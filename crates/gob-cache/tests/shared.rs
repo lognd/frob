@@ -44,7 +44,7 @@ fn primary_and_linked_worktree_share_one_cache_dir() {
     assert!(a.ends_with(".git/frob/cache/frob"), "{}", a.display());
     assert_eq!(
         git_common_dir(&linked).unwrap(),
-        gob_exec::canonical(&primary.join(".git")).unwrap()
+        gob_fs::canonical(&primary.join(".git")).unwrap()
     );
     let plain = tmp.path().join("plain");
     std::fs::create_dir_all(&plain).unwrap();

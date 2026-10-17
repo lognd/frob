@@ -3,8 +3,11 @@
 // frob:ticket 01M43ATASM383KB9130JY79XVV
 // frob:ticket 01M43ATB4X0B56W8T0G8MQFYVM
 
-use crunk_ingest::ProjectStyles;
+use std::path::Path;
+
+use crunk_ingest::{ProjectStyles, TailwindTheme};
 use crunk_spec::DesignSpec;
+use crunk_tokens::export::GeneratedFile;
 
 /// What a crunk rule may ask of its product: the validated design spec and the ingested styles.
 ///
@@ -19,6 +22,25 @@ pub trait CrunkHost {
 
     /// Every ingested stylesheet and JSX source of the project, when ingest ran.
     fn styles(&self) -> Option<&ProjectStyles> {
+        None
+    }
+
+    // frob:ticket 01M43ATBY4CHA4FYVC7BWK6MXR
+    /// The rendered token exports (TOKENS001's side input), when the host can render them;
+    /// `None` when it cannot, which makes the rule skip.
+    fn generated_files(&self) -> Option<&[GeneratedFile]> {
+        None
+    }
+
+    // frob:ticket 01M43ATBY4CHA4FYVC7BWK6MXR
+    /// The bytes on disk at `path` for the drift comparison; `None` when the file is absent.
+    fn read_generated(&self, path: &Path) -> Option<Vec<u8>> {
+        std::fs::read(path).ok()
+    }
+
+    // frob:ticket 01M43ATBY4CHA4FYVC7BWK6MXR
+    /// The ingested Tailwind theme (`tw_theme`), when `[tailwind]` is configured and was read.
+    fn tailwind_theme(&self) -> Option<&TailwindTheme> {
         None
     }
 }

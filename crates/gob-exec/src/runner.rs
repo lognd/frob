@@ -3,8 +3,10 @@
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::sync::Arc;
+use std::sync::PoisonError;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -20,6 +22,9 @@ use crate::{ExecError, Program};
 pub const DEFAULT_OUTPUT_CAP: usize = 64 * 1024 * 1024;
 
 /// How often a running child is polled for exit.
+/// How long after the child exits (or is killed) to wait for its output pipes to close.
+const JOIN_GRACE: Duration = Duration::from_secs(1);
+
 const POLL: Duration = Duration::from_millis(5);
 
 /// Concurrency limits for a [`Runner`].
@@ -190,8 +195,9 @@ impl Runner {
             return Err(ExecError::OutputCap { limit: cap });
         }
         let duration = started.elapsed();
-        let stdout = out_t.map(collect).unwrap_or_default();
-        let stderr = err_t.map(collect).unwrap_or_default();
+        let deadline = Instant::now() + JOIN_GRACE;
+        let stdout = out_t.map(|h| collect(&h, deadline)).unwrap_or_default();
+        let stderr = err_t.map(|h| collect(&h, deadline)).unwrap_or_default();
         info!(program = %label, ?status, ?duration, "exec finished");
         Ok(Output {
             status,
@@ -203,22 +209,27 @@ impl Runner {
     }
 }
 
+/// A drain thread's shared buffer plus its completion signal.
+struct Drain {
+    buf: Arc<Mutex<Vec<u8>>>,
+    done: mpsc::Receiver<()>,
+}
+
 /// Read a pipe on a helper thread until its end or past `cap` bytes, which sets `exceeded`.
-fn drain(
-    mut r: impl Read + Send + 'static,
-    cap: usize,
-    exceeded: &Arc<AtomicBool>,
-) -> thread::JoinHandle<Vec<u8>> {
+fn drain(mut r: impl Read + Send + 'static, cap: usize, exceeded: &Arc<AtomicBool>) -> Drain {
     let exceeded = Arc::clone(exceeded);
+    let buf = Arc::new(Mutex::new(Vec::new()));
+    let shared = Arc::clone(&buf);
+    let (tx, done) = mpsc::channel();
     thread::spawn(move || {
-        let mut buf = Vec::new();
         let mut chunk = [0_u8; 8 * 1024];
         loop {
             match r.read(&mut chunk) {
                 Ok(0) => break,
                 Ok(n) => {
-                    buf.extend_from_slice(&chunk[..n]);
-                    if buf.len() > cap {
+                    let mut b = shared.lock().unwrap_or_else(PoisonError::into_inner);
+                    b.extend_from_slice(&chunk[..n]);
+                    if b.len() > cap {
                         exceeded.store(true, Ordering::Relaxed);
                         break;
                     }
@@ -230,13 +241,25 @@ fn drain(
                 }
             }
         }
-        buf
-    })
+        let _ = tx.send(());
+    });
+    Drain { buf, done }
 }
 
-/// Join a drain thread and return redacted lossy UTF-8.
-fn collect(h: thread::JoinHandle<Vec<u8>>) -> String {
-    let bytes = h.join().unwrap_or_default();
+/// Wait for a drain thread until `deadline` and return what it read as redacted lossy UTF-8.
+///
+/// A descendant that escaped the kill (setsid, detached) can hold the pipe open forever; the
+/// reader thread is then abandoned and the partial output returned instead of blocking.
+fn collect(d: &Drain, deadline: Instant) -> String {
+    let wait = deadline.saturating_duration_since(Instant::now());
+    // Ok(()) or Disconnected both mean the reader thread ended; only a timeout abandons it.
+    if matches!(
+        d.done.recv_timeout(wait),
+        Err(mpsc::RecvTimeoutError::Timeout)
+    ) {
+        warn!("output pipe still open after grace; abandoning reader (escaped descendant?)");
+    }
+    let bytes = d.buf.lock().unwrap_or_else(PoisonError::into_inner).clone();
     gob_log::redact(&String::from_utf8_lossy(&bytes)).into_owned()
 }
 
@@ -281,8 +304,22 @@ fn kill_group(child: &mut Child) {
     }
 }
 
-/// Kill the child (no process groups on this platform).
+/// Kill the child and its descendants with `taskkill /T /F` (std only; `unsafe` is forbidden,
+/// so no job object), falling back to killing the child alone.
 #[cfg(not(unix))]
 fn kill_group(child: &mut Child) {
+    let pid = child.id();
+    let tree = Command::new("taskkill")
+        .args(["/T", "/F", "/PID", &pid.to_string()])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+    match tree {
+        Ok(st) if st.success() => debug!(pid, "process tree killed"),
+        other => {
+            warn!(pid, ?other, "taskkill failed; killing child only");
+        }
+    }
     let _ = child.kill();
 }

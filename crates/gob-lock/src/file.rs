@@ -14,8 +14,11 @@ const OLDEST_VERSION: u32 = 1;
 /// The digest scheme a version-1 file is taken to use when it does not say (code-model.md 2).
 const LEGACY_SCHEME: u32 = 1;
 
-/// The digest scheme this build computes and expects in a current lock (the gob-ir scheme).
-pub const DIGEST_SCHEME: u32 = gob_ir::DIGEST_SCHEME;
+/// The digest scheme this build computes and expects in a current lock.
+///
+/// Must equal `gob_ir::DIGEST_SCHEME`; it is a literal here so the lock file crate does not
+/// depend on the model crate. `crates/frob-ack/tests/ack.rs` asserts the two stay equal.
+pub const DIGEST_SCHEME: u32 = 2;
 
 /// The lock file name of `product` (`frob` gives `frob.lock`).
 pub fn file_name(product: &str) -> String {

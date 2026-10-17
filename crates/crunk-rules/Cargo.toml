@@ -11,6 +11,7 @@ authors.workspace = true
 [dependencies]
 crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
+crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind", default-features = false }
 crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }
 crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }

@@ -227,7 +227,7 @@ pub fn path_strictly_inside(root: &Path, candidate: &Path) -> bool {
 mod tests {
     use super::*;
 
-    // frob:tests crates/gob-exec/src/path.rs::simplify_verbatim
+    // frob:tests crates/gob-fs/src/path.rs::simplify_verbatim
     #[test]
     fn verbatim_prefixes_strip_only_when_safe() {
         assert_eq!(
@@ -249,7 +249,7 @@ mod tests {
         assert_eq!(simplify_verbatim(&long), None);
     }
 
-    // frob:tests crates/gob-exec/src/path.rs::has_dot_component
+    // frob:tests crates/gob-fs/src/path.rs::has_dot_component
     #[test]
     fn dot_components_are_found_in_every_style() {
         for bad in [
@@ -269,7 +269,7 @@ mod tests {
         }
     }
 
-    // frob:tests crates/gob-exec/src/path.rs::strictly_inside
+    // frob:tests crates/gob-fs/src/path.rs::strictly_inside
     #[test]
     fn windows_style_inputs_are_contained_by_components() {
         let root = r"C:\Work\target";
@@ -333,7 +333,7 @@ mod tests {
     }
 
     proptest::proptest! {
-        // frob:tests crates/gob-exec/src/path.rs::strictly_inside
+        // frob:tests crates/gob-fs/src/path.rs::strictly_inside
         /// Whatever Windows-style spelling a candidate takes, one admitted is below the root and has no dot component.
         #[test]
         fn no_admitted_windows_path_escapes_the_root(
@@ -360,7 +360,7 @@ mod tests {
         }
     }
 
-    // frob:tests crates/gob-exec/src/path.rs::canonical
+    // frob:tests crates/gob-fs/src/path.rs::canonical
     #[test]
     fn canonical_resolves_and_errors_on_missing() {
         let tmp = tempfile::tempdir().expect("tempdir");

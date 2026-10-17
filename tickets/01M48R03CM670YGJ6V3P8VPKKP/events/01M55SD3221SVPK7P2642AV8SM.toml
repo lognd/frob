@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "needs crates/frob-check/**, held by MXXGNZ3; redo after it lands"
+at = "2026-10-17T20:38:39Z"
+actor = "lognd"
+rev = 1
