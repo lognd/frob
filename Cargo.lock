@@ -1307,6 +1307,7 @@ version = "0.532.0"
 dependencies = [
  "clap",
  "frob-evidence",
+ "frob-lease",
  "frob-ledger",
  "gob-cache",
  "gob-caps",

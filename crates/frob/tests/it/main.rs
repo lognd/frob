@@ -22,6 +22,7 @@ mod fragment;
 mod gc;
 mod init_adopt;
 mod land_config;
+mod lease_heartbeat;
 mod lease_widen;
 mod merge_driver_branch;
 mod merge_driver_path;

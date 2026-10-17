@@ -347,6 +347,10 @@ impl Command for Check {
         if let Some(id) = &self.explain {
             return explain(id);
         }
+        if self.ticket.is_some() {
+            // check --ticket proves agent activity: keep the worktree lease inside its TTL.
+            frob_lease::heartbeat(&ctx.cwd, ctx.clock.clone());
+        }
         let root = gob_git::Repo::discover(&ctx.cwd)
             .ok()
             .and_then(|r| r.work_dir().map(std::path::Path::to_path_buf))
