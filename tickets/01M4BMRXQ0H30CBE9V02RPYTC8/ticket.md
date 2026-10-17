@@ -2,7 +2,8 @@
 id = "01M4BMRXQ0H30CBE9V02RPYTC8"
 title = "TEST001: suggest Type.method when a symref writes Type::method"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
