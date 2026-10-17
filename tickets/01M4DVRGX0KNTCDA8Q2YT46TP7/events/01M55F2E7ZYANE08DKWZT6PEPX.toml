@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-17T17:38:06Z"
+digest = "bfbfb41c72b6e8ba3e4612d5fd97bd2d6e75b75b40c23530769563108c13c83b"
+exit_code = 0
+inline = """
+
+running 1 test
+test tools::tests::a_ruff_definition_runs_from_data_with_the_matching_variant ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 46 filtered out; finished in 0.05s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.33s
+     Running unittests src/lib.rs (target/debug/deps/gob_check-0f8fdda6abaaa384)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p gob-check --lib tools::tests::a_ruff_definition_runs_from_data_with_the_matching_variant"
+size = 352
+status = "measured"
+at = "2026-10-17T17:38:06Z"
+actor = "lognd"
+rev = 1

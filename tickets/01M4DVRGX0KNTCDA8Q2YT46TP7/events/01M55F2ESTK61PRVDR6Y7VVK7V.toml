@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-17T17:38:05Z"
+digest = "68d8fc89c75a922df01a8a8ac05906594c924d072b9552b0f993ba73bee031f5"
+exit_code = 0
+inline = """
+
+running 5 tests
+test tool_bind::tests::stage_args_beat_variants ... ok
+test tool_bind::tests::the_variant_matching_the_version_is_used ... ok
+test tool_bind::tests::project_bin_dirs_are_searched ... ok
+test tool_bind::tests::the_key_changes_with_version_and_config ... ok
+test tool_bind::tests::zizmor_and_ruff_bind_from_data ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 42 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+     Running unittests src/lib.rs (target/debug/deps/gob_check-0f8fdda6abaaa384)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p gob-check --lib tool_bind::tests"
+size = 585
+status = "measured"
+at = "2026-10-17T17:38:05Z"
+actor = "lognd"
+rev = 1
