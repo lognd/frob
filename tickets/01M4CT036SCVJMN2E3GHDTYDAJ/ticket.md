@@ -2,13 +2,13 @@
 id = "01M4CT036SCVJMN2E3GHDTYDAJ"
 title = "PM010-PM012: cycle over capacity, cycle without goal, not-ready cycle members"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:01Z"
-updated = "2026-10-08T03:48:01Z"
+updated = "2026-10-17T23:51:13Z"
 scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
 [[acceptance]]
