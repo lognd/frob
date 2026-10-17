@@ -2,7 +2,8 @@
 id = "01M48R03ZFTPSDD33HMJBD7STD"
 title = "Migrate gob-check neutral rules, gob-directives and tool-bound rules; PROC001 into one file"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
