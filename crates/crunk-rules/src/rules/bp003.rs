@@ -1,4 +1,4 @@
-//! BP003: a `max-width` media query in a mobile-first project.
+//! BP003: a `width`/`min-width` declaration wider than the smallest declared breakpoint.
 //!
 //! Ships as a Rust rule ahead of the GRL executor (D76 allows recorded tier-0 exceptions); the
 //! std-pack ticket replaces it.
@@ -7,15 +7,17 @@
 
 use gob_rules::{Out, RepoRule, rule};
 
+use crunk_values::LengthKind;
+
 use crate::host::{CrunkHost, missing_inputs};
 use crate::org::line_offset;
 use crate::sheets::site_path;
 
-/// A `max-width` media query: breakpoints are mobile-first, so styles are layered up with `min-width`.
+/// A fixed `width`/`min-width` in px or rem exceeding the smallest breakpoint: guaranteed mobile overflow.
 #[derive(Debug, Clone, Copy, Default)]
 #[rule(
     id = "BP003",
-    slug = "max-width-media-query",
+    slug = "fixed-width-exceeds-mobile",
     severity = Error,
     polarity = Pplus,
     must_measure = false,
@@ -33,18 +35,35 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Bp003 {
         let (Some(spec), Some(styles)) = (host.spec(), host.styles()) else {
             return;
         };
+        let Some((name, smallest)) = spec.breakpoints.points.iter().min_by_key(|(_, v)| **v) else {
+            return;
+        };
+        let smallest = f64::from(i32::try_from(*smallest).unwrap_or(i32::MAX));
         for sheet in &styles.sheets {
             let path = site_path(spec, &sheet.path);
-            for query in sheet.media_queries.iter().filter(|q| q.max_px.is_some()) {
-                tracing::debug!(%path, prelude = %query.prelude, "BP003: max-width query");
-                out.fire_in(
-                    &path,
-                    line_offset(&sheet.source, query.line),
-                    format!(
-                        "media query `{}` is desktop-first; write mobile-first `min-width` queries",
-                        query.prelude
-                    ),
-                );
+            for decl in &sheet.declarations {
+                if !matches!(decl.prop.as_str(), "width" | "min-width") {
+                    continue;
+                }
+                for located in &decl.lengths {
+                    let length = &located.length;
+                    let (LengthKind::Px | LengthKind::Rem, Some(px)) = (length.kind, length.px)
+                    else {
+                        continue;
+                    };
+                    if px.abs() <= smallest {
+                        continue;
+                    }
+                    tracing::debug!(%path, prop = %decl.prop, px, "BP003: width exceeds smallest breakpoint");
+                    out.fire_in(
+                        &path,
+                        line_offset(&sheet.source, decl.line),
+                        format!(
+                            "{}: {} exceeds the smallest declared breakpoint {name}={smallest}px -- guaranteed mobile overflow",
+                            decl.prop, length.raw
+                        ),
+                    );
+                }
             }
         }
     }

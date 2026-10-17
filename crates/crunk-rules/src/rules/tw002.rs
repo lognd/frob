@@ -1,4 +1,4 @@
-//! TW002: an arbitrary Tailwind colour (`bg-[#123456]`) that is not a palette colour.
+//! TW002: a `tw_theme` entry that maps to a `var(--x)` the token export does not define.
 //!
 //! Ships as a Rust rule ahead of the GRL executor (D76 allows recorded tier-0 exceptions); the
 //! std-pack ticket replaces it.
@@ -7,16 +7,15 @@
 
 use gob_rules::{Out, RepoRule, rule};
 
-use crate::color::Palette;
 use crate::host::{CrunkHost, missing_inputs};
-use crate::mode::modes;
-use crate::tailwind::{Arbitrary, arbitrary, sites};
+use crate::sheets::site_path;
+use crate::tailwind::theme_view;
 
-/// An arbitrary-value colour utility whose colour is not a palette colour.
+/// A Tailwind theme entry mapped to a `var(--x)` that is not an exported token.
 #[derive(Debug, Clone, Copy, Default)]
 #[rule(
     id = "TW002",
-    slug = "tailwind-arbitrary-color-off-palette",
+    slug = "tailwind-theme-unknown-token",
     severity = Error,
     polarity = Pplus,
     must_measure = false,
@@ -29,43 +28,52 @@ use crate::tailwind::{Arbitrary, arbitrary, sites};
 )]
 pub struct Tw002;
 
+/// The custom property of a value spelled exactly `var(--name)`.
+pub fn bare_var(value: &str) -> Option<&str> {
+    let name = value.trim().strip_prefix("var(")?.strip_suffix(')')?;
+    let body = name.strip_prefix("--")?;
+    (!body.is_empty()
+        && body
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-'))
+    .then_some(name)
+}
+
 impl<P: ?Sized + CrunkHost> RepoRule<P> for Tw002 {
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
-        let (Some(spec), Some(styles)) = (host.spec(), host.styles()) else {
+        let (Some(spec), Some(theme)) = (host.spec(), host.tailwind_theme()) else {
             return;
         };
-        let root = spec.project.root_font_size;
-        let sites = sites(spec, styles);
-        for mode in modes(spec) {
-            let palette = Palette::new(mode.palette(spec));
-            for site in &sites {
-                let Some(Arbitrary::Color(color)) = arbitrary(&site.candidate, root) else {
-                    continue;
-                };
-                if palette.conforms(color) {
-                    continue;
-                }
-                let nearest = palette
-                    .nearest(color)
-                    .map_or_else(String::new, |(name, d)| {
-                        format!("; nearest is `{name}` (distance {d:.2})")
-                    });
-                tracing::debug!(path = %site.path, class = %site.candidate.raw, "TW002: colour is off the palette");
-                out.fire_in(
-                    &site.path,
-                    site.offset,
-                    format!(
-                        "`{}` uses {}, which is not a palette color{nearest}{}",
-                        site.candidate.raw,
-                        color.to_hex(),
-                        mode.suffix()
-                    ),
-                );
+        let view = theme_view(host, spec);
+        let Some(names) = &view.token_names else {
+            tracing::warn!("TW002: token set did not build; skipped");
+            return;
+        };
+        let path = site_path(spec, &theme.path);
+        let mut keys: Vec<&String> = view.map.keys().collect();
+        keys.sort();
+        for key in keys {
+            let value = &view.map[key];
+            let Some(var) = bare_var(value) else { continue };
+            if names.contains(var) {
+                continue;
             }
+            tracing::debug!(%path, key, var, "TW002: theme entry maps to an unexported token");
+            out.fire_in(
+                &path,
+                0,
+                format!(
+                    "tailwind theme entry '{key}' maps to var({var}) which is not an exported token"
+                ),
+            );
         }
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {
-        missing_inputs(host)
+        missing_inputs(host).or_else(|| {
+            host.tailwind_theme()
+                .is_none()
+                .then(|| "no [tailwind] theme ingested".to_owned())
+        })
     }
 }

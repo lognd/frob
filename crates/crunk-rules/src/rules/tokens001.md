@@ -5,7 +5,7 @@ The generated tokens sheet must equal what `crunk tokens` writes for the current
 
 ## What it does
 
-Compares each generated file to the exporter's output for the current spec and flags a file that is missing or differs.
+Compares each generated file to the exporter's output for the current spec and flags a file that is missing or drifted. JSON artifacts are compared as parsed JSON, so a rewrap is clean.
 
 ## Why it matters
 
@@ -17,7 +17,7 @@ Run `crunk tokens` and commit the result.
 
 ## Examples
 
-### A sheet that differs from the exporter output fires
+### A sheet that drifted from the exporter output fires
 
 ```css expect=fire file=styles/base/app.css config=stale-tokens
 .card {

@@ -18,11 +18,13 @@
 //! - [`waiver`]: the `crunk:waive` comment: scan, bind to the covered region, turn into exceptions.
 //! - [`layers`], [`org`]: what LAYER001 and ORG001-005 share (declared z-index values, ignore globs,
 //!   class casing and component prefixes).
-//! - [`tailwind`], [`breakpoints`], [`tokens_drift`]: what TW001-005, BP001-003 and TOKENS001 share
-//!   (arbitrary-value reading, breakpoint widths and families, the generated-file comparison).
+//! - [`tailwind`], [`breakpoints`]: what TW001-005 and BP001-003 share (arbitrary-value splitting,
+//!   the scale judgment, the `tw_theme` view, breakpoint tolerance and base families). TOKENS001
+//!   compares [`GeneratedFile`] (from `crunk-tokens`) with the bytes on disk.
 //! - [`host`]: [`host::CrunkHost`], the host trait crunk's rules evaluate against.
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
+// frob:ticket 01M43ATBY4CHA4FYVC7BWK6MXR
 
 pub mod breakpoints;
 pub mod color;
@@ -37,8 +39,8 @@ pub mod registry;
 pub mod rules;
 pub mod sheets;
 pub mod tailwind;
-pub mod tokens_drift;
 pub mod waiver;
 
 pub use host::CrunkHost;
-pub use tokens_drift::GeneratedFile;
+// frob:ticket 01M43ATBY4CHA4FYVC7BWK6MXR
+pub use crunk_tokens::export::GeneratedFile;

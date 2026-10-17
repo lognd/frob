@@ -5,13 +5,13 @@
 
 // frob:ticket 01M43ATBY4CHA4FYVC7BWK6MXR
 
+use crunk_tokens::export::{Drift, compare};
 use gob_rules::{Out, RepoRule, rule};
 
 use crate::host::CrunkHost;
 use crate::sheets::site_path;
-use crate::tokens_drift::drift;
 
-/// A generated file (the tokens sheet) whose bytes differ from the exporter's output for the current spec.
+/// A generated token file (css, json or tailwind mapping) that is missing or differs from the exporter's output.
 #[derive(Debug, Clone, Copy, Default)]
 #[rule(
     id = "TOKENS001",
@@ -34,13 +34,18 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Tokens001 {
             return;
         };
         for file in files {
-            let Some(why) = drift(file) else { continue };
+            let on_disk = host.read_generated(&file.path);
+            let status = match compare(file, on_disk.as_deref()) {
+                Drift::Clean => continue,
+                Drift::Missing => "missing",
+                Drift::Drifted => "drifted",
+            };
             let path = site_path(spec, &file.path);
-            tracing::debug!(%path, %why, "TOKENS001: generated file is stale");
+            tracing::debug!(%path, status, target = file.target.name(), "TOKENS001: generated file is stale");
             out.fire_in(
                 &path,
                 0,
-                format!("generated file {why}; run `crunk tokens` to regenerate it"),
+                format!("tokens file {status}; run `crunk tokens` to regenerate"),
             );
         }
     }

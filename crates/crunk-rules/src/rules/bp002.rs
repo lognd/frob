@@ -7,7 +7,7 @@
 
 use gob_rules::{Out, RepoRule, rule};
 
-use crate::breakpoints::{base_family, responsive_variant, same_family};
+use crate::breakpoints::{has_responsive_variant, matched_family};
 use crate::host::{CrunkHost, missing_inputs};
 use crate::tailwind::sites;
 
@@ -35,30 +35,30 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Bp002 {
         };
         let required = &spec.breakpoints.base_required;
         let sites = sites(spec, styles);
+        let base_groups: std::collections::HashSet<(&str, u32, &str)> = sites
+            .iter()
+            .filter(|s| s.variants.is_empty())
+            .filter_map(|s| {
+                matched_family(s.name, required).map(|(_, group)| (s.path.as_str(), s.line, group))
+            })
+            .collect();
         for site in &sites {
-            let Some(point) = responsive_variant(site.variants, spec) else {
-                continue;
-            };
-            let name = &site.candidate.raw;
-            let Some(family) = base_family(&site.candidate.utility, required) else {
-                continue;
-            };
-            let has_base = sites.iter().any(|other| {
-                other.path == site.path
-                    && other.line == site.line
-                    && other.variants.is_empty()
-                    && base_family(&other.candidate.utility, required)
-                        .is_some_and(|f| same_family(f, family))
-            });
-            if has_base {
+            if !has_responsive_variant(site.variants, spec) {
                 continue;
             }
-            tracing::debug!(path = %site.path, class = %name, "BP002: responsive utility has no mobile base");
+            let Some((family, group)) = matched_family(site.name, required) else {
+                continue;
+            };
+            if base_groups.contains(&(site.path.as_str(), site.line, group)) {
+                continue;
+            }
+            tracing::debug!(path = %site.path, utility = site.name, "BP002: responsive utility has no mobile base");
             out.fire_in(
                 &site.path,
                 site.offset,
                 format!(
-                    "`{point}:{name}` has no unprefixed `{family}` base for the smallest viewport"
+                    "utility '{}' has a responsive variant in family '{family}' with no unprefixed base in the same className -- mobile behavior undefined",
+                    site.name
                 ),
             );
         }

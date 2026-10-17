@@ -7,7 +7,7 @@
 
 use gob_rules::{Out, RepoRule, rule};
 
-use crate::breakpoints::{max_allowed, min_allowed, widths};
+use crate::breakpoints::matches_breakpoint;
 use crate::host::{CrunkHost, missing_inputs};
 use crate::org::line_offset;
 use crate::sheets::site_path;
@@ -34,30 +34,25 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Bp001 {
         let (Some(spec), Some(styles)) = (host.spec(), host.styles()) else {
             return;
         };
-        let allowed = widths(spec);
+        let mut declared: Vec<i64> = spec.breakpoints.points.values().copied().collect();
+        declared.sort_unstable();
         for sheet in &styles.sheets {
             let path = site_path(spec, &sheet.path);
             for query in &sheet.media_queries {
-                let bad = [(query.min_px, false), (query.max_px, true)]
-                    .into_iter()
-                    .filter_map(|(px, is_max)| px.map(|px| (px, is_max)))
-                    .find(|&(px, is_max)| {
-                        !if is_max {
-                            max_allowed(px, &allowed)
-                        } else {
-                            min_allowed(px, &allowed)
-                        }
-                    });
-                let Some((px, _)) = bad else { continue };
-                tracing::debug!(%path, prelude = %query.prelude, px, "BP001: width is not a breakpoint");
-                out.fire_in(
-                    &path,
-                    line_offset(&sheet.source, query.line),
-                    format!(
-                        "media query `{}` uses {px}px, which is not a declared breakpoint",
-                        query.prelude
-                    ),
-                );
+                for px in [query.min_px, query.max_px].into_iter().flatten() {
+                    if matches_breakpoint(px, spec) {
+                        continue;
+                    }
+                    tracing::debug!(%path, prelude = %query.prelude, px, "BP001: width is not a breakpoint");
+                    out.fire_in(
+                        &path,
+                        line_offset(&sheet.source, query.line),
+                        format!(
+                            "media query '{}' uses {px}px, which is not a declared breakpoint {declared:?}",
+                            query.prelude
+                        ),
+                    );
+                }
             }
         }
     }
