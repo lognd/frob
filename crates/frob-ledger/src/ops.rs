@@ -454,6 +454,36 @@ impl Ledger {
         self.commit_events("update", id, &events)
     }
 
+    /// Apply `patch` and add a comment to ticket `id` as ONE ledger commit.
+    ///
+    /// # Errors
+    ///
+    /// Everything [`Ledger::update`] and [`Ledger::comment`] refuse, before anything is written.
+    pub fn update_with_comment(
+        &self,
+        id: TicketId,
+        patch: &Patch,
+        subtype: CommentSubtype,
+        body: &str,
+    ) -> Result<Applied> {
+        if body.trim().is_empty() {
+            return Err(LedgerError::invalid("a comment needs a non-empty body"));
+        }
+        let s = self.synced()?;
+        let (_, mut events) = self.plan_update(&s, id, patch)?;
+        events.push(Event::new(
+            self.now(),
+            &self.actor()?,
+            EventBody::Comment(CommentData {
+                subtype,
+                body: body.to_owned(),
+            }),
+        ));
+        drop(s);
+        tracing::debug!(ticket = %id, events = events.len(), "coalesced update and comment");
+        self.commit_events("update", id, &events)
+    }
+
     /// The scope globs ticket `id` would have after `patch`, without writing anything.
     ///
     /// Runs the same validation as [`Ledger::update`], so a patch that update
