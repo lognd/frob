@@ -75,7 +75,7 @@ fn talk(cli: &Cli, cwd: &std::path::Path, requests: &[Value]) -> Vec<Value> {
         .collect()
 }
 
-// frob:tests gob_cli::Cli::mcp_tools
+// frob:tests crates/gob-cli/src/mcp.rs::mcp_tools
 #[test]
 fn every_read_only_verb_is_a_tool_carrying_its_verb_schema() {
     let dir = tempfile::tempdir().expect("tmp");
@@ -97,7 +97,7 @@ fn every_read_only_verb_is_a_tool_carrying_its_verb_schema() {
     assert_eq!(look["inputSchema"]["x-verb-schema"], verb_schema);
 }
 
-// frob:tests gob_cli::Cli::serve_mcp
+// frob:tests crates/gob-cli/src/mcp.rs::serve_mcp
 #[test]
 fn a_tool_call_returns_the_cli_envelope() {
     let dir = tempfile::tempdir().expect("tmp");
@@ -116,7 +116,7 @@ fn a_tool_call_returns_the_cli_envelope() {
     assert_eq!(replies[0]["result"]["isError"], false);
 }
 
-// frob:tests gob_cli::Cli::mcp_tools
+// frob:tests crates/gob-cli/src/mcp.rs::mcp_tools
 #[test]
 fn a_mutating_verb_is_not_listed_and_cannot_be_called() {
     let dir = tempfile::tempdir().expect("tmp");
@@ -140,7 +140,7 @@ fn a_mutating_verb_is_not_listed_and_cannot_be_called() {
     assert_eq!(replies[2]["error"]["code"], -32602);
 }
 
-// frob:tests gob_cli::Cli::serve_mcp
+// frob:tests crates/gob-cli/src/mcp.rs::serve_mcp
 #[test]
 fn handshake_notifications_and_bad_input() {
     let dir = tempfile::tempdir().expect("tmp");
