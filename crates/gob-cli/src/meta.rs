@@ -3,6 +3,8 @@
 use gob_diagnostics::ExitCode;
 
 /// Static description of a verb, enough to generate the CLI reference.
+// Each flag is an independent verb property surfaced in the reference docs.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CommandMeta {
     /// Verb path, words separated by single spaces (`config show`).
@@ -26,6 +28,8 @@ pub struct CommandMeta {
     pub deprecated: Option<&'static str>,
     /// True when the verb has a markdown view (`#[command(markdown)]`); `--format md` is refused elsewhere.
     pub markdown: bool,
+    /// True when the verb never changes repository or ledger state (`#[command(read_only)]`); `frob serve` exposes only these.
+    pub read_only: bool,
 }
 
 impl CommandMeta {
@@ -117,6 +121,7 @@ mod tests {
             module: "m",
             deprecated,
             markdown: false,
+            read_only: false,
         }
     }
 

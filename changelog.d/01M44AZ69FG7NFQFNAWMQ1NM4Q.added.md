@@ -1,0 +1,1 @@
+frob serve: a read-only MCP server whose tools are generated from verbs marked read_only (ticket show/list/doable/brief, lease list, check, doctor and more); each call returns the same JSON envelope as the CLI.

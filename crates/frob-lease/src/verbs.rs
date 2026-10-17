@@ -64,6 +64,7 @@ pub struct LeaseListData {
     verb = "lease list",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, refused, internal)
 )]
 pub struct LeaseList {
@@ -150,6 +151,7 @@ impl From<Contended> for ContendedFile {
     product = "frob",
     deprecated = "lease list --contention",
     idempotent = true,
+    read_only,
     exits(ok, refused, internal)
 )]
 pub struct Contention;

@@ -25,10 +25,11 @@
 //! - A named file outside `css_root` is skipped; Python raised. A malformed `crunk:waive`
 //!   comment becomes a diagnostic; Python ignored it.
 //! - Parse errors read `css syntax error at line N`; Python carried tinycss2's messages.
-//! - The Tailwind theme is not ingested here (its own ticket); JSX and TS sources are ingested by
-//!   [`jsx`], with its own list of divergences.
+//! - The Tailwind theme is ingested by [`tailwind`], with its own list of divergences; JSX and
+//!   TS sources are ingested by [`jsx`], likewise.
 
 // frob:ticket 01M43ARY91XZ35DN9SCHRHS033
+// frob:ticket 01M43ARZ3VCNDX20C9BZZCCYHY
 
 mod error;
 mod facts;
@@ -37,6 +38,7 @@ pub mod jsx;
 mod lex;
 pub mod model;
 pub mod parse;
+pub mod tailwind;
 pub mod waive;
 pub mod walk;
 
@@ -49,5 +51,6 @@ pub use model::{
     Stylesheet, Waiver,
 };
 pub use parse::{FoldFailure, ParsedCss, parse_css_source};
+pub use tailwind::{Collision, TailwindTheme, ThemeEntry, ThemeSource, ingest_tailwind};
 pub use waive::Waive;
 pub use walk::{INGEST_VERSION, IngestStats, Ingested, bucket_for, ingest_paths, ingest_tree};
