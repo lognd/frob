@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-17T21:14:00Z"
-updated = "2026-10-17T21:45:35Z"
+updated = "2026-10-17T22:00:39Z"
 scope = [".github/workflows/ci.yml", "crates/gob-dev/tests/ci_parity.rs", "docs/design/build-test-ci.md"]
 +++
 
