@@ -1,0 +1,1 @@
+gob-exec: a timed-out run now kills the whole process tree (taskkill /T on Windows, process group on unix) and returns within a 1 s grace even if an escaped descendant holds the output pipe, keeping partial output.

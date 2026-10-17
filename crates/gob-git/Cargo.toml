@@ -10,7 +10,9 @@ authors.workspace = true
 
 [dependencies]
 gix = { version = "0.87", default-features = false, features = ["sha1", "max-performance-safe", "index", "status", "revision", "blob-diff", "worktree-mutation", "merge"] }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
+inventory = "0.3"
 thiserror = "2"
 tracing = "0.1"
 

@@ -97,7 +97,10 @@ otherwise spawns one `git merge`; a name without `refs/` resolves as
 (`Repo::worktree_content_as_git`, `WorktreeSource`): a symlink reads as
 its target string and a regular file runs through the same clean filters.
 Every digest compared with recorded state goes through it (`gob-walk`'s
-`ContentSource` for walk digests and symbol extraction), so a CRLF
+`ContentSource` for walk digests and symbol extraction; `gob-walk` owns the
+`NormalizedSource` trait and `gob-git` registers its implementation at link
+time, so the pure model crates never pull in gix; a test over `cargo
+metadata` enforces it), so a CRLF
 checkout under `core.autocrlf` hashes like its LF twin. Parsed text is the
 normalized text, so spans are offsets into it; line numbers are identical
 in both forms.

@@ -75,6 +75,20 @@ fn check_reports_stale_and_missing_files_without_writing() {
     assert!(!missing.exists(), "check mode writes nothing");
 }
 
+// frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
+/// Every rule id: the legacy registry plus the declared rules of all products.
+fn rule_ids() -> BTreeSet<String> {
+    gob_rules::Registry::global()
+        .iter()
+        .map(|m| m.id.to_owned())
+        .chain(
+            gob_dev::products::all_defs()
+                .into_iter()
+                .map(|(_, d)| d.id.to_owned()),
+        )
+        .collect()
+}
+
 #[test]
 fn every_rule_has_a_page_and_every_page_a_rule() {
     let files = generate(Kind::Rules, &crates_dir()).expect("generate");
@@ -85,10 +99,7 @@ fn every_rule_has_a_page_and_every_page_a_rule() {
         .filter(|n| *n != "README")
         .map(str::to_owned)
         .collect();
-    let rules: BTreeSet<String> = gob_rules::Registry::global()
-        .iter()
-        .map(|m| m.id.to_owned())
-        .collect();
+    let rules = rule_ids();
     assert!(!rules.is_empty());
     assert_eq!(pages, rules);
 }
@@ -98,10 +109,7 @@ fn committed_pages_have_no_orphans_on_disk() {
     let dir = workspace_root()
         .expect("workspace root")
         .join("docs/reference/rules");
-    let rules: BTreeSet<String> = gob_rules::Registry::global()
-        .iter()
-        .map(|m| format!("{}.md", m.id))
-        .collect();
+    let rules: BTreeSet<String> = rule_ids().iter().map(|id| format!("{id}.md")).collect();
     for entry in std::fs::read_dir(&dir).expect("rules dir exists once generated") {
         let name = entry
             .expect("entry")

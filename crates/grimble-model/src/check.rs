@@ -281,8 +281,10 @@ struct Checker<'a> {
 
 impl<'a> Checker<'a> {
     fn new(input: &'a ModelFiles, root: &'a LoadedRoot, ids: &'a mut FileInterner) -> Self {
+        // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
         let mut known_rules: BTreeSet<String> =
             Registry::global().iter().map(|m| m.id.to_owned()).collect();
+        known_rules.extend(crate::rules::METAS.iter().map(|d| d.id.to_owned()));
         known_rules.extend(input.extra_rules.iter().cloned());
         Self {
             input,
@@ -306,10 +308,14 @@ impl<'a> Checker<'a> {
         let Ok(id) = rule.parse::<RuleId>() else {
             return;
         };
+        // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
         let severity = sev.unwrap_or_else(|| {
-            Registry::global()
-                .by_id(rule)
-                .map_or(Severity::Error, |m| m.severity)
+            crate::rules::METAS
+                .iter()
+                .find(|d| d.id == rule)
+                .map(|d| d.severity)
+                .or_else(|| Registry::global().by_id(rule).map(|m| m.severity))
+                .unwrap_or(Severity::Error)
         });
         let path = &self.root.files[file].parsed.path;
         let fid = self.ids.intern(path);

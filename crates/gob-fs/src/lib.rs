@@ -1,10 +1,18 @@
-//! Filesystem primitives shared by every goblin: the one atomic file write.
+//! Filesystem primitives shared by every goblin: the one atomic file write and the one
+//! path-canonicalization function (see [`canonical`]).
 //!
 //! Every write that must leave the target wholly old or wholly new goes through
 //! [`write_atomic`] (or [`write_atomic_private`] for owner-only files); the
 //! inventory test in `tests/inventory.rs` fails on any hand-rolled temp-and-rename.
 
 // frob:ticket 01M43JETBHW7FYNMR6SGVWFAEV
+
+mod path;
+
+pub use path::{
+    Style, canonical, has_dot_component, path_has_dot_component, path_strictly_inside,
+    simplify_verbatim, strictly_inside,
+};
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};

@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk binaries must link gob-git so digests keep git normalization (gob-walk uses a link-time provider)"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk/**"]
+body = "found while working ~NF2ZMQG: ContentSource::locate resolves gob-git via inventory; crunk bins do not link gob-git so they fall back to raw reads."
+at = "2026-10-17T21:11:57Z"
+actor = "lognd"
+rev = 1
