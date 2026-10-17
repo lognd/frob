@@ -6,6 +6,8 @@
 use crunk_ingest::ProjectStyles;
 use crunk_spec::DesignSpec;
 
+use crate::tokens_drift::GeneratedFile;
+
 /// What a crunk rule may ask of its product: the validated design spec and the ingested styles.
 ///
 /// Both default to `None` (no valid `crunk.toml`, nothing ingested), which is what a rule that
@@ -19,6 +21,12 @@ pub trait CrunkHost {
 
     /// Every ingested stylesheet and JSX source of the project, when ingest ran.
     fn styles(&self) -> Option<&ProjectStyles> {
+        None
+    }
+
+    /// The generated files with their expected and current bytes (TOKENS001's side input), when
+    /// the host can render them; `None` when it cannot, which makes the rule skip.
+    fn generated_files(&self) -> Option<&[GeneratedFile]> {
         None
     }
 }

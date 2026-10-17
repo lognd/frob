@@ -2,6 +2,8 @@
 //! the case file, an empty generated tokens sheet, and the real ingest over them.
 //!
 //! The case's `config=no-tokens` leaves the tokens sheet out, so the definition set is incomplete.
+//! `config=stale-tokens` supplies a generated tokens sheet whose expected bytes differ from disk.
+//! `config=breakpoints` declares sm/md/lg breakpoints (640/768/1024px) so the BP rules apply.
 
 // frob:ticket 01M43ATB4X0B56W8T0G8MQFYVM
 
@@ -13,7 +15,7 @@
 use std::path::Path;
 
 use crunk_ingest::{ProjectStyles, ingest_tree};
-use crunk_rules::CrunkHost;
+use crunk_rules::{CrunkHost, GeneratedFile};
 use crunk_spec::DesignSpec;
 use gob_cache::Cache;
 use gob_rules::{Emitted, Finding, RepoRule, run_repo};
@@ -23,6 +25,7 @@ use gob_text::FileInterner;
 pub struct Project {
     pub spec: DesignSpec,
     pub styles: ProjectStyles,
+    pub generated: Option<Vec<GeneratedFile>>,
     _dir: tempfile::TempDir,
 }
 
@@ -32,6 +35,9 @@ impl CrunkHost for Project {
     }
     fn styles(&self) -> Option<&ProjectStyles> {
         Some(&self.styles)
+    }
+    fn generated_files(&self) -> Option<&[GeneratedFile]> {
+        self.generated.as_deref()
     }
 }
 
@@ -53,6 +59,9 @@ pub fn project(file: &str, text: &str, config: Option<&str>) -> Project {
     if [".tsx", ".jsx", ".ts"].iter().any(|e| file.ends_with(e)) {
         spec_text.push_str("\n[jsx]\nglobs = [\"src/**/*\"]\n");
     }
+    if config == Some("breakpoints") {
+        spec_text.push_str("\n[breakpoints]\nsm = 640\nmd = 768\nlg = 1024\n");
+    }
     write(dir.path(), "crunk.toml", &spec_text);
     if file != "crunk.toml" {
         write(dir.path(), file, text);
@@ -62,10 +71,18 @@ pub fn project(file: &str, text: &str, config: Option<&str>) -> Project {
     }
     let spec = crunk_spec::parse_spec(&spec_text, &dir.path().join("crunk.toml"), dir.path())
         .expect("spec parses");
+    let dir_path = dir.path().to_path_buf();
     let styles = ingest_tree(&spec, &Cache::null()).expect("ingest").styles;
     Project {
         spec,
         styles,
+        generated: (config == Some("stale-tokens")).then(|| {
+            vec![GeneratedFile {
+                path: dir_path.join("styles/tokens.css"),
+                expected: ":root { --a: 1; }\n".to_owned(),
+                actual: Some(":root {}\n".to_owned()),
+            }]
+        }),
         _dir: dir,
     }
 }
