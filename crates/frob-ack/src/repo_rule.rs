@@ -1,11 +1,11 @@
 //! The gob-cache `repo_rule` helper: findings per (inputs digest, rule id, rule version).
 
 use gob_cache::Cache;
-use gob_rules::{RuleMeta, Severity};
+use gob_rules::{RuleDef, Severity};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 use serde::{Deserialize, Serialize};
 
-use crate::rules::Raw;
+use crate::eval::Raw;
 
 /// One cached finding, free of interner ids.
 #[derive(Serialize, Deserialize)]
@@ -17,7 +17,7 @@ struct Stored {
 }
 
 /// The cache key digest: the inputs digest with the rule version folded in.
-fn key(inputs_digest: &str, meta: &RuleMeta) -> String {
+fn key(inputs_digest: &str, meta: &RuleDef) -> String {
     let mut h = blake3::Hasher::new();
     h.update(inputs_digest.as_bytes());
     h.update(&meta.version.to_le_bytes());
@@ -28,7 +28,7 @@ fn key(inputs_digest: &str, meta: &RuleMeta) -> String {
 pub(crate) fn load(
     cache: &Cache,
     inputs_digest: &str,
-    meta: &'static RuleMeta,
+    meta: &'static RuleDef,
     files: &mut FileInterner,
 ) -> Option<Vec<Raw>> {
     let bytes = cache.get_repo_rule(&key(inputs_digest, meta), meta.id)?;
@@ -63,7 +63,7 @@ pub(crate) fn load(
 pub(crate) fn store(
     cache: &Cache,
     inputs_digest: &str,
-    meta: &'static RuleMeta,
+    meta: &'static RuleDef,
     files: &FileInterner,
     raws: &[Raw],
 ) {

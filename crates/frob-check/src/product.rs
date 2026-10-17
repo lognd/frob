@@ -3,14 +3,11 @@
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
-use frob_ack::{Affect001, Drift001, Drift002, Drift003};
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::TicketId;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
 use frob_ledger::rules::{Tick001, Tick003, Tick004, Tick005};
-use frob_obligations::{
-    Cov001, Inv001, Inv002, Todo002, apply_exceptions, cov001_subjects, evaluate_repo,
-};
+use frob_obligations::{Cov001, Todo002, apply_exceptions, cov001_subjects, evaluate_legacy_repo};
 use frob_pm::rules::cycle::Pm036;
 use frob_pm::rules::membership::Pm034;
 use frob_pm::rules::milestone::{Pm001, Pm002};
@@ -20,7 +17,7 @@ use frob_release::rel001::Rel001;
 use frob_release::rel002::Rel002;
 use frob_release::rel003::Rel003;
 use gob_check::{
-    CheckError, CheckTable, CollectCx, Collected, External, FileCheck, Product, RepoGroup,
+    CheckError, CheckTable, CollectCx, Collected, External, FileCheck, Product, RepoGroup, RuleSet,
     ScopedFindings, Snapshot, Timing,
 };
 use gob_languages::Language;
@@ -28,10 +25,17 @@ use gob_rules::{Finding, RequiredReason, Resolved, Rule, RuleMeta, Severity};
 use gob_text::FileInterner;
 
 use crate::filecheck::builtin_checks;
+use crate::host::FrobHost;
 use crate::options::CheckOptions;
+use crate::product_rules;
 use crate::scope::{self, TicketScope};
 use crate::sibling::Siblings;
 use crate::snapshot::{self, FrobInputs, FrobShared};
+
+/// The host the declared rules judge: the snapshot's inputs.
+fn host<'a>(_: &'a Frob, snap: &'a Snapshot<Frob>) -> &'a (dyn FrobHost + 'static) {
+    &snap.inputs
+}
 
 /// Rules that read the ticket ledger: without one they examine nothing.
 const LEDGER_RULES: [&str; 3] = ["REF001", "TODO002", "TICK002"];
@@ -338,6 +342,10 @@ impl Product for Frob {
         snapshot::collect(cx, &self.opts)
     }
 
+    fn rule_set(&self) -> RuleSet<Self> {
+        RuleSet::new().bind(product_rules::rules(), host)
+    }
+
     fn file_checks(&self) -> Vec<Arc<dyn FileCheck<Self>>> {
         let mut checks = builtin_checks();
         checks.extend(self.opts.extra_checks.iter().cloned());
@@ -346,10 +354,12 @@ impl Product for Frob {
 
     fn repo_groups(&self) -> Vec<RepoGroup<Self>> {
         vec![
+            // COV001 and TODO002 stay on the legacy derive: `Out` cannot carry their span ranges.
+            // frob:ticket 01M48R02V2J0R5ZXWP9MXXGNZ3
             RepoGroup::new(
                 "repo:obligations",
-                vec![Cov001.meta(), Todo002.meta(), Inv001.meta(), Inv002.meta()],
-                |s: &Snapshot<Self>, f| evaluate_repo(&s.inputs.obligations(), f),
+                vec![Cov001.meta(), Todo002.meta()],
+                |s: &Snapshot<Self>, f| evaluate_legacy_repo(&s.inputs.obligations(), f),
             )
             .counting(|s| {
                 vec![
@@ -357,28 +367,6 @@ impl Product for Frob {
                     ("TODO002", s.inputs.ledger.as_ref().map_or(0, |l| l.tickets)),
                 ]
             }),
-            RepoGroup::new(
-                "repo:ack",
-                vec![
-                    Drift001.meta(),
-                    Drift002.meta(),
-                    Drift003.meta(),
-                    Affect001.meta(),
-                ],
-                |s: &Snapshot<Self>, _| frob_ack::check(&s.inputs.ack),
-            ),
-            RepoGroup::new(
-                "repo:tests",
-                vec![frob_tests::Test001.meta()],
-                |s: &Snapshot<Self>, _| {
-                    let read = |p: &str| std::fs::read_to_string(s.core.root.join(p)).ok();
-                    frob_tests::test001_with_sources(
-                        &s.inputs.directives,
-                        &s.inputs.ack.graph,
-                        &read,
-                    )
-                },
-            ),
             // frob:ticket 01M4069REJDB8FFVZFMJWAAVRY
             RepoGroup::new(
                 "repo:pm",

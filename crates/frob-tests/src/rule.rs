@@ -1,28 +1,11 @@
 //! `TEST001`: a `frob:tests` directive names nothing the graph can find.
 
 use gob_directives::DirectiveRecord;
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RuleDecl, RuleId};
 use gob_symbols::{ResolveError, SymbolGraph};
 
 use crate::catalog::is_test_fn;
-
-/// A `frob:tests` directive whose target resolves to no test (or, inside a test, to no symbol).
-///
-/// On a non-test item the target names a test and must resolve to a test
-/// function; inside a test item the target is the symbol the test covers and
-/// must resolve to any symbol. Fix the symref or remove the directive.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "TEST001",
-    slug = "tests-target-missing",
-    family = "TEST",
-    severity = Error,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Test001;
+use crate::rules::test001::Test001;
 
 /// `TEST001` using only the naming heuristic to recognise tests.
 pub fn test001(records: &[DirectiveRecord], graph: &SymbolGraph) -> Vec<Finding> {
@@ -35,10 +18,10 @@ pub fn test001_with_sources(
     graph: &SymbolGraph,
     read: &dyn Fn(&str) -> Option<String>,
 ) -> Vec<Finding> {
-    let id: RuleId = Test001
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
+    let id: RuleId = Test001::DEF
+        .id
+        .parse()
+        .unwrap_or_else(|e| unreachable!("the rule macro validates the id: {e}"));
     let mut out = Vec::new();
     for rec in records
         .iter()
@@ -74,7 +57,7 @@ pub fn test001_with_sources(
         tracing::debug!(target, covers, "TEST001");
         out.push(Finding::new(
             id.clone(),
-            Severity::Error,
+            Test001::DEF.severity,
             Some(rec.span),
             message,
             target,
