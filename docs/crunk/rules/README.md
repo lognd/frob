@@ -6,6 +6,9 @@ Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this pa
 
 | Id | Slug | Family | Severity | Release | Fixable | Tiers | What it does |
 |---|---|---|---|---|---|---|---|
+| BP001 | media-query-off-breakpoint | BP | error | error | no | T0 | Flags a `min-width` or `max-width` media query whose px width is not in `[breakpoints]`. |
+| BP002 | responsive-without-base | BP | error | error | no | T0 | Flags a breakpoint-prefixed utility of a `base_required` family (`md:flex`) when the same class list has no unprefixed utility of that family. |
+| BP003 | max-width-media-query | BP | error | error | no | T0 | Flags a `max-width` media query. |
 | COLOR001 | color-off-palette | COLOR | error | error | no | T0, T2 | Flags a colour literal (hex, `rgb()`, `hsl()` or a named colour) that is not a palette colour, and names the nearest palette token with its distance. |
 | COLOR002 | undefined-token-reference | COLOR | error | error | no | T0, T2 | Flags a `var()` reference whose name starts with a configured token prefix and is defined neither by the spec's token export nor by a custom property of any indexed sheet. |
 | CONTRAST001 | role-contrast-below-floor | CONTRAST | error | error | no | T0, T2 | Measures the WCAG 2.2 contrast ratio of each declared role pair (foreground over background) in every declared mode and flags a pair below its own floor: 4.5 by default, lower for a role that declares the large-text or icon exception. |
@@ -15,6 +18,12 @@ Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this pa
 | ORG003 | component-prefix | ORG | error | error | no | T0 | Flags a class selector in `styles/components/<name>.css` whose name, ignoring case and separators, does not start with `<name>`. |
 | ORG004 | custom-prop-outside-tokens | ORG | error | error | no | T0 | Flags a `--x:` definition in any stylesheet other than the tokens file. |
 | ORG005 | ungoverned-stylesheet | ORG | error | error | no | T0 | Flags a `.css` file outside `css_root` that no `[org] ignore` glob covers; no other rule judges it. |
+| TOKENS001 | generated-tokens-stale | TOKENS | error | error | no | T0 | Compares each generated file to the exporter's output for the current spec and flags a file that is missing or differs. |
+| TW001 | tailwind-arbitrary-off-scale | TW | error | error | no | T0 | Flags an arbitrary-value utility such as `p-[13px]` whose length is not a step of the `[scales]` list its root takes (spacing, font sizes, radii, sizes). |
+| TW002 | tailwind-arbitrary-color-off-palette | TW | error | error | no | T0 | Flags a colour utility with an arbitrary colour (`bg-[#123456]`) that is not within `[lint] color_tolerance` of a palette colour in any mode. |
+| TW003 | tailwind-arbitrary-on-scale | TW | warn | warn | no | T0 | Flags an arbitrary-value utility such as `p-[16px]` whose length is a step of its scale, so a named utility exists. |
+| TW004 | tailwind-arbitrary-property | TW | error | error | no | T0 | Flags an arbitrary property utility such as `[width:13px]` or `[color:#fff]` whose whole value is a length or colour literal. |
+| TW005 | tailwind-dynamic-class | TW | error | error | no | T0 | Flags a `className` site with a part built at runtime, such as a template literal interpolation. |
 | WAIVE001 | waiver-without-reason | WAIVE | error | error | no | T0 | Flags a `crunk:waive` comment that has no `reason`, or a blank one. |
 
 ## Families
