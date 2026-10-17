@@ -2,12 +2,12 @@
 id = "01M55896EM27W5SD8BGZ0816YV"
 title = "gob-rules/gob-check/gob-macros: stage-bodied and relayed repo rules with per-rule subjects (prerequisite of ~7Z6YH8P)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-17T15:39:26Z"
-updated = "2026-10-17T15:39:47Z"
+updated = "2026-10-17T19:06:31Z"
 scope = ["crates/gob-rules/**", "crates/gob-check/**", "crates/gob-macros/**"]
 +++
 
