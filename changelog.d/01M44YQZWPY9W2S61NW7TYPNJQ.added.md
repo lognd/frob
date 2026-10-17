@@ -1,0 +1,1 @@
+frob: the unity evidence provider resolves the editor from [evidence.unity] editor or the Unity Hub install for ProjectVersion.txt and refuses, naming the version and the key, when the editor or its license is missing.
