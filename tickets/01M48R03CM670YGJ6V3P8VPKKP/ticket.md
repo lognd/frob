@@ -2,7 +2,8 @@
 id = "01M48R03CM670YGJ6V3P8VPKKP"
 title = "Migrate frob-ledger, frob-pm, frob-release, frob-lease and gob-config rules to the two-file shape"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
