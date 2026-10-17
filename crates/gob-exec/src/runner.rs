@@ -196,8 +196,8 @@ impl Runner {
         }
         let duration = started.elapsed();
         let deadline = Instant::now() + JOIN_GRACE;
-        let stdout = out_t.map(|h| collect(h, deadline)).unwrap_or_default();
-        let stderr = err_t.map(|h| collect(h, deadline)).unwrap_or_default();
+        let stdout = out_t.map(|h| collect(&h, deadline)).unwrap_or_default();
+        let stderr = err_t.map(|h| collect(&h, deadline)).unwrap_or_default();
         info!(program = %label, ?status, ?duration, "exec finished");
         Ok(Output {
             status,
@@ -250,7 +250,7 @@ fn drain(mut r: impl Read + Send + 'static, cap: usize, exceeded: &Arc<AtomicBoo
 ///
 /// A descendant that escaped the kill (setsid, detached) can hold the pipe open forever; the
 /// reader thread is then abandoned and the partial output returned instead of blocking.
-fn collect(d: Drain, deadline: Instant) -> String {
+fn collect(d: &Drain, deadline: Instant) -> String {
     let wait = deadline.saturating_duration_since(Instant::now());
     // Ok(()) or Disconnected both mean the reader thread ended; only a timeout abandons it.
     if matches!(
