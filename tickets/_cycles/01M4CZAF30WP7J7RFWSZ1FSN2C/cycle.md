@@ -4,6 +4,7 @@ start = "2026-10-10"
 end = "2026-10-11"
 goal = "Hullbreach adoption: C#/Unity test detection and project model, crunk parity for the platform, websec prerequisites (std pack, pack loader), GRL executor core, soundness fixes"
 state = "planned"
+tickets = ["01M3ZX7ETPH5Z6K2VJ64K5XTMX"]
 created = "2026-10-08T05:21:04Z"
-updated = "2026-10-08T05:21:04Z"
+updated = "2026-10-17T15:06:10Z"
 +++
