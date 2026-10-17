@@ -191,7 +191,7 @@ Milestone 2 or later (D36).
   and `--next-goal`. `frob cycle close CYCLE --next-goal TEXT [--next-days N]
   [--retro TEXT]` closes and, when unfinished members need a home and no next
   cycle exists, creates one starting the day after the effective end
-  (`[pm] cycle_days` long unless `--next-days`) and carries them into it; its
+  (`[pm] cycle_days` long unless `--next-days`) and carries them into it; with nothing to carry the flags are refused with a usage error, never ignored; its
   overlap check sees the closing cycle as closed at the effective end, and the
   ratio counts the carried tickets as committed. Write order, safe to retry:
   create the next cycle, add each carried ticket to it, then one commit on
