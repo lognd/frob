@@ -30,18 +30,22 @@
 
 pub mod catalog;
 pub mod error;
+pub mod host;
 pub mod lease;
 pub mod node;
 pub mod reach;
 pub mod rule;
+pub mod rules;
 pub mod run;
 pub mod select;
 pub mod touched;
 pub mod verb;
 
 pub use error::{Result, TestsError};
+pub use host::TestsHost;
 pub use lease::lease_ticket;
-pub use rule::{Test001, test001, test001_with_sources};
+pub use rule::{test001, test001_with_sources};
+pub use rules::test001::Test001;
 pub use run::{
     DotnetGroup, FrameworkRun, JsGroup, RunOptions, RunReport, dotnet_groups, js_groups,
     nextest_args, pytest_args, run, unity_assemblies, unity_groups,

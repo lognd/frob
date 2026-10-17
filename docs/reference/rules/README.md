@@ -216,7 +216,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [TEST001](TEST001.md) | tests-target-missing | error | manual | P+ | false | A `frob:tests` directive whose target resolves to no test (or, inside a test, to no symbol). |
+| [TEST001](TEST001.md) | tests-target-missing | error | manual | P+ | false | A `frob:tests` directive must name something the symbol graph can find. |
 
 ## TICK
 

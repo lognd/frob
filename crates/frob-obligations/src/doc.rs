@@ -10,7 +10,7 @@ use gob_symbols::{FacetDigest, SymbolGraph, SymbolKind, Target, extract_file, sl
 use gob_text::{FileId, Span};
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
-use crate::rules::{Doc001, Doc002};
+use crate::legacy::{Doc001, Doc002};
 use crate::todo::range;
 use crate::util::finding;
 
