@@ -15,6 +15,10 @@ scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-ch
 kind = "blocked-by"
 target = "01M48R029HFBJ3PKQX5GBBKJ6V"
 
+[[links]]
+kind = "blocked-by"
+target = "01M55896EM27W5SD8BGZ0816YV"
+
 [[acceptance]]
 text = "grimble check output identical"
 bound = false
