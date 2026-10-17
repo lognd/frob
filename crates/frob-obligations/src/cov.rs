@@ -21,7 +21,7 @@ use gob_symbols::{
 };
 use gob_text::{FileInterner, Span};
 
-use crate::rules::Cov001;
+use crate::legacy::Cov001;
 use crate::util::{finding, rule_id};
 
 /// True for functions and methods.

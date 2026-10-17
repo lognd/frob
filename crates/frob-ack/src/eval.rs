@@ -1,123 +1,30 @@
-//! The DRIFT and AFFECT rules and their evaluation entry points.
+//! The DRIFT and AFFECT evaluators and their entry points; the rule declarations are in `rules/`.
 
 use std::collections::HashSet;
 use std::path::Path;
 
 use gob_cache::Cache;
 use gob_lock::LockEntry;
-use gob_rules::{Finding, Rule, RuleMeta, Severity};
+use gob_rules::{Finding, RuleDecl, RuleDef, Severity};
 use gob_symbols::{Status, SymbolKind, SymbolRecord, Symref, Target};
 use gob_text::{FileInterner, Span};
 
 use crate::inputs::{DocDirective, Inputs, section_digest};
 use crate::repo_rule;
+use crate::rules::affect001::Affect001;
+use crate::rules::drift001::Drift001;
+use crate::rules::drift002::Drift002;
+use crate::rules::drift003::Drift003;
+use crate::rules::drift004::Drift004;
 
 /// How many dependent names an AFFECT001 message lists.
 const LISTED_DEPENDENTS: usize = 5;
 
-/// A `frob:doc` binding went stale: the code changed under the doc, or the doc under the code.
-///
-/// The symbol bound by a `frob:doc path#slug` directive has a lock entry
-/// (an ack). The finding fires when that entry no longer matches: the sig,
-/// body, doc or attr facet of the symbol changed (the code changed under the doc),
-/// or the digest of the named markdown section changed (the doc changed
-/// under the code). The message names the facet. Re-read the pair and run
-/// `frob ack <symref> --reason ...` to record the new state.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "DRIFT001",
-    slug = "doc-binding-drift",
-    family = "DRIFT",
-    severity = Error,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Drift001;
-
-/// A `frob:doc` directive names a markdown section that does not exist.
-///
-/// The message carries the nearest heading slug of the target file by edit
-/// distance, so a renamed or mistyped heading is a one-line fix.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "DRIFT002",
-    slug = "dangling-doc-target",
-    family = "DRIFT",
-    severity = Error,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Drift002;
-
-/// A symbol was acked, its signature changed, and no `frob:doc` directive covers it.
-///
-/// The ack recorded an older contract and nothing ties it to documentation,
-/// so nobody is told to re-read anything. Re-ack the symbol or bind it to
-/// the doc that describes it.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "DRIFT003",
-    slug = "stale-ack",
-    family = "DRIFT",
-    severity = Warn,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Drift003;
-
-/// A lock entry was recorded under another file version or digest scheme and must be re-attested.
-///
-/// Fires once per entry (symbol or flow) when `frob.lock` predates this build's format
-/// version or digest scheme. The digests are not comparable across schemes, so no drift
-/// rule judges such an entry and nothing is silently accepted; `frob ack --all --reason ...`
-/// re-records every entry under the current scheme.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "DRIFT004",
-    slug = "reattest-required",
-    family = "DRIFT",
-    severity = Warn,
-    tier = Universal,
-    scope = Repo,
-    polarity = P0,
-    must_measure = false,
-    fix = Manual,
-    version = 1
-)]
-pub struct Drift004;
-
-/// A public symbol changed its signature and its dependents were not re-acked.
-///
-/// Predicate: the symbol is in the public API graph, has a lock entry whose
-/// sig digest differs from the current one, and at least one dependent (a
-/// transitive caller from `SymbolGraph::affects`, excluding the symbol's own
-/// containers and file nodes) has no lock entry acked strictly later than
-/// the symbol's own entry. Re-ack the symbol after reviewing its dependents,
-/// and ack the dependents you reviewed.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "AFFECT001",
-    slug = "dependents-not-updated",
-    family = "AFFECT",
-    severity = Warn,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Affect001;
-
 /// A finding before it becomes a [`Finding`]: plain data, cacheable.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub(crate) struct Raw {
     /// The rule that fired.
-    pub meta: &'static RuleMeta,
+    pub meta: &'static RuleDef,
     /// Severity of this finding.
     pub severity: Severity,
     /// Location, when the finding has one.
@@ -130,7 +37,7 @@ pub(crate) struct Raw {
 
 impl Raw {
     fn new(
-        meta: &'static RuleMeta,
+        meta: &'static RuleDef,
         span: Option<Span>,
         message: String,
         anchor: &impl ToString,
@@ -144,24 +51,23 @@ impl Raw {
         }
     }
 
-    fn into_finding(self) -> Finding {
-        let id = self
-            .meta
-            .rule_id()
-            .unwrap_or_else(|e| unreachable!("derive validated rule id {}: {e}", self.meta.id));
+    pub(crate) fn into_finding(self) -> Finding {
+        let id = self.meta.id.parse().unwrap_or_else(|e| {
+            unreachable!("the rule macro validated rule id {}: {e}", self.meta.id)
+        });
         Finding::new(id, self.severity, self.span, self.message, &self.anchor)
     }
 }
 
 type RuleFn = fn(&Inputs) -> Vec<Raw>;
 
-fn rules() -> [(&'static RuleMeta, RuleFn); 5] {
+fn rules() -> [(&'static RuleDef, RuleFn); 5] {
     [
-        (Drift001.meta(), drift001),
-        (Drift002.meta(), drift002),
-        (Drift003.meta(), drift003),
-        (Drift004.meta(), drift004),
-        (Affect001.meta(), affect001),
+        (Drift001::DEF, drift001),
+        (Drift002::DEF, drift002),
+        (Drift003::DEF, drift003),
+        (Drift004::DEF, drift004),
+        (Affect001::DEF, affect001),
     ]
 }
 
@@ -169,8 +75,8 @@ fn hex(d: gob_symbols::FacetDigest) -> String {
     d.to_string()
 }
 
-fn drift001(inputs: &Inputs) -> Vec<Raw> {
-    let meta = Drift001.meta();
+pub(crate) fn drift001(inputs: &Inputs) -> Vec<Raw> {
+    let meta = Drift001::DEF;
     let mut out = Vec::new();
     if inputs.lock.is_stale() {
         return out;
@@ -229,8 +135,8 @@ fn nearest_heading<'g>(inputs: &'g Inputs, target: &Symref) -> Option<(&'g str, 
         .min_by_key(|(slug, dist)| (*dist, *slug))
 }
 
-fn drift002(inputs: &Inputs) -> Vec<Raw> {
-    let meta = Drift002.meta();
+pub(crate) fn drift002(inputs: &Inputs) -> Vec<Raw> {
+    let meta = Drift002::DEF;
     let mut out = Vec::new();
     for d in &inputs.docs {
         if inputs.graph.get(&d.target).is_some() {
@@ -256,8 +162,8 @@ fn drift002(inputs: &Inputs) -> Vec<Raw> {
     out
 }
 
-fn drift003(inputs: &Inputs) -> Vec<Raw> {
-    let meta = Drift003.meta();
+pub(crate) fn drift003(inputs: &Inputs) -> Vec<Raw> {
+    let meta = Drift003::DEF;
     let covered: HashSet<String> = inputs.docs.iter().map(|d| d.symbol.to_string()).collect();
     let mut out = Vec::new();
     if inputs.lock.is_stale() {
@@ -305,8 +211,8 @@ fn acked_after(entry: &LockEntry, dependent: &LockEntry) -> bool {
     matches!((parse(&dependent.acked_at), parse(&entry.acked_at)), (Some(d), Some(e)) if d > e)
 }
 
-fn drift004(inputs: &Inputs) -> Vec<Raw> {
-    let meta = Drift004.meta();
+pub(crate) fn drift004(inputs: &Inputs) -> Vec<Raw> {
+    let meta = Drift004::DEF;
     inputs
         .lock
         .reattest()
@@ -346,8 +252,8 @@ pub fn partial_parse_files(graph: &gob_symbols::SymbolGraph) -> Vec<(String, u32
         .collect()
 }
 
-fn affect001(inputs: &Inputs) -> Vec<Raw> {
-    let meta = Affect001.meta();
+pub(crate) fn affect001(inputs: &Inputs) -> Vec<Raw> {
+    let meta = Affect001::DEF;
     let mut out = Vec::new();
     if inputs.lock.is_stale() {
         return out;
@@ -443,6 +349,7 @@ pub fn check(inputs: &Inputs) -> Vec<Finding> {
     raw_all(inputs).into_iter().map(Raw::into_finding).collect()
 }
 
+/// Every raw finding of every rule, in rule order, uncached.
 pub(crate) fn raw_all(inputs: &Inputs) -> Vec<Raw> {
     rules().into_iter().flat_map(|(_, f)| f(inputs)).collect()
 }

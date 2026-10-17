@@ -8,12 +8,13 @@
 use std::path::Path;
 
 use frob_ledger::Ledger;
-use gob_rules::Finding;
+use gob_rules::{Finding, RuleDecl};
 use gob_text::{FileInterner, LineCol, LineIndex, Span, TextRange};
 
-use crate::rules::{Exc003, Exc007};
+use crate::rules::exc003::Exc003;
+use crate::rules::exc007::Exc007;
 use crate::tickets::{Standing, Tickets};
-use crate::util::finding;
+use crate::util::finding_def;
 
 /// One sibling exception that names a ticket, as read from the sibling document.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -77,8 +78,8 @@ pub fn sibling_exception_findings(
             Standing::Missing => {
                 tracing::info!(product = %e.product, exception = %e.id, ticket = %e.ticket, "EXC007 on sibling exception");
                 let span = at(files);
-                out.push(finding(
-                    &Exc007,
+                out.push(finding_def(
+            Exc007::DEF,
                     span,
                     format!(
                         "{} `{} {}` names ticket {}, which does not exist; fix the id or file the ticket ({parks})",
@@ -90,8 +91,8 @@ pub fn sibling_exception_findings(
             Standing::Terminal(outcome) => {
                 tracing::info!(product = %e.product, exception = %e.id, ticket = %e.ticket, %outcome, "EXC003 on sibling exception");
                 let span = at(files);
-                out.push(finding(
-                    &Exc003,
+                out.push(finding_def(
+            Exc003::DEF,
                     span,
                     format!(
                         "{} `{} {}` names ticket {}, which is already done ({outcome}); pay the debt or re-point the exception ({parks})",

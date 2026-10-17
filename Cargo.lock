@@ -1318,6 +1318,7 @@ dependencies = [
  "gob-rules",
  "gob-symbols",
  "gob-testsupport",
+ "gob-text",
  "gob-time",
  "gob-walk",
  "schemars",

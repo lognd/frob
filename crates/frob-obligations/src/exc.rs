@@ -5,15 +5,19 @@ use gob_directives::{Binding, Directive, DirectiveRecord};
 use gob_lock::LockFile;
 use gob_rules::{
     BoundException, Exception, ExceptionCtx, ExceptionKind, Finding, ReasonPolicy, Resolved,
-    RuleId, Severity, apply_exceptions, check_reason,
+    RuleDecl, RuleId, Severity, apply_exceptions, check_reason,
 };
 use gob_symbols::{SymbolGraph, Symref};
 use gob_text::{FileInterner, Span};
 use gob_time::Day;
 
-use crate::rules::{Exc001, Exc003, Exc005, Exc007, Exc014, Exc016};
+use crate::legacy::{Exc014, Exc016};
+use crate::rules::exc001::Exc001;
+use crate::rules::exc003::Exc003;
+use crate::rules::exc005::Exc005;
+use crate::rules::exc007::Exc007;
 use crate::tickets::{Standing, Tickets};
-use crate::util::finding;
+use crate::util::{finding, finding_def};
 
 /// One parsed `frob:accept` or `frob:defer` with where it applies.
 pub(crate) struct Bound {
@@ -106,8 +110,8 @@ fn police(
     let anchor = format!("{}:{}", b.symref, ex.rule);
     let mut out = Vec::new();
     if let Err(why) = check_reason(&ex.reason, policy) {
-        out.push(finding(
-            &Exc001,
+        out.push(finding_def(
+            Exc001::DEF,
             Some(b.at),
             format!("`frob:{verb} {}` reason rejected: {why}", ex.rule),
             &anchor,
@@ -115,8 +119,8 @@ fn police(
     }
     match (ex.kind, ex.ticket.as_deref()) {
         (ExceptionKind::Defer, Some(ticket)) => match tickets.standing(ticket) {
-            Standing::Missing => out.push(finding(
-                &Exc007,
+            Standing::Missing => out.push(finding_def(
+            Exc007::DEF,
                 Some(b.at),
                 format!(
                     "`frob:defer {}` names ticket {ticket}, which does not exist; fix the id or file the ticket",
@@ -124,8 +128,8 @@ fn police(
                 ),
                 &anchor,
             )),
-            Standing::Terminal(outcome) => out.push(finding(
-                &Exc003,
+            Standing::Terminal(outcome) => out.push(finding_def(
+            Exc003::DEF,
                 Some(b.at),
                 format!(
                     "`frob:defer {}` names ticket {ticket}, which is already done ({outcome}); pay the debt or re-point the defer",
@@ -138,8 +142,8 @@ fn police(
         (ExceptionKind::Accept, _) => {
             let key = b.symref.to_string();
             match lock.entries.get(&key) {
-                None => out.push(finding(
-                    &Exc005,
+                None => out.push(finding_def(
+            Exc005::DEF,
                     Some(b.at),
                     format!(
                         "`frob:accept {}` is unattested: `{key}` has no entry in frob.lock; run `frob ack {key}`",
@@ -150,8 +154,8 @@ fn police(
                 Some(entry) => {
                     let live = graph.get(&b.symref).map(|r| r.digests.body.to_string());
                     if live.as_ref().is_some_and(|d| *d != entry.body) {
-                        out.push(finding(
-                            &Exc005,
+                        out.push(finding_def(
+            Exc005::DEF,
                             Some(b.at),
                             format!(
                                 "`frob:accept {}`: `{key}` changed since it was attested; re-read it and run `frob ack {key}`",

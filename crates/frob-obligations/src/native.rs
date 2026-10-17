@@ -11,7 +11,7 @@ use gob_rules::{BoundException, ExceptionCtx, Finding, RuleId};
 use gob_symbols::{SymbolGraph, Target};
 use gob_text::{FileInterner, Span};
 
-use crate::rules::Exc017;
+use crate::legacy::Exc017;
 use crate::todo::range;
 use crate::util::finding;
 
