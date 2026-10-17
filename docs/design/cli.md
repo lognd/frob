@@ -249,7 +249,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `work <ticket>` | frob | frob-worktree | only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `worktree sweep\|remove` | frob | frob-worktree | yes | 0 2 3 4 | 2 |
 | `land <ticket> [--wait <secs>] [--dry-run]` | frob | frob-land | yes, a landed ticket returns `already` | 0 2 3 4 | 1 |
-| `check [--ticket] [--fix] [--fail-on]` | frob | frob-check | yes | 0 1 2 3 4 | 1 |
+| `check [--ticket] [--fix] [--fail-on] [--skip-tools]` | frob | frob-check | yes | 0 1 2 3 4 | 1 |
 | `fix` | frob | frob-check | yes | 0 2 3 4 | 1 |
 | `ack` | frob | frob-ack | yes | 0 2 3 4 | 1 |
 | `test [--base]` | frob | frob-tests | yes | 0 1 2 4 | 1 |

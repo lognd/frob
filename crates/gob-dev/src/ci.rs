@@ -242,12 +242,15 @@ pub const SIBLING_PACKAGES: [&str; 3] = ["frob-cli", "grimble", "crunk"];
 /// The `check` step: build this workspace's own sibling binaries, then run `frob check` from the
 /// same target dir so sibling discovery (next to the frob executable, D87) finds them and never
 /// falls back to whatever is on `PATH`. One shell command so a goway host builds and runs on the
-/// same machine; the step is Linux-only, so `sh` is always there.
+/// same machine; the step is Linux-only, so `sh` is always there. It passes `--skip-tools` because
+/// the dedicated fmt/clippy/gen/zizmor/actionlint/deny/shear/typos steps already run the
+/// `[[check.tool]]` stages, so no check runs twice per OS.
 /// frob:ticket 01M4527J4M910ZZBJZXMDZJQZQ
+/// frob:ticket 01M55VDSD2GHYJMFSQWPR7WM45
 fn sibling_check() -> Step {
     let build: Vec<String> = SIBLING_PACKAGES.iter().map(|p| format!("-p {p}")).collect();
     let script = format!(
-        "cargo build {} && exec cargo run -p frob-cli -- check",
+        "cargo build {} && exec cargo run -p frob-cli -- check --skip-tools",
         build.join(" ")
     );
     Step {
@@ -1594,6 +1597,31 @@ mod tests {
             script.find("cargo build") < script.find("cargo run"),
             "{script}"
         );
+    }
+
+    // frob:ticket 01M55VDSD2GHYJMFSQWPR7WM45
+    // frob:tests crates/gob-dev/src/ci.rs::sibling_check
+    #[cfg(unix)]
+    #[test]
+    fn check_step_skips_tool_stages_the_dedicated_steps_already_run() {
+        let step = step_named("check");
+        let script = step.args.last().expect("script");
+        assert!(script.contains("-- check --skip-tools"), "{script}");
+        // Every tool the check config binds has its own dedicated CI step, so skipping them in
+        // `check` means each runs exactly once per OS.
+        for dedicated in [
+            "fmt",
+            "clippy",
+            "gen",
+            "zizmor",
+            "actionlint",
+            "deny",
+            "shear",
+            "typos",
+        ] {
+            let n = real().iter().filter(|s| s.name == dedicated).count();
+            assert_eq!(n, 1, "{dedicated} must have exactly one dedicated step");
+        }
     }
 
     #[test]

@@ -130,6 +130,7 @@ pub struct Check {
     explain: Option<String>,
     timing: bool,
     base: Option<String>,
+    skip_tools: bool,
 }
 
 fn fail_on_name(f: FailOn) -> &'static str {
@@ -294,6 +295,12 @@ impl Command for Check {
                 .value_name("REF")
                 .help("Ref the --ticket diff is taken against (default: [check] base)"),
         )
+        .arg(
+            Arg::new("skip_tools")
+                .long("skip-tools")
+                .action(ArgAction::SetTrue)
+                .help("Skip the [[check.tool]] stages (fmt, clippy, ...) when another CI step already runs them"),
+        )
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
@@ -310,6 +317,7 @@ impl Command for Check {
             explain: m.get_one::<String>("explain").cloned(),
             timing: m.get_flag("timing"),
             base: m.get_one::<String>("base").cloned(),
+            skip_tools: m.get_flag("skip_tools"),
         })
     }
 
@@ -327,6 +335,7 @@ impl Command for Check {
             fix: self.fix,
             fail_on: self.fail_on,
             base: self.base.clone(),
+            skip_tools: self.skip_tools,
             clock: Some(ctx.clock.clone()),
             ..CheckOptions::default()
         };
@@ -526,6 +535,19 @@ fn explain(id: &str) -> Outcome<CheckData> {
 mod tests {
     use super::*;
     use gob_diagnostics::EnvelopeError;
+
+    // frob:ticket 01M55VDSD2GHYJMFSQWPR7WM45
+    // frob:tests crates/frob-check/src/verb.rs::Check
+    #[test]
+    fn skip_tools_flag_is_parsed_and_off_by_default() {
+        let parse = |args: &[&str]| {
+            let cmd = Check::configure(gob_cli::clap::Command::new("check"));
+            let m = cmd.try_get_matches_from(args).expect("parse");
+            Check::from_matches(&m).expect("matches")
+        };
+        assert!(!parse(&["check"]).skip_tools);
+        assert!(parse(&["check", "--skip-tools"]).skip_tools);
+    }
 
     // frob:tests crates/frob-check/src/verb.rs::cli_error
     #[test]
