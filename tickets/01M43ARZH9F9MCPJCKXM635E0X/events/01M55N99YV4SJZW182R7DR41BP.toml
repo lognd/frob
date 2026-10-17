@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-17T19:26:38Z"
+digest = "dd4b7b7513ac7cdede30607cc87952d00f2fcc724b9ebae986f4c7a5e6506bec"
+exit_code = 0
+inline = """
+
+running 1 test
+test target_json_previews_and_writes_nothing ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.04s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.56s
+     Running tests/tokens.rs (target/debug/deps/tokens-7b38de32212d565b)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p crunk --test tokens target_json_previews_and_writes_nothing"
+size = 310
+status = "measured"
+at = "2026-10-17T19:26:38Z"
+actor = "lognd"
+rev = 1
