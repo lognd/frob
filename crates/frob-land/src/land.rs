@@ -1052,7 +1052,69 @@ fn verify_check(
         });
     }
     tracing::warn!(blocking = verdict.new.len(), "land check red");
+    if tool_failures_only(&verdict.new) && !is_timeout_only(&verdict.new) {
+        // A tool stage failure may be flaky: rerun once and report a pass as retryable.
+        tracing::info!("land check red on tool stages only; rerunning once to detect a flake");
+        let rerun = frob_check::run_with_cone(wt_path, &options(Some(handle)))?.0;
+        let again = ratchet::verdict(&rerun, &head, &base_set);
+        if again.new.is_empty() {
+            tracing::warn!("tool stage failed then passed on rerun; reporting flaky");
+            return Err(flaky_refusal(&verdict.new, handle));
+        }
+    }
     Err(refuse(&scoped, &verdict, (handle, base)))
+}
+
+/// Rule id of a tool stage failure.
+const TOOL_RULE: &str = "TOOL001";
+
+/// True when every new blocking finding is a `TOOL001` tool stage failure.
+fn tool_failures_only(new: &[ratchet::FindingNote]) -> bool {
+    !new.is_empty() && new.iter().all(|n| n.rule == TOOL_RULE)
+}
+
+/// True when the red is only tool stages that timed out (a timeout is not deterministic).
+fn is_timeout_only(new: &[ratchet::FindingNote]) -> bool {
+    tool_failures_only(new) && new.iter().all(|n| n.message.contains("timed out after"))
+}
+
+/// The tool stage names a set of `TOOL001` findings quote between backticks.
+fn stage_names(new: &[ratchet::FindingNote]) -> Vec<String> {
+    let mut names: Vec<String> = new
+        .iter()
+        .filter_map(|n| n.message.split('`').nth(1).map(str::to_owned))
+        .collect();
+    names.sort();
+    names.dedup();
+    names
+}
+
+/// The retryable `E-LAND-CHECK-RED` refusal for tool stages that timed out.
+fn timeout_refusal(new: &[ratchet::FindingNote], handle: &str) -> LandError {
+    let names = stage_names(new).join(", ");
+    LandError::Refused(
+        Refusal::new(
+            "E-LAND-CHECK-RED",
+            RefusalClass::GuardRetryByWaiting,
+            format!("tool stage(s) {names} timed out; a timeout is not a deterministic failure"),
+        )
+        .with_remedy(format!(
+            "re-run `frob land {handle}` (or raise timeout_secs for the stage in frob.toml)"
+        )),
+    )
+}
+
+/// The retryable `E-LAND-CHECK-RED` refusal for a tool stage that failed then passed on rerun.
+fn flaky_refusal(new: &[ratchet::FindingNote], handle: &str) -> LandError {
+    let names = stage_names(new).join(", ");
+    LandError::Refused(
+        Refusal::new(
+            "E-LAND-CHECK-RED",
+            RefusalClass::GuardRetryByWaiting,
+            format!("tool stage(s) {names} failed then passed on an immediate rerun (flaky)"),
+        )
+        .with_remedy(format!("frob land {handle}")),
+    )
 }
 
 /// Run `f`, recording its wall time in `stages` as `name`.
@@ -1132,6 +1194,9 @@ fn refuse(
             tail,
             "; {pre_existing} pre-existing blocking finding(s) on {base} do not block"
         );
+    }
+    if is_timeout_only(new) {
+        return timeout_refusal(new, handle);
     }
     LandError::Refused(
         Refusal::new(
@@ -1562,6 +1627,46 @@ fn remove_worktree(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn note(rule: &str, message: &str) -> ratchet::FindingNote {
+        ratchet::FindingNote {
+            fingerprint: "f".to_owned(),
+            rule: rule.to_owned(),
+            path: None,
+            message: message.to_owned(),
+        }
+    }
+
+    // frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ
+    // frob:tests crates/frob-land/src/land.rs::timeout_refusal
+    #[test]
+    fn a_tool_stage_timeout_refusal_is_retryable_and_says_to_rerun() {
+        let new = vec![note(
+            "TOOL001",
+            "tool stage `cov` (cargo) timed out after 900s",
+        )];
+        assert!(is_timeout_only(&new));
+        let LandError::Refused(r) = timeout_refusal(&new, "T-1") else {
+            panic!("expected a refusal");
+        };
+        assert!(r.class.retryable());
+        let remedy = r.remedy.expect("remedy");
+        assert!(remedy.contains("re-run") && remedy.contains("timeout_secs"));
+    }
+
+    // frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ
+    // frob:tests crates/frob-land/src/land.rs::flaky_refusal
+    #[test]
+    fn a_flaky_tool_stage_refusal_is_retryable_and_names_the_stage() {
+        let new = vec![note("TOOL001", "tool stage `cov` (cargo) exited 1: boom")];
+        assert!(tool_failures_only(&new) && !is_timeout_only(&new));
+        let LandError::Refused(r) = flaky_refusal(&new, "T-1") else {
+            panic!("expected a refusal");
+        };
+        assert!(r.class.retryable());
+        assert!(r.message.contains("cov") && r.message.contains("flaky"));
+        assert!(!tool_failures_only(&[note("DUP001", "x")]));
+    }
 
     // frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
     // frob:tests crates/frob-land/src/land.rs::touches_cone
