@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "already implemented: train.rs pushes once per drain (push_base after all rounds); train_close members record pushed=false"
+at = "2026-10-17T00:18:09Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["NEAT013 examples all pass, with python time.time resolving to a unit in the clock vocab", "External ambient units and the python ambient vocab are covered by unit tests"]
+moved = []
+at = "2026-10-16T23:50:59Z"
+actor = "lognd"
+rev = 1
