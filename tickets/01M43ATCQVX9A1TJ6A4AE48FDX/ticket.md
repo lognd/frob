@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:36Z"
-updated = "2026-10-17T08:54:10Z"
+updated = "2026-10-17T08:54:26Z"
 idempotency_key = "crunk-plan-afix"
 labels = ["area:crunk"]
 scope = ["crates/crunk-fix/**", "crates/crunk/src/fix.rs", "crates/crunk/tests/fix*.rs", "Cargo.lock", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml"]
@@ -35,7 +35,7 @@ bound = false
 
 [[acceptance]]
 text = "Given `--dry-run`, when run, then the diff equals the diff of the real run and no file changes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a finding with no fix (an out-of-tolerance value) or a non-stylesheet (JSX style-prop) site, when fix runs, then it is left alone"
