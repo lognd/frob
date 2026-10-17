@@ -2,11 +2,11 @@
 id = "01M55ZW4P41ES0N6HBZ9TQ01YC"
 title = "List gob_check and gob_directives marker-host rules in frob-check product_rules!"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-17T22:31:44Z"
-updated = "2026-10-17T23:28:46Z"
+updated = "2026-10-17T23:44:27Z"
 idempotency_key = "jbd7std-product-rules"
 scope = ["crates/frob-check/**", "crates/gob-directives/src/lib.rs"]
 +++
