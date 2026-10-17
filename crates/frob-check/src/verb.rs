@@ -134,8 +134,14 @@ pub struct Check {
     explain: Option<String>,
     timing: bool,
     base: Option<String>,
+    tools: ToolFlags,
+}
+
+/// The tool-stage switches of a run (`--quick`, `--skip-tools`), grouped to keep `Check` lean.
+#[derive(Debug, Clone, Copy)]
+struct ToolFlags {
     quick: bool,
-    skip_tools: bool,
+    skip: bool,
 }
 
 fn fail_on_name(f: FailOn) -> &'static str {
@@ -329,8 +335,10 @@ impl Command for Check {
             explain: a.explain,
             timing: a.timing,
             base: a.base,
-            quick: a.quick,
-            skip_tools: a.skip_tools,
+            tools: ToolFlags {
+                quick: a.quick,
+                skip: a.skip_tools,
+            },
         })
     }
 
@@ -348,8 +356,8 @@ impl Command for Check {
             fix: self.fix,
             fail_on: self.fail_on,
             base: self.base.clone(),
-            quick: self.quick,
-            skip_tools: self.skip_tools,
+            quick: self.tools.quick,
+            skip_tools: self.tools.skip,
             clock: Some(ctx.clock.clone()),
             ..CheckOptions::default()
         };
