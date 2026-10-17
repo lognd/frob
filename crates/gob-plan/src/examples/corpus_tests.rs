@@ -34,9 +34,7 @@ fn todo001_directive_examples_pass() {
 // frob:tests crates/gob-plan/src/examples/runner.rs::run_example
 #[test]
 fn cov001_calls_examples_pass() {
-    // Example 2 (python `unresolved` through a parameter callee) is a known engine gap; see the
-    // follow-up ticket.
-    run_except("COV001.grl", include_str!("corpus/COV001.grl"), &[2]);
+    run_all("COV001.grl", include_str!("corpus/COV001.grl"));
 }
 
 // frob:tests crates/gob-plan/src/examples/runner.rs::run_example

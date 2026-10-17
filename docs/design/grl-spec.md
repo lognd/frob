@@ -1005,8 +1005,9 @@ rule COV001 "untested-public-function" {
     #[cfg(test)] mod tests { #[test] fn d() { assert_eq!(super::double(2), 4); } }
   """
   example unresolved python """
-    def helper(cb): cb()                          #~ unresolved
-    def test_run(): helper(len)
+    def helper(): pass                            #~ unresolved
+    def run(cb): cb()
+    def test_run(): run(helper)
   """
   explain """
     Public callables should be reached by at least one test.

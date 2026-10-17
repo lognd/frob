@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-17T05:01:00Z"
+digest = "ca62f2c7371e05814e3a0abb8039466bef4d26f3af9d2a64c54848b2acb4816a"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9m 13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 747ec284-ab36-42da-b006-b3ff2a45df43 with nextest profile: default
+    Starting 1 test across 26 binaries (268 tests skipped)
+        PASS [   0.011s] gob-plan examples::corpus_tests::cov001_calls_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 268 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E test(cov001_calls_examples_pass)"
+size = 608
+status = "measured"
+test_count = 1
+tests_digest = "dbe739d3db38c9659266cc2b0b234f105872afd4b056805293a48013790b6436"
+at = "2026-10-17T05:01:00Z"
+actor = "lognd"
+rev = 1
