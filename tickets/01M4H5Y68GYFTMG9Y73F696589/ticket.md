@@ -8,8 +8,8 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-09T20:33:40Z"
-updated = "2026-10-17T08:06:03Z"
-scope = ["crates/frob-pm/**", "crates/frob-lease/**", "crates/frob-evidence/**", "changelog.d/**", "crates/frob/**", "crates/frob-worktree/**"]
+updated = "2026-10-17T08:06:04Z"
+scope = ["crates/frob-pm/**", "crates/frob-lease/**", "crates/frob-evidence/**", "changelog.d/**", "crates/frob/**", "crates/frob-worktree/**", "docs/**"]
 
 [[acceptance]]
 text = "Given 16 tickets of which 9 are finished (passing evidence, clean check --ticket) and waiting to land, when another agent runs frob work, then it is admitted because in_progress counts only the 7 being worked; the 9 show in a ready-to-land column (board) with an optional [pm.wip] ready limit"
