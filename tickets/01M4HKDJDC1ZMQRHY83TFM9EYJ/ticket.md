@@ -8,13 +8,13 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-10T00:29:15Z"
-updated = "2026-10-17T08:28:52Z"
+updated = "2026-10-17T08:32:07Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/src/tools.rs", "crates/frob-land/src/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a land refused only because a tool stage timed out, when the refusal is printed, then retryable is true and the remedy says to re-run (or raise timeout_secs)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a tool stage that failed and passes on an immediate rerun (flaky), when land reports it, then the refusal is retryable:true and names the stage as flaky; frob.toml and the stage's own config files count as implicit inputs of every stage (logand F-575)"
