@@ -2,14 +2,14 @@
 id = "01M48R03ZFTPSDD33HMJBD7STD"
 title = "Migrate gob-check neutral rules, gob-directives and tool-bound rules; PROC001 into one file"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:07Z"
-updated = "2026-10-08T03:51:50Z"
-scope = ["crates/gob-check/**", "crates/gob-directives/**", "crates/gob-exec/**"]
+updated = "2026-10-17T21:58:44Z"
+scope = ["crates/gob-check/**", "crates/gob-directives/**", "crates/gob-exec/**", "crates/gob-rules/**", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
