@@ -269,6 +269,7 @@ impl Described for Check {
 }
 
 /// The flags of `check`, declared once.
+#[allow(clippy::struct_excessive_bools)] // one bool per CLI flag
 #[derive(Debug, Clone, clap::Args)]
 #[command(about = None, long_about = None)]
 struct CheckArgs {
