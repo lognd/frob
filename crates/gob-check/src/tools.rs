@@ -41,7 +41,7 @@ fn field(h: &mut blake3::Hasher, tag: &str, value: &[u8]) {
     h.update(value);
 }
 
-/// Files that are implicit inputs of every stage: its configuration (frob:ticket ~TFM9EYJ).
+/// Files that are implicit inputs of every stage: its configuration (frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ).
 const IMPLICIT_INPUTS: &[&str] = &["frob.toml"];
 
 /// The memo key of `stage`: its command line and version window plus the content of every file its `inputs` match.
@@ -1065,7 +1065,7 @@ mod tests {
         );
     }
 
-    // frob:ticket ~TFM9EYJ
+    // frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ
     // frob:tests crates/gob-check/src/tools.rs::untouched
     #[test]
     fn frob_toml_is_an_implicit_input_of_every_stage() {

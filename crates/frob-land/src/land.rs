@@ -1637,7 +1637,7 @@ mod tests {
         }
     }
 
-    // frob:ticket ~TFM9EYJ
+    // frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ
     // frob:tests crates/frob-land/src/land.rs::timeout_refusal
     #[test]
     fn a_tool_stage_timeout_refusal_is_retryable_and_says_to_rerun() {
@@ -1654,7 +1654,7 @@ mod tests {
         assert!(remedy.contains("re-run") && remedy.contains("timeout_secs"));
     }
 
-    // frob:ticket ~TFM9EYJ
+    // frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ
     // frob:tests crates/frob-land/src/land.rs::flaky_refusal
     #[test]
     fn a_flaky_tool_stage_refusal_is_retryable_and_names_the_stage() {
