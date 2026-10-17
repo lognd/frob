@@ -13,7 +13,7 @@ A coverage claim that points at nothing is silent: the symbol looks covered whil
 
 ## Remedy
 
-Fix the symref, or remove the directive.
+Fix the symref, or remove the directive. A target written `path::Type::method` is not a symref: members nest with `.`, so the finding names the dotted form `path::Type.method` when that resolves.
 
 ## Examples
 
@@ -32,4 +32,18 @@ pub fn covered() {}
 
 #[test]
 fn covers_it() {}
+```
+
+### A `Type::method` target fires with the dotted form as the fix
+
+```rust expect=fire file=src/lib.rs
+// frob:tests src/lib.rs::Widget::spin
+pub fn covered() {}
+
+pub struct Widget;
+
+impl Widget {
+    #[test]
+    fn spin() {}
+}
 ```
