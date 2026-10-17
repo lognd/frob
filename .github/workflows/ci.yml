@@ -8,6 +8,8 @@ name: ci
 on:
   push:
     branches: [main, experimental]
+    # A ledger-only or changelog-only push builds nothing new: skip both OS jobs and the dev build.
+    paths-ignore: ["tickets/**", "changelog.d/**"]
   pull_request:
 
 permissions:
@@ -20,6 +22,13 @@ jobs:
   rust:
     name: rust (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3
+    timeout-minutes: 45
+    # A newer push to the same ref cancels the superseded test run. Job-level (not workflow-level)
+    # so dev-publish, which has its own queue-never-cancel group, is never cut off mid-publish.
+    concurrency:
+      group: ci-rust-${{ matrix.os }}-${{ github.ref }}
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
@@ -160,6 +169,9 @@ jobs:
     name: profile (command budgets)
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    concurrency:
+      group: ci-profile-${{ github.ref }}
+      cancel-in-progress: true
     permissions:
       contents: read
       actions: read
