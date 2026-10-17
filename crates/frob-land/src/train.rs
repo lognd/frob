@@ -10,7 +10,7 @@
 //! is the enqueuer (`--enqueue-only` queues the ticket and returns at once; a queued ticket's lease is
 //! flagged so it leaves the WIP count, and a red or evicted result is written to the ticket as a
 //! comment and a label): it waits for its own result, driving the train itself when nobody else does, and
-//! falls back to the plain single-ticket [`land`] for a lone ticket or when `[land] train` is off.
+//! falls back to the plain single-ticket [`land`] when `[land] train` is off; a lone ticket is a batch of one.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -1137,8 +1137,8 @@ fn landed_outcome(
 /// Land the ticket of `opts` through the train (`frob land --train`).
 ///
 /// The ticket is enqueued; this call then waits (up to `--wait` seconds) for the train to land it,
-/// driving the train itself when no other driver holds the lock. A lone ticket, a dry run, a done
-/// ticket or `[land] train = false` use the plain [`land`].
+/// driving the train itself when no other driver holds the lock. A lone ticket lands as a batch of
+/// one; a dry run, a done ticket or `[land] train = false` use the plain [`land`].
 ///
 /// # Errors
 ///
@@ -1159,10 +1159,14 @@ pub fn land_train(
         );
         return land(root, &opts.land, clock);
     }
+    // The landed member's own worktree is gone by the time the result is read back.
+    let primary = primary_root(&probe.repo)?;
     let (id, handle, common) = (
         probe.id,
         probe.handle.clone(),
-        probe.repo.common_dir().to_path_buf(),
+        // Resolved now: a landed member's worktree dir vanishes, taking a `worktrees/<id>/../..` path with it.
+        std::fs::canonicalize(probe.repo.common_dir())
+            .unwrap_or_else(|_| probe.repo.common_dir().to_path_buf()),
     );
     drop(probe);
     if let Enqueued::Done(out) = enqueue(root, &opts.land, clock)? {
@@ -1176,23 +1180,14 @@ pub fn land_train(
     let deadline = Instant::now() + Duration::from_secs(opts.land.wait_secs);
     loop {
         if let Some(result) = store.result(&id)? {
-            return result_to_outcome(root, clock, &opts.land, &handle, &result);
+            return result_to_outcome(&primary, clock, &opts.land, &handle, &result);
         }
         match Driver::start(root, opts, clock, Duration::ZERO) {
             Ok(mut driver) => {
-                let alone = driver.site.store.queue()?.iter().all(|e| e.id == id)
-                    && driver.site.store.load_run()?.is_none();
-                if alone {
-                    tracing::info!(ticket = %handle, "alone on the train; landing it directly");
-                    driver.site.store.dequeue(&id)?;
-                    mark_queued(&driver.site.primary, clock, id, false);
-                    drop(driver);
-                    return land(root, &opts.land, clock);
-                }
                 let report = driver.drain(None)?;
                 drop(driver);
                 if let Some(result) = store.result(&id)? {
-                    return result_to_outcome(root, clock, &opts.land, &handle, &result);
+                    return result_to_outcome(&primary, clock, &opts.land, &handle, &result);
                 }
                 if report.rounds.iter().all(|r| !r.progressed()) && Instant::now() >= deadline {
                     return Ok(queued_outcome(id, &handle, &opts.land));

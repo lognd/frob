@@ -41,14 +41,7 @@ inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.t
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).
 timeout_secs = 1200
 
-[[check.tool]]
-name = "cargo"
-command = "env"
-# The docs step CI runs with `RUSTDOCFLAGS: -D warnings`; a public doc linking a private item fails here, not after landing.
-args = ["RUSTDOCFLAGS=-D warnings", "cargo", "doc", "--no-deps", "--all-features", "{packages}"]
-unscoped_packages = ["--workspace"]
-inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*"]
-timeout_secs = 1200
+# The docs step (cargo doc -D warnings) runs in CI only: a local rustdoc peaks near 4.5 GB and OOM-killed the dev box.
 
 [[check.tool]]
 name = "cargo"
