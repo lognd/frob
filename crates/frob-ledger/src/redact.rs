@@ -20,7 +20,8 @@ use gob_rules::{Finding, Severity};
 use regex::Regex;
 
 use crate::privacy::find_home_path;
-use crate::rules::{Tick005, id_of};
+use crate::rules::tick005::Tick005;
+use crate::tick::id_of;
 
 // frob:ticket 01M42EZ8J63P84XFKTR2GXRW72
 
@@ -332,7 +333,7 @@ pub fn tick005(path: &str, bytes: &[u8], rules: &RuleSet) -> Vec<Finding> {
         .filter(|h| !h.builtin)
         .map(|h| {
             Finding::new(
-                id_of(&Tick005),
+                id_of::<Tick005>(),
                 Severity::Error,
                 None,
                 format!(

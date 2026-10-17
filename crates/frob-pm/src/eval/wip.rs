@@ -28,42 +28,16 @@ use frob_ledger::event::{Event, EventBody};
 use frob_ledger::index::{ListFilter, Summary};
 use frob_ledger::model::{Acceptance, Category, Class};
 use frob_ledger::{Ledger, LedgerError, TicketId};
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RuleId, Severity};
+
+use crate::eval::id_of;
+use crate::rules::pm013::Pm013;
 
 use crate::error::Result;
-use crate::rules::membership::Evaluation;
-
-/// The repository has more tickets in progress than `[pm.wip] in_progress` allows.
-///
-/// Fires once, naming every holder, when the in-progress count exceeds the
-/// limit. A limit of 0 turns the rule off. `work` and `start` refuse before
-/// the limit is crossed, so this fires for tickets moved past the gate
-/// (by hand, by a merge of two ledger branches, or by lowering the limit).
-/// Finished tickets (every criterion bound by passing evidence) wait in a
-/// ready-to-land column that does not count here; `[pm.wip] ready` caps it.
-///
-/// ## Remedy
-///
-/// Finish or requeue one of the named holders with `frob requeue TICKET
-/// --reason WHY`, or raise `[pm.wip] in_progress` in `frob.toml`.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "PM013",
-    slug = "wip-limit-exceeded",
-    family = "PM",
-    severity = Warn,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Pm013;
+use crate::eval::membership::Evaluation;
 
 fn rule_id() -> RuleId {
-    Pm013
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
+    id_of::<Pm013>()
 }
 
 /// Every in-progress ticket at the ledger index, the one count behind the WIP gate and `PM013`.
@@ -326,7 +300,7 @@ mod tests {
 
     #[test]
     fn limits_zero_are_off() {
-        // frob:tests crates/frob-pm/src/rules/wip.rs::pm013
+        // frob:tests crates/frob-pm/src/eval/wip.rs::pm013
         let off = WipLimits {
             in_progress: 0,
             expedite_max: 0,
@@ -337,8 +311,8 @@ mod tests {
 
     #[test]
     fn empty_input_splits_to_empty_lanes() {
-        // frob:tests crates/frob-pm/src/rules/wip.rs::split_lanes
-        // frob:tests crates/frob-pm/src/rules/wip.rs::count
+        // frob:tests crates/frob-pm/src/eval/wip.rs::split_lanes
+        // frob:tests crates/frob-pm/src/eval/wip.rs::count
         let wip = count(Vec::new(), Some(&BTreeSet::new()), 1);
         assert!(wip.standard.is_empty() && wip.expedite.is_empty() && wip.stale.is_empty());
     }
@@ -389,7 +363,7 @@ mod tests {
 
     #[test]
     fn ready_needs_bound_criteria_and_passing_latest_evidence() {
-        // frob:tests crates/frob-pm/src/rules/wip.rs::is_ready
+        // frob:tests crates/frob-pm/src/eval/wip.rs::is_ready
         let pass = evidence("-p x", true);
         let fail = evidence("-p x", false);
         assert!(is_ready(&[criterion(true)], std::slice::from_ref(&pass)));
@@ -407,8 +381,8 @@ mod tests {
 
     #[test]
     fn ready_holders_leave_the_in_progress_count() {
-        // frob:tests crates/frob-pm/src/rules/wip.rs::count_ready
-        // frob:tests crates/frob-pm/src/rules/wip.rs::pm013
+        // frob:tests crates/frob-pm/src/eval/wip.rs::count_ready
+        // frob:tests crates/frob-pm/src/eval/wip.rs::pm013
         let all: Vec<Summary> = (1..=16).map(summary).collect();
         let ready: BTreeSet<TicketId> = all[..9].iter().map(|s| s.id).collect();
         let wip = count_ready(all, None, &ready, 0);

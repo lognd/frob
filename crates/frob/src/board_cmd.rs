@@ -1,7 +1,7 @@
 //! `frob board`: the scrumban board as text columns, or the same data as JSON.
 //!
 //! The board is built by [`frob_pm::board::build`] from the one WIP count
-//! (`frob_pm::rules::wip::read`, shared with `PM013` and `work`), so limits and
+//! (`frob_pm::eval::wip::read`, shared with `PM013` and `work`), so limits and
 //! over-limit marks always agree with them. Text mode hands the rendered rows
 //! to [`Payload::with_rendered`] (printed raw, no envelope header or indent)
 //! and leaves the structure out; `--json` carries the structure in `board`.
@@ -27,7 +27,7 @@ use frob_ledger::index::ListFilter;
 use frob_ledger::index::Summary;
 use frob_ledger::model::{Category, LinkKind, Stamp};
 use frob_pm::board::{self, Board, Brief, BriefInput, Input, RenderOptions, Signal, SignalKind};
-use frob_pm::rules::wip::{self, WipLimits};
+use frob_pm::eval::wip::{self, WipLimits};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_diagnostics::ColorChoice;

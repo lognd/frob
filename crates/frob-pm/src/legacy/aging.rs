@@ -17,7 +17,7 @@ use gob_time::Stamp;
 
 use crate::config::PmMaxAgeTable;
 use crate::error::Result;
-use crate::rules::membership::Evaluation;
+use crate::eval::membership::Evaluation;
 
 /// Seconds in a day.
 const DAY_SECS: i64 = 86_400;
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn pm008_fires_only_past_the_limit() {
-        // frob:tests crates/frob-pm/src/rules/aging.rs::pm008
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::pm008
         assert!(pm008("~A", Category::InProgress, 3, 3).is_none());
         let f = pm008("~A", Category::InProgress, 4, 3).expect("fires");
         assert!(f.message.contains("4 day(s)"), "{}", f.message);
@@ -183,15 +183,15 @@ mod tests {
 
     #[test]
     fn pm009_fires_without_points() {
-        // frob:tests crates/frob-pm/src/rules/aging.rs::pm009
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::pm009
         assert!(pm009("~A", Some(2)).is_none());
         assert!(pm009("~A", None).is_some());
     }
 
     #[test]
     fn zero_limit_is_off_and_age_floors() {
-        // frob:tests crates/frob-pm/src/rules/aging.rs::limit_days
-        // frob:tests crates/frob-pm/src/rules/aging.rs::age_days
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::limit_days
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::age_days
         let l = PmMaxAgeTable {
             in_progress: 0,
             ready: 30,

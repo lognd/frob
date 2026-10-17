@@ -16,8 +16,8 @@ use frob_ledger::{Ledger, TicketId};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::error::Result;
-use crate::rules::good_first::is_gwt;
-use crate::rules::membership::Evaluation;
+use crate::legacy::good_first::is_gwt;
+use crate::eval::membership::Evaluation;
 
 /// The `[pm] max_story_points` default: a story above it is too big to finish in one cycle.
 pub const DEFAULT_MAX_STORY_POINTS: u32 = 8;
@@ -368,7 +368,7 @@ mod tests {
 
     #[test]
     fn overlap_is_the_share_of_so_that_tokens_in_i_want() {
-        // frob:tests crates/frob-pm/src/rules/story.rs::overlap
+        // frob:tests crates/frob-pm/src/legacy/story.rs::overlap
         assert!((overlap("land refuses stale base", "Land refuses stale base") - 1.0).abs() < 1e-9);
         assert!(overlap("a b c d", "e f") < 1e-9);
         assert!(overlap("a b", "") < 1e-9);
@@ -376,7 +376,7 @@ mod tests {
 
     #[test]
     fn user_visible_skips_docs_tests_and_markdown() {
-        // frob:tests crates/frob-pm/src/rules/story.rs::user_visible
+        // frob:tests crates/frob-pm/src/legacy/story.rs::user_visible
         assert!(user_visible("crates/frob/src/**"));
         assert!(!user_visible("docs/design/x.rs"));
         assert!(!user_visible("README.md"));

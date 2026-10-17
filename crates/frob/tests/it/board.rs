@@ -14,7 +14,7 @@ use frob_ledger::event::{Event, EventBody, TransitionData};
 use frob_ledger::index::Summary;
 use frob_ledger::model::{Category, Stamp};
 use frob_pm::board::{self, Input, RenderOptions};
-use frob_pm::rules::wip::{self, WipLimits};
+use frob_pm::eval::wip::{self, WipLimits};
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use insta::assert_snapshot;
 use serde_json::Value;

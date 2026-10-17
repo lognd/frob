@@ -19,10 +19,8 @@ use frob_ledger::guards::NoLeases;
 use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
-use frob_pm::rules::{
-    aging, cycle, cycle_plan, good_first, membership::evaluate, milestone, pm032, replenish, story,
-    wip,
-};
+use frob_pm::eval::{cycle, membership::evaluate, milestone, replenish, wip};
+use frob_pm::legacy::{aging, cycle_plan, good_first, pm032, story};
 use frob_pm::{NewObject, ObjectKind, PmStore, State, event::Op};
 use gob_git::{CommitOptions, RelPath, Repo};
 use gob_mdtest::Case;
@@ -278,11 +276,11 @@ fn runner(case: &Case) -> Vec<Finding> {
             .collect();
     }
     if matches!(case.rule.to_string().as_str(), "PM010" | "PM011" | "PM012") {
-        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::pm010
-        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::pm011
-        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::pm012
-        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::evaluate
-        // frob:tests crates/frob-pm/src/rules/cycle_plan.rs::ready_failures
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::pm010
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::pm011
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::pm012
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::evaluate
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::ready_failures
         // frob:tests crates/frob-pm/src/cycle/history.rs::deliveries
         // frob:tests crates/frob-pm/src/cycle/history.rs::done_points
         // frob:tests crates/frob-pm/src/cycle/history.rs::cycle_events
@@ -295,9 +293,9 @@ fn runner(case: &Case) -> Vec<Finding> {
             .collect();
     }
     if matches!(case.rule.to_string().as_str(), "PM008" | "PM009") {
-        // frob:tests crates/frob-pm/src/rules/aging.rs::pm008
-        // frob:tests crates/frob-pm/src/rules/aging.rs::pm009
-        // frob:tests crates/frob-pm/src/rules/aging.rs::evaluate
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::pm008
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::pm009
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::evaluate
         let now = ledger.clock().now().plus_seconds(later_days * 86_400);
         return aging::evaluate(&ledger, &ages, now)
             .expect("evaluate")
@@ -310,12 +308,12 @@ fn runner(case: &Case) -> Vec<Finding> {
         case.rule.to_string().as_str(),
         "PM003" | "PM004" | "PM005" | "PM006" | "PM007"
     ) {
-        // frob:tests crates/frob-pm/src/rules/story.rs::pm003
-        // frob:tests crates/frob-pm/src/rules/story.rs::pm004
-        // frob:tests crates/frob-pm/src/rules/story.rs::pm005
-        // frob:tests crates/frob-pm/src/rules/story.rs::pm006
-        // frob:tests crates/frob-pm/src/rules/story.rs::pm007
-        // frob:tests crates/frob-pm/src/rules/story.rs::evaluate
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm003
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm004
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm005
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm006
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm007
+        // frob:tests crates/frob-pm/src/legacy/story.rs::evaluate
         return story::evaluate(&ledger, max_story_points)
             .expect("evaluate")
             .findings
@@ -327,16 +325,16 @@ fn runner(case: &Case) -> Vec<Finding> {
         return pm036_findings(&ledger);
     }
     if case.rule.to_string() == "PM031" {
-        // frob:tests crates/frob-pm/src/rules/good_first.rs::missing_parts
-        // frob:tests crates/frob-pm/src/rules/good_first.rs::evaluate
+        // frob:tests crates/frob-pm/src/legacy/good_first.rs::missing_parts
+        // frob:tests crates/frob-pm/src/legacy/good_first.rs::evaluate
         return good_first::evaluate(&ledger, good_first_max)
             .expect("evaluate")
             .findings;
     }
     if case.rule.to_string() == "PM032" {
         // frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
-        // frob:tests crates/frob-pm/src/rules/pm032.rs::pm032
-        // frob:tests crates/frob-pm/src/rules/pm032.rs::evaluate
+        // frob:tests crates/frob-pm/src/legacy/pm032.rs::pm032
+        // frob:tests crates/frob-pm/src/legacy/pm032.rs::evaluate
         return pm032::evaluate(&ledger, &NoLeases, good_first_min)
             .expect("evaluate")
             .findings;
@@ -465,7 +463,7 @@ fn pm032_ledger(dir: &std::path::Path, n: usize) -> Ledger {
 /// Two ready good-first tickets against the default minimum 3 warn with both numbers.
 #[test]
 fn pm032_two_ready_warns_with_count_and_minimum() {
-    // frob:tests crates/frob-pm/src/rules/pm032.rs::evaluate
+    // frob:tests crates/frob-pm/src/legacy/pm032.rs::evaluate
     let dir = tempfile::tempdir().expect("tempdir");
     let ledger = pm032_ledger(dir.path(), 2);
     let found = pm032::evaluate(&ledger, &NoLeases, pm032::DEFAULT_MIN)
@@ -480,7 +478,7 @@ fn pm032_two_ready_warns_with_count_and_minimum() {
 /// Three ready good-first tickets meet the minimum and do not fire.
 #[test]
 fn pm032_three_ready_is_silent() {
-    // frob:tests crates/frob-pm/src/rules/pm032.rs::evaluate
+    // frob:tests crates/frob-pm/src/legacy/pm032.rs::evaluate
     let dir = tempfile::tempdir().expect("tempdir");
     let ledger = pm032_ledger(dir.path(), 3);
     let found = pm032::evaluate(&ledger, &NoLeases, pm032::DEFAULT_MIN)

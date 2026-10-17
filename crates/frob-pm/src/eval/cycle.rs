@@ -14,43 +14,20 @@
 // frob:ticket 01M4CT016NKN4QRVY0Y57FX1J2
 
 use frob_ledger::{Ledger, TicketId};
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RuleId, Severity};
+
+use crate::eval::id_of;
+use crate::rules::pm036::Pm036;
 
 use crate::cycle::lifecycle::state_on;
 use crate::error::Result;
+use crate::eval::membership::Evaluation;
 use crate::event::{CycleEventData, CycleOp, MemberData, Op, PmBody};
 use crate::model::{Cycle, Day, Object, ObjectKind, State};
-use crate::rules::membership::Evaluation;
 use crate::store::PmStore;
 
-/// An active cycle is past its end date and has not been closed.
-///
-/// Fires once per overdue cycle, naming it and the days overdue. While it
-/// stands, `frob work` and `frob start` refuse standard tickets with
-/// `E-PM-CYCLE-OVERDUE` (an expedite ticket still starts).
-///
-/// ## Remedy
-///
-/// Close the cycle with `frob cycle close --retro TEXT`, which carries the
-/// incomplete work to the next cycle and records the retro.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "PM036",
-    slug = "cycle-overdue",
-    family = "PM",
-    severity = Warn,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Pm036;
-
 fn rule_id() -> RuleId {
-    Pm036
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
+    id_of::<Pm036>()
 }
 
 /// An active cycle past its end date.
@@ -265,8 +242,8 @@ mod tests {
 
     #[test]
     fn sprint_check_distinguishes_planned_unplanned_and_no_cycle() {
-        // frob:tests crates/frob-pm/src/rules/cycle.rs::sprint_check
-        // frob:tests crates/frob-pm/src/rules/cycle.rs::sprint_cycle
+        // frob:tests crates/frob-pm/src/eval/cycle.rs::sprint_check
+        // frob:tests crates/frob-pm/src/eval/cycle.rs::sprint_cycle
         let (member, stranger, parked) = (TicketId::mint(), TicketId::mint(), TicketId::mint());
         let today: Day = "2026-10-08".parse().unwrap();
         let current = cycle_on("2026-10-07", "2026-10-09", vec![member]);
@@ -290,13 +267,13 @@ mod tests {
 
     #[test]
     fn no_overdue_is_clean() {
-        // frob:tests crates/frob-pm/src/rules/cycle.rs::pm036
+        // frob:tests crates/frob-pm/src/eval/cycle.rs::pm036
         assert!(pm036(&[], 0).findings.is_empty());
     }
 
     #[test]
     fn describe_names_cycle_and_days() {
-        // frob:tests crates/frob-pm/src/rules/cycle.rs::describe
+        // frob:tests crates/frob-pm/src/eval/cycle.rs::describe
         let o = Overdue {
             alias: "2026-10-01..2026-10-05".into(),
             end: "2026-10-05".parse().unwrap(),

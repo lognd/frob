@@ -14,8 +14,8 @@ use frob_ledger::{Ledger, TicketId};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::error::Result;
-use crate::rules::good_first::GOOD_FIRST_LABEL;
-use crate::rules::membership::Evaluation;
+use crate::legacy::good_first::GOOD_FIRST_LABEL;
+use crate::eval::membership::Evaluation;
 
 /// The `[tickets] good_first_min` default.
 pub const DEFAULT_MIN: u32 = 3;
@@ -114,13 +114,13 @@ mod tests {
 
     #[test]
     fn minimum_zero_is_off() {
-        // frob:tests crates/frob-pm/src/rules/pm032.rs::pm032
+        // frob:tests crates/frob-pm/src/legacy/pm032.rs::pm032
         assert!(pm032(0, 0).findings.is_empty());
     }
 
     #[test]
     fn message_carries_count_and_minimum() {
-        // frob:tests crates/frob-pm/src/rules/pm032.rs::pm032
+        // frob:tests crates/frob-pm/src/legacy/pm032.rs::pm032
         let f = &pm032(3, 2).findings[0];
         assert_eq!(f.severity, Severity::Warn);
         assert!(f.message.contains('2') && f.message.contains("minimum of 3"));

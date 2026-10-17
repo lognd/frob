@@ -12,7 +12,7 @@ use frob_ledger::{Ledger, TicketId};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::error::Result;
-use crate::rules::membership::Evaluation;
+use crate::eval::membership::Evaluation;
 
 /// The label that opts a ticket into the good-first checks.
 pub const GOOD_FIRST_LABEL: &str = "good-first";
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn gwt_needs_all_three_words_in_order() {
-        // frob:tests crates/frob-pm/src/rules/good_first.rs::is_gwt
+        // frob:tests crates/frob-pm/src/legacy/good_first.rs::is_gwt
         assert!(is_gwt("Given a, when b, then c"));
         assert!(!is_gwt("then c, when b, Given a"));
         assert!(!is_gwt("it works"));
@@ -173,14 +173,14 @@ mod tests {
 
     #[test]
     fn start_here_heading_is_matched_exactly() {
-        // frob:tests crates/frob-pm/src/rules/good_first.rs::has_start_here
+        // frob:tests crates/frob-pm/src/legacy/good_first.rs::has_start_here
         assert!(has_start_here("intro\n\n## Start here\nread x"));
         assert!(!has_start_here("### Start here later"));
     }
 
     #[test]
     fn scaffold_is_a_start_here_section_full_of_placeholders() {
-        // frob:tests crates/frob-pm/src/rules/good_first.rs::START_HERE_SCAFFOLD
+        // frob:tests crates/frob-pm/src/legacy/good_first.rs::START_HERE_SCAFFOLD
         assert!(has_start_here(START_HERE_SCAFFOLD));
         assert_eq!(START_HERE_SCAFFOLD.matches(PLACEHOLDER).count(), 3);
     }

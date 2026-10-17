@@ -10,47 +10,10 @@
 use crate::ProductTags;
 use frob_pm::event::{CutData, TagRecord};
 use gob_git::Repo;
-use gob_rules::{Finding, Rule, RuleId, Severity};
-use toml::Table;
+use gob_rules::{Finding, RuleDecl, RuleId, Severity};
 
-// frob:ticket 01M4069XB9N36CQGEBNPKJ5AVG
-/// A product release tag that `frob release cut` did not create, or that no longer matches its cut.
-///
-/// The v1 meaning of this rule (refuse a release while any debt is open) was retired: v2
-/// replaced it with `defer` exceptions and the EXC rules (`exceptions.md` section 6), and the
-/// id now guards the integrity of release tags instead.
-///
-/// A product tag is a tag name matching the configured `[release] tag` pattern for one of the
-/// configured `[release] products` (default: `v{version}` for one product named after the
-/// repository; this repository sets `{product}-v{version}` for frob and grimble). The
-/// rule fires for each such tag when no recorded `cut` event names the tag with the same tag
-/// object and commit (a tag made by plain `git tag`), when the tag now points at a different
-/// commit than the one the cut recorded (a moved tag), or when the workspace version in the
-/// `Cargo.toml` committed at the tagged commit differs from the tag's version. Tags before the
-/// first cut are not special-cased. Tags that match no product tag are ignored, for example
-/// the v1 release tag `v0.531.0`. A repository with no product tags and no recorded cuts is
-/// not applicable.
-///
-/// ## Remedy
-///
-/// For a stray tag that is already published, run `frob release adopt VERSION`: it records the
-/// existing tags as the version's cut without touching git or the remote. For one that is not
-/// published, delete it and run `frob release cut VERSION`, which bumps, commits, tags and
-/// records the release in one step. For a moved tag, restore it to the commit the cut
-/// recorded (the finding names it). For a version mismatch, the tag is on the wrong commit:
-/// delete it and cut the release again.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "REL001",
-    slug = "release-without-cut",
-    family = "REL",
-    severity = Error,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Rel001;
+use crate::rules::rel001::Rel001;
+use toml::Table;
 
 /// What [`evaluate`] found.
 #[derive(Debug, Clone, Default)]
@@ -68,10 +31,10 @@ const NOT_APPLICABLE: &str =
     "no product tags (per [release] tag and products) and no recorded release cuts";
 
 fn rule_id() -> RuleId {
-    Rel001
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
+    Rel001::DEF
+        .id
+        .parse()
+        .unwrap_or_else(|e| unreachable!("declaration validates the id: {e}"))
 }
 
 fn finding(severity: Severity, tag: &str, kind: &str, message: String) -> Finding {
@@ -258,4 +221,44 @@ fn check_tag(
             format!("REL001: the workspace version at {commit} (tag `{tag}`) cannot be read: {why}"),
         )),
     }
+}
+
+// frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+/// The git repository holding `root`, the input of `REL001`; `None` outside a git work tree.
+#[must_use]
+pub fn repo_of(root: &std::path::Path) -> Option<Repo> {
+    match Repo::discover(root) {
+        Ok(r) if r.work_dir().is_some() => Some(r),
+        Ok(_) | Err(_) => {
+            tracing::info!("REL001: no git work tree");
+            None
+        }
+    }
+}
+
+// frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+/// Every `cut` event on every milestone at the ledger tip; an unreadable ledger is an error, never "no cuts".
+///
+/// # Errors
+///
+/// The ledger or milestone read failure rendered as text.
+pub fn recorded_cuts(ledger: &frob_ledger::Ledger) -> Result<Vec<CutData>, String> {
+    use frob_pm::event::PmBody;
+    use frob_pm::{ObjectKind, PmStore};
+    let Some(tip) = ledger.tip_hex().map_err(|e| e.to_string())? else {
+        return Ok(Vec::new());
+    };
+    let store = PmStore::new(ledger);
+    let mut cuts = Vec::new();
+    for m in frob_pm::eval::membership::milestones(ledger).map_err(|e| e.to_string())? {
+        for e in store
+            .read_events_at(&tip, ObjectKind::Milestone, m.id)
+            .map_err(|e| e.to_string())?
+        {
+            if let PmBody::Cut(d) = e.body {
+                cuts.push(d);
+            }
+        }
+    }
+    Ok(cuts)
 }

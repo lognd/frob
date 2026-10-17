@@ -8,7 +8,7 @@ use crate::error::Result;
 use crate::layout::Layout;
 use crate::ledger::Ledger;
 use crate::reindex::{ReindexOptions, Tree, reindex};
-use crate::rules::{Tick007, id_of};
+use crate::legacy::{Tick007, id_of};
 
 /// How many of the newest reindex commits one check replays.
 const REPLAY_LIMIT: usize = 20;
