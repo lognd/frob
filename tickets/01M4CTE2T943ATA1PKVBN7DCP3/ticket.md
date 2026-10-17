@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:40Z"
-updated = "2026-10-17T21:19:12Z"
+updated = "2026-10-17T21:24:00Z"
 scope = ["changelog.d/**", ".github/workflows/**", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
 text = "Given a second push to the same ref, when CI starts, then the earlier run is cancelled"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given every CI job, when inspected, then each has timeout-minutes and no check runs twice per OS"
