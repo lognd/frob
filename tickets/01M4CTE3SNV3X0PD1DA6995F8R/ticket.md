@@ -8,12 +8,12 @@ points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:41Z"
-updated = "2026-10-17T15:25:56Z"
+updated = "2026-10-17T15:28:56Z"
 scope = ["changelog.d/**", "crates/*/Cargo.toml", "crates/gob-dev/**"]
 
 [[acceptance]]
 text = "Given cargo dev publish --dry-run, when it runs, then the unconsumed crates are skipped and the rest publish in order"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M11 and L3 (workspace.dependencies). frob-gh gains a consumer through the land CI gate ticket; then it publishes again.
