@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob check accepts --skip-tools and skips the [[check.tool]] stages", "the CI check step passes --skip-tools so no tool stage runs twice per OS"]
+moved = []
+at = "2026-10-17T23:36:17Z"
+actor = "lognd"
+rev = 1
