@@ -355,6 +355,7 @@ fn runner(case: &Case) -> Vec<Finding> {
         let limits = wip::WipLimits {
             in_progress: limit,
             expedite_max,
+            ..wip::WipLimits::default()
         };
         return wip::evaluate_with(&ledger, limits, Some(&live))
             .expect("evaluate")

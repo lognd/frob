@@ -997,6 +997,7 @@ fn the_gate_and_pm013_count_the_same_holders() {
         let limits = frob_pm::rules::wip::WipLimits {
             in_progress: limit,
             expedite_max: 1,
+            ..frob_pm::rules::wip::WipLimits::default()
         };
         frob_pm::rules::wip::evaluate_with(&ledger, limits, Some(&live)).expect("pm013")
     };

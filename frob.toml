@@ -181,8 +181,10 @@ ready = 30
 # Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off.
 in_progress_per_identity = 1
 # Repository WIP cap: wide agent waves (owner 2026-10-09); suite runs go to the goway helpers with
-# per-host job fitting (goway ~K60F05J), so local builds stay scoped. Finished-but-unlanded tickets count.
+# per-host job fitting (goway ~K60F05J), so local builds stay scoped. Finished-but-unlanded tickets wait in the ready-to-land column instead.
 in_progress = 16
+# Most finished tickets (every criterion bound, evidence passing) waiting to land at once; they leave the `in_progress` count so serial lands do not starve new work, and 0 leaves this column unlimited.
+ready = 0
 
 [release]
 # When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green.

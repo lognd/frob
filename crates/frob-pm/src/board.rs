@@ -10,13 +10,18 @@
 //! sorted with [`wip::read`](crate::rules::wip::read), the count shared with
 //! `PM013` and the `work` gate: only live standard holders count against
 //! `[pm.wip] in_progress`, expedite holders count against the lane's
-//! `[pm.classes] expedite_max`, and stale holders are listed but never counted.
+//! `[pm.classes] expedite_max`, finished tickets waiting to land count against
+//! the optional `[pm.wip] ready`, and stale holders are listed but never counted.
 //!
 //! # Columns
 //!
 //! - **triage**: category `triage`;
 //! - **todo**: category `todo` with no open blocker, in `doable` order first;
-//! - **in-progress**: category `in-progress`, with the repository limit;
+//! - **in-progress**: category `in-progress` and still being worked, with the
+//!   repository limit;
+//! - **ready-to-land**: in progress but finished (criteria bound, evidence
+//!   passing): waiting on the serial land train, with the optional
+//!   `[pm.wip] ready` limit, and not counted against `in_progress`;
 //! - **blocked**: category `todo` with an open blocker (blocked is derived,
 //!   never a stored category; an in-progress ticket stays in its column so the
 //!   count matches PM013);
@@ -62,6 +67,8 @@ pub enum ColumnKind {
     Todo,
     /// Being worked.
     InProgress,
+    /// Finished (criteria bound, evidence passing) and waiting its turn to land.
+    ReadyToLand,
     /// Queued behind an open blocker.
     Blocked,
     /// Recently finished.
@@ -70,10 +77,11 @@ pub enum ColumnKind {
 
 impl ColumnKind {
     /// Board order, left to right.
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::Triage,
         Self::Todo,
         Self::InProgress,
+        Self::ReadyToLand,
         Self::Blocked,
         Self::Done,
     ];
@@ -84,6 +92,7 @@ impl ColumnKind {
             Self::Triage => "triage",
             Self::Todo => "todo",
             Self::InProgress => "in-progress",
+            Self::ReadyToLand => "ready-to-land",
             Self::Blocked => "blocked",
             Self::Done => "done",
         }
@@ -139,7 +148,7 @@ pub struct Column {
 pub struct Board {
     /// The expedite lane; absent when `expedite_max` is 0.
     pub expedite: Option<Column>,
-    /// Triage, todo, in-progress, blocked and done, in that order.
+    /// Triage, todo, in-progress, ready-to-land, blocked and done, in that order.
     pub columns: Vec<Column>,
 }
 
@@ -213,6 +222,7 @@ fn card(s: &Summary, input: &Input, stale: bool) -> Card {
 pub fn build(input: &Input) -> Board {
     let lane_open = input.limits.expedite_max > 0;
     let stale_ids: Vec<TicketId> = input.wip.stale.iter().map(|s| s.id).collect();
+    let ready_ids: Vec<TicketId> = input.wip.ready.iter().map(|s| s.id).collect();
     let shown: Vec<&Summary> = input
         .tickets
         .iter()
@@ -255,7 +265,12 @@ pub fn build(input: &Input) -> Board {
                 .filter(|s| match kind {
                     ColumnKind::Triage => s.category == Category::Triage,
                     ColumnKind::Todo => s.category == Category::Todo && !s.blocked,
-                    ColumnKind::InProgress => s.category == Category::InProgress,
+                    ColumnKind::InProgress => {
+                        s.category == Category::InProgress && !ready_ids.contains(&s.id)
+                    }
+                    ColumnKind::ReadyToLand => {
+                        s.category == Category::InProgress && ready_ids.contains(&s.id)
+                    }
                     ColumnKind::Blocked => s.category == Category::Todo && s.blocked,
                     ColumnKind::Done => s.category == Category::Done,
                 })
@@ -274,7 +289,9 @@ pub fn build(input: &Input) -> Board {
                 _ => {}
             }
             let total = members.len();
-            let hidden = if input.show > 0 && kind != ColumnKind::InProgress {
+            let hidden = if input.show > 0
+                && !matches!(kind, ColumnKind::InProgress | ColumnKind::ReadyToLand)
+            {
                 total.saturating_sub(input.show)
             } else {
                 0
@@ -283,6 +300,9 @@ pub fn build(input: &Input) -> Board {
             let (count, limit) = if kind == ColumnKind::InProgress {
                 let lim = input.limits.in_progress;
                 (input.wip.standard.len(), (lim > 0).then_some(lim))
+            } else if kind == ColumnKind::ReadyToLand {
+                let lim = input.limits.ready;
+                (input.wip.ready.len(), (lim > 0).then_some(lim))
             } else {
                 (total, None)
             };
@@ -296,6 +316,8 @@ pub fn build(input: &Input) -> Board {
                 hidden,
             }
         })
+        // An empty, unlimited ready-to-land column is noise and would squeeze the others.
+        .filter(|c| c.kind != Some(ColumnKind::ReadyToLand) || c.count > 0 || c.limit.is_some())
         .collect();
     tracing::debug!(lane = lane_open, "board built");
     Board { expedite, columns }

@@ -190,12 +190,17 @@ pub fn check(
     let live: Vec<Lease> = live.iter().filter(|l| !l.queued).cloned().collect();
     let live = live.as_slice();
     let live_ids: BTreeSet<TicketId> = live.iter().map(|l| l.ticket).collect();
-    let mut wip = frob_pm::rules::wip::count(
-        holders(ledger, live, id)?,
-        Some(&live_ids),
-        limits.expedite_max,
-    );
-    for list in [&mut wip.standard, &mut wip.expedite, &mut wip.stale] {
+    // Finished tickets waiting to land hold no in-progress slot (frob:ticket 01M4H5Y68GYFTMG9Y73F696589).
+    let held = holders(ledger, live, id)?;
+    let ready = frob_pm::rules::wip::ready_ids(ledger, &held)?;
+    let mut wip =
+        frob_pm::rules::wip::count_ready(held, Some(&live_ids), &ready, limits.expedite_max);
+    for list in [
+        &mut wip.standard,
+        &mut wip.expedite,
+        &mut wip.stale,
+        &mut wip.ready,
+    ] {
         list.retain(|s| s.id != id && !queued.contains(&s.id));
     }
     let holding = |s: Summary| {

@@ -119,6 +119,7 @@ fn fixture() -> Input {
     let limits = WipLimits {
         in_progress: 1,
         expedite_max: 1,
+        ..WipLimits::default()
     };
     let in_progress: Vec<Summary> = tickets[..4].to_vec();
     let wip = wip::count(in_progress, Some(&live), limits.expedite_max);
@@ -500,6 +501,7 @@ fn brief_fixture() -> (board::Board, board::BriefInput) {
     let limits = WipLimits {
         in_progress: 5,
         expedite_max: 0,
+        ..WipLimits::default()
     };
     let wip = wip::count(tickets[..5].to_vec(), Some(&live), limits.expedite_max);
     let entered: BTreeMap<TicketId, Stamp> = tickets[..5]

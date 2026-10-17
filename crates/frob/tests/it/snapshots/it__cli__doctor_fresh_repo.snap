@@ -14,7 +14,7 @@ expression: v
     },
     "config": {
       "error": null,
-      "missing_knobs": 37,
+      "missing_knobs": 38,
       "path": "[path]",
       "present": false
     },
@@ -445,6 +445,19 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `pm.wip.in_progress` in frob.toml (default 2); run `frob init` (or `frob config sync`) to write it",
+      "message_origin": "std",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "d66c786e6fe06b4e93ce809422a5076becb9c076635434810a8a72e7db155967",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `pm.wip.ready` in frob.toml (default 0); run `frob init` (or `frob config sync`) to write it",
       "message_origin": "std",
       "required": null,
       "rule": "CFG001",

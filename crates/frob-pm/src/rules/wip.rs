@@ -9,17 +9,24 @@
 //!   repository limit and bounded by `[pm.classes] expedite_max` instead; with
 //!   `expedite_max = 0` the lane is closed and expedite counts like standard.
 //!
+//! - an in-progress ticket that is *ready to land* (every acceptance criterion
+//!   bound and its latest evidence per reference passing, see [`is_ready`]) is
+//!   finished work waiting its turn on the serial land train: it leaves both
+//!   lanes for [`Wip::ready`], bounded by the optional `[pm.wip] ready` limit.
+//!
 //! Liveness is passed in as a set of ticket ids (the caller reads the lease
 //! store), so this crate stays free of the lease dependency. `None` means the
 //! leases could not be read: every in-progress ticket is then taken as live.
 
 // frob:ticket 01M4069TBHQ2YTFEEWHED96MPY
 // frob:ticket 01M416Z11V5GR012FR47HWFTBP
+// frob:ticket 01M4H5Y68GYFTMG9Y73F696589
 
 use std::collections::BTreeSet;
 
+use frob_ledger::event::{Event, EventBody};
 use frob_ledger::index::{ListFilter, Summary};
-use frob_ledger::model::{Category, Class};
+use frob_ledger::model::{Acceptance, Category, Class};
 use frob_ledger::{Ledger, LedgerError, TicketId};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
@@ -32,6 +39,8 @@ use crate::rules::membership::Evaluation;
 /// limit. A limit of 0 turns the rule off. `work` and `start` refuse before
 /// the limit is crossed, so this fires for tickets moved past the gate
 /// (by hand, by a merge of two ledger branches, or by lowering the limit).
+/// Finished tickets (every criterion bound by passing evidence) wait in a
+/// ready-to-land column that does not count here; `[pm.wip] ready` caps it.
 ///
 /// ## Remedy
 ///
@@ -89,6 +98,67 @@ pub struct Wip {
     pub expedite: Vec<Summary>,
     /// In progress with an expired lease: reported, never counted.
     pub stale: Vec<Summary>,
+    /// Live holders that are finished and wait to land: counted against `[pm.wip] ready`, not `in_progress`.
+    pub ready: Vec<Summary>,
+}
+
+/// True when finished work is waiting to land: every acceptance criterion is bound and, per reference, the latest evidence passed and was measured.
+///
+/// A ticket with no evidence at all is not ready; one with no criteria is judged on its evidence alone.
+pub fn is_ready(acceptance: &[Acceptance], events: &[Event]) -> bool {
+    use std::collections::BTreeMap;
+    if !acceptance.iter().all(|a| a.bound) {
+        return false;
+    }
+    let mut latest: BTreeMap<String, bool> = BTreeMap::new();
+    for event in events {
+        let EventBody::Evidence(data) = &event.body else {
+            continue;
+        };
+        let key = format!(
+            "{}\u{0}{}",
+            data.record
+                .get("provider")
+                .and_then(toml::Value::as_str)
+                .unwrap_or_default(),
+            data.record
+                .get("ref")
+                .and_then(toml::Value::as_str)
+                .unwrap_or_default()
+        );
+        let passed = data
+            .record
+            .get("passed")
+            .and_then(toml::Value::as_bool)
+            .unwrap_or(true)
+            && data
+                .record
+                .get("status")
+                .and_then(toml::Value::as_str)
+                .is_none_or(|st| st != "unmeasured");
+        latest.insert(key, passed);
+    }
+    !latest.is_empty() && latest.values().all(|p| *p)
+}
+
+/// The ids among `held` that are [`is_ready`], read from the ledger.
+///
+/// # Errors
+///
+/// Ledger read failures.
+pub fn ready_ids(
+    ledger: &Ledger,
+    held: &[Summary],
+) -> std::result::Result<BTreeSet<TicketId>, LedgerError> {
+    let mut out = BTreeSet::new();
+    for s in held {
+        let view = ledger.show(s.id)?;
+        if is_ready(&view.ticket.front.acceptance, &ledger.events(s.id)?) {
+            out.insert(s.id);
+        }
+    }
+    tracing::debug!(ready = out.len(), held = held.len(), "ready-to-land tickets read");
+    Ok(out)
 }
 
 /// Sort `in_progress` into [`Wip`]: drop stale holders (`live` is the set of leased tickets; `None` takes all as live), then split lanes.
@@ -97,13 +167,26 @@ pub fn count(
     live: Option<&BTreeSet<TicketId>>,
     expedite_max: u32,
 ) -> Wip {
+    count_ready(in_progress, live, &BTreeSet::new(), expedite_max)
+}
+
+/// Like [`count`], but live holders in `ready` (see [`ready_ids`]) go to [`Wip::ready`] instead of a lane.
+pub fn count_ready(
+    in_progress: Vec<Summary>,
+    live: Option<&BTreeSet<TicketId>>,
+    ready: &BTreeSet<TicketId>,
+    expedite_max: u32,
+) -> Wip {
     let (held, stale): (Vec<Summary>, Vec<Summary>) = in_progress
         .into_iter()
         .partition(|s| live.is_none_or(|l| l.contains(&s.id)));
+    let (ready, held): (Vec<Summary>, Vec<Summary>) =
+        held.into_iter().partition(|s| ready.contains(&s.id));
     let (standard, expedite) = split_lanes(held, expedite_max);
     tracing::debug!(
         standard = standard.len(),
         expedite = expedite.len(),
+        ready = ready.len(),
         stale = stale.len(),
         "wip counted"
     );
@@ -111,10 +194,11 @@ pub fn count(
         standard,
         expedite,
         stale,
+        ready,
     }
 }
 
-/// Read the in-progress tickets from `ledger` and sort them with [`count`].
+/// Read the in-progress tickets from `ledger` and sort them with [`count_ready`], ready-to-land ones included.
 ///
 /// # Errors
 ///
@@ -124,16 +208,20 @@ pub fn read(
     live: Option<&BTreeSet<TicketId>>,
     expedite_max: u32,
 ) -> std::result::Result<Wip, LedgerError> {
-    Ok(count(in_progress(ledger)?, live, expedite_max))
+    let held = in_progress(ledger)?;
+    let ready = ready_ids(ledger, &held)?;
+    Ok(count_ready(held, live, &ready, expedite_max))
 }
 
 /// The two knobs of the WIP policy: `[pm.wip] in_progress` and `[pm.classes] expedite_max`; 0 turns either off.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct WipLimits {
     /// Repository-wide limit on standard holders.
     pub in_progress: u32,
     /// Expedite tickets allowed at once; 0 closes the lane.
     pub expedite_max: u32,
+    /// Ready-to-land tickets allowed at once; 0 leaves the column unlimited.
+    pub ready: u32,
 }
 
 fn holders(list: &[Summary]) -> String {
@@ -146,7 +234,7 @@ fn holders(list: &[Summary]) -> String {
 /// Evaluate `PM013` for sorted `wip` against `limits`: fires for standard holders over `in_progress` (0 is off) and for the expedite lane over `expedite_max`.
 pub fn pm013(limits: WipLimits, wip: &Wip) -> Evaluation {
     let mut out = Evaluation {
-        subjects: wip.standard.len() + wip.expedite.len(),
+        subjects: wip.standard.len() + wip.expedite.len() + wip.ready.len(),
         ..Evaluation::default()
     };
     let limit = limits.in_progress;
@@ -179,6 +267,21 @@ pub fn pm013(limits: WipLimits, wip: &Wip) -> Evaluation {
             "wip:expedite",
         ));
     }
+    if limits.ready > 0 && wip.ready.len() > limits.ready as usize {
+        tracing::debug!(count = wip.ready.len(), limit = limits.ready, "PM013: ready column over");
+        out.findings.push(Finding::new(
+            rule_id(),
+            Severity::Warn,
+            None,
+            format!(
+                "{} tickets are ready to land, over the [pm.wip] ready limit of {}; waiting: {}; land them (frob land <ticket>) or raise the limit",
+                wip.ready.len(),
+                limits.ready,
+                holders(&wip.ready)
+            ),
+            "wip:ready",
+        ));
+    }
     out
 }
 
@@ -192,7 +295,7 @@ pub fn evaluate_with(
     limits: WipLimits,
     live: Option<&BTreeSet<TicketId>>,
 ) -> Result<Evaluation> {
-    if limits.in_progress == 0 && limits.expedite_max == 0 {
+    if limits.in_progress == 0 && limits.expedite_max == 0 && limits.ready == 0 {
         tracing::info!("PM013 not applicable: both WIP limits are 0");
         return Ok(Evaluation::default());
     }
@@ -219,6 +322,7 @@ mod tests {
         let off = WipLimits {
             in_progress: 0,
             expedite_max: 0,
+            ready: 0,
         };
         assert!(pm013(off, &Wip::default()).findings.is_empty());
     }
@@ -229,5 +333,80 @@ mod tests {
         // frob:tests crates/frob-pm/src/rules/wip.rs::count
         let wip = count(Vec::new(), Some(&BTreeSet::new()), 1);
         assert!(wip.standard.is_empty() && wip.expedite.is_empty() && wip.stale.is_empty());
+    }
+
+    fn evidence(reference: &str, passed: bool) -> Event {
+        let mut record = toml::Table::new();
+        record.insert("provider".into(), "nextest".into());
+        record.insert("ref".into(), reference.into());
+        record.insert("passed".into(), passed.into());
+        Event::new(
+            frob_ledger::model::Stamp::from_unix(0),
+            "t",
+            EventBody::Evidence(frob_ledger::event::EvidenceData {
+                accepts: vec![1],
+                record,
+            }),
+        )
+    }
+
+    fn summary(n: u8) -> Summary {
+        let at = frob_ledger::model::Stamp::from_unix(0);
+        Summary {
+            id: format!("01M4069W45P08YPC4YH4XZVM{n:02}").parse().expect("ulid"),
+            handle: format!("~4XZVM{n:02}"),
+            title: "t".to_owned(),
+            ty: "task".parse().expect("type"),
+            category: "in-progress".parse().expect("category"),
+            outcome: None,
+            priority: "medium".parse().expect("priority"),
+            class: "standard".parse().expect("class"),
+            due: None,
+            points: None,
+            parent: None,
+            created: at,
+            updated: at,
+            blocked: false,
+        }
+    }
+
+    fn criterion(bound: bool) -> Acceptance {
+        Acceptance {
+            text: "c".into(),
+            bound,
+        }
+    }
+
+    #[test]
+    fn ready_needs_bound_criteria_and_passing_latest_evidence() {
+        // frob:tests crates/frob-pm/src/rules/wip.rs::is_ready
+        let pass = evidence("-p x", true);
+        let fail = evidence("-p x", false);
+        assert!(is_ready(&[criterion(true)], std::slice::from_ref(&pass)));
+        assert!(!is_ready(&[criterion(false)], std::slice::from_ref(&pass)));
+        assert!(!is_ready(&[criterion(true)], &[]), "no evidence is not ready");
+        assert!(!is_ready(&[criterion(true)], &[pass.clone(), fail.clone()]));
+        assert!(
+            is_ready(&[criterion(true)], &[fail, pass]),
+            "a later passing run supersedes a failure of the same ref"
+        );
+    }
+
+    #[test]
+    fn ready_holders_leave_the_in_progress_count() {
+        // frob:tests crates/frob-pm/src/rules/wip.rs::count_ready
+        // frob:tests crates/frob-pm/src/rules/wip.rs::pm013
+        let all: Vec<Summary> = (1..=16).map(summary).collect();
+        let ready: BTreeSet<TicketId> = all[..9].iter().map(|s| s.id).collect();
+        let wip = count_ready(all, None, &ready, 0);
+        assert_eq!((wip.standard.len(), wip.ready.len()), (7, 9));
+        let limits = WipLimits {
+            in_progress: 7,
+            expedite_max: 0,
+            ready: 8,
+        };
+        let out = pm013(limits, &wip);
+        assert_eq!(out.findings.len(), 1, "only the ready limit is exceeded");
+        assert!(out.findings[0].message.contains("ready to land"));
     }
 }

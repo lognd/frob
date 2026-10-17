@@ -301,6 +301,7 @@ impl Command for BoardVerb {
         let limits = WipLimits {
             in_progress: cfg.pm.wip.in_progress,
             expedite_max: cfg.pm.classes.expedite_max,
+            ready: cfg.pm.wip.ready,
         };
         let now = ctx.clock.now();
 
