@@ -2537,7 +2537,7 @@ fn train_status_reports_queue_candidate_and_batch_size_as_an_envelope() {
 // frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
 // frob:tests crates/frob-land/src/train.rs::land_train
 #[test]
-fn a_lone_ticket_lands_through_the_plain_land_path() {
+fn a_lone_ticket_lands_as_a_batch_of_one() {
     if !git_available() {
         return;
     }
@@ -2545,10 +2545,18 @@ fn a_lone_ticket_lands_through_the_plain_land_path() {
     let s = fx.start("Lone", &["solo/**"]);
     Fixture::commit_in(&s.wt, "solo/solo.rs", "fn f() {}\n");
     Fixture::evidence(&s, "solo/solo.rs");
-    let opts = frob_land::TrainOptions::new(LandOptions {
-        handle: Some(s.handle.clone()),
-        ..LandOptions::default()
+    let runner = Arc::new(Poison {
+        poison: None,
+        calls: 0.into(),
     });
+    let opts = frob_land::TrainOptions {
+        land: LandOptions {
+            handle: Some(s.handle.clone()),
+            ..LandOptions::default()
+        },
+        runner: Some(runner.clone()),
+        enqueue_only: false,
+    };
     let out = frob_land::land_train(&s.wt, &opts, &train_clock()).expect("land --train");
     assert!(out.closed, "{out:?}");
     assert!(
@@ -2556,6 +2564,11 @@ fn a_lone_ticket_lands_through_the_plain_land_path() {
             .read_blob_at("main", "solo/solo.rs")
             .expect("read")
             .is_some()
+    );
+    assert_eq!(
+        runner.calls.load(std::sync::atomic::Ordering::SeqCst),
+        1,
+        "the train checked the lone ticket as a batch of one"
     );
     let store = frob_land::train_state::TrainStore::new(fx.repo().common_dir());
     assert!(store.queue().expect("queue").is_empty());

@@ -476,7 +476,7 @@ Master Green at Scale", EuroSys 2019).
    past the branch fork by ledger commits alone is folded by `frob land`
    itself (a bounded 30 second retry) without `--wait`; a code move
    still needs `--wait`. A lone ticket on the train is a batch of one and
-   lands directly.
+   lands through the same round as any batch.
 3. **CI split.** The full unscoped check, the whole suite and the
    cross-platform jobs run on CI after every land. This is the safety
    net for what the cone misses, so the cone may be conservative but
@@ -549,7 +549,7 @@ evicted member keeps both so its agent can fix and enqueue again.
 is handed off, so it no longer counts toward the per-holder lease limit,
 the repository WIP limit (`work`/`start`/PM013) or the board's stale-holder
 list, and the agent is free to start the next ticket. The flag is cleared
-when the train lands, reds or evicts the ticket, or lands it alone. A red or
+when the train lands, reds or evicts the ticket, or lands it. A red or
 evicted result is also written to the ticket in the ledger, not only to
 `.git/frob/train/results/`: a note comment with the failing evidence and a
 `train-red` or `train-evicted` label (dropped again on the next enqueue).
@@ -663,7 +663,7 @@ carrying the failing evidence, builds the final candidate, closes it with
 the round with `E-LAND-TRAIN-FAULT` and leaves every member queued. A stale
 `state.json` is recovered first (close the rest when the candidate reached
 the base, else discard). Verbs: `frob land --train` (enqueue, drive when
-nobody else does, wait up to `--wait`; a lone ticket, a dry run or
+nobody else does, wait up to `--wait`; a lone ticket is a batch of one; a dry run or
 `[land] train = false` use the plain single-ticket `land`), `frob train
 drop <ticket> --reason <text>` (remove one queue entry, releasing nothing else), `frob train
 status` (queue, current candidate, batch size, as an envelope with a schema),
