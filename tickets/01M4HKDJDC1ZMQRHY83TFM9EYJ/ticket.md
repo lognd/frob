@@ -2,7 +2,8 @@
 id = "01M4HKDJDC1ZMQRHY83TFM9EYJ"
 title = "TOOL001 from a tool-stage timeout is reported retryable:false; a timeout is not a deterministic failure and the land refusal should be retryable"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
