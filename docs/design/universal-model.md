@@ -302,27 +302,83 @@ section 3).
 
 ### 4.3 Theorem 2 (adequacy)
 
-Let the structural relations of a U term be: operator and sort of each
-node, parent, child order, attachment (attr, comment), the scope graph
-with edge status, location order and containment, and the facet digests.
-Then every rule predicate expressible in first-order logic with least
-fixpoints (equivalently stratified Datalog) over these relations is
-decidable, total, and evaluable in time polynomial in the term; its
-three-valued answer is sound (never a wrong Yes or No about the source
-structure); and on the closed fragment (no `opaque`, no `hole`, no May
-or Unknown edges in the rule's dependency cone) it is exact: preserved
-and reflected by T_L.
+Setting. Each structural relation R of a U term (operator and sort of
+each node, parent, child order, attachment (attr, comment), the scope
+graph with edge status, location order and containment, the facet
+digests) is a pair `(lo(R), hi(R))` with `lo(R)` within `hi(R)`, as in
+grl-spec.md 7.0. Adapter hypothesis (H): for every relation R the
+adapter returns, `R_lo <= R_true <= R_hi`, where `R_true` is the
+relation of the actual program. Must and Exact facts are in `lo`, May
+facts in `hi` only, and a tuple outside `hi` is certainly absent. H is
+the soundness contract of 4.4, restated; Theorem 2 is conditional on it
+and says nothing about an adapter that violates it.
 
-Proof sketch. The relations are finite and computed by structural
-recursion (Theorem 1). Stratified Datalog over finite relations has
-polynomial data complexity (Immerman, Vardi). Soundness: evaluate under
-Kleene logic where an atom that touches an `opaque`, `hole` or
-non-Must edge is Unknown; by induction on the formula a Yes or No is
-derived only from atoms whose truth is fixed by the syntax, which T_L
-preserves because rho_L is a morphism and bind_L is total. Exactness on
-the closed fragment: every atom is then Exact and the evaluation is
-classical. Alpha-invariance follows because all relations are defined
-on the alpha-normal form. QED.
+Statement. Every rule predicate expressible in stratified Datalog with
+aggregation (negation and counts only across strata; recursion only
+positive, and only in the catalog closures `reaches`, `within N` and the
+Pc closure) over these relations is decidable, total, and evaluable in
+time polynomial in the term. Its K3 value (grl-spec.md 7.0) is sound
+under H: a Yes means the predicate holds of `R_true` and a No means it
+fails of `R_true`, so the only wrong answer an adapter satisfying H can
+cause is Unknown. On the closed fragment (`lo = hi` for every relation
+in the rule's dependency cone: no `opaque`, no `hole`, no May or
+Unknown edges) the value is exact: preserved and reflected by T_L.
+
+This is deliberately not "FO+LFP, equivalently stratified Datalog". Those
+are not equivalent: FO+LFP captures PTIME only on ordered structures and
+unrestricted LFP is strictly stronger than stratified Datalog without
+order (Kolaitis 1991), and the engine neither needs nor offers
+non-positive recursion. The class above is what the evaluator
+implements.
+
+Evaluation. Strata are numbered so that a relation depends negatively or
+through an aggregate only on lower strata, and positively (including
+recursively) on its own stratum or lower. Within a stratum the two
+bounds are computed by two passes of the least fixpoint, each over a
+monotone positive operator:
+- pass lo: the least fixpoint of the stratum's rules with every positive
+  atom read at `lo` and every negated atom or aggregate argument read at
+  `hi` of the lower strata (the pessimistic reading);
+- pass hi: the least fixpoint with positive atoms read at `hi` and
+  negated atoms or aggregates read at `lo` of the lower strata (the
+  optimistic reading).
+Because no recursion passes through negation or an aggregate, the lower
+strata are final when a stratum runs, each pass is an ordinary monotone
+least fixpoint, and the pair is the well-founded model of the stratum,
+which is total: no atom is left undefined by the iteration itself. Each
+pass reaches its fixpoint in at most `n^k` rounds over a domain of size
+`n` and relation arity `k`, each round polynomial.
+
+Proof sketch. Complexity: finite relations computed by structural
+recursion (Theorem 1); stratified Datalog with aggregation over finite
+relations has polynomial data complexity (Immerman, Vardi), and doubling
+the passes keeps it polynomial. Soundness by induction on strata. Base
+(stratum 0, extensional relations): `lo = R_lo <= R_true <= R_hi = hi`
+by H. Step: assume every lower relation S satisfies `lo(S) <= S_true <=
+hi(S)`. The pass-lo operator reads positive atoms at a subset of the
+truth and negated atoms and aggregates at a superset, so it is below the
+true operator pointwise; the pass-hi operator is above it. Both are
+monotone, so by induction on the number of fixpoint rounds (Knaster-Tarski
+iteration) every round of pass lo stays below the corresponding round of
+the true fixpoint and every round of pass hi above it; hence the stratum's
+`lo <= true <= hi`. Counts follow the same argument as intervals
+(7.0). The K3 value of a formula is then read from the final `(lo, hi)`
+by the atom clauses of 7.0, and by induction on the formula (every
+connective is monotone in the information order) a Yes or No is derived
+only from atoms settled in `lo` or outside `hi`. Exactness on the closed
+fragment: `lo = hi` propagates through every stratum, so both passes
+coincide and the evaluation is classical. Alpha-invariance follows
+because all relations are defined on the alpha-normal form. QED.
+
+Belnap conflict. If an adapter violates H on a tuple, the pair is
+inconsistent (`lo` not within `hi`: the adapter asserts both Must and
+absent), the Belnap value "both". The engine does not add a fourth
+truth value to K3. It detects `lo(R)` not within `hi(R)` at load, treats
+the offending tuple as Unknown, and attaches the reason `conflict`
+naming the adapter and relation, so the rule is Unresolved with that
+reason and the defect is loud and attributable. The soundness claim
+above is therefore: sound whenever H holds, and a detected violation
+degrades to Unresolved rather than a wrong Yes or No.
 
 The syntactic queries this covers are the ones the landed crates already
 compute for Rust and markdown, restated over U: units and symrefs,
@@ -358,21 +414,25 @@ ask of any new language.
 
 ### 4.5 Theorem 3 (honesty)
 
-(a) No total computable query on U decides a non-trivial property of
-the behaviour of the programs its terms denote (Rice 1953). Exact call
-targets under first-class values, termination, reachability of runtime
-states, macro expansion termination, type inference for System F (Wells
-1999) and type checking for dependent types with general recursion are
-undecidable in general.
+(a) For a Turing-complete source language L, no total computable query
+on U decides a non-trivial semantic property of the behaviour of the
+L-programs its terms denote (Rice 1953, applied to L, not to U: U is the
+syntax and the queries are on terms, so the theorem is about what the
+terms denote under L). Exact call targets under first-class values,
+termination, reachability of runtime states, macro expansion
+termination, type inference for System F (Wells 1999) and type checking
+for dependent types with general recursion are undecidable in general.
 
 (b) Under the contracts of 4.1-4.4, every rule evaluated over U is
 sound: it never emits an Error or Warn whose premise is false, and the
 only cost of undecidability is Unresolved findings and widened bounds.
 
-Proof. (a) Rice's theorem applied to any Turing-complete source
-language, which includes U itself (2.1). (b) Induction on the rule
-formula under Kleene logic, as in Theorem 2, with capability answers
-treated as atoms whose soundness is the adapter's contract. QED.
+Proof. (a) Rice's theorem applied to L: a decider for such a property
+of L-programs, composed with the computable denotation of a term, would
+decide a non-trivial semantic property of the programs. (b) Induction on
+strata and on the rule formula, as in Theorem 2, with capability answers
+treated as atoms whose soundness is hypothesis H (the adapter's
+contract). QED.
 
 What "computable" buys: where the source language's own type system
 decides a question (Hindley-Milner inference, Rust trait resolution,
@@ -693,8 +753,8 @@ here.
 
 - gob-ir: Tm(Sigma_U + Sigma_L), the scope graph with edge status, the
   alpha-normal printer and canonical facet stream (7.1), the query
-  interface of section 5, the FO+LFP evaluator with Kleene semantics
-  and polarity, the answer lattice types, the atom registry and the
+  interface of section 5, the stratified-Datalog-with-aggregation
+  evaluator over lo/hi pairs with Kleene semantics and polarity, the answer lattice types, the atom registry and the
   callee vocabularies (grimble-model.md 9.6). Depends on gob-text and
   gob-languages only.
 - gob-languages: location sorts; the F0 constant parser; rho_L checked
