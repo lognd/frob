@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "wont-fix"
+reason = "already implemented: enqueue_rules in train.rs, CachedCi reset once per round, CandidateChecker::suspects (commit 6856b3c8d, b6722983a)"
+at = "2026-10-17T04:46:30Z"
+actor = "lognd"
+rev = 1
