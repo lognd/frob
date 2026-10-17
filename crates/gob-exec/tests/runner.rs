@@ -70,7 +70,7 @@ fn timeout_leaves_no_grandchild() {
     }
 }
 
-/// frob:ticket ~PYFAH0T
+/// frob:ticket 01M4CTDYG696JWM20AZPYFAH0T
 #[cfg(unix)]
 #[test]
 fn timeout_returns_promptly_despite_setsid_grandchild_holding_the_pipe() {
