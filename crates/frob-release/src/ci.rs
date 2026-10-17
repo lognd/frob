@@ -50,7 +50,7 @@ pub enum CiState {
         /// How many checks were looked at.
         checks: usize,
     },
-    /// At least one check failed, was cancelled or timed out.
+    /// At least one check failed or timed out (a cancelled check is pending).
     Red {
         /// The failing checks.
         failures: Vec<CiFailure>,
@@ -99,7 +99,8 @@ fn redact_url(url: &str) -> String {
 /// # Errors
 /// [`CiUnknown`] when the host is not `github.com` or the path is not `owner/repo`.
 pub fn parse_remote(url: &str) -> Result<GithubRepo, CiUnknown> {
-    let not_github = || CiUnknown {
+    let not_github = || {
+        CiUnknown {
         reason: format!(
             "origin is `{}`, which is not a github.com remote; CI status is read through the GitHub CLI only",
             redact_url(url)
@@ -107,6 +108,7 @@ pub fn parse_remote(url: &str) -> Result<GithubRepo, CiUnknown> {
         remedy: format!(
             "point origin at GitHub (`git remote set-url origin https://github.com/<owner>/<repo>.git`), {REQUIRE_CI_HINT}"
         ),
+    }
     };
     let trimmed = url.trim();
     let (host, path) = if let Some((_, rest)) = trimmed.split_once("://") {
@@ -182,11 +184,15 @@ struct Check {
 }
 
 impl From<CheckRun> for Check {
-    /// Completed `success`, `skipped` and `neutral` pass; unfinished is pending; every other conclusion fails (unknown is never green).
+    /// Completed `success`, `skipped` and `neutral` pass; unfinished is pending; `cancelled` (a superseded run) is pending; every other conclusion fails (unknown is never green).
     fn from(r: CheckRun) -> Self {
         let verdict = if r.status == "completed" {
             match r.conclusion.as_deref() {
                 Some("success" | "skipped" | "neutral") => Verdict::Pass,
+                Some("cancelled") => {
+                    tracing::warn!(check = %r.name, "check cancelled (superseded run); treating as pending");
+                    Verdict::Pending
+                }
                 Some(other) => Verdict::Fail(other.to_owned()),
                 None => Verdict::Fail("no conclusion".to_owned()),
             }
@@ -635,7 +641,6 @@ mod tests {
             ("build", "completed", Some("success")),
             ("lint", "completed", Some("failure")),
             ("slow", "completed", Some("timed_out")),
-            ("dist", "completed", Some("cancelled")),
         ]);
         let fake = FakeGh::new(&body, NO_STATUS, None);
         let CiState::Red { failures } = fake.tip(ORIGIN) else {
@@ -645,14 +650,7 @@ mod tests {
             .iter()
             .map(|f| (f.name.as_str(), f.conclusion.as_str()))
             .collect();
-        assert_eq!(
-            named,
-            [
-                ("lint", "failure"),
-                ("slow", "timed_out"),
-                ("dist", "cancelled")
-            ]
-        );
+        assert_eq!(named, [("lint", "failure"), ("slow", "timed_out")]);
         assert_eq!(
             failures[0].url.as_deref(),
             Some("https://github.com/acme/widget/runs/lint")
@@ -686,6 +684,22 @@ mod tests {
             fake.tip(ORIGIN),
             CiState::Pending {
                 running: vec!["test".to_owned()]
+            }
+        );
+    }
+
+    #[test]
+    fn a_cancelled_check_is_pending_never_red_or_green() {
+        // frob:tests crates/frob-release/src/ci.rs::check_tip
+        let body = runs(&[
+            ("build", "completed", Some("success")),
+            ("dist", "completed", Some("cancelled")),
+        ]);
+        let fake = FakeGh::new(&body, NO_STATUS, None);
+        assert_eq!(
+            fake.tip(ORIGIN),
+            CiState::Pending {
+                running: vec!["dist".to_owned()]
             }
         );
     }
