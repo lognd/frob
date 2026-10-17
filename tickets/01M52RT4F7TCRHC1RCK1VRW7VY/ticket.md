@@ -8,6 +8,6 @@ points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-16T16:30:35Z"
-updated = "2026-10-17T05:45:05Z"
-scope = ["crates/frob-land/**", "docs/design/build-test-ci.md"]
+updated = "2026-10-17T05:45:09Z"
+scope = ["crates/frob-land/**", "docs/design/build-test-ci.md", "changelog.d/01M52RT4F7TCRHC1RCK1VRW7VY.changed.md"]
 +++
