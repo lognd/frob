@@ -2,7 +2,8 @@
 id = "01M52RT4F7TCRHC1RCK1VRW7VY"
 title = "land train: a lone ticket lands as a batch of one"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
