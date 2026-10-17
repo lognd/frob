@@ -7,8 +7,16 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-17T21:13:59Z"
-updated = "2026-10-17T23:29:00Z"
+updated = "2026-10-17T23:36:17Z"
 scope = ["crates/gob-dev/src/ci.rs", "docs/design/cli.md", "crates/frob-check/src/verb.rs"]
+
+[[acceptance]]
+text = "frob check accepts --skip-tools and skips the [[check.tool]] stages"
+bound = false
+
+[[acceptance]]
+text = "the CI check step passes --skip-tools so no tool stage runs twice per OS"
+bound = false
 +++
 
 found while working ~BN7DCP3: dedupe needs a CLI flag for skip_tools; then ci.rs sibling_check passes it
