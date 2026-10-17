@@ -16,6 +16,7 @@ mod cli;
 mod command;
 mod context;
 mod error;
+mod mcp;
 mod meta;
 mod render;
 mod schema_cmd;
@@ -31,6 +32,7 @@ pub use error::{CliError, Outcome, Payload};
 pub use gob_diagnostics::{ExitCode, Refusal, RefusalClass};
 pub use gob_macros::Command;
 pub use inventory;
+pub use mcp::{ServeCmd, ServeData, tool_name};
 pub use meta::{
     CommandEntry, CommandMeta, Described, all_commands, dangling_deprecations, markdown_verbs,
 };

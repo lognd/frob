@@ -306,6 +306,7 @@ pub struct InboxData {
     product = "frob",
     deprecated = "ticket list --category triage",
     idempotent = true,
+    read_only,
     exits(ok, usage, internal)
 )]
 pub struct InboxList {

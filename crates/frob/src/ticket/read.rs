@@ -163,6 +163,7 @@ pub struct ShowData {
     product = "frob",
     markdown,
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct Show {
@@ -289,6 +290,7 @@ impl ListData {
     verb = "ticket list",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct List {
@@ -410,6 +412,7 @@ impl List {
     verb = "ticket doable",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, usage, internal)
 )]
 pub struct Doable {
@@ -499,6 +502,7 @@ pub struct BriefData {
     product = "frob",
     deprecated = "ticket show --format md",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct Brief {

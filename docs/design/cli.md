@@ -288,6 +288,27 @@ ops groups, `waive audit` and `pool` (replaced by `exceptions`). v1's
 `sys`, `cycle`, `dup`, `arch`, `bind` live in grimble; `vet` too
 (boundaries.md section 2.3).
 
+### 4.1 `serve`: read-only MCP surface (D123)
+
+`frob serve` speaks MCP (newline-delimited JSON-RPC 2.0 on stdin and
+stdout; logs on stderr) and is generated from verb metadata, so there is no
+second API. A verb declares `#[command(read_only)]` when it never changes
+repository or ledger state; every such verb is listed by `tools/list` as a
+tool named by its path with underscores (`ticket show` is `ticket_show`).
+Mutating verbs and `serve` itself are absent and `tools/call` refuses them.
+
+- Input: `{"args": ["..."]}`, the verb's own arguments exactly as on the
+  command line. The `inputSchema` carries the verb schema (what
+  `<verb> --schema` prints) under `x-verb-schema`.
+- Output: the tool call runs the verb in-process with `--json`, and the
+  text content is the very envelope the CLI prints. `isError` is true for
+  exit codes of 2 and above; exit 1 (a negative answer, such as a failed
+  gate) is still a result.
+- Read-only verbs today: `ticket show/list/doable/brief/contention`,
+  `ticket triage list`, `lease list`, `milestone show/list`, `cycle
+  show/list`, `board`, `graph why/affects`, `config show`, `check` and
+  `doctor`.
+
 ## 5. Human ergonomics kept
 
 Color and tables on a TTY, `-v` for the span tree, shell completions,

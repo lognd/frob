@@ -250,6 +250,7 @@ fn changed_facets(inputs: &Inputs, rec: &SymbolRecord) -> Vec<String> {
     verb = "graph why",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, usage, internal)
 )]
 pub struct GraphWhy {
@@ -347,6 +348,7 @@ pub struct AffectsData {
     verb = "graph affects",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, usage, internal)
 )]
 pub struct GraphAffects {
