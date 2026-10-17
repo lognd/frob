@@ -8,8 +8,8 @@ points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:07Z"
-updated = "2026-10-17T22:18:51Z"
-scope = ["crates/frob-ledger/**", "crates/frob-pm/**", "crates/frob-release/**", "crates/frob-lease/**", "crates/gob-config/**", "crates/frob-check/**"]
+updated = "2026-10-17T22:18:53Z"
+scope = ["crates/frob-ledger/**", "crates/frob-pm/**", "crates/frob-release/**", "crates/frob-lease/**", "crates/gob-config/**", "crates/frob-check/**", "crates/gob-mdtest/coverage-allowlist.toml"]
 
 [[links]]
 kind = "blocked-by"
