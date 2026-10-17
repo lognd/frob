@@ -1,0 +1,1 @@
+universal-model.md: Theorem 2 restated over lo/hi relation pairs with the adapter hypothesis and two-pass well-founded fixpoints; Theorem 3(a) about the source language; Belnap conflict as an Unresolved reason.

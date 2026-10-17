@@ -2,13 +2,14 @@
 id = "01M4CXTXFTPBYMJGS70TK9PKRH"
 title = "universal-model.md: restate Theorem 2 over lo/hi relation pairs with well-founded two-pass fixpoints; Theorem 3(a) about L; Belnap conflict as a reason"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:06Z"
-updated = "2026-10-17T16:01:31Z"
+updated = "2026-10-17T16:01:35Z"
 scope = ["changelog.d/**", "docs/design/universal-model.md"]
 
 [[acceptance]]
