@@ -2,7 +2,8 @@
 id = "01M43ATBY4CHA4FYVC7BWK6MXR"
 title = "Rules TW001-005, BP001-003 and TOKENS001 (Rust, tier-0)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
