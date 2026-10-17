@@ -1,0 +1,6 @@
+kind = "cycle"
+op = "retro"
+text = "Overdue; carrying everything into the 2026-10-17 drain cycle"
+at = "2026-10-17T15:06:15Z"
+actor = "lognd"
+rev = 1
