@@ -2,13 +2,13 @@
 id = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 title = "gob-walk stops depending on gob-git: file-reader trait in gob-walk, gob-git implements it; drop gob-lock -> gob-ir and gob-cache -> gob-exec (audit M8)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:37Z"
-updated = "2026-10-08T03:55:37Z"
+updated = "2026-10-17T20:38:56Z"
 scope = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock"]
 
 [[acceptance]]
