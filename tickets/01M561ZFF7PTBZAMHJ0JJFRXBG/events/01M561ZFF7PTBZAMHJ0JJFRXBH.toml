@@ -1,0 +1,10 @@
+kind = "create"
+title = "gob-dev tests fail: publish plan Cycle and profile_coverage serve/tokens scenarios"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-dev/**"]
+body = "found while working P8VPKKP: publish::tests::this_workspace_reads_and_plans_without_a_cycle and profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason fail independent of that change"
+at = "2026-10-17T23:08:31Z"
+actor = "lognd"
+rev = 1
