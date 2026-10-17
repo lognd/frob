@@ -8,7 +8,7 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-10T00:29:15Z"
-updated = "2026-10-17T08:32:08Z"
+updated = "2026-10-17T08:32:09Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/src/tools.rs", "crates/frob-land/src/**", "changelog.d/**"]
 
