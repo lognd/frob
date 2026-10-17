@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-17T18:41:51Z"
+digest = "b6996ee5aab3ae214c253653fc249695db387ee39b7abb843117b7a5779ddef7"
+exit_code = 0
+inline = """
+
+running 1 test
+test a_stale_tokens_sheet_fires_tokens001 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.05s
+
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.18s
+     Running tests/tailwind_tokens_drift.rs (target/debug/deps/tailwind_tokens_drift-14e7db543d34b277)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p crunk-rules --test tailwind_tokens_drift a_stale_tokens_sheet_fires_tokens001"
+size = 507
+status = "measured"
+at = "2026-10-17T18:41:51Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "carried in-progress with no live lease or worktree; restarting for drain"
+at = "2026-10-17T18:51:00Z"
+actor = "lognd"
+rev = 1

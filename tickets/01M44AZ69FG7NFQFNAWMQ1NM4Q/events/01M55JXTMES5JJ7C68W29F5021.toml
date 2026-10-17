@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-10-17T18:45:22Z"
+digest = "92d669b814656a1ae3f54eb9ad8b09c97693405874fc7103ae1fd72c054729fe"
+exit_code = 0
+inline = '''
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+    Finished `test` profile [unoptimized] target(s) in 5.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 618f44e8-5d70-44c4-8fef-648a308457f3 with nextest profile: default
+    Starting 4 tests across 1 binary (3 binaries skipped)
+        PASS [   0.045s] gob-cli::mcp a_mutating_verb_is_not_listed_and_cannot_be_called
+        PASS [   0.047s] gob-cli::mcp handshake_notifications_and_bad_input
+        PASS [   0.050s] gob-cli::mcp a_tool_call_returns_the_cli_envelope
+        PASS [   0.095s] gob-cli::mcp every_read_only_verb_is_a_tool_carrying_its_verb_schema
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.104s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-cli -E 'binary(mcp)'"
+size = 846
+status = "measured"
+tests = ["a_mutating_verb_is_not_listed_and_cannot_be_called", "handshake_notifications_and_bad_input", "a_tool_call_returns_the_cli_envelope", "every_read_only_verb_is_a_tool_carrying_its_verb_schema"]
+at = "2026-10-17T18:45:22Z"
+actor = "lognd"
+rev = 1
