@@ -2,7 +2,8 @@
 id = "01M4FDR99VC2BKWKC6WV58QYKH"
 title = "Ledger commit volume: coalesce ledger writes per verb invocation and document ref_mode so code branches carry no ledger commits"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
