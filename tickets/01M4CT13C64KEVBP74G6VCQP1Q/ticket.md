@@ -8,8 +8,8 @@ points = 1
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:34Z"
-updated = "2026-10-17T15:31:04Z"
-scope = ["crates/frob-pm/**", "crates/frob/**", "changelog.d/**"]
+updated = "2026-10-17T15:42:33Z"
+scope = ["crates/frob-pm/**", "crates/frob/**", "changelog.d/**", "docs/design/pm-enforcement.md"]
 
 [[acceptance]]
 text = "Given a close with --next-goal and nothing carried, when it runs, then the next cycle is created with that goal (or the flags are refused), never ignored"

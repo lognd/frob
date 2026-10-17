@@ -4,9 +4,10 @@ title = "gob-rules/gob-check/gob-macros: stage-bodied and relayed repo rules wit
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-17T15:39:26Z"
-updated = "2026-10-17T15:39:26Z"
+updated = "2026-10-17T15:39:47Z"
 scope = ["crates/gob-rules/**", "crates/gob-check/**", "crates/gob-macros/**"]
 +++
 
