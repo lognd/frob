@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-17T18:31:02Z"
+digest = "2bc8838043a961cd10ef1efe598654c7d80d5127cf1b0bbfad489ed48c74f538"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 1.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0b08b629-3aa1-46a8-ba49-304c1dec7f0d with nextest profile: default
+    Starting 2 tests across 5 binaries (68 tests skipped)
+        PASS [   0.023s] frob-evidence::unity nunit_xml_with_a_pass_and_a_fail_yields_both_per_test_results
+        PASS [   0.694s] frob-evidence::unity a_batch_run_stores_the_measured_per_test_results
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.697s] 2 tests run: 2 passed, 68 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -j2 -p frob-evidence nunit_xml_with_a_pass_and_a_fail_yields_both_per_test_results a_batch_run_stores_the_measured_per_test_results"
+size = 658
+status = "measured"
+at = "2026-10-17T18:31:02Z"
+actor = "lognd"
+rev = 1
