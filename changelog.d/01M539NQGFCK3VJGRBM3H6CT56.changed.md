@@ -1,1 +1,1 @@
-GRL: `c resolves to v` now binds ambient stdlib calls (python `time.time`) to an external unit in the clock vocabulary; NEAT013 example 0 passes and `has attr "frob:..."` sees a directive comment just before the node.
+gob: `c resolves to v` now binds ambient stdlib calls (python `time.time`) to an external unit in the clock vocabulary; NEAT013 example 0 passes and `has attr "frob:..."` sees a directive comment just before the node.
