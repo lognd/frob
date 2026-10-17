@@ -2,12 +2,12 @@
 id = "01M4HT2BSXCN48AG9Z18GC1GYM"
 title = "CI frob check step skips stages already run as dedicated steps"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T02:25:28Z"
-updated = "2026-10-10T02:25:28Z"
+updated = "2026-10-17T05:47:57Z"
 scope = ["crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
