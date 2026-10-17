@@ -2,13 +2,13 @@
 id = "01M4H5Y68GYFTMG9Y73F696589"
 title = "WIP counts only work in progress: a ticket with passing evidence and a clean check --ticket moves to a ready-to-land column with its own limit, not counted in [pm.wip] in_progress"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-09T20:33:40Z"
-updated = "2026-10-16T16:30:34Z"
+updated = "2026-10-17T08:01:43Z"
 scope = ["crates/frob-pm/**", "crates/frob-lease/**", "crates/frob-evidence/**", "changelog.d/**"]
 
 [[acceptance]]
