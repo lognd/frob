@@ -1243,3 +1243,27 @@ fn close_batch_closes_every_ticket_in_one_commit() {
         Err(LedgerError::Terminal { .. })
     ));
 }
+
+/// A scope edit past the glob cap is refused, and a repeated glob is a no-op.
+fn scope_edits_dedupe_and_respect_the_cap(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let t = ledger
+        .new_ticket(NewTicket::new("T", TicketType::Task))
+        .expect("new");
+    let id = t.ticket.front.id;
+    let one = Patch {
+        add_scope: vec!["a/**".into()],
+        ..Patch::default()
+    };
+    ledger.update(id, &one).expect("first add");
+    assert!(ledger.update(id, &one).expect("repeat").already);
+    let many = Patch {
+        add_scope: (0..frob_ledger::ops::MAX_SCOPE_GLOBS)
+            .map(|i| format!("changelog.d/{i}.fixed.md"))
+            .collect(),
+        ..Patch::default()
+    };
+    let err = ledger.update(id, &many).expect_err("over the cap");
+    assert!(matches!(err, LedgerError::Invalid { .. }), "{err:?}");
+}
+both_layouts!(scope_edits_dedupe_and_respect_the_cap);

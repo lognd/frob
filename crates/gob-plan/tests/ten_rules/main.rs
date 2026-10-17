@@ -19,8 +19,7 @@ const RULES: [(&str, &str); 6] = [
 ///
 /// A listed example must still fail: when the engine learns the feature the test fails
 /// and the entry is deleted, so the list can only shrink.
-const KNOWN_ENGINE_GAPS: [(&str, usize); 2] = [
-    ("COV001", 2), // python `unresolved` verdict for a call reached through a parameter callee
+const KNOWN_ENGINE_GAPS: [(&str, usize); 1] = [
     ("DOC002", 1), // example runner lacks multi-file `file "..."` inputs
 ];
 
