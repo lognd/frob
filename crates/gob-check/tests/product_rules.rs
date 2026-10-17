@@ -72,6 +72,7 @@ fn rules_binds_every_listed_rule_and_runs_it() {
         let found = match &rule.body {
             Body::File(run) => run(host, "a bad word"),
             Body::Repo(run) => run(host),
+            Body::Relay(_) => unreachable!("the demo product binds no relay rule"),
         };
         fired.push((rule.def.id, found.len()));
     }
@@ -85,6 +86,7 @@ fn a_clean_host_and_text_fire_nothing() {
         let found = match &rule.body {
             Body::File(run) => run(host, "all fine"),
             Body::Repo(run) => run(host),
+            Body::Relay(_) => unreachable!("the demo product binds no relay rule"),
         };
         assert!(found.is_empty(), "{} fired on a clean input", rule.def.id);
     }
