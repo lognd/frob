@@ -1,0 +1,46 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-17T17:29:08Z"
+digest = "6e315d222180e4c53af84d46eb0f390ea56dcd204f341266bcd6a5269424a1bd"
+exit_code = 0
+inline = """
+
+running 1 test
+test close_next_days_defaults_to_cycle_days ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 1.02s
+
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.60s
+     Running tests/cycle.rs (target/debug/deps/cycle-56e4d46284545b19)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-cli --test cycle close_next_days_defaults_to_cycle_days"
+size = 1807
+status = "measured"
+at = "2026-10-17T17:29:08Z"
+actor = "lognd"
+rev = 1
