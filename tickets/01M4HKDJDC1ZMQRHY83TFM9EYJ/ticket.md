@@ -2,13 +2,13 @@
 id = "01M4HKDJDC1ZMQRHY83TFM9EYJ"
 title = "TOOL001 from a tool-stage timeout is reported retryable:false; a timeout is not a deterministic failure and the land refusal should be retryable"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-10T00:29:15Z"
-updated = "2026-10-17T08:28:51Z"
+updated = "2026-10-17T08:28:52Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/src/tools.rs", "crates/frob-land/src/**", "changelog.d/**"]
 
