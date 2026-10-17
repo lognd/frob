@@ -8,12 +8,16 @@ points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:08Z"
-updated = "2026-10-08T03:52:00Z"
-scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-check/**"]
+updated = "2026-10-17T15:39:47Z"
+scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-rules/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M48R029HFBJ3PKQX5GBBKJ6V"
+
+[[links]]
+kind = "blocked-by"
+target = "01M55896EM27W5SD8BGZ0816YV"
 
 [[acceptance]]
 text = "grimble check output identical"

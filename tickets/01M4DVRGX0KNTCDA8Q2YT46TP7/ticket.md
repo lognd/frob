@@ -2,13 +2,13 @@
 id = "01M4DVRGX0KNTCDA8Q2YT46TP7"
 title = "Tool definitions as data in the std pack: pinned version, version probe, version-ranged command variants, exit classes, parser id, config files, suppression pattern, id map, fix command"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T13:38:05Z"
-updated = "2026-10-08T13:38:05Z"
+updated = "2026-10-17T15:35:15Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/gob-packs/**", "docs/design/rules.md"]
 
 [[acceptance]]
