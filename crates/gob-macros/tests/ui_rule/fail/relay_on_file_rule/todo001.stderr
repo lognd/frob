@@ -1,0 +1,5 @@
+error: `body = relay` applies to `scope = Repo` rules only
+  --> tests/ui_rule/fail/relay_on_file_rule/todo001.rs:12:5
+   |
+12 |     body = relay,
+   |     ^^^^

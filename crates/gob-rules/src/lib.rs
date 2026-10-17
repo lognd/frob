@@ -29,8 +29,8 @@ mod required;
 mod unresolved;
 
 pub use decl::{
-    Applies, Emitted, FileCx, FileRule, Measured, Out, RepoRule, RuleDecl, RuleDef, run_file,
-    run_repo,
+    Applies, Emitted, FileCx, FileRule, Measured, Out, RelayRule, RepoRule, RuleDecl, RuleDef,
+    run_file, run_relay, run_repo,
 };
 pub use exception::{
     BoundException, Exception, ExceptionCtx, ExceptionKind, Resolved, apply_exceptions,
@@ -38,9 +38,10 @@ pub use exception::{
 pub use finding::{Finding, Fingerprint, Fix, TextEdit};
 pub use gob_caps as caps;
 pub use gob_macros::{Rule, rule};
+pub use gob_text::FileInterner;
 pub use id::{ParseRuleIdError, RuleId};
 pub use index::{
-    Body, BoundRule, FileFn, InapplicableFn, RepoFn, RuleIndex, SubjectsFn, assert_unique,
+    Body, BoundRule, FileFn, InapplicableFn, RelayFn, RepoFn, RuleIndex, SubjectsFn, assert_unique,
 };
 pub use inventory;
 pub use meta::{
