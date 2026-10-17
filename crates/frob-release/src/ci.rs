@@ -99,8 +99,7 @@ fn redact_url(url: &str) -> String {
 /// # Errors
 /// [`CiUnknown`] when the host is not `github.com` or the path is not `owner/repo`.
 pub fn parse_remote(url: &str) -> Result<GithubRepo, CiUnknown> {
-    let not_github = || {
-        CiUnknown {
+    let not_github = || CiUnknown {
         reason: format!(
             "origin is `{}`, which is not a github.com remote; CI status is read through the GitHub CLI only",
             redact_url(url)
@@ -108,7 +107,6 @@ pub fn parse_remote(url: &str) -> Result<GithubRepo, CiUnknown> {
         remedy: format!(
             "point origin at GitHub (`git remote set-url origin https://github.com/<owner>/<repo>.git`), {REQUIRE_CI_HINT}"
         ),
-    }
     };
     let trimmed = url.trim();
     let (host, path) = if let Some((_, rest)) = trimmed.split_once("://") {
