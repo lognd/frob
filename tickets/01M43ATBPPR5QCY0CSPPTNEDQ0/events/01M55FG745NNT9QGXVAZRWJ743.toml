@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-17T17:45:35Z"
+digest = "34a682780ef4cdbd0fc1a690b856571df0ea25eb43d3cc85f341cc37ca8ea053"
+exit_code = 0
+inline = """
+
+running 4 tests
+test a_stylesheet_outside_every_declared_root_fires_org005 ... ok
+test a_stylesheet_in_no_declared_bucket_fires_org001 ... ok
+test card_title_under_kebab_fires_org002 ... ok
+test the_component_prefix_is_judged_only_in_the_components_bucket ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.64s
+     Running tests/org_rules.rs (target/debug/deps/org_rules-e0d98e43fa4fcc5b)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p crunk-rules --test org_rules"
+size = 512
+status = "measured"
+at = "2026-10-17T17:45:35Z"
+actor = "lognd"
+rev = 1

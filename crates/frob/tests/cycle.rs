@@ -786,10 +786,11 @@ fn close_next_days_defaults_to_cycle_days() {
     let v = repo.ok(&["cycle", "close", id(&c), "--next-goal", "g2"]);
     assert_eq!(v["data"]["next"]["start"], utc(1).as_str());
     assert_eq!(v["data"]["next"]["end"], utc(7).as_str());
-    // Nothing unfinished: no next cycle is made.
+    // Nothing unfinished: the flags are refused, never silently ignored.
+    // frob:ticket 01M4CT13C64KEVBP74G6VCQP1Q
     let c2 = utc_window(&repo, 8, 9);
-    let v = repo.ok(&["cycle", "close", id(&c2), "--next-goal", "unused"]);
-    assert_eq!(v["data"]["next"], Value::Null);
+    let out = repo.run(&["cycle", "close", id(&c2), "--next-goal", "unused"]);
+    assert!(!out.status.success());
     assert_eq!(repo.ok(&["cycle", "list"])["data"]["count"], 3);
 }
 
@@ -1181,6 +1182,9 @@ fn close_with_next_goal_on_a_reused_range_gets_a_unique_alias() {
         again["data"]["cycle"]["alias"],
         format!("{s}..{e}.2").as_str()
     );
+    // Something unfinished must carry, or the next-cycle flags are refused.
+    let todo = repo.ticket("todo", "1");
+    repo.assign(id(&again["data"]["cycle"]), &todo);
     repo.ok(&[
         "cycle",
         "close",

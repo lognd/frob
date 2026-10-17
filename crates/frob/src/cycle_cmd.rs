@@ -839,6 +839,13 @@ impl Command for CycleClose {
             next = Some(made);
         }
         let plan = planned.map_err(|e| refusal(&e))?;
+        // frob:ticket 01M4CT13C64KEVBP74G6VCQP1Q
+        if plan.carried.is_empty() && self.next_goal.is_some() {
+            tracing::info!(cycle = %c.alias(), "cycle close refused: --next-goal with nothing to carry");
+            return Err(CliError::Usage(
+                "--next-goal/--next-days apply only when unfinished tickets carry; nothing carries, so no next cycle is made (use `frob cycle new`)".to_owned(),
+            ));
+        }
         if let Some(target) = plan.target {
             for t in &plan.carried {
                 store

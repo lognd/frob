@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M55896EM27W5SD8BGZ0816YV"
+committed = 118
+text = "Prerequisite engine ticket for ~7Z6YH8P; the drain cycle already carries 113 points of overdue work toward 0.533.0"
+capacity = 28
+at = "2026-10-17T15:39:52Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,198 @@
+kind = "evidence"
+captured_at = "2026-10-17T17:19:12Z"
+digest = "43a774d8f01786b84be27b8821ce457453867f77a2eb84dc264e8ae7830e7604"
+exit_code = 0
+inline = """
+
+running 31 tests
+test a_cycle_starting_tomorrow_is_planned_and_a_closed_cycle_stays_closed ... ok
+test closing_on_the_first_day_frees_the_next_day_and_shows_both_ends ... ok
+test closing_on_the_last_day_or_a_legacy_close_keeps_the_planned_end ... ok
+test close_early_without_next_goal_refuses_and_the_remedy_names_it ... ok
+test assign_refuses_epics_and_tickets_without_points_with_remedies ... ok
+test close_is_refused_while_a_member_is_in_progress_with_a_live_lease ... ok
+test close_retries_after_a_failure_between_the_create_and_the_carry ... ok
+test assign_and_unassign_are_idempotent_and_say_capacity_is_not_enforced_yet ... ok
+test assigning_to_another_cycle_moves_the_ticket ... ok
+test close_with_next_goal_on_a_reused_range_gets_a_unique_alias ... ok
+test close_next_days_defaults_to_cycle_days ... ok
+test assign_defaults_to_the_open_cycle_holding_today_else_the_next_planned ... ok
+test a_closed_cycle_does_not_block_the_same_dates_and_the_new_alias_is_suffixed ... ok
+test new_takes_its_end_from_cycle_days_and_a_repeat_is_already ... ok
+test close_early_with_next_goal_creates_the_next_cycle_carries_members_and_counts_them ... ok
+test close_without_a_next_cycle_is_refused_unless_carry_to_names_one ... ok
+test overlapping_an_open_cycle_is_refused_with_a_remedy ... ok
+test doctor_is_clean_after_an_early_close_and_a_same_day_recreate ... ok
+test explicit_capacity_is_enforced_and_over_commit_records_the_reason ... ok
+test state_is_derived_from_the_clock_in_show_list_and_assign ... ok
+test close_carries_incomplete_members_and_records_the_ratio_and_retro ... ok
+test velocity_with_no_closed_cycles_says_so_and_exits_zero ... ok
+test show_and_list_report_cycles_and_unknown_references_suggest ... ok
+test plan_without_enforced_capacity_is_refused_unless_points_is_given ... ok
+test velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero ... ok
+test doctor_fix_numbers_existing_duplicate_aliases_in_creation_order ... ok
+test plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently ... ok
+test velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once ... ok
+test velocity_agrees_with_the_close_record_and_ignores_unassigned_done_work ... ok
+test computed_capacity_applies_once_min_history_cycles_have_closed ... ok
+test velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.55s
+
+    Blocking waiting for file lock on build directory
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling smallvec v1.16.2
+   Compiling parking_lot_core v0.9.12
+   Compiling parking_lot v0.12.5
+   Compiling syn v3.0.6
+   Compiling zerocopy v0.8.59
+   Compiling prodash v31.0.1
+   Compiling thiserror-impl v2.0.21
+   Compiling thiserror v2.0.21
+   Compiling gix-path v0.12.6
+   Compiling gix-features v0.49.1
+   Compiling ahash v0.8.12
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling hashbrown v0.14.5
+   Compiling syn v2.0.119
+   Compiling sha1 v0.10.7
+   Compiling sha1-checked v0.10.0
+   Compiling gix-hash v0.26.2
+   Compiling dashmap v6.2.1
+   Compiling gix-fs v0.22.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-command v0.10.1
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-object v0.64.1
+   Compiling serde_derive v1.0.229
+   Compiling tracing-attributes v0.1.31
+   Compiling gix-lock v24.0.0
+   Compiling tracing v0.1.44
+   Compiling gix-glob v0.27.1
+   Compiling gix-commitgraph v0.39.0
+   Compiling serde v1.0.229
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-packetline v0.22.2
+   Compiling gix-config-value v0.19.1
+   Compiling gix-index v0.55.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-ref v0.67.1
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling ident_case v1.0.1
+   Compiling darling_core v0.20.11
+   Compiling schemars_derive v1.2.2
+   Compiling ref-cast v1.0.27
+   Compiling gix-worktree v0.56.0
+   Compiling gix-pathspec v0.20.0
+   Compiling schemars v1.2.2
+   Compiling darling_macro v0.20.11
+   Compiling gix-filter v0.34.0
+   Compiling tracing-serde v0.2.0
+   Compiling gix-url v0.38.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling darling v0.20.11
+   Compiling gix-zlib v0.1.0
+   Compiling gix-diff v0.67.1
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gix-discover v0.55.0
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gix-pack v0.74.2
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-dir v0.29.1
+   Compiling gix-transport v0.59.2
+   Compiling gix-config v0.60.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-shallow v0.13.0
+   Compiling gix-macros v0.1.6
+   Compiling gix-refspec v0.45.1
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gix v0.87.1
+   Compiling hashlink v0.9.1
+   Compiling serde_core v1.0.229
+   Compiling rusqlite v0.32.1
+   Compiling hashbrown v0.17.1
+   Compiling either v1.18.0
+   Compiling serde_json v1.0.151
+   Compiling rayon v1.12.0
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling indexmap v2.14.2
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling tree-sitter v0.27.0
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling cobs v0.3.0
+   Compiling postcard v1.1.3
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling aho-corasick v1.1.5
+   Compiling clap_derive v4.6.7
+   Compiling regex-automata v0.4.18
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling ppv-lite86 v0.2.21
+   Compiling regex v1.13.1
+   Compiling rand_chacha v0.9.0
+   Compiling clap v4.6.7
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling error_set_impl v0.9.2
+   Compiling rand v0.9.5
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling ulid v1.2.1
+   Compiling error_set v0.9.2
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling pest_generator v2.9.2
+   Compiling pest_derive v2.9.2
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling insta v1.48.0
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 29s
+     Running tests/cycle.rs (target/debug/deps/cycle-56e4d46284545b19)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-cli --test cycle"
+size = 8668
+status = "measured"
+at = "2026-10-17T17:19:12Z"
+actor = "lognd"
+rev = 1
