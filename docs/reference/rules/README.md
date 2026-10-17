@@ -8,6 +8,14 @@
 |---|---|---|---|---|---|---|
 | [AFFECT001](AFFECT001.md) | dependents-not-updated | warn | manual | P+ | false | A public symbol changed its signature and its dependents were not re-acked. |
 
+## BP
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [BP001](BP001.md) | media-query-off-breakpoint | error | manual | P+ | false | Media query widths must be declared breakpoints. These blocks run in a project declaring `[breakpoints]` sm=640, md=768 and lg=1024. |
+| [BP002](BP002.md) | responsive-without-base | error | manual | P+ | false | A responsive utility of a layout-critical family needs an unprefixed base. These blocks run in a project declaring `[breakpoints]`. |
+| [BP003](BP003.md) | fixed-width-exceeds-mobile | error | manual | P+ | false | A fixed width must fit the smallest viewport. These blocks run in a project declaring `[breakpoints]` with smallest sm=640. |
+
 ## CFG
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -227,12 +235,28 @@
 | [TODO001](TODO001.md) | bare-work-marker | error | manual | P+ | false | A comment carries an upper-case work marker with no owning ticket. |
 | [TODO002](TODO002.md) | todo-ticket-terminal | warn | manual | P+ | true | A `frob:todo` directive points at a ticket that is already done or dropped. |
 
+## TOKENS
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TOKENS001](TOKENS001.md) | generated-tokens-stale | error | manual | P+ | false | The generated tokens sheet must equal what `crunk tokens` writes for the current `crunk.toml`. `config=stale-tokens` gives the mdtest project an expected sheet that differs from the one on disk. |
+
 ## TOOL
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [TOOL001](TOOL001.md) | tool-stage-failed | error | manual | P+ | false | A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start. |
 | [TOOL002](TOOL002.md) | tool-finding-unmapped | advisory | manual | P+ | false | A bound tool reported a finding that no frob rule id covers. |
+
+## TW
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TW001](TW001.md) | tailwind-arbitrary-off-scale | error | manual | P+ | false | Arbitrary Tailwind values must come from the design. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TW002](TW002.md) | tailwind-theme-unknown-token | error | manual | P+ | false | A Tailwind theme entry may only point at a token the export defines. These blocks run in a project whose `[tailwind]` config is ingested. |
+| [TW003](TW003.md) | tailwind-alpha-no-placeholder | warn | manual | P+ | false | An alpha modifier needs a theme value that can take alpha. These blocks run in a project whose `[tailwind]` config is ingested (Tailwind v3). |
+| [TW004](TW004.md) | tailwind-default-color | error | manual | P+ | false | A colour utility must resolve to the project theme, not Tailwind's built-in palette. Each block is one source file in a default-preset project. |
+| [TW005](TW005.md) | tailwind-default-scale | error | manual | P+ | false | A named utility must come from the declared scale, not Tailwind's default one. Each block is one source file in a default-preset project. |
 
 ## WAIVE
 
