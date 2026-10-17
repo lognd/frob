@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:06Z"
-updated = "2026-10-17T16:01:31Z"
+updated = "2026-10-17T16:01:35Z"
 scope = ["changelog.d/**", "docs/design/universal-model.md"]
 
 [[acceptance]]
