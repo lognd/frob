@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:04Z"
-updated = "2026-10-17T18:31:02Z"
+updated = "2026-10-17T18:31:04Z"
 idempotency_key = "d94-unityrun"
 scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/tests/unity.rs", "crates/frob-tests/src/select.rs", "crates/frob-tests/src/run.rs", "crates/frob-tests/tests/**", "docs/reference/config.md", "docs/design/build-test-ci.md", "crates/frob-evidence/src/error.rs", "crates/frob-tests/src/error.rs", "crates/frob-tests/src/lib.rs", "crates/frob-tests/src/verb.rs", "crates/gob-testsupport/src/bin/fake_dotnet.rs"]
 
@@ -30,7 +30,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a change to a function reached only by a PlayMode test, when frob test runs, then the unity provider runs PlayMode for that assembly; given only EditMode tests are selected, then it runs EditMode"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the project already open in another editor instance, when the provider runs, then it refuses with a remedy"
