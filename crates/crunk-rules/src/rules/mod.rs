@@ -7,6 +7,18 @@ pub mod color001;
 pub mod color002;
 /// Rule `CONTRAST001`.
 pub mod contrast001;
+/// Rule `LAYER001`.
+pub mod layer001;
+/// Rule `ORG001`.
+pub mod org001;
+/// Rule `ORG002`.
+pub mod org002;
+/// Rule `ORG003`.
+pub mod org003;
+/// Rule `ORG004`.
+pub mod org004;
+/// Rule `ORG005`.
+pub mod org005;
 /// Rule `WAIVE001`.
 pub mod waive001;
 
@@ -16,6 +28,12 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <color001::Color001 as gob_rules::RuleDecl>::DEF,
     <color002::Color002 as gob_rules::RuleDecl>::DEF,
     <contrast001::Contrast001 as gob_rules::RuleDecl>::DEF,
+    <layer001::Layer001 as gob_rules::RuleDecl>::DEF,
+    <org001::Org001 as gob_rules::RuleDecl>::DEF,
+    <org002::Org002 as gob_rules::RuleDecl>::DEF,
+    <org003::Org003 as gob_rules::RuleDecl>::DEF,
+    <org004::Org004 as gob_rules::RuleDecl>::DEF,
+    <org005::Org005 as gob_rules::RuleDecl>::DEF,
     <waive001::Waive001 as gob_rules::RuleDecl>::DEF,
 ];
 
@@ -36,12 +54,24 @@ where
     color001::Color001: gob_rules::Measured<P>,
     color002::Color002: gob_rules::Measured<P>,
     contrast001::Contrast001: gob_rules::RepoRule<P>,
+    layer001::Layer001: gob_rules::RepoRule<P>,
+    org001::Org001: gob_rules::RepoRule<P>,
+    org002::Org002: gob_rules::RepoRule<P>,
+    org003::Org003: gob_rules::RepoRule<P>,
+    org004::Org004: gob_rules::RepoRule<P>,
+    org005::Org005: gob_rules::RepoRule<P>,
     waive001::Waive001: gob_rules::FileRule<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::measured(color001::Color001));
     rules.push(gob_rules::BoundRule::measured(color002::Color002));
     rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
+    rules.push(gob_rules::BoundRule::repo(layer001::Layer001));
+    rules.push(gob_rules::BoundRule::repo(org001::Org001));
+    rules.push(gob_rules::BoundRule::repo(org002::Org002));
+    rules.push(gob_rules::BoundRule::repo(org003::Org003));
+    rules.push(gob_rules::BoundRule::repo(org004::Org004));
+    rules.push(gob_rules::BoundRule::repo(org005::Org005));
     rules.push(gob_rules::BoundRule::file(waive001::Waive001));
     rules
 }
