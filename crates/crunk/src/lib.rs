@@ -9,6 +9,12 @@
 // frob:ticket 01M43ARVS24254G85TMFYH8FGQ
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
 // frob:ticket 01M43ARZH9F9MCPJCKXM635E0X
+// frob:ticket 01M55VA1V2RX832AYQ5AG4YATH
+
+// Linked for its side effect only: gob-git registers the `gob_walk::SourceProvider` through
+// `inventory` at link time, and without it every digest silently falls back to raw reads
+// (no git line-ending normalization). `tests/git_provider.rs` fails if this goes away.
+use gob_git as _;
 
 pub mod doctor;
 pub mod tokens;

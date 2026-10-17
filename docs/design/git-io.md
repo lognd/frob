@@ -100,7 +100,9 @@ Every digest compared with recorded state goes through it (`gob-walk`'s
 `ContentSource` for walk digests and symbol extraction; `gob-walk` owns the
 `NormalizedSource` trait and `gob-git` registers its implementation at link
 time, so the pure model crates never pull in gix; a test over `cargo
-metadata` enforces it), so a CRLF
+metadata` enforces it; every product binary must link `gob-git` itself, as
+`crunk` does with `use gob_git as _` guarded by `crates/crunk/tests/git_provider.rs`,
+or digests silently fall back to raw reads), so a CRLF
 checkout under `core.autocrlf` hashes like its LF twin. Parsed text is the
 normalized text, so spans are offsets into it; line numbers are identical
 in both forms.

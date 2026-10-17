@@ -27,6 +27,7 @@ crunk-check = { version = "0.532.0", path = "../crunk-check" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
+gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-product = { version = "0.532.0", path = "../gob-product" }
 schemars = "1"
@@ -36,6 +37,8 @@ tracing = "0.1"
 
 [dev-dependencies]
 assert_cmd = "2"
+inventory = "0.3"
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
 jsonschema = { version = "0.58.5", default-features = false }
 tempfile = "3"
 toml = "1"
