@@ -2,13 +2,13 @@
 id = "01M4CTE3SNV3X0PD1DA6995F8R"
 title = "publish = false for the six crates with no consumer (gob-plan, gob-frameworks, gob-trust, gob-packs, crunk-tailwind, frob-gh) until one exists (audit M11)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:41Z"
-updated = "2026-10-08T03:55:41Z"
+updated = "2026-10-17T15:06:21Z"
 scope = ["changelog.d/**", "crates/*/Cargo.toml", "crates/gob-dev/**"]
 
 [[acceptance]]
