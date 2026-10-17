@@ -2,7 +2,8 @@
 id = "01M48R02V2J0R5ZXWP9MXXGNZ3"
 title = "Migrate frob-obligations, frob-ack and frob-tests rules to the two-file shape"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
