@@ -2,7 +2,7 @@
 id = "01M43ARZ3VCNDX20C9BZZCCYHY"
 title = "crunk-ingest: Tailwind config ingest and theme mapping"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
