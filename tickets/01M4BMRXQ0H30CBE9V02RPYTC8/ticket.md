@@ -2,12 +2,12 @@
 id = "01M4BMRXQ0H30CBE9V02RPYTC8"
 title = "TEST001: suggest Type.method when a symref writes Type::method"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-07T16:57:29Z"
-updated = "2026-10-08T03:50:59Z"
+updated = "2026-10-17T22:37:19Z"
 idempotency_key = "test001-dot-member-hint"
 labels = ["milestone:2"]
 scope = ["crates/frob-tests/**", "crates/gob-symbols/**"]

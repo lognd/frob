@@ -2366,6 +2366,7 @@ dependencies = [
  "toml",
  "tracing",
  "trybuild",
+ "walkdir",
 ]
 
 [[package]]
@@ -2494,7 +2495,6 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tracing",
- "walkdir",
  "which",
 ]
 

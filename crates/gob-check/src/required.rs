@@ -97,7 +97,7 @@ mod tests {
 
     fn unresolved(msg: &str) -> Finding {
         Finding::new(
-            "TOOL001".parse().unwrap(),
+            crate::ids::rule_id::<crate::rules::tool001::Tool001>(),
             Severity::Unresolved,
             None,
             msg,

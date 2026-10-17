@@ -55,6 +55,8 @@ mod defs;
 mod error;
 mod filecheck;
 mod fix;
+mod host;
+mod ids;
 mod options;
 mod pipeline;
 mod product;
@@ -63,6 +65,10 @@ mod repo;
 mod report;
 mod required;
 mod rule_set;
+#[allow(
+    dead_code,
+    reason = "rules::bind is consumed by product_rules! once a product lists this crate"
+)]
 mod rules;
 pub mod sibling;
 pub mod sibling_doc;
@@ -80,6 +86,7 @@ pub use filecheck::{CheckCtx, FileCheck, SharedCtx};
 pub use gob_cache::ArtifactKey;
 #[doc(hidden)]
 pub use gob_rules as __rules;
+pub use host::CheckHost;
 pub use options::RunOptions;
 pub use pipeline::run;
 pub use product::{
@@ -88,9 +95,17 @@ pub use product::{
 };
 pub use report::{AppliedFix, CheckReport, Counts, FixOutcome, StageTime, Stats, Timing};
 pub use rule_set::RuleSet;
-pub use rules::{
-    Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Read001, Tool001, Tool002,
-};
+pub use rules::ci001::Ci001;
+pub use rules::ci003::Ci003;
+pub use rules::ci006::Ci006;
+pub use rules::ci007::Ci007;
+pub use rules::ci010::Ci010;
+pub use rules::ci014::Ci014;
+pub use rules::perf001::Perf001;
+pub use rules::proc001::{Proc001, Proc001Hit, scan as scan_proc001};
+pub use rules::read001::Read001;
+pub use rules::tool001::Tool001;
+pub use rules::tool002::Tool002;
 pub use status::{
     FidelityReport, LanguageFidelity, OtherCopy, SiblingRow, SkippedReport, SubjectStatus,
     hole_caveat, is_binary, opaque_finding, subject_status, subject_status_for, unreadable_finding,

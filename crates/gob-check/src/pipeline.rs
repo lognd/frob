@@ -4,7 +4,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use gob_cache::Cache;
-use gob_rules::{Finding, Fingerprint, Registry, Rule, RuleDef, RuleMeta, Severity};
+use gob_rules::{Finding, Fingerprint, Registry, RuleDecl, RuleDef, RuleMeta, Severity};
 use gob_text::FileInterner;
 
 use crate::applicability::{FileFacts, RuleRef, resolve};
@@ -19,7 +19,8 @@ use crate::product::{CollectCx, Collected, Product, ScopeView, Snapshot};
 use crate::repo::run_repo_rules;
 use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
 use crate::required::{mark_annotations, zero_subjects};
-use crate::rules::{Perf001, Read001};
+use crate::rules::perf001::Perf001;
+use crate::rules::read001::Read001;
 use crate::status::{
     FidelityReport, SubjectStatus, is_binary, opaque_finding_for, unreadable_finding,
 };
@@ -153,7 +154,7 @@ fn refingerprint(
 fn perf_finding(perf: &PerfTable, timing: &Timing, only: &[String]) -> Option<Finding> {
     if !(perf.enforce
         && timing.budget_ms() > perf.budget_ms
-        && matches_only(only, "PERF", "PERF001"))
+        && matches_only(only, "PERF", Perf001::DEF.id))
     {
         return None;
     }
@@ -166,10 +167,7 @@ fn perf_finding(perf: &PerfTable, timing: &Timing, only: &[String]) -> Option<Fi
             format!("; slowest stage `{}` took {} ms", s.name, s.ms)
         });
     Some(Finding::new(
-        Perf001
-            .meta()
-            .rule_id()
-            .unwrap_or_else(|e| unreachable!("derive validates the id: {e}")),
+        crate::ids::rule_id::<Perf001>(),
         Severity::Warn,
         None,
         format!(
@@ -258,13 +256,13 @@ fn unreadable_findings<P: Product>(
     skipped.extend(product.unreadable(&snap.shared));
     skipped.sort_by(|a, b| a.path.cmp(&b.path));
     skipped.dedup_by(|a, b| a.path == b.path);
-    let emit = matches_only(only, "READ", "READ001");
+    let emit = matches_only(only, "READ", Read001::DEF.id);
     skipped
         .iter()
         .map(|s| {
             tracing::warn!(path = %s.path, kind = s.kind.as_str(), detail = %s.detail, "READ001: file not read");
             fidelity.add_skipped(s.kind);
-            unreadable_finding(&Read001::META, snap.core.index.ids.get(&s.path).copied(), s)
+            unreadable_finding(crate::ids::meta_of::<Read001>(), snap.core.index.ids.get(&s.path).copied(), s)
         })
         .filter(|_| emit)
         .collect()

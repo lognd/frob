@@ -9,12 +9,12 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 
 use gob_exec::{ExecError, Limits, Outcome, Output, Program, Runner, Spec};
-use gob_rules::{Finding, RequiredReason, Rule, RuleId, Severity};
+use gob_rules::{Finding, RequiredReason, RuleId, Severity};
 use gob_text::{FileInterner, LineCol, LineIndex, Span, TextRange, TextSize};
 
 use crate::config::{ToolParser, ToolStage};
 use crate::report::Timing;
-use crate::rules::Tool001;
+use crate::rules::tool001::Tool001;
 use crate::tool_bind::{Bound, bind, cache_key, command_args, project_tool};
 use crate::tool_parse::{
     RawFinding, RawRange, VersionVerdict, check_version, classify, default_version_args,
@@ -346,10 +346,7 @@ pub(crate) fn run_tools(
     if stages.is_empty() {
         return Vec::new();
     }
-    let id: RuleId = Tool001
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
+    let id: RuleId = crate::ids::rule_id::<Tool001>();
     let bounds: Vec<Result<Bound, String>> = stages.iter().map(bind).collect();
     let runner = Runner::new(Limits::default()).allow_tools(
         bounds

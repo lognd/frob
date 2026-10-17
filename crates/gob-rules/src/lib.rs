@@ -43,7 +43,7 @@ pub use index::{
     Body, BoundRule, FileFn, InapplicableFn, RelayFn, RepoFn, RuleIndex, SubjectsFn, assert_unique,
 };
 pub use inventory;
-pub use meta::{FixKind, Polarity, RuleEntry, RuleMeta, Scope, Severity, Tier};
+pub use meta::{DeclaredEntry, FixKind, Polarity, RuleEntry, RuleMeta, Scope, Severity, Tier};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError};
 pub use required::RequiredReason;
