@@ -2,13 +2,13 @@
 id = "01M48R02V2J0R5ZXWP9MXXGNZ3"
 title = "Migrate frob-obligations, frob-ack and frob-tests rules to the two-file shape"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:06Z"
-updated = "2026-10-08T03:51:29Z"
+updated = "2026-10-17T20:34:02Z"
 scope = ["crates/frob-obligations/**", "crates/frob-ack/**", "crates/frob-tests/**", "crates/frob-check/**"]
 
 [[links]]
