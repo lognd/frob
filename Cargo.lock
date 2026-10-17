@@ -530,9 +530,12 @@ version = "0.532.0"
 dependencies = [
  "assert_cmd",
  "crunk-check",
+ "crunk-spec",
+ "crunk-tokens",
  "gob-check",
  "gob-cli",
  "gob-config",
+ "gob-fs",
  "gob-product",
  "jsonschema",
  "schemars",
@@ -566,6 +569,7 @@ name = "crunk-ingest"
 version = "0.532.0"
 dependencies = [
  "crunk-spec",
+ "crunk-tailwind",
  "crunk-values",
  "gob-cache",
  "gob-directives",
@@ -642,6 +646,7 @@ dependencies = [
  "indexmap",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
  "tracing",
 ]

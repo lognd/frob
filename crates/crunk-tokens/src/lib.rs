@@ -18,6 +18,7 @@
 //! assert!(tokens.get("--color-ink").is_some());
 //! ```
 
+pub mod export;
 pub mod model;
 pub mod naming;
 

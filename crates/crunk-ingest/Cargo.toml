@@ -14,6 +14,7 @@ categories = ["web-programming", "parser-implementations"]
 workspace = true
 
 [dependencies]
+crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
 crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-cache = { version = "0.532.0", path = "../gob-cache" }

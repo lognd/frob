@@ -1,0 +1,11 @@
+{
+  "borderRadius.md": "8px",
+  "colors.accent": "var(--color-missing)",
+  "colors.primary": "#282828",
+  "colors.secondary": "#282828",
+  "fontFamily.sans": "Inter, sans-serif",
+  "fontSize.lg": "1.25rem",
+  "screens.md": "48rem",
+  "spacing.lg": "calc(4px * 4)",
+  "spacing.sm": "4px"
+}

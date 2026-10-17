@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-17T19:17:40Z"
+digest = "6aab834acb13110cd958d6df632923c32c8ffaa7391e9f7e4ce8163bd78611c1"
+exit_code = 0
+inline = """
+
+running 1 test
+test a_spacing_key_that_collides_with_a_default_is_reported_and_can_be_waived ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.02s
+     Running tests/tailwind.rs (target/debug/deps/tailwind-d18f6282e37ae09a)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p crunk-ingest --test tailwind a_spacing_key_that_collides_with_a_default_is_reported_and_can_be_waived"
+size = 347
+status = "measured"
+at = "2026-10-17T19:17:40Z"
+actor = "lognd"
+rev = 1
