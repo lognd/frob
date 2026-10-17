@@ -2,13 +2,13 @@
 id = "01M4FDR99VC2BKWKC6WV58QYKH"
 title = "Ledger commit volume: coalesce ledger writes per verb invocation and document ref_mode so code branches carry no ledger commits"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-09T04:11:46Z"
-updated = "2026-10-16T16:30:34Z"
+updated = "2026-10-17T06:14:45Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-ledger/**", "docs/guides/**", "changelog.d/**"]
 
