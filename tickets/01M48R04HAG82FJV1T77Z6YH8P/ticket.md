@@ -2,7 +2,8 @@
 id = "01M48R04HAG82FJV1T77Z6YH8P"
 title = "Migrate grimble MDL and SYS rules to the two-file shape"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
