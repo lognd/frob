@@ -32,6 +32,30 @@ pub enum EvidenceError {
         /// The runner that needed it: `vitest`, `jest` or `dotnet`.
         runner: String,
     },
+    // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+    /// No Unity editor was found for the project's version; never a skip.
+    #[error(
+        "E-EVIDENCE-UNITY-EDITOR: no Unity editor found for version {version}; looked at {}; nothing was recorded", .tried.join(", ")
+    )]
+    UnityEditorMissing {
+        /// The version in `ProjectVersion.txt`, or `unknown` when the file is absent or unreadable.
+        version: String,
+        /// The editor paths that were tried.
+        tried: Vec<String>,
+    },
+    // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+    /// The Unity editor reported no valid license (missing, expired or unavailable); never a skip.
+    #[error(
+        "E-EVIDENCE-UNITY-LICENSE: the Unity editor {editor} (version {version}) did not start in batch mode, so it has no valid license; nothing was recorded: {detail}"
+    )]
+    UnityLicense {
+        /// The editor that was probed.
+        editor: String,
+        /// The project's editor version, or `unknown`.
+        version: String,
+        /// The last lines the editor printed, or how it ended.
+        detail: String,
+    },
     /// An attestation was attempted without a person at a terminal.
     #[error("E-ATTEST-NOT-HUMAN: an attestation is a person's statement; refused because {}", .reasons.join("; "))]
     NotHuman {
@@ -181,6 +205,20 @@ impl EvidenceError {
                     } else {
                         format!("install {runner} in the package (npm install --save-dev {runner}) or on PATH so `{runner} --version` runs, then rerun")
                     }),
+            ),
+            // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+            Self::UnityEditorMissing { version, .. } => Some(
+                Refusal::new("E-EVIDENCE-UNITY-EDITOR", GuardNeedsAction, self.to_string())
+                    .with_remedy(format!(
+                        "install Unity {version} through Unity Hub, or set [evidence.unity] editor in frob.toml to the editor executable, then rerun"
+                    )),
+            ),
+            // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
+            Self::UnityLicense { version, .. } => Some(
+                Refusal::new("E-EVIDENCE-UNITY-LICENSE", GuardNeedsAction, self.to_string())
+                    .with_remedy(format!(
+                        "activate or renew the Unity license for {version} (sign in through Unity Hub, or provide a serial or license server), confirm the editor starts with -batchmode, then rerun; [evidence.unity] editor selects a different editor"
+                    )),
             ),
             Self::BadReference(_) | Self::BadProvider(_) | Self::BadAccepts(_) => {
                 Some(Refusal::new(code_of(&self), UsageError, self.to_string()))

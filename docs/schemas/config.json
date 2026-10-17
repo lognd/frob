@@ -226,6 +226,18 @@
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
+        },
+        "unity": {
+          "additionalProperties": false,
+          "description": "The `unity` evidence provider (`[evidence.unity]`).",
+          "properties": {
+            "editor": {
+              "default": "",
+              "description": "Path of the Unity editor executable the provider runs; empty finds the version in `ProjectSettings/ProjectVersion.txt` under the standard Unity Hub install locations.",
+              "type": "string"
+            }
+          },
+          "type": "object"
         }
       },
       "type": "object"
