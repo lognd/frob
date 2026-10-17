@@ -337,7 +337,16 @@ is a `TOOL001` Unresolved with required reason `tool-failed`, naming the
 stage, the command, the status and an escaped, capped stderr excerpt, so
 the default `fail_on_unresolved = "required"` fails the gate. Only
 `optional = true` downgrades a missing binary to a non-required
-Unresolved. Fix tiers:
+Unresolved. A stage may instead name `tool = "<name>"`: the definition
+comes from the std pack (`crates/gob-packs/std/tools/*.toml`: zizmor,
+actionlint, ruff) and supplies command, pinned version, `version_args`,
+parser id, exit classes (`exit_codes` on the stage overrides), config
+files, suppression pattern, id map and fix command. Command variants are
+keyed by inclusive `min_version`/`max_version` ranges against the probed
+version (first match wins; a stage `args` overrides them), so a renamed
+flag selects the right command. The program is looked up in the project's
+`.venv/bin` and `node_modules/.bin` before `PATH`. The result-cache key is
+the blake3 of the tool version plus its config file contents. Fix tiers:
 A deterministic (rule provides `fix()`), B apply-verify-commit (runs
 bound tests), C fix-it only. `--fix` without `--ticket` requires
 `--fix-all`, as in v1.

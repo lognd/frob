@@ -33,7 +33,7 @@ fn findings_of(spec_text: &str, rel: &str, source: &str) -> Vec<gob_rules::Findi
 // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
 #[test]
 fn the_message_names_the_nearest_palette_token_and_the_distance() {
-    let f = findings_of(spec(), "styles/a.css", ".a { color: #1b1b1b; }\n");
+    let f = findings_of(spec(), "styles/base/a.css", ".a { color: #1b1b1b; }\n");
     assert_eq!(f.len(), 1, "{f:?}");
     assert!(
         f[0].message.contains("nearest is --color-ink (distance"),
@@ -49,23 +49,23 @@ fn off_in_lint_silences_the_rule() {
         "{}\n",
         spec().replace("[lint]", "[lint]\nCOLOR001 = \"off\"")
     );
-    assert!(findings_of(&off, "styles/a.css", ".a { color: #ff0000; }\n").is_empty());
+    assert!(findings_of(&off, "styles/base/a.css", ".a { color: #ff0000; }\n").is_empty());
 }
 
 // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
 #[test]
 fn without_a_valid_spec_the_rule_does_not_apply() {
-    assert!(findings_of("", "styles/a.css", ".a { color: #ff0000; }\n").is_empty());
+    assert!(findings_of("", "styles/base/a.css", ".a { color: #ff0000; }\n").is_empty());
 }
 
 // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
 #[test]
 fn the_finding_is_located_at_the_literal_and_a_waiver_silences_it() {
-    let f = findings_of(spec(), "styles/a.css", ".a {\n  color: #1b1b1b;\n}\n");
+    let f = findings_of(spec(), "styles/base/a.css", ".a {\n  color: #1b1b1b;\n}\n");
     assert_eq!(f.len(), 1, "{f:?}");
     assert!(f[0].span.is_some(), "COLOR001 is located: {:?}", f[0]);
     let waived = ".a {\n  color: #1b1b1b; /* crunk:waive COLOR001 reason=\"legacy\" */\n}\n";
-    assert!(findings_of(spec(), "styles/a.css", waived).is_empty());
+    assert!(findings_of(spec(), "styles/base/a.css", waived).is_empty());
 }
 
 // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
@@ -85,7 +85,7 @@ fn an_undefined_token_with_the_generated_sheet_present_fires_and_without_it_is_u
     write(dir.path(), "crunk.toml", spec());
     write(
         dir.path(),
-        "styles/a.css",
+        "styles/base/a.css",
         ".a { color: var(--color-nope); }\n",
     );
     let unresolved = run(dir.path(), &CheckOptions::default())
@@ -115,7 +115,7 @@ fn a_failing_role_pair_is_reported_at_the_spec() {
     let bad = spec()
         .replace("ink = \"#1a1a1a\"", "ink = \"#999999\"")
         .replace("paper = \"#fafaf7\"", "paper = \"#ffffff\"");
-    let f = findings_of(&bad, "styles/a.css", ".a { padding: 0; }\n");
+    let f = findings_of(&bad, "styles/base/a.css", ".a { padding: 0; }\n");
     let hit = f
         .iter()
         .find(|f| f.rule.as_str() == "CONTRAST001")

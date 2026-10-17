@@ -15,6 +15,7 @@ use gob_text::{FileInterner, LineCol, LineIndex, Span, TextRange, TextSize};
 use crate::config::{ToolParser, ToolStage};
 use crate::report::Timing;
 use crate::rules::Tool001;
+use crate::tool_bind::{Bound, bind, cache_key, command_args, project_tool};
 use crate::tool_parse::{
     RawFinding, RawRange, VersionVerdict, check_version, classify, default_version_args,
     find_version, parse,
@@ -97,9 +98,12 @@ enum StageResult {
 
 fn spec(root: &Path, stage: &ToolStage, args: Vec<String>) -> Spec {
     Spec {
-        program: Program::Tool {
-            name: stage.command.clone(),
-        },
+        program: project_tool(root, &stage.command).map_or_else(
+            || Program::Tool {
+                name: stage.command.clone(),
+            },
+            |path| Program::Hook { path },
+        ),
         args,
         cwd: Some(root.to_path_buf()),
         env: Vec::new(),
@@ -228,12 +232,15 @@ fn tool_version(
     }
 }
 
-/// Exit codes a parsed tool uses to report findings rather than failure.
-fn normal_exits(parser: ToolParser) -> &'static [i32] {
-    match parser {
-        ToolParser::None => &[0],
-        ToolParser::ZizmorJsonV1 => &[0, 10, 11, 12, 13, 14],
-        ToolParser::ActionlintJson => &[0, 1],
+/// Exit codes a parsed stage treats as findings rather than failure: its declared classes, else the parser's.
+fn normal_exits(stage: &ToolStage) -> Vec<i32> {
+    if let Some(codes) = &stage.exit_codes {
+        return codes.clone();
+    }
+    match stage.parser {
+        ToolParser::None => vec![0],
+        ToolParser::ZizmorJsonV1 => vec![0, 10, 11, 12, 13, 14],
+        ToolParser::ActionlintJson | ToolParser::RuffJson => vec![0, 1],
     }
 }
 
@@ -250,25 +257,28 @@ fn abnormal(o: &Output, stage: &ToolStage) -> Option<String> {
     }
 }
 
-fn execute(
-    runner: &Runner,
-    root: &Path,
-    stage: &ToolStage,
-    files: &mut FileInterner,
-) -> StageResult {
+fn execute(runner: &Runner, root: &Path, bound: &Bound, files: &mut FileInterner) -> StageResult {
+    let stage = &bound.stage;
     let parsed = stage.parser != ToolParser::None;
+    let mut version = None;
     if parsed {
         match tool_version(runner, root, stage) {
             Err(result) => return result,
-            Ok(version) => {
-                tracing::info!(stage = %stage.name, version = version.as_deref().unwrap_or("unknown"), "tool version");
-                if let VersionVerdict::Lag(why) = check_version(stage, version.as_deref()) {
+            Ok(found) => {
+                tracing::info!(stage = %stage.name, version = found.as_deref().unwrap_or("unknown"), "tool version");
+                if let VersionVerdict::Lag(why) = check_version(stage, found.as_deref()) {
                     return StageResult::Lag(why);
                 }
+                version = found;
             }
         }
     }
-    let output = match runner.run(&spec(root, stage, stage.args.clone())) {
+    let args = match command_args(bound, version.as_deref()) {
+        Ok(args) => args,
+        Err(why) => return StageResult::Failed(failure(stage, &[], &why, "not run", "")),
+    };
+    cache_key(root, bound.def.as_ref(), version.as_deref());
+    let output = match runner.run(&spec(root, stage, args.clone())) {
         Ok(o) => o,
         Err(err @ ExecError::NotFound { .. }) => {
             return StageResult::Missing(format!("could not run: {err}"));
@@ -276,7 +286,7 @@ fn execute(
         Err(err) if parsed => {
             return StageResult::Failed(failure(
                 stage,
-                &stage.args,
+                &args,
                 &format!("could not run ({err})"),
                 "not run",
                 "",
@@ -289,12 +299,11 @@ fn execute(
             .map_or(StageResult::Done(Vec::new()), StageResult::Problem);
     }
     // A parsed stage exits nonzero when it has findings; only an undeclared status or unreadable output is a failure.
-    let declared =
-        matches!(output.status, Outcome::Exited(c) if normal_exits(stage.parser).contains(&c));
+    let declared = matches!(output.status, Outcome::Exited(c) if normal_exits(stage).contains(&c));
     if !declared {
         return StageResult::Failed(failure(
             stage,
-            &stage.args,
+            &args,
             "exited abnormally",
             &status_text(&output),
             &output.stderr,
@@ -303,7 +312,7 @@ fn execute(
     if output.status != Outcome::Exited(0) && output.stdout.trim().is_empty() {
         return StageResult::Failed(failure(
             stage,
-            &stage.args,
+            &args,
             "printed no output despite a findings exit",
             &status_text(&output),
             &output.stderr,
@@ -316,7 +325,7 @@ fn execute(
         }
         Err(err) => StageResult::Failed(failure(
             stage,
-            &stage.args,
+            &args,
             &format!("printed output its parser cannot read ({err})"),
             &status_text(&output),
             &output.stderr,
@@ -341,12 +350,37 @@ pub(crate) fn run_tools(
         .meta()
         .rule_id()
         .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
-    let runner =
-        Runner::new(Limits::default()).allow_tools(stages.iter().map(|s| s.command.clone()));
+    let bounds: Vec<Result<Bound, String>> = stages.iter().map(bind).collect();
+    let runner = Runner::new(Limits::default()).allow_tools(
+        bounds
+            .iter()
+            .filter_map(|b| b.as_ref().ok())
+            .map(|b| b.stage.command.clone()),
+    );
     let mut out = Vec::new();
-    for stage in stages {
+    for (declared, bound) in stages.iter().zip(&bounds) {
         let started = Instant::now();
-        let result = execute(&runner, root, stage, files);
+        let bound = match bound {
+            Ok(b) => b,
+            Err(why) => {
+                tracing::warn!(stage = %declared.name, %why, "tool definition unusable");
+                out.push(
+                    Finding::new(
+                        id.clone(),
+                        Severity::Unresolved,
+                        None,
+                        format!("tool stage `{}` {why}", declared.name),
+                        &declared.name,
+                    )
+                    .with_required(RequiredReason::ToolFailed {
+                        stage: declared.name.clone(),
+                    }),
+                );
+                continue;
+            }
+        };
+        let stage = &bound.stage;
+        let result = execute(&runner, root, bound, files);
         timing.push(format!("tool:{}", stage.name), started.elapsed(), false);
         let unresolved = |message: String| {
             Finding::new(id.clone(), Severity::Unresolved, None, message, &stage.name)
@@ -432,6 +466,8 @@ mod tests {
             max_version: Some("1.7.99".to_owned()),
             version_args: Some(vec!["-c".to_owned(), probe.to_owned()]),
             optional: false,
+            tool: None,
+            exit_codes: None,
         }
     }
 
@@ -559,5 +595,49 @@ mod tests {
         assert!(msg.len() < 900, "capped: {}", msg.len());
         let esc = escape("\u{1b}[31mx\n");
         assert_eq!(esc, "\\u{1b}[31mx\\n");
+    }
+
+    // frob:tests crates/gob-check/src/tool_bind.rs::command_args
+    // frob:tests crates/gob-check/src/tool_bind.rs::project_tool
+    #[cfg(unix)]
+    #[test]
+    fn a_ruff_definition_runs_from_data_with_the_matching_variant() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().expect("tmp");
+        let bin = dir.path().join(".venv/bin");
+        std::fs::create_dir_all(&bin).expect("mkdir");
+        let script = bin.join("ruff");
+        let body = r#"#!/bin/sh
+if [ "$1" = "--version" ]; then echo "ruff 0.0.291"; exit 0; fi
+if [ "$2" = "--format" ]; then
+  echo '[{"code":"F401","message":"unused","filename":"a.py","location":{"row":1,"column":8},"end_location":{"row":1,"column":10}}]'
+  exit 1
+fi
+echo "wrong variant: $*" >&2; exit 2
+"#;
+        std::fs::write(&script, body).expect("write");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+        std::fs::write(dir.path().join("a.py"), "import os\n").expect("py");
+        let stage = ToolStage {
+            tool: Some("ruff".to_owned()),
+            ..sh_stage("ruff", ToolParser::None, "", "")
+        };
+        let stage = ToolStage {
+            command: String::new(),
+            args: Vec::new(),
+            min_version: None,
+            max_version: None,
+            version_args: None,
+            ..stage
+        };
+        let mut timing = Timing::default();
+        let mut files = FileInterner::default();
+        let found = run_tools(dir.path(), &[stage], &mut timing, &mut files);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].message.starts_with("ruff/F401"),
+            "{}",
+            found[0].message
+        );
     }
 }

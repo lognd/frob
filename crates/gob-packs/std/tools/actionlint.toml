@@ -1,0 +1,17 @@
+# actionlint: GitHub Actions workflow syntax and expression checks.
+name = "actionlint"
+command = "uvx"
+version = "1.7.12"
+min_version = "1.7.0"
+max_version = "1.7.99"
+version_args = ["--from", "actionlint-py==1.7.12.25", "actionlint", "-version"]
+parser = "actionlint-json"
+config_files = [".github/actionlint.yaml", ".github/actionlint.yml"]
+suppression = "#\\s*actionlint"
+
+[exit]
+success = [0]
+findings = [1]
+
+[[variants]]
+args = ["--from", "actionlint-py==1.7.12.25", "actionlint", "-format", "{{json .}}"]

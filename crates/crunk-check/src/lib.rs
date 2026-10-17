@@ -3,7 +3,7 @@
 //!
 //! The run walks the repository, ingests the styles under `crunk.toml` (`crunk-ingest`: CSS and
 //! JSX sheets), applies the neutral pipeline groups and the `#[rule]` declarations of the crates
-//! listed in [`product_rules`] (`crunk-rules`: WAIVE001, COLOR001-002, CONTRAST001).
+//! listed in [`product_rules`] (`crunk-rules`: WAIVE001, COLOR001-002, CONTRAST001, LAYER001, ORG001-005).
 //! `crunk:waive` comments with a reason suppress their rule at the declaration they cover, and
 //! `[lint]` severities apply to every finding of a catalog rule. New rules are two files in a rule
 //! crate; no legacy rule group is left in this crate.

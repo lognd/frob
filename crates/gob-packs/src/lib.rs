@@ -29,8 +29,10 @@
 mod error;
 mod limits;
 mod manifest;
+mod tooldef;
 mod validate;
 
 pub use error::{PackCode, PackError};
 pub use limits::{MAX_MANIFEST_BYTES, Owner};
 pub use manifest::{Manifest, PackTable, Provides, check_unique, load};
+pub use tooldef::{ExitClasses, FixCommand, ToolDef, Variant, std_tool, std_tools};

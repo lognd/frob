@@ -9,6 +9,12 @@ Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this pa
 | COLOR001 | color-off-palette | COLOR | error | error | no | T0, T2 | Flags a colour literal (hex, `rgb()`, `hsl()` or a named colour) that is not a palette colour, and names the nearest palette token with its distance. |
 | COLOR002 | undefined-token-reference | COLOR | error | error | no | T0, T2 | Flags a `var()` reference whose name starts with a configured token prefix and is defined neither by the spec's token export nor by a custom property of any indexed sheet. |
 | CONTRAST001 | role-contrast-below-floor | CONTRAST | error | error | no | T0, T2 | Measures the WCAG 2.2 contrast ratio of each declared role pair (foreground over background) in every declared mode and flags a pair below its own floor: 4.5 by default, lower for a role that declares the large-text or icon exception. |
+| LAYER001 | z-index-not-a-layer | LAYER | error | error | no | T0 | Flags a `z-index` whose value is a bare integer that no `[layers]` entry declares. |
+| ORG001 | stylesheet-outside-buckets | ORG | error | error | no | T0 | Flags a stylesheet under `css_root` whose first directory is not an `[org] buckets` entry and that no `[org] entry` glob names. |
+| ORG002 | class-case | ORG | error | error | no | T0 | Flags a class selector whose name is not lowercase words joined by the configured separator (kebab `a-b`, snake `a_b`, camel `aB`). |
+| ORG003 | component-prefix | ORG | error | error | no | T0 | Flags a class selector in `styles/components/<name>.css` whose name, ignoring case and separators, does not start with `<name>`. |
+| ORG004 | custom-prop-outside-tokens | ORG | error | error | no | T0 | Flags a `--x:` definition in any stylesheet other than the tokens file. |
+| ORG005 | ungoverned-stylesheet | ORG | error | error | no | T0 | Flags a `.css` file outside `css_root` that no `[org] ignore` glob covers; no other rule judges it. |
 | WAIVE001 | waiver-without-reason | WAIVE | error | error | no | T0 | Flags a `crunk:waive` comment that has no `reason`, or a blank one. |
 
 ## Families
