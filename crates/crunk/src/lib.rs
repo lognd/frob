@@ -8,8 +8,10 @@
 
 // frob:ticket 01M43ARVS24254G85TMFYH8FGQ
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
+// frob:ticket 01M43ARZH9F9MCPJCKXM635E0X
 
 pub mod doctor;
+pub mod tokens;
 
 use std::path::Path;
 
@@ -72,7 +74,7 @@ impl Product for CrunkProduct {
     }
 
     fn register(cli: Cli) -> Cli {
-        cli
+        cli.register::<tokens::Tokens>()
     }
 }
 
