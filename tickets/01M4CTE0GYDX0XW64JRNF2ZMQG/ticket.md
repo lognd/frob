@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:37Z"
-updated = "2026-10-17T20:53:11Z"
+updated = "2026-10-17T20:54:01Z"
 scope = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock", "crates/gob-fs/**", "docs/design/git-io.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the workspace, when the full suite runs, then it passes"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M8. gix (54 crates) sits under gob-ir, gob-symbols, grimble-model and crunk-check and on the critical path of every binary. Also stop gob-walk reading frob.toml (M9 list). Merge with the canonical/common-dir move named in the audit if ~ARHP82G is not started.
