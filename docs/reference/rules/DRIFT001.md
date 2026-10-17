@@ -13,13 +13,49 @@
 | polarity | P+ |
 | must_measure | false |
 | version | 1 |
-| since | 2.0.0 |
+| since | 0.532.0 |
+
+<!-- mdtest: rule=DRIFT001 -->
+# DRIFT001 doc-binding-drift
 
 A `frob:doc` binding went stale: the code changed under the doc, or the doc under the code.
 
-The symbol bound by a `frob:doc path#slug` directive has a lock entry
-(an ack). The finding fires when that entry no longer matches: the sig,
-body, doc or attr facet of the symbol changed (the code changed under the doc),
-or the digest of the named markdown section changed (the doc changed
-under the code). The message names the facet. Re-read the pair and run
-`frob ack <symref> --reason ...` to record the new state.
+## What it does
+
+Fires when a symbol bound by a `frob:doc path#slug` directive has a lock entry that no longer matches: the sig, body, doc or attr facet of the symbol changed, or the digest of the named markdown section changed. The message names the facet.
+
+## Why it matters
+
+A doc and the code it describes are acked together; when either moves alone, the doc may now lie.
+
+## Remedy
+
+Re-read the pair, then run `frob ack <symref> --reason ...` to record the new state.
+
+## Examples
+
+### A drifted case fires
+
+```rust expect=fire file=src/lib.rs
+pub fn bound() {}
+```
+
+### An unchanged case is clean
+
+```rust expect=clean file=src/lib.rs
+pub fn unbound() {}
+```
+
+## Examples
+
+### DRIFT001 doc-binding-drift / Examples #1 (line 22) (fire)
+
+```rust
+pub fn bound() {}
+```
+
+### DRIFT001 doc-binding-drift / Examples #2 (line 28) (clean)
+
+```rust
+pub fn unbound() {}
+```

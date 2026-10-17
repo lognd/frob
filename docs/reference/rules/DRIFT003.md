@@ -13,10 +13,49 @@
 | polarity | P+ |
 | must_measure | false |
 | version | 1 |
-| since | 2.0.0 |
+| since | 0.532.0 |
+
+<!-- mdtest: rule=DRIFT003 -->
+# DRIFT003 stale-ack
 
 A symbol was acked, its signature changed, and no `frob:doc` directive covers it.
 
-The ack recorded an older contract and nothing ties it to documentation,
-so nobody is told to re-read anything. Re-ack the symbol or bind it to
-the doc that describes it.
+## What it does
+
+Fires when a lock entry records an older signature of a symbol and no `frob:doc` directive ties the symbol to documentation.
+
+## Why it matters
+
+The ack recorded an older contract and nothing tells anybody to re-read anything.
+
+## Remedy
+
+Re-ack the symbol, or bind it to the doc that describes it.
+
+## Examples
+
+### A drifted case fires
+
+```rust expect=fire file=src/lib.rs
+pub fn bound() {}
+```
+
+### An unchanged case is clean
+
+```rust expect=clean file=src/lib.rs
+pub fn unbound() {}
+```
+
+## Examples
+
+### DRIFT003 stale-ack / Examples #1 (line 22) (fire)
+
+```rust
+pub fn bound() {}
+```
+
+### DRIFT003 stale-ack / Examples #2 (line 28) (clean)
+
+```rust
+pub fn unbound() {}
+```

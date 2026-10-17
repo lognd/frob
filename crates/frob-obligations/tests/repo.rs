@@ -291,20 +291,26 @@ fn cov003_is_declared_but_never_emitted() {
     );
     let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
     assert_eq!(count(&ev.findings, "COV003"), 0);
-    let reg = Registry::global();
-    assert!(reg.by_id("COV003").is_some());
+    assert!(declared("COV003"), "COV003 not declared");
     assert_eq!(frob_obligations::COV003_ALIAS_OF, "TEST001");
-    assert!(reg.verify_unique().is_ok());
+    assert!(Registry::global().verify_unique().is_ok());
+}
+
+/// True when the declared (two-file) rules of this crate include `id`.
+fn declared(id: &str) -> bool {
+    frob_obligations::rules::METAS.iter().any(|d| d.id == id)
 }
 
 #[test]
 fn every_rule_is_registered_exactly_once() {
     let reg = Registry::global();
-    for id in [
-        "COV001", "COV003", "TODO001", "TODO002", "DOC001", "DOC002", "REF001", "INV001", "INV002",
-        "EXC001", "EXC003", "EXC005", "EXC007",
-    ] {
+    for id in ["COV001", "TODO001", "TODO002", "DOC001", "DOC002", "REF001"] {
         assert!(reg.by_id(id).is_some(), "{id} not registered");
+    }
+    for id in [
+        "COV003", "INV001", "INV002", "EXC001", "EXC003", "EXC005", "EXC007",
+    ] {
+        assert!(declared(id), "{id} not declared");
     }
     assert_eq!(
         reg.by_id("COV001").map(|m| m.severity),
@@ -556,7 +562,7 @@ fn init_autocrlf_repo(root: &std::path::Path) {
     std::fs::write(config, text).expect("write git config");
 }
 
-// frob:tests crates/frob-obligations/src/rules.rs::Exc005
+// frob:tests crates/frob-obligations/src/rules/exc005.rs::Exc005
 #[test]
 fn crlf_checkout_under_autocrlf_keeps_an_accept_attested_but_a_real_edit_does_not() {
     let dir = tempfile::tempdir().expect("tempdir");

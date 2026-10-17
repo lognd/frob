@@ -34,6 +34,7 @@
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
 mod filecheck;
+mod host;
 mod options;
 mod product;
 pub mod product_rules;

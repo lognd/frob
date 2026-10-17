@@ -13,9 +13,49 @@
 | polarity | P+ |
 | must_measure | false |
 | version | 1 |
-| since | 2.0.0 |
+| since | 0.532.0 |
+
+<!-- mdtest: rule=DRIFT002 -->
+# DRIFT002 dangling-doc-target
 
 A `frob:doc` directive names a markdown section that does not exist.
 
-The message carries the nearest heading slug of the target file by edit
-distance, so a renamed or mistyped heading is a one-line fix.
+## What it does
+
+Fires when the file or heading a `frob:doc` directive points at cannot be found. The message carries the nearest heading slug of the target file by edit distance.
+
+## Why it matters
+
+A binding to nothing guards nothing: the symbol looks documented while no doc is tied to it.
+
+## Remedy
+
+Fix the path or the slug in the directive, or restore the heading.
+
+## Examples
+
+### A drifted case fires
+
+```rust expect=fire file=src/lib.rs
+pub fn bound() {}
+```
+
+### An unchanged case is clean
+
+```rust expect=clean file=src/lib.rs
+pub fn unbound() {}
+```
+
+## Examples
+
+### DRIFT002 dangling-doc-target / Examples #1 (line 22) (fire)
+
+```rust
+pub fn bound() {}
+```
+
+### DRIFT002 dangling-doc-target / Examples #2 (line 28) (clean)
+
+```rust
+pub fn unbound() {}
+```

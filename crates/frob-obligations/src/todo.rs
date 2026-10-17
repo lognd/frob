@@ -7,7 +7,7 @@ use gob_rules::Finding;
 use gob_text::{FileId, LineIndex, Span, TextRange, TextSize};
 
 use crate::comments::comment_lines;
-use crate::rules::{Todo001, Todo002};
+use crate::legacy::{Todo001, Todo002};
 use crate::tickets::{Standing, Tickets};
 use crate::util::{finding, is_marker};
 

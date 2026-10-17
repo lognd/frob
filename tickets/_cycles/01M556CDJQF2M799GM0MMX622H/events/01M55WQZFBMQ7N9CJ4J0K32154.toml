@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M55VDSD2GHYJMFSQWPR7WM45"
+text = "undelivered half of BN7DCP3 scope (no check twice per OS); release push"
+at = "2026-10-17T21:37:02Z"
+actor = "lognd"
+rev = 1

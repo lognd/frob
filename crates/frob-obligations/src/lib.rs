@@ -60,9 +60,11 @@ mod config;
 mod cov;
 mod doc;
 mod exc;
+mod host;
 mod inv;
+mod legacy;
 mod refs;
-mod rules;
+pub mod rules;
 mod sibling;
 mod tickets;
 mod todo;
@@ -82,10 +84,15 @@ use gob_text::{FileId, FileInterner};
 pub use collect::{CollectError, Collected, collect};
 pub use config::{ForbidImport, InvariantsConfig};
 pub use gob_rules::Resolved;
-pub use rules::{
-    Cov001, Cov003, Doc001, Doc002, Exc001, Exc003, Exc005, Exc007, Inv001, Inv002, Ref001,
-    Todo001, Todo002,
-};
+pub use host::ObligationHost;
+pub use legacy::{Cov001, Doc001, Doc002, Ref001, Todo001, Todo002};
+pub use rules::cov003::Cov003;
+pub use rules::exc001::Exc001;
+pub use rules::exc003::Exc003;
+pub use rules::exc005::Exc005;
+pub use rules::exc007::Exc007;
+pub use rules::inv001::Inv001;
+pub use rules::inv002::Inv002;
 pub use sibling::{SiblingException, sibling_exception_findings};
 
 use tickets::Tickets;
@@ -234,13 +241,24 @@ pub fn evaluate_file(
     file_rules(inputs, &tickets, file, path, text, &directives)
 }
 
-/// The repo-level rules (`COV001`, `TODO002`, `INV001`, `INV002`); new files are interned into `files`.
+/// The repo-level rules still on the legacy derive (`COV001`, `TODO002`); new files are interned into `files`.
 ///
-/// Findings are raw: exceptions are applied by [`apply_exceptions`].
-pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
+/// `INV001` and `INV002` are declared rules (see [`rules`]); [`evaluate_repo`] adds them.
+pub fn evaluate_legacy_repo(
+    inputs: &ObligationInputs<'_>,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
     let tickets = Tickets::new(inputs.ledger);
     let mut out = cov::cov001(inputs.root, inputs.graph, inputs.directives, files);
     out.extend(todo::todo002(inputs.directives, &tickets));
+    out
+}
+
+/// Every repo-level rule (`COV001`, `TODO002`, `INV001`, `INV002`); new files are interned into `files`.
+///
+/// Findings are raw: exceptions are applied by [`apply_exceptions`].
+pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
+    let mut out = evaluate_legacy_repo(inputs, files);
     out.extend(inv::inv001(inputs.graph, inputs.directives, files));
     out.extend(inv::inv002(inputs.root, inputs.graph, inputs.config, files));
     out
