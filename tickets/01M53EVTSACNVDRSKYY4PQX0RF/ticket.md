@@ -13,7 +13,7 @@ scope = ["crates/gob-plan/**", "crates/gob-ir/src/eval/**", "docs/design/grl-spe
 
 [[acceptance]]
 text = "given the COV001 python example 2, when run, then the engine reports unresolved and the gap entry is gone"
-bound = false
+bound = true
 +++
 
 found while working ~8KS9TG8: python helper(cb): cb() is marked unknown_out, but test_run -> helper is a Yes edge so COV001 stays clean; the example expects unresolved. Entry (COV001, 2) stays in KNOWN_ENGINE_GAPS and the corpus_tests skip list.
