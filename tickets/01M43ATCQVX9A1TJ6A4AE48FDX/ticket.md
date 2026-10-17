@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:36Z"
-updated = "2026-10-17T08:54:26Z"
+updated = "2026-10-17T08:55:09Z"
 idempotency_key = "crunk-plan-afix"
 labels = ["area:crunk"]
 scope = ["crates/crunk-fix/**", "crates/crunk/src/fix.rs", "crates/crunk/tests/fix*.rs", "Cargo.lock", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml"]
@@ -31,7 +31,7 @@ target = "01M43ATCF5GGK59S96K1ZF0G9C"
 
 [[acceptance]]
 text = "Given a machine-applicable fix on a stylesheet finding, when `crunk fix` runs, then the span is rewritten atomically and every byte outside it is untouched (INV-FIX-01 property test)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given `--dry-run`, when run, then the diff equals the diff of the real run and no file changes"
