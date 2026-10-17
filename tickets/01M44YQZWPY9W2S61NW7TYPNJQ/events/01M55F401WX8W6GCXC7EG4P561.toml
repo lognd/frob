@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-17T17:38:50Z"
+digest = "9452755628c60750b6fc4de74990d60fc8472a088bf202bc0635a2997d043579"
+exit_code = 0
+inline = """
+
+running 6 tests
+test the_version_is_read_from_the_editor_version_line ... ok
+test a_missing_editor_refuses_naming_the_version_and_the_config_key ... ok
+test a_configured_path_that_is_not_a_file_refuses ... ok
+test an_editor_found_under_the_hub_location_is_resolved ... ok
+test a_configured_editor_is_used_regardless_of_the_version_file ... ok
+test an_editor_without_a_valid_license_refuses_with_a_remedy ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.94s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.98s
+     Running tests/unity.rs (target/debug/deps/unity-ac0bde5861acaad1)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-evidence --test unity"
+size = 652
+status = "measured"
+at = "2026-10-17T17:38:50Z"
+actor = "lognd"
+rev = 1
