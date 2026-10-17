@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:37Z"
-updated = "2026-10-17T20:38:56Z"
-scope = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock"]
+updated = "2026-10-17T20:40:15Z"
+scope = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock", "crates/gob-fs/**"]
 
 [[acceptance]]
 text = "Given cargo tree -p gob-walk, gob-ir, gob-symbols and grimble-model, when inspected, then no gix crate appears (test over cargo metadata)"
