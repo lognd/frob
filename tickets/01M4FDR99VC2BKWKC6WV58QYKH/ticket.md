@@ -8,7 +8,7 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-09T04:11:46Z"
-updated = "2026-10-17T06:41:19Z"
+updated = "2026-10-17T07:30:22Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-ledger/**", "docs/guides/**", "changelog.d/**"]
 
