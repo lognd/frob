@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:35Z"
-updated = "2026-10-17T18:40:39Z"
+updated = "2026-10-17T18:41:48Z"
 idempotency_key = "crunk-plan-rtw"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/src/tailwind/**", "crates/crunk-rules/src/breakpoints/**", "crates/crunk-rules/src/tokens_drift.rs", "crates/crunk-rules/tests/tailwind*.rs", "crates/crunk-rules/tests/breakpoints*.rs", "crates/crunk-rules/src/rules/**", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/tests/**", "crates/crunk-check/**", "docs/crunk/rules/README.md", "Cargo.lock"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given `@media (min-width: 850px)` not in breakpoints, when checked, then BP001 fires"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a stale tokens.css, when checked, then TOKENS001 fires and `crunk tokens` fixes it"
