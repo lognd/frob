@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-17T15:39:26Z"
-updated = "2026-10-17T19:48:14Z"
+updated = "2026-10-17T19:48:17Z"
 scope = ["crates/gob-rules/**", "crates/gob-check/**", "crates/gob-macros/**", "docs/design/rule-authoring.md", "notes/research/rule-authoring.md"]
 +++
 
