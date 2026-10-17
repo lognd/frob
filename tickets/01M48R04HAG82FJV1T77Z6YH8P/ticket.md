@@ -2,13 +2,13 @@
 id = "01M48R04HAG82FJV1T77Z6YH8P"
 title = "Migrate grimble MDL and SYS rules to the two-file shape"
 type = "story"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:08Z"
-updated = "2026-10-17T15:39:01Z"
+updated = "2026-10-17T15:39:47Z"
 scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-rules/**"]
 
 [[links]]
