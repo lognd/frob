@@ -416,9 +416,8 @@ pub(crate) fn check_version(stage: &ToolStage, found: Option<&str>) -> VersionVe
 /// The default arguments that print `parser`'s tool version.
 pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
     match parser {
-        ToolParser::ZizmorJsonV1 => Some(vec!["--version".to_owned()]),
+        ToolParser::ZizmorJsonV1 | ToolParser::RuffJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
-        ToolParser::RuffJson => Some(vec!["--version".to_owned()]),
         ToolParser::None => None,
     }
 }
