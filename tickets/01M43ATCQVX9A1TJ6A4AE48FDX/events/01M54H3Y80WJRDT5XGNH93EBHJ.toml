@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-17T08:54:26Z"
+digest = "0f20455f88be2aabcea76031f6d7630956ea28813654270fd8e9c8aeb64eab1e"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b00a981a-74f6-490e-bcd9-f59b69f63e9c with nextest profile: default
+    Starting 1 test across 2 binaries (7 tests skipped)
+        PASS [   0.006s] crunk-fix::fix dry_run_diff_equals_real_diff_and_writes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-fix -E test(dry_run_diff_equals_real_diff_and_writes_nothing)"
+size = 659
+status = "measured"
+test_count = 1
+tests_digest = "67e7959c9cf19f02a589d2a6b3e40d263585c33607384295e6a429f21a6eb877"
+at = "2026-10-17T08:54:26Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-17T14:31:56Z"
+digest = "1fd7648623809a416c1ca535dd1aa915c666232ce61e1c7caccbe253ea1b9959"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 01ee3045-578c-4b95-817c-42acbdfe9bd6 with nextest profile: default
+    Starting 3 tests across 4 binaries (333 tests skipped)
+        PASS [   2.306s] frob-cli::it lease_heartbeat::ticket_update_renews_the_worktree_lease
+        PASS [   2.328s] frob-cli::it lease_heartbeat::check_ticket_renews_the_worktree_lease
+        PASS [   2.364s] frob-cli::it lease_heartbeat::test_verb_renews_the_worktree_lease
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.365s] 3 tests run: 3 passed, 333 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(renews_the_worktree_lease)"
+size = 750
+status = "measured"
+test_count = 3
+tests_digest = "8dc1af8c97447aa8b9407c003140a7106b498a6cde52b61db46399f1ec566b2c"
+at = "2026-10-17T14:31:56Z"
+actor = "lognd"
+rev = 1
