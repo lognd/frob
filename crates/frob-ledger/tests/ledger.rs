@@ -1267,3 +1267,44 @@ fn scope_edits_dedupe_and_respect_the_cap(layout: Layout) {
     assert!(matches!(err, LedgerError::Invalid { .. }), "{err:?}");
 }
 both_layouts!(scope_edits_dedupe_and_respect_the_cap);
+
+#[test]
+fn update_with_comment_is_one_ledger_commit() {
+    let (_dir, ledger) = fixture(Layout::Dir, RefMode::Trunk);
+    let t = ledger
+        .new_ticket(NewTicket::new("T", TicketType::Task))
+        .expect("new");
+    let id = t.ticket.front.id;
+    let before = commits_since_root(ledger.repo(), Layout::Dir).len();
+    let patch = Patch {
+        add_labels: vec!["x".into()],
+        ..Patch::default()
+    };
+    let applied = ledger
+        .update_with_comment(id, &patch, CommentSubtype::Note, "why")
+        .expect("update_with_comment");
+    assert_eq!(applied.events.len(), 2, "label event plus comment event");
+    let after = commits_since_root(ledger.repo(), Layout::Dir).len();
+    assert_eq!(after, before + 1, "exactly one commit");
+    assert!(matches!(
+        ledger.update_with_comment(id, &patch, CommentSubtype::Note, "  "),
+        Err(LedgerError::Invalid { .. })
+    ));
+}
+
+#[test]
+fn orphan_mode_leaves_the_code_branch_without_ledger_commits() {
+    let (_dir, ledger) = fixture(Layout::Branch, RefMode::Orphan);
+    let main_tip = ledger.repo().rev_parse(MAIN).expect("main");
+    frob_ledger::branch::init_branch(ledger.repo(), "frob-tickets", 5).expect("init branch");
+    for n in 0..4 {
+        ledger
+            .new_ticket(NewTicket::new(format!("T{n}"), TicketType::Task))
+            .expect("new");
+    }
+    assert_eq!(
+        ledger.repo().rev_parse(MAIN).expect("main"),
+        main_tip,
+        "four tickets, zero commits on the code branch"
+    );
+}

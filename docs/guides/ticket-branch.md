@@ -82,6 +82,16 @@ exists, the tracker link. With `--check` a hand edit inside the region is
 reported as GEN001 and nothing is written.
 <!-- frob:ticket 01M3ZX87403VR4YVK4QMJ7KPBV -->
 
+## Commit volume
+
+Each ledger verb makes exactly one ledger commit, however many events it
+writes (an `update` plus its comment is one commit, and a batch close is one
+commit for all its tickets). With `ref_mode = "orphan"` those commits go to
+`frob-tickets`, so a code branch on which you work any number of tickets
+carries no ledger commits at all: its history is code only, and a pull request
+from it never conflicts on ticket files. With the default `ref_mode = "trunk"`
+the same commits land on the trunk branch instead.
+
 ## Push, clone and CI
 
 Push the ledger with the code: `git push origin main frob-tickets`. A fresh
