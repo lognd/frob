@@ -59,6 +59,22 @@ pub enum ToolParser {
     /// actionlint `-format '{{json .}}'`: an array of findings with line and column.
     #[serde(rename = "actionlint-json")]
     ActionlintJson,
+    /// ruff `check --output-format json`: an array of findings with row and column.
+    #[serde(rename = "ruff-json")]
+    RuffJson,
+}
+
+impl ToolParser {
+    /// The parser named by a tool definition's parser id.
+    pub fn from_id(id: &str) -> Option<Self> {
+        match id {
+            "none" => Some(Self::None),
+            "zizmor-json-v1" => Some(Self::ZizmorJsonV1),
+            "actionlint-json" => Some(Self::ActionlintJson),
+            "ruff-json" => Some(Self::RuffJson),
+            _ => Option::None,
+        }
+    }
 }
 
 /// One external tool stage: a command run after the built-in rules (`[[check.tool]]`).
@@ -67,8 +83,15 @@ pub enum ToolParser {
 pub struct ToolStage {
     /// Stage name shown in findings and timing; also the allowlisted program name.
     pub name: String,
-    /// The program, found on `PATH` (no path separators).
+    /// The program, found on the project's own path then `PATH` (no path separators); filled from `tool` when empty.
+    #[serde(default)]
     pub command: String,
+    /// Name of a std tool definition (tool-binding.md section 2) supplying command, parser, version range, exits and id map; this stage's own keys win.
+    #[serde(default)]
+    pub tool: Option<String>,
+    /// Exit statuses that are not a tool error (findings or success); defaults to the definition's or the parser's.
+    #[serde(default)]
+    pub exit_codes: Option<Vec<i32>>,
     /// Arguments passed without shell interpretation.
     #[serde(default)]
     pub args: Vec<String>,

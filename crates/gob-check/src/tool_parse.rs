@@ -1,4 +1,4 @@
-//! Parsers for bound tool output (zizmor, actionlint), id maps and version ranges.
+//! Parsers for bound tool output (zizmor, actionlint, ruff), id maps and version ranges.
 //!
 //! Pure functions: they turn a tool's stdout into [`RawFinding`]s and decide
 //! the rule id and severity; locating them in the repository is `tools.rs`.
@@ -111,6 +111,22 @@ struct AFinding {
     end_column: u32,
 }
 
+#[derive(Deserialize)]
+struct RPos {
+    row: u32,
+    column: u32,
+}
+
+#[derive(Deserialize)]
+struct RFinding {
+    #[serde(default)]
+    code: Option<String>,
+    message: String,
+    filename: String,
+    location: RPos,
+    end_location: Option<RPos>,
+}
+
 /// Parse `stdout` of the stage's tool; `ToolParser::None` yields nothing.
 ///
 /// # Errors
@@ -121,7 +137,37 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::None => Ok(Vec::new()),
         ToolParser::ZizmorJsonV1 => parse_zizmor(stdout),
         ToolParser::ActionlintJson => parse_actionlint(stdout),
+        ToolParser::RuffJson => parse_ruff(stdout),
     }
+}
+
+fn parse_ruff(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
+    let findings: Vec<RFinding> =
+        serde_json::from_str(stdout).map_err(|source| ParseError::Json {
+            format: "ruff",
+            source,
+        })?;
+    Ok(findings
+        .into_iter()
+        .map(|f| {
+            let end_col = f
+                .end_location
+                .as_ref()
+                .filter(|e| e.row == f.location.row)
+                .map_or(f.location.column + 1, |e| e.column)
+                .max(f.location.column + 1);
+            RawFinding {
+                path: f.filename,
+                range: RawRange::LineCol {
+                    line: f.location.row,
+                    col: f.location.column,
+                    end_col,
+                },
+                tool_id: f.code.unwrap_or_else(|| "syntax-error".to_owned()),
+                message: f.message,
+            }
+        })
+        .collect())
 }
 
 fn parse_zizmor(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
@@ -206,7 +252,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
             ("artipacked", "CI010"),
             ("excessive-permissions", "CI003"),
         ]),
-        ToolParser::ActionlintJson | ToolParser::None => BTreeMap::new(),
+        ToolParser::ActionlintJson | ToolParser::RuffJson | ToolParser::None => BTreeMap::new(),
     }
 }
 
@@ -288,6 +334,23 @@ pub(crate) fn find_version(output: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
+/// True when `version` lies in the inclusive range; an unreadable bound or version never matches.
+pub(crate) fn in_range(version: &str, min: Option<&str>, max: Option<&str>) -> bool {
+    let Some(have) = parse_version(version) else {
+        return false;
+    };
+    let bound = |b: Option<&str>| b.map(parse_version);
+    let (lo, hi) = (bound(min), bound(max));
+    if matches!(lo, Some(None)) || matches!(hi, Some(None)) {
+        return false;
+    }
+    lo.flatten()
+        .is_none_or(|m| compare(&have, &m) != Ordering::Less)
+        && hi
+            .flatten()
+            .is_none_or(|m| compare(&have, &m) != Ordering::Greater)
+}
+
 /// Compare dotted versions numerically, padding the shorter with zeros.
 fn compare(a: &[u64], b: &[u64]) -> Ordering {
     let n = a.len().max(b.len());
@@ -355,6 +418,7 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
     match parser {
         ToolParser::ZizmorJsonV1 => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
+        ToolParser::RuffJson => Some(vec!["--version".to_owned()]),
         ToolParser::None => None,
     }
 }
@@ -380,6 +444,8 @@ mod tests {
             max_version: None,
             version_args: None,
             optional: false,
+            tool: None,
+            exit_codes: None,
         }
     }
 
