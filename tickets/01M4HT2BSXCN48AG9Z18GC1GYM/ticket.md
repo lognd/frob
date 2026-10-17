@@ -7,8 +7,8 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T02:25:28Z"
-updated = "2026-10-17T06:06:14Z"
-scope = ["crates/gob-dev/src/ci.rs", "crates/frob-check/src/verb.rs"]
+updated = "2026-10-17T08:18:20Z"
+scope = ["crates/gob-dev/src/ci.rs", "crates/frob-check/src/verb.rs", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
 text = "Given a CI run, when the check step runs, then no tool stage already run as a dedicated step runs again"
