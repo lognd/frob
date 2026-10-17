@@ -2,13 +2,13 @@
 id = "01M43ATBY4CHA4FYVC7BWK6MXR"
 title = "Rules TW001-005, BP001-003 and TOKENS001 (Rust, tier-0)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:35Z"
-updated = "2026-10-04T11:29:35Z"
+updated = "2026-10-17T18:13:19Z"
 idempotency_key = "crunk-plan-rtw"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/src/tailwind/**", "crates/crunk-rules/src/breakpoints/**", "crates/crunk-rules/src/tokens_drift.rs", "crates/crunk-rules/tests/tailwind*.rs", "crates/crunk-rules/tests/breakpoints*.rs"]
