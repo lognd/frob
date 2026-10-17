@@ -2,13 +2,13 @@
 id = "01M48YXQM2E6EFTH71NQ6XGMR7"
 title = "Renew leases from check --ticket, test and ticket update, not only evidence add"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-06T15:57:04Z"
-updated = "2026-10-17T08:28:45Z"
+updated = "2026-10-17T08:45:59Z"
 scope = ["crates/frob-check/**"]
 +++
 
