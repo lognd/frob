@@ -30,6 +30,9 @@ const REQUIRED: &[&str] = &[
     "version",
     "since",
 ];
+/// Fields a rule may omit; `body = relay` is the only one (a repo rule whose findings a stage computed).
+const OPTIONAL: &[&str] = &["body"];
+const BODY: &[&str] = &["relay"];
 const RT: &str = "::gob_rules";
 const MATRIX_PATH: &str = "crates/gob-caps/src/matrix.rs";
 
@@ -187,6 +190,14 @@ fn string_of(args: &Args, key: &str, errs: &mut Errors) -> Option<LitStr> {
         }
         Value::Applies(_) => None,
     }
+}
+
+/// Span of the key `key` in `args`, or the call site when absent.
+fn find_span(args: &Args, key: &str) -> Span {
+    args.0
+        .iter()
+        .find(|(k, _)| k == key)
+        .map_or_else(Span::call_site, |(k, _)| k.span())
 }
 
 fn choice_of(args: &Args, key: &str, allowed: &[&str], errs: &mut Errors) -> Option<Ident> {
@@ -366,12 +377,14 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     let mut errs = Errors::default();
     let args: Args = syn::parse2(attr)?;
     for (i, (k, _)) in args.0.iter().enumerate() {
-        if !REQUIRED.contains(&k.to_string().as_str()) {
+        let name = k.to_string();
+        if !REQUIRED.contains(&name.as_str()) && !OPTIONAL.contains(&name.as_str()) {
             errs.at(
                 k.span(),
                 format!(
-                    "unknown rule field `{k}`; fields are: {}",
-                    REQUIRED.join(", ")
+                    "unknown rule field `{k}`; fields are: {}, {} (optional)",
+                    REQUIRED.join(", "),
+                    OPTIONAL.join(", ")
                 ),
             );
         }
@@ -478,6 +491,19 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     let polarity = choice_of(&args, "polarity", POLARITY, &mut errs);
     let scope = choice_of(&args, "scope", SCOPE, &mut errs);
     let fix = choice_of(&args, "fix", FIX, &mut errs);
+    let relay = choice_of(&args, "body", BODY, &mut errs).is_some();
+    if relay && scope.as_ref().is_some_and(|s| s != "Repo") {
+        errs.at(
+            find_span(&args, "body"),
+            "`body = relay` applies to `scope = Repo` rules only",
+        );
+    }
+    if relay && must_measure == Some(true) {
+        errs.at(
+            find_span(&args, "must_measure"),
+            "`body = relay` cannot be `must_measure = true`: a relay reports its count through `RelayRule::examined`",
+        );
+    }
     let applies = match find(&args, "applies") {
         Some(Value::Applies(a)) => Some(a),
         _ => None,
@@ -517,10 +543,10 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     let applies_ts = applies_tokens(applies);
     let asserts = matrix_asserts(&id.value(), applies);
     let host_span = host.span();
-    let eval_trait = rt(if scope == "File" {
-        "FileRule"
-    } else {
-        "RepoRule"
+    let eval_trait = rt(match (scope == "File", relay) {
+        (true, _) => "FileRule",
+        (false, false) => "RepoRule",
+        (false, true) => "RelayRule",
     });
     let measured = rt("Measured");
     let probe = quote_spanned!(host_span=>
