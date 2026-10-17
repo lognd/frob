@@ -78,11 +78,11 @@ fn add_cycle(ledger: &Ledger, o: &BTreeMap<&str, &str>, closed: bool) {
 
 /// `PM036` over the ledger's cycles.
 fn pm036_findings(ledger: &Ledger) -> Vec<Finding> {
-    // frob:tests crates/frob-pm/src/rules/cycle.rs::pm036
-    // frob:tests crates/frob-pm/src/rules/cycle.rs::evaluate
-    // frob:tests crates/frob-pm/src/rules/cycle.rs::overdue
-    // frob:tests crates/frob-pm/src/rules/cycle.rs::active
-    // frob:tests crates/frob-pm/src/rules/cycle.rs::cycles
+    // frob:tests crates/frob-pm/src/eval/cycle.rs::pm036
+    // frob:tests crates/frob-pm/src/eval/cycle.rs::evaluate
+    // frob:tests crates/frob-pm/src/eval/cycle.rs::overdue
+    // frob:tests crates/frob-pm/src/eval/cycle.rs::active
+    // frob:tests crates/frob-pm/src/eval/cycle.rs::cycles
     cycle::evaluate(ledger).expect("evaluate").findings
 }
 
@@ -123,9 +123,9 @@ fn add_milestone(
 
 /// Build the ledger a block describes and evaluate the block's rule (`PM034`, `PM001`, `PM002`, `PM013`, `PM033` or `PM036`) over it.
 fn runner(case: &Case) -> Vec<Finding> {
-    // frob:tests crates/frob-pm/src/rules/membership.rs::pm034
-    // frob:tests crates/frob-pm/src/rules/membership.rs::evaluate
-    // frob:tests crates/frob-pm/src/rules/membership.rs::milestones
+    // frob:tests crates/frob-pm/src/eval/membership.rs::pm034
+    // frob:tests crates/frob-pm/src/eval/membership.rs::evaluate
+    // frob:tests crates/frob-pm/src/eval/membership.rs::milestones
     let dir = tempfile::tempdir().expect("tempdir");
     let ledger = ledger(dir.path());
     let mut keys: BTreeMap<String, TicketId> = BTreeMap::new();
@@ -177,9 +177,9 @@ fn runner(case: &Case) -> Vec<Finding> {
         }
     }
     if matches!(case.rule.to_string().as_str(), "PM001" | "PM002") {
-        // frob:tests crates/frob-pm/src/rules/milestone.rs::pm001
-        // frob:tests crates/frob-pm/src/rules/milestone.rs::pm002
-        // frob:tests crates/frob-pm/src/rules/milestone.rs::evaluate
+        // frob:tests crates/frob-pm/src/eval/milestone.rs::pm001
+        // frob:tests crates/frob-pm/src/eval/milestone.rs::pm002
+        // frob:tests crates/frob-pm/src/eval/milestone.rs::evaluate
         return milestone::evaluate(&ledger)
             .expect("evaluate")
             .findings
@@ -191,16 +191,16 @@ fn runner(case: &Case) -> Vec<Finding> {
         return pm036_findings(&ledger);
     }
     if case.rule.to_string() == "PM033" {
-        // frob:tests crates/frob-pm/src/rules/replenish.rs::pm033
-        // frob:tests crates/frob-pm/src/rules/replenish.rs::evaluate
+        // frob:tests crates/frob-pm/src/eval/replenish.rs::pm033
+        // frob:tests crates/frob-pm/src/eval/replenish.rs::evaluate
         return replenish::evaluate(&ledger, &NoLeases, ready_min)
             .expect("evaluate")
             .findings;
     }
     if case.rule.to_string() == "PM013" {
-        // frob:tests crates/frob-pm/src/rules/wip.rs::pm013
-        // frob:tests crates/frob-pm/src/rules/wip.rs::evaluate_with
-        // frob:tests crates/frob-pm/src/rules/wip.rs::in_progress
+        // frob:tests crates/frob-pm/src/eval/wip.rs::pm013
+        // frob:tests crates/frob-pm/src/eval/wip.rs::evaluate_with
+        // frob:tests crates/frob-pm/src/eval/wip.rs::in_progress
         let limits = wip::WipLimits {
             in_progress: limit,
             expedite_max,

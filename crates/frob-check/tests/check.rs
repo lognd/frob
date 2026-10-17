@@ -1214,7 +1214,6 @@ fn ticket_text_never_folds_a_required_unreadable_finding_into_a_count() {
 }
 
 // frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
-// frob:tests crates/frob-check/src/product.rs::settle
 #[test]
 fn a_corrupt_ledger_index_is_required_unresolved_findings_and_fails_the_gate() {
     let (dir, _id) = ticket_fixture();
