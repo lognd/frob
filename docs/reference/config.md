@@ -257,6 +257,7 @@ Materialized: yes.
 |---|---|---|---|---|
 | `in_progress` | `u32` | `2` | yes | Most tickets in progress in the repository at once, sized to what the machine can build; the default 2 matches the two-builder rule, and 0 is off. |
 | `in_progress_per_identity` | `u32` | `1` | yes | Most tickets one holder (actor plus worktree path) may have in progress; 1 makes an agent finish before starting another, 0 is off. |
+| `ready` | `u32` | `0` | yes | Most finished tickets (every criterion bound, evidence passing) waiting to land at once; they leave the `in_progress` count so serial lands do not starve new work, and 0 leaves this column unlimited. |
 
 ## `[release]`
 

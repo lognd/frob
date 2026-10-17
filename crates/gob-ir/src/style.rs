@@ -8,6 +8,9 @@
 //!   declarations, nested rules and at-rules.
 //! - An at-rule (`@media`, `@layer`, `@supports`) is `unit(at-rule)` named
 //!   without the `@`, with the prelude text in attribute `prelude`.
+//! - A class selector (`.card` in `a.card > .tile`) is the `Sigma_L` operator
+//!   [`class_selector_op`] named by the class without its dot, a child of the
+//!   style rule whose selector list holds it.
 //! - A declaration is the `Sigma_L` operator [`declaration_op`] named by its
 //!   property, with the raw value text in attribute `raw`, an optional boolean
 //!   `important`, and the component values as children.
@@ -45,6 +48,22 @@ pub const IMPORTANT: &str = "important";
 /// The operator of one declaration.
 pub fn declaration_op() -> Operator {
     Operator::adapter(LANG, "declaration", Sort::Exp)
+}
+
+/// The operator of one class selector (`.card` is named `card`).
+pub fn class_selector_op() -> Operator {
+    Operator::adapter(LANG, "class_selector", Sort::Exp)
+}
+
+/// A class selector inside a style rule's selector list.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClassSelector {
+    /// The class selector node.
+    pub node: NodeId,
+    /// The class name without its leading dot.
+    pub name: String,
+    /// The style rule whose selector holds it.
+    pub rule: Option<NodeId>,
 }
 
 /// A style rule.
@@ -184,6 +203,28 @@ pub fn style_rules(model: &Model) -> Vec<StyleRule> {
             selector: term.node(n).name().unwrap_or_default().to_owned(),
         })
         .collect()
+}
+
+/// Whether `node` is a class selector node.
+pub fn is_class_selector(model: &Model, node: NodeId) -> bool {
+    matches!(&model.term().node(node).op,
+        Operator::Adapter(a) if a.lang == LANG && a.name == "class_selector")
+}
+
+/// Every class selector in node order.
+pub fn class_selectors(model: &Model) -> Vec<ClassSelector> {
+    let term = model.term();
+    let out: Vec<ClassSelector> = term
+        .ids()
+        .filter(|&n| is_class_selector(model, n))
+        .map(|n| ClassSelector {
+            node: n,
+            name: term.node(n).name().unwrap_or_default().to_owned(),
+            rule: owner(model, n),
+        })
+        .collect();
+    trace!(count = out.len(), "style class selectors read");
+    out
 }
 
 /// Every at-rule in node order (`media`, `layer`, `supports`, ...).

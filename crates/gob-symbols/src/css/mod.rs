@@ -9,6 +9,8 @@
 //!   a keyframe block is a `unit(style-rule)` named by its selector (`from`, `50%`). Children are the nested
 //!   rules, at-rules and declarations, so the selector and at-rule chain of a declaration is its ancestor
 //!   chain ([`gob_ir::style::declarations`] reports the nearest owner).
+//! - Each class selector (`.card`) in a rule's selector list is a `style.class_selector` operator named by
+//!   the class without its dot, the first children of the rule in source order (not a symbol).
 //! - Symrefs nest like the units (`site.css::media.[.card,_.tile]`, see `view::style_segment`).
 //! - A declaration `property: value` is the `style.declaration` operator named by the property with the raw
 //!   value text in `raw`, `important` set, and the component values (see [`tokens`]) as children; a
@@ -236,16 +238,44 @@ impl Css<'_> {
 
     /// `unit(style-rule)` over the declarations and nested rules of `block`, named `selector`.
     fn rule_unit(&mut self, n: Node<'_>, selector: &str, block: Option<Node<'_>>) -> R<NodeId> {
-        let kids = match block {
-            Some(b) => self.items(b)?,
-            None => Vec::new(),
-        };
+        let mut kids = self.class_selectors(n)?;
+        if let Some(b) = block {
+            kids.extend(self.items(b)?);
+        }
         let spec = NodeSpec::new(
             Operator::unit(style::STYLE_RULE, "impl"),
             self.cx.node_loc(n),
         )
         .named(selector);
         self.cx.add(spec, &kids)
+    }
+
+    /// One `style.class_selector` node per `.class` in the rule's own selector list (not its block).
+    fn class_selectors(&mut self, rule: Node<'_>) -> R<Vec<NodeId>> {
+        let mut found = Vec::new();
+        let mut stack: Vec<Node<'_>> = children(rule)
+            .into_iter()
+            .filter(|c| c.kind() == "selectors")
+            .collect();
+        while let Some(n) = stack.pop() {
+            if n.kind() == "class_selector" {
+                found.push(n);
+            }
+            stack.extend(children(n));
+        }
+        found.sort_by_key(Node::start_byte);
+        let mut out = Vec::new();
+        for n in found {
+            let name = children(n)
+                .into_iter()
+                .find(|c| c.kind() == "class_name")
+                .map(|c| self.t(c).to_owned());
+            let Some(name) = name else { continue };
+            tracing::trace!(path = self.path, name, "css class selector");
+            let spec = NodeSpec::new(style::class_selector_op(), self.cx.node_loc(n)).named(&name);
+            out.push(self.cx.add(spec, &[])?);
+        }
+        Ok(out)
     }
 
     fn rule_set(&mut self, n: Node<'_>) -> R<NodeId> {

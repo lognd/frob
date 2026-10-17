@@ -700,6 +700,13 @@
               "format": "uint32",
               "minimum": 0,
               "type": "integer"
+            },
+            "ready": {
+              "default": 0,
+              "description": "Most finished tickets (every criterion bound, evidence passing) waiting to land at once; they leave the `in_progress` count so serial lands do not starve new work, and 0 leaves this column unlimited.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
             }
           },
           "type": "object"

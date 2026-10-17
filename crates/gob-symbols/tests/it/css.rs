@@ -243,3 +243,35 @@ fn spaced_and_uppercase_important_and_an_empty_custom_property_are_facts_not_err
         .collect();
     assert_eq!(names, [("--x", ""), ("--y", "")]);
 }
+
+// frob:tests crates/gob-ir/src/style.rs::class_selectors
+#[test]
+fn class_selectors_are_nodes_of_their_rule_in_source_order() {
+    let src = "a.card > .tile, .card:hover { color: red; }\n.x { .nested { margin: 0; } }\n";
+    let f = extract_file(&entry("site.css", src), src);
+    assert_eq!(f.parse_status, ParseStatus::Complete);
+    let model = model_of(src);
+    let rules = style::style_rules(&model);
+    let classes = style::class_selectors(&model);
+    let got: Vec<(&str, Option<&str>)> = classes
+        .iter()
+        .map(|c| {
+            let sel = rules
+                .iter()
+                .find(|r| Some(r.node) == c.rule)
+                .map(|r| r.selector.as_str());
+            (c.name.as_str(), sel)
+        })
+        .collect();
+    assert_eq!(
+        got,
+        [
+            ("card", Some("a.card > .tile, .card:hover")),
+            ("tile", Some("a.card > .tile, .card:hover")),
+            ("card", Some("a.card > .tile, .card:hover")),
+            ("x", Some(".x")),
+            ("nested", Some(".nested")),
+        ]
+    );
+    assert_eq!(style::declarations(&model).len(), 2);
+}

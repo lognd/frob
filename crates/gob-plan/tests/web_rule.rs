@@ -8,6 +8,7 @@
 mod support;
 
 use gob_ir::markup::{self, ELEMENT, TAG};
+use gob_ir::style;
 use gob_ir::{NodeId, Operator, Truth};
 use gob_plan::catalog;
 use gob_plan::exec::{Input, run};
@@ -116,6 +117,7 @@ fn catalog_names_query_and_languages_for_each_web_kind() {
         ("element", "Q48 markup", "tsx"),
         ("attribute", "Q48 markup", "html"),
         ("style_rule", "Q49 style", "css"),
+        ("class_selector", "Q49 style", "css"),
         ("declaration", "Q49 style", "jsx"),
         ("custom_property", "Q49 style", "scss"),
     ] {
@@ -123,4 +125,35 @@ fn catalog_names_query_and_languages_for_each_web_kind() {
         assert_eq!(k.query, query, "{word}");
         assert!(k.answered_in(lang), "{word} in {lang}");
     }
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run
+#[test]
+fn class_selector_kind_finds_only_class_selector_nodes_by_name() {
+    let mut d = Doc::new("a.css", "css");
+    let card = d.add(style::class_selector_op(), Some("card"), &[]);
+    let tile = d.add(style::class_selector_op(), Some("tile"), &[]);
+    let rule = d.add(
+        Operator::unit(style::STYLE_RULE, "impl"),
+        Some(".card .tile"),
+        &[card, tile],
+    );
+    let (model, _) = d.root(&[rule]);
+
+    let mut b = PlanBuilder::new("CLS001", Polarity::Pplus);
+    let c = b.find("class_selector");
+    let (name, want) = (b.field(c, "name"), b.str_lit("card"));
+    let is_card = b.cmp(name, CmpOp::Eq, want);
+    b.clause(is_card);
+    b.report(None, c, "card class");
+    let out = run(
+        &b.build(),
+        &Input {
+            model: &model,
+            source: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(out.rows.len(), 1);
+    assert_eq!(out.rows[0].node(0), Some(card));
 }
