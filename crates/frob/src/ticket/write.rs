@@ -480,6 +480,7 @@ impl Command for Update {
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<UpdateData> {
+        frob_lease::heartbeat(&ctx.cwd, ctx.clock.clone());
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
         let creates = frob_lease::unmatched::creates_label;

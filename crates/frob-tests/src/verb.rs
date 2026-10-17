@@ -177,6 +177,7 @@ impl Command for TestVerb {
 
     fn run(&self, ctx: &Context) -> Outcome<TestData> {
         let ws = Workspace::open(&ctx.cwd, ctx.clock.clone()).map_err(EvidenceError::into_cli)?;
+        frob_lease::heartbeat(&ctx.cwd, ctx.clock.clone());
         let repo = ws.ledger.repo();
         let (touched, selected) = match (&self.base, self.all) {
             (Some(base), false) => {
