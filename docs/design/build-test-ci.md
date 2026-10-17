@@ -207,7 +207,10 @@ stays locked). Windows therefore uses the second alias `dev-isolated`
 (`run -p gob-dev --target-dir target/dev-tool --`), which builds the tool
 into its own target dir at the cost of one extra build. The windows-latest
 job calls `cargo dev-isolated ci --step <name>`; the Linux job keeps
-`cargo dev ci --step <name>`. On Windows, gob-dev run from the shared
+`cargo dev ci --step <name>`. Steps both OSes run are one workflow step,
+`cargo ${{ matrix.dev }} ci --step <name>`, where `matrix.include` maps
+`dev` to `dev` (Linux) or `dev-isolated` (Windows); Linux-only steps stay
+guarded. On Windows, gob-dev run from the shared
 target dir for a rebuilding task (`ci` without `--list`, `publish`) fails
 fast naming `cargo dev-isolated` (`isolation::check`). A parity test pins
 both aliases and requires the same step names and order per OS.

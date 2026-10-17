@@ -1,7 +1,8 @@
 //! `.github/workflows/ci.yml` and `cargo dev ci` must run the same checks: every check in the
 //! workflow is `cargo dev ci --step <name>` on Linux and `cargo dev-isolated ci --step <name>` on
-//! Windows (no argv, flags or environment of its own), in the
+//! Windows, folded into one `cargo ${{ matrix.dev }} ci --step <name>` step where both run it (no argv, flags or environment of its own), in the
 //! order of `gob_dev::ci::steps`, on the platforms the step list says, and every step is run.
+// frob:ticket 01M55VDSM0FWP78JG2RMQ7HJTJ
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
 // frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
@@ -37,6 +38,54 @@ fn workflow_steps(text: &str) -> Vec<(String, Option<String>, Option<String>, bo
 /// Per-OS check invocations: Linux through `cargo dev`, Windows through `cargo dev-isolated`.
 const LINUX_PREFIX: &str = "cargo dev ci --step ";
 const WINDOWS_PREFIX: &str = "cargo dev-isolated ci --step ";
+/// Both-OS invocation: the `dev` matrix variable names the alias per OS.
+const MATRIX_PREFIX: &str = "cargo ${{ matrix.dev }} ci --step ";
+
+/// The `matrix.include` entries of the `rust` job as (os, dev) pairs.
+fn matrix_dev(text: &str) -> Vec<(String, String)> {
+    let doc: Value = serde_yaml_ng::from_str(text).unwrap();
+    let get = |e: &Value, k: &str| {
+        e.get(k)
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned()
+    };
+    doc["jobs"]["rust"]["strategy"]["matrix"]["include"]
+        .as_sequence()
+        .map(|inc| inc.iter().map(|e| (get(e, "os"), get(e, "dev"))).collect())
+        .unwrap_or_default()
+}
+
+/// Validates a both-OS `cargo ${{ matrix.dev }}` step: a real, unguarded, env-free, non-Linux-only step.
+fn matrix_step(
+    name: &str,
+    first: &str,
+    rest: &str,
+    cond: Option<&str>,
+    has_env: bool,
+    steps: &[Step],
+) -> Result<&'static str, String> {
+    let step = steps
+        .iter()
+        .find(|s| rest.trim() == s.name)
+        .ok_or_else(|| {
+            format!("ci.yml step {name:?} runs `{first}`, which is not a cargo dev ci step")
+        })?;
+    if has_env {
+        return Err(format!(
+            "ci.yml step {name:?} sets env; environment belongs in cargo dev ci ({})",
+            step.name
+        ));
+    }
+    if step.linux_only || cond.is_some() {
+        return Err(format!(
+            "step {}: `{first}` runs on both OSes, so it must be unguarded and not linux-only, \
+             ci.yml has if={cond:?}",
+            step.name
+        ));
+    }
+    Ok(step.name)
+}
 
 /// The first deviation of `ci.yml` from the `cargo dev ci` step list, naming the offending step.
 ///
@@ -45,6 +94,17 @@ const WINDOWS_PREFIX: &str = "cargo dev-isolated ci --step ";
 fn parity(text: &str, steps: &[Step]) -> Result<(), String> {
     let mut linux = Vec::new();
     let mut windows = Vec::new();
+    let map = matrix_dev(text);
+    let want_map = [
+        ("ubuntu-latest".to_owned(), "dev".to_owned()),
+        ("windows-latest".to_owned(), "dev-isolated".to_owned()),
+    ];
+    let uses_matrix = text.contains(MATRIX_PREFIX);
+    if uses_matrix && map != want_map {
+        return Err(format!(
+            "ci.yml matrix.include {map:?} must map the dev variable to {want_map:?}"
+        ));
+    }
     for (name, run, cond, has_env) in workflow_steps(text) {
         let Some(run) = run else { continue };
         let first = run.lines().next().unwrap_or_default().trim().to_owned();
@@ -63,6 +123,12 @@ fn parity(text: &str, steps: &[Step]) -> Result<(), String> {
             return Err(format!(
                 "ci.yml step {name:?} runs a check outside cargo dev ci: {first}"
             ));
+        }
+        if let Some(rest) = first.strip_prefix(MATRIX_PREFIX) {
+            let step = matrix_step(&name, &first, rest, cond.as_deref(), has_env, steps)?;
+            linux.push(step);
+            windows.push(step);
+            continue;
         }
         let (prefix, os, seen) = if first.starts_with(LINUX_PREFIX) {
             (LINUX_PREFIX, "Linux", &mut linux)
@@ -161,7 +227,7 @@ fn a_check_missing_from_cargo_dev_ci_fails_naming_it() {
     steps.retain(|s| s.name != "docs");
     let err = parity(&text, &steps).unwrap_err();
     assert!(
-        err.contains("cargo dev ci --step docs") || err.contains("missing from ci.yml"),
+        err.contains("step docs") || err.contains("not a cargo dev ci step"),
         "{err}"
     );
 }
@@ -170,21 +236,21 @@ fn a_check_missing_from_cargo_dev_ci_fails_naming_it() {
 #[test]
 fn a_raw_or_dropped_check_in_ci_yml_fails_naming_it() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    let raw = text.replace("cargo dev ci --step fmt", "cargo fmt --all");
+    let raw = text.replace("cargo ${{ matrix.dev }} ci --step fmt", "cargo fmt --all");
     let err = parity(&raw, &real_steps()).unwrap_err();
     assert!(
         err.contains("rustfmt") && err.contains("cargo fmt"),
         "{err}"
     );
-    let dropped = text.replace("cargo dev ci --step docs", "echo skipped");
+    let dropped = text.replace("cargo ${{ matrix.dev }} ci --step docs", "echo skipped");
     let err = parity(&dropped, &real_steps()).unwrap_err();
     assert!(
         err.contains("missing from ci.yml") && err.contains("docs"),
         "{err}"
     );
     let with_env = text.replace(
-        "        run: cargo dev ci --step docs",
-        "        env:\n          RUSTDOCFLAGS: x\n        run: cargo dev ci --step docs",
+        "        run: cargo ${{ matrix.dev }} ci --step docs",
+        "        env:\n          RUSTDOCFLAGS: x\n        run: cargo ${{ matrix.dev }} ci --step docs",
     );
     assert!(
         parity(&with_env, &real_steps())
@@ -250,12 +316,15 @@ fn dev_isolated_alias_builds_the_tool_in_its_own_target_dir() {
 fn windows_steps_use_the_isolated_alias_with_the_same_names_and_order() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
     parity(&text, &real_steps()).unwrap();
-    let broken = text.replace(
-        "cargo dev-isolated ci --step nextest",
-        "cargo dev ci --step nextest",
-    );
+    let broken = text.replace("dev: dev-isolated", "dev: dev");
     let err = parity(&broken, &real_steps()).unwrap_err();
-    assert!(err.contains("nextest"), "{err}");
+    assert!(err.contains("dev-isolated"), "{err}");
+    let unguarded = text.replace(
+        "run: cargo dev ci --step snapshots",
+        "run: cargo ${{ matrix.dev }} ci --step snapshots",
+    );
+    let err = parity(&unguarded, &real_steps()).unwrap_err();
+    assert!(err.contains("snapshots"), "{err}");
 }
 
 // frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
