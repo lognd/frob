@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:37Z"
-updated = "2026-10-17T20:48:25Z"
+updated = "2026-10-17T20:53:11Z"
 scope = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock", "crates/gob-fs/**", "docs/design/git-io.md"]
 
 [[acceptance]]
 text = "Given cargo tree -p gob-walk, gob-ir, gob-symbols and grimble-model, when inspected, then no gix crate appears (test over cargo metadata)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the workspace, when the full suite runs, then it passes"
