@@ -12,13 +12,13 @@ use std::path::Path;
 use std::time::Instant;
 
 use gob_cache::Cache;
-use gob_rules::{Finding, Rule, RuleId, RuleMeta, Severity};
-use gob_text::{FileInterner, Span, TextRange, TextSize};
+use gob_rules::{Finding, RuleMeta};
+use gob_text::FileInterner;
 
 use crate::config::CheckTable;
 use crate::product::{Product, RepoGroup, Snapshot};
 use crate::report::{Stats, Tally};
-use crate::rules::Proc001;
+use crate::rules::proc001::Proc001;
 use crate::store;
 
 /// Digest of everything repo rules read (the repo-rule cache key component).
@@ -135,57 +135,16 @@ pub(crate) fn cached(
     found
 }
 
-/// Byte offset of the start of 1-based `line` in `text`.
-fn line_start(text: &str, line: usize) -> usize {
-    text.split_inclusive('\n')
-        .take(line.saturating_sub(1))
-        .map(str::len)
-        .sum()
-}
-
 /// `PROC001` over the repository: one finding per spawning reference outside `spawners`.
 fn proc001(root: &Path, spawners: &[String], files: &mut FileInterner) -> Vec<Finding> {
-    let id: RuleId = Proc001
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
-    let mut out = Vec::new();
-    for hit in gob_exec::proc001::scan(root, spawners) {
-        let rel = hit
-            .path
-            .strip_prefix(root)
-            .unwrap_or(&hit.path)
-            .to_string_lossy()
-            .replace('\\', "/");
-        let text = std::fs::read_to_string(&hit.path).unwrap_or_default();
-        let start = line_start(&text, hit.line) + hit.col.saturating_sub(1);
-        let line_end = line_start(&text, hit.line + 1).min(text.len());
-        let end = line_end.max(start);
-        let to_size = |n: usize| TextSize::new(u32::try_from(n).unwrap_or(u32::MAX));
-        let span = Span::new(
-            files.intern(&rel),
-            TextRange::new(to_size(start), to_size(end)),
-        );
-        out.push(Finding::new(
-            id.clone(),
-            Severity::Error,
-            Some(span),
-            format!(
-                "`{}` uses a process-spawning API outside {}; spawn through gob_exec::Runner",
-                hit.text,
-                spawners.join(", ")
-            ),
-            &rel,
-        ));
-    }
-    out
+    crate::rules::proc001::findings(root, spawners, files)
 }
 
 /// The neutral repo groups every product gets: `PROC001`, which is inert without `process_spawners`.
 pub(crate) fn builtin_groups<P: Product>(spawners: Vec<String>) -> Vec<RepoGroup<P>> {
     vec![RepoGroup::new(
         "repo:process",
-        vec![Proc001.meta()],
+        vec![crate::ids::meta_of::<Proc001>()],
         move |s: &Snapshot<P>, f| proc001(&s.core.root, &spawners, f),
     )]
 }
@@ -237,10 +196,11 @@ pub(crate) fn run_repo_rules<P: Product>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gob_rules::{RuleDecl, RuleId, Severity};
 
     /// Runs `cached` for `PROC001` on a fresh interner; returns whether `compute` ran.
     fn ran(cache: &Cache) -> bool {
-        let metas = [RuleKey::from(Proc001.meta())];
+        let metas = [RuleKey::from(Proc001::DEF)];
         let mut computed = false;
         let mut stats = Stats::default();
         let mut files = FileInterner::default();
@@ -265,8 +225,8 @@ mod tests {
     fn a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh() {
         let dir = tempfile::tempdir().unwrap();
         let cache = Cache::open(dir.path());
-        let metas = [RuleKey::from(Proc001.meta())];
-        let id: RuleId = "PROC001".parse().unwrap();
+        let metas = [RuleKey::from(Proc001::DEF)];
+        let id: RuleId = crate::ids::rule_id::<Proc001>();
         let run = |fail: bool| {
             let mut computed = false;
             let found = cached(
@@ -284,7 +244,7 @@ mod tests {
                     vec![
                         Finding::new(id.clone(), Severity::Unresolved, None, "boom", "repository")
                             .with_required(gob_rules::RequiredReason::EvaluationFailed {
-                                rule: "PROC001".into(),
+                                rule: Proc001::DEF.id.into(),
                                 error: "boom".into(),
                             }),
                     ]

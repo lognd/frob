@@ -46,8 +46,13 @@ mod config;
 mod effects;
 pub mod frob;
 pub mod grimble;
+mod host;
 mod lex;
 mod meta;
+#[allow(
+    dead_code,
+    reason = "rules::bind is consumed by product_rules! once a product lists this crate"
+)]
 mod rules;
 mod scan;
 mod ulid;
@@ -58,9 +63,12 @@ pub use bind::Binding;
 pub use config::DirectivesConfig;
 pub use effects::{EffectAlias, EffectAtom, EffectBase, EffectSet, EffectsClaim, effects_claim};
 pub use gob_macros::Directive;
+pub use host::DirectiveHost;
 pub use inventory;
 pub use meta::{Directive, DirectiveEntry, DirectiveMeta, all_directives, validate};
-pub use rules::{Dsl001, Dsl002, Parse001};
+pub use rules::dsl001::Dsl001;
+pub use rules::dsl002::Dsl002;
+pub use rules::parse001::Parse001;
 pub use scan::{DirectiveRecord, NOT_ATTACHED, REORIENT_VERB, ScanConfig, ScanResult, Scanner};
 pub use ulid::{is_full_ulid, looks_like_ticket_ref};
 pub use wire::{WIRE_VERSION, decode_records, encode_records};

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-17T23:07:33Z"
+digest = "e2f1cbf002391786645c63bbc1fd4f03ad629469d86b3dc71633b3efc1be773a"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 743c1de6-42f6-45a4-a996-9d2b2639cc3b with nextest profile: default
+    Starting 1 test across 15 binaries (80 tests skipped)
+        PASS [   0.050s] frob-check::fidelity pm_rules_inapplicable_reasons_appear_in_the_not_applicable_list
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.051s] 1 test run: 1 passed, 80 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-j2 -p frob-check -E test(pm_rules_inapplicable)"
+size = 564
+status = "measured"
+tests = ["pm_rules_inapplicable_reasons_appear_in_the_not_applicable_list"]
+at = "2026-10-17T23:07:33Z"
+actor = "lognd"
+rev = 1

@@ -45,7 +45,14 @@ pub fn test001_with_sources(
         if ok {
             continue;
         }
-        let message = if covers {
+        let dotted = dotted_member_form(target)
+            .filter(|d| !matches!(graph.resolve(d), Err(ResolveError::NotFound(_))));
+        let message = if let Some(d) = dotted {
+            tracing::debug!(target, dotted = %d, "TEST001 dotted-member hint");
+            format!(
+                "`frob:tests {target}` names no symbol in the graph; members nest with `.` (code-model.md section 2), write `{d}`"
+            )
+        } else if covers {
             format!(
                 "`frob:tests {target}` names no symbol in the graph; fix the symref or remove the directive"
             )
@@ -64,6 +71,15 @@ pub fn test001_with_sources(
         ));
     }
     out
+}
+
+/// The `path::Type.method` spelling of a `path::Type::method` symref, when it nests more than one qualname segment.
+// frob:ticket 01M4BMRXQ0H30CBE9V02RPYTC8
+fn dotted_member_form(target: &str) -> Option<String> {
+    let (locator, qualname) = target.split_once("::")?;
+    qualname
+        .contains("::")
+        .then(|| format!("{locator}::{}", qualname.replace("::", ".")))
 }
 
 fn is_test(rec: &gob_symbols::SymbolRecord, read: &dyn Fn(&str) -> Option<String>) -> bool {

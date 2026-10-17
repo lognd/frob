@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 
 use gob_languages::{Language, ParseLimits, ParseResult, parse};
-use gob_rules::{Finding, RuleId, RuleMeta};
+use gob_rules::{Finding, RuleDecl, RuleDef, RuleId};
 use gob_symbols::{FileSymbols, Symref};
 use gob_text::{FileId, FileInterner, LineIndex, Span, TextRange};
 
@@ -13,7 +13,9 @@ use crate::comments::{Segment, segments};
 use crate::config::DirectivesConfig;
 use crate::lex::{is_word, range_at, tokenize};
 use crate::meta::{DirectiveEntry, entries};
-use crate::rules::{Dsl001, Dsl002, Parse001};
+use crate::rules::dsl001::Dsl001;
+use crate::rules::dsl002::Dsl002;
+use crate::rules::parse001::Parse001;
 use crate::ulid::{is_full_ulid, looks_like_ticket_ref};
 
 /// The verb whose binding is reoriented to its named target inside a test item.
@@ -86,7 +88,7 @@ pub struct Scanner {
     verbs: BTreeMap<(String, String), &'static DirectiveEntry>,
 }
 
-fn rule_finding(meta: &RuleMeta, span: Span, message: String, anchor: &str) -> Finding {
+fn rule_finding(meta: &RuleDef, span: Span, message: String, anchor: &str) -> Finding {
     let id: RuleId = meta
         .id
         .parse()
@@ -186,14 +188,14 @@ impl Scanner {
         let verb_len = after.find(char::is_whitespace).unwrap_or(after.len());
         let verb = &after[..verb_len];
         let verb_span = ctx.span(range_at(seg.offset, colon + 1, colon + 1 + verb_len));
-        let mut emit = |meta: &RuleMeta, span: Span, message: String| {
+        let mut emit = |meta: &RuleDef, span: Span, message: String| {
             tracing::debug!(rule = meta.id, %message, "directive finding");
             out.findings
                 .push(rule_finding(meta, span, message, &ctx.symbols.path));
         };
         if verb.is_empty() {
             emit(
-                &Parse001::META,
+                <Parse001 as RuleDecl>::DEF,
                 ctx.span(range_at(seg.offset, 0, colon + 1)),
                 format!("`{ns}:` is missing a verb"),
             );
@@ -201,7 +203,7 @@ impl Scanner {
         }
         if !is_word(verb, true) {
             emit(
-                &Parse001::META,
+                <Parse001 as RuleDecl>::DEF,
                 verb_span,
                 format!("malformed verb `{verb}`; expected lowercase letters, digits, `_` and `-`"),
             );
@@ -209,7 +211,7 @@ impl Scanner {
         }
         let Some(entry) = self.verbs.get(&(ns.to_owned(), verb.to_owned())) else {
             emit(
-                &Dsl001::META,
+                <Dsl001 as RuleDecl>::DEF,
                 verb_span,
                 self.unknown_verb_message(ns, verb),
             );
@@ -220,7 +222,7 @@ impl Scanner {
             Ok(a) => a,
             Err(e) => {
                 emit(
-                    &Parse001::META,
+                    <Parse001 as RuleDecl>::DEF,
                     ctx.span(e.range),
                     format!("`{ns}:{verb}`: {}", e.message),
                 );
@@ -229,7 +231,11 @@ impl Scanner {
         };
         if let Err(e) = (entry.validate)(&args) {
             let span = e.range().map_or(whole, |r| ctx.span(r));
-            emit(&Parse001::META, span, format!("`{ns}:{verb}`: {e}"));
+            emit(
+                <Parse001 as RuleDecl>::DEF,
+                span,
+                format!("`{ns}:{verb}`: {e}"),
+            );
             return;
         }
         if let Some((meta, span, message)) = check_ticket_refs(ctx, entry, &args, ns, verb) {
@@ -254,7 +260,7 @@ impl Scanner {
         (ns, verb): (&str, &str),
         args: ArgList,
         span: Span,
-        emit: &mut impl FnMut(&RuleMeta, Span, String),
+        emit: &mut impl FnMut(&RuleDef, Span, String),
     ) -> Option<DirectiveRecord> {
         let site = Site {
             start: seg.offset,
@@ -272,7 +278,7 @@ impl Scanner {
             && ctx.language == Language::Rust
         {
             tracing::debug!(?span, "unattached tests directive dropped");
-            emit(&Parse001::META, span, NOT_ATTACHED.to_owned());
+            emit(<Parse001 as RuleDecl>::DEF, span, NOT_ATTACHED.to_owned());
             return None;
         }
         let mut bound = sym.map_or(Binding::File, |s| Binding::Symbol(s.symref.clone()));
@@ -288,7 +294,7 @@ impl Scanner {
                     bound = Binding::Symbol(t);
                 }
                 Err(e) => emit(
-                    &Parse001::META,
+                    <Parse001 as RuleDecl>::DEF,
                     ctx.span(target.range),
                     format!("`{ns}:{verb}` target is not a symref: {e}"),
                 ),
@@ -352,7 +358,7 @@ fn check_ticket_refs<'m>(
     args: &ArgList,
     ns: &str,
     verb: &str,
-) -> Option<(&'m RuleMeta, Span, String)> {
+) -> Option<(&'m RuleDef, Span, String)> {
     let mut positional = 0usize;
     for a in entry.meta.args {
         let token: Option<&Token> = if a.list {
@@ -372,7 +378,7 @@ fn check_ticket_refs<'m>(
         let span = ctx.span(t.range);
         return Some(if looks_like_ticket_ref(&t.value) {
             (
-                &Dsl002::META,
+                <Dsl002 as RuleDecl>::DEF,
                 span,
                 format!(
                     // frob:ticket 01M40YQZF4422S88TN6992AN0Q
@@ -382,7 +388,7 @@ fn check_ticket_refs<'m>(
             )
         } else {
             (
-                &Parse001::META,
+                <Parse001 as RuleDecl>::DEF,
                 span,
                 format!("`{ns}:{verb}`: `{}` is not a ticket id", t.value),
             )

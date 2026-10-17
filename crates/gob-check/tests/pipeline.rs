@@ -259,7 +259,11 @@ fn only_accepts_this_products_rules_and_rejects_the_others() {
     };
     assert!(run(&toy, dir.path(), &ok).is_ok(), "family TOY is known");
     let foreign = RunOptions {
-        only: vec!["TOOL001".to_owned()],
+        only: vec![
+            <gob_check::Tool001 as gob_check::__rules::RuleDecl>::DEF
+                .id
+                .to_owned(),
+        ],
         ..quiet()
     };
     assert!(
