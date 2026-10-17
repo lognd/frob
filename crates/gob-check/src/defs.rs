@@ -68,7 +68,7 @@ impl<'a, P: Product> Live<'a, P> {
     pub fn repo_refs(&self) -> Vec<RuleRef> {
         self.entries
             .iter()
-            .filter(|e| matches!(e.run, Run::Repo(_)))
+            .filter(|e| matches!(e.run, Run::Repo(_) | Run::Relay(_)))
             .map(|e| RuleRef::of_def(e.def))
             .collect()
     }
@@ -167,7 +167,7 @@ pub(crate) fn run_file_rules<P: Product>(
     out
 }
 
-/// Run the live declared repo rules (cached per inputs digest) and count `must_measure` subjects.
+/// Run the live declared repo and relay rules (repo bodies cached per inputs digest) and count subjects.
 pub(crate) fn run_repo_rules<P: Product>(
     product: &P,
     snap: &Snapshot<P>,
@@ -179,26 +179,35 @@ pub(crate) fn run_repo_rules<P: Product>(
     let digest = inputs_digest(product, snap);
     let mut out = Vec::new();
     for entry in &live.entries {
-        let Run::Repo(run) = &entry.run else { continue };
         let def = entry.def;
         let started = Instant::now();
         let name = format!("repo:{}", def.id.to_ascii_lowercase());
-        out.extend(cached(
-            cache,
-            &digest,
-            &name,
-            &[RuleKey::from(def)],
-            files,
-            &mut tally.stats,
-            |files| {
-                run(product, snap)
-                    .into_iter()
-                    .map(|e| e.into_located_finding(def, files))
-                    .collect()
-            },
-        ));
-        if let Some(count) = &entry.subjects {
-            let n = count(product, snap);
+        match &entry.run {
+            Run::Repo(run) => out.extend(cached(
+                cache,
+                &digest,
+                &name,
+                &[RuleKey::from(def)],
+                files,
+                &mut tally.stats,
+                |files| {
+                    run(product, snap)
+                        .into_iter()
+                        .map(|e| e.into_located_finding(def, files))
+                        .collect()
+                },
+            )),
+            // Not cached: the sibling stage that computed these findings owns their caching.
+            Run::Relay(run) => out.extend(run(product, snap, files)),
+            // A stage computes its own findings; only its subject count is read here.
+            Run::Stage => {}
+            Run::File(_) => continue,
+        }
+        if let Some(n) = entry
+            .subjects
+            .as_ref()
+            .and_then(|count| count(product, snap))
+        {
             tracing::debug!(
                 rule = def.id,
                 subjects = n,
@@ -206,7 +215,9 @@ pub(crate) fn run_repo_rules<P: Product>(
             );
             tally.subjects.insert(def.id.to_owned(), n);
         }
-        tally.timing.push(name, started.elapsed(), true);
+        if !matches!(entry.run, Run::Stage) {
+            tally.timing.push(name, started.elapsed(), true);
+        }
     }
     out
 }

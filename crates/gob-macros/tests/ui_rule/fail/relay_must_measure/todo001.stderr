@@ -1,0 +1,5 @@
+error: `body = relay` cannot be `must_measure = true`: a relay reports its count through `RelayRule::examined`
+  --> tests/ui_rule/fail/relay_must_measure/todo001.rs:10:5
+   |
+10 |     must_measure = true,
+   |     ^^^^^^^^^^^^

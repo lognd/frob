@@ -12,7 +12,8 @@ use gob_check::{
 };
 use gob_diagnostics::ExitCode;
 use gob_rules::{
-    ExceptionCtx, Finding, RequiredReason, Resolved, Severity, apply_exceptions, indexgen,
+    BoundRule, ExceptionCtx, Finding, RequiredReason, Resolved, RuleDecl, Severity,
+    UnresolvedReason, apply_exceptions, indexgen,
 };
 use gob_symbols::{Fidelity, FileInfo, ParseStatus};
 use gob_text::FileInterner;
@@ -25,12 +26,16 @@ pub trait Host {
     fn items(&self) -> usize;
     /// True when the product has no item store at all.
     fn disabled(&self) -> bool;
+    /// Findings a sibling stage already computed (~Z0816YV).
+    fn staged(&self) -> Vec<Finding>;
 }
 
 #[path = "product_rules/alpha/src/rules/mod.rs"]
 pub mod alpha_rules;
 #[path = "product_rules/beta/src/rules/mod.rs"]
 pub mod beta_rules;
+#[path = "product_rules/delta/src/rules/mod.rs"]
+pub mod delta_rules;
 #[path = "product_rules/gamma/src/rules/mod.rs"]
 pub mod gamma_rules;
 
@@ -62,6 +67,8 @@ struct Toy {
     bad: bool,
     items: usize,
     disabled: bool,
+    /// Bind the relay and stage rules of the ~Z0816YV tests as well.
+    extras: bool,
 }
 
 impl Host for Toy {
@@ -73,6 +80,13 @@ impl Host for Toy {
     }
     fn disabled(&self) -> bool {
         self.disabled
+    }
+    fn staged(&self) -> Vec<Finding> {
+        if self.extras {
+            staged_findings()
+        } else {
+            Vec::new()
+        }
     }
 }
 
@@ -98,7 +112,17 @@ impl Product for Toy {
     }
 
     fn rule_set(&self) -> RuleSet<Self> {
-        RuleSet::new().bind(listed::rules(), host)
+        let set = RuleSet::new().bind(listed::rules(), host);
+        if !self.extras {
+            return set;
+        }
+        set.bind(vec![BoundRule::relay(delta_rules::rel001::Rel001)], host)
+            .stage_when(<delta_rules::stg001::Stg001 as RuleDecl>::DEF, |p, _| {
+                p.disabled.then(|| "no sibling configured".to_owned())
+            })
+            .stage_counted(<delta_rules::stc001::Stc001 as RuleDecl>::DEF, |p, _| {
+                p.items
+            })
     }
 
     fn file_checks(&self) -> Vec<Arc<dyn FileCheck<Self>>> {
@@ -144,7 +168,41 @@ fn toy(bad: bool, items: usize, disabled: bool) -> Toy {
         bad,
         items,
         disabled,
+        extras: false,
     }
+}
+
+fn toy_extras(items: usize, disabled: bool) -> Toy {
+    Toy {
+        extras: true,
+        ..toy(false, items, disabled)
+    }
+}
+
+fn staged_findings() -> Vec<Finding> {
+    let rel = |id: &str| id.parse().expect("rule id");
+    vec![
+        Finding::new(
+            rel("REL001"),
+            Severity::Unresolved,
+            None,
+            "sibling absent",
+            "sibling",
+        )
+        .with_reason(UnresolvedReason::EdgeMay)
+        .with_required(RequiredReason::SiblingMissing {
+            product: "toy-sibling".into(),
+        }),
+        Finding::new(
+            rel("REL001"),
+            Severity::Error,
+            None,
+            "custom severity",
+            "sev",
+        ),
+        // Another rule's id: a relay may not speak for a sibling rule.
+        Finding::new(rel("BET001"), Severity::Warn, None, "stray", "stray"),
+    ]
 }
 
 fn tree() -> tempfile::TempDir {
@@ -311,10 +369,80 @@ fn the_resolver_decides_per_file_for_declared_rules() {
 
 #[test]
 fn fixture_indexes_are_fresh() {
-    for name in ["alpha", "beta", "gamma"] {
+    for name in ["alpha", "beta", "gamma", "delta"] {
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("tests/product_rules")
             .join(name);
         indexgen::assert_fresh(dir).expect("fixture index is fresh");
     }
+}
+
+// frob:ticket 01M55896EM27W5SD8BGZ0816YV
+// frob:tests crates/gob-rules/src/decl.rs::run_relay
+// frob:tests crates/gob-check/src/defs.rs::run_repo_rules
+// frob:tests crates/gob-rules/src/decl.rs::RelayRule.relay
+// frob:tests crates/gob-rules/src/index.rs::BoundRule.relay
+// frob:tests crates/gob-rules/src/decl.rs::Out.fire
+// frob:tests crates/gob-check/src/rule_set.rs::RuleSet.bind
+#[test]
+fn a_relay_rule_keeps_reason_severity_and_required_and_drops_stray_ids() {
+    let dir = tree();
+    let report = run(&toy_extras(1, false), dir.path(), &quiet()).expect("run");
+    let rel: Vec<&Finding> = report
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "REL001")
+        .collect();
+    assert_eq!(rel.len(), 2, "{:?}", report.findings);
+    let unresolved = rel
+        .iter()
+        .find(|f| f.severity == Severity::Unresolved)
+        .expect("relayed unresolved");
+    assert_eq!(unresolved.reason, Some(UnresolvedReason::EdgeMay));
+    assert_eq!(
+        unresolved.required,
+        Some(RequiredReason::SiblingMissing {
+            product: "toy-sibling".into()
+        })
+    );
+    assert!(rel.iter().any(|f| f.severity == Severity::Error));
+    assert!(
+        report.findings.iter().all(|f| f.rule.as_str() != "BET001"),
+        "the stray BET001 finding is dropped"
+    );
+    assert_eq!(report.subjects_examined.get("REL001"), Some(&3));
+}
+
+// frob:ticket 01M55896EM27W5SD8BGZ0816YV
+// frob:tests crates/gob-check/src/rule_set.rs::RuleSet.stage_when
+// frob:tests crates/gob-check/src/rule_set.rs::RuleSet.stage
+#[test]
+fn a_stage_rule_can_be_not_applicable_with_a_reason() {
+    let dir = tree();
+    let report = run(&toy_extras(1, true), dir.path(), &quiet()).expect("run");
+    assert_eq!(
+        report.fidelity.inapplicable["STG001"],
+        "no sibling configured"
+    );
+    let report = run(&toy_extras(1, false), dir.path(), &quiet()).expect("run");
+    assert!(!report.fidelity.inapplicable.contains_key("STG001"));
+}
+
+// frob:ticket 01M55896EM27W5SD8BGZ0816YV
+// frob:tests crates/gob-check/src/rule_set.rs::RuleSet.stage_counted
+#[test]
+fn a_counted_stage_rule_with_zero_subjects_is_the_required_unresolved() {
+    let dir = tree();
+    let report = run(&toy_extras(0, false), dir.path(), &quiet()).expect("run");
+    assert_eq!(report.subjects_examined.get("STC001"), Some(&0));
+    assert!(report.findings.iter().any(|f| {
+        f.rule.as_str() == "STC001"
+            && f.required
+                == Some(RequiredReason::ZeroSubjects {
+                    rule: "STC001".into(),
+                })
+    }));
+    let report = run(&toy_extras(2, false), dir.path(), &quiet()).expect("run");
+    assert_eq!(report.subjects_examined.get("STC001"), Some(&2));
+    assert!(report.findings.iter().all(|f| f.rule.as_str() != "STC001"));
 }

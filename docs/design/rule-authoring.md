@@ -49,6 +49,15 @@ impl RepoRule for Cov001 { /* evaluation on the same type */ }
 - Evaluation is a trait on the same type: `FileRule` or `RepoRule` (chosen by
   `scope`), `Measured` when `must_measure`, and a `stage(..)` body for rules a
   pipeline stage emits (tool parsers, the grimble model check).
+- `body = relay` (optional, `scope = Repo` only, not with `must_measure`) swaps `RepoRule` for
+  `RelayRule`, whose `relay(host, files)` returns whole `Finding`s a sibling stage already
+  computed. Unlike `Out`, that keeps the typed `UnresolvedReason`, per-finding severity, the
+  required reason, custom anchors, byte ranges and fixes. Findings stamped with another rule's id
+  are dropped (with a warning), and relay output is never cached: the stage owns its caching.
+- Subjects are available for any repo rule: `RepoRule::examined` / `RelayRule::examined` return
+  `Option<usize>` (`None` reports nothing), and `RuleSet::stage_counted(def, count)` does the same for a
+  stage rule, so a `must_measure` stage rule with zero subjects is the required Unresolved.
+  `RuleSet::stage_when(def, inapplicable)` gives a stage rule a product-fact `not_applicable`.
 - Product-fact applicability is a method on the rule (`inapplicable`), whose
   reason is counted and printed.
 

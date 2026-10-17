@@ -26,6 +26,8 @@ pub struct RuleSrc {
     pub scope: SrcScope,
     /// `must_measure = true` in the attribute (a repo rule then binds through `Measured`).
     pub must_measure: bool,
+    /// `body = relay` in the attribute (a repo rule then binds through `RelayRule`).
+    pub relay: bool,
 }
 
 /// `scope` as written in the attribute.
@@ -200,6 +202,7 @@ fn parse_rule_file(path: &Path, stem: &str, text: &str) -> Result<Option<RuleSrc
         ty: name.to_owned(),
         scope,
         must_measure: word_arg(body, "must_measure") == Some("true"),
+        relay: word_arg(body, "body") == Some("relay"),
     }))
 }
 
@@ -253,19 +256,22 @@ pub fn render(rules: &[RuleSrc], has_retired: bool) -> String {
         "/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.\n#[allow(clippy::vec_init_then_push, reason = \"generated: one push per rule\")]\npub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>\nwhere"
     );
     for r in rules {
-        let tr = match (r.scope, r.must_measure) {
-            (SrcScope::File, _) => "FileRule",
-            (SrcScope::Repo, false) => "RepoRule",
-            (SrcScope::Repo, true) => "Measured",
+        let tr = match (r.scope, r.relay, r.must_measure) {
+            (SrcScope::File, _, _) => "gob_rules::FileRule<P>",
+            (SrcScope::Repo, false, false) => "gob_rules::RepoRule<P>",
+            (SrcScope::Repo, false, true) => "gob_rules::Measured<P>",
+            // the macro rejects `must_measure = true` on a relay rule, so the flag cannot differ here
+            (SrcScope::Repo, true, _) => "gob_rules::RelayRule<P>",
         };
-        let _ = writeln!(s, "    {}::{}: gob_rules::{tr}<P>,", r.stem, r.ty);
+        let _ = writeln!(s, "    {}::{}: {tr},", r.stem, r.ty);
     }
     let _ = writeln!(s, "{{\n    let mut rules = Vec::new();");
     for r in rules {
-        let ctor = match (r.scope, r.must_measure) {
-            (SrcScope::File, _) => "file",
-            (SrcScope::Repo, false) => "repo",
-            (SrcScope::Repo, true) => "measured",
+        let ctor = match (r.scope, r.relay, r.must_measure) {
+            (SrcScope::File, _, _) => "file",
+            (SrcScope::Repo, false, false) => "repo",
+            (SrcScope::Repo, false, true) => "measured",
+            (SrcScope::Repo, true, _) => "relay",
         };
         let _ = writeln!(
             s,
@@ -400,6 +406,7 @@ mod tests {
                 ty: "Cov001".into(),
                 scope: SrcScope::File,
                 must_measure: false,
+                relay: false,
             },
             RuleSrc {
                 stem: "cov002".into(),
@@ -407,6 +414,7 @@ mod tests {
                 ty: "Cov002".into(),
                 scope: SrcScope::Repo,
                 must_measure: false,
+                relay: false,
             },
         ];
         let text = render(&rules, false);
@@ -431,6 +439,18 @@ mod tests {
         let text = render(&rules, false);
         assert!(text.contains("cov003::Cov003: gob_rules::Measured<P>,"));
         assert!(text.contains("rules.push(gob_rules::BoundRule::measured(cov003::Cov003));"));
+    }
+
+    #[test]
+    fn a_relay_repo_rule_binds_through_relay_rule() {
+        let mut file = rule_file("COV004", "Cov004", "Repo");
+        file = file.replace("scope = Repo,", "scope = Repo,\n    body = relay,");
+        let dir = crate_with(&[("cov004.rs", file.clone())]);
+        let rules = scan(dir.path()).expect("scan");
+        assert!(rules[0].relay && !rules[0].must_measure);
+        let text = render(&rules, false);
+        assert!(text.contains("cov004::Cov004: gob_rules::RelayRule<P>,"));
+        assert!(text.contains("rules.push(gob_rules::BoundRule::relay(cov004::Cov004));"));
     }
 
     #[test]

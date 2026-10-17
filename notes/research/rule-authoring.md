@@ -383,7 +383,9 @@ pub trait Measured<P: ?Sized>: RepoRule<P> { fn subjects(&self, cx: &RepoCx<'_, 
   closures).
 - Stage-emitted rules (shape G, 26 rules): `scope = Repo, body = stage(DirectiveScan)` etc. `Stage` is a closed enum in
   gob-check (DirectiveScan, ReadWalk, Perf, ToolStage, Sibling, Exceptions, TicketScope, Doctor, Alias(of)); no trait is
-  required, the stage code stamps findings through `Cov003::id()`-style consts. They get declaration, docs, matrix,
+  required, the stage code stamps findings through `Cov003::id()`-style consts. (~Z0816YV: a stage rule that must
+  carry typed reasons, severities or fixes instead declares `body = relay` and implements `RelayRule`; stage
+  rules gain `RuleSet::stage_when` / `stage_counted` for not-applicable and subject counts.) They get declaration, docs, matrix,
   registry, uniqueness; they do not get a `check`. This is real extra surface (flag F2).
 - Shared per-file/per-run work (today fused: `directives_of`, `Tickets::new`, ledger read for PM001/PM002/PM034):
   memoized inside the Cx (`OnceLock` fields). Rules are evaluated one at a time; the cache key is already per rule
