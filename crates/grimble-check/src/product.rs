@@ -2,17 +2,17 @@
 //! exceptions written in the model.
 
 use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 
 use gob_check::{
-    CheckError, CollectCx, Collected, FileCheck, NoScope, Product, RepoGroup, Snapshot,
+    CheckError, CollectCx, Collected, FileCheck, NoScope, Product, RepoGroup, RuleSet, Snapshot,
 };
 use gob_rules::{
-    BoundException, ExceptionCtx, ExceptionKind, Finding, Registry, Resolved, RuleMeta, Severity,
-    apply_exceptions,
+    BoundException, ExceptionCtx, ExceptionKind, Finding, Registry, Resolved, RuleDef, RuleMeta,
+    Severity, Tier, apply_exceptions,
 };
 use gob_text::{FileInterner, Span};
-use grimble_model::{ModelFiles, check_model, rules::file_table};
+use grimble_model::{ModelFiles, check_model, file_table};
 
 use crate::bind_cache::{self, BindSummary};
 use crate::config::{GrimbleTable, PRODUCT};
@@ -73,26 +73,74 @@ impl Grimble {
 /// Directive-scanner rules `check_model` also emits for `frob:` and `grimble:` comments in `.grmb` files.
 const DIRECTIVE_RULES: [&str; 3] = ["PARSE001", "DSL001", "DSL002"];
 
-/// The rules the model group emits: the MDL family and the directive-scanner rules it relays.
-///
-/// The families SYS, CAP, CYCLE/LARGE/DEAD, PACK, GPOL, NEAT, CI and DK register their own
-/// groups as their tickets land.
-pub fn model_rules() -> Vec<&'static RuleMeta> {
-    let registry = Registry::global();
-    let mut metas: Vec<&'static RuleMeta> = registry
-        .iter()
-        .filter(|m| m.product == PRODUCT && m.family == "MDL")
-        .collect();
-    metas.extend(DIRECTIVE_RULES.iter().filter_map(|id| registry.by_id(id)));
-    metas
+// frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
+/// The legacy metadata of a declared rule, leaked once per process (the legacy groups hold `&'static`).
+fn legacy_meta(def: &'static RuleDef) -> &'static RuleMeta {
+    let summary = def.summary();
+    Box::leak(Box::new(RuleMeta {
+        id: def.id,
+        slug: def.slug,
+        family: def.family,
+        product: PRODUCT,
+        severity: def.severity,
+        summary,
+        explanation: def.doc,
+        tier: Tier::Universal,
+        scope: def.scope,
+        fix: def.fix,
+        polarity: def.polarity,
+        must_measure: def.must_measure,
+        version: def.version,
+        since: def.since,
+        module: "grimble",
+    }))
 }
 
-/// The binding rules (the SYS family `grimble-bind` evaluates).
-pub fn binding_rules() -> Vec<&'static RuleMeta> {
-    Registry::global()
+/// The legacy metadata of the declared rules in `defs`, built on first use.
+fn legacy_metas(
+    cell: &'static OnceLock<Vec<&'static RuleMeta>>,
+    defs: &[&'static RuleDef],
+) -> Vec<&'static RuleMeta> {
+    cell.get_or_init(|| defs.iter().map(|d| legacy_meta(d)).collect())
+        .clone()
+}
+
+/// The rules the model group emits: the MDL family declared in `grimble-model`.
+fn model_metas() -> Vec<&'static RuleMeta> {
+    static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
+    legacy_metas(&CELL, grimble_model::rules::METAS)
+}
+
+/// The binding rules (the SYS family `grimble-bind` declares).
+fn binding_metas() -> Vec<&'static RuleMeta> {
+    static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
+    legacy_metas(&CELL, grimble_bind::rules::METAS)
+}
+
+/// Every rule grimble reports: the global registry plus the declared MDL and SYS rules (for slugs and polarity).
+pub(crate) fn registry() -> &'static Registry {
+    static CELL: OnceLock<Registry> = OnceLock::new();
+    CELL.get_or_init(|| {
+        let metas = Registry::global()
+            .iter()
+            .chain(model_metas())
+            .chain(binding_metas());
+        Registry::from_metas(metas)
+    })
+}
+
+/// The directive-scanner rules `check_model` relays; they are still legacy `RuleMeta` rules.
+fn directive_metas() -> Vec<&'static RuleMeta> {
+    let registry = Registry::global();
+    DIRECTIVE_RULES
         .iter()
-        .filter(|m| m.product == PRODUCT && grimble_bind::RULES.contains(&m.id))
+        .filter_map(|id| registry.by_id(id))
         .collect()
+}
+
+/// The reason the declared rule `def` does not apply on this model, from the binding.
+fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) -> Option<String> {
+    snap.inputs.binding.not_applicable.get(def.id).cloned()
 }
 
 /// Key under which a suppressed finding is remembered: rule, file, offset and message.
@@ -190,12 +238,25 @@ impl Product for Grimble {
         })
     }
 
+    fn rule_set(&self) -> RuleSet<Self> {
+        let mut set = RuleSet::new();
+        for def in grimble_model::rules::METAS
+            .iter()
+            .chain(grimble_bind::rules::METAS)
+            .copied()
+        {
+            set = set.stage_when(def, move |p, snap| inapplicable(p, snap, def));
+        }
+        set
+    }
+
     fn file_checks(&self) -> Vec<Arc<dyn FileCheck<Self>>> {
         Vec::new()
     }
 
     fn repo_groups(&self) -> Vec<RepoGroup<Self>> {
-        let metas = model_rules();
+        let mut metas = model_metas();
+        metas.extend(directive_metas());
         let ids: Vec<&'static str> = metas.iter().map(|m| m.id).collect();
         vec![
             RepoGroup::new(
@@ -214,7 +275,7 @@ impl Product for Grimble {
             }),
             RepoGroup::new(
                 "repo:binding",
-                binding_rules(),
+                binding_metas(),
                 |s: &Snapshot<Self>, files: &mut FileInterner| {
                     s.inputs
                         .binding

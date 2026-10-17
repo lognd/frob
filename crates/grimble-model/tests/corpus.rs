@@ -6,12 +6,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
+use grimble_model::check_model;
 use grimble_model::dump::{dump, u_signature};
 use grimble_model::fmt::format_file;
 use grimble_model::fold::fold_file;
 use grimble_model::model::{ModelFiles, PackPin};
 use grimble_model::parse::parse_file;
-use grimble_model::rules::check_model;
 
 fn corpus_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/corpus")

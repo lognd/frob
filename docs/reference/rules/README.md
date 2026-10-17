@@ -8,6 +8,14 @@
 |---|---|---|---|---|---|---|
 | [AFFECT001](AFFECT001.md) | dependents-not-updated | warn | manual | P+ | false | A public symbol changed its signature and its dependents were not re-acked. |
 
+## BP
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [BP001](BP001.md) | media-query-off-breakpoint | error | manual | P+ | false | Media query widths must be declared breakpoints. These blocks run in a project declaring `[breakpoints]` sm=640, md=768 and lg=1024. |
+| [BP002](BP002.md) | responsive-without-base | error | manual | P+ | false | A responsive utility of a layout-critical family needs an unprefixed base. These blocks run in a project declaring `[breakpoints]`. |
+| [BP003](BP003.md) | fixed-width-exceeds-mobile | error | manual | P+ | false | A fixed width must fit the smallest viewport. These blocks run in a project declaring `[breakpoints]` with smallest sm=640. |
+
 ## CFG
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -24,6 +32,19 @@
 | [CI007](CI007.md) | no-event-interpolation-in-run | error | manual | P+ | false | A `run:` script interpolates an expression an attacker can influence. |
 | [CI010](CI010.md) | checkout-no-persist | advisory | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
 | [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
+
+## COLOR
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [COLOR001](COLOR001.md) | color-off-palette | error | manual | P+ | true | A colour literal in a stylesheet, a custom property or a JSX style prop must be a palette colour. |
+| [COLOR002](COLOR002.md) | undefined-token-reference | error | manual | P- | true | A `var(--color-x)` that looks like a design token must name a custom property that exists. Each |
+
+## CONTRAST
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CONTRAST001](CONTRAST001.md) | role-contrast-below-floor | error | manual | P+ | false | Every `[scales] |
 
 ## COV
 
@@ -71,6 +92,12 @@
 | [INV001](INV001.md) | invariant-without-anchor | warn | manual | P- | false | An invariants document has no `frob:invariant` directive in code. |
 | [INV002](INV002.md) | forbidden-import | error | manual | P+ | false | A file imports something the `[invariants]` table forbids. |
 
+## LAYER
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [LAYER001](LAYER001.md) | z-index-not-a-layer | error | manual | P+ | false | A `z-index` integer must be one of the values declared in `[layers]`. Each block is one source file in a project whose `crunk.toml` is the default preset. The preset declares 0, 100, 200 and 300. |
+
 ## MDL
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -96,6 +123,16 @@
 | [MDL019](MDL019.md) | mdl-orphan-file | warn | manual | P+ | false | A .grmb file in the walk is reachable from no model root. |
 | [MDL020](MDL020.md) | mdl-include-outside | error | manual | P+ | false | An include names a file above the including file's directory without the `outside` marker. |
 | [MDL021](MDL021.md) | mdl-no-root | error | manual | P+ | false | No model root is declared, or a declared root is not a .grmb file of the walk. |
+
+## ORG
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [ORG001](ORG001.md) | stylesheet-outside-buckets | error | manual | P+ | false | Every stylesheet under `css_root` belongs to a declared bucket directory. Each block is one source file in a project whose `crunk.toml` is the default preset. `css_root` is `styles` and the buckets are `base`, `components`, `layouts` and `utilities`. |
+| [ORG002](ORG002.md) | class-case | error | manual | P+ | false | Class names are written in the casing `[org] class_case` requires. Each block is one source file in a project whose `crunk.toml` is the default preset. The preset requires kebab case. |
+| [ORG003](ORG003.md) | component-prefix | error | manual | P+ | false | A class in a `components` sheet carries the component's name. Each block is one source file in a project whose `crunk.toml` is the default preset. The component is the sheet's file stem and the preset sets `component_prefix = true`. |
+| [ORG004](ORG004.md) | custom-prop-outside-tokens | error | manual | P+ | false | Custom properties are defined only in the generated tokens file. Each block is one source file in a project whose `crunk.toml` is the default preset. The preset sets `tokens_only_custom_props = true`. |
+| [ORG005](ORG005.md) | ungoverned-stylesheet | error | manual | P+ | false | Every `.css` file of the project is under `css_root` or ignored on purpose. Each block is one source file in a project whose `crunk.toml` is the default preset. |
 
 ## PARSE
 
@@ -198,9 +235,31 @@
 | [TODO001](TODO001.md) | bare-work-marker | error | manual | P+ | false | A comment carries an upper-case work marker with no owning ticket. |
 | [TODO002](TODO002.md) | todo-ticket-terminal | warn | manual | P+ | true | A `frob:todo` directive points at a ticket that is already done or dropped. |
 
+## TOKENS
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TOKENS001](TOKENS001.md) | generated-tokens-stale | error | manual | P+ | false | The generated tokens sheet must equal what `crunk tokens` writes for the current `crunk.toml`. `config=stale-tokens` gives the mdtest project an expected sheet that differs from the one on disk. |
+
 ## TOOL
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [TOOL001](TOOL001.md) | tool-stage-failed | error | manual | P+ | false | A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start. |
 | [TOOL002](TOOL002.md) | tool-finding-unmapped | advisory | manual | P+ | false | A bound tool reported a finding that no frob rule id covers. |
+
+## TW
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TW001](TW001.md) | tailwind-arbitrary-off-scale | error | manual | P+ | false | Arbitrary Tailwind values must come from the design. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TW002](TW002.md) | tailwind-theme-unknown-token | error | manual | P+ | false | A Tailwind theme entry may only point at a token the export defines. These blocks run in a project whose `[tailwind]` config is ingested. |
+| [TW003](TW003.md) | tailwind-alpha-no-placeholder | warn | manual | P+ | false | An alpha modifier needs a theme value that can take alpha. These blocks run in a project whose `[tailwind]` config is ingested (Tailwind v3). |
+| [TW004](TW004.md) | tailwind-default-color | error | manual | P+ | false | A colour utility must resolve to the project theme, not Tailwind's built-in palette. Each block is one source file in a default-preset project. |
+| [TW005](TW005.md) | tailwind-default-scale | error | manual | P+ | false | A named utility must come from the declared scale, not Tailwind's default one. Each block is one source file in a default-preset project. |
+
+## WAIVE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [WAIVE001](WAIVE001.md) | waiver-without-reason | error | manual | P+ | false | A `crunk:waive RULE reason="..."` comment silences one rule at one declaration. Without the reason |

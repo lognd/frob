@@ -85,7 +85,13 @@ impl BindSummary {
         if doc["schema"] != SCHEMA {
             return None;
         }
-        let rule_of = |s: &str| grimble_bind::RULES.iter().copied().find(|r| *r == s);
+        // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
+        let rule_of = |s: &str| {
+            grimble_bind::rules::METAS
+                .iter()
+                .map(|d| d.id)
+                .find(|id| *id == s)
+        };
         let mut findings = Vec::new();
         for f in doc["findings"].as_array()? {
             let range = match f["range"].as_array() {

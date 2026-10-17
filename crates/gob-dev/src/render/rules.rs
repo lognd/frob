@@ -170,8 +170,13 @@ pub fn load_examples(crates_dir: &Path, id: &str) -> Vec<Example> {
     crate_dirs.sort();
     let mut examples = Vec::new();
     for dir in crate_dirs {
-        let path = dir.join("tests").join("mdtest").join(&file);
-        let Ok(text) = std::fs::read_to_string(&path) else {
+        // The legacy corpus lives under tests/mdtest, the two-file shape beside its rule.
+        let Some((path, text)) = [
+            dir.join("tests").join("mdtest").join(&file),
+            dir.join("src").join("rules").join(&file),
+        ]
+        .into_iter()
+        .find_map(|p| std::fs::read_to_string(&p).ok().map(|t| (p, t))) else {
             continue;
         };
         match parse_suite(&text) {
@@ -194,7 +199,40 @@ pub fn load_examples(crates_dir: &Path, id: &str) -> Vec<Example> {
 
 /// Every rule page plus the index, for the global registry.
 pub fn generate(crates_dir: &Path) -> Vec<GenFile> {
-    generate_for(Registry::global().iter().collect(), crates_dir)
+    // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
+    let mut metas: Vec<&RuleMeta> = Registry::global().iter().collect();
+    let declared = declared_metas();
+    let known: std::collections::BTreeSet<&str> = metas.iter().map(|m| m.id).collect();
+    let fresh: Vec<&RuleMeta> = declared.iter().filter(|d| !known.contains(d.id)).collect();
+    metas.extend(fresh);
+    generate_for(metas, crates_dir)
+}
+
+/// Page metadata for every `#[rule]` declaration of every product, built once per process.
+fn declared_metas() -> &'static [RuleMeta] {
+    static CELL: std::sync::OnceLock<Vec<RuleMeta>> = std::sync::OnceLock::new();
+    CELL.get_or_init(|| {
+        crate::products::all_defs()
+            .into_iter()
+            .map(|(product, def)| RuleMeta {
+                id: def.id,
+                slug: def.slug,
+                family: def.family,
+                product,
+                severity: def.severity,
+                summary: def.summary(),
+                explanation: def.doc,
+                tier: Tier::Universal,
+                scope: def.scope,
+                fix: def.fix,
+                polarity: def.polarity,
+                must_measure: def.must_measure,
+                version: def.version,
+                since: def.since,
+                module: product,
+            })
+            .collect()
+    })
 }
 
 /// Rule pages plus index for an explicit rule set.

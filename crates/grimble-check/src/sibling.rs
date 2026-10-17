@@ -72,6 +72,7 @@ pub fn sibling_document(run: &GrimbleRun) -> Value {
     let na_list: Vec<String> = run.not_applicable.keys().cloned().collect();
     document(&SiblingInput {
         product: crate::config::PRODUCT,
+        registry: crate::product::registry(),
         product_version: env!("CARGO_PKG_VERSION"),
         root: &run.root,
         report: &run.report,
