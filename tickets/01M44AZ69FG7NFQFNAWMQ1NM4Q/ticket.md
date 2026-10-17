@@ -7,12 +7,12 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T20:51:28Z"
-updated = "2026-10-17T18:09:48Z"
+updated = "2026-10-17T18:45:15Z"
 scope = ["crates/gob-cli/**", "crates/gob-macros/src/command.rs", "crates/gob-product/**", "crates/frob/**", "crates/frob-check/src/verb.rs", "crates/frob-lease/src/verbs.rs", "crates/frob-ack/src/cmd.rs", "docs/design/README.md", "docs/design/cli.md", "docs/reference/cli/**"]
 
 [[acceptance]]
 text = "Given the verb registry, when frob serve starts, then every read-only verb is listed as an MCP tool whose input schema equals the verb schema"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an MCP tool call, when it runs, then the result is the same JSON envelope the CLI prints for that verb"
