@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-17T18:41:48Z"
+digest = "cb5b483e83871a11000e3db001990282ad0badea0f939ac9919a4ba3a02346d0"
+exit_code = 0
+inline = """
+
+running 1 test
+test an_undeclared_media_width_fires_bp001 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.02s
+
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.06s
+     Running tests/breakpoints_rules.rs (target/debug/deps/breakpoints_rules-407947d980d77b57)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p crunk-rules --test breakpoints_rules an_undeclared_media_width_fires_bp001"
+size = 396
+status = "measured"
+at = "2026-10-17T18:41:48Z"
+actor = "lognd"
+rev = 1
