@@ -13,13 +13,49 @@
 | polarity | P+ |
 | must_measure | false |
 | version | 1 |
-| since | 2.0.0 |
+| since | 0.532.0 |
+
+<!-- mdtest: rule=AFFECT001 -->
+# AFFECT001 dependents-not-updated
 
 A public symbol changed its signature and its dependents were not re-acked.
 
-Predicate: the symbol is in the public API graph, has a lock entry whose
-sig digest differs from the current one, and at least one dependent (a
-transitive caller from `SymbolGraph::affects`, excluding the symbol's own
-containers and file nodes) has no lock entry acked strictly later than
-the symbol's own entry. Re-ack the symbol after reviewing its dependents,
-and ack the dependents you reviewed.
+## What it does
+
+Fires when a symbol in the public API graph has a lock entry whose sig digest differs from the current one and at least one dependent (a transitive caller, excluding the symbol's own containers and file nodes) has no lock entry acked strictly later. Dependents reached only through May edges, or unresolved calls, are reported Unresolved.
+
+## Why it matters
+
+A changed signature breaks callers silently unless someone reviews them.
+
+## Remedy
+
+Re-ack the symbol after reviewing its dependents, and ack the dependents you reviewed.
+
+## Examples
+
+### A drifted case fires
+
+```rust expect=fire file=src/lib.rs
+pub fn bound() {}
+```
+
+### An unchanged case is clean
+
+```rust expect=clean file=src/lib.rs
+pub fn unbound() {}
+```
+
+## Examples
+
+### AFFECT001 dependents-not-updated / Examples #1 (line 22) (fire)
+
+```rust
+pub fn bound() {}
+```
+
+### AFFECT001 dependents-not-updated / Examples #2 (line 28) (clean)
+
+```rust
+pub fn unbound() {}
+```

@@ -4,11 +4,6 @@
 
 [[gap]]
 product = "frob"
-rule = "AFFECT001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
 rule = "CFG001"
 ticket = "~C5DQ4WJ"
 
@@ -44,36 +39,6 @@ ticket = "~C5DQ4WJ"
 
 [[gap]]
 product = "frob"
-rule = "COV003"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "DRIFT001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "DRIFT002"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "DRIFT003"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "DRIFT004"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "EXC005"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
 rule = "PERF001"
 ticket = "~C5DQ4WJ"
 
@@ -95,11 +60,6 @@ ticket = "~C5DQ4WJ"
 [[gap]]
 product = "frob"
 rule = "SIB001"
-ticket = "~C5DQ4WJ"
-
-[[gap]]
-product = "frob"
-rule = "TEST001"
 ticket = "~C5DQ4WJ"
 
 [[gap]]
