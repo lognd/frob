@@ -8,7 +8,7 @@ points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:08Z"
-updated = "2026-10-17T21:11:55Z"
+updated = "2026-10-17T21:20:41Z"
 scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-rules/**", "crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-dev/src/render/rules.rs", "docs/reference/rules/**", "crates/gob-check/src/sibling.rs", "crates/crunk-check/src/sibling.rs", "crates/gob-dev/tests/generate.rs"]
 
 [[links]]
