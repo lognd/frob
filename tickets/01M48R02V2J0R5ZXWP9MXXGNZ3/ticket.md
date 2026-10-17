@@ -8,7 +8,7 @@ points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:06Z"
-updated = "2026-10-17T21:58:06Z"
+updated = "2026-10-17T21:59:47Z"
 scope = ["crates/frob-obligations/**", "crates/frob-ack/**", "crates/frob-tests/**", "crates/frob-check/**", "crates/gob-mdtest/coverage-allowlist.toml", "docs/reference/rules/**"]
 
 [[links]]
