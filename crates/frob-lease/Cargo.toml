@@ -21,7 +21,6 @@ gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
-gob-text = { version = "0.532.0", path = "../gob-text" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
