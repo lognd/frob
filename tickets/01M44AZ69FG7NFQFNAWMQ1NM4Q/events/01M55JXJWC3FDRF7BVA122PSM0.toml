@@ -1,0 +1,20 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-17T18:45:18Z"
+digest = "aa6a9c1f46e43866b98607bfbb97cb83a518e7bdb598205c40c217d26b45a57f"
+exit_code = 0
+inline = """
+
+running 1 test
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.01s
+
+"""
+passed = true
+provider = "command"
+ref = "cargo test -q -j2 -p gob-cli --test mcp a_tool_call_returns_the_cli_envelope"
+size = 113
+status = "measured"
+at = "2026-10-17T18:45:18Z"
+actor = "lognd"
+rev = 1

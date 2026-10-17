@@ -1,0 +1,28 @@
+# ruff: Python lint (native JSON). `--format` was renamed `--output-format` in 0.1.0.
+name = "ruff"
+command = "ruff"
+version = "0.8.6"
+min_version = "0.0.280"
+max_version = "0.99.99"
+version_args = ["--version"]
+parser = "ruff-json"
+config_files = ["ruff.toml", ".ruff.toml", "pyproject.toml"]
+suppression = "#\\s*noqa"
+
+[exit]
+success = [0]
+findings = [1]
+
+[[variants]]
+max_version = "0.0.999"
+args = ["check", "--format", "json", "."]
+
+[[variants]]
+min_version = "0.1.0"
+args = ["check", "--output-format", "json", "."]
+
+[fix]
+args = ["check", "--fix", "."]
+unattended = true
+
+[id_map]

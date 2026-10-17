@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-17T18:31:04Z"
+digest = "45e4e1cdda0af2c8226165be5d29d5c2bc1c765afd100a5dee17eb6325c6f713"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.63s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 439da062-1903-47d1-9123-c4e1075a45db with nextest profile: default
+    Starting 2 tests across 6 binaries (33 tests skipped)
+        PASS [   1.965s] frob-tests::dotnet a_play_mode_only_test_runs_play_mode_and_edit_mode_tests_run_edit_mode
+        PASS [   2.066s] frob-tests::dotnet a_touched_unity_assembly_prints_the_selection_and_the_run_goes_through_the_unity_provider
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.067s] 2 tests run: 2 passed, 33 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -j2 -p frob-tests a_play_mode_only_test_runs_play_mode_and_edit_mode_tests_run_edit_mode a_touched_unity_assembly_prints_the_selection_and_the_run_goes_through_the_unity_provider"
+size = 704
+status = "measured"
+at = "2026-10-17T18:31:04Z"
+actor = "lognd"
+rev = 1
