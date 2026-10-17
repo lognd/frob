@@ -1143,6 +1143,9 @@ fn is_empty_list(v: &toml::Value) -> bool {
     v.as_array().is_some_and(Vec::is_empty)
 }
 
+/// Most globs a ticket scope may hold; a runaway per-file widen loop hits this instead of the history.
+pub const MAX_SCOPE_GLOBS: usize = 64;
+
 /// Add and remove entries of list field `name` on `work`; the field change when the list differs.
 fn edit_list(
     work: &mut Ticket,
@@ -1163,6 +1166,13 @@ fn edit_list(
         if !list.iter().any(|v| v.as_str() == Some(a.as_str())) {
             list.push(toml::Value::String(a.clone()));
         }
+    }
+    if name == "scope" && list.len() > MAX_SCOPE_GLOBS {
+        tracing::warn!(count = list.len(), "scope edit refused: over the glob cap");
+        return Err(LedgerError::invalid(format!(
+            "scope would hold {} globs, over the cap of {MAX_SCOPE_GLOBS}; use a directory glob (for example `changelog.d/<id>.*`) instead of one entry per file",
+            list.len()
+        )));
     }
     let new = (!list.is_empty()).then_some(toml::Value::Array(list));
     if new == old {
