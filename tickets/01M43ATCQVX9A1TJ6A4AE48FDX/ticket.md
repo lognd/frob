@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:36Z"
-updated = "2026-10-17T08:51:27Z"
+updated = "2026-10-17T08:54:10Z"
 idempotency_key = "crunk-plan-afix"
 labels = ["area:crunk"]
 scope = ["crates/crunk-fix/**", "crates/crunk/src/fix.rs", "crates/crunk/tests/fix*.rs", "Cargo.lock", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml"]
@@ -30,7 +30,7 @@ kind = "blocked-by"
 target = "01M43ATCF5GGK59S96K1ZF0G9C"
 
 [[acceptance]]
-text = "Given an in-tolerance off-scale value, when `crunk fix` runs, then it is rewritten to the token and a re-check of the site is clean"
+text = "Given a machine-applicable fix on a stylesheet finding, when `crunk fix` runs, then the span is rewritten atomically and every byte outside it is untouched (INV-FIX-01 property test)"
 bound = false
 
 [[acceptance]]
@@ -38,7 +38,7 @@ text = "Given `--dry-run`, when run, then the diff equals the diff of the real r
 bound = false
 
 [[acceptance]]
-text = "Given a value outside tolerance, when fix runs, then it is left alone and the finding remains"
+text = "Given a finding with no fix (an out-of-tolerance value) or a non-stylesheet (JSX style-prop) site, when fix runs, then it is left alone"
 bound = false
 +++
 
