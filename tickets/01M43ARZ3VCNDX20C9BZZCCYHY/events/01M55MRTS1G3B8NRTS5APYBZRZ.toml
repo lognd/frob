@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-17T19:17:41Z"
+digest = "61c0ed62882f65896bbeeaf73a86e4565bbe6cbcdbd144b89708afb251dc40d4"
+exit_code = 0
+inline = """
+
+running 1 test
+test a_project_without_a_tailwind_section_runs_nothing ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+     Running tests/tailwind.rs (target/debug/deps/tailwind-d18f6282e37ae09a)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p crunk-ingest --test tailwind a_project_without_a_tailwind_section_runs_nothing"
+size = 324
+status = "measured"
+at = "2026-10-17T19:17:41Z"
+actor = "lognd"
+rev = 1
