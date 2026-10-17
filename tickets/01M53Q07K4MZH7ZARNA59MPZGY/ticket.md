@@ -8,6 +8,6 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-17T01:18:12Z"
-updated = "2026-10-17T01:48:44Z"
-scope = ["crates/frob-pm/**", "crates/frob-ledger/src/ops.rs"]
+updated = "2026-10-17T01:48:57Z"
+scope = ["crates/frob-pm/**", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/tests/ledger.rs"]
 +++
