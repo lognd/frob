@@ -7,10 +7,10 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-07T16:57:29Z"
-updated = "2026-10-17T22:37:19Z"
+updated = "2026-10-17T22:43:39Z"
 idempotency_key = "test001-dot-member-hint"
 labels = ["milestone:2"]
-scope = ["crates/frob-tests/**", "crates/gob-symbols/**"]
+scope = ["crates/frob-tests/**", "crates/gob-symbols/**", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "Given a frob:tests symref path::Type::method where path::Type.method resolves, when frob check runs, then TEST001 names the dotted form as the fix (machine-applicable)"
