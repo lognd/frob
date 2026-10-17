@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:40Z"
-updated = "2026-10-17T21:12:12Z"
+updated = "2026-10-17T21:19:12Z"
 scope = ["changelog.d/**", ".github/workflows/**", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = false
 
 [[acceptance]]
 text = "Given every CI job, when inspected, then each has timeout-minutes and no check runs twice per OS"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M18. Keep zizmor and actionlint clean. Coordinate with ~RWD03DW, which adds the profile job to ci.yml: land after it or rebase onto it.
