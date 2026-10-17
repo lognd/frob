@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "the CI check step passes --skip-tools so no tool stage runs twice per OS"
-bound = false
+bound = true
 +++
 
 found while working ~BN7DCP3: dedupe needs a CLI flag for skip_tools; then ci.rs sibling_check passes it
