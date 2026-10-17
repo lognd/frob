@@ -2,7 +2,8 @@
 id = "01M4HT2BSXCN48AG9Z18GC1GYM"
 title = "CI frob check step skips stages already run as dedicated steps"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 reporter = "lognd"
