@@ -15,9 +15,9 @@ use crate::schema_cmd::SchemaCmd;
 
 /// A product's command-line root: global flags plus its registered verbs.
 pub struct Cli {
-    product: &'static str,
-    version: &'static str,
-    verbs: Vec<Registered>,
+    pub(crate) product: &'static str,
+    pub(crate) version: &'static str,
+    pub(crate) verbs: Vec<Registered>,
     // frob:ticket 01M40FXV09GYGBH9YZZANDZXZ4
     guard: Option<Guard>,
 }
@@ -48,6 +48,7 @@ impl Cli {
             guard: None,
         }
         .register::<SchemaCmd>()
+        .register::<crate::mcp::ServeCmd>()
     }
 
     /// Run `guard` before every verb (not `--schema`); an `Err` stops the verb and is rendered.
@@ -225,6 +226,9 @@ impl Cli {
             return render::failure(None, &err, ctx.json);
         };
         let dotted = path.replace(' ', ".");
+        if path == "serve" && !leaf.get_flag("schema") {
+            return self.serve_stdio(&ctx, &dotted);
+        }
         if leaf.get_flag("schema") {
             let text = serde_json::to_string_pretty(&(verb.schema)()).unwrap_or_default();
             return Execution::out(format!("{text}\n"));
@@ -269,6 +273,15 @@ impl Cli {
             exec.stderr.insert_str(0, &format!("{note}\n"));
         }
         exec
+    }
+
+    /// Run the MCP server over the process's stdin and stdout (verb `serve`).
+    fn serve_stdio(&self, ctx: &Context, dotted: &str) -> Execution {
+        let stdin = std::io::stdin();
+        match self.serve_mcp(stdin.lock(), std::io::stdout().lock(), &ctx.cwd) {
+            Ok(()) => Execution::out(String::new()),
+            Err(e) => render::failure(Some(dotted), &CliError::internal(e), ctx.json),
+        }
     }
 
     /// Resolve global flags into a [`Context`] and install logging.

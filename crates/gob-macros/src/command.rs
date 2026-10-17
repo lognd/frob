@@ -17,6 +17,8 @@ const EXITS: [(&str, &str); 5] = [
     ("internal", "Internal"),
 ];
 
+// Each flag mirrors one `#[command(...)]` switch; a bitset would obscure the attribute surface.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(command), forward_attrs(doc), supports(struct_any))]
 struct CommandArgs {
@@ -34,6 +36,8 @@ struct CommandArgs {
     deprecated: Option<String>,
     #[darling(default)]
     markdown: bool,
+    #[darling(default)]
+    read_only: bool,
 }
 
 /// True for lowercase words separated by single spaces (`config show`).
@@ -122,6 +126,7 @@ pub(crate) fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
         idempotent,
         dry_run,
         markdown,
+        read_only,
         deprecated,
         ..
     } = args;
@@ -141,6 +146,7 @@ pub(crate) fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
                 module: ::core::module_path!(),
                 deprecated: #deprecated,
                 markdown: #markdown,
+                read_only: #read_only,
             };
         }
 

@@ -205,6 +205,15 @@ impl CsharpOwners {
     pub fn is_test_assembly(&mut self, id: &str) -> bool {
         matches!(self.unity.assembly(id), Some(Ok(a)) if a.is_test())
     }
+
+    // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+    /// The test platform of Unity test assembly `id`; `None` when it is not a readable test assembly.
+    pub fn test_mode(&mut self, id: &str) -> Option<gob_symbols::UnityTestMode> {
+        match self.unity.assembly(id) {
+            Some(Ok(a)) => a.test_mode(),
+            _ => None,
+        }
+    }
 }
 
 // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6

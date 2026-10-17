@@ -23,6 +23,8 @@ pub enum Provider {
     Jest,
     /// `dotnet test` with a TRX logger: pass/fail and the executed fully qualified test names.
     Dotnet,
+    /// Unity batch-mode `EditMode` or `PlayMode` tests: pass/fail and the executed fully qualified test names.
+    Unity,
     /// An allowlisted tool: exit code and transcript digest.
     Command,
     /// A person's signed statement; never a tool measurement (see [`crate::attestation`]).
@@ -40,6 +42,7 @@ impl Provider {
             Self::Vitest => "vitest",
             Self::Jest => "jest",
             Self::Dotnet => "dotnet",
+            Self::Unity => "unity",
             Self::Command => "command",
             Self::File => "file",
             Self::Attestation => "attestation",
@@ -53,6 +56,7 @@ impl Provider {
         "vitest",
         "jest",
         "dotnet",
+        "unity",
         "command",
         "file",
         "attestation",
@@ -69,6 +73,7 @@ impl FromStr for Provider {
             "vitest" => Ok(Self::Vitest),
             "jest" => Ok(Self::Jest),
             "dotnet" => Ok(Self::Dotnet),
+            "unity" => Ok(Self::Unity),
             "command" => Ok(Self::Command),
             "file" => Ok(Self::File),
             "attestation" => Ok(Self::Attestation),

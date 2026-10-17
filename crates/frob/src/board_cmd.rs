@@ -124,6 +124,7 @@ fn last_commit(runner: &Runner, root: &Path, branch: &str) -> Option<Stamp> {
     verb = "board",
     product = "frob",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct BoardVerb {

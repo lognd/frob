@@ -56,6 +56,17 @@ pub enum EvidenceError {
         /// The last lines the editor printed, or how it ended.
         detail: String,
     },
+    // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+    /// The Unity project is already open in another editor instance.
+    #[error(
+        "E-EVIDENCE-UNITY-OPEN: the Unity project {project} is open in another editor ({lock} exists), and a project cannot be opened twice; nothing was recorded"
+    )]
+    UnityProjectOpen {
+        /// The project directory.
+        project: String,
+        /// The lock file that signals the open editor.
+        lock: String,
+    },
     /// An attestation was attempted without a person at a terminal.
     #[error("E-ATTEST-NOT-HUMAN: an attestation is a person's statement; refused because {}", .reasons.join("; "))]
     NotHuman {
@@ -218,6 +229,13 @@ impl EvidenceError {
                 Refusal::new("E-EVIDENCE-UNITY-LICENSE", GuardNeedsAction, self.to_string())
                     .with_remedy(format!(
                         "activate or renew the Unity license for {version} (sign in through Unity Hub, or provide a serial or license server), confirm the editor starts with -batchmode, then rerun; [evidence.unity] editor selects a different editor"
+                    )),
+            ),
+            // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+            Self::UnityProjectOpen { lock, .. } => Some(
+                Refusal::new("E-EVIDENCE-UNITY-OPEN", GuardNeedsAction, self.to_string())
+                    .with_remedy(format!(
+                        "close the Unity editor that has the project open and rerun; if no editor is running, delete the stale {lock}"
                     )),
             ),
             Self::BadReference(_) | Self::BadProvider(_) | Self::BadAccepts(_) => {
