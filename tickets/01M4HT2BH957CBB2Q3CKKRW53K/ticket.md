@@ -2,13 +2,13 @@
 id = "01M4HT2BH957CBB2Q3CKKRW53K"
 title = "Land gate: a cancelled base CI check is Pending, not Red"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-10T02:25:28Z"
-updated = "2026-10-16T16:30:34Z"
+updated = "2026-10-17T04:46:13Z"
 scope = ["crates/frob-release/src/ci.rs"]
 
 [[acceptance]]
