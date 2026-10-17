@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:03Z"
-updated = "2026-10-17T17:38:29Z"
+updated = "2026-10-17T17:38:31Z"
 idempotency_key = "d94-unityedit"
 scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/tests/unity.rs", "docs/reference/config.md", "docs/schemas/config.json", "crates/frob-evidence/src/lib.rs", "crates/frob-evidence/src/workspace.rs"]
 
@@ -22,7 +22,7 @@ target = "01M44YQWY2SWCH7PS9F9W0WEA9"
 
 [[acceptance]]
 text = "Given ProjectVersion.txt naming 6000.0.43f1 and no editor at any Hub location, when the provider runs, then it refuses naming that version and the [evidence.unity] editor key"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given [evidence.unity] editor set to a path, when the provider runs, then that path is used regardless of the version file"
