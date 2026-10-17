@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:04Z"
-updated = "2026-10-17T18:31:04Z"
+updated = "2026-10-17T18:31:08Z"
 idempotency_key = "d94-unityrun"
 scope = ["crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/tests/unity.rs", "crates/frob-tests/src/select.rs", "crates/frob-tests/src/run.rs", "crates/frob-tests/tests/**", "docs/reference/config.md", "docs/design/build-test-ci.md", "crates/frob-evidence/src/error.rs", "crates/frob-tests/src/error.rs", "crates/frob-tests/src/lib.rs", "crates/frob-tests/src/verb.rs", "crates/gob-testsupport/src/bin/fake_dotnet.rs"]
 
@@ -34,7 +34,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the project already open in another editor instance, when the provider runs, then it refuses with a remedy"
-bound = false
+bound = true
 +++
 
 Second half of provider `unity`: run the editor `-batchmode -nographics -runTests -testPlatform EditMode|PlayMode -assemblyNames <asm> -testResults <file> -testFilter <ids>`, parse the NUnit 3 XML per test (test-case fullname, result, duration, failure message, output) into a measured record through gob-exec and the shared redact, scrub and escape paths. EditMode by default; PlayMode when the selected tests need it (assembly mode from the asmdef story, [UnityTest] and the PlayMode path), with the PlayMode graphics-less flag; one editor process per project at a time (a Unity project cannot be opened twice) with a clear refusal when the project is already open. Wires frob test selection for asmdef assemblies (select.rs). Reference: 274 [Test] and 17 [UnityTest] in the game repository. Docs: docs/reference/config.md, docs/design/build-test-ci.md.
