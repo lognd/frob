@@ -1,0 +1,240 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-17T20:54:01Z"
+digest = "7b13228f820ee72583610363674dfc85092efd2831492908cd6a796f38bb6ccb"
+exit_code = 0
+inline = '''
+   Compiling ahash v0.8.12
+   Compiling crossbeam-channel v0.5.17
+   Compiling generic-array v0.14.7
+   Compiling faster-hex v0.10.1
+   Compiling serde_json v1.0.151
+   Compiling ref-cast v1.0.27
+   Compiling pkg-config v0.3.34
+   Compiling vcpkg v0.2.15
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling dyn-clone v1.0.20
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling fallible-iterator v0.3.0
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gix-packetline v0.22.2
+   Compiling hashbrown v0.14.5
+   Compiling gix-features v0.49.1
+   Compiling libsqlite3-sys v0.30.1
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-transport v0.59.2
+   Compiling schemars_derive v1.2.2
+   Compiling sha1 v0.10.7
+   Compiling sha1-checked v0.10.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling dashmap v6.2.1
+   Compiling hashlink v0.9.1
+   Compiling gix-hash v0.26.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling tinytemplate v1.2.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-refspec v0.45.1
+   Compiling criterion v0.5.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-object v0.64.1
+   Compiling gix-shallow v0.13.0
+   Compiling schemars v1.2.2
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gix-index v0.55.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix v0.87.1
+   Compiling rusqlite v0.32.1
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.93s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 033c8fdf-2542-4c18-a237-f78f4c1bf551 with nextest profile: default
+    Starting 148 tests across 19 binaries
+        PASS [   0.116s] gob-cache tests::artifacts_and_repo_rules_round_trip
+        PASS [   0.122s] gob-cache tests::engines_never_share_findings_or_repo_rules
+        PASS [   0.111s] gob-cache tests::findings_miss_when_any_key_part_changes
+        PASS [   0.113s] gob-cache tests::migrates_from_empty_db
+        PASS [   0.019s] gob-cache tests::null_cache_when_dir_is_a_file
+        PASS [   0.116s] gob-cache tests::persists_across_reopen
+        PASS [   0.112s] gob-cache::shared a_row_written_from_one_checkout_hits_from_the_other
+        PASS [   0.013s] gob-cache::shared primary_and_linked_worktree_share_one_cache_dir
+        PASS [   0.009s] gob-exec env::tests::a_secret_shaped_name_on_the_allowlist_is_still_dropped
+        PASS [   0.007s] gob-exec env::tests::inherit_does_not_clear
+        PASS [   0.008s] gob-exec env::tests::scrub_keeps_only_allowlisted_names
+        PASS [   0.010s] gob-exec env::tests::scrubbed_adds_the_baseline
+        PASS [   0.012s] gob-exec env::tests::secret_shapes_follow_the_security_design
+        PASS [   0.006s] gob-exec proc001::tests::exit_code_and_exit_are_not_spawns
+        PASS [   0.007s] gob-exec proc001::tests::flags_code_and_skips_comments
+        PASS [   0.006s] gob-exec proc001::tests::grouped_and_multiline_imports_match_spawn_names
+        PASS [   0.010s] gob-exec proc001::tests::scan_fires_outside_spawner_crates
+        PASS [   0.009s] gob-exec::cmdline arg_new_wraps_an_os_string_and_exposes_it
+        PASS [   0.189s] gob-cache::shared two_processes_open_and_write_one_fresh_cache_without_loss
+        PASS [   0.160s] gob-exec::cmdline cmd_round_trips
+        PASS [   0.007s] gob-exec::cmdline known_lines_for_the_merge_driver
+        PASS [   0.130s] gob-exec::cmdline git_for_windows_sh_round_trips
+        PASS [   0.139s] gob-exec::cmdline posix_round_trips
+        PASS [   0.006s] gob-exec::discover a_directory_that_is_not_a_venv_or_lacks_the_tool_is_never_searched
+        PASS [   0.007s] gob-exec::discover a_windows_scripts_dir_copy_beats_path_and_both_are_reported
+        PASS [   0.006s] gob-exec::discover a_windows_uv_tool_copy_in_the_bin_dir_finds_the_tool_environment_scripts
+        PASS [   0.008s] gob-exec::discover beside_dirs_resolve_symlinks_to_the_real_directory_first
+        PASS [   0.007s] gob-exec::discover find_sibling_refuses_path_like_names_and_reports_absence
+        PASS [   0.007s] gob-exec::discover path_dirs_are_searched_in_order_and_a_missing_beside_falls_back_to_path
+        PASS [   0.008s] gob-exec::discover tool_roots_follow_the_installers_precedence_and_only_apply_on_windows
+        PASS [   0.006s] gob-exec::discover windows_does_not_match_a_suffixless_file_and_unix_does_not_add_exe
+        PASS [   0.138s] gob-exec::cmdline powershell_round_trips
+        PASS [   0.007s] gob-exec::discover windows_names_take_exe_ignoring_case_and_unix_names_are_bare
+        PASS [   0.047s] gob-exec::env an_explicit_addition_may_carry_a_secret_shaped_name
+        PASS [   0.051s] gob-exec::env a_secret_looking_parent_variable_never_reaches_a_scrubbed_child
+        PASS [   0.007s] gob-exec::env secret_probe
+        PASS [   0.044s] gob-exec::env inherit_keeps_the_parent_environment
+        PASS [   0.037s] gob-exec::env the_child_prints_only_allowlisted_and_added_variables
+        PASS [   0.016s] gob-exec::runner a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error
+        PASS [   0.044s] gob-exec::runner captured_output_is_redacted_and_env_added
+        PASS [   0.439s] gob-exec::runner concurrency_is_bounded_by_jobs
+        PASS [   0.007s] gob-exec::runner missing_tool_is_not_found
+        PASS [   0.036s] gob-exec::runner output_under_the_cap_is_returned_whole
+        PASS [   0.042s] gob-exec::runner spawn_counter_counts_only_real_spawns
+        PASS [   0.243s] gob-exec::runner timeout_kills_group
+        PASS [   1.092s] gob-exec::proc001_self workspace_has_no_forbidden_process_references
+        PASS [   0.437s] gob-exec::runner timeout_leaves_no_grandchild
+        PASS [   0.018s] gob-exec::runner unlisted_program_is_not_allowed
+        PASS [   0.013s] gob-fs path::tests::canonical_resolves_and_errors_on_missing
+        PASS [   0.021s] gob-fs path::tests::dot_components_are_found_in_every_style
+        PASS [   0.117s] gob-fs path::tests::no_admitted_windows_path_escapes_the_root
+        PASS [   0.011s] gob-fs path::tests::verbatim_prefixes_strip_only_when_safe
+        PASS [   0.009s] gob-fs path::tests::windows_style_inputs_are_contained_by_components
+        PASS [   0.011s] gob-fs tests::bare_relative_parent_syncs_the_current_dir
+        PASS [   0.025s] gob-fs tests::completed_write_is_wholly_new
+        PASS [   0.033s] gob-fs tests::existing_permissions_are_kept
+        PASS [   0.011s] gob-fs tests::killed_write_leaves_the_old_file_whole
+        PASS [   0.026s] gob-fs tests::private_write_is_owner_only
+        PASS [   0.156s] gob-fs::inventory no_hand_rolled_temp_and_rename_outside_the_helper
+        PASS [   0.053s] gob-git::ledger blobs_listed_in_one_walk_are_read_by_oid
+        PASS [   0.509s] gob-git::ledger cas_exhausted_when_ref_keeps_churning
+        PASS [   0.089s] gob-git::ledger cas_succeeds_after_one_lost_race
+        PASS [   1.340s] gob-exec::runner timeout_returns_promptly_despite_setsid_grandchild_holding_the_pipe
+        PASS [   0.141s] gob-git::ledger commit_from_linked_worktree_syncs_primary_checkout
+        PASS [   0.054s] gob-git::ledger crlf_checkout_rewrite_is_not_a_local_edit
+        PASS [   0.169s] gob-git::ledger concurrent_writers_lose_nothing
+        PASS [   0.068s] gob-git::ledger delete_via_none_and_local_edit_refusal
+        PASS [   0.098s] gob-git::ledger primary_with_local_edit_is_reported_and_keeps_it
+        PASS [   0.136s] gob-git::ledger losing_sync_order_leaves_checkout_equal_to_head
+        PASS [   0.066s] gob-git::ledger read_apis
+        PASS [   0.049s] gob-git::ledger real_edit_still_refused_under_autocrlf
+        PASS [   0.128s] gob-git::ledger primary_with_local_edit_still_receives_the_unblocked_new_paths
+        PASS [   0.012s] gob-git::ledger rel_path_validation_and_error_codes
+        PASS [   0.037s] gob-git::ledger root_commit_on_missing_ref_and_checkout_sync
+        PASS [   0.062s] gob-git::ledger staged_unrelated_file_is_untouched
+        PASS [   0.250s] gob-git::ledger spawn_fallbacks_worktree_merge_push
+        PASS [   0.098s] gob-git::symlinks crlf_checkout_without_content_change_is_not_reported
+        PASS [   0.097s] gob-git::symlinks retargeted_symlink_is_reported_committed_and_uncommitted
+        PASS [   0.070s] gob-git::symlinks symlink_replaced_by_regular_file_with_target_text_is_reported
+        PASS [   0.140s] gob-git::symlinks untouched_symlinks_are_not_reported
+        PASS [   0.075s] gob-git::symlinks worktree_content_as_git_matches_what_git_would_store
+        PASS [   0.703s] gob-git::ledger twenty_four_concurrent_writers_never_lose_an_update
+        PASS [   0.083s] gob-git::tag an_annotated_tag_peels_to_its_commit_and_is_never_overwritten
+        PASS [   0.040s] gob-git::tag first_parent_subjects_lists_newest_first_and_honours_the_limit
+        PASS [   0.013s] gob-lock::lock diff_reports_added_removed_and_changed_facets
+        PASS [   0.038s] gob-git::tag list_tags_returns_every_tag_name_sorted
+        PASS [   0.008s] gob-lock::lock empty_lock_is_just_the_header
+        PASS [   0.007s] gob-lock::lock file_name_is_product_dot_lock
+        PASS [   0.008s] gob-lock::lock missing_file_is_empty_and_garbage_is_an_error
+        PASS [   0.009s] gob-lock::lock flow_and_five_facet_symbol_entries_round_trip_in_stable_text
+        PASS [   0.007s] gob-lock::lock plan_records_changes_skips_unchanged_and_rejects_empty
+        PASS [   0.007s] gob-lock::lock plan_acks_flows_by_key
+        PASS [   0.007s] gob-lock::lock rename_log_and_absent_shape_contract_round_trip
+        PASS [   0.008s] gob-lock::lock plan_refuses_to_migrate_without_all_and_reason_then_reattests_and_drops
+        PASS [   0.008s] gob-lock::lock rename_rekeys_entry_and_flow_ends_and_records_the_chain
+        PASS [   0.008s] gob-lock::lock scheme_one_file_under_version_two_is_all_reattest
+        PASS [   0.007s] gob-lock::lock version_one_file_loads_and_every_entry_needs_reattest
+        PASS [   0.008s] gob-walk owner::tests::may_more_specific_over_must_broader_gives_bounds
+        PASS [   0.008s] gob-walk owner::tests::may_only_candidates_may_be_foreign
+        PASS [   0.006s] gob-walk owner::tests::most_specific_must_wins
+        PASS [   0.055s] gob-lock::lock save_load_round_trips_and_is_sorted_and_stable
+        PASS [   0.009s] gob-walk owner::tests::must_dominates_less_specific_may
+        PASS [   0.008s] gob-walk owner::tests::nobody_is_foreign_unless_something_is_hidden
+        PASS [   0.008s] gob-walk owner::tests::same_entity_rows_never_tie_with_themselves
+        PASS [   0.008s] gob-walk owner::tests::tie_of_must_candidates_is_unknown_with_both_recorded
+        PASS [   0.008s] gob-walk owner::tests::tie_with_a_higher_may_is_not_a_tie
+        PASS [   0.008s] gob-walk role::tests::ledger_files_match_whole_components_and_are_not_scanned
+        PASS [   0.008s] gob-walk role::tests::the_ledger_dir_is_configurable_and_defaults
+        PASS [   0.008s] gob-walk select::tests::glob_and_lang_select_files_with_must
+        PASS [   0.009s] gob-walk select::tests::negation_is_the_complement_within_the_walk
+        PASS [   0.008s] gob-walk select::tests::oversized_matches_are_reported_as_unseen
+        PASS [   0.009s] gob-walk select::tests::owner_of_path_uses_the_review_m12_order
+        PASS [   0.009s] gob-walk select::tests::owner_ties_on_a_path_are_unknown_with_both_recorded
+        PASS [   0.009s] gob-walk select::tests::predicate_narrowing_wins_a_directory_tie
+        PASS [   0.008s] gob-walk select::tests::symbol_globs_do_not_claim_the_module_unit_unless_they_match_it
+        PASS [   0.008s] gob-walk select::tests::unit_predicates_and_symbol_globs_degrade_to_may
+        PASS [   0.008s] gob-walk selector::glob::tests::literal_detection
+        PASS [   0.009s] gob-walk selector::glob::tests::path_matching_table
+        PASS [   0.009s] gob-walk selector::glob::tests::qual_matching_table
+        PASS [   0.009s] gob-walk selector::glob::tests::rejections_carry_offsets
+        PASS [   0.008s] gob-walk selector::glob::tests::specificity_follows_the_spec_examples
+        PASS [   0.009s] gob-walk selector::glob::tests::wildcard_text_matching
+        PASS [   0.008s] gob-walk selector::tests::errors_carry_exact_positions
+        PASS [   0.010s] gob-walk selector::tests::glob_error_offsets_map_through_escapes
+        PASS [   0.009s] gob-walk selector::tests::kleene_combinators_and_specificity_rows
+        PASS [   0.009s] gob-walk selector::tests::literal_selectors
+        PASS [   0.010s] gob-walk selector::tests::or_keeps_both_a_must_row_and_a_more_specific_may_row
+        PASS [   0.131s] gob-walk selector::tests::parser_never_panics
+        PASS [   0.009s] gob-walk selector::tests::precedence_is_not_then_and_then_or
+        PASS [   0.008s] gob-walk selector::tests::spans_cover_the_source_and_honor_the_base
+        PASS [   0.009s] gob-walk selector::tests::spec_examples_parse_and_print_canonically
+        PASS [   0.008s] gob-walk selector::tests::string_escapes_round_trip
+        PASS [   0.009s] gob-walk specificity::tests::and_takes_the_larger_glob_and_adds_predicates
+        PASS [   0.010s] gob-walk specificity::tests::bottom_is_below_any_glob
+        PASS [   0.008s] gob-walk specificity::tests::fewer_double_stars_beat_more_at_equal_literals
+        PASS [   0.201s] gob-walk selector::tests::parse_of_print_is_identity
+        PASS [   0.008s] gob-walk specificity::tests::level_dominates_everything_below_it
+        PASS [   0.008s] gob-walk specificity::tests::predicates_break_the_last_tie_only
+        PASS [   0.008s] gob-walk specificity::tests::review_m12_example_orders_the_nested_glob_first
+        PASS [   0.007s] gob-walk tests::digest_is_hex_and_content_addressed
+        PASS [   0.022s] gob-walk tests::config_exclude_and_bad_glob
+        PASS [   0.029s] gob-walk tests::gitignore_excludes_target_and_order_is_stable
+        PASS [   0.023s] gob-walk tests::oversized_files_are_reported_not_hashed
+        PASS [   0.021s] gob-walk tests::state_directories_are_never_walked_without_any_config
+        PASS [   0.009s] gob-walk::content outside_a_repository_bytes_are_read_raw
+        PASS [   0.020s] gob-walk::content symlink_reads_as_its_target_string_and_crlf_text_as_lf
+        PASS [   0.072s] gob-walk::content crlf_checkout_digests_like_its_lf_twin_and_a_real_edit_differs
+        PASS [   1.193s] gob-walk::layering model_crates_do_not_depend_on_gix
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   6.332s] 148 tests run: 148 passed, 0 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -j2 -p gob-walk -p gob-git -p gob-lock -p gob-cache -p gob-fs -p gob-exec"
+size = 15783
+status = "measured"
+at = "2026-10-17T20:54:01Z"
+actor = "lognd"
+rev = 1
