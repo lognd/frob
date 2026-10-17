@@ -2,7 +2,8 @@
 id = "01M44YR0AAJ0X0BGXX7F17DMKH"
 title = "unity evidence provider: batch-mode EditMode and PlayMode runs"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
