@@ -8,8 +8,8 @@ points = 3
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:08Z"
-updated = "2026-10-17T19:53:42Z"
-scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-rules/**"]
+updated = "2026-10-17T20:48:09Z"
+scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-rules/**", "crates/gob-mdtest/coverage-allowlist.toml"]
 
 [[links]]
 kind = "blocked-by"
