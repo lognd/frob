@@ -2,7 +2,8 @@
 id = "01M55896EM27W5SD8BGZ0816YV"
 title = "gob-rules/gob-check/gob-macros: stage-bodied and relayed repo rules with per-rule subjects (prerequisite of ~7Z6YH8P)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
