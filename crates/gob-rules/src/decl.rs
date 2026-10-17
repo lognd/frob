@@ -94,6 +94,16 @@ pub struct RuleDef {
 }
 
 impl RuleDef {
+    // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
+    /// One-line summary: the first prose line of the page, past the corpus comment and the title.
+    pub fn summary(&self) -> &'static str {
+        self.doc
+            .lines()
+            .map(str::trim)
+            .find(|l| !l.is_empty() && !l.starts_with("<!--") && !l.starts_with('#'))
+            .unwrap_or_default()
+    }
+
     /// Placeholder the macro emits after reporting an error, so one mistake is one diagnostic.
     #[doc(hidden)]
     pub const POISONED: RuleDef = RuleDef {

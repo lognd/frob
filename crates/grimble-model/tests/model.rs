@@ -5,10 +5,10 @@
 use gob_languages::ParseLimits;
 use gob_symbols::{Adapter, Capability, Fidelity, FileInput, ParseStatus, Precision};
 use grimble_model::adapter::{GrmbAdapter, fold_text};
+use grimble_model::check_model;
 use grimble_model::fold::fold_file;
 use grimble_model::model::{ModelFiles, load_roots};
 use grimble_model::parse::parse_file;
-use grimble_model::rules::check_model;
 
 const H: &str = "grimble = \"2\";\nmodule m;\n";
 const P: &str = "grimble = \"2\";\npart of m;\n";
@@ -176,19 +176,18 @@ fn the_adapter_is_f4_and_folds_through_the_gob_symbols_contract() {
 }
 
 #[test]
-fn the_registry_knows_the_mdl_family() {
-    let reg = gob_rules::Registry::global();
-    for n in 0..=17 {
+fn the_rule_index_knows_the_mdl_family() {
+    let by_id = |id: &str| grimble_model::rules::METAS.iter().find(|d| d.id == id);
+    for n in (0..=17).chain(19..=21) {
         let id = format!("MDL{n:03}");
-        assert!(reg.by_id(&id).is_some(), "{id} is registered");
+        assert!(by_id(&id).is_some(), "{id} is indexed");
     }
-    assert!(reg.verify_unique().is_ok());
     assert_eq!(
-        reg.by_id("MDL015").map(|m| m.severity),
+        by_id("MDL015").map(|d| d.severity),
         Some(gob_rules::Severity::Advisory)
     );
     assert_eq!(
-        reg.by_id("MDL005").map(|m| m.severity),
+        by_id("MDL005").map(|d| d.severity),
         Some(gob_rules::Severity::Warn)
     );
 }

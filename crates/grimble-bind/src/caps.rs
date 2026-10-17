@@ -36,7 +36,7 @@ use grimble_model::{PackDetectorKind, PackPin};
 
 use crate::code::CodeFile;
 use crate::model::Grant;
-use crate::rules::{Cx, Output};
+use crate::eval::{Cx, Output};
 use crate::types::Reason;
 
 /// How many example call sites one finding names.

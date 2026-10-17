@@ -31,9 +31,9 @@ use gob_lock::{LockEntry, LockFile};
 use gob_rules::Severity;
 
 use crate::code::Code;
+use crate::eval::{Output, path_of};
 use crate::live::{Live, LiveSymbol, body_tokens};
 use crate::model::FlowContract;
-use crate::rules::{Output, path_of};
 use crate::types::{Reason, Role, Row, Source, Status};
 
 /// The lock file as a finding anchor and site.

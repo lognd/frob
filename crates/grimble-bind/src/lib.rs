@@ -9,8 +9,8 @@
 //! | 3 | pack inference | a stub: packs do not load yet (G04); an `attr infer` request is `inference-unavailable` |
 //! | 4 | nothing: the hidden remainder, as rows with status `unknown` | [`relation`] |
 //!
-//! [`owner`] merges the ranks into the owner function of binding.md 2.6 and [`rules`] evaluates
-//! `SYS001`-`SYS005`, `SYS009`-`SYS011`, `SYS013`, `CAP001` and `CAP002` ([`rule_defs`], [`caps`]). [`bind`] runs the whole pipeline.
+//! [`owner`] merges the ranks into the owner function of binding.md 2.6 and [`eval`] evaluates
+//! `SYS001`-`SYS005`, `SYS009`-`SYS011`, `SYS013`, `CAP001` and `CAP002` ([`rules`], [`caps`]). [`bind`] runs the whole pipeline.
 //!
 //! # Known limits, each a decision-log proposal
 //!
@@ -41,7 +41,9 @@ pub mod live;
 pub mod model;
 pub mod owner;
 pub mod relation;
-pub mod rule_defs;
+
+pub mod eval;
+pub mod host;
 pub mod rules;
 pub mod types;
 
@@ -52,17 +54,7 @@ use gob_walk::{FileEntry, Selector};
 use grimble_model::ModelFiles;
 use serde_json::Value;
 
-pub use rule_defs::{
-    Cap001, Cap002, Sys001, Sys002, Sys003, Sys004, Sys005, Sys006, Sys007, Sys008, Sys009, Sys010,
-    Sys011, Sys013,
-};
 pub use types::{BindFinding, Reason, Role, Row, Source, Status};
-
-/// The rule ids this crate evaluates.
-pub const RULES: [&str; 14] = [
-    "SYS001", "SYS002", "SYS003", "SYS004", "SYS005", "SYS006", "SYS007", "SYS008", "SYS009",
-    "SYS010", "SYS011", "SYS013", "CAP001", "CAP002",
-];
 
 /// The product name: the lock is `grimble.lock`.
 pub const PRODUCT: &str = "grimble";
@@ -108,28 +100,28 @@ pub struct Binding {
 
 /// Declare the rules whose subject fact is absent, before any rule runs.
 ///
-/// Each predicate sits next to its rule (`rules::sysNNN_inapplicable`,
+/// Each predicate sits next to its rule (`eval::sysNNN_inapplicable`,
 /// `drift::sys008_inapplicable`) and reads model, code or lock facts, never an evaluation result:
 /// a rule that is applicable and then examines zero subjects stays a framework bug. An unreadable
 /// lock leaves SYS008 applicable (the fact is unknown, not absent).
-fn declare_not_applicable(
+fn inapplicable_verdicts(
     model: &model::Model,
     rel: &relation::Relation,
     graph: &gob_symbols::SymbolGraph,
     lock: &Result<gob_lock::LockFile, gob_lock::LockError>,
 ) -> BTreeMap<&'static str, &'static str> {
     let verdicts = [
-        ("SYS001", rules::sys001_inapplicable(model)),
-        ("SYS002", rules::sys002_inapplicable(rel)),
-        ("SYS003", rules::sys003_inapplicable(model, rel)),
-        ("SYS004", rules::sys004_inapplicable(model)),
+        ("SYS001", eval::sys001_inapplicable(model)),
+        ("SYS002", eval::sys002_inapplicable(rel)),
+        ("SYS003", eval::sys003_inapplicable(model, rel)),
+        ("SYS004", eval::sys004_inapplicable(model)),
         (
             "SYS008",
             lock.as_ref().ok().and_then(drift::sys008_inapplicable),
         ),
-        ("SYS009", rules::sys009_inapplicable(model)),
-        ("SYS010", rules::sys010_inapplicable(model)),
-        ("SYS011", rules::sys011_inapplicable(model)),
+        ("SYS009", eval::sys009_inapplicable(model)),
+        ("SYS010", eval::sys010_inapplicable(model)),
+        ("SYS011", eval::sys011_inapplicable(model)),
         ("SYS013", edges::sys013_inapplicable(model, graph)),
         ("CAP001", caps::caps_inapplicable(model)),
         ("CAP002", caps::caps_inapplicable(model)),
@@ -159,13 +151,13 @@ fn expand_files(
     let mut out: BTreeSet<String> = rel
         .dir_owns
         .keys()
-        .map(|s| rules::path_of(s).to_owned())
+        .map(|s| eval::path_of(s).to_owned())
         .collect();
     for r in &rel.rows {
         if matches!(r.role, Role::Producer | Role::Consumer)
             && let Some(id) = &r.identity
         {
-            out.insert(rules::path_of(id).to_owned());
+            out.insert(eval::path_of(id).to_owned());
         }
     }
     for s in modeled {
@@ -188,7 +180,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     let lock = gob_lock::LockFile::load(&lock_path);
     if model.entities.is_empty() {
         tracing::info!("no model entities; binding skipped");
-        let not_applicable = declare_not_applicable(
+        let not_applicable = inapplicable_verdicts(
             &model,
             &relation::Relation::default(),
             &gob_symbols::SymbolGraph::default(),
@@ -228,7 +220,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     } else {
         gob_symbols::SymbolGraph::default()
     };
-    let cx = rules::Cx {
+    let cx = eval::Cx {
         model: &model,
         code: &code,
         rel: &rel,
@@ -239,8 +231,8 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         ledger_dir: input.ledger_dir,
         packs: &input.model.packs,
     };
-    let not_applicable = declare_not_applicable(&model, &rel, &graph, &lock);
-    let mut out = rules::evaluate(&cx);
+    let not_applicable = inapplicable_verdicts(&model, &rel, &graph, &lock);
+    let mut out = eval::evaluate(&cx);
     let live = live::Live::build(&code);
     let flow_contracts = model.flow_contracts();
     match lock {
