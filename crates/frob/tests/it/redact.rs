@@ -145,7 +145,7 @@ fn fragment_with_a_private_term_is_refused() {
 
 /// `check` flags a leaked term as a TICK005 error without echoing it, doctor --fix repairs it in one commit, and a second run changes nothing.
 // frob:tests crates/frob/src/ticket/doctor_cmd.rs::scrub_ledger
-// frob:tests crates/frob-check/src/product.rs::private_term_findings
+// frob:tests crates/frob-ledger/src/privacy.rs::Ledger.private_term_findings
 #[test]
 fn check_flags_and_doctor_fix_repairs() {
     let repo = Repo::new();
