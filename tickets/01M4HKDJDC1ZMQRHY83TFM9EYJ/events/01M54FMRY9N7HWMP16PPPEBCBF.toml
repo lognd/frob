@@ -1,0 +1,7 @@
+kind = "field"
+field = "points"
+old = 1
+new = 3
+at = "2026-10-17T08:28:51Z"
+actor = "lognd"
+rev = 1

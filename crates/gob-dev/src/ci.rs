@@ -5,7 +5,7 @@
 //! `tests/ci_parity.rs` fails when the workflow and this list disagree, so a check added to one
 //! cannot be missing from the other. Process spawning goes through `gob-exec` (PROC001).
 //! The `clippy-windows` step is part of the default list and offloadable, so the one documented
-//! whole-workspace command (`cargo dev ci`, through goway) catches Windows-only compile breaks.
+//! whole-workspace command (`cargo dev ci`, through a remote host) catches Windows-only compile breaks.
 //! Design: `docs/design/build-test-ci.md`.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
@@ -52,7 +52,7 @@ pub struct Step {
     pub linux_only: bool,
     /// Prerequisites checked before the step runs; `ci.yml` must install each (parity test).
     pub needs: Vec<Prerequisite>,
-    /// Heavy enough to run on a goway host under `--remote`; others always run locally.
+    /// Heavy enough to run on a remote host under `--remote`; others always run locally.
     pub offload: bool,
     /// Run with uv's tool bin dir on `PATH`, so pytest installed by the `pytest` step is found.
     pub uv_tools_on_path: bool,
@@ -122,7 +122,7 @@ pub enum CiError {
     /// A process could not be run at all.
     #[error("{0}")]
     Spawn(String),
-    /// The goway host lacks declared prerequisites: a host setup problem, not a code failure.
+    /// The remote host lacks declared prerequisites: a host setup problem, not a code failure.
     #[error("host {host} lacks: {}", missing.join("; "))]
     HostPrerequisite {
         /// Pool host that was probed.
@@ -130,7 +130,7 @@ pub enum CiError {
         /// Each missing item with the command that installs it.
         missing: Vec<String>,
     },
-    /// goway itself failed (exit 125: no host, ssh, sync), not the step's command.
+    /// The runner itself failed (exit 125: no host, ssh, sync), not the step's command.
     #[error("goway failed: {0}")]
     Goway(String),
 }
@@ -142,9 +142,9 @@ pub enum StepStatus {
     Passed,
     /// Failed, with the reason.
     Failed(String),
-    /// The goway host lacks a declared prerequisite (named in the reason); the code was not run.
+    /// The remote host lacks a declared prerequisite (named in the reason); the code was not run.
     HostPrerequisite(String),
-    /// goway failed before or around the step (exit 125); says nothing about the step itself.
+    /// The runner failed before or around the step (exit 125); says nothing about the step itself.
     GowayFailed(String),
     /// Not run on this host, with the reason (never silent).
     Skipped(String),
@@ -159,7 +159,7 @@ pub struct StepResult {
     pub status: StepStatus,
     /// Wall-clock time spent.
     pub elapsed: Duration,
-    /// Where the step ran when goway ran it; `None` for a local step.
+    /// Where the step ran when a remote host ran it; `None` for a local step.
     pub remote: Option<Remote>,
 }
 
@@ -180,7 +180,7 @@ fn cargo(name: &'static str, args: &[&str]) -> Step {
     }
 }
 
-/// Mark `step` as runnable on a goway host under `--remote`.
+/// Mark `step` as runnable on a remote host under `--remote`.
 fn offloaded(mut step: Step) -> Step {
     step.offload = true;
     step
@@ -240,13 +240,13 @@ pub const SIBLING_PACKAGES: [&str; 3] = ["frob-cli", "grimble", "crunk"];
 
 /// The `check` step: build this workspace's own sibling binaries, then run `frob check` from the
 /// same target dir so sibling discovery (next to the frob executable, D87) finds them and never
-/// falls back to whatever is on `PATH`. One shell command so a goway host builds and runs on the
+/// falls back to whatever is on `PATH`. `--skip-tools`: each tool stage is its own CI step. One shell command so a remote host builds and runs on the
 /// same machine; the step is Linux-only, so `sh` is always there.
 /// frob:ticket 01M4527J4M910ZZBJZXMDZJQZQ
 fn sibling_check() -> Step {
     let build: Vec<String> = SIBLING_PACKAGES.iter().map(|p| format!("-p {p}")).collect();
     let script = format!(
-        "cargo build {} && exec cargo run -p frob-cli -- check",
+        "cargo build {} && exec cargo run -p frob-cli -- check --skip-tools",
         build.join(" ")
     );
     Step {
@@ -544,11 +544,11 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
 
 /// Executes one step; a trait so tests drive the flow without spawning anything.
 pub trait StepRunner {
-    /// Run `step` in `root`; `Ok` when it exits 0, carrying where it ran if a goway host ran it.
+    /// Run `step` in `root`; `Ok` when it exits 0, carrying where it ran if a remote host ran it.
     ///
     /// # Errors
     /// [`CiError::TargetMissing`] or [`CiError::ToolMissing`] when a prerequisite is absent,
-    /// [`CiError::Goway`] when goway itself failed, [`CiError::Spawn`] on any other failure to
+    /// [`CiError::Goway`] when the runner itself failed, [`CiError::Spawn`] on any other failure to
     /// run or a non-zero exit.
     fn run(&self, root: &Path, step: &Step) -> Result<Option<Remote>, CiError>;
 }
@@ -663,8 +663,8 @@ fn require_all(root: &Path, step: &Step) -> Result<(), CiError> {
     Ok(())
 }
 
-/// Environment variable that opts `cargo dev ci` into running offloadable steps through goway;
-/// its value is the goway binary (a bare name or a path). A `--remote` flag will set the same.
+/// Environment variable that opts `cargo dev ci` into running offloadable steps through a remote host;
+/// its value is the remote-runner binary (a bare name or a path). A `--remote` flag will set the same.
 pub const REMOTE_ENV: &str = "CARGO_DEV_CI_REMOTE";
 
 /// Run `step` on this host, checking its prerequisites locally first.
@@ -691,8 +691,8 @@ impl StepRunner for ExecRunner {
     }
 }
 
-/// Operating system of a goway host. Only Linux is built; Windows (`--remote-os windows`,
-/// `goway run --host <windows host>`) adds a variant and its arms here, nowhere else.
+/// Operating system of a remote host. Only Linux is built; Windows (`--remote-os windows`,
+/// a remote run on a Windows host) adds a variant and its arms here, nowhere else.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RemoteOs {
     /// A Linux helper.
@@ -701,7 +701,7 @@ pub enum RemoteOs {
 }
 
 impl RemoteOs {
-    /// The `goway run --needs` term that restricts the pool to this OS.
+    /// The runner `--needs` term that restricts the pool to this OS.
     #[must_use]
     pub fn needs_term(self) -> &'static str {
         match self {
@@ -724,20 +724,20 @@ impl RemoteOs {
     }
 }
 
-/// Hardware every offloaded step needs from its host (`goway run --needs`).
+/// Hardware every offloaded step needs from its host (runner `--needs`).
 pub const REMOTE_NEEDS: [&str; 2] = ["cores>=8", "mem>=2G"];
-/// goway's own failure exit code (also "no host"), as opposed to the remote command's.
+/// The runner's own failure exit code (also "no host"), as opposed to the remote command's.
 pub const GOWAY_FAILURE: i32 = 125;
-/// How many times a goway failure is retried before it is reported.
+/// How many times a runner failure is retried before it is reported.
 const GOWAY_RETRIES: u32 = 5;
-/// First wait after a goway failure; doubles each retry up to [`GOWAY_BACKOFF_CAP`].
+/// First wait after a runner failure; doubles each retry up to [`GOWAY_BACKOFF_CAP`].
 const GOWAY_BACKOFF: Duration = Duration::from_secs(15);
-/// Longest wait between goway retries.
+/// Longest wait between runner retries.
 const GOWAY_BACKOFF_CAP: Duration = Duration::from_secs(120);
-/// Where the goway run report lands, relative to the workspace root (`target/` is untracked).
+/// Where the runner report lands, relative to the workspace root (`target/` is untracked).
 const REPORT_PATH: &str = "target/goway-ci-report.json";
 
-/// Where a goway-run step ran, from `goway run --report`.
+/// Where a runner-run step ran, from the runner report.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Remote {
     /// Pool host name.
@@ -752,10 +752,10 @@ pub struct Remote {
     pub duration_secs: f64,
 }
 
-/// A [`StepRunner`] that sends offloadable steps through `goway run` and runs the rest locally.
+/// A [`StepRunner`] that sends offloadable steps through the remote runner and runs the rest locally.
 ///
 /// The remote command is the step's own program, args and env (`-e K=V`), so [`steps`] stays the
-/// single source. goway ships the work tree with a minimal `.git` (`--with-git`), so the steps
+/// single source. The runner ships the work tree with a minimal `.git` (`--with-git`), so the steps
 /// that ask git about the repository run remotely too.
 #[derive(Debug)]
 pub struct GowayRunner {
@@ -766,7 +766,7 @@ pub struct GowayRunner {
 }
 
 impl GowayRunner {
-    /// Use the goway at `binary`: a bare name looked up on `PATH`, or a path to the executable.
+    /// Use the runner at `binary`: a bare name looked up on `PATH`, or a path to the executable.
     #[must_use]
     pub fn new(binary: &str, os: RemoteOs) -> Self {
         let goway = if binary.contains(['/', '\\']) {
@@ -792,7 +792,7 @@ impl GowayRunner {
         }
     }
 
-    /// The `goway run` argv for `command`, pinned to `host` when given.
+    /// The remote runner argv for `command`, pinned to `host` when given.
     fn argv(
         &self,
         root: &Path,
@@ -819,7 +819,7 @@ impl GowayRunner {
         a
     }
 
-    /// Run one goway command, retrying exit 125 with backoff; returns the outcome and report.
+    /// Run one runner command, retrying exit 125 with backoff; returns the outcome and report.
     fn invoke(
         &self,
         root: &Path,
@@ -865,7 +865,7 @@ impl GowayRunner {
         )))
     }
 
-    /// Check `step`'s prerequisites on a goway host; returns that host so the step runs on it.
+    /// Check `step`'s prerequisites on a remote host; returns that host so the step runs on it.
     fn require_remote(&self, root: &Path, step: &Step) -> Result<Option<String>, CiError> {
         let mut host: Option<String> = None;
         let mut missing = Vec::new();
@@ -1389,7 +1389,7 @@ mod tests {
     }
 
     /// A Windows-only compile break must be caught by the default `cargo dev ci` run: the step
-    /// is in the list, offloadable to goway, Linux-only, and comes before the suite run.
+    /// is in the list, offloadable, Linux-only, and comes before the suite run.
     #[test]
     fn clippy_windows_is_in_the_default_run_before_nextest() {
         let all = real();
@@ -1463,7 +1463,7 @@ mod tests {
         assert!(a.args.iter().any(|x| x.starts_with("actionlint-py==")));
     }
 
-    /// A fake goway: logs one argv element per line to `log`, writes a report, exits `code`.
+    /// A fake runner: logs one argv element per line to `log`, writes a report, exits `code`.
     #[cfg(unix)]
     fn fake_goway(dir: &Path, code: i32) -> (GowayRunner, std::path::PathBuf) {
         use std::os::unix::fs::PermissionsExt;
@@ -1563,7 +1563,7 @@ mod tests {
     fn a_remote_command_failure_is_a_step_failure_naming_the_host() {
         let dir = tempfile::tempdir().unwrap();
         let (g, _) = fake_goway(dir.path(), 1);
-        // The fake goway fails every probe too; this test is about the command, not prerequisites.
+        // The fake runner fails every probe too; this test is about the command, not prerequisites.
         let mut nextest = step_named("nextest");
         nextest.needs.clear();
         let r = run(dir.path(), &[nextest], &g, false, true, &mut |_| {});
@@ -1633,6 +1633,15 @@ mod tests {
             script.find("cargo build") < script.find("cargo run"),
             "{script}"
         );
+    }
+
+    // frob:ticket 01M4HT2BSXCN48AG9Z18GC1GYM
+    #[cfg(unix)]
+    #[test]
+    fn check_step_skips_tool_stages_the_dedicated_steps_already_ran() {
+        let step = step_named("check");
+        let script = step.args.last().expect("script");
+        assert!(script.ends_with("-- check --skip-tools"), "{script}");
     }
 
     #[test]

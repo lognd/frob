@@ -2,13 +2,14 @@
 id = "01M4HT2BSXCN48AG9Z18GC1GYM"
 title = "CI frob check step skips stages already run as dedicated steps"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T02:25:28Z"
-updated = "2026-10-17T06:06:14Z"
-scope = ["crates/gob-dev/src/ci.rs", "crates/frob-check/src/verb.rs"]
+updated = "2026-10-17T08:25:29Z"
+scope = ["crates/gob-dev/src/ci.rs", "crates/frob-check/src/verb.rs", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
 text = "Given a CI run, when the check step runs, then no tool stage already run as a dedicated step runs again"

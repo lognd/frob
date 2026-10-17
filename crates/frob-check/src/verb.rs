@@ -134,7 +134,14 @@ pub struct Check {
     explain: Option<String>,
     timing: bool,
     base: Option<String>,
+    tools: ToolFlags,
+}
+
+/// The tool-stage switches of a run (`--quick`, `--skip-tools`), grouped to keep `Check` lean.
+#[derive(Debug, Clone, Copy)]
+struct ToolFlags {
     quick: bool,
+    skip: bool,
 }
 
 fn fail_on_name(f: FailOn) -> &'static str {
@@ -262,6 +269,7 @@ impl Described for Check {
 }
 
 /// The flags of `check`, declared once.
+#[allow(clippy::struct_excessive_bools)] // one bool per CLI flag
 #[derive(Debug, Clone, clap::Args)]
 #[command(about = None, long_about = None)]
 struct CheckArgs {
@@ -304,6 +312,11 @@ struct CheckArgs {
         help = "With --ticket: run only the ticket-tier tool stages (skip train and ci tiers)"
     )]
     quick: bool,
+    #[arg(
+        long,
+        help = "Skip the [[check.tool]] stages (CI runs each as its own step)"
+    )]
+    skip_tools: bool,
 }
 
 impl Command for Check {
@@ -323,7 +336,10 @@ impl Command for Check {
             explain: a.explain,
             timing: a.timing,
             base: a.base,
-            quick: a.quick,
+            tools: ToolFlags {
+                quick: a.quick,
+                skip: a.skip_tools,
+            },
         })
     }
 
@@ -341,7 +357,8 @@ impl Command for Check {
             fix: self.fix,
             fail_on: self.fail_on,
             base: self.base.clone(),
-            quick: self.quick,
+            quick: self.tools.quick,
+            skip_tools: self.tools.skip,
             clock: Some(ctx.clock.clone()),
             ..CheckOptions::default()
         };

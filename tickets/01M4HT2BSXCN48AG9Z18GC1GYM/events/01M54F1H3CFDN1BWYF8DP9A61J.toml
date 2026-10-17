@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/src/ci.rs", "crates/frob-check/src/verb.rs"]
+new = ["crates/gob-dev/src/ci.rs", "crates/frob-check/src/verb.rs", "docs/reference/tool-stages.md"]
+at = "2026-10-17T08:18:20Z"
+actor = "lognd"
+rev = 1

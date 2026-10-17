@@ -23,6 +23,10 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `optional` | `false` | A missing binary is Unresolved but not required. |
 | `tier` | `ticket` | Earliest check level that runs the stage: `ticket` (also under `frob check --ticket --quick`), `train` (a plain `--ticket` run, which is the land and train check) or `ci` (only the unscoped check). Levels widen, so a `ci` stage never delays a land. |
 
+## Skipping stages
+
+`frob check --skip-tools` runs no `[[check.tool]]` stage at all. CI passes it from the `check` step (`cargo dev ci --step check`) because fmt, clippy, docs, gen, zizmor, actionlint, deny, shear and typos each already run as a dedicated step; the built-in rules still run.
+
 ## Tool definitions
 
 A stage with `def = "<name>"` takes every key it leaves unset from a tool definition shipped in the std pack (`crates/gob-check/src/tools/*.toml`; design: `docs/design/tool-binding.md` section 2). A definition holds the pinned version, the version probe, the trusted range, the default argv, argv variants keyed by version range, exit classes (`success`, `findings`; any other status is `TOOL001`), the parser id, the input and configuration globs, the native suppression pattern, an id map and an optional fix command. `{version}` in an argv stands for the pinned version. Keys the stage sets itself win; `id_map` and `inputs` are merged. The configuration globs join `inputs`, so editing a tool's config re-runs the stage and changes its cache key (file digests, pinned version and range, command line). The version is probed first and the first `[[variant]]` whose inclusive `min_version`..`max_version` holds the probed version replaces the default argv (a stage with its own `args` is never swapped).
