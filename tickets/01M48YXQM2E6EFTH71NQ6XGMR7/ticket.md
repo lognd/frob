@@ -2,7 +2,8 @@
 id = "01M48YXQM2E6EFTH71NQ6XGMR7"
 title = "Renew leases from check --ticket, test and ticket update, not only evidence add"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
