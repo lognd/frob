@@ -7,7 +7,7 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T20:51:28Z"
-updated = "2026-10-17T18:45:18Z"
+updated = "2026-10-17T18:45:20Z"
 scope = ["crates/gob-cli/**", "crates/gob-macros/src/command.rs", "crates/gob-product/**", "crates/frob/**", "crates/frob-check/src/verb.rs", "crates/frob-lease/src/verbs.rs", "crates/frob-ack/src/cmd.rs", "docs/design/README.md", "docs/design/cli.md", "docs/reference/cli/**"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a mutating verb, when serve lists tools, then it is absent"
-bound = false
+bound = true
 +++
 
 Coordinator decision 2026-10-04 (owner delegated; review notes/review/v1-gap/C-features.md P-04): frob serve is kept, as a thin MCP surface generated from command metadata, not a hand-written server. Every verb already has a typed schema and a JSON envelope; serve exposes read-only verbs (ticket show/list/doable/brief, check --json, lease list, doctor, explain) as MCP tools whose input schema and output are the verb schema and envelope, so there is no second API to keep in sync. Mutating verbs stay CLI-only until a later decision. Sequenced after 0.532.0 and the Python adapter epic; low priority. Record a decision row in docs/design/README.md and a section in docs/design/cli.md.
