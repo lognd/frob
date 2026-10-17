@@ -4,7 +4,7 @@ start = "2026-10-17"
 end = "2026-10-23"
 goal = "Drain to grimble 0.533.0: GRL plan executor, std pack tool definitions, rule-shape migrations, crunk parity, soundness fixes"
 state = "planned"
-tickets = ["01M3ZX7ETPH5Z6K2VJ64K5XTMX", "01M3ZX7EYANWG9GE031G17RK4A", "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"]
+tickets = ["01M3ZX7ETPH5Z6K2VJ64K5XTMX", "01M3ZX7EYANWG9GE031G17RK4A", "01M3ZX7F1SGDAFM6ZQ8BP7TEN3", "01M43ARZ3VCNDX20C9BZZCCYHY"]
 created = "2026-10-17T15:06:14Z"
 updated = "2026-10-17T15:06:15Z"
 +++
