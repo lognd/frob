@@ -8,7 +8,7 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:01Z"
-updated = "2026-10-18T00:04:08Z"
+updated = "2026-10-18T00:06:03Z"
 scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**", "docs/design/releases.md", "docs/reference/rules/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a cycle with an empty goal, when frob check runs, then PM011 fires"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a cycle member failing ready_requires, when frob check runs, then PM012 fires naming the failed predicates"
