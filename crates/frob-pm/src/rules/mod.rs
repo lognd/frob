@@ -5,6 +5,12 @@
 pub mod pm001;
 /// Rule `PM002`.
 pub mod pm002;
+/// Rule `PM010`.
+pub mod pm010;
+/// Rule `PM011`.
+pub mod pm011;
+/// Rule `PM012`.
+pub mod pm012;
 /// Rule `PM013`.
 pub mod pm013;
 /// Rule `PM033`.
@@ -19,6 +25,9 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     // one entry per rule file
     <pm001::Pm001 as gob_rules::RuleDecl>::DEF,
     <pm002::Pm002 as gob_rules::RuleDecl>::DEF,
+    <pm010::Pm010 as gob_rules::RuleDecl>::DEF,
+    <pm011::Pm011 as gob_rules::RuleDecl>::DEF,
+    <pm012::Pm012 as gob_rules::RuleDecl>::DEF,
     <pm013::Pm013 as gob_rules::RuleDecl>::DEF,
     <pm033::Pm033 as gob_rules::RuleDecl>::DEF,
     <pm034::Pm034 as gob_rules::RuleDecl>::DEF,
@@ -41,6 +50,9 @@ pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
 where
     pm001::Pm001: gob_rules::RelayRule<P>,
     pm002::Pm002: gob_rules::RelayRule<P>,
+    pm010::Pm010: gob_rules::RelayRule<P>,
+    pm011::Pm011: gob_rules::RelayRule<P>,
+    pm012::Pm012: gob_rules::RelayRule<P>,
     pm013::Pm013: gob_rules::RelayRule<P>,
     pm033::Pm033: gob_rules::RelayRule<P>,
     pm034::Pm034: gob_rules::RelayRule<P>,
@@ -49,6 +61,9 @@ where
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::relay(pm001::Pm001));
     rules.push(gob_rules::BoundRule::relay(pm002::Pm002));
+    rules.push(gob_rules::BoundRule::relay(pm010::Pm010));
+    rules.push(gob_rules::BoundRule::relay(pm011::Pm011));
+    rules.push(gob_rules::BoundRule::relay(pm012::Pm012));
     rules.push(gob_rules::BoundRule::relay(pm013::Pm013));
     rules.push(gob_rules::BoundRule::relay(pm033::Pm033));
     rules.push(gob_rules::BoundRule::relay(pm034::Pm034));

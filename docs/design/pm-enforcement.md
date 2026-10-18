@@ -150,9 +150,15 @@ Milestone 2 or later (D36).
   one; the limit is floored to whole points. `assign` defaults the cycle to the
   open one holding today, else the next planned; a ticket lives in one open or
   planned cycle, so assigning it elsewhere moves it (`remove` then `add`);
-  epics and unestimated tickets are refused. PM010 flags cycles
-  over capacity; PM011 flags a cycle with no goal; PM012 flags stories
-  in a cycle that are not `ready`.
+  epics and unestimated tickets are refused. PM010 (Advisory, never
+  escalated by `strict`) flags an open cycle whose committed points
+  exceed its capacity, naming both and where the capacity came from;
+  PM011 (Warn) flags an open cycle with an empty goal; PM012 (Warn)
+  flags an open-cycle member in triage or todo that fails any
+  `[pm] ready_requires` predicate, naming the failed predicates
+  (`story_or_objective_qualified` fails only a story missing its
+  persona, capability or outcome; other types pass it vacuously). An
+  empty `ready_requires` turns PM012 off. Closed cycles are never judged.
 - Work comes from the sprint backlog. While a cycle is active and
   `[pm] sprint_gate` is true (the default), `frob work` and `start`
   refuse a ticket that is not a member of the active cycle with
@@ -280,7 +286,9 @@ as standard). PM013 fires when live standard holders exceed
 | PM007 | task without parent story |
 | PM008 | ticket aging past `[pm] max_age_days` per category |
 | PM009 | unsized ticket in `ready` |
-| PM010-PM012 | cycle over capacity, no goal, not-ready members |
+| PM010 | open cycle committed above its capacity (Advisory) |
+| PM011 | open cycle with an empty goal |
+| PM012 | open-cycle member failing `[pm] ready_requires`, naming the failed predicates |
 | PM013 | WIP limit exceeded |
 | PM014 | milestone without forecast (no sized work) or past target date |
 | PM033 | replenish: ready work below `[pm] ready_min` (releases.md 2) |

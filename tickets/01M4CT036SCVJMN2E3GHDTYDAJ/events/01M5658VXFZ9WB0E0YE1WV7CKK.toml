@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-18T00:06:03Z"
+digest = "bb3da2db219edeb295e6e800f7557f8ff1a62c6b9b76aa5e6182542907c1d10d"
+exit_code = 0
+inline = """
+
+running 1 test
+test pm011 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.15s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.03s
+     Running tests/corpus.rs (target/debug/deps/corpus-a08e6ea42988825e)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-pm --test corpus -- pm011"
+size = 276
+status = "measured"
+at = "2026-10-18T00:06:03Z"
+actor = "lognd"
+rev = 1
