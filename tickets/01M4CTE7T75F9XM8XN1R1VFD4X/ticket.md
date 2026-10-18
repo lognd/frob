@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:45Z"
-updated = "2026-10-18T04:01:08Z"
-scope = ["changelog.d/**", "crates/frob/**", "crates/gob-cli/**", "crates/frob-land/**", "crates/frob-lease/**"]
+updated = "2026-10-18T04:25:05Z"
+scope = ["changelog.d/**", "crates/frob/**", "crates/gob-cli/**", "crates/frob-land/**", "crates/frob-lease/**", "crates/frob-evidence/src/workspace.rs", "crates/gob-git/src/read.rs"]
 
 [[links]]
 kind = "blocked-by"
