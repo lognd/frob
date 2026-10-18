@@ -1,8 +1,4 @@
 //! Markdown corpora: one file per rule under `tests/mdtest/`, each with fire and clean blocks.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod common;
 

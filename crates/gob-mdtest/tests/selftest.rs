@@ -1,8 +1,4 @@
 //! Self-tests: a toy rule MDT001 (and MDT002 as a warn) over the corpora.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use gob_mdtest::{Case, Missing, Runner, run_dir, run_file};
 use gob_rules::{Finding, Severity};

@@ -10,7 +10,7 @@ use frob_ledger::guards::{NoLeases, default_close_guards};
 use frob_ledger::index::{Index, ListFilter};
 use frob_ledger::model::{Category, CommentSubtype, LinkKind, Outcome, Priority, TicketType};
 use frob_ledger::ops::{BatchClose, NewTicket, Patch};
-use frob_ledger::{Layout, Ledger, LedgerConfig, LedgerError, RefMode, TicketId, fold, rules};
+use frob_ledger::{Layout, Ledger, LedgerConfig, LedgerError, RefMode, TicketId, fold};
 use gob_git::{CommitOptions, RelPath, Repo, TreeRef};
 
 const MAIN: &str = "refs/heads/main";

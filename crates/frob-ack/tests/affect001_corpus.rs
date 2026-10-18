@@ -1,10 +1,6 @@
 //! `AFFECT001` markdown corpus: each block is `src/lib.rs` edited after `base` was acknowledged.
 
 // frob:ticket 01M4YBK7YTVNC16GHFFK4JKY97
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::Path;
 use std::time::Duration;

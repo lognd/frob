@@ -2607,6 +2607,7 @@ name = "gob-mdtest"
 version = "0.532.0"
 dependencies = [
  "gob-diagnostics",
+ "gob-path",
  "gob-rules",
  "gob-text",
  "insta",

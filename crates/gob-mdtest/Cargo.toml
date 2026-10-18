@@ -11,6 +11,7 @@ publish = false
 
 [dependencies]
 gob-diagnostics = { path = "../gob-diagnostics" }
+gob-path = { path = "../gob-path" }
 gob-rules = { path = "../gob-rules" }
 gob-text = { path = "../gob-text" }
 insta = "1"
