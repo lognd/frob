@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-17T23:01:10Z"
-updated = "2026-10-18T00:38:59Z"
+updated = "2026-10-18T00:46:39Z"
 idempotency_key = "frob-test-arg-max"
 scope = ["crates/frob-tests/**"]
 
