@@ -154,11 +154,49 @@ impl RunReport {
 /// different packages do not drag each other in:
 /// `(package(=a) & (test(=x) | test(=y))) | (package(=b) & test(=z))`.
 pub fn nextest_args(selected: &[TestTarget]) -> Vec<String> {
-    let mut by_pkg: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
-    for t in selected
+    nextest_args_of(
+        selected
+            .iter()
+            .filter(|t| t.framework == Framework::Nextest),
+    )
+}
+
+// frob:ticket 01M561J10PTM0B1X2BEZ908DQB
+/// Largest filterset expression (bytes) one nextest invocation carries; Linux caps a single argument at 128 KiB.
+pub const NEXTEST_CHUNK_BYTES: usize = 64 * 1024;
+
+// frob:ticket 01M561J10PTM0B1X2BEZ908DQB
+/// The nextest argument lists for `selected`, split so no filterset exceeds `max_bytes` (one list per invocation; empty when no nextest test).
+pub fn nextest_chunks(selected: &[TestTarget], max_bytes: usize) -> Vec<Vec<String>> {
+    let mut tests: Vec<&TestTarget> = selected
         .iter()
         .filter(|t| t.framework == Framework::Nextest)
-    {
+        .collect();
+    tests.sort_by(|a, b| (&a.package, &a.test_path).cmp(&(&b.package, &b.test_path)));
+    let mut chunks = Vec::new();
+    let mut cur: Vec<&TestTarget> = Vec::new();
+    let mut size = 0usize;
+    for t in tests {
+        let cost = t.test_path.len() + 16;
+        if !cur.is_empty() && size + cost > max_bytes {
+            chunks.push(nextest_args_of(cur.drain(..)));
+            size = 0;
+        }
+        size += cost + t.package.len();
+        cur.push(t);
+    }
+    if !cur.is_empty() {
+        chunks.push(nextest_args_of(cur.drain(..)));
+    }
+    tracing::debug!(chunks = chunks.len(), "split nextest selection");
+    chunks
+}
+
+// frob:ticket 01M561J10PTM0B1X2BEZ908DQB
+/// The `-p`/`-E` arguments for the nextest targets `tests`.
+fn nextest_args_of<'a>(tests: impl IntoIterator<Item = &'a TestTarget>) -> Vec<String> {
+    let mut by_pkg: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for t in tests {
         by_pkg.entry(&t.package).or_default().push(&t.test_path);
     }
     if by_pkg.is_empty() {
@@ -434,17 +472,18 @@ pub fn unity_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<UnityGrou
 pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Result<RunReport> {
     let mut report = RunReport::default();
     let nextest = if opts.all {
-        vec!["--workspace".to_owned()]
+        vec![vec!["--workspace".to_owned()]]
     } else {
-        nextest_args(selected)
+        // frob:ticket 01M561J10PTM0B1X2BEZ908DQB
+        nextest_chunks(selected, NEXTEST_CHUNK_BYTES)
     };
-    if !nextest.is_empty() {
+    for args in nextest {
         tracing::info!(all = opts.all, "running nextest");
-        let capture = run_nextest(runner, &opts.root, &nextest, &opts.profile, opts.timeout)?;
+        let capture = run_nextest(runner, &opts.root, &args, &opts.profile, opts.timeout)?;
         report.runs.push(FrameworkRun {
             framework: Framework::Nextest,
             member: String::new(),
-            args: nextest,
+            args,
             capture,
         });
     }
@@ -586,6 +625,27 @@ mod tests {
         assert_eq!(nextest_args(&sel), nextest_args(&sel[..1]));
         assert_eq!(sel[1].plan_line(), "pytest tests/test_a.py::TestC::test_m");
         assert!(pytest_args(&sel[..1]).is_empty());
+    }
+
+    // frob:ticket 01M561J10PTM0B1X2BEZ908DQB
+    // frob:tests nextest_chunks
+    #[test]
+    fn huge_selection_splits_into_bounded_invocations() {
+        let sel: Vec<TestTarget> = (0..20_000)
+            .map(|i| t("a", &format!("tests::some_long_test_name_{i}")))
+            .collect();
+        assert!(nextest_args(&sel).iter().map(String::len).max().unwrap() > 128 * 1024);
+        let chunks = nextest_chunks(&sel, NEXTEST_CHUNK_BYTES);
+        assert!(chunks.len() > 1);
+        for c in &chunks {
+            assert!(c.iter().map(String::len).max().unwrap() < 128 * 1024);
+        }
+        let total: usize = chunks
+            .iter()
+            .map(|c| c.last().unwrap().matches("test(=").count())
+            .sum();
+        assert_eq!(total, 20_000);
+        assert!(nextest_chunks(&[], NEXTEST_CHUNK_BYTES).is_empty());
     }
 
     #[test]

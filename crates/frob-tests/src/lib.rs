@@ -47,8 +47,8 @@ pub use lease::lease_ticket;
 pub use rule::{test001, test001_with_sources};
 pub use rules::test001::Test001;
 pub use run::{
-    DotnetGroup, FrameworkRun, JsGroup, RunOptions, RunReport, dotnet_groups, js_groups,
-    nextest_args, pytest_args, run, unity_assemblies, unity_groups,
+    DotnetGroup, FrameworkRun, JsGroup, NEXTEST_CHUNK_BYTES, RunOptions, RunReport, dotnet_groups,
+    js_groups, nextest_args, nextest_chunks, pytest_args, run, unity_assemblies, unity_groups,
 };
 pub use select::{CsharpOwner, CsharpOwners, Framework, TestTarget, select_tests};
 pub use touched::{TouchedSet, build_repo_graph, touched_set};
