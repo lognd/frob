@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-check/src/store.rs", "crates/gob-check/src/fix.rs", "crates/gob-diagnostics/tests/contract.rs"]
+new = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-check/src/store.rs", "crates/gob-check/src/fix.rs", "crates/gob-diagnostics/tests/contract.rs", "docs/schemas/envelope.json"]
+at = "2026-10-18T00:43:58Z"
+actor = "lognd"
+rev = 1
