@@ -8,8 +8,8 @@ points = 3
 parent = "01M4065Y4N6DQG30TRSP2QNP8T"
 reporter = "lognd"
 created = "2026-10-08T03:48:01Z"
-updated = "2026-10-17T23:51:13Z"
-scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
+updated = "2026-10-18T00:00:48Z"
+scope = ["crates/frob-pm/**", "crates/frob-cli/**", "crates/frob/**", "docs/design/pm-enforcement.md", "changelog.d/**", "docs/design/releases.md", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "Given a cycle over its capacity, when frob check runs, then PM010 fires (Advisory) with committed and capacity"
