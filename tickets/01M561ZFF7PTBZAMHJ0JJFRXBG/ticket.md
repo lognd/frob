@@ -2,7 +2,8 @@
 id = "01M561ZFF7PTBZAMHJ0JJFRXBG"
 title = "gob-dev tests fail: publish plan Cycle and profile_coverage serve/tokens scenarios"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
