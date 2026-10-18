@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-08T03:55:45Z"
-updated = "2026-10-18T04:41:32Z"
+updated = "2026-10-18T04:44:13Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/gob-cli/**", "crates/frob-land/**", "crates/frob-lease/**", "crates/frob-evidence/src/workspace.rs", "crates/gob-git/src/read.rs"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M4CTE6TNY9C5R18NE53J42W1"
 
 [[acceptance]]
 text = "Given frob land, when it runs, then the repository is opened once (counter test)"
-bound = false
+bound = true
 +++
 
 notes/review/audit-2026-10-07.md M14: three Workspace types, verbs open the repository 47 times (8 in land). Do after the Config Document ticket.
