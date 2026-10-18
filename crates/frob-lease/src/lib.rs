@@ -56,11 +56,25 @@ pub fn open_store(
     clock: std::sync::Arc<dyn gob_time::Clock>,
 ) -> Result<(LeaseStore, PathBuf), LeaseError> {
     let repo = gob_git::Repo::discover(cwd).map_err(|e| LeaseError::Repo(e.to_string()))?;
+    open_store_in(&repo, cfg, clock)
+}
+
+/// Like [`open_store`] on an already-open `repo`, so a command opens its repository once.
+///
+/// # Errors
+///
+/// [`LeaseError::Repo`] for a bare repository, or [`LeaseError::BadGlob`] for an invalid `shared_files` glob.
+// frob:ticket 01M4CTE7T75F9XM8XN1R1VFD4X
+pub fn open_store_in(
+    repo: &gob_git::Repo,
+    cfg: LeaseConfig,
+    clock: std::sync::Arc<dyn gob_time::Clock>,
+) -> Result<(LeaseStore, PathBuf), LeaseError> {
     let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
-        LeaseError::Repo(format!("{} is not inside a git work tree", cwd.display()))
+        LeaseError::Repo(format!("{} is not a work tree", repo.git_dir().display()))
     })?;
     tracing::debug!(root = %root.display(), shared = cfg.shared_files.len(), "opening lease store");
-    Ok((LeaseStore::open(&repo, cfg, clock)?, root))
+    Ok((LeaseStore::open(repo, cfg, clock)?, root))
 }
 
 /// Open the lease store of `cwd` with `[lease]` read from the ledger ref's `frob.toml` (the worktree copy only when the ref has none).
@@ -75,16 +89,29 @@ pub fn open_store_from_file(
     clock: std::sync::Arc<dyn gob_time::Clock>,
 ) -> Result<(LeaseStore, PathBuf), LeaseError> {
     let repo = gob_git::Repo::discover(cwd).map_err(|e| LeaseError::Repo(e.to_string()))?;
+    open_store_from_repo(&repo, clock)
+}
+
+/// Like [`open_store_from_file`] on an already-open `repo`, so a command opens its repository once.
+///
+/// # Errors
+///
+/// [`LeaseError::Repo`] when `repo` is bare or the config is invalid.
+// frob:ticket 01M4CTE7T75F9XM8XN1R1VFD4X
+pub fn open_store_from_repo(
+    repo: &gob_git::Repo,
+    clock: std::sync::Arc<dyn gob_time::Clock>,
+) -> Result<(LeaseStore, PathBuf), LeaseError> {
     let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
-        LeaseError::Repo(format!("{} is not inside a git work tree", cwd.display()))
+        LeaseError::Repo(format!("{} is not a work tree", repo.git_dir().display()))
     })?;
     // frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
     let ledger_ref = frob_ledger::config::load_ledger_config(&root)
         .map_err(LeaseError::Repo)?
         .ref_name;
-    let cfg = LeaseConfig::load_repo_wide(&root, &ledger_ref)
+    let cfg = LeaseConfig::load_repo_wide_in(repo, &root, &ledger_ref)
         .map_err(|e| LeaseError::Repo(e.to_string()))?;
-    open_store(cwd, cfg, clock)
+    open_store_in(repo, cfg, clock)
 }
 
 /// Best-effort heartbeat: renew the live lease held from the worktree containing `cwd`.
