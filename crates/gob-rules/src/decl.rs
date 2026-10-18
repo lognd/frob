@@ -8,7 +8,7 @@
 
 use std::marker::PhantomData;
 
-use gob_text::{FileId, Span, TextRange, TextSize};
+use gob_text::{FileId, FileInterner, Span, TextRange, TextSize};
 
 use crate::finding::Finding;
 use crate::id::RuleId;
@@ -94,6 +94,16 @@ pub struct RuleDef {
 }
 
 impl RuleDef {
+    // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
+    /// One-line summary: the first prose line of the page, past the corpus comment and the title.
+    pub fn summary(&self) -> &'static str {
+        self.doc
+            .lines()
+            .map(str::trim)
+            .find(|l| !l.is_empty() && !l.starts_with("<!--") && !l.starts_with('#'))
+            .unwrap_or_default()
+    }
+
     /// Placeholder the macro emits after reporting an error, so one mistake is one diagnostic.
     #[doc(hidden)]
     pub const POISONED: RuleDef = RuleDef {
@@ -282,6 +292,37 @@ pub trait RepoRule<P: ?Sized>: RuleDecl {
     fn inapplicable(&self, _host: &P) -> Option<String> {
         None
     }
+
+    /// How many subjects the rule examined, for a rule that is not `must_measure` but still
+    /// reports its count; `None` (the default) reports nothing (see [`Measured::subjects`]).
+    fn examined(&self, _host: &P) -> Option<usize> {
+        None
+    }
+}
+
+/// A repo rule whose findings a pipeline stage already computed; the body only relays them.
+///
+/// Chosen by `body = relay` (with `scope = Repo`). Unlike [`RepoRule`] the body returns whole
+/// [`Finding`]s, so it keeps what [`Out`] cannot express: a typed [`crate::UnresolvedReason`], a
+/// per-finding severity, a [`crate::RequiredReason`], custom anchors, byte ranges and fixes. The
+/// findings of other rules are dropped by the pipeline, so a relay cannot emit a sibling's id.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is declared `body = relay` but does not implement `RelayRule<{P}>`",
+    note = "write `impl<P: ?Sized + YourHost> RelayRule<P> for {Self}`, where `host = YourHost` in `#[rule(..)]`"
+)]
+pub trait RelayRule<P: ?Sized>: RuleDecl {
+    /// The findings of this rule that a stage already computed; paths are interned in `files`.
+    fn relay(&self, host: &P, files: &mut FileInterner) -> Vec<Finding>;
+
+    /// Why this rule cannot apply to the product at all (see [`FileRule::inapplicable`]).
+    fn inapplicable(&self, _host: &P) -> Option<String> {
+        None
+    }
+
+    /// How many subjects the stage examined for this rule; `None` (the default) reports nothing.
+    fn examined(&self, _host: &P) -> Option<usize> {
+        None
+    }
 }
 
 /// Subject accounting a `must_measure = true` rule must provide.
@@ -309,5 +350,26 @@ pub fn run_repo<R: RepoRule<P>, P: ?Sized>(rule: &R, host: &P) -> Vec<Emitted> {
     let mut found = Vec::new();
     rule.check(host, &mut Out::new(&mut found));
     tracing::debug!(rule = R::DEF.id, found = found.len(), "repo rule ran");
+    found
+}
+
+/// The product-side bind for a relay rule: instantiating this is the "does this product host that
+/// rule" check. Only findings stamped with `R`'s id are kept.
+pub fn run_relay<R: RelayRule<P>, P: ?Sized>(
+    rule: &R,
+    host: &P,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    let mut found = rule.relay(host, files);
+    let before = found.len();
+    found.retain(|f| f.rule.as_str() == R::DEF.id);
+    if found.len() != before {
+        tracing::warn!(
+            rule = R::DEF.id,
+            dropped = before - found.len(),
+            "relay returned findings of other rules; dropped"
+        );
+    }
+    tracing::debug!(rule = R::DEF.id, found = found.len(), "relay rule ran");
     found
 }

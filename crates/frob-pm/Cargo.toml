@@ -14,6 +14,7 @@ gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-time = { version = "0.532.0", path = "../gob-time" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 strsim = "0.11"

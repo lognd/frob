@@ -25,4 +25,5 @@ thiserror = "2"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-mdtest = { path = "../gob-mdtest" }
 proptest = "1"

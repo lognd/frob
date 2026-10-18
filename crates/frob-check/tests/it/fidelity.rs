@@ -154,3 +154,27 @@ fn a_partial_markdown_parse_points_at_the_table_row_and_names_the_cause() {
     assert_ne!(span.range, gob_text::TextRange::default(), "not 1:1");
     assert!(hits[0].message.contains("line 6"), "{}", hits[0].message);
 }
+
+// frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+// frob:tests crates/frob-pm/src/rules/pm001.rs::Pm001
+#[test]
+fn pm_rules_inapplicable_reasons_appear_in_the_not_applicable_list() {
+    let dir = fixture();
+    let report = run(dir.path(), &options()).expect("run");
+    for rule in ["PM001", "PM002", "PM034"] {
+        let why =
+            report.fidelity.inapplicable.get(rule).unwrap_or_else(|| {
+                panic!("{rule} missing from {:?}", report.fidelity.inapplicable)
+            });
+        assert!(!why.is_empty(), "{rule} carries a reason");
+    }
+    assert!(
+        report
+            .fidelity
+            .lines()
+            .iter()
+            .any(|l| l.starts_with("inapplicable PM001: ")),
+        "{:?}",
+        report.fidelity.lines()
+    );
+}

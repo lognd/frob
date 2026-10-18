@@ -7,7 +7,12 @@
 
 use std::sync::Arc;
 
-use crate::decl::{Emitted, FileRule, Measured, RepoRule, RuleDef, run_file, run_repo};
+use gob_text::FileInterner;
+
+use crate::decl::{
+    Emitted, FileRule, Measured, RelayRule, RepoRule, RuleDef, run_file, run_relay, run_repo,
+};
+use crate::finding::Finding;
 
 /// One crate's rules: the generated list plus its renamed and retired ids.
 #[derive(Debug)]
@@ -243,19 +248,24 @@ pub type FileFn<P> = dyn Fn(&P, &str) -> Vec<Emitted> + Send + Sync;
 /// A bound repo rule: host in, findings out.
 pub type RepoFn<P> = dyn Fn(&P) -> Vec<Emitted> + Send + Sync;
 
+/// A bound relay rule: host and path interner in, whole findings out (see [`RelayRule`]).
+pub type RelayFn<P> = dyn Fn(&P, &mut FileInterner) -> Vec<Finding> + Send + Sync;
+
 /// Evaluation body of a bound rule, generic over the product host `P`.
 pub enum Body<P: ?Sized> {
     /// Judges one file: `(host, file text)`.
     File(Box<FileFn<P>>),
     /// Judges the repository.
     Repo(Box<RepoFn<P>>),
+    /// Relays findings a pipeline stage already computed (`body = relay`).
+    Relay(Box<RelayFn<P>>),
 }
 
 /// A bound rule's product-fact applicability: the reason it cannot apply, if any.
 pub type InapplicableFn<P> = dyn Fn(&P) -> Option<String> + Send + Sync;
 
-/// A bound `must_measure` rule's subject counter.
-pub type SubjectsFn<P> = dyn Fn(&P) -> usize + Send + Sync;
+/// A bound repo rule's subject counter; `None` when the rule reports no count.
+pub type SubjectsFn<P> = dyn Fn(&P) -> Option<usize> + Send + Sync;
 
 /// A rule bound to a product host: its declaration plus a runnable body.
 pub struct BoundRule<P: ?Sized> {
@@ -265,7 +275,7 @@ pub struct BoundRule<P: ?Sized> {
     pub body: Body<P>,
     /// The rule's own product-fact applicability ([`FileRule::inapplicable`]).
     pub inapplicable: Box<InapplicableFn<P>>,
-    /// Subject accounting of a `must_measure` repo rule ([`Measured::subjects`]).
+    /// Subject accounting of a repo rule ([`Measured::subjects`], [`RepoRule::examined`]).
     pub subjects: Option<Box<SubjectsFn<P>>>,
 }
 
@@ -287,17 +297,17 @@ impl<P: ?Sized + 'static> BoundRule<P> {
     pub fn repo<R: RepoRule<P> + Send + Sync + 'static>(rule: R) -> Self {
         tracing::trace!(rule = R::DEF.id, "bound repo rule");
         let rule = Arc::new(rule);
-        let na = Arc::clone(&rule);
+        let (na, count) = (Arc::clone(&rule), Arc::clone(&rule));
         Self {
             def: R::DEF,
             body: Body::Repo(Box::new(move |host| run_repo(&*rule, host))),
             inapplicable: Box::new(move |host| na.inapplicable(host)),
-            subjects: None,
+            subjects: Some(Box::new(move |host| count.examined(host))),
         }
     }
 
     /// Bind a `must_measure` repo rule with its subject counter, so an empty pass is not a clean one.
-    pub fn measured<R: Measured<P> + Send + Sync + 'static>(rule: R) -> Self {
+    pub fn measured<R: RepoRule<P> + Measured<P> + Send + Sync + 'static>(rule: R) -> Self {
         tracing::trace!(rule = R::DEF.id, "bound measured repo rule");
         let rule = Arc::new(rule);
         let (na, count) = (Arc::clone(&rule), Arc::clone(&rule));
@@ -305,7 +315,22 @@ impl<P: ?Sized + 'static> BoundRule<P> {
             def: R::DEF,
             body: Body::Repo(Box::new(move |host| run_repo(&*rule, host))),
             inapplicable: Box::new(move |host| na.inapplicable(host)),
-            subjects: Some(Box::new(move |host| count.subjects(host))),
+            subjects: Some(Box::new(move |host| {
+                Some(Measured::subjects(&*count, host))
+            })),
+        }
+    }
+
+    /// Bind a `body = relay` repo rule: its findings come from a stage that already ran.
+    pub fn relay<R: RelayRule<P> + Send + Sync + 'static>(rule: R) -> Self {
+        tracing::trace!(rule = R::DEF.id, "bound relay rule");
+        let rule = Arc::new(rule);
+        let (na, count) = (Arc::clone(&rule), Arc::clone(&rule));
+        Self {
+            def: R::DEF,
+            body: Body::Relay(Box::new(move |host, files| run_relay(&*rule, host, files))),
+            inapplicable: Box::new(move |host| na.inapplicable(host)),
+            subjects: Some(Box::new(move |host| count.examined(host))),
         }
     }
 }

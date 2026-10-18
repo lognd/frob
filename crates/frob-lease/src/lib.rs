@@ -22,9 +22,11 @@
 pub mod config;
 pub mod error;
 pub mod guard;
+pub mod host;
 pub mod model;
 pub mod overlap;
 pub mod rule;
+pub mod rules;
 pub mod store;
 pub mod unmatched;
 pub mod verbs;
@@ -35,7 +37,8 @@ pub use config::LeaseConfig;
 pub use error::LeaseError;
 pub use guard::LeaseGuard;
 pub use model::{Holder, Lease, StealRecord, Waiter};
-pub use rule::{Scope001, scope001};
+pub use rule::scope001;
+pub use rules::scope001::Scope001;
 pub use store::{Acquired, Contended, CorruptLease, LeaseStore, Stolen, WaiterInfo};
 
 /// Open the lease store of the repository containing `cwd` with the caller's `cfg`.

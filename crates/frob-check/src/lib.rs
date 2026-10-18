@@ -35,6 +35,7 @@
 
 mod filecheck;
 pub mod grl;
+mod host;
 mod memo;
 mod options;
 mod product;

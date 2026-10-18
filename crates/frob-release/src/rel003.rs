@@ -8,46 +8,12 @@
 
 use std::path::Path;
 
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RuleDecl, RuleId, Severity};
+
+use crate::rules::rel003::Rel003;
 
 use crate::error::FragmentError;
 use crate::fragment::{TicketResolver, files_of, read_all};
-
-// frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
-/// A changelog fragment that is missing for the checked ticket or that fails validation.
-///
-/// A fragment is `changelog.d/<ULID>.<type>.md` with a type of added, changed, fixed,
-/// removed, deprecated or security, a ULID that names a ticket in the ledger, and a non-empty
-/// ASCII body of one or two user-facing sentences, optionally prefixed with a product
-/// (`frob:`). Repository-wide the rule fires for each fragment that does not validate: an
-/// unknown type, a name that is not a ULID, a ULID with no ticket, an empty or non-ASCII
-/// body, or a product prefix that is a near miss of a real product. Under `check --ticket`
-/// it also fires when the checked ticket is not yet done and has no fragment file at all.
-/// It is not applicable when `changelog_fragment` is not in `[pm] done_requires` and the
-/// repository has no `changelog.d` directory.
-///
-/// ## Remedy
-///
-/// For a missing fragment run `frob ticket fragment TICKET` in the ticket's worktree: it
-/// writes `changelog.d/<ULID>.<type>.md` from the title (`--type` and `--sentence` set them),
-/// validated by the same code; edit the sentence and commit it, or, audited, close the ticket with
-/// `--no-changelog --reason TEXT`. For an invalid fragment,
-/// fix what the message names (rename the file, reword the body) or replace it with
-/// `frob ticket fragment TICKET --force`. A change with no user-visible effect (a design
-/// document, an internal refactor) is closed with `--no-changelog --reason TEXT` instead; the
-/// exemption is a `changelog-exempt` event, audited, and a ticket that has one is not reported.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "REL003",
-    slug = "changelog-fragment-required",
-    family = "REL",
-    severity = Error,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    version = 1
-)]
-pub struct Rel003;
 
 /// What [`evaluate`] found.
 #[derive(Debug, Clone, Default)]
@@ -59,10 +25,10 @@ pub struct Evaluation {
 }
 
 fn rule_id() -> RuleId {
-    Rel003
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"))
+    Rel003::DEF
+        .id
+        .parse()
+        .unwrap_or_else(|e| unreachable!("declaration validates the id: {e}"))
 }
 
 /// The finding for one fragment error, keyed by the file.
@@ -133,4 +99,20 @@ pub fn not_applicable(root: &Path, fragment_required: bool) -> Option<String> {
         "changelog_fragment is not in [pm] done_requires and the repository has no changelog.d directory"
             .to_owned(),
     )
+}
+
+// frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+/// Whether `[pm] done_requires` lists `changelog_fragment`; an unreadable `[pm]` table counts as required (the default), logged.
+#[must_use]
+pub fn fragment_required(root: &Path) -> bool {
+    match frob_pm::PmConfig::load(root) {
+        Ok(pm) => pm
+            .pm
+            .done_requires
+            .contains(&frob_pm::DoneRequirement::ChangelogFragment),
+        Err(err) => {
+            tracing::warn!(%err, "REL003: [pm] unreadable; assuming changelog_fragment is required");
+            true
+        }
+    }
 }

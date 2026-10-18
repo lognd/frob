@@ -7,7 +7,7 @@
 //! # One count
 //!
 //! Column limits and over-limit marks are read from the [`Wip`] the caller
-//! sorted with [`wip::read`](crate::rules::wip::read), the count shared with
+//! sorted with [`wip::read`](crate::eval::wip::read), the count shared with
 //! `PM013` and the `work` gate: only live standard holders count against
 //! `[pm.wip] in_progress`, expedite holders count against the lane's
 //! `[pm.classes] expedite_max`, finished tickets waiting to land count against
@@ -46,7 +46,7 @@ use frob_ledger::model::{Category, Class, Stamp, TicketType};
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::rules::wip::{Wip, WipLimits};
+use crate::eval::wip::{Wip, WipLimits};
 
 /// Days a done ticket stays on the board.
 pub const DONE_DAYS: i64 = 7;

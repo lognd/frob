@@ -11,7 +11,7 @@ use crate::layout::Layout;
 use crate::ledger::Ledger;
 use crate::reindex::GENERATED_MARKER_PREFIX;
 use crate::replay::reindex_trailer;
-use crate::rules::{Tick008, id_of};
+use crate::legacy::{Tick008, id_of};
 
 /// How many of the newest first-parent commits one check inspects.
 const SCAN_LIMIT: usize = 100;

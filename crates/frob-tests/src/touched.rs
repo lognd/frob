@@ -5,7 +5,7 @@ use std::path::Path;
 
 use gob_cache::Cache;
 use gob_git::{Repo, TreeRef};
-use gob_rules::{Finding, Rule, RuleId, Severity};
+use gob_rules::{Finding, RuleDecl, RuleId, Severity};
 use gob_symbols::{
     BuildStats, Digests, FileSymbols, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target,
     adapter_for_path, build_graph_with_stats, extract_file,
@@ -15,7 +15,7 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::error::Result;
-use crate::rule::Test001;
+use crate::rules::test001::Test001;
 
 /// Changed files and changed symbols (the seeds of test selection).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, JsonSchema)]
@@ -38,9 +38,9 @@ impl TouchedSet {
         let Some(first) = self.unresolved_files.first() else {
             return Vec::new();
         };
-        let id: RuleId = Test001
-            .meta()
-            .rule_id()
+        let id: RuleId = Test001::DEF
+            .id
+            .parse()
             .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
         vec![Finding::new(
             id,

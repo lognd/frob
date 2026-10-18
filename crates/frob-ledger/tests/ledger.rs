@@ -379,7 +379,8 @@ fn tick002_and_tick003(layout: Layout) {
     let ghost = TicketId::mint();
     let real = id.to_string();
     let ghost_s = ghost.to_string();
-    let findings = rules::tick002(&[&real, &ghost_s, "~abbrev"], "main", &ledger).expect("tick002");
+    let findings = frob_ledger::tick::tick002(&[&real, &ghost_s, "~abbrev"], "main", &ledger)
+        .expect("tick002");
     assert_eq!(findings.len(), 2);
     assert!(findings.iter().all(|f| f.rule.as_str() == "TICK002"));
     let view = ledger.show(id).expect("show");
@@ -388,7 +389,7 @@ fn tick002_and_tick003(layout: Layout) {
         kind: LinkKind::Relates,
         target: ghost,
     });
-    let dangling = rules::tick003(&front, &|t| t == id);
+    let dangling = frob_ledger::tick::tick003(&front, &|t| t == id);
     assert_eq!(dangling.len(), 1);
     assert_eq!(dangling[0].rule.as_str(), "TICK003");
 }
