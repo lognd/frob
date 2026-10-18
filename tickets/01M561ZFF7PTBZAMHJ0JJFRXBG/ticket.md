@@ -4,9 +4,10 @@ title = "gob-dev tests fail: publish plan Cycle and profile_coverage serve/token
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-17T23:08:31Z"
-updated = "2026-10-17T23:08:31Z"
+updated = "2026-10-18T00:04:05Z"
 scope = ["crates/gob-dev/**"]
 +++
 
