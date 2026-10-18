@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["gob_check and gob_directives rules are listed in frob-check product_rules! and frob check output is unchanged"]
+moved = []
+at = "2026-10-18T00:20:58Z"
+actor = "lognd"
+rev = 1

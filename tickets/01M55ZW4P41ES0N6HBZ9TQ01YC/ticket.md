@@ -6,9 +6,13 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-17T22:31:44Z"
-updated = "2026-10-18T00:12:00Z"
+updated = "2026-10-18T00:20:58Z"
 idempotency_key = "jbd7std-product-rules"
 scope = ["crates/frob-check/**", "crates/gob-directives/src/lib.rs", "crates/gob-check/src/lib.rs", "crates/gob-check/src/pipeline.rs"]
+
+[[acceptance]]
+text = "gob_check and gob_directives rules are listed in frob-check product_rules! and frob check output is unchanged"
+bound = true
 +++
 
 found while working ~JBD7STD: the new gob-check and gob-directives declared rules are not listed in crates/frob-check/src/product_rules.rs (that file was under ~MXXGNZ3 lease). Add them and verify frob check output unchanged.
