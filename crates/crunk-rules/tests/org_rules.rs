@@ -3,7 +3,7 @@
 
 // frob:ticket 01M43ATBPPR5QCY0CSPPTNEDQ0
 
-mod support;
+use crate::support;
 
 use crunk_rules::org::{bem_segments, carries_prefix, case_name, case_ok};
 use crunk_rules::rules::{

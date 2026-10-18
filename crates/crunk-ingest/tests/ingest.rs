@@ -6,7 +6,7 @@
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
 
-mod common;
+use crate::common;
 
 use std::path::PathBuf;
 

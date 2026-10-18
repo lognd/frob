@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "crunk-rules"
 version.workspace = true
 description = "crunk's rule registry: family metadata, release severities, [lint] severity resolution, crunk:waive waivers and WAIVE001."
@@ -28,3 +29,10 @@ tempfile = "3"
 
 [lints]
 workspace = true
+
+# frob:ticket 01M4MGEZBQ9DD7BKKZ8ZM1HA1J
+# One integration-test binary: tests/main.rs includes every other tests/*.rs as a module, so the
+# crate links once instead of once per file. A new tests/x.rs must be added there as `mod x;`.
+[[test]]
+name = "main"
+path = "tests/main.rs"

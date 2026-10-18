@@ -1,6 +1,6 @@
 //! COV001 over C#: C# files are test-capable subjects, tested methods are covered and untested public ones are findings (~PMRA314).
 
-mod common;
+use crate::common;
 
 use frob_obligations::{InvariantsConfig, collect, cov001_subjects};
 

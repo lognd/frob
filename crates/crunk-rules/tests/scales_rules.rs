@@ -3,7 +3,7 @@
 
 // frob:ticket 01M43ATBDWVSJBXP7TEQ6DBW3W
 
-mod support;
+use crate::support;
 
 use crunk_rules::rules::{
     radius001::Radius001, size001::Size001, space001::Space001, type001::Type001,

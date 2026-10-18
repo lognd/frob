@@ -20,7 +20,7 @@ use crunk_rules::rules::{
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
 
-mod support;
+use crate::support;
 
 struct Host;
 impl crunk_rules::CrunkHost for Host {}

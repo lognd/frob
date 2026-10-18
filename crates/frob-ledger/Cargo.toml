@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "frob-ledger"
 version.workspace = true
 description = "The frob ticket ledger: ULID tickets, append-only events, fold, SQLite index and merge driver."
@@ -40,3 +41,10 @@ harness = false
 
 [lints]
 workspace = true
+
+# frob:ticket 01M4MGEZBQ9DD7BKKZ8ZM1HA1J
+# One integration-test binary: tests/main.rs includes every other tests/*.rs as a module, so the
+# crate links once instead of once per file. A new tests/x.rs must be added there as `mod x;`.
+[[test]]
+name = "main"
+path = "tests/main.rs"

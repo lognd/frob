@@ -3,7 +3,7 @@
 
 // frob:ticket 01M43ATBY4CHA4FYVC7BWK6MXR
 
-mod support;
+use crate::support;
 
 use crunk_rules::breakpoints::{has_responsive_variant, matched_family, matches_breakpoint};
 use crunk_rules::rules::{bp001::Bp001, bp002::Bp002, bp003::Bp003};

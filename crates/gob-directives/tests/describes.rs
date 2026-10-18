@@ -1,6 +1,6 @@
 //! `frob:describes` in markdown: parsed, bound to the enclosing section, no DSL001.
 
-mod common;
+use crate::common;
 
 use gob_directives::frob::Describes;
 use gob_directives::{Binding, Directive};

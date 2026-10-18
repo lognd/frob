@@ -1,6 +1,6 @@
 //! The executor's node-kind prefilter (plugins.md section 6.2).
 
-mod support;
+use crate::support;
 
 use gob_ir::{Model, NodeId, NodeSpec, Operator};
 use gob_plan::exec::outcome::outcomes;

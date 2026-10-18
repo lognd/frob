@@ -3,7 +3,7 @@
 
 // frob:ticket 01M43ARX764095Q4VWABWXXV5H
 
-mod common;
+use crate::common;
 
 use std::path::{Path, PathBuf};
 

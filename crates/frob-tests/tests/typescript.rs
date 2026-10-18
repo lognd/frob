@@ -24,7 +24,7 @@ use frob_tests::{
 };
 use gob_git::Repo;
 
-mod common;
+use crate::common;
 use common::{git, write};
 
 const PACKAGE: &str = include_str!("../../gob-symbols/tests/corpus/web/repo/package.json");

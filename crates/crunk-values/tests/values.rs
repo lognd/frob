@@ -1,6 +1,6 @@
 //! Port of the Python `tests/unit/test_values.py` plus reference-vector parity tests.
 
-mod vectors;
+use crate::vectors;
 
 use crunk_values::{Color, ColorError, Length, LengthError, LengthKind, NAMED_COLORS, named_color};
 

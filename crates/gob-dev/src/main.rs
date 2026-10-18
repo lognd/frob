@@ -11,7 +11,7 @@ use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
 use gob_dev::{
-    Kind, Mode, apply, ci, generate, isolation, profile, publish, wheel, wheel_smoke,
+    Kind, Mode, apply, ci, generate, isolation, profile, publish, test_size, wheel, wheel_smoke,
     workspace_root,
 };
 
@@ -91,6 +91,15 @@ enum Task {
         /// Where to write the report (default: target/profile/report.json).
         #[arg(long)]
         out: Option<PathBuf>,
+    },
+    /// Sum the test executables in target/<profile>/deps and fail when over the budget (~ZM1HA1J).
+    TestSize {
+        /// Cargo profile directory under target/ to scan.
+        #[arg(long, default_value = "debug")]
+        profile: String,
+        /// Budget in gigabytes (default 3).
+        #[arg(long, default_value_t = 3.0)]
+        max_gb: f64,
     },
     /// Publish the workspace crates to crates.io in dependency order; resumable.
     Publish {
@@ -268,6 +277,7 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
         Task::WheelSmoke { dir, version } => {
             wheel_task(|root| wheel_smoke::smoke_from_env(root, &dir, version)).map(|()| ok)
         }
+        Task::TestSize { profile, max_gb } => test_size_task(&profile, max_gb).map(|()| ok),
         Task::Gen { kind, check, root } => generate_files(kind, check, root).map(|()| ok),
     }
 }
@@ -282,6 +292,29 @@ fn wheel_task(
     };
     let root = workspace_root().map_err(|e| fail(&e))?;
     task(&root).map_err(|e| fail(&e))
+}
+
+// frob:ticket 01M4MGEZBQ9DD7BKKZ8ZM1HA1J
+/// Report the size of the test executables under `target/<profile>/deps`; fail when over `max_gb`.
+fn test_size_task(profile: &str, max_gb: f64) -> Result<(), Failed> {
+    let root = workspace_root().map_err(|e| Failed(format!("error: {e}")))?;
+    let report =
+        test_size::measure(&root.join("target").join(profile).join("deps")).map_err(|e| {
+            tracing::error!(error = %e, "test-size scan failed");
+            Failed(format!("error: {e}"))
+        })?;
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a positive budget in GB"
+    )]
+    let max_bytes = (max_gb * 1e9) as u64;
+    emit(&test_size::summary(&report, max_bytes));
+    if report.bytes <= max_bytes {
+        Ok(())
+    } else {
+        Err(Failed("test executables exceed the budget".to_owned()))
+    }
 }
 
 /// Regenerate (or with `check`, diff) the derived files.

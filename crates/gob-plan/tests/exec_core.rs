@@ -5,7 +5,7 @@
     reason = "short names in table-style tests"
 )]
 
-mod support;
+use crate::support;
 
 use gob_ir::{Model, NodeId, NodeSpec, Operator, Truth};
 use gob_plan::exec::{Input, Row, run};

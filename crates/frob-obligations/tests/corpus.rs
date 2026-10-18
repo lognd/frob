@@ -1,6 +1,6 @@
 //! Markdown corpora: one file per rule under `tests/mdtest/`, each with fire and clean blocks.
 
-mod common;
+use crate::common;
 
 use frob_obligations::InvariantsConfig;
 use gob_mdtest::Case;

@@ -3,7 +3,7 @@
 
 // frob:ticket 01M43ATBY4CHA4FYVC7BWK6MXR
 
-mod support;
+use crate::support;
 
 use crunk_rules::rules::{
     tokens001::Tokens001, tw001::Tw001, tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005,

@@ -3,7 +3,7 @@
 
 // frob:ticket 01M43ATB4X0B56W8T0G8MQFYVM
 
-mod support;
+use crate::support;
 
 use crunk_rules::rules::{color001::Color001, color002::Color002};
 use crunk_rules::{CrunkHost, color::Palette, host::missing_inputs, mode};

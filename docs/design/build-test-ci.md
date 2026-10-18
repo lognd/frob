@@ -150,6 +150,23 @@ at least one examined subject, and strictness counts Unresolved findings.
 Runner: `cargo nextest run` everywhere (per-test process isolation,
 retries off, junit output); `cargo test --doc` separately.
 
+**One integration-test binary per crate (~ZM1HA1J).** Every `tests/*.rs`
+file is its own crate and its own linked executable (about 24 MB each); a
+full workspace test build used to leave 226 integration-test executables,
+about 12 GB. A crate with several test files now has `autotests = false`
+and one `[[test]] name = "main"` at `tests/main.rs`, which includes the
+other files as modules (`mod x;`), so it links once: 66 test targets
+remain workspace-wide. Rules for the folded layout: add a new test file as
+a `mod` line in `tests/main.rs` (auto-discovery is off); shared helper
+modules (`common`, `support`) are declared once in `main.rs` and imported
+with `use crate::common;`; insta snapshots are named `main__<file>__<test>`;
+a test that re-executes itself with `--exact` names `<file>::<test>`.
+Files that need their own crate root stay separate `[[test]]` targets with
+the reason beside them (gob-check `product_rules`, `rule_defs`: fixtures name
+`crate::Host`; gob-directives `scan`: asserts the whole global registry).
+`cargo dev test-size [--profile debug] [--max-gb 3]` sums the executables in
+`target/<profile>/deps` and fails over the budget.
+
 ## 3. Generated artifacts (`cargo dev gen`, checked with `cargo dev gen --check`)
 
 gob-dev's `cargo dev gen` writes every generated page, schema, type

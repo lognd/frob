@@ -14,7 +14,7 @@ use frob_ledger::{Ledger, LedgerConfig};
 use frob_tests::{TestTarget, build_repo_graph, select_tests, touched_set};
 use gob_git::Repo;
 
-mod common;
+use crate::common;
 use common::{git, write};
 
 const ALPHA: &str = r"pub fn double(x: i32) -> i32 {

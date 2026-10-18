@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "grimble"
 version.workspace = true
 description = "The grimble binary: check, init, doctor, fmt and exceptions list over the shared goblin CLI root."
@@ -50,3 +51,10 @@ toml = "1"
 
 [lints]
 workspace = true
+
+# frob:ticket 01M4MGEZBQ9DD7BKKZ8ZM1HA1J
+# One integration-test binary: tests/main.rs includes every other tests/*.rs as a module, so the
+# crate links once instead of once per file. A new tests/x.rs must be added there as `mod x;`.
+[[test]]
+name = "main"
+path = "tests/main.rs"

@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "crunk-ingest"
 version.workspace = true
 description = "CSS ingest for crunk: ProjectStyles from a project's stylesheets, bucket placement and the organization inventory."
@@ -35,3 +36,10 @@ tracing = "0.1"
 [dev-dependencies]
 gob-git = { version = "0.532.0", path = "../gob-git" }
 tempfile = "3"
+
+# frob:ticket 01M4MGEZBQ9DD7BKKZ8ZM1HA1J
+# One integration-test binary: tests/main.rs includes every other tests/*.rs as a module, so the
+# crate links once instead of once per file. A new tests/x.rs must be added there as `mod x;`.
+[[test]]
+name = "main"
+path = "tests/main.rs"

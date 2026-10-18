@@ -1,6 +1,6 @@
 //! Multi-file scenarios, exceptions, registry facts and the per-file entry point.
 
-mod common;
+use crate::common;
 
 use frob_obligations::{InvariantsConfig, collect, evaluate_file};
 use gob_lock::{LockEntry, LockFile};

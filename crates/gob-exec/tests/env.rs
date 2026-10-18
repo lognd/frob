@@ -92,7 +92,12 @@ fn secret_probe() {
 fn a_secret_looking_parent_variable_never_reaches_a_scrubbed_child() {
     // The standard library spawn is allowed inside gob-exec's own tests (PROC001 exempts the crate).
     let out = std::process::Command::new(std::env::current_exe().expect("test binary"))
-        .args(["--exact", "secret_probe", "--nocapture", "--test-threads=1"])
+        .args([
+            "--exact",
+            "env::secret_probe",
+            "--nocapture",
+            "--test-threads=1",
+        ])
         .env(PROBE_MARK, "1")
         .env("MY_API_TOKEN", "hunter2")
         .env("AWS_SECRET_ACCESS_KEY", "hunter2")

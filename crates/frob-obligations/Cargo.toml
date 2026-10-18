@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "frob-obligations"
 version.workspace = true
 description = "Accounting rules of frob: COV, TODO, DOC, REF and INV subsets plus accept and defer exception handling (EXC001, EXC003, EXC005, EXC007)."
@@ -35,3 +36,10 @@ tempfile = "3"
 
 [lints]
 workspace = true
+
+# frob:ticket 01M4MGEZBQ9DD7BKKZ8ZM1HA1J
+# One integration-test binary: tests/main.rs includes every other tests/*.rs as a module, so the
+# crate links once instead of once per file. A new tests/x.rs must be added there as `mod x;`.
+[[test]]
+name = "main"
+path = "tests/main.rs"

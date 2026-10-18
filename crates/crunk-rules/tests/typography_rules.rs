@@ -2,7 +2,7 @@
 
 // frob:ticket 01M43ATBDWVSJBXP7TEQ6DBW3W
 
-mod support;
+use crate::support;
 
 use crunk_rules::rules::{type002::Type002, type003::Type003};
 use crunk_rules::typography::{Weight, effective_stacks, split_family_stack, weight_of};

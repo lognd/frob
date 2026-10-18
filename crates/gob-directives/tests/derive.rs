@@ -1,6 +1,6 @@
 //! `#[derive(Directive)]` over every argument mode and supported type.
 
-mod common;
+use crate::common;
 
 use gob_directives::{ArgError, ArgKind, Directive, ScanConfig, all_directives};
 

@@ -3,7 +3,7 @@
 
 // frob:ticket 01M43ATB4X0B56W8T0G8MQFYVM
 
-mod support;
+use crate::support;
 
 use crunk_rules::contrast::measure_roles;
 use crunk_rules::mode::Mode;

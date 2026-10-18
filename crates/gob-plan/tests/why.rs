@@ -2,7 +2,7 @@
 
 // frob:ticket 01M3ZX7H8FPEAY1X1WVW1PNXXN
 
-mod support;
+use crate::support;
 
 use gob_ir::{NodeId, NodeSpec, Operator, Relation, Truth};
 use gob_plan::exec::Input;

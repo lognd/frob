@@ -4,7 +4,7 @@
     reason = "short names in table-style tests"
 )]
 
-mod support;
+use crate::support;
 
 use gob_ir::{Model, NodeId, NodeSpec, Operator, Relation, Truth};
 use gob_plan::catalog::{Column, FieldType};

@@ -1,4 +1,5 @@
 [package]
+autotests = false
 name = "crunk-values"
 version.workspace = true
 description = "Pure CSS value math for crunk: color and length parsing, WCAG contrast and palette distance."
@@ -17,3 +18,10 @@ workspace = true
 [dependencies]
 thiserror = "2"
 tracing = "0.1"
+
+# frob:ticket 01M4MGEZBQ9DD7BKKZ8ZM1HA1J
+# One integration-test binary: tests/main.rs includes every other tests/*.rs as a module, so the
+# crate links once instead of once per file. A new tests/x.rs must be added there as `mod x;`.
+[[test]]
+name = "main"
+path = "tests/main.rs"

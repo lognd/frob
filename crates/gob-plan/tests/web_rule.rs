@@ -5,7 +5,7 @@
 //! the compiler will emit; GRL001 (unknown kind or field) is the checker's, tested in
 //! `check_names.rs`.
 
-mod support;
+use crate::support;
 
 use gob_ir::markup::{self, ELEMENT, TAG};
 use gob_ir::{NodeId, Operator, Truth};

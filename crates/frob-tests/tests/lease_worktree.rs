@@ -9,7 +9,7 @@
 use frob_tests::lease_ticket;
 use gob_git::Repo;
 
-mod common;
+use crate::common;
 use common::{git, write};
 
 // frob:tests crates/frob-tests/src/lease.rs::lease_ticket

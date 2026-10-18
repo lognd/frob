@@ -4,7 +4,7 @@
 
 // frob:ticket 01M43ARYFVG86PAGGM78JGRZY3
 
-mod common;
+use crate::common;
 
 use crunk_ingest::{Bucket, ParsedJsx, ingest_tree, parse_jsx_source};
 use crunk_values::LengthKind;

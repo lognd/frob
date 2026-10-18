@@ -14,7 +14,7 @@ use frob_tests::{
 };
 use gob_git::Repo;
 
-mod common;
+use crate::common;
 use common::{git, write};
 
 const SHIP: &str = "namespace Game\n{\n    public class Ship\n    {\n        public int Thrust(int n) { return n * 2; }\n        public int Unused(int n) { return n; }\n    }\n}\n";

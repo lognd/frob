@@ -1,7 +1,7 @@
 //! The executor's outcome layer: polarity, `unresolved when`, one finding per binding,
 //! witnesses and budgets (grl-spec.md 7.0.5).
 
-mod support;
+use crate::support;
 
 use gob_ir::{Model, NodeId, NodeSpec, Operator, Relation, Truth};
 use gob_plan::exec::outcome::{Kind, Outcomes, Reason, outcomes};

@@ -11,7 +11,7 @@ use frob_tests::{
 use gob_exec::{Limits, Runner};
 use gob_git::Repo;
 
-mod common;
+use crate::common;
 use common::{git, write};
 
 /// The manifest of a one-crate workspace named `name` (unique per test: tests share one cargo target dir).

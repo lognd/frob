@@ -50,7 +50,7 @@ fn registry_lists_derived_rules_by_id_and_slug() {
         (m.severity, m.tier, m.scope, m.fix),
         (Severity::Error, Tier::Lang, Scope::File, FixKind::Manual)
     );
-    assert!(m.module.starts_with("derive"));
+    assert!(m.module.ends_with("derive"));
     assert_eq!(reg.by_slug("demo-two").map(|m| m.id), Some("DEM002"));
     assert_eq!(DemoTwo.meta().version, 3);
     assert_eq!(DemoRule.meta().rule_id().unwrap().family(), "DEM");

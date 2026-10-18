@@ -1,0 +1,9 @@
+//! Single integration-test binary for this crate: one link instead of one per file (~ZM1HA1J).
+
+mod corpus;
+mod model;
+mod roundtrip;
+mod rules;
+mod selectors;
+mod stability;
+mod tracked_paths;

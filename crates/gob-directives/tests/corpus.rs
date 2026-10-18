@@ -1,6 +1,6 @@
 //! Corpus tests: PARSE001 and DSL001 to DSL003 with firing and clean controls.
 
-mod common;
+use crate::common;
 
 use gob_directives::ScanConfig;
 use gob_mdtest::Case;
