@@ -34,7 +34,7 @@ static META: gob_rules::RuleMeta = gob_rules::RuleMeta {
     id: "CFG001",
     slug: "missing-materialized-knob",
     family: "CFG",
-    product: "gob",
+    product: "frob",
     severity: gob_rules::Severity::Error,
     summary: "A materialized config knob is missing from the product config file.",
     explanation: <Cfg001 as gob_rules::RuleDecl>::DEF.doc,
