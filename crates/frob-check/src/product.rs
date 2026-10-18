@@ -9,7 +9,7 @@ use gob_check::{
     ScopedFindings, Snapshot, Timing,
 };
 use gob_languages::Language;
-use gob_rules::{Finding, Resolved, Rule, RuleMeta};
+use gob_rules::{Finding, Resolved, Rule, RuleDef, RuleMeta};
 use gob_text::FileInterner;
 
 use crate::filecheck::builtin_checks;
@@ -70,7 +70,21 @@ impl Product for Frob {
     }
 
     fn rule_set(&self) -> RuleSet<Self> {
-        RuleSet::new().bind(product_rules::rules(), host)
+        // frob:ticket 01M55ZW4P41ES0N6HBZ9TQ01YC
+        // The gob_check and gob_directives rules are computed by the pipeline's own stages, so they
+        // are declared (staged) rather than run: a bound empty body would double their findings.
+        let staged: Vec<&'static RuleDef> = gob_check::rules::METAS
+            .iter()
+            .chain(gob_directives::rules::METAS)
+            .copied()
+            .collect();
+        let bound: Vec<_> = product_rules::rules()
+            .into_iter()
+            .filter(|r| staged.iter().all(|d| d.id != r.def.id))
+            .collect();
+        staged
+            .into_iter()
+            .fold(RuleSet::new().bind(bound, host), RuleSet::stage)
     }
 
     fn file_checks(&self) -> Vec<Arc<dyn FileCheck<Self>>> {
