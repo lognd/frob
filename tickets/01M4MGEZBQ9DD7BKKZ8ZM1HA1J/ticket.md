@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:35:19Z"
-updated = "2026-10-18T04:01:31Z"
-scope = ["Cargo.toml"]
+updated = "2026-10-18T04:02:26Z"
+scope = ["Cargo.toml", "crates/gob-dev/**", "docs/**"]
 
 [[acceptance]]
 text = "a full workspace test build leaves under 3 GB of test executables, measured by a script in cargo dev that sums the files, and CI still passes"
