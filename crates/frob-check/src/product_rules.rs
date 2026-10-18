@@ -5,6 +5,7 @@
 //! every product's `RULE_INDEXES` so ids stay unique across products.
 
 // frob:ticket 01M48R02V2J0R5ZXWP9MXXGNZ3
+// frob:ticket 01M55ZW4P41ES0N6HBZ9TQ01YC
 
 use crate::host::FrobHost;
 
@@ -20,5 +21,7 @@ gob_check::product_rules! {
         frob_release,
         frob_lease,
         gob_config,
+        gob_check,
+        gob_directives,
     ];
 }

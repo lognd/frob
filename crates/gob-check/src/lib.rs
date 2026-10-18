@@ -69,7 +69,7 @@ mod rule_set;
     dead_code,
     reason = "rules::bind is consumed by product_rules! once a product lists this crate"
 )]
-mod rules;
+pub mod rules;
 pub mod sibling;
 pub mod sibling_doc;
 mod status;

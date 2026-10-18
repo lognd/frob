@@ -11,16 +11,31 @@ use frob_ledger::{LedgerHost, LedgerView, TicketId};
 use frob_obligations::{ObligationHost, ObligationInputs};
 use frob_pm::{PmConfig, PmHost};
 use frob_tests::TestsHost;
-use gob_directives::DirectiveRecord;
+use gob_check::CheckHost;
+use gob_directives::{DirectiveHost, DirectiveRecord};
 use gob_rules::Finding;
 use gob_symbols::SymbolGraph;
 
 use crate::snapshot::FrobInputs;
 
-/// Everything the migrated rule crates ask of frob: obligations, ack, test-coverage, ledger and PM facts.
-pub trait FrobHost: ObligationHost + AckHost + TestsHost + LedgerHost + PmHost {}
+/// Everything the migrated rule crates ask of frob: obligations, ack, test-coverage, ledger and PM facts, plus the check and directive markers.
+pub trait FrobHost:
+    ObligationHost + AckHost + TestsHost + LedgerHost + PmHost + CheckHost + DirectiveHost
+{
+}
 
-impl<T: ObligationHost + AckHost + TestsHost + LedgerHost + PmHost + ?Sized> FrobHost for T {}
+impl<
+    T: ObligationHost + AckHost + TestsHost + LedgerHost + PmHost + CheckHost + DirectiveHost + ?Sized,
+> FrobHost for T
+{
+}
+
+// frob:ticket 01M55ZW4P41ES0N6HBZ9TQ01YC
+/// The check pipeline, tool binders and PROC001 scan produce the CHECK verdicts; the marker only hosts the declarations.
+impl CheckHost for FrobInputs {}
+
+/// The directive scanner produces the PARSE and DSL verdicts; the marker only hosts the declarations.
+impl DirectiveHost for FrobInputs {}
 
 impl ObligationHost for FrobInputs {
     fn obligations(&self) -> ObligationInputs<'_> {

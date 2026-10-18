@@ -53,7 +53,7 @@ mod meta;
     dead_code,
     reason = "rules::bind is consumed by product_rules! once a product lists this crate"
 )]
-mod rules;
+pub mod rules;
 mod scan;
 mod ulid;
 mod wire;
