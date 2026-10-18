@@ -1,3 +1,4 @@
+# frob:ticket 01M561ZFF7PTBZAMHJ0JJFRXBG
 [scenario."frob schema"]
 args = ["schema"]
 fixture = "tmp"
@@ -390,3 +391,17 @@ readonly = true
 exit = [0, 3]
 budget_ms = 500
 
+[scenario."frob serve"]
+skip = "long-running MCP stdio server: it reads requests until stdin closes, so wall time measures the client, not the verb; tools/list is covered by gob-cli mcp tests"
+
+[scenario."grimble serve"]
+skip = "long-running MCP stdio server: it reads requests until stdin closes, so wall time measures the client, not the verb; tools/list is covered by gob-cli mcp tests"
+
+[scenario."crunk serve"]
+skip = "long-running MCP stdio server: it reads requests until stdin closes, so wall time measures the client, not the verb; tools/list is covered by gob-cli mcp tests"
+
+[scenario."crunk tokens"]
+args = ["tokens", "--check"]
+readonly = true
+exit = [0, 1, 3]
+budget_ms = 500
