@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-17T23:08:31Z"
-updated = "2026-10-18T00:04:05Z"
-scope = ["crates/gob-dev/**"]
+updated = "2026-10-18T00:14:32Z"
+scope = ["crates/gob-dev/**", "crates/gob-walk/Cargo.toml"]
 +++
 
 found while working P8VPKKP: publish::tests::this_workspace_reads_and_plans_without_a_cycle and profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason fail independent of that change
