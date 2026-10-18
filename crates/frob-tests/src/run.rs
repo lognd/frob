@@ -518,7 +518,6 @@ pub fn unity_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<UnityGrou
 }
 
 // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
-#[allow(clippy::too_many_lines)]
 /// Run `selected` (or the whole workspace with `opts.all`) with cargo nextest, pytest, vitest, jest and dotnet.
 ///
 /// A runner runs only when it has selected tests (or, with `opts.all`, when the work
