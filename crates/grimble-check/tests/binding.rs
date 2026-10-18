@@ -393,7 +393,7 @@ fn cap_rules_are_listed_fire_and_are_writable_in_accept() {
 }
 
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
-// frob:tests crates/grimble-model/src/rules.rs::check_model
+// frob:tests crates/grimble-model/src/check.rs::check_model
 #[test]
 fn core_effects_atoms_resolve_and_a_bare_env_names_its_near_miss() {
     let doc = cap_run("  may process.spawn;\n  may fs;\n  may process.env;\n  may exec;\n");
