@@ -2,11 +2,12 @@
 id = "01M561J10PTM0B1X2BEZ908DQB"
 title = "frob test --base main fails with E-INTERNAL Argument list too long"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-17T23:01:10Z"
-updated = "2026-10-17T23:01:10Z"
+updated = "2026-10-18T00:34:01Z"
 idempotency_key = "frob-test-arg-max"
 scope = ["crates/frob-tests/**"]
 +++
