@@ -44,7 +44,7 @@ impl TestsHost for FrobInputs {
     }
 
     fn read_source(&self, path: &str) -> Option<String> {
-        std::fs::read_to_string(self.root.join(path)).ok()
+        self.test_sources.get(path).cloned()
     }
 }
 
