@@ -2,12 +2,13 @@
 id = "01M4BMRX5T7R0BH9P7HZZQ6PA9"
 title = "ticket doable takes about 23 s on this repository"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-07T16:57:28Z"
-updated = "2026-10-17T23:37:26Z"
+updated = "2026-10-17T23:45:11Z"
 idempotency_key = "ticket-doable-slow"
 labels = ["milestone:2", "area:pm"]
 scope = ["crates/frob-ledger/src/**", "crates/frob/src/ticket/**", "crates/frob-lease/src/guard.rs", "crates/frob-lease/src/overlap.rs", "crates/frob-lease/tests/lease.rs"]

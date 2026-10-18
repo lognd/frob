@@ -321,7 +321,8 @@ part of the job's design:
   `frob release status` as Unresolved items until done.
 - **Rule numbers.** PM035 intangible-share (Warning) is new; PM014 keeps
   its pm-enforcement.md meaning (milestone without forecast). PM010 to
-  PM012 and PM035 are not in 0.532.0 (cycles ship at minimum scope).
+  PM012 (cycle capacity, goal, readiness) ship in 0.532.0; PM035 is not
+  in 0.532.0.
 
 ## 7. The v2 milestone list
 

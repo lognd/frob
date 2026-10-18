@@ -382,6 +382,28 @@ fn guard_hides_overlapping_tickets() {
     );
 }
 
+// frob:ticket 01M4BMRX5T7R0BH9P7HZZQ6PA9
+// frob:tests crates/frob-lease/src/guard.rs::LeaseGuard
+#[test]
+fn guard_resolves_each_lease_scope_once_across_candidates() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "src/a.rs");
+    write(dir.path(), "docs/b.md");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    for (i, g) in ["src/**", "lib/**", "bin/**"].iter().enumerate() {
+        store
+            .acquire(TicketId::mint(), &holder(&format!("h{i}")), &scope(&[g]))
+            .expect("acquire");
+    }
+    let guard = LeaseGuard::new(store).expect("guard");
+    let before = guard.resolutions();
+    for _ in 0..5 {
+        assert!(guard.is_free(&summary(TicketId::mint()), &scope(&["docs/**"])));
+    }
+    // 3 lease scopes once each, plus one resolution per candidate; never leases x candidates.
+    assert_eq!(guard.resolutions() - before, 3 + 5);
+}
+
 #[test]
 fn scope001_flags_outside_paths_only() {
     let dir = tempfile::tempdir().expect("tempdir");

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-18T00:17:34Z"
+digest = "fd6e656987c98e5fa2c02fbb70b2f46d8a562eca01ea56bf50e7c895d5065122"
+exit_code = 0
+inline = """
+
+running 1 test
+test publish::tests::this_workspace_reads_and_plans_without_a_cycle ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 82 filtered out; finished in 0.12s
+
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.30s
+     Running unittests src/lib.rs (target/debug/deps/gob_dev-e8788803573f009f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p gob-dev --lib this_workspace_reads"
+size = 399
+status = "measured"
+at = "2026-10-18T00:17:34Z"
+actor = "lognd"
+rev = 1

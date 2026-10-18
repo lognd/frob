@@ -241,6 +241,7 @@ fn literal_vs_wild(literal: &str, wild: &str) -> Result<bool, LeaseError> {
 pub struct Resolver {
     root: PathBuf,
     files: OnceLock<Result<Vec<String>, String>>,
+    resolutions: std::sync::atomic::AtomicUsize,
 }
 
 impl Resolver {
@@ -249,7 +250,13 @@ impl Resolver {
         Self {
             root,
             files: OnceLock::new(),
+            resolutions: std::sync::atomic::AtomicUsize::new(0),
         }
+    }
+
+    /// How many times [`Resolver::resolve`] has scanned the tree for a non-empty scope.
+    pub fn resolutions(&self) -> usize {
+        self.resolutions.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     fn all_files(&self) -> Result<&[String], LeaseError> {
@@ -281,6 +288,15 @@ impl Resolver {
         if scope.is_empty() {
             return Ok(BTreeSet::new());
         }
+        let n = self
+            .resolutions
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            + 1;
+        tracing::debug!(
+            globs = scope.len(),
+            resolution = n,
+            "resolving scope to files"
+        );
         let set = glob_set(scope)?;
         Ok(self
             .all_files()?
@@ -295,7 +311,7 @@ impl Resolver {
 ///
 /// A glob covering other tickets' fragments (legacy `changelog.d/**`) and a literal naming
 /// the ticket's own fragment never contend: every ticket owns its fragment without a lease.
-fn effective(scope: &[String], shared: &GlobSet, ticket: TicketId) -> Vec<String> {
+pub(crate) fn effective(scope: &[String], shared: &GlobSet, ticket: TicketId) -> Vec<String> {
     scope
         .iter()
         .map(|g| normalize(g))
@@ -329,8 +345,23 @@ pub fn scopes_overlap(
         effective(a, shared, a_ticket),
         effective(b, shared, b_ticket),
     );
-    for ga in &ea {
-        for gb in &eb {
+    if let Some(o) = text_overlap(&ea, &eb)? {
+        return Ok(Some(o));
+    }
+    let ra = resolver.resolve_owned(&ea, shared, a_ticket)?;
+    let rb = resolver.resolve_owned(&eb, shared, b_ticket)?;
+    Ok(files_overlap(&ra, &rb))
+}
+
+// frob:ticket 01M4BMRX5T7R0BH9P7HZZQ6PA9
+/// The first overlapping glob pair of two effective scopes, described, or `None`.
+///
+/// # Errors
+///
+/// [`LeaseError::BadGlob`] when a wildcard pattern does not parse.
+pub(crate) fn text_overlap(ea: &[String], eb: &[String]) -> Result<Option<String>, LeaseError> {
+    for ga in ea {
+        for gb in eb {
             if globs_overlap(ga, gb)? {
                 return Ok(Some(if ga == gb {
                     ga.clone()
@@ -340,20 +371,31 @@ pub fn scopes_overlap(
             }
         }
     }
-    let (mut ra, mut rb) = (
-        resolver.resolve(&ea, shared)?,
-        resolver.resolve(&eb, shared)?,
-    );
-    ra.retain(|f| !is_own_fragment(f, a_ticket));
-    rb.retain(|f| !is_own_fragment(f, b_ticket));
-    let common: Vec<&String> = ra.intersection(&rb).take(3).collect();
-    Ok((!common.is_empty()).then(|| {
-        common
-            .iter()
-            .map(|s| s.as_str())
-            .collect::<Vec<_>>()
-            .join(", ")
-    }))
+    Ok(None)
+}
+
+/// Up to three files common to both resolved sets, joined, or `None` when disjoint.
+pub(crate) fn files_overlap(ra: &BTreeSet<String>, rb: &BTreeSet<String>) -> Option<String> {
+    let common: Vec<&str> = ra.intersection(rb).take(3).map(String::as_str).collect();
+    (!common.is_empty()).then(|| common.join(", "))
+}
+
+impl Resolver {
+    /// [`Resolver::resolve`] minus `ticket`'s own changelog fragments.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::BadGlob`] or [`LeaseError::Walk`].
+    pub(crate) fn resolve_owned(
+        &self,
+        effective_scope: &[String],
+        shared: &GlobSet,
+        ticket: TicketId,
+    ) -> Result<BTreeSet<String>, LeaseError> {
+        let mut files = self.resolve(effective_scope, shared)?;
+        files.retain(|f| !is_own_fragment(f, ticket));
+        Ok(files)
+    }
 }
 
 /// Unit tests of the text analysis.
