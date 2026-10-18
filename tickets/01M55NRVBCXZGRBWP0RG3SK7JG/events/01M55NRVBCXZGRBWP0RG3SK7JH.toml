@@ -1,0 +1,13 @@
+kind = "create"
+title = "crunk: LAYER001 underscore integers and golden provenance note"
+type = "chore"
+category = "todo"
+priority = "medium"
+idempotency_key = "crunk-cmp-layer-golden"
+labels = ["area:crunk"]
+scope = ["crates/crunk-rules/**", "crates/crunk-ingest/**"]
+acceptance = ["Given layer 1_0, when LAYER001 runs, then it parses as 10", "Given the tailwind fixtures, when read, then a note states the golden is Rust-authored"]
+body = "Python int() accepts underscores (1_0) in LAYER001. Also record in tests/fixtures/tailwind that the tailwind_v4.theme.json golden was hand-authored on the Rust side, not a Python output."
+at = "2026-10-17T19:35:10Z"
+actor = "lognd"
+rev = 1
