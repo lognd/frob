@@ -2,7 +2,8 @@
 id = "01M4CTE7T75F9XM8XN1R1VFD4X"
 title = "Per-command Session: open repository, ledger, leases and config once and pass it to verbs; one Workspace type (audit M14)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
