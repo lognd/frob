@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:20Z"
-updated = "2026-10-18T00:43:58Z"
+updated = "2026-10-18T00:44:02Z"
 idempotency_key = "m2-diag-applicability"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-check/src/store.rs", "crates/gob-check/src/fix.rs", "crates/gob-diagnostics/tests/contract.rs", "docs/schemas/envelope.json"]
+scope = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-check/src/store.rs", "crates/gob-check/src/fix.rs", "crates/gob-diagnostics/tests/contract.rs", "docs/schemas/envelope.json", "docs/schemas/sibling.json"]
 
 [[acceptance]]
 text = "Given a finding with a Deterministic fix, when serialized to JSON, then its fixes entry has applicability machine and the exact edits"
