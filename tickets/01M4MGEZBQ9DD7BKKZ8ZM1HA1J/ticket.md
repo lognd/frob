@@ -2,13 +2,13 @@
 id = "01M4MGEZBQ9DD7BKKZ8ZM1HA1J"
 title = "Test executables: about 570 integration-test binaries at 24 MB each (12 GB) make a full test build unaffordable; consolidate to one test binary per crate or link dynamically"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "high"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:35:19Z"
-updated = "2026-10-18T04:02:26Z"
+updated = "2026-10-18T04:45:08Z"
 scope = ["Cargo.toml", "crates/gob-dev/**", "docs/**"]
 
 [[acceptance]]
