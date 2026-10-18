@@ -31,7 +31,6 @@ const ALLOW: &[&str] = &[
     "gob-cli",
     "gob-config",
     "gob-dev",
-    "gob-directives",
     "gob-exec",
     "gob-frameworks",
     "gob-fs",
