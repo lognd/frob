@@ -40,10 +40,10 @@ pub mod eval;
 pub mod event;
 pub mod fold;
 pub mod host;
+pub mod legacy;
 pub mod merge;
 pub mod milestone;
 pub mod model;
-pub mod legacy;
 pub mod rules;
 pub mod store;
 

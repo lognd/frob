@@ -16,8 +16,8 @@ use frob_ledger::{Ledger, TicketId};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::error::Result;
-use crate::legacy::good_first::is_gwt;
 use crate::eval::membership::Evaluation;
+use crate::legacy::good_first::is_gwt;
 
 /// The `[pm] max_story_points` default: a story above it is too big to finish in one cycle.
 pub const DEFAULT_MAX_STORY_POINTS: u32 = 8;

@@ -14,8 +14,8 @@ use frob_ledger::{Ledger, TicketId};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::error::Result;
-use crate::legacy::good_first::GOOD_FIRST_LABEL;
 use crate::eval::membership::Evaluation;
+use crate::legacy::good_first::GOOD_FIRST_LABEL;
 
 /// The `[tickets] good_first_min` default.
 pub const DEFAULT_MIN: u32 = 3;

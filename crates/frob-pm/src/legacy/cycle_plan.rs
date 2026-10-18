@@ -15,9 +15,9 @@ use crate::config::{PmTable, ReadyRequirement};
 use crate::cycle::history::{deliveries, done_points};
 use crate::cycle::velocity::{Capacity, capacity, committed};
 use crate::error::Result;
-use crate::model::{Cycle, State};
 use crate::eval::cycle::cycles;
 use crate::eval::membership::{Evaluation, handle};
+use crate::model::{Cycle, State};
 use crate::store::PmStore;
 
 /// An open or planned cycle commits more points than its capacity.

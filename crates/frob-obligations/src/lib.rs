@@ -97,12 +97,12 @@ use gob_text::{FileId, FileInterner};
 pub use collect::{CollectError, Collected, collect};
 pub use config::{ForbidImport, InvariantsConfig};
 pub use gob_rules::Resolved;
-pub use native::tool_bound_ids;
-pub use refs::unsettled_ticket_refs;
 pub use host::ObligationHost;
 pub use legacy::{
     Cov001, Doc001, Doc002, Exc014, Exc016, Exc017, Ref001, Tick006, Todo001, Todo002,
 };
+pub use native::tool_bound_ids;
+pub use refs::unsettled_ticket_refs;
 pub use rules::cov003::Cov003;
 pub use rules::exc001::Exc001;
 pub use rules::exc003::Exc003;
