@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-18T00:38:59Z"
+digest = "954059f568bf04f16134afdbbecfda938fd92d9a9aea213e91e6a25c37dbd515"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+    Finished `test` profile [unoptimized] target(s) in 9.06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 411c12eb-9203-4bd1-ad58-bdd3d9f1d34b with nextest profile: default
+    Starting 1 test across 6 binaries (37 tests skipped)
+        PASS [   0.043s] frob-tests run::tests::huge_selection_splits_into_bounded_invocations
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.045s] 1 test run: 1 passed, 37 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests -E test(=run::tests::huge_selection_splits_into_bounded_invocations)"
+size = 666
+status = "measured"
+tests = ["run::tests::huge_selection_splits_into_bounded_invocations"]
+at = "2026-10-18T00:38:59Z"
+actor = "lognd"
+rev = 1
