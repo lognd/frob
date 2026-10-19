@@ -2,7 +2,8 @@
 id = "01M4S9HRETE0RW4H034W1H7QCD"
 title = "crunk scene ingest and taffy layout solve (prerequisite of LAYOUT/RESP T1 rules)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRHCPXFBNQDX85QY70Q62"
