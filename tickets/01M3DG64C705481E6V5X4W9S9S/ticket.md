@@ -7,10 +7,10 @@ priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-19T22:21:38Z"
+updated = "2026-10-19T22:22:19Z"
 aliases = ["T-6535"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
-scope = ["src/frob/gates/_fix_engine_tier_b.py", "src/frob/gates/_fix_engine_text.py", "src/frob/gates/_fix_engine.py", "tests/unit/gates/test_fix_engine_roundtrip.py", "docs/design/rules.md"]
+scope = ["src/frob/gates/_fix_engine_tier_b.py", "src/frob/gates/_fix_engine_text.py", "src/frob/gates/_fix_engine.py", "tests/unit/gates/test_fix_engine_roundtrip.py", "docs/design/rules.md", "crates/gob-fix/**", "docs/design/boundaries.md"]
 +++
 
 Source: logand.app-v2 FROBLEMS.md (peer coordinator report, 2026-09-26, frob 0.531.1.dev332). Reproduction lives in that repo (read-only for frob agents); the frob-side positive control must be a fixture here.
