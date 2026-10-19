@@ -4,10 +4,11 @@ title = "gob-mdtest: strict mode, any unmatched finding fails the case"
 type = "story"
 category = "todo"
 priority = "high"
+points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:39Z"
-updated = "2026-10-06T13:41:04Z"
+updated = "2026-10-19T14:46:34Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
 [[links]]
