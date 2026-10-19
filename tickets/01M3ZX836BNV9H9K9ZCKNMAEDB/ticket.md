@@ -2,13 +2,13 @@
 id = "01M3ZX836BNV9H9K9ZCKNMAEDB"
 title = "Generate docs/schemas/issue-projection.json and the mirror render verb"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-03T03:34:42Z"
+updated = "2026-10-19T17:45:25Z"
 idempotency_key = "m2-mirror-schema-gen"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/gob-dev/src/render/**", "docs/schemas/issue-projection.json", "crates/frob/src/mirror_cmd.rs"]
