@@ -2,7 +2,8 @@
 id = "01M1QDTYRJ3P3GT8828GCNECVB"
 title = "frob:waive is silently inert in files with no registered grammar: the suppression mechanism fails without telling anyone"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "human"
