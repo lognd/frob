@@ -2,7 +2,8 @@
 id = "01M3ZX7V0XP3BYTWDHXN20Z79R"
 title = "Trust store: MAC'd entries, repository identity, expiry, list and revoke"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
