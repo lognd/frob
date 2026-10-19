@@ -258,7 +258,7 @@ A skipped, `xfail` or `XPASS` test is not evidence that it passed: the provider 
 leaves those tests out of the executed set, and reports them apart as `Capture.non_passing`
 (`skipped`, `xfailed`, `xpassed`), never folded into the passing count. Measured on this
 code before the change: skip and xfail were already excluded; a non-strict `XPASS` was
-counted as passed. An opt-in that lets them satisfy evidence is not implemented.
+counted as passed. `[tests] non_passing_counts` (any of skipped, xfailed, xpassed) opts them in to satisfy evidence; counts are surfaced separately. vitest/jest pending, skipped, todo and disabled tests are counted as skipped.
 Tests that run pytest (frob-evidence and frob-tests) need `python3` and
 `pytest` on `PATH` and skip with a named reason when they are absent
 (`gob_testsupport::python_test_prerequisites`); setting
