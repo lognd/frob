@@ -9,5 +9,6 @@ Warn DOC001 src/lib.rs@44-68 1cde9366560544a7e0dfcdedbab6f2d5ed4d757fc03351702a9
 Error EXC001 src/lib.rs@73-124 e00f37481dbcacb71e33739c47146c874f0b63867eb1ce67d0e8cefd3eca44fc | `frob:accept COV001` reason rejected: reason matches banned pattern `temporary`
 Warn EXC005 src/lib.rs@73-124 727318fb5112ce0f9b40c2108e0aafcd0923840e25ad700d823885025e0b084b | `frob:accept COV001` is unattested: `src/lib.rs::accepted` has no entry in frob.lock; run `frob ack src/lib.rs::accepted`
 Error TEST001 src/lib.rs@169-194 0c0cb614184c9d8d1728c79da6ff7988c05239a43232fcfc5f5c534e03cdf0da | `frob:tests tests::missing` names no test function in the graph; fix the symref or remove the directive
+Unresolved DOC001 - 03a267867a98cc5b696e01ecb00ac7d4e4062528d45b368cfc590117bdd49e7e | DOC001: 1 opaque text file(s) (no adapter, first `frob.toml`) were not examined: no adapter provides what the rule reads: repository
 suppressed COV001 src/lib.rs@144-164 by Accept | temporary hack for now
 exit Negative

@@ -306,7 +306,7 @@ fn opaque_repo_findings<P: Product>(
         .chain(declared.iter().copied())
         .collect();
     for rule in rules {
-        // Only a rule that reads comments is unresolved on opaque text (capability rules are not applicable).
+        // A rule whose needs the adapter-less text row leaves as a gap is unresolved (D106); binaries stay not applicable.
         let facts = FileFacts::opaque_text(&gob_symbols::ParseStatus::NotParsed);
         if !matches!(resolve(&rule.applies, &facts), SubjectStatus::Unresolved(_)) {
             continue;
