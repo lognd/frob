@@ -7,10 +7,14 @@ priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-19T22:22:23Z"
+updated = "2026-10-19T22:28:35Z"
 aliases = ["T-6549"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/design/testing.md", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/tests/*"]
+
+[[acceptance]]
+text = "A green run that executed no test (skipped-only or empty selection) is refused as E-EVIDENCE-NOT-EXECUTED; a matching run is recorded"
+bound = false
 +++
 
 Source: logand.app-v2 coordinator report, 2026-09-26 (frob 0.531.1.dev332), found while working F-410.
