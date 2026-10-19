@@ -2,7 +2,8 @@
 id = "01M3DG64CNAZ8K50HQ046VKHER"
 title = "test runners: exit-code-only outcome records PASS when the filter selects nothing; require executed-and-passed per bound id from the runner report"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "agent"
