@@ -31,7 +31,7 @@ bound = false
 
 [[acceptance]]
 text = "Given more than one page of bot issues, when looked up back to a create-start time, then paging continues until that time is passed"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.3 (Lookup is read-your-writes; F5).
