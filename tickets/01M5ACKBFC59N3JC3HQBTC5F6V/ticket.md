@@ -2,7 +2,8 @@
 id = "01M5ACKBFC59N3JC3HQBTC5F6V"
 title = "Five mdtest corpus cases expect=fire but the rule returns Unresolved (READ001, SIB001, CLAIM003, MDL021, COLOR002)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
