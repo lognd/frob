@@ -2,15 +2,19 @@
 id = "01M3DG64CNAZ8K50HQ046VKHER"
 title = "test runners: exit-code-only outcome records PASS when the filter selects nothing; require executed-and-passed per bound id from the runner report"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-19T22:21:33Z"
+updated = "2026-10-19T22:32:45Z"
 aliases = ["T-6549"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
-scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/design/testing.md"]
+scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/design/testing.md", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/tests/*", "docs/design/build-test-ci.md"]
+
+[[acceptance]]
+text = "A green run that executed no test (skipped-only or empty selection) is refused as E-EVIDENCE-NOT-EXECUTED; a matching run is recorded"
+bound = true
 +++
 
 Source: logand.app-v2 coordinator report, 2026-09-26 (frob 0.531.1.dev332), found while working F-410.

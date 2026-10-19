@@ -2,7 +2,8 @@
 #![allow(missing_docs)]
 
 use gob_fix::{
-    Applicability, DropReason, Edit, FileOutcome, Fix, Mode, Snapshot, Tier, apply, plan,
+    Applicability, DropReason, Edit, FileOutcome, Fix, Mode, Snapshot, Tier, apply,
+    apply_validated, plan,
 };
 
 fn edit(path: &str, s: usize, e: usize, r: &str) -> Edit {
@@ -84,4 +85,65 @@ fn changed_file_is_refused_and_untouched() {
     assert_eq!(r.files["a.txt"], FileOutcome::Stale);
     assert!(r.diffs.is_empty());
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "hello!");
+}
+
+/// Parse-ish validator: braces must balance (stands in for a re-parse).
+#[allow(clippy::naive_bytecount)]
+fn balanced(_: &str, b: &[u8]) -> Result<(), String> {
+    let (o, c) = (
+        b.iter().filter(|x| **x == b'(').count(),
+        b.iter().filter(|x| **x == b')').count(),
+    );
+    if o == c {
+        Ok(())
+    } else {
+        Err(format!("unbalanced parens {o}/{c}"))
+    }
+}
+
+const SRC: &str = "def f(\n    a,\n):\n    return a\n\ndef g():\n    return 1\n";
+
+#[test]
+fn shared_target_inserts_once_and_multiline_signature_survives() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("m.py"), SRC).unwrap();
+    let mut snap = Snapshot::new();
+    snap.record("m.py", SRC.as_bytes());
+    let at = SRC.find("def g").unwrap();
+    // Two production symbols share one test target: both propose the same insertion.
+    let p = plan(
+        vec![
+            fix("TEST010", vec![edit("m.py", at, at, "# frob:tests t\n")]),
+            fix("TEST010", vec![edit("m.py", at, at, "# frob:tests t\n")]),
+        ],
+        Tier::A,
+    );
+    assert_eq!(p.accepted.len(), 1);
+    let r = apply_validated(&p, dir.path(), &snap, Mode::Write, &balanced).unwrap();
+    assert_eq!(r.files["m.py"], FileOutcome::Rewritten);
+    let out = std::fs::read_to_string(dir.path().join("m.py")).unwrap();
+    assert_eq!(out.matches("frob:tests t").count(), 1);
+    assert!(out.starts_with("def f(\n    a,\n):"));
+}
+
+#[test]
+fn corrupting_rewrite_is_rolled_back_and_reported() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("m.py"), SRC).unwrap();
+    let mut snap = Snapshot::new();
+    snap.record("m.py", SRC.as_bytes());
+    // Clobbers the multi-line signature's closing paren.
+    let at = SRC.find("):").unwrap();
+    let p = plan(
+        vec![fix("TEST010", vec![edit("m.py", at, at + 1, "")])],
+        Tier::A,
+    );
+    let r = apply_validated(&p, dir.path(), &snap, Mode::Write, &balanced).unwrap();
+    assert!(matches!(r.files["m.py"], FileOutcome::RolledBack { .. }));
+    assert!(r.diffs.is_empty() && r.journal.is_empty());
+    assert_eq!(r.skipped, vec!["TEST010".to_owned()]);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("m.py")).unwrap(),
+        SRC
+    );
 }
