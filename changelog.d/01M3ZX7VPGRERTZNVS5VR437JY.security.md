@@ -1,0 +1,1 @@
+Tool stages now resolve to an absolute canonical path outside the work tree, record a blake3 digest, run with a scrubbed environment and closed stdin, and are Unresolved untrusted (naming the trust command) when the digest is not trusted; a program resolving inside the work tree is refused.

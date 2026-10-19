@@ -22,6 +22,11 @@ pub enum Program {
         /// Binary name.
         name: String,
     },
+    /// A resolved process pack: an absolute path outside the work tree (see [`crate::ProcessPack`]).
+    Pack {
+        /// Absolute path to the executable.
+        path: PathBuf,
+    },
     /// A configured external tool found on `PATH`.
     Tool {
         /// Binary name.
@@ -36,6 +41,7 @@ impl Program {
             Self::Git => "git".to_owned(),
             Self::Cargo => "cargo".to_owned(),
             Self::Hook { path } => format!("hook:{}", path.display()),
+            Self::Pack { path } => format!("pack:{}", path.display()),
             Self::Sibling { name } | Self::Tool { name } => name.clone(),
         }
     }
@@ -49,7 +55,7 @@ impl Program {
         match self {
             Self::Git => which_name("git"),
             Self::Cargo => which_name("cargo"),
-            Self::Hook { path } => {
+            Self::Hook { path } | Self::Pack { path } => {
                 if path.is_file() {
                     Ok(path.clone())
                 } else {

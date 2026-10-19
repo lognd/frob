@@ -23,4 +23,7 @@ pub struct RunOptions {
     pub clock: Option<std::sync::Arc<dyn gob_time::Clock>>,
     /// Store that lets a tool stage reuse a recorded pass for byte-identical inputs; absent runs every stage.
     pub tool_memo: Option<std::sync::Arc<dyn crate::tools::ToolMemo>>,
+    /// Trust source for tool programs; when present an untrusted program is Unresolved and not run,
+    /// and one resolving inside the work tree is refused (security.md 2.4). Absent leaves stages unvetted.
+    pub tool_trust: Option<std::sync::Arc<dyn crate::tools::ToolTrust>>,
 }

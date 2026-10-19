@@ -2,13 +2,13 @@
 id = "01M4S9HRETE0RW4H034W1H7QCD"
 title = "crunk scene ingest and taffy layout solve (prerequisite of LAYOUT/RESP T1 rules)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXRHCPXFBNQDX85QY70Q62"
 reporter = "lognd"
 created = "2026-10-13T00:10:42Z"
-updated = "2026-10-13T00:10:42Z"
+updated = "2026-10-19T09:46:11Z"
 scope = ["crates/crunk-ingest/**", "changelog.d/**"]
 
 [[acceptance]]
