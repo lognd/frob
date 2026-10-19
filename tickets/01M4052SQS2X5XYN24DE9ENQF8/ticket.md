@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a human edit between the mirror's read and its write, when the next run reads, then the edit lies after the cursor and is read"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.3 (F3) and 3.4 (F2, MIR-AUD-25).
