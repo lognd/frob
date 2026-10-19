@@ -2,13 +2,13 @@
 id = "01M4052WAB3H52W92NYG3AS571"
 title = "Fake GitHub for replaying the model: history, listing, lost and late creates, rate limits"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-03T05:51:39Z"
+updated = "2026-10-19T16:19:54Z"
 idempotency_key = "m2-mirror2-fake-github"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/support/**"]
