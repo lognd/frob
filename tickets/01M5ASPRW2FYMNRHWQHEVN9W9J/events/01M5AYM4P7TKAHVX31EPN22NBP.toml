@@ -1,0 +1,87 @@
+kind = "evidence"
+captured_at = "2026-10-19T20:44:03Z"
+digest = "5980899f17ddea88b08a7a6ba81a3b42207aff1b074e934dd05c97e018938e38"
+exit_code = 0
+inline = '''
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling gob-text v0.532.0 (<worktree>/crates/gob-text)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID edd37f22-f762-4139-825e-72371c0ee425 with nextest profile: default
+    Starting 1 test across 325 binaries (3787 tests skipped)
+        PASS [   0.006s] frob-mirror github::adapter::tests::create_confirms_rejects_and_flags_unknown
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 3787 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "create_confirms_rejects_and_flags_unknown"
+size = 4709
+status = "measured"
+test_count = 1
+tests_digest = "1996883ba1398774b475d2b23f79173c4ef983610220a0dc8276aa5fda02abea"
+at = "2026-10-19T20:44:03Z"
+actor = "lognd"
+rev = 1
