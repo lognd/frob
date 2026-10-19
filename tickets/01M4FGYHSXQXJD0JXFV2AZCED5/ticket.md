@@ -8,7 +8,7 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:37Z"
-updated = "2026-10-19T11:00:29Z"
+updated = "2026-10-19T11:00:33Z"
 idempotency_key = "logand-gaps-K2"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**", "docs/reference/rules/**", "docs/design/grmb-spec.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given claim reach A -> B and a declared path, when grimble check runs, then the claim is satisfied"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a bound claim on a quantity the model cannot compute, when grimble check runs, then Unresolved with the reason"
