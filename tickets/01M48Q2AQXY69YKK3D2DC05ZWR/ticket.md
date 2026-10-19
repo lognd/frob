@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "the log-normal fit recovers parameters from synthetic samples within tolerance"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "below min_history the figures are Unresolved with the count"
