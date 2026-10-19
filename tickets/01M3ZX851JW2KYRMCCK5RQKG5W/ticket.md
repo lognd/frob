@@ -2,7 +2,8 @@
 id = "01M3ZX851JW2KYRMCCK5RQKG5W"
 title = "Marker v1: MAC over (repository node id, ULID, nonce), creation-revision-only trust, MIR003"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
