@@ -490,4 +490,22 @@ fn runner(case: &Case) -> Vec<Finding> {
     }
 }
 
-gob_mdtest::mdtest!(dir = "tests/mdtest", runner = runner);
+/// The corpus drives fake tool stages through `sh`; without it the run is a named skip.
+#[test]
+fn mdtest_corpus() {
+    if !gob_exec::require_sh("mdtest_corpus") {
+        return;
+    }
+    let dir = gob_mdtest::manifest_dir(env!("CARGO_MANIFEST_DIR")).join("tests/mdtest");
+    let report = gob_mdtest::run_dir(&dir, &gob_mdtest::Runner::new(runner));
+    assert!(
+        !report.files.is_empty(),
+        "no markdown files under {}",
+        gob_mdtest::shown(&dir)
+    );
+    assert!(
+        report.passed(),
+        "mdtest corpus failed:\n{}",
+        report.render()
+    );
+}

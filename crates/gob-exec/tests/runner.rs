@@ -20,6 +20,9 @@ fn sleep_spec(secs: &str, timeout: Duration) -> Spec {
 #[cfg(unix)]
 #[test]
 fn timeout_kills_group() {
+    if !gob_exec::require_sh("timeout_kills_group") {
+        return;
+    }
     let runner = Runner::new(Limits { jobs: 2 });
     // sh forks a grandchild sleep; the group kill must take it down too.
     let spec = Spec {
@@ -45,6 +48,9 @@ fn timeout_kills_group() {
 #[cfg(unix)]
 #[test]
 fn timeout_leaves_no_grandchild() {
+    if !gob_exec::require_sh("timeout_leaves_no_grandchild") {
+        return;
+    }
     let runner = Runner::new(Limits { jobs: 1 });
     let spec = Spec {
         program: Program::Tool { name: "sh".into() },
@@ -161,6 +167,9 @@ fn spawn_counter_counts_only_real_spawns() {
 
 #[test]
 fn captured_output_is_redacted_and_env_added() {
+    if !gob_exec::require_sh("captured_output_is_redacted_and_env_added") {
+        return;
+    }
     let runner = Runner::new(Limits { jobs: 1 });
     let spec = Spec {
         program: Program::Tool { name: "sh".into() },
@@ -182,6 +191,9 @@ fn captured_output_is_redacted_and_env_added() {
 // frob:tests crates/gob-exec/src/runner.rs::Runner.output_cap
 #[test]
 fn a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error() {
+    if !gob_exec::require_sh("a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error") {
+        return;
+    }
     let spec = Spec {
         program: Program::Tool { name: "sh".into() },
         args: vec!["-c".into(), "yes aaaaaaaaaaaaaaaa".into()],
@@ -208,6 +220,9 @@ fn a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error() {
 // frob:tests crates/gob-exec/src/runner.rs::Runner.output_cap
 #[test]
 fn output_under_the_cap_is_returned_whole() {
+    if !gob_exec::require_sh("output_under_the_cap_is_returned_whole") {
+        return;
+    }
     let spec = Spec {
         program: Program::Tool { name: "sh".into() },
         args: vec!["-c".into(), "echo small".into()],
@@ -239,6 +254,9 @@ fn pid_dead(pid: &str) -> Option<bool> {
 #[cfg(unix)]
 #[test]
 fn timeout_kills_setsid_grandchild_and_returns_promptly() {
+    if !gob_exec::require_sh("timeout_kills_setsid_grandchild_and_returns_promptly") {
+        return;
+    }
     let runner = Runner::new(Limits { jobs: 1 });
     // The grandchild leaves the process group and keeps the capture pipes open for 30 s.
     let spec = Spec {
@@ -269,6 +287,9 @@ fn timeout_kills_setsid_grandchild_and_returns_promptly() {
 #[cfg(unix)]
 #[test]
 fn normal_exit_does_not_block_on_pipe_held_by_background_child() {
+    if !gob_exec::require_sh("normal_exit_does_not_block_on_pipe_held_by_background_child") {
+        return;
+    }
     let runner = Runner::new(Limits { jobs: 1 });
     let spec = Spec {
         program: Program::Tool { name: "sh".into() },
@@ -296,6 +317,11 @@ fn normal_exit_does_not_block_on_pipe_held_by_background_child() {
 // frob:tests crates/gob-exec/src/runner.rs::Runner.run_with_env
 #[test]
 fn a_secret_looking_stdout_payload_is_intact_while_the_transcript_stdout_and_stderr_are_redacted() {
+    if !gob_exec::require_sh(
+        "a_secret_looking_stdout_payload_is_intact_while_the_transcript_stdout_and_stderr_are_redacted",
+    ) {
+        return;
+    }
     let runner = Runner::new(Limits { jobs: 1 });
     let spec = Spec {
         program: Program::Tool { name: "sh".into() },

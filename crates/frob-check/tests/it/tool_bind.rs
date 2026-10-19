@@ -53,6 +53,9 @@ fn path_of(report: &CheckReport, i: usize) -> Option<String> {
 
 #[test]
 fn zizmor_findings_carry_ci_ids_and_real_spans() {
+    if !gob_exec::require_sh("zizmor_findings_carry_ci_ids_and_real_spans") {
+        return;
+    }
     let dir = tempfile::tempdir().expect("tempdir");
     write(dir.path(), ".github/workflows/ci.yml", &workflow(""));
     write(dir.path(), ".github/dependabot.yml", &workflow(""));
@@ -92,6 +95,9 @@ fn zizmor_findings_carry_ci_ids_and_real_spans() {
 // frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
 #[test]
 fn a_frob_accept_suppresses_a_tool_finding_like_a_native_one() {
+    if !gob_exec::require_sh("a_frob_accept_suppresses_a_tool_finding_like_a_native_one") {
+        return;
+    }
     // The tool is pointed at a TOML file here; the YAML twin is below.
     let dir = tempfile::tempdir().expect("tempdir");
     write(
@@ -143,6 +149,9 @@ const ACCEPT_CI001: &str =
 // frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
 #[test]
 fn a_yaml_accept_above_a_key_suppresses_the_finding_inside_that_key() {
+    if !gob_exec::require_sh("a_yaml_accept_above_a_key_suppresses_the_finding_inside_that_key") {
+        return;
+    }
     let dir = tempfile::tempdir().expect("tempdir");
     write(
         dir.path(),
@@ -171,6 +180,9 @@ fn a_yaml_accept_above_a_key_suppresses_the_finding_inside_that_key() {
 // frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
 #[test]
 fn a_yaml_accept_above_another_key_does_not_suppress_the_finding() {
+    if !gob_exec::require_sh("a_yaml_accept_above_another_key_does_not_suppress_the_finding") {
+        return;
+    }
     let dir = tempfile::tempdir().expect("tempdir");
     write(
         dir.path(),
@@ -196,6 +208,9 @@ fn a_yaml_accept_above_another_key_does_not_suppress_the_finding() {
 
 #[test]
 fn actionlint_findings_map_to_ci014_and_configured_labels_are_dropped() {
+    if !gob_exec::require_sh("actionlint_findings_map_to_ci014_and_configured_labels_are_dropped") {
+        return;
+    }
     let dir = tempfile::tempdir().expect("tempdir");
     write(
         dir.path(),
@@ -233,6 +248,10 @@ fn actionlint_findings_map_to_ci014_and_configured_labels_are_dropped() {
 
 #[test]
 fn a_tool_outside_its_version_range_yields_one_non_required_unresolved() {
+    if !gob_exec::require_sh("a_tool_outside_its_version_range_yields_one_non_required_unresolved")
+    {
+        return;
+    }
     let dir = tempfile::tempdir().expect("tempdir");
     write(dir.path(), ".github/workflows/ci.yml", &workflow(""));
     let toml = stage(
@@ -285,6 +304,9 @@ fn an_optional_missing_tool_is_unresolved_but_not_required() {
 
 #[test]
 fn unparseable_output_is_a_required_tool_failed() {
+    if !gob_exec::require_sh("unparseable_output_is_a_required_tool_failed") {
+        return;
+    }
     let dir = tempfile::tempdir().expect("tempdir");
     let toml = stage(dir.path(), "not json", 0, "actionlint-json", "");
     write(dir.path(), "frob.toml", &toml);

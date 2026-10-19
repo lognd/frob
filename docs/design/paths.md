@@ -67,6 +67,15 @@ backslashes, drive letters, `$`, `%`, non-ASCII), splitting the produced
 line with a reference splitter for that shell returns the argv exactly.
 `frob init` writes the merge driver through it.
 
+No product path needs a POSIX shell. A `[[check.tool]]` stage and a `command`
+evidence provider run their program by argv through gob-exec, so a Windows host
+without Git for Windows' `usr\bin` on `PATH` runs them unchanged. A shell line
+that a user configures is run with the platform shell, quoted by
+`command_line`. Tests that exercise `sh` behaviour (fake tool stages, process
+group kills) gate on `gob_exec::require_sh(test_name)`, which logs and prints
+`SKIPPED <test>: requires prerequisite sh on PATH` and returns false, so a
+missing `sh` is a named prerequisite in the report, never a failure.
+
 ## 3. Compile-time confinement
 
 The workspace `clippy.toml` lists `disallowed-methods` for every

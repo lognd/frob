@@ -551,6 +551,9 @@ const FAILING_ACTIONLINT: &str = "[[check.tool]]\nname = \"lint\"\ncommand = \"s
 // frob:tests crates/gob-check/src/tools.rs::start_tools
 #[test]
 fn a_failed_parsed_tool_fails_the_default_gate_with_its_stderr() {
+    if !gob_exec::require_sh("a_failed_parsed_tool_fails_the_default_gate_with_its_stderr") {
+        return;
+    }
     let dir = tempfile::tempdir().expect("tempdir");
     write(dir.path(), "frob.toml", FAILING_ACTIONLINT);
     let report = run(dir.path(), &tool_options()).expect("default policy");

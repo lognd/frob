@@ -1,0 +1,1 @@
+tests: shell-dependent tests in gob-check, gob-exec and frob-check now skip with a named `sh` prerequisite (`gob_exec::require_sh`) when no POSIX sh is on PATH; the product itself never needed sh (docs/design/paths.md section 2).

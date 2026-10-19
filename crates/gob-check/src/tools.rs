@@ -1139,6 +1139,9 @@ mod tests {
     // frob:ticket 01M3ZX7VJE22Y68R184Y9WQC2N
     #[test]
     fn a_file_placeholder_renders_tracked_paths_and_refuses_others() {
+        if !gob_exec::require_sh("a_file_placeholder_renders_tracked_paths_and_refuses_others") {
+            return;
+        }
         let mut stage = sh_stage("t", ToolParser::None, "", "");
         stage.args = vec!["--".to_owned(), FILE_TOKEN.to_owned()];
         let tracked: std::collections::BTreeSet<String> = ["a.rs".to_owned()].into();
@@ -1218,6 +1221,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn independent_stages_overlap_and_keep_their_order_and_timing() {
+        if !gob_exec::require_sh("independent_stages_overlap_and_keep_their_order_and_timing") {
+            return;
+        }
         let slow = |name: &str| sh_stage(name, ToolParser::None, "sleep 1", "true");
         let stages = [slow("a"), slow("b"), slow("c")];
         let mut timing = Timing::default();
@@ -1238,6 +1244,10 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::applicable_stages
     #[test]
     fn a_stage_is_skipped_only_when_it_declares_inputs_the_scope_misses() {
+        if !gob_exec::require_sh("a_stage_is_skipped_only_when_it_declares_inputs_the_scope_misses")
+        {
+            return;
+        }
         let mut stage = sh_stage("gen", ToolParser::None, "true", "true");
         let scope: std::collections::BTreeSet<String> =
             ["docs/a.md".to_owned()].into_iter().collect();
@@ -1268,6 +1278,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::untouched
     #[test]
     fn frob_toml_is_an_implicit_input_of_every_stage() {
+        if !gob_exec::require_sh("frob_toml_is_an_implicit_input_of_every_stage") {
+            return;
+        }
         let mut stage = sh_stage("gen", ToolParser::None, "true", "true");
         stage.inputs = vec!["crates/**/*.rs".to_owned()];
         let scope: std::collections::BTreeSet<String> =
@@ -1282,6 +1295,11 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::expand_packages
     #[test]
     fn the_packages_token_expands_to_the_affected_set_or_the_unscoped_default() {
+        if !gob_exec::require_sh(
+            "the_packages_token_expands_to_the_affected_set_or_the_unscoped_default",
+        ) {
+            return;
+        }
         let mut stage = sh_stage("clippy", ToolParser::None, "true", "true");
         stage.args = vec![
             "clippy".to_owned(),
@@ -1306,6 +1324,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::group_key
     #[test]
     fn cargo_stages_share_one_group_and_others_get_their_own() {
+        if !gob_exec::require_sh("cargo_stages_share_one_group_and_others_get_their_own") {
+            return;
+        }
         let mut cargo = sh_stage("c", ToolParser::None, "true", "true");
         cargo.command = "cargo".to_owned();
         let other = sh_stage("o", ToolParser::None, "true", "true");
@@ -1339,6 +1360,11 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::execute
     #[test]
     fn a_spawn_io_failure_is_a_required_tool_failed_even_when_not_gating() {
+        if !gob_exec::require_sh(
+            "a_spawn_io_failure_is_a_required_tool_failed_even_when_not_gating",
+        ) {
+            return;
+        }
         {
             let mut stage = sh_stage("lint", ToolParser::None, "true", VERSION_OK);
             stage.fail_on_nonzero = false;
@@ -1362,6 +1388,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn a_missing_binary_is_a_required_tool_failed() {
+        if !gob_exec::require_sh("a_missing_binary_is_a_required_tool_failed") {
+            return;
+        }
         let mut stage = sh_stage("lint", ToolParser::ActionlintJson, "true", VERSION_OK);
         stage.command = "frob-no-such-binary".to_owned();
         assert_tool_failed(
@@ -1373,6 +1402,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn an_unresolvable_pin_fails_the_version_probe_loudly() {
+        if !gob_exec::require_sh("an_unresolvable_pin_fails_the_version_probe_loudly") {
+            return;
+        }
         let stage = sh_stage(
             "lint",
             ToolParser::ActionlintJson,
@@ -1392,6 +1424,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn an_undeclared_exit_with_empty_output_names_status_and_stderr() {
+        if !gob_exec::require_sh("an_undeclared_exit_with_empty_output_names_status_and_stderr") {
+            return;
+        }
         let stage = sh_stage(
             "lint",
             ToolParser::ActionlintJson,
@@ -1412,6 +1447,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn a_findings_exit_with_no_output_is_a_failure() {
+        if !gob_exec::require_sh("a_findings_exit_with_no_output_is_a_failure") {
+            return;
+        }
         let stage = sh_stage("lint", ToolParser::ActionlintJson, "exit 1", VERSION_OK);
         assert_tool_failed(
             &run_one(&stage),
@@ -1422,6 +1460,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn unparseable_output_is_a_failure() {
+        if !gob_exec::require_sh("unparseable_output_is_a_failure") {
+            return;
+        }
         let stage = sh_stage(
             "lint",
             ToolParser::ActionlintJson,
@@ -1434,6 +1475,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn a_clean_run_yields_no_finding() {
+        if !gob_exec::require_sh("a_clean_run_yields_no_finding") {
+            return;
+        }
         for script in ["echo null", "echo '[]'", "echo '[]'; exit 1"] {
             let stage = sh_stage("lint", ToolParser::ActionlintJson, script, VERSION_OK);
             assert!(run_one(&stage).is_empty(), "{script}");
@@ -1527,6 +1571,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::excerpt
     #[test]
     fn stderr_is_escaped_and_capped() {
+        if !gob_exec::require_sh("stderr_is_escaped_and_capped") {
+            return;
+        }
         let stage = sh_stage(
             "lint",
             ToolParser::ActionlintJson,
@@ -1565,6 +1612,10 @@ mod tests {
     // frob:ticket 01M4GKCBT6MW3BHED91718ANQ7
     #[test]
     fn a_failing_tool_with_info_noise_quotes_its_error_line_in_tool001() {
+        if !gob_exec::require_sh("a_failing_tool_with_info_noise_quotes_its_error_line_in_tool001")
+        {
+            return;
+        }
         let stage = sh_stage(
             "lint",
             ToolParser::ActionlintJson,
@@ -1597,6 +1648,9 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
     fn a_recorded_pass_is_reused_until_one_input_changes() {
+        if !gob_exec::require_sh("a_recorded_pass_is_reused_until_one_input_changes") {
+            return;
+        }
         let dir = tempfile::tempdir().expect("tempdir");
         std::fs::write(dir.path().join("a.txt"), "one").expect("write");
         let mut stage = sh_stage("m", ToolParser::None, "echo x >> spawns.log", "true");
