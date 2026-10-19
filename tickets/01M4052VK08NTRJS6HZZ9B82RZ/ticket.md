@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-19T20:50:20Z"
+updated = "2026-10-19T21:11:00Z"
 idempotency_key = "m2-mirror2-tick-github"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-obligations/src/tick_github.rs"]
+scope = ["crates/frob-obligations/src/tick_github.rs", "crates/frob-check/src/product.rs"]
 
 [[links]]
 kind = "blocked-by"
