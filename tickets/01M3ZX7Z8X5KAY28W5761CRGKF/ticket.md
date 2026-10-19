@@ -2,13 +2,13 @@
 id = "01M3ZX7Z8X5KAY28W5761CRGKF"
 title = "Escape other non-ASCII in text from packs, the tracker and the ledger (OWNER call)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-03T03:39:11Z"
+updated = "2026-10-19T07:15:36Z"
 idempotency_key = "m2-sec-escape-nonascii"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/escape.rs"]
