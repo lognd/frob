@@ -2,7 +2,8 @@
 id = "01M3Z714EEST9EGEHWWV56RXG4"
 title = "G14: grimble-capabilities: the matrix and CAP001-003"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
