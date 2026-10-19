@@ -17,6 +17,7 @@ pub mod config;
 pub mod config_cmd;
 pub mod cycle_cmd;
 pub mod doctor;
+pub mod explain_cmd;
 pub mod first_run;
 pub mod init;
 pub mod lease_cmd;
