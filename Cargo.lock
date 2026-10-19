@@ -1240,7 +1240,10 @@ dependencies = [
 name = "frob-mirror"
 version = "0.532.0"
 dependencies = [
+ "blake3",
  "gob-trust",
+ "serde",
+ "serde_json",
  "thiserror",
  "tracing",
 ]
