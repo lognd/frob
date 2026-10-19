@@ -1,0 +1,10 @@
+kind = "create"
+title = "Mirror: replace the curl-subprocess HTTP transport with a native HttpTransport"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-mirror/**"]
+body = "found while working ~1KH6CCV"
+at = "2026-10-19T21:14:17Z"
+actor = "lognd"
+rev = 1
