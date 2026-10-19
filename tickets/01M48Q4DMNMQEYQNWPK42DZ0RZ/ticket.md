@@ -2,7 +2,8 @@
 id = "01M48Q4DMNMQEYQNWPK42DZ0RZ"
 title = "Universal-rule language matrix with expectations derived from needs and capability cells"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
