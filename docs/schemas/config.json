@@ -351,6 +351,13 @@
       "additionalProperties": false,
       "description": "The `[grimble]` table: model roots and binding policy (grmb-spec 3, binding.md 6).",
       "properties": {
+        "large_lines": {
+          "default": 400,
+          "description": "A function, method or type longer than this many lines fires LARGE001; 0 turns the rule off.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
         "modeled": {
           "default": [],
           "description": "Selectors whose public units must have an owner (SYS005); empty turns the rule off.",

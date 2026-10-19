@@ -88,6 +88,9 @@ pub struct GrimbleTable {
     /// A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3).
     #[config(default = 12_u64)]
     pub rename_min_tokens: u64,
+    /// A function, method or type longer than this many lines fires LARGE001; 0 turns the rule off.
+    #[config(default = 400_u64)]
+    pub large_lines: u64,
 }
 
 impl GrimbleTable {

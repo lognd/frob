@@ -1,0 +1,90 @@
+//! The architecture rules CYCLE001, LARGE001 and DEAD001 over the symbol graph (design:
+//! `rules.md` repo-scope family, ticket G10).
+//!
+//! [`analyze`] reads one [`gob_symbols::SymbolGraph`] and returns every verdict as an
+//! [`ArchFinding`]; the product converts them to its own findings. The three rules never run one
+//! by one: they are declared with `#[rule]` ([`rules`]) and staged, like the SYS rules.
+//!
+//! | Rule | Polarity | Fires | Unresolved |
+//! |---|---|---|---|
+//! | `CYCLE001` | Pc | a cycle of Must dependency edges (import, call, reference) between crates (files outside any crate) | a cycle that needs a May edge |
+//! | `LARGE001` | Pn | a function, method or type longer than `large_lines` | never (a size is exact) |
+//! | `DEAD001` | P- | a private function or method no edge reaches | only May edges reach it, or an Unknown edge spells its name |
+//!
+//! # Known limits
+//!
+//! - `CYCLE001` ignores Unknown edges (they name no target to close a cycle through).
+//! - `DEAD001` judges functions and methods only: the graph has no edge for a use in a type
+//!   position, so a private type could look dead while it is not. A dynamic call that spells no
+//!   name (`getattr(x, name)()`) is not matched to any unit.
+//! - The pass reads one graph; nothing is cached between runs.
+
+// frob:ticket 01M3Z7141TW2H3HXJRK1QBHP7T
+
+mod cycle;
+mod dead;
+mod finding;
+pub mod host;
+mod large;
+pub mod rules;
+
+use std::collections::BTreeMap;
+
+use gob_symbols::SymbolGraph;
+
+pub use finding::ArchFinding;
+
+/// Rule id of the import cycle rule.
+pub const CYCLE: &str = "CYCLE001";
+/// Rule id of the oversized unit rule.
+pub const LARGE: &str = "LARGE001";
+/// Rule id of the dead unit rule.
+pub const DEAD: &str = "DEAD001";
+
+/// Everything the architecture pass reads.
+pub struct ArchInput<'a> {
+    /// The symbol graph of the walk.
+    pub graph: &'a SymbolGraph,
+    /// Repo-relative file path to the crate (package) that owns it; a file absent here is its own node.
+    pub crates: &'a BTreeMap<String, String>,
+    /// A unit longer than this many lines fires `LARGE001`; 0 turns the rule off.
+    pub large_lines: usize,
+    /// The text of a repo-relative file, `None` when unreadable (only called when `LARGE001` is on).
+    pub read: &'a dyn Fn(&str) -> Option<String>,
+}
+
+/// What the architecture pass found and examined.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct ArchReport {
+    /// Findings of the three rules, sorted by file, rule and anchor.
+    pub findings: Vec<ArchFinding>,
+    /// Subjects examined per rule (nodes, sized units, private functions); a rule that is off has none.
+    pub subjects: BTreeMap<&'static str, usize>,
+}
+
+/// Run `CYCLE001`, `LARGE001` and `DEAD001` over `input`.
+pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
+    let mut report = ArchReport::default();
+    let (findings, nodes) = cycle::check(input.graph, input.crates);
+    report.subjects.insert(CYCLE, nodes);
+    report.findings.extend(findings);
+    if input.large_lines > 0 {
+        let (findings, sized) = large::check(input.graph, input.large_lines, input.read);
+        report.subjects.insert(LARGE, sized);
+        report.findings.extend(findings);
+    } else {
+        tracing::debug!("LARGE001 is off (large_lines = 0)");
+    }
+    let (findings, candidates) = dead::check(input.graph);
+    report.subjects.insert(DEAD, candidates);
+    report.findings.extend(findings);
+    report
+        .findings
+        .sort_by(|a, b| (&a.file, a.rule, &a.anchor).cmp(&(&b.file, b.rule, &b.anchor)));
+    tracing::info!(
+        findings = report.findings.len(),
+        subjects = ?report.subjects,
+        "architecture pass done"
+    );
+    report
+}

@@ -2866,6 +2866,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "grimble-arch"
+version = "0.532.0"
+dependencies = [
+ "gob-mdtest",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "gob-walk",
+ "grimble-bind",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
 name = "grimble-bind"
 version = "0.532.0"
 dependencies = [
@@ -2910,6 +2924,7 @@ dependencies = [
  "gob-symbols",
  "gob-text",
  "gob-walk",
+ "grimble-arch",
  "grimble-bind",
  "grimble-model",
  "schemars",
