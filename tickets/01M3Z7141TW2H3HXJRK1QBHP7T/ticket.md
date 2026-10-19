@@ -11,7 +11,7 @@ created = "2026-10-02T21:06:24Z"
 updated = "2026-10-19T12:19:23Z"
 idempotency_key = "m2-arch"
 labels = ["milestone:2"]
-scope = ["crates/grimble-arch/**", "crates/grimble-check/**", "docs/**", "Cargo.lock"]
+scope = ["crates/grimble-arch/**", "crates/grimble-check/**", "docs/**", "Cargo.lock", "Cargo.toml"]
 
 [[links]]
 kind = "blocked-by"
