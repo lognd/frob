@@ -8,7 +8,7 @@ points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:40:59Z"
-updated = "2026-10-19T21:12:53Z"
+updated = "2026-10-19T21:14:10Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/**"]
 
 [[links]]
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "the allowlist entries are per case kind with tickets"
-bound = false
+bound = true
 +++
 
 testing.md 3: coverage.rs reads RuleMeta polarity, tier and must_measure and requires the case kinds of the table per rule; the allowlist is keyed by (product, rule, case kind), shrink-only, each with a ticket; a rule's fire and clean cases live in one suite file and the clean case certifies subjects. Split ~C5DQ4WJ and ~QSK0WB1 into per-kind entries. Design: docs/design/testing.md (D106); audit: notes/research/u-testing-audit.md.
