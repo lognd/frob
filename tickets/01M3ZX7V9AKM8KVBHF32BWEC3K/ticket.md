@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-19T18:22:52Z"
+updated = "2026-10-19T18:27:49Z"
 idempotency_key = "m2-sec-trust-follow"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/follow.rs", "crates/gob-trust/src/lib.rs", "docs/design/security.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX7V587K71E94E0AE4GWW8"
 
 [[acceptance]]
 text = "Given `trust --follow origin/main`, when a pack changes on origin/main and is fetched, then the new pair is trusted with no prompt"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a pair present only in an unpushed commit, when consulted, then it is untrusted"
