@@ -90,7 +90,11 @@ Each adapter declares a `capabilities` record (native sub-issues,
 native links, custom fields, state reasons, markdown dialect) and the
 mapping is checked against it at load: a projection field the mapping
 neither routes nor explicitly drops is a configuration error, so no
-information disappears silently. The projection's JSON schema is
+information disappears silently. The trait and record are
+`frob_mirror::adapter::{TrackerAdapter, Capabilities}`; `route_relations`
+sends parent and child edges to native sub-issues when declared, and
+every other edge to native links when declared, else to body links.
+The projection's JSON schema is
 generated from the Rust type (`cargo dev gen schemas`, file
 `docs/schemas/issue-projection.json`) when the producer is implemented;
 `frob mirror render <ticket>` prints a projection, so a GitLab or Jira
