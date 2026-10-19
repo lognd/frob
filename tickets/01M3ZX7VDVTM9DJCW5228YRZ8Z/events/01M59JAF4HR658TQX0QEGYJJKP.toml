@@ -1,0 +1,54 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T07:51:39Z"
+digest = "0660b925af0a8feabb1c493db1bd083fc77e563b972f0a1b3493bbcf561e329e"
+exit_code = 101
+inline = """
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+error[E0432]: unresolved import `gob_trust::prompt`
+  --> crates/frob/src/trust_cmd.rs:14:16
+   |
+14 | use gob_trust::prompt::{Presence, ReviewFacts, presence};
+   |                ^^^^^^ could not find `prompt` in `gob_trust`
+
+error[E0433]: cannot find `prompt` in `gob_trust`
+  --> crates/frob/src/trust_cmd.rs:87:39
+   |
+87 |             let decision = gob_trust::prompt::review(
+   |                                       ^^^^^^ could not find `prompt` in `gob_trust`
+
+error[E0433]: cannot find `prompt` in `gob_trust`
+  --> crates/frob/src/trust_cmd.rs:94:28
+   |
+94 |                 gob_trust::prompt::Decision::Approve => approved.push(facts.pack),
+   |                            ^^^^^^ could not find `prompt` in `gob_trust`
+
+error[E0433]: cannot find `prompt` in `gob_trust`
+  --> crates/frob/src/trust_cmd.rs:95:28
+   |
+95 |                 gob_trust::prompt::Decision::Deny => denied.push(facts.pack),
+   |                            ^^^^^^ could not find `prompt` in `gob_trust`
+
+Some errors have detailed explanations: E0432, E0433.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `frob-cli` (lib) due to 4 previous errors
+"""
+passed = false
+provider = "command"
+ref = "cargo test -p frob-cli --test it trust::non_tty_stdin_exits_3_and_is_marked_requires_human"
+size = 1939
+status = "measured"
+at = "2026-10-19T07:51:39Z"
+actor = "lognd"
+rev = 1
