@@ -1,0 +1,4 @@
+//! GitHub adapter pieces (mirror.md 2, 2.1, 3.6): everything GitHub-shaped lives under here.
+
+// frob:ticket 01M3ZX83T22GTC94BW4PM742G1
+pub mod render;

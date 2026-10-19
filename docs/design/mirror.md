@@ -314,6 +314,18 @@ an uncertain create forces recovery first.
   `proposal-accepted`, `proposal-declined`, `proposal-expired` join
   tickets.md 2a.
 
+#### GitHub rendering
+
+`frob_mirror::github::render::render(projection, marker)` turns a projection
+into a `RenderedIssue` (title, body, labels, digest). Each section becomes a
+`##` heading in projection order (scope, evidence and the managed notice are
+the generated read-only block), the hidden marker string supplied by the
+marker keyring is the last line of the body, and the only label is
+`frob:managed`. Acceptance lines are rendered as `Bound:` / `Unbound:` list
+items, never task-list checkboxes. The digest is the projection's own render
+digest, and rendering is a pure function, so the same projection yields
+byte-identical output. Neutralisation and render limits layer on top.
+
 ### 3.6 Publishing safely (MIR-AUD-18, 19, 21, 23, 28, 30, 32)
 
 - Render limits are checked before any write: body size (65536
