@@ -8,7 +8,7 @@ points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:01Z"
-updated = "2026-10-19T15:54:46Z"
+updated = "2026-10-19T15:55:28Z"
 scope = ["crates/gob-check/**", "crates/frob-check/**", "docs/reference/fidelity.md"]
 
 [[links]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "a binary file stays NotApplicable"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob check on this repository stays without errors and the rolled-up counts are listed"
