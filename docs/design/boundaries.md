@@ -378,9 +378,10 @@ fails the test. Every workspace crate must appear here exactly once.
 | 8 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-pm, grimble-bind |
 | 9 | product mid | crunk-query, crunk-rules, frob-release, frob-worktree, grimble-check |
 | 10 | product upper | crunk-check, frob-evidence, frob-gh, grimble |
-| 11 | product top | crunk, frob-tests |
-| 12 | obligations | frob-obligations |
-| 13 | check | frob-check |
-| 14 | land | frob-land |
-| 15 | binary | frob-cli |
-| 16 | tool | gob-dev |
+| 11 | product top | crunk-fix, frob-tests |
+| 12 | product apex | crunk |
+| 13 | obligations | frob-obligations |
+| 14 | check | frob-check |
+| 15 | land | frob-land |
+| 16 | binary | frob-cli |
+| 17 | tool | gob-dev |

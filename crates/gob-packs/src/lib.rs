@@ -32,6 +32,7 @@ mod error;
 mod limits;
 pub mod lock;
 mod manifest;
+mod names;
 mod plan_cache;
 #[path = "std/mod.rs"]
 pub mod std_pack;
@@ -43,4 +44,5 @@ pub use digest::{Digest, to_hex, tree_digest};
 pub use error::{PackCode, PackError};
 pub use limits::{MAX_MANIFEST_BYTES, Owner};
 pub use manifest::{Manifest, PackTable, Provides, check_unique, load};
+pub use names::{Provenance, RESERVED_PREFIXES, check_reserved};
 pub use plan_cache::{Loaded, PlanCache, Source};

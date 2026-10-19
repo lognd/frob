@@ -1,0 +1,23 @@
+kind = "evidence"
+captured_at = "2026-10-19T04:57:54Z"
+digest = "fed7d6b7d0c2dc2ebf16050f2c586ef26bbe26629118aa28871ceda502c7a986"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a9433aa8-53c5-40f4-ba77-9e5eae399203 with nextest profile: default
+    Starting 1 test across 292 binaries (3447 tests skipped)
+        PASS [   0.057s] gob-dev::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.064s] 1 test run: 1 passed, 3447 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "every_leaf_command_has_a_scenario_or_a_skip_reason"
+size = 573
+status = "measured"
+test_count = 1
+tests_digest = "59d2af6bb7068fe222677a5063f60036dc54cff05a7a1fa4739af6a172414e15"
+at = "2026-10-19T04:57:54Z"
+actor = "lognd"
+rev = 1
