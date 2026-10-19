@@ -352,7 +352,10 @@ byte-identical output. Neutralisation and render limits layer on top.
 - Render limits are checked before any write: body size (65536
   characters), label count and length, sub-issue limits. A ticket that
   cannot be published is isolated (MIR001 for that ticket only); one bad
-  ticket never stops the run.
+  ticket never stops the run. Implemented in `frob-mirror` `limits`:
+  `check` tests one rendered issue (body 65536 characters, 100 labels of
+  at most 50 characters, 100 sub-issues) and `plan` splits a run into
+  publishable and isolated tickets, each isolation carrying its reason.
 - Mirrored text cannot trigger GitHub side effects: `@` mentions and
   team mentions are neutralised, closing keywords (`fixes #12`) and
   cross-repository references are rendered as plain text, no task-list

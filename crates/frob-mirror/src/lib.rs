@@ -8,6 +8,7 @@ pub mod config;
 pub mod github;
 pub mod journal;
 pub mod keyring;
+pub mod limits;
 pub mod lock;
 pub mod mapfile;
 pub mod mapping;
