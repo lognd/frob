@@ -2,7 +2,8 @@
 id = "01M3ZX836BNV9H9K9ZCKNMAEDB"
 title = "Generate docs/schemas/issue-projection.json and the mirror render verb"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
