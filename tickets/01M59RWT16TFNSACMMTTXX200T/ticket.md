@@ -2,7 +2,8 @@
 id = "01M59RWT16TFNSACMMTTXX200T"
 title = "G14b: grimble-capabilities: wire the matrix into grimble-bind, excuses, CAP001-002 via the crate, census"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
