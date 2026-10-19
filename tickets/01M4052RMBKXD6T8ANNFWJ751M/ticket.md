@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given unconfirmed journal entries at run start, when the run begins, then they are re-read first and each is confirmed or marked lost"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.3 (Own writes).
