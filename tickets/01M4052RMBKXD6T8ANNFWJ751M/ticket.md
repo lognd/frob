@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-19T06:47:00Z"
+updated = "2026-10-19T06:47:01Z"
 idempotency_key = "m2-mirror2-journal"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/journal.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX83J29R620BVRAVK5Z6DZ"
 
 [[acceptance]]
 text = "Given a mutation about to be sent, when journaled, then (issue, field, value digest, run id) is recorded before the call is made"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a history entry by a bot id whose digest matches a journaled write, when classified, then it is own; given a bot-id entry with no match, then it is an edit by unknown automation"
