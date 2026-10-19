@@ -2,16 +2,16 @@
 id = "01M4052TZJMWSQJGXQN6ZR4N2C"
 title = "Neutralise mentions, closing keywords, cross-repository references and task lists in mirrored text"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-03T05:51:38Z"
+updated = "2026-10-19T08:21:46Z"
 idempotency_key = "m2-mirror2-neutralise"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/github/neutralise.rs"]
+scope = ["crates/frob-mirror/src/github/neutralise.rs", "crates/frob-mirror/src/github/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,15 +19,15 @@ target = "01M3ZX83T22GTC94BW4PM742G1"
 
 [[acceptance]]
 text = "Given text with @user and @org/team, when rendered, then no mention can notify anyone"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given text with 'fixes #12' and 'owner/repo#5', when rendered, then neither closes or links an issue"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given text with '- [ ] item', when rendered, then no task-list checkbox is produced"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.6 (side effects; MIR-AUD-21, 23).
