@@ -59,7 +59,7 @@ impl Command for MirrorRender {
 }
 
 /// Fold one ticket view and its evidence into the facts the producer projects.
-fn facts_of(
+pub(crate) fn facts_of(
     ledger: &Ledger,
     view: &TicketView,
     repository: String,
@@ -191,6 +191,7 @@ fn relations(ledger: &Ledger, view: &TicketView) -> Result<Vec<Relation>, CliErr
 /// Verbs of this module, registered on the root in one place.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<MirrorRender>()
+        .register::<crate::mirror_recreate_cmd::MirrorRecreate>()
 }
 
 #[cfg(test)]

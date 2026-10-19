@@ -88,6 +88,11 @@ fn a_missing_cell_fails_unless_allowlisted_with_a_ticket() {
     let body = full().replace("cell=csharp", "cell=rust");
     let r = run(&body, vec![]);
     assert_eq!(r.missing, vec![("TODO001".to_owned(), "csharp".to_owned())]);
+    assert!(
+        r.render().contains("TODO001: no `cell=csharp` block"),
+        "{}",
+        r.render()
+    );
     let r = run(&body, vec![gap("csharp", "~ABCDEFG")]);
     assert!(r.passed(), "{}", r.render());
     let r = run(&body, vec![gap("csharp", "soon")]);

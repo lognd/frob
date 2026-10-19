@@ -133,13 +133,19 @@ registered rule of a product, from the `inventory` registry:
 Alias rules (`RULE_ALIASES`, e.g. `COV003` for `TEST001`) are never emitted and
 are exempt: the target's coverage stands for them.
 
+Each rule also needs the cases its `RuleMeta` demands: `fire`, `clean`, an
+`unresolved` case shaped by its polarity (P+, P-, P0, Pn, Pc) and, for a
+`must_measure` rule, a vacuous case (`expect=unresolved reason=vacuous`).
+Universal-tier matrix rows are enforced by the language matrix gate below.
+
 `frob-check`, `grimble-check` and `crunk-check` each carry a
 `tests/rule_coverage.rs` calling `assert_product_coverage`; the failure
-names every uncovered rule. Known gaps are listed in
-`crates/gob-mdtest/coverage-allowlist.toml`, one `[[gap]]` per rule with
-`product`, `rule` and a `ticket` handle (one umbrella ticket per product).
-The list may only shrink: an entry whose rule is now covered, no longer
-registered, or without a `~XXXXXXX` handle fails the test.
+names every missing case as `RULE POLARITY kind` (e.g. `COV001 P- unresolved`).
+Known gaps are listed in `crates/gob-mdtest/coverage-allowlist.toml`, one
+`[[gap]]` per rule and case kind with `product`, `rule`, `kind` (`fire`,
+`clean`, `unresolved`, `vacuous`) and a `ticket` handle.
+The list may only shrink: an entry whose case now exists, whose rule is no
+longer registered, or without a `~XXXXXXX` handle fails the test.
 
 ## Language matrix
 

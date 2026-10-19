@@ -2,13 +2,14 @@
 id = "01M5AREAW91T16PSWFS1KH6CCV"
 title = "Wire frob mirror recreate verb to the real shard store and GitHub adapter"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T18:58:04Z"
-updated = "2026-10-19T20:49:51Z"
-scope = ["crates/frob/src/mirror_recreate_cmd.rs"]
+updated = "2026-10-19T21:32:49Z"
+scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/mirror_cmd.rs", "docs/design/mirror.md", "docs/reference/cli/frob.md"]
 
 [[links]]
 kind = "blocked-by"
