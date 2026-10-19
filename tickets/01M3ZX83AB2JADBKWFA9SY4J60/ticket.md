@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-19T04:52:35Z"
+updated = "2026-10-19T05:04:59Z"
 idempotency_key = "m2-mirror-adapter-trait"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/adapter.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -19,7 +19,7 @@ target = "01M3ZX832JK52FXBPPCCGTDRTG"
 
 [[acceptance]]
 text = "Given a fake adapter and a recorded projection, when the mirror runs offline, then operations are produced without network"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an adapter declaring no native sub-issues, when relations are routed, then parent edges fall back to body links and the capabilities say so"
