@@ -2,13 +2,13 @@
 id = "01M3ZX7VPGRERTZNVS5VR437JY"
 title = "Process packs: absolute path outside the work tree, digest in the lock, scrubbed environment"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-03T03:51:20Z"
+updated = "2026-10-19T09:15:48Z"
 idempotency_key = "m2-sec-process-packs"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-check/src/tools.rs", "crates/gob-exec/src/**"]
