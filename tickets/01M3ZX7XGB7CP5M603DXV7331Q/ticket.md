@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:36Z"
-updated = "2026-10-19T06:15:23Z"
+updated = "2026-10-19T06:16:22Z"
 idempotency_key = "m2-sec-gate001"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-check/src/gate001.rs"]
+scope = ["crates/gob-check/src/gate001.rs", "crates/gob-check/Cargo.toml"]
 
 [[links]]
 kind = "blocked-by"
