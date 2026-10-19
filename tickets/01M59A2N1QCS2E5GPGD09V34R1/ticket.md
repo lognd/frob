@@ -2,7 +2,8 @@
 id = "01M59A2N1QCS2E5GPGD09V34R1"
 title = "Declare PATH001-PATH003 rules with generated pages and Error severity (follows 21PHK3V detectors)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
