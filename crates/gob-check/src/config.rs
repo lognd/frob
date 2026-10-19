@@ -137,6 +137,10 @@ pub enum ToolParser {
     // frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
     #[serde(rename = "eslint-json")]
     EslintJson,
+    /// `dotnet build` Roslyn SARIF (CS, CA, IDE, VSTHRD and Microsoft.Unity.Analyzers ids): the SARIF reader with `UNT*` mapped to `UNITY101`, unused-code ids to `DEAD001` and `VSTHRD*` to `CONC001`.
+    // frob:ticket 01M4D94X9ESER47HCP4DTW2X7C
+    #[serde(rename = "roslyn-sarif")]
+    RoslynSarif,
 }
 
 /// The earliest check level that runs a tool stage (`tier` of `[[check.tool]]`).
