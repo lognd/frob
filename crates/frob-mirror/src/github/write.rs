@@ -159,8 +159,7 @@ impl<'a, T: WriteTransport, C: Clock> GithubWriter<'a, T, C> {
     ) -> bool {
         if let Some(last) = self.last_sent {
             let elapsed = self.clock.now().saturating_sub(last);
-            if elapsed < self.spacing {
-                let wait = self.spacing - elapsed;
+            if let Some(wait) = self.spacing.checked_sub(elapsed).filter(|w| !w.is_zero()) {
                 trace!(?wait, "write: spacing mutations");
                 self.clock.sleep(wait);
             }
