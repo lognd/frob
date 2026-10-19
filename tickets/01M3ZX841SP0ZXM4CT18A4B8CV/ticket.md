@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-19T16:46:34Z"
+updated = "2026-10-19T16:50:55Z"
 idempotency_key = "m2-mirror-outbox"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/outbox.rs"]
@@ -23,7 +23,7 @@ target = "01M4052R88Y0A9HQHDB86ERMEM"
 
 [[acceptance]]
 text = "Given a run interrupted after two of five operations, when rerun, then only the remaining three execute and nothing is duplicated"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given no new events, when the mirror runs, then no tracker request that mutates state is made"
