@@ -8,8 +8,8 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:48Z"
-updated = "2026-10-19T17:15:09Z"
-scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
+updated = "2026-10-19T17:25:05Z"
+scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
 text = "Given a Unity fixture with ?. on a MonoBehaviour field and an empty Update, when frob check runs the dotnet stage, then UNITY findings appear with source_rule UNT0008 and UNT0001"
