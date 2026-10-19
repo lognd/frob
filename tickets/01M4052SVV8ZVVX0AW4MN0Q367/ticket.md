@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-19T19:26:10Z"
+updated = "2026-10-19T19:26:11Z"
 idempotency_key = "m2-mirror2-capture"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/capture.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a field changed twice between runs with history retained, when read, then both values and their authors are captured"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.4 (what nothing is lost means).
