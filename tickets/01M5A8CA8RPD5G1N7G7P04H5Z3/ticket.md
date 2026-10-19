@@ -7,7 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T14:17:20Z"
-updated = "2026-10-19T14:24:05Z"
+updated = "2026-10-19T14:24:25Z"
+scope = ["crates/grimble-arch/**"]
 +++
 
 check output now carries unresolved arch findings (grimble-arch), so check_json_without_a_model_is_a_valid_empty_sibling_document, an_accept_clause_parks_its_finding_and_is_listed, init_twice_is_idempotent, the_binary_prints_exactly_one_envelope_line_on_stdout and a_model_error_exits_one_and_the_finding_is_in_the_document fail. Fix the product (arch findings must not fire on a model-only/empty repo) or the tests, whichever is the real regression.
