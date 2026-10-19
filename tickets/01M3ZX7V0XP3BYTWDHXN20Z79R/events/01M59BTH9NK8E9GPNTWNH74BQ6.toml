@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T05:58:17Z"
+digest = "f9294c18cc5a1cd65b25eec6fd6fb0dabdcedf2c7e0e5242bf06ad85991b3741"
+exit_code = 0
+inline = """
+
+running 1 test
+test hand_added_unmaced_entry_is_inert ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+     Running tests/store.rs (target/debug/deps/store-c734525e89f6f264)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-trust --test store hand_added_unmaced_entry_is_inert"
+size = 302
+status = "measured"
+at = "2026-10-19T05:58:17Z"
+actor = "lognd"
+rev = 1

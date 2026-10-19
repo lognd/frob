@@ -30,7 +30,10 @@ mod error;
 mod guard;
 mod key;
 mod mac;
+pub mod policy;
 mod state;
+// frob:ticket 01M3ZX7V0XP3BYTWDHXN20Z79R
+mod store;
 
 pub use error::TrustError;
 // frob:ticket 01M3ZX7TR7HMSXPCQSHFSG8SMS
@@ -38,3 +41,8 @@ pub use guard::{GuardError, STATE_DIRS, check_state_untracked};
 pub use key::{KEY_LEN, MachineKey, default_key_path, resolve_key_path};
 pub use mac::{Canonical, CanonicalWriter, Tag, mac, mac_record, verify, verify_record};
 pub use state::{Discard, Lookup, StateError, StateStore, cache_dir, ci_active, resolve_cache_dir};
+// frob:ticket 01M3ZX7V0XP3BYTWDHXN20Z79R
+pub use store::{
+    DEFAULT_TTL_SECS, Entry, Expiry, Finding, NETWORK_TTL_SECS, RepoIdentity, StoreError,
+    TrustStore, Verdict, default_store_path,
+};

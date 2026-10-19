@@ -2,16 +2,17 @@
 id = "01M3ZX7XBY8S4DXNFVYWVF8884"
 title = "Effective policy snapshot at a ref"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:36Z"
-updated = "2026-10-03T03:34:36Z"
+updated = "2026-10-19T06:07:12Z"
 idempotency_key = "m2-sec-policy-snapshot"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-trust/src/policy/**"]
+scope = ["crates/gob-trust/src/policy/**", "crates/gob-trust/Cargo.toml", "crates/gob-trust/tests/policy.rs", "docs/design/policy-snapshot.md", "crates/gob-trust/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,11 +24,11 @@ target = "01M3ZX7JWHQZQHD66HV2SB0498"
 
 [[acceptance]]
 text = "Given two refs differing in a disabled rule and a widened exclude, when snapshots are diffed, then both changes appear with old and new values"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given identical policy, when diffed, then the delta is empty"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.7 (GATE001 inputs).
