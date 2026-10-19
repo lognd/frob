@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-19T14:48:39Z"
+updated = "2026-10-19T14:50:55Z"
 idempotency_key = "m2-mirror-markers"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/marker.rs"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a bot issue whose marker HMAC is wrong, when the mirror runs, then it is not adopted"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.3 (marker format, trust) and security.md section 2.11.
