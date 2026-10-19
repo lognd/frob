@@ -11,7 +11,7 @@ created = "2026-10-09T05:07:35Z"
 updated = "2026-10-19T11:56:54Z"
 idempotency_key = "logand-gaps-K1"
 labels = ["adoption:logand-app", "grimble"]
-scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**", "docs/design/boundaries.md"]
+scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**", "docs/design/boundaries.md", "docs/design/grmb-spec.md"]
 
 [[links]]
 kind = "relates"
