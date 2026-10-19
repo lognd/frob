@@ -155,6 +155,23 @@ principles and the annotation vocabulary above; NEAT never penalizes small funct
 off by default (Smith's `remove_if` is honest, Meyer's rule disagrees);
 unverified effect claims report Unresolved; thresholds materialized.
 
+Implementation status (grimble-lints `neat` module, Rust only): NEAT010 and
+NEAT031 ship first. `neat::scan` reads each function as a unit and takes
+`frob:honest`, `frob:pure`, `frob:core`, `frob:effects ATOMS`, `frob:shell`,
+`frob:trusted` and `frob:dispatcher` from the comments above it. The
+`effects(unit)` capability answers `gob_ir::Answer<EffectSet>` from a callee
+vocabulary (`neat::Options::vocabulary`, matching a call path or its trailing
+segments) with local callees followed transitively: Exact when every callee
+resolved, otherwise Bounds whose `hi` is open. A `lo` outside the ceiling is
+Contradicted and fires NEAT010 at Warn (the section 3 wording "Error" is
+superseded by this table); an open `hi` is Unverified, reported unresolved
+and never clean. NEAT031 treats a function as a dispatcher when it is marked
+or matches on one of its own parameters, and fires on a branch whose
+condition weighs more than `guard_weight` (default 2): calls, plus 2 per
+closure or nested branch group, plus the weight of any local feeding the
+condition. Not yet done: the `[neat]` config table, other languages,
+NEAT031 `movable` wording and the remaining catalogue rules.
+
 Open for the owner:
 1. Should `[neat] require_effects` default to on for the public surface
    of this repository from milestone 2 (dogfooding section 4.6), with
