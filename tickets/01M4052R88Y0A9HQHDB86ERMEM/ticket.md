@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-19T16:24:17Z"
+updated = "2026-10-19T16:24:21Z"
 idempotency_key = "m2-mirror2-gh-writes"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/github/write.rs"]
@@ -39,7 +39,7 @@ bound = true
 
 [[acceptance]]
 text = "Given two mutations in one run and a fake clock, when sent, then at least one second separates them"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a write that fails with 5xx, when recorded, then it is marked failed with no effect assumed and retried next run"
