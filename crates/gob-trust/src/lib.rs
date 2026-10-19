@@ -30,6 +30,7 @@ mod error;
 mod guard;
 mod key;
 mod mac;
+pub mod policy;
 mod state;
 
 pub use error::TrustError;

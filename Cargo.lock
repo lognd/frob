@@ -2797,6 +2797,7 @@ dependencies = [
  "proptest",
  "tempfile",
  "thiserror",
+ "toml",
  "tracing",
 ]
 
