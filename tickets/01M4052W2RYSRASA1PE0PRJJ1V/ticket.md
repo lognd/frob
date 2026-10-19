@@ -2,7 +2,8 @@
 id = "01M4052W2RYSRASA1PE0PRJJ1V"
 title = "Progress commits: sharded map committed every K operations, rate-limited stop"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
