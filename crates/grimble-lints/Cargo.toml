@@ -14,7 +14,11 @@ workspace = true
 [dependencies]
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 thiserror = "2"
 tree-sitter = "=0.27.0"
 tracing = "0.1"
+
+[dev-dependencies]
+gob-mdtest = { path = "../gob-mdtest" }

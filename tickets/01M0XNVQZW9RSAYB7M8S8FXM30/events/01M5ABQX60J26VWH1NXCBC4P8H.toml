@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "obsolete: Python-era scope; TDD001 dropped in notes/v1/gates-and-rules.md"
+at = "2026-10-19T15:16:06Z"
+actor = "lognd"
+rev = 1

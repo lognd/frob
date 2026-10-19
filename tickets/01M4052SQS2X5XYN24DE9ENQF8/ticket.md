@@ -2,16 +2,17 @@
 id = "01M4052SQS2X5XYN24DE9ENQF8"
 title = "History cursor as an event id: taken before listing, advanced only after proposals are committed"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-03T05:51:37Z"
+updated = "2026-10-19T15:21:34Z"
 idempotency_key = "m2-mirror2-cursor"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/cursor.rs"]
+scope = ["crates/frob-mirror/src/cursor.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,15 +24,15 @@ target = "01M4052R0DZK01W7K8EE77637T"
 
 [[acceptance]]
 text = "Given a ticket's first read, when processed, then the cursor is taken before its issues are listed and survives a create"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a crash after proposals are recorded and before their commit, when the run repeats, then the cursor has not advanced and nothing is recorded twice"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a human edit between the mirror's read and its write, when the next run reads, then the edit lies after the cursor and is read"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.3 (F3) and 3.4 (F2, MIR-AUD-25).

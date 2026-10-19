@@ -3,14 +3,15 @@
 // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
 use grimble_arch::host::ArchHost;
 use grimble_bind::host::BindHost;
+use grimble_lints::host::PathHost;
 use grimble_model::host::MdlHost;
 
 use crate::GrimbleInputs;
 
-/// Everything a declared grimble rule may ask: the model, binding and architecture hosts.
-pub trait GrimbleHost: MdlHost + BindHost + ArchHost {}
+/// Everything a declared grimble rule may ask: the model, binding, architecture and path hosts.
+pub trait GrimbleHost: MdlHost + BindHost + ArchHost + PathHost {}
 
-impl<T: MdlHost + BindHost + ArchHost + ?Sized> GrimbleHost for T {}
+impl<T: MdlHost + BindHost + ArchHost + PathHost + ?Sized> GrimbleHost for T {}
 
 impl MdlHost for GrimbleInputs {}
 
@@ -23,5 +24,11 @@ impl BindHost for GrimbleInputs {
 impl ArchHost for GrimbleInputs {
     fn arch_subjects_of(&self, id: &str) -> usize {
         self.arch.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+impl PathHost for GrimbleInputs {
+    fn path_subjects_of(&self, id: &str) -> usize {
+        self.path.subjects.get(id).copied().unwrap_or(0)
     }
 }
