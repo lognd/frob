@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "obsolete: scope was Python files that no longer exist; TDD001 was explicitly DROPPED in notes/v1/gates-and-rules.md (git-history archaeology, costly)"
+at = "2026-10-19T15:16:06Z"
+actor = "lognd"
+rev = 1
