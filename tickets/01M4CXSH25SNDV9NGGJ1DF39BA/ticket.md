@@ -8,12 +8,12 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:54:20Z"
-updated = "2026-10-19T15:31:16Z"
+updated = "2026-10-19T15:37:33Z"
 scope = ["changelog.d/**", "crates/crunk/**", "docs/crunk/**"]
 
 [[acceptance]]
 text = "Given hullbreach platform, when its CI crunk step runs the Rust crunk, then it passes and every divergence from the Python crunk is listed with a reason"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md section 9 phase 1 exit.
