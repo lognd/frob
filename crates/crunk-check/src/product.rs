@@ -39,6 +39,9 @@ pub struct CrunkInputs {
     // frob:ticket 01M4CXR0EQH7WHQSNXCGKXE3V8
     /// The authored `design/tokens/*.toml` files, compiled one by one.
     pub tokens: Option<crunk_rules::token_files::TokenFacts>,
+    // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+    /// The authored `design/scenes/*.scene.json` files, parsed and solved (T1).
+    pub scenes: Option<crunk_rules::scene_files::SceneFacts>,
 }
 
 impl CrunkHost for CrunkInputs {
@@ -61,6 +64,11 @@ impl CrunkHost for CrunkInputs {
 
     fn tokens(&self) -> Option<&crunk_rules::token_files::TokenFacts> {
         self.tokens.as_ref()
+    }
+
+    // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+    fn scenes(&self) -> Option<&crunk_rules::scene_files::SceneFacts> {
+        self.scenes.as_ref()
     }
 }
 
@@ -151,6 +159,10 @@ impl Product for Crunk {
         let tokens = spec
             .as_ref()
             .map(crunk_rules::token_files::TokenFacts::load);
+        // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+        let scenes = spec
+            .as_ref()
+            .map(crunk_rules::scene_files::SceneFacts::load);
         Ok(Collected {
             shared: CrunkShared,
             inputs: CrunkInputs {
@@ -159,6 +171,7 @@ impl Product for Crunk {
                 tailwind,
                 reviews,
                 tokens,
+                scenes,
             },
             findings: Vec::new(),
         })
@@ -190,6 +203,10 @@ impl Product for Crunk {
         }
         if let Some(facts) = &snap.inputs.tokens {
             // frob:ticket 01M4CXR0EQH7WHQSNXCGKXE3V8
+            digest.extend(facts.fingerprint().into_bytes());
+        }
+        if let Some(facts) = &snap.inputs.scenes {
+            // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
             digest.extend(facts.fingerprint().into_bytes());
         }
         if let Some(spec) = &snap.inputs.spec {

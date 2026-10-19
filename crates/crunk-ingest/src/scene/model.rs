@@ -106,6 +106,9 @@ pub struct SceneNode {
     /// The text, for a `text` node.
     #[serde(default)]
     pub text: Option<TextRun>,
+    /// Whether the node is a pointer or touch target (button, link, control); LAYOUT005 sizes it.
+    #[serde(default)]
+    pub interactive: bool,
     /// Child nodes.
     #[serde(default)]
     pub children: Vec<SceneNode>,
@@ -116,6 +119,10 @@ pub struct SceneNode {
 pub struct Scene {
     /// The viewport to solve against.
     pub viewport: Viewport,
+    /// Inset from every viewport edge that text and targets must stay inside (notches, home
+    /// indicators), pixels; 0 (default) means no safe-area constraint.
+    #[serde(default)]
+    pub safe_area: f32,
     /// The root node.
     pub root: SceneNode,
 }

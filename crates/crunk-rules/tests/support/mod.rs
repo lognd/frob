@@ -2,7 +2,7 @@
 //! the case file, an empty generated tokens sheet, and the real ingest over them.
 //!
 //! The case's `config=no-tokens` leaves the tokens sheet out, so the definition set is incomplete;
-//! `config=breakpoints` adds a `[breakpoints]` table; `config=tw-theme-*` declares a Tailwind config and a stand-in theme; `config=tokens-current` writes the generated token
+//! `config=breakpoints` adds a `[breakpoints]` table (`breakpoints-scenes` also writes scenes at 768 and 1024); `config=tw-theme-*` declares a Tailwind config and a stand-in theme; `config=tokens-current` writes the generated token
 //! files the spec renders, so TOKENS001 finds no drift; `config=tokens-divergent` then hand-edits one
 //! generated value (EXPORT002); `config=uses-ink` adds a stylesheet reading `var(--color-ink)` (the
 //! TOKEN rules that look at uses). The authored `design/tokens/*.toml` files load as the pipeline does.
@@ -20,6 +20,7 @@ use std::path::Path;
 use crunk_ingest::{ProjectStyles, ingest_tree};
 use crunk_rules::CrunkHost;
 use crunk_rules::review::{AckSignature, ReviewFacts, Subject, judge};
+use crunk_rules::scene_files::SceneFacts;
 use crunk_rules::tailwind::TailwindFacts;
 use crunk_rules::token_files::TokenFacts;
 use crunk_spec::DesignSpec;
@@ -37,6 +38,7 @@ pub struct Project {
     pub tailwind: TailwindFacts,
     pub reviews: Option<ReviewFacts>,
     pub tokens: Option<TokenFacts>,
+    pub scenes: Option<SceneFacts>,
     _dir: tempfile::TempDir,
 }
 
@@ -55,6 +57,9 @@ impl CrunkHost for Project {
     }
     fn tokens(&self) -> Option<&TokenFacts> {
         self.tokens.as_ref()
+    }
+    fn scenes(&self) -> Option<&SceneFacts> {
+        self.scenes.as_ref()
     }
 }
 
@@ -222,6 +227,9 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
     if config == Some("breakpoints") {
         spec_text.push_str(BREAKPOINTS_TABLE);
     }
+    if matches!(config, Some("breakpoints-scenes")) {
+        spec_text.push_str(BREAKPOINTS_TABLE);
+    }
     if config.is_some_and(|c| c.starts_with("review-")) {
         spec_text.push_str(&review_tables(config));
     }
@@ -267,8 +275,21 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
             ".a { color: var(--color-ink); }\n",
         );
     }
+    // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+    if config == Some("breakpoints-scenes") {
+        for width in [768, 1024] {
+            write(
+                dir.path(),
+                &format!("design/scenes/w{width}.scene.json"),
+                &format!(
+                    "{{\"viewport\":{{\"width\":{width},\"height\":300}},\"root\":{{\"id\":\"root\",\"kind\":\"box\",\"style\":{{\"width\":{width},\"height\":300}}}}}}"
+                ),
+            );
+        }
+    }
     let styles = ingest_tree(&spec, &Cache::null()).expect("ingest").styles;
     let tokens = Some(TokenFacts::load(&spec));
+    let scenes = Some(SceneFacts::load(&spec));
     let tailwind = tailwind_facts(&spec, &styles, config);
     let reviews = config.and_then(|c| review_facts(&spec, c));
     Project {
@@ -277,6 +298,7 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
         tailwind,
         reviews,
         tokens,
+        scenes,
         _dir: dir,
     }
 }

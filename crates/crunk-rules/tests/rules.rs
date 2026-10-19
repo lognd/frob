@@ -8,14 +8,16 @@ use crunk_rules::registry::{catalog_mismatches, entries, render_markdown, unknow
 use crunk_rules::rules::{
     INDEX, bp001::Bp001, bp002::Bp002, bp003::Bp003, color001::Color001, color002::Color002,
     contrast001::Contrast001, export001::Export001, export002::Export002, gx001::Gx001,
-    human001::Human001, human002::Human002, layer001::Layer001, org001::Org001, org002::Org002,
-    org003::Org003, org004::Org004, org005::Org005, radius001::Radius001, size001::Size001,
-    slop001::Slop001, slop003::Slop003, slop004::Slop004, slop010::Slop010, slop011::Slop011,
-    slop014::Slop014, slop022::Slop022, slop040::Slop040, slop060::Slop060, space001::Space001,
-    token002::Token002, token003::Token003, token004::Token004, token005::Token005,
-    token006::Token006, token007::Token007, token008::Token008, token009::Token009,
-    tokens001::Tokens001, tw001::Tw001, tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005,
-    type001::Type001, type002::Type002, type003::Type003, waive001::Waive001,
+    human001::Human001, human002::Human002, layer001::Layer001, layout001::Layout001,
+    layout002::Layout002, layout003::Layout003, layout004::Layout004, layout005::Layout005,
+    org001::Org001, org002::Org002, org003::Org003, org004::Org004, org005::Org005,
+    radius001::Radius001, resp001::Resp001, size001::Size001, slop001::Slop001, slop003::Slop003,
+    slop004::Slop004, slop010::Slop010, slop011::Slop011, slop014::Slop014, slop022::Slop022,
+    slop040::Slop040, slop060::Slop060, space001::Space001, token002::Token002, token003::Token003,
+    token004::Token004, token005::Token005, token006::Token006, token007::Token007,
+    token008::Token008, token009::Token009, tokens001::Tokens001, tw001::Tw001, tw002::Tw002,
+    tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002, type003::Type003,
+    waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -43,6 +45,11 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/radius001.rs::Radius001
     // frob:tests crates/crunk-rules/src/rules/size001.rs::Size001
     // frob:tests crates/crunk-rules/src/rules/layer001.rs::Layer001
+    // frob:tests crates/crunk-rules/src/rules/layout001.rs::Layout001
+    // frob:tests crates/crunk-rules/src/rules/layout002.rs::Layout002
+    // frob:tests crates/crunk-rules/src/rules/layout003.rs::Layout003
+    // frob:tests crates/crunk-rules/src/rules/layout004.rs::Layout004
+    // frob:tests crates/crunk-rules/src/rules/layout005.rs::Layout005
     // frob:tests crates/crunk-rules/src/rules/org001.rs::Org001
     // frob:tests crates/crunk-rules/src/rules/org002.rs::Org002
     // frob:tests crates/crunk-rules/src/rules/org003.rs::Org003
@@ -70,6 +77,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/human001.rs::Human001
     // frob:tests crates/crunk-rules/src/rules/human002.rs::Human002
     // frob:tests crates/crunk-rules/src/rules/gx001.rs::Gx001
+    // frob:tests crates/crunk-rules/src/rules/resp001.rs::Resp001
     // frob:tests crates/crunk-rules/src/rules/slop001.rs::Slop001
     // frob:tests crates/crunk-rules/src/rules/slop003.rs::Slop003
     // frob:tests crates/crunk-rules/src/rules/slop004.rs::Slop004
@@ -100,6 +108,12 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "SLOP040" => support::run::<Slop040>(&host),
         "SLOP060" => support::run::<Slop060>(&host),
         "LAYER001" => support::run::<Layer001>(&host),
+        "LAYOUT001" => support::run::<Layout001>(&host),
+        "LAYOUT002" => support::run::<Layout002>(&host),
+        "LAYOUT003" => support::run::<Layout003>(&host),
+        "LAYOUT004" => support::run::<Layout004>(&host),
+        "LAYOUT005" => support::run::<Layout005>(&host),
+        "RESP001" => support::run::<Resp001>(&host),
         "ORG001" => support::run::<Org001>(&host),
         "ORG002" => support::run::<Org002>(&host),
         "ORG003" => support::run::<Org003>(&host),
@@ -163,12 +177,18 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "HUMAN001",
             "HUMAN002",
             "LAYER001",
+            "LAYOUT001",
+            "LAYOUT002",
+            "LAYOUT003",
+            "LAYOUT004",
+            "LAYOUT005",
             "ORG001",
             "ORG002",
             "ORG003",
             "ORG004",
             "ORG005",
             "RADIUS001",
+            "RESP001",
             "SIZE001",
             "SLOP001",
             "SLOP003",
@@ -343,6 +363,33 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 47);
+    assert_eq!(ids.len(), 53);
     assert!(ids.contains(&"SPACE001"));
+}
+
+// frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+// frob:tests crates/crunk-rules/src/host.rs::missing_scene_inputs
+// frob:tests crates/crunk-rules/src/host.rs::scene_subjects
+// frob:tests crates/crunk-rules/src/host.rs::CrunkHost.scenes
+// frob:tests crates/crunk-rules/src/scene_files.rs::SceneFile.is_content
+// frob:tests crates/crunk-rules/src/scene_files.rs::rect
+#[test]
+fn scene_host_accessors_report_inputs_and_subjects() {
+    use crunk_rules::CrunkHost as _;
+    use crunk_rules::host::{missing_scene_inputs, scene_subjects};
+    use crunk_rules::scene_files::rect;
+
+    let without = support::project("css/a.css", "a { color: red; }", None);
+    assert!(missing_scene_inputs(&without).is_some());
+    assert_eq!(scene_subjects(&without), 0);
+
+    let with = support::project("css/a.css", "a { color: red; }", Some("breakpoints-scenes"));
+    assert!(missing_scene_inputs(&with).is_none());
+    let facts = with.scenes().expect("scenes loaded");
+    assert_eq!(scene_subjects(&with), facts.files.len());
+    let file = &facts.files[0];
+    let node = &file.solve.nodes[0];
+    let (left, top, right, bottom) = rect(node);
+    assert!(right >= left && bottom >= top);
+    assert!(!file.is_content(node));
 }

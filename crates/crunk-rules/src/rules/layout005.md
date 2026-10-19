@@ -1,0 +1,78 @@
+<!-- mdtest: rule=LAYOUT005 -->
+# LAYOUT005 target-below-minimum-size
+
+Interactive targets are large enough to hit. Each block is one scene file under `design/scenes/`; a node marked `"interactive": true` is a pointer or touch target.
+
+## What it does
+
+Fires for each interactive node narrower or shorter than 24 px, the WCAG 2.2 AA (2.5.8) minimum target size in CSS px. A project with no scene files is not judged.
+
+## Why it matters
+
+Small targets are hard to hit for people with tremor, large fingers or a coarse pointer, and are easy to hit by mistake.
+
+## Remedy
+
+Enlarge the target (or its padding) to at least 24x24 px, or waive the rule with a reason when WCAG's spacing exception applies.
+
+## Examples
+
+### A 16 px square button fires
+
+```json expect=fire file=design/scenes/home.scene.json
+{
+  "viewport": {
+    "width": 400,
+    "height": 300
+  },
+  "root": {
+    "id": "root",
+    "kind": "box",
+    "style": {
+      "width": 400,
+      "height": 300
+    },
+    "children": [
+      {
+        "id": "ok",
+        "kind": "box",
+        "style": {
+          "width": 16,
+          "height": 16
+        },
+        "interactive": true
+      }
+    ]
+  }
+}
+```
+
+### A 44 px square button is clean
+
+```json expect=clean file=design/scenes/home.scene.json
+{
+  "viewport": {
+    "width": 400,
+    "height": 300
+  },
+  "root": {
+    "id": "root",
+    "kind": "box",
+    "style": {
+      "width": 400,
+      "height": 300
+    },
+    "children": [
+      {
+        "id": "ok",
+        "kind": "box",
+        "style": {
+          "width": 44,
+          "height": 44
+        },
+        "interactive": true
+      }
+    ]
+  }
+}
+```

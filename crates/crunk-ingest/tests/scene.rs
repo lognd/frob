@@ -54,3 +54,19 @@ fn bad_dimension_and_bad_json_are_typed_errors() {
         Err(SceneError::BadDimension { .. })
     ));
 }
+
+// frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+// frob:tests parse_scene
+#[test]
+fn interactive_and_safe_area_parse_and_default_off() {
+    let json = r#"{"viewport":{"width":100,"height":100},"safe_area":8,
+        "root":{"id":"r","kind":"box","children":[{"id":"b","kind":"box","interactive":true}]}}"#;
+    let scene = parse_scene(json).expect("parses");
+    assert_eq!(scene.safe_area, 8.0);
+    assert!(scene.root.children[0].interactive);
+    assert!(!scene.root.interactive);
+    let plain =
+        parse_scene(r#"{"viewport":{"width":1,"height":1},"root":{"id":"r","kind":"box"}}"#)
+            .expect("parses");
+    assert_eq!(plain.safe_area, 0.0);
+}
