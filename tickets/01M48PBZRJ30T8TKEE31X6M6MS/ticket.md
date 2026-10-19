@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:39Z"
-updated = "2026-10-19T15:25:36Z"
+updated = "2026-10-19T15:25:37Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
 [[links]]
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "all existing corpora pass after migration"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "an Unresolved or Advisory finding of a selected rule that no marker matches fails the case, and a rolled-up spanless Unresolved is matched by a header assertion"
