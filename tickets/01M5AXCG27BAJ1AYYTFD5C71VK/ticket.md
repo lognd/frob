@@ -4,9 +4,10 @@ title = "Reconcile declared adapter fidelity with measured corpus level (rust, m
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T20:24:26Z"
-updated = "2026-10-19T20:24:26Z"
+updated = "2026-10-19T23:19:06Z"
 scope = ["crates/gob-caps/**", "crates/gob-symbols/tests/**"]
 
 [[acceptance]]
