@@ -2,7 +2,8 @@
 id = "01M3Z7151078ZAM6AM1GFWC6QP"
 title = "NEAT first ten rules in grimble-lints with the effects capability"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
