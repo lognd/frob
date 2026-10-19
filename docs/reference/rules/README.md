@@ -112,6 +112,14 @@
 | [EXPORT001](EXPORT001.md) | export-drift | error | manual | P+ | true | The generated exports match the spec. Each block is one source file in a project whose `crunk.toml` |
 | [EXPORT002](EXPORT002.md) | export-parity | error | manual | P+ | true | The same token resolves to the same value in every export. Each block is one source file in a |
 
+## FLOW
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [FLOW001](FLOW001.md) | flow-label-closure | error | manual | P+ | false | A flow's label exceeds the destination node's clearance and no declassify boundary lowers it. |
+| [FLOW002](FLOW002.md) | flow-unendorsed | error | manual | P+ | false | A flow into a higher-trust node has no endorse boundary reaching that trust. |
+| [FLOW003](FLOW003.md) | flow-no-rate | warn | manual | P+ | false | A flow from a foreign node declares no rate. |
+
 ## GRL
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
