@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-evidence/**"]
+at = "2026-10-19T22:53:41Z"
+actor = "lognd"
+rev = 1

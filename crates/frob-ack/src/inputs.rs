@@ -23,7 +23,7 @@ pub const PRODUCT: &str = "frob";
 const DOC_MARKER: &str = "frob:";
 
 /// Bump when the scan or its binding output changes for the same input; part of the cache key.
-const SCAN_VERSION: u32 = 3;
+const SCAN_VERSION: u32 = 4;
 
 /// One cached `frob:doc` directive of a file, free of interner ids.
 #[derive(Serialize, Deserialize)]
@@ -59,7 +59,7 @@ fn cached_scan(
 fn scan_file(
     reader: &mut ContentReader<'_, '_>,
     entry: &FileEntry,
-    lang: Language,
+    lang: Option<Language>,
     scanner: &Scanner,
 ) -> Vec<Stored> {
     let Ok(text) = reader.read_text(&entry.path) else {
@@ -73,7 +73,12 @@ fn scan_file(
     let mut ids = FileInterner::new();
     let file = ids.intern(&entry.path);
     let mut out = Vec::new();
-    for d in scanner.scan_in(file, lang, &text, &symbols).directives {
+    // No grammar: scan lexically (same split as frob-check's directive scan).
+    let result = match lang {
+        Some(lang) => scanner.scan_in(file, lang, &text, &symbols),
+        None => scanner.scan_unparsed_in(file, &text, &symbols),
+    };
+    for d in result.directives {
         let Some((symbol, target)) =
             doc_pair(&d.namespace, &d.verb, &d.args, &d.bound, &entry.path)
         else {
@@ -187,14 +192,12 @@ impl Inputs {
                 if !roles.role(&entry.path).scans_directives() {
                     continue;
                 }
-                let Some(lang) = Language::detect(&entry.path) else {
-                    continue;
-                };
+                let lang = Language::detect(&entry.path);
                 let key = ArtifactKey {
                     content_digest: entry.digest.to_string(),
                     producer_identity: format!(
                         "frob-ack/doc/v{SCAN_VERSION}/{EXTRACTOR_VERSION}/{}",
-                        grammar_identity(lang)
+                        lang.map_or_else(|| "lexical".to_owned(), grammar_identity)
                     ),
                 };
                 let found = cached_scan(&cache, &key, || scan_file(reader, entry, lang, &scanner));
@@ -247,5 +250,29 @@ impl Inputs {
         // The lock's Debug form is deterministic (sorted maps) and covers header, entries and flows.
         h.update(format!("{:?}", self.lock).as_bytes());
         h.finalize().to_hex().to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/frob-ack/src/inputs.rs::Inputs
+    #[test]
+    fn frob_doc_in_a_no_grammar_file_is_collected() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let p = dir.path();
+        std::fs::write(
+            p.join("run.zzz"),
+            "# frob:doc docs/g.md#intro\nsetting = 1\n",
+        )
+        .unwrap();
+        std::fs::write(p.join("g.md"), "# Intro\n\nhello\n").unwrap();
+        let inputs = Inputs::collect(p).expect("collect");
+        assert!(
+            inputs.docs.iter().any(|d| d.file == "run.zzz"),
+            "{:?}",
+            inputs.docs
+        );
     }
 }

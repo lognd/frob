@@ -2,15 +2,19 @@
 id = "01M3DG64ECQN5RFA286F6YXYRZ"
 title = "frob check --ticket: refuse a second concurrent full check for the same worktree (per-worktree lock), --allow-concurrent to override, so stacked agent checks cannot starve the shared host"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-09T20:43:01Z"
+updated = "2026-10-19T23:01:57Z"
 aliases = ["T-6604"]
 labels = ["v1-cluster:C1b", "triage:accepted"]
-scope = ["src/frob/app/check_runner.py", "src/frob/process/", "src/frob/_cli_parsers/_check.py", "docs/design/rules.md"]
+scope = ["src/frob/app/check_runner.py", "src/frob/process/", "src/frob/_cli_parsers/_check.py", "docs/design/rules.md", "crates/frob-check/**", "docs/**"]
+
+[[acceptance]]
+text = "A second concurrent full check in a worktree is refused naming the live holder pid; a dead holder's lock is reclaimed; --allow-concurrent overrides"
+bound = true
 +++
 
 Measured twice on 2026-09-26 (14:00 and 23:05 local): implementer agents
