@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-19T07:55:32Z"
+updated = "2026-10-19T07:55:49Z"
 idempotency_key = "m2-mirror2-lock"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/lock.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a stale lock past its timeout, when a run starts, then it takes the lock by CAS and logs the takeover"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a watermark, when a run starts, then only ledger commits after it are processed and the mirror's own commits do not start a run"
