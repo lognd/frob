@@ -2,7 +2,8 @@
 id = "01M4MGEZBQ9DD7BKKZ8ZM1HA1J"
 title = "Test executables: about 570 integration-test binaries at 24 MB each (12 GB) make a full test build unaffordable; consolidate to one test binary per crate or link dynamically"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
