@@ -2,7 +2,8 @@
 id = "01M3ZX7TWB2H5WHD27FH2DAC49"
 title = "Relocate findings and plan caches out of the work tree under the MAC store"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
