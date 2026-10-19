@@ -2,13 +2,13 @@
 id = "01M48Q4DMNMQEYQNWPK42DZ0RZ"
 title = "Universal-rule language matrix with expectations derived from needs and capability cells"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:00Z"
-updated = "2026-10-19T16:19:49Z"
+updated = "2026-10-19T16:19:57Z"
 scope = ["crates/gob-mdtest/**", "crates/gob-check/**", "crates/*/tests/mdtest/**"]
 
 [[links]]
