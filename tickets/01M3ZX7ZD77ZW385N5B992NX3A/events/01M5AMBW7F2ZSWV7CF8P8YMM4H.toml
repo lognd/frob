@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-cli/src/explain.rs", "crates/frob/src/explain_cmd.rs", "crates/grimble/src/explain_cmd.rs", "crates/gob-cli/src/lib.rs", "crates/gob-cli/Cargo.toml"]
+new = ["crates/gob-cli/src/explain.rs", "crates/frob/src/explain_cmd.rs", "crates/grimble/src/explain_cmd.rs", "crates/gob-cli/src/lib.rs", "crates/gob-cli/Cargo.toml", "crates/grimble/src/lib.rs"]
+at = "2026-10-19T17:46:49Z"
+actor = "lognd"
+rev = 1
