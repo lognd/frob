@@ -8,7 +8,7 @@ points = 5
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:51Z"
-updated = "2026-10-19T10:30:52Z"
+updated = "2026-10-19T10:30:53Z"
 scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-pm/**", "Cargo.lock"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "below min_history the figures are Unresolved with the count"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "cycle velocity remains as a hidden alias printing the same numbers"
