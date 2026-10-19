@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T06:47:01Z"
+digest = "3a387b8e86fa20858d7564f3285e4bed18a0eb68b7bc88907a1c538bd9e7e33a"
+exit_code = 0
+inline = """
+
+running 1 test
+test journal::tests::journal_is_durable_before_the_call_is_made ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 26 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-9c7a4f86665bb5e8)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror journal_is_durable_before_the_call_is_made"
+size = 340
+status = "measured"
+at = "2026-10-19T06:47:01Z"
+actor = "lognd"
+rev = 1

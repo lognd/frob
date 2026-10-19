@@ -228,6 +228,13 @@ and in `frob mirror status`.
   id and its value digest matches a journaled write. Any other bot
   entry is an edit by "unknown automation". Unconfirmed journal entries
   are re-read at the start of the next run.
+  Implemented in `crates/frob-mirror/src/journal.rs`: `journaled_write`
+  commits the entry (CAS) before the send closure runs;
+  `Journal::classify` returns own, unknown automation, or other (not a
+  bot id); `Journal::recover` re-reads unconfirmed entries at run start
+  and marks each confirmed or lost (a failed read stays unconfirmed).
+  The journal is stored under the key `journal-<ULID>` next to the
+  ticket's shard; 30-day pruning is not yet implemented.
 
 ### 3.4 Reconcile, never block (owner decision; MIR-AUD-03, 06, 11, 20, 25; F2, F7, F9)
 
