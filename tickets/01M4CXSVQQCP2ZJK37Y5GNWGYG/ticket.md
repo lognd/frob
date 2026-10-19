@@ -2,7 +2,8 @@
 id = "01M4CXSVQQCP2ZJK37Y5GNWGYG"
 title = "Type precision on every type-dependent answer (exact, claimed, inferred, dynamic) and Unknown reason classes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
