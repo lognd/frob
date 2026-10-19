@@ -2,11 +2,12 @@
 id = "01M595Z02880WESFJF0KZ6SK09"
 title = "Regenerate stale docs/reference/grl/catalog.md (class_selector missing; GEN001 fails frob check cargo stage)"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-19T04:15:52Z"
-updated = "2026-10-19T04:15:52Z"
+updated = "2026-10-19T04:17:34Z"
 scope = ["docs/reference/grl/catalog.md"]
 +++
 
