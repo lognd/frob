@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T13:12:32Z"
+digest = "799f6ffcc68db17d5cbdb40e5797b146861014311988a07951450a6573464079"
+exit_code = 0
+inline = """
+
+running 1 test
+test pack006_required_unresolved_and_pack001_skips_the_pack ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running tests/pack_rules.rs (target/debug/deps/pack_rules-74d6f52cb133b910)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-capabilities --test pack_rules pack006_required_unresolved_and_pack001_skips_the_pack"
+size = 333
+status = "measured"
+at = "2026-10-19T13:12:32Z"
+actor = "lognd"
+rev = 1
