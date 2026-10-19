@@ -29,6 +29,7 @@
 mod activation;
 mod digest;
 mod error;
+pub mod hooks;
 mod limits;
 pub mod loader;
 pub mod lock;

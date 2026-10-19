@@ -1,0 +1,1 @@
+gob-packs: typed hook registry (`gob_packs::hooks`): the closed hook list, versioned implementations validated at load as PACK005 with the exact reason, priority ordering with a pack-name tie-break, and `config_tables`.
