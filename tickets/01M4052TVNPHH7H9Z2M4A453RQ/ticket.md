@@ -2,16 +2,17 @@
 id = "01M4052TVNPHH7H9Z2M4A453RQ"
 title = "Render limits and per-ticket isolation"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-03T05:51:38Z"
+updated = "2026-10-19T08:52:01Z"
 idempotency_key = "m2-mirror2-render-limits"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/limits.rs"]
+scope = ["crates/frob-mirror/src/limits.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,15 +20,15 @@ target = "01M3ZX83T22GTC94BW4PM742G1"
 
 [[acceptance]]
 text = "Given a projection whose body is 65537 characters, when planned, then MIR001 is reported for that ticket and no write is made for it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given one over-limit ticket among ten, when a run executes, then the other nine are published"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a label over its length limit, when planned, then the ticket is isolated with a reason"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.6 (Publishing safely; MIR-AUD-18, 19).
