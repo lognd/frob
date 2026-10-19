@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T16:06:14Z"
+digest = "658c7c0d6dc16d9d8f59b317d467a16e2548601ec928b67961a6747fbd5445d3"
+exit_code = 0
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+
+running 1 test
+test unresolved_only_fails_fire_and_error_fails_unresolved ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running unittests src/lib.rs (target/debug/deps/gob_mdtest-621ca2dee3165f35)
+     Running tests/coverage.rs (target/debug/deps/coverage-bc370b968c065097)
+     Running tests/outcomes.rs (target/debug/deps/outcomes-7daa9cd5cd510b81)
+     Running tests/selftest.rs (target/debug/deps/selftest-2fbbec17e216a24d)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-mdtest unresolved_only_fails_fire_and_error_fails_unresolved"
+size = 904
+status = "measured"
+at = "2026-10-19T16:06:14Z"
+actor = "lognd"
+rev = 1

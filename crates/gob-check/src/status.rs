@@ -219,7 +219,7 @@ pub(crate) fn opaque_finding_for(id: &str, files: &[&str]) -> Finding {
         None,
         "repository",
         &format!(
-            "{} opaque text file(s) (no adapter, first `{first}`) were not read for comments or directives",
+            "{} opaque text file(s) (no adapter, first `{first}`) were not examined: no adapter provides what the rule reads",
             files.len()
         ),
         UnresolvedReason::Fidelity,
@@ -276,7 +276,7 @@ pub(crate) fn merge_opaque_notices(raw: Vec<Finding>) -> Vec<Finding> {
         None,
         "repository",
         &format!(
-            "{count} opaque text file(s) (no adapter, first `{first}`) were not read for comments or directives by {} rules ({})",
+            "{count} opaque text file(s) (no adapter, first `{first}`) were not examined by {} rules ({}): no adapter provides what they read",
             rules.len(),
             rules.join(", ")
         ),

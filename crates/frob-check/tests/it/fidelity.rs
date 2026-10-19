@@ -112,10 +112,14 @@ fn not_applicable_is_counted_never_a_finding() {
     );
     let opaque = &report.fidelity.languages["opaque"];
     assert_eq!(opaque.files, 2);
-    assert_eq!(opaque.not_applicable["DOC"], 2, "DOC001 needs items");
+    assert_eq!(opaque.not_applicable["DOC"], 1, "only the PNG");
     assert_eq!(opaque.not_applicable["TODO"], 1, "only the PNG");
     assert_eq!(opaque.not_applicable["REF"], 1, "only the PNG");
     assert_eq!(opaque.unresolved["TODO001"], 1);
+    // D106: a capability rule over adapter-less text is one rolled-up Unresolved, not a silent pass.
+    for rule in ["DOC001", "DOC002", "INV002"] {
+        assert_eq!(opaque.unresolved[rule], 1, "{rule}");
+    }
     assert_eq!(opaque.unresolved["REF001"], 1);
     assert_eq!(opaque.files_examined, 0);
 }
