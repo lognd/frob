@@ -1,0 +1,10 @@
+kind = "create"
+title = "Fold integration tests into one binary per crate: remaining crates under crates/*/tests (~243 files), then verify cargo dev test-size under 3 GB"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/*/tests/**"]
+body = "found while working ~ZM1HA1J: finishes the consolidation and closes the 3 GB acceptance measurement."
+at = "2026-10-19T16:50:57Z"
+actor = "lognd"
+rev = 1

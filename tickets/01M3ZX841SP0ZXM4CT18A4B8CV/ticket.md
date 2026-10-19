@@ -2,16 +2,16 @@
 id = "01M3ZX841SP0ZXM4CT18A4B8CV"
 title = "Outbox: ledger-driven work from unpublished events, idempotent set-to-value operations, full resync"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-03T05:51:55Z"
+updated = "2026-10-19T17:02:13Z"
 idempotency_key = "m2-mirror-outbox"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/outbox.rs"]
+scope = ["crates/frob-mirror/src/outbox.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,11 +23,11 @@ target = "01M4052R88Y0A9HQHDB86ERMEM"
 
 [[acceptance]]
 text = "Given a run interrupted after two of five operations, when rerun, then only the remaining three execute and nothing is duplicated"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given no new events, when the mirror runs, then no tracker request that mutates state is made"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.2 (work class 2) and 3.4.

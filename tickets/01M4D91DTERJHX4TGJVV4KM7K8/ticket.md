@@ -2,13 +2,14 @@
 id = "01M4D91DTERJHX4TGJVV4KM7K8"
 title = "Web profile: ESLint JSON parser; stages for eslint, typescript-eslint (type-aware, separate), jsx-a11y, react-hooks and eslint-plugin-react"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:10:53Z"
-updated = "2026-10-14T05:23:59Z"
+updated = "2026-10-19T17:03:04Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**", "docs/reference/**"]
 
 [[acceptance]]

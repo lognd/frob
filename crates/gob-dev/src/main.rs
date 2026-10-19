@@ -11,7 +11,7 @@ use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
 use gob_dev::{
-    Kind, Mode, apply, ci, generate, isolation, profile, publish, wheel, wheel_smoke,
+    Kind, Mode, apply, ci, generate, isolation, profile, publish, test_size, wheel, wheel_smoke,
     workspace_root,
 };
 
@@ -91,6 +91,15 @@ enum Task {
         /// Where to write the report (default: target/profile/report.json).
         #[arg(long)]
         out: Option<PathBuf>,
+    },
+    /// Sum the linked test executables of a build and fail when they exceed the disk budget (~ZM1HA1J).
+    TestSize {
+        /// Build profile directory under target/ whose deps/ is measured.
+        #[arg(long, default_value = "debug")]
+        profile: String,
+        /// Budget in gigabytes (decimal).
+        #[arg(long, default_value_t = 3.0)]
+        budget_gb: f64,
     },
     /// Publish the workspace crates to crates.io in dependency order; resumable.
     Publish {
@@ -268,7 +277,33 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
         Task::WheelSmoke { dir, version } => {
             wheel_task(|root| wheel_smoke::smoke_from_env(root, &dir, version)).map(|()| ok)
         }
+        Task::TestSize { profile, budget_gb } => test_size_task(&profile, budget_gb),
         Task::Gen { kind, check, root } => generate_files(kind, check, root).map(|()| ok),
+    }
+}
+
+// frob:ticket 01M4MGEZBQ9DD7BKKZ8ZM1HA1J
+/// Measure `target/<profile>/deps` and fail (exit 1) when the executables exceed the budget.
+fn test_size_task(profile: &str, budget_gb: f64) -> Result<std::process::ExitCode, Failed> {
+    let fail = |e: &dyn std::fmt::Display| {
+        tracing::error!(error = %e, "test-size failed");
+        Failed(format!("error: {e}"))
+    };
+    let root = workspace_root().map_err(|e| fail(&e))?;
+    let deps = root.join("target").join(profile).join("deps");
+    let measured = test_size::measure(&deps).map_err(|e| fail(&e))?;
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "a CLI budget in GB"
+    )]
+    let budget = (budget_gb * 1e9) as u64;
+    let (line, ok) = test_size::summary(measured, budget);
+    emit(&line);
+    if ok {
+        Ok(std::process::ExitCode::SUCCESS)
+    } else {
+        Err(Failed("test executables over budget".to_owned()))
     }
 }
 
@@ -625,6 +660,14 @@ mod tests {
         );
         assert!((budget_factor - 2.5).abs() < f64::EPSILON);
         assert_eq!(compare, Some(PathBuf::from("base.json")));
+    }
+
+    // frob:tests crates/gob-dev/src/main.rs::Task
+    #[test]
+    fn test_size_parses() {
+        let cli =
+            Cli::try_parse_from(["gob-dev", "test-size", "--budget-gb", "2"]).expect("parses");
+        assert!(matches!(cli.command, Task::TestSize { .. }));
     }
 
     #[test]

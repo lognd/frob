@@ -184,6 +184,33 @@ struct SWarning {
     text: String,
 }
 
+// frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
+/// One file of `eslint -f json`.
+#[derive(Deserialize)]
+struct EFile {
+    #[serde(rename = "filePath")]
+    file_path: String,
+    #[serde(default)]
+    messages: Vec<EMessage>,
+}
+
+// frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
+/// One message of an eslint file; `ruleId` is null for parse errors.
+#[derive(Deserialize)]
+struct EMessage {
+    #[serde(rename = "ruleId")]
+    rule_id: Option<String>,
+    message: String,
+    #[serde(default)]
+    line: u32,
+    #[serde(default)]
+    column: u32,
+    #[serde(rename = "endLine", default)]
+    end_line: Option<u32>,
+    #[serde(rename = "endColumn", default)]
+    end_column: Option<u32>,
+}
+
 // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
 /// Parse `stdout` of the stage's tool; `ToolParser::None` yields nothing.
 ///
@@ -202,6 +229,7 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::TyGitlab => crate::type_parse::parse_ty_gitlab(stdout),
         ToolParser::PyrightJson => crate::type_parse::parse_pyright(stdout),
         ToolParser::TyposJson => parse_typos(stdout),
+        ToolParser::EslintJson => parse_eslint(stdout),
     }
 }
 
@@ -256,6 +284,67 @@ fn parse_typos(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
     }
     tracing::debug!(count = out.len(), "typos findings parsed");
     Ok(out)
+}
+
+// frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
+/// eslint `-f json`: one entry per file with 1-based line and column messages (empty output is no finding).
+fn parse_eslint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
+    let text = stdout.trim();
+    let files: Vec<EFile> = if text.is_empty() {
+        Vec::new()
+    } else {
+        serde_json::from_str(text).map_err(|source| ParseError::Json {
+            format: "eslint",
+            source,
+        })?
+    };
+    let mut out = Vec::new();
+    for file in files {
+        for m in file.messages {
+            // A parse error carries no rule id; it is not a lint finding.
+            let Some(rule) = m.rule_id else {
+                tracing::debug!(path = %file.file_path, "eslint message without a rule id; skipped");
+                continue;
+            };
+            let end_col = match (m.end_line, m.end_column) {
+                (Some(l), Some(c)) if l == m.line && c > m.column => c,
+                _ => m.column + 1,
+            };
+            out.push(RawFinding {
+                path: file.file_path.clone(),
+                range: RawRange::LineCol {
+                    line: m.line,
+                    col: m.column,
+                    end_col,
+                },
+                tool_id: rule,
+                message: m.message,
+                suppressed: None,
+                meta: RawMeta::default(),
+            });
+        }
+    }
+    tracing::debug!(count = out.len(), "eslint findings parsed");
+    Ok(out)
+}
+
+// frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
+/// The built-in rule for an eslint rule id, by plugin prefix; `None` falls through to `LINT001`.
+fn eslint_target(rule: &str) -> Option<&'static str> {
+    if rule.starts_with("jsx-a11y/") {
+        return Some("A11Y001");
+    }
+    if rule.starts_with("react-hooks/") || rule.starts_with("react/") {
+        return Some("REACT001");
+    }
+    match rule.strip_prefix("@typescript-eslint/")? {
+        "no-floating-promises" | "no-misused-promises" | "await-thenable" | "require-await" => {
+            Some("CONC001")
+        }
+        "no-explicit-any" => Some("TYPING001"),
+        name if name.starts_with("no-unsafe-") => Some("TYPING001"),
+        _ => None,
+    }
 }
 
 // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
@@ -436,6 +525,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
+        | ToolParser::EslintJson
         | ToolParser::None => BTreeMap::new(),
         // frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
         ToolParser::TyposJson => BTreeMap::from([("typo", "SPELL001")]),
@@ -449,7 +539,8 @@ fn fallback(parser: ToolParser) -> &'static str {
         ToolParser::CargoJson
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
-        | ToolParser::PyrightJson => "LINT001",
+        | ToolParser::PyrightJson
+        | ToolParser::EslintJson => "LINT001",
         _ => "TOOL002",
     }
 }
@@ -506,7 +597,7 @@ fn default_severity(rule: &str) -> Severity {
         "CI006" | "CI007" => Severity::Error,
         // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
         "CI001" | "CI003" | "CI014" | "DEAD001" | "ERR001" | "ERR003" | "CONC001" | "TESTQ001"
-        | "LOGIC001" => Severity::Warn,
+        | "LOGIC001" | "A11Y001" | "REACT001" | "TYPING001" => Severity::Warn,
         _ => Severity::Advisory,
     }
 }
@@ -549,6 +640,11 @@ pub(crate) fn classify(stage: &ToolStage, raw: &RawFinding) -> Option<(RuleId, S
         .or(match ruff {
             RuffRule::Maps(id) => Some(id),
             _ => None,
+        })
+        .or_else(|| {
+            (stage.parser == ToolParser::EslintJson)
+                .then(|| eslint_target(&raw.tool_id))
+                .flatten()
         })
         .or_else(|| {
             (stage.parser == ToolParser::CargoJson)
@@ -668,6 +764,7 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
+        | ToolParser::EslintJson
         | ToolParser::TyposJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
         ToolParser::Sarif | ToolParser::CargoJson | ToolParser::None => None,
@@ -681,6 +778,7 @@ mod tests {
     const ZIZMOR: &str = include_str!("../tests/fixtures/zizmor-json-v1.json");
     const ACTIONLINT: &str = include_str!("../tests/fixtures/actionlint.json");
     const RUFF: &str = include_str!("../tests/fixtures/ruff.json");
+    const ESLINT: &str = include_str!("../tests/fixtures/eslint.json");
 
     fn stage(parser: ToolParser) -> ToolStage {
         ToolStage {
@@ -992,6 +1090,62 @@ mod tests {
             Some("WCSS009".to_owned()),
             "a configured id_map entry wins"
         );
+    }
+
+    // frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
+    // frob:tests crates/gob-check/src/tool_parse.rs::parse_eslint
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
+    #[test]
+    fn eslint_output_parses_and_plugin_ids_map_to_families() {
+        let found = parse(ToolParser::EslintJson, ESLINT).expect("parse");
+        assert_eq!(
+            found.len(),
+            6,
+            "the parse error and the clean file add nothing"
+        );
+        assert_eq!(
+            found[0].range,
+            RawRange::LineCol {
+                line: 7,
+                col: 5,
+                end_col: 22
+            }
+        );
+        assert_eq!(
+            found[1].range,
+            RawRange::LineCol {
+                line: 12,
+                col: 3,
+                end_col: 4
+            },
+            "a multi-line message ends one column after its start"
+        );
+        let st = stage(ToolParser::EslintJson);
+        let got: Vec<(String, String, Severity)> = found
+            .iter()
+            .filter_map(|f| {
+                classify(&st, f).map(|(id, sev)| (f.tool_id.clone(), id.to_string(), sev))
+            })
+            .collect();
+        let want = [
+            ("jsx-a11y/alt-text", "A11Y001", Severity::Warn),
+            ("react-hooks/exhaustive-deps", "REACT001", Severity::Warn),
+            ("react/no-array-index-key", "REACT001", Severity::Warn),
+            (
+                "@typescript-eslint/no-floating-promises",
+                "CONC001",
+                Severity::Warn,
+            ),
+            (
+                "@typescript-eslint/no-explicit-any",
+                "TYPING001",
+                Severity::Warn,
+            ),
+            ("no-console", "LINT001", Severity::Advisory),
+        ];
+        assert_eq!(got, want.map(|(a, b, c)| (a.to_owned(), b.to_owned(), c)));
+        assert!(parse(ToolParser::EslintJson, "").expect("empty").is_empty());
+        assert!(parse(ToolParser::EslintJson, "not json").is_err());
     }
 
     // frob:tests crates/gob-check/src/tool_parse.rs::classify
