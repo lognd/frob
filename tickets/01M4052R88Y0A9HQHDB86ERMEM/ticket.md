@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-19T16:24:21Z"
+updated = "2026-10-19T16:24:22Z"
 idempotency_key = "m2-mirror2-gh-writes"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/github/write.rs"]
@@ -43,7 +43,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a write that fails with 5xx, when recorded, then it is marked failed with no effect assumed and retried next run"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.2 (serial writes, one second apart), 3.3 (never recreate) and 3.4 (additive endpoints).
