@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:42Z"
 updated = "2026-10-19T07:16:18Z"
 idempotency_key = "m2-mirror-gh-render"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/github/render.rs", "crates/frob-mirror/src/lib.rs"]
+scope = ["crates/frob-mirror/src/github/render.rs", "crates/frob-mirror/src/lib.rs", "crates/frob-mirror/src/github/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
