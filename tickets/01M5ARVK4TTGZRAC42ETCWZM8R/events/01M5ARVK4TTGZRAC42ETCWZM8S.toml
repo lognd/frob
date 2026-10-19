@@ -1,0 +1,9 @@
+kind = "create"
+title = "gen: regenerate stale docs/reference/rules/DOC001.md (GEN001 in gen all --check)"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["docs/reference/rules/DOC001.md"]
+at = "2026-10-19T19:05:18Z"
+actor = "lognd"
+rev = 1
