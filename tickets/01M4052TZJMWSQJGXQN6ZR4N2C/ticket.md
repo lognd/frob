@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-19T08:15:43Z"
+updated = "2026-10-19T08:17:08Z"
 idempotency_key = "m2-mirror2-neutralise"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/github/neutralise.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX83T22GTC94BW4PM742G1"
 
 [[acceptance]]
 text = "Given text with @user and @org/team, when rendered, then no mention can notify anyone"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given text with 'fixes #12' and 'owner/repo#5', when rendered, then neither closes or links an issue"
