@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a private fn reachable only through a May edge, when DEAD evaluates, then it reports Unresolved, not dead"
-bound = false
+bound = true
 +++
 
 The first model-free findings over the U graph: import cycles (CYCLE), oversized units by a knob (LARGE), unreferenced non-public units (DEAD with May edges respected: Unresolved when any Unknown edge could reach the unit).
