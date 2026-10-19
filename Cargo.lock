@@ -1094,6 +1094,7 @@ dependencies = [
  "frob-land",
  "frob-lease",
  "frob-ledger",
+ "frob-metrics",
  "frob-pm",
  "frob-release",
  "frob-tests",
@@ -1236,6 +1237,18 @@ dependencies = [
  "toml",
  "tracing",
  "ulid",
+]
+
+[[package]]
+name = "frob-metrics"
+version = "0.532.0"
+dependencies = [
+ "frob-ledger",
+ "frob-pm",
+ "schemars",
+ "serde",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]

@@ -18,7 +18,6 @@
 | `cycle plan` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Propose filling a cycle from ready work in rank order, preferring the next milestone, never past capacity; `--apply` assigns. |
 | `cycle show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one cycle (default: the current one) with its members, carried work, ratio and retro. |
 | `cycle unassign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Take a ticket out of a cycle; idempotent when it was not a member. |
-| `cycle velocity` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show points delivered per closed cycle, the rolling mean and standard deviation, and the capacity `cycle assign` would use. |
 | `doctor` | yes | no | 0 ok, 3 refused | Report toolchain, git, cache, config and ledger health; never fails on findings. |
 | `graph affects` | yes | no | 0 ok, 2 usage, 4 internal | List the transitive dependents of a symbol, grouped by file. |
 | `graph why` | yes | no | 0 ok, 2 usage, 4 internal | Explain the bindings and acks that make a finding fire for a symbol. |
@@ -49,6 +48,7 @@
 | `rule fmt` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Rewrite rule files to the canonical layout; `--check` only reports and exits 1 on a difference. |
 | `rule new` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold `rules/ID.grl` from the code at `FILE:LINE`; `--print` shows it without writing. |
 | `rule test` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run the examples of rule files; exits 1 when any example fails. |
+| `stats` | yes | no | 0 ok, 2 usage, 3 refused, 4 internal | Show velocity, capacity, points remaining, throughput, cycle and lead times and cost per point; a figure with too little history is Unresolved with its sample count. |
 | `test` | no | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run only the tests that reach the files changed against a base, and record the evidence. |
 | `ticket branch init` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create the orphan `[tickets] branch` with a README placeholder through gob-git compare-and-swap, leaving the code checkout alone. |
 | `ticket close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a ticket with an outcome once every close guard passes; repeating is a no-op. |

@@ -197,8 +197,8 @@ fn every_deprecated_alias_names_a_registered_verb() {
         .filter(|m| m.deprecated.is_some())
         .count();
     assert_eq!(
-        aliases, 4,
-        "the four D104 aliases are registered through the attribute"
+        aliases, 5,
+        "the four D104 aliases and `cycle velocity` are registered through the attribute"
     );
 }
 

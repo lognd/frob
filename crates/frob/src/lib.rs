@@ -27,6 +27,7 @@ pub mod profile;
 pub mod profile_cmd;
 pub mod release_cmd;
 pub mod rule_cmd;
+pub mod stats_cmd;
 pub mod ticket;
 pub mod tour_cmd;
 pub mod trust_cmd;

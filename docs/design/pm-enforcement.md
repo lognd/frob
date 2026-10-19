@@ -151,8 +151,14 @@ Milestone 2 or later (D36).
   closed cycle's recorded ratio event is preferred over recomputing.
   Work finished in the window but never assigned to the cycle is
   reported separately as `unplanned_done` and never enters the ratio,
-  the mean or capacity. `frob cycle velocity [--last N]` prints the
-  last N cycles, the rolling mean, and the standard deviation.
+  the mean or capacity. `frob stats --section velocity [--last N]` prints the
+  last N cycles, the rolling mean, and the standard deviation
+  (`frob cycle velocity` remains as a hidden deprecated alias with the
+  same numbers). `frob stats` (crate `frob-metrics`, pure functions over
+  the fold) also reports points remaining by milestone and epic,
+  throughput, cycle and lead time percentiles, and cost per point
+  (a log-normal fit per cost unit); below `[pm] min_history` samples
+  every figure is `unresolved` with the sample count.
   Carry-over leaves the cycle at close, so it counts in the completing
   cycle only.
 - `frob cycle assign <ticket> <cycle>` refuses when committed points
