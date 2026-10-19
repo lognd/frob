@@ -2,7 +2,8 @@
 id = "01M48Q4CHCFKJ9SSTVT471060B"
 title = "gob-mdtest: outcome classes unresolved and notapplicable, subject accounting, certified clean"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
