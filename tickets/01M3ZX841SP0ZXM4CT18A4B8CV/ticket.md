@@ -2,7 +2,8 @@
 id = "01M3ZX841SP0ZXM4CT18A4B8CV"
 title = "Outbox: ledger-driven work from unpublished events, idempotent set-to-value operations, full resync"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
