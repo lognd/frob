@@ -2,7 +2,8 @@
 id = "01M5B07S0STANADP897P4A6YB2"
 title = "Mirror: replace the curl-subprocess HTTP transport with a native HttpTransport"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
