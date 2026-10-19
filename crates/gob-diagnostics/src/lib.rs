@@ -17,7 +17,7 @@ mod text;
 
 pub use command::{RemedyCommand, RemedyFlag};
 pub use envelope::{Envelope, EnvelopeError, SCHEMA_VERSION, envelope_schema, render_json};
-pub use escape::{escape_line, escape_non_ascii, escape_text, is_dangerous};
+pub use escape::{escape_for_origin, escape_line, escape_non_ascii, escape_text, is_dangerous};
 pub use exit::{ExitCode, fail_on};
 pub use gob_rules::RequiredReason;
 pub use record::{EditRecord, FindingRecord, FixRecord, TextOrigin};

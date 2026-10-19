@@ -55,7 +55,9 @@ error[SYS003]: unit claimed by two bindings that disagree
 Security rules for all rendered text (security.md 2.10, D82): every
 text field carries an `origin` (`host`, `std`, `pack:NAME`, `source`,
 `tracker`, `ledger`) and non-host text is labelled; controls, bidi and
-invisible characters are always escaped; `remedy`, `help` and fix
+invisible characters are always escaped, and text from packs, the
+tracker and the ledger also has other non-ASCII escaped as `\u{..}`
+(`escape_for_origin`; source snippets are shown as is); `remedy`, `help` and fix
 commands come only from host templates; first-occurrence teaching
 applies to std rules only; plugin fixes are at most `maybe-incorrect`
 unless the pack holds `fix.machine`, and never touch the control plane.
