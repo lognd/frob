@@ -2,7 +2,8 @@
 id = "01M4052R0DZK01W7K8EE77637T"
 title = "GitHub reads: issue state, history after an event id, creation revision of the body"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
