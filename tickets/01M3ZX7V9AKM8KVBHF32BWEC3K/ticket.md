@@ -2,7 +2,8 @@
 id = "01M3ZX7V9AKM8KVBHF32BWEC3K"
 title = "trust --follow: trust pairs reachable on a fetched protected branch"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
