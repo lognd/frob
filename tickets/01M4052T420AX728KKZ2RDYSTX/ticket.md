@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-19T15:49:20Z"
+updated = "2026-10-19T16:09:26Z"
 idempotency_key = "m2-mirror2-proposal-record"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/proposals.rs", "crates/frob-mirror/Cargo.toml", "crates/frob-mirror/src/lib.rs", "Cargo.lock", "docs/design/mirror.md"]
@@ -31,7 +31,7 @@ target = "01M4052SZYWSD45GEYNTTTJMDB"
 
 [[acceptance]]
 text = "Given an edit read twice after a crash, when recorded, then one proposal exists keyed by its tracker event id, and an accepted or declined one never returns"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a 5000-character edited value, when recorded, then the excerpt is 200 characters, escaped, origin tracker, and the digest covers the full value"
