@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F3), [`PythonAdapter`] (F2), [`CSharpAdapter`] (F1), [`TypeScriptAdapter`] (F2), [`CssAdapter`] (F2), [`HtmlAdapter`] (F2), [`MarkdownAdapter`] (F4) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.

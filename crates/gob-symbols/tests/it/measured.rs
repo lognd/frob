@@ -143,40 +143,8 @@ fn measure(files: &[(String, String)]) -> Evidence {
 }
 
 /// Declared-vs-measured disagreements that predate this gate: (language, declared, measured, ticket).
-/// A pin holds only while both levels stay exactly as recorded, so any change in either the
-/// declaration or the corpus fails until the pin is removed (the list may only shrink).
-const PINNED: [(&str, Fidelity, Fidelity, &str); 5] = [
-    (
-        "rust",
-        Fidelity::F3,
-        Fidelity::F4,
-        "frob:todo 01M5AXCG27BAJ1AYYTFD5C71VK",
-    ),
-    (
-        "markdown",
-        Fidelity::F4,
-        Fidelity::F3,
-        "frob:todo 01M5AXCG27BAJ1AYYTFD5C71VK",
-    ),
-    (
-        "python",
-        Fidelity::F2,
-        Fidelity::F3,
-        "frob:todo 01M5AXCG27BAJ1AYYTFD5C71VK",
-    ),
-    (
-        "typescript",
-        Fidelity::F2,
-        Fidelity::F3,
-        "frob:todo 01M5AXCG27BAJ1AYYTFD5C71VK",
-    ),
-    (
-        "html",
-        Fidelity::F2,
-        Fidelity::F0,
-        "frob:todo 01M5AXCG27BAJ1AYYTFD5C71VK",
-    ),
-];
+/// A pin holds only while both levels stay exactly as recorded; the list may only shrink.
+const PINNED: [(&str, Fidelity, Fidelity, &str); 0] = [];
 
 /// Errs when `declared` differs from `measured` in either direction, unless pinned exactly.
 fn check_declared(lang: &str, declared: Fidelity, measured: Fidelity) -> Result<(), String> {
@@ -224,8 +192,9 @@ fn demoting_below_the_measured_level_fails_too() {
 
 #[test]
 fn a_pin_that_no_longer_matches_fails() {
+    // A pin only holds at its exact levels: with none left, any divergence errs.
     assert!(check_declared("html", Fidelity::F3, Fidelity::F0).is_err());
-    assert!(check_declared("html", Fidelity::F2, Fidelity::F2).is_err());
+    assert!(check_declared("html", Fidelity::F2, Fidelity::F0).is_err());
 }
 
 #[test]

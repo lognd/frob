@@ -591,7 +591,7 @@ fn javascript_dialects_use_the_same_adapter() {
         "function f() { return g(); }\nfunction g() {}\nmodule.exports = { f, g };\n",
     );
     assert_eq!(js.language, "typescript");
-    assert_eq!(js.fidelity, gob_symbols::Fidelity::F2);
+    assert_eq!(js.fidelity, gob_symbols::Fidelity::F3);
     assert!(js.parse_status.is_complete());
     assert!(
         js.symbols

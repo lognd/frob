@@ -401,7 +401,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let scopes = ScopeGraph::from_term(&term);
     let v = view::build(&term, input.path, Naming::Python);
     let mut file = base_file(input, "python");
-    file.fidelity = Fidelity::F2;
+    file.fidelity = gob_caps::lang_fidelity(Lang::Python);
     file.parse_status = view::parse_status_of(&term);
     let symref_of = |ord: usize| -> Option<Symref> {
         ord_nodes

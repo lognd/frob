@@ -1,5 +1,5 @@
 ---
-source: crates/gob-symbols/tests/corpus.rs
+source: crates/gob-symbols/tests/it/corpus.rs
 expression: out
 ---
 == term ==
@@ -43,7 +43,7 @@ R0 S11 must D12
 R1 S13 must D15
 
 == file ==
-fidelity F3 status Complete
+fidelity F4 status Complete
 == symbols ==
 tests/corpus/rust/ops/unit.rs::shapes Module Public parent=
 tests/corpus/rust/ops/unit.rs::shapes.Point Struct Public parent=tests/corpus/rust/ops/unit.rs::shapes

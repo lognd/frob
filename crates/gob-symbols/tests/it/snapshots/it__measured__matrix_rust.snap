@@ -2,7 +2,7 @@
 source: crates/gob-symbols/tests/it/measured.rs
 expression: matrix_of(a)
 ---
-rust F3
+rust F4
 resolve_ref Implemented lexical+imports
 apply_targets Implemented by-name-in-crate (May)
 visibility Implemented keyword

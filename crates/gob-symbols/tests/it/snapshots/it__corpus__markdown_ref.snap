@@ -1,5 +1,5 @@
 ---
-source: crates/gob-symbols/tests/corpus.rs
+source: crates/gob-symbols/tests/it/corpus.rs
 expression: out
 ---
 == term ==
@@ -18,7 +18,7 @@ R3 S3 unknown "#links"
 R4 S3 unknown "docs/guide.md"
 
 == file ==
-fidelity F4 status Complete
+fidelity F3 status Complete
 == symbols ==
 tests/corpus/markdown/ops/ref.md#links Heading Public parent=
 tests/corpus/markdown/ops/ref.md#setup Heading Public parent=tests/corpus/markdown/ops/ref.md#links

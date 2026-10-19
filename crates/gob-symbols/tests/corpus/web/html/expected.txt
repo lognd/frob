@@ -1,5 +1,5 @@
 == web/html/index.html ==
-language html fidelity F2 status Complete digest 098e20640ad058c04b5bc7037a1dffda08fa1221d9c774efc5cacddf3d490948
+language html fidelity F0 status Complete digest 098e20640ad058c04b5bc7037a1dffda08fa1221d9c774efc5cacddf3d490948
 -- symbols --
 -- edges --
 -- markup --
