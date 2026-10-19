@@ -60,6 +60,15 @@ this phase; it detects them and reports them.
 The field mapping is configuration (`[mirror.<tracker>]`), materialized,
 versioned, and checked at load against the tracker's live schema.
 
+The mapping is `frob_mirror::config::MappingConfig` (a `version` and one
+route per field: `label` with a prefix, `field`, `issue_type`, `state` or
+`drop`), validated by `frob_mirror::mapping::Mapping::load`. Every
+mappable projection field (`ticket_type`, `labels`, `priority`,
+`points`, `milestone`, `epic`, `category`, `outcome`, `owner`,
+`assignee`) must be routed or dropped; a missing one is a config error
+naming the field. `Mapping::apply` turns a projection into `PlannedOps`
+(labels, custom fields, issue type, state inputs).
+
 ### 2.1 The producer is platform agnostic: the issue projection
 
 GitHub Issues comes first, but nothing GitHub-specific lives above the

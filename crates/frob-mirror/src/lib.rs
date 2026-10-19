@@ -4,11 +4,13 @@
 pub mod adapter;
 pub mod blind;
 pub mod budget;
+pub mod config;
 pub mod github;
 pub mod journal;
 pub mod keyring;
 pub mod lock;
 pub mod mapfile;
+pub mod mapping;
 pub mod plan;
 pub mod progress;
 pub mod projection;
