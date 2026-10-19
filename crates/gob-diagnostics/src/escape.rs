@@ -7,6 +7,8 @@
 use std::borrow::Cow;
 use std::fmt::Write as _;
 
+use crate::record::TextOrigin;
+
 /// True for characters that render as nothing or reorder neighbours: bidi controls, zero-width and format characters.
 fn is_invisible(c: char) -> bool {
     matches!(u32::from(c),
@@ -50,6 +52,23 @@ pub fn escape_text(text: &str) -> Cow<'_, str> {
     }
     tracing::debug!("dangerous characters escaped in rendered text");
     Cow::Owned(out)
+}
+
+// frob:ticket 01M3ZX7Z8X5KAY28W5761CRGKF
+
+/// Escape `text` by who wrote it (security.md 2.10): pack, tracker and ledger text also loses other non-ASCII.
+///
+/// Source snippets and host/std text keep letters such as `\u{e9}` as they are; controls, bidi and invisibles
+/// are escaped for every origin.
+pub fn escape_for_origin<'a>(text: &'a str, origin: &TextOrigin) -> Cow<'a, str> {
+    let base = escape_text(text);
+    match origin {
+        TextOrigin::Pack(_) | TextOrigin::Tracker | TextOrigin::Ledger if !base.is_ascii() => {
+            tracing::debug!(origin = %origin.label(), "non-ASCII escaped by origin");
+            Cow::Owned(escape_non_ascii(&base))
+        }
+        _ => base,
+    }
 }
 
 /// Escape `text` for one line of output: newline becomes `\n`; controls and every non-ASCII character become `\u{..}`.
@@ -169,6 +188,23 @@ mod tests {
         assert_eq!(escape_line("a\nb\u{1b}[31m"), "a\\nb\\u{1b}[31m");
         assert_eq!(escape_line("x\u{202e}y\u{e9}"), "x\\u{202e}y\\u{e9}");
         assert!(escape_line("\u{202e}\u{7}\u{85}").is_ascii());
+    }
+
+    // frob:tests escape_for_origin
+    #[test]
+    fn pack_tracker_ledger_text_escapes_accents_but_source_does_not() {
+        for o in [
+            TextOrigin::Pack("p".into()),
+            TextOrigin::Tracker,
+            TextOrigin::Ledger,
+        ] {
+            assert_eq!(escape_for_origin("caf\u{e9}\nx", &o), "caf\\u{e9}\nx");
+            assert_eq!(escape_for_origin("a\u{1b}", &o), "a\\u{1b}");
+        }
+        for o in [TextOrigin::Source, TextOrigin::Host, TextOrigin::Std] {
+            assert_eq!(escape_for_origin("caf\u{e9}", &o), "caf\u{e9}");
+            assert_eq!(escape_for_origin("a\u{202e}", &o), "a\\u{202e}");
+        }
     }
 
     proptest! {

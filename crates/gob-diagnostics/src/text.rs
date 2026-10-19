@@ -9,7 +9,7 @@ use anstyle::{AnsiColor, Style};
 use gob_rules::{Applicability, Finding, Fix, Registry, Severity, TextEdit, UnresolvedReason};
 use gob_text::{TextSize, render_snippet};
 
-use crate::escape::escape_text;
+use crate::escape::{escape_for_origin, escape_text};
 use crate::record::TextOrigin;
 use crate::source::SourceProvider;
 
@@ -147,7 +147,7 @@ fn write_finding(
         severity_label(f.severity),
         f.rule,
         origin_prefix(&origin),
-        escape_text(&f.message)
+        escape_for_origin(&f.message, &origin)
     );
     if opts.snippets
         && let Some(sp) = f.span
@@ -182,7 +182,7 @@ fn origin_prefix(origin: &TextOrigin) -> String {
     match origin {
         TextOrigin::Pack(name) => {
             tracing::debug!(pack = %name, "labeling pack-authored message");
-            format!("pack({}) says: ", escape_text(name))
+            format!("pack({}) says: ", escape_for_origin(name, origin))
         }
         _ => String::new(),
     }
