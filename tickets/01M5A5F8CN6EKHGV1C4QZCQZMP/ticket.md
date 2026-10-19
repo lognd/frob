@@ -2,7 +2,8 @@
 id = "01M5A5F8CN6EKHGV1C4QZCQZMP"
 title = "grimble shrink verb: wire shrink::plan (dry-run default, --apply), owns proposals, excuse prompt"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
