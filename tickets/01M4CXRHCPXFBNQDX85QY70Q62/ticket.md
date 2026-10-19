@@ -9,7 +9,7 @@ parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:48Z"
 updated = "2026-10-19T10:18:16Z"
-scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-rules/**"]
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-rules/**", "crates/crunk-ingest/**"]
 
 [[links]]
 kind = "blocked-by"
