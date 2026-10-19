@@ -8,7 +8,7 @@ points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-19T09:45:17Z"
+updated = "2026-10-19T09:51:38Z"
 idempotency_key = "m2-caps"
 labels = ["milestone:2"]
 scope = ["crates/grimble-capabilities/**", "crates/gob-ir/**"]
@@ -31,7 +31,7 @@ target = "01M3ZX7JRYNHG0BHJ3ZHC9450N"
 
 [[acceptance]]
 text = "Given a node in a language with no detector for atom net, when the matrix is built, then the cell is unknown and the summary carries one Unresolved for the node"
-bound = false
+bound = true
 +++
 
 grimble-model.md 9.6: cells uses, undeclared, declared-unused, excused, unknown, not-applicable; detector registry per atom and language; CAP001 undeclared Error, CAP002 declared-unused Warn, CAP003 unexcused Advisory for one release; unknown reported as Unresolved once per node.
