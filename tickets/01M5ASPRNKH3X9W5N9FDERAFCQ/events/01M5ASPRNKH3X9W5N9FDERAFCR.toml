@@ -1,0 +1,10 @@
+kind = "create"
+title = "Mirror: ticket-branch ShardStore implementing frob_mirror::mapfile::ShardStore with CAS"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-mirror/src/shardstore.rs"]
+body = "No concrete ShardStore exists (only test Mem impls). Needed by the mirror recreate verb (~1KH6CCV) and push."
+at = "2026-10-19T19:20:09Z"
+actor = "lognd"
+rev = 1
