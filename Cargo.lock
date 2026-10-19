@@ -2350,6 +2350,7 @@ dependencies = [
  "gob-diagnostics",
  "gob-exec",
  "gob-fs",
+ "gob-git",
  "gob-languages",
  "gob-lock",
  "gob-rules",

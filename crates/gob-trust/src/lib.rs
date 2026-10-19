@@ -24,6 +24,7 @@
     clippy::disallowed_methods,
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
+pub mod baseref;
 pub mod effects;
 mod error;
 // frob:ticket 01M3ZX7TR7HMSXPCQSHFSG8SMS

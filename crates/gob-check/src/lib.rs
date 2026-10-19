@@ -78,6 +78,7 @@ mod tool_def;
 mod tool_key;
 mod tool_parse;
 mod tools;
+pub mod trust_from;
 mod type_parse;
 
 pub use config::{CheckTable, FailOn, PerfTable, ToolParser, ToolStage, ToolTier, TypesTable};

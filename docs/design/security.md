@@ -121,6 +121,9 @@ frob, grimble and crunk.
   with no effects and no privileges; its affected rules report
   Unresolved `untrusted-in-change`, which is required in CI. There is no
   other CI trust flag, and CI never reads or writes a user store.
+  Implemented in `gob_trust::baseref` (pure decision over the lock text) and
+  `gob_check::trust_from` (reads the lock blob at the ref via gob-git, maps an
+  untrusted required pack to `RequiredReason::UntrustedInChange`, fails the gate).
 - **Follow a protected branch locally, as a ceremony** (TUX-01 to
   TUX-03, TUX-06, TUX-18). `trust --follow` is a one-time review, not a
   blanket grant: it records the full refname, the remote URL and the
