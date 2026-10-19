@@ -8,7 +8,7 @@ points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:01Z"
-updated = "2026-10-19T15:55:51Z"
+updated = "2026-10-19T16:01:05Z"
 scope = ["crates/gob-check/**", "crates/frob-check/**", "docs/reference/fidelity.md"]
 
 [[links]]
