@@ -2,7 +2,8 @@
 id = "01M3ZX7ZD77ZW385N5B992NX3A"
 title = "explain RULE: the full rule page offline, with a pager on a TTY"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
