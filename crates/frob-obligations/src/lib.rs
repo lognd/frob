@@ -19,6 +19,7 @@
 //! | `EXC003` | Error | repo | a defer names a done or dropped ticket |
 //! | `EXC005` | Warn | repo | an accept is unattested or its symbol changed since `frob ack` |
 //! | `EXC007` | Error | repo | a defer names a ticket that does not exist |
+//! | `MIR001` | Advisory | repo | no successful mirror run for N hours, or a recorded per-scope reason ([`mir001`]) |
 //! | `EXC014` | Error | repo | a defer's `until` day has passed (the finding stands again) |
 //! | `EXC016` | Error | repo | an accept names a rule at an Unresolved finding (it does not park it) |
 //! | `EXC017` | Warn | repo | a native suppression of a tool-bound rule has no frob exception |
@@ -74,6 +75,7 @@ mod exc;
 mod host;
 mod inv;
 mod legacy;
+mod mir;
 mod native;
 mod refs;
 pub mod rules;
@@ -101,6 +103,7 @@ pub use host::ObligationHost;
 pub use legacy::{
     Cov001, Doc001, Doc002, Exc014, Exc016, Exc017, Ref001, Tick006, Todo001, Todo002,
 };
+pub use mir::{Mir001Reason, MirrorRunState, ScopeReason, mir001};
 pub use native::tool_bound_ids;
 pub use refs::unsettled_ticket_refs;
 pub use rules::cov003::Cov003;

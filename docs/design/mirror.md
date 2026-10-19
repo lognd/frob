@@ -160,6 +160,13 @@ and in `frob mirror status`.
 - MIR001 is time-based: "no successful run for N hours" (scheduled runs
   are delayed, dropped, and disabled after inactivity), plus the
   per-scope reasons below.
+  Implemented in `crates/frob-obligations/src/mir.rs`: `mir001` takes the
+  recorded `MirrorRunState` (last successful run, per-scope reasons), the
+  clock and N, and returns Advisory findings only: one when the last
+  success is older than N hours or absent (stating the age), one per
+  reason (`rate-limited` with the next window, `budget-too-small`,
+  `token-blind`, `marker-key-unknown`, `render-limit`,
+  `write-not-sticking`). A fresh success with no reasons emits nothing.
 
 ### 3.2 What a run looks at: feed, sweep and budget (MIR-AUD-02, 10, 27, 33; F8)
 
