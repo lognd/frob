@@ -2,12 +2,12 @@
 id = "01M5A5F8CN6EKHGV1C4QZCQZMP"
 title = "grimble shrink verb: wire shrink::plan (dry-run default, --apply), owns proposals, excuse prompt"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T13:26:31Z"
-updated = "2026-10-19T13:48:20Z"
+updated = "2026-10-19T13:48:21Z"
 labels = ["milestone:2"]
 scope = ["crates/grimble/**"]
 
