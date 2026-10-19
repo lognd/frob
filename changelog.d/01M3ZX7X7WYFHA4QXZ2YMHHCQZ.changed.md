@@ -1,0 +1,1 @@
+Added `gob_check::base_unknowns::new_unknowns`, the comparison behind `check --base` failing on a new Unresolved for a P+ rule in a changed file (security.md 2.7); Unresolved that existed at base stay non-failing.
