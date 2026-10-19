@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:25Z"
 updated = "2026-10-19T06:45:55Z"
 idempotency_key = "m2-packs-hooks"
 labels = ["milestone:2", "area:packs"]
-scope = ["crates/gob-packs/src/hooks/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/hooks.rs"]
+scope = ["crates/gob-packs/src/hooks/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/hooks.rs", "docs/design/plugins.md"]
 
 [[links]]
 kind = "blocked-by"
