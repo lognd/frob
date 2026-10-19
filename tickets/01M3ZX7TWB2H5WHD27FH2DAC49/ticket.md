@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:33Z"
 updated = "2026-10-19T18:23:34Z"
 idempotency_key = "m2-sec-cache-relocate"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-cache/src/**", "crates/gob-cache/Cargo.toml", "crates/gob-cache/tests/**"]
+scope = ["crates/gob-cache/src/**", "crates/gob-cache/Cargo.toml", "crates/gob-cache/tests/**", "docs/design/architecture.md"]
 
 [[links]]
 kind = "blocked-by"
