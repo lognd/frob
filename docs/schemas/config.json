@@ -768,6 +768,14 @@
       "additionalProperties": false,
       "description": "How `frob test` and the `pytest` provider find the Python interpreter (`[tests]`).",
       "properties": {
+        "non_passing_counts": {
+          "default": [],
+          "description": "Non-passing pytest outcomes (`skipped`, `xfailed`, `xpassed`) that count as executed tests and so may satisfy evidence; empty (the default) lets none, and they are counted apart either way.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "python": {
           "default": "",
           "description": "Interpreter that runs `-m pytest` (a name on `PATH` or a path, relative ones from the repository root); empty uses `.venv` in the repository root when it has one, else `pytest` on `PATH`.",
