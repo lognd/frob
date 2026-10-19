@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:36Z"
 updated = "2026-10-19T05:56:50Z"
 idempotency_key = "m2-sec-policy-snapshot"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-trust/src/policy/**", "crates/gob-trust/Cargo.toml"]
+scope = ["crates/gob-trust/src/policy/**", "crates/gob-trust/Cargo.toml", "crates/gob-trust/tests/policy.rs"]
 
 [[links]]
 kind = "blocked-by"
