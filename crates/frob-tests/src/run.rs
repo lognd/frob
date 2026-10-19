@@ -747,6 +747,7 @@ mod tests {
                 } else {
                     vec![test.to_owned()]
                 },
+                non_passing: frob_evidence::NonPassing::default(),
                 transcript: String::new(),
             },
         };

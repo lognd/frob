@@ -34,8 +34,29 @@ pub struct Capture {
     pub tests: Vec<String>,
     /// Names of the tests that failed, timed out or crashed (a subset of `tests`).
     pub failed_tests: Vec<String>,
+    /// Outcomes that executed without passing or failing (skip, xfail, xpass); never in `tests`.
+    pub non_passing: NonPassing,
     /// The redacted transcript.
     pub transcript: String,
+}
+
+// frob:ticket 01M1T07NW78MGWRF7HZQMPSRAV
+/// Test outcomes that are neither a pass nor a failure; counted apart, and never evidence that a test passed.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct NonPassing {
+    /// Tests that were skipped (not executed).
+    pub skipped: Vec<String>,
+    /// Tests that failed as expected (`xfail`).
+    pub xfailed: Vec<String>,
+    /// Tests marked `xfail` that passed anyway (`XPASS`, non-strict).
+    pub xpassed: Vec<String>,
+}
+
+impl NonPassing {
+    /// The total number of non-passing outcomes across the three kinds.
+    pub fn count(&self) -> usize {
+        self.skipped.len() + self.xfailed.len() + self.xpassed.len()
+    }
 }
 
 // frob:ticket 01M40P6CWYKN4V9HEBRXR3342F
@@ -122,6 +143,8 @@ pub struct Parsed {
     pub tests: Vec<String>,
     /// Names of the tests that failed, timed out or crashed.
     pub failed: Vec<String>,
+    /// Skip, xfail and xpass outcomes, kept out of `tests` so they never satisfy evidence.
+    pub non_passing: NonPassing,
 }
 
 impl Parsed {
@@ -321,6 +344,7 @@ pub fn run_nextest_with_env(
         measured,
         tests: seen.tests,
         failed_tests: seen.failed,
+        non_passing: NonPassing::default(),
         transcript,
     })
 }
@@ -454,6 +478,15 @@ pub fn parse_junit_under(xml: &str, prefix: &str) -> Parsed {
         };
         rest = next;
         if body.contains("<skipped") {
+            let id = node_id(tag, prefix);
+            // pytest writes xfail as a skipped child typed `pytest.xfail`.
+            if body.contains("pytest.xfail") {
+                tracing::info!(test = %id, "xfail is not evidence: counted apart");
+                parsed.non_passing.xfailed.push(id);
+            } else {
+                tracing::info!(test = %id, "skip is not evidence: counted apart");
+                parsed.non_passing.skipped.push(id);
+            }
             continue;
         }
         let failed = body.contains("<failure") || body.contains("<error");
@@ -620,6 +653,7 @@ pub fn run_pytest(
     full.extend([
         "-o".to_owned(),
         "junit_family=xunit1".to_owned(),
+        "-rX".to_owned(),
         format!("--junitxml={}", junit.display()),
     ]);
     full.extend(args.iter().cloned());
@@ -632,7 +666,8 @@ pub fn run_pytest(
     }
     let out = out?;
     let prefix = rootdir_prefix(&out.stdout, cwd);
-    let seen = parse_junit_under(&xml, &prefix);
+    let mut seen = parse_junit_under(&xml, &prefix);
+    demote_xpass(&mut seen, &out.stdout, &prefix);
     let mut transcript = out.stdout;
     transcript.push_str(&out.stderr);
     let (exit_code, measured) = exit_of(out.status);
@@ -645,6 +680,7 @@ pub fn run_pytest(
         passed,
         tests = seen.tests.len(),
         failed = ?seen.failed,
+        non_passing = seen.non_passing.count(),
         "pytest captured"
     );
     Ok(Capture {
@@ -653,8 +689,29 @@ pub fn run_pytest(
         measured,
         tests: seen.tests,
         failed_tests: seen.failed,
+        non_passing: seen.non_passing,
         transcript,
     })
+}
+
+// frob:ticket 01M1T07NW78MGWRF7HZQMPSRAV
+/// Move every test pytest reported `XPASS` (the `-rX` summary) from `seen.tests` to `seen.non_passing.xpassed`.
+///
+/// junit writes a non-strict xpass as a plain passing testcase, so only the transcript tells it apart.
+fn demote_xpass(seen: &mut Parsed, stdout: &str, prefix: &str) {
+    for id in stdout.lines().filter_map(|l| l.strip_prefix("XPASS ")) {
+        let id = id.split(" - ").next().unwrap_or(id).trim();
+        let id = if prefix.is_empty() {
+            id.to_owned()
+        } else {
+            format!("{prefix}/{id}")
+        };
+        if let Some(at) = seen.tests.iter().position(|t| *t == id) {
+            seen.tests.remove(at);
+            tracing::info!(test = %id, "xpass is not evidence: counted apart");
+            seen.non_passing.xpassed.push(id);
+        }
+    }
 }
 
 /// True when a pytest run collected no test (pytest exits 5), which is no measurement rather than a failure.
@@ -869,6 +926,7 @@ pub fn run_js_tests(runner: &Runner, job: &JsRun<'_>) -> Result<Capture> {
         measured,
         tests: seen.tests,
         failed_tests: seen.failed,
+        non_passing: NonPassing::default(),
         transcript,
     })
 }
@@ -923,6 +981,7 @@ pub fn run_command(
         measured,
         tests: Vec::new(),
         failed_tests: Vec::new(),
+        non_passing: NonPassing::default(),
         transcript,
     })
 }
@@ -1334,6 +1393,7 @@ pub fn run_dotnet(runner: &Runner, job: &DotnetRun<'_>) -> Result<Capture> {
         measured,
         tests: trx.parsed.tests,
         failed_tests: trx.parsed.failed,
+        non_passing: NonPassing::default(),
         transcript,
     })
 }
@@ -1785,6 +1845,7 @@ pub fn run_unity(runner: &Runner, job: &UnityTestRun<'_>, timeout: Duration) -> 
         measured,
         tests: nunit.parsed.tests,
         failed_tests: nunit.parsed.failed,
+        non_passing: NonPassing::default(),
         transcript,
     })
 }
@@ -2028,6 +2089,7 @@ mod tests {
             measured: true,
             tests: Vec::new(),
             failed_tests: Vec::new(),
+            non_passing: NonPassing::default(),
             transcript: text.to_owned(),
         };
         assert!(matched_no_tests(&cap(4, "")));
@@ -2102,6 +2164,28 @@ mod tests {
     }
 
     #[test]
+    // frob:ticket 01M1T07NW78MGWRF7HZQMPSRAV
+    fn skip_xfail_and_xpass_never_satisfy_evidence_and_are_counted_apart() {
+        // frob:tests crates/frob-evidence/src/provider.rs::parse_junit
+        let xml = concat!(
+            "<testsuite>",
+            "<testcase classname=\"t.m\" name=\"a\" file=\"t/m.py\" />",
+            "<testcase classname=\"t.m\" name=\"s\" file=\"t/m.py\"><skipped type=\"pytest.skip\" message=\"m\">x</skipped></testcase>",
+            "<testcase classname=\"t.m\" name=\"x\" file=\"t/m.py\"><skipped type=\"pytest.xfail\" message=\"m\">x</skipped></testcase>",
+            "<testcase classname=\"t.m\" name=\"p\" file=\"t/m.py\" />",
+            "</testsuite>",
+        );
+        let mut parsed = parse_junit(xml);
+        assert_eq!(parsed.tests, ["t/m.py::a", "t/m.py::p"]);
+        assert_eq!(parsed.non_passing.skipped, ["t/m.py::s"]);
+        assert_eq!(parsed.non_passing.xfailed, ["t/m.py::x"]);
+        demote_xpass(&mut parsed, "XPASS t/m.py::p - why\n", "");
+        assert_eq!(parsed.tests, ["t/m.py::a"]);
+        assert_eq!(parsed.non_passing.xpassed, ["t/m.py::p"]);
+        assert_eq!(parsed.non_passing.count(), 3);
+    }
+
+    #[test]
     // frob:ticket 01M44J072TEWFTCB1AFVTN9C8B
     fn junit_windows_file_separators_give_portable_node_ids() {
         let xml = concat!(
@@ -2169,6 +2253,7 @@ mod tests {
             measured: true,
             tests: Vec::new(),
             failed_tests: Vec::new(),
+            non_passing: NonPassing::default(),
             transcript: String::new(),
         };
         assert!(pytest_matched_no_tests(&cap(5)));
