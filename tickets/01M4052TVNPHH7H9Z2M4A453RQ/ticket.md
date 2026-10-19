@@ -2,7 +2,8 @@
 id = "01M4052TVNPHH7H9Z2M4A453RQ"
 title = "Render limits and per-ticket isolation"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
