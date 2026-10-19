@@ -7,8 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T18:58:04Z"
-updated = "2026-10-19T19:19:33Z"
+updated = "2026-10-19T19:20:25Z"
 scope = ["crates/frob/src/mirror_recreate_cmd.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M5ASPRNKH3X9W5N9FDERAFCQ"
 +++
 
 Core recreate() exists (~3YZEJ9X); needs the clap verb, store and adapter construction once the ticket-branch ShardStore and real adapter exist.
