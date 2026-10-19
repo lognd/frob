@@ -2,7 +2,8 @@
 id = "01M4052QWSEERAG3JPCGXM4RK4"
 title = "GitHub lookup: list the bot's issues by creator newest first (read-your-writes)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
