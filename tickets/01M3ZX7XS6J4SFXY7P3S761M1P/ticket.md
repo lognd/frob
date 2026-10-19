@@ -2,13 +2,13 @@
 id = "01M3ZX7XS6J4SFXY7P3S761M1P"
 title = "Summary separates plugin-unfinished from undecidable and counts security decisions"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:36Z"
-updated = "2026-10-03T03:34:36Z"
+updated = "2026-10-19T17:45:29Z"
 idempotency_key = "m2-sec-summary"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/text.rs", "crates/gob-diagnostics/src/record.rs"]
