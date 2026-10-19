@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-19T07:46:34Z"
+updated = "2026-10-19T07:46:35Z"
 idempotency_key = "m2-sec-trust-prompt"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-trust/src/prompt.rs", "crates/frob/src/trust_cmd.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/prompt.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/tests/trust_cmd.rs", "docs/design/security.md"]
+scope = ["crates/gob-trust/src/prompt.rs", "crates/frob/src/trust_cmd.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/prompt.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/tests/trust_cmd.rs", "docs/design/security.md", "changelog.d/01M3ZX7VDVTM9DJCW5228YRZ8Z.added.md"]
 
 [[links]]
 kind = "blocked-by"
