@@ -8,7 +8,9 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
-use gob_exec::{ExecError, Limits, Outcome, Output, Program, Runner, Spec};
+use gob_exec::{
+    ExecError, Limits, Outcome, Output, ProcessPack, Program, Runner, Spec, resolve_pack,
+};
 use gob_rules::{Finding, RequiredReason, Rule, RuleId, Severity};
 use gob_text::{FileInterner, LineCol, LineIndex, Span, TextRange, TextSize};
 
@@ -29,6 +31,16 @@ pub trait ToolMemo: std::fmt::Debug + Send + Sync {
     fn load(&self, key: &str) -> Option<String>;
     /// Record `payload` under `key`.
     fn store(&self, key: &str, payload: &str);
+}
+
+/// Decides whether a resolved tool program may run (security.md section 2.4, I11).
+///
+/// The implementor owns the trust store or base-ref lock lookup; this crate only asks.
+pub trait ToolTrust: std::fmt::Debug + Send + Sync {
+    /// True when the binary at `pack.path` with `pack.digest` is trusted for this repository.
+    fn is_trusted(&self, pack: &ProcessPack) -> bool;
+    /// The command a user runs to trust `pack`, named in the remedy of an untrusted stage.
+    fn trust_command(&self, pack: &ProcessPack) -> String;
 }
 
 /// Bumped when the key recipe or the payload shape changes, so old records never match.
@@ -225,6 +237,8 @@ pub(crate) struct ToolOutput {
 enum StageResult {
     /// The binary was not found.
     Missing(String),
+    /// The program is not trusted (or resolves inside the work tree); the stage did not run.
+    Untrusted(String),
     /// The tool did not produce evidence (unresolvable, abnormal exit, unreadable output); carries the full message.
     Failed(String),
     /// The stage failed for another reason.
@@ -245,6 +259,77 @@ fn spec(root: &Path, stage: &ToolStage, args: Vec<String>) -> Spec {
         env: Vec::new(),
         timeout: Duration::from_secs(stage.timeout_secs),
         capture: true,
+    }
+}
+
+/// Run `stage` with `args`: through the verified `pack` when there is one, else by name.
+fn launch(
+    runner: &Runner,
+    root: &Path,
+    stage: &ToolStage,
+    pack: Option<&ProcessPack>,
+    args: Vec<String>,
+) -> Result<Output, ExecError> {
+    match pack {
+        Some(pack) => runner.run_pack(
+            pack,
+            args,
+            Some(root.to_path_buf()),
+            Duration::from_secs(stage.timeout_secs),
+        ),
+        None => runner.run(&spec(root, stage, args)),
+    }
+}
+
+/// Resolve and vet the stage's program under `trust`; `Err` is the stage result that replaces the run.
+///
+/// Refuses a program inside the work tree, and an unknown digest is Unresolved untrusted with the
+/// trust command. `None` trust is the unenforced legacy path (a caller that has no trust source).
+fn vet(
+    root: &Path,
+    stage: &ToolStage,
+    trust: Option<&dyn ToolTrust>,
+) -> Result<Option<ProcessPack>, StageResult> {
+    let search = std::env::var_os("PATH").unwrap_or_default();
+    vet_on(root, stage, trust, &search)
+}
+
+/// [`vet`] against an explicit `PATH` list.
+fn vet_on(
+    root: &Path,
+    stage: &ToolStage,
+    trust: Option<&dyn ToolTrust>,
+    search: &std::ffi::OsStr,
+) -> Result<Option<ProcessPack>, StageResult> {
+    let Some(trust) = trust else {
+        return Ok(None);
+    };
+    match resolve_pack(&stage.command, root, search) {
+        Ok(pack) if trust.is_trusted(&pack) => {
+            tracing::debug!(stage = %stage.name, path = %pack.path.display(), "tool program trusted");
+            Ok(Some(pack))
+        }
+        Ok(pack) => {
+            tracing::warn!(stage = %stage.name, path = %pack.path.display(), digest = %pack.digest, "tool program untrusted; not run");
+            Err(StageResult::Untrusted(format!(
+                "tool stage `{}` ({}) is untrusted: {} {} was not run; run `{}` to trust it",
+                stage.name,
+                stage.command,
+                pack.path.display(),
+                pack.digest,
+                trust.trust_command(&pack)
+            )))
+        }
+        Err(err @ ExecError::NotFound { .. }) => {
+            Err(StageResult::Missing(format!("could not run: {err}")))
+        }
+        Err(err) => {
+            tracing::warn!(stage = %stage.name, %err, "tool program refused");
+            Err(StageResult::Untrusted(format!(
+                "tool stage `{}` ({}) was refused and not run: {err}",
+                stage.name, stage.command
+            )))
+        }
     }
 }
 
@@ -398,6 +483,7 @@ fn tool_version(
     runner: &Runner,
     root: &Path,
     stage: &ToolStage,
+    pack: Option<&ProcessPack>,
 ) -> Result<Option<String>, StageResult> {
     let Some(args) = stage
         .version_args
@@ -406,7 +492,7 @@ fn tool_version(
     else {
         return Ok(None);
     };
-    match runner.run(&spec(root, stage, args.clone())) {
+    match launch(runner, root, stage, pack, args.clone()) {
         Ok(o) if o.status == Outcome::Exited(0) => {
             Ok(find_version(&format!("{}\n{}", o.stdout, o.stderr)))
         }
@@ -489,12 +575,22 @@ fn with_variant(stage: &ToolStage, version: Option<&str>) -> ToolStage {
     out
 }
 
-fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
+fn execute(
+    runner: &Runner,
+    root: &Path,
+    stage: &ToolStage,
+    trust: Option<&dyn ToolTrust>,
+) -> StageResult {
+    let pack = match vet(root, stage, trust) {
+        Ok(pack) => pack,
+        Err(result) => return result,
+    };
+    let pack = pack.as_ref();
     let parsed = stage.parser != ToolParser::None;
     let variant_stage;
     let mut stage = stage;
     if parsed {
-        match tool_version(runner, root, stage) {
+        match tool_version(runner, root, stage, pack) {
             Err(result) => return result,
             Ok(version) => {
                 tracing::info!(stage = %stage.name, version = version.as_deref().unwrap_or("unknown"), "tool version");
@@ -506,7 +602,7 @@ fn execute(runner: &Runner, root: &Path, stage: &ToolStage) -> StageResult {
             }
         }
     }
-    let output = match runner.run(&spec(root, stage, stage.args.clone())) {
+    let output = match launch(runner, root, stage, pack, stage.args.clone()) {
         Ok(o) => o,
         Err(err @ ExecError::NotFound { .. }) => {
             return StageResult::Missing(format!("could not run: {err}"));
@@ -731,6 +827,7 @@ pub(crate) fn start_tools(
     root: &Path,
     stages: &[ToolStage],
     memo: Option<&std::sync::Arc<dyn ToolMemo>>,
+    trust: Option<&std::sync::Arc<dyn ToolTrust>>,
 ) -> Option<ToolRun> {
     if stages.is_empty() {
         return None;
@@ -780,6 +877,7 @@ pub(crate) fn start_tools(
                 })
                 .collect();
             let memo = memo.cloned();
+            let trust = trust.cloned();
             std::thread::spawn(move || {
                 tracing::debug!(group = %key, "tool group running");
                 work.into_iter()
@@ -794,7 +892,7 @@ pub(crate) fn start_tools(
                             tracing::info!(stage = %stage.name, "tool stage reused a recorded pass");
                             return (i, StageResult::Done(raws), started.elapsed(), true);
                         }
-                        let result = execute(&runner, &root, &stage);
+                        let result = execute(&runner, &root, &stage, trust.as_deref());
                         // Only a stage that ran to a verdict is recorded; failures are never reused.
                         if let (StageResult::Done(raws), Some(m), Some(k)) =
                             (&result, memo.as_ref(), key.as_deref())
@@ -888,6 +986,15 @@ fn stage_findings(
                     )),
                 );
             }
+            StageResult::Untrusted(message) => {
+                tracing::warn!(stage = %stage.name, %message, "tool stage untrusted; not run");
+                push_own(
+                    &mut out,
+                    unresolved(message).with_required(RequiredReason::ToolFailed {
+                        stage: stage.name.clone(),
+                    }),
+                );
+            }
             StageResult::Failed(message) => {
                 tracing::warn!(stage = %stage.name, %message, "tool stage failed to produce evidence");
                 push_own(
@@ -934,6 +1041,96 @@ fn stage_findings(
 )]
 #[cfg(test)]
 mod tests {
+
+    /// Trusts exactly the digests it was given.
+    #[derive(Debug)]
+    struct Digests(Vec<String>);
+
+    impl ToolTrust for Digests {
+        fn is_trusted(&self, pack: &ProcessPack) -> bool {
+            self.0.contains(&pack.digest)
+        }
+        fn trust_command(&self, pack: &ProcessPack) -> String {
+            format!("frob trust --tool {}", pack.name)
+        }
+    }
+
+    #[cfg(unix)]
+    fn script(dir: &Path, name: &str, body: &str) {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::create_dir_all(dir).expect("mkdir");
+        let p = dir.join(name);
+        std::fs::write(&p, body).expect("write");
+        std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+    }
+
+    fn named_stage(command: &str) -> ToolStage {
+        let mut stage = sh_stage("t", ToolParser::None, "true", "true");
+        stage.command = command.to_owned();
+        stage.args = Vec::new();
+        stage
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::vet_on
+    #[cfg(unix)]
+    #[test]
+    fn a_program_resolving_inside_the_work_tree_is_refused() {
+        let root = tempfile::tempdir().expect("root");
+        script(&root.path().join("bin"), "tool", "#!/bin/sh\n");
+        let stage = named_stage("tool");
+        let trust = Digests(Vec::new());
+        let search = root.path().join("bin");
+        let Err(StageResult::Untrusted(msg)) =
+            vet_on(root.path(), &stage, Some(&trust), search.as_os_str())
+        else {
+            panic!("expected a refusal");
+        };
+        assert!(msg.contains("inside the work tree"), "{msg}");
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::vet_on
+    // frob:tests crates/gob-check/src/tools.rs::stage_findings
+    #[cfg(unix)]
+    #[test]
+    fn an_untrusted_stage_is_unresolved_with_the_trust_command_and_a_changed_digest_drops_trust() {
+        let root = tempfile::tempdir().expect("root");
+        let out = tempfile::tempdir().expect("out");
+        script(out.path(), "tool", "#!/bin/sh\n");
+        let stage = named_stage("tool");
+        let untrusted = Digests(Vec::new());
+        let Err(result) = vet_on(
+            root.path(),
+            &stage,
+            Some(&untrusted),
+            out.path().as_os_str(),
+        ) else {
+            panic!("untrusted must not run");
+        };
+        let id: RuleId = Tool001.meta().rule_id().expect("id");
+        let mut files = FileInterner::default();
+        let found = stage_findings(root.path(), &id, &stage, result, &mut files);
+        let f = &found.findings[0].finding;
+        assert_eq!(f.severity, Severity::Unresolved);
+        assert!(f.message.contains("untrusted"), "{}", f.message);
+        assert!(
+            f.message.contains("frob trust --tool tool"),
+            "{}",
+            f.message
+        );
+
+        // Trust the current digest, then change the binary: trust is gone.
+        let pack = resolve_pack("tool", root.path(), out.path().as_os_str()).expect("pack");
+        let trusted = Digests(vec![pack.digest.clone()]);
+        assert!(matches!(
+            vet_on(root.path(), &stage, Some(&trusted), out.path().as_os_str()),
+            Ok(Some(_))
+        ));
+        script(out.path(), "tool", "#!/bin/sh\necho swapped\n");
+        assert!(matches!(
+            vet_on(root.path(), &stage, Some(&trusted), out.path().as_os_str()),
+            Err(StageResult::Untrusted(_))
+        ));
+    }
     use super::*;
 
     // frob:tests crates/gob-check/src/tools.rs::normalize
@@ -1010,7 +1207,7 @@ mod tests {
     fn run_full(stage: &ToolStage, root: &Path) -> ToolOutput {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
-        start_tools(root, std::slice::from_ref(stage), None)
+        start_tools(root, std::slice::from_ref(stage), None, None)
             .expect("one stage")
             .finish(&mut timing, &mut files)
     }
@@ -1024,7 +1221,7 @@ mod tests {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
         let started = Instant::now();
-        let found = start_tools(Path::new("."), &stages, None)
+        let found = start_tools(Path::new("."), &stages, None, None)
             .expect("stages")
             .finish(&mut timing, &mut files);
         let wall = started.elapsed();
@@ -1145,7 +1342,7 @@ mod tests {
             stage.fail_on_nonzero = false;
             let runner = Runner::new(Limits::default()).allow_tools(["sh".to_owned()]);
             // A working directory that does not exist makes the OS refuse the spawn.
-            let result = execute(&runner, Path::new("/frob-no-such-dir/x"), &stage);
+            let result = execute(&runner, Path::new("/frob-no-such-dir/x"), &stage, None);
             let mut files = FileInterner::default();
             let id: RuleId = Tool001.meta().rule_id().expect("id");
             let found = stage_findings(Path::new("."), &id, &stage, result, &mut files);
@@ -1406,7 +1603,7 @@ mod tests {
         let run = || {
             let mut timing = Timing::default();
             let mut files = FileInterner::default();
-            start_tools(dir.path(), std::slice::from_ref(&stage), Some(&memo))
+            start_tools(dir.path(), std::slice::from_ref(&stage), Some(&memo), None)
                 .expect("stage")
                 .finish(&mut timing, &mut files);
             timing.stages[0].name.clone()

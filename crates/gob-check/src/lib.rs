@@ -106,5 +106,5 @@ pub use status::{
     subject_status_for, unreadable_finding, unresolved_finding, unresolved_finding_at,
 };
 pub use tool_def::ToolDef;
-pub use tools::ToolMemo;
+pub use tools::{ToolMemo, ToolTrust};
 pub use type_parse::type_facts_from_output;

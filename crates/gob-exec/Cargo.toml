@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+blake3 = "1"
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-log = { version = "0.532.0", path = "../gob-log" }
 thiserror = "2"
