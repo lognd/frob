@@ -8,7 +8,7 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:35Z"
-updated = "2026-10-19T11:56:55Z"
+updated = "2026-10-19T11:57:13Z"
 idempotency_key = "logand-gaps-K1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**", "docs/design/boundaries.md", "docs/design/grmb-spec.md", "docs/reference/rules/**"]
@@ -19,7 +19,7 @@ target = "01M3Z714MQBXMW4PJVRQNDWNDM"
 
 [[acceptance]]
 text = "Given flow f2 labelled Secret into a node with clearance Public, when grimble check runs, then a label-closure finding names f2"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given flow f1 from a foreign source into a trusted node with no endorsing boundary and no rate, when grimble check runs, then a finding names f1"
