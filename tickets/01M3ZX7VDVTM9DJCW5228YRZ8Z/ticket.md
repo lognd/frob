@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:34Z"
 updated = "2026-10-19T07:46:34Z"
 idempotency_key = "m2-sec-trust-prompt"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-trust/src/prompt.rs", "crates/frob/src/trust_cmd.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/prompt.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/tests/trust_cmd.rs"]
+scope = ["crates/gob-trust/src/prompt.rs", "crates/frob/src/trust_cmd.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/prompt.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/tests/trust_cmd.rs", "docs/design/security.md"]
 
 [[links]]
 kind = "blocked-by"
