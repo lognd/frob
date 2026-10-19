@@ -2,13 +2,13 @@
 id = "01M3ZX7V9AKM8KVBHF32BWEC3K"
 title = "trust --follow: trust pairs reachable on a fetched protected branch"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-03T03:51:19Z"
+updated = "2026-10-19T18:21:52Z"
 idempotency_key = "m2-sec-trust-follow"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/follow.rs"]
