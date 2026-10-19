@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-19T07:46:29Z"
+updated = "2026-10-19T07:46:39Z"
 idempotency_key = "m2-mirror2-gh-status-blind"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/src/status.rs", "crates/frob-mirror/src/blind.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX83AB2JADBKWFA9SY4J60"
 
 [[acceptance]]
 text = "Given a 404 for an issue, when classified, then the result is not-visible and never deleted"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a 410, when classified, then the ticket is marked unmirrored and reported and no create is made"
