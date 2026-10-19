@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-19T07:16:34Z"
+updated = "2026-10-19T07:17:09Z"
 idempotency_key = "m2-sec-escape-nonascii"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/escape.rs", "crates/gob-diagnostics/src/text.rs", "crates/gob-diagnostics/src/lib.rs", "docs/design/diagnostics.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX7Z0EM0DCAHC59PJH50MJ"
 
 [[acceptance]]
 text = 'Given a pack message containing an accented letter, when rendered as text, then it appears as \u{e9}'
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same character in a source snippet, when rendered, then it is shown as is"
