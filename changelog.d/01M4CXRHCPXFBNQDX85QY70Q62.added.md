@@ -1,0 +1,1 @@
+crunk: LAYOUT001-005 (child overflow, sibling overlap, viewport clipping, safe area, 24 px target size) and RESP001 (breakpoint without a scene) rules at T1, reading design/scenes/*.scene.json; scenes gain `interactive` and `safe_area`.

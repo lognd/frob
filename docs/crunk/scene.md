@@ -12,6 +12,8 @@
 
 - `kind` is `box` or `text`; ids are unique strings.
 - `style` keys: `display` (`flex`, `block`, `none`), `direction` (`row`, `column`), `wrap`, `gap`, `padding`, `margin`, `width`, `height` (pixels, `"auto"` or `"N%"`), `grow`, `shrink`. Unknown keys are rejected.
+- `interactive` (default false) marks a pointer or touch target; LAYOUT005 sizes it and LAYOUT004 keeps it inside the safe area. A scene's top-level `safe_area` (pixels, default 0) is the inset from every viewport edge that text and targets must stay inside.
+- Project scene files live at `design/scenes/*.scene.json`; the LAYOUT rules solve each one and RESP001 matches their viewport widths to `[breakpoints]`.
 - A `text` node carries `text.content`, `text.font_size`, optional `line_height` (default 1.2) and `max_width`.
 
 ## Text metrics

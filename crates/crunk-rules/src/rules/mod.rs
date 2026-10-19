@@ -25,6 +25,16 @@ pub mod human001;
 pub mod human002;
 /// Rule `LAYER001`.
 pub mod layer001;
+/// Rule `LAYOUT001`.
+pub mod layout001;
+/// Rule `LAYOUT002`.
+pub mod layout002;
+/// Rule `LAYOUT003`.
+pub mod layout003;
+/// Rule `LAYOUT004`.
+pub mod layout004;
+/// Rule `LAYOUT005`.
+pub mod layout005;
 /// Rule `ORG001`.
 pub mod org001;
 /// Rule `ORG002`.
@@ -37,6 +47,8 @@ pub mod org004;
 pub mod org005;
 /// Rule `RADIUS001`.
 pub mod radius001;
+/// Rule `RESP001`.
+pub mod resp001;
 /// Rule `SIZE001`.
 pub mod size001;
 /// Rule `SLOP001`.
@@ -111,12 +123,18 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <human001::Human001 as gob_rules::RuleDecl>::DEF,
     <human002::Human002 as gob_rules::RuleDecl>::DEF,
     <layer001::Layer001 as gob_rules::RuleDecl>::DEF,
+    <layout001::Layout001 as gob_rules::RuleDecl>::DEF,
+    <layout002::Layout002 as gob_rules::RuleDecl>::DEF,
+    <layout003::Layout003 as gob_rules::RuleDecl>::DEF,
+    <layout004::Layout004 as gob_rules::RuleDecl>::DEF,
+    <layout005::Layout005 as gob_rules::RuleDecl>::DEF,
     <org001::Org001 as gob_rules::RuleDecl>::DEF,
     <org002::Org002 as gob_rules::RuleDecl>::DEF,
     <org003::Org003 as gob_rules::RuleDecl>::DEF,
     <org004::Org004 as gob_rules::RuleDecl>::DEF,
     <org005::Org005 as gob_rules::RuleDecl>::DEF,
     <radius001::Radius001 as gob_rules::RuleDecl>::DEF,
+    <resp001::Resp001 as gob_rules::RuleDecl>::DEF,
     <size001::Size001 as gob_rules::RuleDecl>::DEF,
     <slop001::Slop001 as gob_rules::RuleDecl>::DEF,
     <slop003::Slop003 as gob_rules::RuleDecl>::DEF,
@@ -174,12 +192,18 @@ where
     human001::Human001: gob_rules::RepoRule<P>,
     human002::Human002: gob_rules::RepoRule<P>,
     layer001::Layer001: gob_rules::Measured<P>,
+    layout001::Layout001: gob_rules::Measured<P>,
+    layout002::Layout002: gob_rules::Measured<P>,
+    layout003::Layout003: gob_rules::Measured<P>,
+    layout004::Layout004: gob_rules::Measured<P>,
+    layout005::Layout005: gob_rules::Measured<P>,
     org001::Org001: gob_rules::Measured<P>,
     org002::Org002: gob_rules::Measured<P>,
     org003::Org003: gob_rules::Measured<P>,
     org004::Org004: gob_rules::Measured<P>,
     org005::Org005: gob_rules::Measured<P>,
     radius001::Radius001: gob_rules::Measured<P>,
+    resp001::Resp001: gob_rules::Measured<P>,
     size001::Size001: gob_rules::Measured<P>,
     slop001::Slop001: gob_rules::RepoRule<P>,
     slop003::Slop003: gob_rules::RepoRule<P>,
@@ -223,12 +247,18 @@ where
     rules.push(gob_rules::BoundRule::repo(human001::Human001));
     rules.push(gob_rules::BoundRule::repo(human002::Human002));
     rules.push(gob_rules::BoundRule::measured(layer001::Layer001));
+    rules.push(gob_rules::BoundRule::measured(layout001::Layout001));
+    rules.push(gob_rules::BoundRule::measured(layout002::Layout002));
+    rules.push(gob_rules::BoundRule::measured(layout003::Layout003));
+    rules.push(gob_rules::BoundRule::measured(layout004::Layout004));
+    rules.push(gob_rules::BoundRule::measured(layout005::Layout005));
     rules.push(gob_rules::BoundRule::measured(org001::Org001));
     rules.push(gob_rules::BoundRule::measured(org002::Org002));
     rules.push(gob_rules::BoundRule::measured(org003::Org003));
     rules.push(gob_rules::BoundRule::measured(org004::Org004));
     rules.push(gob_rules::BoundRule::measured(org005::Org005));
     rules.push(gob_rules::BoundRule::measured(radius001::Radius001));
+    rules.push(gob_rules::BoundRule::measured(resp001::Resp001));
     rules.push(gob_rules::BoundRule::measured(size001::Size001));
     rules.push(gob_rules::BoundRule::repo(slop001::Slop001));
     rules.push(gob_rules::BoundRule::repo(slop003::Slop003));
