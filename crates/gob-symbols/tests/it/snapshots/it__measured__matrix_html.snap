@@ -1,0 +1,14 @@
+---
+source: crates/gob-symbols/tests/it/measured.rs
+expression: matrix_of(a)
+---
+html F2
+resolve_ref NotApplicable not-applicable
+apply_targets NotApplicable not-applicable
+visibility NotApplicable not-applicable
+effects NotApplicable not-applicable
+test_items NotApplicable not-applicable
+imports Gap none
+expand NotApplicable not-applicable
+order Gap none
+project_model Gap none

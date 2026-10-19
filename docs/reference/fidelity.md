@@ -255,3 +255,18 @@ yield comments, with or without a syntax tree (the text fallback lexes them too)
 lines (`#if`, `#region`) are not comments and do not disturb scanning; a trailing `//` on one is
 a comment. A file that parses with syntax errors still yields its partial tree (`has_errors`).
 Directives (`frob:...`) and TODO001 therefore read the same spans in C# as in Rust.
+
+## Measured fidelity
+
+An adapter's declared fidelity is checked against its conformance corpus
+(`crates/gob-symbols/tests/it/measured.rs`, design: `docs/design/testing.md`
+section 5). The corpus is folded and the level is the highest one whose
+evidence, and that of every level below, is present: F1 units and
+containment, F2 references resolved or `ref` terms, F3 statused edges, F4
+attributes, bound comments, regions and phases. Declared and measured must
+be equal in both directions; a pinned divergence (listed in `PINNED`, each
+tied to a ticket) holds only while both values stay exactly as recorded.
+Every adapter also ships a capability-matrix snapshot, a garbage-input case
+and a partial-parse case. The languages page (`docs/reference/languages.md`)
+and `frob doctor --languages` are generated from the same registry data
+(`gob_symbols::fidelity_report`).
