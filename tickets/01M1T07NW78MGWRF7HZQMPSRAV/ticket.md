@@ -2,7 +2,8 @@
 id = "01M1T07NW78MGWRF7HZQMPSRAV"
 title = "evidence satisfaction must exclude xfail/xpass/skip by default"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M1QDTYTRW714S858S0TP6YWM"
