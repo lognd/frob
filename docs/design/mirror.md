@@ -408,6 +408,13 @@ byte-identical output. Neutralisation and render limits layer on top.
   closing-keyword phrases in mirrored text are rendered inside code spans
   (`` `@name` ``, `` `fixes #12` ``), where GitHub neither notifies nor
   links nor closes.
+  Implemented in `crates/frob-mirror/src/github/neutralise.rs`: a
+  mention (`@name`, `@org/team`), an issue reference (`#12`), a
+  cross-repository reference (`owner/repo#5`) or a closing phrase
+  (`fixes #12`, `Closes: o/r#3`) becomes a single code span; email
+  addresses are not mentions. Task-list lines (`- [ ] x`, `* [x] y`,
+  `1. [x] z`) become `- Unbound: x` / `- Bound: y`. Existing code spans
+  and fenced blocks are left verbatim, and the pass is idempotent.
 - **Verifying the tracker facts.** The audit left 16 GitHub facts
   UNVERIFIED (among them read-your-writes listing, the nudge's
   permission, autolink limits); one ticket verifies each against the
