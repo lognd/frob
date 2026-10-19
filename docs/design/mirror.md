@@ -176,6 +176,10 @@ and in `frob mirror status`.
 - **Progress.** A stopped run commits its progress (the map is sharded
   per ticket and committed every K operations, MIR-AUD-14) and reports
   MIR001 `rate-limited` with the next window. The next run continues.
+  Implemented in `frob-mirror::progress`: `ProgressWriter` writes the
+  pending shards and then the index round-robin cursor every K
+  operations, so a crash repeats at most K operations and never one
+  already behind the cursor.
 
 ### 3.3 Identity: markers, creates and duplicates (MIR-AUD-04, 05, 09, 15, 16, 24; F3-F6; spoofed marker)
 
