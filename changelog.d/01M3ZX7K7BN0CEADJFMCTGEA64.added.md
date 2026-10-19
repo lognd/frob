@@ -1,0 +1,1 @@
+gob-packs: load_pack loads a repository pack from packs/NAME (tier-1 atoms, tier-2 GRL rules) with repo provenance and lock verification, and reports tier-3 wasm as Unresolved pack-unavailable with the reason.

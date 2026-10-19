@@ -30,6 +30,7 @@ mod activation;
 mod digest;
 mod error;
 mod limits;
+pub mod loader;
 pub mod lock;
 mod manifest;
 mod names;

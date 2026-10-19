@@ -116,6 +116,16 @@ declaring one family is PACK004. The std packs own the existing families.
 | 3 | code rules | wasmtime components, AOT-compiled and cached | bounded by a benchmark gate (section 6) |
 | 4 | language adapters | grammar (native or WASM tree-sitter) plus declarative mapping and scope files | parse cost measured per adapter; mapping identical |
 
+Implementation (repository packs, tiers 1 and 2): `gob_packs::loader::load_pack`
+loads `packs/<name>/`. It reads the manifest and each content file once into memory,
+interns the tier-1 atoms (provenance `repo:packs/<name>`), compiles the tier-2 GRL rules
+(through the plan cache when given), computes the tree digest and verifies the pack against
+the lock (PACK001 findings, `lock_verified`). The directory name must equal `pack.name`.
+Tier 3 is refused until the trust store and sandbox land: the pack's wasm components come
+back as `Unavailable` (PACK006, Unresolved `pack-unavailable`, with the reason), never
+dropped silently. `inspect_pack` does the same without registering atoms, to build a lock
+entry; nothing is registered unless every step succeeds.
+
 Rejected, with the survey's reasons: Rust dylib/cdylib plugins (no stable
 ABI, undefined behaviour on mismatch, unsandboxed; abi_stable and stabby
 included); an embedded scripting language as the rule host (per-node
