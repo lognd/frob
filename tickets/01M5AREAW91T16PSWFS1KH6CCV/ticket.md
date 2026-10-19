@@ -4,9 +4,10 @@ title = "Wire frob mirror recreate verb to the real shard store and GitHub adapt
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-19T18:58:04Z"
-updated = "2026-10-19T18:58:04Z"
+updated = "2026-10-19T19:19:32Z"
 scope = ["crates/frob/src/mirror_recreate_cmd.rs"]
 +++
 
