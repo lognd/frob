@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-19T16:41:26Z"
+digest = "77d51449b60d01699ef93d7383fd24f5677d586f973de3e15c16a6674994791b"
+exit_code = 0
+inline = """
+
+running 1 test
+test mdtest_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.11s
+
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.69s
+     Running tests/corpus.rs (target/debug/deps/corpus-e2016c38b8d2b39a)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-obligations --test corpus mdtest_corpus"
+size = 1186
+status = "measured"
+at = "2026-10-19T16:41:26Z"
+actor = "lognd"
+rev = 1
