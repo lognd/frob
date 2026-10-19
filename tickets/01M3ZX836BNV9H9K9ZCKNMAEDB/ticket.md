@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-19T18:06:12Z"
+updated = "2026-10-19T18:16:18Z"
 idempotency_key = "m2-mirror-schema-gen"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/gob-dev/src/render/**", "docs/schemas/issue-projection.json", "crates/frob/src/mirror_cmd.rs", "crates/frob-mirror/src/projection.rs", "crates/frob-mirror/Cargo.toml", "crates/gob-dev/Cargo.toml", "crates/frob/Cargo.toml", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "Cargo.lock", "crates/frob/tests/it/mirror_render.rs", "docs/design/mirror.md", "docs/reference/cli/frob.md"]
+scope = ["crates/gob-dev/src/render/**", "docs/schemas/issue-projection.json", "crates/frob/src/mirror_cmd.rs", "crates/frob-mirror/src/projection.rs", "crates/frob-mirror/Cargo.toml", "crates/gob-dev/Cargo.toml", "crates/frob/Cargo.toml", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "Cargo.lock", "crates/frob/tests/it/mirror_render.rs", "docs/design/mirror.md", "docs/reference/cli/frob.md", "crates/frob/tests/it/main.rs"]
 
 [[links]]
 kind = "blocked-by"
