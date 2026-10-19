@@ -8,7 +8,7 @@ points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:56:13Z"
-updated = "2026-10-19T05:27:30Z"
+updated = "2026-10-19T05:27:33Z"
 scope = ["crates/grimble-lints/**", "docs/reference/rules/PATH001.md", "docs/reference/rules/PATH002.md", "docs/reference/rules/PATH003.md", "grimble.toml", "docs/design/rules.md"]
 
 [[links]]
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a language adapter without path-conversion roles, when PATH002 runs, then it reports Unresolved, not clean"
-bound = false
+bound = true
 +++
 
 Owner request 2026-10-03 (D86, docs/design/rules.md section 3.1, boundaries.md 2.5): the PATH host-path portability family. The / versus \ difference broke CI on every first Windows run (~G5RJY40: merge driver path, command allowlist compare, --cwd string compare, fixtures).
