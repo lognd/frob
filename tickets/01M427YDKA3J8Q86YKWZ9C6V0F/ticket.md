@@ -4,11 +4,11 @@ title = "Audit the sh dependency: 17 tests (gob-check, gob-exec, frob-check) fai
 type = "bug"
 category = "todo"
 priority = "medium"
-points = 3
+points = 2
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-04T01:20:08Z"
-updated = "2026-10-04T01:20:08Z"
+updated = "2026-10-19T19:54:49Z"
 scope = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/tests/**", "docs/design/paths.md"]
 
 [[acceptance]]
