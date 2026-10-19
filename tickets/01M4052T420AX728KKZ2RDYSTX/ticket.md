@@ -11,7 +11,7 @@ created = "2026-10-03T05:51:37Z"
 updated = "2026-10-19T15:49:11Z"
 idempotency_key = "m2-mirror2-proposal-record"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/proposals.rs", "crates/frob-mirror/Cargo.toml", "crates/frob-mirror/src/lib.rs"]
+scope = ["crates/frob-mirror/src/proposals.rs", "crates/frob-mirror/Cargo.toml", "crates/frob-mirror/src/lib.rs", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
