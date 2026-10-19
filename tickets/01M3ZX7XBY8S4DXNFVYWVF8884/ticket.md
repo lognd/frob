@@ -2,13 +2,13 @@
 id = "01M3ZX7XBY8S4DXNFVYWVF8884"
 title = "Effective policy snapshot at a ref"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:36Z"
-updated = "2026-10-03T03:34:36Z"
+updated = "2026-10-19T05:45:15Z"
 idempotency_key = "m2-sec-policy-snapshot"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/policy/**"]
