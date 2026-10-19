@@ -218,6 +218,10 @@ and in `frob mirror status`.
   later revisions changes nothing (F4, MIR-AUD-24). A marker under an
   unknown kid on a bot issue is MIR001 `marker-key-unknown`, never a
   recreate.
+  Implemented in `frob_mirror::marker`: `format_marker`, `parse_marker` and
+  `evaluate`, which returns a `MarkerVerdict` (`Adopted`, `Spoofed` for
+  MIR003, `Rejected` for a bad MAC or MIR001 unknown kid, `Unreadable`,
+  `None`).
 - **Lookup is read-your-writes.** The mirror finds a ticket's issues by
   listing the bot's issues (by creator, newest first), never through
   search, which lags (F5). The tracker is the identity authority; the
