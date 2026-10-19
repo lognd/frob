@@ -18,6 +18,7 @@ gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
+grimble-arch = { version = "0.532.0", path = "../grimble-arch" }
 grimble-bind = { version = "0.532.0", path = "../grimble-bind" }
 grimble-model = { version = "0.532.0", path = "../grimble-model" }
 schemars = "1"

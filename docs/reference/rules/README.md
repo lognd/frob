@@ -69,6 +69,18 @@
 | [COV001](COV001.md) | untested-public-function | warn | manual | P- | true | A public function or method has no test that reaches it. |
 | [COV003](COV003.md) | tests-names-missing-test | error | manual | P- | false | Alias of TEST001; never emitted by this crate. |
 
+## CYCLE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CYCLE001](CYCLE001.md) | arch-import-cycle | error | manual | Pc | true | Crates (or files, outside any crate) that import each other. |
+
+## DEAD
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [DEAD001](DEAD001.md) | arch-dead-unit | warn | manual | P- | true | A private function or method that nothing references. |
+
 ## DOC
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -145,6 +157,12 @@
 |---|---|---|---|---|---|---|
 | [INV001](INV001.md) | invariant-without-anchor | warn | manual | P- | false | An invariants document has no `frob:invariant` directive in code. |
 | [INV002](INV002.md) | forbidden-import | error | manual | P+ | false | A file imports something the `[invariants]` table forbids. |
+
+## LARGE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [LARGE001](LARGE001.md) | arch-large-unit | warn | manual | Pn | true | A function, method or type longer than the configured line limit. |
 
 ## LAYER
 

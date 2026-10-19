@@ -1,0 +1,24 @@
+[package]
+name = "grimble-arch"
+version.workspace = true
+description = "The architecture rules CYCLE, LARGE and DEAD over the symbol graph: import cycles, oversized units and unreferenced private units."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+grimble-bind = { version = "0.532.0", path = "../grimble-bind" }
+tracing = "0.1"
+
+[dev-dependencies]
+gob-mdtest = { path = "../gob-mdtest" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
+tempfile = "3"

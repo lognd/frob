@@ -137,6 +137,7 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `large_lines` | `u64` | `400` | no | A function, method or type longer than this many lines fires LARGE001; 0 turns the rule off. |
 | `modeled` | `Vec<String>` | `[]` | no | Selectors whose public units must have an owner (SYS005); empty turns the rule off. |
 | `models` | `Vec<String>` | `["design/model.grmb"]` | yes | Root `.grmb` files, one independent model each; only files reachable from them through `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared). |
 | `rename_min_tokens` | `u64` | `12` | no | A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3). |

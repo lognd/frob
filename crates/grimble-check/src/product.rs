@@ -12,6 +12,7 @@ use gob_rules::{
     Severity, Tier, apply_exceptions,
 };
 use gob_text::{FileInterner, Span};
+use grimble_arch::{ArchInput, ArchReport};
 use grimble_model::{ModelFiles, check_model, file_table};
 
 use crate::bind_cache::{self, BindSummary};
@@ -38,6 +39,8 @@ pub struct GrimbleInputs {
     pub view: Arc<ModelView>,
     /// The rows of B, the SYS findings and subject counts (grimble-bind), possibly from the cache.
     pub binding: BindSummary,
+    /// The CYCLE, LARGE and DEAD verdicts (grimble-arch), recomputed each run.
+    pub arch: ArchReport,
 }
 
 /// What a run leaves behind for the document builder: the model view and which exception parked which finding.
@@ -117,14 +120,21 @@ fn binding_metas() -> Vec<&'static RuleMeta> {
     legacy_metas(&CELL, grimble_bind::rules::METAS)
 }
 
-/// Every rule grimble reports: the global registry plus the declared MDL and SYS rules (for slugs and polarity).
+/// The architecture rules (the CYCLE, LARGE and DEAD families `grimble-arch` declares).
+fn arch_metas() -> Vec<&'static RuleMeta> {
+    static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
+    legacy_metas(&CELL, grimble_arch::rules::METAS)
+}
+
+/// Every rule grimble reports: the global registry plus the declared MDL, SYS and architecture rules (for slugs and polarity).
 pub(crate) fn registry() -> &'static Registry {
     static CELL: OnceLock<Registry> = OnceLock::new();
     CELL.get_or_init(|| {
         let metas = Registry::global()
             .iter()
             .chain(model_metas())
-            .chain(binding_metas());
+            .chain(binding_metas())
+            .chain(arch_metas());
         Registry::from_metas(metas)
     })
 }
@@ -141,6 +151,28 @@ fn directive_metas() -> Vec<&'static RuleMeta> {
 /// The reason the declared rule `def` does not apply on this model, from the binding.
 fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) -> Option<String> {
     snap.inputs.binding.not_applicable.get(def.id).cloned()
+}
+
+/// Run the architecture rules over the walk (graph built from the bound code, uncached).
+fn arch_report(
+    root: &std::path::Path,
+    entries: &[gob_walk::FileEntry],
+    table: &GrimbleTable,
+    read: &dyn Fn(&str) -> Option<String>,
+) -> ArchReport {
+    let code = grimble_bind::code::Code::build(root, entries);
+    let graph = grimble_bind::edges::build_graph(root, &code);
+    let mut deps = gob_symbols::CrateDeps::new(root);
+    let crates: BTreeMap<String, String> = entries
+        .iter()
+        .filter_map(|e| deps.crate_of(&e.path).map(|c| (e.path.clone(), c)))
+        .collect();
+    grimble_arch::analyze(&ArchInput {
+        graph: &graph,
+        crates: &crates,
+        large_lines: usize::try_from(table.large_lines).unwrap_or(usize::MAX),
+        read,
+    })
 }
 
 /// Key under which a suppressed finding is remembered: rule, file, offset and message.
@@ -215,6 +247,11 @@ impl Product for Grimble {
             summary
         };
         cx.timing.push("binding", started.elapsed(), true);
+        let started = std::time::Instant::now();
+        let arch = arch_report(&cx.core.root, &cx.core.entries, &table, &|p| {
+            cx.core.text(p).ok()
+        });
+        cx.timing.push("architecture", started.elapsed(), false);
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
             trace.view = Some(Arc::clone(&view));
@@ -235,6 +272,7 @@ impl Product for Grimble {
                 model,
                 view,
                 binding,
+                arch,
             },
             findings: Vec::new(),
         })
@@ -245,6 +283,7 @@ impl Product for Grimble {
         for def in grimble_model::rules::METAS
             .iter()
             .chain(grimble_bind::rules::METAS)
+            .chain(grimble_arch::rules::METAS)
             .copied()
         {
             set = set.stage_when(def, move |p, snap| inapplicable(p, snap, def));
@@ -291,6 +330,27 @@ impl Product for Grimble {
             .counting(|s| {
                 s.inputs
                     .binding
+                    .subjects
+                    .iter()
+                    .map(|(rule, n)| (*rule, *n))
+                    .collect()
+            }),
+            RepoGroup::new(
+                "repo:arch",
+                arch_metas(),
+                |s: &Snapshot<Self>, files: &mut FileInterner| {
+                    s.inputs
+                        .arch
+                        .findings
+                        .iter()
+                        .cloned()
+                        .filter_map(|f| f.into_finding(files))
+                        .collect()
+                },
+            )
+            .counting(|s| {
+                s.inputs
+                    .arch
                     .subjects
                     .iter()
                     .map(|(rule, n)| (*rule, *n))
