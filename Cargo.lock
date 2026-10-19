@@ -2907,6 +2907,9 @@ name = "grimble-capabilities"
 version = "0.532.0"
 dependencies = [
  "gob-ir",
+ "gob-mdtest",
+ "gob-packs",
+ "gob-rules",
  "tracing",
 ]
 

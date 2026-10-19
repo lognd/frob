@@ -1130,6 +1130,8 @@ Total 40 atoms, 291 lock items.
 
 ## 9. The PACK rule family
 
+Implementation note: PACK001 to PACK008 are declared (staged, no-op `check`) in `crates/grimble-capabilities/src/pack_rules`, with one mdtest page each. `pack_rules::evaluate` is the one pass: PACK001 over loaded packs only, PACK006 as an Unresolved (required when the pack is) for packs that could not be loaded, and PACK002 to PACK005, PACK007, PACK008 from per-pack issues. PACK009 stays retired.
+
 Ids `FAMILYNNN`, new family PACK, registered in rules.md by the
 implementation ticket; owner crate `grimble-capabilities`. Polarity is
 universal-model.md 4.2; every rule declares polarity and `needs`

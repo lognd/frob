@@ -13,4 +13,9 @@ workspace = true
 
 [dependencies]
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
+gob-packs = { version = "0.532.0", path = "../gob-packs" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
 tracing = "0.1"
+
+[dev-dependencies]
+gob-mdtest = { path = "../gob-mdtest" }

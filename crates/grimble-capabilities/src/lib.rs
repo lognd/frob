@@ -8,6 +8,8 @@
 
 // frob:ticket 01M3Z714EEST9EGEHWWV56RXG4
 
+pub mod pack_rules;
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_ir::Answer;
