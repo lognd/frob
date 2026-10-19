@@ -1,0 +1,1 @@
+Added `frob trust`, the interactive trust review: terminal-only (exit 3 otherwise), no `--yes` or `--all`, host-derived facts with a widening shown first, and the pack name typed to approve a widening or a subprocess.

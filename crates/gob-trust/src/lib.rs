@@ -31,6 +31,7 @@ mod guard;
 mod key;
 mod mac;
 pub mod policy;
+pub mod prompt;
 mod state;
 // frob:ticket 01M3ZX7V0XP3BYTWDHXN20Z79R
 mod store;

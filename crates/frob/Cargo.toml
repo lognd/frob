@@ -32,6 +32,7 @@ gob-plan = { version = "0.532.0", path = "../gob-plan" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-time = { version = "0.532.0", path = "../gob-time" }
+gob-trust = { version = "0.532.0", path = "../gob-trust" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 frob-ack = { version = "0.532.0", path = "../frob-ack" }

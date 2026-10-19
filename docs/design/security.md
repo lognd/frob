@@ -163,6 +163,11 @@ frob, grimble and crunk.
   remembered per digest; grants unused for 30 days expire. `trust
   --show` prints the pending review non-interactively (agents may run
   it); it has no approve action.
+  The review prompt is `gob_trust::prompt` (facts, render, review) behind
+  `frob trust` (`crates/frob/src/trust_cmd.rs`): `ReviewFacts` has no field
+  for pack prose, a widening is rendered first and in full, and approving a
+  widening or a subprocess needs the pack name typed. Off a TTY or under an
+  agent marker the verb exits 3 with `requires_human = true` and no pack id.
   Implementation: `gob_trust::TrustStore` (`crates/gob-trust/src/store`).
   Entries are keyed-blake3 MAC'd (context `gob-trust-entry/v1`) over
   subject, who, grant and expiry times, the network flag and the full

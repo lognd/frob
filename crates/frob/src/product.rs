@@ -79,6 +79,8 @@ impl Product for FrobProduct {
         let cli = crate::cycle_cmd::register(cli);
         let cli = crate::profile_cmd::register(cli);
         let cli = crate::tour_cmd::register(cli);
+        // frob:ticket 01M3ZX7VDVTM9DJCW5228YRZ8Z
+        let cli = cli.register::<crate::trust_cmd::Trust>();
         let cli = crate::release_cmd::register(cli);
         let cli = cli
             .register::<crate::rule_cmd::RuleTest>()

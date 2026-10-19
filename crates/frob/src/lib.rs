@@ -29,6 +29,7 @@ pub mod release_cmd;
 pub mod rule_cmd;
 pub mod ticket;
 pub mod tour_cmd;
+pub mod trust_cmd;
 mod workspace;
 
 use gob_cli::Cli;

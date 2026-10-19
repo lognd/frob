@@ -52,5 +52,6 @@ mod ticket_unsynced;
 mod ticket_url;
 mod tour;
 mod triage;
+mod trust;
 mod wiring;
 mod work_unplanned;
