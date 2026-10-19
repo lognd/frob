@@ -2,7 +2,8 @@
 id = "01M5ANA1DJ6V3MDF3NJZXAS6JW"
 title = "Wire frob explain: register the Explain verb (needs lib.rs/product.rs, held by KNMAEDB)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
