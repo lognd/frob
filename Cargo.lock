@@ -2894,6 +2894,7 @@ dependencies = [
  "gob-symbols",
  "gob-text",
  "gob-walk",
+ "grimble-capabilities",
  "grimble-model",
  "postcard",
  "rayon",

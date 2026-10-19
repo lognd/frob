@@ -342,6 +342,10 @@ Unresolved; `unknown` is reported as Unresolved in the summary, one per
 node, never as clean. A language with no detectors yields a column of
 `unknown` and one summary Unresolved per node.
 
+Implementation: `grimble-capabilities` holds the cells (`build`), template excuses and
+CAP004 subjects (`excuse`), and the matrix text and census (`output`); `grimble-bind` derives
+the CAP001 subjects from the matrix. Emitting CAP004 and the matrix verb are not wired yet.
+
 The atom registry lives in `gob-ir` as inventory entries, not a closed
 Rust enum, so data packs add atoms and detectors with a pack-qualified
 id. Atoms are hierarchical (`fs` covers `fs.read` and `fs.write`).

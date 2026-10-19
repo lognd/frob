@@ -1,4 +1,4 @@
-//! CAP001 and CAP002: the capability cell of a node, from observed uses and its `may` grants.
+//! CAP001 (through `grimble_capabilities::build`) and CAP002: the capability cell of a node, from observed uses and its `may` grants.
 //!
 //! Binding.md 7.2 item 3: a use of an ungranted atom in code a node owns is `undeclared` and
 //! CAP001 (Error, P+, deny by default). Item 6: a grant whose whole scope is Must-owned,
@@ -14,7 +14,7 @@
 //! use, reported Unresolved (grimble-model.md 9.6: unknown never reads as clean).
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
-//! shadowing by unannotated parameters); `open(..)` is `fs.read` whatever its mode; the template excuses and CAP004 (packs.md 6.7) are not implemented; the pack
+//! shadowing by unannotated parameters); `open(..)` is `fs.read` whatever its mode; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
 //! severity table is not consulted (CAP001 is an Error, CAP002 a Warning); a grant's `at`
 //! selector is compared at file granularity; `may` arguments are ignored.
 
@@ -22,6 +22,7 @@
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 // frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
+// frob:ticket 01M59RWT16TFNSACMMTTXX200T
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -31,6 +32,7 @@ use gob_ir::registry::{DetectorKind, atoms, callee_vocab, detectors};
 use gob_rules::Severity;
 use gob_symbols::EdgeKind;
 use gob_walk::{Owner, select_files};
+use grimble_capabilities::{Cell, NodeInput};
 use grimble_model::ast::EntityKind;
 use grimble_model::{PackDetectorKind, PackPin};
 
@@ -530,7 +532,53 @@ fn list(uses: &[&Use]) -> String {
     s
 }
 
+/// The `(node anchor, atom)` pairs the capability matrix marks `undeclared` (or `unknown`: the
+/// callee vocabulary matched but no registry detector row exists, e.g. a pack atom) from the
+/// certain uses in Must-owned code. A use counts as granted when a grant covers it at its file.
+fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String)> {
+    let mut out = BTreeSet::new();
+    for e in cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Node && !e.external && e.owns_code())
+    {
+        let Some(found) = uses.lo.get(&e.anchor) else {
+            continue;
+        };
+        // One matrix input per language of the node's used code.
+        let mut inputs: BTreeMap<&str, NodeInput> = BTreeMap::new();
+        for u in found.iter().filter(|u| u.certain) {
+            let Some(lang) = cx.code.file(&u.file).map(|c| c.language.as_str()) else {
+                continue;
+            };
+            let input = inputs.entry(lang).or_insert_with(|| NodeInput {
+                node: e.anchor.clone(),
+                lang: lang.to_owned(),
+                ..NodeInput::default()
+            });
+            input.uses.insert(u.atom.clone());
+            if e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file)) {
+                input.grants.insert(u.atom.clone());
+            }
+        }
+        for input in inputs.into_values() {
+            let atoms: Vec<String> = input.uses.iter().cloned().collect();
+            let atoms: Vec<&str> = atoms.iter().map(String::as_str).collect();
+            let matrix = grimble_capabilities::build(&[input], &atoms);
+            for (atom, cell) in matrix.cells.values().flatten() {
+                if matches!(cell, Cell::Undeclared | Cell::Unknown) {
+                    out.insert((e.anchor.clone(), atom.clone()));
+                }
+            }
+        }
+    }
+    tracing::debug!(cells = out.len(), "matrix undeclared cells");
+    out
+}
+
 fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
+    let undeclared = matrix_undeclared(cx, uses);
     for e in cx
         .model
         .entities
@@ -546,7 +594,13 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             // (atom, receiver unresolved) -> uses; an unresolved receiver is a May use.
             let mut by_atom: BTreeMap<(&str, bool), Vec<&Use>> = BTreeMap::new();
             for u in found {
-                if !e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file)) {
+                let flagged = if must && u.certain {
+                    undeclared.contains(&(e.anchor.clone(), u.atom.clone()))
+                        && !e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file))
+                } else {
+                    !e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file))
+                };
+                if flagged {
                     by_atom
                         .entry((u.atom.as_str(), !u.certain))
                         .or_default()
