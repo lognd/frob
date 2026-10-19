@@ -43,7 +43,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the ruff PR 29076 shape in a fixture (dispatcher with a nested condition), when grimble check runs, then NEAT031 fires and the fixed shape is clean"
-bound = false
+bound = true
 +++
 
 neatness.md section 4: NEAT002, 003, 004, 007, 006, 012, 013, 010 with 011, 030, 031; effects(unit) as Bounds with the callee vocabulary from [neat.effects]; claims verified, contradicted or Unresolved; thresholds materialized under [neat]; corpora with fire and clean; bound-tool entries for NEAT001, 005, 009.
