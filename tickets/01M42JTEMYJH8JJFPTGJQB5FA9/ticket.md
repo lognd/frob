@@ -2,7 +2,8 @@
 id = "01M42JTEMYJH8JJFPTGJQB5FA9"
 title = "Make frob-evidence escape_line and escape_non_ascii thin wrappers over gob-diagnostics::escape"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
