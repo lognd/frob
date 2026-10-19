@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-19T06:47:01Z"
+updated = "2026-10-19T06:47:02Z"
 idempotency_key = "m2-mirror2-journal"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/journal.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a history entry by a bot id whose digest matches a journaled write, when classified, then it is own; given a bot-id entry with no match, then it is an edit by unknown automation"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given unconfirmed journal entries at run start, when the run begins, then they are re-read first and each is confirmed or marked lost"
