@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T17:23:04Z"
+digest = "65eb9f0c228ded9739fef06fb4b594b308119fcb00a9a8e79587ae537813a362"
+exit_code = 0
+inline = """
+
+running 1 test
+test lowest_number_canonical_other_closed_as_duplicate ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.65s
+     Running tests/dups/main.rs (target/debug/deps/dups-a5b04b841ccd9da7)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror --test dups lowest_number_canonical_other_closed_as_duplicate"
+size = 388
+status = "measured"
+at = "2026-10-19T17:23:04Z"
+actor = "lognd"
+rev = 1

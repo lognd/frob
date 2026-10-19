@@ -222,7 +222,7 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::None => Ok(Vec::new()),
         ToolParser::ZizmorJsonV1 => parse_zizmor(stdout),
         ToolParser::ActionlintJson => parse_actionlint(stdout),
-        ToolParser::Sarif => crate::sarif::parse_sarif(stdout),
+        ToolParser::Sarif | ToolParser::RoslynSarif => crate::sarif::parse_sarif(stdout),
         ToolParser::CargoJson => crate::cargo_json::parse_cargo_json(stdout),
         ToolParser::StylelintJson => parse_stylelint(stdout),
         ToolParser::RuffJson => parse_ruff(stdout),
@@ -345,6 +345,27 @@ fn eslint_target(rule: &str) -> Option<&'static str> {
         name if name.starts_with("no-unsafe-") => Some("TYPING001"),
         _ => None,
     }
+}
+
+// frob:ticket 01M4D94X9ESER47HCP4DTW2X7C
+/// The built-in rule for a Roslyn diagnostic id; `None` falls through to `LINT001`.
+fn roslyn_target(rule: &str) -> Option<&'static str> {
+    let digits = |prefix: &str| {
+        rule.strip_prefix(prefix)
+            .is_some_and(|d| !d.is_empty() && d.bytes().all(|b| b.is_ascii_digit()))
+    };
+    if digits("UNT") {
+        return Some("UNITY101");
+    }
+    if rule.starts_with("VSTHRD") {
+        return Some("CONC001");
+    }
+    // Unused usings, members, parameters and locals; the USP suppressors keep engine-called messages out of IDE0051.
+    matches!(
+        rule,
+        "IDE0051" | "IDE0052" | "IDE0060" | "IDE0005" | "CS8019" | "CS0168" | "CS0219"
+    )
+    .then_some("DEAD001")
 }
 
 // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
@@ -526,6 +547,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
         | ToolParser::EslintJson
+        | ToolParser::RoslynSarif
         | ToolParser::None => BTreeMap::new(),
         // frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
         ToolParser::TyposJson => BTreeMap::from([("typo", "SPELL001")]),
@@ -540,7 +562,8 @@ fn fallback(parser: ToolParser) -> &'static str {
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
-        | ToolParser::EslintJson => "LINT001",
+        | ToolParser::EslintJson
+        | ToolParser::RoslynSarif => "LINT001",
         _ => "TOOL002",
     }
 }
@@ -597,7 +620,7 @@ fn default_severity(rule: &str) -> Severity {
         "CI006" | "CI007" => Severity::Error,
         // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
         "CI001" | "CI003" | "CI014" | "DEAD001" | "ERR001" | "ERR003" | "CONC001" | "TESTQ001"
-        | "LOGIC001" | "A11Y001" | "REACT001" | "TYPING001" => Severity::Warn,
+        | "LOGIC001" | "A11Y001" | "REACT001" | "TYPING001" | "UNITY101" => Severity::Warn,
         _ => Severity::Advisory,
     }
 }
@@ -644,6 +667,11 @@ pub(crate) fn classify(stage: &ToolStage, raw: &RawFinding) -> Option<(RuleId, S
         .or_else(|| {
             (stage.parser == ToolParser::EslintJson)
                 .then(|| eslint_target(&raw.tool_id))
+                .flatten()
+        })
+        .or_else(|| {
+            (stage.parser == ToolParser::RoslynSarif)
+                .then(|| roslyn_target(&raw.tool_id))
                 .flatten()
         })
         .or_else(|| {
@@ -765,6 +793,7 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
         | ToolParser::EslintJson
+        | ToolParser::RoslynSarif
         | ToolParser::TyposJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
         ToolParser::Sarif | ToolParser::CargoJson | ToolParser::None => None,
@@ -779,6 +808,7 @@ mod tests {
     const ACTIONLINT: &str = include_str!("../tests/fixtures/actionlint.json");
     const RUFF: &str = include_str!("../tests/fixtures/ruff.json");
     const ESLINT: &str = include_str!("../tests/fixtures/eslint.json");
+    const UNITY_SARIF: &str = include_str!("../tests/fixtures/sarif-roslyn-unity.json");
 
     fn stage(parser: ToolParser) -> ToolStage {
         ToolStage {
@@ -1146,6 +1176,36 @@ mod tests {
         assert_eq!(got, want.map(|(a, b, c)| (a.to_owned(), b.to_owned(), c)));
         assert!(parse(ToolParser::EslintJson, "").expect("empty").is_empty());
         assert!(parse(ToolParser::EslintJson, "not json").is_err());
+    }
+
+    // frob:ticket 01M4D94X9ESER47HCP4DTW2X7C
+    // frob:tests crates/gob-check/src/tool_parse.rs::roslyn_target
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
+    #[test]
+    fn unity_analyzer_ids_map_to_unity101_and_suppressed_dead_code_is_set_aside() {
+        let found = parse(ToolParser::RoslynSarif, UNITY_SARIF).expect("parse");
+        let st = stage(ToolParser::RoslynSarif);
+        let live: Vec<(String, String)> = found
+            .iter()
+            .filter(|f| f.suppressed.is_none())
+            .filter_map(|f| classify(&st, f).map(|(id, _)| (f.tool_id.clone(), id.to_string())))
+            .collect();
+        let want = [
+            ("UNT0008", "UNITY101"),
+            ("UNT0001", "UNITY101"),
+            ("VSTHRD100", "CONC001"),
+            ("IDE0051", "DEAD001"),
+            ("CA1822", "LINT001"),
+        ];
+        assert_eq!(live, want.map(|(a, b)| (a.to_owned(), b.to_owned())));
+        assert!(
+            found
+                .iter()
+                .any(|f| f.tool_id == "IDE0051" && f.suppressed.is_some()),
+            "the engine-called message's IDE0051 is flagged suppressed by the USP suppressor"
+        );
+        let (_, sev) = classify(&st, &found[0]).expect("classified");
+        assert_eq!(sev, Severity::Warn);
     }
 
     // frob:tests crates/gob-check/src/tool_parse.rs::classify

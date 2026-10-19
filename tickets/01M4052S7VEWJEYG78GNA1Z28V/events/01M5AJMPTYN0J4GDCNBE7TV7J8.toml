@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-mirror/src/create.rs", "crates/frob-mirror/tests/create.rs", "crates/frob-mirror/src/lib.rs"]
+new = ["crates/frob-mirror/src/create.rs", "crates/frob-mirror/tests/create.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
+at = "2026-10-19T17:16:41Z"
+actor = "lognd"
+rev = 1

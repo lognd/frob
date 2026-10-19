@@ -69,6 +69,20 @@ tier = "train"
 optional = true
 inputs = ["**/*.ts", "**/*.tsx", "tsconfig*.json", "package.json", "eslint.typed.config.*"]
 "#;
+/// The `[[check.tool]]` stage `frob init` adds to a repository with a root `.sln` or `.csproj`: `dotnet build` with the Roslyn error log on stdout.
+// frob:ticket 01M4D94X9ESER47HCP4DTW2X7C
+const DOTNET_STAGE: &str = r#"
+# dotnet build writes the Roslyn SARIF error log (CA, IDE, VSTHRD and Microsoft.Unity.Analyzers ids); UNT* map to UNITY101, unused-code ids to DEAD001, VSTHRD* to CONC001.
+# Reference Microsoft.Unity.Analyzers (its USP suppressors keep engine-called messages and serialized fields out of IDE0051/IDE0052) and
+# Microsoft.VisualStudio.Threading.Analyzers as PackageReferences; the log is one file, so a multi-project build keeps the last project's.
+[[check.tool]]
+name = "dotnet"
+command = "sh"
+args = ["-c", "mkdir -p .frob && rm -f .frob/dotnet.sarif && dotnet build -nologo -v:q -p:EnforceCodeStyleInBuild=true -p:EnableNETAnalyzers=true '-p:ErrorLog=.frob/dotnet.sarif%2Cversion=2.1' >&2; cat .frob/dotnet.sarif"]
+parser = "roslyn-sarif"
+version_args = ["-c", "dotnet --version"]
+inputs = ["**/*.cs", "**/*.csproj", "**/*.sln", "**/*.asmdef", ".editorconfig", "Directory.Build.props"]
+"#;
 /// Time a `git config` call may take.
 const GIT_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -225,28 +239,31 @@ fn owner_attesters(repo: &Repo) -> Option<toml::Value> {
     }
 }
 
-// frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
-/// Append the ruff stage to `frob.toml` when the repository has a `pyproject.toml` and no ruff stage yet; returns whether it changed.
-fn ensure_python_stage(root: &Path, dry_run: bool) -> Result<bool, CliError> {
-    if !root.join("pyproject.toml").is_file() {
-        tracing::debug!("no pyproject.toml; no python stage");
-        return Ok(false);
-    }
+// frob:ticket 01M4D94X9ESER47HCP4DTW2X7C
+/// Append `stages` to `frob.toml` unless a tool stage whose name starts with `prefix` exists; returns whether it changed.
+fn append_tool_stages(
+    root: &Path,
+    dry_run: bool,
+    prefix: &str,
+    stages: &str,
+) -> Result<bool, CliError> {
     let path = root.join("frob.toml");
     let existing = read_or_empty(&path)?;
-    let has_ruff = existing
+    let present = existing
         .parse::<toml::Table>()
         .ok()
         .and_then(|t| {
-            t.get("check")?.get("tool")?.as_array().map(|stages| {
-                stages
-                    .iter()
-                    .any(|s| s.get("name").and_then(toml::Value::as_str) == Some("ruff"))
+            t.get("check")?.get("tool")?.as_array().map(|list| {
+                list.iter().any(|s| {
+                    s.get("name")
+                        .and_then(toml::Value::as_str)
+                        .is_some_and(|n| n.starts_with(prefix))
+                })
             })
         })
         .unwrap_or(false);
-    if has_ruff {
-        tracing::debug!("ruff stage already configured");
+    if present {
+        tracing::debug!(prefix, "tool stage already configured");
         return Ok(false);
     }
     if !dry_run {
@@ -254,12 +271,22 @@ fn ensure_python_stage(root: &Path, dry_run: bool) -> Result<bool, CliError> {
         if !text.is_empty() && !text.ends_with('\n') {
             text.push('\n');
         }
-        text.push_str(RUFF_STAGE);
+        text.push_str(stages);
         std::fs::write(&path, text)
             .map_err(|e| CliError::internal(format!("cannot write {}: {e}", path.display())))?;
     }
-    tracing::info!(path = %path.display(), dry_run, "ruff stage added for the pyproject repository");
+    tracing::info!(path = %path.display(), dry_run, prefix, "tool stages added");
     Ok(true)
+}
+
+// frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
+/// Append the ruff stage to `frob.toml` when the repository has a `pyproject.toml` and no ruff stage yet; returns whether it changed.
+fn ensure_python_stage(root: &Path, dry_run: bool) -> Result<bool, CliError> {
+    if !root.join("pyproject.toml").is_file() {
+        tracing::debug!("no pyproject.toml; no python stage");
+        return Ok(false);
+    }
+    append_tool_stages(root, dry_run, "ruff", RUFF_STAGE)
 }
 
 // frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
@@ -270,36 +297,29 @@ fn ensure_web_stages(root: &Path, dry_run: bool) -> Result<bool, CliError> {
         tracing::debug!("no package.json naming eslint; no web stages");
         return Ok(false);
     }
-    let path = root.join("frob.toml");
-    let existing = read_or_empty(&path)?;
-    let has_eslint = existing
-        .parse::<toml::Table>()
-        .ok()
-        .and_then(|t| {
-            t.get("check")?.get("tool")?.as_array().map(|stages| {
-                stages.iter().any(|s| {
-                    s.get("name")
-                        .and_then(toml::Value::as_str)
-                        .is_some_and(|n| n.starts_with("eslint"))
-                })
-            })
+    append_tool_stages(root, dry_run, "eslint", ESLINT_STAGES)
+}
+
+// frob:ticket 01M4D94X9ESER47HCP4DTW2X7C
+/// Whether `root` holds a `.sln` or `.csproj` file (a .NET or generated Unity solution).
+fn has_dotnet_project(root: &Path) -> bool {
+    std::fs::read_dir(root).is_ok_and(|entries| {
+        entries.flatten().any(|e| {
+            e.path()
+                .extension()
+                .is_some_and(|x| x == "sln" || x == "csproj")
         })
-        .unwrap_or(false);
-    if has_eslint {
-        tracing::debug!("eslint stage already configured");
+    })
+}
+
+// frob:ticket 01M4D94X9ESER47HCP4DTW2X7C
+/// Append the dotnet stage to `frob.toml` when the root has a `.sln` or `.csproj` and no dotnet stage exists yet; returns whether it changed.
+fn ensure_dotnet_stage(root: &Path, dry_run: bool) -> Result<bool, CliError> {
+    if !has_dotnet_project(root) {
+        tracing::debug!("no .sln or .csproj at the root; no dotnet stage");
         return Ok(false);
     }
-    if !dry_run {
-        let mut text = existing;
-        if !text.is_empty() && !text.ends_with('\n') {
-            text.push('\n');
-        }
-        text.push_str(ESLINT_STAGES);
-        std::fs::write(&path, text)
-            .map_err(|e| CliError::internal(format!("cannot write {}: {e}", path.display())))?;
-    }
-    tracing::info!(path = %path.display(), dry_run, "eslint stages added for the eslint repository");
-    Ok(true)
+    append_tool_stages(root, dry_run, "dotnet", DOTNET_STAGE)
 }
 
 /// Ensure `.frob/` is ignored; returns whether the file changed.
@@ -758,6 +778,7 @@ impl Command for Init {
         )?;
         let python_stage = ensure_python_stage(root, ctx.dry_run)?;
         let web_stages = ensure_web_stages(root, ctx.dry_run)?;
+        let dotnet_stage = ensure_dotnet_stage(root, ctx.dry_run)?;
         let gitignore = ensure_gitignore(root, ctx.dry_run)?;
         let (merge_driver, driver, driver_warning) = ensure_merge_driver(
             root,
@@ -780,6 +801,7 @@ impl Command for Init {
         let already = config.added.is_empty()
             && !python_stage
             && !web_stages
+            && !dotnet_stage
             && !gitignore.changed
             && !merge_driver.changed
             && !gitattributes.changed;
@@ -852,6 +874,29 @@ mod tests {
         assert_eq!(stages[0]["parser"].as_str(), Some("eslint-json"));
         assert_eq!(stages[1]["name"].as_str(), Some("eslint-typed"));
         assert_eq!(stages[1]["tier"].as_str(), Some("train"));
+    }
+
+    // frob:ticket 01M4D94X9ESER47HCP4DTW2X7C
+    // frob:tests crates/frob/src/init.rs::ensure_dotnet_stage
+    // frob:tests crates/frob/src/init.rs::append_tool_stages
+    #[test]
+    fn a_dotnet_repository_gets_one_roslyn_sarif_stage() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path();
+        std::fs::write(root.join("frob.toml"), "[check]\nbase = \"main\"\n").expect("write");
+        assert!(!ensure_dotnet_stage(root, false).expect("no project"));
+        std::fs::write(root.join("Game.sln"), "").expect("write");
+        assert!(ensure_dotnet_stage(root, true).expect("dry run"));
+        assert!(ensure_dotnet_stage(root, false).expect("first"));
+        assert!(!ensure_dotnet_stage(root, false).expect("second is a no-op"));
+        let table: toml::Table = std::fs::read_to_string(root.join("frob.toml"))
+            .expect("read")
+            .parse()
+            .expect("valid toml");
+        let stages = table["check"]["tool"].as_array().expect("stages");
+        assert_eq!(stages.len(), 1);
+        assert_eq!(stages[0]["name"].as_str(), Some("dotnet"));
+        assert_eq!(stages[0]["parser"].as_str(), Some("roslyn-sarif"));
     }
 
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40

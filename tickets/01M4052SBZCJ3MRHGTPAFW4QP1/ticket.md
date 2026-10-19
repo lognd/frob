@@ -2,16 +2,16 @@
 id = "01M4052SBZCJ3MRHGTPAFW4QP1"
 title = "Duplicate closing on every run"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-03T05:51:36Z"
+updated = "2026-10-19T17:35:35Z"
 idempotency_key = "m2-mirror2-dups"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/dups.rs"]
+scope = ["crates/frob-mirror/src/dups.rs", "crates/frob-mirror/tests/dups/main.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -31,15 +31,15 @@ target = "01M4052R88Y0A9HQHDB86ERMEM"
 
 [[acceptance]]
 text = "Given two bot issues with valid markers for one ULID, when a run lists them, then the lowest number is canonical and the other is closed as a duplicate of it with its marker kept"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a closed duplicate that a human edited, when the next run reads it, then the edit is captured"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a human who reopens a closed duplicate, when the next run lists, then it is closed again"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.3 (Duplicates; F6).

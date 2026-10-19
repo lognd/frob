@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T17:25:34Z"
+digest = "f644d0f4fbc794f3cf2babce0d59aac49eedb71184f317e4b01e180fdbc0faba"
+exit_code = 0
+inline = """
+
+running 1 test
+test tool_parse::tests::unity_analyzer_ids_map_to_unity101_and_suppressed_dead_code_is_set_aside ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 105 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running unittests src/lib.rs (target/debug/deps/gob_check-37165dd97aa22185)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-check --lib unity_analyzer_ids_map_to_unity101_and_suppressed_dead_code_is_set_aside"
+size = 372
+status = "measured"
+at = "2026-10-19T17:25:34Z"
+actor = "lognd"
+rev = 1

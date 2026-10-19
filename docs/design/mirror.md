@@ -250,6 +250,12 @@ and in `frob mirror status`.
   no idempotency key, so a duplicate can still appear (a timed-out
   create that lands after its retry); the model confirms this cannot be
   prevented, only bounded: at most one extra issue per uncertain create.
+  Implemented in `frob_mirror::create`: `create_issue` persists the
+  uncertain flag and commits the journal entry before the tracker is
+  called, `recover` adopts the issue whose bot-authored marker carries
+  the nonce (or reports it not landed), and `CreatedIssue::store_cursor`
+  stores the history cursor taken before listing, only after the commit
+  proof.
 - **Duplicates are found every run, not only on first sync** (F6): if
   two bot issues carry valid markers for one ULID, the lowest issue
   number is canonical; the others are closed as duplicates of it, keep
