@@ -2,7 +2,8 @@
 id = "01M5ASPRW2FYMNRHWQHEVN9W9J"
 title = "Mirror: real GitHub TrackerAdapter over an HTTP transport (read/create/update/close/inventory)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
