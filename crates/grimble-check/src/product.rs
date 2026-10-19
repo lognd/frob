@@ -13,6 +13,7 @@ use gob_rules::{
 };
 use gob_text::{FileInterner, Span};
 use grimble_arch::{ArchInput, ArchReport};
+use grimble_lints::pass::{PathFile, PathReport};
 use grimble_model::{ModelFiles, check_model, file_table};
 
 use crate::bind_cache::{self, BindSummary};
@@ -41,6 +42,8 @@ pub struct GrimbleInputs {
     pub binding: BindSummary,
     /// The CYCLE, LARGE and DEAD verdicts (grimble-arch), recomputed each run.
     pub arch: ArchReport,
+    /// The PATH001 to PATH003 verdicts (grimble-lints), recomputed each run.
+    pub path: PathReport,
 }
 
 /// What a run leaves behind for the document builder: the model view and which exception parked which finding.
@@ -126,7 +129,13 @@ fn arch_metas() -> Vec<&'static RuleMeta> {
     legacy_metas(&CELL, grimble_arch::rules::METAS)
 }
 
-/// Every rule grimble reports: the global registry plus the declared MDL, SYS and architecture rules (for slugs and polarity).
+/// The host-path portability rules (the PATH family `grimble-lints` declares).
+fn path_metas() -> Vec<&'static RuleMeta> {
+    static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
+    legacy_metas(&CELL, grimble_lints::rules::METAS)
+}
+
+/// Every rule grimble reports: the global registry plus the declared MDL, SYS, architecture and path rules (for slugs and polarity).
 pub(crate) fn registry() -> &'static Registry {
     static CELL: OnceLock<Registry> = OnceLock::new();
     CELL.get_or_init(|| {
@@ -134,7 +143,8 @@ pub(crate) fn registry() -> &'static Registry {
             .iter()
             .chain(model_metas())
             .chain(binding_metas())
-            .chain(arch_metas());
+            .chain(arch_metas())
+            .chain(path_metas());
         Registry::from_metas(metas)
     })
 }
@@ -156,6 +166,30 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .get(def.id)
         .cloned()
         .or_else(|| snap.inputs.arch.not_applicable.get(def.id).cloned())
+        .or_else(|| snap.inputs.path.not_applicable.get(def.id).cloned())
+}
+
+/// Run the PATH rules over every Rust, Python, TypeScript and C# file of the walk (uncached).
+fn path_report(
+    entries: &[gob_walk::FileEntry],
+    read: &dyn Fn(&str) -> Option<String>,
+) -> PathReport {
+    let texts: Vec<(&str, gob_languages::Language, String)> = entries
+        .iter()
+        .filter_map(|e| {
+            let language = gob_languages::Language::detect(&e.path)?;
+            read(&e.path).map(|text| (e.path.as_str(), language, text))
+        })
+        .collect();
+    let files: Vec<PathFile<'_>> = texts
+        .iter()
+        .map(|(path, language, text)| PathFile {
+            path,
+            language: *language,
+            text,
+        })
+        .collect();
+    grimble_lints::pass::analyze(&files, &grimble_lints::path::Options::default())
 }
 
 /// Run the architecture rules over the walk (graph built from the bound code, uncached).
@@ -257,6 +291,9 @@ impl Product for Grimble {
             cx.core.text(p).ok()
         });
         cx.timing.push("architecture", started.elapsed(), false);
+        let started = std::time::Instant::now();
+        let path = path_report(&cx.core.entries, &|p| cx.core.text(p).ok());
+        cx.timing.push("path", started.elapsed(), false);
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
             trace.view = Some(Arc::clone(&view));
@@ -267,6 +304,7 @@ impl Product for Grimble {
                 .not_applicable
                 .iter()
                 .chain(&arch.not_applicable)
+                .chain(&path.not_applicable)
                 .map(|(rule, why)| ((*rule).to_owned(), why.clone()))
                 .collect();
         }
@@ -279,6 +317,7 @@ impl Product for Grimble {
                 view,
                 binding,
                 arch,
+                path,
             },
             findings: Vec::new(),
         })
@@ -290,6 +329,7 @@ impl Product for Grimble {
             .iter()
             .chain(grimble_bind::rules::METAS)
             .chain(grimble_arch::rules::METAS)
+            .chain(grimble_lints::rules::METAS)
             .copied()
         {
             set = set.stage_when(def, move |p, snap| inapplicable(p, snap, def));
@@ -362,12 +402,34 @@ impl Product for Grimble {
                     .map(|(rule, n)| (*rule, *n))
                     .collect()
             }),
+            RepoGroup::new(
+                "repo:path",
+                path_metas(),
+                |s: &Snapshot<Self>, files: &mut FileInterner| {
+                    s.inputs
+                        .path
+                        .findings
+                        .iter()
+                        .cloned()
+                        .filter_map(|f| f.into_finding(files))
+                        .collect()
+                },
+            )
+            .counting(|s| {
+                s.inputs
+                    .path
+                    .subjects
+                    .iter()
+                    .map(|(rule, n)| (*rule, *n))
+                    .collect()
+            }),
         ]
     }
 
     fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
         !snap.inputs.binding.not_applicable.contains_key(meta.id)
             && !snap.inputs.arch.not_applicable.contains_key(meta.id)
+            && !snap.inputs.path.not_applicable.contains_key(meta.id)
     }
 
     fn repo_digest(&self, _snap: &Snapshot<Self>) -> Vec<u8> {

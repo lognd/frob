@@ -122,7 +122,7 @@ pub fn default_severity(kind: Kind, test_context: bool) -> Severity {
     match kind {
         Kind::AbsoluteHostPath if test_context => Severity::Advisory,
         Kind::AbsoluteHostPath | Kind::StringPathSeparator | Kind::PathInCommandLine => {
-            Severity::Warn
+            Severity::Error
         }
     }
 }
@@ -258,11 +258,11 @@ mod tests {
         );
         assert_eq!(
             default_severity(Kind::AbsoluteHostPath, false),
-            Severity::Warn
+            Severity::Error
         );
         assert_eq!(
             default_severity(Kind::PathInCommandLine, true),
-            Severity::Warn
+            Severity::Error
         );
     }
 

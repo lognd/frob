@@ -186,9 +186,9 @@ is not reused, so converted v1 waivers keep their meaning.
 
 | Rule | Fires on | Default |
 |---|---|---|
-| PATH001 `absolute-host-path` | a string literal that is an absolute host path: `/home/<name>/`, `/Users/<name>/`, `/root/`, `/tmp/...`, a drive path `X:\` or `X:/`, a UNC path; not `/`, URLs, shebang lines, or entries in `[path] allowed` (default `/dev/null`) | Warn in non-test code, Advisory in tests and fixtures |
-| PATH002 `string-path-separator` | a value produced by turning a path into a string (Rust `to_str`, `to_string_lossy`, `display`, `as_os_str`; Python `str(p)`, `os.fspath`; per-language through the callee vocabulary) that is split, joined, concatenated, compared, trimmed or searched with a literal `/` or `\` in the same function | Warn |
-| PATH003 `path-in-command-line` | a path-derived string interpolated into one command-line string (`format!` into a shell command, `sh -c`, a git config value that git runs, a `.ps1` body) instead of passed as its own argument | Warn |
+| PATH001 `absolute-host-path` | a string literal that is an absolute host path: `/home/<name>/`, `/Users/<name>/`, `/root/`, `/tmp/...`, a drive path `X:\` or `X:/`, a UNC path; not `/`, URLs, shebang lines, or entries in `[path] allowed` (default `/dev/null`) | Error in non-test code, Advisory in tests and fixtures |
+| PATH002 `string-path-separator` | a value produced by turning a path into a string (Rust `to_str`, `to_string_lossy`, `display`, `as_os_str`; Python `str(p)`, `os.fspath`; per-language through the callee vocabulary) that is split, joined, concatenated, compared, trimmed or searched with a literal `/` or `\` in the same function | Error |
+| PATH003 `path-in-command-line` | a path-derived string interpolated into one command-line string (`format!` into a shell command, `sh -c`, a git config value that git runs, a `.ps1` body) instead of passed as its own argument | Error |
 
 Remedies name the portable form: `Path::join`, `components`,
 `strip_prefix` and `Path` equality; the repository-relative path type

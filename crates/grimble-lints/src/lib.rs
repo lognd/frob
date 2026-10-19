@@ -14,6 +14,10 @@
 //! path-to-string separator handling and `PATH003` paths in command-line strings; a language
 //! without path-conversion roles reports them unresolved.
 //!
+//! [`pass::analyze`] runs [`path::scan`] over the walked files and returns the `PATH001` to
+//! `PATH003` verdicts for the product; the rules are declared in [`rules`] and staged like the
+//! architecture rules.
+//!
 //! [`neat::scan`] finds `NEAT010` effect claims a unit's calls contradict (an `effects` capability
 //! answering [`gob_ir::Answer`] bounds) and `NEAT031` dispatchers that own condition logic, in Rust.
 //!
@@ -23,7 +27,10 @@
 // frob:ticket 01M4D956T20WN96P7A3K4B9CKF
 
 pub mod err;
+pub mod host;
 pub mod neat;
+pub mod pass;
 pub mod path;
 pub mod res;
+pub mod rules;
 pub mod typing;

@@ -222,6 +222,14 @@
 |---|---|---|---|---|---|---|
 | [PARSE001](PARSE001.md) | malformed-directive | error | manual | P+ | false | A `frob:` directive is malformed: unterminated quote, bad key, missing or invalid argument. |
 
+## PATH
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [PATH001](PATH001.md) | absolute-host-path | error | manual | P- | true | A string literal that is an absolute host path. |
+| [PATH002](PATH002.md) | string-path-separator | error | manual | P- | true | A path turned into a string and then handled with a literal separator. |
+| [PATH003](PATH003.md) | path-in-command-line | error | manual | P- | true | A path interpolated into one command-line string instead of passed as its own argument. |
+
 ## PERF
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
