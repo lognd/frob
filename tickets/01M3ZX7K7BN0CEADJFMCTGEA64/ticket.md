@@ -2,16 +2,16 @@
 id = "01M3ZX7K7BN0CEADJFMCTGEA64"
 title = "Repository pack loader for tiers 1 and 2"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-03T03:34:25Z"
+updated = "2026-10-19T06:19:07Z"
 idempotency_key = "m2-packs-repo-loader"
 labels = ["milestone:2", "area:packs"]
-scope = ["crates/gob-packs/src/loader/**"]
+scope = ["crates/gob-packs/src/loader/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/loader.rs"]
 
 [[links]]
 kind = "blocked-by"
