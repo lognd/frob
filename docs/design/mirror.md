@@ -314,6 +314,19 @@ and in `frob mirror status`.
   go. If comments are enabled, the once-per-day rule checks the issue's
   own comments before posting, not state in the map (F7).
 
+**Field ownership guard (implemented in `frob-mirror/src/fields.rs`).**
+The raw `[mirror.fields]` table deserializes into `FieldsConfig` (an
+owner per projected field plus `tracker_owned` custom field names).
+`FieldOwnership::load` checks it covers exactly the projected fields:
+an unowned projected field is `Unowned`, an owner entry for a field
+that is not projected is `Unknown`; both are returned as errors.
+`FieldOwnership::authorize` is the only way to build a `WriteOp`, so
+a write to a tracker-owned target cannot be expressed: a label outside
+the `frob:` prefix and a field listed in `tracker_owned` are refused
+with `TrackerOwned`. `plan_writes` turns a rendered `PlannedOps` into
+authorized writes and drops (logging at debug) every refused one;
+`plan_project_writes` does the same for requested project fields.
+
 **Map shards (implemented in `frob-mirror/src/mapfile.rs`).** One JSON
 shard per ticket, keyed by ULID, holds issue number, node id, cached
 location, last observed normalized values, history cursor, last event
@@ -385,6 +398,17 @@ byte-identical output. Neutralisation and render limits layer on top.
   only status is reconciled; other project fields are read-time only.
 - Transfer, conversion to a discussion, lock and pin are classified and
   reported, never acted on blindly.
+
+**Write gate (implemented in `frob-mirror/src/fields.rs`).** The
+`WriteOp` type is only constructible through `FieldOwnership::authorize`,
+so the publishing path cannot build a write to a tracker-owned target.
+The rules it enforces: only labels in the `frob:` namespace
+(`frob:managed` among them) are writable; custom fields named in
+`tracker_owned` are refused; and of the project fields only `status`
+(`PROJECT_STATUS_FIELD`) is writable, any other project field fails
+with `ProjectFieldReadOnly`. `plan_writes` (for rendered labels and
+custom fields) and `plan_project_writes` (for requested project
+fields) return only the authorized operations.
 
 ### 3.6a Operational details (closing the re-cut's gaps)
 
