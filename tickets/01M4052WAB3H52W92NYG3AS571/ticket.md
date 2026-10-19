@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-19T16:19:54Z"
+updated = "2026-10-19T16:22:06Z"
 idempotency_key = "m2-mirror2-fake-github"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/support/**"]
@@ -19,7 +19,7 @@ target = "01M3ZX83AB2JADBKWFA9SY4J60"
 
 [[acceptance]]
 text = "Given a seed, when a scenario runs twice, then both runs are identical"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a delayed create, when time advances, then the issue appears later with an event id in order"
