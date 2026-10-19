@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T13:26:31Z"
-updated = "2026-10-19T14:00:54Z"
+updated = "2026-10-19T14:03:51Z"
 labels = ["milestone:2"]
 scope = ["crates/grimble/**", "docs/design/cli.md"]
 
