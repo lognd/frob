@@ -84,6 +84,7 @@ pub mod migrate;
 pub mod mirror_map; // frob:ticket 01M4M85N13CXXPTEE7PYVCV0NS
 pub mod misfiled; // frob:ticket 01M3ZX86ZX0SCN2FHTDBQF97FD
 pub mod model;
+pub mod nudge; // frob:ticket 01M4052VF61FCR6FQS2KSS1NJG
 pub mod moves; // frob:ticket 01M3ZX86W1P62F80ZNR17Q0SQ9
 pub mod objects;
 pub mod ops;
