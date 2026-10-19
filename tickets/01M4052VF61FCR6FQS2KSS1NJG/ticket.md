@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-19T19:21:04Z"
+updated = "2026-10-19T19:26:21Z"
 idempotency_key = "m2-mirror2-nudge"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-ledger/src/nudge.rs", "crates/frob-ledger/src/lib.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX82Q2N145P3DWVVY4E868"
 
 [[acceptance]]
 text = "Given the generator, when run twice, then the bytes are identical"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the generated workflow, when inspected, then it references no secrets and no environment"
