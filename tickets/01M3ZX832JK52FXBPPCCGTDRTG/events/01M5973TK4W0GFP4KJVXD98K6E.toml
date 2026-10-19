@@ -1,0 +1,16 @@
+kind = "evidence"
+captured_at = "2026-10-19T04:33:00Z"
+digest = "c64d21b2c50d41c229d4f1769f5fe3bc2695265adb153ea486f85a124d9f20eb"
+exit_code = 100
+failed_tests = ["workspace_layering_holds_and_every_crate_has_a_layer", "every_leaf_command_has_a_scenario_or_a_skip_reason"]
+passed = false
+provider = "nextest"
+ref = "package(frob-mirror) and test(projection)"
+size = 145582
+status = "measured"
+test_count = 1363
+tests_digest = "83d1da91f5a09eab184d33729df6172e28a4da6aebafbb0f1925a2e0fbea3ecc"
+uri = "dir:.git/frob/artifacts/c64d21b2c50d41c229d4f1769f5fe3bc2695265adb153ea486f85a124d9f20eb"
+at = "2026-10-19T04:33:00Z"
+actor = "lognd"
+rev = 1

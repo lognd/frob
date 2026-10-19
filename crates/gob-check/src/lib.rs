@@ -49,6 +49,7 @@
 //! metadata`), so grimble links it without pulling frob in.
 
 pub mod applicability;
+pub mod base_unknowns;
 mod cargo_json;
 mod config;
 mod core;

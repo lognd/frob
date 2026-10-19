@@ -1,0 +1,24 @@
+[package]
+name = "crunk-fix"
+version.workspace = true
+description = "crunk fix: Tier A autofix engine over gob-fix (stylesheet sites only, atomic, dry-run identical to the real run)."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+crunk-check = { version = "0.532.0", path = "../crunk-check" }
+gob-fix = { version = "0.532.0", path = "../gob-fix" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+proptest = "1"
+tempfile = "3"
+
+[lints]
+workspace = true

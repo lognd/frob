@@ -2,13 +2,14 @@
 id = "01M43ATCQVX9A1TJ6A4AE48FDX"
 title = "crunk fix: autofix engine on gob-fix (Tier A, tolerance-gated)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:36Z"
-updated = "2026-10-19T04:14:15Z"
+updated = "2026-10-19T04:15:38Z"
 idempotency_key = "crunk-plan-afix"
 labels = ["area:crunk"]
 scope = ["crates/crunk-fix/**", "crates/crunk/src/fix.rs", "crates/crunk/tests/fix*.rs", "Cargo.lock", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", ".gitignore", "changelog.d/01M43ATCQVX9A1TJ6A4AE48FDX.added.md", "docs/reference/grl/catalog.md"]

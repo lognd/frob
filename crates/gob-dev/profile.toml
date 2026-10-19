@@ -500,6 +500,12 @@ budget_ms = 500
 [scenario."crunk init"]
 skip = "scaffolds files into the working directory and refuses when crunk.toml exists, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/init.rs"
 
+[scenario."crunk fix"]
+args = ["fix", "--dry-run"]
+readonly = true
+exit = [0, 1, 3]
+budget_ms = 500
+
 [scenario."crunk gallery check"]
 skip = "opt-in behind the gallery cargo feature, absent from the default build the profile times; covered by crates/crunk-gallery tests"
 

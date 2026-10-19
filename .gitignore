@@ -42,3 +42,4 @@ done-report-*.md
 *.whl
 *.snap.new
 *.pending-snap
+.crunk/

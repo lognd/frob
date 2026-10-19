@@ -1,0 +1,1 @@
+Added IssueProjection in frob-mirror: the tracker-independent, typed description of a ticket (ordered sections, relations, provenance with a stable render digest, and `[mirror] exclude` withholding recorded in `private`).
