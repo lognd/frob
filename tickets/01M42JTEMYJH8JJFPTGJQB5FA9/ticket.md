@@ -4,9 +4,10 @@ title = "Make frob-evidence escape_line and escape_non_ascii thin wrappers over 
 type = "chore"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-04T04:30:12Z"
-updated = "2026-10-04T04:30:12Z"
+updated = "2026-10-19T19:54:45Z"
 scope = ["crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src/attestation.rs"]
 
 [[acceptance]]
