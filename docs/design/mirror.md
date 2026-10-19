@@ -1,11 +1,6 @@
 # Ticket branch and the one-way tracker mirror
 
-Status: current
-Owner: frob
-Decisions: D79
-Audience: contributor
-
-Provenance: ACCEPTED with changes (D79). Owner decisions 2026-10-04: GitHub
+Status: ACCEPTED with changes (D79). Owner decisions 2026-10-04: GitHub
 Issues first behind a platform-agnostic producer (section 2.1); tracker
 edits never block anything (section 3.4). The protocol (section 3) was
 rewritten from an adversarial audit and a TLA+ model (ticket ~HV53M66).
@@ -60,15 +55,6 @@ this phase; it detects them and reports them.
 The field mapping is configuration (`[mirror.<tracker>]`), materialized,
 versioned, and checked at load against the tracker's live schema.
 
-The mapping is `frob_mirror::config::MappingConfig` (a `version` and one
-route per field: `label` with a prefix, `field`, `issue_type`, `state` or
-`drop`), validated by `frob_mirror::mapping::Mapping::load`. Every
-mappable projection field (`ticket_type`, `labels`, `priority`,
-`points`, `milestone`, `epic`, `category`, `outcome`, `owner`,
-`assignee`) must be routed or dropped; a missing one is a config error
-naming the field. `Mapping::apply` turns a projection into `PlannedOps`
-(labels, custom fields, issue type, state inputs).
-
 ### 2.1 The producer is platform agnostic: the issue projection
 
 GitHub Issues comes first, but nothing GitHub-specific lives above the
@@ -99,13 +85,9 @@ Each adapter declares a `capabilities` record (native sub-issues,
 native links, custom fields, state reasons, markdown dialect) and the
 mapping is checked against it at load: a projection field the mapping
 neither routes nor explicitly drops is a configuration error, so no
-information disappears silently. The trait and record are
-`frob_mirror::adapter::{TrackerAdapter, Capabilities}`; `route_relations`
-sends parent and child edges to native sub-issues when declared, and
-every other edge to native links when declared, else to body links.
-The projection's JSON schema is
+information disappears silently. The projection's JSON schema is
 generated from the Rust type (`cargo dev gen schemas`, file
-`docs/schemas/issue-projection.json`);
+`docs/schemas/issue-projection.json`) when the producer is implemented;
 `frob mirror render <ticket>` prints a projection, so a GitLab or Jira
 adapter can be developed and tested from recorded projections without
 touching the producer.
@@ -136,13 +118,7 @@ and in `frob mirror status`.
   workflow file from the ticket branch, which every ledger writer can
   edit. A secret-free nudge workflow on the ticket branch may send a
   `repository_dispatch` ("something changed"); it carries nothing the
-  mirror trusts.
-  Implemented in `crates/frob-ledger/src/nudge.rs`: `render` emits the
-  workflow as a pure function of the ticket branch and the bot ids (sorted,
-  deduplicated), so the TICK rule can byte-compare it; it uses no secrets
-  and no environment (the token is `github.token`), and its `if:` skips
-  pushes whose `github.actor_id` is a mirror bot id, so the mirror's own
-  ledger commits send no dispatch. Scheduled runs also catch tracker edits made when the
+  mirror trusts. Scheduled runs also catch tracker edits made when the
   ledger is quiet (model flaw F1).
 - Credentials (a dedicated GitHub App's key, the marker keyring) live in
   an environment whose deployment branches are restricted to the
@@ -156,23 +132,9 @@ and in `frob mirror status`.
   updated by CAS) and keeps a watermark of the last processed ledger
   commit (MIR-AUD-13). The mirror's own ledger commits never trigger
   runs.
-  Implemented in `crates/frob-mirror/src/lock.rs`: `acquire` takes the
-  lock record (`writer-lock`, run id and time) by CAS; a live holder
-  returns `Busy` (exit without work, no error), one older than the TTL
-  (`lock_ttl_minutes`) is taken over and logged; `release` frees it only
-  if still ours. `pending_commits` returns the ledger commits after the
-  stored `watermark`, minus the mirror's own (`triggers_run` is false
-  for those).
 - MIR001 is time-based: "no successful run for N hours" (scheduled runs
   are delayed, dropped, and disabled after inactivity), plus the
   per-scope reasons below.
-  Implemented in `crates/frob-obligations/src/mir.rs`: `mir001` takes the
-  recorded `MirrorRunState` (last successful run, per-scope reasons), the
-  clock and N, and returns Advisory findings only: one when the last
-  success is older than N hours or absent (stating the age), one per
-  reason (`rate-limited` with the next window, `budget-too-small`,
-  `token-blind`, `marker-key-unknown`, `render-limit`,
-  `write-not-sticking`). A fresh success with no reasons emits nothing.
 
 ### 3.2 What a run looks at: feed, sweep and budget (MIR-AUD-02, 10, 27, 33; F8)
 
@@ -205,19 +167,6 @@ and in `frob mirror status`.
 - **Progress.** A stopped run commits its progress (the map is sharded
   per ticket and committed every K operations, MIR-AUD-14) and reports
   MIR001 `rate-limited` with the next window. The next run continues.
-  Implemented in `frob-mirror::progress`: `ProgressWriter` writes the
-  pending shards and then the index round-robin cursor every K
-  operations, so a crash repeats at most K operations and never one
-  already behind the cursor.
-- **Outbox** (work class 2). Implemented in `frob_mirror::outbox`: each
-  ledger event is a `LedgerEvent` keyed by ticket ULID plus event ULID and
-  sets one field to one value. `plan_ops` selects oldest first (incremental:
-  events past the shard's `last_event`; `Mode::FullResync`: latest value
-  per ticket and field, rotated after the round-robin cursor, bounded by
-  the budget); `run` skips a value equal to the shard's normalized observed
-  value without any request, stores the tracker's normalized value after a
-  write, holds a failed ticket's later operations for the next run, defers
-  tickets with no issue to the create class, and stops on a rate limit.
 
 ### 3.3 Identity: markers, creates and duplicates (MIR-AUD-04, 05, 09, 15, 16, 24; F3-F6; spoofed marker)
 
@@ -233,21 +182,10 @@ and in `frob mirror status`.
   later revisions changes nothing (F4, MIR-AUD-24). A marker under an
   unknown kid on a bot issue is MIR001 `marker-key-unknown`, never a
   recreate.
-  Implemented in `frob_mirror::marker`: `format_marker`, `parse_marker` and
-  `evaluate`, which returns a `MarkerVerdict` (`Adopted`, `Spoofed` for
-  MIR003, `Rejected` for a bad MAC or MIR001 unknown kid, `Unreadable`,
-  `None`).
 - **Lookup is read-your-writes.** The mirror finds a ticket's issues by
   listing the bot's issues (by creator, newest first), never through
   search, which lags (F5). The tracker is the identity authority; the
   map file is a cache of it.
-  On GitHub this is `github::lookup::lookup_since`: it pages the creator
-  listing (page 1 upward, newest first) and stops at the first page that
-  holds an issue created before the create-start time, or at an empty
-  page. The `ListingSource` trait has no search method. An ignored live
-  test checks a creator listing saved right after a create
-  (`FROB_GH_PROBE_LISTING`, `FROB_GH_PROBE_NUMBER`); its result is recorded on the ticket as the
-  verification of the read-your-writes fact.
 - **Create protocol.** Before a create the run derives a nonce and
   records "create started" in the journal. A create whose outcome is
   unknown (timeout, 5xx, crash) makes the ticket create-uncertain: no
@@ -256,12 +194,6 @@ and in `frob mirror status`.
   no idempotency key, so a duplicate can still appear (a timed-out
   create that lands after its retry); the model confirms this cannot be
   prevented, only bounded: at most one extra issue per uncertain create.
-  Implemented in `frob_mirror::create`: `create_issue` persists the
-  uncertain flag and commits the journal entry before the tracker is
-  called, `recover` adopts the issue whose bot-authored marker carries
-  the nonce (or reports it not landed), and `CreatedIssue::store_cursor`
-  stores the history cursor taken before listing, only after the commit
-  proof.
 - **Duplicates are found every run, not only on first sync** (F6): if
   two bot issues carry valid markers for one ULID, the lowest issue
   number is canonical; the others are closed as duplicates of it, keep
@@ -269,11 +201,6 @@ and in `frob mirror status`.
   still read so edits made on them are captured (F3: the history cursor
   is taken before the ticket's issues are listed and kept across a
   create).
-  Implemented in `frob_mirror::dups`: `plan_duplicates` picks the lowest
-  issue number per ULID from the adopted markers (`claims_from_verdicts`),
-  `close_duplicates` closes the others with reason duplicate (a reopened
-  one is closed again, an already closed one is left alone), and
-  `read_duplicate_history` reads their history so human edits are captured.
 - **Status codes.** 301 (moved or transferred) updates the cached
   location after verifying the marker; 404 is never read as "deleted"
   (a token that cannot see the issue also gets 404); 410 (deleted)
@@ -282,29 +209,12 @@ and in `frob mirror status`.
   <ticket>`. A blindness check (the token sees the repository and its
   own recent issues) runs first; if it fails the run stops with MIR001
   `token-blind`.
-  Implemented in `crates/frob-mirror/src/blind.rs`: `classify` maps
-  adapter errors to a `Disposition` (moved, not visible, unmirrored; none
-  may create), `handle_moved` swaps the cached location only when the
-  marker verifies at the new one, and `check_blind` reads the repository
-  and the bot's newest issue and returns MIR001 `token-blind` on failure.
-  Recreate is implemented in `crates/frob/src/mirror_recreate_cmd.rs`:
-  `recreate` probes the old issue, proceeds only on a 410 (drops the
-  shard's tracker identity, then runs the create protocol), and refuses a
-  404 ("may be invisible, not deleted"), a live issue and a moved one.
-  The CLI verb wiring (store and adapter) is a follow-up.
 - **Own writes.** A dedicated App identity (`[mirror] bot_ids`, by
   user id). Before each mutation the run journals (issue, field, value
   digest, run id); a history entry is "own" only if its actor is a bot
   id and its value digest matches a journaled write. Any other bot
   entry is an edit by "unknown automation". Unconfirmed journal entries
   are re-read at the start of the next run.
-  Implemented in `crates/frob-mirror/src/journal.rs`: `journaled_write`
-  commits the entry (CAS) before the send closure runs;
-  `Journal::classify` returns own, unknown automation, or other (not a
-  bot id); `Journal::recover` re-reads unconfirmed entries at run start
-  and marks each confirmed or lost (a failed read stays unconfirmed).
-  The journal is stored under the key `journal-<ULID>` next to the
-  ticket's shard; 30-day pruning is not yet implemented.
 
 ### 3.4 Reconcile, never block (owner decision; MIR-AUD-03, 06, 11, 20, 25; F2, F7, F9)
 
@@ -325,10 +235,6 @@ and in `frob mirror status`.
 - **The cursor is the history position actually read** (an event id,
   never a time), advanced only after the proposals it covers are
   committed (F2, MIR-AUD-25).
-  Implemented in `frob_mirror::cursor`: `HistoryCursor` (an event-id
-  newtype), `begin_read` (history after the stored cursor, yielding a
-  `PendingCursor` held outside the shard so it survives a create) and
-  `PendingCursor::advance`, which needs a `Committed` proof.
 - **What "nothing is lost" means, precisely** (MIR-AUD-03). The value
   present at read time is always captured (read-time capture compares
   it with the last observed value). Intermediate values and authors are
@@ -340,21 +246,6 @@ and in `frob mirror status`.
   and listed in `frob mirror status`; a repository-level inventory of
   managed labels, milestones and issue types catches renames once,
   not per issue.
-  Implementation: `frob-mirror::github::read` merges timeline events and
-  body revisions into ordered history entries and returns a fidelity
-  gap, never an error, for truncated or deleted revisions.
-- **GitHub writes** (`frob-mirror::github::write`). `GithubWriter` sends
-  only the diff between the issue as read and the rendered projection:
-  title and body in one patch, then `frob:` labels one add or remove
-  call at a time (labels outside `frob:` are never touched, the set is
-  never replaced), then a close carrying a `state_reason` derived from
-  the outcome (`completed`, `not_planned`, `duplicate`) and the reason
-  text. `WriteTransport` has no delete call. Relations use native
-  sub-issues or links when the capabilities say so; the rest are body
-  links already in the render. Mutations are serial and at least one
-  second apart by an injected `Clock`. A failed write (5xx, throttle)
-  is recorded `Failed`, no effect is assumed, the issue's remaining
-  writes stop, and the next run recomputes the same diff.
 - **Revert wars end** (MIR-AUD-06). A field changed again by a
   non-mirror actor within the backoff window is reverted after 1, 2,
   4 ... runs, at most once a day. After three re-applications by the
@@ -367,28 +258,6 @@ and in `frob mirror status`.
   says the issue is managed from the repository and where proposals
   go. If comments are enabled, the once-per-day rule checks the issue's
   own comments before posting, not state in the map (F7).
-
-**Field ownership guard (implemented in `frob-mirror/src/fields.rs`).**
-The raw `[mirror.fields]` table deserializes into `FieldsConfig` (an
-owner per projected field plus `tracker_owned` custom field names).
-`FieldOwnership::load` checks it covers exactly the projected fields:
-an unowned projected field is `Unowned`, an owner entry for a field
-that is not projected is `Unknown`; both are returned as errors.
-`FieldOwnership::authorize` is the only way to build a `WriteOp`, so
-a write to a tracker-owned target cannot be expressed: a label outside
-the `frob:` prefix and a field listed in `tracker_owned` are refused
-with `TrackerOwned`. `plan_writes` turns a rendered `PlannedOps` into
-authorized writes and drops (logging at debug) every refused one;
-`plan_project_writes` does the same for requested project fields.
-
-**Map shards (implemented in `frob-mirror/src/mapfile.rs`).** One JSON
-shard per ticket, keyed by ULID, holds issue number, node id, cached
-location, last observed normalized values, history cursor, last event
-hash and the create-uncertain flag (nonce, start time); a small `index`
-shard holds the round-robin and change-feed cursors. Writes are
-compare-and-swap on the content hash. `resolve` checks the cache, then
-the tracker listing (lowest number wins), and only then allows a create;
-an uncertain create forces recovery first.
 
 ### 3.5 Proposals (MIR-AUD-07, 08, 12, 22; F9)
 
@@ -416,38 +285,12 @@ an uncertain create forces recovery first.
   `proposal-accepted`, `proposal-declined`, `proposal-expired` join
   tickets.md 2a.
 
-#### Recording proposals
-
-`frob_mirror::proposals::record(sink, existing, edits, actor, now, per_run)` turns tracker
-edits (each with its tracker event id and full value) into `proposal` and `proposal-superseded`
-events and hands all of them to `ProposalSink::commit` in one call. Edits whose tracker event id
-is already in the ledger fold (any state) are skipped, as are edits not newer than a recorded
-proposal of the same field. Several edits of one field in a run collapse to the latest. A cap
-(`per_run`, or an (issue, field) already recorded today) holds an edit back and `advance_to`
-stops before it. The excerpt is the first 200 characters, escaped with origin `tracker`; the
-digest covers the full value.
-
-#### GitHub rendering
-
-`frob_mirror::github::render::render(projection, marker)` turns a projection
-into a `RenderedIssue` (title, body, labels, digest). Each section becomes a
-`##` heading in projection order (scope, evidence and the managed notice are
-the generated read-only block), the hidden marker string supplied by the
-marker keyring is the last line of the body, and the only label is
-`frob:managed`. Acceptance lines are rendered as `Bound:` / `Unbound:` list
-items, never task-list checkboxes. The digest is the projection's own render
-digest, and rendering is a pure function, so the same projection yields
-byte-identical output. Neutralisation and render limits layer on top.
-
 ### 3.6 Publishing safely (MIR-AUD-18, 19, 21, 23, 28, 30, 32)
 
 - Render limits are checked before any write: body size (65536
   characters), label count and length, sub-issue limits. A ticket that
   cannot be published is isolated (MIR001 for that ticket only); one bad
-  ticket never stops the run. Implemented in `frob-mirror` `limits`:
-  `check` tests one rendered issue (body 65536 characters, 100 labels of
-  at most 50 characters, 100 sub-issues) and `plan` splits a run into
-  publishable and isolated tickets, each isolation carrying its reason.
+  ticket never stops the run.
 - Mirrored text cannot trigger GitHub side effects: `@` mentions and
   team mentions are neutralised, closing keywords (`fixes #12`) and
   cross-repository references are rendered as plain text, no task-list
@@ -463,17 +306,6 @@ byte-identical output. Neutralisation and render limits layer on top.
   only status is reconciled; other project fields are read-time only.
 - Transfer, conversion to a discussion, lock and pin are classified and
   reported, never acted on blindly.
-
-**Write gate (implemented in `frob-mirror/src/fields.rs`).** The
-`WriteOp` type is only constructible through `FieldOwnership::authorize`,
-so the publishing path cannot build a write to a tracker-owned target.
-The rules it enforces: only labels in the `frob:` namespace
-(`frob:managed` among them) are writable; custom fields named in
-`tracker_owned` are refused; and of the project fields only `status`
-(`PROJECT_STATUS_FIELD`) is writable, any other project field fails
-with `ProjectFieldReadOnly`. `plan_writes` (for rendered labels and
-custom fields) and `plan_project_writes` (for requested project
-fields) return only the authorized operations.
 
 ### 3.6a Operational details (closing the re-cut's gaps)
 
@@ -523,13 +355,6 @@ fields) return only the authorized operations.
   closing-keyword phrases in mirrored text are rendered inside code spans
   (`` `@name` ``, `` `fixes #12` ``), where GitHub neither notifies nor
   links nor closes.
-  Implemented in `crates/frob-mirror/src/github/neutralise.rs`: a
-  mention (`@name`, `@org/team`), an issue reference (`#12`), a
-  cross-repository reference (`owner/repo#5`) or a closing phrase
-  (`fixes #12`, `Closes: o/r#3`) becomes a single code span; email
-  addresses are not mentions. Task-list lines (`- [ ] x`, `* [x] y`,
-  `1. [x] z`) become `- Unbound: x` / `- Bound: y`. Existing code spans
-  and fenced blocks are left verbatim, and the pass is idempotent.
 - **Verifying the tracker facts.** The audit left 16 GitHub facts
   UNVERIFIED (among them read-your-writes listing, the nudge's
   permission, autolink limits); one ticket verifies each against the
