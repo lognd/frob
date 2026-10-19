@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "the unmatched-finding report prints class, severity and reason"
-bound = false
+bound = true
 +++
 
 The runner silently drops findings from rules other than the block rule and marker rules (crates/gob-mdtest/src/run.rs:174). Select the rules a case runs (section config, default the block rule plus marker rules) and fail on any selected finding no marker matches, reported as an unexpected finding like ty. Migrate the existing corpora, adding explicit markers where rules legitimately co-fire. Source: notes/research/rule-testing.md (D103).
