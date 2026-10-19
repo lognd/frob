@@ -7,14 +7,14 @@ priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-19T22:59:44Z"
+updated = "2026-10-19T23:01:57Z"
 aliases = ["T-6604"]
 labels = ["v1-cluster:C1b", "triage:accepted"]
 scope = ["src/frob/app/check_runner.py", "src/frob/process/", "src/frob/_cli_parsers/_check.py", "docs/design/rules.md", "crates/frob-check/**", "docs/**"]
 
 [[acceptance]]
 text = "A second concurrent full check in a worktree is refused naming the live holder pid; a dead holder's lock is reclaimed; --allow-concurrent overrides"
-bound = false
+bound = true
 +++
 
 Measured twice on 2026-09-26 (14:00 and 23:05 local): implementer agents
