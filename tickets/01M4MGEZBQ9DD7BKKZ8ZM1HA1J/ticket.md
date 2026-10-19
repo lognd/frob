@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-11T03:35:19Z"
-updated = "2026-10-19T16:51:55Z"
+updated = "2026-10-19T16:55:13Z"
 scope = ["Cargo.toml", "crates/gob-dev/**", "docs/**"]
 
 [[acceptance]]
