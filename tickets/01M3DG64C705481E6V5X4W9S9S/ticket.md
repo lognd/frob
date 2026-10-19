@@ -2,7 +2,8 @@
 id = "01M3DG64C705481E6V5X4W9S9S"
 title = "`frob check --fix` TEST010 MOVE handler corrupts Python: re-parse after every Tier-A edit and roll back on failure"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "agent"
