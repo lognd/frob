@@ -100,7 +100,10 @@ mod tests {
     use super::*;
 
     fn spec() -> NudgeSpec {
-        NudgeSpec { ticket_branch: "frob/tickets".into(), bot_ids: vec![42, 7, 42] }
+        NudgeSpec {
+            ticket_branch: "frob/tickets".into(),
+            bot_ids: vec![42, 7, 42],
+        }
     }
 
     // frob:tests render
@@ -134,7 +137,10 @@ mod tests {
     // frob:tests render
     #[test]
     fn render_rejects_unsafe_branch() {
-        let bad = NudgeSpec { ticket_branch: "a'b".into(), bot_ids: vec![] };
+        let bad = NudgeSpec {
+            ticket_branch: "a'b".into(),
+            bot_ids: vec![],
+        };
         assert!(matches!(render(&bad), Err(NudgeError::BadBranch(_))));
     }
 }
