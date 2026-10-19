@@ -8,10 +8,17 @@
 //! - a fixture `resources/test/fixtures/<FAMILY>/<RULE>.<ext>` exists with a
 //!   diagnostics snapshot `<RULE>.snap` beside it.
 //!
-//! Known gaps live in one allowlist file ([`ALLOWLIST_PATH`]) with a ticket
-//! handle per entry. The allowlist may only shrink: an entry whose rule is
-//! now covered, whose rule is no longer registered, or whose ticket handle is
-//! malformed fails the test, as does any uncovered rule that is not listed.
+//! Beyond fire and clean, the case kinds of `docs/design/testing.md` section 3
+//! are derived from the rule's [`RuleMeta`]: an `unresolved` case for every
+//! polarity, and a `vacuous` case (`expect=unresolved reason=vacuous`) for a
+//! `must_measure` rule. A rule's fire and clean blocks must live in one suite
+//! file. The Universal-tier language matrix is checked by [`crate::matrix`].
+//!
+//! Known gaps live in one allowlist file ([`ALLOWLIST_PATH`]), keyed by
+//! (product, rule, case kind) with a ticket handle per entry. The allowlist may
+//! only shrink: an entry whose case is now present, whose rule is no longer
+//! registered or does not require that kind, or whose ticket handle is
+//! malformed fails the test, as does any missing case that is not listed.
 
 // frob:ticket 01M47QTTKVRY3C52CXZBGB8V55
 
@@ -19,7 +26,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use gob_rules::{Registry, RuleMeta};
+use gob_rules::{Polarity, Registry, RuleMeta};
 use serde::Deserialize;
 use walkdir::WalkDir;
 
@@ -63,6 +70,33 @@ pub struct CoverageRule {
     pub id: String,
     /// Family prefix, naming the fixture directory.
     pub family: String,
+    /// Polarity, selecting the required `unresolved` case.
+    pub polarity: Polarity,
+    /// True when zero subjects must be a required Unresolved (`vacuous` case).
+    pub must_measure: bool,
+}
+
+impl CoverageRule {
+    /// A rule with the default polarity and no `must_measure`, the family taken from the id.
+    #[must_use]
+    pub fn new(id: &str) -> Self {
+        Self {
+            id: id.to_owned(),
+            family: id.trim_end_matches(char::is_numeric).to_owned(),
+            polarity: Polarity::Pplus,
+            must_measure: false,
+        }
+    }
+
+    /// The case kinds this rule requires, in report order.
+    #[must_use]
+    pub fn required_kinds(&self) -> Vec<CaseKind> {
+        let mut kinds = vec![CaseKind::Fire, CaseKind::Clean, CaseKind::Unresolved];
+        if self.must_measure {
+            kinds.push(CaseKind::Vacuous);
+        }
+        kinds
+    }
 }
 
 impl From<&RuleMeta> for CoverageRule {
@@ -70,7 +104,49 @@ impl From<&RuleMeta> for CoverageRule {
         Self {
             id: m.id.to_owned(),
             family: m.family.to_owned(),
+            polarity: m.polarity,
+            must_measure: m.must_measure,
         }
+    }
+}
+
+/// One kind of test case a rule must have (`docs/design/testing.md` section 3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CaseKind {
+    /// An `expect=fire` case.
+    Fire,
+    /// An `expect=clean` case, in the same suite file as the fire case.
+    Clean,
+    /// An `expect=unresolved` case shaped by the rule's polarity.
+    Unresolved,
+    /// An `expect=unresolved reason=vacuous` case, required of `must_measure` rules.
+    Vacuous,
+}
+
+impl std::fmt::Display for CaseKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Fire => "fire",
+            Self::Clean => "clean",
+            Self::Unresolved => "unresolved",
+            Self::Vacuous => "vacuous",
+        })
+    }
+}
+
+/// What the `unresolved` case of a rule of this polarity must exercise.
+fn unresolved_shape(p: Polarity) -> &'static str {
+    match p {
+        Polarity::Pplus => {
+            "the offender is reachable only through a May edge or sits in an opaque region"
+        }
+        Polarity::Pminus => {
+            "the good thing is present only on a May edge, or the needed answer is Unknown"
+        }
+        Polarity::P0 => "one side is not Exact",
+        Polarity::Pn => "the count is only bounded (lo <= N < hi)",
+        Polarity::Pc => "the path runs only through May edges; the poisoned frontier is named",
     }
 }
 
@@ -84,7 +160,7 @@ pub fn rules_of(registry: &Registry, product: &str) -> Vec<CoverageRule> {
         .collect()
 }
 
-/// One allowlisted gap: a rule with no corpus yet, owned by a ticket.
+/// One allowlisted gap: a rule's missing case kind, owned by a ticket.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Gap {
@@ -92,6 +168,8 @@ pub struct Gap {
     pub product: String,
     /// Rule id.
     pub rule: String,
+    /// The missing case kind this entry allows.
+    pub kind: CaseKind,
     /// Ticket handle (`~XXXXXXX`) that will close the gap.
     pub ticket: String,
 }
@@ -131,10 +209,14 @@ impl Allowlist {
 /// What the corpora under `crates/` prove, by rule.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Corpus {
-    /// Rules with an `expect=fire` mdtest block.
-    pub fire: BTreeSet<String>,
-    /// Rules with an `expect=clean` mdtest block.
-    pub clean: BTreeSet<String>,
+    /// Per rule, the suite files holding an `expect=fire` block.
+    pub fire: BTreeMap<String, BTreeSet<PathBuf>>,
+    /// Per rule, the suite files holding an `expect=clean` block.
+    pub clean: BTreeMap<String, BTreeSet<PathBuf>>,
+    /// Rules with an `expect=unresolved` block.
+    pub unresolved: BTreeSet<String>,
+    /// Rules with an `expect=unresolved reason=vacuous` block.
+    pub vacuous: BTreeSet<String>,
     /// `(family, rule)` pairs with a fixture and a snapshot.
     pub fixtures: BTreeSet<(String, String)>,
 }
@@ -224,10 +306,23 @@ pub fn scan_corpus(root: &Path) -> Corpus {
                     for b in blocks {
                         let id = b.rule.as_str().to_owned();
                         match b.expect {
-                            Expect::Fire => corpus.fire.insert(id),
-                            Expect::Clean => corpus.clean.insert(id),
-                            Expect::Unresolved | Expect::NotApplicable => false,
-                        };
+                            Expect::Fire => {
+                                corpus.fire.entry(id).or_default().insert(path.to_owned());
+                            }
+                            Expect::Clean => {
+                                corpus.clean.entry(id).or_default().insert(path.to_owned());
+                            }
+                            Expect::Unresolved => {
+                                if b.reason
+                                    .as_deref()
+                                    .is_some_and(|r| r.eq_ignore_ascii_case("vacuous"))
+                                {
+                                    corpus.vacuous.insert(id.clone());
+                                }
+                                corpus.unresolved.insert(id);
+                            }
+                            Expect::NotApplicable => {}
+                        }
                     }
                 }
                 Err(e) => {
@@ -241,6 +336,7 @@ pub fn scan_corpus(root: &Path) -> Corpus {
     tracing::debug!(
         fire = corpus.fire.len(),
         clean = corpus.clean.len(),
+        unresolved = corpus.unresolved.len(),
         fixtures = corpus.fixtures.len(),
         "coverage corpus scanned"
     );
@@ -256,6 +352,17 @@ pub(crate) fn is_handle(s: &str) -> bool {
     })
 }
 
+/// A required case a rule lacks and the allowlist does not cover.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Missing {
+    /// Rule id.
+    pub rule: String,
+    /// The missing case kind.
+    pub kind: CaseKind,
+    /// What is missing, naming the polarity for an `unresolved` case.
+    pub detail: String,
+}
+
 /// The outcome of one product's coverage check.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CoverageReport {
@@ -263,11 +370,11 @@ pub struct CoverageReport {
     pub product: String,
     /// Registered rules examined.
     pub checked: usize,
-    /// Uncovered rules that are not allowlisted, with what is missing.
-    pub uncovered: Vec<(String, String)>,
-    /// Allowlist entries whose rule is now covered (delete them).
+    /// Required cases that are absent and not allowlisted.
+    pub uncovered: Vec<Missing>,
+    /// Allowlist entries (`RULE [kind]`) whose case is now present (delete them).
     pub stale: Vec<String>,
-    /// Allowlist entries naming a rule that is not registered for the product.
+    /// Allowlist entries naming a rule not registered for the product, or a kind it does not require.
     pub unknown: Vec<String>,
     /// Allowlist entries without a valid ticket handle.
     pub bad_ticket: Vec<String>,
@@ -283,37 +390,85 @@ impl CoverageReport {
             && self.bad_ticket.is_empty()
     }
 
-    /// A multi-line failure text naming every offending rule.
+    /// A multi-line failure text naming every offending rule and case kind.
     #[must_use]
     pub fn render(&self) -> String {
         let mut out = format!("{}: rule coverage ({} rules)\n", self.product, self.checked);
-        for (rule, missing) in &self.uncovered {
+        for m in &self.uncovered {
             let _ = writeln!(
                 out,
-                "  {rule}: no corpus ({missing}); add an mdtest fire/clean pair or a fixture, or allowlist it with a ticket"
+                "  {} {}: missing `{}` case; add it to the rule's suite or allowlist it as a [[gap]] with a ticket",
+                m.rule, m.detail, m.kind
             );
         }
-        for rule in &self.stale {
+        for entry in &self.stale {
             let _ = writeln!(
                 out,
-                "  {rule}: allowlisted but now covered; delete the allowlist entry"
+                "  {entry}: allowlisted but now present; delete the allowlist entry"
             );
         }
-        for rule in &self.unknown {
+        for entry in &self.unknown {
             let _ = writeln!(
                 out,
-                "  {rule}: allowlisted but not a registered {} rule; delete the entry",
+                "  {entry}: allowlisted but not a case a registered {} rule requires; delete the entry",
                 self.product
             );
         }
-        for rule in &self.bad_ticket {
+        for entry in &self.bad_ticket {
             let _ = writeln!(
                 out,
-                "  {rule}: allowlist entry needs a ticket handle like ~ABCDEFG"
+                "  {entry}: allowlist entry needs a ticket handle like ~ABCDEFG"
             );
         }
         out
     }
+}
+
+/// The required kinds of `rule` that `corpus` does not provide, with a detail line each.
+fn missing_kinds(rule: &CoverageRule, corpus: &Corpus) -> Vec<(CaseKind, String)> {
+    if RULE_ALIASES.iter().any(|(alias, _)| *alias == rule.id) {
+        tracing::debug!(alias = %rule.id, "alias rule is never emitted; exempt from corpus");
+        return Vec::new();
+    }
+    let fixture = corpus
+        .fixtures
+        .contains(&(rule.family.clone(), rule.id.clone()));
+    let fire_files = corpus.fire.get(&rule.id);
+    let clean_files = corpus.clean.get(&rule.id);
+    let paired = fire_files
+        .zip(clean_files)
+        .is_some_and(|(f, c)| f.intersection(c).next().is_some());
+    let sym = rule.polarity.symbol();
+    let mut out = Vec::new();
+    for kind in rule.required_kinds() {
+        let detail = match kind {
+            CaseKind::Fire if !fixture && fire_files.is_none() => Some(if clean_files.is_some() {
+                "has clean, lacks fire".to_owned()
+            } else {
+                "no mdtest block and no fixture".to_owned()
+            }),
+            CaseKind::Clean if !fixture && !paired => Some(if clean_files.is_some() {
+                "fire and clean are in different suite files".to_owned()
+            } else if fire_files.is_some() {
+                "has fire, lacks clean".to_owned()
+            } else {
+                "no mdtest block and no fixture".to_owned()
+            }),
+            CaseKind::Unresolved if !corpus.unresolved.contains(&rule.id) => Some(format!(
+                "{sym} unresolved ({})",
+                unresolved_shape(rule.polarity)
+            )),
+            CaseKind::Vacuous if !corpus.vacuous.contains(&rule.id) => Some(
+                "must_measure vacuous (zero subjects is Unresolved reason=vacuous, never clean)"
+                    .to_owned(),
+            ),
+            _ => None,
+        };
+        if let Some(d) = detail {
+            out.push((kind, d));
+        }
+    }
+    out
 }
 
 /// Compare `rules` (one product) against `corpus` and `allowlist`.
@@ -327,11 +482,10 @@ pub fn analyze(
     corpus: &Corpus,
     allowlist: &Allowlist,
 ) -> CoverageReport {
-    let allowed: BTreeMap<&str, &Gap> = allowlist
+    let allowed: Vec<&Gap> = allowlist
         .gap
         .iter()
         .filter(|g| g.product == product)
-        .map(|g| (g.rule.as_str(), g))
         .collect();
     let mut report = CoverageReport {
         product: product.to_owned(),
@@ -341,40 +495,31 @@ pub fn analyze(
         unknown: Vec::new(),
         bad_ticket: Vec::new(),
     };
+    let mut seen: BTreeSet<(&str, CaseKind)> = BTreeSet::new();
     for rule in rules {
-        let fixture = corpus
-            .fixtures
-            .contains(&(rule.family.clone(), rule.id.clone()));
-        let (fire, clean) = (
-            corpus.fire.contains(&rule.id),
-            corpus.clean.contains(&rule.id),
-        );
-        let covered = if RULE_ALIASES.iter().any(|(alias, _)| *alias == rule.id) {
-            tracing::debug!(alias = %rule.id, "alias rule is never emitted; exempt from corpus");
-            true
-        } else {
-            fixture || (fire && clean)
-        };
-        match (covered, allowed.contains_key(rule.id.as_str())) {
-            (true, true) => report.stale.push(rule.id.clone()),
-            (false, false) => {
-                let missing = match (fire, clean) {
-                    (true, false) => "has fire, lacks clean",
-                    (false, true) => "has clean, lacks fire",
-                    _ => "no mdtest block and no fixture",
-                };
-                report.uncovered.push((rule.id.clone(), missing.to_owned()));
+        let missing = missing_kinds(rule, corpus);
+        for kind in rule.required_kinds() {
+            let is_missing = missing.iter().find(|(k, _)| *k == kind);
+            let listed = allowed.iter().any(|g| g.rule == rule.id && g.kind == kind);
+            match (is_missing, listed) {
+                (None, true) => report.stale.push(format!("{} [{kind}]", rule.id)),
+                (Some((_, detail)), false) => report.uncovered.push(Missing {
+                    rule: rule.id.clone(),
+                    kind,
+                    detail: detail.clone(),
+                }),
+                _ => {}
             }
-            _ => {}
+            seen.insert((rule.id.as_str(), kind));
         }
     }
-    let known: BTreeSet<&str> = rules.iter().map(|r| r.id.as_str()).collect();
-    for (id, gap) in &allowed {
-        if !known.contains(id) {
-            report.unknown.push((*id).to_owned());
+    for gap in &allowed {
+        let key = format!("{} [{}]", gap.rule, gap.kind);
+        if !seen.contains(&(gap.rule.as_str(), gap.kind)) {
+            report.unknown.push(key.clone());
         }
         if !is_handle(&gap.ticket) {
-            report.bad_ticket.push((*id).to_owned());
+            report.bad_ticket.push(key);
         }
     }
     tracing::info!(
