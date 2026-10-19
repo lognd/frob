@@ -7,6 +7,6 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T05:27:46Z"
-updated = "2026-10-19T14:48:44Z"
-scope = ["docs/reference/rules/PATH*.md", "docs/design/rules.md", "Cargo.lock", "crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/rules.rs", "crates/grimble-check/src/**"]
+updated = "2026-10-19T14:48:45Z"
+scope = ["docs/reference/rules/PATH*.md", "docs/design/rules.md", "Cargo.lock", "crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/rules.rs", "crates/grimble-check/src/**", "crates/grimble-check/Cargo.toml"]
 +++
