@@ -8,12 +8,12 @@ points = 5
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:51Z"
-updated = "2026-10-19T10:16:32Z"
+updated = "2026-10-19T10:30:52Z"
 scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-pm/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "a fixture history reproduces known velocity, capacity and percentile values"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the log-normal fit recovers parameters from synthetic samples within tolerance"
