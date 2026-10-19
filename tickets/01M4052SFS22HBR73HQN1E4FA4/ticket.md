@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a project field other than status, when planned, then it is read-only"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.4 (One owner per field) and 3.6 (project status only).
