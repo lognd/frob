@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T11:00:29Z"
+digest = "1cfa238a4fe951911739eb2b6d96830df0117c83cd8f742bf98c447ac6a46247"
+exit_code = 0
+inline = """
+
+running 1 test
+test noflow_over_a_declared_path_is_refuted_with_the_path ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.51s
+     Running tests/claim.rs (target/debug/deps/claim-a54c2bf12317cea6)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-model --test claim noflow_over_a_declared_path_is_refuted_with_the_path"
+size = 445
+status = "measured"
+at = "2026-10-19T11:00:29Z"
+actor = "lognd"
+rev = 1
