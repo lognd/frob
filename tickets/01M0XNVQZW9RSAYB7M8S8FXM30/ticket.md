@@ -2,13 +2,13 @@
 id = "01M0XNVQZW9RSAYB7M8S8FXM30"
 title = "TDD commit protocol: test-first commit marks the test xfail(strict=True), implementation commit removes it; a surviving xfail is tracked debt"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 parent = "01M0XNVQXWNFXBK2AGM3QF2P3A"
 reporter = "human"
 created = "2026-08-26T00:00:00Z"
-updated = "2026-10-19T15:15:29Z"
+updated = "2026-10-19T15:16:06Z"
 aliases = ["T-3068"]
 labels = ["v1-cluster:C4b", "triage:accepted"]
 scope = ["src/frob/gates/_tdd_order.py", "tests/gates/test_tdd_order.py", "docs/design/rules.md"]
