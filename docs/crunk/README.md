@@ -62,7 +62,8 @@ waiver applies, the severity at the release gate) are `crunk_rules::family::FAMI
 ## CI
 
 <!-- frob:ticket 01M43ARWT173GKANZ322H41VF1 -->
-Path-filtered jobs and the optional node job: [ci.md](ci.md).
+Path-filtered jobs and the optional node job: [ci.md](ci.md). Switching a consumer from the Python
+crunk, with the reasoned divergence list: [hullbreach-migration.md](hullbreach-migration.md).
 
 ## Boundary
 

@@ -1,0 +1,1 @@
+Added `docs/crunk/hullbreach-migration.md`: the CI step that switches hullbreach from `uv run crunk` to the Rust `crunk`, with a reasoned list of every divergence from the Python crunk, pinned by `crates/crunk/tests/hullbreach_exit.rs`.
