@@ -7,13 +7,17 @@ priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-19T22:25:19Z"
+updated = "2026-10-19T22:25:39Z"
 aliases = ["T-6535"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 scope = ["src/frob/gates/_fix_engine_tier_b.py", "src/frob/gates/_fix_engine_text.py", "src/frob/gates/_fix_engine.py", "tests/unit/gates/test_fix_engine_roundtrip.py", "docs/design/rules.md", "crates/gob-fix/**", "docs/design/boundaries.md"]
 
 [[acceptance]]
 text = "gob-fix rolls back any rewritten file failing its post-edit re-parse and inserts a shared directive once"
+bound = false
+
+[[acceptance]]
+text = "gob-fix rolls back any rewritten file that fails its post-edit re-parse and inserts a shared directive once"
 bound = false
 +++
 
