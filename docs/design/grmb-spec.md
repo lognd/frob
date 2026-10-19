@@ -462,6 +462,8 @@ claim no_frob_to_grimble {
 
 Verdicts: a `noflow` with a declared flow path, or a `reach` with none, is REFUTED (CLAIM001, naming the path); a claim the model cannot decide, such as every `bound` today, is Unresolved with the reason (CLAIM003). A claim is never silently ok.
 
+Kernel findings: a flow whose `label` exceeds the destination clearance with no `declassify` boundary is FLOW001; a flow into a higher-trust node with no `endorse` boundary is FLOW002; a flow from a `foreign` node with no `rate` is FLOW003. Each names the flow.
+
 Verdicts (PROVED, REFUTED with witness, UNPROVABLE, and the three-way
 closure) are computed by the kernel and are not part of the language.
 

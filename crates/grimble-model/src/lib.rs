@@ -37,6 +37,7 @@ pub mod dump;
 pub mod fmt;
 pub mod fold;
 pub mod host;
+pub mod kernel;
 pub mod keywords;
 pub mod lex;
 pub mod model;

@@ -1,0 +1,1 @@
+grimble: the kernel now checks flows. FLOW001 reports a label above the destination node's clearance (unless a declassify boundary lowers it), FLOW002 a flow into a higher-trust node with no endorse boundary, and FLOW003 a flow from a foreign node with no rate; each names the flow.

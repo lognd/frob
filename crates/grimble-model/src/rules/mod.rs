@@ -5,6 +5,12 @@
 pub mod claim001;
 /// Rule `CLAIM003`.
 pub mod claim003;
+/// Rule `FLOW001`.
+pub mod flow001;
+/// Rule `FLOW002`.
+pub mod flow002;
+/// Rule `FLOW003`.
+pub mod flow003;
 /// Rule `MDL000`.
 pub mod mdl000;
 /// Rule `MDL001`.
@@ -53,6 +59,9 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     // one entry per rule file
     <claim001::Claim001 as gob_rules::RuleDecl>::DEF,
     <claim003::Claim003 as gob_rules::RuleDecl>::DEF,
+    <flow001::Flow001 as gob_rules::RuleDecl>::DEF,
+    <flow002::Flow002 as gob_rules::RuleDecl>::DEF,
+    <flow003::Flow003 as gob_rules::RuleDecl>::DEF,
     <mdl000::Mdl000 as gob_rules::RuleDecl>::DEF,
     <mdl001::Mdl001 as gob_rules::RuleDecl>::DEF,
     <mdl002::Mdl002 as gob_rules::RuleDecl>::DEF,
@@ -92,6 +101,9 @@ pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
 where
     claim001::Claim001: gob_rules::RepoRule<P>,
     claim003::Claim003: gob_rules::RepoRule<P>,
+    flow001::Flow001: gob_rules::RepoRule<P>,
+    flow002::Flow002: gob_rules::RepoRule<P>,
+    flow003::Flow003: gob_rules::RepoRule<P>,
     mdl000::Mdl000: gob_rules::RepoRule<P>,
     mdl001::Mdl001: gob_rules::RepoRule<P>,
     mdl002::Mdl002: gob_rules::RepoRule<P>,
@@ -117,6 +129,9 @@ where
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::repo(claim001::Claim001));
     rules.push(gob_rules::BoundRule::repo(claim003::Claim003));
+    rules.push(gob_rules::BoundRule::repo(flow001::Flow001));
+    rules.push(gob_rules::BoundRule::repo(flow002::Flow002));
+    rules.push(gob_rules::BoundRule::repo(flow003::Flow003));
     rules.push(gob_rules::BoundRule::repo(mdl000::Mdl000));
     rules.push(gob_rules::BoundRule::repo(mdl001::Mdl001));
     rules.push(gob_rules::BoundRule::repo(mdl002::Mdl002));

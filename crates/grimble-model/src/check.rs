@@ -362,6 +362,10 @@ impl<'a> Checker<'a> {
             let rec = self.idx.entities[i].clone();
             self.entity(&rec);
         }
+        for f in crate::kernel::kernel_findings(&self.idx) {
+            let anchor = format!("flow/{}", f.flow);
+            self.emit(f.rule.id(), None, f.file, f.span, f.message, &anchor);
+        }
         for rec in self.idx.extensions.clone() {
             self.extension(&rec);
         }

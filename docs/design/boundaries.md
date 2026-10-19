@@ -157,6 +157,7 @@ namespaces families by product so a foreign family is never unknown.
 | SIB | frob | frob-check | SIB001-SIB099; `sibling-unavailable`, emitted by `sibling.rs` when a configured sibling cannot be used (sibling-contract.md section 6); required Unresolved under `[check] require_siblings` |
 | PACK | grimble | grimble-capabilities | PACK001-PACK099; PACK001-PACK008 of packs.md section 9; pack loading, the drift-lock and `grimble.packs.lock` |
 | MDL | grimble | grimble-model | MDL000-MDL099; MDL000-MDL018 of grmb-spec.md (.grmb well-formedness) |
+| FLOW | grimble | grimble-model | FLOW001-FLOW003; kernel flow findings (label closure, endorsement, rate) |
 | SYS, BIND | grimble | grimble-bind | model drift and cross-language edges |
 | CAP | grimble | grimble-capabilities | capability matrix; CAP001, CAP002 and CAP004 (excused but used); CAP003 is retired (D75) and its id is never reused |
 | CYCLE, ARCH, LARGE, DEAD, DUP | grimble | grimble-arch | structure metrics |
