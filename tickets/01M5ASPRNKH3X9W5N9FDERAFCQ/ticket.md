@@ -2,7 +2,8 @@
 id = "01M5ASPRNKH3X9W5N9FDERAFCQ"
 title = "Mirror: ticket-branch ShardStore implementing frob_mirror::mapfile::ShardStore with CAS"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
