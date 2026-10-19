@@ -302,6 +302,7 @@ pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<Evid
         test_count: None,
         tests_digest: None,
         failed_tests: Vec::new(),
+        non_passing: crate::record::NonPassingCounts::default(),
         inline: None,
         size: req.statement.len() as u64,
         attestation: Some(Attestation {

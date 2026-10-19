@@ -1,0 +1,1 @@
+`[tests] non_passing_counts` lets pytest `skipped`, `xfailed` and `xpassed` tests count as executed (and so satisfy evidence); the default admits none. Evidence records and `frob test` output now carry a `non_passing` count per kind, and vitest/jest skipped, pending, todo and disabled tests are counted as skipped instead of dropped.

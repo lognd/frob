@@ -60,6 +60,13 @@ pub struct TestData {
     /// Names of the tests that failed, timed out or crashed.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub failed: Vec<String>,
+    // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+    /// Skipped, xfailed and xpassed counts, a distinct state from a pass (absent when all zero).
+    #[serde(
+        default,
+        skip_serializing_if = "frob_evidence::NonPassingCounts::is_zero"
+    )]
+    pub non_passing: frob_evidence::NonPassingCounts,
     /// The first evidence event, when the run happened in a lease-holding worktree.
     pub evidence: Option<EvidenceAdded>,
     /// Every evidence event appended, one per runner that ran (nextest, then pytest).
@@ -200,6 +207,7 @@ impl Command for TestVerb {
             passed: None,
             executed: Vec::new(),
             failed: Vec::new(),
+            non_passing: frob_evidence::NonPassingCounts::default(),
             evidence: None,
             evidence_all: Vec::new(),
         };
@@ -240,6 +248,9 @@ impl Command for TestVerb {
         opts.dotnet_path.clone_from(&ws.dotnet.path);
         // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
         opts.python.clone_from(&ws.tests.python);
+        // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+        opts.non_passing_counts
+            .clone_from(&ws.tests.non_passing_counts);
         // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
         opts.unity_editor.clone_from(&ws.unity.editor);
         let ran = run(&ws.runner(), &data.selected, &opts);
@@ -252,6 +263,7 @@ impl Command for TestVerb {
         data.passed = Some(report.passed());
         data.executed = report.executed();
         data.failed = report.failed();
+        data.non_passing = report.non_passing();
         let recorded = record_runs(&ws, &report, &mut warnings)?;
         data.evidence = recorded.first().cloned();
         data.evidence_all = recorded;

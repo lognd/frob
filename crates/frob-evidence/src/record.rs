@@ -109,6 +109,25 @@ pub enum Status {
     Unmeasured,
 }
 
+// frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+/// How many tests skipped, failed as expected (`xfail`) or passed unexpectedly (`xpass`), counted apart from passes.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct NonPassingCounts {
+    /// Tests that were skipped.
+    pub skipped: u64,
+    /// Tests that failed as expected.
+    pub xfailed: u64,
+    /// Tests marked `xfail` that passed anyway.
+    pub xpassed: u64,
+}
+
+impl NonPassingCounts {
+    /// True when no test was skipped, xfailed or xpassed (the record omits the field then).
+    pub fn is_zero(&self) -> bool {
+        *self == Self::default()
+    }
+}
+
 /// One persisted measurement, stored as the body of a ledger `evidence` event.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct EvidenceRecord {
@@ -148,6 +167,10 @@ pub struct EvidenceRecord {
     /// Names of the tests that failed, timed out or crashed (nextest only), so a flake is identifiable.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub failed_tests: Vec<String>,
+    // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+    /// Skipped, xfailed and xpassed counts, a distinct state from a pass (absent when all zero).
+    #[serde(default, skip_serializing_if = "NonPassingCounts::is_zero")]
+    pub non_passing: NonPassingCounts,
     /// The transcript itself when it is within `inline_max_bytes`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inline: Option<String>,

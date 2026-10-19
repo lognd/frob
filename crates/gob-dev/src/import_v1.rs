@@ -613,6 +613,7 @@ fn evidence_events(
             test_count: None,
             tests_digest: None,
             failed_tests: Vec::new(),
+            non_passing: frob_evidence::NonPassingCounts::default(),
             inline: None,
             size: 0,
             attestation: None,

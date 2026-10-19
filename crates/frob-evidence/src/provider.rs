@@ -16,10 +16,43 @@ use gob_exec::{Outcome, Program, Runner, Spec};
 
 use crate::attestation::escape_non_ascii;
 use crate::error::{EvidenceError, Result};
-use crate::record::{EvidenceRecord, Provider, Status, digest_hex};
+use crate::record::{EvidenceRecord, NonPassingCounts, Provider, Status, digest_hex};
 use crate::scrub::PathScrub;
 use crate::store::{BlobStore, Stored};
 use crate::workspace::Workspace;
+
+impl Capture {
+    /// Opt in: count the named non-passing kinds (`skipped`, `xfailed`, `xpassed`) as executed tests so they can satisfy evidence.
+    ///
+    /// The counts in `non_passing` are kept, so the record still reports them as a distinct state.
+    /// Unknown kind names are ignored with a warning.
+    pub fn admit_non_passing(&mut self, kinds: &[String]) {
+        for kind in kinds {
+            let names = match kind.as_str() {
+                "skipped" => &self.non_passing.skipped,
+                "xfailed" => &self.non_passing.xfailed,
+                "xpassed" => &self.non_passing.xpassed,
+                other => {
+                    tracing::warn!(
+                        kind = other,
+                        "unknown non-passing kind in [tests] non_passing_counts"
+                    );
+                    continue;
+                }
+            };
+            for name in names {
+                if !self.tests.contains(name) {
+                    self.tests.push(name.clone());
+                }
+            }
+            tracing::info!(
+                kind = kind.as_str(),
+                count = names.len(),
+                "non-passing tests admitted as executed"
+            );
+        }
+    }
+}
 
 /// What one measured process produced.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,6 +86,15 @@ pub struct NonPassing {
 }
 
 impl NonPassing {
+    /// The per-kind counts, as a record carries them.
+    pub fn counts(&self) -> NonPassingCounts {
+        NonPassingCounts {
+            skipped: self.skipped.len() as u64,
+            xfailed: self.xfailed.len() as u64,
+            xpassed: self.xpassed.len() as u64,
+        }
+    }
+
     /// The total number of non-passing outcomes across the three kinds.
     pub fn count(&self) -> usize {
         self.skipped.len() + self.xfailed.len() + self.xpassed.len()
@@ -744,7 +786,7 @@ fn js_rel_path(file: &str, cwd: &Path, member: &str) -> String {
 /// `member`, then the unit names the symbol graph gives that test (`gob_symbols::test_unit_name`), so evidence
 /// names map back to test units. A repeated title in one suite chain gets `[dupN]` like the unit does; two
 /// `describe` blocks of the same title are not told apart. `passed` and `failed` count as executed, `pending`,
-/// `skipped`, `todo` and `disabled` do not; a file that failed to load (no assertions, failed status) is
+/// `skipped`, `todo` and `disabled` do not (they are counted apart as skipped); a file that failed to load (no assertions, failed status) is
 /// recorded as a failed test named by its path.
 pub fn parse_js_json(json: &str, cwd: &Path, member: &str) -> Parsed {
     let mut parsed = Parsed::default();
@@ -765,7 +807,8 @@ pub fn parse_js_json(json: &str, cwd: &Path, member: &str) -> Parsed {
         let mut seen: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
         for case in cases {
             let status = case["status"].as_str().unwrap_or_default();
-            if !matches!(status, "passed" | "failed") {
+            let executed = matches!(status, "passed" | "failed");
+            if !executed && !matches!(status, "pending" | "skipped" | "todo" | "disabled") {
                 continue;
             }
             let mut id = rel.clone();
@@ -786,7 +829,12 @@ pub fn parse_js_json(json: &str, cwd: &Path, member: &str) -> Parsed {
             if *count > 1 {
                 let _ = write!(id, "[dup{count}]");
             }
-            parsed.note(&id, status == "failed");
+            if executed {
+                parsed.note(&id, status == "failed");
+            } else {
+                tracing::info!(test = %id, status, "skipped test is not evidence: counted apart");
+                parsed.non_passing.skipped.push(id);
+            }
         }
     }
     parsed
@@ -1073,6 +1121,7 @@ pub fn build_record(
         test_count,
         tests_digest,
         failed_tests: capture.failed_tests.clone(),
+        non_passing: capture.non_passing.counts(),
         inline,
         size: redacted.len() as u64,
         attestation: None,
@@ -1102,6 +1151,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Resul
         test_count: None,
         tests_digest: None,
         failed_tests: Vec::new(),
+        non_passing: NonPassingCounts::default(),
         inline: None,
         size: bytes.len() as u64,
         attestation: None,
@@ -1950,7 +2000,7 @@ pub fn capture(
         }
         Provider::Pytest => {
             let args = split_args(reference)?;
-            let cap = run_pytest(
+            let mut cap = run_pytest(
                 &ws.runner(),
                 &ws.evidence.allowed_tools,
                 &ws.root,
@@ -1958,6 +2008,8 @@ pub fn capture(
                 &args,
                 ws.timeout(),
             )?;
+            // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+            cap.admit_non_passing(&ws.tests.non_passing_counts);
             refuse_empty(
                 &cap,
                 pytest_matched_no_tests(&cap),
@@ -2374,6 +2426,41 @@ mod tests {
                 .tests
                 .is_empty()
         );
+        assert_eq!(
+            got.non_passing.skipped,
+            [
+                "apps/a/src/x.test.ts::test$is_skipped",
+                "apps/a/src/x.test.ts::test$todo"
+            ]
+        );
+    }
+
+    // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+    #[test]
+    fn non_passing_kinds_satisfy_evidence_only_when_opted_in() {
+        // frob:tests crates/frob-evidence/src/provider.rs::Capture.admit_non_passing
+        let mut cap = Capture {
+            exit_code: Some(0),
+            passed: true,
+            measured: true,
+            tests: vec!["a".to_owned()],
+            failed_tests: Vec::new(),
+            non_passing: NonPassing {
+                skipped: vec!["s".to_owned()],
+                xfailed: vec!["x".to_owned()],
+                xpassed: vec!["p".to_owned()],
+            },
+            transcript: String::new(),
+        };
+        cap.admit_non_passing(&[]);
+        assert_eq!(cap.tests, ["a"], "default admits nothing");
+        cap.admit_non_passing(&["xfailed".to_owned(), "bogus".to_owned()]);
+        assert_eq!(cap.tests, ["a", "x"]);
+        assert_eq!(cap.non_passing.count(), 3, "counts are kept apart");
+        let c = cap.non_passing.counts();
+        assert_eq!((c.skipped, c.xfailed, c.xpassed), (1, 1, 1));
+        assert!(!c.is_zero());
+        assert!(crate::record::NonPassingCounts::default().is_zero());
     }
 
     // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK

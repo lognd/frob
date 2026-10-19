@@ -57,4 +57,8 @@ pub struct TestsTable {
     /// Interpreter that runs `-m pytest` (a name on `PATH` or a path, relative ones from the repository root); empty uses `.venv` in the repository root when it has one, else `pytest` on `PATH`.
     #[config(default = String::new())]
     pub python: String,
+    // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+    /// Non-passing pytest outcomes (`skipped`, `xfailed`, `xpassed`) that count as executed tests and so may satisfy evidence; empty (the default) lets none, and they are counted apart either way.
+    #[config(default = Vec::<String>::new())]
+    pub non_passing_counts: Vec<String>,
 }

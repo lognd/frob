@@ -39,6 +39,9 @@ pub struct RunOptions {
     // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
     /// `[tests] python`: the interpreter that runs pytest; empty prefers the repository's `.venv`.
     pub python: String,
+    // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+    /// `[tests] non_passing_counts`: pytest outcomes (`skipped`, `xfailed`, `xpassed`) that count as executed; empty counts none.
+    pub non_passing_counts: Vec<String>,
     // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
     /// `[evidence.unity] editor`: the Unity editor executable; empty finds the Hub install of the project's version.
     pub unity_editor: String,
@@ -62,6 +65,7 @@ impl RunOptions {
             node: NODE_PROGRAM.to_owned(),
             dotnet_path: String::new(),
             python: String::new(),
+            non_passing_counts: Vec::new(),
             unity_editor: String::new(),
         }
     }
@@ -142,6 +146,20 @@ impl RunReport {
             .iter()
             .flat_map(|r| r.capture.failed_tests.iter().cloned())
             .collect()
+    }
+
+    // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+    /// Skipped, xfailed and xpassed counts summed over every run.
+    pub fn non_passing(&self) -> frob_evidence::NonPassingCounts {
+        self.runs
+            .iter()
+            .fold(frob_evidence::NonPassingCounts::default(), |mut a, r| {
+                let c = r.capture.non_passing.counts();
+                a.skipped += c.skipped;
+                a.xfailed += c.xfailed;
+                a.xpassed += c.xpassed;
+                a
+            })
     }
 
     /// The exit code of the first run that did not pass, else of the first run.
@@ -550,7 +568,7 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
     let pytest = pytest_args(selected);
     if !pytest.is_empty() || (opts.all && has_python_tests(&opts.root)) {
         tracing::info!(all = opts.all, tests = pytest.len(), "running pytest");
-        let capture = run_pytest(
+        let mut capture = run_pytest(
             runner,
             &opts.allowed_tools,
             &opts.root,
@@ -558,6 +576,8 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
             &pytest,
             opts.timeout,
         )?;
+        // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+        capture.admit_non_passing(&opts.non_passing_counts);
         report.runs.push(FrameworkRun {
             framework: Framework::Pytest,
             member: String::new(),
@@ -763,5 +783,36 @@ mod tests {
         assert_eq!(report.exit_code(), Some(1));
         assert_eq!(report.runs[1].provider(), Provider::Pytest);
         assert!(!RunReport::default().passed());
+    }
+
+    // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+    #[test]
+    fn a_report_sums_non_passing_counts_apart_from_passes() {
+        // frob:tests crates/frob-tests/src/run.rs::RunReport.non_passing
+        let run = |skipped: &[&str], xfailed: &[&str]| FrameworkRun {
+            framework: Framework::Pytest,
+            args: Vec::new(),
+            member: String::new(),
+            capture: Capture {
+                exit_code: Some(0),
+                passed: true,
+                measured: true,
+                tests: vec!["a".to_owned()],
+                failed_tests: Vec::new(),
+                non_passing: frob_evidence::NonPassing {
+                    skipped: skipped.iter().map(|s| (*s).to_owned()).collect(),
+                    xfailed: xfailed.iter().map(|s| (*s).to_owned()).collect(),
+                    xpassed: Vec::new(),
+                },
+                transcript: String::new(),
+            },
+        };
+        let report = RunReport {
+            runs: vec![run(&["s1", "s2"], &[]), run(&["s3"], &["x1"])],
+        };
+        let c = report.non_passing();
+        assert_eq!((c.skipped, c.xfailed, c.xpassed), (3, 1, 0));
+        assert_eq!(report.executed(), ["a", "a"]);
+        assert!(RunReport::default().non_passing().is_zero());
     }
 }
