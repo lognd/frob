@@ -14,7 +14,6 @@ use std::collections::BTreeSet;
 use std::fmt;
 use std::fmt::Write as _;
 use std::io::{IsTerminal, Write};
-use std::process::{Command as Process, Stdio};
 use std::time::{Duration, Instant};
 
 use frob_ledger::mirror_map::MAP_DIR;
@@ -29,6 +28,8 @@ use frob_mirror::projection;
 use frob_mirror::shardstore::BranchShardStore;
 use gob_cli::clap::{self, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_exec::Outcome as ExecOutcome;
+use gob_exec::{Limits, Program, Runner, Spec};
 use gob_trust::prompt::{Presence, presence};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -299,41 +300,66 @@ impl HttpTransport for CurlTransport {
             );
         }
         tracing::debug!(%method, path = %req.path, "mirror recreate: http");
-        let mut child = Process::new("curl")
-            .args([
+        let cfg_path = write_private_config(&cfg)
+            .map_err(|e| TransportError::Other(format!("curl config: {e}")))?;
+        let spec = Spec {
+            program: Program::Tool {
+                name: "curl".to_owned(),
+            },
+            args: [
                 "--silent",
                 "--show-error",
                 "--include",
                 "--max-time",
                 "30",
                 "--config",
-                "-",
-            ])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| TransportError::Other(format!("cannot run curl: {e}")))?;
-        child
-            .stdin
-            .take()
-            .ok_or_else(|| TransportError::Other("curl stdin unavailable".into()))?
-            .write_all(cfg.as_bytes())
-            .map_err(|e| TransportError::Other(format!("curl stdin: {e}")))?;
-        let out = child
-            .wait_with_output()
-            .map_err(|e| TransportError::Other(format!("curl: {e}")))?;
-        if out.status.code() == Some(28) {
-            return Err(TransportError::Timeout);
+            ]
+            .iter()
+            .map(|a| (*a).to_owned())
+            .chain([cfg_path.display().to_string()])
+            .collect(),
+            cwd: None,
+            env: Vec::new(),
+            timeout: Duration::from_secs(40),
+            capture: true,
+        };
+        let ran = Runner::new(Limits { jobs: 1 }).run(&spec);
+        if let Err(e) = std::fs::remove_file(&cfg_path) {
+            warn!(error = %e, "mirror recreate: could not remove curl config");
         }
-        if !out.status.success() {
-            return Err(TransportError::Other(
-                String::from_utf8_lossy(&out.stderr).trim().to_owned(),
-            ));
+        let out = ran.map_err(|e| TransportError::Other(format!("cannot run curl: {e}")))?;
+        match out.status {
+            ExecOutcome::Exited(0) => {}
+            ExecOutcome::Exited(28) | ExecOutcome::TimedOut => return Err(TransportError::Timeout),
+            _ => return Err(TransportError::Other(out.stderr.trim().to_owned())),
         }
-        parse_response(&String::from_utf8_lossy(&out.stdout))
+        parse_response(&out.stdout_raw)
             .ok_or_else(|| TransportError::Other("unparseable http response".into()))
     }
+}
+
+/// Write `cfg` to a fresh owner-only temp file (it holds the token) and return its path.
+fn write_private_config(cfg: &str) -> std::io::Result<std::path::PathBuf> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let path = std::env::temp_dir().join(format!(
+        "frob-mirror-{}-{}.curl",
+        std::process::id(),
+        rand_suffix()
+    ));
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&path)?;
+    f.write_all(cfg.as_bytes())?;
+    Ok(path)
+}
+
+/// A per-call suffix so concurrent configs never collide.
+fn rand_suffix() -> u32 {
+    use std::sync::atomic::{AtomicU32, Ordering};
+    static N: AtomicU32 = AtomicU32::new(0);
+    N.fetch_add(1, Ordering::Relaxed)
 }
 
 /// Monotonic clock with real sleeps, for the adapter's write spacing.
