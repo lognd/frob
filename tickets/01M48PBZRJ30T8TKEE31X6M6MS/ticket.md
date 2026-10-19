@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:39Z"
-updated = "2026-10-19T14:46:58Z"
+updated = "2026-10-19T15:25:36Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
 [[links]]
@@ -21,7 +21,7 @@ target = "01M48Q4CHCFKJ9SSTVT471060B"
 
 [[acceptance]]
 text = "a self-test where a second rule fires unexpectedly fails"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "all existing corpora pass after migration"
