@@ -1,0 +1,1 @@
+gob-mdtest: outcome classes `unresolved` and `notapplicable`, subject accounting (`subjects=`, `subjects>=`), and certified-clean `expect=clean`; INV002 migrated and Unresolved blocks added to COV001, DOC001, TODO001 and REF001.

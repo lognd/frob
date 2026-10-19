@@ -74,3 +74,11 @@ fn a() -> &'static str { "TODO inside a string" }
 TODO this is code
 ```
 ````
+
+## Unresolved for a file type no scanner reads
+
+The rule cannot examine an opaque text file, so it says so instead of passing.
+
+```text expect=unresolved file=notes.xyz
+TODO this file is never scanned
+```

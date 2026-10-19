@@ -4,13 +4,46 @@ use std::collections::BTreeMap;
 
 use gob_rules::{RuleId, Severity};
 
-/// Whether a block must produce findings or none.
+/// The outcome class a block expects (testing.md section 1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Expect {
-    /// The rule must fire.
+    /// The rule found what it looks for.
     Fire,
-    /// The rule must stay silent.
+    /// The rule examined at least one subject and found nothing.
     Clean,
+    /// The rule could not decide: an Unresolved finding.
+    Unresolved,
+    /// The rule cannot apply to this artifact by construction.
+    NotApplicable,
+}
+
+/// A constraint on the number of subjects the rule examined.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Subjects {
+    /// `subjects=N`: exactly N.
+    Exactly(usize),
+    /// `subjects>=N`: at least N.
+    AtLeast(usize),
+}
+
+impl Subjects {
+    /// True when `examined` satisfies the constraint.
+    #[must_use]
+    pub fn admits(self, examined: usize) -> bool {
+        match self {
+            Self::Exactly(n) => examined == n,
+            Self::AtLeast(n) => examined >= n,
+        }
+    }
+}
+
+impl std::fmt::Display for Subjects {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Exactly(n) => write!(f, "subjects={n}"),
+            Self::AtLeast(n) => write!(f, "subjects>={n}"),
+        }
+    }
 }
 
 impl std::fmt::Display for Expect {
@@ -18,6 +51,8 @@ impl std::fmt::Display for Expect {
         f.write_str(match self {
             Self::Fire => "fire",
             Self::Clean => "clean",
+            Self::Unresolved => "unresolved",
+            Self::NotApplicable => "notapplicable",
         })
     }
 }
@@ -56,8 +91,20 @@ pub struct Block {
     pub text: String,
     /// Rule under test.
     pub rule: RuleId,
-    /// Fire or clean.
+    /// Expected outcome class.
     pub expect: Expect,
+    /// `reason=CODE`: the Unresolved reason code (expect=unresolved) or the not-applicable reason text (expect=notapplicable).
+    pub reason: Option<String>,
+    /// `subjects=N` / `subjects>=N`; a clean block with none defaults to at least one.
+    pub subjects: Option<Subjects>,
+    /// `fidelity=F0..F4`: the adapter fidelity class the case is written for (recorded; checked by the language matrix).
+    pub fidelity: Option<String>,
+    /// `parse=ok|partial|failed`: the parse status the case is written for (recorded; checked by the language matrix).
+    pub parse: Option<String>,
+    /// `known-gap=~TICKET`: an Unresolved the project accepts, tracked by the ticket.
+    pub known_gap: Option<String>,
+    /// `fixed`: the case is the text after applying the rule's fix.
+    pub fixed: bool,
     /// Optional inline TOML config.
     pub config: Option<String>,
     /// Inline marker expectations.
@@ -275,7 +322,7 @@ fn markers(text: &str, line_err: usize, default_rule: &RuleId) -> Result<Vec<Mar
 /// # Errors
 ///
 /// Returns [`ParseError`] for a malformed info string, missing `rule` or
-/// `expect`, an unterminated fence, or markers inside an `expect=clean` block.
+/// `expect`, an unterminated fence, or markers inside a clean or notapplicable block.
 pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
     let mut blocks = Vec::new();
     let mut h1 = String::new();
@@ -299,22 +346,7 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
         };
         let ticks = t.chars().take_while(|c| fence.starts_with(*c)).count();
         let info = t[ticks..].trim();
-        let mut body = String::new();
-        let mut closed = false;
-        for (_, l) in lines.by_ref() {
-            let lt = l.trim_start();
-            if lt.chars().take_while(|c| fence.starts_with(*c)).count() >= ticks
-                && lt
-                    .trim_start_matches(fence.chars().next().unwrap_or('`'))
-                    .trim()
-                    .is_empty()
-            {
-                closed = true;
-                break;
-            }
-            body.push_str(l);
-            body.push('\n');
-        }
+        let (body, closed) = fence_body(&mut lines, fence, ticks);
         let fence_line = i + 1;
         if !closed {
             return Err(ParseError {
@@ -340,8 +372,16 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
         let expect = match *expect {
             "fire" => Expect::Fire,
             "clean" => Expect::Clean,
-            o => return Err(err(format!("expect must be fire or clean, got `{o}`"))),
+            "unresolved" => Expect::Unresolved,
+            "notapplicable" => Expect::NotApplicable,
+            o => {
+                return Err(err(format!(
+                    "expect must be fire, clean, unresolved or notapplicable, got `{o}`"
+                )));
+            }
         };
+        let subjects = subjects_of(&opts).map_err(&err)?;
+        let (known_gap, fixed, reason) = modifiers(&opts, &toks, expect).map_err(&err)?;
         let rule = match opts.get("rule") {
             Some(r) => r.parse::<RuleId>().map_err(|e| err(e.to_string()))?,
             None => default_rule
@@ -349,8 +389,8 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
                 .ok_or_else(|| err("no rule=ID and no suite default".into()))?,
         };
         let marks = markers(&body, fence_line, &rule)?;
-        if expect == Expect::Clean && !marks.is_empty() {
-            return Err(err("expect=clean block must not carry markers".into()));
+        if matches!(expect, Expect::Clean | Expect::NotApplicable) && !marks.is_empty() {
+            return Err(err(format!("expect={expect} block must not carry markers")));
         }
         let file_name = opts.get("file").map_or_else(
             || format!("case.{}", extension(&language)),
@@ -365,12 +405,83 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             text: body,
             rule,
             expect,
+            reason,
+            subjects,
+            fidelity: opts.get("fidelity").map(|t| (*t).to_owned()),
+            parse: opts.get("parse").map(|t| (*t).to_owned()),
+            known_gap,
+            fixed,
             config: opts.get("config").map(|c| (*c).to_owned()),
             markers: marks,
             snapshot,
         });
     }
     Ok(blocks)
+}
+
+/// Read lines up to the closing fence of `ticks` or more `fence` chars; the body and whether it closed.
+fn fence_body<'a>(
+    lines: &mut impl Iterator<Item = (usize, &'a str)>,
+    fence: &str,
+    ticks: usize,
+) -> (String, bool) {
+    let mut body = String::new();
+    for (_, l) in lines {
+        let lt = l.trim_start();
+        if lt.chars().take_while(|c| fence.starts_with(*c)).count() >= ticks
+            && lt
+                .trim_start_matches(fence.chars().next().unwrap_or('`'))
+                .trim()
+                .is_empty()
+        {
+            return (body, true);
+        }
+        body.push_str(l);
+        body.push('\n');
+    }
+    (body, false)
+}
+
+/// The `known-gap`, `fixed` and `reason` modifiers, each checked against the block's `expect` class.
+fn modifiers(
+    opts: &BTreeMap<&str, &str>,
+    toks: &[String],
+    expect: Expect,
+) -> Result<(Option<String>, bool, Option<String>), String> {
+    let known_gap = opts.get("known-gap").map(|t| (*t).to_owned());
+    if let Some(t) = &known_gap
+        && !t.starts_with('~')
+    {
+        return Err(format!(
+            "known-gap needs a ticket handle `~XXXXXXX`, got `{t}`"
+        ));
+    }
+    if known_gap.is_some() && expect != Expect::Unresolved {
+        return Err("known-gap applies only to expect=unresolved".into());
+    }
+    let fixed = toks.iter().skip(1).any(|t| t == "fixed");
+    if fixed && !matches!(expect, Expect::Clean) {
+        return Err("`fixed` applies only to expect=clean".into());
+    }
+    let reason = opts.get("reason").map(|r| (*r).to_owned());
+    if reason.is_some() && !matches!(expect, Expect::Unresolved | Expect::NotApplicable) {
+        return Err("reason= applies only to expect=unresolved or notapplicable".into());
+    }
+    Ok((known_gap, fixed, reason))
+}
+
+/// Read `subjects=N` or `subjects>=N` from the info-string options.
+fn subjects_of(opts: &BTreeMap<&str, &str>) -> Result<Option<Subjects>, String> {
+    let num = |v: &str| {
+        v.parse::<usize>()
+            .map_err(|_| format!("subjects needs a number, got `{v}`"))
+    };
+    match (opts.get("subjects"), opts.get("subjects>")) {
+        (Some(_), Some(_)) => Err("both subjects= and subjects>= given".into()),
+        (Some(v), None) => Ok(Some(Subjects::Exactly(num(v)?))),
+        (None, Some(v)) => Ok(Some(Subjects::AtLeast(num(v)?))),
+        (None, None) => Ok(None),
+    }
 }
 
 /// Handle a non-fence line: headings and the suite header comment.

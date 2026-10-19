@@ -98,3 +98,9 @@ fn a() -> &'static str { "TODO inside a string" }
 TODO this is code
 ```
 ````
+
+### TODO001 bare work markers / Unresolved for a file type no scanner reads #10 (line 82) (unresolved)
+
+```text
+TODO this file is never scanned
+```

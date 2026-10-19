@@ -194,6 +194,7 @@ pub fn scan_corpus(root: &Path) -> Corpus {
                         match b.expect {
                             Expect::Fire => corpus.fire.insert(id),
                             Expect::Clean => corpus.clean.insert(id),
+                            Expect::Unresolved | Expect::NotApplicable => false,
                         };
                     }
                 }

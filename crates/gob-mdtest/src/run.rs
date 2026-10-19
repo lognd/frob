@@ -9,7 +9,7 @@ use gob_rules::{Finding, RuleId, RuleReport, Severity};
 use gob_text::{LineIndex, SourceText};
 use walkdir::WalkDir;
 
-use crate::parse::{Block, Expect, Marker, parse_suite};
+use crate::parse::{Block, Expect, Marker, Subjects, parse_suite};
 
 /// What the caller's closure receives for each block.
 #[derive(Debug, Clone)]
@@ -118,20 +118,34 @@ impl Report {
     }
 }
 
+/// Everything one case run produced: findings plus the rule's subject accounting.
+#[derive(Debug, Clone, Default)]
+pub struct CaseResult {
+    /// The findings the case's expectations are checked against.
+    pub findings: Vec<Finding>,
+    /// `(total, examined)` subjects, when the runner reports them; `None` for bare findings.
+    pub subjects: Option<(usize, usize)>,
+    /// Why the rule cannot apply to this artifact, when it reported `NotApplicable`.
+    pub not_applicable: Option<String>,
+}
+
 /// What a runner closure may return for one case: bare findings or a full [`RuleReport`].
 pub trait CaseOutput {
-    /// The findings the case's expectations are checked against.
-    fn into_findings(self) -> Vec<Finding>;
+    /// The findings and subject accounting the case's expectations are checked against.
+    fn into_result(self) -> CaseResult;
 }
 
 impl CaseOutput for Vec<Finding> {
-    fn into_findings(self) -> Vec<Finding> {
-        self
+    fn into_result(self) -> CaseResult {
+        CaseResult {
+            findings: self,
+            ..CaseResult::default()
+        }
     }
 }
 
 impl CaseOutput for RuleReport {
-    fn into_findings(self) -> Vec<Finding> {
+    fn into_result(self) -> CaseResult {
         tracing::debug!(
             rule = %self.rule,
             total = self.subjects_total,
@@ -139,7 +153,11 @@ impl CaseOutput for RuleReport {
             not_applicable = ?self.not_applicable,
             "mdtest case returned a rule report"
         );
-        self.findings
+        CaseResult {
+            findings: self.findings,
+            subjects: Some((self.subjects_total, self.subjects_examined)),
+            not_applicable: self.not_applicable,
+        }
     }
 }
 
@@ -296,35 +314,129 @@ fn diff(missing: &[&Marker], matched: &[&Actual], extra: &[&Actual]) -> String {
     s
 }
 
-/// Check one block's findings against its expectations.
-fn check(block: &Block, findings: &[Finding]) -> Result<(), String> {
-    let mine: Vec<Finding> = findings
+/// Fail unless the reported subject count satisfies the block's `subjects` constraint.
+///
+/// A clean block defaults to at least one subject; a runner that reports no accounting
+/// is only held to an explicit constraint.
+fn check_subjects(block: &Block, res: &CaseResult) -> Result<(), String> {
+    let want = block
+        .subjects
+        .or((block.expect == Expect::Clean).then_some(Subjects::AtLeast(1)));
+    match (want, res.subjects) {
+        (Some(w), Some((total, examined))) if !w.admits(examined) => Err(format!(
+            "    expected {w}, the rule examined {examined} of {total} subjects\n"
+        )),
+        (Some(w), None) if block.subjects.is_some() => Err(format!(
+            "    expected {w}, but the runner reports no subject accounting\n"
+        )),
+        _ => Ok(()),
+    }
+}
+
+/// Match the block's markers against `actual` as a multiset.
+fn check_markers(block: &Block, actual: &[Actual]) -> Result<(), String> {
+    let (missing, matched, extra) = match_markers(&block.markers, actual);
+    if missing.is_empty() && extra.is_empty() {
+        Ok(())
+    } else {
+        Err(diff(&missing, &matched, &extra))
+    }
+}
+
+/// Check one block's result against its expected outcome class.
+fn check(block: &Block, res: &CaseResult) -> Result<(), String> {
+    let mine: Vec<Finding> = res
+        .findings
         .iter()
         .filter(|f| f.rule == block.rule || block.markers.iter().any(|m| m.rule == f.rule))
         .cloned()
         .collect();
     let actual = actuals(&block.text, &mine);
-    match (block.expect, block.markers.is_empty()) {
-        (Expect::Clean, _) if actual.is_empty() => Ok(()),
-        (Expect::Fire, true) if !actual.is_empty() => Ok(()),
-        (Expect::Fire, false) => {
-            let (missing, matched, extra) = match_markers(&block.markers, &actual);
-            if missing.is_empty() && extra.is_empty() {
-                Ok(())
-            } else {
-                Err(diff(&missing, &matched, &extra))
+    let unexpected = || diff(&[], &[], &actual.iter().collect::<Vec<_>>());
+    if let (Some(why), false) = (&res.not_applicable, block.expect == Expect::NotApplicable) {
+        return Err(format!(
+            "    expected {}, but {} reported NotApplicable: {why}\n",
+            block.expect, block.rule
+        ));
+    }
+    match block.expect {
+        Expect::Fire if !block.markers.is_empty() => check_markers(block, &actual)?,
+        Expect::Fire => {
+            if !actual.iter().any(|a| a.severity != Severity::Unresolved) {
+                return Err(format!(
+                    "    expected at least one {} finding that is not Unresolved, got {}\n{}",
+                    block.rule,
+                    actual.len(),
+                    unexpected()
+                ));
             }
         }
-        (Expect::Fire, true) => Err(format!(
-            "    expected at least one {} finding, got none\n",
-            block.rule
-        )),
-        (Expect::Clean, _) => Err(format!(
-            "    expected no {} findings\n{}",
-            block.rule,
-            diff(&[], &[], &actual.iter().collect::<Vec<_>>())
-        )),
+        Expect::Clean => {
+            if !actual.is_empty() {
+                return Err(format!(
+                    "    expected no {} findings\n{}",
+                    block.rule,
+                    unexpected()
+                ));
+            }
+        }
+        Expect::Unresolved => {
+            if let Some(a) = actual
+                .iter()
+                .find(|a| !matches!(a.severity, Severity::Unresolved | Severity::Advisory))
+            {
+                return Err(format!(
+                    "    expected only Unresolved findings, got {}\n{}",
+                    a.short(),
+                    unexpected()
+                ));
+            }
+            let unresolved: Vec<&Actual> = actual
+                .iter()
+                .filter(|a| a.severity == Severity::Unresolved)
+                .collect();
+            if unresolved.is_empty() {
+                return Err(format!(
+                    "    expected an Unresolved {} finding, got none\n",
+                    block.rule
+                ));
+            }
+            if let Some(r) = &block.reason
+                && !unresolved.iter().any(|a| a.reason.as_ref() == Some(r))
+            {
+                let got: Vec<String> = unresolved.iter().map(|a| a.short()).collect();
+                return Err(format!(
+                    "    expected Unresolved reason `{r}`, got {}\n",
+                    got.join(", ")
+                ));
+            }
+            if !block.markers.is_empty() {
+                check_markers(block, &actual)?;
+            }
+        }
+        Expect::NotApplicable => {
+            let Some(why) = &res.not_applicable else {
+                return Err(format!(
+                    "    expected {} to report NotApplicable, it applied\n",
+                    block.rule
+                ));
+            };
+            if !actual.is_empty() {
+                return Err(format!(
+                    "    NotApplicable must carry no findings\n{}",
+                    unexpected()
+                ));
+            }
+            if let Some(r) = &block.reason
+                && !why.contains(r.as_str())
+            {
+                return Err(format!(
+                    "    expected NotApplicable reason `{r}`, got `{why}`\n"
+                ));
+            }
+        }
     }
+    check_subjects(block, res)
 }
 
 /// Positive-control audit over the blocks of one file.
@@ -335,6 +447,7 @@ fn controls(blocks: &[Block]) -> Vec<MissingControl> {
         match b.expect {
             Expect::Fire => e.0 = true,
             Expect::Clean => e.1 = true,
+            Expect::Unresolved | Expect::NotApplicable => {}
         }
     }
     let mut out = Vec::new();
@@ -452,10 +565,10 @@ pub fn run_file<R: CaseOutput, F: Fn(&Case) -> R>(path: &Path, runner: &Runner<F
             rule: b.rule.clone(),
             config: b.config.clone(),
         };
-        let findings = (runner.0)(&case).into_findings();
-        let mut outcome = check(b, &findings);
+        let result = (runner.0)(&case).into_result();
+        let mut outcome = check(b, &result);
         if outcome.is_ok() && b.snapshot {
-            outcome = check_snapshot(path, b, &findings);
+            outcome = check_snapshot(path, b, &result.findings);
         }
         tracing::debug!(case = %b.name, ok = outcome.is_ok(), "mdtest case");
         report.cases.push(CaseReport {

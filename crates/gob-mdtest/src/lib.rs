@@ -1,10 +1,11 @@
 //! Markdown corpus harness: fenced blocks as rule tests with positive controls.
 //!
 //! A markdown file is a suite; fenced blocks whose info string carries
-//! `expect=fire|clean` are cases. See `FORMAT.md` in the crate root for the
+//! `expect=fire|clean|unresolved|notapplicable` are cases. See `FORMAT.md` in the crate root for the
 //! full grammar; in brief:
 //!
-//! - info string: `lang rule=ID expect=fire|clean [config="toml"] [file=name]`
+//! - info string: `lang rule=ID expect=fire|clean|unresolved|notapplicable [reason=R]
+//!   [subjects=N|subjects>=N] [config="toml"] [file=name]`
 //! - suite default rule: `<!-- mdtest: rule=ID -->`
 //! - markers `// error: [COL] ID "substring"` (also `warn`, `advisory`,
 //!   `unresolved[REASON]`; column, rule and message optional; a bare `error:`
@@ -35,10 +36,10 @@ pub mod coverage;
 mod parse;
 mod run;
 
-pub use parse::{Block, Expect, Marker, ParseError, parse_suite};
+pub use parse::{Block, Expect, Marker, ParseError, Subjects, parse_suite};
 pub use run::{
-    Case, CaseOutput, CaseReport, FileReport, Missing, MissingControl, Report, Runner, run_dir,
-    run_file,
+    Case, CaseOutput, CaseReport, CaseResult, FileReport, Missing, MissingControl, Report, Runner,
+    run_dir, run_file,
 };
 
 /// Crate manifest directory: the run-time `CARGO_MANIFEST_DIR` cargo sets, else `compile_time`.
