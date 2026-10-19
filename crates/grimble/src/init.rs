@@ -57,6 +57,8 @@ pub struct InitData {
     pub model: Step,
     /// The `.gitignore` entry.
     pub gitignore: Step,
+    /// Advice that is not a change (for example a missing CODEOWNERS for the control plane).
+    pub recommendations: Vec<String>,
 }
 
 fn internal(what: &str, path: &Path, e: &std::io::Error) -> CliError {
@@ -124,14 +126,20 @@ impl Command for Init {
         };
         let model = ensure_model(&root)?;
         let gitignore = ensure_gitignore(&root)?;
+        let recommendations: Vec<String> = crate::config_diff::codeowners_recommendation(&root)
+            .into_iter()
+            .collect();
         let already = config.added.is_empty() && !model.changed && !gitignore.changed;
         tracing::info!(already, "init finished");
-        Ok(Payload::new(InitData {
+        let advice = recommendations.clone();
+        let payload = Payload::new(InitData {
             root: root.display().to_string(),
             config,
             model,
             gitignore,
+            recommendations,
         })
-        .with_already(already))
+        .with_already(already);
+        Ok(advice.into_iter().fold(payload, Payload::with_warning))
     }
 }

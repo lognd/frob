@@ -377,3 +377,77 @@ fn config_for_names_the_line_and_scopes_by_path() {
     assert_eq!(packs.len(), 1);
     assert_eq!(packs[0]["name"], "core");
 }
+
+fn git(dir: &Path, args: &[&str]) {
+    let st = std::process::Command::new("git")
+        .args([
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@t",
+            "-c",
+            "commit.gpgsign=false",
+        ])
+        .args(args)
+        .current_dir(dir)
+        .status()
+        .expect("git runs");
+    assert!(st.success(), "git {args:?}");
+}
+
+// frob:tests crates/grimble/src/config_for.rs::run
+// frob:ticket 01M3ZX7XMRBR2H68DNBNGV12ZZ
+#[test]
+fn config_diff_lists_the_weakenings_between_base_and_head() {
+    let dir = repo();
+    git(dir.path(), &["init", "-q", "-b", "main"]);
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[rules.SEC001]\nseverity = \"error\"\n",
+    );
+    git(dir.path(), &["add", "."]);
+    git(dir.path(), &["commit", "-q", "-m", "base"]);
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[rules.SEC001]\nseverity = \"warn\"\n",
+    );
+    git(dir.path(), &["commit", "-q", "-am", "weaken"]);
+    let (code, env, err) = grimble(
+        dir.path(),
+        &[
+            "config", "diff", "--base", "HEAD~1", "--head", "HEAD", "--json",
+        ],
+    );
+    assert_eq!(code, 0, "{env} {err}");
+    let weak = env["data"]["weakenings"].as_array().unwrap();
+    assert_eq!(weak.len(), 1, "{env}");
+    assert_eq!(weak[0]["key"], "rules.SEC001.severity");
+    assert_eq!(weak[0]["old"], "\"error\"");
+    assert_eq!(weak[0]["new"], "\"warn\"");
+
+    let (code, env, err) = grimble(dir.path(), &["config", "diff", "--base", "HEAD", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
+    assert!(env["data"]["changes"].as_array().unwrap().is_empty());
+}
+
+// frob:tests crates/grimble/src/init.rs::run
+// frob:ticket 01M3ZX7XMRBR2H68DNBNGV12ZZ
+#[test]
+fn init_recommends_codeowners_for_the_control_plane() {
+    let dir = repo();
+    let (code, env, err) = grimble(dir.path(), &["init", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
+    let rec = env["data"]["recommendations"].as_array().unwrap();
+    assert_eq!(rec.len(), 1, "{env}");
+    assert!(rec[0].as_str().unwrap().contains("CODEOWNERS"));
+    write(dir.path(), "CODEOWNERS", "* @owner\n");
+    let (_, env, _) = grimble(dir.path(), &["init", "--json"]);
+    assert!(
+        env["data"]["recommendations"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+}

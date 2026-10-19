@@ -1,4 +1,4 @@
-//! `config --for FILE`: the packs and rules in effect for one file and the config line each came from.
+//! `config --for FILE` and `config diff --base REF`: the packs and rules in effect for one file and the config line each came from.
 //!
 //! Answers "where does this rule come from" (plugins.md section 2) from the one root
 //! `grimble.toml` alone: path-scoped `[[packs.enable]]` entries and the `[packs] enabled` list are
@@ -17,6 +17,7 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::PRODUCT;
+use crate::config_diff::{ConfigData, config_diff};
 use crate::workspace::locate_root;
 
 /// Show the packs and rules in effect for a file and the `grimble.toml` line that activated each pack.
@@ -28,7 +29,12 @@ use crate::workspace::locate_root;
     exits(ok, refused, usage, internal)
 )]
 pub struct ConfigFor {
-    file: String,
+    /// `config diff`: the base ref, when this is a diff.
+    diff_base: Option<String>,
+    /// `config diff`: the head ref; the working copy when absent.
+    diff_head: Option<String>,
+    /// `config --for`: the file to explain.
+    file: Option<String>,
 }
 
 /// One rule a pack contributes to a file.
@@ -132,32 +138,43 @@ fn root_relative(root: &Path, cwd: &Path, arg: &str) -> Option<String> {
 #[command(about = None, long_about = None)]
 struct ConfigForArgs {
     #[arg(
+        value_name = "ACTION",
+        value_parser = ["diff"],
+        help = "`diff` compares the policy at --base with --head"
+    )]
+    action: Option<String>,
+    #[arg(
         long = "for",
         value_name = "FILE",
-        required = true,
+        conflicts_with = "action",
+        required_unless_present = "action",
         help = "File to explain, relative to the current directory"
     )]
-    file: String,
+    file: Option<String>,
+    #[arg(
+        long,
+        value_name = "REF",
+        requires = "action",
+        required_if_eq("action", "diff"),
+        help = "diff: the ref whose policy is the baseline"
+    )]
+    base: Option<String>,
+    #[arg(
+        long,
+        value_name = "REF",
+        requires = "action",
+        help = "diff: the ref to compare (default: the working copy)"
+    )]
+    head: Option<String>,
 }
 
-impl Command for ConfigFor {
-    type Data = ConfigForData;
-
-    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        gob_cli::augment::<ConfigForArgs>(cmd)
-    }
-
-    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let a = gob_cli::parse::<ConfigForArgs>(m)?;
-        Ok(Self { file: a.file })
-    }
-
-    fn run(&self, ctx: &Context) -> Outcome<ConfigForData> {
+impl ConfigFor {
+    /// `config --for FILE`.
+    fn run_for(file: &str, ctx: &Context) -> Outcome<ConfigData> {
         let root = locate_root(&ctx.cwd);
-        let Some(rel) = root_relative(&root, &ctx.cwd, &self.file) else {
+        let Some(rel) = root_relative(&root, &ctx.cwd, file) else {
             return Err(CliError::Usage(format!(
-                "{} is outside the workspace root {}",
-                self.file,
+                "{file} is outside the workspace root {}",
                 root.display()
             )));
         };
@@ -196,7 +213,90 @@ impl Command for ConfigFor {
                     .map(|r| format!("    {} {} {}", r.id, r.severity, r.summary)),
             );
         }
-        Ok(Payload::new(data).with_rendered(rows))
+        Ok(Payload::new(ConfigData::For(data)).with_rendered(rows))
+    }
+
+    /// `config diff --base REF [--head REF]`.
+    fn run_diff(base: &str, head: Option<&str>, ctx: &Context) -> Outcome<ConfigData> {
+        let root = locate_root(&ctx.cwd);
+        let config_file = format!("{PRODUCT}.toml");
+        let repo = gob_git::Repo::discover(&root)
+            .map_err(|e| CliError::Usage(format!("config diff needs a git repository: {e}")))?;
+        let at_ref = |rev: &str| -> Result<String, CliError> {
+            let blob = repo
+                .read_blob_at(rev, &config_file)
+                .map_err(|e| CliError::Usage(format!("cannot read {config_file} at {rev}: {e}")))?;
+            Ok(blob
+                .map(|b| String::from_utf8_lossy(&b).into_owned())
+                .unwrap_or_default())
+        };
+        let base_text = at_ref(base)?;
+        let (head_label, head_text) = match head {
+            Some(h) => (h, at_ref(h)?),
+            None => (
+                "worktree",
+                std::fs::read_to_string(root.join(&config_file)).unwrap_or_default(),
+            ),
+        };
+        let data = config_diff(base, &base_text, head_label, &head_text).map_err(|e| {
+            CliError::from(
+                Refusal::new("E-CONFIG", RefusalClass::GuardNeedsAction, e.to_string())
+                    .with_remedy(format!("fix {config_file} as described, then rerun")),
+            )
+        })?;
+        let show = |v: &Option<String>| v.clone().unwrap_or_else(|| "(unset)".to_owned());
+        let mut rows = vec![format!(
+            "{} -> {}: {} policy change(s), {} weakening(s)",
+            data.base,
+            data.head,
+            data.changes.len(),
+            data.weakenings.len()
+        )];
+        rows.extend(data.changes.iter().map(|c| {
+            let weak = data.weakenings.iter().any(|w| w.key == c.key);
+            format!(
+                "  {}{}: {} -> {}",
+                if weak { "[weakened] " } else { "" },
+                c.key,
+                show(&c.old),
+                show(&c.new)
+            )
+        }));
+        Ok(Payload::new(ConfigData::Diff(data)).with_rendered(rows))
+    }
+}
+
+impl Command for ConfigFor {
+    type Data = ConfigData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<ConfigForArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<ConfigForArgs>(m)?;
+        Ok(if a.action.is_some() {
+            Self {
+                diff_base: a.base,
+                diff_head: a.head,
+                file: None,
+            }
+        } else {
+            Self {
+                file: a.file,
+                ..Self::default()
+            }
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<ConfigData> {
+        match (&self.diff_base, &self.file) {
+            (Some(base), _) => Self::run_diff(base, self.diff_head.as_deref(), ctx),
+            (None, Some(file)) => Self::run_for(file, ctx),
+            (None, None) => Err(CliError::Usage(
+                "config needs --for FILE or `diff --base REF`".to_owned(),
+            )),
+        }
     }
 }
 

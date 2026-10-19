@@ -1,0 +1,1 @@
+Added `grimble config diff --base REF [--head REF]`, which prints the policy delta GATE001 reads and lists the weakenings, and `grimble init` now recommends a CODEOWNERS entry for the control plane when none covers it.

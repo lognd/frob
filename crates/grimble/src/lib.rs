@@ -15,6 +15,7 @@
 
 pub mod ack;
 pub mod compile_cmd;
+pub mod config_diff;
 pub mod config_for;
 pub mod doctor;
 pub mod exceptions;

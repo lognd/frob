@@ -2834,6 +2834,7 @@ dependencies = [
  "gob-rules",
  "gob-symbols",
  "gob-time",
+ "gob-trust",
  "gob-walk",
  "grimble-bind",
  "grimble-check",

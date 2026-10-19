@@ -277,7 +277,9 @@ Read implies publish: the trust prompt and docs say "can read and print".
   depends on) and each weakening is one finding naming old and new
   value. Cleared only by an exception with a ticket (exceptions.md);
   strengthening is silent. `config diff --base REF`
-  prints the delta. `init` recommends CODEOWNERS for the control plane.
+  prints the delta (implemented as `grimble config diff --base REF [--head REF]`,
+  with the weakenings listed separately). `init` recommends CODEOWNERS for the control
+  plane (as a `recommendations` entry and a warning) when no CODEOWNERS file covers it.
 - The summary separates "Unresolved because a plugin did not finish"
   from "Unresolved because the code is undecidable", so nobody filters
   both together.

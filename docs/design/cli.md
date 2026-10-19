@@ -301,6 +301,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble fmt` | grimble | grimble-model (the alpha-normal printer) | yes | 0 2 4 | 2 |
 | `grimble compile [PATH...]` | grimble | gob-plan (the GRL checker) | yes, read-only | 0 1 2 4 | 2 |
 | `grimble config --for FILE` | grimble | gob-packs (path-scoped activation) over gob-rules | yes, read-only | 0 2 3 4 | 2 |
+| `grimble config diff --base REF [--head REF]` | grimble | gob-trust (policy snapshot) with gob-check (GATE001 weakening classifier) | yes, read-only; lists every changed policy setting and the weakenings GATE001 would report; `--head` defaults to the working copy | 0 2 4 | 2 |
 | `grimble exceptions list` | grimble | grimble-check over gob-rules | yes, read-only | 0 2 4 | 2 |
 | `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 |
 | `grimble vet [--hook]` | grimble | grimble-vet | yes | 0 1 2 4 | 2 (after the G01-G19 cut; build-test-ci.md Milestone 2 item 8) |
