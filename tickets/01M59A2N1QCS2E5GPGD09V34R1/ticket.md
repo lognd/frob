@@ -8,5 +8,5 @@ points = 3
 reporter = "lognd"
 created = "2026-10-19T05:27:46Z"
 updated = "2026-10-19T14:48:37Z"
-scope = ["docs/reference/rules/PATH*.md"]
+scope = ["docs/reference/rules/PATH*.md", "docs/design/rules.md"]
 +++
