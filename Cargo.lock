@@ -1256,6 +1256,9 @@ name = "frob-mirror"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "frob-ledger",
+ "gob-diagnostics",
+ "gob-time",
  "gob-trust",
  "serde",
  "serde_json",

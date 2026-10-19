@@ -373,6 +373,17 @@ an uncertain create forces recovery first.
   `proposal-accepted`, `proposal-declined`, `proposal-expired` join
   tickets.md 2a.
 
+#### Recording proposals
+
+`frob_mirror::proposals::record(sink, existing, edits, actor, now, per_run)` turns tracker
+edits (each with its tracker event id and full value) into `proposal` and `proposal-superseded`
+events and hands all of them to `ProposalSink::commit` in one call. Edits whose tracker event id
+is already in the ledger fold (any state) are skipped, as are edits not newer than a recorded
+proposal of the same field. Several edits of one field in a run collapse to the latest. A cap
+(`per_run`, or an (issue, field) already recorded today) holds an edit back and `advance_to`
+stops before it. The excerpt is the first 200 characters, escaped with origin `tracker`; the
+digest covers the full value.
+
 #### GitHub rendering
 
 `frob_mirror::github::render::render(projection, marker)` turns a projection

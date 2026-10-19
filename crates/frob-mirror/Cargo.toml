@@ -10,6 +10,9 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
+gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
 gob-trust = { version = "0.532.0", path = "../gob-trust" }
 blake3 = "1"
 serde = { version = "1", features = ["derive"] }
