@@ -2,14 +2,14 @@
 id = "01M48Q4CHCFKJ9SSTVT471060B"
 title = "gob-mdtest: outcome classes unresolved and notapplicable, subject accounting, certified clean"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:40:59Z"
-updated = "2026-10-19T10:16:35Z"
-scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
+updated = "2026-10-19T11:26:25Z"
+scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**", "docs/reference/rules/*.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -17,23 +17,23 @@ target = "01M48Q4BZHFXT3GMYDKYR7MCXF"
 
 [[acceptance]]
 text = "a rule that examines nothing fails an expect=clean block"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "an Unresolved-only result fails expect=fire and an Error fails expect=unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a wrong reason code fails"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a NotApplicable result fails expect=clean and passes expect=notapplicable"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "FORMAT.md documents the vocabulary"
-bound = false
+bound = true
 +++
 
 testing.md 1-2: expect=fire|clean|unresolved|notapplicable, markers advisory: and unresolved[REASON]: with required, subjects= / subjects>= (clean defaults to >=1), fidelity=, parse=, spanless header assertions, known-gap and fixed modifiers shared with GRL section 9. Migrate inv002.md (its unresolved case is an unmarked fire) and add Unresolved blocks to cov001, doc001, todo001, ref001. Design: docs/design/testing.md (D106); audit: notes/research/u-testing-audit.md.
