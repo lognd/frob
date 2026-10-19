@@ -7,9 +7,9 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-13T22:10:58Z"
-updated = "2026-10-19T21:53:42Z"
+updated = "2026-10-19T21:55:42Z"
 idempotency_key = "base-swap-stale-fingerprints"
-scope = ["crates/frob/**", "crates/frob-tests/**"]
+scope = ["crates/frob/**", "crates/frob-tests/**", "docs/guides/quickstart.md"]
 
 [[acceptance]]
 text = "After frob test --base, a cargo build in the same worktree rebuilds every file changed versus the base"
