@@ -5,6 +5,7 @@ pub mod adapter;
 pub mod blind;
 pub mod budget;
 pub mod config;
+pub mod fields;
 pub mod github;
 pub mod journal;
 pub mod keyring;
