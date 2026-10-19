@@ -2,7 +2,8 @@
 id = "01M4D91DTERJHX4TGJVV4KM7K8"
 title = "Web profile: ESLint JSON parser; stages for eslint, typescript-eslint (type-aware, separate), jsx-a11y, react-hooks and eslint-plugin-react"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4D8X558Q07HCMEBP224NQP4"
