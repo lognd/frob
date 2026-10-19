@@ -2,7 +2,8 @@
 id = "01M3Z714HJ6E02VGXH271BAAE0"
 title = "G15: grimble shrink"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
