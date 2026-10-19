@@ -9,7 +9,7 @@ parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:51Z"
 updated = "2026-10-19T10:35:12Z"
-scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-pm/**", "Cargo.lock", "docs/design/pm-enforcement.md", "docs/guides/quickstart.md"]
+scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-pm/**", "Cargo.lock", "docs/design/pm-enforcement.md", "docs/guides/quickstart.md", "docs/reference/cli/frob.md"]
 
 [[acceptance]]
 text = "a fixture history reproduces known velocity, capacity and percentile values"
