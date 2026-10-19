@@ -2,13 +2,13 @@
 id = "01M406M2HX6Z6SEGM6HRPQKHAV"
 title = "grimble vet: dependency vetting in grimble-vet (designed in cli.md, not implemented)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T06:18:31Z"
-updated = "2026-10-03T06:19:03Z"
+updated = "2026-10-19T13:22:24Z"
 idempotency_key = "m2-frob-vet"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/grimble-vet/**", "crates/grimble/src/**"]
