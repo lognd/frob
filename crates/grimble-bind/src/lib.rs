@@ -41,6 +41,7 @@ pub mod live;
 pub mod model;
 pub mod owner;
 pub mod relation;
+pub mod shrink;
 
 pub mod eval;
 pub mod host;

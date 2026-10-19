@@ -123,7 +123,15 @@ Every verb, every time:
   findings without re-deriving it. Landed state: `gob-diagnostics`
   (`exit.rs`) skips Unresolved today; changing it is the first item of
   build-test-ci.md Milestone 2.
-- `frob check` merges sibling findings under this same contract; crunk
+- `grimble shrink` is dry-run by default: it prints a diff that removes each
+`may` grant CAP002 reports as declared-unused (Exact absence only) and
+writes nothing until `--apply`. Each proposed removal carries the
+`excuses ATOM because="..."` clause to write instead when the grant is
+kept on purpose. The planner is `grimble_bind::shrink::plan`; proposing
+`owns` selectors from ownership and an interactive excuse prompt are not
+implemented yet.
+
+`frob check` merges sibling findings under this same contract; crunk
   and grimble adopt it (crunk's v1 0/1/2 contract maps onto it: exit 1
   only through `--fail-on`).
 - `--schema` on any verb prints the bare JSON schema of that verb's

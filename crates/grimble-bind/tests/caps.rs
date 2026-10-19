@@ -248,3 +248,65 @@ fn a_clap_command_is_not_a_process_spawn_but_std_process_command_is() {
     let b = bind_file("src/x.rs", std, "");
     assert_eq!(atoms(&b), ["cap/node/a/process.spawn"], "{:?}", b.findings);
 }
+
+fn shrink_fixture(body: &str) -> (tempfile::TempDir, Binding) {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(dir.path().join("src")).unwrap();
+    std::fs::create_dir_all(dir.path().join("design")).unwrap();
+    std::fs::write(dir.path().join("src/x.py"), PY).unwrap();
+    let text = model(body);
+    std::fs::write(dir.path().join("design/model.grmb"), &text).unwrap();
+    let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
+    let files = ModelFiles::new().with_file("design/model.grmb", text.into_bytes());
+    let b = grimble_bind::bind(&BindInput {
+        root: dir.path(),
+        entries: &walked.files,
+        model: &files,
+        modeled: &[],
+        strict: false,
+        rename_min_tokens: 12,
+        ledger_dir: "tickets",
+    });
+    (dir, b)
+}
+
+// frob:tests crates/grimble-bind/src/shrink.rs::plan
+// frob:tests crates/grimble-bind/src/shrink.rs::Plan.apply
+#[test]
+fn shrink_proposes_the_unused_grant_and_writes_only_on_apply() {
+    let body = "  may fs.read;\n  may exec;\n  may net.listen;\n  may fs.write;\n";
+    let (dir, b) = shrink_fixture(body);
+    let path = dir.path().join("design/model.grmb");
+    let before = std::fs::read_to_string(&path).unwrap();
+    let mut read = |f: &str| std::fs::read_to_string(dir.path().join(f)).ok();
+    let plan = grimble_bind::shrink::plan(&b.findings, &mut read);
+    assert_eq!(plan.removals.len(), 1, "{plan:?}");
+    assert_eq!(plan.removals[0].clause, "may fs.write;");
+    assert!(plan.diff.contains("-  may fs.write;"), "{}", plan.diff);
+    assert!(!plan.diff.contains("may exec"), "{}", plan.diff);
+    // Planning writes nothing.
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), before);
+    plan.apply(dir.path()).unwrap();
+    let after = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(
+        after,
+        model("  may fs.read;\n  may exec;\n  may net.listen;\n")
+    );
+    // The shrunk model is a fixed point: re-binding it proposes nothing.
+    let (dir2, b2) = shrink_fixture("  may fs.read;\n  may exec;\n  may net.listen;\n");
+    let mut read2 = |f: &str| std::fs::read_to_string(dir2.path().join(f)).ok();
+    assert!(
+        grimble_bind::shrink::plan(&b2.findings, &mut read2)
+            .removals
+            .is_empty()
+    );
+}
+
+// frob:tests crates/grimble-bind/src/shrink.rs::plan
+#[test]
+fn shrink_leaves_a_used_model_alone() {
+    let (dir, b) = shrink_fixture("  may fs.read;\n  may exec;\n  may net.listen;\n");
+    let mut read = |f: &str| std::fs::read_to_string(dir.path().join(f)).ok();
+    let plan = grimble_bind::shrink::plan(&b.findings, &mut read);
+    assert!(plan.removals.is_empty() && plan.diff.is_empty() && plan.edited.is_empty());
+}
