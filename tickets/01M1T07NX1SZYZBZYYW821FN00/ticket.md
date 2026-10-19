@@ -2,19 +2,19 @@
 id = "01M1T07NX1SZYZBZYYW821FN00"
 title = "Two different builds both report 0.530.0, so consumer bug reports cannot be checked against main (F-216 was already fixed and unverifiable)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-14T22:08:32Z"
+updated = "2026-10-19T14:28:37Z"
 aliases = ["T-4001"]
 labels = ["v1-cluster:E3", "triage:accepted"]
-scope = ["src/frob/app/doctor_runner.py"]
+scope = ["src/frob/app/doctor_runner.py", "crates/frob/build.rs", "crates/frob/src/product.rs", "crates/frob/src/init.rs", "crates/frob/Cargo.toml", "docs", ".github/ISSUE_TEMPLATE/bug_report.yml", "CONTRIBUTING.md", "crates/frob/tests/it/build_identity.rs", "crates/frob/tests/it/main.rs", "design/model.grmb"]
 
 [[acceptance]]
 text = "Given a dev or debug build, when frob --version runs, then it prints the release version plus a dev suffix and commit (e.g. 0.533.0-dev+ec63b58), never the bare released version (hullbreach: a dev build printed 0.532.0)"
-bound = false
+bound = true
 +++
 
 WE SHIP BEHAVIOUR CHANGES UNDER AN UNCHANGED VERSION STRING, so a consumer

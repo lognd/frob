@@ -159,3 +159,22 @@ fn host_binds_and_converts() {
         .collect();
     assert!(converted.iter().any(|f| f.rule.as_str() == "CYCLE001"));
 }
+
+/// A repository with no source units marks all three rules not applicable instead of vacuous.
+#[test]
+fn empty_repository_makes_the_rules_not_applicable() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).expect("walk");
+    let code = Code::build(dir.path(), &walked.files);
+    let graph = grimble_bind::edges::build_graph(dir.path(), &code);
+    let crates = BTreeMap::new();
+    let read = |_: &str| None;
+    let report = analyze(&ArchInput {
+        graph: &graph,
+        crates: &crates,
+        large_lines: 100,
+        read: &read,
+    });
+    let ids: Vec<_> = report.not_applicable.keys().copied().collect();
+    assert_eq!(ids, ["CYCLE001", "DEAD001", "LARGE001"]);
+}

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/app/doctor_runner.py", "crates/frob/build.rs", "crates/frob/src/product.rs", "crates/frob/src/init.rs", "crates/frob/Cargo.toml", "docs"]
+new = ["src/frob/app/doctor_runner.py", "crates/frob/build.rs", "crates/frob/src/product.rs", "crates/frob/src/init.rs", "crates/frob/Cargo.toml", "docs", ".github/ISSUE_TEMPLATE/bug_report.yml"]
+at = "2026-10-19T14:28:34Z"
+actor = "lognd"
+rev = 1
