@@ -2,13 +2,13 @@
 id = "01M4052SFS22HBR73HQN1E4FA4"
 title = "Field ownership: [mirror.fields], tracker_owned, never write a tracker-owned field"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-03T05:51:36Z"
+updated = "2026-10-19T09:15:27Z"
 idempotency_key = "m2-mirror2-fields"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/fields.rs"]
