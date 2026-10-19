@@ -135,6 +135,7 @@ pub struct Check {
     timing: bool,
     base: Option<String>,
     tools: ToolFlags,
+    allow_concurrent: bool,
 }
 
 /// The tool-stage switches of a run (`--quick`, `--skip-tools`), grouped to keep `Check` lean.
@@ -204,6 +205,20 @@ fn refusal(code: &str, class: RefusalClass, err: &CheckError, remedy: &str) -> C
     Refusal::new(code, class, err.to_string())
         .with_remedy(remedy)
         .into()
+}
+
+/// Refuse (exit 3, distinct from a gate failure) when the worktree's full-check lock is held.
+fn lock_refusal(err: crate::concurrent::LockError) -> CliError {
+    match err {
+        crate::concurrent::LockError::Held(_) => Refusal::new(
+            "E-CHECK-CONCURRENT",
+            RefusalClass::GuardNeedsAction,
+            err.to_string(),
+        )
+        .with_remedy("wait for the running check, or pass --allow-concurrent to run in parallel")
+        .into(),
+        crate::concurrent::LockError::Io { .. } => CliError::internal(err),
+    }
 }
 
 /// Map a pipeline failure onto the exit table (cli.md section 2).
@@ -317,6 +332,11 @@ struct CheckArgs {
         help = "Skip the [[check.tool]] stages (CI runs each as its own step)"
     )]
     skip_tools: bool,
+    #[arg(
+        long,
+        help = "Run even if another full check holds this worktree's lock (recorded in .frob/check-overrides.log)"
+    )]
+    allow_concurrent: bool,
 }
 
 impl Command for Check {
@@ -340,6 +360,7 @@ impl Command for Check {
                 quick: a.quick,
                 skip: a.skip_tools,
             },
+            allow_concurrent: a.allow_concurrent,
         })
     }
 
@@ -355,6 +376,22 @@ impl Command for Check {
             .ok()
             .and_then(|r| r.work_dir().map(std::path::Path::to_path_buf))
             .unwrap_or_else(|| ctx.cwd.clone());
+        // Full runs (no --only filter) are locked per worktree; scoped --only runs are not.
+        let _lock = if self.only.is_empty() {
+            let argv: Vec<String> = std::env::args().collect();
+            Some(
+                crate::concurrent::acquire(
+                    &root,
+                    std::process::id(),
+                    &argv,
+                    self.allow_concurrent,
+                    ctx.clock.as_ref(),
+                )
+                .map_err(lock_refusal)?,
+            )
+        } else {
+            None
+        };
         let opts = CheckOptions {
             ticket: self.ticket.clone(),
             only: self.only.clone(),
