@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-19T17:16:41Z"
+updated = "2026-10-19T17:24:07Z"
 idempotency_key = "m2-mirror2-create"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/create.rs", "crates/frob-mirror/tests/create.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -31,7 +31,7 @@ target = "01M4052RMBKXD6T8ANNFWJ751M"
 
 [[acceptance]]
 text = "Given a create that times out, when the ticket is processed again before recovery, then no second create is made for it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a create-uncertain ticket, when recovery lists the bot's issues back to the create's start time and matches the nonce, then the issue is adopted and the uncertainty is cleared"
