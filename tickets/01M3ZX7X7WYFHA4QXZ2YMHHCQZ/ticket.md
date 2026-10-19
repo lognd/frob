@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:36Z"
-updated = "2026-10-19T04:29:48Z"
+updated = "2026-10-19T04:29:55Z"
 idempotency_key = "m2-sec-no-new-unknowns"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-check/src/base_unknowns.rs", "crates/gob-check/src/lib.rs", "changelog.d/01M3ZX7X7WYFHA4QXZ2YMHHCQZ.*"]
@@ -19,7 +19,7 @@ target = "01M3ZX7X3RQTTR7V8JFRN8TQEK"
 
 [[acceptance]]
 text = "Given a changed file whose edit makes a P+ rule Unresolved where base was decided, when check --base runs, then it fails and names the file and rule"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an Unresolved that existed at base, when check --base runs, then it does not fail"
