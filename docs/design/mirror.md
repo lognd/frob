@@ -366,7 +366,8 @@ and in `frob mirror status`.
   writes stop, and the next run recomputes the same diff.
 - **The GitHub adapter** (`frob-mirror::github::adapter`).
   `HttpTransport` performs one raw REST or GraphQL call (live through
-  `frob-gh`, or recorded for offline tests); `GithubRest` maps the
+  the native `github::http::NativeTransport`, a `ureq`/rustls client with no
+  subprocess, or recorded for offline tests); `GithubRest` maps the
   `WriteTransport`, `HistorySource` and `ListingSource` contracts onto
   endpoints; `GithubAdapter` implements `TrackerAdapter` on top, signing
   the creation marker with the `Keyring` and spacing mutations by the

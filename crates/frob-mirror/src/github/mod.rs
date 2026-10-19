@@ -17,3 +17,6 @@ pub mod write;
 
 // frob:ticket 01M5ASPRW2FYMNRHWQHEVN9W9J
 pub mod adapter;
+
+// frob:ticket 01M5B07S0STANADP897P4A6YB2
+pub mod http;
