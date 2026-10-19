@@ -4,9 +4,10 @@ title = "frob test --base leaves stale fingerprints: later cargo builds in the w
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-10-13T22:10:58Z"
-updated = "2026-10-13T22:10:58Z"
+updated = "2026-10-19T21:45:20Z"
 idempotency_key = "base-swap-stale-fingerprints"
 scope = ["crates/frob/**"]
 
