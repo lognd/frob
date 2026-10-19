@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T09:54:23Z"
+digest = "9885148b15c2629f74521f90e8e591113d0dbfc01b60dc8e00732e99bf98c47b"
+exit_code = 0
+inline = """
+
+running 1 test
+test scene_solves_to_deterministic_layout_json ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.88s
+     Running tests/scene.rs (target/debug/deps/scene-a4ba3569e729b7ac)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p crunk-ingest --test scene scene_solves_to_deterministic_layout_json"
+size = 378
+status = "measured"
+at = "2026-10-19T09:54:23Z"
+actor = "lognd"
+rev = 1
