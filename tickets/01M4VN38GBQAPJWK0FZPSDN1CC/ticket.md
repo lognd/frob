@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-13T22:10:58Z"
-updated = "2026-10-19T21:55:42Z"
+updated = "2026-10-19T21:56:59Z"
 idempotency_key = "base-swap-stale-fingerprints"
 scope = ["crates/frob/**", "crates/frob-tests/**", "docs/guides/quickstart.md"]
 
