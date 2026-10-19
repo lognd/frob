@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-19T21:14:10Z"
+digest = "39605da58cfa3a22eb646160535036ad01cd78ba9b7a247d35d38fe1bfcb6488"
+exit_code = 0
+inline = """
+
+running 1 test
+test the_checked_in_allowlist_entries_carry_kind_and_ticket ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running tests/coverage.rs (target/debug/deps/coverage-bc370b968c065097)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-mdtest --test coverage the_checked_in_allowlist_entries_carry_kind_and_ticket"
+size = 330
+status = "measured"
+at = "2026-10-19T21:14:10Z"
+actor = "lognd"
+rev = 1

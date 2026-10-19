@@ -2,16 +2,16 @@
 id = "01M4052VK08NTRJS6HZZ9B82RZ"
 title = "TICK rule: a .github tree on the ticket branch other than the generated nudge is an Error"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-03T05:51:39Z"
+updated = "2026-10-19T21:11:06Z"
 idempotency_key = "m2-mirror2-tick-github"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-obligations/src/tick_github.rs"]
+scope = ["crates/frob-obligations/src/tick_github.rs", "crates/frob-check/src/product.rs", "crates/frob-ledger/src/github_tree.rs", "crates/frob-ledger/src/legacy.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/nudge.rs", "crates/frob/src/explain_cmd.rs", "docs/design/navigation.md", "docs/reference/rules/README.md", "docs/reference/rules/TICK010.md"]
 
 [[links]]
 kind = "blocked-by"
