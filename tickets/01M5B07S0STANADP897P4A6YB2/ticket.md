@@ -2,12 +2,12 @@
 id = "01M5B07S0STANADP897P4A6YB2"
 title = "Mirror: replace the curl-subprocess HTTP transport with a native HttpTransport"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:17Z"
-updated = "2026-10-19T23:19:11Z"
+updated = "2026-10-19T23:19:12Z"
 scope = ["crates/frob-mirror/**"]
 +++
 
