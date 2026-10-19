@@ -13,6 +13,10 @@ scope = ["crates/frob/src/mirror_recreate_cmd.rs"]
 [[links]]
 kind = "blocked-by"
 target = "01M5ASPRNKH3X9W5N9FDERAFCQ"
+
+[[links]]
+kind = "blocked-by"
+target = "01M5ASPRW2FYMNRHWQHEVN9W9J"
 +++
 
 Core recreate() exists (~3YZEJ9X); needs the clap verb, store and adapter construction once the ticket-branch ShardStore and real adapter exist.
