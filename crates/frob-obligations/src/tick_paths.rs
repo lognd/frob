@@ -7,7 +7,7 @@ use gob_directives::is_full_ulid;
 use gob_rules::{Applicability, Finding, Fix, FixKind, TextEdit};
 use gob_text::{FileId, Span};
 
-use crate::rules::Tick006;
+use crate::legacy::Tick006;
 use crate::todo::range;
 use crate::util::finding;
 

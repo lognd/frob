@@ -52,8 +52,8 @@
 //!
 //! [`guards::CloseGuard`] is the close-guard trait (the evidence guard arrives
 //! with `frob-evidence`), [`guards::LeaseCheck`] the lease hook `doable`
-//! consults (`frob-lease`). [`rules`] declares `TICK001` to `TICK005`, `TICK007`, `TICK008` and `TICK009` (`TICK004` is [`privacy`], a byte scan of committed ledger files, repaired by [`scrub`]; `TICK005` is the same scan for the local private terms of [`redact`]);
-//! `frob-check` supplies the ticket ids [`rules::tick002`] checks.
+//! consults (`frob-lease`). [`rules`] declares `TICK001` to `TICK005` (`TICK004` is [`privacy`], a byte scan of committed ledger files, repaired by [`scrub`]; `TICK005` is the same scan for the local private terms of [`redact`]); [`legacy`] holds `TICK007`, `TICK008` and `TICK009`;
+//! `frob-check` supplies the ticket ids [`tick::tick002`] checks.
 #![expect(
     clippy::disallowed_methods,
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
@@ -72,10 +72,12 @@ pub mod fold;
 pub mod r#gen;
 pub mod guards;
 pub mod hand_written; // frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
+pub mod host;
 pub mod id;
 pub mod index;
 pub mod layout;
 pub mod ledger;
+pub mod legacy;
 pub mod links;
 pub mod merge;
 pub mod migrate;
@@ -95,9 +97,11 @@ pub mod rules;
 pub mod schema;
 pub mod scrub;
 pub mod slug; // frob:ticket 01M3ZX82FBZHFCX6P69NRTFCH7
+pub mod tick;
 pub mod triage;
 
 pub use error::{Candidate, LedgerError, Result};
+pub use host::{LedgerHost, LedgerView, evaluation_failed};
 pub use id::{EventId, TicketId};
 pub use layout::Layout;
 pub use ledger::{Applied, Ledger, LedgerConfig, RefMode};

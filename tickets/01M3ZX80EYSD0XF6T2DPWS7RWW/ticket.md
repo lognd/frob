@@ -2,16 +2,16 @@
 id = "01M3ZX80EYSD0XF6T2DPWS7RWW"
 title = "Reserved pack names, config_tables namespace and provenance prefixes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:39Z"
-updated = "2026-10-11T14:46:57Z"
+updated = "2026-10-19T04:05:38Z"
 idempotency_key = "m2-sec-pack-names"
 labels = ["milestone:2", "area:security", "good-first"]
-scope = ["crates/gob-packs/src/names.rs"]
+scope = ["crates/gob-packs/src/names.rs", "crates/gob-packs/src/lib.rs", "crates/gob-packs/src/manifest.rs"]
 
 [[links]]
 kind = "blocked-by"

@@ -5,14 +5,15 @@ use std::path::Path;
 
 use globset::Glob;
 use gob_directives::DirectiveRecord;
-use gob_rules::{Finding, Severity};
+use gob_rules::{Finding, RuleDecl, Severity};
 use gob_symbols::{ImportEdge, SymbolGraph, Target};
 use gob_text::{FileInterner, Span};
 
 use crate::config::{ForbidImport, InvariantsConfig};
-use crate::rules::{Inv001, Inv002};
+use crate::rules::inv001::Inv001;
+use crate::rules::inv002::Inv002;
 use crate::todo::range;
-use crate::util::{finding, rule_id};
+use crate::util::{def_id, finding_def};
 
 /// The slug of `invariants/<slug>.md`, when `path` has that shape.
 fn invariant_slug(path: &str) -> Option<&str> {
@@ -45,8 +46,8 @@ pub(crate) fn inv001(
             continue;
         }
         let file = files.intern(path);
-        out.push(finding(
-            &Inv001,
+        out.push(finding_def(
+            Inv001::DEF,
             Some(Span::new(file, range(0, 0))),
             format!("invariant `{slug}` has no `frob:invariant {slug}` directive in code"),
             path,
@@ -129,7 +130,7 @@ pub(crate) fn inv002(
             Err(err) => {
                 tracing::warn!(index = i, from = %entry.from, %err, "forbid_imports glob invalid");
                 out.push(Finding::new(
-                    rule_id(&Inv002),
+                    def_id(Inv002::DEF),
                     Severity::Unresolved,
                     None,
                     format!(
@@ -154,8 +155,8 @@ pub(crate) fn inv002(
                 .map_or((0, 0), |t| locate(&t, target));
             let file = files.intern(from_file);
             tracing::debug!(file = %from_file, import = %target, "forbidden import");
-            out.push(finding(
-                &Inv002,
+            out.push(finding_def(
+                Inv002::DEF,
                 Some(Span::new(file, range(start, len))),
                 format!(
                     "`{from_file}` imports `{target}`, forbidden by [invariants] ({}): {}",

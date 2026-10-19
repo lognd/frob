@@ -19,8 +19,8 @@ use gob_walk::Owner;
 use grimble_model::ast::EntityKind;
 
 use crate::code::Code;
+use crate::eval::{Cx, Output, path_of};
 use crate::model::Model;
-use crate::rules::{Cx, Output, path_of};
 use crate::types::Reason;
 
 /// The rule id.

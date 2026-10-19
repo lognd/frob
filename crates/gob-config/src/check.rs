@@ -2,28 +2,12 @@
 
 use std::path::Path;
 
-use gob_rules::{Finding, Rule, Severity};
+use gob_rules::{Finding, RuleDecl, Severity};
 
 use crate::describe::TableDescription;
 use crate::error::ConfigError;
 use crate::load::{lookup, read_table};
-
-/// A materialized config knob is missing from the product config file.
-///
-/// Every knob that affects behavior must be written down with its default so
-/// no variable is invisible; run `frob init` (or `frob config sync`) to add it.
-#[derive(Debug, Clone, Copy, Default, gob_rules::Rule)]
-#[rule(
-    id = "CFG001",
-    slug = "missing-materialized-knob",
-    family = "CFG",
-    severity = Error,
-    tier = Universal,
-    scope = Repo,
-    fix = Deterministic,
-    version = 1
-)]
-pub struct Cfg001;
+use crate::rules::cfg001::Cfg001;
 
 /// One `CFG001` finding per enforcement knob of `tables` absent from the file.
 ///
@@ -40,10 +24,10 @@ pub fn check(
     let path = crate::config_path(root, product);
     let (doc, _) = read_table(&path)?;
     let file = format!("{product}.toml");
-    let rule = Cfg001
-        .meta()
-        .rule_id()
-        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
+    let rule = Cfg001::DEF
+        .id
+        .parse::<gob_rules::RuleId>()
+        .unwrap_or_else(|e| unreachable!("declaration validates the id: {e}"));
     let mut findings = Vec::new();
     for desc in tables.iter().filter(|d| d.materialize) {
         let present = lookup(&doc, &desc.table);

@@ -300,6 +300,75 @@ fn happy_path_lands_closes_and_cleans_up() {
     assert!(again.already && !again.closed, "second land is a no-op");
 }
 
+/// Counts `repository discovered` events per git dir on the thread that installs it.
+#[derive(Clone, Default)]
+struct DiscoverCounter {
+    seen: Arc<std::sync::Mutex<Vec<String>>>,
+}
+
+impl tracing::Subscriber for DiscoverCounter {
+    fn enabled(&self, _: &tracing::Metadata<'_>) -> bool {
+        true
+    }
+    fn new_span(&self, _: &tracing::span::Attributes<'_>) -> tracing::span::Id {
+        tracing::span::Id::from_u64(1)
+    }
+    fn record(&self, _: &tracing::span::Id, _: &tracing::span::Record<'_>) {}
+    fn record_follows_from(&self, _: &tracing::span::Id, _: &tracing::span::Id) {}
+    fn enter(&self, _: &tracing::span::Id) {}
+    fn exit(&self, _: &tracing::span::Id) {}
+    fn event(&self, event: &tracing::Event<'_>) {
+        struct V(String, String);
+        impl tracing::field::Visit for V {
+            fn record_debug(&mut self, f: &tracing::field::Field, v: &dyn std::fmt::Debug) {
+                match f.name() {
+                    "message" => self.0 = format!("{v:?}"),
+                    "git_dir" => self.1 = format!("{v:?}"),
+                    _ => {}
+                }
+            }
+        }
+        let mut v = V(String::new(), String::new());
+        event.record(&mut v);
+        if v.0 == "repository discovered" {
+            self.seen.lock().expect("lock").push(v.1);
+        }
+    }
+}
+
+// frob:ticket 01M4CTE7T75F9XM8XN1R1VFD4X
+// frob:tests crates/frob-land/src/land.rs::begin
+#[test]
+fn land_opens_each_repository_once() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+
+    let counter = DiscoverCounter::default();
+    let out = tracing::subscriber::with_default(counter.clone(), || {
+        land(
+            &fx.root,
+            &Fixture::opts(&s),
+            &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+        )
+    })
+    .expect("land");
+    assert!(out.closed);
+    let seen = counter.seen.lock().expect("lock").clone();
+    // The invoking (primary) checkout is opened once and shared by the workspace, the lease
+    // store and gc; the ticket worktree and the ratchet checkout are opened by frob-check.
+    let primary = fx.repo().git_dir().display().to_string();
+    let opens = seen
+        .iter()
+        .filter(|d| d.trim_matches('"') == primary)
+        .count();
+    assert_eq!(opens, 1, "primary opened {opens} times: {seen:?}");
+}
+
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 #[test]
 fn land_runs_the_throttled_gc_pass_after_removing_the_worktree() {

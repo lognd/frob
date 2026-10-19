@@ -4,7 +4,7 @@ use gob_directives::frob::{Ticket, Todo};
 use gob_directives::{Directive, DirectiveRecord};
 use gob_rules::Finding;
 
-use crate::rules::Ref001;
+use crate::legacy::Ref001;
 use crate::tickets::{Standing, Tickets};
 use crate::util::finding;
 

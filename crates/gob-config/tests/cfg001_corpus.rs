@@ -1,8 +1,4 @@
 #![allow(dead_code, reason = "the tables are described, never loaded")]
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 //! `CFG001` markdown corpus: each block is the `frob.toml` of a fresh repository.
 
 // frob:ticket 01M4YBK7YTVNC16GHFFK4JKY97

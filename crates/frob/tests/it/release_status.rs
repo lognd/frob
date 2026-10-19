@@ -308,7 +308,7 @@ fn tickets_closed_with_no_changelog_are_listed_for_the_reviewer_and_do_not_block
 #[test]
 fn a_ticket_claiming_the_release_outside_its_epics_surfaces_pm034() {
     // frob:tests crates/frob/src/release_cmd.rs::ReleaseStatus.run
-    // frob:tests crates/frob-pm/src/rules/membership.rs::claimants
+    // frob:tests crates/frob-pm/src/eval/membership.rs::claimants
     let repo = Repo::new();
     milestone(&repo, &[]);
     let epic = repo.titled("epic", "The epic");

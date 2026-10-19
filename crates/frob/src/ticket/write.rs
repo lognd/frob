@@ -209,17 +209,17 @@ fn good_first_body(body: &str, good_first: bool, labels: &mut Vec<String>) -> St
     if !good_first {
         return body.to_owned();
     }
-    let label = frob_pm::rules::good_first::GOOD_FIRST_LABEL;
+    let label = frob_pm::legacy::good_first::GOOD_FIRST_LABEL;
     if !labels.iter().any(|l| l == label) {
         labels.push(label.to_owned());
     }
     if body.is_empty() {
-        return frob_pm::rules::good_first::START_HERE_SCAFFOLD.to_owned();
+        return frob_pm::legacy::good_first::START_HERE_SCAFFOLD.to_owned();
     }
     format!(
         "{}\n\n{}",
         body.trim_end(),
-        frob_pm::rules::good_first::START_HERE_SCAFFOLD
+        frob_pm::legacy::good_first::START_HERE_SCAFFOLD
     )
 }
 

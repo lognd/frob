@@ -1,0 +1,1 @@
+frob: frob land opens the invoking repository once and shares it across the workspace, the lease store and gc (Repo is now Clone; Workspace::open_repo and open_store_from_repo take an open repository).

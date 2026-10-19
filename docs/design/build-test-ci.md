@@ -793,10 +793,15 @@ the file belongs to one, else its `.csproj` project. Plan lines are
 `dotnet <project> <id>` and `unity <assembly> <id>`. Projects run through the
 `dotnet` evidence provider, one `dotnet test <project> --filter ...` per
 project (`--all` runs each test project whole), and the TRX results become
-one evidence event per project. Selecting a Unity assembly test refuses the
-run with `E-TESTS-UNITY-PROVIDER` before anything runs: the message carries
-the selection and names the unity provider (~F17DMKH), and the remedy is
-the Unity Test Runner. `--dry-run` still prints the selection. A change no
+one evidence event per project. Selected Unity assembly tests run through
+the `unity` evidence provider (~F17DMKH): one batch run per (Unity project,
+mode), `-runTests -testPlatform EditMode|PlayMode -assemblyNames ... -testFilter ...`,
+where the mode comes from the assembly (a `PlayMode` path segment or no
+editor-only platform means PlayMode, else EditMode). The NUnit 3 result XML
+becomes per-test measured results. A project already open in another
+editor (`Temp/UnityLockfile`) refuses with `E-EVIDENCE-UNITY-OPEN` and a
+remedy; editor discovery and license refusal come from ~7TYPNJQ.
+`--dry-run` still prints the selection. A change no
 test reaches selects nothing and the run says so (`no tests reach the
 touched set; nothing was run`).
 

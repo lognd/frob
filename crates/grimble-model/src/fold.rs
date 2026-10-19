@@ -371,6 +371,8 @@ fn add_builtin_scope(term: &Term, g: &mut ScopeGraph) {
             .iter()
             .map(|m| m.id.to_owned()),
     );
+    // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
+    names.extend(crate::rules::METAS.iter().map(|d| d.id.to_owned()));
     for n in names {
         g.declare(builtin, &n, None, DeclKind::Other, Status::Must, None);
     }

@@ -1,4 +1,4 @@
-//! C# test selection and runs: `.csproj` projects run through the dotnet provider, Unity assemblies refuse with a remedy (~J5RTJ6).
+//! C# test selection and runs: `.csproj` projects run through the dotnet provider, Unity assemblies run through the unity provider (~J5RTJ6, ~F17DMKH).
 
 // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
 #![expect(
@@ -9,8 +9,8 @@
 use std::path::Path;
 
 use frob_tests::{
-    Framework, RunOptions, TestTarget, TestsError, build_repo_graph, dotnet_groups, run,
-    select_tests, touched_set, unity_assemblies,
+    Framework, RunOptions, TestTarget, build_repo_graph, dotnet_groups, run, select_tests,
+    touched_set, unity_assemblies, unity_groups,
 };
 use gob_git::Repo;
 
@@ -242,10 +242,24 @@ fn unity_repo() -> (tempfile::TempDir, String) {
     (dir, base)
 }
 
+const NUNIT_PASS: &str = r#"<test-run result="Passed"><test-suite type="Assembly">
+<test-case id="1" name="Doubles" fullname="Hb.Core.Tests.Math2Tests.Doubles" methodname="Doubles" classname="Hb.Core.Tests.Math2Tests" result="Passed" duration="0.01" />
+</test-suite></test-run>"#;
+const PLAY_ASMDEF: &str = "{ \"name\": \"Hb.Play.Tests\", \"references\": [\"Hb.Core\", \"UnityEngine.TestRunner\"], \"defineConstraints\": [\"UNITY_INCLUDE_TESTS\"] }\n";
+const PLAY_TESTS: &str = "using NUnit.Framework;\n\nnamespace Hb.Play.Tests\n{\n    public class SpinTests\n    {\n        [Test]\n        public void Spins()\n        {\n            Assert.AreEqual(4, Hb.Core.Math2.Twice(2));\n        }\n    }\n}\n";
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
 #[test]
-fn a_touched_unity_assembly_prints_the_selection_and_the_run_refuses_with_a_remedy() {
-    // frob:tests crates/frob-tests/src/error.rs::TestsError.into_cli
+fn a_touched_unity_assembly_prints_the_selection_and_the_run_goes_through_the_unity_provider() {
+    // frob:tests crates/frob-tests/src/run.rs::run
+    let fake = gob_testsupport::fake_unity();
     let (dir, base) = unity_repo();
+    write(
+        dir.path(),
+        "frob.toml",
+        &format!("[evidence.unity]\neditor = '{}'\n", fake.display()),
+    );
+    write(dir.path(), "fake-unity.xml", NUNIT_PASS);
     write(
         dir.path(),
         "Assets/Scripts/Hb.Core/Math2.cs",
@@ -271,24 +285,96 @@ fn a_touched_unity_assembly_prints_the_selection_and_the_run_refuses_with_a_reme
     );
     let (code, out, err) =
         gob_cli::run_for_test(&cli(), &["--json", "test", "--base", &base], dir.path());
-    assert_ne!(code, 0, "{out}{err}");
+    assert_eq!(code, 0, "{out}{err}");
     let v: serde_json::Value = serde_json::from_str(&out).expect("json");
-    assert_eq!(v["error"]["code"], "E-TESTS-UNITY-PROVIDER", "{out}");
-    let message = v["error"]["message"].as_str().expect("message");
-    assert!(message.contains("~F17DMKH"), "{message}");
-    assert!(
-        message.contains("Hb.Core.Tests.Math2Tests.Doubles"),
-        "{message}"
-    );
-    assert!(
-        v["error"]["remedy"]
-            .as_str()
-            .is_some_and(|r| r.contains("Unity Test Runner"))
+    assert_eq!(v["data"]["passed"], true, "{out}");
+    assert_eq!(
+        v["data"]["executed"],
+        serde_json::json!(["Hb.Core.Tests.Math2Tests.Doubles"]),
+        "{out}"
     );
 }
 
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
 #[test]
-fn the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies() {
+fn a_play_mode_only_test_runs_play_mode_and_edit_mode_tests_run_edit_mode() {
+    // frob:tests crates/frob-tests/src/run.rs::unity_groups
+    let fake = gob_testsupport::fake_unity();
+    let (dir, base) = unity_repo();
+    write(
+        dir.path(),
+        "Assets/Tests/PlayMode/Hb.Play.Tests/Hb.Play.Tests.asmdef",
+        PLAY_ASMDEF,
+    );
+    write(
+        dir.path(),
+        "Assets/Tests/PlayMode/Hb.Play.Tests/SpinTests.cs",
+        PLAY_TESTS,
+    );
+    write(
+        dir.path(),
+        "Assets/Tests/EditMode/Hb.Core.Tests/Math2Tests.cs",
+        &UNITY_TESTS
+            .replace("Doubles", "Quadruples")
+            .replace("Twice(2)", "Missing(2)"),
+    );
+    write(dir.path(), "fake-unity.xml", NUNIT_PASS);
+    git(dir.path(), &["add", "-A"]);
+    git(dir.path(), &["commit", "-q", "-m", "play"]);
+    let base2 = git(dir.path(), &["rev-parse", "HEAD"]);
+    let _ = base;
+    write(
+        dir.path(),
+        "Assets/Scripts/Hb.Core/Math2.cs",
+        &UNITY_CODE.replace("n * 2", "n * 3"),
+    );
+    let got = selected(dir.path(), &base2);
+    let mut opts = RunOptions::new(
+        dir.path().to_path_buf(),
+        std::time::Duration::from_secs(60),
+        String::new(),
+        Vec::new(),
+        false,
+    );
+    opts.unity_editor = fake.display().to_string();
+    let groups = unity_groups(&got, &opts);
+    let modes: Vec<&str> = groups.iter().map(|g| g.mode).collect();
+    assert!(modes.contains(&"PlayMode"), "{groups:?}");
+    // Only the PlayMode test reaches the function: run just that selection.
+    let play_only: Vec<TestTarget> = got
+        .iter()
+        .filter(|t| t.package.contains("PlayMode"))
+        .cloned()
+        .collect();
+    assert!(!play_only.is_empty(), "{got:?}");
+    let runner = gob_exec::Runner::new(gob_exec::Limits::default());
+    let report = run(&runner, &play_only, &opts).expect("run");
+    assert_eq!(report.runs.len(), 1);
+    let transcript = &report.runs[0].capture.transcript;
+    assert!(
+        transcript.contains("-testPlatform PlayMode"),
+        "{transcript}"
+    );
+    assert!(
+        transcript.contains("-assemblyNames Hb.Play.Tests"),
+        "{transcript}"
+    );
+    assert_eq!(
+        report.runs[0].provider(),
+        frob_evidence::record::Provider::Unity
+    );
+    assert_eq!(report.runs[0].args[0], "PlayMode");
+    let edit_only: Vec<TestTarget> = got
+        .iter()
+        .filter(|t| t.package.contains("EditMode"))
+        .cloned()
+        .collect();
+    let edit = unity_groups(&edit_only, &opts);
+    assert!(edit.iter().all(|g| g.mode == "EditMode"), "{edit:?}");
+}
+
+#[test]
+fn all_finds_the_unity_test_assemblies_and_groups_them_whole() {
     // frob:tests crates/frob-tests/src/run.rs::unity_assemblies
     let (dir, _) = unity_repo();
     let mut opts = RunOptions::new(
@@ -302,12 +388,10 @@ fn the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies() {
         unity_assemblies(&[], &opts),
         ["Assets/Tests/EditMode/Hb.Core.Tests/Hb.Core.Tests.asmdef"]
     );
-    let runner = gob_exec::Runner::new(gob_exec::Limits::default());
-    let err = run(&runner, &[], &opts).expect_err("refused");
-    assert!(
-        matches!(err, TestsError::UnityProviderMissing { .. }),
-        "{err}"
-    );
+    let groups = unity_groups(&[], &opts);
+    assert_eq!(groups.len(), 1, "{groups:?}");
+    assert_eq!(groups[0].mode, "EditMode");
+    assert!(groups[0].ids.is_empty());
     opts.all = false;
     assert!(unity_assemblies(&[], &opts).is_empty());
 }

@@ -34,22 +34,26 @@
 
 pub mod catalog;
 pub mod error;
+pub mod host;
 pub mod lease;
 pub mod node;
 pub mod reach;
 pub mod rule;
+pub mod rules;
 pub mod run;
 pub mod select;
 pub mod touched;
 pub mod verb;
 
 pub use error::{Result, TestsError};
+pub use host::TestsHost;
 pub use lease::lease_ticket;
-pub use rule::{Test001, test001, test001_with_sources};
+pub use rule::{test001, test001_with_sources};
+pub use rules::test001::Test001;
 pub use run::{
     DotnetGroup, FrameworkRun, JsGroup, MAX_FILTER_BYTES, RunOptions, RunReport, chunk_targets,
     dotnet_groups, failure_cause, js_groups, nextest_args, nextest_groups, pytest_args, run,
-    unity_assemblies,
+    unity_assemblies, unity_groups,
 };
 pub use select::{CsharpOwner, CsharpOwners, Framework, TestTarget, select_tests};
 pub use touched::{TouchedSet, build_repo_graph, build_repo_graph_with_stats, touched_set};

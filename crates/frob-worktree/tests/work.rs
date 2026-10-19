@@ -947,7 +947,7 @@ fn a_second_expedite_exits_3_while_one_is_running() {
 }
 
 // frob:tests crates/frob-worktree/src/wip.rs::check
-// frob:tests crates/frob-pm/src/rules/wip.rs::count
+// frob:tests crates/frob-pm/src/eval/wip.rs::count
 #[test]
 fn the_gate_and_pm013_count_the_same_holders() {
     if !git_available() {
@@ -994,19 +994,19 @@ fn the_gate_and_pm013_count_the_same_holders() {
         .map(|l| l.ticket)
         .collect();
     let at = |limit: u32| {
-        let limits = frob_pm::rules::wip::WipLimits {
+        let limits = frob_pm::eval::wip::WipLimits {
             in_progress: limit,
             expedite_max: 1,
-            ..frob_pm::rules::wip::WipLimits::default()
+            ..frob_pm::eval::wip::WipLimits::default()
         };
-        frob_pm::rules::wip::evaluate_with(&ledger, limits, Some(&live)).expect("pm013")
+        frob_pm::eval::wip::evaluate_with(&ledger, limits, Some(&live)).expect("pm013")
     };
     assert!(
         at(1).findings.is_empty(),
         "rule agrees with the gate at the limit"
     );
     // ... and it fires exactly when the gate's holder count is exceeded.
-    let wip = frob_pm::rules::wip::read(&ledger, Some(&live), 1).expect("read");
+    let wip = frob_pm::eval::wip::read(&ledger, Some(&live), 1).expect("read");
     assert_eq!(wip.standard.len(), 1);
     assert_eq!(wip.expedite.len(), 1);
     assert_eq!(wip.stale.len(), 1);
@@ -1170,7 +1170,7 @@ fn an_overdue_active_cycle_refuses_standard_work_but_not_expedite() {
 // frob:ticket 01M4CT016NKN4QRVY0Y57FX1J2
 // frob:tests crates/frob-worktree/src/cycle_gate.rs::check_sprint
 // frob:tests crates/frob-worktree/src/cycle_gate.rs::not_in_cycle_refusal
-// frob:tests crates/frob-pm/src/rules/cycle.rs::assign_unplanned
+// frob:tests crates/frob-pm/src/eval/cycle.rs::assign_unplanned
 #[test]
 fn the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it() {
     if !git_available() {

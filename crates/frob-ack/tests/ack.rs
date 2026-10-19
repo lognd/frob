@@ -136,7 +136,7 @@ fn messages(findings: &[Finding], rule: &str) -> Vec<String> {
         .collect()
 }
 
-// frob:tests crates/frob-ack/src/rules.rs::Drift003
+// frob:tests crates/frob-ack/src/rules/drift003.rs::Drift003
 #[test]
 fn acked_signature_change_fires_drift003_and_ack_clears_it() {
     let fx = Fixture::new();
@@ -183,7 +183,7 @@ fn reack_of_unchanged_state_is_a_no_op() {
     assert_eq!(git(fx.root(), &["rev-parse", "main"]), head);
 }
 
-// frob:tests crates/frob-ack/src/rules.rs::Drift002
+// frob:tests crates/frob-ack/src/rules/drift002.rs::Drift002
 #[test]
 fn doc_to_missing_heading_fires_drift002_with_nearest_heading() {
     let fx = Fixture::new();
@@ -209,7 +209,7 @@ fn doc_to_missing_heading_fires_drift002_with_nearest_heading() {
     );
 }
 
-// frob:tests crates/frob-ack/src/rules.rs::Drift001
+// frob:tests crates/frob-ack/src/rules/drift001.rs::Drift001
 #[test]
 fn code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet() {
     let fx = Fixture::new();
@@ -245,7 +245,7 @@ fn code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet() 
     );
 }
 
-// frob:tests crates/frob-ack/src/rules.rs::Drift001
+// frob:tests crates/frob-ack/src/rules/drift001.rs::Drift001
 #[test]
 fn describes_in_a_doc_pairs_without_a_code_side_frob_doc() {
     let fx = Fixture::new();
@@ -273,7 +273,7 @@ fn describes_in_a_doc_pairs_without_a_code_side_frob_doc() {
     assert!(messages(&found, "DRIFT001")[0].contains("body facet"));
 }
 
-// frob:tests crates/frob-ack/src/rules.rs::Affect001
+// frob:tests crates/frob-ack/src/rules/affect001.rs::Affect001
 #[test]
 fn changed_public_signature_with_unacked_dependents_fires_affect001() {
     let fx = Fixture::new();
@@ -414,7 +414,7 @@ fn verbs_ack_why_and_affects_work_end_to_end() {
     assert_eq!(v["data"]["dry_run"], true);
 }
 
-// frob:tests crates/frob-ack/src/rules.rs::Drift001
+// frob:tests crates/frob-ack/src/rules/drift001.rs::Drift001
 #[test]
 fn outer_attribute_change_on_an_acked_symbol_fires_drift001_on_attr() {
     let fx = Fixture::new();
@@ -446,7 +446,7 @@ acked_by = "Old <old@example.com>"
 acked_at = "2026-10-01T00:00:00Z"
 "#;
 
-// frob:tests crates/frob-ack/src/rules.rs::Drift004
+// frob:tests crates/frob-ack/src/rules/drift004.rs::Drift004
 #[test]
 fn version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it() {
     let fx = Fixture::new();
@@ -505,7 +505,7 @@ fn version_one_lock_is_all_reattest_and_ack_all_under_scheme_two_clears_it() {
     );
 }
 
-// frob:tests crates/frob-ack/src/rules.rs::Drift004
+// frob:tests crates/frob-ack/src/rules/drift004.rs::Drift004
 #[test]
 fn scheme_one_lock_under_version_two_is_all_reattest() {
     let fx = Fixture::new();
@@ -538,7 +538,7 @@ fn lock_and_symbols_agree_on_the_digest_scheme() {
     assert_eq!(gob_symbols::DIGEST_SCHEME, 2);
 }
 
-// frob:tests crates/frob-ack/src/rules.rs::Drift001
+// frob:tests crates/frob-ack/src/rules/drift001.rs::Drift001
 #[test]
 fn crlf_checkout_under_autocrlf_is_not_drift_but_a_real_edit_still_is() {
     let fx = Fixture::with_autocrlf("true");

@@ -1,0 +1,24 @@
+error[E0277]: `Todo001` is declared `body = relay` but does not implement `RelayRule<dyn ObligationHost>`
+  --> tests/ui_rule/fail/relay_missing_impl/todo001.rs:19:12
+   |
+19 | pub struct Todo001;
+   |            ^^^^^^^ unsatisfied trait bound
+   |
+help: the trait `RelayRule<dyn ObligationHost>` is not implemented for `Todo001`
+  --> tests/ui_rule/fail/relay_missing_impl/todo001.rs:19:1
+   |
+19 | pub struct Todo001;
+   | ^^^^^^^^^^^^^^^^^^
+   = note: write `impl<P: ?Sized + YourHost> RelayRule<P> for Todo001`, where `host = YourHost` in `#[rule(..)]`
+note: required by a bound in `need`
+  --> tests/ui_rule/fail/relay_missing_impl/todo001.rs:5:1
+   |
+ 5 | / #[rule(
+ 6 | |     id = "TODO001",
+ 7 | |     slug = "bare-work-marker",
+ 8 | |     severity = Error,
+...  |
+17 | |     since = "0.0.0",
+18 | | )]
+   | |__^ required by this bound in `need`
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)

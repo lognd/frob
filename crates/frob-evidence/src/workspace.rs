@@ -49,6 +49,18 @@ impl Workspace {
             tracing::debug!(error = %e, "no repository");
             EvidenceError::NotARepo(cwd.display().to_string())
         })?;
+        Self::open_repo(repo, clock)
+    }
+
+    /// Like [`Workspace::open`] on an already-open `repo`, so a command opens its repository once.
+    ///
+    /// # Errors
+    ///
+    /// [`EvidenceError::NotARepo`] for a bare repository, [`EvidenceError::Config`]
+    /// for an unreadable or invalid `frob.toml`.
+    // frob:ticket 01M4CTE7T75F9XM8XN1R1VFD4X
+    pub fn open_repo(repo: Repo, clock: std::sync::Arc<dyn gob_time::Clock>) -> Result<Self> {
+        let cwd = repo.git_dir().to_path_buf();
         let root = repo
             .work_dir()
             .map(Path::to_path_buf)

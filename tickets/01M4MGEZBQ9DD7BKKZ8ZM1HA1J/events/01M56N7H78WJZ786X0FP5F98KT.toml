@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "WIP committed on ticket/ZM1HA1J. Done: 36 crates folded to tests/main.rs (226 -> 66 test targets), cargo dev test-size, docs. Remaining: (1) frob lease widen for crates/*/tests/** and crates/*/Cargo.toml (SCOPE001, 22+ files) - changelog.d overlaps R1VFD4X lease; (2) cargo fmt on folded tests (rustfmt diffs e.g. grimble-check coh004.rs blank line); (3) re-run frob check --ticket; (4) fold skipped crates frob, gob-cli, frob-land, frob-lease after R1VFD4X lands (file follow-up); (5) 3 GB byte target unmeasured, run cargo dev test-size after a full build; gob-cache untouched."
+at = "2026-10-18T04:44:57Z"
+actor = "lognd"
+rev = 1

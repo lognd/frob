@@ -53,6 +53,12 @@ pub fn manifest_dir(compile_time: &str) -> std::path::PathBuf {
     )
 }
 
+/// Render `dir` for the `mdtest!` failure message, so consumer crates never call `Path::display` through the macro.
+#[doc(hidden)]
+pub fn shown(dir: &std::path::Path) -> String {
+    gob_path::Shown::of(dir).to_string()
+}
+
 /// Generate a `#[test]` running every markdown file under `dir` (relative to the crate).
 #[macro_export]
 macro_rules! mdtest {
@@ -67,7 +73,7 @@ macro_rules! mdtest {
             assert!(
                 !report.files.is_empty(),
                 "no markdown files under {}",
-                dir.display()
+                $crate::shown(&dir)
             );
             assert!(
                 report.passed(),

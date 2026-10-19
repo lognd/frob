@@ -6,7 +6,7 @@ use gob_rules::{Finding, Severity};
 use crate::error::Result;
 use crate::layout::Layout;
 use crate::ledger::Ledger;
-use crate::rules::{Tick009, id_of};
+use crate::legacy::{Tick009, id_of};
 
 impl Ledger {
     /// `TICK009` findings, one per ticket file that a reindex would move; none outside the branch layout.

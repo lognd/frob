@@ -2,10 +2,6 @@
 //! need the generated index.
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use crunk_rules::family::{CheckTier, FAMILIES, Gate, family, gate_severity, is_waivable};
 use crunk_rules::registry::{catalog_mismatches, entries, render_markdown, unknown_families};

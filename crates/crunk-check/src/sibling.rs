@@ -13,6 +13,7 @@ pub use gob_check::sibling::SCHEMA_VERSION;
 pub fn sibling_document(run: &CrunkRun) -> Value {
     document(&SiblingInput {
         product: PRODUCT,
+        registry: gob_rules::Registry::global(),
         product_version: env!("CARGO_PKG_VERSION"),
         root: &run.root,
         report: &run.report,

@@ -9,7 +9,8 @@ use gob_rules::{Finding, Severity};
 
 use crate::error::Result;
 use crate::ledger::Ledger;
-use crate::rules::{Tick004, id_of};
+use crate::rules::tick004::Tick004;
+use crate::tick::id_of;
 
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 
@@ -161,7 +162,7 @@ fn windows_hit(rest: &[u8]) -> Option<&'static str> {
 /// `TICK004` for one committed file: a finding when `bytes` holds an absolute home path.
 pub fn tick004(path: &str, bytes: &[u8]) -> Option<Finding> {
     let (offset, kind) = find_home_path(bytes)?;
-    let rule = id_of(&Tick004);
+    let rule = id_of::<Tick004>();
     Some(Finding::new(
         rule,
         Severity::Error,

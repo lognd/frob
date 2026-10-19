@@ -36,8 +36,11 @@ pub mod config;
 pub mod cycle;
 pub mod doctor;
 pub mod error;
+pub mod eval;
 pub mod event;
 pub mod fold;
+pub mod host;
+pub mod legacy;
 pub mod merge;
 pub mod milestone;
 pub mod model;
@@ -49,5 +52,6 @@ pub use config::{
     ReadyRequirement,
 };
 pub use error::{PmError, Result};
+pub use host::{PmHost, relay_pm};
 pub use model::{Cycle, Day, Milestone, Object, ObjectId, ObjectKind, State};
 pub use store::{Applied, NewObject, PmStore};

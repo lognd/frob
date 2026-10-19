@@ -15,13 +15,57 @@
 | polarity | P+ |
 | must_measure | false |
 | version | 1 |
-| since | 2.0.0 |
+| since | 0.532.0 |
 
-A `frob:tests` directive whose target resolves to no test (or, inside a test, to no symbol).
+<!-- mdtest: rule=TEST001 -->
+# TEST001 tests-target-missing
 
-On a non-test item the target names a test and must resolve to a test
-function; inside a test item the target is the symbol the test covers and
-must resolve to any symbol. Fix the symref or remove the directive.
+A `frob:tests` directive must name something the symbol graph can find.
+
+## What it does
+
+On a non-test item the target names a test and must resolve to a test function; inside a test item the target is the symbol the test covers and must resolve to any symbol. A target that resolves to nothing is flagged at the directive.
+
+## Why it matters
+
+A coverage claim that points at nothing is silent: the symbol looks covered while no test is bound to it.
+
+## Remedy
+
+Fix the symref, or remove the directive. A target written `path::Type::method` is not a symref: members nest with `.`, so the finding names the dotted form `path::Type.method` when that resolves.
+
+## Examples
+
+### A target that names no test fires
+
+```rust expect=fire file=src/lib.rs
+// frob:tests src/lib.rs::no_such_test
+pub fn covered() {}
+```
+
+### A target that names a test function is clean
+
+```rust expect=clean file=src/lib.rs
+// frob:tests src/lib.rs::covers_it
+pub fn covered() {}
+
+#[test]
+fn covers_it() {}
+```
+
+### A `Type::method` target fires with the dotted form as the fix
+
+```rust expect=fire file=src/lib.rs
+// frob:tests src/lib.rs::Widget::spin
+pub fn covered() {}
+
+pub struct Widget;
+
+impl Widget {
+    #[test]
+    fn spin() {}
+}
+```
 
 ## Examples
 
@@ -51,5 +95,36 @@ pub fn add_one(x: u32) -> u32 {
 #[test]
 fn adds_one() {
     assert_eq!(add_one(1), 2);
+}
+```
+
+### TEST001 tests-target-missing / Examples #1 (line 22) (fire)
+
+```rust
+// frob:tests src/lib.rs::no_such_test
+pub fn covered() {}
+```
+
+### TEST001 tests-target-missing / Examples #2 (line 29) (clean)
+
+```rust
+// frob:tests src/lib.rs::covers_it
+pub fn covered() {}
+
+#[test]
+fn covers_it() {}
+```
+
+### TEST001 tests-target-missing / Examples #3 (line 39) (fire)
+
+```rust
+// frob:tests src/lib.rs::Widget::spin
+pub fn covered() {}
+
+pub struct Widget;
+
+impl Widget {
+    #[test]
+    fn spin() {}
 }
 ```

@@ -96,6 +96,14 @@ pub struct FrobInputs {
     // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
     /// The UTC day `until=` dates are compared with, from the pass's one clock.
     pub(crate) today: gob_time::Day,
+    /// Lease settings the caller supplied (`PM033` counts doable tickets under them); loaded from `frob.toml` when absent.
+    // frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+    pub(crate) lease: Option<frob_lease::LeaseConfig>,
+    /// The ledger doctor's findings, computed once for the four `TICK` rules that read them.
+    // frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
+    pub(crate) doctor: std::sync::OnceLock<Result<Vec<gob_rules::Finding>, String>>,
+    /// Walked text of every file declaring a `frob:tests` target (`TEST001`), read through the core, never the disk.
+    pub(crate) test_sources: std::collections::BTreeMap<String, String>,
 }
 
 impl FrobInputs {
@@ -167,7 +175,7 @@ fn open_ledger(
     };
     // frob:ticket 01M4069RJJ4C73Z6GKKSV1E7PS
     // frob:ticket 01M41DQF8CJG567CJ1AWETTCK4
-    let milestones = match frob_pm::rules::membership::milestones(&ledger) {
+    let milestones = match frob_pm::eval::membership::milestones(&ledger) {
         Ok(m) => m.len(),
         Err(err) => {
             tracing::warn!(%err, "milestones unreadable: ledger rules report required Unresolved");
@@ -328,6 +336,43 @@ fn doc_directives(directives: &[DirectiveRecord], files: &FileInterner) -> Vec<D
     out
 }
 
+/// The walked text of every file a `frob:tests` target resolves to (all candidates when ambiguous), for `TEST001`.
+fn tests_target_sources(
+    core: &gob_check::Core,
+    directives: &[DirectiveRecord],
+    graph: &gob_symbols::SymbolGraph,
+) -> std::collections::BTreeMap<String, String> {
+    let mut paths = BTreeSet::new();
+    for rec in directives
+        .iter()
+        .filter(|r| r.namespace == "frob" && r.verb == "tests")
+    {
+        let Some(target) = rec.args.positional.first() else {
+            continue;
+        };
+        match graph.resolve(&target.value) {
+            Ok(found) => {
+                paths.insert(found.symref.path().to_owned());
+            }
+            Err(gob_symbols::ResolveError::Ambiguous(candidates)) => {
+                paths.extend(
+                    candidates
+                        .iter()
+                        .filter_map(|c| graph.get(c))
+                        .map(|c| c.symref.path().to_owned()),
+                );
+            }
+            Err(_) => {}
+        }
+    }
+    let out: std::collections::BTreeMap<String, String> = paths
+        .into_iter()
+        .filter_map(|p| core.text(&p).ok().map(|t| (p, t)))
+        .collect();
+    tracing::debug!(files = out.len(), "TEST001 sources read through the core");
+    out
+}
+
 /// True when `<root>/frob.toml` has a `[tickets]` table (an unreadable file counts as absent).
 #[allow(
     clippy::disallowed_methods,
@@ -443,6 +488,7 @@ pub(crate) fn collect(
         directives = directives.len(),
         "inputs collected"
     );
+    let test_sources = tests_target_sources(core, &directives, &graph);
     let ref_unsettled = unsettled_by_path(&directives, files, ledger.as_ref());
     let shared = FrobShared {
         ref_unsettled,
@@ -475,6 +521,9 @@ pub(crate) fn collect(
             changelog_exempt: opts.changelog_exempt,
             tool_ids: frob_obligations::tool_bound_ids(root),
             today: clock.today(),
+            lease: opts.lease.clone(),
+            doctor: std::sync::OnceLock::new(),
+            test_sources,
         },
         findings: scan_findings,
     })

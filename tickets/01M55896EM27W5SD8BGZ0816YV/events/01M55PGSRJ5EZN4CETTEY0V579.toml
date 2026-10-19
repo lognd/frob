@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-10-17T19:48:14Z"
+digest = "d9fe5feaafc8b117acf20808d5fa38838a15e1e91c171b61bc1ed6d5e4fe3d13"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 940c3ac8-efcc-466f-a564-ff5acfe0fdd7 with nextest profile: default
+    Starting 5 tests across 1 binary (10 tests skipped)
+        PASS [   0.093s] gob-check::rule_defs the_zero_subject_unresolved_is_typed_vacuous_and_the_counters_convert_to_a_rule_report
+        PASS [   0.097s] gob-check::rule_defs zero_subjects_for_a_must_measure_rule_is_the_required_unresolved
+        PASS [   0.097s] gob-check::rule_defs a_relay_rule_keeps_reason_severity_and_required_and_drops_stray_ids
+        PASS [   0.103s] gob-check::rule_defs a_counted_stage_rule_with_zero_subjects_is_the_required_unresolved
+        PASS [   0.120s] gob-check::rule_defs a_stage_rule_can_be_not_applicable_with_a_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.121s] 5 tests run: 5 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --test rule_defs -E 'test(relay) | test(stage) | test(zero_subject)'"
+size = 1031
+status = "measured"
+tests = ["the_zero_subject_unresolved_is_typed_vacuous_and_the_counters_convert_to_a_rule_report", "zero_subjects_for_a_must_measure_rule_is_the_required_unresolved", "a_relay_rule_keeps_reason_severity_and_required_and_drops_stray_ids", "a_counted_stage_rule_with_zero_subjects_is_the_required_unresolved", "a_stage_rule_can_be_not_applicable_with_a_reason"]
+at = "2026-10-17T19:48:14Z"
+actor = "lognd"
+rev = 1

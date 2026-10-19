@@ -249,7 +249,7 @@ pub(crate) fn preconditions(
     // The close guards read only the ledger and the worktree, so they run before any merge or check:
     // an unbound criterion refuses in seconds, not after a cold build.
     let site = if here.ledger.config().mode == RefMode::Branch {
-        Workspace::open(&wt_path, clock.clone())?
+        Workspace::open_repo(wt.clone(), clock.clone())?
     } else if primary == cwd_root {
         here
     } else {
@@ -522,6 +522,7 @@ impl Ready {
         // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
         collect_garbage(
             &self.primary,
+            (self.site.root == self.primary).then_some(&self.site.ledger),
             leases,
             self.site.ledger.clock().clone(),
             &mut self.out.warnings,
@@ -567,21 +568,29 @@ impl Ready {
 /// is opened on the primary checkout, not the removed worktree, so no index is
 /// recreated inside a directory that no longer exists. Also sweeps abandoned
 /// ratchet base checkouts under the git common dir (`land-base-*`).
+///
+/// `open` is a workspace already open on `primary` (reused so the repository is not opened again);
+/// `None` opens one.
 fn collect_garbage(
     primary: &Path,
+    open: Option<&Ledger>,
     leases: &LeaseStore,
     clock: Arc<dyn Clock>,
     warnings: &mut Vec<String>,
 ) {
-    let opened = Repo::discover(primary)
-        .map_err(|e| e.to_string())
-        .and_then(|repo| {
+    let opened = (|| {
+        let wt = frob_worktree::WorktreeConfig::load(primary).map_err(|e| e.to_string())?;
+        let gc = frob_worktree::GcConfig::load(primary).map_err(|e| e.to_string())?;
+        let ledger = if open.is_some() {
+            None
+        } else {
+            let repo = Repo::discover(primary).map_err(|e| e.to_string())?;
             let ledger_cfg = frob_worktree::ledger_config(primary)?;
-            let wt = frob_worktree::WorktreeConfig::load(primary).map_err(|e| e.to_string())?;
-            let gc = frob_worktree::GcConfig::load(primary).map_err(|e| e.to_string())?;
-            Ok((Ledger::open(repo, ledger_cfg, clock), wt, gc))
-        });
-    let (ledger, wt, gc) = match opened {
+            Some(Ledger::open(repo, ledger_cfg, clock))
+        };
+        Ok::<_, String>((ledger, wt, gc))
+    })();
+    let (opened_ledger, wt, gc) = match opened {
         Ok(o) => o,
         Err(e) => {
             tracing::warn!(error = %e, "gc after land skipped");
@@ -589,8 +598,11 @@ fn collect_garbage(
             return;
         }
     };
+    let Some(ledger) = open.or(opened_ledger.as_ref()) else {
+        return;
+    };
     let report =
-        frob_worktree::gc::glue::run_for(&ledger, leases, &wt, &gc, frob_worktree::gc::Mode::Auto);
+        frob_worktree::gc::glue::run_for(ledger, leases, &wt, &gc, frob_worktree::gc::Mode::Auto);
     warnings.extend(frob_worktree::gc::glue::notices(&report));
 }
 
@@ -614,10 +626,12 @@ pub(crate) fn begin(
     opts: &LandOptions,
     clock: &Arc<dyn Clock>,
 ) -> Result<Begun, LandError> {
+    // frob:ticket 01M4CTE7T75F9XM8XN1R1VFD4X
+    // The one open of the invoking checkout: the workspace and the lease store share this handle.
     let repo = Repo::discover(root).map_err(|e| LandError::Config(e.to_string()))?;
     let cwd_root = work_dir(&repo)?;
-    let here = Workspace::open(&cwd_root, clock.clone())?;
-    let (leases, _) = frob_lease::open_store_from_file(&cwd_root, clock.clone())?;
+    let here = Workspace::open_repo(repo.clone(), clock.clone())?;
+    let (leases, _) = frob_lease::open_store_from_repo(&repo, clock.clone())?;
     let id = resolve(&here.ledger, &leases, &cwd_root, opts.handle.as_deref())?;
     let view = here.ledger.show(id)?;
     let handle = view.summary.handle.clone();
@@ -675,7 +689,13 @@ pub(crate) fn finish_member(
             base,
             warnings,
         );
-    collect_garbage(&member.primary, &leases, clock.clone(), warnings);
+    collect_garbage(
+        &member.primary,
+        (member.site.root == member.primary).then_some(&member.site.ledger),
+        &leases,
+        clock.clone(),
+        warnings,
+    );
     Ok(removed)
 }
 

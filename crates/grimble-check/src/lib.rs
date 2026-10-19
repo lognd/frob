@@ -42,6 +42,7 @@ pub mod coh001;
 pub mod coh004;
 pub mod config;
 pub mod fidelity;
+mod host;
 pub mod model_view;
 pub mod packs;
 mod product;
@@ -54,10 +55,9 @@ use std::sync::{Arc, PoisonError};
 use std::time::Instant;
 
 pub use gob_check::{CheckError, CheckReport, FailOn};
+pub use host::GrimbleHost;
 pub use model_view::ModelView;
-pub use product::{
-    Grimble, GrimbleInputs, GrimbleShared, MODEL_EXTENSION, binding_rules, model_rules,
-};
+pub use product::{Grimble, GrimbleInputs, GrimbleShared, MODEL_EXTENSION};
 pub use sibling::{SCHEMA_VERSION, exceptions_json, sibling_document};
 
 use config::{ComputeTable, GrimbleTable, PRODUCT, PacksTable};
@@ -237,6 +237,10 @@ pub fn read_models(
         Err(err) => tracing::warn!(%err, "[packs] unreadable; no pack is loaded"),
     }
     tracing::info!(roots = ?table.models, files = model.files.len(), "model roots declared");
+    // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
+    let model = grimble_bind::rules::METAS
+        .iter()
+        .fold(model, |m, def| m.with_rule(def.id));
     model.with_declared_roots(table.models.clone())
 }
 

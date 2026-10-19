@@ -8,7 +8,6 @@
 const PRODUCERS: [&str; 2] = ["src/product.rs", "src/snapshot.rs"];
 
 // frob:ticket 01M42MGNE7XHTT1MR5CA6C2R1C
-// frob:tests crates/frob-check/src/product.rs::settle
 #[test]
 fn no_producer_logs_not_evaluated_and_returns_nothing() {
     for path in PRODUCERS {

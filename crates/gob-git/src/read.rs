@@ -28,6 +28,9 @@ pub struct WorktreeInfo {
 }
 
 /// An open repository: one `gix` handle plus the runner used for spawn fallbacks.
+///
+/// Cloning is cheap and opens nothing: it shares the handle's object database and runner.
+#[derive(Clone)]
 pub struct Repo {
     pub(crate) gix: gix::Repository,
     pub(crate) runner: Arc<Runner>,

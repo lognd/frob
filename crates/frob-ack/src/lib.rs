@@ -25,15 +25,20 @@
 mod ack;
 mod cmd;
 mod error;
+mod eval;
+mod host;
 mod inputs;
 mod repo_rule;
-mod rules;
+pub mod rules;
 
 pub use ack::{AckOutcome, ack, plan_ack};
 pub use cmd::{Ack, AckData, GraphAffects, GraphWhy, register};
 pub use error::AckError;
+pub use eval::{check, evaluate, partial_parse_files};
 pub use gob_lock::Plan;
+pub use host::AckHost;
 pub use inputs::{DocDirective, Inputs, PRODUCT, doc_pair, section_digest};
 pub use rules::{
-    Affect001, Drift001, Drift002, Drift003, Drift004, check, evaluate, partial_parse_files,
+    affect001::Affect001, drift001::Drift001, drift002::Drift002, drift003::Drift003,
+    drift004::Drift004,
 };

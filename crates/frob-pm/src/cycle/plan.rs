@@ -17,8 +17,8 @@ use frob_ledger::model::{Class, TicketType};
 
 use crate::cycle::assign::{AssignError, AssignPlan, TicketFacts, plan_assign};
 use crate::cycle::velocity::{Capacity, counts};
+use crate::eval::membership::{Claimant, claimed_versions, reached};
 use crate::model::{Cycle, Milestone, State};
-use crate::rules::membership::{Claimant, claimed_versions, reached};
 
 /// A plan that cannot be made.
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
@@ -227,8 +227,8 @@ fn why(c: &Candidate) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::eval::membership::CLAIM_PREFIX;
     use crate::model::{Day, ObjectId};
-    use crate::rules::membership::CLAIM_PREFIX;
     use frob_ledger::model::Stamp;
 
     fn day(s: &str) -> Day {

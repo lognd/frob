@@ -10,12 +10,14 @@ authors.workspace = true
 
 [dependencies]
 blake3 = "1"
+frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-pm = { version = "0.532.0", path = "../frob-pm" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
 schemars = "1"
 semver = "1"
 serde = { version = "1", features = ["derive"] }

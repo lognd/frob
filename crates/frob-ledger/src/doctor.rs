@@ -9,7 +9,7 @@ use crate::event::EventBody;
 use crate::fold::fold;
 use crate::id::TicketId;
 use crate::ledger::Ledger;
-use crate::rules::{tick001, tick001_unreadable, tick003};
+use crate::tick::{tick001, tick001_unreadable, tick003};
 
 /// Seconds an event's `at` may differ from its ULID time before it is flagged.
 pub const CLOCK_SKEW_SECS: i64 = 600;

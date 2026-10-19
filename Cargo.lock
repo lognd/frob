@@ -1205,6 +1205,7 @@ dependencies = [
  "gob-git",
  "gob-macros",
  "gob-rules",
+ "gob-text",
  "gob-time",
  "inventory",
  "proptest",
@@ -1265,6 +1266,7 @@ dependencies = [
  "gob-git",
  "gob-mdtest",
  "gob-rules",
+ "gob-text",
  "gob-time",
  "schemars",
  "serde",
@@ -1280,6 +1282,7 @@ name = "frob-release"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "frob-ledger",
  "frob-pm",
  "gob-config",
  "gob-exec",
@@ -1287,6 +1290,7 @@ dependencies = [
  "gob-git",
  "gob-mdtest",
  "gob-rules",
+ "gob-text",
  "schemars",
  "semver",
  "serde",
@@ -1319,6 +1323,7 @@ dependencies = [
  "gob-rules",
  "gob-symbols",
  "gob-testsupport",
+ "gob-text",
  "gob-time",
  "gob-walk",
  "schemars",
@@ -2601,6 +2606,7 @@ name = "gob-mdtest"
 version = "0.532.0"
 dependencies = [
  "gob-diagnostics",
+ "gob-path",
  "gob-rules",
  "gob-text",
  "insta",
@@ -2829,6 +2835,7 @@ dependencies = [
  "gob-ir",
  "gob-languages",
  "gob-lock",
+ "gob-mdtest",
  "gob-rules",
  "gob-symbols",
  "gob-text",
@@ -2885,6 +2892,7 @@ dependencies = [
  "gob-directives",
  "gob-ir",
  "gob-languages",
+ "gob-mdtest",
  "gob-rules",
  "gob-symbols",
  "gob-text",

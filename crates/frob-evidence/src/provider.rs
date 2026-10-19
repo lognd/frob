@@ -1528,6 +1528,320 @@ pub fn unity_license_refusal(version: Option<&str>, log: &str) -> Option<Evidenc
     })
 }
 
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// The file Unity holds open in `Temp/` while an editor has the project open.
+pub const UNITY_LOCK_FILE: &str = "Temp/UnityLockfile";
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// Which Unity Test Framework platform a run uses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnityMode {
+    /// Tests run in the editor without entering play mode (the default).
+    EditMode,
+    /// Tests run in play mode.
+    PlayMode,
+}
+
+impl UnityMode {
+    /// The `-testPlatform` value and reference spelling.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::EditMode => "EditMode",
+            Self::PlayMode => "PlayMode",
+        }
+    }
+
+    /// The mode spelled `text` (`EditMode` or `PlayMode`), `None` for anything else.
+    pub fn parse(text: &str) -> Option<Self> {
+        match text {
+            "EditMode" => Some(Self::EditMode),
+            "PlayMode" => Some(Self::PlayMode),
+            _ => None,
+        }
+    }
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// Where one Unity run happens: which editor, in which project.
+#[derive(Debug, Clone, Copy)]
+pub struct UnityRun<'a> {
+    /// `[evidence.unity] editor`; empty finds the Hub install of the project's version.
+    pub editor: &'a str,
+    /// The Unity project directory (the one holding `ProjectSettings/`).
+    pub project: &'a Path,
+    /// The repository root, where a relative `editor` path starts.
+    pub base: &'a Path,
+    /// The user's home directory, which locates the Hub on Linux.
+    pub home: Option<&'a Path>,
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// What one batch-mode Unity test run needs.
+#[derive(Debug, Clone, Copy)]
+pub struct UnityTestRun<'a> {
+    /// The editor and project.
+    pub run: UnityRun<'a>,
+    /// The test platform.
+    pub mode: UnityMode,
+    /// Assembly names (`-assemblyNames`, the `.asmdef` `name`); empty runs every assembly of the platform.
+    pub assemblies: &'a [String],
+    /// Fully qualified test ids (`-testFilter`); empty runs every test.
+    pub ids: &'a [String],
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// The nearest ancestor directory of `asmdef` (repo-relative) under `root` that holds `ProjectSettings/`, else `root`.
+pub fn unity_project_dir(root: &Path, asmdef: &str) -> PathBuf {
+    let mut dir = Path::new(asmdef).parent();
+    while let Some(rel) = dir {
+        let candidate = root.join(rel);
+        if candidate.join("ProjectSettings").is_dir() {
+            return candidate;
+        }
+        dir = rel.parent();
+    }
+    root.to_path_buf()
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// The assembly name of a repo-relative `.asmdef` (its JSON `name`), the file stem when unreadable; a non-`.asmdef` id is its own name.
+pub fn unity_assembly_name(root: &Path, id: &str) -> String {
+    if !id.ends_with(".asmdef") {
+        return id.strip_prefix("unity:").unwrap_or(id).to_owned();
+    }
+    let named = std::fs::read_to_string(root.join(id))
+        .ok()
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+        .and_then(|v| v["name"].as_str().map(str::to_owned));
+    named.unwrap_or_else(|| {
+        tracing::warn!(id, "asmdef unreadable or unnamed; using its file stem");
+        id.rsplit('/')
+            .next()
+            .and_then(|f| f.strip_suffix(".asmdef"))
+            .unwrap_or(id)
+            .to_owned()
+    })
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// Refuse a run while another editor instance has the project open (a Unity project cannot be opened twice).
+///
+/// # Errors
+///
+/// [`EvidenceError::UnityProjectOpen`] when `Temp/UnityLockfile` exists under the project.
+pub fn check_unity_unlocked(project: &Path) -> Result<()> {
+    let lock = project.join(UNITY_LOCK_FILE);
+    if lock.exists() {
+        tracing::warn!(lock = %lock.display(), "unity project is open in another editor; refusing");
+        return Err(EvidenceError::UnityProjectOpen {
+            project: project.display().to_string(),
+        });
+    }
+    Ok(())
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// The tests in an `NUnit` 3 result file (`<test-case>` elements), named `Namespace.Type.Method`.
+///
+/// The name is `classname` and `methodname` when present (nested `+` becomes `.`), else the `fullname` up to its
+/// first `(`, so a parameterized case folds into its method. `Passed` is executed; `Failed` (any label)
+/// is executed and failed; `Skipped`, `Inconclusive`, `Warning` and the rest did not pass or fail and are left out. A repeated
+/// name is one test, failed if any case failed. The summary lists each result with its duration; a failure also
+/// shows its message and output, to be redacted and escaped with the rest of the transcript.
+pub fn parse_nunit(xml: &str) -> Trx {
+    let mut trx = Trx::default();
+    let mut rest = xml;
+    while let Some(at) = rest.find("<test-case ") {
+        rest = &rest[at + "<test-case".len()..];
+        let Some(tag_end) = rest.find('>') else { break };
+        let tag = &rest[..tag_end];
+        let (body, next) = if tag.ends_with('/') {
+            ("", &rest[tag_end + 1..])
+        } else {
+            let after = &rest[tag_end + 1..];
+            let close = after.find("</test-case>").unwrap_or(after.len());
+            (&after[..close], &after[close..])
+        };
+        rest = next;
+        let outcome = xml_attr(tag, "result").unwrap_or_default();
+        let duration = xml_attr(tag, "duration").unwrap_or_default();
+        let full = xml_attr(tag, "fullname").unwrap_or_default();
+        let id = match (xml_attr(tag, "classname"), xml_attr(tag, "methodname")) {
+            (Some(class), Some(method)) => format!("{}.{method}", class.replace('+', ".")),
+            _ => full.split('(').next().unwrap_or_default().replace('+', "."),
+        };
+        let failed = outcome == "Failed";
+        let _ = writeln!(trx.summary, "{outcome} {full} [{duration}]");
+        if failed {
+            for (label, tag) in [("message", "message"), ("output", "output")] {
+                if let Some(text) = xml_element_text(body, tag).filter(|t| !t.trim().is_empty()) {
+                    for line in text.trim().lines() {
+                        let _ = writeln!(trx.summary, "    {label}: {line}");
+                    }
+                }
+            }
+        }
+        if outcome == "Passed" || failed {
+            trx.parsed.note(&id, failed);
+        }
+    }
+    trx
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// Run the Unity editor in batch mode over `job` and capture the verdict and executed tests from its `NUnit` result.
+///
+/// Refuses first when another editor has the project open ([`check_unity_unlocked`]) or no editor is found
+/// ([`find_unity_editor`]), and after the run when the editor's log says it has no valid license
+/// ([`unity_license_refusal`]). The editor runs `-batchmode -nographics -runTests -testPlatform <mode> -testResults <file>`
+/// plus `-assemblyNames` and `-testFilter` (semicolon separated) when given. The XML is parsed with
+/// [`parse_nunit`] and removed; the transcript is the editor's output then the per-test summary, left to
+/// [`build_record`] to redact and escape. A run passes only when the editor exited 0 and no test failed.
+///
+/// # Errors
+///
+/// [`EvidenceError::UnityProjectOpen`], [`EvidenceError::UnityEditor`], [`EvidenceError::UnityLicense`], [`EvidenceError::BadReference`] for an
+/// option-like assembly or id, [`EvidenceError::Io`] when the results directory cannot be made,
+/// [`EvidenceError::Exec`] when the editor cannot start.
+pub fn run_unity(runner: &Runner, job: &UnityTestRun<'_>, timeout: Duration) -> Result<Capture> {
+    if let Some(bad) = job
+        .assemblies
+        .iter()
+        .chain(job.ids)
+        .find(|a| a.starts_with('-') || a.contains(';'))
+    {
+        tracing::warn!(arg = bad, "unity evidence refused: option-like argument");
+        return Err(EvidenceError::BadReference(format!(
+            "`{bad}` looks like an option or holds `;`; pass assembly names and fully qualified test ids only"
+        )));
+    }
+    check_unity_unlocked(job.run.project)?;
+    let hub_roots = UnityHost::current().hub_roots(job.run.home);
+    let found = find_unity_editor(&UnityLookup {
+        project: job.run.project,
+        configured: job.run.editor,
+        base: job.run.base,
+        hub_roots: &hub_roots,
+        host: UnityHost::current(),
+    })?;
+    let results = std::env::temp_dir().join(format!(
+        "frob-unity-{}-{}",
+        std::process::id(),
+        JUNIT_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::create_dir_all(&results).map_err(|e| EvidenceError::io(&results, e))?;
+    let file = results.join("frob-nunit.xml");
+    let mut args: Vec<String> = [
+        "-batchmode",
+        "-nographics",
+        "-runTests",
+        "-testPlatform",
+        job.mode.as_str(),
+        "-testResults",
+    ]
+    .map(str::to_owned)
+    .to_vec();
+    args.push(file.display().to_string());
+    args.extend([
+        "-logFile".to_owned(),
+        "-".to_owned(),
+        "-projectPath".to_owned(),
+        job.run.project.display().to_string(),
+    ]);
+    if !job.assemblies.is_empty() {
+        args.extend(["-assemblyNames".to_owned(), job.assemblies.join(";")]);
+    }
+    if !job.ids.is_empty() {
+        args.extend(["-testFilter".to_owned(), job.ids.join(";")]);
+    }
+    tracing::info!(mode = job.mode.as_str(), assemblies = ?job.assemblies, ids = job.ids.len(), "running unity tests");
+    let out = runner.run(&spec(
+        Program::Hook { path: found.path },
+        args,
+        job.run.project,
+        timeout,
+    ));
+    let xml = std::fs::read_to_string(&file).unwrap_or_default();
+    if let Err(e) = std::fs::remove_dir_all(&results) {
+        tracing::warn!(path = %results.display(), error = %e, "could not remove the results directory");
+    }
+    let out = out?;
+    let mut transcript = out.stdout;
+    transcript.push_str(&out.stderr);
+    if let Some(refusal) = unity_license_refusal(found.version.as_deref(), &transcript) {
+        return Err(refusal);
+    }
+    let nunit = parse_nunit(&xml);
+    if !nunit.summary.is_empty() {
+        transcript.push_str("\n-- nunit results --\n");
+        transcript.push_str(&nunit.summary);
+    }
+    let (exit_code, measured) = exit_of(out.status);
+    let passed = exit_code == Some(0) && nunit.parsed.failed.is_empty();
+    tracing::info!(?exit_code, passed, tests = nunit.parsed.tests.len(), failed = ?nunit.parsed.failed, "unity tests captured");
+    Ok(Capture {
+        exit_code,
+        passed,
+        measured,
+        tests: nunit.parsed.tests,
+        failed_tests: nunit.parsed.failed,
+        transcript,
+    })
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// True when a Unity run exited 0 yet executed no test (the filter matched nothing), which is no measurement.
+pub fn unity_matched_no_tests(cap: &Capture) -> bool {
+    cap.tests.is_empty() && cap.exit_code == Some(0)
+}
+
+// frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+/// Run Unity tests for a reference `[EditMode|PlayMode] [<asmdef path>...] [<test id>...]`, refusing a run that executed no test.
+///
+/// The mode defaults to `EditMode`; each `.asmdef` path (repo-relative) selects its assembly and, for the first,
+/// the Unity project it lives in (else the repository root); every other argument is a fully qualified test id.
+fn capture_unity(ws: &Workspace, reference: &str) -> Result<Capture> {
+    let mut args = split_args(reference)?;
+    let mode = args
+        .first()
+        .and_then(|a| UnityMode::parse(a))
+        .inspect(|_| {
+            args.remove(0);
+        })
+        .unwrap_or(UnityMode::EditMode);
+    let (asmdefs, ids): (Vec<String>, Vec<String>) =
+        args.into_iter().partition(|a| a.ends_with(".asmdef"));
+    let project = asmdefs
+        .first()
+        .map_or_else(|| ws.root.clone(), |a| unity_project_dir(&ws.root, a));
+    let assemblies: Vec<String> = asmdefs
+        .iter()
+        .map(|a| unity_assembly_name(&ws.root, a))
+        .collect();
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let cap = run_unity(
+        &ws.runner(),
+        &UnityTestRun {
+            run: UnityRun {
+                editor: &ws.unity.editor,
+                project: &project,
+                base: &ws.root,
+                home: home.as_deref(),
+            },
+            mode,
+            assemblies: &assemblies,
+            ids: &ids,
+        },
+        ws.timeout(),
+    )?;
+    refuse_empty(
+        unity_matched_no_tests(&cap),
+        "unity run executed no tests",
+        reference,
+    )?;
+    Ok(cap)
+}
+
 /// Run the provider named by `provider` for `reference` and return its record.
 ///
 /// `reference` is the nextest filter args, the pytest arguments, the command line or the file path.
@@ -1612,6 +1926,8 @@ pub fn capture(
         }
         // frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
         Provider::Dotnet => capture_dotnet(ws, reference)?,
+        // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+        Provider::Unity => capture_unity(ws, reference)?,
         Provider::Command => {
             let argv = split_args(reference)?;
             run_command(

@@ -10,6 +10,14 @@
 |---|---|---|---|---|---|---|
 | [AFFECT001](AFFECT001.md) | dependents-not-updated | warn | manual | P+ | false | A public symbol changed its signature and its dependents were not re-acked. |
 
+## BP
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [BP001](BP001.md) | media-query-off-breakpoints | error | manual | P+ | true | Media queries use the declared breakpoints. Each block is one source file in a project whose |
+| [BP002](BP002.md) | responsive-without-base | error | manual | P+ | true | A responsive utility needs an unprefixed base in the same class list. Each block is one source file |
+| [BP003](BP003.md) | fixed-width-exceeds-breakpoint | error | manual | P+ | true | A fixed width must fit the smallest declared breakpoint. Each block is one source file in a project |
+
 ## CAP
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -21,7 +29,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | P+ | false | A materialized config knob is missing from the product config file. |
+| [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | P- | false | A materialized config knob is missing from the product config file. |
 
 ## CI
 
@@ -33,6 +41,19 @@
 | [CI007](CI007.md) | no-event-interpolation-in-run | error | manual | P+ | false | A `run:` script interpolates an expression an attacker can influence. |
 | [CI010](CI010.md) | checkout-no-persist | advisory | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
 | [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
+
+## COLOR
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [COLOR001](COLOR001.md) | color-off-palette | error | manual | P+ | true | A colour literal in a stylesheet, a custom property or a JSX style prop must be a palette colour. |
+| [COLOR002](COLOR002.md) | undefined-token-reference | error | manual | P- | true | A `var(--color-x)` that looks like a design token must name a custom property that exists. Each |
+
+## CONTRAST
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CONTRAST001](CONTRAST001.md) | role-contrast-below-floor | error | manual | P+ | false | Every `[scales] |
 
 ## COV
 
@@ -77,11 +98,31 @@
 | [EXC016](EXC016.md) | accept-on-unresolved | error | manual | P+ | false | An accept directive names a rule at a site where the finding is Unresolved. |
 | [EXC017](EXC017.md) | native-suppression-without-exception | warn | manual | P+ | false | A native suppression of a rule bound through a tool stage has no frob exception. |
 
+## EXPORT
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [EXPORT001](EXPORT001.md) | export-drift | error | manual | P+ | true | The generated exports match the spec. Each block is one source file in a project whose `crunk.toml` |
+| [EXPORT002](EXPORT002.md) | export-parity | error | manual | P+ | true | The same token resolves to the same value in every export. Each block is one source file in a |
+
 ## GRL
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [GRL016](GRL016.md) | rule-example-mismatch | error | manual | P+ | false | A repository rule file whose example expectation does not match, or which fails to compile. |
+
+## GX
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [GX001](GX001.md) | game-coverage-undeclared | error | manual | P+ | false | A project with a `[game]` profile declares every game accessibility coverage key. Each block is |
+
+## HUMAN
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [HUMAN001](HUMAN001.md) | human-review-stale | advisory | manual | P+ | false | A screen that needs a human review has a current, trusted ack in `crunk.lock`. Each block is one |
+| [HUMAN002](HUMAN002.md) | human-review-rejected | advisory | manual | P+ | false | A reviewed screen is not under a standing rejection. Each block is one source file in a project |
 
 ## INV
 
@@ -89,6 +130,12 @@
 |---|---|---|---|---|---|---|
 | [INV001](INV001.md) | invariant-without-anchor | warn | manual | P- | false | An invariants document has no `frob:invariant` directive in code. |
 | [INV002](INV002.md) | forbidden-import | error | manual | P+ | false | A file imports something the `[invariants]` table forbids. |
+
+## LAYER
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [LAYER001](LAYER001.md) | z-index-off-layers | error | manual | P+ | true | A `z-index` must be one of the declared layers. Each block is one source file in a project whose |
 
 ## MDL
 
@@ -116,6 +163,16 @@
 | [MDL020](MDL020.md) | mdl-include-outside | error | manual | P+ | false | An include names a file above the including file's directory without the `outside` marker. |
 | [MDL021](MDL021.md) | mdl-no-root | error | manual | P+ | false | No model root is declared, or a declared root is not a .grmb file of the walk. |
 
+## ORG
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [ORG001](ORG001.md) | stylesheet-outside-buckets | error | manual | P+ | true | Every stylesheet under `css_root` lives in a declared bucket. Each block is one source file in a |
+| [ORG002](ORG002.md) | class-case | error | manual | P+ | true | Class names use the configured casing. Each block is one source file in a project whose `crunk.toml` |
+| [ORG003](ORG003.md) | component-prefix | error | manual | P+ | true | Classes in `components/<name>.css` carry the component name. Each block is one source file in a |
+| [ORG004](ORG004.md) | custom-property-outside-tokens | error | manual | P+ | true | Custom properties are defined in the generated tokens file only. Each block is one source file in a |
+| [ORG005](ORG005.md) | ungoverned-stylesheet | error | manual | P+ | true | Every stylesheet of the project is under `css_root`. Each block is one source file in a project whose |
+
 ## PARSE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -132,8 +189,8 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [PM001](PM001.md) | milestone-without-goal | warn | manual | P+ | false | A milestone has no goal statement or no exit criteria. |
-| [PM002](PM002.md) | milestone-epics-incomplete | warn | manual | P+ | false | A milestone has no epics, or a member epic is done while work under it is open. |
+| [PM001](PM001.md) | milestone-without-goal | warn | manual | P- | false | A milestone has no goal statement or no exit criteria. |
+| [PM002](PM002.md) | milestone-epics-incomplete | warn | manual | P- | false | A milestone has no epics, or a member epic is done while work under it is open. |
 | [PM003](PM003.md) | story-structure | warn | manual | P+ | false | A story lacks one of `as_a`, `i_want`, `so_that`, or one is shorter than three words. |
 | [PM004](PM004.md) | story-restates-want | warn | manual | P+ | false | A story's `so_that` restates its `i_want`. |
 | [PM005](PM005.md) | story-criteria-shape | warn | manual | P+ | false | A story has no acceptance criteria, or a criterion is neither Given/When/Then nor explicit free-form. |
@@ -144,18 +201,24 @@
 | [PM010](PM010.md) | cycle-over-capacity | advisory | manual | P+ | false | An open or planned cycle commits more points than its capacity. |
 | [PM011](PM011.md) | cycle-without-goal | warn | manual | P+ | false | An open or planned cycle states no goal. |
 | [PM012](PM012.md) | cycle-member-not-ready | advisory | manual | P+ | false | A not-yet-started member of an open or planned cycle fails the definition of ready. |
-| [PM013](PM013.md) | wip-limit-exceeded | warn | manual | P+ | false | The repository has more tickets in progress than `[pm.wip] in_progress` allows. |
+| [PM013](PM013.md) | wip-limit-exceeded | warn | manual | P- | false | The repository has more tickets in progress than `[pm.wip] in_progress` allows. |
 | [PM031](PM031.md) | good-first-incomplete | error | manual | P+ | false | A ticket labelled `good-first` is missing something a newcomer needs. |
 | [PM032](PM032.md) | good-first-pool-low | warn | manual | P+ | false | Fewer than `[tickets] good_first_min` ready tickets carry the `good-first` label. |
-| [PM033](PM033.md) | ready-queue-low | advisory | manual | P+ | false | The ready queue holds fewer doable tickets than `[pm] ready_min`. |
-| [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P+ | false | A ticket claims a milestone that its epic ancestry does not reach. |
-| [PM036](PM036.md) | cycle-overdue | warn | manual | P+ | false | An active cycle is past its end date and has not been closed. |
+| [PM033](PM033.md) | ready-queue-low | advisory | manual | P- | false | The ready queue holds fewer doable tickets than `[pm] ready_min`. |
+| [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P- | false | A ticket claims a milestone that its epic ancestry does not reach. |
+| [PM036](PM036.md) | cycle-overdue | warn | manual | P- | false | An active cycle is past its end date and has not been closed. |
 
 ## PROC
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [PROC001](PROC001.md) | process-outside-exec | error | manual | P+ | false | A crate outside the repository's declared spawners uses a process-spawning API. |
+
+## RADIUS
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [RADIUS001](RADIUS001.md) | radius-off-scale | warn | manual | P+ | true | Corner radii must be steps of the radius scale. Each block is one source file in a project whose |
 
 ## READ
 
@@ -173,21 +236,47 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [REL001](REL001.md) | release-without-cut | error | manual | P+ | false | A product release tag that `frob release cut` did not create, or that no longer matches its cut. |
-| [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P+ | false | Crates or the wheel whose version differs from the workspace version. |
-| [REL003](REL003.md) | changelog-fragment-required | error | manual | P+ | false | A changelog fragment that is missing for the checked ticket or that fails validation. |
+| [REL001](REL001.md) | release-without-cut | error | manual | P- | false | A product release tag that `frob release cut` did not create, or that no longer matches its cut. |
+| [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P- | false | Crates or the wheel whose version differs from the workspace version. |
+| [REL003](REL003.md) | changelog-fragment-required | error | manual | P- | false | A changelog fragment that is missing for the checked ticket or that fails validation. |
 
 ## SCOPE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SCOPE001](SCOPE001.md) | path-outside-lease | error | manual | P+ | false | A changed path lies outside the globs of the ticket's scope lease. |
+| [SCOPE001](SCOPE001.md) | path-outside-lease | error | manual | P- | false | A changed path lies outside the globs of the ticket's scope lease. |
 
 ## SIB
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [SIB001](SIB001.md) | sibling-unavailable | unresolved | manual | P- | false | A sibling product's `check --json` could not be used: unavailable, incompatible, failed, late or malformed. |
+
+## SIZE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [SIZE001](SIZE001.md) | size-off-scale | warn | manual | P+ | true | Box sizes must be steps of the sizes scale. Each block is one source file in a project whose |
+
+## SLOP
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [SLOP001](SLOP001.md) | default-palette-accent | advisory | manual | P+ | false | Flags a palette entry or a colour literal within two deltaE_OK points of a Tailwind indigo, violet or purple 400-700 stop. `[decisions] accent` records that the purple is the brand and silences the rule. Advisory: real purple brands exist. |
+| [SLOP003](SLOP003.md) | gradient-abuse | advisory | manual | P+ | false | Flags the fourth gradient background in a project, and any gradient text (`background-clip: text`). `[decisions] gradients` silences it. Advisory. |
+| [SLOP004](SLOP004.md) | coloured-glow-shadows | advisory | manual | P+ | false | Flags two or more `box-shadow` layers with a saturated colour and a blur of 15px or more. `[decisions] glows` silences it. Advisory. |
+| [SLOP010](SLOP010.md) | font-unchosen | advisory | manual | P+ | false | Flags a literal `font-family` led by Inter, Roboto, Arial, system-ui or a second-wave default (Space Grotesk, Geist, Instrument Serif, Fraunces, Syne). `[decisions] fonts` records the rationale and silences it. Advisory: a chosen Inter is fine. |
+| [SLOP011](SLOP011.md) | font-not-shipped | warn | manual | P+ | false | Flags a literal `font-family` or `--font-*` whose first family is not a generic or system face and that no `@font-face` defines. A project that loads fonts through Google Fonts, Bunny, `next/font` or `@fontsource` is exempt, as is a `[decisions] fonts` project. Warn. |
+| [SLOP014](SLOP014.md) | eyebrow-chrome | advisory | manual | P+ | false | Flags three or more short (four words or fewer) labels in an element marked `uppercase`, `eyebrow`, `kicker` or `overline` that sit directly above an `h1` or `h2`. `[decisions] eyebrows` silences it. Advisory. |
+| [SLOP022](SLOP022.md) | uniform-radius | advisory | manual | P+ | false | Flags, once, three or more literal radii that share one value or that are 16px and larger in more than 60 percent of cases. Zero, percentages and `var()` radii are ignored. `[decisions] radius` silences it. Advisory. |
+| [SLOP040](SLOP040.md) | emoji-as-icon | warn | manual | P+ | false | Flags a pictograph as the first character of an `li`, heading, `button` or `a` label in a JSX source, or at the start of a CSS `content` or `list-style` string. Numeric character references and CSS escapes are read as the character they name. `[decisions] emoji` silences it. Warn. |
+| [SLOP060](SLOP060.md) | buzzword-density | advisory | manual | P+ | false | Scores the literal text of a JSX source against a buzzword lexicon (seamless, unlock, elevate, supercharge, world-class and similar). Three or more hits at three or more per 100 words, over at least 30 words, fires once per source; a single hit never fires. `[decisions] voice` silences it. Advisory. |
+
+## SPACE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [SPACE001](SPACE001.md) | spacing-off-scale | error | manual | P+ | true | Margins, paddings, gaps and insets must be steps of the spacing scale. Each block below is one source |
 
 ## SYS
 
@@ -210,17 +299,17 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [TEST001](TEST001.md) | tests-target-missing | error | manual | P+ | false | A `frob:tests` directive whose target resolves to no test (or, inside a test, to no symbol). |
+| [TEST001](TEST001.md) | tests-target-missing | error | manual | P+ | false | A `frob:tests` directive must name something the symbol graph can find. |
 
 ## TICK
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [TICK001](TICK001.md) | frontmatter-differs-from-fold | error | deterministic | P+ | false | A ticket's frontmatter differs from the fold of its events. |
-| [TICK002](TICK002.md) | ticket-not-on-base | error | manual | P+ | true | A ticket id is referenced but absent from the base ref. |
-| [TICK003](TICK003.md) | dangling-link | error | manual | P+ | false | A link or parent names a ticket that does not exist. |
-| [TICK004](TICK004.md) | absolute-home-path | error | deterministic | P+ | false | A committed ledger file holds an absolute home path. |
-| [TICK005](TICK005.md) | private-term | error | deterministic | P+ | false | A committed ledger file or changelog fragment holds a private term. |
+| [TICK001](TICK001.md) | frontmatter-differs-from-fold | error | deterministic | P- | false | A ticket's `ticket.md` disagrees with the fold of its events. |
+| [TICK002](TICK002.md) | ticket-not-on-base | error | manual | P- | true | A directive or trailer names a ticket missing from the base branch. |
+| [TICK003](TICK003.md) | dangling-link | error | manual | P- | false | A ticket link or parent points at a missing ticket. |
+| [TICK004](TICK004.md) | absolute-home-path | error | deterministic | P- | false | A ledger file holds `/home/<name>/`, `/Users/<name>/`, `/root/` or `C:\Users\<name>\`. |
+| [TICK005](TICK005.md) | private-term | error | deterministic | P- | false | A ledger file or changelog fragment holds a term the local privacy rules forbid. |
 | [TICK006](TICK006.md) | ledger-path-reference | error | deterministic | P+ | false | Hand-written text links to a ticket-branch path instead of the ticket's ULID. |
 | [TICK007](TICK007.md) | reindex-not-pure | error | manual | P+ | false | A reindex commit is not what the pure reindex of its parent tree produces. |
 | [TICK008](TICK008.md) | move-outside-reindex | error | manual | P+ | false | A ledger commit without the reindex trailer renamed or deleted a ticket file, or touched an event file it did not add. |
@@ -233,9 +322,52 @@
 | [TODO001](TODO001.md) | bare-work-marker | error | manual | P+ | false | A comment carries an upper-case work marker with no owning ticket. |
 | [TODO002](TODO002.md) | todo-ticket-terminal | warn | manual | P+ | true | A `frob:todo` directive points at a ticket that is already done or dropped. |
 
+## TOKEN
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TOKEN002](TOKEN002.md) | token-file-invalid | error | manual | P+ | true | An authored token file compiles. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN003](TOKEN003.md) | token-alias-broken | error | manual | P+ | true | Token aliases resolve. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN004](TOKEN004.md) | token-unused | warn | manual | P+ | true | Every token is used. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN005](TOKEN005.md) | token-naming | warn | manual | P+ | true | Token paths follow the naming and layering convention. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN006](TOKEN006.md) | token-mode-incomplete | error | manual | P+ | true | Mode overrides are complete. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN007](TOKEN007.md) | token-scope-violation | error | manual | P+ | true | Tokens are bound to properties they are scoped for. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN008](TOKEN008.md) | token-near-duplicate | warn | manual | P+ | true | Tokens do not duplicate each other. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN009](TOKEN009.md) | token-deprecated-used | warn | manual | P+ | true | Deprecated tokens are not used. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+
+## TOKENS
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TOKENS001](TOKENS001.md) | tokens-file-drift | error | manual | P+ | true | The generated token files match the spec. Each block is one source file in a project whose |
+
 ## TOOL
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [TOOL001](TOOL001.md) | tool-stage-failed | error | manual | P+ | false | A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start. |
 | [TOOL002](TOOL002.md) | tool-finding-unmapped | advisory | manual | P+ | false | A bound tool reported a finding that no frob rule id covers. |
+
+## TW
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TW001](TW001.md) | arbitrary-value-off-design | error | manual | P+ | true | An arbitrary Tailwind value must still sit on the design law. Each block is one source file in a |
+| [TW002](TW002.md) | theme-entry-undefined-token | error | manual | P- | true | A Tailwind theme entry may only map to a token that exists. Each block is one source file in a |
+| [TW003](TW003.md) | alpha-modifier-without-placeholder | warn | manual | P+ | true | An alpha modifier needs a theme colour that can take alpha. Each block is one source file in a |
+| [TW004](TW004.md) | tailwind-default-color | error | manual | P+ | true | A colour utility must come from the project theme, not Tailwind's defaults. Each block is one source |
+| [TW005](TW005.md) | tailwind-default-scale | error | manual | P+ | true | A scale utility must come from the declared scales, not Tailwind's defaults. Each block is one source |
+
+## TYPE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TYPE001](TYPE001.md) | font-size-off-scale | error | manual | P+ | true | Font sizes must be steps of the type ramp. Each block is one source file in a project whose |
+| [TYPE002](TYPE002.md) | font-family-off-stack | error | manual | P+ | true | Font families must come from the declared stacks. Each block is one source file in a project whose |
+| [TYPE003](TYPE003.md) | font-weight-off-scale | warn | manual | P+ | true | Font weights must be declared weights. Each block is one source file in a project whose `crunk.toml` |
+
+## WAIVE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [WAIVE001](WAIVE001.md) | waiver-without-reason | error | manual | P+ | false | A `crunk:waive RULE reason="..."` comment silences one rule at one declaration. Without the reason |
