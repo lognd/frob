@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:42Z"
 updated = "2026-10-19T18:06:11Z"
 idempotency_key = "m2-mirror-schema-gen"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/gob-dev/src/render/**", "docs/schemas/issue-projection.json", "crates/frob/src/mirror_cmd.rs", "crates/frob-mirror/src/projection.rs", "crates/frob-mirror/Cargo.toml", "crates/gob-dev/Cargo.toml", "crates/frob/Cargo.toml", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "Cargo.lock", "crates/frob/tests/it/mirror_render.rs"]
+scope = ["crates/gob-dev/src/render/**", "docs/schemas/issue-projection.json", "crates/frob/src/mirror_cmd.rs", "crates/frob-mirror/src/projection.rs", "crates/frob-mirror/Cargo.toml", "crates/gob-dev/Cargo.toml", "crates/frob/Cargo.toml", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "Cargo.lock", "crates/frob/tests/it/mirror_render.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
