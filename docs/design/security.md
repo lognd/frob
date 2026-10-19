@@ -163,6 +163,11 @@ frob, grimble and crunk.
   remembered per digest; grants unused for 30 days expire. `trust
   --show` prints the pending review non-interactively (agents may run
   it); it has no approve action.
+  Implementation: `gob_trust::TrustStore` (`crates/gob-trust/src/store`).
+  Entries are keyed-blake3 MAC'd (context `gob-trust-entry/v1`) over
+  subject, who, grant and expiry times, the network flag and the full
+  repository identity; unverified lines are inert and counted by
+  `TrustStore::doctor`. Time is always passed in by the caller.
 
 ### 2.4 Tool stages are process packs (I11)
 

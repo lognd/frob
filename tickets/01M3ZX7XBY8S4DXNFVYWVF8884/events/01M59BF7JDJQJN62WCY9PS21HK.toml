@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T05:51:35Z"
+digest = "2ba110a98fa46e3b08b3a347f99e2a352fe7930b7c9c2560c15fe132a0801436"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 29.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e5981277-7911-4823-95d1-bb1c3164c707 with nextest profile: default
+    Starting 1 test across 294 binaries (3469 tests skipped)
+        PASS [   0.032s] gob-trust::policy identical_policy_has_empty_delta
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.064s] 1 test run: 1 passed, 3469 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "identical_policy_has_empty_delta"
+size = 602
+status = "measured"
+test_count = 1
+tests_digest = "ca97f4cda14485a34dd1490c82bdc86f32f9428d7a30d24160370fe53f4cf36e"
+at = "2026-10-19T05:51:35Z"
+actor = "lognd"
+rev = 1
