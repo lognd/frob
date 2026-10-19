@@ -1,0 +1,9 @@
+kind = "create"
+title = "Record token usage per ticket so frob stats can fit cost per token"
+type = "task"
+category = "todo"
+priority = "medium"
+idempotency_key = "dc05-tokens"
+at = "2026-10-19T10:30:04Z"
+actor = "lognd"
+rev = 1
