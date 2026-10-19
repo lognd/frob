@@ -2,7 +2,8 @@
 id = "01M3ZX80Q9RG2ZBBDB1J1W3H46"
 title = "Nested grimble.toml loads only from [workspace] members or explicit root"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
