@@ -2,7 +2,8 @@
 id = "01M1T07NX1SZYZBZYYW821FN00"
 title = "Two different builds both report 0.530.0, so consumer bug reports cannot be checked against main (F-216 was already fixed and unverifiable)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "human"
