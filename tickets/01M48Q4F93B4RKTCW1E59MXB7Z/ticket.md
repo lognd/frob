@@ -2,7 +2,8 @@
 id = "01M48Q4F93B4RKTCW1E59MXB7Z"
 title = "Adapter-less text is Unresolved (reason fidelity, rolled up) for capability rules, NotApplicable only for binaries and featureless languages"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
