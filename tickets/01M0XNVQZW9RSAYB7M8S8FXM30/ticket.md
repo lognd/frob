@@ -2,7 +2,8 @@
 id = "01M0XNVQZW9RSAYB7M8S8FXM30"
 title = "TDD commit protocol: test-first commit marks the test xfail(strict=True), implementation commit removes it; a surviving xfail is tracked debt"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 parent = "01M0XNVQXWNFXBK2AGM3QF2P3A"
