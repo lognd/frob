@@ -39,7 +39,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a second edit by the same actor to the same field, when recorded, then a superseding event is appended"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given more than P new proposals in a run, when recorded, then those beyond P stay after the cursor and are recorded in a later run, and all recorded ones share one ledger commit"
