@@ -2,7 +2,8 @@
 id = "01M5B3C8W6AG0G7K53KK75B3D3"
 title = "frob:doc in no-grammar files is skipped by frob-ack (extend lexical directive scan)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
