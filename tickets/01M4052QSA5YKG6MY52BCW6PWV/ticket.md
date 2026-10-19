@@ -2,7 +2,8 @@
 id = "01M4052QSA5YKG6MY52BCW6PWV"
 title = "frob-gh: status classification (301, 404, 410) and the token blindness check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
