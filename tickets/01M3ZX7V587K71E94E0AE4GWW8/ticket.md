@@ -2,16 +2,16 @@
 id = "01M3ZX7V587K71E94E0AE4GWW8"
 title = "check --trust-from REF: trust the pairs present in the lock at a protected ref"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:33Z"
-updated = "2026-10-03T03:34:33Z"
+updated = "2026-10-19T08:31:42Z"
 idempotency_key = "m2-sec-trust-base-ref"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-trust/src/baseref.rs", "crates/gob-check/src/**"]
+scope = ["crates/gob-trust/src/baseref.rs", "crates/gob-check/src/**", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/baseref.rs", "crates/gob-check/Cargo.toml", "docs/design/security.md", "changelog.d/01M3ZX7V587K71E94E0AE4GWW8.*"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,11 +23,11 @@ target = "01M3ZX7V0XP3BYTWDHXN20Z79R"
 
 [[acceptance]]
 text = "Given a pack whose digest differs from the lock at the base ref, when check --trust-from origin/main runs, then its rules report Unresolved untrusted-in-change and the gate fails"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a pack unchanged since the base ref, when check runs, then it is trusted with the effects recorded at that ref"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.3 (base-ref trust in CI).
