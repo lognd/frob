@@ -1,0 +1,71 @@
+kind = "evidence"
+captured_at = "2026-10-19T19:25:46Z"
+digest = "79201e412314f9865cb1f7b9867d6b3e92118138b4c0bfc921e8ff20813e75dc"
+exit_code = 0
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 92 filtered out; finished in 0.00s
+
+
+running 1 test
+test tests::ci_remote_flag_takes_an_optional_runner_defaulting_to_goway ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.18s
+     Running unittests src/lib.rs (target/debug/deps/gob_dev-804ec5ac841140cb)
+     Running unittests src/main.rs (target/debug/deps/gob_dev-1a4b8437149d60be)
+     Running tests/ci_parity.rs (target/debug/deps/ci_parity-44a649d98a7d97a6)
+     Running tests/ci_plan.rs (target/debug/deps/ci_plan-a1113eca1fb5df84)
+     Running tests/generate.rs (target/debug/deps/generate-6315672edca34915)
+     Running tests/import_v1.rs (target/debug/deps/import_v1-cfaad1aaee41c408)
+     Running tests/layering.rs (target/debug/deps/layering-7ad4f7899c910e05)
+     Running tests/profile_coverage.rs (target/debug/deps/profile_coverage-e9d48bb5e4810436)
+     Running tests/rules_index.rs (target/debug/deps/rules_index-f7b893c11e6d2c96)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-dev ci_remote_flag_takes_an_optional_runner_defaulting_to_goway"
+size = 1948
+status = "measured"
+at = "2026-10-19T19:25:46Z"
+actor = "lognd"
+rev = 1

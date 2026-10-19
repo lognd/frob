@@ -41,9 +41,12 @@ Only the full ULID is ever written into a file or a directive.
    actionlint, `frob doctor`, `frob check`, `frob test --dry-run`).
    On Windows use `cargo dev-isolated ci` (a running `gob-dev.exe` cannot be rebuilt).
    `--keep-going` runs every step, `--step <name>` one, `--list` names them.
-   On a busy laptop, `CARGO_DEV_CI_REMOTE=goway cargo dev ci` runs the
-   heavy steps on a goway host (see `docs/design/build-test-ci.md`
-   section 4); a `GOWAY` summary line means goway failed, not the step.
+   On a busy laptop, `cargo dev ci --remote` runs the heavy steps on a
+   goway host (`--remote <path>` names another goway binary; bare
+   `--remote` means `goway`). `CARGO_DEV_CI_REMOTE=goway cargo dev ci`
+   sets the same and the flag wins when both are given (see
+   `docs/design/build-test-ci.md` section 4); a `GOWAY` summary line means
+   goway failed, not the step.
    The Windows clippy step needs `rustup target add
    x86_64-pc-windows-gnu` and the MinGW C compiler (`sudo apt-get install
    -y gcc-mingw-w64-x86-64`, required by libsqlite3-sys); it checks both
