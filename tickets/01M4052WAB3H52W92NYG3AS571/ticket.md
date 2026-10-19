@@ -2,7 +2,8 @@
 id = "01M4052WAB3H52W92NYG3AS571"
 title = "Fake GitHub for replaying the model: history, listing, lost and late creates, rate limits"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
