@@ -8,14 +8,14 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-03T06:18:31Z"
-updated = "2026-10-19T13:32:45Z"
+updated = "2026-10-19T13:37:27Z"
 idempotency_key = "m2-frob-vet"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/grimble-vet/**", "crates/grimble/src/**", "crates/grimble/Cargo.toml", "crates/grimble/tests/vet.rs", "docs/design/vet.md"]
 
 [[acceptance]]
 text = "Given a change that adds a dependency with a RustSec advisory, when frob vet runs, then it reports the advisory with its id and the fixed versions"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ticket diff that adds a new direct dependency, when frob check --ticket runs, then the dependency is reported unless it was vetted"
