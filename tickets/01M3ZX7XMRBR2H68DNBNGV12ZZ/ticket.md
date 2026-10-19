@@ -2,13 +2,13 @@
 id = "01M3ZX7XMRBR2H68DNBNGV12ZZ"
 title = "config diff --base REF"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:36Z"
-updated = "2026-10-03T03:34:36Z"
+updated = "2026-10-19T07:15:10Z"
 idempotency_key = "m2-sec-config-diff"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/frob/src/config_cmd.rs", "crates/grimble/src/config_diff.rs"]
