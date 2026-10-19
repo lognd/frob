@@ -2,12 +2,13 @@
 id = "01M5ANA1DJ6V3MDF3NJZXAS6JW"
 title = "Wire frob explain: register the Explain verb (needs lib.rs/product.rs, held by KNMAEDB)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-19T18:03:17Z"
-updated = "2026-10-19T18:21:22Z"
+updated = "2026-10-19T18:36:28Z"
 scope = ["crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/tests/it/main.rs", "docs/reference/cli/frob.md"]
 +++
 
