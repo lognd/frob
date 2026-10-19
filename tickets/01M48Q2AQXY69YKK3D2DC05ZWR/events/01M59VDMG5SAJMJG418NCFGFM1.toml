@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T10:30:52Z"
+digest = "ec6b6dabd322f0f831d5e6b18f3d4e3bf5dd51ebbb06975802dc338db5ca4e96"
+exit_code = 0
+inline = """
+
+running 1 test
+test fit::tests::fit_recovers_synthetic_log_normal_parameters ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running unittests src/lib.rs (target/debug/deps/frob_metrics-1a1a61638bf63d9f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-metrics fit_recovers_synthetic_log_normal_parameters"
+size = 339
+status = "measured"
+at = "2026-10-19T10:30:52Z"
+actor = "lognd"
+rev = 1

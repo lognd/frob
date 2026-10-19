@@ -1,0 +1,22 @@
+[package]
+name = "frob-metrics"
+version.workspace = true
+description = "frob metrics: velocity, capacity, points remaining, throughput, cycle and lead time percentiles and log-normal cost per point, as pure functions."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+frob-pm = { version = "0.532.0", path = "../frob-pm" }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+tracing = "0.1"
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+frob-ledger = { version = "0.532.0", path = "../frob-ledger" }

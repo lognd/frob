@@ -322,7 +322,7 @@ fn cycle_pm_err(e: PmError) -> CliError {
 }
 
 /// Every cycle folded at the current tip with its state derived for today, earliest start first.
-fn cycles(store: PmStore<'_>) -> Result<Vec<Cycle>, CliError> {
+pub(crate) fn cycles(store: PmStore<'_>) -> Result<Vec<Cycle>, CliError> {
     // frob:ticket 01M413V82EXMRXXVWZN0MQNY3G
     let today = store.today();
     let mut out: Vec<Cycle> = store
@@ -1288,12 +1288,13 @@ pub struct VelocityData {
     pub message: Option<String>,
 }
 
-/// Show points delivered per closed cycle, the rolling mean and standard deviation, and the capacity `cycle assign` would use.
+/// Deprecated alias of `stats --section velocity`: show points delivered per closed cycle, the rolling mean and standard deviation, and the capacity `cycle assign` would use.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "cycle velocity",
     read_only,
     product = "frob",
+    deprecated = "stats --section velocity",
     idempotent = true,
     exits(ok, refused, usage, internal)
 )]
