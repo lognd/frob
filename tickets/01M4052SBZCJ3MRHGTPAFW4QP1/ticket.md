@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-19T17:23:04Z"
+updated = "2026-10-19T17:23:28Z"
 idempotency_key = "m2-mirror2-dups"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/dups.rs"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a closed duplicate that a human edited, when the next run reads it, then the edit is captured"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a human who reopens a closed duplicate, when the next run lists, then it is closed again"

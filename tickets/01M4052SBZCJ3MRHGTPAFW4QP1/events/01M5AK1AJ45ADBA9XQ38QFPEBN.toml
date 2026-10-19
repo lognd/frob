@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T17:23:28Z"
+digest = "6dc7c431fe43e233621976e46374f8b1cba1942bed6346ed013a790647722439"
+exit_code = 0
+inline = """
+
+running 1 test
+test edit_on_closed_duplicate_is_captured ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.88s
+     Running tests/dups/main.rs (target/debug/deps/dups-a5b04b841ccd9da7)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror --test dups edit_on_closed_duplicate_is_captured"
+size = 362
+status = "measured"
+at = "2026-10-19T17:23:28Z"
+actor = "lognd"
+rev = 1
