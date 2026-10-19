@@ -4,9 +4,10 @@ title = "frob mirror recreate: switch CurlTransport to frob_mirror::github::http
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T23:34:26Z"
-updated = "2026-10-19T23:34:26Z"
+updated = "2026-10-19T23:52:38Z"
 scope = ["crates/frob/src/mirror_recreate_cmd.rs"]
 +++
 
