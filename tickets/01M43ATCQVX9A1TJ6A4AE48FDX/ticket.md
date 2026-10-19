@@ -2,7 +2,7 @@
 id = "01M43ATCQVX9A1TJ6A4AE48FDX"
 title = "crunk fix: autofix engine on gob-fix (Tier A, tolerance-gated)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
