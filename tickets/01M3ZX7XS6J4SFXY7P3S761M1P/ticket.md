@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:36Z"
-updated = "2026-10-19T17:50:44Z"
+updated = "2026-10-19T17:58:56Z"
 idempotency_key = "m2-sec-summary"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-diagnostics/src/text.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/tests/snapshots/*.snap"]
+scope = ["crates/gob-diagnostics/src/text.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/tests/snapshots/*.snap", "docs/design/security.md"]
 
 [[links]]
 kind = "blocked-by"
