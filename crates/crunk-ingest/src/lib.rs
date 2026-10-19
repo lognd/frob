@@ -13,6 +13,8 @@
 //! - [`model`]: [`ProjectStyles`], [`Stylesheet`], [`Declaration`] and the located facts.
 //! - [`walk`]: [`ingest_tree`], [`ingest_paths`], [`bucket_for`] and [`IngestStats`].
 //! - [`parse`]: [`parse_css_source`], one file's text to its [`ParsedCss`].
+//! - [`scene`]: [`parse_scene`](scene::parse_scene) and [`solve_scene`](scene::solve_scene), a scene of
+//!   boxes and text runs solved by taffy into a layout-solve JSON.
 //! - [`glob`]: the `fnmatch` semantics `[org] entry`, `[org] ignore` and `[jsx] globs` use.
 //!
 //! # Known divergences from the Python crunk
@@ -41,6 +43,7 @@ pub mod jsx;
 mod lex;
 pub mod model;
 pub mod parse;
+pub mod scene;
 pub mod tailwind;
 pub mod waive;
 pub mod walk;

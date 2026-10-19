@@ -14,12 +14,16 @@
 //! path-to-string separator handling and `PATH003` paths in command-line strings; a language
 //! without path-conversion roles reports them unresolved.
 //!
+//! [`neat::scan`] finds `NEAT010` effect claims a unit's calls contradict (an `effects` capability
+//! answering [`gob_ir::Answer`] bounds) and `NEAT031` dispatchers that own condition logic, in Rust.
+//!
 //! [`typing::scan`] finds `TYPING001` sites: a tsconfig with `strict` off, a csproj without
 //! `<Nullable>enable</Nullable>`, or a lax mypy or pyright table, each naming the key to set.
 
 // frob:ticket 01M4D956T20WN96P7A3K4B9CKF
 
 pub mod err;
+pub mod neat;
 pub mod path;
 pub mod res;
 pub mod typing;

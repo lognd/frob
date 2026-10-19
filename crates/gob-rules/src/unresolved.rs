@@ -44,6 +44,14 @@ pub enum UnresolvedReason {
     OrderUnrecorded,
     /// Any other opaque region, with its own code.
     Opaque(String),
+    /// A type-dependent answer at a site typed `Any`, `dynamic`, unannotated or reflective (`dynamic-site`).
+    DynamicSite,
+    /// An annotation and local inference disagree: a likely bug (`conflict:annotation-vs-inference`).
+    ConflictAnnotationInference,
+    /// A type fact exists but is not trusted: an annotation without checker closure (`untrusted-type`).
+    UntrustedType,
+    /// The type checker was not run (`not-run`).
+    NotRun,
     /// A hole or parse-error node (`hole`).
     Hole,
     /// The deciding edge is `May` (`edge:may`).
@@ -72,6 +80,10 @@ impl UnresolvedReason {
             Self::NormalizationUnverified => "normalization:unverified",
             Self::OrderUnrecorded => "order:unrecorded",
             Self::Opaque(code) => code,
+            Self::DynamicSite => "dynamic-site",
+            Self::ConflictAnnotationInference => "conflict:annotation-vs-inference",
+            Self::UntrustedType => "untrusted-type",
+            Self::NotRun => "not-run",
             Self::Hole => "hole",
             Self::EdgeMay => "edge:may",
             Self::EdgeUnknown => "edge:unknown",
@@ -94,6 +106,10 @@ impl UnresolvedReason {
             "expansion:budget" => Self::ExpansionBudget,
             "normalization:unverified" => Self::NormalizationUnverified,
             "order:unrecorded" => Self::OrderUnrecorded,
+            "dynamic-site" => Self::DynamicSite,
+            "conflict:annotation-vs-inference" => Self::ConflictAnnotationInference,
+            "untrusted-type" => Self::UntrustedType,
+            "not-run" => Self::NotRun,
             "hole" => Self::Hole,
             "edge:may" => Self::EdgeMay,
             "edge:unknown" | "unknown" => Self::EdgeUnknown,
@@ -102,6 +118,38 @@ impl UnresolvedReason {
             "parse-failed" => Self::ParseFailed,
             "partial" => Self::Partial,
             other => Self::Opaque(other.to_owned()),
+        }
+    }
+
+    /// The reason class (`cohesion.md` 2.3), so a user can tell "frob could not" from "nobody could".
+    pub fn class(&self) -> UnknownClass {
+        match self {
+            Self::NotRun => UnknownClass::NotRun,
+            Self::UntrustedType | Self::ConflictAnnotationInference => UnknownClass::UntrustedType,
+            Self::DynamicSite | Self::DynamicUnresolvable | Self::DynamicStringCode => {
+                UnknownClass::DynamicSite
+            }
+            Self::ExpansionBudget | Self::NormalizationUnverified | Self::Fidelity => {
+                UnknownClass::AnalysisLimit
+            }
+            _ => UnknownClass::Undecidable,
+        }
+    }
+
+    /// The cheapest remedy for this reason, where one is known.
+    pub fn remedy(&self) -> Option<&'static str> {
+        match self {
+            Self::DynamicSite => Some(
+                "annotate the receiver with a concrete type, or state the effect with a frob: directive",
+            ),
+            Self::ConflictAnnotationInference => {
+                Some("fix the annotation or the code it disagrees with; this is a likely bug")
+            }
+            Self::UntrustedType => Some(
+                "run the type checker in its strictest configuration over every module reaching the site",
+            ),
+            Self::NotRun => Some("run the configured type checker"),
+            _ => None,
         }
     }
 
@@ -126,6 +174,39 @@ impl From<String> for UnresolvedReason {
 impl From<UnresolvedReason> for String {
     fn from(r: UnresolvedReason) -> Self {
         r.code().to_owned()
+    }
+}
+
+/// The class of an Unknown answer (`cohesion.md` 2.3): where the missing precision comes from.
+///
+/// ```
+/// use gob_rules::UnknownClass;
+/// assert_eq!(UnknownClass::DynamicSite.code(), "dynamic-site");
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum UnknownClass {
+    /// The type checker was not run.
+    NotRun,
+    /// A type fact exists but is not trusted.
+    UntrustedType,
+    /// The site is dynamic (`Any`, `dynamic`, reflection).
+    DynamicSite,
+    /// The analysis is weaker than a better one could be.
+    AnalysisLimit,
+    /// Nobody could decide it.
+    Undecidable,
+}
+
+impl UnknownClass {
+    /// The stable class code.
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::NotRun => "not-run",
+            Self::UntrustedType => "untrusted-type",
+            Self::DynamicSite => "dynamic-site",
+            Self::AnalysisLimit => "analysis-limit",
+            Self::Undecidable => "undecidable",
+        }
     }
 }
 

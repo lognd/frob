@@ -991,6 +991,48 @@ fn velocity_lists_closed_cycles_and_its_capacity_is_what_assign_reports() {
 }
 
 #[test]
+fn stats_velocity_prints_the_same_numbers_as_the_hidden_cycle_velocity_alias() {
+    // frob:ticket 01M48Q2AQXY69YKK3D2DC05ZWR
+    // frob:tests crates/frob/src/stats_cmd.rs::Stats
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleVelocity
+    let repo = Repo::new();
+    for (s, e) in [(-3, 3), (-2, 4), (-1, 5)] {
+        let c = window(&repo, s, e, None);
+        repo.assign(id(&c), &repo.done_ticket("8"));
+        repo.assign(id(&c), &repo.done_ticket("2"));
+        repo.ok(&["cycle", "close", id(&c)]);
+    }
+    let alias = repo.ok(&["cycle", "velocity"]);
+    let stats = repo.ok(&["stats", "--section", "velocity"]);
+    let v = &stats["data"]["velocity"];
+    assert_eq!(v["status"], "value");
+    assert_eq!(v["value"]["mean"], alias["data"]["mean"]);
+    assert_eq!(v["value"]["stddev"], alias["data"]["stddev"]);
+    assert_eq!(v["value"]["capacity"], alias["data"]["capacity_limit"]);
+    assert_eq!(v["value"]["capacity_note"], alias["data"]["capacity"]);
+    assert_eq!(v["value"]["cycles"].as_array().expect("cycles").len(), 3);
+    assert!(
+        stats["data"].get("remaining").is_none(),
+        "only the asked section"
+    );
+}
+
+#[test]
+fn stats_below_min_history_is_unresolved_with_the_sample_count() {
+    // frob:ticket 01M48Q2AQXY69YKK3D2DC05ZWR
+    // frob:tests crates/frob/src/stats_cmd.rs::Stats
+    let repo = Repo::new();
+    let c = window(&repo, -3, 3, None);
+    repo.assign(id(&c), &repo.done_ticket("8"));
+    repo.ok(&["cycle", "close", id(&c)]);
+    let stats = repo.ok(&["stats"]);
+    assert_eq!(stats["data"]["velocity"]["status"], "unresolved");
+    assert_eq!(stats["data"]["velocity"]["samples"], 1);
+    assert_eq!(stats["data"]["velocity"]["need"], 3);
+    assert_eq!(stats["data"]["times"]["cycle_days"]["status"], "unresolved");
+}
+
+#[test]
 fn velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CycleVelocity
     let repo = Repo::new();

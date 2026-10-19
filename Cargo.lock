@@ -588,6 +588,7 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
+ "taffy",
  "tempfile",
  "thiserror",
  "tracing",
@@ -1093,6 +1094,7 @@ dependencies = [
  "frob-land",
  "frob-lease",
  "frob-ledger",
+ "frob-metrics",
  "frob-pm",
  "frob-release",
  "frob-tests",
@@ -1235,6 +1237,18 @@ dependencies = [
  "toml",
  "tracing",
  "ulid",
+]
+
+[[package]]
+name = "frob-metrics"
+version = "0.532.0"
+dependencies = [
+ "frob-ledger",
+ "frob-pm",
+ "schemars",
+ "serde",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -2491,6 +2505,7 @@ dependencies = [
 name = "gob-exec"
 version = "0.532.0"
 dependencies = [
+ "blake3",
  "gob-fs",
  "gob-log",
  "nix",
@@ -2851,6 +2866,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "grimble-arch"
+version = "0.532.0"
+dependencies = [
+ "gob-mdtest",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "gob-walk",
+ "grimble-bind",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
 name = "grimble-bind"
 version = "0.532.0"
 dependencies = [
@@ -2874,6 +2903,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "grimble-capabilities"
+version = "0.532.0"
+dependencies = [
+ "gob-ir",
+ "tracing",
+]
+
+[[package]]
 name = "grimble-check"
 version = "0.532.0"
 dependencies = [
@@ -2887,6 +2924,7 @@ dependencies = [
  "gob-symbols",
  "gob-text",
  "gob-walk",
+ "grimble-arch",
  "grimble-bind",
  "grimble-model",
  "schemars",
@@ -2901,6 +2939,7 @@ dependencies = [
 name = "grimble-lints"
 version = "0.532.0"
 dependencies = [
+ "gob-ir",
  "gob-languages",
  "gob-text",
  "thiserror",
@@ -4029,6 +4068,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
+name = "slotmap"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bdd58c3c93c3d278ca835519292445cb4b0d4dc59ccfdf7ceadaab3f8aeb4038"
+dependencies = [
+ "version_check",
+]
+
+[[package]]
 name = "smallvec"
 version = "1.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4093,6 +4141,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "taffy"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c8480887e8803986d96a7173729565520d4bbb721ad6b7ad6941a22897207aa"
+dependencies = [
+ "serde",
+ "slotmap",
 ]
 
 [[package]]

@@ -51,7 +51,7 @@ pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTa
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError, RuleRow, RuleSettings};
 pub use required::{PackFailure, RequiredReason};
-pub use unresolved::{RuleReport, UnresolvedReason};
+pub use unresolved::{RuleReport, UnknownClass, UnresolvedReason};
 
 /// A declared rule; implemented by `#[derive(Rule)]`. Object safe.
 pub trait Rule {

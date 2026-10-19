@@ -1,7 +1,7 @@
 [package]
 name = "grimble-lints"
 version.workspace = true
-description = "Syntactic detectors behind grimble's universal lint rules: host-path portability (PATH001-PATH003), swallowed errors (ERR001-ERR003) for Rust, Python, TypeScript and C#, and unpaired resource acquisition for TypeScript and JavaScript."
+description = "Syntactic detectors behind grimble's universal lint rules: host-path portability (PATH001-PATH003), swallowed errors (ERR001-ERR003) for Rust, Python, TypeScript and C#, and unpaired resource acquisition for TypeScript and JavaScript, and the first NEAT neatness rules (NEAT010 effect ceiling, NEAT031 dispatch-site-owns-logic) for Rust."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -12,6 +12,7 @@ authors.workspace = true
 workspace = true
 
 [dependencies]
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 thiserror = "2"

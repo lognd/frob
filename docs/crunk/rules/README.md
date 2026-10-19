@@ -20,12 +20,18 @@ Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this pa
 | HUMAN001 | human-review-stale | HUMAN | advisory | error | no | T0 | For every screen state that requires review (`review = "human"`, or `provenance = "agent"` without `review = "skip"`), compares the digest of its inputs (the spec entry, the declared sources, the resolved tokens the sources use per mode, the fonts, the render when one exists) with the digest in its `[[review]]` entry. |
 | HUMAN002 | human-review-rejected | HUMAN | advisory | error | no | T0 | When the `[[review]]` entry of a screen state has the current digest and the verdict `rejected`, the rule fires, naming the screen, the reviewer and their note. |
 | LAYER001 | z-index-off-layers | LAYER | error | error | no | T0 | Flags a `z-index: <integer>` whose value is not among the values of `[layers]`, naming the declared values. |
+| LAYOUT001 | child-overflows-parent | LAYOUT | error | error | no | T1 | Fires for each solved node whose rectangle extends more than half a pixel beyond its parent's on any side. |
+| LAYOUT002 | siblings-overlap | LAYOUT | warn | warn | no | T1 | Fires for each pair of siblings whose rectangles intersect by more than half a pixel in both directions. |
+| LAYOUT003 | node-clipped-by-viewport | LAYOUT | error | error | no | T1 | Fires for each solved node whose rectangle extends more than half a pixel beyond the viewport on any side. |
+| LAYOUT004 | content-outside-safe-area | LAYOUT | error | error | no | T1 | For a scene with a positive `safe_area`, fires for each text run or `interactive` node whose rectangle extends into the inset. |
+| LAYOUT005 | target-below-minimum-size | LAYOUT | error | error | no | T1 | Fires for each interactive node narrower or shorter than 24 px, the WCAG 2.2 AA (2.5.8) minimum target size in CSS px. |
 | ORG001 | stylesheet-outside-buckets | ORG | error | error | no | T0 | Flags a `.css` file under `css_root` that is in no `[org] buckets` directory and is not the tokens file or an `[org] entry` sheet. |
 | ORG002 | class-case | ORG | error | error | no | T0 | Flags a class selector that is not written in `[org] class_case` (`kebab`, `snake` or `camel`). |
 | ORG003 | component-prefix | ORG | error | error | no | T0 | In a `components` bucket sheet named `<name>.css`, flags every class that is not `<name>`, `<name>__*` or `<name>--*`. |
 | ORG004 | custom-property-outside-tokens | ORG | error | error | no | T0 | Flags a `--name:` definition in any stylesheet other than the tokens file. |
 | ORG005 | ungoverned-stylesheet | ORG | error | error | no | T0 | Flags a `.css` file under the project root but outside `css_root` that no `[org] ignore` glob covers. |
 | RADIUS001 | radius-off-scale | RADIUS | warn | warn | no | T0 | Flags a px or rem `border-radius` (or a corner longhand) that is not a step of `[scales] radii`, naming the bracketing steps and the nearest one. |
+| RESP001 | breakpoint-without-scene | RESP | error | error | no | T1 | Fires once for each `[breakpoints]` width that no scene file is solved at (a scene whose viewport width equals the breakpoint). |
 | SIZE001 | size-off-scale | SIZE | warn | warn | no | T0 | Flags a px or rem `width`, `height`, `min-width`, `min-height` or `max-height` that is not a step of `[scales] sizes` (of `spacing` when no sizes are declared), naming the bracketing steps and the nearest one. |
 | SLOP001 | default-palette-accent | SLOP | advisory | advisory | no | T0 | Flags a palette entry or a colour literal within two deltaE_OK points of a Tailwind indigo, violet or purple 400-700 stop. |
 | SLOP003 | gradient-abuse | SLOP | advisory | advisory | no | T0 | Flags the fourth gradient background in a project, and any gradient text (`background-clip: text`). |

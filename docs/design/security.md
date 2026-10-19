@@ -211,6 +211,15 @@ any sandbox, so they enter the same trust model:
   placeholders where the program supports it, and the review shows the
   template with these guards; a program supporting neither is
   high-risk "arguments come from file names".
+- **Implementation** (gob-exec `pack`, gob-check `tools`): `resolve_pack`
+  returns the first executable `$PATH` match, canonicalized, and refuses
+  one inside the work tree (relative entries included); the blake3
+  digest is recorded as `blake3:<hex>`. `Runner::run_pack` re-verifies the
+  digest, refuses `git -c`, scrubs the environment to `PACK_ENV`, sets
+  `GIT_CONFIG_NOSYSTEM=1` and closes stdin. The `ToolTrust` trait
+  (`RunOptions.tool_trust`) decides trust and names the trust command;
+  with none set the legacy by-name path remains until the repo trust
+  wiring lands.
 - Until trusted (store or base ref), the stage is Unresolved
   `untrusted` with the trust command, exactly like a WASM pack. This
   includes this repository's own stages (`cargo dev gen --check` and the
@@ -342,6 +351,10 @@ Read implies publish: the trust prompt and docs say "can read and print".
   (`[workspace] members`, materialized) or the user passes the root
   explicitly; vendored, ignored and submodule paths never trigger
   nested loading.
+- Implemented in `gob_config::nested_config_dirs`: a nested `grimble.toml`
+  loads only when its directory is in the root `[workspace] members`;
+  the tree is never walked, so vendored, ignored and submodule paths
+  cannot trigger loading.
 
 ### 2.10 Text, findings and fixes (I5, I7)
 

@@ -67,6 +67,7 @@ mod hot;
 mod location;
 pub mod markup;
 mod operator;
+mod precision;
 mod print;
 mod query;
 pub mod registry;
@@ -88,6 +89,9 @@ pub use eval::{
 pub use hot::{HotContext, Hotness};
 pub use location::Location;
 pub use operator::{AdapterOp, GroupOrder, Operator, Sort, Universal};
+pub use precision::{
+    SiteFacts, TypeAnswer, TypePrecision, TypeProvenance, TypeTrust, resolve_site,
+};
 pub use print::{FacetStream, PrintOpts};
 pub use query::{BinderRef, Model, Occurrence, OccurrenceKind, SymrefLookup, UnitInfo};
 pub use registry::{AtomEntry, DetectorEntry, DetectorKind, VocabEntry};

@@ -220,6 +220,22 @@ fn reason_words(reason: &UnresolvedReason) -> (&'static str, &'static str) {
             "record the execution order",
         ),
         UnresolvedReason::Opaque(_) => ("an opaque region was not analyzed", "annotate the region"),
+        UnresolvedReason::DynamicSite => (
+            "a type-dependent answer sits at a site with no type (Any, dynamic, reflection)",
+            "annotate the receiver with a concrete type",
+        ),
+        UnresolvedReason::ConflictAnnotationInference => (
+            "an annotation and local inference disagree",
+            "fix the annotation or the code; this is a likely bug",
+        ),
+        UnresolvedReason::UntrustedType => (
+            "a type fact is not trusted without checker closure",
+            "run the type checker in its strictest configuration",
+        ),
+        UnresolvedReason::NotRun => (
+            "the type checker was not run",
+            "run the configured type checker",
+        ),
         UnresolvedReason::Hole => ("the code has a hole or parse error", "fill or fix the hole"),
         UnresolvedReason::EdgeMay => (
             "the deciding edge is only possible, not certain",

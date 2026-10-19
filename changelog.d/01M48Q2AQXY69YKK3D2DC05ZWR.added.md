@@ -1,0 +1,1 @@
+Add `frob stats` (velocity, capacity, points remaining, throughput, cycle and lead time percentiles, cost per point) backed by the new `frob-metrics` crate; `cycle velocity` is now a hidden deprecated alias of `frob stats --section velocity`.

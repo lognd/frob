@@ -7,6 +7,7 @@ use crunk_ingest::ProjectStyles;
 use crunk_spec::DesignSpec;
 
 use crate::review::ReviewFacts;
+use crate::scene_files::SceneFacts;
 use crate::tailwind::TailwindFacts;
 use crate::token_files::TokenFacts;
 
@@ -36,6 +37,12 @@ pub trait CrunkHost {
     /// The authored `design/tokens/*.toml` files, when the pipeline loaded them (the TOKEN rules'
     /// input).
     fn tokens(&self) -> Option<&TokenFacts> {
+        None
+    }
+
+    // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+    /// The authored `design/scenes/*.scene.json` files, solved (the LAYOUT and RESP rules' input).
+    fn scenes(&self) -> Option<&SceneFacts> {
         None
     }
 
@@ -80,4 +87,22 @@ pub fn missing_token_style_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<Str
 /// How many authored token files `host` carries (the TOKEN rules' subject count).
 pub fn token_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
     host.tokens().map_or(0, |facts| facts.files.len())
+}
+
+// frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+/// Why a LAYOUT or RESP rule cannot run on `host`, if it cannot: no valid spec, or no solved
+/// scene files.
+pub fn missing_scene_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
+    if host.spec().is_none() {
+        return Some("no valid crunk.toml".to_owned());
+    }
+    match host.scenes() {
+        Some(facts) if !facts.files.is_empty() => None,
+        _ => Some("no design/scenes/*.scene.json files".to_owned()),
+    }
+}
+
+/// How many solved scene files `host` carries (the LAYOUT and RESP rules' subject count).
+pub fn scene_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
+    host.scenes().map_or(0, |facts| facts.files.len())
 }

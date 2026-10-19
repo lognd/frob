@@ -42,6 +42,13 @@
 | [CI010](CI010.md) | checkout-no-persist | advisory | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
 | [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
 
+## CLAIM
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CLAIM001](CLAIM001.md) | claim-refuted | error | manual | P+ | false | A claim's proposition is refuted by the declared flows, with the witness path. |
+| [CLAIM003](CLAIM003.md) | claim-unresolved | error | manual | P+ | false | A claim cannot be evaluated on this model, so it has no verdict. |
+
 ## COLOR
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -61,6 +68,18 @@
 |---|---|---|---|---|---|---|
 | [COV001](COV001.md) | untested-public-function | warn | manual | P- | true | A public function or method has no test that reaches it. |
 | [COV003](COV003.md) | tests-names-missing-test | error | manual | P- | false | Alias of TEST001; never emitted by this crate. |
+
+## CYCLE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CYCLE001](CYCLE001.md) | arch-import-cycle | error | manual | Pc | true | Crates (or files, outside any crate) that import each other. |
+
+## DEAD
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [DEAD001](DEAD001.md) | arch-dead-unit | warn | manual | P- | true | A private function or method that nothing references. |
 
 ## DOC
 
@@ -105,6 +124,14 @@
 | [EXPORT001](EXPORT001.md) | export-drift | error | manual | P+ | true | The generated exports match the spec. Each block is one source file in a project whose `crunk.toml` |
 | [EXPORT002](EXPORT002.md) | export-parity | error | manual | P+ | true | The same token resolves to the same value in every export. Each block is one source file in a |
 
+## FLOW
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [FLOW001](FLOW001.md) | flow-label-closure | error | manual | P+ | false | A flow's label exceeds the destination node's clearance and no declassify boundary lowers it. |
+| [FLOW002](FLOW002.md) | flow-unendorsed | error | manual | P+ | false | A flow into a higher-trust node has no endorse boundary reaching that trust. |
+| [FLOW003](FLOW003.md) | flow-no-rate | warn | manual | P+ | false | A flow from a foreign node declares no rate. |
+
 ## GRL
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -131,11 +158,27 @@
 | [INV001](INV001.md) | invariant-without-anchor | warn | manual | P- | false | An invariants document has no `frob:invariant` directive in code. |
 | [INV002](INV002.md) | forbidden-import | error | manual | P+ | false | A file imports something the `[invariants]` table forbids. |
 
+## LARGE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [LARGE001](LARGE001.md) | arch-large-unit | warn | manual | Pn | true | A function, method or type longer than the configured line limit. |
+
 ## LAYER
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [LAYER001](LAYER001.md) | z-index-off-layers | error | manual | P+ | true | A `z-index` must be one of the declared layers. Each block is one source file in a project whose |
+
+## LAYOUT
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [LAYOUT001](LAYOUT001.md) | child-overflows-parent | error | manual | P+ | true | A scene node stays inside its parent's rectangle. Each block is one scene file under `design/scenes/` of a default-preset project; the scene is solved with the deterministic layout engine (T1) and every node's absolute rectangle is compared with its parent's. |
+| [LAYOUT002](LAYOUT002.md) | siblings-overlap | warn | manual | P+ | true | Sibling scene nodes do not cover one another. Each block is one scene file under `design/scenes/`; siblings share a parent and their solved rectangles are compared pairwise. |
+| [LAYOUT003](LAYOUT003.md) | node-clipped-by-viewport | error | manual | P+ | true | No scene node extends past the viewport edge. Each block is one scene file under `design/scenes/`; every node's rectangle, the root included, is compared with the viewport the scene is solved against. |
+| [LAYOUT004](LAYOUT004.md) | content-outside-safe-area | error | manual | P+ | true | Text and interactive targets stay inside the safe area. Each block is one scene file under `design/scenes/`; the scene's `safe_area` is the inset from every viewport edge (notches, rounded corners, home indicators) that content must respect. |
+| [LAYOUT005](LAYOUT005.md) | target-below-minimum-size | error | manual | P+ | true | Interactive targets are large enough to hit. Each block is one scene file under `design/scenes/`; a node marked `"interactive": true` is a pointer or touch target. |
 
 ## MDL
 
@@ -239,6 +282,12 @@
 | [REL001](REL001.md) | release-without-cut | error | manual | P- | false | A product release tag that `frob release cut` did not create, or that no longer matches its cut. |
 | [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P- | false | Crates or the wheel whose version differs from the workspace version. |
 | [REL003](REL003.md) | changelog-fragment-required | error | manual | P- | false | A changelog fragment that is missing for the checked ticket or that fails validation. |
+
+## RESP
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [RESP001](RESP001.md) | breakpoint-without-scene | error | manual | P+ | true | Every declared breakpoint is solved by some scene. Each block is one scene file under `design/scenes/` of a project whose `crunk.toml` declares `[breakpoints]` (`sm` 640, `md` 768, `lg` 1024); the case's `config` selects whether scenes for the other breakpoints exist. |
 
 ## SCOPE
 

@@ -171,6 +171,7 @@ fn begin_tools(
         &core.root,
         &applicable_stages(&tiered, scope_files, affected.as_ref()),
         opts.tool_memo.as_ref(),
+        opts.tool_trust.as_ref(),
     )
 }
 

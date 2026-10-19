@@ -83,3 +83,27 @@ fn a_rule_report_is_clean_only_when_applied_examined_and_silent() {
     assert!(!r.is_certified_clean());
     assert_eq!(r.unresolved().count(), 1);
 }
+
+// frob:tests crates/gob-rules/src/unresolved.rs::UnresolvedReason.class
+// frob:tests crates/gob-rules/src/unresolved.rs::UnresolvedReason.remedy
+// frob:tests crates/gob-rules/src/unresolved.rs::UnknownClass.code
+#[test]
+fn type_reasons_round_trip_and_carry_class_and_remedy() {
+    use gob_rules::UnknownClass;
+    for (code, class) in [
+        ("dynamic-site", UnknownClass::DynamicSite),
+        ("not-run", UnknownClass::NotRun),
+        ("untrusted-type", UnknownClass::UntrustedType),
+        (
+            "conflict:annotation-vs-inference",
+            UnknownClass::UntrustedType,
+        ),
+    ] {
+        let r = UnresolvedReason::from_code(code);
+        assert_eq!(r.code(), code);
+        assert_eq!(r.class(), class);
+        assert!(r.remedy().is_some());
+    }
+    assert_eq!(UnknownClass::Undecidable.code(), "undecidable");
+    assert_eq!(UnknownClass::AnalysisLimit.code(), "analysis-limit");
+}

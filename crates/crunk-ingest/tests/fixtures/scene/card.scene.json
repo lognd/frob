@@ -1,0 +1,15 @@
+{
+  "viewport": { "width": 320, "height": 480 },
+  "root": {
+    "id": "page", "kind": "box",
+    "style": { "direction": "column", "width": 320, "height": 480, "padding": 16, "gap": 8 },
+    "children": [
+      { "id": "title", "kind": "text",
+        "text": { "content": "Hello", "font_size": 20 } },
+      { "id": "body", "kind": "text",
+        "text": { "content": "A long paragraph that wraps onto lines", "font_size": 10, "max_width": 120 } },
+      { "id": "button", "kind": "box",
+        "style": { "width": "50%", "height": 44 } }
+    ]
+  }
+}

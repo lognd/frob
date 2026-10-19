@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked by ~W1H7QCD (scene ingest and taffy solve not built)"
+at = "2026-10-19T09:46:00Z"
+actor = "lognd"
+rev = 1

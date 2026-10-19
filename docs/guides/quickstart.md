@@ -161,7 +161,7 @@ is dirty or the fragment is missing. `--dry-run` shows the plan.
 ```sh
 frob board
 frob cycle show
-frob cycle velocity
+frob stats --section velocity
 frob release status
 ```
 

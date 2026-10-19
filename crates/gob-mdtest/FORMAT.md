@@ -35,7 +35,15 @@ snapshots with `INSTA_UPDATE=always` (or `cargo insta review`); CI runs with
 
 - first token: the language (`rust`, `py`, `toml`, ...).
 - `rule=ID`: rule under test; required unless the suite header sets it.
-- `expect=fire|clean`: required.
+- `expect=fire|clean|unresolved|notapplicable`: required; see Outcome classes.
+- `reason=TEXT`: unresolved or notapplicable only; for unresolved a reason
+  code (`hole`), for notapplicable a substring of the reported reason.
+- `subjects=N` / `subjects>=N`: assert the rule's examined subject count
+  exactly or at least. `expect=clean` defaults to `subjects>=1`.
+- `fidelity=` / `parse=`: recorded for the language matrix; not yet enforced.
+- `known-gap=~TICKET`: expect=unresolved only; the block records a gap that
+  the ticket will close.
+- `fixed`: expect=clean only; the block is the regression for a former gap.
 - `config=<inline toml>`: optional; quote with `"` when it has spaces.
 - `file=<name>`: optional; defaults to `case.<ext>` chosen by language.
 
@@ -72,7 +80,24 @@ column and message for unmatched findings.
 
 - `expect=fire` with markers: findings must equal the markers.
 - `expect=fire` without markers: at least one finding of the rule.
-- `expect=clean`: zero findings; markers are not allowed.
+- `expect=clean`: certified clean, see below; markers are not allowed.
+
+## Outcome classes
+
+- `fire`: the rule reports a finding (an Unresolved finding alone does not
+  count).
+- `clean`: certified clean. The rule examined at least one subject (when the
+  runner reports subject accounting), was applicable, and produced zero
+  findings at any severity. A rule that examines nothing fails.
+- `unresolved`: the rule could not decide. Only Unresolved (and Advisory)
+  findings are allowed and at least one Unresolved is required; an Error
+  fails. `unresolved[REASON]:` markers and `reason=` assert the reason code.
+- `notapplicable`: the runner reports the rule does not apply to the
+  subject, with a reason, and no findings. A NotApplicable result fails an
+  `expect=clean` block.
+
+Runners returning a bare `Vec<Finding>` report no subject accounting, so
+only an explicit `subjects=` constraint is checked for them.
 
 ## Positive controls
 

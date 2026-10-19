@@ -1,0 +1,1 @@
+grimble: `noflow`, `reach` and `bound` claims are now evaluated. A violated `noflow` (or a `reach` with no declared path) raises CLAIM001 with the path; a claim the model cannot decide (every `bound` today) raises CLAIM003 as Unresolved with the reason.

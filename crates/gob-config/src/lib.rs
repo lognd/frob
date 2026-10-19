@@ -42,6 +42,7 @@ mod local;
 mod materialize;
 pub mod rules;
 mod schema;
+mod workspace;
 
 pub use artifact::{ArtifactBody, ArtifactEntry, ArtifactFamily, all_artifacts};
 pub use check::check;
@@ -63,6 +64,7 @@ pub use rules::cfg001::Cfg001;
 pub use schema::schema;
 pub use serde;
 pub use toml;
+pub use workspace::{nested_config_dirs, workspace_members};
 
 /// Path of the product config file under `root`: `<root>/<product>.toml`.
 pub(crate) fn config_path(root: &std::path::Path, product: &str) -> std::path::PathBuf {

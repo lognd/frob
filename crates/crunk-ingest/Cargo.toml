@@ -31,6 +31,7 @@ serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "2"
 tree-sitter = "=0.27.0"
 tracing = "0.1"
+taffy = { version = "0.15", default-features = false, features = ["std", "taffy_tree", "flexbox", "block_layout", "content_size"] }
 
 [dev-dependencies]
 gob-git = { version = "0.532.0", path = "../gob-git" }

@@ -16,6 +16,7 @@ use crate::SpawnCount;
 use crate::counter::record;
 use crate::semaphore::Semaphore;
 use crate::{ExecError, Program};
+use crate::{PACK_ENV, ProcessPack};
 
 /// Default cap on captured output per stream: 64 MiB (a knob of the caller's config).
 pub const DEFAULT_OUTPUT_CAP: usize = 64 * 1024 * 1024;
@@ -143,6 +144,40 @@ impl Runner {
         self.run_with_env(spec, &EnvPolicy::Inherit)
     }
 
+    /// Run a verified [`ProcessPack`]: digest re-checked just before the spawn, scrubbed
+    /// environment ([`PACK_ENV`] on top of the baseline), `GIT_CONFIG_NOSYSTEM=1`, stdin closed.
+    /// A `-c` argument to `git` is refused (no config passthrough).
+    ///
+    /// # Errors
+    /// [`ExecError::DigestChanged`] when the binary differs from the recorded digest,
+    /// [`ExecError::NotAllowed`] for a `-c` argument to `git`, otherwise the errors of [`Runner::run`].
+    pub fn run_pack(
+        &self,
+        pack: &ProcessPack,
+        args: Vec<String>,
+        cwd: Option<PathBuf>,
+        timeout: Duration,
+    ) -> Result<Output, ExecError> {
+        pack.verify()?;
+        if pack.name == "git" && args.iter().any(|a| a == "-c" || a.starts_with("-c=")) {
+            warn!(program = %pack.name, "-c passthrough refused for a process pack");
+            return Err(ExecError::NotAllowed {
+                program: format!("{} -c", pack.name),
+            });
+        }
+        let spec = Spec {
+            program: Program::Pack {
+                path: pack.path.clone(),
+            },
+            args,
+            cwd,
+            env: Vec::new(),
+            timeout,
+            capture: true,
+        };
+        self.run_with_env(&spec, &EnvPolicy::scrubbed(PACK_ENV.iter().copied()))
+    }
+
     /// Like [`Runner::run`], with the child environment built by `env`: the parent's whole
     /// environment for [`EnvPolicy::Inherit`], or an empty one plus the allowlisted names for
     /// [`EnvPolicy::Scrub`]. `Spec::env` additions are applied last under either policy.
@@ -171,11 +206,15 @@ impl Runner {
         if let Some(kept) = env.resolve(std::env::vars_os()) {
             cmd.env_clear().envs(kept);
         }
+        if matches!(spec.program, Program::Pack { .. }) {
+            // frob:ticket 01M3ZX7VPGRERTZNVS5VR437JY
+            cmd.env("GIT_CONFIG_NOSYSTEM", "1");
+        }
         cmd.envs(spec.env.iter().map(|(k, v)| (k, v)));
         if let Some(cwd) = &spec.cwd {
             cmd.current_dir(cwd);
         }
-        if spec.capture {
+        if spec.capture || matches!(spec.program, Program::Pack { .. }) {
             cmd.stdin(Stdio::null())
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped());

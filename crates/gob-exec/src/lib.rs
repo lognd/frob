@@ -19,6 +19,7 @@ mod counter;
 mod discover;
 mod env;
 mod error;
+mod pack;
 pub mod proc001;
 mod program;
 mod runner;
@@ -37,5 +38,7 @@ pub use gob_fs::{
     Style, canonical, has_dot_component, path_has_dot_component, path_strictly_inside,
     simplify_verbatim, strictly_inside,
 };
+// frob:ticket 01M3ZX7VPGRERTZNVS5VR437JY
+pub use pack::{PACK_ENV, ProcessPack, digest_file, resolve_pack};
 pub use program::Program;
 pub use runner::{DEFAULT_OUTPUT_CAP, Limits, Outcome, Output, Runner, Spec};
