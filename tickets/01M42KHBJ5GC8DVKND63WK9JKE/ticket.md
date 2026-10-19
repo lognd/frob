@@ -2,7 +2,8 @@
 id = "01M42KHBJ5GC8DVKND63WK9JKE"
 title = "cargo dev ci --remote flag registered in main.rs (env CARGO_DEV_CI_REMOTE already works)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
