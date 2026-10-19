@@ -91,6 +91,8 @@ impl Product for FrobProduct {
             .register::<crate::rule_cmd::RuleFmt>()
             // frob:ticket 01M3ZX7HCQYMTNB9S8ANCZA04W
             .register::<crate::rule_cmd::RuleNew>();
+        // frob:ticket 01M5ANA1DJ6V3MDF3NJZXAS6JW
+        let cli = cli.register::<crate::explain_cmd::Explain>();
         let cli = frob_lease::register(cli);
         let cli = frob_worktree::register(cli);
         let cli = frob_evidence::register(cli);

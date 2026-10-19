@@ -18,6 +18,7 @@ mod deprecated_aliases;
 mod doc_commands;
 mod e2e_init_loop;
 mod envelope_invariant;
+mod explain;
 mod first_run;
 mod fragment;
 mod gc;

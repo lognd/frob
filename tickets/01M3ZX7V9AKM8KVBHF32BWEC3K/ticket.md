@@ -2,16 +2,17 @@
 id = "01M3ZX7V9AKM8KVBHF32BWEC3K"
 title = "trust --follow: trust pairs reachable on a fetched protected branch"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-03T03:51:19Z"
+updated = "2026-10-19T18:41:20Z"
 idempotency_key = "m2-sec-trust-follow"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-trust/src/follow.rs"]
+scope = ["crates/gob-trust/src/follow.rs", "crates/gob-trust/src/lib.rs", "docs/design/security.md", "crates/gob-trust/tests/follow.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,11 +24,11 @@ target = "01M3ZX7V587K71E94E0AE4GWW8"
 
 [[acceptance]]
 text = "Given `trust --follow origin/main`, when a pack changes on origin/main and is fetched, then the new pair is trusted with no prompt"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a pair present only in an unpushed commit, when consulted, then it is untrusted"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.3 (follow a protected branch).

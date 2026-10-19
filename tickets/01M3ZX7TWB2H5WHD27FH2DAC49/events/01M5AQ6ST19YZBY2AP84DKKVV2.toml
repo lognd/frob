@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T18:35:00Z"
+digest = "3293efb7ed6ffe133361901bbb54ef07753d2bfcc4582bf4bab72a8432a9c9f2"
+exit_code = 0
+inline = """
+
+running 1 test
+test a_row_written_from_one_checkout_hits_from_the_other ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.04s
+
+    Blocking waiting for file lock on build directory
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 28s
+     Running tests/shared.rs (target/debug/deps/shared-0c2188e48cf388ef)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-cache --test shared a_row_written_from_one_checkout_hits_from_the_other"
+size = 439
+status = "measured"
+at = "2026-10-19T18:35:00Z"
+actor = "lognd"
+rev = 1
