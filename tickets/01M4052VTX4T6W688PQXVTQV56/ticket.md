@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a run that stopped rate-limited, when `frob check` runs, then MIR001 reports rate-limited with the next window"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a successful run within N hours, when check runs, then no MIR001 is emitted"
