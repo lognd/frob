@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:36Z"
 updated = "2026-10-19T07:16:57Z"
 idempotency_key = "m2-sec-config-diff"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/frob/src/config_cmd.rs", "crates/grimble/src/config_diff.rs", "crates/grimble/src/config_for.rs"]
+scope = ["crates/frob/src/config_cmd.rs", "crates/grimble/src/config_diff.rs", "crates/grimble/src/config_for.rs", "crates/grimble/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
