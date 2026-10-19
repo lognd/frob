@@ -1261,11 +1261,13 @@ dependencies = [
  "blake3",
  "frob-ledger",
  "gob-diagnostics",
+ "gob-git",
  "gob-time",
  "gob-trust",
  "schemars",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
  "tracing",
 ]

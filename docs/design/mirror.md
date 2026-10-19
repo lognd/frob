@@ -541,6 +541,11 @@ fields) return only the authorized operations.
   live API in a sandbox repository before the first live run, and the
   adapter's capabilities record cites the result.
 
+The git-ref-backed shard store is `frob_mirror::shardstore::BranchShardStore`:
+each key is `<prefix>/<key>.json` on a ref, `put_if` is a content-hash
+compare-and-swap, and a lost ref race is re-read and re-checked rather than
+blindly retried.
+
 ### 3.7 Stated properties and assumptions
 
 Properties (formal statements and TLC results in

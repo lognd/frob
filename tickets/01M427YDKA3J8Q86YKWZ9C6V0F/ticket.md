@@ -2,13 +2,13 @@
 id = "01M427YDKA3J8Q86YKWZ9C6V0F"
 title = "Audit the sh dependency: 17 tests (gob-check, gob-exec, frob-check) fail on Windows without Git for Windows' sh on PATH"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
-points = 3
+points = 2
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-04T01:20:08Z"
-updated = "2026-10-04T01:20:08Z"
+updated = "2026-10-19T19:54:50Z"
 scope = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/tests/**", "docs/design/paths.md"]
 
 [[acceptance]]
