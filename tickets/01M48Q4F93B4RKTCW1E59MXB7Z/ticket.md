@@ -4,10 +4,11 @@ title = "Adapter-less text is Unresolved (reason fidelity, rolled up) for capabi
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:01Z"
-updated = "2026-10-06T23:25:21Z"
+updated = "2026-10-19T15:15:26Z"
 scope = ["crates/gob-check/**", "crates/frob-check/**", "docs/reference/fidelity.md"]
 
 [[links]]
