@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:17Z"
-updated = "2026-10-19T23:49:24Z"
+updated = "2026-10-19T23:49:43Z"
 scope = ["crates/frob-mirror/**", "docs/design/mirror.md", "design/model.grmb"]
 
 [[acceptance]]
