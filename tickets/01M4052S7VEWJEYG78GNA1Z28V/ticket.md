@@ -43,7 +43,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a create, when it completes, then the history cursor taken before listing is the one stored (F3)"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.3 (Create protocol; F3, F5).
