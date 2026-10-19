@@ -2,13 +2,13 @@
 id = "01M4D94X9ESER47HCP4DTW2X7C"
 title = ".NET and Unity profile: dotnet build SARIF with Roslyn CA/IDE, VSTHRD and Microsoft.Unity.Analyzers, USP suppressors on"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:48Z"
-updated = "2026-10-08T08:12:48Z"
+updated = "2026-10-19T17:15:09Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
 
 [[acceptance]]
