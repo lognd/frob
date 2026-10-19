@@ -4,9 +4,10 @@ title = "Mirror: add a [mirror] config table (repo, kid, bot ids) so recreate ne
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:18Z"
-updated = "2026-10-19T21:14:18Z"
+updated = "2026-10-19T23:52:43Z"
 scope = ["crates/gob-config/**"]
 +++
 
