@@ -2,7 +2,7 @@
 id = "01M3ZX80EYSD0XF6T2DPWS7RWW"
 title = "Reserved pack names, config_tables namespace and provenance prefixes"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
