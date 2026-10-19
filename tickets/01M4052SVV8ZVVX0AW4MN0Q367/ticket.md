@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given history beyond the retained window, when read, then the gap is recorded and appears in the gap listing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a field changed twice between runs with history retained, when read, then both values and their authors are captured"
