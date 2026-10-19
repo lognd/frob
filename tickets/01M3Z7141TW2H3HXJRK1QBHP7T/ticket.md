@@ -2,7 +2,8 @@
 id = "01M3Z7141TW2H3HXJRK1QBHP7T"
 title = "G10: grimble-arch: CYCLE, LARGE, DEAD"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
