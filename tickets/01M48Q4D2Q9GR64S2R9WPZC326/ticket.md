@@ -8,7 +8,7 @@ points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:40:59Z"
-updated = "2026-10-19T21:12:04Z"
+updated = "2026-10-19T21:12:53Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/**"]
 
 [[links]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "a Universal rule without its matrix rows fails naming it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the allowlist entries are per case kind with tickets"
