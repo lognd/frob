@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-19T06:47:21Z"
+updated = "2026-10-19T06:47:26Z"
 idempotency_key = "m2-packs-config-for"
 labels = ["milestone:2", "area:packs"]
-scope = ["crates/grimble/src/config_for.rs", "crates/frob/src/config_cmd.rs", "crates/grimble/src/lib.rs", "crates/grimble/Cargo.toml", "crates/grimble/tests/**", "Cargo.lock"]
+scope = ["crates/grimble/src/config_for.rs", "crates/frob/src/config_cmd.rs", "crates/grimble/src/lib.rs", "crates/grimble/Cargo.toml", "crates/grimble/tests/**", "Cargo.lock", "docs/design/cli.md"]
 
 [[links]]
 kind = "blocked-by"
