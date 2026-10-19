@@ -2,13 +2,13 @@
 id = "01M48Q4D2Q9GR64S2R9WPZC326"
 title = "Coverage meta-test: required cases per polarity, tier and must_measure"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:40:59Z"
-updated = "2026-10-19T20:20:55Z"
+updated = "2026-10-19T20:49:48Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/**"]
 
 [[links]]
