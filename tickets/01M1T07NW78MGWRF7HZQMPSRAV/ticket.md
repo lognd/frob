@@ -8,7 +8,7 @@ points = 3
 parent = "01M1QDTYTRW714S858S0TP6YWM"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-19T21:49:58Z"
+updated = "2026-10-19T21:50:33Z"
 aliases = ["T-3975"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/testing/_models.py", "crates/frob-evidence/**", "docs/design/build-test-ci.md"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "given the fix, when a test outcome is xfail/xpass/skipped and no explicit opt-in is declared, then it does not satisfy frob:tests or ticket evidence"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "given an explicit opt-in is declared, when such an outcome occurs, then it is reported as a distinct countable state, not folded into passed"
