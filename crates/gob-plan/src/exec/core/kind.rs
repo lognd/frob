@@ -66,6 +66,8 @@ pub(crate) enum KindTest {
     Attribute,
     /// A style rule.
     StyleRule,
+    /// A class selector in a style rule's selector list.
+    ClassSelector,
     /// A style declaration.
     Declaration,
     /// A custom property definition.
@@ -99,6 +101,7 @@ impl KindTest {
             "element" => Self::Element,
             "attribute" => Self::Attribute,
             "style_rule" => Self::StyleRule,
+            "class_selector" => Self::ClassSelector,
             "declaration" => Self::Declaration,
             "custom_property" => Self::CustomProperty,
             _ => return None,
@@ -176,6 +179,7 @@ impl KindTest {
                 _ => None,
             },
             Self::StyleRule => yes(unit_kind_is(model, node, style::STYLE_RULE)),
+            Self::ClassSelector => yes(style::is_class_selector(model, node)),
             Self::CustomProperty => yes(unit_kind_is(model, node, style::CUSTOM_PROPERTY)),
             Self::Declaration => yes(matches!(n.op(),
                 Operator::Adapter(a) if a.lang == style::LANG && a.name == "declaration")),

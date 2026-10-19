@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked: check --ticket TOOL001 from stale generated docs/reference/grl/catalog.md at base b3a8620cb (class_selector), filed as ~KZ6SK09; fix lives in a docs/reference owner's lease"
+at = "2026-10-19T04:15:56Z"
+actor = "lognd"
+rev = 1

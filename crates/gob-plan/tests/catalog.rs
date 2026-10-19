@@ -43,6 +43,7 @@ fn codes(schema: &ConfigSchema, body: &str) -> Vec<(Code, String)> {
 
 // frob:ticket 01M3ZX7DMYNTWB3AP04CDMAECH
 // frob:tests crates/gob-plan/src/catalog/mod.rs::kind
+// frob:tests crates/gob-plan/src/catalog/mod.rs::Kind.field
 // frob:tests crates/gob-plan/src/catalog/mod.rs::render
 #[test]
 fn every_kind_has_a_query_languages_and_unknown_flags() {

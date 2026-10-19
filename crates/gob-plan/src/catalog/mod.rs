@@ -232,6 +232,13 @@ pub const KINDS: &[Kind] = &[
             field("excused", FieldType::Bool, "true", false),
         ],
     ),
+    kind_of(
+        "class_selector",
+        "Q49 style",
+        STYLE,
+        "a class selector such as `.card` in a style rule's selector list",
+        &[field("name", FieldType::Str, "\"card\"", false)],
+    ),
     kind_of("comment", "Q10", Answers::Everywhere, "a comment", &[]),
     kind_of(
         "custom_property",
@@ -507,6 +514,7 @@ mod tests {
             "element",
             "attribute",
             "style_rule",
+            "class_selector",
             "declaration",
             "custom_property",
             "directive",
