@@ -10,7 +10,7 @@
 //! | `COV003` | Error | alias | never emitted, see below |
 //! | `TODO001` | Error | file | a comment carries a bare upper-case work marker |
 //! | `TODO002` | Warn | repo | a `frob:todo` names a done or dropped ticket |
-//! | `DOC001` | Warn | file | a public Rust item has no doc comment |
+//! | `DOC001` | Warn | file | a public Rust item has no doc comment, or a public Python unit no docstring |
 //! | `DOC002` | Error | file | a markdown link points at a missing path or heading |
 //! | `REF001` | Error | file | a `frob:ticket` names no ticket of the ledger |
 //! | `INV001` | Warn | repo | `invariants/<slug>.md` has no `frob:invariant <slug>` in code |
