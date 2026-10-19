@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-19T16:19:50Z"
+updated = "2026-10-19T16:22:01Z"
 idempotency_key = "m2-mirror2-gh-writes"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/github/write.rs"]
@@ -31,7 +31,7 @@ target = "01M4052QNSFSWV0SQ0A05XQ12K"
 
 [[acceptance]]
 text = "Given a changed label set, when published, then only add-label and remove-label calls for frob: labels are made and a tracker-owned label survives"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a dropped ticket, when published, then the issue is closed with the reason and never deleted"
