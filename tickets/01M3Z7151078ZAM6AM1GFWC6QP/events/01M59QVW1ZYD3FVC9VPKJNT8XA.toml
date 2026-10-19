@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T09:28:44Z"
+digest = "281269baa6fb84404814edf4d3c5b025281cd627148835dcad2873c8297bf6c7"
+exit_code = 0
+inline = """
+
+running 1 test
+test ruff_shape_dispatcher_fires_neat031_and_fix_is_clean ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running tests/neat.rs (target/debug/deps/neat-97b442ca80e04e72)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-lints --test neat ruff_shape_dispatcher_fires_neat031_and_fix_is_clean"
+size = 319
+status = "measured"
+at = "2026-10-19T09:28:44Z"
+actor = "lognd"
+rev = 1
