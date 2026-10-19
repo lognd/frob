@@ -8,10 +8,10 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:35Z"
-updated = "2026-10-19T11:56:54Z"
+updated = "2026-10-19T11:56:55Z"
 idempotency_key = "logand-gaps-K1"
 labels = ["adoption:logand-app", "grimble"]
-scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**", "docs/design/boundaries.md", "docs/design/grmb-spec.md"]
+scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**", "docs/design/boundaries.md", "docs/design/grmb-spec.md", "docs/reference/rules/**"]
 
 [[links]]
 kind = "relates"
