@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the same flows with a boundary and a rate declared, when grimble check runs, then no finding"
-bound = false
+bound = true
 +++
 
 Repro 06-label-closure-not-checked (~/projects/frob-v2-repros/logand-grimble-20261009/06-label-closure-not-checked): grimble-model.md section 3 kernel; no kernel rule is registered (rules are DSL, MDL, PARSE, SYS001/2/4 only). Relates ~QNDWNDM (G16); this is the flow-side half, claim verdicts are the sibling ticket.
