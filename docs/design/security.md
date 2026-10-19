@@ -144,6 +144,9 @@ frob, grimble and crunk.
   effects, the new ones denied) until a person reviews it, as browsers
   do for extension updates that ask for more. A revocation list on the
   protected branch overrides every entry.
+  Implemented in `gob_trust::follow` (pure: `FollowRecord` for the ref, URL and
+  tip with frob-only fast-forward `advance`; `FollowTrust` decides over the lock
+  read at the merge-base, so an unpushed pair is untrusted).
 - **The review** (section 2.12) runs only on a TTY, never with a known
   agent marker in the environment (for example `CLAUDECODE=1`; the
   refusal tells the agent to stop and tell the user which pack is

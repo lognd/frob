@@ -27,6 +27,8 @@
 pub mod baseref;
 pub mod effects;
 mod error;
+// frob:ticket 01M3ZX7V9AKM8KVBHF32BWEC3K
+pub mod follow;
 // frob:ticket 01M3ZX7TR7HMSXPCQSHFSG8SMS
 mod guard;
 mod key;
