@@ -476,6 +476,9 @@ is read identically by every product (architecture.md section 6):
 | Dependent type checking | normalization of open terms with general recursion | the language's own termination checker must accept the definition; otherwise the body is opaque (`[compute] normalization`) | `normalization:unverified` |
 | Notebook and spreadsheet evaluation order | the user's execution history | a recorded execution order (notebook metadata) or declared dependency order (`[compute] notebook_order`) | `order:unrecorded` |
 | Shell and build-script word splitting, `eval`, dynamic includes | string semantics at run time | none possible; the region is opaque and the enclosing unit's edges are May | `dynamic:string-code` |
+| Type-dependent query at an `Any` receiver or with no type source | the type of the receiver is not recoverable | a type annotation or a trusted checker on the site (cohesion.md 2.1) | `dynamic-site` |
+| Annotation and local inference disagree on a type | two sources of unequal precision | reconcile the annotation with the inferred type | `conflict:annotation-vs-inference` |
+| Type from an untrusted source, or the type source did not run | an unreviewed or absent checker run | trust the source (`--trust-from`) or run the checker | `untrusted-type`, `not-run` |
 
 Rules read the reason code and degrade with it: on an opaque subject a
 P+ rule reports no Error or Warn (it cannot prove an offender) and
