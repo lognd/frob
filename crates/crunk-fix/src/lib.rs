@@ -15,5 +15,5 @@
 mod collect;
 mod run;
 
-pub use collect::{Collected, collect, is_stylesheet};
-pub use run::{FixError, FixReport, apply_findings, run};
+pub use collect::{collect, is_stylesheet, Collected};
+pub use run::{apply_findings, run, FixError, FixReport};

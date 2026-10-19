@@ -38,9 +38,15 @@ fn dry_run_and_real_run_agree_and_leave_unfixable_sites_alone() {
     assert_eq!(c1, 0, "{dry} {e1}");
     let (c2, real, e2) = run_for_test(&cli, &["fix"], dir.path());
     assert_eq!(c2, 0, "{real} {e2}");
-    let strip = |s: &str| s.replace("\"dry_run\":true", "").replace("\"dry_run\":false", "");
+    let strip = |s: &str| {
+        s.replace("\"dry_run\":true", "")
+            .replace("\"dry_run\":false", "")
+    };
     let field = |s: &str| -> Vec<String> {
-        s.lines().filter(|l| l.contains("files")).map(str::to_owned).collect()
+        s.lines()
+            .filter(|l| l.contains("files"))
+            .map(str::to_owned)
+            .collect()
     };
     assert_eq!(field(&strip(&dry)), field(&strip(&real)));
     assert_eq!(std::fs::read_to_string(&css).expect("read"), body);

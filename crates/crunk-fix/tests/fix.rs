@@ -63,9 +63,18 @@ fn dry_run_diff_equals_real_diff_and_writes_nothing() {
     let body = "a { color: #fff; }";
     let dir = project("a.css", body);
     let mut files = FileInterner::new();
-    let f = finding(&mut files, "a.css", (11, 15), "var(--c)", Applicability::Machine);
+    let f = finding(
+        &mut files,
+        "a.css",
+        (11, 15),
+        "var(--c)",
+        Applicability::Machine,
+    );
     let dry = apply_findings(dir.path(), std::slice::from_ref(&f), &files, true).unwrap();
-    assert_eq!(std::fs::read_to_string(dir.path().join("a.css")).unwrap(), body);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("a.css")).unwrap(),
+        body
+    );
     let real = apply_findings(dir.path(), &[f], &files, false).unwrap();
     assert_eq!(dry.applied.diffs, real.applied.diffs);
     assert!(dry.dry_run && !real.dry_run);
@@ -78,16 +87,31 @@ fn out_of_tolerance_finding_without_fix_is_left_alone() {
     let mut files = FileInterner::new();
     let id = files.intern("a.css");
     let _ = id;
-    let f = Finding::new("COLOR001".parse().unwrap(), Severity::Error, None, "m", "a.css");
+    let f = Finding::new(
+        "COLOR001".parse().unwrap(),
+        Severity::Error,
+        None,
+        "m",
+        "a.css",
+    );
     let r = apply_findings(dir.path(), &[f], &files, false).unwrap();
     assert!(r.applied.diffs.is_empty());
-    assert_eq!(std::fs::read_to_string(dir.path().join("a.css")).unwrap(), body);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("a.css")).unwrap(),
+        body
+    );
 }
 
 #[test]
 fn non_machine_fixes_are_not_collected() {
     let mut files = FileInterner::new();
-    let f = finding(&mut files, "a.css", (0, 1), "x", Applicability::MaybeIncorrect);
+    let f = finding(
+        &mut files,
+        "a.css",
+        (0, 1),
+        "x",
+        Applicability::MaybeIncorrect,
+    );
     assert!(collect(&[f], &files).fixes.is_empty());
 }
 
@@ -101,7 +125,10 @@ fn jsx_style_prop_sites_are_never_fixed() {
     assert!(c.fixes.is_empty());
     assert_eq!(c.skipped_non_stylesheet, 1);
     apply_findings(dir.path(), &[f], &files, false).unwrap();
-    assert_eq!(std::fs::read_to_string(dir.path().join("a.tsx")).unwrap(), body);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("a.tsx")).unwrap(),
+        body
+    );
 }
 
 #[test]
@@ -115,7 +142,13 @@ fn stylesheet_extensions() {
 fn out_of_range_edit_is_skipped() {
     let dir = project("a.css", "a { color: #fff; }");
     let mut files = FileInterner::new();
-    let f = finding(&mut files, "a.css", (11, 15), "var(--c)", Applicability::Machine);
+    let f = finding(
+        &mut files,
+        "a.css",
+        (11, 15),
+        "var(--c)",
+        Applicability::Machine,
+    );
     let g = finding(&mut files, "a.css", (500, 600), "x", Applicability::Machine);
     let r = apply_findings(dir.path(), &[f, g], &files, false).unwrap();
     assert_eq!(r.applied.skipped.len(), 1);
