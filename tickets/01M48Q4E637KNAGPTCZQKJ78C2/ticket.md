@@ -2,7 +2,8 @@
 id = "01M48Q4E637KNAGPTCZQKJ78C2"
 title = "Measured fidelity and a capability-matrix snapshot for every adapter"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
