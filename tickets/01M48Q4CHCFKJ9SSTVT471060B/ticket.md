@@ -8,7 +8,7 @@ points = 5
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:40:59Z"
-updated = "2026-10-19T11:26:15Z"
+updated = "2026-10-19T11:26:25Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**", "docs/reference/rules/*.md"]
 
 [[links]]
@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "FORMAT.md documents the vocabulary"
-bound = false
+bound = true
 +++
 
 testing.md 1-2: expect=fire|clean|unresolved|notapplicable, markers advisory: and unresolved[REASON]: with required, subjects= / subjects>= (clean defaults to >=1), fidelity=, parse=, spanless header assertions, known-gap and fixed modifiers shared with GRL section 9. Migrate inv002.md (its unresolved case is an unmarked fire) and add Unresolved blocks to cov001, doc001, todo001, ref001. Design: docs/design/testing.md (D106); audit: notes/research/u-testing-audit.md.
