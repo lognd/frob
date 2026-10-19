@@ -1,0 +1,10 @@
+kind = "create"
+title = "Frob rule corpora: add the polarity-shaped unresolved case for 39 rules (see coverage-allowlist.toml kind=unresolved)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-check/tests/mdtest/**", "crates/*/tests/mdtest/**"]
+body = "Burn down the [[gap]] kind=unresolved entries for product frob in crates/gob-mdtest/coverage-allowlist.toml; found while working ~WPZC326."
+at = "2026-10-19T21:04:48Z"
+actor = "lognd"
+rev = 1

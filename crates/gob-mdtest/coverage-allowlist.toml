@@ -2,6 +2,260 @@
 # This file may only shrink; see "Rule coverage" in crates/gob-mdtest/FORMAT.md.
 # crunk and grimble declare their rules with an mdtest corpus each, so they have no entries.
 
+# Case-kind gaps (docs/design/testing.md section 3): keyed by (product, rule, kind), one ticket per kind.
+
+[[gap]]
+product = "frob"
+rule = "CFG001"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "CI001"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "CI003"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "CI006"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "CI007"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "CI010"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "CI014"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "DOC002"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "DSL001"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "DSL002"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "DSL003"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "EXC014"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "EXC016"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "EXC017"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "GRL016"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PARSE001"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PERF001"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM003"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM004"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM005"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM006"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM007"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM008"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM009"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM010"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM011"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM012"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM031"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PM032"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "PROC001"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "READ001"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "SIB001"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "TICK006"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "TICK007"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "TICK008"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "TICK009"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "TODO002"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "TOOL001"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "TOOL002"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
+rule = "COV001"
+kind = "vacuous"
+ticket = "~4KVRPBF"
+
+[[gap]]
+product = "frob"
+rule = "REF001"
+kind = "vacuous"
+ticket = "~4KVRPBF"
+
+[[gap]]
+product = "frob"
+rule = "TODO002"
+kind = "vacuous"
+ticket = "~4KVRPBF"
+
 # Language-matrix gaps (docs/design/testing.md section 4): a Universal rule cell with no block yet.
 
 [[matrix_gap]]
