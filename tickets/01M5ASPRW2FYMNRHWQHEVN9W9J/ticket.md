@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T19:20:09Z"
-updated = "2026-10-19T20:44:03Z"
+updated = "2026-10-19T20:46:33Z"
 scope = ["crates/frob-mirror/src/github/adapter.rs", "crates/frob-mirror/src/github/mod.rs", "docs/design/mirror.md"]
 +++
 
