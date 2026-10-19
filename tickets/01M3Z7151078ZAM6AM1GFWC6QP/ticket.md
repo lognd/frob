@@ -8,7 +8,7 @@ points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-19T09:23:59Z"
+updated = "2026-10-19T09:28:44Z"
 idempotency_key = "m2-neat"
 labels = ["milestone:2"]
 scope = ["crates/grimble-lints/**", "crates/gob-ir/**", "docs/design/neatness.md"]
@@ -39,7 +39,7 @@ target = "01M3ZX7FYE5D1N2SY01VNVVACK"
 
 [[acceptance]]
 text = "Given a unit marked frob:honest that calls a clock vocabulary symbol, when grimble check runs, then NEAT010 reports the claim contradicted"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the ruff PR 29076 shape in a fixture (dispatcher with a nested condition), when grimble check runs, then NEAT031 fires and the fixed shape is clean"
