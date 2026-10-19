@@ -4,9 +4,10 @@ title = "Wire frob explain: register the Explain verb (needs lib.rs/product.rs, 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-10-19T18:03:17Z"
-updated = "2026-10-19T18:03:17Z"
+updated = "2026-10-19T18:21:21Z"
 scope = ["crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/tests/it/main.rs", "docs/reference/cli/frob.md"]
 +++
 
