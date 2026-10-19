@@ -15,6 +15,7 @@ workspace = true
 blake3 = "1"
 gob-time = { version = "0.532.0", path = "../gob-time" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
+gob-trust = { version = "0.532.0", path = "../gob-trust" }
 rusqlite = { version = "0.32", features = ["bundled"] }
 thiserror = "2"
 tracing = "0.1"

@@ -61,7 +61,7 @@ without it).
 
 1. `main` builds `Cli` (clap derive via `gob-cli`), installs tracing,
    opens the repository once through `gob-git` (gix, no subprocess),
-   opens the repository-shared cache (`<git common dir>/frob/cache/frob/cache.sqlite`), records invocation start (telemetry spans the WHOLE
+   opens the repository-shared cache (`$XDG_CACHE_HOME/frob/cache/<repo-id>/frob/cache.sqlite`, rows MAC'd under the machine key (security.md 2.2)), records invocation start (telemetry spans the WHOLE
    process this time; v1 timed only dispatch and missed test and graph
    entirely).
 2. The command handler asks the snapshot layer for what it needs.
@@ -72,7 +72,7 @@ without it).
    over per-file memo tables; from milestone 2 the same keys back a
    salsa `Db` (`gob-db`, Milestone 2 or later (D36)).
 3. Results that are expensive and stable are persisted to the SQLite
-   file of this repository, shared by its worktrees (`<git common dir>/frob/cache/frob/cache.sqlite`): parse artifacts keyed by
+   file of this repository, shared by its worktrees (`$XDG_CACHE_HOME/frob/cache/<repo-id>/frob/cache.sqlite`, rows MAC'd under the machine key (security.md 2.2)): parse artifacts keyed by
    (content blake3, adapter id, grammar version, schema version, and
    from milestone 2 a digest of the `[compute]` config; the scope graph
    is a repo-scope artifact keyed by the graph digest, code-model.md
@@ -145,7 +145,7 @@ crate measures the fresh-process case.
 | leases | `<common_dir>/frob/leases/<ulid>.toml` plus one `<common_dir>/frob/leases.lock`; single clone, shared by its worktrees | no |
 | local evidence artifacts | `.git/frob/artifacts/` (non-authoritative; a missing blob reads as Unmeasured; old unreferenced blobs are collected) | no |
 | garbage-collection stamp | `<common_dir>/frob/gc.json` (last pass, throttle) | no |
-| cache, index, telemetry | `.frob/` per worktree: `tickets.sqlite` (frob-ledger index, keyed by the tickets subtree id, not the whole tree), plus `cache.sqlite` (gob-cache) once per repository under the git common dir | no, delete-safe |
+| cache, index, telemetry | `.frob/` per worktree: `tickets.sqlite` (frob-ledger index, keyed by the tickets subtree id, not the whole tree), plus `cache.sqlite` (gob-cache) once per repository under the per-user cache directory (`$XDG_CACHE_HOME/frob/cache/<repo-id>/`, MAC'd rows; supersedes the in-tree placement of D30/D38) | no, delete-safe |
 
 Nothing authoritative under `.frob/`. Deleting it costs one cold parse.
 The deliberate non-git state is exactly: leases (loss means locks
@@ -432,7 +432,7 @@ construction rather than by later retrofits.
 | external jobs | `gob-exec` bounded job pool (`[perf] jobs`), with per-job timeout, memory cap via cgroup where available, and output caps | test runners, ruff/clippy/tsc, Tailwind helper |
 | async IO | `tokio` only in `gob-serve`, `frob-serve`, `grimble-serve`, `frob-gh`; the core stays sync | server transports, HTTP |
 | shared state | immutable snapshots passed by `Arc`; `dashmap` only in caches; no locks of our own around derived state (v1's deadlock class); salsa itself may block a thread that waits on a query in flight elsewhere | caches, interned ids |
-| SQLite | one file per repository (`<git common dir>/frob/cache/frob/cache.sqlite`, shared by every worktree of it); within a process one writer connection behind a channel, many readers in WAL mode; across processes a 5 s `busy_timeout`, an immediate-transaction migration and best-effort writes | persisted artifacts and findings |
+| SQLite | one file per repository (`$XDG_CACHE_HOME/frob/cache/<repo-id>/frob/cache.sqlite`, rows MAC'd under the machine key (security.md 2.2), shared by every worktree of it); within a process one writer connection behind a channel, many readers in WAL mode; across processes a 5 s `busy_timeout`, an immediate-transaction migration and best-effort writes | persisted artifacts and findings |
 
 Rules for every crate: expensive loops are `par_iter` unless the item
 count is bounded and small; a rule's `check` is pure over the snapshot

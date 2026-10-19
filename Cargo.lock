@@ -2345,6 +2345,7 @@ dependencies = [
  "criterion",
  "gob-fs",
  "gob-time",
+ "gob-trust",
  "rusqlite",
  "tempfile",
  "thiserror",

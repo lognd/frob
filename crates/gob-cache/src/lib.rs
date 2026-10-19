@@ -9,6 +9,12 @@
 //! Writes are best-effort: a failure is logged at warn and never surfaces.
 //! When the database cannot be opened the cache degrades to a null cache
 //! where every read misses and every write is a no-op.
+//!
+//! Findings, repo-scope and artifact rows are decision-bearing, so the default location is
+//! the per-user cache directory (`$XDG_CACHE_HOME/frob/cache/<repo-id>/<product>`), never
+//! the work tree or the git dir a checkout can write (security.md 2.2, I4), and every row
+//! carries a keyed-blake3 MAC under the machine key: a row with a missing or wrong MAC is
+//! deleted and read as a miss. Supersedes the in-tree placement of architecture.md D30/D38.
 #![expect(
     clippy::disallowed_methods,
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
@@ -18,13 +24,15 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
+use gob_trust::{Canonical, CanonicalWriter, MachineKey, Tag, mac_record};
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 
 /// File name of the database inside the cache directory.
 pub const DB_FILE: &str = "cache.sqlite";
 
 /// Forward-only migrations; index `i` upgrades schema version `i` to `i + 1`.
-const MIGRATIONS: &[&str] = &["
+const MIGRATIONS: &[&str] = &[
+    "
     CREATE TABLE artifacts(
         key TEXT PRIMARY KEY,
         producer TEXT NOT NULL,
@@ -45,7 +53,17 @@ const MIGRATIONS: &[&str] = &["
         payload BLOB NOT NULL,
         PRIMARY KEY (graph_digest, rule_id)
     );
-"];
+",
+    // Row MACs: a NULL mac (a row written before MACs, or planted) never verifies.
+    "
+    ALTER TABLE artifacts ADD COLUMN mac BLOB;
+    ALTER TABLE findings ADD COLUMN mac BLOB;
+    ALTER TABLE repo_rule ADD COLUMN mac BLOB;
+",
+];
+
+/// Domain-separation context of every row MAC.
+const MAC_CONTEXT: &str = "gob-cache-row/v1";
 
 /// Cache knobs.
 #[derive(Clone, Copy, Debug)]
@@ -106,6 +124,7 @@ pub struct CacheStats {
 /// The cache handle; real or null, with one API.
 pub struct Cache {
     conn: Option<Mutex<Connection>>,
+    key: Option<MachineKey>,
     engine: String,
     clock: std::sync::Arc<dyn gob_time::Clock>,
 }
@@ -166,6 +185,23 @@ fn exe_digest(path: &Path) -> std::io::Result<String> {
 /// The clock a cache uses until [`Cache::with_clock`] replaces it: rows are dated, never compared across runs.
 fn default_clock() -> std::sync::Arc<dyn gob_time::Clock> {
     std::sync::Arc::new(gob_time::SystemClock)
+}
+
+/// One cache row in its canonical, MAC'd form: table, key fields, then payload.
+struct Row<'a> {
+    table: &'a str,
+    head: &'a [&'a [u8]],
+    payload: &'a [u8],
+}
+
+impl Canonical for Row<'_> {
+    fn write_canonical(&self, w: &mut CanonicalWriter) {
+        w.str(self.table);
+        for field in self.head {
+            w.field(field);
+        }
+        w.field(self.payload);
+    }
 }
 
 /// Folds `engine` into a stored key so two engines never share a row.
@@ -236,109 +272,69 @@ fn open_conn(dir: &Path, config: CacheConfig) -> Result<Connection, String> {
     Ok(conn)
 }
 
-/// Directory under the git common dir that holds frob's per-repository state.
+/// Product directory name under the per-user cache base that holds every repository's check cache.
 pub const SHARED_DIR: &str = "frob";
 
 // frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
 pub use gob_fs::git_common_dir;
 
-/// The repository-wide cache directory for the state directory `state_dir` (for example `.frob`) of `root`.
+/// The per-user cache directory for the state directory `state_dir` (for example `.frob`) of `root`.
 ///
-/// It lives under the git common dir, so the primary checkout, every ticket worktree and the
-/// land ratchet's base worktree share one cache; keys are content digests, so sharing is safe.
-/// `None` outside a git checkout, where the caller keeps its per-checkout directory.
+/// It is `$XDG_CACHE_HOME/frob/cache/<repo-id>/<name>` (platform equivalents elsewhere), outside
+/// the work tree and the git dir, so a repository cannot plant rows there. `<repo-id>` digests the
+/// git common dir, so the primary checkout, every ticket worktree and the land ratchet's base
+/// worktree share one cache; keys are content digests, so sharing is safe. Outside a git checkout
+/// the canonical root is digested instead. `None` when no per-user cache base is derivable.
+// frob:ticket 01M3ZX7TWB2H5WHD27FH2DAC49
 pub fn shared_dir(root: &Path, state_dir: &str) -> Option<PathBuf> {
     let name = state_dir.trim_matches(|c| c == '.' || c == '/');
-    Some(
-        git_common_dir(root)?
-            .join(SHARED_DIR)
-            .join("cache")
-            .join(name),
-    )
+    let identity = git_common_dir(root).or_else(|| gob_fs::canonical(root).ok())?;
+    let base = match gob_trust::cache_dir(SHARED_DIR) {
+        Ok(state) => state.parent()?.to_owned(),
+        Err(err) => {
+            tracing::warn!(%err, "no per-user cache directory; check cache disabled");
+            return None;
+        }
+    };
+    let id = blake3::hash(identity.to_string_lossy().as_bytes()).to_hex();
+    Some(base.join("cache").join(&id.as_str()[..32]).join(name))
 }
 
 /// What [`seed_shared`] did.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Seeded {
-    /// The shared cache already exists; nothing was copied.
+    /// Retained for callers; the shared cache is never seeded.
     AlreadyShared,
     /// No shared location (not a git checkout) or no per-checkout cache to copy.
     NothingToSeed,
-    /// The per-checkout cache of the primary was snapshotted into the shared location.
+    /// Retained for callers; seeding from an in-tree cache no longer happens.
     Copied,
-    /// The copy failed (logged at warn); the shared cache starts empty.
+    /// Retained for callers; seeding from an in-tree cache no longer happens.
     Failed,
 }
 
-/// Seeds the repository-shared cache for `state_dir` from the primary checkout's own `<primary>/<state_dir>/cache.sqlite`.
+/// Formerly copied the primary's in-tree `<state_dir>/cache.sqlite` into the shared cache; now a logged no-op.
 ///
-/// A repository warmed before cache sharing (or by a per-checkout run) keeps its rows in the
-/// primary's directory; a new worktree would otherwise start from an empty shared cache and
-/// analyse every file cold. The snapshot is a consistent `VACUUM INTO` a temporary file renamed
-/// into place, so a concurrent opener never sees a partial database. An existing shared cache wins.
+/// The in-tree file is writable by the repository, so its rows are untrusted and are never
+/// imported (security.md 2.2). The per-user shared cache is common to all worktrees already.
 // frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
+// frob:ticket 01M3ZX7TWB2H5WHD27FH2DAC49
 pub fn seed_shared(primary: &Path, state_dir: &str) -> Seeded {
-    let Some(dest_dir) = shared_dir(primary, state_dir) else {
-        tracing::debug!(primary = %primary.display(), "no shared cache location; nothing to seed");
-        return Seeded::NothingToSeed;
-    };
-    let dest = dest_dir.join(DB_FILE);
-    if dest.exists() {
-        tracing::debug!(dest = %dest.display(), "shared cache present; not seeding");
-        return Seeded::AlreadyShared;
-    }
-    let src = primary.join(state_dir).join(DB_FILE);
-    if !src.is_file() {
-        tracing::debug!(src = %src.display(), "no per-checkout cache to seed from");
-        return Seeded::NothingToSeed;
-    }
-    let started = std::time::Instant::now();
-    let tmp = dest_dir.join(format!("{DB_FILE}.seed-{}", std::process::id()));
-    let result = std::fs::create_dir_all(&dest_dir)
-        .map_err(|e| format!("create dir: {e}"))
-        .and_then(|()| {
-            let _ = std::fs::remove_file(&tmp);
-            Connection::open_with_flags(&src, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
-                .map_err(|e| format!("open source: {e}"))
-        })
-        .and_then(|conn| {
-            conn.busy_timeout(CacheConfig::default().busy_timeout)
-                .map_err(|e| format!("busy timeout: {e}"))?;
-            conn.execute("VACUUM INTO ?1", [tmp.to_string_lossy().as_ref()])
-                .map_err(|e| format!("snapshot: {e}"))
-        })
-        .and_then(|_| {
-            // hard_link fails when a racing seeder won, which is the desired "existing wins".
-            let linked = std::fs::hard_link(&tmp, &dest);
-            let _ = std::fs::remove_file(&tmp);
-            linked.map_err(|e| format!("install: {e}"))
-        });
-    match result {
-        Ok(()) => {
-            tracing::info!(src = %src.display(), dest = %dest.display(), elapsed_ms = started.elapsed().as_millis(), "shared cache seeded from the primary");
-            Seeded::Copied
-        }
-        Err(err) if dest.exists() => {
-            tracing::debug!(%err, "lost the seeding race; shared cache present");
-            Seeded::AlreadyShared
-        }
-        Err(err) => {
-            tracing::warn!(src = %src.display(), %err, "shared cache not seeded; it starts empty");
-            let _ = std::fs::remove_file(&tmp);
-            Seeded::Failed
-        }
-    }
+    tracing::debug!(primary = %primary.display(), state_dir, "in-tree cache is never imported; not seeding");
+    Seeded::NothingToSeed
 }
 
 impl Cache {
-    /// Opens the repository-shared cache for `root`'s `state_dir`, else `<root>/<state_dir>`.
+    /// Opens the per-user shared cache for `root`'s `state_dir`; a null cache when none is derivable.
+    ///
+    /// Never falls back to `<root>/<state_dir>`: that directory is writable by the repository.
     pub fn open_shared(root: &Path, state_dir: &str) -> Self {
-        match shared_dir(root, state_dir) {
-            Some(dir) => {
-                tracing::debug!(dir = %dir.display(), "shared cache selected");
-                Self::open(&dir)
-            }
-            None => Self::open(&root.join(state_dir)),
+        if let Some(dir) = shared_dir(root, state_dir) {
+            tracing::debug!(dir = %dir.display(), "shared cache selected");
+            Self::open(&dir)
+        } else {
+            tracing::warn!(root = %root.display(), "no per-user cache location; using null cache");
+            Self::null()
         }
     }
 
@@ -349,11 +345,15 @@ impl Cache {
 
     /// Like [`Cache::open`] with explicit knobs.
     pub fn open_with(dir: &Path, config: CacheConfig) -> Self {
-        match open_conn(dir, config) {
-            Ok(conn) => {
+        let opened = MachineKey::load_or_create()
+            .map_err(|e| format!("machine key: {e}"))
+            .and_then(|key| open_conn(dir, config).map(|conn| (conn, key)));
+        match opened {
+            Ok((conn, key)) => {
                 tracing::debug!(dir = %dir.display(), "cache opened");
                 Self {
                     conn: Some(Mutex::new(conn)),
+                    key: Some(key),
                     engine: default_engine().to_owned(),
                     clock: default_clock(),
                 }
@@ -369,6 +369,7 @@ impl Cache {
     pub fn null() -> Self {
         Self {
             conn: None,
+            key: None,
             engine: default_engine().to_owned(),
             clock: default_clock(),
         }
@@ -413,69 +414,134 @@ impl Cache {
         }
     }
 
+    /// The MAC bytes for a row of `table` made of `head` fields then `payload`.
+    fn row_mac(&self, table: &str, head: &[&[u8]], payload: &[u8]) -> Option<Vec<u8>> {
+        let key = self.key.as_ref()?;
+        let row = Row {
+            table,
+            head,
+            payload,
+        };
+        Some(mac_record(key, MAC_CONTEXT, &row).as_bytes().to_vec())
+    }
+
+    /// Reads one `(payload, mac)` row and returns the payload only when its MAC verifies.
+    ///
+    /// A row with a NULL, malformed or wrong MAC is deleted and reads as a miss, so a planted or
+    /// corrupted row is rebuilt rather than trusted.
+    fn get_signed(
+        &self,
+        table: &str,
+        select: &str,
+        delete: &str,
+        args: &[&dyn rusqlite::ToSql],
+        head: &[&[u8]],
+    ) -> Option<Vec<u8>> {
+        let (payload, stored): (Vec<u8>, Option<Vec<u8>>) = self
+            .with(table, |c| {
+                c.query_row(select, args, |r| Ok((r.get(0)?, r.get(1)?)))
+                    .optional()
+            })
+            .flatten()?;
+        let expected = self.row_mac(table, head, &payload)?;
+        let ok = stored
+            .as_deref()
+            .and_then(|b| <[u8; 32]>::try_from(b).ok())
+            .is_some_and(|b| {
+                Tag::from(b)
+                    == Tag::from(<[u8; 32]>::try_from(expected.as_slice()).unwrap_or([0; 32]))
+            });
+        if ok {
+            return Some(payload);
+        }
+        tracing::warn!(table, "cache row failed MAC verification; discarded");
+        self.with(table, |c| c.execute(delete, args));
+        None
+    }
+
     /// Looks up an artifact; any failure reads as a miss.
     pub fn get_artifact(&self, key: &ArtifactKey) -> Option<Vec<u8>> {
-        self.with("get_artifact", |c| {
-            c.query_row(
-                "SELECT bytes FROM artifacts WHERE key = ?1",
-                [key.row_key()],
-                |r| r.get(0),
-            )
-            .optional()
-        })
-        .flatten()
+        let row_key = key.row_key();
+        self.get_signed(
+            "artifacts",
+            "SELECT bytes, mac FROM artifacts WHERE key = ?1",
+            "DELETE FROM artifacts WHERE key = ?1",
+            &[&row_key],
+            &[row_key.as_bytes(), key.producer_identity.as_bytes()],
+        )
     }
 
     /// Stores an artifact, best-effort.
     pub fn put_artifact(&self, key: &ArtifactKey, bytes: &[u8]) {
+        let row_key = key.row_key();
+        let mac = self.row_mac(
+            "artifacts",
+            &[row_key.as_bytes(), key.producer_identity.as_bytes()],
+            bytes,
+        );
         let done = self.with("put_artifact", |c| {
             c.execute(
-                "INSERT OR REPLACE INTO artifacts(key, producer, bytes, created_at)
-                 VALUES (?1, ?2, ?3, ?4)",
+                "INSERT OR REPLACE INTO artifacts(key, producer, bytes, created_at, mac)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
                 params![
-                    key.row_key(),
+                    row_key,
                     key.producer_identity,
                     bytes,
-                    self.clock.now().unix()
+                    self.clock.now().unix(),
+                    mac
                 ],
             )
         });
         if done.is_some() {
-            tracing::debug!(key = key.row_key(), len = bytes.len(), "artifact stored");
+            tracing::debug!(key = row_key, len = bytes.len(), "artifact stored");
         }
     }
 
     /// Looks up per-file findings; any failure reads as a miss.
     pub fn get_findings(&self, key: &FindingsKey) -> Option<Vec<u8>> {
-        self.with("get_findings", |c| {
-            c.query_row(
-                "SELECT payload FROM findings WHERE file_digest = ?1 AND rule_id = ?2
-                 AND rule_version = ?3 AND side_input_digest = ?4",
-                params![
-                    key.file_digest,
-                    key.rule_id,
-                    key.rule_version,
-                    scoped(&self.engine, &key.side_input_digest)
-                ],
-                |r| r.get(0),
-            )
-            .optional()
-        })
-        .flatten()
+        let side = scoped(&self.engine, &key.side_input_digest);
+        let version = key.rule_version.to_string();
+        self.get_signed(
+            "findings",
+            "SELECT payload, mac FROM findings WHERE file_digest = ?1 AND rule_id = ?2
+             AND rule_version = ?3 AND side_input_digest = ?4",
+            "DELETE FROM findings WHERE file_digest = ?1 AND rule_id = ?2
+             AND rule_version = ?3 AND side_input_digest = ?4",
+            &[&key.file_digest, &key.rule_id, &key.rule_version, &side],
+            &[
+                key.file_digest.as_bytes(),
+                key.rule_id.as_bytes(),
+                version.as_bytes(),
+                side.as_bytes(),
+            ],
+        )
     }
 
     /// Stores per-file findings, best-effort.
     pub fn put_findings(&self, key: &FindingsKey, payload: &[u8]) {
+        let side = scoped(&self.engine, &key.side_input_digest);
+        let version = key.rule_version.to_string();
+        let mac = self.row_mac(
+            "findings",
+            &[
+                key.file_digest.as_bytes(),
+                key.rule_id.as_bytes(),
+                version.as_bytes(),
+                side.as_bytes(),
+            ],
+            payload,
+        );
         let done = self.with("put_findings", |c| {
             c.execute(
                 "INSERT OR REPLACE INTO findings(file_digest, rule_id, rule_version,
-                 side_input_digest, payload) VALUES (?1, ?2, ?3, ?4, ?5)",
+                 side_input_digest, payload, mac) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
                 params![
                     key.file_digest,
                     key.rule_id,
                     key.rule_version,
-                    scoped(&self.engine, &key.side_input_digest),
-                    payload
+                    side,
+                    payload,
+                    mac
                 ],
             )
         });
@@ -486,24 +552,29 @@ impl Cache {
 
     /// Looks up repo-scope findings; any failure reads as a miss.
     pub fn get_repo_rule(&self, graph_digest: &str, rule_id: &str) -> Option<Vec<u8>> {
-        self.with("get_repo_rule", |c| {
-            c.query_row(
-                "SELECT payload FROM repo_rule WHERE graph_digest = ?1 AND rule_id = ?2",
-                params![scoped(&self.engine, graph_digest), rule_id],
-                |r| r.get(0),
-            )
-            .optional()
-        })
-        .flatten()
+        let graph = scoped(&self.engine, graph_digest);
+        self.get_signed(
+            "repo_rule",
+            "SELECT payload, mac FROM repo_rule WHERE graph_digest = ?1 AND rule_id = ?2",
+            "DELETE FROM repo_rule WHERE graph_digest = ?1 AND rule_id = ?2",
+            &[&graph, &rule_id],
+            &[graph.as_bytes(), rule_id.as_bytes()],
+        )
     }
 
     /// Stores repo-scope findings, best-effort.
     pub fn put_repo_rule(&self, graph_digest: &str, rule_id: &str, payload: &[u8]) {
+        let graph = scoped(&self.engine, graph_digest);
+        let mac = self.row_mac(
+            "repo_rule",
+            &[graph.as_bytes(), rule_id.as_bytes()],
+            payload,
+        );
         let done = self.with("put_repo_rule", |c| {
             c.execute(
-                "INSERT OR REPLACE INTO repo_rule(graph_digest, rule_id, payload)
-                 VALUES (?1, ?2, ?3)",
-                params![scoped(&self.engine, graph_digest), rule_id, payload],
+                "INSERT OR REPLACE INTO repo_rule(graph_digest, rule_id, payload, mac)
+                 VALUES (?1, ?2, ?3, ?4)",
+                params![graph, rule_id, payload, mac],
             )
         });
         if done.is_some() {
@@ -690,5 +761,57 @@ mod tests {
             })
             .unwrap();
         assert_eq!(usize::try_from(v).unwrap(), MIGRATIONS.len());
+    }
+
+    // frob:ticket 01M3ZX7TWB2H5WHD27FH2DAC49
+    // frob:tests crates/gob-cache/src/lib.rs::Cache.get_findings
+    // frob:tests crates/gob-cache/src/lib.rs::Cache.put_artifact
+    // frob:tests crates/gob-cache/src/lib.rs::Cache.stats
+    #[test]
+    fn a_row_with_a_wrong_or_missing_mac_is_discarded() {
+        let dir = tempfile::tempdir().unwrap();
+        let cache = Cache::open(dir.path());
+        cache.put_findings(&fkey(), b"good");
+        assert_eq!(cache.get_findings(&fkey()).as_deref(), Some(&b"good"[..]));
+        // Tampered payload under the old MAC.
+        cache
+            .with("t", |c| {
+                c.execute("UPDATE findings SET payload = x'00'", [])
+            })
+            .unwrap();
+        assert!(cache.get_findings(&fkey()).is_none());
+        assert_eq!(cache.stats().findings, 0, "the bad row is deleted");
+        // A planted row with no MAC at all.
+        cache
+            .with("t", |c| {
+                c.execute(
+                    "INSERT INTO findings VALUES ('d','R1',1,?1,x'01',NULL)",
+                    [scoped(cache.engine(), "s")],
+                )
+            })
+            .unwrap();
+        assert!(cache.get_findings(&fkey()).is_none());
+        cache.put_artifact(
+            &ArtifactKey {
+                content_digest: "c".into(),
+                producer_identity: "p".into(),
+            },
+            b"a",
+        );
+        cache
+            .with("t", |c| c.execute("UPDATE artifacts SET bytes = x'02'", []))
+            .unwrap();
+        let k = ArtifactKey {
+            content_digest: "c".into(),
+            producer_identity: "p".into(),
+        };
+        assert!(cache.get_artifact(&k).is_none());
+        cache.put_repo_rule("g", "R", b"x");
+        cache
+            .with("t", |c| {
+                c.execute("UPDATE repo_rule SET payload = x'03'", [])
+            })
+            .unwrap();
+        assert!(cache.get_repo_rule("g", "R").is_none());
     }
 }

@@ -1,0 +1,1 @@
+gob-cache: the findings, repo-rule and artifact cache now lives under `$XDG_CACHE_HOME/frob/cache/<repo-id>/<product>/` instead of the work tree or git dir, every row carries a keyed-blake3 MAC under the machine key (a missing or wrong MAC is deleted and read as a miss), and an in-tree `.frob/cache.sqlite` is never read or imported.

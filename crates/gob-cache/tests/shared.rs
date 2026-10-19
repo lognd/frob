@@ -45,14 +45,15 @@ fn primary_and_linked_worktree_share_one_cache_dir() {
     let a = shared_dir(&primary, ".frob").unwrap();
     let b = shared_dir(&linked, ".frob").unwrap();
     assert_eq!(a, b);
-    assert!(a.ends_with(".git/frob/cache/frob"), "{}", a.display());
+    assert!(!a.starts_with(tmp.path()), "{}", a.display());
+    assert!(a.ends_with("frob"), "{}", a.display());
     assert_eq!(
         git_common_dir(&linked).unwrap(),
         gob_fs::canonical(&primary.join(".git")).unwrap()
     );
     let plain = tmp.path().join("plain");
     std::fs::create_dir_all(&plain).unwrap();
-    assert!(shared_dir(&plain, ".frob").is_none());
+    assert_ne!(shared_dir(&plain, ".frob").unwrap(), a);
 }
 
 // frob:tests crates/gob-cache/src/lib.rs::shared_dir
@@ -128,23 +129,20 @@ fn gob_cache_does_not_depend_on_gob_exec() {
     assert_eq!(git_common_dir(&primary), git_common_dir(&linked));
 }
 
-// frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
+// frob:ticket 01M3ZX7TWB2H5WHD27FH2DAC49
 // frob:tests crates/gob-cache/src/lib.rs::seed_shared
 #[test]
-fn a_warm_primary_cache_seeds_the_shared_one_once() {
+fn a_forged_in_tree_cache_is_never_read_or_imported() {
     let tmp = tempfile::tempdir().unwrap();
     let (primary, linked) = fake_repo(tmp.path());
+    // The repository plants a row in the old in-tree location.
+    Cache::open(&primary.join(".frob")).put_findings(&key("w", 1), b"forged");
     assert_eq!(seed_shared(&primary, ".frob"), Seeded::NothingToSeed);
-    Cache::open(&primary.join(".frob")).put_findings(&key("w", 1), b"warm");
-    assert_eq!(seed_shared(&primary, ".frob"), Seeded::Copied);
-    let hit = Cache::open_shared(&linked, ".frob").get_findings(&key("w", 1));
-    assert_eq!(hit.as_deref(), Some(&b"warm"[..]));
-    // The shared cache now exists and wins over later primary rows.
-    Cache::open(&primary.join(".frob")).put_findings(&key("w", 2), b"late");
-    assert_eq!(seed_shared(&primary, ".frob"), Seeded::AlreadyShared);
-    assert!(
-        Cache::open_shared(&linked, ".frob")
-            .get_findings(&key("w", 2))
-            .is_none()
-    );
+    for root in [&primary, &linked] {
+        let cache = Cache::open_shared(root, ".frob");
+        assert!(cache.get_findings(&key("w", 1)).is_none());
+    }
+    // The shared cache itself lives outside the work tree.
+    let dir = shared_dir(&primary, ".frob").unwrap();
+    assert!(!dir.starts_with(tmp.path()), "{}", dir.display());
 }
