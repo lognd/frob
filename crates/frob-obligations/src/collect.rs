@@ -95,16 +95,19 @@ pub fn collect(root: &Path) -> Result<Collected, CollectError> {
         if !roles.role(&entry.path).scans_directives() {
             continue;
         }
-        let Some(lang) = Language::detect(&entry.path) else {
-            continue;
-        };
+        let lang = Language::detect(&entry.path);
         let Ok(text) = content.with_reader(|r| r.read_text(&entry.path)) else {
             tracing::debug!(path = %entry.path, "unreadable file not scanned for directives");
             continue;
         };
         let symbols = extract_file(entry, &text);
         let file = files.intern(&entry.path);
-        directives.extend(scanner.scan_in(file, lang, &text, &symbols).directives);
+        // No grammar: still scanned, lexically (same split as frob-check).
+        let result = match lang {
+            Some(lang) => scanner.scan_in(file, lang, &text, &symbols),
+            None => scanner.scan_unparsed_in(file, &text, &symbols),
+        };
+        directives.extend(result.directives);
     }
     tracing::info!(
         directives = directives.len(),
@@ -119,4 +122,21 @@ pub fn collect(root: &Path) -> Result<Collected, CollectError> {
         tool_ids: crate::tool_bound_ids(root),
         today: gob_time::Clock::today(&gob_time::SystemClock::pin()),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::collect;
+
+    // frob:ticket 01M5B3C8ZKMG5N6TMP07NG0ESV
+    // frob:tests crates/frob-obligations/src/collect.rs::collect
+    #[test]
+    fn collect_scans_directives_in_files_without_a_grammar() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("conf/site.caddy");
+        std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+        std::fs::write(&path, "# frob:ticket 01M1QDTYRJ3P3GT8828GCNECVB\nroute\n").expect("write");
+        let collected = collect(dir.path()).expect("collect");
+        assert_eq!(collected.directives.len(), 1, "{:?}", collected.directives);
+    }
 }
