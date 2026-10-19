@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-19T05:48:18Z"
+updated = "2026-10-19T05:50:59Z"
 idempotency_key = "m2-mirror-map-file"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/mapfile.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a lost map file, when the mirror re-finds issues by ULID marker, then no duplicate is created"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.2 (progress), 3.3 (the tracker is the identity authority, the map is a cache) and 3.4 (cursor).
