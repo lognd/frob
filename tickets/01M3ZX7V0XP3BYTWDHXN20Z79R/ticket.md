@@ -2,13 +2,13 @@
 id = "01M3ZX7V0XP3BYTWDHXN20Z79R"
 title = "Trust store: MAC'd entries, repository identity, expiry, list and revoke"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:33Z"
-updated = "2026-10-03T03:51:19Z"
+updated = "2026-10-19T05:45:18Z"
 idempotency_key = "m2-sec-trust-store"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/store/**"]
