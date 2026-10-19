@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-19T17:46:27Z"
+updated = "2026-10-19T18:06:12Z"
 idempotency_key = "m2-mirror-schema-gen"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/gob-dev/src/render/**", "docs/schemas/issue-projection.json", "crates/frob/src/mirror_cmd.rs", "crates/frob-mirror/src/projection.rs", "crates/frob-mirror/Cargo.toml", "crates/gob-dev/Cargo.toml", "crates/frob/Cargo.toml", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "Cargo.lock"]
+scope = ["crates/gob-dev/src/render/**", "docs/schemas/issue-projection.json", "crates/frob/src/mirror_cmd.rs", "crates/frob-mirror/src/projection.rs", "crates/frob-mirror/Cargo.toml", "crates/gob-dev/Cargo.toml", "crates/frob/Cargo.toml", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "Cargo.lock", "crates/frob/tests/it/mirror_render.rs", "docs/design/mirror.md", "docs/reference/cli/frob.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,11 +19,11 @@ target = "01M3ZX832JK52FXBPPCCGTDRTG"
 
 [[acceptance]]
 text = "Given the Rust type, when `cargo dev gen all --check` runs, then docs/schemas/issue-projection.json is current"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given `frob mirror render ~X --json`, when run, then the output validates against that schema"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 2.1 (last paragraph).
