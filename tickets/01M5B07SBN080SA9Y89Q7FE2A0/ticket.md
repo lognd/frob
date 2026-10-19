@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:18Z"
-updated = "2026-10-19T23:52:47Z"
+updated = "2026-10-19T23:58:38Z"
 scope = ["crates/frob-mirror/src/shardstore.rs"]
+
+[[acceptance]]
+text = "The shard store writes .toml files carrying issue = N, and get returns the exact bytes put"
+bound = false
 +++
 
 found while working ~1KH6CCV
