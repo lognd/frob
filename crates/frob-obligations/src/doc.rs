@@ -6,7 +6,9 @@ use std::path::{Component, Path, PathBuf};
 use frob_tests::catalog::is_test_file;
 use gob_languages::{Language, ParseLimits, ParseResult, markdown_link_destinations, parse};
 use gob_rules::Finding;
-use gob_symbols::{FacetDigest, SymbolGraph, SymbolKind, Target, extract_file, slugify};
+use gob_symbols::{
+    FacetDigest, SymbolGraph, SymbolKind, Target, extract_file, is_python_path, slugify,
+};
 use gob_text::{FileId, Span};
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
@@ -31,9 +33,16 @@ fn has_doc_attribute(text: &str, start: usize) -> bool {
     false
 }
 
-/// DOC001 over one Rust file: public items of `graph` whose doc facet is empty.
+/// True for a Python dunder name (`__init__`), which DOC001 does not ask to be documented.
+fn is_dunder(name: &str) -> bool {
+    name.len() > 4 && name.starts_with("__") && name.ends_with("__")
+}
+
+// frob:ticket 01M43CVMKVBZ2WDZHJ3TCKEFKF
+/// DOC001 over one Rust or Python file: public items of `graph` whose doc facet is empty.
 pub(crate) fn doc001(graph: &SymbolGraph, file: FileId, path: &str, text: &str) -> Vec<Finding> {
-    if Language::detect(path) != Some(Language::Rust) || is_test_file(path) {
+    let python = is_python_path(path);
+    if !(python || Language::detect(path) == Some(Language::Rust)) || is_test_file(path) {
         return Vec::new();
     }
     let empty = FacetDigest::of(b"");
@@ -46,8 +55,11 @@ pub(crate) fn doc001(graph: &SymbolGraph, file: FileId, path: &str, text: &str) 
         {
             continue;
         }
+        if python && rec.symref.name().is_some_and(is_dunder) {
+            continue;
+        }
         let start = usize::try_from(u32::from(rec.span.start())).unwrap_or(usize::MAX);
-        if has_doc_attribute(text, start) {
+        if !python && has_doc_attribute(text, start) {
             continue;
         }
         tracing::debug!(symref = %rec.symref, "undocumented public item");

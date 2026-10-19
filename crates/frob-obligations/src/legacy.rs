@@ -29,8 +29,9 @@ pub struct Todo001;
 ///
 /// A doc comment is `///` or `/** */` directly above the item, or a `#[doc]`
 /// attribute. Public items of test files, trait-impl members and file-backed
-/// modules are not checked. This complements the compiler lint `missing_docs`
-/// for languages without one.
+/// modules are not checked. In Python a public function, class or method
+/// needs a docstring; test files and dunder methods are not checked. This
+/// complements the compiler lint `missing_docs` for languages without one.
 #[derive(Debug, Clone, Copy, Default, Rule)]
 #[rule(
     id = "DOC001",

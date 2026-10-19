@@ -608,3 +608,33 @@ fn a_frob_doc_line_between_a_doc_block_and_its_item_does_not_raise_doc001() {
     assert_eq!(docs.len(), 1, "only the undocumented g: {docs:?}");
     assert!(docs[0].contains("::g"), "{docs:?}");
 }
+
+// frob:ticket 01M43CVMKVBZ2WDZHJ3TCKEFKF
+#[test]
+// frob:tests crates/frob-obligations/src/doc.rs::doc001
+fn doc001_reports_undocumented_public_python_units() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[(
+            "pkg/mod.py",
+            "def bare():\n    return 1\n\n\ndef documented():\n    \"\"\"Does it.\"\"\"\n    return 1\n\n\ndef _private():\n    return 1\n\n\nclass Bare:\n    def __init__(self):\n        pass\n\n    def method(self):\n        return 1\n",
+        )],
+    );
+    let ev = common::evaluate_tree(dir.path(), None, &defaults(), None);
+    let mut docs: Vec<String> = ev
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "DOC001")
+        .map(|f| f.message.clone())
+        .collect();
+    docs.sort();
+    assert_eq!(docs.len(), 3, "bare, Bare, Bare.method only: {docs:?}");
+    assert!(docs.iter().any(|d| d.contains("bare")), "{docs:?}");
+    assert!(docs.iter().any(|d| d.contains("method")), "{docs:?}");
+    assert!(
+        !docs
+            .iter()
+            .any(|d| d.contains("documented") || d.contains("__init__"))
+    );
+}
