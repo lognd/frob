@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T20:24:26Z"
-updated = "2026-10-19T23:19:08Z"
-scope = ["crates/gob-caps/**", "crates/gob-symbols/tests/**"]
+updated = "2026-10-19T23:26:23Z"
+scope = ["crates/gob-caps/**", "crates/gob-symbols/tests/**", "crates/gob-symbols/src/rust.rs"]
 
 [[acceptance]]
 text = "PINNED in measured.rs is empty and every_adapter_declares_the_fidelity_its_corpus_measures passes"
