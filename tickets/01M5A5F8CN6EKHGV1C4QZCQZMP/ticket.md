@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T13:26:31Z"
-updated = "2026-10-19T14:00:39Z"
+updated = "2026-10-19T14:00:54Z"
 labels = ["milestone:2"]
-scope = ["crates/grimble/**"]
+scope = ["crates/grimble/**", "docs/design/cli.md"]
 
 [[acceptance]]
 text = "Given a model with a grant no detector observes, when grimble shrink runs, then it prints the removal diff and writes nothing; with --apply the grant is removed"
