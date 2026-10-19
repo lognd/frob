@@ -2,13 +2,14 @@
 id = "01M3ZX83AB2JADBKWFA9SY4J60"
 title = "Tracker adapter trait and capabilities record (listing, history by event id, additive edits, journaled writes)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-19T05:12:55Z"
+updated = "2026-10-19T05:12:57Z"
 idempotency_key = "m2-mirror-adapter-trait"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/adapter.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]

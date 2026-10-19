@@ -2,14 +2,14 @@
 id = "01M41RV691XZQ5W2EW821PHK3V"
 title = "PATH family: absolute host paths, string path separators and paths in command lines (D86)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:56:13Z"
-updated = "2026-10-03T20:59:51Z"
-scope = ["crates/grimble-lints/**", "docs/reference/rules/PATH001.md", "docs/reference/rules/PATH002.md", "docs/reference/rules/PATH003.md", "grimble.toml"]
+updated = "2026-10-19T05:27:33Z"
+scope = ["crates/grimble-lints/**", "docs/reference/rules/PATH001.md", "docs/reference/rules/PATH002.md", "docs/reference/rules/PATH003.md", "grimble.toml", "docs/design/rules.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -17,15 +17,15 @@ target = "01M3ZX7FYE5D1N2SY01VNVVACK"
 
 [[acceptance]]
 text = "Given the ~G5RJY40 Windows bugs as corpus cases, when the PATH rules run, then each bug fires its rule and each fixed version is quiet"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a repository-relative path type used with /, when PATH002 runs, then it does not fire"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a language adapter without path-conversion roles, when PATH002 runs, then it reports Unresolved, not clean"
-bound = false
+bound = true
 +++
 
 Owner request 2026-10-03 (D86, docs/design/rules.md section 3.1, boundaries.md 2.5): the PATH host-path portability family. The / versus \ difference broke CI on every first Windows run (~G5RJY40: merge driver path, command allowlist compare, --cwd string compare, fixtures).
