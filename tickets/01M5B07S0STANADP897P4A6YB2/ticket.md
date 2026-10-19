@@ -12,7 +12,7 @@ scope = ["crates/frob-mirror/**"]
 
 [[acceptance]]
 text = "frob-mirror provides a native in-process HttpTransport that sends method, query, JSON body and auth headers, reports redirects unfollowed, and maps connection failures to TransportError"
-bound = false
+bound = true
 +++
 
 found while working ~1KH6CCV
