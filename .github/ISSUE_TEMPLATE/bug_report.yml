@@ -7,7 +7,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: 'Output of `frob --version`, or the commit hash.'
+      description: 'Full output of `frob --version`, including any -dev+<sha> suffix; it identifies the exact build.'
     validations:
       required: true
 

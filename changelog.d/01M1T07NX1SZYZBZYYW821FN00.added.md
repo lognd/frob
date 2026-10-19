@@ -1,0 +1,1 @@
+`frob --version` now carries the build identity: a build that is not an exact tagged release prints `<release>-dev+<sha>` (override the sha with `FROB_BUILD_ID` when packaging without .git), so two builds from different commits never share a version string. The bug-report form asks for the full line.

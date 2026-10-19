@@ -24,7 +24,7 @@ gob_product::register_commands!(FrobProduct);
 
 impl Product for FrobProduct {
     const NAME: &'static str = PRODUCT;
-    const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+    const VERSION: &'static str = env!("FROB_BUILD_VERSION");
     const DOCTOR_SUMMARY: &'static str = crate::doctor::SUMMARY;
     const CHECK_SUMMARY: &'static str = frob_check::CHECK_SUMMARY;
     const DOCTOR_IDEMPOTENT: bool = true;
