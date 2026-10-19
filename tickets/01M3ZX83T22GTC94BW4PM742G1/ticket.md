@@ -2,7 +2,8 @@
 id = "01M3ZX83T22GTC94BW4PM742G1"
 title = "GitHub adapter renders projection sections to markdown, labels and hidden marker"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
