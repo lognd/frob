@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-19T11:57:16Z"
+digest = "5e65809477c507feb497529d78802f8f310aa39692450260caff76bac51c0210"
+exit_code = 0
+inline = """
+
+running 1 test
+test boundary_and_rate_clear_the_findings ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running tests/kernel.rs (target/debug/deps/kernel-a74db1f0b2bb049f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-model --test kernel boundary_and_rate_clear_the_findings"
+size = 307
+status = "measured"
+at = "2026-10-19T11:57:16Z"
+actor = "lognd"
+rev = 1
