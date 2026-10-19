@@ -36,6 +36,7 @@ holds then is stated in section 6.3.
 | `MC_aswritten.cfg` | Every switch FALSE: the protocol as the text reads. |
 | `MC_abl_*.cfg` | Ablations: the repaired protocol with exactly one switch turned off, against the adversary that breaks it. |
 | `MC_Race_*.cfg` | `MirrorRace.tla` with bounded or unbounded edits, round robin or fixed order, several budgets. |
+| `crates/frob-mirror/tests/support/` | The deterministic fake GitHub that replays this model against the real adapter trait: seeded scenarios, append-only history with event ids, creator listing, lost, delayed and duplicated creates, human adversaries, injected crashes and per-call rate-limit refusals. Property tests reuse it. |
 
 ## 2. What is modeled
 
