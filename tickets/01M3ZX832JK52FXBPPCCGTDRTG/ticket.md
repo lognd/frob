@@ -2,13 +2,13 @@
 id = "01M3ZX832JK52FXBPPCCGTDRTG"
 title = "IssueProjection: the tracker-independent description of a ticket"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-03T03:35:00Z"
+updated = "2026-10-19T04:24:45Z"
 idempotency_key = "m2-mirror-projection"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/**"]
