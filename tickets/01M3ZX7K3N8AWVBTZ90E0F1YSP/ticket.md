@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-19T12:54:32Z"
+updated = "2026-10-19T13:12:31Z"
 idempotency_key = "m2-packs-rules"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/grimble-capabilities/src/pack_rules/**", "crates/grimble-capabilities/Cargo.toml", "crates/grimble-capabilities/src/lib.rs", "crates/grimble-capabilities/tests/**", "Cargo.lock", "docs/design/packs.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX7FTSKACE9TE7MBHQH7ET"
 
 [[acceptance]]
 text = "Given a changed pack item, when checked, then one PACK001 per item is emitted with reason changed, added, removed or lock-missing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an enabled pack that cannot be loaded, when checked, then PACK006 is a required Unresolved and PACK001 does not evaluate that pack"
