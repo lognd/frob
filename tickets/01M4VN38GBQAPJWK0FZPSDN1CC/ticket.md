@@ -2,7 +2,8 @@
 id = "01M4VN38GBQAPJWK0FZPSDN1CC"
 title = "frob test --base leaves stale fingerprints: later cargo builds in the worktree compile old sources"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
