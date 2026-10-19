@@ -2,7 +2,8 @@
 id = "01M59S6NHG1W9Z8K50QEK1CE3P"
 title = "docs(mirror): document fields.rs ownership guard in mirror.md 3.4/3.6"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
