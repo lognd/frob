@@ -16,6 +16,7 @@ pub mod lock;
 pub mod mapfile;
 pub mod mapping;
 pub mod marker;
+pub mod outbox;
 pub mod plan;
 pub mod progress;
 pub mod projection;

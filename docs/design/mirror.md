@@ -203,6 +203,15 @@ and in `frob mirror status`.
   pending shards and then the index round-robin cursor every K
   operations, so a crash repeats at most K operations and never one
   already behind the cursor.
+- **Outbox** (work class 2). Implemented in `frob_mirror::outbox`: each
+  ledger event is a `LedgerEvent` keyed by ticket ULID plus event ULID and
+  sets one field to one value. `plan_ops` selects oldest first (incremental:
+  events past the shard's `last_event`; `Mode::FullResync`: latest value
+  per ticket and field, rotated after the round-robin cursor, bounded by
+  the budget); `run` skips a value equal to the shard's normalized observed
+  value without any request, stores the tracker's normalized value after a
+  write, holds a failed ticket's later operations for the next run, defers
+  tickets with no issue to the create class, and stops on a rate limit.
 
 ### 3.3 Identity: markers, creates and duplicates (MIR-AUD-04, 05, 09, 15, 16, 24; F3-F6; spoofed marker)
 
