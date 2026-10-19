@@ -2,7 +2,8 @@
 id = "01M48Q2AQXY69YKK3D2DC05ZWR"
 title = "frob-metrics crate and frob stats: velocity, capacity, points remaining, cost per point"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M48Q294B33TB7C0GSATZRGJB"
