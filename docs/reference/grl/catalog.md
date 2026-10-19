@@ -77,6 +77,16 @@ Query: binding.md 7. Languages: every language.
 | `.granted` | bool | `true` | never |
 | `.excused` | bool | `true` | never |
 
+## `class_selector`
+
+a class selector such as `.card` in a style rule's selector list.
+
+Query: Q49 style. Languages: typescript, css, html (languages providing `style`).
+
+| Field | Type | Example | Unknown |
+|---|---|---|---|
+| `.name` | string | `"card"` | never |
+
 ## `comment`
 
 a comment.
