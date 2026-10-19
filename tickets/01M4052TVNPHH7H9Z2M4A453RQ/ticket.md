@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a label over its length limit, when planned, then the ticket is isolated with a reason"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.6 (Publishing safely; MIR-AUD-18, 19).
