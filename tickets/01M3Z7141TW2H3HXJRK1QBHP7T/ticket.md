@@ -8,7 +8,7 @@ points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-19T12:19:23Z"
+updated = "2026-10-19T12:36:27Z"
 idempotency_key = "m2-arch"
 labels = ["milestone:2"]
 scope = ["crates/grimble-arch/**", "crates/grimble-check/**", "docs/**", "Cargo.lock", "Cargo.toml"]
@@ -27,7 +27,7 @@ target = "01M3ZX7FYE5D1N2SY01VNVVACK"
 
 [[acceptance]]
 text = "Given two crates importing each other, when grimble check runs, then CYCLE names both"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a private fn reachable only through a May edge, when DEAD evaluates, then it reports Unresolved, not dead"
