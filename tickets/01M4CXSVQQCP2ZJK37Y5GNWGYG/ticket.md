@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:31Z"
-updated = "2026-10-19T12:40:56Z"
+updated = "2026-10-19T12:42:44Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-rules/**", "crates/gob-symbols/**", "crates/gob-diagnostics/src/text.rs", "docs/design/universal-model.md"]
 
 [[acceptance]]
