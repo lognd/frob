@@ -2,7 +2,8 @@
 id = "01M3ZX7X7WYFHA4QXZ2YMHHCQZ"
 title = "check --base: fail on new Unresolved for P+ rules in changed files"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
