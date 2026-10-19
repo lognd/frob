@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T19:20:09Z"
-updated = "2026-10-19T19:21:28Z"
-scope = ["crates/frob-mirror/src/shardstore.rs", "crates/frob-mirror/Cargo.toml"]
+updated = "2026-10-19T19:41:31Z"
+scope = ["crates/frob-mirror/src/shardstore.rs", "crates/frob-mirror/Cargo.toml", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
 +++
 
 No concrete ShardStore exists (only test Mem impls). Needed by the mirror recreate verb (~1KH6CCV) and push.
