@@ -2875,6 +2875,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "grimble-capabilities"
+version = "0.532.0"
+dependencies = [
+ "gob-ir",
+ "tracing",
+]
+
+[[package]]
 name = "grimble-check"
 version = "0.532.0"
 dependencies = [
