@@ -294,6 +294,10 @@ and in `frob mirror status`.
 - **The cursor is the history position actually read** (an event id,
   never a time), advanced only after the proposals it covers are
   committed (F2, MIR-AUD-25).
+  Implemented in `frob_mirror::cursor`: `HistoryCursor` (an event-id
+  newtype), `begin_read` (history after the stored cursor, yielding a
+  `PendingCursor` held outside the shard so it survives a create) and
+  `PendingCursor::advance`, which needs a `Committed` proof.
 - **What "nothing is lost" means, precisely** (MIR-AUD-03). The value
   present at read time is always captured (read-time capture compares
   it with the last observed value). Intermediate values and authors are
