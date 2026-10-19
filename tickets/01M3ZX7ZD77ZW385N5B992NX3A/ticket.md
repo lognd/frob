@@ -2,13 +2,13 @@
 id = "01M3ZX7ZD77ZW385N5B992NX3A"
 title = "explain RULE: the full rule page offline, with a pager on a TTY"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-03T03:34:38Z"
+updated = "2026-10-19T17:45:32Z"
 idempotency_key = "m2-diag-explain-verb"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/gob-cli/src/explain.rs", "crates/frob/src/explain_cmd.rs", "crates/grimble/src/explain_cmd.rs"]
