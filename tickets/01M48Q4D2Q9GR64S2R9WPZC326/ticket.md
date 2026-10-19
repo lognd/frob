@@ -8,7 +8,7 @@ points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:40:59Z"
-updated = "2026-10-19T20:49:48Z"
+updated = "2026-10-19T21:12:04Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/**"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M48Q4CHCFKJ9SSTVT471060B"
 
 [[acceptance]]
 text = "removing COV001's unresolved case fails naming COV001 P- unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a Universal rule without its matrix rows fails naming it"
