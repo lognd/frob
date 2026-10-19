@@ -2,16 +2,17 @@
 id = "01M3ZX7JN8RWAKDVYK0BNG3E2K"
 title = "Typed hook registry: versions, priority with name tie-break, config_tables"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-19T06:45:17Z"
+updated = "2026-10-19T06:55:35Z"
 idempotency_key = "m2-packs-hooks"
 labels = ["milestone:2", "area:packs"]
-scope = ["crates/gob-packs/src/hooks/**"]
+scope = ["crates/gob-packs/src/hooks/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/hooks.rs", "docs/design/plugins.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,11 +20,11 @@ target = "01M3ZX7FG2JNTHKVQ5R535DAVZ"
 
 [[acceptance]]
 text = "Given a pack implementing an unknown hook or a wrong signature, when loaded, then PACK005 states the exact reason"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two packs with equal priority on one hook, when ordered, then the tie-break is by pack name and the order is identical on every run"
-bound = false
+bound = true
 +++
 
 Implements plugins.md section 5.

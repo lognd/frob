@@ -218,6 +218,15 @@ replacing pytest's tryfirst/trylast surprises. There is no wrapper hook
 in version 1: findings are data, merged by the engine, so nothing needs
 to wrap another pack's execution.
 
+Implemented in `gob_packs::hooks`: `Hook` is the closed list above, a pack
+declares each implementation as hook name, version, signature and
+priority (`Implementation`), and `Registry::register` refuses an unknown
+hook, an unimplemented version, a signature that differs from the
+specification (whitespace ignored) or a missing capability (`check_repo`
+needs `graph`, `adapter.fold` needs `adapter`) as PACK005 stating the
+reason. `Registry::ordered` sorts by priority then pack name;
+`Registry::config_tables` lists materialized tables sorted.
+
 ## 6. Performance: how parity is guaranteed and measured
 
 1. **Built-ins are compiled in, and treated logically the same.** (Owner
