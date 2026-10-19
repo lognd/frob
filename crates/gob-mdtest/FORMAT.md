@@ -140,3 +140,17 @@ names every uncovered rule. Known gaps are listed in
 `product`, `rule` and a `ticket` handle (one umbrella ticket per product).
 The list may only shrink: an entry whose rule is now covered, no longer
 registered, or without a `~XXXXXXX` handle fails the test.
+
+## Language matrix
+
+`cell=NAME` (one of `rust python typescript csharp markdown text binary island`) places a block
+in the language matrix of a Universal rule (`docs/design/testing.md` section 4). The expected
+class of each cell is derived from the rule's needs and the capability matrix by an injected
+deriver (`gob_mdtest::matrix`); a block whose `expect=` contradicts it fails. `parity=NAME`
+groups blocks of one rule stating the same case in several languages: every group member in an
+Examine cell must agree on fire versus clean.
+
+Every Universal rule needs a block in every cell, or a `[[matrix_gap]]` entry in
+`coverage-allowlist.toml` with `product`, `rule`, `cell` (a name or `*`) and a `~XXXXXXX`
+`ticket`. The list may only shrink: an entry whose cell is now filled fails the test.
+`crates/frob-check/tests/rule_matrix.rs` wires the real deriver.

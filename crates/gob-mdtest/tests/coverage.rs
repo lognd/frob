@@ -29,6 +29,7 @@ fn gap(rule: &str, ticket: &str) -> Allowlist {
             rule: rule.into(),
             ticket: ticket.into(),
         }],
+        matrix_gap: Vec::new(),
     }
 }
 

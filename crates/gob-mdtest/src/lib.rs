@@ -33,6 +33,7 @@
 )]
 
 pub mod coverage;
+pub mod matrix;
 mod parse;
 mod run;
 

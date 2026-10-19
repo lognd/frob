@@ -82,3 +82,40 @@ The rule cannot examine an opaque text file, so it says so instead of passing.
 ```text expect=unresolved file=notes.xyz
 TODO this file is never scanned
 ```
+
+## Language matrix
+
+One bare-marker case per matrix cell (docs/design/testing.md section 4). The expected class
+of each cell is derived from the rule's needs and the capability matrix, and a block that
+contradicts it fails the matrix check; `parity=bare` ties the examined cells to one outcome.
+
+```rust expect=fire cell=rust parity=bare file=src/lib.rs
+// TODO tidy this // error: TODO001
+fn a() {}
+```
+
+```python expect=fire cell=python parity=bare file=app.py
+# TODO tidy this # error: TODO001
+def a():
+    pass
+```
+
+```typescript expect=fire cell=typescript parity=bare file=app.ts
+// TODO tidy this // error: TODO001
+function a() {}
+```
+
+```csharp expect=fire cell=csharp parity=bare file=App.cs
+// TODO tidy this // error: TODO001
+class A {}
+```
+
+```markdown expect=fire cell=markdown parity=bare file=notes.md
+# Title
+
+<!-- TODO tidy this --> <!-- error: TODO001 -->
+```
+
+```text expect=unresolved cell=text reason=fidelity file=notes.txt
+TODO tidy this
+```

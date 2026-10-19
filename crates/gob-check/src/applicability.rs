@@ -181,6 +181,69 @@ pub fn resolve(applies: &Applies, facts: &FileFacts<'_>) -> SubjectStatus {
     SubjectStatus::Examine
 }
 
+/// The matrix cell names `derive_cell` understands; mirrors `gob_mdtest::matrix::CELLS`.
+pub const MATRIX_CELLS: [&str; 8] = [
+    "rust",
+    "python",
+    "typescript",
+    "csharp",
+    "markdown",
+    "text",
+    "binary",
+    "island",
+];
+
+/// A complete parse, for the matrix cells' facts.
+static COMPLETE: ParseStatus = ParseStatus::Complete;
+
+/// The facts of one language-matrix cell (testing.md section 4): the language at its fidelity, or a pseudo-cell.
+fn cell_facts(cell: &str) -> Option<FileFacts<'static>> {
+    let adapter = |lang, fidelity| FileFacts {
+        lang: Some(lang),
+        opaque: false,
+        scanned: false,
+        fidelity,
+        parse: &COMPLETE,
+    };
+    Some(match cell {
+        "rust" => adapter(Lang::Rust, Fidelity::F3),
+        "python" => adapter(Lang::Python, Fidelity::F2),
+        "typescript" => adapter(Lang::TypeScript, Fidelity::F2),
+        "csharp" => adapter(Lang::CSharp, Fidelity::F1),
+        "markdown" => adapter(Lang::Markdown, Fidelity::F4),
+        "text" => FileFacts::opaque_text(&COMPLETE),
+        "binary" => FileFacts {
+            lang: Some(Lang::Binary),
+            opaque: true,
+            scanned: false,
+            fidelity: Fidelity::F0,
+            parse: &COMPLETE,
+        },
+        _ => return None,
+    })
+}
+
+/// The status a rule declaring `applies` derives for the matrix `cell`, or `None` for an unknown cell.
+///
+/// The `island` cell is a lexically scanned code region inside another file (a fenced block in
+/// markdown): lexical rules (comments only) examine it, any rule needing symbols cannot decide.
+pub fn derive_cell(applies: &Applies, cell: &str) -> Option<SubjectStatus> {
+    if cell == "island" {
+        let lexical = applies.needs().iter().all(|c| *c == Capability::Comments);
+        tracing::debug!(lexical, "island cell derived from the rule's needs");
+        return Some(if lexical {
+            SubjectStatus::Examine
+        } else {
+            SubjectStatus::Unresolved(
+                "island text has no symbols: only its comments are scanned".to_owned(),
+            )
+        });
+    }
+    let status = resolve(applies, &cell_facts(cell)?);
+    tracing::debug!(cell, ?status, "matrix cell derived");
+    Some(status)
+}
+
 /// Text rules: read comments and directives of every text artifact.
 const TEXT: Applies = Applies::Universal {
     needs: &[Capability::Comments],
@@ -224,6 +287,34 @@ pub fn temporary_applies(meta: &RuleMeta) -> Applies {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:tests crates/gob-check/src/applicability.rs::derive_cell
+    #[test]
+    fn matrix_cells_derive_from_needs_and_capabilities() {
+        let class = |a: &Applies, c: &str| match derive_cell(a, c).expect("known cell") {
+            SubjectStatus::Examine => "examine",
+            SubjectStatus::Unresolved(_) => "unresolved",
+            SubjectStatus::NotApplicable(_) => "notapplicable",
+        };
+        let text: Vec<_> = MATRIX_CELLS.iter().map(|c| class(&TEXT, c)).collect();
+        assert_eq!(
+            text,
+            [
+                "examine",
+                "examine",
+                "examine",
+                "examine",
+                "examine",
+                "unresolved",
+                "notapplicable",
+                "examine"
+            ]
+        );
+        assert_eq!(class(&REACH, "csharp"), "unresolved");
+        assert_eq!(class(&REACH, "island"), "unresolved");
+        assert_eq!(class(&REACH, "rust"), "examine");
+        assert!(derive_cell(&TEXT, "cobol").is_none());
+    }
 
     // frob:tests crates/gob-check/src/applicability.rs::resolve
     #[test]

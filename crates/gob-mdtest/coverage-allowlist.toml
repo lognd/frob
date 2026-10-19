@@ -1,3 +1,65 @@
 # Rule coverage gaps: one umbrella ticket per product lists its uncovered rules.
 # This file may only shrink; see "Rule coverage" in crates/gob-mdtest/FORMAT.md.
 # crunk and grimble declare their rules with an mdtest corpus each, so they have no entries.
+
+# Language-matrix gaps (docs/design/testing.md section 4): a Universal rule cell with no block yet.
+
+[[matrix_gap]]
+product = "frob"
+rule = "TODO001"
+cell = "binary"
+ticket = "~HJBXNSN"
+
+[[matrix_gap]]
+product = "frob"
+rule = "TODO001"
+cell = "island"
+ticket = "~HJBXNSN"
+
+[[matrix_gap]]
+product = "frob"
+rule = "COV001"
+cell = "csharp"
+ticket = "~VDJC1HF"
+
+[[matrix_gap]]
+product = "frob"
+rule = "COV001"
+cell = "text"
+ticket = "~VDJC1HF"
+
+[[matrix_gap]]
+product = "frob"
+rule = "COV001"
+cell = "binary"
+ticket = "~HJBXNSN"
+
+[[matrix_gap]]
+product = "frob"
+rule = "COV001"
+cell = "island"
+ticket = "~HJBXNSN"
+
+[[matrix_gap]]
+product = "frob"
+rule = "DOC001"
+cell = "*"
+ticket = "~7DK876S"
+
+[[matrix_gap]]
+product = "frob"
+rule = "DOC002"
+cell = "*"
+ticket = "~7DK876S"
+
+[[matrix_gap]]
+product = "frob"
+rule = "REF001"
+cell = "*"
+ticket = "~7DK876S"
+
+[[matrix_gap]]
+product = "frob"
+rule = "TICK006"
+cell = "*"
+ticket = "~7DK876S"

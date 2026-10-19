@@ -104,3 +104,46 @@ TODO this is code
 ```text
 TODO this file is never scanned
 ```
+
+### TODO001 bare work markers / Language matrix #11 (line 92) (fire)
+
+```rust
+// TODO tidy this // error: TODO001
+fn a() {}
+```
+
+### TODO001 bare work markers / Language matrix #12 (line 97) (fire)
+
+```python
+# TODO tidy this # error: TODO001
+def a():
+    pass
+```
+
+### TODO001 bare work markers / Language matrix #13 (line 103) (fire)
+
+```typescript
+// TODO tidy this // error: TODO001
+function a() {}
+```
+
+### TODO001 bare work markers / Language matrix #14 (line 108) (fire)
+
+```csharp
+// TODO tidy this // error: TODO001
+class A {}
+```
+
+### TODO001 bare work markers / Language matrix #15 (line 113) (fire)
+
+```markdown
+# Title
+
+<!-- TODO tidy this --> <!-- error: TODO001 -->
+```
+
+### TODO001 bare work markers / Language matrix #16 (line 119) (unresolved)
+
+```text
+TODO tidy this
+```

@@ -81,6 +81,10 @@ expectation that disagrees with the derived one fails, so the matrix
 cannot be satisfied by copying. Parity cases render one logical shape in
 three languages with one expectation.
 
+The harness is `gob_mdtest::matrix` (blocks carry `cell=` and `parity=`); gaps are
+`[[matrix_gap]]` entries in `crates/gob-mdtest/coverage-allowlist.toml`, each with a
+ticket, and the list may only shrink.
+
 An artifact with no adapter yet is `unresolved` with reason `fidelity`
 for capability rules, rolled up to one finding per rule and language
 (universal-model.md 3.3, 6: the worst case is F0 with everything

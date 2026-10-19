@@ -103,6 +103,9 @@ pub struct Allowlist {
     /// Every allowlisted gap.
     #[serde(default)]
     pub gap: Vec<Gap>,
+    /// Every allowlisted language-matrix gap (see [`crate::matrix`]).
+    #[serde(default)]
+    pub matrix_gap: Vec<crate::matrix::MatrixGap>,
 }
 
 impl Allowlist {
@@ -170,6 +173,35 @@ fn fixture_key(path: &Path) -> Option<(String, String)> {
     Some((family, rule))
 }
 
+/// Every mdtest block under `<root>/crates`, in walk order; unreadable or unparsable suites are skipped with a warning.
+#[must_use]
+pub fn scan_blocks(root: &Path) -> Vec<crate::parse::Block> {
+    let walker = WalkDir::new(root.join("crates"))
+        .into_iter()
+        .filter_entry(|e| e.file_name() != "target");
+    let mut out = Vec::new();
+    for entry in walker
+        .filter_map(Result::ok)
+        .filter(|e| e.file_type().is_file())
+    {
+        let path = entry.path();
+        if !(path.extension().is_some_and(|x| x == "md") && in_mdtest_dir(path)) {
+            continue;
+        }
+        let Ok(text) = std::fs::read_to_string(path) else {
+            tracing::warn!(path = %path.display(), "unreadable mdtest suite skipped");
+            continue;
+        };
+        match parse_suite(&text) {
+            Ok(blocks) => out.extend(blocks),
+            Err(e) => {
+                tracing::warn!(path = %path.display(), error = %e, "unparsable mdtest suite skipped");
+            }
+        }
+    }
+    out
+}
+
 /// Scan every mdtest suite and fixture under `<root>/crates`.
 #[must_use]
 pub fn scan_corpus(root: &Path) -> Corpus {
@@ -216,7 +248,7 @@ pub fn scan_corpus(root: &Path) -> Corpus {
 }
 
 /// True when `s` looks like a ticket handle: `~` and seven Crockford characters.
-fn is_handle(s: &str) -> bool {
+pub(crate) fn is_handle(s: &str) -> bool {
     s.strip_prefix('~').is_some_and(|h| {
         h.len() == 7
             && h.chars()

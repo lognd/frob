@@ -101,6 +101,10 @@ pub struct Block {
     pub fidelity: Option<String>,
     /// `parse=ok|partial|failed`: the parse status the case is written for (recorded; checked by the language matrix).
     pub parse: Option<String>,
+    /// `cell=NAME`: the language-matrix cell the case fills (see [`crate::matrix::CELLS`]).
+    pub cell: Option<String>,
+    /// `parity=NAME`: the case is one language's version of the named cross-language case.
+    pub parity: Option<String>,
     /// `known-gap=~TICKET`: an Unresolved the project accepts, tracked by the ticket.
     pub known_gap: Option<String>,
     /// `fixed`: the case is the text after applying the rule's fix.
@@ -411,6 +415,8 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             subjects,
             fidelity: opts.get("fidelity").map(|t| (*t).to_owned()),
             parse: opts.get("parse").map(|t| (*t).to_owned()),
+            cell: cell_of(&opts).map_err(&err)?,
+            parity: opts.get("parity").map(|t| (*t).to_owned()),
             known_gap,
             fixed,
             rules: selected_rules(opts.get("rules").copied()).map_err(&err)?,
@@ -420,6 +426,18 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
         });
     }
     Ok(blocks)
+}
+
+/// The `cell=` key, checked against the closed matrix cell list.
+fn cell_of(opts: &BTreeMap<&str, &str>) -> Result<Option<String>, String> {
+    match opts.get("cell") {
+        None => Ok(None),
+        Some(c) if crate::matrix::CELLS.contains(c) => Ok(Some((*c).to_owned())),
+        Some(c) => Err(format!(
+            "cell must be one of {}, got `{c}`",
+            crate::matrix::CELLS.join(", ")
+        )),
+    }
 }
 
 /// Parse the comma-separated `rules=` list into rule ids.

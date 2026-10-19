@@ -1,0 +1,1 @@
+gob-mdtest: Universal rules are tested across a language matrix (rust, python, typescript, csharp, markdown, text, binary, island); `cell=` and `parity=` block keys, expectations derived from rule needs and capability cells, and `[[matrix_gap]]` allowlist entries.
