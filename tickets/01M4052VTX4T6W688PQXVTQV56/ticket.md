@@ -2,7 +2,8 @@
 id = "01M4052VTX4T6W688PQXVTQV56"
 title = "MIR001 mirror-behind is time-based, with per-scope reasons"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
