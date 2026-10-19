@@ -2,13 +2,13 @@
 id = "01M4FGYG9TXDAMZ2VS2ZHGJKX1"
 title = "Kernel rules: label closure, clearance, boundary and rate findings"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:35Z"
-updated = "2026-10-09T05:08:15Z"
+updated = "2026-10-19T11:45:11Z"
 idempotency_key = "logand-gaps-K1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble*/**", "crates/gob-*/**", "changelog.d/**"]
