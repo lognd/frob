@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T08:46:15Z"
+digest = "650dbe024ed454074a7c2f9e2faf62fac8bfcc66b1c85f5e85a14f4da2b6c328"
+exit_code = 0
+inline = """
+
+running 1 test
+test limits::tests::body_over_limit_is_reported_and_exact_limit_passes ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 47 filtered out; finished in 0.00s
+
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 15s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-9c7a4f86665bb5e8)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror body_over_limit_is_reported_and_exact_limit_passes"
+size = 414
+status = "measured"
+at = "2026-10-19T08:46:15Z"
+actor = "lognd"
+rev = 1

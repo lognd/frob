@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T08:59:30Z"
+digest = "d946f1c4fb9e0e5c08583b89f4c54f3f985bea04635c2f38ab9427388d6686f4"
+exit_code = 0
+inline = """
+
+running 1 test
+test github::lookup::tests::found_through_listing_only_never_search ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 47 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-9c7a4f86665bb5e8)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror found_through_listing_only_never_search"
+size = 344
+status = "measured"
+at = "2026-10-19T08:59:30Z"
+actor = "lognd"
+rev = 1

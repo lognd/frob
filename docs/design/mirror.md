@@ -160,6 +160,13 @@ and in `frob mirror status`.
 - MIR001 is time-based: "no successful run for N hours" (scheduled runs
   are delayed, dropped, and disabled after inactivity), plus the
   per-scope reasons below.
+  Implemented in `crates/frob-obligations/src/mir.rs`: `mir001` takes the
+  recorded `MirrorRunState` (last successful run, per-scope reasons), the
+  clock and N, and returns Advisory findings only: one when the last
+  success is older than N hours or absent (stating the age), one per
+  reason (`rate-limited` with the next window, `budget-too-small`,
+  `token-blind`, `marker-key-unknown`, `render-limit`,
+  `write-not-sticking`). A fresh success with no reasons emits nothing.
 
 ### 3.2 What a run looks at: feed, sweep and budget (MIR-AUD-02, 10, 27, 33; F8)
 
@@ -359,7 +366,10 @@ byte-identical output. Neutralisation and render limits layer on top.
 - Render limits are checked before any write: body size (65536
   characters), label count and length, sub-issue limits. A ticket that
   cannot be published is isolated (MIR001 for that ticket only); one bad
-  ticket never stops the run.
+  ticket never stops the run. Implemented in `frob-mirror` `limits`:
+  `check` tests one rendered issue (body 65536 characters, 100 labels of
+  at most 50 characters, 100 sub-issues) and `plan` splits a run into
+  publishable and isolated tickets, each isolation carrying its reason.
 - Mirrored text cannot trigger GitHub side effects: `@` mentions and
   team mentions are neutralised, closing keywords (`fixes #12`) and
   cross-repository references are rendered as plain text, no task-list

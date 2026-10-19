@@ -2,16 +2,16 @@
 id = "01M4052QWSEERAG3JPCGXM4RK4"
 title = "GitHub lookup: list the bot's issues by creator newest first (read-your-writes)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-03T05:51:35Z"
+updated = "2026-10-19T08:59:31Z"
 idempotency_key = "m2-mirror2-gh-lookup"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-gh/src/list.rs", "crates/frob-mirror/src/github/lookup.rs"]
+scope = ["crates/frob-gh/src/list.rs", "crates/frob-mirror/src/github/lookup.rs", "crates/frob-mirror/src/github/mod.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,7 +23,7 @@ target = "01M3ZX83AB2JADBKWFA9SY4J60"
 
 [[acceptance]]
 text = "Given a recorded listing of bot issues, when a ticket's issues are looked up, then they are found through listing only and the search endpoint is never called"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a live token and an ignored test, when an issue is created and listed at once, then it appears in the listing and the result is recorded in the ticket as the verification of the UNVERIFIED fact"
@@ -31,7 +31,7 @@ bound = false
 
 [[acceptance]]
 text = "Given more than one page of bot issues, when looked up back to a create-start time, then paging continues until that time is passed"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.3 (Lookup is read-your-writes; F5).
