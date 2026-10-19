@@ -11,7 +11,7 @@ created = "2026-10-03T06:18:31Z"
 updated = "2026-10-19T13:32:02Z"
 idempotency_key = "m2-frob-vet"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/grimble-vet/**", "crates/grimble/src/**", "crates/grimble/Cargo.toml"]
+scope = ["crates/grimble-vet/**", "crates/grimble/src/**", "crates/grimble/Cargo.toml", "crates/grimble/tests/vet.rs"]
 
 [[acceptance]]
 text = "Given a change that adds a dependency with a RustSec advisory, when frob vet runs, then it reports the advisory with its id and the fixed versions"
