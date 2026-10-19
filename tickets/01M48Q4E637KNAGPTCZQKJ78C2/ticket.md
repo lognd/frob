@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "dropping a corpus operator case fails"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "every adapter has matrix, garbage and partial-parse cases"
