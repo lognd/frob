@@ -2,7 +2,8 @@
 id = "01M5A8CA8RPD5G1N7G7P04H5Z3"
 title = "grimble tests/verbs.rs: 5 tests fail since CYCLE001/DEAD001/LARGE001 findings appear in check output"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
