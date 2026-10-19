@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T20:26:42Z"
+digest = "a64df9e0414369709471dcf9c68e407aebbc1e9ccbac907ab6f79855b94c02cf"
+exit_code = 0
+inline = """
+
+running 1 test
+test measured::dropping_a_corpus_operator_case_lowers_the_measured_level ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 207 filtered out; finished in 0.02s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running tests/it/main.rs (target/debug/deps/it-67a1a5f67609aca3)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-symbols --test it dropping_a_corpus_operator_case_lowers_the_measured_level"
+size = 337
+status = "measured"
+at = "2026-10-19T20:26:42Z"
+actor = "lognd"
+rev = 1
