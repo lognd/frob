@@ -2,7 +2,8 @@
 id = "01M4052SBZCJ3MRHGTPAFW4QP1"
 title = "Duplicate closing on every run"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
