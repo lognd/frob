@@ -4,10 +4,11 @@ title = "Measured fidelity and a capability-matrix snapshot for every adapter"
 type = "story"
 category = "todo"
 priority = "high"
+points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:00Z"
-updated = "2026-10-06T13:41:00Z"
+updated = "2026-10-19T20:20:52Z"
 scope = ["crates/gob-symbols/**", "crates/gob-languages/**", "docs/reference/**"]
 
 [[acceptance]]
