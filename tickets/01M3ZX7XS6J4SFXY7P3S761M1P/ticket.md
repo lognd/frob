@@ -2,7 +2,8 @@
 id = "01M3ZX7XS6J4SFXY7P3S761M1P"
 title = "Summary separates plugin-unfinished from undecidable and counts security decisions"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
