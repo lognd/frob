@@ -25,12 +25,7 @@ pub struct BranchShardStore {
 
 impl BranchShardStore {
     /// A store writing `<prefix>/<key>.json` on `ref_name`; `author` overrides git config.
-    pub fn new(
-        repo: Repo,
-        ref_name: &str,
-        prefix: &str,
-        author: Option<(String, String)>,
-    ) -> Self {
+    pub fn new(repo: Repo, ref_name: &str, prefix: &str, author: Option<(String, String)>) -> Self {
         Self {
             repo,
             ref_name: ref_name.to_string(),
