@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:36Z"
-updated = "2026-10-19T17:47:28Z"
+updated = "2026-10-19T17:50:44Z"
 idempotency_key = "m2-sec-summary"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/text.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/tests/snapshots/*.snap"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a grant and a replaces, when summarized, then each appears as a counted security decision"
-bound = false
+bound = true
 +++
 
 Implements security.md sections 1 (I13) and 2.7 (last bullet).
