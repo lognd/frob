@@ -2,7 +2,8 @@
 id = "01M48Q4D2Q9GR64S2R9WPZC326"
 title = "Coverage meta-test: required cases per polarity, tier and must_measure"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
