@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-19T06:21:25Z"
+updated = "2026-10-19T06:24:09Z"
 idempotency_key = "m2-packs-repo-loader"
 labels = ["milestone:2", "area:packs"]
-scope = ["crates/gob-packs/src/loader/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/loader.rs"]
+scope = ["crates/gob-packs/src/loader/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/loader.rs", "docs/design/plugins.md"]
 
 [[links]]
 kind = "blocked-by"
