@@ -8,8 +8,8 @@ points = 2
 parent = "01M43A5349M17PED730HKNM4VV"
 reporter = "lognd"
 created = "2026-10-04T12:05:14Z"
-updated = "2026-10-19T19:03:11Z"
-scope = ["crates/frob-obligations/**"]
+updated = "2026-10-19T19:05:11Z"
+scope = ["crates/frob-obligations/**", "docs/reference/fidelity.md"]
 
 [[acceptance]]
 text = "Given a public Python function without a docstring, when frob check runs, then DOC001 reports it"
