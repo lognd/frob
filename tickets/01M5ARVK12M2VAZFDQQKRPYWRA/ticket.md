@@ -7,6 +7,6 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T19:05:18Z"
-updated = "2026-10-19T19:19:37Z"
+updated = "2026-10-19T19:25:46Z"
 scope = ["CONTRIBUTING.md", "docs/design/build-test-ci.md"]
 +++
