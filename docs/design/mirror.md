@@ -281,6 +281,11 @@ and in `frob mirror status`.
   may create), `handle_moved` swaps the cached location only when the
   marker verifies at the new one, and `check_blind` reads the repository
   and the bot's newest issue and returns MIR001 `token-blind` on failure.
+  Recreate is implemented in `crates/frob/src/mirror_recreate_cmd.rs`:
+  `recreate` probes the old issue, proceeds only on a 410 (drops the
+  shard's tracker identity, then runs the create protocol), and refuses a
+  404 ("may be invisible, not deleted"), a live issue and a moved one.
+  The CLI verb wiring (store and adapter) is a follow-up.
 - **Own writes.** A dedicated App identity (`[mirror] bot_ids`, by
   user id). Before each mutation the run journals (issue, field, value
   digest, run id); a history entry is "own" only if its actor is a bot
