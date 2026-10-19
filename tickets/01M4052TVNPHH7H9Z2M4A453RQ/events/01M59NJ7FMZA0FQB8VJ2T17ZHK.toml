@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T08:48:31Z"
+digest = "af8272ae69cb6b9bfc3cb14de5ea8b6d03b6fecbc358e0270e0e50943ebce20c"
+exit_code = 0
+inline = """
+
+running 1 test
+test limits::tests::one_bad_ticket_among_ten_leaves_nine_publishable ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 47 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-9c7a4f86665bb5e8)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror one_bad_ticket_among_ten_leaves_nine_publishable"
+size = 345
+status = "measured"
+at = "2026-10-19T08:48:31Z"
+actor = "lognd"
+rev = 1
