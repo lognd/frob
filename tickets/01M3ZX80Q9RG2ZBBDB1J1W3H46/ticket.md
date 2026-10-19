@@ -8,14 +8,14 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:39Z"
-updated = "2026-10-19T12:46:58Z"
+updated = "2026-10-19T12:47:12Z"
 idempotency_key = "m2-sec-nested-config"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-config/src/workspace.rs", "crates/gob-config/src/lib.rs"]
 
 [[acceptance]]
 text = "Given a grimble.toml under a vendored directory not listed in members, when checking, then it is not loaded"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same path listed in members, when checking, then it loads as its own root"
