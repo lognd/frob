@@ -1,5 +1,6 @@
 //! `grimble vet` end to end: advisories from an offline snapshot and unvetted new dependencies.
 
+use std::fmt::Write as _;
 use std::path::Path;
 use std::process::Command;
 
@@ -13,13 +14,14 @@ fn lock(pkgs: &[(&str, &str)]) -> String {
         "version = 4\n[[package]]\nname = \"app\"\nversion = \"0.1.0\"\ndependencies = [\n",
     );
     for (n, _) in pkgs {
-        s.push_str(&format!(" \"{n}\",\n"));
+        let _ = writeln!(s, " \"{n}\",");
     }
     s.push_str("]\n");
     for (n, v) in pkgs {
-        s.push_str(&format!(
+        let _ = write!(
+            s,
             "[[package]]\nname = \"{n}\"\nversion = \"{v}\"\nsource = \"{REG}\"\n"
-        ));
+        );
     }
     s
 }
