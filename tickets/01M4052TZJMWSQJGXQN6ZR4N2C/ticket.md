@@ -2,7 +2,8 @@
 id = "01M4052TZJMWSQJGXQN6ZR4N2C"
 title = "Neutralise mentions, closing keywords, cross-repository references and task lists in mirrored text"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
