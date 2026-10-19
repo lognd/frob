@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-19T09:17:09Z"
+updated = "2026-10-19T09:17:10Z"
 idempotency_key = "m2-sec-process-packs"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-check/src/tools.rs", "crates/gob-exec/src/**", "crates/gob-exec/Cargo.toml", "crates/gob-check/src/options.rs"]
+scope = ["crates/gob-check/src/tools.rs", "crates/gob-exec/src/**", "crates/gob-exec/Cargo.toml", "crates/gob-check/src/options.rs", "crates/gob-check/src/pipeline.rs"]
 
 [[links]]
 kind = "blocked-by"
