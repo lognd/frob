@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:17Z"
-updated = "2026-10-19T23:19:12Z"
+updated = "2026-10-19T23:27:13Z"
 scope = ["crates/frob-mirror/**"]
+
+[[acceptance]]
+text = "frob-mirror provides a native in-process HttpTransport that sends method, query, JSON body and auth headers, reports redirects unfollowed, and maps connection failures to TransportError"
+bound = false
 +++
 
 found while working ~1KH6CCV
