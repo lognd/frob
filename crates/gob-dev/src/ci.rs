@@ -553,7 +553,7 @@ pub trait StepRunner {
     fn run(&self, root: &Path, step: &Step) -> Result<Option<Remote>, CiError>;
 }
 
-/// The real [`StepRunner`], spawning through `gob-exec`.
+/// The real local [`StepRunner`], spawning through `gob-exec`; remote runs use [`GowayRunner`].
 #[derive(Debug, Default)]
 pub struct ExecRunner;
 
@@ -664,7 +664,7 @@ fn require_all(root: &Path, step: &Step) -> Result<(), CiError> {
 }
 
 /// Environment variable that opts `cargo dev ci` into running offloadable steps through a remote host;
-/// its value is the remote-runner binary (a bare name or a path). A `--remote` flag will set the same.
+/// its value is the remote-runner binary (a bare name or a path). The `--remote` flag reads it too.
 pub const REMOTE_ENV: &str = "CARGO_DEV_CI_REMOTE";
 
 /// Run `step` on this host, checking its prerequisites locally first.
@@ -681,13 +681,7 @@ fn run_local(root: &Path, step: &Step) -> Result<Option<Remote>, CiError> {
 
 impl StepRunner for ExecRunner {
     fn run(&self, root: &Path, step: &Step) -> Result<Option<Remote>, CiError> {
-        match std::env::var(REMOTE_ENV) {
-            Ok(bin) if !bin.is_empty() => {
-                tracing::info!(goway = %bin, step = step.name, "remote runner selected by env");
-                GowayRunner::new(&bin, RemoteOs::default()).run(root, step)
-            }
-            _ => run_local(root, step),
-        }
+        run_local(root, step)
     }
 }
 

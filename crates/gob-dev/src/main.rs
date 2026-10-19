@@ -70,6 +70,9 @@ enum Task {
         /// Print the step names and exit.
         #[arg(long)]
         list: bool,
+        /// Run offloadable steps on a goway host: a bare name or path (default `goway`; also `CARGO_DEV_CI_REMOTE`).
+        #[arg(long, value_name = "GOWAY", num_args = 0..=1, default_missing_value = "goway")]
+        remote: Option<String>,
     },
     /// Time every leaf command of frob, grimble and crunk against its budget in profile.toml.
     Profile {
@@ -267,7 +270,8 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             steps,
             keep_going,
             list,
-        } => ci_checks(&steps, keep_going, list).map(|()| ok),
+            remote,
+        } => ci_checks(&steps, keep_going, list, remote.as_deref()).map(|()| ok),
         Task::Wheel {
             out,
             target,
@@ -355,8 +359,13 @@ fn generate_files(kind: Kind, check: bool, root: Option<PathBuf>) -> Result<(), 
     }
 }
 
-/// Run the CI checks from the workspace root and print the step summary.
-fn ci_checks(names: &[String], keep_going: bool, list: bool) -> Result<(), Failed> {
+/// Run the CI checks from the workspace root and print the step summary; `remote` offloads via goway.
+fn ci_checks(
+    names: &[String],
+    keep_going: bool,
+    list: bool,
+    remote: Option<&str>,
+) -> Result<(), Failed> {
     let fail = |e: &dyn std::fmt::Display| {
         tracing::error!(error = %e, "ci failed");
         Failed(format!("error: {e}"))
@@ -370,10 +379,23 @@ fn ci_checks(names: &[String], keep_going: bool, list: bool) -> Result<(), Faile
         }
         return Ok(());
     }
+    let from_env = std::env::var(ci::REMOTE_ENV).ok();
+    let goway = remote
+        .map(str::to_owned)
+        .or(from_env)
+        .filter(|bin| !bin.is_empty())
+        .map(|bin| ci::GowayRunner::new(&bin, ci::RemoteOs::default()));
+    let exec: &dyn ci::StepRunner = match &goway {
+        Some(runner) => {
+            tracing::info!(step_count = selected.len(), "ci offloading through goway");
+            runner
+        }
+        None => &ci::ExecRunner,
+    };
     let results = ci::run(
         &root,
         &selected,
-        &ci::ExecRunner,
+        exec,
         keep_going,
         ci::host_is_linux(),
         &mut |line| emit(line),
@@ -626,6 +648,26 @@ mod tests {
             panic!("not an import task");
         };
         assert_eq!(selection, None);
+    }
+
+    // frob:ticket 01M42KHBJ5GC8DVKND63WK9JKE
+    // frob:tests crates/gob-dev/src/main.rs::Task
+    #[test]
+    fn ci_remote_flag_takes_an_optional_runner_defaulting_to_goway() {
+        let parse = |args: &[&str]| {
+            let mut argv = vec!["gob-dev", "ci"];
+            argv.extend_from_slice(args);
+            match Cli::try_parse_from(argv).expect("parses").command {
+                Task::Ci { remote, .. } => remote,
+                _ => panic!("not a ci task"),
+            }
+        };
+        assert_eq!(parse(&[]), None);
+        assert_eq!(parse(&["--remote"]), Some("goway".to_owned()));
+        assert_eq!(
+            parse(&["--remote", "/opt/goway", "--step", "fmt"]),
+            Some("/opt/goway".to_owned())
+        );
     }
 
     // frob:tests crates/gob-dev/src/main.rs::profile_commands
