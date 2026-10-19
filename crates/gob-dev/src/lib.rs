@@ -23,6 +23,7 @@ pub mod products;
 pub mod profile;
 pub mod publish;
 pub mod render;
+pub mod test_size;
 pub mod wheel;
 pub mod wheel_smoke;
 

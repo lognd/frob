@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T16:50:55Z"
+digest = "305a6a21010bc2021cca95dd73d5489626a20f69a04f8b61f991fbea5c7ecebe"
+exit_code = 0
+inline = """
+
+running 1 test
+test outbox::tests::interrupted_run_resumes_with_only_remaining_ops ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 85 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.22s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-1ff17a4595a82125)
+     Running tests/support/main.rs (target/debug/deps/support-c1514688b8d078ad)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror interrupted_run_resumes_with_only_remaining_ops"
+size = 603
+status = "measured"
+at = "2026-10-19T16:50:55Z"
+actor = "lognd"
+rev = 1

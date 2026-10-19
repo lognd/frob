@@ -686,7 +686,13 @@ cargo nextest run -p <crate>    # focused
 frob check --ticket <id>        # the gate, scoped
 frob test --base main           # touched tests via frob's own selection
 cargo dev ci                    # exactly what CI runs on Linux, before reporting
+cargo dev test-size             # sum target/debug/deps executables against the 3 GB budget
 ```
+
+`cargo dev test-size [--profile debug] [--budget-gb 3]` (~ZM1HA1J) sums the linked
+test executables under `target/<profile>/deps` and exits 1 over budget. Dev and test
+profiles already strip symbols; the remaining lever is folding each crate's
+`tests/*.rs` into one `tests/main.rs` binary, tracked per crate as follow-up tickets.
 
 ### Suite time (~B6VY10G)
 
