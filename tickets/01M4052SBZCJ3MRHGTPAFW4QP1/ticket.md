@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-19T17:15:16Z"
+updated = "2026-10-19T17:23:04Z"
 idempotency_key = "m2-mirror2-dups"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/dups.rs"]
@@ -31,7 +31,7 @@ target = "01M4052R88Y0A9HQHDB86ERMEM"
 
 [[acceptance]]
 text = "Given two bot issues with valid markers for one ULID, when a run lists them, then the lowest number is canonical and the other is closed as a duplicate of it with its marker kept"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a closed duplicate that a human edited, when the next run reads it, then the edit is captured"
