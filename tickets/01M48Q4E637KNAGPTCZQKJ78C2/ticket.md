@@ -8,12 +8,12 @@ points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:00Z"
-updated = "2026-10-19T20:20:53Z"
+updated = "2026-10-19T20:26:42Z"
 scope = ["crates/gob-symbols/**", "crates/gob-languages/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "promoting an adapter's declared fidelity without corpus support fails"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "dropping a corpus operator case fails"
