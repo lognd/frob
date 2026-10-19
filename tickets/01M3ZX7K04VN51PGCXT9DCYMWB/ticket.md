@@ -2,13 +2,13 @@
 id = "01M3ZX7K04VN51PGCXT9DCYMWB"
 title = "config --for FILE: packs and rules in effect and the config line each came from"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-03T03:34:25Z"
+updated = "2026-10-19T06:45:20Z"
 idempotency_key = "m2-packs-config-for"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/grimble/src/config_for.rs", "crates/frob/src/config_cmd.rs"]
