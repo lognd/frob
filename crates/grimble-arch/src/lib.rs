@@ -60,6 +60,8 @@ pub struct ArchReport {
     pub findings: Vec<ArchFinding>,
     /// Subjects examined per rule (nodes, sized units, private functions); a rule that is off has none.
     pub subjects: BTreeMap<&'static str, usize>,
+    /// Rules whose whole scope is absent here (rule id to the reason), so zero subjects is not a gap.
+    pub not_applicable: BTreeMap<&'static str, String>,
 }
 
 /// Run `CYCLE001`, `LARGE001` and `DEAD001` over `input`.
@@ -68,6 +70,14 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     let (findings, nodes) = cycle::check(input.graph, input.crates);
     report.subjects.insert(CYCLE, nodes);
     report.findings.extend(findings);
+    if nodes == 0 {
+        tracing::debug!("no source units in the walk; architecture rules do not apply");
+        for id in [CYCLE, LARGE, DEAD] {
+            report
+                .not_applicable
+                .insert(id, "no source files in the walk".to_owned());
+        }
+    }
     if input.large_lines > 0 {
         let (findings, sized) = large::check(input.graph, input.large_lines, input.read);
         report.subjects.insert(LARGE, sized);

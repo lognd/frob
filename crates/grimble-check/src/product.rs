@@ -150,7 +150,12 @@ fn directive_metas() -> Vec<&'static RuleMeta> {
 
 /// The reason the declared rule `def` does not apply on this model, from the binding.
 fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) -> Option<String> {
-    snap.inputs.binding.not_applicable.get(def.id).cloned()
+    snap.inputs
+        .binding
+        .not_applicable
+        .get(def.id)
+        .cloned()
+        .or_else(|| snap.inputs.arch.not_applicable.get(def.id).cloned())
 }
 
 /// Run the architecture rules over the walk (graph built from the bound code, uncached).
@@ -261,6 +266,7 @@ impl Product for Grimble {
             trace.not_applicable = binding
                 .not_applicable
                 .iter()
+                .chain(&arch.not_applicable)
                 .map(|(rule, why)| ((*rule).to_owned(), why.clone()))
                 .collect();
         }
@@ -361,6 +367,7 @@ impl Product for Grimble {
 
     fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
         !snap.inputs.binding.not_applicable.contains_key(meta.id)
+            && !snap.inputs.arch.not_applicable.contains_key(meta.id)
     }
 
     fn repo_digest(&self, _snap: &Snapshot<Self>) -> Vec<u8> {

@@ -130,6 +130,11 @@ their own work. An agent-authored PR still needs a named human author.
 
 Use the issue forms: [bug report](.github/ISSUE_TEMPLATE/bug_report.yml)
 and [feature request](.github/ISSUE_TEMPLATE/feature_request.yml).
+Paste the full `frob --version` line: a build between releases prints
+`<release>-dev+<sha>`, and that sha is what lets a report be checked against
+`main`. Only an exact tagged release build prints the bare release version.
+Main between releases carries the dev marker deliberately (decision on
+~821FN00), so an unbumped land can never reuse a released identity.
 
 ## License
 

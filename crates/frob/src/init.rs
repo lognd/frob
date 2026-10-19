@@ -338,7 +338,7 @@ fn running_exe() -> Result<PathBuf, CliError> {
 
 /// The version line a frob prints for `--version`, as the running one would.
 fn running_version_line() -> String {
-    format!("{PRODUCT} {}", env!("CARGO_PKG_VERSION"))
+    format!("{PRODUCT} {}", env!("FROB_BUILD_VERSION"))
 }
 
 /// First stdout line of `<path> --version`, or `None` when it cannot run.
