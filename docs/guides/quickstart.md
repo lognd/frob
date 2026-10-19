@@ -112,6 +112,9 @@ exactly those, and records the run as evidence on the ticket. It does not
 choose which criterion the run proves; you bind that next. Tests run from the
 repository root, so a Rust crate in a subdirectory needs a `Cargo.toml`
 workspace at the root. A python project works the same way with pytest.
+After a `--base` run the changed files get a fresh mtime, so a later cargo build
+in the same (possibly shared-target) worktree recompiles them instead of
+trusting fingerprints from the run.
 
 ## 6. Bind evidence to the criterion
 

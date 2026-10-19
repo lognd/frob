@@ -12,7 +12,7 @@ use crate::lease::lease_ticket;
 // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
 use crate::run::{RunOptions, RunReport, failure_cause, run};
 use crate::select::{Framework, TestTarget, select_tests};
-use crate::touched::{TouchedSet, build_repo_graph, touched_set};
+use crate::touched::{TouchedSet, build_repo_graph, bump_mtimes, touched_set};
 
 /// The evidence event a run appended to the leased ticket.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -242,7 +242,12 @@ impl Command for TestVerb {
         opts.python.clone_from(&ws.tests.python);
         // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
         opts.unity_editor.clone_from(&ws.unity.editor);
-        let report = run(&ws.runner(), &data.selected, &opts).map_err(TestsError::into_cli)?;
+        let ran = run(&ws.runner(), &data.selected, &opts);
+        // frob:ticket 01M4VN38GBQAPJWK0FZPSDN1CC
+        if self.base.is_some() {
+            bump_mtimes(&ws.root, &data.touched.files);
+        }
+        let report = ran.map_err(TestsError::into_cli)?;
         data.ran = true;
         data.passed = Some(report.passed());
         data.executed = report.executed();

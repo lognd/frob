@@ -2,28 +2,28 @@
 id = "01M1T07NW78MGWRF7HZQMPSRAV"
 title = "evidence satisfaction must exclude xfail/xpass/skip by default"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M1QDTYTRW714S858S0TP6YWM"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-19T21:45:12Z"
+updated = "2026-10-19T22:01:26Z"
 aliases = ["T-3975"]
 labels = ["v1-cluster:B4", "triage:accepted"]
-scope = ["src/frob/testing/_models.py"]
+scope = ["src/frob/testing/_models.py", "crates/frob-evidence/**", "docs/design/build-test-ci.md", "crates/frob-tests/src/run.rs"]
 
 [[acceptance]]
 text = "given the current outcome-handling code, when this ticket's first step runs, then it reports whether xfail/xpass/skip currently satisfy evidence in this repo before any code change"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "given the fix, when a test outcome is xfail/xpass/skipped and no explicit opt-in is declared, then it does not satisfy frob:tests or ticket evidence"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "given an explicit opt-in is declared, when such an outcome occurs, then it is reported as a distinct countable state, not folded into passed"
-bound = false
+bound = true
 +++
 
 T-3928 edge/ops-unique item. THIS ONE BEARS ON FROB'S OWN EVIDENCE INTEGRITY, per the epic's own framing -- if xfail/xpass/skip satisfies frob:tests or ticket evidence today, every fail-then-pass claim this repo's own gates rely on is weaker than it reads.

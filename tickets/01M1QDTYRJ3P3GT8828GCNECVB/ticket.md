@@ -2,11 +2,12 @@
 id = "01M1QDTYRJ3P3GT8828GCNECVB"
 title = "frob:waive is silently inert in files with no registered grammar: the suppression mechanism fails without telling anyone"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
+points = 3
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-04T22:22:21Z"
+updated = "2026-10-19T21:45:17Z"
 aliases = ["T-3858"]
 labels = ["v1-cluster:G1", "triage:accepted"]
 +++
