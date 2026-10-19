@@ -36,6 +36,7 @@
 | `milestone list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every milestone, oldest first. |
 | `milestone new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a milestone; an identical repeat returns `already`, a different one is refused. |
 | `milestone show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one milestone with its member epics and exit criteria. |
+| `mirror recreate` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Replace the issue the tracker deleted (a 410) with a new one through the create protocol; a person at a terminal only. |
 | `mirror render` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the tracker-independent projection of a ticket: identity, sections, classification, state, relations, people and provenance. |
 | `profile` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the reader profile, or set it to `newcomer` or `experienced`. |
 | `release adopt` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Record tags made by hand as the version's release cut; git and the remote are never touched. |

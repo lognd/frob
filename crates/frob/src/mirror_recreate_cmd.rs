@@ -3,14 +3,42 @@
 //! The mirror never recreates an issue by itself. A person runs recreate for a ticket whose issue
 //! returned 410; the old identity is dropped from the shard and a new issue is made through the
 //! create protocol, after which the ticket is mirrored again. A 404 is refused: the token may
-//! simply be unable to see the issue, so it is not known to be deleted. This module is the
-//! transport-free core; the verb wiring supplies the store, adapter and projection.
+//! simply be unable to see the issue, so it is not known to be deleted. `recreate` is the
+//! transport-free core; `MirrorRecreate` is the verb that supplies the branch shard store, the
+//! GitHub adapter (over a `curl` transport) and the ticket projection.
 
 // frob:ticket 01M4052V7BG4YBHSW863YZEJ9X
+// frob:ticket 01M5AREAW91T16PSWFS1KH6CCV
 
+use std::collections::BTreeSet;
 use std::fmt;
+use std::fmt::Write as _;
+use std::io::{IsTerminal, Write};
+use std::process::{Command as Process, Stdio};
+use std::time::{Duration, Instant};
 
-use frob_mirror::adapter::{AdapterError, IssueRef, TrackerAdapter};
+use frob_ledger::mirror_map::MAP_DIR;
+use frob_mirror::github::adapter::{
+    GithubAdapter, GithubRest, HttpRequest, HttpResponse, HttpTransport, Method, TransportError,
+};
+use frob_mirror::github::read::{BodyRevisions, HistorySource, TimelineEvent};
+use frob_mirror::github::write::Clock as WriteClock;
+use frob_mirror::keyring::Keyring;
+use frob_mirror::mapfile::Shard;
+use frob_mirror::projection;
+use frob_mirror::shardstore::BranchShardStore;
+use gob_cli::clap::{self, ArgMatches};
+use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_trust::prompt::{Presence, presence};
+use schemars::JsonSchema;
+use serde::Serialize;
+use serde_json::Value;
+
+use crate::mirror_cmd::facts_of;
+use crate::ticket::{cli_err, open, resolve};
+use crate::workspace::Located;
+
+use frob_mirror::adapter::{AdapterError, AdapterResult, IssueRef, IssueState, TrackerAdapter};
 use frob_mirror::blind::{Disposition, classify};
 use frob_mirror::create::{CreateError, CreateStep, create_issue};
 use frob_mirror::cursor::PendingCursor;
@@ -127,6 +155,355 @@ pub fn recreate<S: ShardStore, A: TrackerAdapter>(
         .map_err(RecreateError::Create)?;
     info!(ulid, "recreate: create protocol finished");
     Ok(step)
+}
+
+/// Environment variable holding the 64-hex marker signing key.
+const KEY_VAR: &str = "FROB_MIRROR_KEY";
+/// Environment variable naming the marker key id; `DEFAULT_KID` when unset.
+const KID_VAR: &str = "FROB_MIRROR_KID";
+/// Marker key id used when `FROB_MIRROR_KID` is unset.
+const DEFAULT_KID: &str = "k1";
+/// Token variables, first set one wins.
+const TOKEN_VARS: [&str; 2] = ["GH_TOKEN", "GITHUB_TOKEN"];
+/// GitHub API root.
+const API_ROOT: &str = "https://api.github.com";
+/// Refusal code when a person is not at a terminal.
+const CODE_NEEDS_HUMAN: &str = "E-MIRROR-NEEDS-HUMAN";
+/// Refusal code for a recreate that did not run.
+const CODE_RECREATE: &str = "E-MIRROR-RECREATE";
+
+/// What `frob mirror recreate` did.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct RecreateReport {
+    /// The ticket ULID.
+    pub ticket: String,
+    /// `created`, `uncertain`, `blocked` or `rejected`.
+    pub result: String,
+    /// The new issue number when one was confirmed.
+    pub issue: Option<u64>,
+}
+
+/// Replace the issue the tracker deleted (a 410) with a new one; a person runs this at a terminal.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "mirror recreate",
+    product = "frob",
+    exits(ok, refused, usage, internal)
+)]
+pub struct MirrorRecreate {
+    ticket: String,
+    repo: Option<String>,
+}
+
+/// Arguments of `mirror recreate`.
+#[derive(Debug, Clone, clap::Args)]
+struct RecreateArgs {
+    /// The ticket as typed: full ULID, `~handle` or alias.
+    #[arg(value_name = "TICKET")]
+    ticket: String,
+    /// `owner/name` of the GitHub repository; defaults to the `origin` remote.
+    #[arg(long, value_name = "OWNER/NAME")]
+    repo: Option<String>,
+}
+
+/// The `(owner, name)` of a GitHub remote URL (https or scp-like), if it is one.
+fn parse_remote(url: &str) -> Option<(String, String)> {
+    let tail = url
+        .split_once("github.com/")
+        .or_else(|| url.split_once("github.com:"))?
+        .1;
+    let tail = tail.trim_end_matches('/').trim_end_matches(".git");
+    let (owner, name) = tail.split_once('/')?;
+    (!owner.is_empty() && !name.is_empty() && !name.contains('/'))
+        .then(|| (owner.to_owned(), name.to_owned()))
+}
+
+/// Percent-encode a query component.
+fn enc(s: &str) -> String {
+    let mut out = String::new();
+    for b in s.bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
+            out.push(char::from(b));
+        } else {
+            let _ = write!(out, "%{b:02X}");
+        }
+    }
+    out
+}
+
+/// Quote `s` as a curl config string.
+fn curl_quote(s: &str) -> String {
+    let mut out = String::from("\"");
+    for c in s.chars() {
+        match c {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}
+
+/// Split a `curl --include` capture into status, `Location` and body.
+fn parse_response(raw: &str) -> Option<HttpResponse> {
+    let (head, body) = raw
+        .split_once("\r\n\r\n")
+        .or_else(|| raw.split_once("\n\n"))?;
+    let mut lines = head.lines();
+    let status = lines.next()?.split_whitespace().nth(1)?.parse().ok()?;
+    let location = lines.find_map(|l| {
+        let (k, v) = l.split_once(':')?;
+        k.eq_ignore_ascii_case("location")
+            .then(|| v.trim().to_owned())
+    });
+    Some(HttpResponse {
+        status,
+        location,
+        body: body.to_owned(),
+    })
+}
+
+/// An [`HttpTransport`] that shells out to `curl`; the token goes over stdin, never argv.
+#[derive(Clone)]
+struct CurlTransport {
+    token: String,
+}
+
+impl HttpTransport for CurlTransport {
+    fn send(&self, req: &HttpRequest) -> Result<HttpResponse, TransportError> {
+        let mut url = format!("{API_ROOT}{}", req.path);
+        for (i, (k, v)) in req.query.iter().enumerate() {
+            url.push(if i == 0 { '?' } else { '&' });
+            let _ = write!(url, "{}={}", enc(k), enc(v));
+        }
+        let method = match req.method {
+            Method::Get => "GET",
+            Method::Post => "POST",
+            Method::Patch => "PATCH",
+            Method::Delete => "DELETE",
+        };
+        let mut cfg = format!(
+            "url = {}\nrequest = {method}\nheader = {}\nheader = \"Accept: application/vnd.github+json\"\nheader = \"X-GitHub-Api-Version: 2022-11-28\"\nheader = \"User-Agent: frob-mirror\"\n",
+            curl_quote(&url),
+            curl_quote(&format!("Authorization: Bearer {}", self.token)),
+        );
+        if let Some(body) = &req.body {
+            let _ = write!(
+                cfg,
+                "header = \"Content-Type: application/json\"\ndata = {}\n",
+                curl_quote(&body.to_string())
+            );
+        }
+        tracing::debug!(%method, path = %req.path, "mirror recreate: http");
+        let mut child = Process::new("curl")
+            .args([
+                "--silent",
+                "--show-error",
+                "--include",
+                "--max-time",
+                "30",
+                "--config",
+                "-",
+            ])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| TransportError::Other(format!("cannot run curl: {e}")))?;
+        child
+            .stdin
+            .take()
+            .ok_or_else(|| TransportError::Other("curl stdin unavailable".into()))?
+            .write_all(cfg.as_bytes())
+            .map_err(|e| TransportError::Other(format!("curl stdin: {e}")))?;
+        let out = child
+            .wait_with_output()
+            .map_err(|e| TransportError::Other(format!("curl: {e}")))?;
+        if out.status.code() == Some(28) {
+            return Err(TransportError::Timeout);
+        }
+        if !out.status.success() {
+            return Err(TransportError::Other(
+                String::from_utf8_lossy(&out.stderr).trim().to_owned(),
+            ));
+        }
+        parse_response(&String::from_utf8_lossy(&out.stdout))
+            .ok_or_else(|| TransportError::Other("unparseable http response".into()))
+    }
+}
+
+/// Monotonic clock with real sleeps, for the adapter's write spacing.
+struct StdClock(Instant);
+
+impl WriteClock for StdClock {
+    fn now(&self) -> Duration {
+        self.0.elapsed()
+    }
+    fn sleep(&self, d: Duration) {
+        std::thread::sleep(d);
+    }
+}
+
+/// A history source that has seen nothing: the new issue starts with no cursor.
+struct NoHistory;
+
+impl HistorySource for NoHistory {
+    fn issue(&self, i: &IssueRef) -> AdapterResult<IssueState> {
+        Err(AdapterError::Other(format!("no history for {}", i.0)))
+    }
+    fn timeline(&self, _: &IssueRef) -> AdapterResult<Vec<TimelineEvent>> {
+        Ok(vec![])
+    }
+    fn body_revisions(&self, _: &IssueRef) -> AdapterResult<BodyRevisions> {
+        Ok(BodyRevisions::default())
+    }
+}
+
+/// Refuse unless a person is at a terminal and no agent marker is set.
+fn gate(
+    stdin_tty: bool,
+    stdout_tty: bool,
+    env: impl Fn(&str) -> Option<String>,
+) -> Result<(), Refusal> {
+    match presence(stdin_tty, stdout_tty, env) {
+        Presence::Human => Ok(()),
+        other => {
+            tracing::warn!(?other, "mirror recreate refused: no person at a terminal");
+            Err(Refusal::new(
+                CODE_NEEDS_HUMAN,
+                RefusalClass::GuardNeedsAction,
+                "mirror recreate is a decision a person makes at a terminal",
+            )
+            .with_remedy("ask the user to run `frob mirror recreate` in their own terminal")
+            .requiring_human())
+        }
+    }
+}
+
+fn refuse(message: impl Into<String>) -> CliError {
+    Refusal::new(CODE_RECREATE, RefusalClass::GuardNeedsAction, message).into()
+}
+
+/// A JSON string field of an API object, or a refusal naming `what`.
+fn field(v: &Value, key: &str, what: &str) -> Result<String, CliError> {
+    v.get(key)
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| refuse(format!("GitHub returned no {what}")))
+}
+
+/// One GET through the transport, 2xx only.
+fn get_json(http: &CurlTransport, path: &str) -> Result<Value, CliError> {
+    let req = HttpRequest {
+        method: Method::Get,
+        path: path.to_owned(),
+        query: vec![],
+        body: None,
+    };
+    let resp = http
+        .send(&req)
+        .map_err(|e| refuse(format!("GET {path}: {e}")))?;
+    if !(200..300).contains(&resp.status) {
+        return Err(refuse(format!("GET {path}: http {}", resp.status)));
+    }
+    serde_json::from_str(&resp.body).map_err(CliError::internal)
+}
+
+impl Command for MirrorRecreate {
+    type Data = RecreateReport;
+
+    fn configure(cmd: clap::Command) -> clap::Command {
+        gob_cli::augment::<RecreateArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<RecreateArgs>(m)?;
+        Ok(Self {
+            ticket: a.ticket,
+            repo: a.repo,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<RecreateReport> {
+        gate(
+            std::io::stdin().is_terminal(),
+            std::io::stdout().is_terminal(),
+            |k| std::env::var(k).ok(),
+        )?;
+        let ledger = open(ctx)?;
+        let id = resolve(&ledger, &self.ticket)?;
+        let view = ledger.show(id).map_err(cli_err)?;
+        let (repo, _) = Located::discover(&ctx.cwd).into_repo()?;
+        let remote = repo.remote_url("origin").unwrap_or_default();
+        let (owner, name) = match &self.repo {
+            Some(r) => parse_remote(&format!("github.com/{r}")),
+            None => parse_remote(&remote),
+        }
+        .ok_or_else(|| refuse("no GitHub repository: pass --repo OWNER/NAME"))?;
+        let token = TOKEN_VARS
+            .iter()
+            .find_map(|v| std::env::var(v).ok().filter(|t| !t.is_empty()))
+            .ok_or_else(|| {
+                refuse("set GH_TOKEN or GITHUB_TOKEN to a token that can write issues")
+            })?;
+        let http = CurlTransport { token };
+        let node_id = field(
+            &get_json(&http, &format!("/repos/{}/{}", enc(&owner), enc(&name)))?,
+            "node_id",
+            "repository node id",
+        )?;
+        let bot = field(&get_json(&http, "/user")?, "login", "token login")?;
+        let kid = std::env::var(KID_VAR).unwrap_or_else(|_| DEFAULT_KID.to_owned());
+        let keyring = Keyring::from_env(&kid, KEY_VAR, &[])
+            .map_err(|e| refuse(format!("marker key: {e}")))?;
+
+        let facts = facts_of(&ledger, &view, remote)?;
+        let projection = projection::project(&facts, &BTreeSet::new(), env!("CARGO_PKG_VERSION"));
+        let ulid = id.to_string();
+        let mut store =
+            BranchShardStore::new(repo, &ledger.ledger_ref().map_err(cli_err)?, MAP_DIR, None);
+        // The old issue is gone, so the new one starts with no cursor.
+        let mut blank = Shard::new(&ulid);
+        blank.history_cursor = None;
+        let pending = frob_mirror::cursor::begin_read(&NoHistory, &IssueRef(String::new()), &blank)
+            .map_err(CliError::internal)?
+            .pending;
+        let clock = StdClock(Instant::now());
+        let mut adapter = GithubAdapter::new(
+            GithubRest::new(http, &owner, &name, &bot),
+            &keyring,
+            &node_id,
+            &clock,
+        );
+        let started = ctx.clock.now().to_string();
+        let run_id = format!("recreate-{started}");
+        let step = recreate(
+            &mut store,
+            &mut adapter,
+            &ulid,
+            &projection,
+            &run_id,
+            &started,
+            pending,
+        )
+        .map_err(|e| refuse(e.to_string()))?;
+        let (result, issue) = match &step {
+            CreateStep::Created(c) => ("created", c.shard.issue_number),
+            CreateStep::Uncertain(_) => ("uncertain", None),
+            CreateStep::Blocked(_) => ("blocked", None),
+            CreateStep::Rejected(..) => ("rejected", None),
+        };
+        tracing::info!(ticket = %ulid, result, ?issue, "mirror recreate done");
+        Ok(Payload::new(RecreateReport {
+            ticket: ulid,
+            result: result.to_owned(),
+            issue,
+        }))
+    }
 }
 
 #[cfg(test)]
@@ -370,5 +747,32 @@ mod tests {
             RecreateError::Refused(RecreateRefusal::StillExists(_))
         ));
         assert_eq!(adapter.creates, 0);
+    }
+
+    #[test]
+    fn remote_urls_parse_to_owner_and_name() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::parse_remote
+        let want = Some(("o".to_owned(), "r".to_owned()));
+        assert_eq!(parse_remote("https://github.com/o/r.git"), want);
+        assert_eq!(parse_remote("git@github.com:o/r.git"), want);
+        assert_eq!(parse_remote("https://example.com/o/r"), None);
+    }
+
+    #[test]
+    fn curl_output_parses_status_location_and_body() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::parse_response
+        let r = parse_response("HTTP/2 301\r\nLocation: /x\r\n\r\n{}").unwrap();
+        assert_eq!(
+            (r.status, r.location.as_deref(), r.body.as_str()),
+            (301, Some("/x"), "{}")
+        );
+        assert_eq!(curl_quote("a\"b\\"), "\"a\\\"b\\\\\"");
+    }
+
+    #[test]
+    fn recreate_refuses_without_a_person() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::gate
+        assert!(gate(false, false, |_| None).is_err());
+        assert!(gate(true, true, |_| None).is_ok());
     }
 }
