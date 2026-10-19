@@ -2,7 +2,8 @@
 id = "01M4FGYG9TXDAMZ2VS2ZHGJKX1"
 title = "Kernel rules: label closure, clearance, boundary and rate findings"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
