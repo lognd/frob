@@ -2,7 +2,8 @@
 id = "01M3ZX7JN8RWAKDVYK0BNG3E2K"
 title = "Typed hook registry: versions, priority with name tie-break, config_tables"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
