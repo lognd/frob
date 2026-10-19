@@ -4,9 +4,10 @@ title = "frob:doc in no-grammar files is skipped by frob-ack (extend lexical dir
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T22:09:11Z"
-updated = "2026-10-19T22:09:11Z"
+updated = "2026-10-19T22:52:57Z"
 scope = ["crates/frob-ack/src/inputs.rs"]
 +++
 
