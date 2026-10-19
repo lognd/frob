@@ -203,6 +203,14 @@ language whose adapter lacks the path-conversion roles reports
 Unresolved, never clean. This repository raises PATH002 and PATH003 to
 Error in its own config.
 
+The detectors live in `grimble-lints::path` (`scan`): PATH001 reads
+string literals of Rust, Python, TypeScript and C#; PATH002 and PATH003
+run a per-function name-based def-use taint for Rust and Python (the
+languages with path-conversion roles) and list both as unresolved for
+every other code language. The corpus under
+`crates/grimble-lints/tests/corpus/path` holds the ~G5RJY40 Windows bugs
+and their fixed versions.
+
 ### 3.2 TIME: one clock, one zone (D93)
 
 ~AAZFNR5 turned CI red at 00:06 UTC: cycle state used the UTC day, the

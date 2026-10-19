@@ -1,7 +1,7 @@
 [package]
 name = "grimble-lints"
 version.workspace = true
-description = "Syntactic detectors behind grimble's universal lint rules: swallowed errors (ERR001-ERR003) for Rust, Python, TypeScript and C#, and unpaired resource acquisition for TypeScript and JavaScript."
+description = "Syntactic detectors behind grimble's universal lint rules: host-path portability (PATH001-PATH003), swallowed errors (ERR001-ERR003) for Rust, Python, TypeScript and C#, and unpaired resource acquisition for TypeScript and JavaScript."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
