@@ -2,16 +2,16 @@
 id = "01M3ZX7K3N8AWVBTZ90E0F1YSP"
 title = "PACK001-PACK008 findings in grimble-capabilities"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-03T03:34:25Z"
+updated = "2026-10-19T12:54:32Z"
 idempotency_key = "m2-packs-rules"
 labels = ["milestone:2", "area:packs"]
-scope = ["crates/grimble-capabilities/src/pack_rules/**"]
+scope = ["crates/grimble-capabilities/src/pack_rules/**", "crates/grimble-capabilities/Cargo.toml", "crates/grimble-capabilities/src/lib.rs", "crates/grimble-capabilities/tests/**", "Cargo.lock", "docs/design/packs.md"]
 
 [[links]]
 kind = "blocked-by"

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-capabilities/src/pack_rules/**", "crates/grimble-capabilities/Cargo.toml", "crates/grimble-capabilities/src/lib.rs", "crates/grimble-capabilities/tests/**"]
+new = ["crates/grimble-capabilities/src/pack_rules/**", "crates/grimble-capabilities/Cargo.toml", "crates/grimble-capabilities/src/lib.rs", "crates/grimble-capabilities/tests/**", "Cargo.lock"]
+at = "2026-10-19T12:47:54Z"
+actor = "lognd"
+rev = 1
