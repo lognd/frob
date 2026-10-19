@@ -200,6 +200,131 @@ impl FindingRecord {
     }
 }
 
+// frob:ticket 01M3ZX7XS6J4SFXY7P3S761M1P
+
+/// Kind of security-relevant decision counted in the summary (security.md I13).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SecurityDecisionKind {
+    /// A trust decision about a pack or source.
+    Trust,
+    /// A capability grant.
+    Grant,
+    /// A `replaces` of a standard rule or pack.
+    Replacement,
+    /// An excuse from a rule.
+    Excuse,
+    /// A `NotApplicable` claim.
+    NotApplicable,
+    /// An in-source declaration a verdict depends on.
+    Declaration,
+    /// An override of a default.
+    Override,
+}
+
+impl SecurityDecisionKind {
+    /// Every kind, in summary order.
+    pub const ALL: [Self; 7] = [
+        Self::Trust,
+        Self::Grant,
+        Self::Replacement,
+        Self::Excuse,
+        Self::NotApplicable,
+        Self::Declaration,
+        Self::Override,
+    ];
+
+    /// Plural label used in the summary line.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Trust => "trust",
+            Self::Grant => "grants",
+            Self::Replacement => "replacements",
+            Self::Excuse => "excuses",
+            Self::NotApplicable => "not-applicable claims",
+            Self::Declaration => "declarations",
+            Self::Override => "overrides",
+        }
+    }
+}
+
+/// True when `finding` is Unresolved because a plugin pack did not finish (trap, budget, denied effect, untrusted, unavailable).
+pub fn is_plugin_unfinished(finding: &Finding) -> bool {
+    if finding.severity != gob_rules::Severity::Unresolved {
+        return false;
+    }
+    if let Some(req) = &finding.required {
+        return matches!(
+            req,
+            RequiredReason::Untrusted { .. }
+                | RequiredReason::UntrustedInChange { .. }
+                | RequiredReason::Budget { .. }
+                | RequiredReason::Trap { .. }
+                | RequiredReason::EffectDenied { .. }
+                | RequiredReason::PackUnavailable { .. }
+        );
+    }
+    matches!(
+        &finding.reason,
+        Some(UnresolvedReason::Opaque(code)) if matches!(
+            code.as_str(),
+            "untrusted" | "untrusted-in-change" | "budget" | "trap" | "effect-denied" | "pack-unavailable"
+        )
+    )
+}
+
+/// Counts shown in the summary: severities, the two kinds of Unresolved, and security decisions.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct Summary {
+    /// Error findings.
+    pub errors: usize,
+    /// Warning findings.
+    pub warnings: usize,
+    /// Advisory findings.
+    pub advisory: usize,
+    /// All Unresolved findings.
+    pub unresolved: usize,
+    /// Unresolved findings that fail the gate under `required`.
+    pub required: usize,
+    /// Unresolved because a plugin did not finish.
+    pub plugin_unfinished: usize,
+    /// Unresolved because the code is undecidable (everything else Unresolved).
+    pub undecidable: usize,
+    /// Count per security-decision kind (only kinds that occur).
+    pub security_decisions: std::collections::BTreeMap<SecurityDecisionKind, usize>,
+}
+
+impl Summary {
+    /// Tally `findings` and the security `decisions` recorded for the run.
+    pub fn of(findings: &[Finding], decisions: &[SecurityDecisionKind]) -> Self {
+        use gob_rules::Severity;
+        let mut s = Self::default();
+        for f in findings {
+            match f.severity {
+                Severity::Error => s.errors += 1,
+                Severity::Warn => s.warnings += 1,
+                Severity::Advisory => s.advisory += 1,
+                Severity::Unresolved => {
+                    s.unresolved += 1;
+                    if f.required.is_some() {
+                        s.required += 1;
+                    }
+                    if is_plugin_unfinished(f) {
+                        s.plugin_unfinished += 1;
+                    } else {
+                        s.undecidable += 1;
+                    }
+                }
+            }
+        }
+        for d in decisions {
+            *s.security_decisions.entry(*d).or_default() += 1;
+        }
+        tracing::debug!(?s, "summary tallied");
+        s
+    }
+}
+
 #[cfg(test)]
 mod origin_tests {
     use super::*;
@@ -223,5 +348,49 @@ mod origin_tests {
         let s = crate::envelope_schema().to_string();
         assert!(s.contains("TextOrigin") && s.contains("never instructions"));
         assert!(s.contains("^pack:.+$") && s.contains("\"ledger\""));
+    }
+}
+
+#[cfg(test)]
+mod summary_tests {
+    use super::*;
+    use gob_rules::Severity;
+
+    fn unresolved() -> Finding {
+        Finding::new(
+            "XYZ001".parse().unwrap(),
+            Severity::Unresolved,
+            None,
+            "m",
+            "a",
+        )
+    }
+
+    // frob:ticket 01M3ZX7XS6J4SFXY7P3S761M1P
+    /// Plugin-unfinished and undecidable Unresolved are tallied separately.
+    #[test]
+    fn plugin_and_undecidable_are_separate() {
+        let trapped = unresolved().with_required(RequiredReason::Trap { pack: "p".into() });
+        let undecidable = unresolved().with_reason(UnresolvedReason::DynamicSite);
+        let s = Summary::of(&[trapped, undecidable], &[]);
+        assert_eq!(
+            (s.unresolved, s.plugin_unfinished, s.undecidable),
+            (2, 1, 1)
+        );
+    }
+
+    // frob:ticket 01M3ZX7XS6J4SFXY7P3S761M1P
+    /// A grant and a replacement are each counted as a security decision.
+    #[test]
+    fn decisions_are_counted() {
+        let s = Summary::of(
+            &[],
+            &[
+                SecurityDecisionKind::Grant,
+                SecurityDecisionKind::Replacement,
+            ],
+        );
+        assert_eq!(s.security_decisions[&SecurityDecisionKind::Grant], 1);
+        assert_eq!(s.security_decisions[&SecurityDecisionKind::Replacement], 1);
     }
 }

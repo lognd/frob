@@ -1,0 +1,1 @@
+gob-diagnostics: the text summary separates Unresolved because a plugin did not finish from Unresolved because the code is undecidable, and counts security decisions (grants, replacements, excuses, overrides) by kind.

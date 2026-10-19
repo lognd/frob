@@ -20,8 +20,14 @@ pub use envelope::{Envelope, EnvelopeError, SCHEMA_VERSION, envelope_schema, ren
 pub use escape::{escape_for_origin, escape_line, escape_non_ascii, escape_text, is_dangerous};
 pub use exit::{ExitCode, fail_on};
 pub use gob_rules::RequiredReason;
-pub use record::{EditRecord, FindingRecord, FixRecord, TextOrigin};
+pub use record::{
+    EditRecord, FindingRecord, FixRecord, SecurityDecisionKind, Summary, TextOrigin,
+    is_plugin_unfinished,
+};
 pub use refusal::{Refusal, RefusalClass};
 pub use required::UnresolvedPolicy;
 pub use source::{MemorySources, SourceProvider};
-pub use text::{ColorChoice, Report, TextOptions, is_tty, render_text, severity_label};
+pub use text::{
+    ColorChoice, Report, TextOptions, is_tty, render_text, render_text_with_decisions,
+    severity_label,
+};
