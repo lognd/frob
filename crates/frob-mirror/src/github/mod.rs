@@ -11,3 +11,6 @@ pub mod lookup;
 
 // frob:ticket 01M4052R0DZK01W7K8EE77637T
 pub mod read;
+
+// frob:ticket 01M4052R88Y0A9HQHDB86ERMEM
+pub mod write;

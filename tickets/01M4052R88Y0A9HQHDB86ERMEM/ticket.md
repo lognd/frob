@@ -2,16 +2,17 @@
 id = "01M4052R88Y0A9HQHDB86ERMEM"
 title = "GitHub adapter writes: update, close with reason, additive label endpoints, sub-issues or body links"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-19T16:19:50Z"
+updated = "2026-10-19T16:30:17Z"
 idempotency_key = "m2-mirror2-gh-writes"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/github/write.rs"]
+scope = ["crates/frob-mirror/src/github/write.rs", "crates/frob-mirror/src/github/mod.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -31,19 +32,19 @@ target = "01M4052QNSFSWV0SQ0A05XQ12K"
 
 [[acceptance]]
 text = "Given a changed label set, when published, then only add-label and remove-label calls for frob: labels are made and a tracker-owned label survives"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a dropped ticket, when published, then the issue is closed with the reason and never deleted"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two mutations in one run and a fake clock, when sent, then at least one second separates them"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a write that fails with 5xx, when recorded, then it is marked failed with no effect assumed and retried next run"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.2 (serial writes, one second apart), 3.3 (never recreate) and 3.4 (additive endpoints).
