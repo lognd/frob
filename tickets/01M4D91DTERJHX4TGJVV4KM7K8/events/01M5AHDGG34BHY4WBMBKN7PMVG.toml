@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T16:54:57Z"
+digest = "791c658941515416ee69945c86012ddebd6d4bb003836bcc0dca06948f493d74"
+exit_code = 0
+inline = """
+
+running 1 test
+test tool_parse::tests::eslint_output_parses_and_plugin_ids_map_to_families ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 104 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.09s
+     Running unittests src/lib.rs (target/debug/deps/gob_check-37165dd97aa22185)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-check --lib eslint_output_parses_and_plugin_ids_map_to_families"
+size = 790
+status = "measured"
+at = "2026-10-19T16:54:57Z"
+actor = "lognd"
+rev = 1
