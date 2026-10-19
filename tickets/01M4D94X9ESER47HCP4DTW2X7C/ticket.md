@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:48Z"
-updated = "2026-10-19T17:25:34Z"
+updated = "2026-10-19T17:25:35Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an engine-called private message method, when checked, then no IDE0051 dead-code finding is reported"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md rows U01, U04, K02, K14, K23 (4.2 N05); notes/research/creators-games-2026-10-08.md 5.1 ranks 1, 4-10 are Microsoft.Unity.Analyzers rules and 5.6 (ship the rules and the suppressors together). Depends on the SARIF parser in the bind-before-own epic.
