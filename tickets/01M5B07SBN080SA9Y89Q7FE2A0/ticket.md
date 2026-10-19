@@ -4,9 +4,10 @@ title = "Mirror: shard store writes .json under .mirror/map but ledger parse_sha
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:18Z"
-updated = "2026-10-19T21:14:18Z"
+updated = "2026-10-19T23:52:46Z"
 scope = ["crates/frob-mirror/src/shardstore.rs"]
 +++
 
