@@ -43,6 +43,7 @@ pub use config::{DotnetTable, EvidenceTable, TestsTable, UnityTable};
 pub use done::DoneGuard;
 pub use error::{EvidenceError, Result};
 pub use guard::EvidenceGuard;
+pub use provider::NonPassing;
 pub use record::{EvidenceRecord, Provider, Status};
 pub use store::{BlobStore, Fetched, Stored};
 pub use workspace::Workspace;

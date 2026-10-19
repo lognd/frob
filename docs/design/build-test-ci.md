@@ -251,6 +251,11 @@ prints the resolved launcher as `pytest_runner`. Exit 2, 3 or 4 (interrupted, in
 usage and collection errors) means pytest could not run the tests: the run refuses with
 `E-EVIDENCE-RUNNER-ERROR` (reason `runner-error`) naming the files that failed to
 collect, and records no evidence.
+A skipped, `xfail` or `XPASS` test is not evidence that it passed: the provider adds `-rX`,
+leaves those tests out of the executed set, and reports them apart as `Capture.non_passing`
+(`skipped`, `xfailed`, `xpassed`), never folded into the passing count. Measured on this
+code before the change: skip and xfail were already excluded; a non-strict `XPASS` was
+counted as passed. An opt-in that lets them satisfy evidence is not implemented.
 Tests that run pytest (frob-evidence and frob-tests) need `python3` and
 `pytest` on `PATH` and skip with a named reason when they are absent
 (`gob_testsupport::python_test_prerequisites`); setting

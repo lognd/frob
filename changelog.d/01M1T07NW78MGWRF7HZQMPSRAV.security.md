@@ -1,0 +1,1 @@
+A pytest run now keeps skipped, xfail and non-strict XPASS tests out of the executed set (they never satisfy frob:tests or ticket evidence) and reports them as a separate non-passing count; a non-strict XPASS was previously counted as passed.

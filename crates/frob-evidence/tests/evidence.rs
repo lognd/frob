@@ -206,6 +206,7 @@ fn a_missing_blob_is_unmeasured_not_failed() {
         measured: true,
         tests: vec![],
         failed_tests: vec![],
+        non_passing: frob_evidence::NonPassing::default(),
         transcript: "y".repeat(40),
     };
     let rec = build_record(
@@ -681,6 +682,7 @@ fn captured_paths_become_placeholders_in_the_event_data() {
         measured: true,
         tests: vec![],
         failed_tests: vec![],
+        non_passing: frob_evidence::NonPassing::default(),
         transcript:
             "ok /home/ann/projects/app-wt/T1/crates/x /home/ann/projects/app/src /home/ann/.cargo"
                 .to_owned(),
@@ -891,6 +893,7 @@ fn wide_capture(n: usize) -> provider::Capture {
         measured: true,
         tests: (0..n).map(|i| format!("pkg::suite::case_{i:04}")).collect(),
         failed_tests: vec![],
+        non_passing: frob_evidence::NonPassing::default(),
         transcript: "ok".to_owned(),
     }
 }
