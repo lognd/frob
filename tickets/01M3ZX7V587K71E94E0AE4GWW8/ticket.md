@@ -2,7 +2,8 @@
 id = "01M3ZX7V587K71E94E0AE4GWW8"
 title = "check --trust-from REF: trust the pairs present in the lock at a protected ref"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
