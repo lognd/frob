@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T18:58:04Z"
-updated = "2026-10-19T20:49:51Z"
-scope = ["crates/frob/src/mirror_recreate_cmd.rs"]
+updated = "2026-10-19T20:51:37Z"
+scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/mirror_cmd.rs"]
 
 [[links]]
 kind = "blocked-by"
