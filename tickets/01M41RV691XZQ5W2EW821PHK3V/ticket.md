@@ -8,7 +8,7 @@ points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:56:13Z"
-updated = "2026-10-19T05:27:33Z"
+updated = "2026-10-19T05:27:47Z"
 scope = ["crates/grimble-lints/**", "docs/reference/rules/PATH001.md", "docs/reference/rules/PATH002.md", "docs/reference/rules/PATH003.md", "grimble.toml", "docs/design/rules.md"]
 
 [[links]]
