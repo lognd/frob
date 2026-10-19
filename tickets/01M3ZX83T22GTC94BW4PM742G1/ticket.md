@@ -2,16 +2,16 @@
 id = "01M3ZX83T22GTC94BW4PM742G1"
 title = "GitHub adapter renders projection sections to markdown, labels and hidden marker"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-03T05:49:57Z"
+updated = "2026-10-19T07:20:36Z"
 idempotency_key = "m2-mirror-gh-render"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/github/render.rs"]
+scope = ["crates/frob-mirror/src/github/render.rs", "crates/frob-mirror/src/lib.rs", "crates/frob-mirror/src/github/mod.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -19,11 +19,11 @@ target = "01M3ZX83AB2JADBKWFA9SY4J60"
 
 [[acceptance]]
 text = "Given a projection, when rendered, then the body has the documented sections and the managed notice and the digest equals the projection render digest"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same projection twice, when rendered, then the output is byte-identical"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 2, 2.1 and 3.6 (one managed label).
