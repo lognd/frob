@@ -65,6 +65,7 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "READ001",
     "PERF001",
     "TICK009",
+    "TICK010",
     "TODO001",
     "TICK001",
     "SCOPE001",

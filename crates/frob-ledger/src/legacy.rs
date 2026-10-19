@@ -1,4 +1,4 @@
-//! Legacy-derive ledger rules (`TICK007`, `TICK008`, `TICK009`) that the declared rule shape cannot yet express.
+//! Legacy-derive ledger rules (`TICK007` to `TICK010`) that the declared rule shape cannot yet express.
 
 use gob_rules::{Rule, RuleId};
 
@@ -56,6 +56,25 @@ pub struct Tick009;
     version = 1
 )]
 pub struct Tick007;
+
+/// A `.github/` tree on the ticket branch is not exactly the generated nudge workflow.
+///
+/// The only `.github/` file the ticket branch may carry is the nudge workflow, and its bytes must equal what
+/// `frob` generates. Any other file under `.github/`, or an edited nudge, is an Error: a workflow on the ticket
+/// branch runs with the repository token. Delete the file, or regenerate the nudge.
+// frob:ticket 01M4052VK08NTRJS6HZZ9B82RZ
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "TICK010",
+    slug = "ledger-branch-workflow",
+    family = "TICK",
+    severity = Error,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    version = 1
+)]
+pub struct Tick010;
 
 /// Parse the rule id the derive already validated.
 pub(crate) fn id_of<R: Rule>(rule: &R) -> RuleId {

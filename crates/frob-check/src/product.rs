@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use frob_lease::LeaseConfig;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
-use frob_ledger::legacy::{Tick007, Tick008, Tick009};
+use frob_ledger::legacy::{Tick007, Tick008, Tick009, Tick010};
 use frob_obligations::{Cov001, Todo002, apply_exceptions, cov001_subjects, evaluate_legacy_repo};
 use frob_pm::legacy::aging::{Pm008, Pm009};
 use frob_pm::legacy::cycle_plan::{Pm010, Pm011, Pm012};
@@ -150,14 +150,15 @@ fn ledger_rule_metas() -> Vec<&'static gob_rules::RuleMeta> {
         Tick007.meta(),
         Tick008.meta(),
         Tick009.meta(),
+        Tick010.meta(),
         frob_obligations::Tick006.meta(),
     ]
 }
 
-/// `TICK006` to `TICK009` from the ledger's replay, move, misfile and hand-written scans (read-only); empty without a ledger.
+/// `TICK006` to `TICK010` from the ledger's replay, move, misfile and hand-written scans (read-only); empty without a ledger.
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
-    const ALL: &[&str] = &["TICK006", "TICK007", "TICK008", "TICK009"];
+    const ALL: &[&str] = &["TICK006", "TICK007", "TICK008", "TICK009", "TICK010"];
     let state = match ledger_of(inputs, ALL) {
         Ok(Some(state)) => state,
         Ok(None) => return Vec::new(),
@@ -179,9 +180,23 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
             .ledger
             .misfiled_ticket_findings()
             .map_err(|e| failed(&["TICK009"], e)),
+        // frob:ticket 01M4052VK08NTRJS6HZZ9B82RZ
+        tick010_findings(&state.ledger),
         // frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
         tick006_ledger_findings(&state.ledger),
     ])
+}
+
+/// `TICK010` over the ticket branch tip; the expected nudge is for the configured branch with no mirror bot ids (no `[mirror]` table exists yet).
+// frob:ticket 01M4052VK08NTRJS6HZZ9B82RZ
+fn tick010_findings(ledger: &frob_ledger::Ledger) -> Evaluated {
+    let spec = frob_ledger::nudge::NudgeSpec {
+        ticket_branch: ledger.config().branch.clone(),
+        bot_ids: Vec::new(),
+    };
+    ledger
+        .github_tree_findings(&spec)
+        .map_err(|e| failed(&["TICK010"], e))
 }
 
 /// `TICK006` over the hand-written files of a ticket-branch ledger (bodies, `EPIC.md`).

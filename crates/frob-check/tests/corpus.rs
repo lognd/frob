@@ -357,7 +357,7 @@ fn tick_dir_runner(case: &Case) -> Vec<Finding> {
     ledger_findings(root, case)
 }
 
-/// `TICK007`/`TICK008`/`TICK009`: an orphan-branch ledger with one task, then the block's first line as the scenario.
+/// `TICK007`-`TICK010`: an orphan-branch ledger with one task, then the block's first line as the scenario.
 ///
 /// `none` leaves the ledger as written; `rename <path>` commits the task file under `<path>` without a trailer;
 /// `edit <text>` commits a reindex-trailer commit that also appends `<text>` to the task; `reindex` reparents the
@@ -396,7 +396,31 @@ fn tick_branch_runner(case: &Case) -> Vec<Finding> {
             .expect("read task")
             .expect("task file")
     };
-    if let Some(to) = script.strip_prefix("rename ") {
+    if let Some(path) = script.strip_prefix("add ") {
+        commit_files(
+            ledger.repo(),
+            &tip,
+            &[(path, Some(b"name: x\n".to_vec()))],
+            "tickets(hand): add file",
+        );
+    } else if script == "nudge" || script == "edited-nudge" {
+        let spec = frob_ledger::nudge::NudgeSpec {
+            ticket_branch: BRANCH.to_owned(),
+            bot_ids: Vec::new(),
+        };
+        let mut bytes = frob_ledger::nudge::render(&spec)
+            .expect("render")
+            .into_bytes();
+        if script == "edited-nudge" {
+            bytes.extend_from_slice(b"# edited\n");
+        }
+        commit_files(
+            ledger.repo(),
+            &tip,
+            &[(frob_ledger::nudge::NUDGE_PATH, Some(bytes))],
+            "tickets(hand): nudge",
+        );
+    } else if let Some(to) = script.strip_prefix("rename ") {
         let bytes = blob();
         commit_files(
             ledger.repo(),
@@ -477,7 +501,7 @@ fn runner(case: &Case) -> Vec<Finding> {
         tool_runner(case)
     } else if matches!(rule, "TICK001" | "TICK003" | "TICK004" | "TICK005") {
         tick_dir_runner(case)
-    } else if matches!(rule, "TICK007" | "TICK008" | "TICK009") {
+    } else if matches!(rule, "TICK007" | "TICK008" | "TICK009" | "TICK010") {
         tick_branch_runner(case)
     } else if rule.starts_with("GRL") {
         grl_runner(case)
