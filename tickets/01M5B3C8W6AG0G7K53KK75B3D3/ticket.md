@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T22:09:11Z"
-updated = "2026-10-19T22:52:59Z"
+updated = "2026-10-19T22:56:31Z"
 scope = ["crates/frob-ack/src/inputs.rs"]
+
+[[acceptance]]
+text = "frob:doc in a no-grammar file is collected by frob-ack"
+bound = false
 +++
 
 found while working ~GCNECVB: crates/frob-ack/src/inputs.rs:190 skips Language::detect==None files, so frob:doc there is ignored. Use Scanner::scan_unparsed_in.
