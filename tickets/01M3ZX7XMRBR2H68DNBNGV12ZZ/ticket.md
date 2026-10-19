@@ -2,7 +2,8 @@
 id = "01M3ZX7XMRBR2H68DNBNGV12ZZ"
 title = "config diff --base REF"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
