@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T18:03:34Z"
+digest = "f1c25c0601ef211dc431e524faa43d04cd905732338f10bf2fa6353be20426d1"
+exit_code = 0
+inline = """
+
+running 1 test
+test mirror_render::render_output_validates_against_the_committed_schema ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 323 filtered out; finished in 0.08s
+
+    Blocking waiting for file lock on build directory
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.46s
+     Running tests/it/main.rs (target/debug/deps/it-7834fb94dc4bad17)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-cli --test it mirror_render"
+size = 448
+status = "measured"
+at = "2026-10-19T18:03:34Z"
+actor = "lognd"
+rev = 1

@@ -24,3 +24,4 @@ src/b.rs
   unresolved[TOOL001]: tool missing
 
 1 errors, 1 warnings, 1 advisory, 1 unresolved (0 required)
+  unresolved: 0 because a plugin did not finish, 1 because the code is undecidable
