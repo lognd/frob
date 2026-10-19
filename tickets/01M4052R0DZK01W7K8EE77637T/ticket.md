@@ -2,16 +2,16 @@
 id = "01M4052R0DZK01W7K8EE77637T"
 title = "GitHub reads: issue state, history after an event id, creation revision of the body"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-03T05:51:35Z"
+updated = "2026-10-19T13:59:35Z"
 idempotency_key = "m2-mirror2-gh-history-reads"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-gh/src/history.rs", "crates/frob-mirror/src/github/read.rs"]
+scope = ["crates/frob-gh/src/history.rs", "crates/frob-mirror/src/github/read.rs", "crates/frob-mirror/src/github/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
