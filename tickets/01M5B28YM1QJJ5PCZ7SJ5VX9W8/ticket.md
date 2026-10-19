@@ -2,7 +2,8 @@
 id = "01M5B28YM1QJJ5PCZ7SJ5VX9W8"
 title = "opt-in for xfail/skip/xpass to satisfy pytest evidence, counted as a distinct state"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
