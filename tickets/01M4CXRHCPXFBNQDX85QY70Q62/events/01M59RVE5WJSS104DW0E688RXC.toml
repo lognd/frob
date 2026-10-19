@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Blocked: no scene ingest or taffy layout solve exists in crates (grep taffy/data-id finds nothing in crunk-*); LAYOUT/RESP T1 rules need ~W1H7QCD first. No code written."
+at = "2026-10-19T09:45:59Z"
+actor = "lognd"
+rev = 1
