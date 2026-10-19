@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked: needs ShardStore ~DERAFCQ and GitHub adapter ~EVN9W9J"
+at = "2026-10-19T19:20:25Z"
+actor = "lognd"
+rev = 1

@@ -2,7 +2,7 @@
 id = "01M5AREAW91T16PSWFS1KH6CCV"
 title = "Wire frob mirror recreate verb to the real shard store and GitHub adapter"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 2
 reporter = "lognd"
