@@ -7,7 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T15:31:05Z"
-updated = "2026-10-19T15:48:00Z"
+updated = "2026-10-19T16:04:28Z"
+scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
 text = "mdtest corpus tests for frob-check, grimble-model, grimble-check and crunk-rules pass under strict mode"
