@@ -97,7 +97,6 @@ fn read_holder(path: &Path) -> Option<LockHolder> {
 /// # Errors
 ///
 /// [`LockError::Held`] when a live process holds the lock, [`LockError::Io`] on filesystem failure.
-// frob:tests crates/frob-check/src/concurrent.rs::acquire
 pub fn acquire(
     root: &Path,
     pid: u32,
