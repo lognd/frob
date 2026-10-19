@@ -2,7 +2,8 @@
 id = "01M3ZX7K3N8AWVBTZ90E0F1YSP"
 title = "PACK001-PACK008 findings in grimble-capabilities"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
