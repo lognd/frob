@@ -221,6 +221,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [PARSE001](PARSE001.md) | malformed-directive | error | manual | P+ | false | A `frob:` directive is malformed: unterminated quote, bad key, missing or invalid argument. |
+| [PARSE002](PARSE002.md) | directive-matched-lexically | advisory | manual | P+ | false | A `frob:` directive sits in a file with no registered grammar and was matched by a text scan. |
 
 ## PATH
 

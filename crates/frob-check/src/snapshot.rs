@@ -241,10 +241,11 @@ struct ScanOutcome {
 }
 
 // frob:ticket 01M41ZSWGC86TY3K0NSA8AMNGF
+// frob:ticket 01M1QDTYRJ3P3GT8828GCNECVB
 /// Scan `entry` for directives, serving unchanged files from the artifact cache.
 ///
-/// Every file of a known language is cached by content digest, engine and
-/// grammar: a file without the marker or with a clean scan stores its (possibly
+/// Every file is cached by content digest, engine and grammar (files with no
+/// grammar are scanned by text and keyed `lexical`): a file without the marker or with a clean scan stores its (possibly
 /// empty) directive records and is not read next time. A file whose scan
 /// raised findings is rescanned each run, as findings are not serialized.
 fn scan_one(
@@ -258,13 +259,15 @@ fn scan_one(
     if !roles.role(&entry.path).scans_directives() {
         return None;
     }
-    let lang = Language::detect(&entry.path)?;
+    // No grammar: the file is still scanned, lexically (see `Scanner::scan_unparsed_in`).
+    let lang = Language::detect(&entry.path);
+    let identity = lang.map_or_else(|| "lexical".to_owned(), grammar_identity);
     let key = ArtifactKey {
         content_digest: entry.digest.to_string(),
         producer_identity: format!(
             "frob-check/scan/v{SCAN_VERSION}/{WIRE_VERSION}/{EXTRACTOR_VERSION}/{}/{}",
             cache.engine(),
-            grammar_identity(lang)
+            identity
         ),
     };
     if let Some(bytes) = cache.get_artifact(&key)
@@ -295,7 +298,12 @@ fn scan_one(
     };
     let (directives, findings) = if text.contains(DIRECTIVE_MARKER) {
         let symbols = extract_file(entry, &text);
-        let result = scanner.scan_in(file, lang, &text, &symbols);
+        let result = if let Some(lang) = lang {
+            scanner.scan_in(file, lang, &text, &symbols)
+        } else {
+            tracing::debug!(path = %entry.path, "no grammar; scanning directives lexically");
+            scanner.scan_unparsed_in(file, &text, &symbols)
+        };
         (result.directives, result.findings)
     } else {
         (Vec::new(), Vec::new())

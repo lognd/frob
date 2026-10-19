@@ -345,6 +345,7 @@ fn rules_are_registered_with_d32_identity() {
     let reg = Registry::global();
     for (id, slug) in [
         ("PARSE001", "malformed-directive"),
+        ("PARSE002", "directive-matched-lexically"),
         ("DSL001", "unknown-directive-verb"),
         ("DSL002", "abbreviated-ticket-id"),
         ("DSL003", "deprecated-directive-spelling"),

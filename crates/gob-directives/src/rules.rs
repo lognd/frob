@@ -75,12 +75,39 @@ pub struct Dsl002;
 )]
 pub struct Dsl003;
 
+/// A `frob:` directive sits in a file with no registered grammar and was matched by a text scan.
+///
+/// A file whose extension has no grammar is never parsed: its symbols are not in the graph and the
+/// structural gates (coverage, dead code, wiring, architecture) do not see it. Its `frob:`
+/// directives are still honoured, found by a lexical scan for a fixed comment leader (`#`, `//`,
+/// `;`, `--`, `%`) followed by `frob:<verb>`. This advisory marks each such directive so a working
+/// waiver is never mistaken for frob understanding the file. Nothing to fix; add a grammar if the
+/// file needs parsed results.
+#[derive(Debug, Clone, Copy, Default, gob_rules::Rule)]
+#[rule(
+    id = "PARSE002",
+    slug = "directive-matched-lexically",
+    family = "PARSE",
+    severity = Advisory,
+    tier = Universal,
+    scope = File,
+    fix = Manual,
+    version = 1
+)]
+pub struct Parse002;
+
 /// The metadata of every rule declared here; calling it keeps this object linked.
 ///
 /// The rule registry is built from `inventory` entries, which a linker drops with the object file
 /// that holds them unless something references that object. A non-inlined function defined next to
 /// the rules gives binaries that only list directives (the generator) that reference.
 #[inline(never)]
-pub(crate) fn declared() -> [&'static gob_rules::RuleMeta; 4] {
-    [&Parse001::META, &Dsl001::META, &Dsl002::META, &Dsl003::META]
+pub(crate) fn declared() -> [&'static gob_rules::RuleMeta; 5] {
+    [
+        &Parse001::META,
+        &Parse002::META,
+        &Dsl001::META,
+        &Dsl002::META,
+        &Dsl003::META,
+    ]
 }

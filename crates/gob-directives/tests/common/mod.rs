@@ -32,3 +32,10 @@ pub fn scan_with(config: &ScanConfig, path: &str, text: &str) -> ScanResult {
     let syms = symbols(path, text);
     Scanner::new(config).scan(language_of(path), text, &syms)
 }
+
+/// Scan `text` at `path` lexically (a file with no grammar) with `config`.
+pub fn scan_lexical_with(config: &ScanConfig, path: &str, text: &str) -> ScanResult {
+    let syms = symbols(path, text);
+    let file = gob_text::FileInterner::new().intern(path);
+    Scanner::new(config).scan_unparsed_in(file, text, &syms)
+}

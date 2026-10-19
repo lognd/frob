@@ -1,0 +1,1 @@
+frob: files with no grammar are now scanned lexically for `frob:` directives, which are honoured (PARSE002) or reported when the comment syntax is unrecognised (PARSE001), always marked as matched lexically and still invisible to structural gates.

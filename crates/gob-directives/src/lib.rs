@@ -61,6 +61,7 @@ mod meta;
 mod rules;
 mod scan;
 mod ulid;
+mod unparsed;
 mod wire;
 
 pub use admission::{ADMISSION, Admission, admission_for};
@@ -71,7 +72,7 @@ pub use effects::{EffectAtom, EffectBase, EffectSet, EffectsClaim, effects_claim
 pub use gob_macros::Directive;
 pub use inventory;
 pub use meta::{Directive, DirectiveEntry, DirectiveMeta, all_directives, validate};
-pub use rules::{Dsl001, Dsl002, Dsl003, Parse001};
+pub use rules::{Dsl001, Dsl002, Dsl003, Parse001, Parse002};
 pub use scan::{DirectiveRecord, NOT_ATTACHED, REORIENT_VERB, ScanConfig, ScanResult, Scanner};
 // frob:ticket 01M4GK42XB93XT5TFDQDRQ36JC
 pub use ulid::{is_full_ulid, is_v1_alias, looks_like_ticket_ref};

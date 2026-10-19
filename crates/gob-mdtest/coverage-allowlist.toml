@@ -102,6 +102,12 @@ ticket = "~4GGFHTV"
 
 [[gap]]
 product = "frob"
+rule = "PARSE002"
+kind = "unresolved"
+ticket = "~4GGFHTV"
+
+[[gap]]
+product = "frob"
 rule = "PERF001"
 kind = "unresolved"
 ticket = "~4GGFHTV"

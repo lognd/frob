@@ -447,6 +447,21 @@ capabilities` lists which cells changed. The finding ids and their
 conditions are the one table in grimble-model.md section 4. Milestone 2
 or later (D36).
 
+### 7.1 Files with no grammar: lexical directive scan
+
+A file whose extension has no registered grammar is never parsed and is
+invisible to structural gates. Because `frob:` directives are a fixed
+literal prefix inside a comment, frob still scans such files textually
+for them (`Scanner::scan_unparsed_in`, gob-directives `unparsed.rs`):
+a directive behind a `#`, `//`, `;`, `--` or `%` leader is honoured as a
+file-level directive and reported once as PARSE002 (advisory). A
+directive whose comment syntax is not recognised is PARSE001 (error),
+naming the file, line and directive, so a `frob:waive` or debt marker is
+never silently ignored. Every such finding carries the marker
+"matched lexically (no grammar for .ext; text scan, not parsed)". A
+no-grammar file with no directives stays quiet, and parsed languages are
+scanned exactly as before.
+
 ## 8. Graph storage and incrementality
 
 - Parse artifacts (symbols, comments, U terms, imports) keyed by

@@ -117,6 +117,16 @@ impl Scanner {
         }
     }
 
+    /// The honoured namespaces, in configuration order.
+    pub(crate) fn namespaces(&self) -> &[String] {
+        &self.namespaces
+    }
+
+    /// True when `(namespace, verb)` is a registered directive.
+    pub(crate) fn knows(&self, ns: &str, verb: &str) -> bool {
+        self.verbs.contains_key(&(ns.to_owned(), verb.to_owned()))
+    }
+
     /// The product findings are reported under.
     pub fn product(&self) -> &str {
         &self.product
@@ -158,7 +168,7 @@ impl Scanner {
         };
         let ctx = Ctx {
             file,
-            language,
+            language: Some(language),
             text,
             index: &index,
             symbols,
@@ -175,7 +185,7 @@ impl Scanner {
         result
     }
 
-    fn handle(&self, ctx: &Ctx<'_>, seg: &Segment<'_>, out: &mut ScanResult) {
+    pub(crate) fn handle(&self, ctx: &Ctx<'_>, seg: &Segment<'_>, out: &mut ScanResult) {
         let Some(colon) = seg.text.find(':') else {
             return;
         };
@@ -308,17 +318,17 @@ impl Scanner {
         let site = Site {
             start: seg.offset,
             end: seg.offset + seg.text.len(),
-            allow_following: !seg.inner_doc && ctx.language != Language::Markdown,
+            allow_following: !seg.inner_doc && ctx.language != Some(Language::Markdown),
             hash_comments: matches!(
                 ctx.language,
-                Language::Toml | Language::Yaml | Language::Python
+                Some(Language::Toml | Language::Yaml | Language::Python)
             ),
         };
         let sym = bind(ctx.index, ctx.text, &ctx.symbols.symbols, site);
         if sym.is_none()
             && verb == REORIENT_VERB
             && site.allow_following
-            && ctx.language == Language::Rust
+            && ctx.language == Some(Language::Rust)
         {
             tracing::debug!(?span, "unattached tests directive dropped");
             emit(&Parse001::META, span, NOT_ATTACHED.to_owned());
@@ -390,16 +400,17 @@ enum Legacy<'a> {
 }
 
 /// Per-scan shared state.
-struct Ctx<'a> {
-    file: FileId,
-    language: Language,
-    text: &'a str,
-    index: &'a LineIndex,
-    symbols: &'a FileSymbols,
+pub(crate) struct Ctx<'a> {
+    pub(crate) file: FileId,
+    /// The file's grammar; `None` for a file scanned lexically (no grammar registered).
+    pub(crate) language: Option<Language>,
+    pub(crate) text: &'a str,
+    pub(crate) index: &'a LineIndex,
+    pub(crate) symbols: &'a FileSymbols,
 }
 
 impl Ctx<'_> {
-    fn span(&self, range: TextRange) -> Span {
+    pub(crate) fn span(&self, range: TextRange) -> Span {
         Span::new(self.file, range)
     }
 }
