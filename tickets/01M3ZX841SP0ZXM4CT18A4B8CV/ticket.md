@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-19T16:50:55Z"
+updated = "2026-10-19T16:50:56Z"
 idempotency_key = "m2-mirror-outbox"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/outbox.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given no new events, when the mirror runs, then no tracker request that mutates state is made"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.2 (work class 2) and 3.4.
