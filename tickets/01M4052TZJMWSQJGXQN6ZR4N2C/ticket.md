@@ -2,13 +2,13 @@
 id = "01M4052TZJMWSQJGXQN6ZR4N2C"
 title = "Neutralise mentions, closing keywords, cross-repository references and task lists in mirrored text"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-03T05:51:38Z"
+updated = "2026-10-19T08:15:43Z"
 idempotency_key = "m2-mirror2-neutralise"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/github/neutralise.rs"]
