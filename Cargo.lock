@@ -2394,6 +2394,7 @@ dependencies = [
  "clap",
  "gob-config",
  "gob-diagnostics",
+ "gob-exec",
  "gob-log",
  "gob-macros",
  "gob-rules",

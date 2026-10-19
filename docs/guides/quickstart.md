@@ -178,7 +178,9 @@ frob's own release see [release.md](release.md).
 
 Errors carry a code, the cause and a remedy command, for example
 `E-DONE-CRITERIA-UNBOUND` prints the exact `frob ticket evidence add ...` to
-run. `frob check --explain RULE` prints a rule's page (the same pages are in
+run. `frob explain RULE` prints a rule's full page offline (through `$PAGER`,
+then `less -R`, on a terminal; plainly otherwise), and an unknown id suggests the
+closest ones. `frob check --explain RULE` prints the same page (the pages are in
 [../reference/rules/](../reference/rules/)).
 
 ## Where next

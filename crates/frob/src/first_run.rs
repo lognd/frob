@@ -15,6 +15,7 @@ pub const CODE_NO_CONFIG: &str = "E-NO-CONFIG";
 /// Verbs that work without a `frob.toml` (they create it, read nothing from it, or are read-only).
 const NO_CONFIG_VERBS: &[&str] = &[
     "doctor",
+    "explain",
     "init",
     "schema",
     "config show",
