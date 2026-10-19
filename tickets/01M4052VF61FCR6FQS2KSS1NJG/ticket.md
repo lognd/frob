@@ -2,13 +2,13 @@
 id = "01M4052VF61FCR6FQS2KSS1NJG"
 title = "Secret-free nudge workflow generated onto the ticket branch"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-19T19:20:13Z"
+updated = "2026-10-19T19:20:14Z"
 idempotency_key = "m2-mirror2-nudge"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-ledger/src/nudge.rs"]
