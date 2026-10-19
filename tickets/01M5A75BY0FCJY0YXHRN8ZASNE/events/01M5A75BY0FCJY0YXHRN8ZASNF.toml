@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble matrix verb: print grimble_capabilities::output::render and census, move CAP002 onto the matrix"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble/src/**"]
+body = "Follow-up of ~TXX200T: expose render/census through a CLI verb; CAP002 still evaluated in grimble-bind caps.rs without the crate."
+at = "2026-10-19T13:56:04Z"
+actor = "lognd"
+rev = 1

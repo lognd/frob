@@ -127,7 +127,8 @@ Every verb, every time:
 `may` grant CAP002 reports as declared-unused (Exact absence only) and
 writes nothing until `--apply`. Each proposed removal carries the
 `excuses ATOM because="..."` clause to write instead when the grant is
-kept on purpose. The planner is `grimble_bind::shrink::plan`; proposing
+kept on purpose. The verb is implemented (`crates/grimble/src/shrink_cmd.rs`) over the
+planner `grimble_bind::shrink::plan`; proposing
 `owns` selectors from ownership and an interactive excuse prompt are not
 implemented yet.
 
@@ -312,7 +313,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble config diff --base REF [--head REF]` | grimble | gob-trust (policy snapshot) with gob-check (GATE001 weakening classifier) | yes, read-only; lists every changed policy setting and the weakenings GATE001 would report; `--head` defaults to the working copy | 0 2 4 | 2 |
 | `grimble exceptions list` | grimble | grimble-check over gob-rules | yes, read-only | 0 2 4 | 2 |
 | `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 |
-| `grimble vet [--hook]` | grimble | grimble-vet | yes | 0 1 2 4 | 2 (after the G01-G19 cut; build-test-ci.md Milestone 2 item 8) |
+| `grimble vet [--hook]` | grimble | grimble-vet | yes; implemented (vet.md); `--hook` not yet | 0 1 2 4 | 2 |
 | `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 |
 | `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 |
 | crunk verbs (notes/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 |
