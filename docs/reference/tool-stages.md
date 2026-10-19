@@ -15,7 +15,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `eslint-json` or `typos-json`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `eslint-json`, `roslyn-sarif` or `typos-json`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -26,6 +26,10 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 ## eslint stages
 
 `parser = "eslint-json"` reads `eslint -f json` (exit 1 for lint errors is a normal exit; a message without a rule id, such as a parse error, is skipped). `frob init` in a repository whose `package.json` names eslint adds two stages: `eslint` (the repository config: jsx-a11y, react-hooks, react and syntax-level typescript-eslint rules) and `eslint-typed` (`tier = "train"`, `optional`, its own `eslint.typed.config.mjs` with the type-aware typescript-eslint rules). The type-aware rules cost a type check, so they are a separate stage; every tool stage is timed apart from the `[perf]` budget (`timing.stages` with `budgeted = false`), so the type check never counts against the 2 s budget.
+
+## dotnet stage
+
+`parser = "roslyn-sarif"` reads the Roslyn SARIF error log of `dotnet build` (the SARIF reader, plus the id mapping below; exit 1 for build errors is a normal exit). Roslyn writes the log to a file, so the stage runs `dotnet build` with `-p:ErrorLog=<file>%2Cversion=2.1` and prints the file. `frob init` in a repository with a root `.sln` or `.csproj` (a Unity project's generated solution counts) adds that `dotnet` stage with `EnforceCodeStyleInBuild` and `EnableNETAnalyzers` on. Reference `Microsoft.Unity.Analyzers` and `Microsoft.VisualStudio.Threading.Analyzers` as `PackageReference`s: the USP suppressors ship in the Unity package and mark `IDE0051`/`IDE0052` results for engine-called messages and serialized fields as suppressed, so they never become `DEAD001` findings (a suppressed result is kept aside for EXC017, as for every SARIF stage). The log is a single file, so a multi-project build keeps the last project's.
 
 ## Skipping stages
 
@@ -65,6 +69,10 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | eslint | `@typescript-eslint/` `no-floating-promises`, `no-misused-promises`, `await-thenable`, `require-await` | `CONC001` | Warn |
 | eslint | `@typescript-eslint/` `no-explicit-any`, `no-unsafe-*` | `TYPING001` | Warn |
 | eslint | any other rule id | `LINT001` | Advisory |
+| roslyn-sarif | `UNT*` (Microsoft.Unity.Analyzers) | `UNITY101` | Warn |
+| roslyn-sarif | `IDE0051`, `IDE0052`, `IDE0060`, `IDE0005`, `CS8019`, `CS0168`, `CS0219` | `DEAD001` | Warn |
+| roslyn-sarif | `VSTHRD*` | `CONC001` | Warn |
+| roslyn-sarif | any other id (CA, IDE, CS) | `LINT001` | Advisory |
 | sarif | any id (the stage `id_map` names the rule) | `TOOL002` | Advisory |
 | cargo-json | `unused_*`, `dead_code` | `DEAD001` | rustc level |
 | cargo-json | `too_many_arguments` | `NEAT002` | rustc level |
