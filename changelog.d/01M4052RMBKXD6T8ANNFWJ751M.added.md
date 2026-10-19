@@ -1,0 +1,1 @@
+Added the mirror write journal: mutations are journaled before they are sent, history entries are attributed as own or unknown automation by bot id and value digest, and unconfirmed entries are re-read and confirmed or marked lost at run start.
