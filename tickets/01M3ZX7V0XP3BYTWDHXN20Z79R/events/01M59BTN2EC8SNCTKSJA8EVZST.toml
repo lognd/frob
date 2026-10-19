@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T05:58:21Z"
+digest = "4b321485595cee390669e287ae104b3fa5ea6adf43b2c94883a2667a7629da9e"
+exit_code = 0
+inline = """
+
+running 1 test
+test expired_entry_is_untrusted_and_doctor_reports_it ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests/store.rs (target/debug/deps/store-c734525e89f6f264)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-trust --test store expired_entry_is_untrusted_and_doctor_reports_it"
+size = 317
+status = "measured"
+at = "2026-10-19T05:58:21Z"
+actor = "lognd"
+rev = 1

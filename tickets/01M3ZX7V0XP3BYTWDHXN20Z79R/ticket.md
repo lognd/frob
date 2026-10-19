@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an expired entry, when consulted, then it is untrusted and `doctor` reports it"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.3 (The store).
