@@ -1,0 +1,11 @@
++++
+id = "01M5A63T0R2D5DKF95XEZ00NZ6"
+title = "grimble vet: licence, yanked, maintenance and typosquat checks"
+type = "task"
+category = "todo"
+priority = "medium"
+reporter = "lognd"
+created = "2026-10-19T13:37:44Z"
+updated = "2026-10-19T13:37:44Z"
+scope = ["crates/grimble-vet/**"]
++++
