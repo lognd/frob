@@ -361,7 +361,7 @@ fn strays<'a>(block: &Block, actual: &'a [Actual]) -> Vec<&'a Actual> {
                 return true;
             }
             block.expect == Expect::Fire
-                && (a.severity == Severity::Unresolved
+                && ((a.severity == Severity::Unresolved && !a.required)
                     || (hard && a.severity == Severity::Advisory))
         })
         .collect()
@@ -434,7 +434,11 @@ fn check(block: &Block, res: &CaseResult) -> Result<(), String> {
     match block.expect {
         Expect::Fire if !block.markers.is_empty() => check_markers(block, &actual)?,
         Expect::Fire => {
-            if !actual.iter().any(|a| a.severity != Severity::Unresolved) {
+            // A required Unresolved fails the gate, so it fires; an optional one is no verdict.
+            if !actual
+                .iter()
+                .any(|a| a.severity != Severity::Unresolved || a.required)
+            {
                 return Err(format!(
                     "    expected at least one {} finding that is not Unresolved, got {}\n{}",
                     block.rule,

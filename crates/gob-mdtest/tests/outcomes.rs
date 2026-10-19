@@ -1,7 +1,7 @@
 //! Outcome classes (testing.md 1): unresolved, notapplicable, subject accounting, certified clean.
 
 use gob_mdtest::{Case, Runner, run_file};
-use gob_rules::{Finding, RuleReport, Severity, UnresolvedReason};
+use gob_rules::{Finding, RequiredReason, RuleReport, Severity, UnresolvedReason};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 
 /// A directive-driven rule: `@subjects T E`, `@na WHY`, `@error`, `@unresolved CODE` lines.
@@ -32,6 +32,19 @@ fn directed(case: &Case) -> RuleReport {
                 "bad",
                 &case.file_name,
             )),
+            Some("@required") => findings.push(
+                Finding::new(
+                    case.rule.clone(),
+                    Severity::Unresolved,
+                    None,
+                    "cannot decide",
+                    &case.file_name,
+                )
+                .with_reason(UnresolvedReason::from_code(words.next().unwrap()))
+                .with_required(RequiredReason::SiblingMissing {
+                    product: "p".to_owned(),
+                }),
+            ),
             Some("@unresolved") => findings.push(
                 Finding::new(
                     case.rule.clone(),
@@ -96,6 +109,7 @@ fn a_rule_that_examines_nothing_fails_clean() {
 fn unresolved_only_fails_fire_and_error_fails_unresolved() {
     let e = passes("uf", "```txt expect=fire\n@unresolved hole\n```\n").unwrap_err();
     assert!(e.contains("not Unresolved"), "{e}");
+    assert!(passes("rf", "```txt expect=fire\n@required hole\n```\n").is_ok());
     let e = passes(
         "eu",
         "```txt expect=unresolved\n@error\n@unresolved hole\n```\n",

@@ -49,7 +49,7 @@ flow f : a -> b {
   label Public;
 }
 claim c {
-  bound latency f <= 5ms;
+  bound latency f <= 5ms; // unresolved: CLAIM003
 }
 ```
 
@@ -85,7 +85,7 @@ flow f : a -> b {
   label Public;
 }
 claim c {
-  bound latency f <= 5ms;
+  bound latency f <= 5ms; // unresolved: CLAIM003
 }
 ```
 

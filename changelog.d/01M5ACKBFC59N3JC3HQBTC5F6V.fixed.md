@@ -1,0 +1,1 @@
+A required Unresolved finding now counts as firing in the mdtest corpus (expect=fire), so rules that only report gate-failing spanless Unresolved findings (READ001, SIB001, MDL021) keep a fire control; CLAIM003 and COLOR002 corpus blocks now assert their Unresolved outcome.
