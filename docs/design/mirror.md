@@ -136,7 +136,13 @@ and in `frob mirror status`.
   workflow file from the ticket branch, which every ledger writer can
   edit. A secret-free nudge workflow on the ticket branch may send a
   `repository_dispatch` ("something changed"); it carries nothing the
-  mirror trusts. Scheduled runs also catch tracker edits made when the
+  mirror trusts.
+  Implemented in `crates/frob-ledger/src/nudge.rs`: `render` emits the
+  workflow as a pure function of the ticket branch and the bot ids (sorted,
+  deduplicated), so the TICK rule can byte-compare it; it uses no secrets
+  and no environment (the token is `github.token`), and its `if:` skips
+  pushes whose `github.actor_id` is a mirror bot id, so the mirror's own
+  ledger commits send no dispatch. Scheduled runs also catch tracker edits made when the
   ledger is quiet (model flaw F1).
 - Credentials (a dedicated GitHub App's key, the marker keyring) live in
   an environment whose deployment branches are restricted to the
