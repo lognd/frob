@@ -2,12 +2,12 @@
 id = "01M59RWT16TFNSACMMTTXX200T"
 title = "G14b: grimble-capabilities: wire the matrix into grimble-bind, excuses, CAP001-002 via the crate, census"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T09:46:43Z"
-updated = "2026-10-19T13:48:20Z"
+updated = "2026-10-19T13:48:25Z"
 scope = ["crates/grimble-capabilities/**", "crates/grimble-bind/src/caps.rs"]
 +++
 
