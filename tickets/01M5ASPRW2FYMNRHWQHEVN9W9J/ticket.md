@@ -4,9 +4,10 @@ title = "Mirror: real GitHub TrackerAdapter over an HTTP transport (read/create/
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T19:20:09Z"
-updated = "2026-10-19T19:20:09Z"
+updated = "2026-10-19T20:20:48Z"
 scope = ["crates/frob-mirror/src/github/adapter.rs"]
 +++
 
