@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-19T09:27:25Z"
+updated = "2026-10-19T09:29:19Z"
 idempotency_key = "m2-sec-process-packs"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-check/src/tools.rs", "crates/gob-exec/src/**", "crates/gob-exec/Cargo.toml", "crates/gob-check/src/options.rs", "crates/gob-check/src/pipeline.rs", "docs/design/security.md", "crates/gob-check/src/lib.rs", "crates/frob-check/src/options.rs"]
@@ -27,7 +27,7 @@ target = "01M3ZX7VJE22Y68R184Y9WQC2N"
 
 [[acceptance]]
 text = "Given a stage resolving to ./bin/tool inside the work tree via $PATH, when trusted or run, then it is refused"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an untrusted stage, when check runs, then it is Unresolved untrusted, not run, and the remedy names the trust command; a changed binary digest drops trust"
