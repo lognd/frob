@@ -1,0 +1,16 @@
+[package]
+name = "grimble-capabilities"
+version.workspace = true
+description = "The capability matrix (grimble-model.md 9.6): per-node, per-atom cells and the one-Unresolved-per-node summary."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
+tracing = "0.1"
