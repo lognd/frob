@@ -7,10 +7,10 @@ priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-19T22:21:34Z"
+updated = "2026-10-19T22:22:23Z"
 aliases = ["T-6549"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
-scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/design/testing.md"]
+scope = ["src/frob/testing/_runners.py", "src/frob/testing/_collect.py", "src/frob/tickets/_land_verify.py", "src/frob/app/config.py", "tests/unit/test_runner_outcome_executed.py", "docs/design/testing.md", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/tests/*"]
 +++
 
 Source: logand.app-v2 coordinator report, 2026-09-26 (frob 0.531.1.dev332), found while working F-410.
