@@ -2,7 +2,8 @@
 id = "01M597MAP5J4YPB5GW3DXK5BWV"
 title = "Base CI red: crunk-fix missing from ci.yml crunk job, layer table, profile.toml"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
