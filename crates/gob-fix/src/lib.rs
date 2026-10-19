@@ -9,7 +9,8 @@ mod apply;
 mod plan;
 
 pub use apply::{
-    ApplyReport, FileDiff, FileOutcome, FixError, JournalEntry, Mode, Snapshot, apply,
+    ApplyReport, FileDiff, FileOutcome, FixError, JournalEntry, Mode, Snapshot, Validator, apply,
+    apply_validated,
 };
 pub use gob_rules::Applicability;
 pub use plan::{DropReason, Dropped, Edit, Fix, Plan, Tier, plan};

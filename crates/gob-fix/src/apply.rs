@@ -67,7 +67,15 @@ pub enum FileOutcome {
     Rewritten,
     /// The file changed since the check (or was never snapshotted); nothing written.
     Stale,
+    /// The rewritten bytes failed the post-edit validator; the file keeps its pre-fix bytes.
+    RolledBack {
+        /// Why the validator rejected the rewrite.
+        reason: String,
+    },
 }
+
+/// Post-edit check run on each rewritten file: `Err(reason)` rolls the file back.
+pub type Validator<'a> = &'a dyn Fn(&str, &[u8]) -> Result<(), String>;
 
 /// The diff of one file: one hunk per edit, identical in dry-run and real runs.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -133,6 +141,21 @@ pub fn apply(
     snapshot: &Snapshot,
     mode: Mode,
 ) -> Result<ApplyReport, FixError> {
+    apply_validated(plan, root, snapshot, mode, &|_, _| Ok(()))
+}
+
+/// Like [`apply`], but every rewritten file must pass `validate` (a re-parse) or it is
+/// left at its pre-fix bytes and reported as [`FileOutcome::RolledBack`], never written.
+///
+/// # Errors
+/// [`FixError`] on the first unreadable or unwritable file; earlier writes stay.
+pub fn apply_validated(
+    plan: &Plan,
+    root: &Path,
+    snapshot: &Snapshot,
+    mode: Mode,
+    validate: Validator<'_>,
+) -> Result<ApplyReport, FixError> {
     let mut report = ApplyReport::default();
     let paths: BTreeSet<&str> = plan
         .accepted
@@ -192,6 +215,21 @@ pub fn apply(
             at = e.end;
         }
         new.extend_from_slice(&old[at..]);
+        if let Err(reason) = validate(path, &new) {
+            tracing::warn!(path, %reason, "rewrite failed validation; rolled back");
+            report.skipped.extend(
+                report
+                    .journal
+                    .iter()
+                    .filter(|j| j.path == path)
+                    .map(|j| j.rule.clone()),
+            );
+            report.journal.retain(|j| j.path != path);
+            report
+                .files
+                .insert(path.to_owned(), FileOutcome::RolledBack { reason });
+            continue;
+        }
         if mode == Mode::Write {
             gob_fs::write_atomic(&resolve(root, path), &new).map_err(|source| FixError::Write {
                 path: path.to_owned(),
