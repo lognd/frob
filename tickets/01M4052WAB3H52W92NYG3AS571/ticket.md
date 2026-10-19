@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-19T16:24:17Z"
+updated = "2026-10-19T16:24:21Z"
 idempotency_key = "m2-mirror2-fake-github"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/support/**"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a call budget of B, when the B+1th call is made, then it is refused as rate-limited"
-bound = false
+bound = true
 +++
 
 Implements the test support for mirror.md section 3.7 and docs/design/models/mirror/README.md section 2.
