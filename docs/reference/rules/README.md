@@ -42,6 +42,13 @@
 | [CI010](CI010.md) | checkout-no-persist | advisory | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
 | [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
 
+## CLAIM
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CLAIM001](CLAIM001.md) | claim-refuted | error | manual | P+ | false | A claim's proposition is refuted by the declared flows, with the witness path. |
+| [CLAIM003](CLAIM003.md) | claim-unresolved | error | manual | P+ | false | A claim cannot be evaluated on this model, so it has no verdict. |
+
 ## COLOR
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

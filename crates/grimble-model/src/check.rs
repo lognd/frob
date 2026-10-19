@@ -15,6 +15,7 @@ use crate::ast::{
     ClaimWhat, Clause, ClauseKind, Direction, Entity, EntityKind, Evidence, Exception, FileStatus,
     Header, Ident, KeyVal, Link, LinkKind, ModuleKind, QuantKey, Quantity, RefPath, Sel, Value,
 };
+use crate::claim::Verdict;
 use crate::fold::{LABELS, TRUST_LEVELS};
 use crate::model::{EntityRec, Index, LoadedRoot, ModelFiles, Via, load_roots, root_list};
 use crate::span::Span;
@@ -1150,6 +1151,15 @@ impl<'a> Checker<'a> {
                         anchor,
                     );
                 }
+                let reach = matches!(w, ClaimWhat::Reach(..));
+                let v = crate::claim::flow_verdict(
+                    &self.idx,
+                    &rec.ctx,
+                    (a, b),
+                    reach,
+                    self.idx.degraded,
+                );
+                self.claim_verdict(rec, a.span, &v, anchor);
             }
             ClaimWhat::Bound {
                 metric,
@@ -1186,7 +1196,25 @@ impl<'a> Checker<'a> {
                         anchor,
                     ),
                 }
+                let v = crate::claim::bound_verdict(&metric.text, target);
+                self.claim_verdict(rec, metric.span, &v, anchor);
             }
+        }
+    }
+
+    /// Turn a claim verdict into its finding: CLAIM001 when refuted, CLAIM003 when unresolved.
+    fn claim_verdict(&mut self, rec: &EntityRec<'_>, span: Span, v: &Verdict, anchor: &str) {
+        match v {
+            Verdict::Satisfied => {}
+            Verdict::Refuted(m) => self.emit("CLAIM001", None, rec.file, span, m.clone(), anchor),
+            Verdict::Unresolved(m) => self.emit(
+                "CLAIM003",
+                Some(Severity::Unresolved),
+                rec.file,
+                span,
+                m.clone(),
+                anchor,
+            ),
         }
     }
 

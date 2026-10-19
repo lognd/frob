@@ -31,6 +31,7 @@ pub mod adapter;
 pub mod ast;
 pub mod binding;
 pub mod check;
+pub mod claim;
 pub mod directive;
 pub mod dump;
 pub mod fmt;

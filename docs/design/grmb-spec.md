@@ -460,6 +460,8 @@ claim no_frob_to_grimble {
 | assumed | `assumed owner=IDENT review=DATE because="...";` | attrs, all three required | no | the claim is an assumption: named, owned, expiring (v1 `assume`); overdue is REFUTED, as in v1 |
 | evidence | `evidence tests SELECTOR;` or `evidence ref "SYMREF";` | list | no | what discharges the claim above L1: test units (bound also from the test side by `frob:tests`, 8.3) or a document anchor |
 
+Verdicts: a `noflow` with a declared flow path, or a `reach` with none, is REFUTED (CLAIM001, naming the path); a claim the model cannot decide, such as every `bound` today, is Unresolved with the reason (CLAIM003). A claim is never silently ok.
+
 Verdicts (PROVED, REFUTED with witness, UNPROVABLE, and the three-way
 closure) are computed by the kernel and are not part of the language.
 
