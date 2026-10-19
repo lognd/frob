@@ -2,7 +2,8 @@
 id = "01M3DG64ECQN5RFA286F6YXYRZ"
 title = "frob check --ticket: refuse a second concurrent full check for the same worktree (per-worktree lock), --allow-concurrent to override, so stacked agent checks cannot starve the shared host"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "agent"
