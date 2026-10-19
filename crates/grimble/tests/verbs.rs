@@ -352,3 +352,28 @@ fn compile_passes_a_valid_file_silently() {
     assert_eq!(env["data"]["files"][0]["errors"], 0);
     assert_eq!(env["data"]["files"][0]["report"], "");
 }
+
+// frob:tests crates/grimble/src/config_for.rs::run
+// frob:ticket 01M3ZX7K04VN51PGCXT9DCYMWB
+#[test]
+fn config_for_names_the_line_and_scopes_by_path() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[[packs.enable]]\nname = \"react\"\npaths = [\"frontend/**\"]\n\n[[packs.enable]]\nname = \"core\"\n",
+    );
+    let (code, env, err) = grimble(dir.path(), &["config", "--for", "frontend/a.tsx", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
+    let packs = env["data"]["packs"].as_array().unwrap();
+    assert_eq!(packs[0]["name"], "react");
+    assert_eq!(packs[0]["config_line"], 1);
+    assert_eq!(packs[1]["name"], "core");
+    assert_eq!(packs[1]["config_line"], 5);
+
+    let (code, env, err) = grimble(dir.path(), &["config", "--for", "backend/b.ts", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
+    let packs = env["data"]["packs"].as_array().unwrap();
+    assert_eq!(packs.len(), 1);
+    assert_eq!(packs[0]["name"], "core");
+}

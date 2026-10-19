@@ -2828,6 +2828,7 @@ dependencies = [
  "gob-fs",
  "gob-git",
  "gob-lock",
+ "gob-packs",
  "gob-plan",
  "gob-product",
  "gob-rules",

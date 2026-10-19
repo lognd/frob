@@ -29,6 +29,7 @@ gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-product = { version = "0.532.0", path = "../gob-product" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-packs = { version = "0.532.0", path = "../gob-packs" }
 gob-lock = { version = "0.532.0", path = "../gob-lock" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-plan = { version = "0.532.0", path = "../gob-plan" }

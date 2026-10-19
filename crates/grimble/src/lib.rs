@@ -15,6 +15,7 @@
 
 pub mod ack;
 pub mod compile_cmd;
+pub mod config_for;
 pub mod doctor;
 pub mod exceptions;
 pub mod fmt_cmd;
@@ -82,6 +83,8 @@ impl Product for GrimbleProduct {
             .register::<init::Init>()
             .register::<fmt_cmd::Fmt>()
             .register::<compile_cmd::Compile>()
+            // frob:ticket 01M3ZX7K04VN51PGCXT9DCYMWB
+            .register::<config_for::ConfigFor>()
             .register::<exceptions::ExceptionsList>()
             .register::<rule_cmd::RuleTest>()
             .register::<rule_cmd::RuleCheck>()
