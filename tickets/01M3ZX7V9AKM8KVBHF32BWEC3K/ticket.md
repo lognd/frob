@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-19T18:27:49Z"
+updated = "2026-10-19T18:27:50Z"
 idempotency_key = "m2-sec-trust-follow"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/follow.rs", "crates/gob-trust/src/lib.rs", "docs/design/security.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a pair present only in an unpushed commit, when consulted, then it is untrusted"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.3 (follow a protected branch).
