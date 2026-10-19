@@ -4,4 +4,5 @@ Warn COV001 src/lib.rs@106-124 f4b4189a943e44abf34be9455fd14706e4b788c4e9d271a9a
 Warn COV001 src/nested.rs@0-31 c83137c600879aed46453f50ac1996997fa343efccaca9ac2649d21e9cc98265 | public function `src/nested.rs::undocumented_nested` is reached by no test; add one or bind it with `frob:tests`
 Warn DOC001 src/nested.rs@0-31 aa493109506b4ae226d29ed09bea0418fc7a50a4e99af1c0868d6b89c9f4286e | public function `src/nested.rs::undocumented_nested` has no doc comment
 Warn COV001 src/nested.rs@49-78 9728f8586560dee73b3c77622afeaf8bf76f11d6b3e3f4e2bbb7e2921d51eb5c | public function `src/nested.rs::documented_nested` is reached by no test; add one or bind it with `frob:tests`
+Unresolved DOC001 - d533f228736e3afc571ea513db11b6a94f02fdb852bde8b087596effd034b33b | DOC001: 2 opaque text file(s) (no adapter, first `Cargo.toml`) were not examined: no adapter provides what the rule reads: repository
 exit Negative

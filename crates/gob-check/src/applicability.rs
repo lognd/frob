@@ -100,18 +100,16 @@ impl<'a> FileFacts<'a> {
     }
 }
 
-/// The precision of (`facts`, `cap`) for the pseudo-language rows.
+/// The precision of (`facts`, `cap`) for the pseudo-language rows (D106).
 ///
-/// The matrix rows for `opaque-text` and scanned TOML hold the D106 target values; today's
-/// answers are the older ones (a capability rule is not applicable to adapter-less text, a
-/// comment rule is unresolved unless the scanner reads the file). This override keeps them
-/// until `~59MXB7Z` flips the opaque-text row and deletes it. Binary reads the matrix.
+/// The matrix is the answer: a gap (adapter-less text, scanned TOML) is Unresolved, a declared
+/// not-applicable cell (binary, TOML style) is `NotApplicable`. The one exception: the matrix
+/// credits adapter-less text with comments, but the scanner reads only the languages it knows,
+/// so an unscanned text file's comments were not read (`None`).
 fn opaque_precision(facts: &FileFacts<'_>, cap: Capability) -> Precision {
     match (facts.lang, cap) {
-        (Some(Lang::Binary), _) => gob_caps::precision(Lang::Binary, cap),
-        (_, Capability::Comments) if facts.scanned => Precision::Syntactic,
-        (_, Capability::Comments) => Precision::None,
-        _ => Precision::NotApplicable,
+        (Some(Lang::OpaqueText), Capability::Comments) | (None, _) => Precision::None,
+        (Some(lang), _) => gob_caps::precision(lang, cap),
     }
 }
 
@@ -160,11 +158,14 @@ pub fn resolve(applies: &Applies, facts: &FileFacts<'_>) -> SubjectStatus {
         if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::NotApplicable) {
             return SubjectStatus::NotApplicable(not_applicable_reason(facts, *cap));
         }
-        if cells.iter().any(|(_, p)| *p == Precision::None) {
-            return SubjectStatus::Unresolved(
+        if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::None) {
+            tracing::debug!(?cap, "opaque file lacks a capability the rule needs");
+            return SubjectStatus::Unresolved(if *cap == Capability::Comments {
                 "no adapter for this file (opaque F0): its comments and directives were not read"
-                    .to_owned(),
-            );
+                    .to_owned()
+            } else {
+                format!("no adapter for this file (opaque F0): its {cap:?} cannot be read")
+            });
         }
         return SubjectStatus::Examine;
     }
@@ -247,7 +248,7 @@ mod tests {
     }
 
     #[test]
-    fn opaque_rows_keep_todays_answers_and_reasons() {
+    fn opaque_text_gaps_are_unresolved_and_binary_is_not_applicable() {
         let parse = ParseStatus::NotParsed;
         let text = FileFacts::opaque_text(&parse);
         assert!(matches!(
@@ -256,7 +257,7 @@ mod tests {
         ));
         assert!(matches!(
             resolve(&SYMBOLS, &text),
-            SubjectStatus::NotApplicable(w) if w.contains("no adapter")
+            SubjectStatus::Unresolved(w) if w.contains("no adapter")
         ));
         let binary = FileFacts {
             lang: Some(Lang::Binary),
@@ -266,11 +267,26 @@ mod tests {
             resolve(&TEXT, &binary),
             SubjectStatus::NotApplicable("binary artifact holds no text".to_owned())
         );
-        let scanned = FileFacts {
+        let toml = FileFacts {
+            lang: Some(Lang::Toml),
             scanned: true,
             ..text
         };
-        assert_eq!(resolve(&TEXT, &scanned), SubjectStatus::Examine);
+        assert_eq!(resolve(&TEXT, &toml), SubjectStatus::Examine);
+        // Scanned TOML (comments read) still has no visibility: a gap, Unresolved.
+        assert!(matches!(
+            resolve(&SYMBOLS, &toml),
+            SubjectStatus::Unresolved(_)
+        ));
+        // A declared not-applicable cell (TOML has no markup) stays NotApplicable.
+        assert!(matches!(
+            resolve(&MARKUP, &toml),
+            SubjectStatus::NotApplicable(_)
+        ));
+        assert!(matches!(
+            resolve(&MARKUP, &binary),
+            SubjectStatus::NotApplicable(_)
+        ));
     }
 
     #[test]

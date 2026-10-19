@@ -92,15 +92,15 @@ finding that nothing matches fails the case with `unexpected findings`, one
 line each giving `class=` (`fire`, `advisory` or `unresolved`), `severity=`,
 `reason=`, rule, line, column and message. So a second rule that co-fires
 needs a marker naming it (or `rules=` to forbid it), and in a block without
-markers an Unresolved/Advisory finding under `expect=fire`, or any finding of a
+markers an optional Unresolved or an Advisory finding under `expect=fire`, or any finding of a
 `rules=` rule, is unexpected. An `expect=unresolved` header matches the
 block rule's Unresolved and Advisory findings, including a rolled-up spanless
 Unresolved (assert its code with `reason=`).
 
 ## Outcome classes
 
-- `fire`: the rule reports a finding (an Unresolved finding alone does not
-  count).
+- `fire`: the rule reports a finding (an optional Unresolved finding alone
+  does not count; a required Unresolved finding fails the gate, so it does).
 - `clean`: certified clean. The rule examined at least one subject (when the
   runner reports subject accounting), was applicable, and produced zero
   findings at any severity. A rule that examines nothing fails.

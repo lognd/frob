@@ -62,7 +62,7 @@ export the token from `crunk.toml`. For an Unresolved result, index the missing 
 
 ### An unindexed generated sheet leaves the answer Unresolved
 
-```css expect=fire file=styles/app.css config=no-tokens
+```css expect=unresolved file=styles/app.css config=no-tokens
 .btn {
   color: var(--color-missing);
 }
