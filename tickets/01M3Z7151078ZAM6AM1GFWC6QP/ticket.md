@@ -8,10 +8,10 @@ points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-19T09:15:52Z"
+updated = "2026-10-19T09:23:59Z"
 idempotency_key = "m2-neat"
 labels = ["milestone:2"]
-scope = ["crates/grimble-lints/**", "crates/gob-ir/**"]
+scope = ["crates/grimble-lints/**", "crates/gob-ir/**", "docs/design/neatness.md"]
 
 [[links]]
 kind = "blocked-by"
