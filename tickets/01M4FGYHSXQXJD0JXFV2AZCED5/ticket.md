@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a bound claim on a quantity the model cannot compute, when grimble check runs, then Unresolved with the reason"
-bound = false
+bound = true
 +++
 
 Repro 06-label-closure-not-checked (~/projects/frob-v2-repros/logand-grimble-20261009/06-label-closure-not-checked): claims noflow/reach/bound never receive a verdict. Part of ~QNDWNDM (G16 CLAIM family); this ticket lands the verdict engine for the three propositions over the declared flows. Unresolved, never satisfied, when evidence is absent.
