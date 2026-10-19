@@ -1137,6 +1137,7 @@ dependencies = [
  "frob-release",
  "gob-cli",
  "gob-config",
+ "gob-diagnostics",
  "gob-exec",
  "gob-fs",
  "gob-git",
