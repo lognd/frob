@@ -7,4 +7,5 @@ node b : trusted {
 claim c {
   noflow a -> b;
   proof L4;
+  evidence tests "crates/x/tests/t.rs";
 }
