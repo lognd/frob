@@ -4,9 +4,10 @@ title = "Mirror: ticket-branch ShardStore implementing frob_mirror::mapfile::Sha
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T19:20:09Z"
-updated = "2026-10-19T19:20:09Z"
+updated = "2026-10-19T19:20:33Z"
 scope = ["crates/frob-mirror/src/shardstore.rs"]
 +++
 
