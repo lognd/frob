@@ -2,7 +2,8 @@
 id = "01M406M2HX6Z6SEGM6HRPQKHAV"
 title = "grimble vet: dependency vetting in grimble-vet (designed in cli.md, not implemented)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
