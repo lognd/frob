@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T06:02:01Z"
+digest = "884fefaca8d691a974027c27554fe0f6bc7aa10b38b0bfa9c201d1acf1a5aabd"
+exit_code = 0
+inline = """
+
+running 1 test
+test disabled_rule_and_widened_exclude_appear_with_old_and_new ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running tests/policy.rs (target/debug/deps/policy-88d5ae3aa4e9ef0b)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-trust --test policy disabled_rule_and_widened_exclude_appear_with_old_and_new"
+size = 328
+status = "measured"
+at = "2026-10-19T06:02:01Z"
+actor = "lognd"
+rev = 1
