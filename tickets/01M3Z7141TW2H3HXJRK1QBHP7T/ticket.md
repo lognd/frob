@@ -2,13 +2,13 @@
 id = "01M3Z7141TW2H3HXJRK1QBHP7T"
 title = "G10: grimble-arch: CYCLE, LARGE, DEAD"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:24Z"
-updated = "2026-10-08T08:14:22Z"
+updated = "2026-10-19T12:15:13Z"
 idempotency_key = "m2-arch"
 labels = ["milestone:2"]
 scope = ["crates/grimble-arch/**"]
