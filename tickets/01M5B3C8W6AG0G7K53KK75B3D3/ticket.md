@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T22:09:11Z"
-updated = "2026-10-19T22:56:31Z"
+updated = "2026-10-19T22:58:39Z"
 scope = ["crates/frob-ack/src/inputs.rs"]
 
 [[acceptance]]
