@@ -2,16 +2,16 @@
 id = "01M3ZX7ZD77ZW385N5B992NX3A"
 title = "explain RULE: the full rule page offline, with a pager on a TTY"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-03T03:34:38Z"
+updated = "2026-10-19T17:58:02Z"
 idempotency_key = "m2-diag-explain-verb"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/gob-cli/src/explain.rs", "crates/frob/src/explain_cmd.rs", "crates/grimble/src/explain_cmd.rs"]
+scope = ["crates/gob-cli/src/explain.rs", "crates/frob/src/explain_cmd.rs", "crates/grimble/src/explain_cmd.rs", "crates/gob-cli/src/lib.rs", "crates/gob-cli/Cargo.toml", "crates/grimble/src/lib.rs", "crates/frob/tests/it/explain.rs", "crates/frob/tests/it/main.rs", "crates/grimble/tests/explain.rs", "Cargo.lock", "crates/frob/src/first_run.rs"]
 
 [[acceptance]]
 text = "Given `frob explain TODO001` offline, when run, then the embedded rule page prints and matches docs/reference/rules/TODO001.md"
