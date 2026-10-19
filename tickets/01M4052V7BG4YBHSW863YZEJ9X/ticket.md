@@ -2,13 +2,13 @@
 id = "01M4052V7BG4YBHSW863YZEJ9X"
 title = "frob mirror recreate <ticket>"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-03T05:51:38Z"
+updated = "2026-10-19T18:51:39Z"
 idempotency_key = "m2-mirror2-recreate"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/mirror_recreate_cmd.rs"]
