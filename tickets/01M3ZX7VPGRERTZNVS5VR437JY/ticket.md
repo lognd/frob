@@ -2,7 +2,8 @@
 id = "01M3ZX7VPGRERTZNVS5VR437JY"
 title = "Process packs: absolute path outside the work tree, digest in the lock, scrubbed environment"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
