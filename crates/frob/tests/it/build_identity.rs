@@ -7,8 +7,16 @@ use std::process::Command;
 /// First line of `frob --version` for the test binary.
 fn version_line() -> String {
     let exe = assert_cmd::cargo::cargo_bin("frob");
-    let out = Command::new(exe).arg("--version").output().expect("run frob");
-    String::from_utf8(out.stdout).expect("utf8").lines().next().unwrap_or_default().to_owned()
+    let out = Command::new(exe)
+        .arg("--version")
+        .output()
+        .expect("run frob");
+    String::from_utf8(out.stdout)
+        .expect("utf8")
+        .lines()
+        .next()
+        .unwrap_or_default()
+        .to_owned()
 }
 
 #[test]
