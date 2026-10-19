@@ -1,7 +1,7 @@
 //! `vet [--base REF]`: dependency vetting over `Cargo.lock` (cli.md, boundaries.md 2.3).
 //!
 //! Inputs: `Cargo.lock` at the root, the allowlist `.grimble/vet.toml` (`allow = ["serde"]`) and an
-//! offline RustSec snapshot directory (`--advisory-db`, default `.grimble/advisory-db`). With
+//! offline `RustSec` snapshot directory (`--advisory-db`, default `.grimble/advisory-db`). With
 //! `--base` only packages new relative to the lockfile at that ref are vetted. `grimble check
 //! --base` also reports the same findings as warnings.
 
