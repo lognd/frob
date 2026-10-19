@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "an Unresolved-only result fails expect=fire and an Error fails expect=unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a wrong reason code fails"
