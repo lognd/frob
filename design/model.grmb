@@ -11,6 +11,7 @@ node frob : trusted {
   may fs.write at "crates/frob*/**";
   may process.env at "crates/frob*/**";
   may exec at "crates/frob*/tests/**";
+  may net.listen at "crates/frob-mirror/**";
   may exec at "crates/frob/build.rs";
 }
 
