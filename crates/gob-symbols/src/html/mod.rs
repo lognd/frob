@@ -151,7 +151,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let scopes = ScopeGraph::from_term(&term);
     let v = view::build(&term, input.path, Naming::Opaque);
     let mut file = base_file(input, "html");
-    file.fidelity = Fidelity::F2;
+    file.fidelity = gob_caps::lang_fidelity(Lang::Html);
     file.parse_status = view::parse_status_of(&term);
     file.symbols = v.symbols;
     file.extras = v.extras;

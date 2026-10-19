@@ -2,7 +2,7 @@
 source: crates/gob-symbols/tests/it/measured.rs
 expression: matrix_of(a)
 ---
-markdown F4
+markdown F3
 resolve_ref Implemented link-targets
 apply_targets Implemented link-targets
 visibility NotApplicable not-applicable

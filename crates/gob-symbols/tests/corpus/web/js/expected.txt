@@ -1,5 +1,5 @@
 == web/js/mod.js ==
-language typescript fidelity F2 status Complete digest 50b690cc69d26f9bbcf426e90f6189c4a0da61b8c39e97f1f35d9191cfafd1da
+language typescript fidelity F3 status Complete digest 50b690cc69d26f9bbcf426e90f6189c4a0da61b8c39e97f1f35d9191cfafd1da
 -- symbols --
 web/js/mod.js::run Function Public
 -- edges --
@@ -9,7 +9,7 @@ Calls web/js/mod.js::run -> web/js/util.js::helper Must None None
 -- markup --
 -- style --
 == web/js/util.js ==
-language typescript fidelity F2 status Complete digest 868940c458628be1f030089594957205aafeca4b2bc556b2f7d4b0824c6acfe9
+language typescript fidelity F3 status Complete digest 868940c458628be1f030089594957205aafeca4b2bc556b2f7d4b0824c6acfe9
 -- symbols --
 web/js/util.js::helper Function Public
 -- edges --

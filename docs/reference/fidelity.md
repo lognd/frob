@@ -13,9 +13,9 @@ sections 4.1, 4.2 and 4.6).
 |---|---|---|
 | Opaque F0 (no adapter), text, comments scanned (TOML) | one Unresolved per rule naming the file count (no visibility, links or items), except NotApplicable where the matrix declares it (style) | examined |
 | YAML F1 (`.yml`, `.yaml`: block-mapping keys as nested units `path::outer.inner`), comments scanned | NotApplicable | examined |
-| Python F2 (`.py`, `.pyi`: modules, classes, functions, methods, imports, calls, decorators, docstrings), comments scanned | NotApplicable for DOC002 (markdown only); DOC001 and COV001 examined | examined |
+| Python F3 (`.py`, `.pyi`: modules, classes, functions, methods, imports, calls, decorators, docstrings), comments scanned | NotApplicable for DOC002 (markdown only); DOC001 and COV001 examined | examined |
 | C# F1 (`.cs`; `.csx` is not C#: namespaces, types, members, attributes, preprocessor conditions; imports and calls land next), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
-| TypeScript and JavaScript F2 (`.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`: functions, classes, methods, interfaces, types, enums, namespaces, constants, ESM and CJS imports, exports, calls, JSX elements and attributes as terms, test runner calls), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
+| TypeScript and JavaScript F3 (`.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`: functions, classes, methods, interfaces, types, enums, namespaces, constants, ESM and CJS imports, exports, calls, JSX elements and attributes as terms, test runner calls), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
 | CSS F2 (`.css`: style rules, at-rules, declarations and custom properties as `gob_ir::style` terms, `var()` uses linked to definitions at May; SCSS and Less not yet), comments scanned | NotApplicable | examined |
 | Opaque F0, text, not scanned (for example `.json`) | one Unresolved per rule naming the file count (D106: no adapter is a gap, never a silent pass) | one Unresolved per rule naming the file count |
 | Opaque F0, binary (NUL byte or known extension) | NotApplicable | NotApplicable |
@@ -108,7 +108,7 @@ A call is Must only when the syntax proves one target; anything else stays May
 
 ## Python
 
-The Python adapter (F2) reads units (`path::Class.method`, nested `outer.inner`),
+The Python adapter (F3) reads units (`path::Class.method`, nested `outer.inner`),
 imports (plain, from, relative, star), decorators as attributes, docstrings as
 the doc facet and calls with qualifiers. Binders follow Python scoping
 (parameters and every name assigned in a function). Calls resolve as follows:
@@ -133,7 +133,7 @@ A test is a module-level `test*` function or a `test*` method of a class in a
 
 ## TypeScript and JavaScript
 
-The adapter (F2, one adapter for the TypeScript, TSX, JavaScript and JSX grammars, chosen by extension)
+The adapter (F3, one adapter for the TypeScript, TSX, JavaScript and JSX grammars, chosen by extension)
 reads units as `path::Class.method` (nested functions `outer.inner`, a namespace `A.B` as one unit per
 component): functions (declarations, and module-level `const f = () => ..`), classes, methods (constructors,
 accessors, `handle = () => ..` fields), interfaces, type aliases, enums, namespaces, and `const` or `static`

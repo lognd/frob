@@ -155,14 +155,14 @@ fn run_corpus(lang: &str, ext: &str, claims: &[&str]) {
 // frob:tests crates/gob-symbols/src/adapter.rs::Adapter.fidelity
 #[test]
 fn rust_corpus_covers_every_claimed_operator() {
-    assert_eq!(RustAdapter.fidelity(), Fidelity::F3);
+    assert_eq!(RustAdapter.fidelity(), Fidelity::F4);
     run_corpus("rust", "rs", &RUST_CLAIMS);
 }
 
 // frob:tests crates/gob-symbols/src/adapter.rs::Adapter.fidelity
 #[test]
 fn python_corpus_covers_every_claimed_operator() {
-    assert_eq!(PythonAdapter.fidelity(), Fidelity::F2);
+    assert_eq!(PythonAdapter.fidelity(), Fidelity::F3);
     run_corpus("python", "py", &PYTHON_CLAIMS);
 }
 
@@ -175,7 +175,7 @@ fn csharp_corpus_covers_every_claimed_operator() {
 
 #[test]
 fn markdown_corpus_covers_every_claimed_operator() {
-    assert_eq!(MarkdownAdapter.fidelity(), Fidelity::F4);
+    assert_eq!(MarkdownAdapter.fidelity(), Fidelity::F3);
     run_corpus("markdown", "md", &MARKDOWN_CLAIMS);
 }
 

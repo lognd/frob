@@ -91,7 +91,7 @@ fn the_package_yields_modules_classes_methods_and_functions() {
         ]
     );
     assert!(model.parse_status.is_complete());
-    assert_eq!(model.fidelity, gob_symbols::Fidelity::F2);
+    assert_eq!(model.fidelity, gob_symbols::Fidelity::F3);
 }
 
 #[test]

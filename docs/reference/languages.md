@@ -8,29 +8,29 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 
 | Extension | Language | Fidelity |
 |---|---|---|
-| `.cjs` | typescript | F2 |
+| `.cjs` | typescript | F3 |
 | `.cs` | csharp | F1 |
 | `.css` | css | F2 |
-| `.cts` | typescript | F2 |
-| `.htm` | html | F2 |
-| `.html` | html | F2 |
-| `.js` | typescript | F2 |
-| `.jsx` | typescript | F2 |
-| `.markdown` | markdown | F4 |
-| `.md` | markdown | F4 |
-| `.mjs` | typescript | F2 |
-| `.mts` | typescript | F2 |
-| `.py` | python | F2 |
-| `.pyi` | python | F2 |
-| `.rs` | rust | F3 |
-| `.ts` | typescript | F2 |
-| `.tsx` | typescript | F2 |
+| `.cts` | typescript | F3 |
+| `.htm` | html | F0 |
+| `.html` | html | F0 |
+| `.js` | typescript | F3 |
+| `.jsx` | typescript | F3 |
+| `.markdown` | markdown | F3 |
+| `.md` | markdown | F3 |
+| `.mjs` | typescript | F3 |
+| `.mts` | typescript | F3 |
+| `.py` | python | F3 |
+| `.pyi` | python | F3 |
+| `.rs` | rust | F4 |
+| `.ts` | typescript | F3 |
+| `.tsx` | typescript | F3 |
 | `.yaml` | yaml | F1 |
 | `.yml` | yaml | F1 |
 
 ## rust
 
-Fidelity F3; extensions `.rs`.
+Fidelity F4; extensions `.rs`.
 
 | Capability | Cell | Precision |
 |---|---|---|
@@ -46,7 +46,7 @@ Fidelity F3; extensions `.rs`.
 
 ## markdown
 
-Fidelity F4; extensions `.md`, `.markdown`.
+Fidelity F3; extensions `.md`, `.markdown`.
 
 | Capability | Cell | Precision |
 |---|---|---|
@@ -78,7 +78,7 @@ Fidelity F1; extensions `.yml`, `.yaml`.
 
 ## python
 
-Fidelity F2; extensions `.py`, `.pyi`.
+Fidelity F3; extensions `.py`, `.pyi`.
 
 | Capability | Cell | Precision |
 |---|---|---|
@@ -110,7 +110,7 @@ Fidelity F1; extensions `.cs`.
 
 ## typescript
 
-Fidelity F2; extensions `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`.
+Fidelity F3; extensions `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`.
 
 | Capability | Cell | Precision |
 |---|---|---|
@@ -142,7 +142,7 @@ Fidelity F2; extensions `.css`.
 
 ## html
 
-Fidelity F2; extensions `.html`, `.htm`.
+Fidelity F0; extensions `.html`, `.htm`.
 
 | Capability | Cell | Precision |
 |---|---|---|

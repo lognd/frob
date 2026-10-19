@@ -1,5 +1,5 @@
 ---
-source: crates/gob-symbols/tests/corpus.rs
+source: crates/gob-symbols/tests/it/corpus.rs
 expression: out
 ---
 == term ==
@@ -11,6 +11,6 @@ D0 S1 Binder "_" Must
 R0 S1 must D0
 
 == file ==
-fidelity F2 status Complete
+fidelity F3 status Complete
 == symbols ==
 == edges ==

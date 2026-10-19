@@ -551,7 +551,7 @@ fn fold_tree_inline(
     bind_super_paths(&term, &mut scopes);
     let v = view::build(&term, input.path, Naming::Rust);
     let mut file = base_file(input, "rust");
-    file.fidelity = Fidelity::F3;
+    file.fidelity = gob_caps::lang_fidelity(Lang::Rust);
     file.parse_status = view::parse_status_of(&term);
     let symref_of = |ord: usize| -> Option<Symref> {
         ord_nodes

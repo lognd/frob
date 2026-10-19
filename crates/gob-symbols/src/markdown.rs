@@ -1,4 +1,4 @@
-//! The markdown adapter (fidelity F4): sections as units, links as `apply(link)`.
+//! The markdown adapter (fidelity F3): sections as units, links as `apply(link)`.
 //!
 //! # Mapping (rho)
 //!
@@ -176,7 +176,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let scopes = ScopeGraph::from_term(&term);
     let v = view::build(&term, input.path, Naming::Markdown);
     let mut file = base_file(input, "markdown");
-    file.fidelity = Fidelity::F4;
+    file.fidelity = gob_caps::lang_fidelity(Lang::Markdown);
     file.parse_status = view::parse_status_of(&term);
     for l in links {
         let from = match l.section.and_then(|i| sections.get(i)) {
