@@ -17,6 +17,7 @@
 pub mod diff;
 pub mod doctor;
 pub mod explain;
+pub mod fix;
 pub mod gallery;
 pub mod init;
 pub mod map;
@@ -130,6 +131,7 @@ impl Product for CrunkProduct {
             .register::<preview::Preview>()
             .register::<diff::Diff>()
             .register::<init::Init>()
+            .register::<fix::Fix>()
             .register::<gallery::GalleryCheck>()
     }
 }

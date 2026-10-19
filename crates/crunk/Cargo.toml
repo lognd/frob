@@ -27,6 +27,7 @@ gallery = ["dep:crunk-gallery"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+crunk-fix = { version = "0.532.0", path = "../crunk-fix" }
 crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
 crunk-check = { version = "0.532.0", path = "../crunk-check" }
 crunk-query = { version = "0.532.0", path = "../crunk-query" }

@@ -487,6 +487,7 @@ dependencies = [
  "assert_cmd",
  "clap",
  "crunk-check",
+ "crunk-fix",
  "crunk-gallery",
  "crunk-ingest",
  "crunk-query",
@@ -535,6 +536,20 @@ dependencies = [
  "gob-text",
  "serde",
  "serde_json",
+ "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "crunk-fix"
+version = "0.532.0"
+dependencies = [
+ "crunk-check",
+ "gob-fix",
+ "gob-rules",
+ "gob-text",
+ "proptest",
  "tempfile",
  "thiserror",
  "tracing",
