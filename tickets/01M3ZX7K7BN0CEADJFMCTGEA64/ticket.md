@@ -2,7 +2,8 @@
 id = "01M3ZX7K7BN0CEADJFMCTGEA64"
 title = "Repository pack loader for tiers 1 and 2"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
