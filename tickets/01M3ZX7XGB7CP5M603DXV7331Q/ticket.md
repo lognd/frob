@@ -2,7 +2,8 @@
 id = "01M3ZX7XGB7CP5M603DXV7331Q"
 title = "GATE001 policy-weakened (Error, required)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
