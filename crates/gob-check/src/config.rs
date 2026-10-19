@@ -133,6 +133,10 @@ pub enum ToolParser {
     // frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
     #[serde(rename = "typos-json")]
     TyposJson,
+    /// `eslint -f json`: an array of files with line and column messages; `jsx-a11y/*` map to `A11Y001`, `react-hooks/*` and `react/*` to `REACT001`, the typescript-eslint promise rules to `CONC001`, `no-explicit-any` and `no-unsafe-*` to `TYPING001`, the rest `LINT001`.
+    // frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
+    #[serde(rename = "eslint-json")]
+    EslintJson,
 }
 
 /// The earliest check level that runs a tool stage (`tier` of `[[check.tool]]`).

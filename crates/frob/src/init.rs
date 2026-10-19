@@ -45,6 +45,30 @@ min_version = "0.14.0"
 max_version = "0.14.99"
 inputs = ["**/*.py", "pyproject.toml", "ruff.toml", ".ruff.toml"]
 "#;
+/// The `[[check.tool]]` stages `frob init` adds to a repository whose `package.json` names eslint: the syntax stage and the separate type-aware stage.
+// frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
+const ESLINT_STAGES: &str = r#"
+# eslint runs the repository's own config (jsx-a11y, react-hooks, react, typescript-eslint syntax rules); jsx-a11y maps to A11Y, react to REACT.
+[[check.tool]]
+name = "eslint"
+command = "npx"
+args = ["--no-install", "eslint", "-f", "json", "."]
+parser = "eslint-json"
+version_args = ["--no-install", "eslint", "--version"]
+inputs = ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "package.json", "eslint.config.*"]
+
+# The type-aware typescript-eslint rules (no-floating-promises -> CONC, no-explicit-any and no-unsafe-* -> TYPING) cost a type check,
+# so they are a separate stage with their own config; like every tool stage it is timed apart from the check budget, and `train` keeps it out of quick runs.
+[[check.tool]]
+name = "eslint-typed"
+command = "npx"
+args = ["--no-install", "eslint", "-c", "eslint.typed.config.mjs", "-f", "json", "."]
+parser = "eslint-json"
+version_args = ["--no-install", "eslint", "--version"]
+tier = "train"
+optional = true
+inputs = ["**/*.ts", "**/*.tsx", "tsconfig*.json", "package.json", "eslint.typed.config.*"]
+"#;
 /// Time a `git config` call may take.
 const GIT_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -235,6 +259,46 @@ fn ensure_python_stage(root: &Path, dry_run: bool) -> Result<bool, CliError> {
             .map_err(|e| CliError::internal(format!("cannot write {}: {e}", path.display())))?;
     }
     tracing::info!(path = %path.display(), dry_run, "ruff stage added for the pyproject repository");
+    Ok(true)
+}
+
+// frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
+/// Append the eslint stages to `frob.toml` when `package.json` names eslint and no eslint stage exists yet; returns whether it changed.
+fn ensure_web_stages(root: &Path, dry_run: bool) -> Result<bool, CliError> {
+    let package = root.join("package.json");
+    if !package.is_file() || !read_or_empty(&package)?.contains("eslint") {
+        tracing::debug!("no package.json naming eslint; no web stages");
+        return Ok(false);
+    }
+    let path = root.join("frob.toml");
+    let existing = read_or_empty(&path)?;
+    let has_eslint = existing
+        .parse::<toml::Table>()
+        .ok()
+        .and_then(|t| {
+            t.get("check")?.get("tool")?.as_array().map(|stages| {
+                stages.iter().any(|s| {
+                    s.get("name")
+                        .and_then(toml::Value::as_str)
+                        .is_some_and(|n| n.starts_with("eslint"))
+                })
+            })
+        })
+        .unwrap_or(false);
+    if has_eslint {
+        tracing::debug!("eslint stage already configured");
+        return Ok(false);
+    }
+    if !dry_run {
+        let mut text = existing;
+        if !text.is_empty() && !text.ends_with('\n') {
+            text.push('\n');
+        }
+        text.push_str(ESLINT_STAGES);
+        std::fs::write(&path, text)
+            .map_err(|e| CliError::internal(format!("cannot write {}: {e}", path.display())))?;
+    }
+    tracing::info!(path = %path.display(), dry_run, "eslint stages added for the eslint repository");
     Ok(true)
 }
 
@@ -693,6 +757,7 @@ impl Command for Init {
             }),
         )?;
         let python_stage = ensure_python_stage(root, ctx.dry_run)?;
+        let web_stages = ensure_web_stages(root, ctx.dry_run)?;
         let gitignore = ensure_gitignore(root, ctx.dry_run)?;
         let (merge_driver, driver, driver_warning) = ensure_merge_driver(
             root,
@@ -714,6 +779,7 @@ impl Command for Init {
         };
         let already = config.added.is_empty()
             && !python_stage
+            && !web_stages
             && !gitignore.changed
             && !merge_driver.changed
             && !gitattributes.changed;
@@ -758,6 +824,34 @@ mod tests {
         assert_eq!(stage["parser"].as_str(), Some("ruff-json"));
         assert_eq!(stage["min_version"].as_str(), Some("0.14.0"));
         assert_eq!(stage["max_version"].as_str(), Some("0.14.99"));
+    }
+
+    // frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
+    // frob:tests crates/frob/src/init.rs::ensure_web_stages
+    #[test]
+    fn an_eslint_repository_gets_a_syntax_stage_and_a_separate_type_aware_stage() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path();
+        std::fs::write(root.join("frob.toml"), "[check]\nbase = \"main\"\n").expect("write");
+        std::fs::write(root.join("package.json"), "{}").expect("write");
+        assert!(!ensure_web_stages(root, false).expect("no eslint named"));
+        std::fs::write(
+            root.join("package.json"),
+            "{\"devDependencies\":{\"eslint\":\"9.0.0\"}}",
+        )
+        .expect("write");
+        assert!(ensure_web_stages(root, true).expect("dry run"));
+        assert!(ensure_web_stages(root, false).expect("first"));
+        assert!(!ensure_web_stages(root, false).expect("second is a no-op"));
+        let table: toml::Table = std::fs::read_to_string(root.join("frob.toml"))
+            .expect("read")
+            .parse()
+            .expect("valid toml");
+        let stages = table["check"]["tool"].as_array().expect("stages");
+        assert_eq!(stages.len(), 2);
+        assert_eq!(stages[0]["parser"].as_str(), Some("eslint-json"));
+        assert_eq!(stages[1]["name"].as_str(), Some("eslint-typed"));
+        assert_eq!(stages[1]["tier"].as_str(), Some("train"));
     }
 
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40

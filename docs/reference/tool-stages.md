@@ -15,13 +15,17 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json` or `typos-json`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `eslint-json` or `typos-json`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
 | `version_args` | parser default | Arguments of `command` that print the version (needed behind `uvx`). |
 | `optional` | `false` | A missing binary is Unresolved but not required. |
 | `tier` | `ticket` | Earliest check level that runs the stage: `ticket` (also under `frob check --ticket --quick`), `train` (a plain `--ticket` run, which is the land and train check) or `ci` (only the unscoped check). Levels widen, so a `ci` stage never delays a land. |
+
+## eslint stages
+
+`parser = "eslint-json"` reads `eslint -f json` (exit 1 for lint errors is a normal exit; a message without a rule id, such as a parse error, is skipped). `frob init` in a repository whose `package.json` names eslint adds two stages: `eslint` (the repository config: jsx-a11y, react-hooks, react and syntax-level typescript-eslint rules) and `eslint-typed` (`tier = "train"`, `optional`, its own `eslint.typed.config.mjs` with the type-aware typescript-eslint rules). The type-aware rules cost a type check, so they are a separate stage; every tool stage is timed apart from the `[perf]` budget (`timing.stages` with `budgeted = false`), so the type check never counts against the 2 s budget.
 
 ## Skipping stages
 
@@ -56,6 +60,11 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | stylelint | `selector-max-id` | `WCSS002` | Advisory |
 | stylelint | `declaration-no-important` | `WCSS003` | Advisory |
 | stylelint | any other id | `TOOL002` | Advisory |
+| eslint | `jsx-a11y/*` | `A11Y001` | Warn |
+| eslint | `react-hooks/*`, `react/*` | `REACT001` | Warn |
+| eslint | `@typescript-eslint/` `no-floating-promises`, `no-misused-promises`, `await-thenable`, `require-await` | `CONC001` | Warn |
+| eslint | `@typescript-eslint/` `no-explicit-any`, `no-unsafe-*` | `TYPING001` | Warn |
+| eslint | any other rule id | `LINT001` | Advisory |
 | sarif | any id (the stage `id_map` names the rule) | `TOOL002` | Advisory |
 | cargo-json | `unused_*`, `dead_code` | `DEAD001` | rustc level |
 | cargo-json | `too_many_arguments` | `NEAT002` | rustc level |

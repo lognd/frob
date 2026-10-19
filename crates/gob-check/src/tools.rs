@@ -527,7 +527,8 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
         | ToolParser::Sarif
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
-        | ToolParser::PyrightJson => &[0, 1],
+        | ToolParser::PyrightJson
+        | ToolParser::EslintJson => &[0, 1],
         // Lints under `-D warnings` and compile errors both exit 101; the diagnostics decide.
         ToolParser::CargoJson => &[0, 101],
         // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
