@@ -2,7 +2,8 @@
 id = "01M4052V7BG4YBHSW863YZEJ9X"
 title = "frob mirror recreate <ticket>"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
