@@ -46,6 +46,9 @@ fn needs_human(why: Presence) -> Refusal {
 }
 
 /// Run the review gate for the given session facts; `Ok` only when a person may be present.
+///
+/// # Errors
+/// `E-TRUST-NEEDS-HUMAN` (exit 3, `requires_human`) off a terminal or under an agent marker.
 pub fn gate(
     stdin_tty: bool,
     stdout_tty: bool,
