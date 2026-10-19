@@ -8,12 +8,12 @@ points = 2
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-04T01:20:08Z"
-updated = "2026-10-19T19:54:50Z"
+updated = "2026-10-19T20:07:49Z"
 scope = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/tests/**", "docs/design/paths.md"]
 
 [[acceptance]]
 text = "Given a Windows host without sh on PATH, when the product runs a configured tool stage and a command evidence provider, then neither needs sh"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the test suite on such a host, when it runs, then no test fails for lack of sh; shell-specific tests report a named prerequisite instead"
