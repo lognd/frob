@@ -14,21 +14,21 @@ use gob_symbols::{
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
 /// Operators the Rust adapter claims at F3; `opaque` is covered by `rust_depth_limit`.
-const RUST_CLAIMS: [&str; 12] = [
+pub(crate) const RUST_CLAIMS: [&str; 12] = [
     "unit", "anon", "ref", "apply", "bind", "group", "lit", "attr", "comment", "region", "phase",
     "hole",
 ];
 
 /// Operators the Python adapter claims at F2 (binders are unit and `anon` abstractors, not `bind` nodes).
-const PYTHON_CLAIMS: [&str; 9] = [
+pub(crate) const PYTHON_CLAIMS: [&str; 9] = [
     "unit", "anon", "ref", "apply", "group", "lit", "attr", "comment", "hole",
 ];
 
 /// Operators the C# adapter claims at F1 (units, tokens, attributes, comments and holes; no references or calls yet).
-const CSHARP_CLAIMS: [&str; 6] = ["unit", "group", "lit", "attr", "comment", "hole"];
+pub(crate) const CSHARP_CLAIMS: [&str; 6] = ["unit", "group", "lit", "attr", "comment", "hole"];
 
 /// Operators the markdown adapter claims at F4.
-const MARKDOWN_CLAIMS: [&str; 5] = ["unit", "ref", "apply", "group", "lit"];
+pub(crate) const MARKDOWN_CLAIMS: [&str; 5] = ["unit", "ref", "apply", "group", "lit"];
 
 fn dir(lang: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))

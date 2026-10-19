@@ -14,6 +14,7 @@ mod dotnet;
 mod gaps;
 mod html;
 mod inference;
+mod measured;
 mod nodejs;
 mod python;
 mod python_types;
