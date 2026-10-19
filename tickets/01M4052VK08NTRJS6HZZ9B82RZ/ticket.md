@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a ticket branch with only the generated nudge, when checked, then no finding is emitted"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.1 (A TICK rule). The rule id is not assigned in the design (next free is TICK008 in navigation.md 6); assign it here and add it to the rule tables.
