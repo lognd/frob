@@ -12,6 +12,7 @@ authors.workspace = true
 clap = { version = "4", features = ["derive"] }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
+gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-log = { version = "0.532.0", path = "../gob-log" }
 gob-macros = { version = "0.532.0", path = "../gob-macros" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }

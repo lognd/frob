@@ -10,7 +10,7 @@ use gob_rules::{Applicability, Finding, Fix, Registry, Severity, TextEdit, Unres
 use gob_text::{TextSize, render_snippet};
 
 use crate::escape::{escape_for_origin, escape_text};
-use crate::record::TextOrigin;
+use crate::record::{SecurityDecisionKind, Summary, TextOrigin};
 use crate::source::SourceProvider;
 
 /// Whether the renderer emits ANSI color; the caller decides (TTY, `NO_COLOR`).
@@ -72,6 +72,15 @@ struct Located<'a> {
 
 /// Render `report` as text, showing and counting each Unresolved finding's required reason.
 pub fn render_text(report: &Report<'_>, opts: &TextOptions) -> String {
+    render_text_with_decisions(report, opts, &[])
+}
+
+/// Render `report` as text, also counting the run's security `decisions` in the summary (I13).
+pub fn render_text_with_decisions(
+    report: &Report<'_>,
+    opts: &TextOptions,
+    decisions: &[SecurityDecisionKind],
+) -> String {
     let registry = Registry::global();
     let mut groups: BTreeMap<Option<String>, Vec<Located<'_>>> = BTreeMap::new();
     for f in report.findings {
@@ -111,7 +120,7 @@ pub fn render_text(report: &Report<'_>, opts: &TextOptions) -> String {
         }
         out.push('\n');
     }
-    write_summary(&mut out, report.findings);
+    write_summary(&mut out, &Summary::of(report.findings, decisions));
     tracing::debug!(findings = report.findings.len(), "text rendered");
     match opts.color {
         ColorChoice::Always => out,
@@ -346,20 +355,31 @@ fn write_edit_diff(out: &mut String, sources: &dyn SourceProvider, edit: &TextEd
     }
 }
 
-fn write_summary(out: &mut String, findings: &[Finding]) {
-    let n = |s: Severity| findings.iter().filter(|f| f.severity == s).count();
-    let required = findings
-        .iter()
-        .filter(|f| f.severity == Severity::Unresolved && f.required.is_some())
-        .count();
+fn write_summary(out: &mut String, summary: &Summary) {
     let _ = writeln!(
         out,
-        "{} errors, {} warnings, {} advisory, {} unresolved ({required} required)",
-        n(Severity::Error),
-        n(Severity::Warn),
-        n(Severity::Advisory),
-        n(Severity::Unresolved)
+        "{} errors, {} warnings, {} advisory, {} unresolved ({} required)",
+        summary.errors, summary.warnings, summary.advisory, summary.unresolved, summary.required
     );
+    if summary.unresolved > 0 {
+        let _ = writeln!(
+            out,
+            "  unresolved: {} because a plugin did not finish, {} because the code is undecidable",
+            summary.plugin_unfinished, summary.undecidable
+        );
+    }
+    if !summary.security_decisions.is_empty() {
+        let parts: Vec<String> = SecurityDecisionKind::ALL
+            .iter()
+            .filter_map(|k| {
+                summary
+                    .security_decisions
+                    .get(k)
+                    .map(|n| format!("{n} {}", k.label()))
+            })
+            .collect();
+        let _ = writeln!(out, "  security decisions: {}", parts.join(", "));
+    }
 }
 
 #[cfg(test)]
@@ -380,5 +400,24 @@ mod tests {
     fn host_and_std_messages_are_not_prefixed() {
         assert_eq!(origin_prefix(&TextOrigin::Host), "");
         assert_eq!(origin_prefix(&TextOrigin::Std), "");
+    }
+
+    // frob:ticket 01M3ZX7XS6J4SFXY7P3S761M1P
+    // frob:tests write_summary
+    #[test]
+    fn summary_lines_separate_unresolved_and_count_decisions() {
+        let mut out = String::new();
+        let s = Summary::of(
+            &[],
+            &[
+                SecurityDecisionKind::Grant,
+                SecurityDecisionKind::Replacement,
+            ],
+        );
+        write_summary(&mut out, &s);
+        assert!(
+            out.contains("security decisions: 1 grants, 1 replacements"),
+            "{out}"
+        );
     }
 }

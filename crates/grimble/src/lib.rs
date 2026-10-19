@@ -19,6 +19,7 @@ pub mod config_diff;
 pub mod config_for;
 pub mod doctor;
 pub mod exceptions;
+pub mod explain_cmd;
 pub mod fmt_cmd;
 pub mod init;
 pub mod rule_cmd;
@@ -88,6 +89,8 @@ impl Product for GrimbleProduct {
 
     fn register(cli: Cli) -> Cli {
         cli.register::<ack::Ack>()
+            // frob:ticket 01M3ZX7ZD77ZW385N5B992NX3A
+            .register::<explain_cmd::Explain>()
             .register::<init::Init>()
             .register::<fmt_cmd::Fmt>()
             .register::<compile_cmd::Compile>()

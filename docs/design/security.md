@@ -300,6 +300,10 @@ Read implies publish: the trust prompt and docs say "can read and print".
 - The summary separates "Unresolved because a plugin did not finish"
   from "Unresolved because the code is undecidable", so nobody filters
   both together.
+  The text summary prints them as two counts, and counts each security
+  decision (trust, grants, replacements, excuses, NotApplicable claims,
+  declarations, overrides) by kind (`gob_diagnostics::Summary`,
+  `render_text_with_decisions`).
 
 ### 2.8 Packs as reviewable code
 
