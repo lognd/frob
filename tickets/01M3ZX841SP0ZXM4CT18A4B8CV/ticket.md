@@ -2,13 +2,13 @@
 id = "01M3ZX841SP0ZXM4CT18A4B8CV"
 title = "Outbox: ledger-driven work from unpublished events, idempotent set-to-value operations, full resync"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-03T05:51:55Z"
+updated = "2026-10-19T16:46:34Z"
 idempotency_key = "m2-mirror-outbox"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/outbox.rs"]
