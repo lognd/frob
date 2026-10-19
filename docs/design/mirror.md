@@ -334,6 +334,11 @@ and in `frob mirror status`.
   and listed in `frob mirror status`; a repository-level inventory of
   managed labels, milestones and issue types catches renames once,
   not per issue.
+  Read-time capture is `frob_mirror::capture`: `capture_issue` keeps every
+  retained history entry with its author, captures an unexplained change
+  with `Fidelity::Gap` and no author, and `GapListing` collects the gaps
+  (unexplained, beyond retention, rename, project field, deletion) for
+  `frob mirror status`.
   Implementation: `frob-mirror::github::read` merges timeline events and
   body revisions into ordered history entries and returns a fidelity
   gap, never an error, for truncated or deleted revisions.

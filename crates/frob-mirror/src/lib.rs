@@ -5,6 +5,7 @@
 pub mod adapter;
 pub mod blind;
 pub mod budget;
+pub mod capture;
 pub mod config;
 pub mod create;
 pub mod cursor;
