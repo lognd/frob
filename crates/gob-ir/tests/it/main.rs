@@ -5,6 +5,7 @@ mod deep;
 mod digest_scheme;
 mod equivalence;
 mod eval;
+mod precision;
 mod properties;
 mod queries;
 mod rule_polarity;

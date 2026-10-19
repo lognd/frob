@@ -1,0 +1,1 @@
+Type-dependent answers now carry a precision (exact, claimed, inferred, dynamic), a provenance set and a typed Unknown reason class (not-run, untrusted-type, dynamic-site, analysis-limit, undecidable) with the cheapest remedy; a dispatch through an `Any` receiver is Unknown with reason `dynamic-site`.
