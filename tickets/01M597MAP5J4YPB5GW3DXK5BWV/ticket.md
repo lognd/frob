@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-10-19T04:45:00Z"
-updated = "2026-10-19T04:58:00Z"
+updated = "2026-10-19T04:58:02Z"
 scope = [".github/workflows/ci.yml", "crates/gob-dev/tests/layering.rs", "crates/gob-dev/profile.toml", "crates/gob-dev/src/**", "docs/design/boundaries.md"]
 
 [[acceptance]]
