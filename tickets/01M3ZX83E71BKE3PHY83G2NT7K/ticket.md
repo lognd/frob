@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-19T08:17:08Z"
+updated = "2026-10-19T08:17:11Z"
 idempotency_key = "m2-mirror-mapping-config"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/mapping.rs", "crates/frob-mirror/src/config.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a mapping routing priority to a label, when applied, then the label appears in the planned operation"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 2 and 2.1.
