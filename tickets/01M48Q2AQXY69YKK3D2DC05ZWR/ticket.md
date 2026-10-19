@@ -4,10 +4,11 @@ title = "frob-metrics crate and frob stats: velocity, capacity, points remaining
 type = "story"
 category = "todo"
 priority = "high"
+points = 5
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:51Z"
-updated = "2026-10-06T13:39:51Z"
+updated = "2026-10-19T10:16:31Z"
 scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-pm/**", "Cargo.lock"]
 
 [[acceptance]]
