@@ -137,16 +137,6 @@
 |---|---|---|---|---|---|---|
 | [LAYER001](LAYER001.md) | z-index-off-layers | error | manual | P+ | true | A `z-index` must be one of the declared layers. Each block is one source file in a project whose |
 
-## LAYOUT
-
-| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
-|---|---|---|---|---|---|---|
-| [LAYOUT001](LAYOUT001.md) | child-overflows-parent | error | manual | P+ | true | A scene node stays inside its parent's rectangle. Each block is one scene file under `design/scenes/` of a default-preset project; the scene is solved with the deterministic layout engine (T1) and every node's absolute rectangle is compared with its parent's. |
-| [LAYOUT002](LAYOUT002.md) | siblings-overlap | warn | manual | P+ | true | Sibling scene nodes do not cover one another. Each block is one scene file under `design/scenes/`; siblings share a parent and their solved rectangles are compared pairwise. |
-| [LAYOUT003](LAYOUT003.md) | node-clipped-by-viewport | error | manual | P+ | true | No scene node extends past the viewport edge. Each block is one scene file under `design/scenes/`; every node's rectangle, the root included, is compared with the viewport the scene is solved against. |
-| [LAYOUT004](LAYOUT004.md) | content-outside-safe-area | error | manual | P+ | true | Text and interactive targets stay inside the safe area. Each block is one scene file under `design/scenes/`; the scene's `safe_area` is the inset from every viewport edge (notches, rounded corners, home indicators) that content must respect. |
-| [LAYOUT005](LAYOUT005.md) | target-below-minimum-size | error | manual | P+ | true | Interactive targets are large enough to hit. Each block is one scene file under `design/scenes/`; a node marked `"interactive": true` is a pointer or touch target. |
-
 ## MDL
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -249,12 +239,6 @@
 | [REL001](REL001.md) | release-without-cut | error | manual | P- | false | A product release tag that `frob release cut` did not create, or that no longer matches its cut. |
 | [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P- | false | Crates or the wheel whose version differs from the workspace version. |
 | [REL003](REL003.md) | changelog-fragment-required | error | manual | P- | false | A changelog fragment that is missing for the checked ticket or that fails validation. |
-
-## RESP
-
-| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
-|---|---|---|---|---|---|---|
-| [RESP001](RESP001.md) | breakpoint-without-scene | error | manual | P+ | true | Every declared breakpoint is solved by some scene. Each block is one scene file under `design/scenes/` of a project whose `crunk.toml` declares `[breakpoints]` (`sm` 640, `md` 768, `lg` 1024); the case's `config` selects whether scenes for the other breakpoints exist. |
 
 ## SCOPE
 
