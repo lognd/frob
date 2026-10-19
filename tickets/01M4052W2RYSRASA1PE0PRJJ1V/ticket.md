@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a crash after the K-th operation, when the next run starts, then at most K operations are repeated and none is duplicated"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.2 (Progress; MIR-AUD-14).
