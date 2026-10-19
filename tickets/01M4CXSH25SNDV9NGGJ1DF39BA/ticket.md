@@ -2,7 +2,8 @@
 id = "01M4CXSH25SNDV9NGGJ1DF39BA"
 title = "Exit: hullbreach platform CI runs the Rust crunk instead of uv run crunk, with a reasoned divergence list"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
