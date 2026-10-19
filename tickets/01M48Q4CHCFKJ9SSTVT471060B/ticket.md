@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "a NotApplicable result fails expect=clean and passes expect=notapplicable"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "FORMAT.md documents the vocabulary"
