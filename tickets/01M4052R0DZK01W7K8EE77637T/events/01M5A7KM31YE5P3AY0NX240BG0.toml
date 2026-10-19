@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-19T14:03:51Z"
+digest = "c0fd3c2e15d1619e0cc961298cb88aa19115e069a71783a2256f0fcfa09a66d5"
+exit_code = 0
+inline = """
+
+running 1 test
+test github::read::tests::truncation_or_deleted_content_is_a_gap_not_a_failure ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 59 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-86539f7cab62adff)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror truncation_or_deleted"
+size = 511
+status = "measured"
+at = "2026-10-19T14:03:51Z"
+actor = "lognd"
+rev = 1

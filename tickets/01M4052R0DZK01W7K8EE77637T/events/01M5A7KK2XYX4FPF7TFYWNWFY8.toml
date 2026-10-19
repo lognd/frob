@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T14:02:43Z"
+digest = "04540866c8450bfd91d9ed50762a49d368ffab949c2c5e8f5a347b00174c942f"
+exit_code = 0
+inline = """
+
+running 1 test
+test github::read::tests::history_after_event_is_ordered_with_actor_field_and_digest ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 59 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 07s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-86539f7cab62adff)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror history_after_event_is_ordered"
+size = 572
+status = "measured"
+at = "2026-10-19T14:02:43Z"
+actor = "lognd"
+rev = 1
