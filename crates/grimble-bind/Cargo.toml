@@ -21,6 +21,7 @@ gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
+grimble-capabilities = { version = "0.532.0", path = "../grimble-capabilities" }
 grimble-model = { version = "0.532.0", path = "../grimble-model" }
 postcard = { version = "1", default-features = false, features = ["use-std"] }
 rayon = "1"

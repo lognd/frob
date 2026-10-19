@@ -3,11 +3,14 @@
 //!
 //! Cells come from the detector registry (`gob_ir::registry::detectors`): an atom with no
 //! detector in a node's language is `unknown`, one whose detector declares the capability
-//! impossible is `not-applicable`. Known limits: excuses are taken as an input set (template
-//! matching and CAP004 are not here), and the CAP findings are still emitted by `grimble-bind`.
+//! impossible is `not-applicable`. Known limits: excuses are resolved to files by the caller
+//! (`excuse`), and `grimble-bind` routes its CAP001 findings through [`build`].
 
 // frob:ticket 01M3Z714EEST9EGEHWWV56RXG4
+// frob:ticket 01M59RWT16TFNSACMMTTXX200T
 
+pub mod excuse;
+pub mod output;
 pub mod pack_rules;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -83,7 +86,7 @@ pub struct Matrix {
 }
 
 /// True when `grant` covers `atom` (equal, or a dotted ancestor: `fs` covers `fs.read`).
-fn covers(grant: &str, atom: &str) -> bool {
+pub(crate) fn covers(grant: &str, atom: &str) -> bool {
     atom == grant || atom.strip_prefix(grant).is_some_and(|r| r.starts_with('.'))
 }
 

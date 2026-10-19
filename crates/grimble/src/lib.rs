@@ -22,6 +22,7 @@ pub mod exceptions;
 pub mod fmt_cmd;
 pub mod init;
 pub mod rule_cmd;
+pub mod shrink_cmd;
 pub mod vet_cmd;
 mod workspace;
 
@@ -95,6 +96,8 @@ impl Product for GrimbleProduct {
             .register::<exceptions::ExceptionsList>()
             // frob:ticket 01M406M2HX6Z6SEGM6HRPQKHAV
             .register::<vet_cmd::Vet>()
+            // frob:ticket 01M5A5F8CN6EKHGV1C4QZCQZMP
+            .register::<shrink_cmd::Shrink>()
             .register::<rule_cmd::RuleTest>()
             .register::<rule_cmd::RuleCheck>()
             .register::<rule_cmd::RuleCatalog>()

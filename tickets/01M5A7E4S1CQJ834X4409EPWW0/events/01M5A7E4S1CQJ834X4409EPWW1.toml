@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble shrink: propose owns selectors from ownership"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble/**", "crates/grimble-bind/**"]
+body = "Follow-up of ~QZCQZMP: shrink verb exists (dry-run/--apply); add owns-selector proposals."
+at = "2026-10-19T14:00:52Z"
+actor = "lognd"
+rev = 1
