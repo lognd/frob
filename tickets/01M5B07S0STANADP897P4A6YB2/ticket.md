@@ -4,9 +4,10 @@ title = "Mirror: replace the curl-subprocess HTTP transport with a native HttpTr
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:17Z"
-updated = "2026-10-19T21:14:17Z"
+updated = "2026-10-19T23:19:11Z"
 scope = ["crates/frob-mirror/**"]
 +++
 
