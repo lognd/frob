@@ -2,12 +2,12 @@
 id = "01M42JTEMYJH8JJFPTGJQB5FA9"
 title = "Make frob-evidence escape_line and escape_non_ascii thin wrappers over gob-diagnostics::escape"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T04:30:12Z"
-updated = "2026-10-19T19:54:45Z"
+updated = "2026-10-19T19:54:46Z"
 scope = ["crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src/attestation.rs"]
 
 [[acceptance]]
