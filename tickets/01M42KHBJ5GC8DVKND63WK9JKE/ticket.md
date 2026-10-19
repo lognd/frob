@@ -4,9 +4,10 @@ title = "cargo dev ci --remote flag registered in main.rs (env CARGO_DEV_CI_REMO
 type = "task"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-10-04T04:42:43Z"
-updated = "2026-10-04T04:42:43Z"
+updated = "2026-10-19T18:51:38Z"
 scope = ["crates/gob-dev/src/main.rs", "crates/gob-dev/src/ci.rs"]
 +++
 
