@@ -239,7 +239,10 @@ report's `TestMethod` definition. `dotnet` must be in `[evidence] allowed_tools`
 `[evidence.dotnet] path` names the executable (empty finds `dotnet` on `PATH`), and an
 absent executable or a host without an SDK (`dotnet --version` not exiting 0) refuses
 with `E-EVIDENCE-RUNNER-MISSING` and a remedy, recording nothing. A run that exits 0
-yet executed no test refuses as `E-EVIDENCE-NO-TESTS`. Its tests need no .NET SDK: they
+yet executed no test refuses as `E-EVIDENCE-NO-TESTS`.
+More generally a bound id needs at least one executed and passed test: a green exit over
+zero executed tests (a name filter that selected nothing, or every test skipped) refuses as
+`E-EVIDENCE-NOT-EXECUTED` with the runner's own summary line, and nothing is recorded. Its tests need no .NET SDK: they
 run the `fake-dotnet` helper binary of `gob-testsupport` (a stand-in that copies a canned
 TRX to the results directory; a native executable, not a shell script, so it runs on
 Windows too).

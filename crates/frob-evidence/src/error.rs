@@ -22,6 +22,17 @@ pub enum EvidenceError {
         /// The filter arguments as given in `--ref`.
         filter: String,
     },
+    // frob:ticket 01M3DG64CNAZ8K50HQ046VKHER
+    /// A run exited 0 but executed no test (all skipped or none selected), so no bound id was executed and passed.
+    #[error(
+        "E-EVIDENCE-NOT-EXECUTED: the run for `{filter}` exited 0 but executed no test (runner said: {summary}); nothing was recorded"
+    )]
+    NotExecuted {
+        /// The filter arguments as given in `--ref`.
+        filter: String,
+        /// The runner's own summary line.
+        summary: String,
+    },
     /// `node` or a JavaScript test runner is not installed, so the TypeScript tests cannot run; never a skip.
     #[error(
         "E-EVIDENCE-RUNNER-MISSING: `{missing}` is not installed or does not run, so the {runner} tests were not run and nothing was recorded"
@@ -256,6 +267,7 @@ impl EvidenceError {
                     ),
                 ),
             ),
+            Self::NotExecuted { .. } => Some(not_executed_refusal(self.to_string())),
             Self::BadIndex(_) => Some(
                 Refusal::new("E-EVIDENCE-INDEX", GuardNeedsAction, self.to_string())
                     .with_remedy("frob ticket evidence list <ticket>"),
@@ -301,6 +313,14 @@ fn code_of(e: &EvidenceError) -> &'static str {
 
 /// The result type of this crate.
 pub type Result<T> = std::result::Result<T, EvidenceError>;
+
+// frob:ticket 01M3DG64CNAZ8K50HQ046VKHER
+/// The refusal for a green run that executed no test.
+fn not_executed_refusal(message: String) -> Refusal {
+    Refusal::new("E-EVIDENCE-NOT-EXECUTED", RefusalClass::UsageError, message).with_remedy(
+        "make the filter select a test that runs and passes (a skipped test is not evidence); check the runner's name-filter syntax",
+    )
+}
 
 // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
 /// The refusal for a pytest run that could not run the tests.

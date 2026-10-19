@@ -1896,6 +1896,7 @@ fn capture_unity(ws: &Workspace, reference: &str) -> Result<Capture> {
         ws.timeout(),
     )?;
     refuse_empty(
+        &cap,
         unity_matched_no_tests(&cap),
         "unity run executed no tests",
         reference,
@@ -1940,6 +1941,7 @@ pub fn capture(
                 ws.timeout(),
             )?;
             refuse_empty(
+                &cap,
                 matched_no_tests(&cap),
                 "nextest filter matched no tests",
                 reference,
@@ -1957,6 +1959,7 @@ pub fn capture(
                 ws.timeout(),
             )?;
             refuse_empty(
+                &cap,
                 pytest_matched_no_tests(&cap),
                 "pytest collected no tests",
                 reference,
@@ -1979,6 +1982,7 @@ pub fn capture(
                 },
             )?;
             refuse_empty(
+                &cap,
                 js_matched_no_tests(&cap),
                 "JavaScript runner found no tests",
                 reference,
@@ -2026,6 +2030,7 @@ fn capture_dotnet(ws: &Workspace, reference: &str) -> Result<Capture> {
         },
     )?;
     refuse_empty(
+        &cap,
         dotnet_matched_no_tests(&cap),
         "dotnet test ran no tests",
         reference,
@@ -2033,12 +2038,42 @@ fn capture_dotnet(ws: &Workspace, reference: &str) -> Result<Capture> {
     Ok(cap)
 }
 
-/// Refuse to record a run that matched no test (`empty`): there is nothing to measure.
-fn refuse_empty(empty: bool, what: &str, reference: &str) -> Result<()> {
+/// The runner's own summary line: the last transcript line that mentions tests, else the last non-empty line.
+pub fn summary_line(transcript: &str) -> String {
+    let lines: Vec<&str> = transcript
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect();
+    lines
+        .iter()
+        .rev()
+        .find(|l| l.to_ascii_lowercase().contains("test"))
+        .or(lines.last())
+        .map_or_else(|| "no output".to_owned(), |l| (*l).to_owned())
+}
+
+// frob:ticket 01M3DG64CNAZ8K50HQ046VKHER
+/// Refuse to record a run that executed no test: the filter matched none (`empty`), or it exited 0 with every test skipped.
+///
+/// A bound id needs at least one executed and passed test, so a green exit code over zero executed tests is never evidence.
+fn refuse_empty(cap: &Capture, empty: bool, what: &str, reference: &str) -> Result<()> {
     if empty {
         tracing::warn!(filter = reference, "{what}; refusing to record");
         return Err(EvidenceError::NoTestsMatched {
             filter: reference.to_owned(),
+        });
+    }
+    if cap.passed && cap.tests.is_empty() {
+        let summary = summary_line(&cap.transcript);
+        tracing::warn!(
+            filter = reference,
+            summary,
+            "{what}: exit 0 but no test executed; refusing to record"
+        );
+        return Err(EvidenceError::NotExecuted {
+            filter: reference.to_owned(),
+            summary,
         });
     }
     Ok(())
@@ -2047,6 +2082,54 @@ fn refuse_empty(empty: bool, what: &str, reference: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:ticket 01M3DG64CNAZ8K50HQ046VKHER
+    fn control_cap(tests: &[&str], transcript: &str) -> Capture {
+        Capture {
+            exit_code: Some(0),
+            passed: true,
+            measured: true,
+            tests: tests.iter().map(|t| (*t).to_owned()).collect(),
+            failed_tests: Vec::new(),
+            non_passing: NonPassing::default(),
+            transcript: transcript.to_owned(),
+        }
+    }
+
+    // frob:ticket 01M3DG64CNAZ8K50HQ046VKHER
+    #[test]
+    fn a_matching_run_is_recorded() {
+        // frob:tests crates/frob-evidence/src/provider.rs::refuse_empty
+        let cap = control_cap(&["t::a"], "Tests 1 passed (1)");
+        assert!(refuse_empty(&cap, false, "x", "-t a").is_ok());
+    }
+
+    // frob:ticket 01M3DG64CNAZ8K50HQ046VKHER
+    #[test]
+    fn a_skipped_only_green_run_is_not_executed() {
+        // frob:tests crates/frob-evidence/src/provider.rs::refuse_empty
+        let cap = control_cap(&[], "noise\n Tests  1 skipped (1)\n");
+        let err = refuse_empty(&cap, false, "x", "-t a").unwrap_err();
+        let EvidenceError::NotExecuted { summary, .. } = err else {
+            panic!("expected NotExecuted");
+        };
+        assert_eq!(summary, "Tests  1 skipped (1)".trim());
+    }
+
+    // frob:ticket 01M3DG64CNAZ8K50HQ046VKHER
+    #[test]
+    fn a_filter_matching_nothing_is_refused() {
+        // frob:tests crates/frob-evidence/src/provider.rs::refuse_empty
+        let cap = control_cap(&[], "");
+        assert!(matches!(
+            refuse_empty(&cap, true, "x", "-t a"),
+            Err(EvidenceError::NoTestsMatched { .. })
+        ));
+        assert!(matches!(
+            refuse_empty(&cap, false, "x", "-t a"),
+            Err(EvidenceError::NotExecuted { .. })
+        ));
+    }
 
     #[test]
     fn split_args_honours_quotes() {
