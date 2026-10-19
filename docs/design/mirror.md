@@ -141,6 +141,13 @@ and in `frob mirror status`.
   updated by CAS) and keeps a watermark of the last processed ledger
   commit (MIR-AUD-13). The mirror's own ledger commits never trigger
   runs.
+  Implemented in `crates/frob-mirror/src/lock.rs`: `acquire` takes the
+  lock record (`writer-lock`, run id and time) by CAS; a live holder
+  returns `Busy` (exit without work, no error), one older than the TTL
+  (`lock_ttl_minutes`) is taken over and logged; `release` frees it only
+  if still ours. `pending_commits` returns the ledger commits after the
+  stored `watermark`, minus the mirror's own (`triggers_run` is false
+  for those).
 - MIR001 is time-based: "no successful run for N hours" (scheduled runs
   are delayed, dropped, and disabled after inactivity), plus the
   per-scope reasons below.
@@ -222,6 +229,11 @@ and in `frob mirror status`.
   <ticket>`. A blindness check (the token sees the repository and its
   own recent issues) runs first; if it fails the run stops with MIR001
   `token-blind`.
+  Implemented in `crates/frob-mirror/src/blind.rs`: `classify` maps
+  adapter errors to a `Disposition` (moved, not visible, unmirrored; none
+  may create), `handle_moved` swaps the cached location only when the
+  marker verifies at the new one, and `check_blind` reads the repository
+  and the bot's newest issue and returns MIR001 `token-blind` on failure.
 - **Own writes.** A dedicated App identity (`[mirror] bot_ids`, by
   user id). Before each mutation the run journals (issue, field, value
   digest, run id); a history entry is "own" only if its actor is a bot
