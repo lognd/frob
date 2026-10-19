@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-19T16:24:22Z"
+updated = "2026-10-19T16:28:01Z"
 idempotency_key = "m2-mirror2-gh-writes"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/github/write.rs"]
+scope = ["crates/frob-mirror/src/github/write.rs", "crates/frob-mirror/src/github/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
