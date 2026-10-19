@@ -4,9 +4,10 @@ title = "G14b: grimble-capabilities: wire the matrix into grimble-bind, excuses,
 type = "task"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T09:46:43Z"
-updated = "2026-10-19T09:46:43Z"
+updated = "2026-10-19T13:48:20Z"
 scope = ["crates/grimble-capabilities/**", "crates/grimble-bind/src/caps.rs"]
 +++
 
