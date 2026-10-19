@@ -2,13 +2,13 @@
 id = "01M4052QSA5YKG6MY52BCW6PWV"
 title = "frob-gh: status classification (301, 404, 410) and the token blindness check"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-03T05:51:35Z"
+updated = "2026-10-19T07:45:23Z"
 idempotency_key = "m2-mirror2-gh-status-blind"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/src/status.rs", "crates/frob-mirror/src/blind.rs"]
