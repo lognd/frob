@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "a wrong reason code fails"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a NotApplicable result fails expect=clean and passes expect=notapplicable"
