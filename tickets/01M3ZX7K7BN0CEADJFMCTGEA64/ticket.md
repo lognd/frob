@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-19T06:21:00Z"
+updated = "2026-10-19T06:21:25Z"
 idempotency_key = "m2-packs-repo-loader"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/loader/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/loader.rs"]
@@ -43,7 +43,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a pack declaring tier-3 wasm, when loaded before trust exists, then its rules report Unresolved pack-unavailable with the reason"
-bound = false
+bound = true
 +++
 
 Implements plugins.md section 2; security.md sections 2.1 and 2.2.
