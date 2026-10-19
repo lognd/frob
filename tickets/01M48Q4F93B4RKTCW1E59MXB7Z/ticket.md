@@ -2,13 +2,13 @@
 id = "01M48Q4F93B4RKTCW1E59MXB7Z"
 title = "Adapter-less text is Unresolved (reason fidelity, rolled up) for capability rules, NotApplicable only for binaries and featureless languages"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:01Z"
-updated = "2026-10-19T15:15:26Z"
+updated = "2026-10-19T15:31:19Z"
 scope = ["crates/gob-check/**", "crates/frob-check/**", "docs/reference/fidelity.md"]
 
 [[links]]
