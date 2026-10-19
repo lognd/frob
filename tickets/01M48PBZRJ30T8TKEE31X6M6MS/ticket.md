@@ -2,7 +2,8 @@
 id = "01M48PBZRJ30T8TKEE31X6M6MS"
 title = "gob-mdtest: strict mode, any unmatched finding fails the case"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
