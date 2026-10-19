@@ -397,6 +397,17 @@ A deterministic (rule provides `fix()`), B apply-verify-commit (runs
 bound tests), C fix-it only. `--fix` without `--ticket` requires
 `--fix-all`, as in v1.
 
+### 4.1 One full check per worktree
+
+Stacked `frob check --ticket` runs in one worktree starve a shared host, so a full run (any
+`frob check` without `--only`) takes `.frob/check.lock` in the repository root; the lock holds
+the pid, start time and argv of the holder. A second run while the holder is alive is refused
+at once with `E-CHECK-CONCURRENT` (exit 3, distinct from the exit 1 of a gate failure) naming
+those three. A lock whose pid is dead is reclaimed automatically (the same `/proc` liveness
+probe as the land lock). `--allow-concurrent` is the override for a genuinely intended
+parallel run: it takes no lock and appends a line to `.frob/check-overrides.log`. `--only`
+runs are not locked.
+
 ## 5. Exceptions (accept, defer, hotfix, baseline)
 
 Designed in exceptions.md: one primitive with four kinds, each with a

@@ -1,0 +1,1 @@
+frob check --ticket (and any full check without --only) now takes a per-worktree lock under .frob/ and refuses a second concurrent run (exit 3, E-CHECK-CONCURRENT) naming the holder pid, start time and argv; a dead holder's lock is reclaimed, and `--allow-concurrent` overrides and is recorded in `.frob/check-overrides.log`.
