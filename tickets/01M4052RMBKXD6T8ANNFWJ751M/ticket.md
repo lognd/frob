@@ -2,13 +2,13 @@
 id = "01M4052RMBKXD6T8ANNFWJ751M"
 title = "Write journal and own-write attribution"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-03T05:51:36Z"
+updated = "2026-10-19T06:45:13Z"
 idempotency_key = "m2-mirror2-journal"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/journal.rs"]
