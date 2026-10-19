@@ -2355,6 +2355,7 @@ dependencies = [
  "gob-symbols",
  "gob-text",
  "gob-time",
+ "gob-trust",
  "gob-walk",
  "rayon",
  "schemars",
