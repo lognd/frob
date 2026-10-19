@@ -1,0 +1,1 @@
+grimble: new `grimble vet [--base REF] [--advisory-db DIR]` vets Cargo.lock (RustSec advisories with fixed versions from an offline snapshot, unvetted new dependencies against .grimble/vet.toml, duplicate versions); `grimble check --base` reports the same findings as warnings.

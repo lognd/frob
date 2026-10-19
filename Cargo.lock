@@ -2856,6 +2856,7 @@ dependencies = [
  "grimble-bind",
  "grimble-check",
  "grimble-model",
+ "grimble-vet",
  "jsonschema",
  "schemars",
  "serde",
@@ -2966,6 +2967,20 @@ dependencies = [
  "inventory",
  "proptest",
  "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "grimble-vet"
+version = "0.532.0"
+dependencies = [
+ "gob-path",
+ "schemars",
+ "semver",
+ "serde",
+ "tempfile",
+ "thiserror",
+ "toml",
  "tracing",
 ]
 

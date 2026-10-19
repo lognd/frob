@@ -22,6 +22,7 @@ pub mod exceptions;
 pub mod fmt_cmd;
 pub mod init;
 pub mod rule_cmd;
+pub mod vet_cmd;
 mod workspace;
 
 use std::path::Path;
@@ -66,10 +67,15 @@ impl Product for GrimbleProduct {
         )
         .map(|run| {
             let document = grimble_check::sibling_document(&run);
+            let mut warnings = run.warnings;
+            // frob:ticket 01M406M2HX6Z6SEGM6HRPQKHAV
+            if let Some(base) = opts.base.as_deref() {
+                warnings.extend(vet_cmd::check_warnings(root, base));
+            }
             ProductRun {
                 report: run.report,
                 document,
-                warnings: run.warnings,
+                warnings,
             }
         });
         gob_product::sibling_check(Self::NAME, ctx, run)
@@ -87,6 +93,8 @@ impl Product for GrimbleProduct {
             // frob:ticket 01M3ZX7K04VN51PGCXT9DCYMWB
             .register::<config_for::ConfigFor>()
             .register::<exceptions::ExceptionsList>()
+            // frob:ticket 01M406M2HX6Z6SEGM6HRPQKHAV
+            .register::<vet_cmd::Vet>()
             .register::<rule_cmd::RuleTest>()
             .register::<rule_cmd::RuleCheck>()
             .register::<rule_cmd::RuleCatalog>()

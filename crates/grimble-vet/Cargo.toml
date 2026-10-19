@@ -1,0 +1,25 @@
+[package]
+name = "grimble-vet"
+version.workspace = true
+description = "Dependency vetting: Cargo.lock delta, vet allowlist, offline RustSec advisory snapshot, duplicate versions."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+gob-path = { version = "0.532.0", path = "../gob-path" }
+schemars = "1"
+semver = "1"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+toml = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+semver = "1"
+tempfile = "3"
