@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:18Z"
-updated = "2026-10-19T23:56:49Z"
+updated = "2026-10-19T23:57:50Z"
 scope = ["crates/gob-config/**"]
 
 [[acceptance]]
 text = "[mirror] table (repo, kid, bot_ids) loads from frob.toml with defaults"
-bound = false
+bound = true
 +++
 
 found while working ~1KH6CCV
