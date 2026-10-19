@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-19T14:03:50Z"
+updated = "2026-10-19T14:03:51Z"
 idempotency_key = "m2-mirror2-gh-history-reads"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/src/history.rs", "crates/frob-mirror/src/github/read.rs", "crates/frob-mirror/src/github/mod.rs"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given more than 99 body edits or deleted revision content, when history is read, then the result carries fidelity gap and does not fail"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.3 and 3.4 (history, creation revision, fidelity).
