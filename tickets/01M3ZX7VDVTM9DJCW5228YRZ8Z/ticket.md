@@ -2,13 +2,13 @@
 id = "01M3ZX7VDVTM9DJCW5228YRZ8Z"
 title = "trust prompt: TTY only, host-derived facts, no --yes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-03T03:51:19Z"
+updated = "2026-10-19T07:45:27Z"
 idempotency_key = "m2-sec-trust-prompt"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/prompt.rs", "crates/frob/src/trust_cmd.rs"]
