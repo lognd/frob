@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a ledger commit made by the mirror itself, when pushed, then no dispatch is sent"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.1 (nudge workflow).
