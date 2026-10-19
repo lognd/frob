@@ -2,7 +2,8 @@
 id = "01M3ZX7VDVTM9DJCW5228YRZ8Z"
 title = "trust prompt: TTY only, host-derived facts, no --yes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
