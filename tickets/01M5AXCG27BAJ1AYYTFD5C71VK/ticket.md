@@ -2,7 +2,8 @@
 id = "01M5AXCG27BAJ1AYYTFD5C71VK"
 title = "Reconcile declared adapter fidelity with measured corpus level (rust, markdown, python, typescript, html)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
