@@ -4,10 +4,9 @@ title = "Run the live GitHub listing probe (live_created_issue_appears_in_listin
 type = "task"
 category = "todo"
 priority = "medium"
-parent = "01M4052QWSEERAG3JPCGXM4RK4"
 reporter = "lognd"
 created = "2026-10-19T13:08:32Z"
-updated = "2026-10-19T13:08:32Z"
+updated = "2026-10-19T13:10:30Z"
 
 [[acceptance]]
 text = "The ignored live probe passes against a real repository and is bound as evidence."
