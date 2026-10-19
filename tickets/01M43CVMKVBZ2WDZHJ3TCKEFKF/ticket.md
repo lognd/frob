@@ -2,13 +2,13 @@
 id = "01M43CVMKVBZ2WDZHJ3TCKEFKF"
 title = "DOC rules read Python docstrings"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M43A5349M17PED730HKNM4VV"
 reporter = "lognd"
 created = "2026-10-04T12:05:14Z"
-updated = "2026-10-04T12:05:14Z"
+updated = "2026-10-19T18:51:43Z"
 scope = ["crates/frob-obligations/**"]
 
 [[acceptance]]
