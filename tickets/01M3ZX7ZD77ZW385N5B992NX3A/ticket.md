@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-19T18:03:26Z"
+updated = "2026-10-19T18:03:45Z"
 idempotency_key = "m2-diag-explain-verb"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/gob-cli/src/explain.rs", "crates/frob/src/explain_cmd.rs", "crates/grimble/src/explain_cmd.rs", "crates/gob-cli/src/lib.rs", "crates/gob-cli/Cargo.toml", "crates/grimble/src/lib.rs", "crates/frob/tests/it/explain.rs", "crates/frob/tests/it/main.rs", "crates/grimble/tests/explain.rs", "Cargo.lock", "crates/frob/src/first_run.rs", "docs/guides/quickstart.md", "docs/reference/cli/frob.md"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an unknown id, when run, then a did-you-mean with the closest ids is returned and the exit code is 2"
-bound = false
+bound = true
 +++
 
 Implements diagnostics.md sections 1.2, 5.1 and 6.
