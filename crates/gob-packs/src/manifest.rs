@@ -212,7 +212,8 @@ fn locate(file: &str, text: &str, e: &toml::de::Error) -> PackError {
 /// Reads and validates the manifest at `path`, never reading past the size bound.
 ///
 /// # Errors
-/// PACK005 when the file cannot be read, is not UTF-8, or fails [`Manifest::parse`].
+/// PACK005 when the file cannot be read, is not UTF-8, fails [`Manifest::parse`], or
+/// names a reserved built-in prefix (see [`check_reserved`](crate::check_reserved)).
 pub fn load(path: &Path) -> Result<Manifest, PackError> {
     let file = path.display().to_string();
     let io = |e: std::io::Error| PackError::malformed(&file, "<file>", format!("cannot read: {e}"));
@@ -224,7 +225,9 @@ pub fn load(path: &Path) -> Result<Manifest, PackError> {
         .map_err(io)?;
     let text = String::from_utf8(buf)
         .map_err(|_| PackError::malformed(&file, "<file>", "must be UTF-8"))?;
-    Manifest::parse(&file, &text)
+    let manifest = Manifest::parse(&file, &text)?;
+    crate::names::check_reserved(&file, &manifest.pack.name)?;
+    Ok(manifest)
 }
 
 /// Checks that no two packs share a name or a family, in the order given.
