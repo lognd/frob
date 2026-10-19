@@ -8,8 +8,12 @@ points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:48Z"
-updated = "2026-10-19T09:45:20Z"
+updated = "2026-10-19T09:45:56Z"
 scope = ["changelog.d/**", "crates/crunk-check/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M4S9HRETE0RW4H034W1H7QCD"
 
 [[acceptance]]
 text = "Given fire and clean scenes per rule, when checked at T1, then each fires only on its fire case"
