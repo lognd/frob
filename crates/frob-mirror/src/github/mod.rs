@@ -14,3 +14,6 @@ pub mod read;
 
 // frob:ticket 01M4052R88Y0A9HQHDB86ERMEM
 pub mod write;
+
+// frob:ticket 01M5ASPRW2FYMNRHWQHEVN9W9J
+pub mod adapter;

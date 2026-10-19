@@ -360,6 +360,19 @@ and in `frob mirror status`.
   second apart by an injected `Clock`. A failed write (5xx, throttle)
   is recorded `Failed`, no effect is assumed, the issue's remaining
   writes stop, and the next run recomputes the same diff.
+- **The GitHub adapter** (`frob-mirror::github::adapter`).
+  `HttpTransport` performs one raw REST or GraphQL call (live through
+  `frob-gh`, or recorded for offline tests); `GithubRest` maps the
+  `WriteTransport`, `HistorySource` and `ListingSource` contracts onto
+  endpoints; `GithubAdapter` implements `TrackerAdapter` on top, signing
+  the creation marker with the `Keyring` and spacing mutations by the
+  injected `Clock`. Create returns `Unknown` on timeout, 5xx or throttle
+  and `Failed` only on a definite rejection. Update reuses the marker
+  already in the body and refuses a body with none. Body revisions come
+  from GraphQL `userContentEdits` (REST has none). Listing uses the
+  creator filter, never search. Capabilities: native sub-issues, no
+  native links (so only parent and child go native), native state
+  reasons. Labels and assignees are additive; there is no delete call.
 - **Revert wars end** (MIR-AUD-06). A field changed again by a
   non-mirror actor within the backoff window is reverted after 1, 2,
   4 ... runs, at most once a day. After three re-applications by the
