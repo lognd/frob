@@ -11,7 +11,6 @@
 
 // frob:ticket 01M40AKKXBN7K30090V7KQSA8Z
 
-use std::fmt::Write as _;
 use std::io::IsTerminal;
 
 use crate::error::{EvidenceError, Result};
@@ -118,40 +117,20 @@ pub struct Request {
     pub accepts: Vec<usize>,
 }
 
-/// Escape `text` for one line of terminal output: controls, newlines and every non-ASCII character become `\u{..}`.
+// frob:ticket 01M42JTEMYJH8JJFPTGJQB5FA9
+
+/// Escape `text` for one line of terminal output; delegates to `gob_diagnostics::escape_line`.
 ///
 /// The text of an attestation is ledger data (security.md 2.10); this keeps it from forging output.
 pub fn escape_line(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    for c in text.chars() {
-        match c {
-            '\n' => out.push_str("\\n"),
-            c if c.is_ascii() && !c.is_ascii_control() => out.push(c),
-            c => {
-                let _ = write!(out, "\\u{{{:x}}}", u32::from(c));
-            }
-        }
-    }
-    out
+    gob_diagnostics::escape_line(text)
 }
 
-/// Escape every non-ASCII character of `text` as `\u{..}`, keeping ASCII (newlines and tabs included) as is.
+/// Escape every non-ASCII character of `text` as `\u{..}`; delegates to `gob_diagnostics::escape_non_ascii`.
 ///
 /// Ledger files must be ASCII; captured tool text goes through this before it is written into an event.
 pub fn escape_non_ascii(text: &str) -> String {
-    if text.is_ascii() {
-        return text.to_owned();
-    }
-    let mut out = String::with_capacity(text.len() + 16);
-    for c in text.chars() {
-        if c.is_ascii() {
-            out.push(c);
-        } else {
-            let _ = write!(out, "\\u{{{:x}}}", u32::from(c));
-        }
-    }
-    tracing::debug!("non-ASCII captured text escaped");
-    out
+    gob_diagnostics::escape_non_ascii(text)
 }
 
 /// Refuse `text` if it holds a non-ASCII character, naming the first one so the attester can retype it.
@@ -348,12 +327,14 @@ mod tests {
         assert!(empty.require_human().is_ok(), "an empty marker is unset");
     }
 
+    // frob:tests escape_non_ascii
     #[test]
     fn escape_non_ascii_keeps_layout_and_hides_the_rest() {
         assert_eq!(escape_non_ascii("a\n\tb"), "a\n\tb");
         assert_eq!(escape_non_ascii("\u{2500}x\u{e9}\n"), "\\u{2500}x\\u{e9}\n");
     }
 
+    // frob:tests escape_line
     #[test]
     fn escape_line_hides_controls_and_non_ascii() {
         assert_eq!(escape_line("a\nb\u{1b}[31m"), "a\\nb\\u{1b}[31m");
