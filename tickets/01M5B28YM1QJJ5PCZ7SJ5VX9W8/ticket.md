@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:49:53Z"
-updated = "2026-10-19T23:01:51Z"
-scope = ["crates/frob-evidence/**", "crates/frob-tests/**", "crates/gob-dev/src/import_v1.rs"]
+updated = "2026-10-19T23:08:18Z"
+scope = ["crates/frob-evidence/**", "crates/frob-tests/**", "crates/gob-dev/src/import_v1.rs", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Pytest skipped/xfailed/xpassed satisfy evidence only via [tests] non_passing_counts, and counts are surfaced apart"
