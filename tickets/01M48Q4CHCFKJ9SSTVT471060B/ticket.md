@@ -8,7 +8,7 @@ points = 5
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:40:59Z"
-updated = "2026-10-19T11:24:55Z"
+updated = "2026-10-19T11:26:15Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**", "docs/reference/rules/*.md"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M48Q4BZHFXT3GMYDKYR7MCXF"
 
 [[acceptance]]
 text = "a rule that examines nothing fails an expect=clean block"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "an Unresolved-only result fails expect=fire and an Error fails expect=unresolved"
