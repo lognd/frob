@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-19T19:20:44Z"
+updated = "2026-10-19T19:26:10Z"
 idempotency_key = "m2-mirror2-capture"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/capture.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -23,7 +23,7 @@ target = "01M4052SQS2X5XYN24DE9ENQF8"
 
 [[acceptance]]
 text = "Given a field whose current value differs from the last observed value and no history entry explains it, when read, then it is captured with fidelity gap"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given history beyond the retained window, when read, then the gap is recorded and appears in the gap listing"
