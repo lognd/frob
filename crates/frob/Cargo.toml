@@ -44,6 +44,7 @@ frob-lease = { version = "0.532.0", path = "../frob-lease" }
 frob-metrics = { version = "0.532.0", path = "../frob-metrics" }
 frob-pm = { version = "0.532.0", path = "../frob-pm" }
 frob-release = { version = "0.532.0", path = "../frob-release" }
+frob-mirror = { version = "0.532.0", path = "../frob-mirror" }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-tests = { version = "0.532.0", path = "../frob-tests" }
 frob-worktree = { version = "0.532.0", path = "../frob-worktree" }
@@ -59,6 +60,7 @@ insta = { version = "1", features = ["json", "redactions"] }
 tempfile = "3"
 grimble = { path = "../grimble" }
 crunk = { path = "../crunk" }
+jsonschema = { version = "0.58.5", default-features = false }
 
 [lints]
 workspace = true

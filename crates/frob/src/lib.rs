@@ -22,6 +22,7 @@ pub mod init;
 pub mod lease_cmd;
 pub mod milestone_cmd;
 pub mod milestone_evidence_cmd;
+pub mod mirror_cmd;
 mod product;
 pub mod profile;
 pub mod profile_cmd;

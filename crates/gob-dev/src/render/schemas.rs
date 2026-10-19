@@ -1,4 +1,4 @@
-//! `docs/schemas/*.json`: envelope, config and directive schemas.
+//! `docs/schemas/*.json`: envelope, config, directive and issue-projection schemas.
 
 use gob_config::{TableDescription, all_tables, schema};
 use gob_directives::all_directives;
@@ -26,7 +26,7 @@ pub fn directives_schema() -> Value {
     })
 }
 
-/// The three schema files for the global inventories.
+/// The schema files for the global inventories.
 pub fn generate() -> Vec<GenFile> {
     let tables: Vec<TableDescription> = {
         let mut t: Vec<_> = all_tables().collect();
@@ -46,6 +46,14 @@ pub fn generate() -> Vec<GenFile> {
         GenFile {
             path: "docs/schemas/directives.json".to_owned(),
             content: json_file("schemas", directives_schema()),
+        },
+        // frob:ticket 01M3ZX836BNV9H9K9ZCKNMAEDB
+        GenFile {
+            path: "docs/schemas/issue-projection.json".to_owned(),
+            content: json_file(
+                "schemas",
+                frob_mirror::projection::issue_projection_schema(),
+            ),
         },
     ]
 }

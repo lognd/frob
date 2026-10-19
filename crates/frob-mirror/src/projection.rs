@@ -4,14 +4,16 @@
 //! Nothing here is tracker-shaped: labels, priorities and relations stay typed.
 
 // frob:ticket 01M3ZX832JK52FXBPPCCGTDRTG
+// frob:ticket 01M3ZX836BNV9H9K9ZCKNMAEDB
 
 use std::collections::BTreeSet;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
 
 /// Ticket identity: what an adapter needs to find and link the ticket.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Identity {
     /// The ticket ULID (stored where the adapter can search for it).
     pub ulid: String,
@@ -26,7 +28,7 @@ pub struct Identity {
 }
 
 /// One Given/When/Then acceptance criterion.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Criterion {
     /// The criterion text.
     pub text: String,
@@ -35,7 +37,7 @@ pub struct Criterion {
 }
 
 /// A piece of evidence: a link and its verdict.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct EvidenceItem {
     /// What the evidence is (test id, rule id, URL).
     pub reference: String,
@@ -44,7 +46,9 @@ pub struct EvidenceItem {
 }
 
 /// The kind of a body section, in rendering order.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum SectionKind {
     /// Free-text summary.
@@ -62,7 +66,7 @@ pub enum SectionKind {
 }
 
 /// One ordered, typed body section with its markdown.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Section {
     /// Which kind of section this is.
     pub kind: SectionKind,
@@ -73,7 +77,7 @@ pub struct Section {
 }
 
 /// Typed classification values (never pre-rendered labels).
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Classification {
     /// Ticket type.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -96,7 +100,7 @@ pub struct Classification {
 }
 
 /// Workflow category.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Category {
     /// Not started.
@@ -108,7 +112,7 @@ pub enum Category {
 }
 
 /// How a closed ticket ended.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Outcome {
     /// Completed.
@@ -122,7 +126,7 @@ pub enum Outcome {
 }
 
 /// Ticket state.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct State {
     /// Workflow category.
     pub category: Category,
@@ -135,7 +139,9 @@ pub struct State {
 }
 
 /// Relation kinds between tickets.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum RelationKind {
     /// The parent ticket.
@@ -155,7 +161,7 @@ pub enum RelationKind {
 }
 
 /// A typed edge to another ticket.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema)]
 pub struct Relation {
     /// The edge kind.
     pub kind: RelationKind,
@@ -166,7 +172,7 @@ pub struct Relation {
 }
 
 /// Owner and assignee as frob identities.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct People {
     /// Reporter or owner.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -177,7 +183,7 @@ pub struct People {
 }
 
 /// Where a projection came from.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Provenance {
     /// Last ledger event ULID folded in.
     pub last_event: String,
@@ -188,7 +194,7 @@ pub struct Provenance {
 }
 
 /// The tracker-independent description of one ticket.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct IssueProjection {
     /// Identity.
     pub identity: Identity,
@@ -405,6 +411,12 @@ pub fn digest(p: &IssueProjection) -> String {
     blake3::hash(&bytes).to_hex().to_string()
 }
 
+/// The JSON schema of [`IssueProjection`], generated from the Rust type (`docs/schemas/issue-projection.json`).
+pub fn issue_projection_schema() -> serde_json::Value {
+    // Schema values always convert to JSON.
+    serde_json::to_value(schemars::schema_for!(IssueProjection)).unwrap_or_default()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -494,5 +506,25 @@ mod tests {
         assert_eq!(a.private, ["points", "scope"]);
         let full = project(&facts(), &BTreeSet::new(), "1");
         assert_ne!(a.provenance.render_digest, full.provenance.render_digest);
+    }
+
+    #[test]
+    fn schema_names_every_projection_field() {
+        // frob:tests crates/frob-mirror/src/projection.rs::issue_projection_schema
+        let schema = issue_projection_schema();
+        let props = schema["properties"].as_object().expect("object schema");
+        for f in [
+            "identity",
+            "title",
+            "sections",
+            "classification",
+            "state",
+            "relations",
+            "people",
+            "provenance",
+            "private",
+        ] {
+            assert!(props.contains_key(f), "missing {f}");
+        }
     }
 }

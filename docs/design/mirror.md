@@ -105,7 +105,7 @@ sends parent and child edges to native sub-issues when declared, and
 every other edge to native links when declared, else to body links.
 The projection's JSON schema is
 generated from the Rust type (`cargo dev gen schemas`, file
-`docs/schemas/issue-projection.json`) when the producer is implemented;
+`docs/schemas/issue-projection.json`);
 `frob mirror render <ticket>` prints a projection, so a GitLab or Jira
 adapter can be developed and tested from recorded projections without
 touching the producer.

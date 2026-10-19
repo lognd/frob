@@ -28,6 +28,7 @@ mod lease_widen;
 mod merge_driver_branch;
 mod merge_driver_path;
 mod milestone;
+mod mirror_render;
 mod pm_config;
 mod pm_wiring;
 mod profile;

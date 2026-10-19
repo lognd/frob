@@ -26,6 +26,7 @@ frob-check = { path = "../frob-check" }
 frob-cli = { path = "../frob" }
 frob-evidence = { path = "../frob-evidence" }
 frob-ledger = { path = "../frob-ledger" }
+frob-mirror = { path = "../frob-mirror" }
 gob-cli = { path = "../gob-cli" }
 gob-config = { path = "../gob-config" }
 gob-diagnostics = { path = "../gob-diagnostics" }
