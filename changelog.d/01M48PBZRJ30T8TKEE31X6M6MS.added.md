@@ -1,0 +1,1 @@
+gob-mdtest is strict about selected rules (the block rule, marker rules and the new `rules=A,B` attribute): a finding of one that no marker or header assertion matches fails the case, reported with its class, severity and reason. A spanless rolled-up Unresolved is matched by `expect=unresolved`.

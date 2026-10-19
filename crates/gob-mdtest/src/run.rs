@@ -22,6 +22,8 @@ pub struct Case {
     pub text: String,
     /// Rule under test.
     pub rule: RuleId,
+    /// Extra rules the case selects (`rules=`); findings of these must be marked.
+    pub rules: Vec<RuleId>,
     /// Inline TOML config, if any.
     pub config: Option<String>,
 }
@@ -200,6 +202,15 @@ impl Actual {
         }
     }
 
+    /// Outcome class of the finding: `unresolved` for an Unresolved, `advisory`, else `fire`.
+    fn class(&self) -> &'static str {
+        match self.severity {
+            Severity::Unresolved => "unresolved",
+            Severity::Advisory => "advisory",
+            _ => "fire",
+        }
+    }
+
     /// Short form plus column, message and required flag.
     fn detail(&self) -> String {
         let req = if self.required { " required" } else { "" };
@@ -333,6 +344,61 @@ fn check_subjects(block: &Block, res: &CaseResult) -> Result<(), String> {
     }
 }
 
+/// Findings of a block without markers that neither the header assertion nor the rule under test covers.
+///
+/// A finding of another rule is always a stray. For the block rule under `expect=fire`, the header
+/// matches Error/Warn findings; an Unresolved finding is a stray, and so is an Advisory one when an
+/// Error/Warn also fired (a rule that only ever advises is matched as a whole). `unresolved` blocks
+/// accept Unresolved and Advisory; other classes are checked separately.
+fn strays<'a>(block: &Block, actual: &'a [Actual]) -> Vec<&'a Actual> {
+    let hard = actual.iter().any(|a| {
+        a.rule == block.rule && !matches!(a.severity, Severity::Unresolved | Severity::Advisory)
+    });
+    actual
+        .iter()
+        .filter(|a| {
+            if a.rule != block.rule {
+                return true;
+            }
+            block.expect == Expect::Fire
+                && (a.severity == Severity::Unresolved
+                    || (hard && a.severity == Severity::Advisory))
+        })
+        .collect()
+}
+
+/// Report unexpected findings with their class, severity and reason.
+fn unexpected_report(strays: &[&Actual]) -> String {
+    let mut s = String::from("    unexpected findings no marker or header assertion matches\n");
+    for a in strays {
+        let _ = writeln!(
+            s,
+            "      class={} severity={:?} reason={} rule={} line={} [col {}] \"{}\"",
+            a.class(),
+            a.severity,
+            a.reason.as_deref().unwrap_or("-"),
+            a.rule,
+            a.line,
+            a.col,
+            a.message
+        );
+    }
+    s
+}
+
+/// Strict mode: in a marker-free block every selected finding must be covered by the header.
+fn check_strict(block: &Block, actual: &[Actual]) -> Result<(), String> {
+    if !block.markers.is_empty() {
+        return Ok(());
+    }
+    let strays = strays(block, actual);
+    if strays.is_empty() {
+        Ok(())
+    } else {
+        Err(unexpected_report(&strays))
+    }
+}
+
 /// Match the block's markers against `actual` as a multiset.
 fn check_markers(block: &Block, actual: &[Actual]) -> Result<(), String> {
     let (missing, matched, extra) = match_markers(&block.markers, actual);
@@ -345,10 +411,16 @@ fn check_markers(block: &Block, actual: &[Actual]) -> Result<(), String> {
 
 /// Check one block's result against its expected outcome class.
 fn check(block: &Block, res: &CaseResult) -> Result<(), String> {
+    // Only selected rules are judged: the block rule, `rules=` and marker rules. A runner that
+    // evaluates more than that has its other findings ignored; selected ones are strict.
     let mine: Vec<Finding> = res
         .findings
         .iter()
-        .filter(|f| f.rule == block.rule || block.markers.iter().any(|m| m.rule == f.rule))
+        .filter(|f| {
+            f.rule == block.rule
+                || block.rules.contains(&f.rule)
+                || block.markers.iter().any(|m| m.rule == f.rule)
+        })
         .cloned()
         .collect();
     let actual = actuals(&block.text, &mine);
@@ -436,6 +508,7 @@ fn check(block: &Block, res: &CaseResult) -> Result<(), String> {
             }
         }
     }
+    check_strict(block, &actual)?;
     check_subjects(block, res)
 }
 
@@ -563,6 +636,7 @@ pub fn run_file<R: CaseOutput, F: Fn(&Case) -> R>(path: &Path, runner: &Runner<F
             file_name: b.file_name.clone(),
             text: b.text.clone(),
             rule: b.rule.clone(),
+            rules: b.rules.clone(),
             config: b.config.clone(),
         };
         let result = (runner.0)(&case).into_result();

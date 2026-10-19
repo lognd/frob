@@ -40,6 +40,7 @@ snapshots with `INSTA_UPDATE=always` (or `cargo insta review`); CI runs with
   code (`hole`), for notapplicable a substring of the reported reason.
 - `subjects=N` / `subjects>=N`: assert the rule's examined subject count
   exactly or at least. `expect=clean` defaults to `subjects>=1`.
+- `rules=A,B`: extra rules the case selects; see Strict mode.
 - `fidelity=` / `parse=`: recorded for the language matrix; not yet enforced.
 - `known-gap=~TICKET`: expect=unresolved only; the block records a gap that
   the ticket will close.
@@ -79,8 +80,22 @@ findings fail the case with an expected-vs-actual table (`!` rows), showing
 column and message for unmatched findings.
 
 - `expect=fire` with markers: findings must equal the markers.
-- `expect=fire` without markers: at least one finding of the rule.
+- `expect=fire` without markers: at least one Error/Warn finding of the rule.
 - `expect=clean`: certified clean, see below; markers are not allowed.
+
+## Strict mode
+
+A case selects rules: the block rule, every rule named by a marker, and any
+rules listed in `rules=A,B` on the info string. Findings of unselected rules
+(a runner may evaluate more than it was asked) are ignored; a selected
+finding that nothing matches fails the case with `unexpected findings`, one
+line each giving `class=` (`fire`, `advisory` or `unresolved`), `severity=`,
+`reason=`, rule, line, column and message. So a second rule that co-fires
+needs a marker naming it (or `rules=` to forbid it), and in a block without
+markers an Unresolved/Advisory finding under `expect=fire`, or any finding of a
+`rules=` rule, is unexpected. An `expect=unresolved` header matches the
+block rule's Unresolved and Advisory findings, including a rolled-up spanless
+Unresolved (assert its code with `reason=`).
 
 ## Outcome classes
 

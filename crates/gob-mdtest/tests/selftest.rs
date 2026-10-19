@@ -215,3 +215,91 @@ fn own_line_marker_applies_to_the_next_line_even_if_blank() {
     assert!(t.contains("!    1") || t.contains("!    2"), "{t}");
     assert!(t.contains("!    3"), "{t}");
 }
+
+/// The toy plus a stray MDT009 Error and an MDT001 Advisory on every case.
+fn noisy(case: &Case) -> Vec<Finding> {
+    let file = FileInterner::new().intern(&case.file_name);
+    let span = Span::new(file, TextRange::at(TextSize::from(0), TextSize::from(1)));
+    let mut out = toy(case);
+    out.push(Finding::new(
+        "MDT009".parse().unwrap(),
+        Severity::Error,
+        Some(span),
+        "second rule",
+        &case.file_name,
+    ));
+    out.push(Finding::new(
+        case.rule.clone(),
+        Severity::Advisory,
+        Some(span),
+        "side note",
+        &case.file_name,
+    ));
+    out
+}
+
+// frob:tests crates/gob-mdtest/src/run.rs::check
+#[test]
+fn an_unexpected_second_rule_or_advisory_fails_the_case() {
+    let dir = std::env::temp_dir().join(format!("gob-mdtest-strict-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("s.md");
+    std::fs::write(
+        &path,
+        "<!-- mdtest: rule=MDT001 -->\n```txt expect=fire rules=MDT009\nforbidden\n```\n```txt expect=clean\nok\n```\n",
+    )
+    .unwrap();
+    let r = run_file(&path, &Runner::new(noisy));
+    std::fs::remove_dir_all(&dir).ok();
+    assert!(!r.passed());
+    let text = r.render_failures();
+    assert!(text.contains("unexpected findings"), "{text}");
+    // the unselected-rule case (second block, no rules=) ignores MDT009
+    assert!(
+        r.cases[1].outcome.is_err(),
+        "clean block sees its own advisory"
+    );
+    assert!(
+        text.contains("class=fire severity=Error reason=- rule=MDT009"),
+        "{text}"
+    );
+    assert!(
+        text.contains("class=advisory severity=Advisory reason=- rule=MDT001"),
+        "{text}"
+    );
+}
+
+/// Returns one spanless Unresolved finding of the rule under test.
+fn rolled_up(case: &Case) -> Vec<Finding> {
+    vec![
+        Finding::new(
+            case.rule.clone(),
+            Severity::Unresolved,
+            None,
+            "rolled up",
+            &case.file_name,
+        )
+        .with_reason(gob_rules::UnresolvedReason::from_code("hole")),
+    ]
+}
+
+// frob:tests crates/gob-mdtest/src/run.rs::check
+#[test]
+fn a_spanless_unresolved_is_matched_by_the_header_assertion_only() {
+    let dir = std::env::temp_dir().join(format!("gob-mdtest-rollup-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("s.md");
+    std::fs::write(
+        &path,
+        "<!-- mdtest: rule=MDT001 -->\n```txt expect=unresolved reason=hole\nx\n```\n```txt expect=fire\nx\n```\n",
+    )
+    .unwrap();
+    let r = run_file(&path, &Runner::new(rolled_up));
+    std::fs::remove_dir_all(&dir).ok();
+    assert!(r.cases[0].outcome.is_ok(), "{}", r.render_failures());
+    let e = r.cases[1].outcome.clone().unwrap_err();
+    assert!(
+        e.contains("not Unresolved") || e.contains("unexpected"),
+        "{e}"
+    );
+}

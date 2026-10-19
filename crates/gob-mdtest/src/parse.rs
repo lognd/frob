@@ -105,6 +105,8 @@ pub struct Block {
     pub known_gap: Option<String>,
     /// `fixed`: the case is the text after applying the rule's fix.
     pub fixed: bool,
+    /// `rules=A,B`: extra rules the case selects beyond the block rule and marker rules.
+    pub rules: Vec<RuleId>,
     /// Optional inline TOML config.
     pub config: Option<String>,
     /// Inline marker expectations.
@@ -411,12 +413,25 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             parse: opts.get("parse").map(|t| (*t).to_owned()),
             known_gap,
             fixed,
+            rules: selected_rules(opts.get("rules").copied()).map_err(&err)?,
             config: opts.get("config").map(|c| (*c).to_owned()),
             markers: marks,
             snapshot,
         });
     }
     Ok(blocks)
+}
+
+/// Parse the comma-separated `rules=` list into rule ids.
+fn selected_rules(list: Option<&str>) -> Result<Vec<RuleId>, String> {
+    list.map_or_else(
+        || Ok(Vec::new()),
+        |l| {
+            l.split(',')
+                .map(|r| r.trim().parse::<RuleId>().map_err(|e| e.to_string()))
+                .collect()
+        },
+    )
 }
 
 /// Read lines up to the closing fence of `ticks` or more `fence` chars; the body and whether it closed.
