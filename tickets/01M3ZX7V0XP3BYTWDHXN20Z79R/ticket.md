@@ -2,16 +2,16 @@
 id = "01M3ZX7V0XP3BYTWDHXN20Z79R"
 title = "Trust store: MAC'd entries, repository identity, expiry, list and revoke"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:33Z"
-updated = "2026-10-03T03:51:19Z"
+updated = "2026-10-19T05:58:21Z"
 idempotency_key = "m2-sec-trust-store"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-trust/src/store/**"]
+scope = ["crates/gob-trust/src/store/**", "docs/design/security.md", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/store.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,11 +23,11 @@ target = "01M3ZX7J6SES21T3KC4WESVR7H"
 
 [[acceptance]]
 text = "Given an entry whose root commit differs from the repository, when consulted, then it does not match; given a hand-added unMAC'd line, then it is inert"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an expired entry, when consulted, then it is untrusted and `doctor` reports it"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.3 (The store).
