@@ -8,7 +8,7 @@ points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:56:13Z"
-updated = "2026-10-19T05:25:00Z"
+updated = "2026-10-19T05:27:30Z"
 scope = ["crates/grimble-lints/**", "docs/reference/rules/PATH001.md", "docs/reference/rules/PATH002.md", "docs/reference/rules/PATH003.md", "grimble.toml", "docs/design/rules.md"]
 
 [[links]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a repository-relative path type used with /, when PATH002 runs, then it does not fire"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a language adapter without path-conversion roles, when PATH002 runs, then it reports Unresolved, not clean"
