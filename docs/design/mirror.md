@@ -301,6 +301,9 @@ and in `frob mirror status`.
   and listed in `frob mirror status`; a repository-level inventory of
   managed labels, milestones and issue types catches renames once,
   not per issue.
+  Implementation: `frob-mirror::github::read` merges timeline events and
+  body revisions into ordered history entries and returns a fidelity
+  gap, never an error, for truncated or deleted revisions.
 - **Revert wars end** (MIR-AUD-06). A field changed again by a
   non-mirror actor within the backoff window is reverted after 1, 2,
   4 ... runs, at most once a day. After three re-applications by the
