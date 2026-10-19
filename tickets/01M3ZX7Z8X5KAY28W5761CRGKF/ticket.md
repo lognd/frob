@@ -2,7 +2,8 @@
 id = "01M3ZX7Z8X5KAY28W5761CRGKF"
 title = "Escape other non-ASCII in text from packs, the tracker and the ledger (OWNER call)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
