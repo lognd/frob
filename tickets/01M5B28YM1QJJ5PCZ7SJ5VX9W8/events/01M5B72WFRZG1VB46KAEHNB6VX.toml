@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-evidence/**", "crates/frob-tests/**", "crates/gob-dev/src/import_v1.rs", "docs/reference/config.md", "docs/schemas/config.json"]
+new = ["crates/frob-evidence/**", "crates/frob-tests/**", "crates/gob-dev/src/import_v1.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/build-test-ci.md"]
+at = "2026-10-19T23:13:57Z"
+actor = "lognd"
+rev = 1
