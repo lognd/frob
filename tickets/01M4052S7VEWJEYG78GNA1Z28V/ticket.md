@@ -11,7 +11,7 @@ created = "2026-10-03T05:51:36Z"
 updated = "2026-10-19T17:16:40Z"
 idempotency_key = "m2-mirror2-create"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/create.rs", "crates/frob-mirror/tests/create.rs"]
+scope = ["crates/frob-mirror/src/create.rs", "crates/frob-mirror/tests/create.rs", "crates/frob-mirror/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
