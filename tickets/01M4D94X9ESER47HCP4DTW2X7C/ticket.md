@@ -2,7 +2,8 @@
 id = "01M4D94X9ESER47HCP4DTW2X7C"
 title = ".NET and Unity profile: dotnet build SARIF with Roslyn CA/IDE, VSTHRD and Microsoft.Unity.Analyzers, USP suppressors on"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
