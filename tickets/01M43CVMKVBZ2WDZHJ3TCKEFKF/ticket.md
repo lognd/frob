@@ -8,12 +8,12 @@ points = 2
 parent = "01M43A5349M17PED730HKNM4VV"
 reporter = "lognd"
 created = "2026-10-04T12:05:14Z"
-updated = "2026-10-19T18:51:43Z"
+updated = "2026-10-19T19:03:11Z"
 scope = ["crates/frob-obligations/**"]
 
 [[acceptance]]
 text = "Given a public Python function without a docstring, when frob check runs, then DOC001 reports it"
-bound = false
+bound = true
 +++
 
 ~F0KSGKF records Python docstrings in the doc facet but DOC001 examines only Rust; extend the DOC family to Python units (public functions, classes and methods without a docstring).
