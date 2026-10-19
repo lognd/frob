@@ -2,7 +2,8 @@
 id = "01M5ARVK12M2VAZFDQQKRPYWRA"
 title = "docs: describe cargo dev ci --remote flag alongside CARGO_DEV_CI_REMOTE"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
