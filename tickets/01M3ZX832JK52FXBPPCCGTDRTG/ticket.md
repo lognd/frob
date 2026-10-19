@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-19T04:36:13Z"
+updated = "2026-10-19T04:36:15Z"
 idempotency_key = "m2-mirror-projection"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/**"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a `[mirror] exclude` match, when projected, then the field is absent and recorded in private"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 2.1.
