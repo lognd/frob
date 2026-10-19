@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-19T16:10:46Z"
+updated = "2026-10-19T16:10:47Z"
 idempotency_key = "m2-mirror2-proposal-record"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/proposals.rs", "crates/frob-mirror/Cargo.toml", "crates/frob-mirror/src/lib.rs", "Cargo.lock", "docs/design/mirror.md"]
@@ -43,7 +43,7 @@ bound = true
 
 [[acceptance]]
 text = "Given more than P new proposals in a run, when recorded, then those beyond P stay after the cursor and are recorded in a later run, and all recorded ones share one ledger commit"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.5 (F9).
