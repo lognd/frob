@@ -2,16 +2,16 @@
 id = "01M3ZX7X7WYFHA4QXZ2YMHHCQZ"
 title = "check --base: fail on new Unresolved for P+ rules in changed files"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:36Z"
-updated = "2026-10-03T03:34:36Z"
+updated = "2026-10-19T04:23:41Z"
 idempotency_key = "m2-sec-no-new-unknowns"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-check/src/base_unknowns.rs"]
+scope = ["crates/gob-check/src/base_unknowns.rs", "crates/gob-check/src/lib.rs", "changelog.d/01M3ZX7X7WYFHA4QXZ2YMHHCQZ.*"]
 
 [[links]]
 kind = "blocked-by"
