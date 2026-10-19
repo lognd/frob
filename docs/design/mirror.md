@@ -268,6 +268,15 @@ and in `frob mirror status`.
   go. If comments are enabled, the once-per-day rule checks the issue's
   own comments before posting, not state in the map (F7).
 
+**Map shards (implemented in `frob-mirror/src/mapfile.rs`).** One JSON
+shard per ticket, keyed by ULID, holds issue number, node id, cached
+location, last observed normalized values, history cursor, last event
+hash and the create-uncertain flag (nonce, start time); a small `index`
+shard holds the round-robin and change-feed cursors. Writes are
+compare-and-swap on the content hash. `resolve` checks the cache, then
+the tracker listing (lowest number wins), and only then allows a create;
+an uncertain create forces recovery first.
+
 ### 3.5 Proposals (MIR-AUD-07, 08, 12, 22; F9)
 
 - Stored by reference: tracker item id, field, actor id, time, a digest
