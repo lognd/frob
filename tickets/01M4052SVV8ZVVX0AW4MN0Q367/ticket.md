@@ -2,13 +2,13 @@
 id = "01M4052SVV8ZVVX0AW4MN0Q367"
 title = "Read-time capture, fidelity gap and the gap listing"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-19T19:20:09Z"
+updated = "2026-10-19T19:20:10Z"
 idempotency_key = "m2-mirror2-capture"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/capture.rs"]
