@@ -2,13 +2,13 @@
 id = "01M3ZX7JN8RWAKDVYK0BNG3E2K"
 title = "Typed hook registry: versions, priority with name tie-break, config_tables"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-03T03:34:25Z"
+updated = "2026-10-19T06:45:17Z"
 idempotency_key = "m2-packs-hooks"
 labels = ["milestone:2", "area:packs"]
 scope = ["crates/gob-packs/src/hooks/**"]
