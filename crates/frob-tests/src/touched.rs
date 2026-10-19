@@ -135,6 +135,35 @@ fn base_symbols(repo: &Repo, base: &str, path: &str) -> Result<BTreeMap<Symref, 
     Ok(symbols.into_iter().map(|s| (s.symref, s.digests)).collect())
 }
 
+// frob:ticket 01M4VN38GBQAPJWK0FZPSDN1CC
+/// Set the mtime of every existing file in `files` (repo-relative to `root`) to now; returns how many were bumped.
+///
+/// Cargo treats a source as fresh when its mtime is no newer than the dep-info of the last build in
+/// the (possibly shared) target directory; a build that ran while the base sources were in place
+/// would otherwise hide the edits. Bumping the changed files after a `--base` run makes the next
+/// cargo build in the work tree recompile all of them. Best effort: failures are logged and skipped.
+pub fn bump_mtimes(root: &Path, files: &[String]) -> usize {
+    let now = std::time::SystemTime::now();
+    let mut bumped = 0;
+    for rel in files {
+        let file = root.join(rel);
+        if !file.is_file() {
+            continue;
+        }
+        let set = std::fs::OpenOptions::new()
+            .write(true)
+            .open(&file)
+            .or_else(|_| std::fs::File::open(&file))
+            .and_then(|f| f.set_modified(now));
+        match set {
+            Ok(()) => bumped += 1,
+            Err(e) => tracing::warn!(file = %file.display(), error = %e, "mtime not bumped"),
+        }
+    }
+    tracing::info!(bumped, "bumped mtimes of files changed against the base");
+    bumped
+}
+
 /// Files changed between `base` and the work tree, and the changed symbols among `graph`'s.
 ///
 /// A symbol is touched when it is new in a changed Rust, Python or C# file or its signature or
