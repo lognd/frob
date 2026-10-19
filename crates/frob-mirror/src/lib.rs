@@ -2,6 +2,7 @@
 
 // frob:ticket 01M4052RG3QVXW6CHTG8BNS7CD
 pub mod adapter;
+pub mod blind;
 pub mod budget;
 pub mod github;
 pub mod journal;
