@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-19T08:17:10Z"
+updated = "2026-10-19T08:17:13Z"
 idempotency_key = "m2-mirror2-neutralise"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/github/neutralise.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given text with '- [ ] item', when rendered, then no task-list checkbox is produced"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.6 (side effects; MIR-AUD-21, 23).
