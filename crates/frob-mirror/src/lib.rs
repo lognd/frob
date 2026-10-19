@@ -6,4 +6,5 @@ pub mod budget;
 pub mod keyring;
 pub mod mapfile;
 pub mod plan;
+pub mod progress;
 pub mod projection;
