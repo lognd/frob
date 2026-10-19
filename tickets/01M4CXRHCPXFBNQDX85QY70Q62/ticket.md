@@ -2,13 +2,13 @@
 id = "01M4CXRHCPXFBNQDX85QY70Q62"
 title = "LAYOUT and RESP rules at T1: overflow, overlap, clipping, safe area, target size, breakpoint coverage"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:48Z"
-updated = "2026-10-14T05:23:57Z"
+updated = "2026-10-19T09:45:20Z"
 scope = ["changelog.d/**", "crates/crunk-check/**"]
 
 [[acceptance]]
