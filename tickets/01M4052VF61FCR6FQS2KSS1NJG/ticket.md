@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-19T19:26:21Z"
+updated = "2026-10-19T19:26:22Z"
 idempotency_key = "m2-mirror2-nudge"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-ledger/src/nudge.rs", "crates/frob-ledger/src/lib.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the generated workflow, when inspected, then it references no secrets and no environment"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ledger commit made by the mirror itself, when pushed, then no dispatch is sent"

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T19:26:22Z"
+digest = "43a4cfefeafcff78833807ff7b0798e85408ebbc04844300f5188f8eb797b4bd"
+exit_code = 0
+inline = """
+
+running 1 test
+test nudge::tests::render_references_no_secrets_or_environment ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 73 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running unittests src/lib.rs (target/debug/deps/frob_ledger-4bc6188fc36a200e)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-ledger --lib nudge::tests::render_references_no_secrets_or_environment"
+size = 339
+status = "measured"
+at = "2026-10-19T19:26:22Z"
+actor = "lognd"
+rev = 1
