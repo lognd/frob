@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-packs/src/hooks/**", "crates/gob-packs/src/lib.rs"]
+new = ["crates/gob-packs/src/hooks/**", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/hooks.rs"]
+at = "2026-10-19T06:45:55Z"
+actor = "lognd"
+rev = 1
