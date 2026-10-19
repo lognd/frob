@@ -4,7 +4,8 @@ title = "Declare PATH001-PATH003 rules with generated pages and Error severity (
 type = "task"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T05:27:46Z"
-updated = "2026-10-19T05:27:46Z"
+updated = "2026-10-19T14:46:34Z"
 +++
