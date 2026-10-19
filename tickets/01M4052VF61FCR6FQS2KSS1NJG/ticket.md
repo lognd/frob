@@ -2,7 +2,8 @@
 id = "01M4052VF61FCR6FQS2KSS1NJG"
 title = "Secret-free nudge workflow generated onto the ticket branch"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
