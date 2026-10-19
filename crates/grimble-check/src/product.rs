@@ -77,7 +77,7 @@ impl Grimble {
 }
 
 /// Directive-scanner rules `check_model` also emits for `frob:` and `grimble:` comments in `.grmb` files.
-const DIRECTIVE_RULES: [&str; 4] = ["PARSE001", "DSL001", "DSL002", "DSL003"];
+const DIRECTIVE_RULES: [&str; 5] = ["PARSE001", "PARSE002", "DSL001", "DSL002", "DSL003"];
 
 // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
 /// The legacy metadata of a declared rule, leaked once per process (the legacy groups hold `&'static`).

@@ -2,12 +2,17 @@
 id = "01M5B07S0STANADP897P4A6YB2"
 title = "Mirror: replace the curl-subprocess HTTP transport with a native HttpTransport"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:17Z"
-updated = "2026-10-19T21:14:17Z"
-scope = ["crates/frob-mirror/**"]
+updated = "2026-10-19T23:30:47Z"
+scope = ["crates/frob-mirror/**", "docs/design/mirror.md"]
+
+[[acceptance]]
+text = "frob-mirror provides a native in-process HttpTransport that sends method, query, JSON body and auth headers, reports redirects unfollowed, and maps connection failures to TransportError"
+bound = true
 +++
 
 found while working ~1KH6CCV
