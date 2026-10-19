@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T08:06:04Z"
+digest = "c4237c06f16ea019f8f3a4ae4230f8891113bab77c0ef9732731bfbf848f8795"
+exit_code = 0
+inline = """
+
+running 1 test
+test widening_is_shown_first_and_in_full_without_control_chars ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.68s
+     Running tests/prompt.rs (target/debug/deps/prompt-4c26535aebde2006)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-trust --test prompt widening_is_shown_first_and_in_full_without_control_chars"
+size = 390
+status = "measured"
+at = "2026-10-19T08:06:04Z"
+actor = "lognd"
+rev = 1

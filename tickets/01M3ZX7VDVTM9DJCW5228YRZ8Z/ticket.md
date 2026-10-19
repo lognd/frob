@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-19T08:05:20Z"
+updated = "2026-10-19T08:06:04Z"
 idempotency_key = "m2-sec-trust-prompt"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-trust/src/prompt.rs", "crates/frob/src/trust_cmd.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/prompt.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/tests/trust_cmd.rs", "docs/design/security.md", "changelog.d/01M3ZX7VDVTM9DJCW5228YRZ8Z.added.md", "crates/frob/tests/it/trust.rs", "crates/frob/tests/it/main.rs", "crates/frob/Cargo.toml", "Cargo.lock", "docs/reference/cli/frob.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a pack widening an effect, when the prompt renders, then the widening is shown first and in full and pack-supplied prose does not appear"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.3 (the prompt).
