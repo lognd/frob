@@ -141,6 +141,13 @@ and in `frob mirror status`.
   updated by CAS) and keeps a watermark of the last processed ledger
   commit (MIR-AUD-13). The mirror's own ledger commits never trigger
   runs.
+  Implemented in `crates/frob-mirror/src/lock.rs`: `acquire` takes the
+  lock record (`writer-lock`, run id and time) by CAS; a live holder
+  returns `Busy` (exit without work, no error), one older than the TTL
+  (`lock_ttl_minutes`) is taken over and logged; `release` frees it only
+  if still ours. `pending_commits` returns the ledger commits after the
+  stored `watermark`, minus the mirror's own (`triggers_run` is false
+  for those).
 - MIR001 is time-based: "no successful run for N hours" (scheduled runs
   are delayed, dropped, and disabled after inactivity), plus the
   per-scope reasons below.
