@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/46VKHER; scope: src/frob/testing/_runners.py, src/frob/testing/_collect.py, src/frob/tickets/_land_verify.py, src/frob/app/config.py, tests/unit/test_runner_outcome_executed.py, docs/design/testing.md; ttl 7200s"
+at = "2026-10-19T22:21:34Z"
+actor = "lognd"
+rev = 1
