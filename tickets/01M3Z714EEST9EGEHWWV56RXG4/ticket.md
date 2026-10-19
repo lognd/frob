@@ -2,13 +2,13 @@
 id = "01M3Z714EEST9EGEHWWV56RXG4"
 title = "G14: grimble-capabilities: the matrix and CAP001-003"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 13
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-03T03:34:59Z"
+updated = "2026-10-19T09:45:17Z"
 idempotency_key = "m2-caps"
 labels = ["milestone:2"]
 scope = ["crates/grimble-capabilities/**", "crates/gob-ir/**"]
