@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T16:24:17Z"
+digest = "e5fdacb1262da255b73aa0c3933fceb406a453d86326e24bf0f3ec0414e5c5f5"
+exit_code = 0
+inline = """
+
+running 1 test
+test delayed_create_lands_later_with_ordered_event_id ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.02s
+     Running tests/support/main.rs (target/debug/deps/support-c1514688b8d078ad)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror --test support delayed_create_lands_later_with_ordered_event_id"
+size = 380
+status = "measured"
+at = "2026-10-19T16:24:17Z"
+actor = "lognd"
+rev = 1
