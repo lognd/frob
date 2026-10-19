@@ -24,7 +24,7 @@ A claim cannot be evaluated on this model, so it has no verdict.
 
 ## What it does
 
-A `bound METRIC TARGET <= Q` claim is Unresolved because the model declares no measured value to compare with. A `noflow` or `reach` claim is Unresolved when an operand resolves to no node, or when holes may hide a flow.
+A claim with `proof` above L1 and neither `evidence` nor `assumed` is Unresolved. A `bound METRIC TARGET <= Q` claim is Unresolved because the model declares no measured value to compare with. A `noflow` or `reach` claim is Unresolved when an operand resolves to no node, or when holes may hide a flow.
 
 ## Why it matters
 

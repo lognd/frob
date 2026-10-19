@@ -222,6 +222,13 @@ and in `frob mirror status`.
   listing the bot's issues (by creator, newest first), never through
   search, which lags (F5). The tracker is the identity authority; the
   map file is a cache of it.
+  On GitHub this is `github::lookup::lookup_since`: it pages the creator
+  listing (page 1 upward, newest first) and stops at the first page that
+  holds an issue created before the create-start time, or at an empty
+  page. The `ListingSource` trait has no search method. An ignored live
+  test checks a creator listing saved right after a create
+  (`FROB_GH_PROBE_LISTING`, `FROB_GH_PROBE_NUMBER`); its result is recorded on the ticket as the
+  verification of the read-your-writes fact.
 - **Create protocol.** Before a create the run derives a nonce and
   records "create started" in the journal. A create whose outcome is
   unknown (timeout, 5xx, crash) makes the ticket create-uncertain: no

@@ -110,3 +110,15 @@ pub fn bound_verdict(metric: &str, target: &RefPath) -> Verdict {
         target.written()
     ))
 }
+
+/// Decide the evidence side of a claim: above L1 with no evidence and not `assumed` is Unresolved.
+pub fn evidence_verdict(claim: &str, proof: &str, has_evidence: bool) -> Verdict {
+    if has_evidence || proof == "L1" {
+        return Verdict::Satisfied;
+    }
+    let verdict = Verdict::Unresolved(format!(
+        "claim `{claim}` requires proof {proof} but has no evidence and is not assumed, so it cannot be satisfied"
+    ));
+    tracing::debug!(claim, proof, "claim has no evidence");
+    verdict
+}

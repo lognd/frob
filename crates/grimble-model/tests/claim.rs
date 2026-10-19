@@ -58,3 +58,21 @@ fn bound_on_an_uncomputable_quantity_is_unresolved_with_the_reason() {
     assert_eq!(got[0].1, "Unresolved");
     assert!(got[0].2.contains("cannot be computed"), "{}", got[0].2);
 }
+
+// frob:tests crates/grimble-model/src/claim.rs::evidence_verdict
+#[test]
+fn claim_above_l1_without_evidence_is_unresolved_never_satisfied() {
+    let got = claim_findings(FLOWS, "claim k {\n  noflow c -> a;\n  proof L2;\n}\n");
+    assert_eq!(got.len(), 1, "{got:?}");
+    assert_eq!(got[0].0, "CLAIM003");
+    assert_eq!(got[0].1, "Unresolved");
+    assert!(got[0].2.contains("no evidence"), "{}", got[0].2);
+}
+
+// frob:tests crates/grimble-model/src/claim.rs::evidence_verdict
+#[test]
+fn claim_above_l1_with_evidence_or_assumed_is_decided_on_its_flows() {
+    let ev =
+        "claim k {\n  noflow c -> a;\n  proof L2;\n  evidence tests \"crates/x/tests/t.rs\";\n}\n";
+    assert!(claim_findings(FLOWS, ev).is_empty());
+}

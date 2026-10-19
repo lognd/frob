@@ -725,6 +725,25 @@ impl<'a> Checker<'a> {
         if e.kind == EntityKind::Vmodel {
             self.vmodel(rec, &anchor);
         }
+        if e.kind == EntityKind::Claim {
+            self.claim_evidence(rec, &anchor);
+        }
+    }
+
+    /// A claim above L1 with no evidence and no `assumed` is Unresolved (grmb-spec 8.3), never satisfied.
+    fn claim_evidence(&mut self, rec: &EntityRec<'_>, anchor: &str) {
+        let clauses = &rec.entity.clauses;
+        let proof = clauses.iter().find_map(|c| match &c.kind {
+            ClauseKind::Proof(i) => Some(i),
+            _ => None,
+        });
+        let has_evidence = clauses
+            .iter()
+            .any(|c| matches!(c.kind, ClauseKind::Evidence(_) | ClauseKind::Assumed(_)));
+        if let Some(i) = proof {
+            let v = crate::claim::evidence_verdict(&rec.full, &i.text, has_evidence);
+            self.claim_verdict(rec, i.span, &v, anchor);
+        }
     }
 
     fn header(&mut self, rec: &EntityRec<'_>, anchor: &str, missing_sev: Option<Severity>) {

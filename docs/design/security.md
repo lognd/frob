@@ -351,6 +351,10 @@ Read implies publish: the trust prompt and docs say "can read and print".
   (`[workspace] members`, materialized) or the user passes the root
   explicitly; vendored, ignored and submodule paths never trigger
   nested loading.
+- Implemented in `gob_config::nested_config_dirs`: a nested `grimble.toml`
+  loads only when its directory is in the root `[workspace] members`;
+  the tree is never walked, so vendored, ignored and submodule paths
+  cannot trigger loading.
 
 ### 2.10 Text, findings and fixes (I5, I7)
 
