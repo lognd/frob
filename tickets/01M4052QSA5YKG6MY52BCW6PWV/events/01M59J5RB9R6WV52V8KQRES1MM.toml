@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-19T07:49:14Z"
+digest = "546d3ff0ff34abe802239fb96d337ea72d17812238cb96bc3d15d539b3e3f7cc"
+exit_code = 0
+inline = """
+
+running 1 test
+test blind::tests::moved_updates_cache_only_after_marker_verifies ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.56s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-9c7a4f86665bb5e8)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror moved_updates_cache_only_after_marker_verifies"
+size = 462
+status = "measured"
+at = "2026-10-19T07:49:14Z"
+actor = "lognd"
+rev = 1

@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-19T07:49:10Z"
+updated = "2026-10-19T07:49:14Z"
 idempotency_key = "m2-mirror2-gh-status-blind"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/src/status.rs", "crates/frob-mirror/src/blind.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a 301, when handled, then the cached location changes only after the marker verifies at the new location"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a token that cannot see the repository or its own recent issues, when the blindness check runs first, then the run stops with MIR001 token-blind and makes no write"
