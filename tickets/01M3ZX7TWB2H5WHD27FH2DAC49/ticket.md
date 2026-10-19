@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:33Z"
-updated = "2026-10-19T18:21:48Z"
+updated = "2026-10-19T18:23:33Z"
 idempotency_key = "m2-sec-cache-relocate"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-cache/src/**"]
+scope = ["crates/gob-cache/src/**", "crates/gob-cache/Cargo.toml"]
 
 [[links]]
 kind = "blocked-by"
