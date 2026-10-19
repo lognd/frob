@@ -2,7 +2,8 @@
 id = "01M4FGYHSXQXJD0JXFV2AZCED5"
 title = "Claim verdicts: noflow, reach and bound claims are evaluated, never silently ok"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
