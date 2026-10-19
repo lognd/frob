@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:42Z"
-updated = "2026-10-19T08:15:40Z"
+updated = "2026-10-19T08:17:08Z"
 idempotency_key = "m2-mirror-mapping-config"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/mapping.rs", "crates/frob-mirror/src/config.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX83AB2JADBKWFA9SY4J60"
 
 [[acceptance]]
 text = "Given a mapping that omits the priority field and does not drop it, when loaded, then a config error names the field"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a mapping routing priority to a label, when applied, then the label appears in the planned operation"
