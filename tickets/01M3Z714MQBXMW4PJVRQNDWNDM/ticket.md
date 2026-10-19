@@ -2,13 +2,13 @@
 id = "01M3Z714MQBXMW4PJVRQNDWNDM"
 title = "G16: kernel port: CLAIM and VMOD families"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-02T21:06:25Z"
+updated = "2026-10-19T12:46:02Z"
 idempotency_key = "m2-kernel"
 labels = ["milestone:2"]
 scope = ["crates/grimble-kernel/**"]
