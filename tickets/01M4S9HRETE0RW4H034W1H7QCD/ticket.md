@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXRHCPXFBNQDX85QY70Q62"
 reporter = "lognd"
 created = "2026-10-13T00:10:42Z"
-updated = "2026-10-19T09:46:11Z"
-scope = ["crates/crunk-ingest/**", "changelog.d/**"]
+updated = "2026-10-19T09:52:52Z"
+scope = ["crates/crunk-ingest/**", "changelog.d/**", "docs/crunk/scene.md"]
 
 [[acceptance]]
 text = "A scene description parses to boxes and text runs and a taffy solve emits a deterministic layout-solve JSON, covered by a nextest test"
