@@ -7,6 +7,7 @@ pub mod blind;
 pub mod budget;
 pub mod config;
 pub mod cursor;
+pub mod dups;
 pub mod fields;
 pub mod github;
 pub mod journal;

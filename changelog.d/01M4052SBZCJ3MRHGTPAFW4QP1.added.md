@@ -1,0 +1,1 @@
+Added per-run duplicate closing for the tracker mirror: the lowest issue number per ticket is canonical, other marked issues are closed as duplicates (reopened ones again) and their history is still read.

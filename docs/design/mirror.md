@@ -257,6 +257,11 @@ and in `frob mirror status`.
   still read so edits made on them are captured (F3: the history cursor
   is taken before the ticket's issues are listed and kept across a
   create).
+  Implemented in `frob_mirror::dups`: `plan_duplicates` picks the lowest
+  issue number per ULID from the adopted markers (`claims_from_verdicts`),
+  `close_duplicates` closes the others with reason duplicate (a reopened
+  one is closed again, an already closed one is left alone), and
+  `read_duplicate_history` reads their history so human edits are captured.
 - **Status codes.** 301 (moved or transferred) updates the cached
   location after verifying the marker; 404 is never read as "deleted"
   (a token that cannot see the issue also gets 404); 410 (deleted)
