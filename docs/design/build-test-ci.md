@@ -218,9 +218,10 @@ fast naming `cargo dev-isolated` (`isolation::check`). A parity test pins
 both aliases and requires the same step names and order per OS.
 
 **Offloading heavy steps to a goway host (~ZWEYXGZ).** Opt-in:
-`CARGO_DEV_CI_REMOTE=<goway binary>` (a bare name or a path; a
-`--remote` flag will set the same once it can be registered in
-`main.rs`). Each step marked `offload` in `ci.rs` (clippy, clippy for
+`cargo dev ci --remote[=<goway binary>]` (bare `--remote` means
+`goway`), or `CARGO_DEV_CI_REMOTE=<goway binary>` with the same value
+shape. The flag wins when both are set, and an empty env value means
+local. Each step marked `offload` in `ci.rs` (clippy, clippy for
 the Windows target, docs, nextest, doctor, check) runs as
 `goway run --with-git --needs cores>=8 --needs mem>=2G --needs os=linux
 --report target/goway-ci-report.json [-e K=V]... -- <program> <args>`: the

@@ -2,16 +2,17 @@
 id = "01M4052SVV8ZVVX0AW4MN0Q367"
 title = "Read-time capture, fidelity gap and the gap listing"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-19T19:20:10Z"
+updated = "2026-10-19T19:32:49Z"
 idempotency_key = "m2-mirror2-capture"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/capture.rs"]
+scope = ["crates/frob-mirror/src/capture.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,15 +24,15 @@ target = "01M4052SQS2X5XYN24DE9ENQF8"
 
 [[acceptance]]
 text = "Given a field whose current value differs from the last observed value and no history entry explains it, when read, then it is captured with fidelity gap"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given history beyond the retained window, when read, then the gap is recorded and appears in the gap listing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a field changed twice between runs with history retained, when read, then both values and their authors are captured"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.4 (what nothing is lost means).
