@@ -2,13 +2,13 @@
 id = "01M3ZX851JW2KYRMCCK5RQKG5W"
 title = "Marker v1: MAC over (repository node id, ULID, nonce), creation-revision-only trust, MIR003"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-03T05:51:55Z"
+updated = "2026-10-19T14:46:35Z"
 idempotency_key = "m2-mirror-markers"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/marker.rs"]
