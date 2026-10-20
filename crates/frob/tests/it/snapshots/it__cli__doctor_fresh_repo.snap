@@ -50,6 +50,8 @@ expression: v
     "ledger": {
       "error": "[error]",
       "oid": null,
+      "protection": "skipped",
+      "protection_detail": null,
       "reachable": false,
       "ref": "refs/heads/main"
     },

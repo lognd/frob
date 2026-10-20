@@ -1,5 +1,5 @@
 ---
-source: crates/frob/tests/cli.rs
+source: crates/frob/tests/it/cli.rs
 expression: v
 ---
 {
@@ -463,6 +463,17 @@ expression: v
             "null"
           ]
         },
+        "protection": {
+          "description": "Ledger-branch protection through the hosting API: `protected`, `unprotected`, `unresolved` or `skipped`.",
+          "type": "string"
+        },
+        "protection_detail": {
+          "description": "What the hosting API said (or why it could not be asked) when `protection` is not `protected`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "reachable": {
           "description": "True when the ref resolves to an object.",
           "type": "boolean"
@@ -474,7 +485,8 @@ expression: v
       },
       "required": [
         "ref",
-        "reachable"
+        "reachable",
+        "protection"
       ],
       "type": "object"
     },

@@ -79,9 +79,9 @@ fn doctor_languages_prints_fidelity_precisions_and_f0_extensions() {
             .unwrap_or_else(|| panic!("no adapter row {name}"))
             .clone()
     };
-    assert_eq!(row("rust")["fidelity"], "F3");
+    assert_eq!(row("rust")["fidelity"], "F4");
     assert_eq!(row("rust")["files"], 1);
-    assert_eq!(row("markdown")["fidelity"], "F4");
+    assert_eq!(row("markdown")["fidelity"], "F3");
     assert_eq!(row("opaque")["fidelity"], "F0");
     let apply = row("rust")["capabilities"]
         .as_array()

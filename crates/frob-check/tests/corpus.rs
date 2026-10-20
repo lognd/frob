@@ -554,6 +554,33 @@ fn ledger_ref_runner(case: &Case) -> Vec<Finding> {
     ledger_findings(root, case)
 }
 
+/// Probe that answers every read with one canned reply (or the reason there was none).
+struct CannedProbe(Result<frob_obligations::tick_protect::Reply, String>);
+
+impl frob_obligations::tick_protect::ProtectionProbe for CannedProbe {
+    fn get(&self, _path: &str) -> Result<frob_obligations::tick_protect::Reply, String> {
+        self.0.clone()
+    }
+}
+
+/// `TICK011`: the block is `<status> <body>` or `unreachable`, judged as the hosting API's protection reply.
+fn tick_protect_runner(case: &Case) -> Vec<Finding> {
+    let line = case.text.lines().next().unwrap_or_default().trim();
+    let reply = match line.split_once(' ') {
+        Some((status, body)) => Ok(frob_obligations::tick_protect::Reply {
+            status: status.parse().expect("status code"),
+            body: body.to_owned(),
+        }),
+        None => Err(format!("no reply: {line}")),
+    };
+    tracing::debug!(line, "TICK011 corpus block");
+    let verdict =
+        frob_obligations::tick_protect::check_branch(&CannedProbe(reply), "o", "r", "frob-tickets");
+    frob_obligations::tick_protect::tick011(&verdict, "frob-tickets")
+        .into_iter()
+        .collect()
+}
+
 /// Route a block to the runner for its rule family.
 fn runner(case: &Case) -> Vec<Finding> {
     let rule = case.rule.as_str();
@@ -565,6 +592,8 @@ fn runner(case: &Case) -> Vec<Finding> {
         tick_dir_runner(case)
     } else if matches!(rule, "TICK007" | "TICK008" | "TICK009" | "TICK010") {
         tick_branch_runner(case)
+    } else if rule == "TICK011" {
+        tick_protect_runner(case)
     } else if rule.starts_with("GRL") {
         grl_runner(case)
     } else if matches!(rule, "REF001" | "TODO002") {

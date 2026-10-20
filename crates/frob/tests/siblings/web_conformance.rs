@@ -140,9 +140,10 @@ fn grimble_check_binds_the_tsx_components_and_reports_the_web_languages_it_read(
             )
         })
         .collect();
-    for lang in ["typescript", "css", "html"] {
+    // The levels come from the gob-caps matrix.
+    for (lang, level) in [("typescript", "F3"), ("css", "F2"), ("html", "F0")] {
         assert!(
-            levels.contains(&(lang.to_owned(), "F2".to_owned())),
+            levels.contains(&(lang.to_owned(), level.to_owned())),
             "{lang} missing from {levels:?}"
         );
     }
