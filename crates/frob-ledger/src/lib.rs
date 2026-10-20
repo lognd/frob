@@ -58,6 +58,7 @@
 pub mod backlog;
 pub mod branch;
 mod brief;
+pub mod claim_cover; // frob:ticket 01M5CW05FBNNJEAP2QQJ2S1737
 pub mod claim_hold; // frob:ticket 01M5CW0557C2HYG7KZBV3Y6VBJ
 pub mod claim_window; // frob:ticket 01M5CW04YABDJW6ZXSWFGTCB9E
 pub mod config;
