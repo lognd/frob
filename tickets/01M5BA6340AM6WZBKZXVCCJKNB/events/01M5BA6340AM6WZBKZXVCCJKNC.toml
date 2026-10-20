@@ -1,0 +1,10 @@
+kind = "create"
+title = "docs/design/mirror.md: recreate section still says 'curl transport'; now NativeTransport (ureq)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["docs/design/mirror.md"]
+body = "found while working ~3CPVHZS: line ~296 says GithubAdapter over a curl transport; replace with the native ureq transport. Blocked from that ticket by a lease held by ~Q7FE2A0."
+at = "2026-10-20T00:08:08Z"
+actor = "lognd"
+rev = 1
