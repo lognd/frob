@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T16:10:12Z"
-updated = "2026-10-20T16:54:21Z"
+updated = "2026-10-20T16:58:07Z"
 scope = ["goway.toml", "frob.toml", ".gitattributes"]
 
 [[links]]
