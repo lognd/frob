@@ -181,22 +181,47 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
             .misfiled_ticket_findings()
             .map_err(|e| failed(&["TICK009"], e)),
         // frob:ticket 01M4052VK08NTRJS6HZZ9B82RZ
-        tick010_findings(&state.ledger),
+        tick010_findings(&inputs.root, &state.ledger),
         // frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
         tick006_ledger_findings(&state.ledger),
     ])
 }
 
-/// `TICK010` over the ticket branch tip; the expected nudge is for the configured branch with no mirror bot ids (no `[mirror]` table exists yet).
-// frob:ticket 01M4052VK08NTRJS6HZZ9B82RZ
-fn tick010_findings(ledger: &frob_ledger::Ledger) -> Evaluated {
+/// `TICK010` over the ticket branch tip; the expected nudge is for the configured branch and the numeric `[mirror] bot_ids`.
+// frob:ticket 01M5B0BWX6BERAV0RJGKV4Z6KW
+fn tick010_findings(root: &std::path::Path, ledger: &frob_ledger::Ledger) -> Evaluated {
+    let configured = gob_config::ConfigDocument::read(root, snapshot::PRODUCT)
+        .and_then(|doc| doc.table::<gob_config::MirrorTable>())
+        .map_err(|e| {
+            failed(
+                &["TICK010"],
+                format_args!("[mirror] config unreadable: {e}"),
+            )
+        })?
+        .value
+        .bot_ids;
     let spec = frob_ledger::nudge::NudgeSpec {
         ticket_branch: ledger.config().branch.clone(),
-        bot_ids: Vec::new(),
+        bot_ids: numeric_bot_ids(&configured),
     };
     ledger
         .github_tree_findings(&spec)
         .map_err(|e| failed(&["TICK010"], e))
+}
+
+/// The entries of `[mirror] bot_ids` that are GitHub user ids; logins cannot be matched against `github.actor_id` and are skipped, logged.
+// frob:ticket 01M5B0BWX6BERAV0RJGKV4Z6KW
+fn numeric_bot_ids(configured: &[String]) -> Vec<u64> {
+    configured
+        .iter()
+        .filter_map(|entry| {
+            let id = entry.trim().parse::<u64>().ok();
+            if id.is_none() {
+                tracing::warn!(entry = %entry, "[mirror] bot_ids entry is not a numeric user id; left out of the nudge workflow");
+            }
+            id
+        })
+        .collect()
 }
 
 /// `TICK006` over the hand-written files of a ticket-branch ledger (bodies, `EPIC.md`).
@@ -656,4 +681,17 @@ fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope) -> Option<Finding>
         return None;
     }
     frob_release::rel003::missing(&snap.core.root, &id.to_string(), &scope.handle)
+}
+
+#[cfg(test)]
+mod mirror_bot_id_tests {
+    use super::numeric_bot_ids;
+
+    // frob:tests crates/frob-check/src/product.rs::numeric_bot_ids
+    #[test]
+    fn numeric_bot_ids_keeps_user_ids_and_skips_logins() {
+        let configured = ["42".to_owned(), "some-bot".to_owned(), " 7 ".to_owned()];
+        assert_eq!(numeric_bot_ids(&configured), [42, 7]);
+        assert!(numeric_bot_ids(&[]).is_empty());
+    }
 }
