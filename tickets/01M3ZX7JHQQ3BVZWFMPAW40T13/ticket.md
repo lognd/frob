@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-20T09:11:45Z"
+updated = "2026-10-20T09:11:46Z"
 idempotency_key = "m2-bench-b2"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/benches/**", "crates/gob-plan/Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the two runs, when their JSON is compared, then it is identical"
-bound = false
+bound = true
 +++
 
 Implements plugins.md section 6.6 (B2).
