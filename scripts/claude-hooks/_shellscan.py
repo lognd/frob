@@ -39,7 +39,6 @@ import re
 #: "(make targets, ...)" inside a commit message -- and blocked a commit on
 #: the first real use. A subshell is rare; an English sentence in a quoted
 #: string is constant.
-# frob:doc docs/guides/claude-hooks.md#_shellscanpy
 POS = r"(?:^|[;&|]\s*|\buv +run +)(?:timeout +\d+ +)?"
 
 #: Quoted spans and heredoc bodies.
@@ -51,8 +50,6 @@ _QUOTED = re.compile(
 )
 
 
-# frob:doc docs/guides/claude-hooks.md#_shellscanpy
-# frob:tests tests/test_hook_pgrep_self_match_guard.py kind="integration"
 def quoted_spans(command: str) -> list[tuple[int, int]]:
     """`(start, end)` of every quoted span and heredoc body in `command`,
     for rules that must keep a quoted ARGUMENT visible (the literal a
@@ -62,8 +59,6 @@ def quoted_spans(command: str) -> list[tuple[int, int]]:
     return [(m.start(), m.end()) for m in _QUOTED.finditer(command)]
 
 
-# frob:doc docs/guides/claude-hooks.md#_shellscanpy
-# frob:tests tests/test_hook_frob_suggest.py kind="integration"
 def strip_quoted(command: str) -> str:
     """`command` with quoted spans and heredoc bodies blanked to a space.
 
@@ -83,7 +78,6 @@ def strip_quoted(command: str) -> str:
 _SEGMENT_BREAK = re.compile(r"&&|\|\||\n|[;|]")
 
 
-# frob:doc docs/guides/claude-hooks.md#_shellscanpy
 def segment_spans(command: str) -> list[tuple[int, int]]:
     """`(start, end)` character spans of `command`'s shell segments, split
     on its own top-level `;`, `&&`, `||`, `|` and newline separators --
@@ -118,8 +112,7 @@ def segment_spans(command: str) -> list[tuple[int, int]]:
     return spans
 
 
-# frob:doc docs/guides/claude-hooks.md#_shellscanpy
-# frob:waive WIRE001 reason="called by .claude/hooks/frob-suggest.py::_handle_bash in \
+
 # this same diff (from _shellscan import strip_and_blank_prefixed_segments as \
 # _strip_and_blank, after this package's usual sys.path.insert hack) -- WIRE001's \
 # call-graph resolver does not trace calls through that dynamic import pattern, a \

@@ -350,8 +350,7 @@ def _edit_rename_hit(file_path: str, old_string: str) -> tuple[str, str, str] | 
             )
         files.add(file_path)
         try:
-            # frob:ticket T-3059
-            # frob:waive PERF004 reason="files grows by one element each iteration, so this is not a hoistable repeated sort of unchanged data -- sorted only for a deterministic on-disk list"  # noqa: E501
+
             state_path.write_text(
                 json.dumps({"files": sorted(files)}), encoding="utf-8"
             )
@@ -522,7 +521,7 @@ def _verbs(command: str) -> tuple[str, str]:
     return (m.group(1), m.group(2) or "") if m else ("", "")
 
 
-# frob:ticket T-5101
+# frob:ticket 01M2VFD1ZDWWNTW1FFGKHCKTS3
 def _log_decision(
     ctx: dict, rule: str, decision: str, key: str, attempt: int = 0
 ) -> None:
@@ -553,7 +552,6 @@ def _log_decision(
 _ESCALATE_AT_ATTEMPT = 3
 
 
-# frob:ticket T-5124
 def _session_key(payload: dict) -> str:
     """Per-agent-session marker discriminator (T-5124):
     `payload["session_id"]`, else `FROB_AGENT`, else this process's
@@ -566,7 +564,6 @@ def _session_key(payload: dict) -> str:
     return os.environ.get("FROB_AGENT") or f"ppid:{os.getppid()}"
 
 
-# frob:ticket T-5124
 def _marker_path(session_key: str, command: str) -> Path:
     """O_EXCL marker path for `command` within `session_key` (ack prefix
     stripped first, so acked/un-acked runs share one counter -- T-2164);
@@ -578,7 +575,6 @@ def _marker_path(session_key: str, command: str) -> Path:
     return _STATE_DIR / f"{digest}.marker"
 
 
-# frob:ticket T-5124
 def _record_attempt(session_key: str, command: str, call_id: str = "") -> int:
     """Atomically record one more attempt at `command` within
     `session_key` (T-2164's counting, T-5124's per-session key
@@ -633,7 +629,6 @@ def _record_attempt(session_key: str, command: str, call_id: str = "") -> int:
 #: quotes even when their SCRIPT argument is.
 _SED_PERL_INPLACE = re.compile(_POS + r"(?:sed|perl)\s+-\w*i\w*\b", re.M)
 
-# frob:ticket T-3615
 #: T-3615: the sed/perl -i invocation's OWN quoted script argument,
 #: captured directly off RAW (never `command`, which has already blanked
 #: it) -- matched against `raw` (never `command`), because this is the
@@ -747,8 +742,7 @@ def _deny(reason: str) -> None:
     )
 
 
-# frob:ticket T-5124
-# frob:ticket T-5101
+# frob:ticket 01M2VFD1ZDWWNTW1FFGKHCKTS3
 def _escalate(
     ctx: dict,
     key: str,
@@ -790,8 +784,7 @@ def _escalate(
     )
 
 
-# frob:ticket T-5124
-# frob:ticket T-5101
+# frob:ticket 01M2VFD1ZDWWNTW1FFGKHCKTS3
 def _handle_edit(payload: dict, ctx: dict) -> None:
     """T-3069's Edit-tool branch (cross-file import-rewrite signal,
     `_edit_rename_hit`) -- separate from the Bash `_match` path since it
@@ -809,7 +802,7 @@ def _handle_edit(payload: dict, ctx: dict) -> None:
     # for a non-Bash call: FROB_SUGGEST_ALLOW=<rule>[,<rule>] (T-5101).
     allowed = os.environ.get("FROB_SUGGEST_ALLOW", "").split(",")
     notice = ""
-    if os.environ.get("FROB_SUGGEST_ACK") == "1":  # frob:waive SEC110 reason="retired boolean flag, not a secret"
+    if os.environ.get("FROB_SUGGEST_ACK") == "1":
         notice = _STALE_ACK_NOTICE
         _log_decision(ctx, name, "ignored-ack", key)
     _escalate(
@@ -827,9 +820,7 @@ def _handle_edit(payload: dict, ctx: dict) -> None:
     )
 
 
-# frob:ticket T-5124
-# frob:ticket T-3851
-# frob:ticket T-5101
+# frob:ticket 01M2VFD1ZDWWNTW1FFGKHCKTS3
 def _handle_bash(payload: dict, root: Path, ctx: dict) -> None:
     """The Bash-command branch: strips hook tokens per segment, matches the
     rules, honours only a per-rule `FROB_SUGGEST_ALLOW=<rule>` (T-5101) and
@@ -866,9 +857,6 @@ def _handle_bash(payload: dict, root: Path, ctx: dict) -> None:
     _escalate(ctx, command, name, suggestion, acked, hint, hint, notice)
 
 
-# frob:doc docs/guides/claude-hooks.md#frob-suggestpy
-# frob:ticket T-5124
-# frob:tests tests/test_hook_frob_suggest.py kind="integration"
 def main() -> None:
     try:
         payload = json.load(sys.stdin)
