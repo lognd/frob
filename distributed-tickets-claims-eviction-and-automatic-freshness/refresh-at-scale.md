@@ -2,13 +2,13 @@
 id = "01M5CW063S30GRFG41DERAA0Q8"
 title = "Refresh at scale"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T14:38:43Z"
+updated = "2026-10-20T22:22:12Z"
 idempotency_key = "dt-DT23"
 
 [[links]]
