@@ -2,7 +2,8 @@
 id = "01M1T07NX91GNHPAWC8Y32GVV7"
 title = "F-223: a brand-new test is NO_VERDICT at the parent commit, so --designate-repro-force is required every time and becomes ceremony"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "invalid"
 priority = "medium"
 points = 3
 reporter = "human"
