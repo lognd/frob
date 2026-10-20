@@ -188,32 +188,10 @@ impl Runner {
         let label = spec.program.label();
         let span = tracing::info_span!("exec.spawn", program = %label);
         let _enter = span.enter();
-        if let (Some(allowed), Program::Tool { name } | Program::Sibling { name }) =
-            (&self.tools, &spec.program)
-            && !allowed.contains(name)
-        {
-            warn!(program = %label, "program not on allowlist");
-            return Err(ExecError::NotAllowed { program: label });
-        }
-        let exe = spec
-            .program
-            .resolve()
-            .inspect_err(|e| warn!(error = %e, "resolve failed"))?;
+        let exe = self.vet(spec)?;
         let _permit = self.sem.acquire();
 
-        let mut cmd = Command::new(&exe);
-        cmd.args(&spec.args);
-        if let Some(kept) = env.resolve(std::env::vars_os()) {
-            cmd.env_clear().envs(kept);
-        }
-        if matches!(spec.program, Program::Pack { .. }) {
-            // frob:ticket 01M3ZX7VPGRERTZNVS5VR437JY
-            cmd.env("GIT_CONFIG_NOSYSTEM", "1");
-        }
-        cmd.envs(spec.env.iter().map(|(k, v)| (k, v)));
-        if let Some(cwd) = &spec.cwd {
-            cmd.current_dir(cwd);
-        }
+        let mut cmd = base_command(&exe, spec, env);
         if spec.capture || matches!(spec.program, Program::Pack { .. }) {
             cmd.stdin(Stdio::null())
                 .stdout(Stdio::piped())
@@ -255,6 +233,71 @@ impl Runner {
             duration,
         })
     }
+
+    /// Start `spec` detached and return its pid without waiting: stdin, stdout and stderr go to
+    /// the null device, the child leads its own process group (unix) so a terminal interrupt
+    /// aimed at the caller does not reach it, and neither the pool nor `spec.timeout` applies.
+    ///
+    /// The child is never reaped by this runner; it is meant for a short-lived caller that
+    /// exits soon after (a background refresh), where the OS reparents it.
+    ///
+    /// # Errors
+    /// [`ExecError::NotAllowed`] or [`ExecError::NotFound`] when the program cannot be used and
+    /// [`ExecError::Spawn`] when the OS refuses to start it.
+    // frob:ticket 01M5D5PZP5BZFRWT9W86STF8MV
+    pub fn spawn_detached(&self, spec: &Spec, env: &EnvPolicy) -> Result<u32, ExecError> {
+        let label = spec.program.label();
+        let span = tracing::info_span!("exec.spawn_detached", program = %label);
+        let _enter = span.enter();
+        let exe = self.vet(spec)?;
+        let mut cmd = base_command(&exe, spec, env);
+        cmd.stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            cmd.process_group(0);
+        }
+        let child = cmd.spawn().map_err(ExecError::Spawn)?;
+        record(&self.spawned);
+        let pid = child.id();
+        info!(program = %label, pid, "spawned detached");
+        Ok(pid)
+    }
+
+    /// Check `spec` against the tool allowlist and resolve its executable.
+    fn vet(&self, spec: &Spec) -> Result<PathBuf, ExecError> {
+        let label = spec.program.label();
+        if let (Some(allowed), Program::Tool { name } | Program::Sibling { name }) =
+            (&self.tools, &spec.program)
+            && !allowed.contains(name)
+        {
+            warn!(program = %label, "program not on allowlist");
+            return Err(ExecError::NotAllowed { program: label });
+        }
+        spec.program
+            .resolve()
+            .inspect_err(|e| warn!(error = %e, "resolve failed"))
+    }
+}
+
+/// Build the command for `spec`: args, environment per `env`, pack hardening and cwd.
+fn base_command(exe: &std::path::Path, spec: &Spec, env: &EnvPolicy) -> Command {
+    let mut cmd = Command::new(exe);
+    cmd.args(&spec.args);
+    if let Some(kept) = env.resolve(std::env::vars_os()) {
+        cmd.env_clear().envs(kept);
+    }
+    if matches!(spec.program, Program::Pack { .. }) {
+        // frob:ticket 01M3ZX7VPGRERTZNVS5VR437JY
+        cmd.env("GIT_CONFIG_NOSYSTEM", "1");
+    }
+    cmd.envs(spec.env.iter().map(|(k, v)| (k, v)));
+    if let Some(cwd) = &spec.cwd {
+        cmd.current_dir(cwd);
+    }
+    cmd
 }
 
 /// A pipe reader thread plus the bytes it has read so far.
