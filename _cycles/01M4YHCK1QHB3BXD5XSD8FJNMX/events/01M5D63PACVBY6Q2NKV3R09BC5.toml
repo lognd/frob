@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M5D5PZP5BZFRWT9W86STF8MV"
+committed = 1009
+text = "unblocks DT08 PROC001"
+capacity = 137
+at = "2026-10-20T17:35:23Z"
+actor = "lognd"
+rev = 1
