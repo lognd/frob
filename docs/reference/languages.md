@@ -12,6 +12,7 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 | `.cs` | csharp | F1 |
 | `.css` | css | F2 |
 | `.cts` | typescript | F3 |
+| `.dockerfile` | dockerfile | F2 |
 | `.htm` | html | F0 |
 | `.html` | html | F0 |
 | `.js` | typescript | F3 |
@@ -153,6 +154,38 @@ Fidelity F0; extensions `.html`, `.htm`.
 | test_items | NotApplicable | not-applicable |
 | imports | Gap | none |
 | expand | NotApplicable | not-applicable |
+| order | Gap | none |
+| project_model | Gap | none |
+
+## github-actions
+
+Fidelity F2.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | Gap | none |
+| effects | Gap | none |
+| test_items | Gap | none |
+| imports | Gap | none |
+| expand | Gap | none |
+| order | Gap | none |
+| project_model | Gap | none |
+
+## dockerfile
+
+Fidelity F2; extensions `.dockerfile`.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | Gap | none |
+| effects | Gap | none |
+| test_items | Gap | none |
+| imports | Gap | none |
+| expand | Gap | none |
 | order | Gap | none |
 | project_model | Gap | none |
 

@@ -1,0 +1,14 @@
+---
+source: crates/gob-symbols/tests/it/measured.rs
+expression: matrix_of(a)
+---
+dockerfile F2
+resolve_ref Gap none
+apply_targets Gap none
+visibility Gap none
+effects Gap none
+test_items Gap none
+imports Gap none
+expand Gap none
+order Gap none
+project_model Gap none
