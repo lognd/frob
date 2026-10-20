@@ -2,7 +2,8 @@
 id = "01M5C7AA29V08HTNZM0BA2A6ST"
 title = "Plan executor is 4.6x-63x slower than handwritten on B1 (target 1.3x)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
