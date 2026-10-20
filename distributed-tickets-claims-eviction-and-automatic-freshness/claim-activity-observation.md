@@ -8,8 +8,9 @@ points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T19:29:36Z"
+updated = "2026-10-20T19:32:06Z"
 idempotency_key = "dt-DT11"
+scope = ["crates/frob-worktree/src/activity.rs", "crates/frob-worktree/src/lib.rs", "docs/design/distributed-tickets.md", "changelog.d/01M5CW04TYF2SQ101BQB1BGNPJ.added.md"]
 
 [[links]]
 kind = "blocked-by"
