@@ -27,7 +27,7 @@ target = "01M3ZX7X3RQTTR7V8JFRN8TQEK"
 
 [[acceptance]]
 text = "Given a pack replacing a std rule and a finding only the shadow produces, when check runs, then Unresolved replaced-divergence is reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a pack replacing CAP004 without --allow-replace, when checked, then it is refused"
