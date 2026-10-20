@@ -44,6 +44,9 @@ pub struct ClaimsTable {
     /// Fractions of the window (each above 0 and below 1) at which the holder is warned.
     #[config(default = vec![0.5, 0.8])]
     pub warn_at: Vec<f64>,
+    /// Consecutive windows soft-only activity (touch, comment, empty commit) may keep a claim alive; 0 means soft activity never extends a claim.
+    #[config(default = 2)]
+    pub soft_max_windows: u32,
     /// Longest hold, in days, `frob claim hold` accepts.
     #[config(default = 30)]
     pub max_hold_days: u32,
@@ -82,6 +85,7 @@ pub struct ClaimWindows {
     expedite_days: u32,
     intangible_days: u32,
     warn_at: Vec<f64>,
+    soft_max_windows: u32,
     max_hold_days: u32,
     paused_max_days: u32,
 }
@@ -95,6 +99,7 @@ impl Default for ClaimWindows {
             expedite_days: 1,
             intangible_days: 7,
             warn_at: vec![0.5, 0.8],
+            soft_max_windows: 2,
             max_hold_days: 30,
             paused_max_days: 14,
         }
@@ -126,9 +131,16 @@ impl ClaimWindows {
             expedite_days: class.expedite,
             intangible_days: class.intangible,
             warn_at: claims.warn_at.clone(),
+            soft_max_windows: claims.soft_max_windows,
             max_hold_days: claims.max_hold_days,
             paused_max_days: claims.paused_max_days,
         })
+    }
+
+    /// How many consecutive windows soft-only activity may extend a claim (`[claims] soft_max_windows`).
+    #[must_use]
+    pub fn soft_max_windows(&self) -> u32 {
+        self.soft_max_windows
     }
 
     /// The longest hold in seconds (`[claims] max_hold_days`).

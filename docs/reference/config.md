@@ -62,6 +62,7 @@ Materialized: yes.
 | `idle_days` | `u32` | `3` | no | Calendar days a human claim may sit idle before it is evictable; 0 means never evict. |
 | `max_hold_days` | `u32` | `30` | no | Longest hold, in days, `frob claim hold` accepts. |
 | `paused_max_days` | `u32` | `14` | no | Longest stretch, in days, a blocked, review, train or CI pause stops the idle clock. |
+| `soft_max_windows` | `u32` | `2` | no | Consecutive windows soft-only activity (touch, comment, empty commit) may keep a claim alive; 0 means soft activity never extends a claim. |
 | `warn_at` | `Vec<f64>` | `[0.5, 0.8]` | no | Fractions of the window (each above 0 and below 1) at which the holder is warned. |
 
 ## `[claims.class]`
