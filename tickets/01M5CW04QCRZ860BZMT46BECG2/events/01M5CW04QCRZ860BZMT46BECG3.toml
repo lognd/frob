@@ -1,0 +1,16 @@
+kind = "create"
+title = "Publish the claim on work"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
+idempotency_key = "dt-DT10"
+body = "Create-only push of ticket/<handle>, lease events with clone id and agent label, unrecorded-claim detection, resume on another clone, loser flow. Offline: warn and proceed with an unpublished claim (D-5). Soft ~A2J8C05. See docs/design/distributed-tickets.md."
+at = "2026-10-20T14:38:42Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M5CW049SPSRGGP5ENQD7BPB3"
