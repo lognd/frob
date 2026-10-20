@@ -4,9 +4,10 @@ title = "docs/design/mirror.md: recreate section still says 'curl transport'; no
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T00:08:08Z"
-updated = "2026-10-20T00:08:08Z"
+updated = "2026-10-20T00:25:36Z"
 scope = ["docs/design/mirror.md"]
 +++
 
