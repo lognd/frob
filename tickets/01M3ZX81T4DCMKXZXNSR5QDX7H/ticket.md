@@ -2,13 +2,13 @@
 id = "01M3ZX81T4DCMKXZXNSR5QDX7H"
 title = "check --fix applies machine fixes within the ticket scope"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-03T03:35:00Z"
+updated = "2026-10-20T13:10:07Z"
 idempotency_key = "m2-diag-fix-scope"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/frob-check/src/fix.rs", "crates/frob-check/src/scope.rs"]
