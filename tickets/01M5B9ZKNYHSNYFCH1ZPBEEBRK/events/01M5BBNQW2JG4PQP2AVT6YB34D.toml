@@ -1,0 +1,107 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T00:34:09Z"
+digest = "704d6bf55f0c7cc9b8f1b995d1706ab8ac52bdffea5fb1de6eda0c9aac0a885a"
+exit_code = 0
+inline = """
+
+running 1 test
+test mirror_map::tests::shard_without_issue_is_unmapped_not_malformed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 77 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 47 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+     Running unittests src/lib.rs (target/debug/deps/frob_ledger-4bc6188fc36a200e)
+     Running tests/branch.rs (target/debug/deps/branch-8d92ff45d021f657)
+     Running tests/gen_by_id.rs (target/debug/deps/gen_by_id-29013e5188bf577e)
+     Running tests/gen_code_readme.rs (target/debug/deps/gen_code_readme-e2e56f01f2d90284)
+     Running tests/gen_epic.rs (target/debug/deps/gen_epic-6c99a01d5f910f57)
+     Running tests/gen_glossary.rs (target/debug/deps/gen_glossary-a8bfb0588aeb1dc0)
+     Running tests/gen_guide.rs (target/debug/deps/gen_guide-fab06bdc138127f6)
+     Running tests/gen_tour.rs (target/debug/deps/gen_tour-11a501002401639d)
+     Running tests/incremental.rs (target/debug/deps/incremental-1efc2341f07eedee)
+     Running tests/layout.rs (target/debug/deps/layout-737f73a3c301b381)
+     Running tests/ledger.rs (target/debug/deps/ledger-d442bc7f8154dcfb)
+     Running tests/no_private_commit.rs (target/debug/deps/no_private_commit-f9d2b3ac58e78b79)
+     Running tests/privacy.rs (target/debug/deps/privacy-d952a6a481d1f85d)
+     Running tests/redact.rs (target/debug/deps/redact-32d45306bb709f5a)
+     Running tests/scrub.rs (target/debug/deps/scrub-4ed40aec21c97485)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-ledger shard_without_issue_is_unmapped_not_malformed"
+size = 3033
+status = "measured"
+at = "2026-10-20T00:34:09Z"
+actor = "lognd"
+rev = 1

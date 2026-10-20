@@ -293,10 +293,16 @@ and in `frob mirror status`.
   404 ("may be invisible, not deleted"), a live issue and a moved one.
   The verb `frob mirror recreate <ticket> [--repo OWNER/NAME]` wires it
   to `BranchShardStore` (on the ledger ref, under `.mirror/map`) and
+<<<<<<< HEAD
   `GithubAdapter` over a `curl` transport. It needs `GH_TOKEN` or
   `GITHUB_TOKEN`, and the marker key in `FROB_MIRROR_KEY`; the key id,
   repository and bot login come from `[mirror] kid` (default `k1`),
   `repo` (default `origin`) and `bot_ids` (default the token's login).
+=======
+  `GithubAdapter` over the native `NativeTransport` (`ureq`/rustls). It needs `GH_TOKEN` or
+  `GITHUB_TOKEN`, and the marker key in `FROB_MIRROR_KEY` (id from
+  `FROB_MIRROR_KID`, default `k1`); the repository defaults to `origin`.
+>>>>>>> experimental
 - **Own writes.** A dedicated App identity (`[mirror] bot_ids`, by
   user id). Before each mutation the run journals (issue, field, value
   digest, run id); a history entry is "own" only if its actor is a bot
