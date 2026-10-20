@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
 updated = "2026-10-20T17:18:28Z"
 idempotency_key = "dt-DT06"
-scope = ["crates/gob-git/src/remote.rs", "crates/gob-git/src/ledger.rs", "crates/gob-git/src/lib.rs", "crates/frob-ledger/src/integrate.rs"]
+scope = ["crates/gob-git/src/remote.rs", "crates/gob-git/src/ledger.rs", "crates/gob-git/src/lib.rs", "crates/frob-ledger/src/integrate.rs", "crates/frob/src/refresh_cmd.rs"]
 
 [[links]]
 kind = "blocked-by"
