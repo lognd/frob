@@ -8,7 +8,7 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:13:00Z"
-updated = "2026-10-20T14:09:33Z"
+updated = "2026-10-20T14:19:14Z"
 scope = ["changelog.d/**", "crates/grimble-arch/**", "docs/reference/rules/README.md", "docs/reference/rules/VIS001.md"]
 
 [[acceptance]]
