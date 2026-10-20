@@ -2,12 +2,12 @@
 id = "01M5D5PZP5BZFRWT9W86STF8MV"
 title = "gob-exec: detached spawn API for background refresh"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T17:28:28Z"
-updated = "2026-10-20T17:35:23Z"
+updated = "2026-10-20T17:35:24Z"
 scope = ["crates/gob-exec/**"]
 +++
 
