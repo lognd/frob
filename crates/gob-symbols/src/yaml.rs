@@ -9,22 +9,38 @@
 //!   blank and comment lines excluded). Its Sig facet is the key name; its Body
 //!   facet is the exact text of that span, so any edit inside the block changes it.
 //! - Keys of sequence items, flow collections, block scalars and exotic keys
-//!   (quoted, with spaces or dots) are not units. No tree-sitter grammar is
-//!   involved: the scan is line based, which is all comment binding needs.
+//!   (quoted, with spaces or dots) are not units in the line scan.
+//!
+//! # Tree-sitter path (F2)
+//!
+//! When the `yaml` grammar is compiled in and the text parses without errors, the
+//! file is folded from the syntax tree instead of the line scan:
+//!
+//! - every block-sequence item is a `unit(key, impl)` named by its zero-based index
+//!   (`jobs.build.steps.0`), spanning from its `-`; the keys inside it nest under it,
+//!   so a directive above a `- uses:` step binds to that step alone.
+//! - an anchor (`&name`) on a mapping value or sequence item names that key or item
+//!   unit; an alias (`*name`) is a `Depends` reference from the unit holding it to the
+//!   unit carrying the nearest preceding anchor of that name.
+//! - on a parse error or a missing grammar the line scan above is used unchanged.
 
 // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 
 use std::sync::Arc;
 
 use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, ScopeGraph, TermError, reserved};
-use gob_languages::{Language, ParseLimits, UnresolvedReason, grammar_identity};
+use gob_languages::{
+    Language, ParseLimits, ParseResult, ParsedTree, UnresolvedReason, grammar_identity, parse,
+};
 
 use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
     ParseStatus,
 };
 use crate::fold::{Cx, base_file, file_root_spec};
+use crate::model::{RefKind, RefSite};
 use crate::pipeline::EXTRACTOR_VERSION;
+use crate::symref::Symref;
 use crate::view::{self, Naming};
 
 /// The YAML adapter.
@@ -238,7 +254,229 @@ fn fold_key(
     Ok(())
 }
 
+// frob:ticket 01M4MDH6NJXB6YK5NZFKC4NSBJ
+/// Folds `text` as YAML: from the syntax tree when it parses cleanly, else by line scan.
 pub(crate) fn fold_text(text: &str, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+    match parse(Language::Yaml, text, &ParseLimits::default()) {
+        ParseResult::Parsed(t) if !t.has_errors() => fold_tree(&t, input),
+        ParseResult::Parsed(_) => {
+            tracing::debug!(path = input.path, "yaml syntax errors; using the line scan");
+            fold_lines(text, input)
+        }
+        ParseResult::Unresolved(u) => {
+            tracing::debug!(path = input.path, reason = %u.reason, "yaml tree unavailable; using the line scan");
+            fold_lines(text, input)
+        }
+    }
+}
+
+/// An anchor definition: its name, byte offset and the unit it names.
+struct AnchorDef {
+    name: String,
+    at: usize,
+    unit: NodeId,
+}
+
+/// An alias use: the unit holding it (`None` for the file), its name and offset.
+struct AliasUse {
+    holder: Option<NodeId>,
+    name: String,
+    at: usize,
+}
+
+/// State of one tree fold.
+struct TreeFold<'a, 'c> {
+    cx: &'a mut Cx<'c>,
+    anchors: Vec<AnchorDef>,
+    aliases: Vec<AliasUse>,
+    /// Indexes into `aliases` not yet attributed to a unit.
+    loose: Vec<usize>,
+}
+
+/// The text of `n` in `text`.
+fn slice<'t>(text: &'t str, n: tree_sitter::Node<'_>) -> &'t str {
+    &text[n.start_byte()..n.end_byte()]
+}
+
+/// The anchor name on the direct children of `value` (`&name`), if any.
+fn anchor_of(text: &str, value: tree_sitter::Node<'_>) -> Option<String> {
+    let mut cur = value.walk();
+    let found = value.children(&mut cur).find(|c| c.kind() == "anchor");
+    found.map(|a| slice(text, a).trim_start_matches('&').to_owned())
+}
+
+/// The key text of a pair and whether it is a simple unit name.
+fn pair_key<'t>(text: &'t str, pair: tree_sitter::Node<'_>) -> Option<(&'t str, bool)> {
+    let raw = slice(text, pair.child_by_field_name("key")?).trim();
+    let simple = !raw.is_empty()
+        && raw
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+    Some((raw, simple))
+}
+
+impl TreeFold<'_, '_> {
+    /// Collect the units under `node` into `out`; aliases seen join `loose`.
+    fn walk(
+        &mut self,
+        text: &str,
+        node: tree_sitter::Node<'_>,
+        out: &mut Vec<NodeId>,
+    ) -> Result<(), TermError> {
+        match node.kind() {
+            "block_mapping_pair" => {
+                let named = pair_key(text, node).filter(|(_, simple)| *simple);
+                let value = node.child_by_field_name("value");
+                self.walk_unit(text, node, named.map(|(k, _)| k.to_owned()), value, out)
+            }
+            "block_sequence_item" => {
+                let mut index = 0;
+                let mut prev = node.prev_named_sibling();
+                while let Some(p) = prev {
+                    if p.kind() == "block_sequence_item" {
+                        index += 1;
+                    }
+                    prev = p.prev_named_sibling();
+                }
+                let value = node.named_child(0);
+                self.walk_unit(text, node, Some(index.to_string()), value, out)
+            }
+            "alias" => {
+                self.aliases.push(AliasUse {
+                    holder: None,
+                    name: slice(text, node).trim_start_matches('*').to_owned(),
+                    at: node.start_byte(),
+                });
+                self.loose.push(self.aliases.len() - 1);
+                Ok(())
+            }
+            _ => {
+                let mut cur = node.walk();
+                for c in node.named_children(&mut cur) {
+                    self.walk(text, c, out)?;
+                }
+                Ok(())
+            }
+        }
+    }
+
+    /// Fold `node` (a pair or item) as a unit named `name`, or pass its units up when unnamed.
+    fn walk_unit(
+        &mut self,
+        text: &str,
+        node: tree_sitter::Node<'_>,
+        name: Option<String>,
+        value: Option<tree_sitter::Node<'_>>,
+        out: &mut Vec<NodeId>,
+    ) -> Result<(), TermError> {
+        let mark = self.loose.len();
+        let mut nested = Vec::new();
+        let mut cur = node.walk();
+        for c in node.named_children(&mut cur) {
+            if node.kind() == "block_mapping_pair" && c.id() == pair_key_id(node) {
+                continue;
+            }
+            self.walk(text, c, &mut nested)?;
+        }
+        let Some(name) = name else {
+            out.extend(nested);
+            return Ok(());
+        };
+        let (start, end) = (node.start_byte(), node.end_byte());
+        let loc = self.cx.loc(start, end);
+        let key = self
+            .cx
+            .add(NodeSpec::new(Operator::lit("key", &name), loc.clone()), &[])?;
+        let sig = self.cx.add(
+            NodeSpec::new(Operator::group(GroupOrder::Sequence), loc.clone())
+                .attr(reserved::FACET, "sig"),
+            &[key],
+        )?;
+        let body = self.cx.add(
+            NodeSpec::new(Operator::lit("text", &text[start..end]), loc.clone()),
+            &[],
+        )?;
+        let mut children = vec![sig, body];
+        children.extend(nested);
+        let unit = self.cx.add(
+            NodeSpec::new(Operator::unit("key", "impl"), loc).named(&name),
+            &children,
+        )?;
+        for i in self.loose.split_off(mark) {
+            self.aliases[i].holder = Some(unit);
+        }
+        if let Some(anchor) = value.and_then(|v| anchor_of(text, v)) {
+            self.anchors.push(AnchorDef {
+                name: anchor,
+                at: start,
+                unit,
+            });
+        }
+        out.push(unit);
+        Ok(())
+    }
+}
+
+/// The node id of a pair's key child (skipped when folding the pair's value side).
+fn pair_key_id(pair: tree_sitter::Node<'_>) -> usize {
+    pair.child_by_field_name("key")
+        .map_or(usize::MAX, |k| k.id())
+}
+
+/// Fold a clean syntax tree (fidelity F2 units, anchors and aliases as references).
+fn fold_tree(tree: &ParsedTree, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+    let text: &str = &tree.text;
+    let mut cx = Cx::new(input.path, "yaml", text);
+    let mut tf = TreeFold {
+        cx: &mut cx,
+        anchors: Vec::new(),
+        aliases: Vec::new(),
+        loose: Vec::new(),
+    };
+    let mut units = Vec::new();
+    tf.walk(text, tree.root(), &mut units)?;
+    let (anchors, aliases) = (tf.anchors, tf.aliases);
+    let root = cx.add(file_root_spec(&cx, input.size as usize), &units)?;
+    let term = cx.b.finish(root)?;
+    let scopes = ScopeGraph::from_term(&term);
+    let v = view::build(&term, input.path, Naming::Model);
+    let mut file = base_file(input, "yaml");
+    file.fidelity = Fidelity::F1;
+    file.parse_status = ParseStatus::Complete;
+    for a in &aliases {
+        let target = anchors
+            .iter()
+            .filter(|d| d.name == a.name && d.at <= a.at)
+            .max_by_key(|d| d.at)
+            .and_then(|d| v.by_node.get(&d.unit));
+        let Some(target) = target else {
+            tracing::trace!(alias = %a.name, "alias without a preceding anchored unit");
+            continue;
+        };
+        let from = a
+            .holder
+            .and_then(|h| v.by_node.get(&h).cloned())
+            .unwrap_or_else(|| Symref::file(input.path));
+        file.refs.push(RefSite {
+            from,
+            name: target.to_string(),
+            qualifier: None,
+            kind: RefKind::Depends,
+        });
+    }
+    file.symbols = v.symbols;
+    file.extras = v.extras;
+    tracing::debug!(
+        path = input.path,
+        keys = file.symbols.len(),
+        refs = file.refs.len(),
+        "yaml tree folded"
+    );
+    Ok(Folded { term, scopes, file })
+}
+
+/// Fold by the line scan (fidelity F1), the fallback when no clean tree is available.
+fn fold_lines(text: &str, input: &FileInput<'_>) -> Result<Folded, FoldError> {
     let mut cx = Cx::new(input.path, "yaml", text);
     let keys = scan_keys(text);
     let mut units = Vec::new();
@@ -289,5 +527,54 @@ mod tests {
         let t = "steps:\n  - name: a\n    run: |\n      x: y\n  - uses: b\nnext: 1\n";
         let k: Vec<String> = scan_keys(t).into_iter().map(|k| k.name).collect();
         assert_eq!(k, ["steps", "next"]);
+    }
+
+    fn fold(text: &str) -> crate::model::FileSymbols {
+        let size = u32::try_from(text.len()).expect("small");
+        let input = FileInput {
+            path: "ci.yml",
+            digest: "d",
+            size,
+        };
+        fold_text(text, &input).expect("fold").file
+    }
+
+    // frob:ticket 01M4MDH6NJXB6YK5NZFKC4NSBJ
+    // frob:tests crates/gob-symbols/src/yaml.rs::fold_text
+    #[test]
+    fn each_sequence_item_is_its_own_unit() {
+        let t = "steps:\n  - uses: a@v1\n  - uses: b@v1\n";
+        let f = fold(t);
+        let refs: Vec<String> = f.symbols.iter().map(|s| s.symref.to_string()).collect();
+        assert!(refs.iter().any(|r| r.ends_with("steps.0")), "{refs:?}");
+        assert!(refs.iter().any(|r| r.ends_with("steps.1.uses")), "{refs:?}");
+        let first = f
+            .symbols
+            .iter()
+            .find(|s| s.symref.to_string().ends_with("steps.0"))
+            .expect("item");
+        let (a, b) = (u32::from(first.span.start()), u32::from(first.span.end()));
+        assert_eq!(&t[a as usize..b as usize], "- uses: a@v1");
+    }
+
+    // frob:ticket 01M4MDH6NJXB6YK5NZFKC4NSBJ
+    // frob:tests crates/gob-symbols/src/yaml.rs::fold_text
+    #[test]
+    fn an_alias_references_the_anchored_key_unit() {
+        let t = "base: &defaults\n  retries: 3\nprod:\n  <<: *defaults\n  host: x\n";
+        let f = fold(t);
+        assert_eq!(f.refs.len(), 1, "{:?}", f.refs);
+        let r = &f.refs[0];
+        assert!(r.name.ends_with("base"), "{}", r.name);
+        assert!(r.from.to_string().ends_with("prod"), "{}", r.from);
+        assert_eq!(r.kind, RefKind::Depends);
+    }
+
+    // frob:ticket 01M4MDH6NJXB6YK5NZFKC4NSBJ
+    // frob:tests crates/gob-symbols/src/yaml.rs::fold_text
+    #[test]
+    fn broken_yaml_falls_back_to_the_line_scan() {
+        let f = fold("a:\n  b: [1\nc: 2\n");
+        assert!(!f.symbols.is_empty());
     }
 }

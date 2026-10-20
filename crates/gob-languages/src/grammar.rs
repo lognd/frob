@@ -31,6 +31,8 @@ pub(crate) fn ts_language(language: Language) -> Option<tree_sitter::Language> {
         Language::Css => Some(tree_sitter_css::LANGUAGE.into()),
         #[cfg(feature = "html")]
         Language::Html => Some(tree_sitter_html::LANGUAGE.into()),
+        #[cfg(feature = "yaml")]
+        Language::Yaml => Some(tree_sitter_yaml::LANGUAGE.into()),
         #[allow(unreachable_patterns)]
         _ => None,
     }
@@ -38,13 +40,14 @@ pub(crate) fn ts_language(language: Language) -> Option<tree_sitter::Language> {
 
 // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 /// Returns `(grammar crate name, exact pinned version)` for `language`, or
-/// `None` for a language scanned without a grammar (YAML).
+/// `None` for a language scanned without a grammar (Grimble).
 pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static str)> {
     match language {
         Language::Rust => Some(("tree-sitter-rust", "0.24.2")),
         Language::Markdown => Some(("tree-sitter-md", "0.5.3")),
         Language::Toml => Some(("tree-sitter-toml-ng", "0.7.0")),
-        Language::Yaml | Language::Grmb => None,
+        Language::Yaml => Some(("tree-sitter-yaml", "0.7.2")),
+        Language::Grmb => None,
         Language::Python => Some(("tree-sitter-python", "0.25.0")),
         Language::CSharp => Some(("tree-sitter-c-sharp", "0.23.5")),
         Language::TypeScript | Language::Tsx => Some(("tree-sitter-typescript", "0.23.2")),

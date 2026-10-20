@@ -206,6 +206,84 @@ fn a_yaml_accept_above_another_key_does_not_suppress_the_finding() {
     );
 }
 
+/// A workflow of two `uses:` steps; the first covers zizmor fixture offsets 305..324.
+fn stepped_workflow(above_first: &str, above_second: &str) -> String {
+    let mut text = String::from("name: ci\njobs:\n  build:\n    steps:\n");
+    text.push_str(above_first);
+    text.push_str("      - uses: actions/checkout@v3\n");
+    while text.len() < 330 {
+        text.push_str("        with: value\n");
+    }
+    text.push_str(above_second);
+    text.push_str("      - uses: actions/cache@v3\n");
+    while text.len() < 450 {
+        text.push_str("        with: value\n");
+    }
+    text
+}
+
+// frob:ticket 01M4MDH6NJXB6YK5NZFKC4NSBJ
+// frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
+#[test]
+fn a_step_accept_suppresses_only_that_steps_finding() {
+    if !gob_exec::require_sh("a_step_accept_suppresses_only_that_steps_finding") {
+        return;
+    }
+    let dir = tempfile::tempdir().expect("tempdir");
+    let accept = "      # frob:accept CI001 because=\"pinned by dependabot\"\n";
+    write(
+        dir.path(),
+        ".github/workflows/ci.yml",
+        &stepped_workflow(accept, ""),
+    );
+    write(dir.path(), ".github/dependabot.yml", &workflow(""));
+    let toml = stage(dir.path(), ZIZMOR, 11, "zizmor-json-v1", "");
+    write(dir.path(), "frob.toml", &toml);
+    let report = run(dir.path(), &options()).expect("run");
+    assert!(
+        !rules(&report).contains(&"CI001".to_owned()),
+        "{:?}",
+        report.findings
+    );
+    assert!(
+        report
+            .suppressed
+            .iter()
+            .any(|(f, _)| f.rule.as_str() == "CI001")
+    );
+}
+
+// frob:ticket 01M4MDH6NJXB6YK5NZFKC4NSBJ
+// frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
+#[test]
+fn a_sibling_step_accept_does_not_suppress_the_finding() {
+    if !gob_exec::require_sh("a_sibling_step_accept_does_not_suppress_the_finding") {
+        return;
+    }
+    let dir = tempfile::tempdir().expect("tempdir");
+    let accept = "      # frob:accept CI001 because=\"pinned by dependabot\"\n";
+    write(
+        dir.path(),
+        ".github/workflows/ci.yml",
+        &stepped_workflow("", accept),
+    );
+    write(dir.path(), ".github/dependabot.yml", &workflow(""));
+    let toml = stage(dir.path(), ZIZMOR, 11, "zizmor-json-v1", "");
+    write(dir.path(), "frob.toml", &toml);
+    let report = run(dir.path(), &options()).expect("run");
+    assert!(
+        rules(&report).contains(&"CI001".to_owned()),
+        "{:?}",
+        report.findings
+    );
+    assert!(
+        report
+            .suppressed
+            .iter()
+            .all(|(f, _)| f.rule.as_str() != "CI001")
+    );
+}
+
 #[test]
 fn actionlint_findings_map_to_ci014_and_configured_labels_are_dropped() {
     if !gob_exec::require_sh("actionlint_findings_map_to_ci014_and_configured_labels_are_dropped") {
