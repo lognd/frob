@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T08:37:34Z"
-updated = "2026-10-20T09:52:37Z"
+updated = "2026-10-20T09:55:04Z"
 scope = ["crates/frob-check/src/**", "crates/frob-check/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
