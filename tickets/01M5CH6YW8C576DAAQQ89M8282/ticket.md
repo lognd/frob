@@ -4,9 +4,10 @@ title = "Register GitHub Actions and Dockerfile adapters in gob-caps and gob-wal
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T11:30:11Z"
-updated = "2026-10-20T11:30:11Z"
+updated = "2026-10-20T13:10:10Z"
 scope = ["crates/gob-caps/**"]
 +++
 
