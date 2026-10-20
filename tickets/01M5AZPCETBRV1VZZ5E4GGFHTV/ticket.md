@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:04:48Z"
-updated = "2026-10-20T02:08:27Z"
-scope = ["crates/frob-check/tests/mdtest/**", "crates/*/tests/mdtest/**", "crates/frob-check/tests/corpus.rs"]
+updated = "2026-10-20T02:12:30Z"
+scope = ["crates/frob-check/tests/mdtest/**", "crates/*/tests/mdtest/**", "crates/frob-check/tests/corpus.rs", "docs/reference/rules/TICK010.md"]
 
 [[acceptance]]
 text = "TICK010 has a polarity-shaped unresolved corpus case and rule_coverage passes for it"
