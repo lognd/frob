@@ -2,7 +2,8 @@
 id = "01M3Z71542Y6NZG3G8A83EFRF2"
 title = "GitHub Actions and Dockerfile adapters in gob-languages and gob-symbols"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
