@@ -1,0 +1,28 @@
+kind = "evidence"
+captured_at = "2026-10-20T21:17:06Z"
+digest = "a850e7bfe91ac7cce8e576836c99b0d7fe90520e0853f913bb5e7995dd70496d"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9ee5ef3f-a03b-42c4-b425-1d8d898a6155 with nextest profile: default
+    Starting 4 tests across 17 binaries (228 tests skipped)
+        PASS [   0.005s] frob-ledger claim_agent::tests::touching_agent_is_evictable_after_soft_cap
+        PASS [   0.005s] frob-ledger claim_agent::tests::rekind_switches_to_human_window
+        PASS [   0.006s] frob-ledger claim_agent::tests::soft_activity_is_capped_by_windows
+        PASS [   0.006s] frob-ledger claim_agent::tests::agent_label_selects_agent_window
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 4 tests run: 4 passed, 228 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger claim_agent::"
+size = 962
+status = "measured"
+test_count = 4
+tests_digest = "cfca27803887a7a39f1d48c74c468dd3b83b7c0f962a3fd7fceab4a19afb7372"
+at = "2026-10-20T21:17:06Z"
+actor = "lognd"
+rev = 1
