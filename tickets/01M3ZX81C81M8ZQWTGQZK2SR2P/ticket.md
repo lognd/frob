@@ -2,7 +2,8 @@
 id = "01M3ZX81C81M8ZQWTGQZK2SR2P"
 title = "doctor and a TICK rule check ledger-branch protection through the hosting API"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
