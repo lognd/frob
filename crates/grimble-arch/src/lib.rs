@@ -1,8 +1,8 @@
-//! The architecture rules CYCLE001, LARGE001 and DEAD001 over the symbol graph (design:
+//! The architecture rules CYCLE001, LARGE001, DEAD001 and VIS001 over the symbol graph (design:
 //! `rules.md` repo-scope family, ticket G10).
 //!
 //! [`analyze`] reads one [`gob_symbols::SymbolGraph`] and returns every verdict as an
-//! [`ArchFinding`]; the product converts them to its own findings. The three rules never run one
+//! [`ArchFinding`]; the product converts them to its own findings. The four rules never run one
 //! by one: they are declared with `#[rule]` ([`rules`]) and staged, like the SYS rules.
 //!
 //! | Rule | Polarity | Fires | Unresolved |
@@ -10,6 +10,7 @@
 //! | `CYCLE001` | Pc | a cycle of Must dependency edges (import, call, reference) between crates (files outside any crate) | a cycle that needs a May edge |
 //! | `LARGE001` | Pn | a function, method or type longer than `large_lines` | never (a size is exact) |
 //! | `DEAD001` | P- | a private function or method no edge reaches | only May edges reach it, or an Unknown edge spells its name |
+//! | `VIS001` | P- | a `pub` Rust free function outside the public API that no other package reaches | only a May edge reaches it from outside, or an Unknown edge from another package spells its name |
 //!
 //! # Known limits
 //!
@@ -17,6 +18,8 @@
 //! - `DEAD001` judges functions and methods only: the graph has no edge for a use in a type
 //!   position, so a private type could look dead while it is not. A dynamic call that spells no
 //!   name (`getattr(x, name)()`) is not matched to any unit.
+//! - `VIS001` judges `pub` free functions in Rust files only (a type used in a type position has
+//!   no edge), and the public API is the graph's `pub` chain plus `pub use` re-exports.
 //! - The pass reads one graph; nothing is cached between runs.
 
 // frob:ticket 01M3Z7141TW2H3HXJRK1QBHP7T
@@ -27,6 +30,7 @@ mod finding;
 pub mod host;
 mod large;
 pub mod rules;
+mod vis;
 
 use std::collections::BTreeMap;
 
@@ -40,6 +44,9 @@ pub const CYCLE: &str = "CYCLE001";
 pub const LARGE: &str = "LARGE001";
 /// Rule id of the dead unit rule.
 pub const DEAD: &str = "DEAD001";
+
+/// Rule id of the visibility wider than its uses rule.
+pub const VIS: &str = "VIS001";
 
 /// Everything the architecture pass reads.
 pub struct ArchInput<'a> {
@@ -56,15 +63,15 @@ pub struct ArchInput<'a> {
 /// What the architecture pass found and examined.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ArchReport {
-    /// Findings of the three rules, sorted by file, rule and anchor.
+    /// Findings of the four rules, sorted by file, rule and anchor.
     pub findings: Vec<ArchFinding>,
-    /// Subjects examined per rule (nodes, sized units, private functions); a rule that is off has none.
+    /// Subjects examined per rule (nodes, sized units, private functions, `pub` functions); a rule that is off has none.
     pub subjects: BTreeMap<&'static str, usize>,
     /// Rules whose whole scope is absent here (rule id to the reason), so zero subjects is not a gap.
     pub not_applicable: BTreeMap<&'static str, String>,
 }
 
-/// Run `CYCLE001`, `LARGE001` and `DEAD001` over `input`.
+/// Run `CYCLE001`, `LARGE001`, `DEAD001` and `VIS001` over `input`.
 pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     let mut report = ArchReport::default();
     let (findings, nodes) = cycle::check(input.graph, input.crates);
@@ -72,7 +79,7 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     report.findings.extend(findings);
     if nodes == 0 {
         tracing::debug!("no source units in the walk; architecture rules do not apply");
-        for id in [CYCLE, LARGE, DEAD] {
+        for id in [CYCLE, LARGE, DEAD, VIS] {
             report
                 .not_applicable
                 .insert(id, "no source files in the walk".to_owned());
@@ -87,6 +94,9 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     }
     let (findings, candidates) = dead::check(input.graph);
     report.subjects.insert(DEAD, candidates);
+    report.findings.extend(findings);
+    let (findings, candidates) = vis::check(input.graph, input.crates);
+    report.subjects.insert(VIS, candidates);
     report.findings.extend(findings);
     report
         .findings

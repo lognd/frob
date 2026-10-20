@@ -1,0 +1,18 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T13:57:19Z"
+digest = "e30e09f5567e753a2d36cb78b3348829eeb8821eec87ee8f6c319c3b7b1d2a00"
+exit_code = 101
+inline = """
+error: package ID specification `frob` did not match any packages
+
+help: a package with a similar name exists: `glob`
+"""
+passed = false
+provider = "command"
+ref = "cargo test -p frob teach_mode_comes_from_seen_toml_and_ui_teach"
+size = 118
+status = "measured"
+at = "2026-10-20T13:57:19Z"
+actor = "lognd"
+rev = 1

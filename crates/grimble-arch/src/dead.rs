@@ -22,7 +22,7 @@ fn within(inner: &Symref, outer: &Symref) -> bool {
 }
 
 /// The last segment of a spelled callee (`a::b`, `a.b`).
-fn last_segment(name: &str) -> &str {
+pub(crate) fn last_segment(name: &str) -> &str {
     name.rsplit([':', '.']).next().unwrap_or(name)
 }
 

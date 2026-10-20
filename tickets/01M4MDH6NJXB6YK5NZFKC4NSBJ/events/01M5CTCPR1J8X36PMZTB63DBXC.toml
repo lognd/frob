@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-20T14:09:57Z"
+digest = "59479eb2d1072fc5a926b1ebfc1549ad05367851204d34f2f5207b62c412b2e5"
+exit_code = 0
+inline = """
+
+running 1 test
+test yaml::tests::an_alias_references_the_anchored_key_unit ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 67 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 212 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 38.97s
+     Running unittests src/lib.rs (target/debug/deps/gob_symbols-def33d4efd96bc36)
+     Running tests/it/main.rs (target/debug/deps/it-cd1a6a14317af3b0)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-symbols an_alias_references_the_anchored_key_unit"
+size = 576
+status = "measured"
+at = "2026-10-20T14:09:57Z"
+actor = "lognd"
+rev = 1
