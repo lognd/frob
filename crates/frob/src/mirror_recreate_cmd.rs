@@ -9,6 +9,7 @@
 
 // frob:ticket 01M4052V7BG4YBHSW863YZEJ9X
 // frob:ticket 01M5AREAW91T16PSWFS1KH6CCV
+// frob:ticket 01M5BA1W8S9BW9Z47AV2ZKVEX0
 
 use std::collections::BTreeSet;
 use std::fmt;
@@ -32,9 +33,10 @@ use schemars::JsonSchema;
 use serde::Serialize;
 use serde_json::Value;
 
+use crate::config::FrobConfig;
 use crate::mirror_cmd::facts_of;
 use crate::ticket::{cli_err, open, resolve};
-use crate::workspace::Located;
+use crate::workspace::{Located, config_refusal};
 
 use frob_mirror::adapter::{AdapterError, AdapterResult, IssueRef, IssueState, TrackerAdapter};
 use frob_mirror::blind::{Disposition, classify};
@@ -157,10 +159,6 @@ pub fn recreate<S: ShardStore, A: TrackerAdapter>(
 
 /// Environment variable holding the 64-hex marker signing key.
 const KEY_VAR: &str = "FROB_MIRROR_KEY";
-/// Environment variable naming the marker key id; `DEFAULT_KID` when unset.
-const KID_VAR: &str = "FROB_MIRROR_KID";
-/// Marker key id used when `FROB_MIRROR_KID` is unset.
-const DEFAULT_KID: &str = "k1";
 /// Token variables, first set one wins.
 const TOKEN_VARS: [&str; 2] = ["GH_TOKEN", "GITHUB_TOKEN"];
 /// Refusal code when a person is not at a terminal.
@@ -212,6 +210,28 @@ fn parse_remote(url: &str) -> Option<(String, String)> {
     let (owner, name) = tail.split_once('/')?;
     (!owner.is_empty() && !name.is_empty() && !name.contains('/'))
         .then(|| (owner.to_owned(), name.to_owned()))
+}
+
+/// The repository to recreate in: the `--repo` flag, else `[mirror] repo`, else the remote URL.
+fn resolve_repo(flag: Option<&str>, cfg: &str, remote: &str) -> Option<(String, String)> {
+    let chosen = flag
+        .filter(|r| !r.is_empty())
+        .or(Some(cfg).filter(|r| !r.is_empty()));
+    match chosen {
+        Some(r) => parse_remote(&format!("github.com/{r}")),
+        None => parse_remote(remote),
+    }
+}
+
+/// The login whose issues are listed: the first `[mirror] bot_ids` entry, else the token's login.
+fn resolve_bot(
+    bot_ids: &[String],
+    token_login: impl FnOnce() -> Result<String, CliError>,
+) -> Result<String, CliError> {
+    match bot_ids.first() {
+        Some(b) => Ok(b.clone()),
+        None => token_login(),
+    }
 }
 
 /// Percent-encode a query component.
@@ -328,13 +348,13 @@ impl Command for MirrorRecreate {
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
         let view = ledger.show(id).map_err(cli_err)?;
-        let (repo, _) = Located::discover(&ctx.cwd).into_repo()?;
+        let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
         let remote = repo.remote_url("origin").unwrap_or_default();
-        let (owner, name) = match &self.repo {
-            Some(r) => parse_remote(&format!("github.com/{r}")),
-            None => parse_remote(&remote),
-        }
-        .ok_or_else(|| refuse("no GitHub repository: pass --repo OWNER/NAME"))?;
+        let cfg = FrobConfig::load(&root)
+            .map_err(|e| config_refusal(&e))?
+            .mirror;
+        let (owner, name) = resolve_repo(self.repo.as_deref(), &cfg.repo, &remote)
+            .ok_or_else(|| refuse("no GitHub repository: pass --repo OWNER/NAME"))?;
         let token = TOKEN_VARS
             .iter()
             .find_map(|v| std::env::var(v).ok().filter(|t| !t.is_empty()))
@@ -347,9 +367,10 @@ impl Command for MirrorRecreate {
             "node_id",
             "repository node id",
         )?;
-        let bot = field(&get_json(&http, "/user")?, "login", "token login")?;
-        let kid = std::env::var(KID_VAR).unwrap_or_else(|_| DEFAULT_KID.to_owned());
-        let keyring = Keyring::from_env(&kid, KEY_VAR, &[])
+        let bot = resolve_bot(&cfg.bot_ids, || {
+            field(&get_json(&http, "/user")?, "login", "token login")
+        })?;
+        let keyring = Keyring::from_env(&cfg.kid, KEY_VAR, &[])
             .map_err(|e| refuse(format!("marker key: {e}")))?;
 
         let facts = facts_of(&ledger, &view, remote)?;
@@ -662,5 +683,23 @@ mod tests {
         // frob:tests crates/frob/src/mirror_recreate_cmd.rs::gate
         assert!(gate(false, false, |_| None).is_err());
         assert!(gate(true, true, |_| None).is_ok());
+    }
+
+    #[test]
+    fn repo_prefers_flag_then_config_then_remote() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::resolve_repo
+        let remote = "https://github.com/r/remote.git";
+        let got = |f, c| resolve_repo(f, c, remote);
+        assert_eq!(got(Some("f/x"), "c/y"), Some(("f".into(), "x".into())));
+        assert_eq!(got(None, "c/y"), Some(("c".into(), "y".into())));
+        assert_eq!(got(None, ""), Some(("r".into(), "remote".into())));
+    }
+
+    #[test]
+    fn bot_comes_from_config_before_the_token() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::resolve_bot
+        let ids = vec!["cfgbot".to_owned()];
+        assert_eq!(resolve_bot(&ids, || panic!("no lookup")).unwrap(), "cfgbot");
+        assert_eq!(resolve_bot(&[], || Ok("tok".into())).unwrap(), "tok");
     }
 }
