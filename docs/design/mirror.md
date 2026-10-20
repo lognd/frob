@@ -508,6 +508,15 @@ and never changes the exit status. Accepting a proposal is a separate step.
   read access): `[mirror] exclude` and redaction apply before the first
   publish; evidence is published as verdicts and links, never
   transcripts.
+- Schema checks run before any write. `github::schema::validate` compares
+  the mapping with the repository's labels, issue types and project fields
+  and fails once with a single MIR001 `schema-missing` diagnostic listing
+  every missing item and its remedy. `project_field_access` makes `Status`
+  the only writable project field. `inventory::reconcile` compares the
+  stored id-to-name inventory of labels, milestones and issue types with a
+  fresh read; a rename or removal is recorded once as a `Fidelity::Gap`
+  and reconciling again reports no change. Neither is wired into a run
+  path yet.
 - One managed label (`frob:managed`), not one label per ULID. Projects
   fields are written only with an App that has project access, and
   only status is reconciled; other project fields are read-time only.
