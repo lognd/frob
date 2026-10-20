@@ -2,12 +2,12 @@
 id = "01M5BJFARQ1896RYMRW3WZ8JB3"
 title = "Mark lexical rules needs = Lexical and add their opaque_fire island cases"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T02:32:59Z"
-updated = "2026-10-20T02:47:21Z"
+updated = "2026-10-20T02:47:22Z"
 scope = ["crates/*/src/rules/**", "crates/gob-mdtest/coverage-allowlist.toml"]
 +++
 
