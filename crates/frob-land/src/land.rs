@@ -30,7 +30,7 @@ use frob_ledger::model::Category;
 use frob_ledger::model::CommentSubtype;
 use frob_ledger::ops::TicketView;
 use frob_ledger::{Ledger, RefMode, TicketId};
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
 use crate::base_ci;
@@ -1179,7 +1179,7 @@ fn flaky_refusal(new: &[ratchet::FindingNote], handle: &str) -> LandError {
             RefusalClass::GuardRetryByWaiting,
             format!("tool stage(s) {names} failed then passed on an immediate rerun (flaky)"),
         )
-        .with_remedy(format!("frob land {handle}")),
+        .with_command(RemedyCommand::new("frob", "land").arg(handle)),
     )
 }
 
@@ -1275,7 +1275,7 @@ fn refuse(
                 listed.join("; ")
             ),
         )
-        .with_remedy(format!("frob check --ticket {handle}")),
+        .with_command(RemedyCommand::new("frob", "check").flag("ticket", handle)),
     )
 }
 
@@ -1339,8 +1339,11 @@ impl Publish<'_> {
             ),
         };
         LandError::Refused(
-            Refusal::new(CODE_STALE, RefusalClass::GuardRetryByWaiting, message)
-                .with_remedy(format!("frob land {} --wait <secs>", self.handle)),
+            Refusal::new(CODE_STALE, RefusalClass::GuardRetryByWaiting, message).with_command(
+                RemedyCommand::new("frob", "land")
+                    .arg(self.handle)
+                    .flag("wait", "<secs>"),
+            ),
         )
     }
 
