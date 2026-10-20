@@ -7,9 +7,13 @@
 
 // frob:ticket 01M5CW046DKVK5QSJR8TMEN0F2
 // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+// frob:ticket 01M5CW04D5QJCJ5S72V8PE22M6
+
+mod freshness;
 
 use std::time::Duration;
 
+use self::freshness::{FreshState, Notice, Signals, Thresholds, assess};
 use frob_ledger::Ledger;
 use frob_ledger::objects::integrate::Integration;
 use gob_git::{MergeOutcome, RemoteRun, Repo};
@@ -78,6 +82,12 @@ pub struct RefreshReport {
     pub base_sync: String,
     /// Paths the ledger union could not resolve.
     pub conflicts: Vec<String>,
+    /// Seconds since the last probe; `None` when never probed or local-only.
+    pub age_secs: Option<i64>,
+    /// How the cached view relates to the remote: `fresh`, `stale`, `degraded`, `unknown` or `local-only`.
+    pub freshness: FreshState,
+    /// Ranked `W-SYNC-*` / `E-SYNC-*` notices, highest first; also in the envelope warnings.
+    pub notices: Vec<Notice>,
 }
 
 /// Longest a fetch or push may run before it is killed (nothing changes when it is).
@@ -114,7 +124,16 @@ impl Command for Refresh {
             } else {
                 state.status_line(now, cfg.sync.ttl_secs)
             };
-            return Ok(render(report(&state, status, "status", false)));
+            let has_remote = repo.remote_url(&cfg.sync.remote).is_some();
+            let out = render(report(&state, status, "status", false));
+            return Ok(with_freshness(
+                out,
+                &state,
+                has_remote,
+                Signals::default(),
+                now,
+                cfg.sync.ttl_secs,
+            ));
         }
         let ledger = cfg.ledger();
         let ledger_branch = (ledger.mode == RefMode::Orphan).then_some(ledger.branch.as_str());
@@ -143,7 +162,20 @@ impl Command for Refresh {
             };
             sync(&ledger, &plan, &mut out.data)?;
         }
-        Ok(out)
+        let signals = Signals {
+            diverged: out.data.base_sync == "diverged",
+            ledger_conflict: false,
+            base_blocked: out.data.base_sync == "skipped-local-changes",
+        };
+        let has_remote = done.outcome != ProbeOutcome::LocalOnly;
+        Ok(with_freshness(
+            out,
+            &done.state,
+            has_remote,
+            signals,
+            now,
+            cfg.sync.ttl_secs,
+        ))
     }
 }
 
@@ -399,7 +431,33 @@ fn report(state: &RefreshState, status: String, outcome: &str, changed: bool) ->
         pushed: false,
         base_sync: "none".to_owned(),
         conflicts: Vec::new(),
+        age_secs: None,
+        freshness: FreshState::Unknown,
+        notices: Vec::new(),
     }
+}
+
+/// Fill the freshness fields of `out` from the cache at `now` and put the ranked notices in its warnings.
+fn with_freshness(
+    mut out: Payload<RefreshReport>,
+    state: &RefreshState,
+    has_remote: bool,
+    signals: Signals,
+    now: i64,
+    ttl_secs: u32,
+) -> Payload<RefreshReport> {
+    let fresh = assess(
+        state,
+        has_remote,
+        signals,
+        now,
+        Thresholds::with_ttl(ttl_secs),
+    );
+    out.warnings.extend(fresh.messages());
+    out.data.age_secs = fresh.age_secs;
+    out.data.freshness = fresh.state;
+    out.data.notices = fresh.notices;
+    out
 }
 
 /// The payload whose rendered text is the one status line.

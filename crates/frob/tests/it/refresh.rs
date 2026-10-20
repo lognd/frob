@@ -169,3 +169,48 @@ fn refresh_reports_an_ahead_base_without_failing() {
     assert_eq!(v["data"]["pushed"], false);
     assert_eq!(v["data"]["ledger"], "none");
 }
+
+// frob:ticket 01M5CW04D5QJCJ5S72V8PE22M6
+// frob:tests crates/frob/src/refresh_cmd.rs::Refresh
+#[test]
+fn status_reports_age_and_ranked_stale_notices() {
+    let (_origin, clone) = clone_with_origin();
+    let dir = clone.path().join(".git").join("frob");
+    std::fs::create_dir_all(&dir).expect("mkdir");
+    std::fs::write(
+        dir.join("refresh.toml"),
+        "probed_at = 1\nclass = \"ok\"\nremote = \"origin\"\nbase = \"main\"\nfailures = 0\nnext_attempt_at = 0\ndetail = \"\"\n[oids]\n",
+    )
+    .expect("state");
+    let (code, v) = frob(clone.path(), &["refresh", "--status"]);
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["data"]["freshness"], "stale", "{v}");
+    assert!(v["data"]["age_secs"].as_i64().expect("age") > 86_400, "{v}");
+    let codes: Vec<&str> = v["data"]["notices"]
+        .as_array()
+        .expect("notices")
+        .iter()
+        .map(|n| n["code"].as_str().expect("code"))
+        .collect();
+    assert_eq!(codes, ["W-SYNC-STALE", "E-SYNC-STALE"], "{v}");
+    let warnings = v["warnings"].as_array().expect("warnings");
+    assert_eq!(warnings.len(), 2, "{v}");
+    assert!(
+        warnings[0]
+            .as_str()
+            .expect("w")
+            .starts_with("W-SYNC-STALE:")
+    );
+}
+
+// frob:ticket 01M5CW04D5QJCJ5S72V8PE22M6
+// frob:tests crates/frob/src/refresh_cmd.rs::Refresh
+#[test]
+fn fresh_probe_reports_age_zero_and_no_warnings() {
+    let (_origin, clone) = clone_with_origin();
+    let (code, v) = frob(clone.path(), &["refresh"]);
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["data"]["freshness"], "fresh", "{v}");
+    assert!(v["data"]["age_secs"].as_i64().expect("age") < 60, "{v}");
+    assert_eq!(v["warnings"].as_array().map_or(0, Vec::len), 0, "{v}");
+}
