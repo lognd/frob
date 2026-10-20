@@ -1,0 +1,1 @@
+`frob work` publishes the claim: a create-only push of `ticket/<handle>` at the base tip, refusing with `E-CLAIM-LOST` when another clone already holds it and warning `W-CLAIM-UNPUBLISHED` (then proceeding) when the remote is unreachable.

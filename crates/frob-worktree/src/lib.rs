@@ -11,6 +11,7 @@
 //!
 //! [`register`] adds the three verbs to a product root.
 
+pub mod claim;
 pub mod config;
 pub mod cycle_gate;
 pub mod error;

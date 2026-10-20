@@ -23,6 +23,7 @@ use gob_diagnostics::{Refusal, RefusalClass};
 use gob_exec::{Outcome, Program, Spec};
 use gob_git::{MergeOutcome, Repo};
 
+use crate::claim::{E_CLAIM_LOST, Publication, W_CLAIM_UNPUBLISHED};
 use crate::config::WorktreeConfig;
 use crate::error::WorktreeError;
 
@@ -255,15 +256,16 @@ impl Workspace<'_> {
         };
         let (lease, fresh, stolen_from) =
             self.take_waiting(taking, needs_slot, (&holder, &scope), steal, wait_secs)?;
-        let built = match self.build(plan, id, &handle, &lease, branch.as_deref()) {
-            Ok(b) => b,
-            Err(e) => {
-                if fresh {
-                    self.rollback(id, &holder);
+        let (claim, built) =
+            match self.claim_and_build(plan, (id, &handle), &lease, branch.as_deref()) {
+                Ok(done) => done,
+                Err(e) => {
+                    if fresh {
+                        self.rollback(id, &holder);
+                    }
+                    return Err(e);
                 }
-                return Err(e);
-            }
-        };
+            };
         let summary = format!(
             "lease: {} in {}; scope: {}; ttl {}s",
             holder.actor,
@@ -284,17 +286,10 @@ impl Workspace<'_> {
             }
         };
         if let Some(prev) = &stolen_from {
-            let note = format!(
-                "lease stolen from {} in {} by {} in {}: {}",
-                prev.actor,
-                self.ledger_path(&prev.worktree),
-                holder.actor,
-                self.ledger_path(&holder.worktree),
-                steal.unwrap_or_default()
-            );
-            self.ledger.comment(id, CommentSubtype::Note, &note)?;
+            self.note_steal(id, prev, &holder, steal.unwrap_or_default())?;
         }
         let mut warnings = Vec::new();
+        warnings.extend(claim);
         if lease.scope.is_empty() {
             warnings.push(format!(
                 "{handle} has an empty scope; SCOPE001 will flag every changed file"
@@ -328,6 +323,38 @@ impl Workspace<'_> {
             stolen_from,
             warnings,
         })
+    }
+
+    /// Record on the ticket that `holder` stole its lease from `prev`.
+    fn note_steal(
+        &self,
+        id: TicketId,
+        prev: &Holder,
+        holder: &Holder,
+        why: &str,
+    ) -> Result<(), WorktreeError> {
+        let note = format!(
+            "lease stolen from {} in {} by {} in {}: {why}",
+            prev.actor,
+            self.ledger_path(&prev.worktree),
+            holder.actor,
+            self.ledger_path(&holder.worktree),
+        );
+        self.ledger.comment(id, CommentSubtype::Note, &note)?;
+        Ok(())
+    }
+
+    /// Publish the claim, then build the worktree; the caller rolls the lease back on error.
+    fn claim_and_build(
+        &self,
+        plan: &Plan,
+        (id, handle): (TicketId, &str),
+        lease: &Lease,
+        branch: Option<&str>,
+    ) -> Result<(Option<String>, Built), WorktreeError> {
+        let claim = self.claim(plan, handle, lease, branch)?;
+        let built = self.build(plan, id, handle, lease, branch)?;
+        Ok((claim, built))
     }
 
     /// The cycle gates for a ticket taking a fresh slot: no overdue cycle, and inside the active one (or started `unplanned`).
@@ -447,6 +474,45 @@ impl Workspace<'_> {
             Err(WorktreeError::Lease(e)) => Err(held_refusal(e, id, handle)),
             Err(e) => Err(e),
         }
+    }
+
+    /// Publish the claim (create-only push of the ticket branch at the base tip) before a fresh worktree is made.
+    ///
+    /// Nothing is pushed for `start`, for an existing worktree, or without a remote.
+    // frob:ticket 01M5CW04QCRZ860BZMT46BECG2
+    fn claim(
+        &self,
+        plan: &Plan,
+        handle: &str,
+        lease: &Lease,
+        branch: Option<&str>,
+    ) -> Result<Option<String>, WorktreeError> {
+        let (Plan::Work { .. }, Some(branch)) = (plan, branch) else {
+            return Ok(None);
+        };
+        if lease.holder.worktree.join(".git").exists() {
+            return Ok(None);
+        }
+        let base = base_branch(self.ledger);
+        let published = crate::claim::publish(self.ledger.repo(), branch, &base)?;
+        if let Publication::Lost { tip } = &published {
+            return Err(WorktreeError::Refused(
+                Refusal::new(
+                    E_CLAIM_LOST,
+                    RefusalClass::GuardNeedsAction,
+                    format!("{handle} is already claimed: {branch} exists on the remote at {tip}"),
+                )
+                .with_remedy(format!(
+                    "pick another ticket; if the claim is yours from another clone, fetch {branch} and resume there"
+                )),
+            ));
+        }
+        Ok(match published {
+            Publication::Unpublished(why) => Some(format!(
+                "{W_CLAIM_UNPUBLISHED}: {handle} is claimed here only; others may take it until a sync publishes {branch} ({why})"
+            )),
+            _ => None,
+        })
     }
 
     /// Create (or recognise) the worktree and merge the base into it.
