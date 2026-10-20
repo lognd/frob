@@ -8,7 +8,7 @@ priority = "medium"
 points = 3
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-10-20T02:15:12Z"
+updated = "2026-10-20T02:15:54Z"
 aliases = ["T-5101"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 +++
