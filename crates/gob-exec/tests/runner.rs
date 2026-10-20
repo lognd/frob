@@ -339,3 +339,55 @@ fn a_secret_looking_stdout_payload_is_intact_while_the_transcript_stdout_and_std
     assert!(!out.stdout.contains("hunter2abc"), "{}", out.stdout);
     assert!(!out.stderr.contains("hunter2abc"), "{}", out.stderr);
 }
+
+// frob:ticket 01M5D5PZP5BZFRWT9W86STF8MV
+// frob:tests crates/gob-exec/src/runner.rs::Runner.spawn_detached
+#[cfg(unix)]
+#[test]
+fn spawn_detached_returns_at_once_and_the_child_finishes_on_its_own() {
+    if !gob_exec::require_sh("spawn_detached_returns_at_once_and_the_child_finishes_on_its_own") {
+        return;
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let marker = dir.path().join("marker");
+    let runner = Runner::new(Limits { jobs: 1 });
+    let spec = Spec {
+        program: Program::Tool { name: "sh".into() },
+        args: vec!["-c".into(), "sleep 0.3; echo \"$KICK\" > marker".into()],
+        cwd: Some(dir.path().to_path_buf()),
+        env: vec![("KICK".into(), "1".into())],
+        timeout: Duration::from_secs(5),
+        capture: false,
+    };
+    let t = Instant::now();
+    let pid = runner
+        .spawn_detached(&spec, &gob_exec::EnvPolicy::Inherit)
+        .unwrap();
+    assert!(pid > 0);
+    assert!(
+        t.elapsed() < Duration::from_millis(250),
+        "spawn must not wait"
+    );
+    assert_eq!(runner.spawn_count(), SpawnCount(1));
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while !marker.exists() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    assert_eq!(std::fs::read_to_string(&marker).unwrap().trim(), "1");
+}
+
+// frob:ticket 01M5D5PZP5BZFRWT9W86STF8MV
+// frob:tests crates/gob-exec/src/runner.rs::Runner.spawn_detached
+#[test]
+fn spawn_detached_refuses_a_tool_off_the_allowlist_and_a_missing_hook() {
+    let runner = Runner::new(Limits { jobs: 1 }).allow_tools(["git".to_owned()]);
+    let mut spec = sleep_spec("1", Duration::from_secs(1));
+    let denied = runner.spawn_detached(&spec, &gob_exec::EnvPolicy::Inherit);
+    assert!(matches!(denied, Err(ExecError::NotAllowed { .. })));
+    spec.program = Program::Hook {
+        path: "/nonexistent/frob-hook".into(),
+    };
+    let missing = runner.spawn_detached(&spec, &gob_exec::EnvPolicy::Inherit);
+    assert!(matches!(missing, Err(ExecError::NotFound { .. })));
+    assert_eq!(runner.spawn_count(), SpawnCount(0));
+}

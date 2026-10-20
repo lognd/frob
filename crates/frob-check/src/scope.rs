@@ -372,7 +372,7 @@ fn branch_changes(
 ///
 /// In trunk mode, or when the branch ref or a read cannot be resolved, `ids` is returned whole.
 fn missing_on_branch_ledger<'a>(ids: &[&'a str], ledger: &Ledger) -> Vec<&'a str> {
-    if ledger.config().mode != RefMode::Branch {
+    if ledger.config().mode == RefMode::Trunk {
         return ids.to_vec();
     }
     let branch_ref = match ledger.ledger_ref() {
@@ -534,7 +534,11 @@ mod tests {
     // frob:tests crates/frob-check/src/scope.rs::missing_on_branch_ledger
     #[test]
     fn a_ticket_created_on_the_branch_resolves_in_branch_mode_only() {
-        for (mode, resolved) in [(RefMode::Branch, true), (RefMode::Trunk, false)] {
+        for (mode, resolved) in [
+            (RefMode::Branch, true),
+            (RefMode::Orphan, true),
+            (RefMode::Trunk, false),
+        ] {
             let dir = tempfile::tempdir().expect("tempdir");
             let repo = Repo::init(dir.path()).expect("init");
             let git_dir = repo.git_dir().to_path_buf();
@@ -568,6 +572,10 @@ mod tests {
                 mode,
                 ..LedgerConfig::default()
             };
+            if mode == RefMode::Orphan {
+                frob_ledger::branch::init_branch(&repo, &cfg.branch, cfg.cas_retries)
+                    .expect("ticket branch");
+            }
             let ledger = Ledger::open(repo, cfg, std::sync::Arc::new(gob_time::SystemClock));
             let id = ledger
                 .new_ticket(NewTicket::new("On topic", TicketType::Task))
