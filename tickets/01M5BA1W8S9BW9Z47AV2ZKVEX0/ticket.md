@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T00:05:50Z"
-updated = "2026-10-20T00:50:06Z"
+updated = "2026-10-20T00:50:25Z"
 scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/config.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/mirror.md"]
 
 [[acceptance]]
