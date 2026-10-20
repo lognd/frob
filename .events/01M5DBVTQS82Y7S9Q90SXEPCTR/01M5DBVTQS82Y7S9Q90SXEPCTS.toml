@@ -1,0 +1,9 @@
+kind = "create"
+title = "Document the work claim publication in docs/design/distributed-tickets.md"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~46BECG2. Blocked by the live ~EV5KK0X lease on that file. Document claim.rs publish, E-CLAIM-LOST, W-CLAIM-UNPUBLISHED."
+at = "2026-10-20T19:15:58Z"
+actor = "lognd"
+rev = 1
