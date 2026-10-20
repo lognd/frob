@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T03:14:15Z"
+digest = "138e8c757aef38fee3276cf0c393bbfa5b9e5575513dd18a1545d60b74aed214"
+exit_code = 0
+inline = """
+
+running 1 test
+test agent::sync_into_empty_home_is_idempotent_and_byte_identical ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.03s
+
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.69s
+     Running tests/it/main.rs (target/debug/deps/it-202c4dbe25a08e4f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-cli --test it sync_into_empty_home_is_idempotent_and_byte_identical"
+size = 386
+status = "measured"
+at = "2026-10-20T03:14:15Z"
+actor = "lognd"
+rev = 1

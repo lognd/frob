@@ -15,3 +15,11 @@ Talk to the hush-term team.
 ```text expect=clean
 Talk to the platform team.
 ```
+
+## A fire inside an opaque island still fires
+
+The rule reads only text, so an opaque region does not hide the offender.
+
+```text expect=fire cell=island
+Talk to the hush-term team.
+```

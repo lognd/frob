@@ -1,0 +1,9 @@
+kind = "create"
+title = "frob agent: preserve settings.json key order on write"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "serde_json without preserve_order alphabetizes keys when the claude emitter rewrites settings.json. Found while working ~VHZ1FDQ."
+at = "2026-10-20T03:17:10Z"
+actor = "lognd"
+rev = 1

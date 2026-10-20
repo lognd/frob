@@ -17,6 +17,7 @@ const ID: &str = "TICK004";
     severity = Error,
     polarity = Pminus,
     must_measure = false,
+    needs = Lexical,
     scope = Repo,
     body = relay,
     fix = Deterministic,
