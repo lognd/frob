@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
 updated = "2026-10-20T20:33:50Z"
 idempotency_key = "dt-DT14"
-scope = ["crates/frob-ledger/src/claim_hold.rs", "crates/frob-ledger/src/claim_window.rs", "crates/frob-ledger/src/lib.rs", "docs/design/distributed-tickets.md", "docs/reference/config.md", "docs/schemas/config.json"]
+scope = ["crates/frob-ledger/src/claim_hold.rs", "crates/frob-ledger/src/claim_window.rs", "crates/frob-ledger/src/lib.rs", "docs/design/distributed-tickets.md", "docs/reference/config.md", "docs/schemas/config.json", "changelog.d/01M5CW0557C2HYG7KZBV3Y6VBJ.added.md"]
 
 [[links]]
 kind = "blocked-by"
