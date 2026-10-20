@@ -2,7 +2,8 @@
 id = "01M4HQ2T0QV27JHJP0DRF7ZZHA"
 title = "ticket triage and ticket scrub support the ticket-branch layout (today they refuse with a clear error)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
