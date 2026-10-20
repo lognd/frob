@@ -2,12 +2,12 @@
 id = "01M5CH6YW8C576DAAQQ89M8282"
 title = "Register GitHub Actions and Dockerfile adapters in gob-caps and gob-walk"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T11:30:11Z"
-updated = "2026-10-20T13:10:10Z"
+updated = "2026-10-20T13:10:11Z"
 scope = ["crates/gob-caps/**"]
 +++
 
