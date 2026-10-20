@@ -1,0 +1,36 @@
+kind = "evidence"
+captured_at = "2026-10-20T22:10:22Z"
+digest = "39f4211b0925ec46df956c77a25b036f7698701e29b07447f3d44665ee896327"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6d635e3e-69a8-48cb-8dd4-a460b34c2177 with nextest profile: default
+    Starting 4 tests across 6 binaries (84 tests skipped)
+        PASS [   0.006s] frob-worktree anyway::tests::other_comments_are_not_notes
+        PASS [   0.006s] frob-worktree anyway::tests::a_rendered_note_parses_back
+        PASS [   0.006s] frob-worktree anyway::tests::an_expired_note_says_so
+        PASS [   0.137s] frob-worktree::claim anyway_works_over_a_lost_claim_and_land_shows_the_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.138s] 4 tests run: 4 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree anyway"
+size = 1452
+status = "measured"
+test_count = 4
+tests_digest = "5a8adb6b25aaf94706ca2094d943aff7a0b7c4646bc2632e628e2aff58c8a194"
+at = "2026-10-20T22:10:22Z"
+actor = "lognd"
+rev = 1
