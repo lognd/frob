@@ -2,13 +2,13 @@
 id = "01M3ZX7J3BDD63R1SJ1H3KZPCX"
 title = "Benchmark B1: plan executor versus handwritten Rust on three std rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-03T03:34:24Z"
+updated = "2026-10-20T08:15:54Z"
 idempotency_key = "m2-bench-b1"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/benches/**"]
