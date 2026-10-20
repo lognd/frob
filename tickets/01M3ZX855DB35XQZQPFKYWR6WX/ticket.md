@@ -19,7 +19,7 @@ target = "01M4052R88Y0A9HQHDB86ERMEM"
 
 [[acceptance]]
 text = "Given an owner without a mapping, when published, then the issue is unassigned and the note says so"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a published ticket, when `frob ticket show <tracker-key>` runs, then the ticket resolves"
