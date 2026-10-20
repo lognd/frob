@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T15:15:51Z"
-updated = "2026-10-20T16:01:31Z"
-scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/work.rs", ".github/workflows/ci.yml", ".github/scripts/ensure-ledger-refs.sh", "crates/frob/tests/it/ticket_branch_refs.rs", "docs/design/distributed-tickets.md", "docs/guides/ticket-branch.md"]
+updated = "2026-10-20T16:08:01Z"
+scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/work.rs", ".github/workflows/ci.yml", ".github/scripts/ensure-ledger-refs.sh", "crates/frob/tests/it/ticket_branch_refs.rs", "docs/design/distributed-tickets.md", "docs/guides/ticket-branch.md", "crates/frob/tests/it/main.rs"]
 
 [[acceptance]]
 text = "Given orphan mode, when frob work runs, then the worktree branches from the code ref and the transition lands on the ticket branch"
