@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:24Z"
 updated = "2026-10-20T08:16:49Z"
 idempotency_key = "m2-bench-b1"
 labels = ["milestone:2", "area:grl", "kind:test"]
-scope = ["crates/gob-plan/benches/**", "crates/gob-plan/Cargo.toml"]
+scope = ["crates/gob-plan/benches/**", "crates/gob-plan/Cargo.toml", "Cargo.lock"]
 
 [[links]]
 kind = "blocked-by"
