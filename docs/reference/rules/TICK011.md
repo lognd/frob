@@ -23,3 +23,41 @@ The ledger branch allows a force push or deletion, or the hosting API could not 
 2.11). An answer that force pushes or deletion are allowed is an Error; no token, an
 unreachable API or an answer that cannot be read is Unresolved, never clean. Enable branch
 protection on the ticket branch with "allow force pushes" and "allow deletions" both off.
+
+## Examples
+
+### TICK011 the ledger branch allows a force push or deletion / Force pushes allowed fires #1 (line 9) (fire)
+
+```text
+200 {"allow_force_pushes":{"enabled":true},"allow_deletions":{"enabled":false}}
+```
+
+### TICK011 the ledger branch allows a force push or deletion / Deletion allowed fires #2 (line 15) (fire)
+
+```text
+200 {"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":true}}
+```
+
+### TICK011 the ledger branch allows a force push or deletion / A branch without protection fires #3 (line 21) (fire)
+
+```text
+404 {"message":"Branch not protected"}
+```
+
+### TICK011 the ledger branch allows a force push or deletion / Both forbidden is clean #4 (line 27) (clean)
+
+```text
+200 {"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false}}
+```
+
+### TICK011 the ledger branch allows a force push or deletion / Unresolved when the token cannot read protection #5 (line 33) (unresolved)
+
+```text
+403 {"message":"Resource not accessible"}
+```
+
+### TICK011 the ledger branch allows a force push or deletion / Unresolved when the API is unreachable #6 (line 39) (unresolved)
+
+```text
+unreachable
+```
