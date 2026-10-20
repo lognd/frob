@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T00:04:36Z"
-updated = "2026-10-20T00:34:09Z"
+updated = "2026-10-20T00:54:57Z"
 scope = ["crates/frob-ledger/src/mirror_map.rs"]
 
 [[acceptance]]
