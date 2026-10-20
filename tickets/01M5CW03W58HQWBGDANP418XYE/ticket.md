@@ -8,7 +8,7 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T15:04:09Z"
+updated = "2026-10-20T15:04:37Z"
 idempotency_key = "dt-DT02"
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "ticket doctor --fix creates the missing ticket branch and plain doctor refuses with E-DOCTOR-TICKET-BRANCH-MISSING"
-bound = false
+bound = true
 +++
 
 init and doctor --fix create it from origin instead of refusing; shallow clones handled. See docs/design/distributed-tickets.md.
