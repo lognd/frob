@@ -2501,6 +2501,7 @@ version = "0.532.0"
 dependencies = [
  "anstream 0.6.21",
  "anstyle",
+ "gob-path",
  "gob-rules",
  "gob-text",
  "insta",
@@ -2509,6 +2510,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "toml",
  "tracing",
 ]
 

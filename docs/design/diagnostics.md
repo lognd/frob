@@ -157,6 +157,10 @@ one command, and the one-line help after the first occurrence names it:
 The one-line form after the first occurrence is
 `= explain: grimble explain SYS003 (shown in full on first occurrence)`,
 so a reader who scrolled past it knows it exists and how to get it.
+State lives in `gob_diagnostics::SeenStore` (per-rule counts in
+`.frob/seen.toml`); `[ui] teach` is `gob_config::UiTable` and parses to
+`TeachMode`. `SeenStore::disclose` returns `Full`, `OneLine` or `Hidden`
+and records the occurrence (`never` records nothing).
 Long explanations go through the pager on a TTY (`$PAGER`, then `less
 -R`), and print plainly otherwise.
 
