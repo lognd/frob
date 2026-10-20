@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-20T11:45:41Z"
+updated = "2026-10-20T11:54:39Z"
 idempotency_key = "m2-mirror2-status"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/status.rs"]
@@ -31,7 +31,7 @@ target = "01M4052VTX4T6W688PQXVTQV56"
 
 [[acceptance]]
 text = "Given N issues and K per run, when status runs, then it states ceil(N/K) runs as the visit bound"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a gap and a contested field, when status runs, then both are listed with ticket and field"
