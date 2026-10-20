@@ -2,16 +2,16 @@
 id = "01M3ZX8068R0AEK980CWAGXYRJ"
 title = "replaces as a privilege: shadow run and divergence"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:39Z"
-updated = "2026-10-03T03:34:39Z"
+updated = "2026-10-20T10:47:43Z"
 idempotency_key = "m2-sec-replaces"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-packs/src/replaces.rs"]
+scope = ["crates/gob-packs/src/replaces.rs", "crates/gob-packs/src/lib.rs", "docs/design/security.md"]
 
 [[links]]
 kind = "blocked-by"
