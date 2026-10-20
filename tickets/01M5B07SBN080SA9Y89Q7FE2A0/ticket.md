@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:18Z"
-updated = "2026-10-20T00:03:37Z"
+updated = "2026-10-20T00:06:47Z"
 scope = ["crates/frob-mirror/src/shardstore.rs", "docs/design/mirror.md"]
 
 [[acceptance]]
