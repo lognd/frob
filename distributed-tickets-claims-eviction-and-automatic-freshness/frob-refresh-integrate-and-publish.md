@@ -2,13 +2,13 @@
 id = "01M5CW049SPSRGGP5ENQD7BPB3"
 title = "frob refresh: integrate and publish"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T14:38:41Z"
+updated = "2026-10-20T17:15:15Z"
 idempotency_key = "dt-DT06"
 
 [[links]]
