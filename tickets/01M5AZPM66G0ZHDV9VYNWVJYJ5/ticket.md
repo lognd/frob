@@ -2,7 +2,8 @@
 id = "01M5AZPM66G0ZHDV9VYNWVJYJ5"
 title = "Coverage meta-test: lexical-rule opaque-region fire case needs a RuleMeta needs field"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 reporter = "lognd"
