@@ -28,6 +28,6 @@ pub use refusal::{Refusal, RefusalClass};
 pub use required::UnresolvedPolicy;
 pub use source::{MemorySources, SourceProvider};
 pub use text::{
-    ColorChoice, Report, TextOptions, is_tty, render_text, render_text_with_decisions,
-    severity_label,
+    Annotations, ColorChoice, FindingNotes, Report, SecondarySpan, TextOptions, is_tty,
+    render_text, render_text_annotated, render_text_with_decisions, severity_label,
 };

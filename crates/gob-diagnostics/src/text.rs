@@ -1,13 +1,15 @@
 //! Text renderer: findings grouped by file with snippets and a summary.
 
 use std::borrow::Cow;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt::Write as _;
 use std::io::IsTerminal;
 
 use anstyle::{AnsiColor, Style};
-use gob_rules::{Applicability, Finding, Fix, Registry, Severity, TextEdit, UnresolvedReason};
-use gob_text::{TextSize, render_snippet};
+use gob_rules::{
+    Applicability, Finding, Fingerprint, Fix, Registry, Severity, TextEdit, UnresolvedReason,
+};
+use gob_text::{Span, TextSize, render_snippet};
 
 use crate::escape::{escape_for_origin, escape_text};
 use crate::record::{SecurityDecisionKind, Summary, TextOrigin};
@@ -64,6 +66,46 @@ fn style_for(s: Severity) -> Style {
     Style::new().bold().fg_color(Some(color.into()))
 }
 
+/// A secondary span, usually in another file, with the label that says why it matters.
+#[derive(Debug, Clone)]
+pub struct SecondarySpan {
+    /// Where the related code is.
+    pub span: Span,
+    /// Short label printed under the underline.
+    pub label: String,
+}
+
+/// Teaching content for one finding (diagnostics.md section 2); every field is host text.
+#[derive(Debug, Clone, Default)]
+pub struct FindingNotes {
+    /// Label printed after the primary underline.
+    pub primary_label: Option<String>,
+    /// Related spans, rendered as `:::` blocks.
+    pub secondary: Vec<SecondarySpan>,
+    /// Facts the user did not ask for but needs (`= note:`).
+    pub notes: Vec<String>,
+    /// The next action (`= help:`); dropped under `--quiet`.
+    pub help: Option<String>,
+    /// How to read the full explanation (`= explain:`).
+    pub explain: Option<String>,
+}
+
+/// Per-finding [`FindingNotes`] keyed by fingerprint, plus the `--quiet` switch.
+#[derive(Debug, Clone, Default)]
+pub struct Annotations {
+    /// Drop help lines (`--quiet`); message, span and code remain.
+    pub quiet: bool,
+    notes: HashMap<Fingerprint, FindingNotes>,
+}
+
+impl Annotations {
+    /// Attach `notes` to the finding with `fingerprint`; such a finding renders in section 2 shape.
+    pub fn insert(&mut self, fingerprint: Fingerprint, notes: FindingNotes) {
+        tracing::debug!("finding annotated");
+        self.notes.insert(fingerprint, notes);
+    }
+}
+
 /// One finding resolved for display.
 struct Located<'a> {
     finding: &'a Finding,
@@ -80,6 +122,16 @@ pub fn render_text_with_decisions(
     report: &Report<'_>,
     opts: &TextOptions,
     decisions: &[SecurityDecisionKind],
+) -> String {
+    render_text_annotated(report, opts, decisions, &Annotations::default())
+}
+
+/// Render `report` as text; findings with [`Annotations`] get the section 2 message shape.
+pub fn render_text_annotated(
+    report: &Report<'_>,
+    opts: &TextOptions,
+    decisions: &[SecurityDecisionKind],
+    annotations: &Annotations,
 ) -> String {
     let registry = Registry::global();
     let mut groups: BTreeMap<Option<String>, Vec<Located<'_>>> = BTreeMap::new();
@@ -116,7 +168,7 @@ pub fn render_text_with_decisions(
                 .map_or(Cow::Borrowed("(no location)"), escape_text)
         );
         for item in &items {
-            write_finding(&mut out, report, item, registry, *opts);
+            write_finding(&mut out, report, item, registry, *opts, annotations);
         }
         out.push('\n');
     }
@@ -134,8 +186,13 @@ fn write_finding(
     item: &Located<'_>,
     registry: &Registry,
     opts: TextOptions,
+    annotations: &Annotations,
 ) {
     let f = item.finding;
+    if let Some(notes) = annotations.notes.get(&f.fingerprint) {
+        write_shaped(out, report, f, notes, registry, opts, annotations.quiet);
+        return;
+    }
     let st = style_for(f.severity);
     let slug = registry
         .by_id(f.rule.as_str())
@@ -183,6 +240,121 @@ fn write_finding(
     }
     if let Some(fix) = &f.fix {
         write_fix(out, report.sources, fix);
+    }
+}
+
+/// Line number, column, display path and snippet for `span`, when its source is known.
+fn locate(
+    sources: &dyn SourceProvider,
+    span: Span,
+) -> Option<(String, u32, u32, gob_text::Snippet)> {
+    let src = sources.source(span.file)?;
+    let lc = src.line_col(span.range.start())?;
+    let snip = render_snippet(src, span.range)?;
+    let path = sources.path(span.file)?;
+    Some((escape_text(path).into_owned(), lc.line, lc.col, snip))
+}
+
+/// Write one snippet block: gutter, source line and underline (`mark` replaces the caret glyph).
+fn write_block(out: &mut String, snip: &gob_text::Snippet, width: usize, mark: char, label: &str) {
+    let num = snip.line_number.to_string();
+    let underline = snip.caret_line.replace('^', &mark.to_string());
+    let label = if label.is_empty() {
+        String::new()
+    } else {
+        format!(" {}", escape_text(label))
+    };
+    let _ = writeln!(out, "  {:>width$} | {}", num, escape_text(&snip.line));
+    let _ = writeln!(out, "  {:width$} | {underline}{label}", "");
+}
+
+/// Write a finding in the diagnostics.md section 2 shape; `quiet` drops the help line.
+fn write_shaped(
+    out: &mut String,
+    report: &Report<'_>,
+    f: &Finding,
+    notes: &FindingNotes,
+    registry: &Registry,
+    opts: TextOptions,
+    quiet: bool,
+) {
+    let st = style_for(f.severity);
+    let origin = TextOrigin::of_rule(registry.provenance(f.rule.as_str()));
+    let _ = writeln!(
+        out,
+        "  {st}{}[{}]{st:#}: {}{}",
+        severity_label(f.severity),
+        f.rule,
+        origin_prefix(&origin),
+        escape_for_origin(&f.message, &origin)
+    );
+    let primary = f.span.and_then(|sp| locate(report.sources, sp));
+    let secondary: Vec<_> = notes
+        .secondary
+        .iter()
+        .filter_map(|s| locate(report.sources, s.span).map(|l| (l, s.label.as_str())))
+        .collect();
+    let width = primary
+        .iter()
+        .map(|p| p.1)
+        .chain(secondary.iter().map(|s| s.0.1))
+        .max()
+        .map_or(1, |n| n.to_string().len());
+    let blank = format!("  {:width$} |", "");
+    if let Some((path, line, col, snip)) = &primary {
+        let _ = writeln!(out, "  {:width$}--> {path}:{line}:{col}", "");
+        if opts.snippets {
+            let _ = writeln!(out, "{blank}");
+            write_block(
+                out,
+                snip,
+                width,
+                '^',
+                notes.primary_label.as_deref().unwrap_or(""),
+            );
+        }
+    }
+    for ((path, line, col, snip), label) in &secondary {
+        let _ = writeln!(out, "{blank}");
+        let _ = writeln!(out, "  {:width$}::: {path}:{line}:{col}", "");
+        if opts.snippets {
+            let _ = writeln!(out, "{blank}");
+            write_block(out, snip, width, '-', label);
+        }
+    }
+    let mut tail: Vec<String> = notes
+        .notes
+        .iter()
+        .map(|n| format!("note: {}", escape_text(n)))
+        .collect();
+    match (&notes.help, quiet) {
+        (Some(h), false) => tail.push(format!("help: {}", escape_text(h))),
+        (Some(_), true) => tracing::debug!("help line dropped by --quiet"),
+        _ => {}
+    }
+    if let Some(fix) = f.fix.as_ref()
+        && let Some(lead) = fix_lead(fix.applicability)
+    {
+        tail.push(format!("{lead}: {}", escape_text(&fix.title)));
+    }
+    if let Some(e) = &notes.explain {
+        tail.push(format!("explain: {}", escape_text(e)));
+    }
+    if !tail.is_empty() {
+        let _ = writeln!(out, "{blank}");
+    }
+    for line in tail {
+        let _ = writeln!(out, "  {:width$} = {line}", "");
+    }
+}
+
+/// Lead words of the section 2 `fix` line; `None` for a fix with no machine edit to show.
+const fn fix_lead(a: Applicability) -> Option<&'static str> {
+    match a {
+        Applicability::Machine => Some("fix"),
+        Applicability::MaybeIncorrect => Some("fix (needs review)"),
+        Applicability::HasPlaceholders => Some("fix (fill in the placeholders)"),
+        Applicability::Manual => None,
     }
 }
 
@@ -385,6 +557,108 @@ fn write_summary(out: &mut String, summary: &Summary) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::source::MemorySources;
+
+    fn shaped_fixture() -> (MemorySources, Vec<Finding>, Annotations) {
+        use gob_text::{FileInterner, SourceText, TextRange};
+        let mut files = FileInterner::new();
+        let (a, b) = (
+            files.intern("src/lib.rs"),
+            files.intern("design/model.grmb"),
+        );
+        let mut sources = MemorySources::new();
+        sources.insert(
+            a,
+            "src/lib.rs",
+            SourceText::new("pub fn run() {}\n").unwrap(),
+        );
+        sources.insert(
+            b,
+            "design/model.grmb",
+            SourceText::new("  owns \"x/**\" ;\n").unwrap(),
+        );
+        let finding = Finding::new(
+            "DOC001".parse().unwrap(),
+            Severity::Error,
+            Some(Span::new(a, TextRange::new(0u32.into(), 6u32.into()))),
+            "unit claimed by two bindings",
+            "src/lib.rs",
+        )
+        .with_fix(Fix {
+            kind: gob_rules::FixKind::Manual,
+            applicability: Applicability::MaybeIncorrect,
+            title: "narrow the selector".into(),
+            edits: vec![],
+        });
+        let mut ann = Annotations::default();
+        ann.insert(
+            finding.fingerprint,
+            FindingNotes {
+                primary_label: Some("bound by a directive".into()),
+                secondary: vec![SecondarySpan {
+                    span: Span::new(b, TextRange::new(2u32.into(), 13u32.into())),
+                    label: "also owned through this selector".into(),
+                }],
+                notes: vec!["a directive outranks a selector".into()],
+                help: Some("remove the directive".into()),
+                explain: Some("frob explain DOC001".into()),
+            },
+        );
+        (sources, vec![finding], ann)
+    }
+
+    fn shaped(quiet: bool) -> String {
+        let (sources, findings, mut ann) = shaped_fixture();
+        ann.quiet = quiet;
+        let report = Report {
+            findings: &findings,
+            sources: &sources,
+        };
+        let opts = TextOptions {
+            color: ColorChoice::Never,
+            snippets: true,
+        };
+        render_text_annotated(&report, &opts, &[], &ann)
+    }
+
+    // frob:tests render_text_annotated
+    #[test]
+    fn secondary_span_and_review_fix_match_section_two_shape() {
+        let out = shaped(false);
+        let want = "\
+src/lib.rs
+  error[DOC001]: unit claimed by two bindings
+   --> src/lib.rs:1:1
+    |
+  1 | pub fn run() {}
+    | ^^^^^^ bound by a directive
+    |
+   ::: design/model.grmb:1:3
+    |
+  1 |   owns \"x/**\" ;
+    |   ----------- also owned through this selector
+    |
+    = note: a directive outranks a selector
+    = help: remove the directive
+    = fix (needs review): narrow the selector
+    = explain: frob explain DOC001
+";
+        assert!(out.starts_with(want), "{out}");
+        assert!(out.is_ascii());
+    }
+
+    // frob:tests render_text_annotated
+    #[test]
+    fn quiet_drops_help_and_keeps_message_span_and_code() {
+        let out = shaped(true);
+        assert!(!out.contains("help:"), "{out}");
+        assert!(
+            out.contains("error[DOC001]: unit claimed by two bindings"),
+            "{out}"
+        );
+        assert!(out.contains("^^^^^^"), "{out}");
+        assert!(out.contains("= note:"), "{out}");
+    }
 
     // frob:tests origin_prefix
     #[test]

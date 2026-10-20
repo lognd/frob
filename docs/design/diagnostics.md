@@ -78,6 +78,11 @@ user did not ask for but needs; `help` for the next action; `fix` lines
 only when a machine fix exists, with its applicability (section 3);
 colour only on a terminal (`NO_COLOR` respected); every line ASCII.
 
+Implementation: `render_text_annotated` takes `Annotations` (per-finding
+`FindingNotes` keyed by fingerprint: primary label, secondary spans, notes,
+help, explain) and renders annotated findings in the shape above;
+`Annotations::quiet` drops only the help lines.
+
 ## 3. Fix applicability (rustc's model)
 
 Each `Fix` on a finding carries one applicability. The existing
