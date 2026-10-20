@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["scripts/claude-hooks/**", "tests/claude_hooks/**", "docs/guides/claude-hooks.md", "changelog.d/01M2VFD1ZAS7PZERWYPQDMB8GH.added.md"]
+new = ["scripts/claude-hooks/**", "tests/claude_hooks/**", "docs/guides/claude-hooks.md", "changelog.d/01M2VFD1ZAS7PZERWYPQDMB8GH.added.md", "changelog.d/01M2VFD1ZBJP6X2ACJ4KCF29W6.added.md"]
+at = "2026-10-20T02:38:59Z"
+actor = "lognd"
+rev = 1

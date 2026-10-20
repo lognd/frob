@@ -1,0 +1,16 @@
+kind = "evidence"
+captured_at = "2026-10-20T02:33:17Z"
+digest = "c3571a1283dd54159f9e5f81561f935d1b2eb96c74ea0830a65982c79c466f9a"
+exit_code = 0
+inline = """
+............                                                             [100%]
+12 passed in 0.41s
+"""
+passed = true
+provider = "command"
+ref = "pytest -q tests/claude_hooks"
+size = 99
+status = "measured"
+at = "2026-10-20T02:33:17Z"
+actor = "lognd"
+rev = 1

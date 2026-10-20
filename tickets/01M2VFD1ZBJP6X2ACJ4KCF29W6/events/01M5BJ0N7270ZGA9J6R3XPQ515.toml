@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-20T02:24:58Z"
+digest = "1428a34d61a3c388bad4f34dda75e7b3a9f464fc21a8a22d0669d6aa08e39300"
+exit_code = 0
+inline = """
+.                                                                        [100%]
+1 passed in 0.12s
+"""
+passed = true
+provider = "command"
+ref = "pytest -q tests/claude_hooks/test_frob_suggest.py::test_per_rule_allow_only_suppresses_that_rule"
+size = 98
+status = "measured"
+at = "2026-10-20T02:24:58Z"
+actor = "lognd"
+rev = 1

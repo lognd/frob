@@ -2,23 +2,24 @@
 id = "01M2VFD1ZAS7PZERWYPQDMB8GH"
 title = "frob-suggest: log every block/allow/ignored-ack decision to .frob/telemetry.jsonl"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "low"
 parent = "01M2VFD1ZDWWNTW1FFGKHCKTS3"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-10-04T22:22:23Z"
+updated = "2026-10-20T02:34:40Z"
 aliases = ["T-5098"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 scope = [".claude/hooks/*", "tests/test_hook_frob_suggest.py"]
 
 [[acceptance]]
 text = "every block, allow, and ignored-ack decision appends a kind=hook row to .frob/telemetry.jsonl with hook, rule, agent, command shape, and decision"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "logging uses the repo logging conventions and is proven by a test"
-bound = false
+bound = true
 +++
 
 Leaf 4 of T-5101. See scratchpad/HOOK-AUDIT.md section 3.3.
