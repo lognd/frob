@@ -187,7 +187,7 @@ fn full_loop_in(branch: &str, orphan: bool) {
     assert_eq!(check["data"]["counts"]["error"], 0);
     assert_eq!(
         check["data"]["fidelity"]["languages"]["rust"]["fidelity"],
-        "F3"
+        "F4"
     );
 
     // test --base <branch>

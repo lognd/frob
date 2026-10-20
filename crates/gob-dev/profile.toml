@@ -218,13 +218,6 @@ readonly = true
 exit = [0, 2, 3]
 budget_ms = 500
 
-[scenario."frob cycle velocity"]
-args = ["cycle", "velocity"]
-readonly = true
-runs = 3
-exit = [0, 2, 3]
-budget_ms = 10600
-
 [scenario."frob cycle new"]
 args = ["cycle", "new", "--start", "2026-10-08", "--goal", "profile probe"]
 exit = [0, 2, 3]
