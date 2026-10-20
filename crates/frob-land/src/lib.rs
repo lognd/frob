@@ -14,6 +14,7 @@ pub mod candidate;
 pub mod error;
 pub mod events;
 mod git;
+pub mod hostland;
 pub mod land;
 pub mod lock;
 mod lockfile;
