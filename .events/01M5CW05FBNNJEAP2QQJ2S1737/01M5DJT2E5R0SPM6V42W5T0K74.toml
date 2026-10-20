@@ -1,0 +1,32 @@
+kind = "evidence"
+captured_at = "2026-10-20T21:15:52Z"
+digest = "f86e965d252cb67d723dd3f7c06f6a129ae2d225d9e4a466f50864a7751ce1f3"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bd586ba1-dd0b-43c8-9197-6ed38e091f5b with nextest profile: default
+    Starting 8 tests across 17 binaries (228 tests skipped)
+        PASS [   0.007s] frob-ledger claim_cover::tests::epic_claim_covers_open_leaves_only
+        PASS [   0.007s] frob-ledger claim_cover::tests::parent_cycle_ends
+        PASS [   0.007s] frob-ledger claim_cover::tests::move_out_of_a_claimed_epic_warns
+        PASS [   0.007s] frob-ledger claim_cover::tests::covered_leaves_skip_separately_claimed_children
+        PASS [   0.007s] frob-ledger claim_cover::tests::task_claim_covers_only_itself
+        PASS [   0.007s] frob-ledger claim_cover::tests::child_claim_shadows_the_epic_claim
+        PASS [   0.008s] frob-ledger claim_cover::tests::doable_exclusion_spares_the_holder
+        PASS [   0.008s] frob-ledger claim_cover::tests::split_notice_differs_for_epic_and_task
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 8 tests run: 8 passed, 228 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger claim_cover"
+size = 1320
+status = "measured"
+test_count = 8
+tests_digest = "04b77ef80ef704e036fac36ff865afa93fc25140de2e3d994124a635a124a816"
+at = "2026-10-20T21:15:52Z"
+actor = "lognd"
+rev = 1

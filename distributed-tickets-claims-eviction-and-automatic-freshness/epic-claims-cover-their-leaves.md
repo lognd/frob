@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T21:05:32Z"
+updated = "2026-10-20T21:15:52Z"
 idempotency_key = "dt-DT17"
 scope = ["crates/frob-ledger/src/claim_cover.rs", "crates/frob-ledger/src/lib.rs", "changelog.d/01M5CW05FBNNJEAP2QQJ2S1737.added.md"]
 
