@@ -2,13 +2,13 @@
 id = "01M4052R4AEFJ2MQ2H9A9X0DN3"
 title = "GitHub schema validation and the repository inventory of managed labels, milestones and issue types"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-03T05:51:35Z"
+updated = "2026-10-20T06:45:27Z"
 idempotency_key = "m2-mirror2-gh-schema-inventory"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/github/schema.rs", "crates/frob-mirror/src/inventory.rs"]
