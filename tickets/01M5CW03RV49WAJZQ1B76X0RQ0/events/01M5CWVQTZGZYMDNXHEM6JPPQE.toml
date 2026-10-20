@@ -1,0 +1,58 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T14:49:53Z"
+digest = "edaa16ef3aae3225677a96d111c7e1121da847df71f382c31d07d5bfe02f1148"
+exit_code = 0
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 62 filtered out; finished in 0.00s
+
+
+running 1 test
+test trunk_land_pushes_after_the_ledger_step_so_origin_has_the_close ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 64 filtered out; finished in 0.49s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 52s
+     Running unittests src/lib.rs (target/debug/deps/frob_land-a58cdf243ebb9bbf)
+     Running tests/land.rs (target/debug/deps/land-483e98b82557ef01)
+     Running tests/lock.rs (target/debug/deps/lock-022a7798953df8c3)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-land trunk_land_pushes_after_the_ledger_step_so_origin_has_the_close"
+size = 2187
+status = "measured"
+at = "2026-10-20T14:49:53Z"
+actor = "lognd"
+rev = 1

@@ -34,7 +34,7 @@ use crate::candidate::{CandidateMember, Skipped, build_candidate, scopes_overlap
 use crate::error::{LandError, needs_action};
 use crate::land::{
     Begun, Preconditions, already_done, base_ref, begin, blank_outcome, finish_member, land,
-    preconditions, primary_root, push_base,
+    preconditions, primary_root, push_base, push_ledger,
 };
 use crate::lock::{CODE_LOCKED, LandLock};
 use crate::plan::{LandOptions, LandOutcome};
@@ -831,6 +831,7 @@ impl<'a> Driver<'a> {
         // One push per drain, not per round or member: CI runs once on the final tip.
         let pushed = if self.opts.land.push && landed > 0 {
             push_base(&self.site.repo, &self.site.base, &mut warnings)
+                && push_ledger(&self.site.repo, self.site.ws.ledger.config(), &mut warnings)
         } else {
             false
         };
