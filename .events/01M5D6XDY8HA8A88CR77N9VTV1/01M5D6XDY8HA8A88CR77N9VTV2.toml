@@ -1,0 +1,9 @@
+kind = "create"
+title = "Declare frob-ledger integrate module in lib.rs instead of objects.rs"
+type = "chore"
+category = "todo"
+priority = "medium"
+body = "found while working ~QD7BPB3: lib.rs was leased by ~EV5KK0X."
+at = "2026-10-20T17:49:27Z"
+actor = "lognd"
+rev = 1
