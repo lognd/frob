@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-20T08:20:28Z"
+updated = "2026-10-20T08:21:03Z"
 idempotency_key = "m2-mirror2-normalize"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/normalize.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a write that does not stick when read back, when checked, then MIR001 is reported for that ticket with the reason write-not-sticking"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.4 (MIR-AUD-20; assumption: writes stick when read back).
