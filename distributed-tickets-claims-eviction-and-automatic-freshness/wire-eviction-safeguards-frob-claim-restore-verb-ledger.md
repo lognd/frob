@@ -2,7 +2,8 @@
 id = "01M5DN9Q57S88B7DQQH8BAXZ01"
 title = "Wire eviction safeguards: frob claim restore verb, ledger restore op, repeat-eviction board flag"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
