@@ -619,3 +619,6 @@ skip = "grimble is in preview and the verb rewrites files, so it is unsafe to pr
 
 [scenario."grimble vet"]
 skip = "grimble is in preview and needs a project the repo fixture does not provide"
+
+[scenario."frob teach"]
+skip = "interactive teaching mode reads and writes per-user seen state, so it is unsafe to profile against the repo fixture"

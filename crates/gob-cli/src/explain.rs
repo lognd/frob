@@ -83,7 +83,7 @@ fn distance(a: &str, b: &str) -> usize {
     row[b.len()]
 }
 
-/// The ids of `pages` closest to `wanted` (upper-case), best first, at most [`SUGGESTIONS`].
+/// The ids of `pages` closest to `wanted` (upper-case), best first, at most `SUGGESTIONS`.
 pub fn closest(pages: &[Page], wanted: &str) -> Vec<&'static str> {
     let mut scored: Vec<(usize, &'static str)> = pages
         .iter()
