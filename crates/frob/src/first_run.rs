@@ -7,6 +7,7 @@ use gob_path::Shown;
 use std::path::Path;
 
 use gob_cli::{CliError, Context, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 
 use crate::workspace::Located;
 
@@ -45,7 +46,7 @@ pub fn no_config_refusal(in_repo: bool) -> Refusal {
             RefusalClass::GuardNeedsAction,
             teaching_message(),
         )
-        .with_remedy("frob init")
+        .with_command(RemedyCommand::new("frob", "init"))
     } else {
         Refusal::new(
             CODE_NO_CONFIG,

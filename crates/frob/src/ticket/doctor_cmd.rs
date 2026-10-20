@@ -18,6 +18,7 @@ use crate::config::FrobConfig;
 use crate::milestone_cmd::pm_err;
 use crate::workspace::{Located, config_refusal};
 use gob_cli::{Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 
 /// Output of `ticket doctor`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -210,7 +211,7 @@ impl TicketDoctor {
                     cfg.tickets.branch
                 ),
             )
-            .with_remedy("frob ticket doctor --fix")
+            .with_command(RemedyCommand::new("frob", "ticket doctor").switch("fix"))
             .into());
         }
         ensure_ticket_branch(&repo, &cfg, false)

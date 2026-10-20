@@ -12,6 +12,7 @@ use frob_pm::model::{Day, Milestone};
 use frob_pm::{NewObject, ObjectKind, PmError, PmStore};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -251,7 +252,7 @@ fn refusal(e: &MilestoneError) -> CliError {
         }
         MilestoneError::Conflict { version, .. } => {
             Refusal::new("E-MILESTONE-EXISTS", GuardNeedsAction, e.to_string())
-                .with_remedy(format!("frob milestone show {version}"))
+                .with_command(RemedyCommand::new("frob", "milestone show").arg(version.clone()))
         }
         MilestoneError::UnknownVersion { suggestions, .. } => {
             let msg = match suggestions.as_slice() {
@@ -259,10 +260,10 @@ fn refusal(e: &MilestoneError) -> CliError {
                 s => format!("{e}; did you mean {}?", s.join(", ")),
             };
             let remedy = match suggestions.first() {
-                Some(s) => format!("frob milestone show {s}"),
-                None => "frob milestone list".to_owned(),
+                Some(s) => RemedyCommand::new("frob", "milestone show").arg(s.as_str()),
+                None => RemedyCommand::new("frob", "milestone list"),
             };
-            Refusal::new("E-MILESTONE-NOT-FOUND", GuardNeedsAction, msg).with_remedy(remedy)
+            Refusal::new("E-MILESTONE-NOT-FOUND", GuardNeedsAction, msg).with_command(remedy)
         }
     };
     r.into()
@@ -276,7 +277,7 @@ pub(crate) fn pm_err(e: PmError) -> CliError {
         PmError::Invalid(m) => Refusal::new("E-MILESTONE-INPUT", UsageError, m).into(),
         PmError::NotFound { .. } | PmError::Ambiguous { .. } => {
             Refusal::new("E-MILESTONE-NOT-FOUND", GuardNeedsAction, e.to_string())
-                .with_remedy("frob milestone list")
+                .with_command(RemedyCommand::new("frob", "milestone list"))
                 .into()
         }
         other => CliError::internal(other),

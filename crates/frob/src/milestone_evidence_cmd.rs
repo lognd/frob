@@ -13,6 +13,7 @@ use frob_evidence::{EvidenceError, EvidenceRecord, Workspace};
 use frob_pm::{Milestone, PmStore};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -31,7 +32,7 @@ fn bad_position(m: &Milestone, n: usize) -> CliError {
             m.criteria.len()
         ),
     )
-    .with_remedy(format!("frob milestone show {}", m.version))
+    .with_command(RemedyCommand::new("frob", "milestone show").arg(m.version.clone()))
     .into()
 }
 
