@@ -1,0 +1,1 @@
+frob: claim holds and pauses are modelled (hold with reason and end date up to [claims] max_hold_days, 30 by default; blocked, review, train and CI pauses capped by [claims] paused_max_days, 14 by default) and stop the idle clock; no verb or ledger event uses them yet.

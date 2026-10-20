@@ -44,6 +44,12 @@ pub struct ClaimsTable {
     /// Fractions of the window (each above 0 and below 1) at which the holder is warned.
     #[config(default = vec![0.5, 0.8])]
     pub warn_at: Vec<f64>,
+    /// Longest hold, in days, `frob claim hold` accepts.
+    #[config(default = 30)]
+    pub max_hold_days: u32,
+    /// Longest stretch, in days, a blocked, review, train or CI pause stops the idle clock.
+    #[config(default = 14)]
+    pub paused_max_days: u32,
 }
 
 /// Per-class idle windows in days (`[claims.class]`); they override `idle_days`, and 0 means never evict.
@@ -76,6 +82,8 @@ pub struct ClaimWindows {
     expedite_days: u32,
     intangible_days: u32,
     warn_at: Vec<f64>,
+    max_hold_days: u32,
+    paused_max_days: u32,
 }
 
 impl Default for ClaimWindows {
@@ -87,6 +95,8 @@ impl Default for ClaimWindows {
             expedite_days: 1,
             intangible_days: 7,
             warn_at: vec![0.5, 0.8],
+            max_hold_days: 30,
+            paused_max_days: 14,
         }
     }
 }
@@ -116,7 +126,21 @@ impl ClaimWindows {
             expedite_days: class.expedite,
             intangible_days: class.intangible,
             warn_at: claims.warn_at.clone(),
+            max_hold_days: claims.max_hold_days,
+            paused_max_days: claims.paused_max_days,
         })
+    }
+
+    /// The longest hold in seconds (`[claims] max_hold_days`).
+    #[must_use]
+    pub fn max_hold_secs(&self) -> i64 {
+        i64::from(self.max_hold_days) * DAY
+    }
+
+    /// The longest a pause stops the idle clock, in seconds (`[claims] paused_max_days`).
+    #[must_use]
+    pub fn paused_max_secs(&self) -> i64 {
+        i64::from(self.paused_max_days) * DAY
     }
 
     /// The idle window in seconds, `None` when it is "never evict".

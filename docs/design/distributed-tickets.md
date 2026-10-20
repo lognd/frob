@@ -475,6 +475,15 @@ none: bot, `Frob-Sync` and others' events), the
 and zero-clamped idle. Still open: feeding it from sync/refresh and
 `claim touch` (DT12 consumes `idle_secs`).
 
+Implementation status (DT14, partial): `frob_ledger::claim_hold` holds
+the pure rules: `Hold` (reason required, end date capped by
+`[claims] max_hold_days`, early resume, `held until` notice), `Pause`
+(blocked, review, train and CI, credit capped by `[claims]
+paused_max_days`, `paused: blocked by ~Y (day 4 of 14)` notice) and
+`effective_observation`, which stops the idle clock for a hold and
+restarts it at expiry. Still open: the `claim hold|resume` verbs, the
+`lease` `hold`/`resume` events and detecting pauses from the ledger.
+
 ### 5.4 Hooks, so nobody has to remember
 
 - `frob init` installs git `post-checkout` and `post-merge` hooks that

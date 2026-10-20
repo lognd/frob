@@ -173,6 +173,20 @@
           "minimum": 0,
           "type": "integer"
         },
+        "max_hold_days": {
+          "default": 30,
+          "description": "Longest hold, in days, `frob claim hold` accepts.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "paused_max_days": {
+          "default": 14,
+          "description": "Longest stretch, in days, a blocked, review, train or CI pause stops the idle clock.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "warn_at": {
           "default": [
             0.5,
