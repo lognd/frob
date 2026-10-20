@@ -5,7 +5,7 @@ use gob_cli::{
     Cli, CliError, Command, CommandMeta, Context, Described, ExitCode, FindingsFailure, Outcome,
     Payload, Refusal, RefusalClass,
 };
-use gob_diagnostics::{FindingRecord, MemorySources};
+use gob_diagnostics::{FindingRecord, MemorySources, RemedyCommand};
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_rules::{Finding, Registry, Severity};
@@ -223,7 +223,7 @@ fn lock_refusal(err: crate::concurrent::LockError) -> CliError {
             RefusalClass::GuardNeedsAction,
             err.to_string(),
         )
-        .with_remedy("wait for the running check, or pass --allow-concurrent to run in parallel")
+        .with_command(RemedyCommand::new("frob", "check").switch("allow-concurrent"))
         .into(),
         crate::concurrent::LockError::Io { .. } => CliError::internal(err),
     }

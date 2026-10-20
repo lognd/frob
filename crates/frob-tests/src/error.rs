@@ -38,7 +38,10 @@ impl TestsError {
                 gob_cli::RefusalClass::GuardNeedsAction,
                 format!("cannot resolve --base `{spec}`: {detail}"),
             )
-            .with_remedy("frob test --base <an existing ref>")
+            .with_command(
+                gob_diagnostics::RemedyCommand::new("frob", "test")
+                    .flag("base", "<an existing ref>"),
+            )
             .into(),
             other => CliError::internal(other),
         }

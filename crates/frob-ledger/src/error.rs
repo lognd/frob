@@ -6,7 +6,7 @@
 //! caller-fixable ones onto [`Refusal`]s for the CLI.
 
 use error_set::error_set;
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use gob_git::GitError;
 
 /// A ticket that matched an ambiguous handle, listed in the refusal.
@@ -147,7 +147,11 @@ impl LedgerError {
             Self::LinkRejected { code, message } => Refusal::new(*code, GuardNeedsAction, message),
             Self::Terminal { message } => {
                 Refusal::new("E-TICKET-TERMINAL", GuardNeedsAction, message)
-                    .with_remedy("frob ticket reopen <ticket> --reason <why>")
+                    .with_command(
+                        RemedyCommand::new("frob", "ticket reopen")
+                            .arg("<ticket>")
+                            .flag("reason", "<why>"),
+                    )
             }
             Self::GuardRefused {
                 code,
@@ -165,7 +169,7 @@ impl LedgerError {
                 GuardNeedsAction,
                 format!("no ticket matches `{input}`"),
             )
-            .with_remedy("frob ticket list"),
+            .with_command(RemedyCommand::new("frob", "ticket list")),
             Self::Ambiguous { input, candidates } => {
                 let listed = candidates
                     .iter()
@@ -177,9 +181,8 @@ impl LedgerError {
                     GuardNeedsAction,
                     format!("`{input}` matches {} tickets: {listed}", candidates.len()),
                 )
-                .with_remedy(format!(
-                    "frob ticket show {}",
-                    candidates.first().map_or("<full-ulid>", |c| c.id.as_str())
+                .with_command(RemedyCommand::new("frob", "ticket show").arg(
+                    candidates.first().map_or("<full-ulid>", |c| c.id.as_str()),
                 ))
             }
             Self::RefMissing { ref_name } => Refusal::new(
@@ -239,3 +242,31 @@ impl LedgerError {
 
 /// Result alias used across the crate.
 pub type Result<T, E = LedgerError> = std::result::Result<T, E>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests LedgerError.to_refusal
+    /// Given a not-found and a terminal error, when refused, then each carries a structured command.
+    #[test]
+    fn remedies_are_structured_commands() {
+        let nf = LedgerError::NotFound {
+            input: "~X".to_owned(),
+        }
+        .to_refusal()
+        .expect("refusal");
+        assert_eq!(nf.command.expect("command").verb_path(), "ticket list");
+        let t = LedgerError::Terminal {
+            message: "done".to_owned(),
+        }
+        .to_refusal()
+        .expect("refusal");
+        let c = t.command.expect("command");
+        assert_eq!(c.verb_path(), "ticket reopen");
+        assert_eq!(
+            t.remedy.as_deref(),
+            Some("frob ticket reopen <ticket> --reason <why>")
+        );
+    }
+}

@@ -39,7 +39,7 @@ pub enum Publication {
 }
 
 /// The remote name and probe timeout from `[sync]` in the repository's `frob.toml` (defaults when absent).
-fn sync_settings(repo: &Repo) -> (String, Duration) {
+pub(crate) fn sync_settings(repo: &Repo) -> (String, Duration) {
     let table = repo
         .work_dir()
         .and_then(|root| gob_config::load::<SyncTable>(root, "frob").ok())
