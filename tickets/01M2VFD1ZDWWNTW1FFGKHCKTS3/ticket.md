@@ -8,10 +8,10 @@ priority = "medium"
 points = 3
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-10-20T02:33:44Z"
+updated = "2026-10-20T02:38:58Z"
 aliases = ["T-5101"]
 labels = ["v1-cluster:E1", "triage:accepted"]
-scope = ["scripts/claude-hooks/**", "tests/claude_hooks/**", "docs/guides/claude-hooks.md"]
+scope = ["scripts/claude-hooks/**", "tests/claude_hooks/**", "docs/guides/claude-hooks.md", "changelog.d/01M2VFD1ZAS7PZERWYPQDMB8GH.added.md"]
 
 [[acceptance]]
 text = "Hook installer is reversible and idempotent, and the hook logs every decision"
