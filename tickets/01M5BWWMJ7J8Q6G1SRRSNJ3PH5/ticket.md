@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T05:35:01Z"
-updated = "2026-10-20T06:14:43Z"
+updated = "2026-10-20T06:26:38Z"
 scope = ["crates/grimble-check/src/lib.rs", "crates/grimble-check/src/product.rs", "crates/grimble-check/src/report_cache.rs", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/src/pass.rs", "docs/design/grimble-model.md"]
 
 [[acceptance]]
