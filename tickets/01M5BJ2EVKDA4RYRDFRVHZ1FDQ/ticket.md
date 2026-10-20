@@ -4,9 +4,10 @@ title = "frob claude: sync tracked hooks/agents/skills into ~/.claude (sync, sta
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T02:25:58Z"
-updated = "2026-10-20T02:25:58Z"
+updated = "2026-10-20T02:47:06Z"
 idempotency_key = "claude-sync-verb"
 +++
 
