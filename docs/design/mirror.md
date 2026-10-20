@@ -348,6 +348,9 @@ and in `frob mirror status`.
   a proposal; never write a tracker-owned field. Values are compared
   after the tracker's own normalization (read back once and stored), so
   the mirror does not rewrite fields the tracker reformats (MIR-AUD-20).
+  Implemented in `frob_mirror::normalize`: `ReadBack::plan` (skip or write),
+  `ReadBack::record` (the one read-back; a value that did not change is
+  MIR001 `write-not-sticking`).
 - **The cursor is the history position actually read** (an event id,
   never a time), advanced only after the proposals it covers are
   committed (F2, MIR-AUD-25).
