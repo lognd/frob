@@ -2,7 +2,8 @@
 id = "01M4052S04N2E2A08NNPAZKPYT"
 title = "Round-robin sweep: reconcile the next K issues of a persisted cursor"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
