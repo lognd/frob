@@ -15,7 +15,7 @@ scope = ["scripts/claude-hooks/**", "tests/claude_hooks/**", "docs/guides/claude
 
 [[acceptance]]
 text = "Hook installer is reversible and idempotent, and the hook logs every decision"
-bound = false
+bound = true
 +++
 
 Audit at scratchpad/HOOK-AUDIT.md. frob-suggest.py precision 10.4%, dual hook registration double-counts attempts per Bash call, FROB_SUGGEST_ACK is a blind blanket bypass used blindly in 97.3% of uses, hook logs nothing. Story tracks 4 leaves: registration/counter fix, rule verdict narrowing, per-rule ack token, and decision logging.
