@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:38Z"
 updated = "2026-10-20T10:16:12Z"
 idempotency_key = "m2-sec-plugin-fixes"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-rules/src/fix.rs", "crates/gob-check/src/fix_validate.rs", "crates/gob-rules/src/lib.rs"]
+scope = ["crates/gob-rules/src/fix.rs", "crates/gob-check/src/fix_validate.rs", "crates/gob-rules/src/lib.rs", "crates/gob-check/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
