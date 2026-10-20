@@ -20,7 +20,7 @@ use std::collections::BTreeMap;
 use gob_ir::Relation;
 
 pub use count::{Count, Knobs};
-pub(crate) use edges::{reaches, verb};
+pub(crate) use edges::{Closure, reaches_in, verb};
 pub use side::{SideData, SideError, SideRow, SideTable};
 
 /// The relation word that is answered from the term itself (same parent unit).

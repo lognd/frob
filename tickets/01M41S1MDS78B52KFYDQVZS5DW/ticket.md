@@ -2,13 +2,13 @@
 id = "01M41S1MDS78B52KFYDQVZS5DW"
 title = "Migrate frob-* crates to gob-path (RelPath, Shown, Arg); remove them from the allow list"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:44Z"
-updated = "2026-10-03T20:59:44Z"
+updated = "2026-10-20T10:45:19Z"
 scope = ["crates/frob*/**"]
 
 [[links]]

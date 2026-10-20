@@ -21,6 +21,7 @@
 mod call;
 mod eval;
 mod field;
+mod fxmap;
 mod kind;
 mod verdict;
 

@@ -277,7 +277,12 @@ reason. `Registry::ordered` sorts by priority then pack name;
    Unresolved with reason `trap`. Never silence.
 6. **Benchmark gates in CI** (survey benchmarks B1-B4, filed as tickets):
    B1 plan executor versus handwritten Rust on three std rules (target:
-   within 1.3x per file); B2 compiled-in GRL rule versus the same rule as
+   within 1.3x per file; the executor caches kind domains, reachability
+   closures, operand values and unit lookups per run, indexes equality
+   joins in quantifier bodies and matches comment text in place, which
+   brought the per-file medians from 4.6x/25.8x/68.1x to about
+   3.0x/4.2x/6.6x for TODO001/COV001/DOC002; the remaining gap is open
+   work); B2 compiled-in GRL rule versus the same rule as
    a disk-loaded plan (target: plan within 1.3x after cache, findings
    identical); B3 tier-3 per-file call versus
    the same rule in tier 0 (target: within 1.5x); B4 WASM tree-sitter
