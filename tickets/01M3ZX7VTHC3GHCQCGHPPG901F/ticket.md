@@ -2,7 +2,8 @@
 id = "01M3ZX7VTHC3GHCQCGHPPG901F"
 title = "This repository's own tool stages need one-time trust (maintainer step and CI flag)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
