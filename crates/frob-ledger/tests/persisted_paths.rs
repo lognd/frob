@@ -70,11 +70,10 @@ fn violations(file: &str, text: &str) -> Vec<String> {
                     .trim_start_matches("pub(crate) ")
                     .strip_prefix(kw)
                 {
-                    item = rest
-                        .split(|c: char| !c.is_alphanumeric() && c != '_')
+                    rest.split(|c: char| !c.is_alphanumeric() && c != '_')
                         .next()
                         .unwrap_or("")
-                        .to_owned();
+                        .clone_into(&mut item);
                     in_item = true;
                     depth = 0;
                 }
@@ -111,7 +110,7 @@ fn violations(file: &str, text: &str) -> Vec<String> {
     bad
 }
 
-/// Given the persisted model types, when the audit runs, then none holds PathBuf or an unvalidated path string.
+/// Given the persisted model types, when the audit runs, then none holds `PathBuf` or an unvalidated path string.
 #[test]
 fn persisted_types_hold_no_host_paths() {
     let bad: Vec<String> = CRATES
