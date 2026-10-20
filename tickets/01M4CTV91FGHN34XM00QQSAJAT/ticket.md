@@ -2,7 +2,8 @@
 id = "01M4CTV91FGHN34XM00QQSAJAT"
 title = "grimble user guide: model files, check, fmt and the rule families an adopter turns on first"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
