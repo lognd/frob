@@ -2045,16 +2045,7 @@ pub fn capture(
         Provider::Dotnet => capture_dotnet(ws, reference)?,
         // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
         Provider::Unity => capture_unity(ws, reference)?,
-        Provider::Command => {
-            let argv = split_args(reference)?;
-            run_command(
-                &ws.runner(),
-                &ws.evidence.allowed_tools,
-                &ws.root,
-                &argv,
-                ws.timeout(),
-            )?
-        }
+        Provider::Command => return capture_command(ws, reference, accepts),
     };
     build_record(
         &ws.store,
@@ -2065,6 +2056,87 @@ pub fn capture(
         accepts,
         ws.ledger.clock().now(),
     )
+}
+
+// frob:ticket 01M5B4R6YPM1D0A41AX7MRCHXP
+/// Run an allowlisted command and record it, with the executed count its declared report field gives (if any).
+fn capture_command(ws: &Workspace, reference: &str, accepts: &[usize]) -> Result<EvidenceRecord> {
+    let argv = split_args(reference)?;
+    let cap = run_command(
+        &ws.runner(),
+        &ws.evidence.allowed_tools,
+        &ws.root,
+        &argv,
+        ws.timeout(),
+    )?;
+    let executed = command_executed(&ws.evidence.report_fields, &argv, &cap, reference)?;
+    let mut record = build_record(
+        &ws.store,
+        &ws.scrub(),
+        Provider::Command,
+        reference,
+        &cap,
+        accepts,
+        ws.ledger.clock().now(),
+    )?;
+    record.test_count = executed;
+    Ok(record)
+}
+
+// frob:ticket 01M5B4R6YPM1D0A41AX7MRCHXP
+/// The number at dotted `path` in the JSON a command printed: the whole stdout, else its last JSON line.
+pub fn report_count(transcript: &str, path: &str) -> Option<u64> {
+    let whole = serde_json::from_str::<serde_json::Value>(transcript.trim()).ok();
+    let value = whole.or_else(|| {
+        transcript
+            .lines()
+            .rev()
+            .find_map(|l| serde_json::from_str::<serde_json::Value>(l.trim()).ok())
+    })?;
+    path.split('.')
+        .try_fold(&value, |v, key| v.get(key))
+        .and_then(serde_json::Value::as_u64)
+}
+
+// frob:ticket 01M5B4R6YPM1D0A41AX7MRCHXP
+/// The executed-test count of a `command` run, from the tool's declared report field.
+///
+/// `Ok(None)` when the tool declares no field (UNMEASURED for granular evidence: the exit code alone is recorded).
+/// A green run whose declared field is missing or zero is refused, since an exit code over zero executed tests is never evidence.
+///
+/// # Errors
+///
+/// [`EvidenceError::NotExecuted`] for a passing run that reported no executed test.
+pub fn command_executed(
+    fields: &std::collections::BTreeMap<String, String>,
+    argv: &[String],
+    cap: &Capture,
+    reference: &str,
+) -> Result<Option<u64>> {
+    let Some(path) = argv.first().and_then(|t| fields.get(t)) else {
+        tracing::debug!(
+            reference,
+            "command evidence: no report field; granular evidence unmeasured"
+        );
+        return Ok(None);
+    };
+    let count = report_count(&cap.transcript, path);
+    if cap.passed && count.unwrap_or(0) == 0 {
+        tracing::warn!(
+            reference,
+            path,
+            ?count,
+            "command exit 0 but report shows no executed test; refusing to record"
+        );
+        return Err(EvidenceError::NotExecuted {
+            filter: reference.to_owned(),
+            summary: format!(
+                "report field `{path}` is {}",
+                count.map_or_else(|| "absent".to_owned(), |c| c.to_string())
+            ),
+        });
+    }
+    Ok(count)
 }
 
 // frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
@@ -2146,6 +2218,47 @@ mod tests {
             non_passing: NonPassing::default(),
             transcript: transcript.to_owned(),
         }
+    }
+
+    // frob:ticket 01M5B4R6YPM1D0A41AX7MRCHXP
+    #[test]
+    fn a_command_with_a_report_field_must_have_executed_tests() {
+        // frob:tests crates/frob-evidence/src/provider.rs::command_executed
+        // frob:tests crates/frob-evidence/src/provider.rs::report_count
+        let fields =
+            std::collections::BTreeMap::from([("jest".to_owned(), "run.total".to_owned())]);
+        let argv = vec!["jest".to_owned()];
+        let green = control_cap(&[], r#"{"run":{"total":3}}"#);
+        assert_eq!(
+            command_executed(&fields, &argv, &green, "jest").expect("ok"),
+            Some(3)
+        );
+        let zero = control_cap(
+            &[],
+            r#"noise
+{"run":{"total":0}}"#,
+        );
+        assert!(matches!(
+            command_executed(&fields, &argv, &zero, "jest"),
+            Err(EvidenceError::NotExecuted { .. })
+        ));
+        let absent = control_cap(&[], "no json here");
+        assert!(matches!(
+            command_executed(&fields, &argv, &absent, "jest"),
+            Err(EvidenceError::NotExecuted { .. })
+        ));
+    }
+
+    // frob:ticket 01M5B4R6YPM1D0A41AX7MRCHXP
+    #[test]
+    fn a_command_without_a_report_field_is_unmeasured_for_granular_evidence() {
+        // frob:tests crates/frob-evidence/src/provider.rs::command_executed
+        let fields = std::collections::BTreeMap::new();
+        let cap = control_cap(&[], "ok");
+        assert_eq!(
+            command_executed(&fields, &["git".to_owned()], &cap, "git status").expect("ok"),
+            None
+        );
     }
 
     // frob:ticket 01M3DG64CNAZ8K50HQ046VKHER

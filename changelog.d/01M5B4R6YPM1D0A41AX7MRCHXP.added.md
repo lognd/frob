@@ -1,0 +1,1 @@
+The `command` evidence provider reads an executed-test count from a per-tool report field declared in `[evidence] report_fields` and refuses a green run that executed none; tools without a field stay UNMEASURED for granular evidence. A passing record with a zero executed count no longer satisfies the close guard at land.

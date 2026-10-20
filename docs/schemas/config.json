@@ -215,6 +215,14 @@
           "description": "Value for `cargo nextest run --profile`; empty leaves nextest's own default.",
           "type": "string"
         },
+        "report_fields": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "description": "Per-tool report field for the `command` provider: tool name to the dotted path of the executed-test count in the JSON the tool prints on stdout (for example `jest = \"numTotalTests\"`); a listed tool that ran no test is refused, an unlisted tool is UNMEASURED for granular evidence (exit code only).",
+          "type": "object"
+        },
         "store": {
           "default": "dir:.git/frob/artifacts",
           "description": "Blob store: `dir:<path>` (relative paths start at the repository root, `.git/` at the common dir) or an `https://` URL (recorded only).",

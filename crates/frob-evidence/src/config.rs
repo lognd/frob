@@ -27,6 +27,10 @@ pub struct EvidenceTable {
     /// Value for `cargo nextest run --profile`; empty leaves nextest's own default.
     #[config(default = String::new())]
     pub nextest_profile: String,
+    // frob:ticket 01M5B4R6YPM1D0A41AX7MRCHXP
+    /// Per-tool report field for the `command` provider: tool name to the dotted path of the executed-test count in the JSON the tool prints on stdout (for example `jest = "numTotalTests"`); a listed tool that ran no test is refused, an unlisted tool is UNMEASURED for granular evidence (exit code only).
+    #[config(default = std::collections::BTreeMap::new())]
+    pub report_fields: std::collections::BTreeMap<String, String>,
 }
 
 // frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9

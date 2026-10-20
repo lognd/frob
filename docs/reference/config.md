@@ -75,6 +75,7 @@ Materialized: yes.
 | `attesters` | `Vec<String>` | `[]` | yes | Identities (git `user.email`) that may attest a criterion; `frob init` and `config sync` write the repository owner's email, and an empty list means nobody may. |
 | `inline_max_bytes` | `u64` | `16384` | no | Transcripts up to this many bytes are stored inline in the event file. |
 | `nextest_profile` | `String` | `""` | no | Value for `cargo nextest run --profile`; empty leaves nextest's own default. |
+| `report_fields` | `std::collections::BTreeMap<String, String>` | `{}` | no | Per-tool report field for the `command` provider: tool name to the dotted path of the executed-test count in the JSON the tool prints on stdout (for example `jest = "numTotalTests"`); a listed tool that ran no test is refused, an unlisted tool is UNMEASURED for granular evidence (exit code only). |
 | `store` | `String` | `"dir:.git/frob/artifacts"` | no | Blob store: `dir:<path>` (relative paths start at the repository root, `.git/` at the common dir) or an `https://` URL (recorded only). |
 | `timeout_secs` | `u64` | `1800` | no | Wall-clock limit in seconds for one provider process. |
 

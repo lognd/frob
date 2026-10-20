@@ -264,7 +264,16 @@ impl EvidenceRecord {
     }
 
     /// True when this record may satisfy the close guard: measured and not a failing run.
+    ///
+    /// A passing run whose recorded executed count is zero never does: land re-verifies it, so a green exit over no test is refused there too.
+    // frob:ticket 01M5B4R6YPM1D0A41AX7MRCHXP
     pub fn satisfies_close(&self, store: &BlobStore) -> bool {
-        self.passed != Some(false) && self.effective_status(store) == Status::Measured
+        let executed_nothing = self.passed == Some(true) && self.test_count == Some(0);
+        if executed_nothing {
+            tracing::warn!(reference = %self.reference, "evidence passed but executed no test; not counted");
+        }
+        !executed_nothing
+            && self.passed != Some(false)
+            && self.effective_status(store) == Status::Measured
     }
 }

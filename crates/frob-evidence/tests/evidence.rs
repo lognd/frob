@@ -1008,3 +1008,38 @@ fn an_inherited_nextest_profile_the_project_lacks_does_not_select_the_profile() 
     assert!(cap.measured && cap.passed, "{}", cap.transcript);
     assert_eq!(cap.tests.len(), 1, "{:?}", cap.tests);
 }
+
+// frob:ticket 01M5B4R6YPM1D0A41AX7MRCHXP
+#[test]
+fn a_passing_record_that_executed_zero_tests_never_satisfies_close() {
+    // frob:tests crates/frob-evidence/src/record.rs::satisfies_close
+    let dir = repo("base");
+    let st = store(dir.path(), 1024);
+    let cap = provider::Capture {
+        exit_code: Some(0),
+        passed: true,
+        measured: true,
+        tests: vec![],
+        failed_tests: vec![],
+        non_passing: frob_evidence::NonPassing::default(),
+        transcript: "ok".to_owned(),
+    };
+    let mut rec = build_record(
+        &st,
+        &PathScrub::default(),
+        Provider::Command,
+        "git status",
+        &cap,
+        &[],
+        frob_ledger::model::Stamp::from_unix(1_800_000_000),
+    )
+    .expect("record");
+    assert!(
+        rec.satisfies_close(&st),
+        "exit-code-only evidence still counts"
+    );
+    rec.test_count = Some(0);
+    assert!(!rec.satisfies_close(&st));
+    rec.test_count = Some(2);
+    assert!(rec.satisfies_close(&st));
+}
