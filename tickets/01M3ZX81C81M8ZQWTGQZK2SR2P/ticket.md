@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-20T04:15:20Z"
+updated = "2026-10-20T04:16:34Z"
 idempotency_key = "m2-sec-ledger-protect"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/frob/src/doctor.rs", "crates/frob-obligations/src/tick_protect.rs"]
+scope = ["crates/frob/src/doctor.rs", "crates/frob-obligations/src/tick_protect.rs", "crates/frob-obligations/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
