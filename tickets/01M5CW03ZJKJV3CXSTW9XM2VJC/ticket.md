@@ -2,7 +2,8 @@
 id = "01M5CW03ZJKJV3CXSTW9XM2VJC"
 title = "Fix tickets.md section 2b drift"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
