@@ -2,7 +2,8 @@
 id = "01M5AZPCM91TVXZNQ6P4KVRPBF"
 title = "Frob rule corpora: add the vacuous (reason=vacuous) case for must_measure rules COV001 REF001 TODO002"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
