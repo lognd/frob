@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-19T21:04:55Z"
 updated = "2026-10-20T02:20:05Z"
-scope = ["crates/gob-mdtest/**", "crates/gob-rules/**", "crates/gob-macros/src/rule_attr.rs", "crates/gob-macros/src/lib.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/grimble-check/src/product.rs", "crates/gob-config/src/rules/cfg001.rs", "crates/gob-check/src/status.rs", "crates/gob-check/src/required.rs", "crates/gob-check/tests/ui_product/retired_reused.rs"]
+scope = ["crates/gob-mdtest/**", "crates/gob-rules/**", "crates/gob-macros/src/rule_attr.rs", "crates/gob-macros/src/lib.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/grimble-check/src/product.rs", "crates/gob-config/src/rules/cfg001.rs", "crates/gob-check/src/status.rs", "crates/gob-check/src/required.rs", "crates/gob-check/tests/ui_product/retired_reused.rs", "crates/gob-check/tests/ui_product/dup_id.rs"]
 +++
 
 testing.md 3 requires a fire inside an opaque region for lexical rules, but RuleMeta carries no needs; add it, then a CaseKind for it. Found while working ~WPZC326.
