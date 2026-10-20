@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-20T07:22:22Z"
+updated = "2026-10-20T07:22:28Z"
 idempotency_key = "m2-mirror2-gh-change-feed"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-gh/src/feed.rs", "crates/frob-mirror/src/feed.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an issue whose update time is not past its stored observed value, when the feed is processed, then it gets no history read"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an errors array in a feed page, when processed, then the feed stops for that scope and the cursor does not advance"
