@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:35Z"
-updated = "2026-10-20T06:47:32Z"
+updated = "2026-10-20T06:47:33Z"
 idempotency_key = "m2-mirror2-gh-schema-inventory"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/github/schema.rs", "crates/frob-mirror/src/inventory.rs"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a repository-level label rename since the last inventory, when the inventory is read, then the change is recorded once with fidelity gap"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a project field other than status, when reconciled, then it is read and never written"
