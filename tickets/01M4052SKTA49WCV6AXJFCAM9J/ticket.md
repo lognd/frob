@@ -2,7 +2,8 @@
 id = "01M4052SKTA49WCV6AXJFCAM9J"
 title = "Read-back normalization: compare after the tracker's own formatting"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
