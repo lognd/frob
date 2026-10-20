@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:44Z"
-updated = "2026-10-20T04:58:50Z"
+updated = "2026-10-20T04:59:40Z"
 idempotency_key = "m2-mirror-privacy"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/privacy.rs", "crates/frob-mirror/Cargo.toml", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md", "Cargo.lock"]
@@ -19,7 +19,7 @@ target = "01M3ZX832JK52FXBPPCCGTDRTG"
 
 [[acceptance]]
 text = "Given an evidence transcript containing a registered secret, when projected, then the secret is redacted"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ticket with a held lease, when projected, then no worktree path appears"
