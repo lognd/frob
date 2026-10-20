@@ -2,7 +2,8 @@
 id = "01M3ZX7ZSTP704C6ANPPJ8J81D"
 title = "Remedies, help and fix commands only from host templates"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
