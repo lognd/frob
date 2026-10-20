@@ -1,0 +1,5 @@
+kind = "changelog-exempt"
+reason = "docs-only drift fix; no code to measure"
+at = "2026-10-20T14:49:37Z"
+actor = "lognd"
+rev = 1
