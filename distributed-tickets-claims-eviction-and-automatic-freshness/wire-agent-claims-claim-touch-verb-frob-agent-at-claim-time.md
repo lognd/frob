@@ -10,5 +10,5 @@ reporter = "lognd"
 created = "2026-10-20T21:18:32Z"
 updated = "2026-10-20T22:49:42Z"
 idempotency_key = "dt-DT15-wire"
-scope = ["crates/frob-lease/src/model.rs", "crates/frob-lease/src/store.rs", "crates/frob-check/src/scope.rs", "crates/frob/src/lease_cmd.rs"]
+scope = ["crates/frob-lease/src/model.rs", "crates/frob-lease/src/store.rs", "crates/frob-check/src/scope.rs", "crates/frob/src/lease_cmd.rs", "crates/frob/src/product.rs"]
 +++
