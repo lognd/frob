@@ -12,6 +12,7 @@ pub mod cursor;
 pub mod dups;
 pub mod fields;
 pub mod github;
+pub mod identity;
 pub mod journal;
 pub mod keyring;
 pub mod limits;

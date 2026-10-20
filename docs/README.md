@@ -21,6 +21,7 @@ This is the one index of every document under docs/. Notes (frozen research and 
 |---|---|---|---|
 | [crunk/README.md](crunk/README.md) | crunk | current | crunk |
 | [crunk/config.md](crunk/config.md) | crunk.toml reference | generated | crunk |
+| [guides/grimble.md](guides/grimble.md) | grimble user guide: model files, check, fmt and the first rules | current | grimble |
 | [guides/quickstart.md](guides/quickstart.md) | Quickstart: from `frob init` to a landed ticket | current | frob |
 | [guides/upgrade-from-v1.md](guides/upgrade-from-v1.md) | Upgrade from frob v1 to v2 | current | frob |
 | [reference/cli/any.md](reference/cli/any.md) | `any` commands | generated | frob |
