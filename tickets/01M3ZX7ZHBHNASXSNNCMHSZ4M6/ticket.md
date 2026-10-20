@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-20T03:46:39Z"
+updated = "2026-10-20T03:49:06Z"
 idempotency_key = "m2-diag-render-help"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/gob-diagnostics/src/text.rs", "crates/gob-diagnostics/src/lib.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX7E968R74N08V8DW4RJVG"
 
 [[acceptance]]
 text = "Given a finding with a secondary span in another file and a maybe-incorrect fix, when rendered as text, then the snapshot matches the diagnostics.md section 2 example"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given --quiet, when rendered, then help lines are dropped and the message, span and code remain"
