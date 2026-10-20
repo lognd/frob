@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-20T03:45:22Z"
+updated = "2026-10-20T03:48:47Z"
 idempotency_key = "m2-sec-finding-handles"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-packs/src/finding_handle.rs"]
+scope = ["crates/gob-packs/src/finding_handle.rs", "crates/gob-packs/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
