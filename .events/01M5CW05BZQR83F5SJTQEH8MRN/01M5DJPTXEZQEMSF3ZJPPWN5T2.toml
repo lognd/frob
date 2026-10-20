@@ -1,0 +1,79 @@
+kind = "evidence"
+captured_at = "2026-10-20T21:15:31Z"
+digest = "13dc7b503d3b3f4756e7338722b23e03b8693fe5114aed9d80fd85211efc1849"
+exit_code = 101
+inline = """
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+error[E0432]: unresolved import `frob_worktree::next`
+  --> crates/frob-worktree/tests/next.rs:12:20
+   |
+12 | use frob_worktree::next::{E_NO_DOABLE, MAX_ATTEMPTS};
+   |                    ^^^^ could not find `next` in `frob_worktree`
+
+error[E0433]: cannot find `next` in `frob_worktree`
+   --> crates/frob-worktree/tests/next.rs:171:28
+    |
+171 |     assert!(frob_worktree::next::is_skippable("E-CLAIM-LOST"));
+    |                            ^^^^ could not find `next` in `frob_worktree`
+
+error[E0433]: cannot find `next` in `frob_worktree`
+   --> crates/frob-worktree/tests/next.rs:172:28
+    |
+172 |     assert!(frob_worktree::next::is_skippable("E-LEASE-HELD"));
+    |                            ^^^^ could not find `next` in `frob_worktree`
+
+error[E0433]: cannot find `next` in `frob_worktree`
+   --> crates/frob-worktree/tests/next.rs:173:29
+    |
+173 |     assert!(!frob_worktree::next::is_skippable("E-PM-CYCLE-OVERDUE"));
+    |                             ^^^^ could not find `next` in `frob_worktree`
+
+error[E0433]: cannot find `next` in `frob_worktree`
+   --> crates/frob-worktree/tests/next.rs:174:29
+    |
+174 |     assert!(!frob_worktree::next::is_skippable("E-WIP-REPO"));
+    |                             ^^^^ could not find `next` in `frob_worktree`
+
+error[E0599]: no method named `work_next` found for struct `Workspace<'a>` in the current scope
+   --> crates/frob-worktree/tests/next.rs:139:10
+    |
+138 |       let started = ws
+    |  ___________________-
+139 | |         .work_next(&WorkOptions::default(), MAX_ATTEMPTS)
+    | |         -^^^^^^^^^ method not found in `Workspace<'_>`
+    | |_________|
+    |
+
+error[E0599]: no method named `work_next` found for struct `Workspace<'a>` in the current scope
+   --> crates/frob-worktree/tests/next.rs:157:10
+    |
+156 |       let none = ws
+    |  ________________-
+157 | |         .work_next(&WorkOptions::default(), MAX_ATTEMPTS)
+    | |         -^^^^^^^^^ method not found in `Workspace<'_>`
+    | |_________|
+    |
+
+error[E0599]: no method named `work_next` found for struct `Workspace<'a>` in the current scope
+   --> crates/frob-worktree/tests/next.rs:163:10
+    |
+162 |       let lost = ws
+    |  ________________-
+163 | |         .work_next(&WorkOptions::default(), MAX_ATTEMPTS)
+    | |         -^^^^^^^^^ method not found in `Workspace<'_>`
+    | |_________|
+    |
+
+Some errors have detailed explanations: E0432, E0433, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `frob-worktree` (test "next") due to 8 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "package(frob-worktree) & binary(next)"
+size = 2795
+status = "measured"
+at = "2026-10-20T21:15:31Z"
+actor = "lognd"
+rev = 1
