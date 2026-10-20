@@ -310,6 +310,7 @@ pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<Evid
             statement: req.statement.clone(),
             facts,
         }),
+        head: None,
     })
 }
 
