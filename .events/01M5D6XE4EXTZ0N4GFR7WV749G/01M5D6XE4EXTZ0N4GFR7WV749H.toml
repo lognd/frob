@@ -1,0 +1,9 @@
+kind = "create"
+title = "Refresh: WIP push of claimed branches, checked-out ledger branch, derived page regeneration"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~QD7BPB3: update_ref_cas/commit_merge refuse a checked-out ref; push_wip and derived pages not done."
+at = "2026-10-20T17:49:28Z"
+actor = "lognd"
+rev = 1
