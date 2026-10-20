@@ -1,0 +1,45 @@
+kind = "evidence"
+captured_at = "2026-10-20T19:35:14Z"
+digest = "6856ea87071abcc3b5a114995ca2dc6e5c977f9a0e7c4df89917b1e625cdfa07"
+exit_code = 101
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+error[E0433]: cannot find `claim_window` in `frob_ledger`
+  --> crates/frob/src/config.rs:60:30
+   |
+60 |     pub claims: frob_ledger::claim_window::ClaimWindows,
+   |                              ^^^^^^^^^^^^ could not find `claim_window` in `frob_ledger`
+
+error[E0433]: cannot find `claim_window` in `frob_ledger`
+   --> crates/frob/src/config.rs:106:34
+    |
+106 |             claims: frob_ledger::claim_window::ClaimWindows::from_tables(
+    |                                  ^^^^^^^^^^^^ could not find `claim_window` in `frob_ledger`
+
+error[E0433]: cannot find `claim_window` in `frob_ledger`
+   --> crates/frob/src/config.rs:107:43
+    |
+107 |                 &doc.table::<frob_ledger::claim_window::ClaimsTable>()?.value,
+    |                                           ^^^^^^^^^^^^ could not find `claim_window` in `frob_ledger`
+
+error[E0433]: cannot find `claim_window` in `frob_ledger`
+   --> crates/frob/src/config.rs:108:43
+    |
+108 |                 &doc.table::<frob_ledger::claim_window::ClaimsClassTable>()?.value,
+    |                                           ^^^^^^^^^^^^ could not find `claim_window` in `frob_ledger`
+
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `frob-cli` (lib) due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `frob-cli` (lib test) due to 4 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "claim_window"
+size = 1691
+status = "measured"
+at = "2026-10-20T19:35:14Z"
+actor = "lognd"
+rev = 1
