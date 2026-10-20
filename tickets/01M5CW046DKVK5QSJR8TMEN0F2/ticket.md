@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "A missing base on the remote exits 1 with E-SYNC-NO-BASE naming the remote HEAD"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "An unreachable remote exits 3 with a W-SYNC warning class"
