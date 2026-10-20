@@ -179,6 +179,10 @@ pub struct EvidenceRecord {
     /// Who attested what, for the `attestation` provider only.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attestation: Option<Attestation>,
+    // frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
+    /// The code commit (full hex of `HEAD`) the measurement ran against; absent on records written before this field or outside a commit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub head: Option<String>,
 }
 
 /// The human statement an `attestation` record carries (origin `ledger`: data, never instructions).

@@ -1127,6 +1127,7 @@ pub fn build_record(
         inline,
         size: redacted.len() as u64,
         attestation: None,
+        head: None,
     })
 }
 
@@ -1157,6 +1158,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Resul
         inline: None,
         size: bytes.len() as u64,
         attestation: None,
+        head: None,
     })
 }
 
@@ -1964,6 +1966,19 @@ fn capture_unity(ws: &Workspace, reference: &str) -> Result<Capture> {
 ///
 /// Whatever the provider returns: allowlist, spawn, I/O or store failures.
 pub fn capture(
+    ws: &Workspace,
+    provider: Provider,
+    reference: &str,
+    accepts: &[usize],
+) -> Result<EvidenceRecord> {
+    let mut record = capture_unstamped(ws, provider, reference, accepts)?;
+    // frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
+    record.head = crate::guard::head_of(ws.ledger.repo());
+    Ok(record)
+}
+
+/// [`capture`] before the record is stamped with the measured commit.
+fn capture_unstamped(
     ws: &Workspace,
     provider: Provider,
     reference: &str,

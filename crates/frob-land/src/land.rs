@@ -358,6 +358,8 @@ fn prepare(
     let mut done_view = view.ticket.clone();
     done_view.front.outcome = Some(opts.outcome);
     warnings.extend(done.warnings(&done_view));
+    // frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
+    warnings.extend(stale_evidence_heads(&wt, &site.ledger, id));
     // frob:ticket 01M5CW05JQZKCQKV68ZEQ5WASD
     warnings.extend(frob_worktree::anyway::land_notices(&site.ledger, id));
     let out = LandOutcome {
@@ -1192,6 +1194,19 @@ fn timed<T>(stages: &mut Vec<StageTiming>, name: &str, f: impl FnOnce() -> T) ->
 }
 
 /// The warning a debug build earns when it lands.
+// frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
+/// Warnings for bound evidence whose measured commit is no longer an ancestor of the ticket branch tip.
+fn stale_evidence_heads(wt: &Repo, ledger: &Ledger, id: TicketId) -> Vec<String> {
+    let Ok(stored) = frob_evidence::events::list(ledger, id) else {
+        return Vec::new();
+    };
+    let Ok(tip) = wt.rev_parse("HEAD") else {
+        return Vec::new();
+    };
+    let records: Vec<_> = stored.into_iter().map(|s| s.record).collect();
+    frob_evidence::guard::stale_head_warnings(wt, &records, &tip.to_string())
+}
+
 fn debug_build_notice() -> Option<String> {
     crate::lock::is_debug_build().then(|| {
         "this frob is an unoptimized debug build; use the optimized binary for lands".to_owned()

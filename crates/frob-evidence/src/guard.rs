@@ -22,6 +22,40 @@ pub const CODE_CHANGING: &[TicketType] = &[
     TicketType::Invariant,
 ];
 
+// frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
+/// The full hex of `repo`'s `HEAD` commit, or `None` on an unborn branch.
+pub fn head_of(repo: &gob_git::Repo) -> Option<String> {
+    repo.head().ok()?.oid.map(|o| o.to_string())
+}
+
+// frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
+/// One warning per record whose `head` is not an ancestor of `tip` (a force push or rebase after measuring).
+///
+/// Records without a `head` and heads the repository cannot resolve are skipped: only a provable non-ancestor warns.
+pub fn stale_head_warnings(
+    repo: &gob_git::Repo,
+    records: &[EvidenceRecord],
+    tip: &str,
+) -> Vec<String> {
+    records
+        .iter()
+        .filter_map(|r| {
+            let head = r.head.as_deref()?;
+            let measured = repo.rev_parse(head).ok()?;
+            let ancestor = repo.merge_base(head, tip).ok()? == Some(measured);
+            tracing::debug!(reference = %r.reference, head, tip, ancestor, "evidence head checked");
+            (!ancestor).then(|| {
+                format!(
+                    "evidence `{}` measured {}, which is not an ancestor of {}; re-measure after the rebase or force push",
+                    r.reference,
+                    &head[..head.len().min(12)],
+                    &tip[..tip.len().min(12)]
+                )
+            })
+        })
+        .collect()
+}
+
 /// Requires at least one measured, non-failing evidence record to close a code-changing ticket.
 #[derive(Debug, Clone, Default)]
 pub struct EvidenceGuard {

@@ -1040,3 +1040,52 @@ fn a_passing_record_that_executed_zero_tests_never_satisfies_close() {
     rec.test_count = Some(2);
     assert!(rec.satisfies_close(&st));
 }
+
+// frob:tests capture
+// frob:tests head_of
+#[test]
+fn capture_records_the_measured_head_commit() {
+    let dir = repo("base");
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
+    let rec =
+        provider::capture(&ws, Provider::Command, "git log -1 --format=%B", &[]).expect("capture");
+    let head = Repo::discover(dir.path())
+        .expect("repo")
+        .head()
+        .expect("head")
+        .oid;
+    assert_eq!(rec.head, head.map(|o| o.to_string()));
+    assert_eq!(rec.head.as_deref().map(str::len), Some(40));
+}
+
+// frob:tests stale_head_warnings
+#[test]
+fn stale_head_warns_only_for_a_head_that_is_not_an_ancestor_of_the_tip() {
+    let dir = repo("base");
+    let p = dir.path();
+    let repo_h = Repo::discover(p).expect("repo");
+    let first = frob_evidence::guard::head_of(&repo_h).expect("head");
+    git(p, &["commit", "-q", "--allow-empty", "-m", "second"]);
+    let tip = frob_evidence::guard::head_of(&Repo::discover(p).expect("repo")).expect("tip");
+    // A commit on a side branch, then back: not an ancestor of the tip.
+    git(p, &["checkout", "-q", "-b", "side", &first]);
+    git(p, &["commit", "-q", "--allow-empty", "-m", "side"]);
+    let side = frob_evidence::guard::head_of(&Repo::discover(p).expect("repo")).expect("side");
+    let mk = |head: Option<&str>| {
+        let mut r = hash_file(
+            p,
+            "data.txt",
+            &[],
+            frob_ledger::model::Stamp::from_unix(1_800_000_000),
+        )
+        .expect("hash");
+        r.head = head.map(str::to_owned);
+        r
+    };
+    let repo_h = Repo::discover(p).expect("repo");
+    let recs = [mk(Some(&first)), mk(Some(&tip)), mk(Some(&side)), mk(None)];
+    let warns = frob_evidence::guard::stale_head_warnings(&repo_h, &recs, &tip);
+    assert_eq!(warns.len(), 1, "{warns:?}");
+    assert!(warns[0].contains(&side[..12]), "{warns:?}");
+}
