@@ -4,9 +4,10 @@ title = "frob enumerates live repo packs (with tree digests) for check --trust-f
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T08:37:34Z"
-updated = "2026-10-20T08:37:34Z"
+updated = "2026-10-20T09:45:25Z"
 scope = ["crates/frob-check/src/**"]
 +++
 
