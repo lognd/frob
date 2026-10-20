@@ -2,12 +2,12 @@
 id = "01M5B9ZKNYHSNYFCH1ZPBEEBRK"
 title = "Ledger parse_shard: treat a shard without issue as unmapped, not malformed"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T00:04:36Z"
-updated = "2026-10-20T00:25:41Z"
+updated = "2026-10-20T00:25:42Z"
 scope = ["crates/frob-ledger/src/mirror_map.rs"]
 +++
 
