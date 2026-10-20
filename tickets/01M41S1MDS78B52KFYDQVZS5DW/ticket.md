@@ -2,7 +2,8 @@
 id = "01M41S1MDS78B52KFYDQVZS5DW"
 title = "Migrate frob-* crates to gob-path (RelPath, Shown, Arg); remove them from the allow list"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
