@@ -4,9 +4,10 @@ title = "CI: schedule the B1 bench (cargo bench -p gob-plan --bench b1_plan_vs_h
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-20T08:37:15Z"
-updated = "2026-10-20T08:37:15Z"
+updated = "2026-10-20T10:15:30Z"
 scope = [".github/workflows/**"]
 +++
 
