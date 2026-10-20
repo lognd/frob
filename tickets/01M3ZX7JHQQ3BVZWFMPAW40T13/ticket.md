@@ -2,7 +2,8 @@
 id = "01M3ZX7JHQQ3BVZWFMPAW40T13"
 title = "Benchmark B2: compiled-in GRL rule versus the same rule as a cached disk plan"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
