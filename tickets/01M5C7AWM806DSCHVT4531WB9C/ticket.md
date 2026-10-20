@@ -2,7 +2,8 @@
 id = "01M5C7AWM806DSCHVT4531WB9C"
 title = "frob enumerates live repo packs (with tree digests) for check --trust-from"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
