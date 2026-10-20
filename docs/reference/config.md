@@ -182,6 +182,18 @@ Materialized: yes.
 | `ttl_secs` | `u64` | `7200` | no | Seconds a lease stays live after its last renewal (default two hours). |
 | `waiter_ttl_secs` | `u64` | `60` | no | Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped (frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ). |
 
+## `[mirror]`
+
+Mirror identity settings, so recreate needs no environment variables for them.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `bot_ids` | `Vec<String>` | `[]` | no | Logins of the bot accounts whose markers are trusted; empty means the token's own login. |
+| `kid` | `String` | `"k1"` | no | Marker signing key id; the key itself stays in `FROB_MIRROR_KEY`. |
+| `repo` | `String` | `""` | no | GitHub repository as `OWNER/NAME`; empty means derive it from the `origin` remote. |
+
 ## `[packs]`
 
 Which data packs the repository enables (packs.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.

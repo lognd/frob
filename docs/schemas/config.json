@@ -512,6 +512,31 @@
       },
       "type": "object"
     },
+    "mirror": {
+      "additionalProperties": false,
+      "description": "Mirror identity settings, so recreate needs no environment variables for them.",
+      "properties": {
+        "bot_ids": {
+          "default": [],
+          "description": "Logins of the bot accounts whose markers are trusted; empty means the token's own login.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kid": {
+          "default": "k1",
+          "description": "Marker signing key id; the key itself stays in `FROB_MIRROR_KEY`.",
+          "type": "string"
+        },
+        "repo": {
+          "default": "",
+          "description": "GitHub repository as `OWNER/NAME`; empty means derive it from the `origin` remote.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "packs": {
       "additionalProperties": false,
       "description": "Which data packs the repository enables (packs.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.",
