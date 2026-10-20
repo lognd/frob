@@ -105,7 +105,8 @@ impl FrobConfig {
             // frob:ticket 01M5CW04YABDJW6ZXSWFGTCB9E
             claims: frob_ledger::claim_window::ClaimWindows::from_tables(
                 &doc.table::<frob_ledger::claim_window::ClaimsTable>()?.value,
-                &doc.table::<frob_ledger::claim_window::ClaimsClassTable>()?.value,
+                &doc.table::<frob_ledger::claim_window::ClaimsClassTable>()?
+                    .value,
             )
             .map_err(|message| ConfigError::Invalid {
                 table: "claims".to_owned(),
