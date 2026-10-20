@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-20T08:16:37Z"
+updated = "2026-10-20T08:18:37Z"
 idempotency_key = "m2-mirror2-normalize"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/normalize.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -23,7 +23,7 @@ target = "01M4052SFS22HBR73HQN1E4FA4"
 
 [[acceptance]]
 text = "Given a body the tracker reformats on write, when read back once and stored, then later runs see no difference and write nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ledger change to the field, when published, then the new value is read back once again and stored"
