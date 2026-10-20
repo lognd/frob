@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:39:12Z"
-updated = "2026-10-20T04:29:58Z"
+updated = "2026-10-20T04:30:03Z"
 idempotency_key = "m2-ticket-proposals-verbs"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/ticket/proposals_cmd.rs", "crates/frob-check/src/proposals_summary.rs", "crates/frob/src/ticket/mod.rs", "crates/frob-check/src/lib.rs", "crates/frob-check/src/verb.rs", "docs/design/mirror.md"]
@@ -23,7 +23,7 @@ target = "01M4052SZYWSD45GEYNTTTJMDB"
 
 [[acceptance]]
 text = "Given pending proposals, when frob check runs, then exit status is unaffected and the summary shows the count"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a pending proposal, when declined with a reason, then a proposal-declined event is appended and the proposal leaves the pending list"
