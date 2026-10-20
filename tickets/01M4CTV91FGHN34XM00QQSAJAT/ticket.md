@@ -8,12 +8,12 @@ points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:52Z"
-updated = "2026-10-20T05:54:09Z"
+updated = "2026-10-20T06:03:51Z"
 scope = ["docs/guides/**", "changelog.d/**", "crates/frob/tests/it/doc_commands.rs", "docs/README.md"]
 
 [[acceptance]]
 text = "Given docs/guides/grimble.md, when its commands run in a fresh repository, then each succeeds (doc test)"
-bound = false
+bound = true
 +++
 
 notes/review/adoption-trial-2026-10-07.md: no grimble user guide found.
