@@ -1272,6 +1272,7 @@ dependencies = [
  "frob-ledger",
  "gob-diagnostics",
  "gob-git",
+ "gob-log",
  "gob-time",
  "gob-trust",
  "schemars",

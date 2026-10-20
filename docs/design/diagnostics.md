@@ -62,6 +62,14 @@ commands come only from host templates; first-occurrence teaching
 applies to std rules only; plugin fixes are at most `maybe-incorrect`
 unless the pack holds `fix.machine`, and never touch the control plane.
 
+Host-only remedies (`gob_diagnostics::remedy`): `host_help` builds the
+help line from a host template and appends any pack text as escaped
+`pack(NAME) says: "..."` data; `plugin_url_line` prints a plugin URL as
+plain text with the pack name first, never as a terminal hyperlink;
+`explain_disclosure` gives a pack rule no inline explain (and records
+nothing in `.frob/seen.toml`); `fenced_pack_explain` shows pack explain
+text on request, fenced and labelled.
+
 Structured remedies: a refusal whose remedy is a command carries it as
 a `RemedyCommand` (`Refusal::with_command`), not only as a string. It
 holds the `product`, the `verb` path words, `flags` (long names without

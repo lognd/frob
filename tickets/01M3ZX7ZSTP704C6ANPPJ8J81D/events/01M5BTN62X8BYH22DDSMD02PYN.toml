@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-diagnostics/src/remedy.rs", "crates/gob-diagnostics/src/lib.rs"]
+new = ["crates/gob-diagnostics/src/remedy.rs", "crates/gob-diagnostics/src/lib.rs", "docs/design/diagnostics.md"]
+at = "2026-10-20T04:56:00Z"
+actor = "lognd"
+rev = 1
