@@ -29,5 +29,6 @@ pub mod privacy;
 pub mod progress;
 pub mod projection;
 pub mod proposals;
+pub mod reconcile;
 pub mod shardstore;
 pub mod sweep;

@@ -2,14 +2,14 @@
 id = "01M41S1Q8HEXR5Y9E39EGNECF6"
 title = "Migrate grimble-* crates to gob-path; remove them from the allow list"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:47Z"
-updated = "2026-10-03T20:59:47Z"
-scope = ["crates/grimble*/**"]
+updated = "2026-10-20T09:17:59Z"
+scope = ["crates/grimble*/**", "crates/gob-path/tests/confinement.rs"]
 
 [[links]]
 kind = "blocked-by"

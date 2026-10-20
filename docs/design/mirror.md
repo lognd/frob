@@ -358,6 +358,12 @@ and in `frob mirror status`.
   newtype), `begin_read` (history after the stored cursor, yielding a
   `PendingCursor` held outside the shard so it survives a create) and
   `PendingCursor::advance`, which needs a `Committed` proof.
+  Implemented in `frob_mirror::reconcile`: `reconcile_issue` turns an `IssueView`
+  (projection, current values, history after the cursor, journal, read-back)
+  into `Reconciled`: `Revert`s to the projection, `Edit`s to record as
+  proposals and capture gaps. Own writes are skipped; a bot id with no
+  journaled write is unknown automation; tracker-owned fields are untouched.
+  It returns data and never an error, so MIR002 stays Advisory.
 - **What "nothing is lost" means, precisely** (MIR-AUD-03). The value
   present at read time is always captured (read-time capture compares
   it with the last observed value). Intermediate values and authors are

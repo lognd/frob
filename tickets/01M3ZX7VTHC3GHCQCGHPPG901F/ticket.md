@@ -2,13 +2,14 @@
 id = "01M3ZX7VTHC3GHCQCGHPPG901F"
 title = "This repository's own tool stages need one-time trust (maintainer step and CI flag)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-20T09:03:54Z"
+updated = "2026-10-20T09:08:47Z"
 idempotency_key = "m2-sec-self-trust"
 labels = ["milestone:2", "area:security"]
 scope = ["frob.toml", ".github/workflows/ci.yml", "docs/design/security.md"]
@@ -27,7 +28,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the CI workflow, when it runs check, then it uses --trust-from and no other trust flag"
-bound = false
+bound = true
 +++
 
 Implements security.md sections 2.4 and 5 item 3 (OWNER call).
