@@ -20,3 +20,6 @@ pub mod adapter;
 
 // frob:ticket 01M5B07S0STANADP897P4A6YB2
 pub mod http;
+
+// frob:ticket 01M4052R4AEFJ2MQ2H9A9X0DN3
+pub mod schema;

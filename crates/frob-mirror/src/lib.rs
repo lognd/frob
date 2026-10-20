@@ -13,6 +13,7 @@ pub mod dups;
 pub mod fields;
 pub mod github;
 pub mod identity;
+pub mod inventory;
 pub mod journal;
 pub mod keyring;
 pub mod limits;
