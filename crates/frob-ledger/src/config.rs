@@ -88,6 +88,25 @@ pub struct GitTable {
     pub cas_retries: u32,
 }
 
+/// Settings of the freshness probe behind `frob refresh` (`distributed-tickets.md` section 5).
+// frob:ticket 01M5CW046DKVK5QSJR8TMEN0F2
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "sync", materialize)]
+pub struct SyncTable {
+    /// The one authoritative remote; other remotes are never probed.
+    #[config(default = "origin".to_owned())]
+    pub remote: String,
+    /// Seconds a successful probe stays fresh before the next one is due.
+    #[config(default = 300)]
+    pub ttl_secs: u32,
+    /// Milliseconds before a hung `git ls-remote` is killed.
+    #[config(default = 2500)]
+    pub probe_timeout_ms: u32,
+    /// Ceiling in seconds of the exponential backoff after failed probes.
+    #[config(default = 3600)]
+    pub backoff_max_secs: u32,
+}
+
 impl LedgerConfig {
     /// The ledger settings the `[tickets]` and `[git]` tables imply.
     #[must_use]

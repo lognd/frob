@@ -27,6 +27,7 @@ pub(crate) mod pathtext;
 mod product;
 pub mod profile;
 pub mod profile_cmd;
+pub mod refresh_cmd;
 pub mod release_cmd;
 pub mod rule_cmd;
 pub mod stats_cmd;

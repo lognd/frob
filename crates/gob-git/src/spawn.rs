@@ -14,6 +14,8 @@ pub enum SpawnClass {
     RepoHook,
     /// `git fetch` of one ticket-branch ref; 1 per bootstrap of a missing local ticket branch.
     GitFetch,
+    /// `git ls-remote` freshness probe of `frob refresh`; at most 1 per ttl per clone.
+    GitLsRemote,
     /// `git push` over SSH until gix push is stable; 1 per `--push`.
     GitPush,
     /// The user-invoked `frob git -- ...` escape hatch; explicit only.
@@ -32,11 +34,12 @@ pub enum SpawnClass {
 
 impl SpawnClass {
     /// Every class, in `git-io.md` table order.
-    pub const ALL: [SpawnClass; 11] = [
+    pub const ALL: [SpawnClass; 12] = [
         Self::GitMerge,
         Self::GitWorktreeAdd,
         Self::RepoHook,
         Self::GitFetch,
+        Self::GitLsRemote,
         Self::GitPush,
         Self::GitEscapeHatch,
         Self::TestRunner,
@@ -53,6 +56,7 @@ impl SpawnClass {
             Self::GitMerge
                 | Self::GitWorktreeAdd
                 | Self::GitFetch
+                | Self::GitLsRemote
                 | Self::GitPush
                 | Self::GitEscapeHatch
         )
@@ -65,6 +69,7 @@ impl SpawnClass {
             Self::GitWorktreeAdd => "git-worktree-add",
             Self::RepoHook => "repo-hook",
             Self::GitFetch => "git-fetch",
+            Self::GitLsRemote => "git-ls-remote",
             Self::GitPush => "git-push",
             Self::GitEscapeHatch => "git-escape-hatch",
             Self::TestRunner => "test-runner",

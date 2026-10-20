@@ -6,7 +6,7 @@ use std::path::Path;
 use gob_config::{ConfigDocument, ConfigError, ConfigTable};
 
 /// `[tickets]` and `[git]` are owned by `frob-ledger`; re-exported for callers of this crate.
-pub use frob_ledger::config::{GitTable, IndexWriterKnob, RefModeKnob, TicketsTable};
+pub use frob_ledger::config::{GitTable, IndexWriterKnob, RefModeKnob, SyncTable, TicketsTable};
 
 use crate::PRODUCT;
 
@@ -52,6 +52,9 @@ pub struct FrobConfig {
     pub agent: AgentTable,
     /// `[git]`.
     pub git: GitTable,
+    // frob:ticket 01M5CW046DKVK5QSJR8TMEN0F2
+    /// `[sync]`, owned by `frob-ledger`: remote and freshness-probe settings.
+    pub sync: SyncTable,
     /// `[lease]`, owned by `frob-lease`.
     pub lease: frob_lease::LeaseConfig,
     /// `[worktree]`, owned by `frob-worktree`.
@@ -95,6 +98,7 @@ impl FrobConfig {
             cache: doc.table::<CacheTable>()?.value,
             agent: doc.table::<AgentTable>()?.value,
             git: doc.table::<GitTable>()?.value,
+            sync: doc.table::<SyncTable>()?.value,
             lease: doc.table::<frob_lease::LeaseConfig>()?.value,
             worktree: doc.table::<frob_worktree::WorktreeConfig>()?.value,
             // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29

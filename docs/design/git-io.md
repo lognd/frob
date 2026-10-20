@@ -71,6 +71,7 @@ through the same runner.
 | three-way merge of a worktree branch into the land staging tree when gix's merge reports conflicts needing rename detection or a custom driver | git's merge-ort is the reference; reimplementing conflict resolution is out of scope | at most 1 spawn per land |
 | `git worktree add` if the gix worktree write path is not yet complete at the pinned version | verified at build time by a feature test; removed when gix covers it | at most 1 per `work` |
 | repo-configured hooks (`pre-commit`, `pre-push`) | they are user programs by definition | 1 per commit or push when enabled |
+| `git ls-remote` freshness probe (`GIT_TERMINAL_PROMPT=0`, ssh `BatchMode=yes`, killed at `[sync] probe_timeout_ms`) | gix has no cheap bounded remote ref listing; a spawn can be killed, an in-process transport cannot | at most 1 per ttl per clone, from `frob refresh` |
 | `git push` over SSH | gix supports fetch; push transport is newer; use git until gix push is stable | 1 per `--push` |
 | user-invoked escape hatch `frob git -- ...` | debugging | explicit |
 

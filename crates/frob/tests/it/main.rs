@@ -31,6 +31,7 @@ mod pm_config;
 mod pm_wiring;
 mod profile;
 mod redact;
+mod refresh;
 mod release;
 mod release_cut;
 mod release_status;

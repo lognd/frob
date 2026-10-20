@@ -820,6 +820,39 @@
       },
       "type": "object"
     },
+    "sync": {
+      "additionalProperties": false,
+      "description": "Settings of the freshness probe behind `frob refresh` (`distributed-tickets.md` section 5).",
+      "properties": {
+        "backoff_max_secs": {
+          "default": 3600,
+          "description": "Ceiling in seconds of the exponential backoff after failed probes.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "probe_timeout_ms": {
+          "default": 2500,
+          "description": "Milliseconds before a hung `git ls-remote` is killed.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "remote": {
+          "default": "origin",
+          "description": "The one authoritative remote; other remotes are never probed.",
+          "type": "string"
+        },
+        "ttl_secs": {
+          "default": 300,
+          "description": "Seconds a successful probe stays fresh before the next one is due.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "tests": {
       "additionalProperties": false,
       "description": "How `frob test` and the `pytest` provider find the Python interpreter (`[tests]`).",

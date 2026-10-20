@@ -299,6 +299,19 @@ Materialized: yes.
 | `require_ci` | `bool` | `true` | yes | When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green. |
 | `tag` | `String` | `"v{version}"` | yes | Tag name pattern of a release: `{version}` is required, `{product}` is replaced by each product name (one tag per product). |
 
+## `[sync]`
+
+Settings of the freshness probe behind `frob refresh` (`distributed-tickets.md` section 5).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `backoff_max_secs` | `u32` | `3600` | no | Ceiling in seconds of the exponential backoff after failed probes. |
+| `probe_timeout_ms` | `u32` | `2500` | no | Milliseconds before a hung `git ls-remote` is killed. |
+| `remote` | `String` | `"origin"` | no | The one authoritative remote; other remotes are never probed. |
+| `ttl_secs` | `u32` | `300` | no | Seconds a successful probe stays fresh before the next one is due. |
+
 ## `[tests]`
 
 How `frob test` and the `pytest` provider find the Python interpreter (`[tests]`).

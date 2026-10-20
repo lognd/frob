@@ -1,0 +1,1 @@
+Add `frob refresh`, a bounded non-prompting `git ls-remote` freshness probe with cached `refresh.toml` state, exponential backoff, a per-clone lock, a `--status` cache line and a `[sync]` config table.
