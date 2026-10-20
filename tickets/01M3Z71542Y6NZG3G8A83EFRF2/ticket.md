@@ -8,10 +8,10 @@ points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:26Z"
-updated = "2026-10-20T11:23:23Z"
+updated = "2026-10-20T11:28:19Z"
 idempotency_key = "m2-actions"
 labels = ["milestone:2"]
-scope = ["crates/gob-languages/**", "crates/gob-symbols/**"]
+scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "docs/design/cicd.md"]
 
 [[links]]
 kind = "blocked-by"
