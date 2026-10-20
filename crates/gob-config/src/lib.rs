@@ -40,6 +40,7 @@ mod ledger_dir;
 mod load;
 mod local;
 mod materialize;
+mod mirror;
 pub mod rules;
 mod schema;
 mod workspace;
@@ -60,6 +61,7 @@ pub use load::{
 };
 pub use local::{repo_file, user_config_dir, user_config_dir_with, user_file};
 pub use materialize::{MaterializeReport, materialize};
+pub use mirror::{DEFAULT_MIRROR_KID, MirrorTable};
 pub use rules::cfg001::Cfg001;
 pub use schema::schema;
 pub use serde;

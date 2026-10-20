@@ -1,11 +1,15 @@
 //! Ticket-branch shard store: [`ShardStore`] over files committed to a git ref with CAS.
 //!
-//! Each key is one file `<prefix>/<key>.json` on `ref_name`. A write commits only when the
+//! Each key is one file `<prefix>/<key>.toml` on `ref_name` (the ledger reads `issue = N` from it;
+//! the caller's exact bytes ride in a `payload` string so the CAS hash round-trips).
+//! A write commits only when the
 //! file's content hash at the ref tip still equals the caller's expectation; the ref
 //! compare-and-swap is run without blind retry (`cas_retries = 0`), so a lost ref race is
 //! re-read and re-verified here and surfaces as `MapError::Conflict` if the content moved.
 
 // frob:ticket 01M5ASPRNKH3X9W5N9FDERAFCQ
+
+use std::fmt::Write as _;
 
 use gob_git::{CommitOptions, GitError, RelPath, Repo};
 use tracing::{debug, error, info, warn};
@@ -24,7 +28,7 @@ pub struct BranchShardStore {
 }
 
 impl BranchShardStore {
-    /// A store writing `<prefix>/<key>.json` on `ref_name`; `author` overrides git config.
+    /// A store writing `<prefix>/<key>.toml` on `ref_name`; `author` overrides git config.
     pub fn new(repo: Repo, ref_name: &str, prefix: &str, author: Option<(String, String)>) -> Self {
         Self {
             repo,
@@ -37,9 +41,9 @@ impl BranchShardStore {
     /// Repo-relative path of the file holding `key`.
     fn path_of(&self, key: &str) -> String {
         if self.prefix.is_empty() {
-            format!("{key}.json")
+            format!("{key}.toml")
         } else {
-            format!("{}/{key}.json", self.prefix)
+            format!("{}/{key}.toml", self.prefix)
         }
     }
 
@@ -49,8 +53,44 @@ impl BranchShardStore {
             debug!(ref_name = %self.ref_name, key, "shard ref absent; key absent");
             return Ok(None);
         }
-        self.repo.read_blob_at(&self.ref_name, &self.path_of(key))
+        let raw = self.repo.read_blob_at(&self.ref_name, &self.path_of(key))?;
+        Ok(raw.and_then(|b| {
+            let out = decode_file(&b);
+            if out.is_none() {
+                warn!(
+                    key,
+                    "shard file has no readable payload; treating as absent"
+                );
+            }
+            out
+        }))
     }
+}
+
+/// Wraps shard `bytes` as TOML: `issue = N` when the JSON names `issue_number`, plus the exact
+/// bytes as a `payload` basic string (JSON string escapes are valid TOML escapes).
+fn encode_file(bytes: &[u8]) -> Vec<u8> {
+    let mut out = String::new();
+    let issue = serde_json::from_slice::<serde_json::Value>(bytes)
+        .ok()
+        .and_then(|v| v.get("issue_number").and_then(serde_json::Value::as_u64))
+        .filter(|n| *n > 0);
+    if let Some(n) = issue {
+        let _ = writeln!(out, "issue = {n}");
+    }
+    let text = String::from_utf8_lossy(bytes);
+    let quoted = serde_json::to_string(text.as_ref()).expect("a str always serializes");
+    let _ = writeln!(out, "payload = {quoted}");
+    out.into_bytes()
+}
+
+/// Recovers the exact shard bytes from a file written by [`encode_file`].
+fn decode_file(file: &[u8]) -> Option<Vec<u8>> {
+    let text = std::str::from_utf8(file).ok()?;
+    let rest = text.lines().find_map(|l| l.strip_prefix("payload = "))?;
+    serde_json::from_str::<String>(rest)
+        .ok()
+        .map(String::into_bytes)
 }
 
 /// Maps an unexpected git failure onto the store's error type (the trait has no I/O variant).
@@ -86,6 +126,7 @@ impl ShardStore for BranchShardStore {
             key: key.to_string(),
             reason: format!("invalid shard path {path}: {e}"),
         })?;
+        let file = encode_file(&bytes);
         let opts = CommitOptions {
             cas_retries: 0,
             author: self.author.clone(),
@@ -104,7 +145,7 @@ impl ShardStore for BranchShardStore {
             let msg = format!("mirror: update shard {key}");
             match self.repo.commit_paths(
                 &self.ref_name,
-                &[(rel.clone(), Some(bytes.clone()))],
+                &[(rel.clone(), Some(file.clone()))],
                 &msg,
                 &opts,
             ) {
@@ -152,6 +193,23 @@ mod tests {
         let h = content_hash(b"one");
         s.put_if("a", Some(&h), b"two".to_vec()).unwrap();
         assert_eq!(s.get("a").unwrap(), b"two");
+    }
+
+    // frob:tests BranchShardStore
+    #[test]
+    fn file_is_toml_the_ledger_can_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut s = store(dir.path());
+        let json = b"{\n  \"issue_number\": 42,\n  \"note\": \"q\\\"\\n'''\"\n}\n".to_vec();
+        s.put_if("01ABC", None, json.clone()).unwrap();
+        assert_eq!(s.get("01ABC").unwrap(), json);
+        let raw = s
+            .repo
+            .read_blob_at(&s.ref_name, ".mirror/01ABC.toml")
+            .unwrap()
+            .unwrap();
+        let text = String::from_utf8(raw).unwrap();
+        assert!(text.starts_with("issue = 42\npayload = \""), "{text}");
     }
 
     // frob:tests BranchShardStore

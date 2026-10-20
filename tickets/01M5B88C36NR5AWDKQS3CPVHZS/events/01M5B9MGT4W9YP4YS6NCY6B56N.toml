@@ -1,0 +1,43 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T23:58:25Z"
+digest = "174164387c525512ac2dae6d68662e108eee09e6352c514d1c6293dbbc5bd29c"
+exit_code = 0
+inline = """
+
+running 1 test
+test mirror_recreate_cmd::tests::get_json_reads_through_the_native_transport ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.02s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 326 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.09s
+     Running unittests src/lib.rs (target/debug/deps/frob_cli-a078efa89cf3e323)
+     Running unittests src/main.rs (target/debug/deps/frob-d53df05cafb587b7)
+     Running tests/it/main.rs (target/debug/deps/it-86b4f0ede1de0041)
+     Running tests/siblings/main.rs (target/debug/deps/siblings-5ae3dfe068a2ad38)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-cli get_json_reads_through_the_native_transport"
+size = 1030
+status = "measured"
+at = "2026-10-19T23:58:25Z"
+actor = "lognd"
+rev = 1
