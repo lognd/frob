@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-ledger/src/claim_cover.rs"]
+at = "2026-10-20T23:46:24Z"
+actor = "lognd"
+rev = 1
