@@ -2,7 +2,8 @@
 id = "01M5D1GP019PAH0KZPFNH0VAHZ"
 title = "Audit working-tree tickets/ path assumptions before the orphan flip"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
