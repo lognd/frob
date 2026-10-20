@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "repo-shipped docs describing the ack (agent playbook or equivalent) are updated in the same change"
-bound = false
+bound = true
 +++
 
 Leaf 3 of T-5101. See scratchpad/HOOK-AUDIT.md section 3.2.
