@@ -1,0 +1,5 @@
+kind = "evidence-bypass"
+reason = "covered by ~RF7ZZHA (scrub on branch layout)"
+at = "2026-10-20T15:54:02Z"
+actor = "lognd"
+rev = 1
