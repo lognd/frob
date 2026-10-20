@@ -2,13 +2,13 @@
 id = "01M3ZX7ZNF2PJ2E8WJH3CSCDFK"
 title = "Teaching state: [ui] teach knob and .frob/seen.toml, first-occurrence inline explain"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-03T03:34:38Z"
+updated = "2026-10-20T04:15:13Z"
 idempotency_key = "m2-diag-teach-state"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/gob-diagnostics/src/teach.rs", "crates/gob-config/src/**"]
