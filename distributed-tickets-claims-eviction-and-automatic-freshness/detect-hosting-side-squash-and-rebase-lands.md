@@ -2,13 +2,13 @@
 id = "01M5CW0609NX9MJ45G2R4CQE0R"
 title = "Detect hosting-side squash and rebase lands"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T14:38:43Z"
+updated = "2026-10-20T23:22:53Z"
 idempotency_key = "dt-DT22"
 
 [[links]]
