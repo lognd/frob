@@ -1325,6 +1325,7 @@ fn brief_labels_ledger_text_and_never_suggests_body_commands(layout: Layout) {
 both_layouts!(brief_labels_ledger_text_and_never_suggests_body_commands);
 
 // frob:ticket 01M3ZX80ZX9YB96A4VRYSQ16NG
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.brief_with
 fn brief_omits_suggested_commands_outside_allowed_tools(layout: Layout) {
     let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let id = ledger
