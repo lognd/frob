@@ -2,7 +2,8 @@
 id = "01M5BA1W8S9BW9Z47AV2ZKVEX0"
 title = "Mirror recreate: read [mirror] repo/kid/bot_ids from FrobConfig instead of env vars"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
