@@ -8,7 +8,7 @@ points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:44Z"
-updated = "2026-10-20T10:45:19Z"
+updated = "2026-10-20T11:14:20Z"
 scope = ["crates/frob*/**"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M41S1KX3ZVF51H8KPJ3YXZF9"
 
 [[acceptance]]
 text = "Given the frob-* crates, when clippy runs without their allow-list entries, then it is clean"
-bound = false
+bound = true
 +++
 
 paths.md sections 1 and 3, migration step 3. Replace every path-to-text conversion in the frob-* crates and the frob binary with RelPath, Shown or argv; persisted fields become RelPath. Remove each finished crate from the confinement allow list.
