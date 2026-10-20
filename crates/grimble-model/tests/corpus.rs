@@ -2,11 +2,7 @@
 //! directory holding an `expect` file. See `tests/corpus/README.md` for the format.
 
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
-
+use gob_path::{RelPath, Shown};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -40,12 +36,8 @@ fn collect_files(dir: &Path, base: &Path, out: &mut BTreeMap<String, Vec<u8>>) {
         if p.is_dir() {
             collect_files(&p, base, out);
         } else if p.extension().is_some_and(|x| x == "grmb") {
-            let rel = p
-                .strip_prefix(base)
-                .expect("under base")
-                .to_string_lossy()
-                .replace('\\', "/");
-            out.insert(rel, std::fs::read(&p).expect("read"));
+            let rel = RelPath::from_host(base, &p).expect("repository path");
+            out.insert(rel.as_str().to_owned(), std::fs::read(&p).expect("read"));
         }
     }
 }
@@ -60,11 +52,10 @@ fn discover(dir: &Path, root: &Path, out: &mut Vec<Case>) {
         let mut files = BTreeMap::new();
         collect_files(dir, dir, &mut files);
         out.push(Case {
-            name: dir
-                .strip_prefix(root)
+            name: RelPath::from_host(root, dir)
                 .expect("under root")
-                .to_string_lossy()
-                .into_owned(),
+                .as_str()
+                .to_owned(),
             files,
             expect: std::fs::read_to_string(dir.join("expect")).expect("expect"),
             golden: dir.join("expect.u"),
@@ -77,15 +68,17 @@ fn discover(dir: &Path, root: &Path, out: &mut Vec<Case>) {
             discover(&p, root, out);
         } else if p.extension().is_some_and(|x| x == "grmb") && p.with_extension("expect").is_file()
         {
-            let name = p.file_name().expect("name").to_string_lossy().into_owned();
+            let name = RelPath::from_host(dir, &p)
+                .expect("file name")
+                .as_str()
+                .to_owned();
             let mut files = BTreeMap::new();
             files.insert(name, std::fs::read(&p).expect("read"));
             out.push(Case {
-                name: p
-                    .strip_prefix(root)
+                name: RelPath::from_host(root, &p)
                     .expect("under root")
-                    .to_string_lossy()
-                    .into_owned(),
+                    .as_str()
+                    .to_owned(),
                 files,
                 expect: std::fs::read_to_string(p.with_extension("expect")).expect("expect"),
                 golden: p.with_extension("u"),
@@ -253,7 +246,7 @@ fn run_case(c: &Case) -> Vec<String> {
         } else if std::fs::read_to_string(&c.golden).expect("golden") != golden {
             problems.push(format!(
                 "U dump differs from {} (GRMB_BLESS=1 rewrites it)",
-                c.golden.display()
+                Shown::of(&c.golden)
             ));
         }
     }

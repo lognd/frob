@@ -15,11 +15,7 @@
 //! `[grimble] strict` on.
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
-
+use gob_path::RelPath;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -191,7 +187,10 @@ fn every_corpus_case_matches_its_expectations() {
         let problems = check_case(c);
         if !problems.is_empty() {
             failures.insert(
-                c.file_name().expect("name").to_string_lossy().into_owned(),
+                RelPath::from_host(&corpus_dir(), c)
+                    .expect("under corpus")
+                    .as_str()
+                    .to_owned(),
                 problems,
             );
         }

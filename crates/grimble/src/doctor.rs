@@ -3,6 +3,7 @@
 use std::collections::BTreeMap;
 
 use gob_cli::{Outcome, Payload};
+use gob_path::Shown;
 use grimble_check::config::{ComputeTable, PacksTable};
 use grimble_check::fidelity::capabilities_of;
 use grimble_check::model_view::file_row;
@@ -126,7 +127,7 @@ pub fn report(root: &std::path::Path) -> Outcome<DoctorData> {
         .collect();
     let config = config_row(root);
     let mut payload = Payload::new(DoctorData {
-        root: root.display().to_string(),
+        root: Shown::of(root).to_string(),
         config,
         model,
         languages,

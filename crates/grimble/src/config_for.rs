@@ -12,6 +12,7 @@ use std::path::{Component, Path, PathBuf};
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use gob_packs::Activation;
+use gob_path::{RelPath, Shown};
 use gob_rules::{Registry, RuleRow};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -124,13 +125,9 @@ fn root_relative(root: &Path, cwd: &Path, arg: &str) -> Option<String> {
             other => full.push(other),
         }
     }
-    let rel = full.strip_prefix(root).ok()?;
-    Some(
-        rel.components()
-            .map(|c| c.as_os_str().to_string_lossy())
-            .collect::<Vec<_>>()
-            .join("/"),
-    )
+    RelPath::from_host(root, &full)
+        .ok()
+        .map(|rel| rel.as_str().to_owned())
 }
 
 /// `ConfigFor` flags.
@@ -175,7 +172,7 @@ impl ConfigFor {
         let Some(rel) = root_relative(&root, &ctx.cwd, file) else {
             return Err(CliError::Usage(format!(
                 "{file} is outside the workspace root {}",
-                root.display()
+                Shown::of(&root)
             )));
         };
         let config_file = format!("{PRODUCT}.toml");

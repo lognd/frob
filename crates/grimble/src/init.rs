@@ -4,6 +4,7 @@ use std::path::Path;
 
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_config::materialize;
+use gob_path::Shown;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -62,7 +63,7 @@ pub struct InitData {
 }
 
 fn internal(what: &str, path: &Path, e: &std::io::Error) -> CliError {
-    CliError::internal(format!("cannot {what} {}: {e}", path.display()))
+    CliError::internal(format!("cannot {what} {}: {e}", Shown::of(path)))
 }
 
 /// Seed `design/model.grmb` unless the repository already has a model file.
@@ -75,7 +76,7 @@ fn ensure_model(root: &Path) -> Result<Step, CliError> {
             std::fs::create_dir_all(dir).map_err(|e| internal("create", dir, &e))?;
         }
         std::fs::write(&path, MODEL_SEED).map_err(|e| internal("write", &path, &e))?;
-        tracing::info!(path = %path.display(), "model seeded");
+        tracing::info!(path = %Shown::of(&path), "model seeded");
     }
     Ok(Step {
         target: MODEL_PATH.to_owned(),
@@ -99,7 +100,7 @@ fn ensure_gitignore(root: &Path) -> Result<Step, CliError> {
         }
         text.push_str(".grimble/\n");
         std::fs::write(&path, text).map_err(|e| internal("write", &path, &e))?;
-        tracing::info!(path = %path.display(), "state directory ignored");
+        tracing::info!(path = %Shown::of(&path), "state directory ignored");
     }
     Ok(Step {
         target: ".gitignore".to_owned(),
@@ -120,7 +121,7 @@ impl Command for Init {
         let refs: Vec<&gob_config::TableDescription> = descs.iter().collect();
         let report = materialize(&root, crate::PRODUCT, &refs).map_err(|e| config_refusal(&e))?;
         let config = ConfigStep {
-            path: report.path.display().to_string(),
+            path: Shown::of(&report.path).to_string(),
             added: report.added,
             created: report.created,
         };
@@ -133,7 +134,7 @@ impl Command for Init {
         tracing::info!(already, "init finished");
         let advice = recommendations.clone();
         let payload = Payload::new(InitData {
-            root: root.display().to_string(),
+            root: Shown::of(&root).to_string(),
             config,
             model,
             gitignore,
