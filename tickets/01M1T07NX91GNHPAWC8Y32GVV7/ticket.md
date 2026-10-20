@@ -2,12 +2,12 @@
 id = "01M1T07NX91GNHPAWC8Y32GVV7"
 title = "F-223: a brand-new test is NO_VERDICT at the parent commit, so --designate-repro-force is required every time and becomes ceremony"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-20T03:15:30Z"
+updated = "2026-10-20T03:15:31Z"
 aliases = ["T-4009"]
 labels = ["v1-cluster:C4c", "triage:accepted"]
 scope = ["src/frob/gates/_bug_repro.py"]
