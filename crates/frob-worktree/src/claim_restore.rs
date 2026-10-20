@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn refusals_carry_their_codes() {
         let code = |why| match plan_refusal(why, "~X") {
-            WorktreeError::Refused(r) => format!("{}", r.code),
+            WorktreeError::Refused(r) => r.code.clone(),
             other => other.to_string(),
         };
         assert_eq!(code(RestoreRefusal::NothingParked), E_RESTORE_NOTHING);
