@@ -599,6 +599,9 @@ skip = "needs a configured [mirror] section and a remote, which the repo fixture
 [scenario."frob stats"]
 skip = "needs a populated stats store that the repo fixture does not provide; the cost is a single store read"
 
+[scenario."frob ticket proposals accept"]
+skip = "needs a terminal and a live tracker, neither of which the repo fixture provides"
+
 [scenario."frob ticket proposals decline"]
 skip = "mutates the proposal queue and needs a pending proposal id, which the repo fixture does not provide"
 
@@ -619,3 +622,6 @@ skip = "grimble is in preview and the verb rewrites files, so it is unsafe to pr
 
 [scenario."grimble vet"]
 skip = "grimble is in preview and needs a project the repo fixture does not provide"
+
+[scenario."frob teach"]
+skip = "interactive teaching mode reads and writes per-user seen state, so it is unsafe to profile against the repo fixture"

@@ -2,16 +2,17 @@
 id = "01M4052TKZWKG1QBB3CWHQ9MVM"
 title = "frob ticket proposals accept: TTY, no agent marker, escaped diff, mapped identities, full value fetched"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-20T06:45:23Z"
+updated = "2026-10-20T06:57:26Z"
 idempotency_key = "m2-mirror2-accept-guards"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob/src/ticket/proposals_accept.rs"]
+scope = ["crates/frob/src/ticket/proposals_accept.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/it/ticket_proposals_accept.rs", "crates/frob/tests/it/main.rs", "docs/design/mirror.md", "docs/reference/cli/frob.md", "crates/gob-dev/profile.toml"]
 
 [[links]]
 kind = "blocked-by"
@@ -31,23 +32,23 @@ target = "01M4052SZYWSD45GEYNTTTJMDB"
 
 [[acceptance]]
 text = "Given no TTY or an agent marker, when accept runs, then it refuses and changes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a proposal by an unmapped identity, when accept runs, then it refuses"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a proposal on scope, acceptance, evidence or links, when accept runs, then it refuses to apply it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a proposal whose full value is gone from the tracker, when accept runs, then the proposal closes as unavailable"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a valid proposal on a TTY, when accepted after the escaped diff is shown, then the field changes through a recorded event and proposal-accepted closes the proposal"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.5 (accept guards) and security.md 2.11.
