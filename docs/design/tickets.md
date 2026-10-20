@@ -233,8 +233,10 @@ Acks are not events: they live in the ack log of the product lock file.
 
 CI is a fresh clone and sees only pushed commits. Ledger commits on the
 trunk must therefore be pushed before or with any PR whose code
-references the ticket (`frob land` pushes when `[land] push` is true;
-otherwise `frob ticket doctor` lists unpushed ledger commits). The TICK
+references the ticket (`frob land --push` pushes the base branch during
+landing; there is no `[land] push` config key). Nothing lists unpushed
+ledger commits: `frob ticket doctor` checks folds, event order, ids and
+conflicts only, so push the trunk by hand when `--push` was not used. The TICK
 rule flags a ticket referenced in code or a trailer that is absent from
 the base ref (`origin/<trunk>`), so a dangling reference fails locally
 and in CI. Where trunk is branch-protected or the work is a fork,

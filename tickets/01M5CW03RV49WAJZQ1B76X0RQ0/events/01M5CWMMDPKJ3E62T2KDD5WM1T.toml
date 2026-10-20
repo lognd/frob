@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Trunk land --push pushes after the ledger step so origin has the land and close commits; orphan mode pushes the ledger branch after the base"]
+moved = []
+at = "2026-10-20T14:49:53Z"
+actor = "lognd"
+rev = 1

@@ -2,14 +2,19 @@
 id = "01M5CW03RV49WAJZQ1B76X0RQ0"
 title = "Land pushes after the ledger step"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T14:38:41Z"
+updated = "2026-10-20T14:58:42Z"
 idempotency_key = "dt-DT01"
+scope = ["crates/frob-land/src/land.rs", "crates/frob-land/src/train.rs", "crates/frob-land/tests/land.rs", "docs/design/distributed-tickets.md"]
+
+[[acceptance]]
+text = "Trunk land --push pushes after the ledger step so origin has the land and close commits; orphan mode pushes the ledger branch after the base"
+bound = true
 +++
 
 Trunk: one push carries code and close. Orphan: push base, then frob-tickets; keep the ticket branch until both succeed. Design sec 3.4. See docs/design/distributed-tickets.md.
