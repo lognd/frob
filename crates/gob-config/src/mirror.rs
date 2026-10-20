@@ -30,7 +30,9 @@ mod tests {
     #[test]
     fn mirror_table_defaults_and_file_values() {
         let dir = tempfile::tempdir().unwrap();
-        let d = crate::load::<MirrorTable>(dir.path(), "frob").unwrap().value;
+        let d = crate::load::<MirrorTable>(dir.path(), "frob")
+            .unwrap()
+            .value;
         assert_eq!((d.repo.as_str(), d.kid.as_str()), ("", "k1"));
         assert!(d.bot_ids.is_empty());
         std::fs::write(
@@ -38,7 +40,9 @@ mod tests {
             "[mirror]\nrepo = \"o/n\"\nkid = \"k2\"\nbot_ids = [\"bot\"]\n",
         )
         .unwrap();
-        let v = crate::load::<MirrorTable>(dir.path(), "frob").unwrap().value;
+        let v = crate::load::<MirrorTable>(dir.path(), "frob")
+            .unwrap()
+            .value;
         assert_eq!((v.repo.as_str(), v.kid.as_str()), ("o/n", "k2"));
         assert_eq!(v.bot_ids, ["bot"]);
     }
