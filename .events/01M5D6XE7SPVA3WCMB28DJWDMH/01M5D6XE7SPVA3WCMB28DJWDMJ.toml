@@ -1,0 +1,9 @@
+kind = "create"
+title = "Refresh: diverged base exit-1 policy per design vs report-only base_sync"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~QD7BPB3: report-only because independent-root clones would always fail."
+at = "2026-10-20T17:49:28Z"
+actor = "lognd"
+rev = 1
