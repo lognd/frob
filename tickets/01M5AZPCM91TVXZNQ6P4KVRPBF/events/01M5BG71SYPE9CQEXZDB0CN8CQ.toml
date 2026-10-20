@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["COV001, REF001 and TODO002 each have a vacuous Unresolved corpus case in frob-check, and their coverage-allowlist entries are removed"]
+moved = []
+at = "2026-10-20T01:53:31Z"
+actor = "lognd"
+rev = 1
