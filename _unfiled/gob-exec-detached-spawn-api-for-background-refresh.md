@@ -7,8 +7,16 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T17:28:28Z"
-updated = "2026-10-20T17:35:24Z"
+updated = "2026-10-20T17:43:09Z"
 scope = ["crates/gob-exec/**"]
+
+[[acceptance]]
+text = "Runner::spawn_detached starts a program with null stdio in its own process group and returns its pid without waiting"
+bound = false
+
+[[acceptance]]
+text = "spawn_detached honours the tool allowlist and reports a missing program as a typed error"
+bound = false
 +++
 
 found while working ~EV5KK0X: sync_policy::background_kick spawns std::process::Command under a PROC001 waiver; add a detached spawn to gob_exec::Runner and drop the waiver.

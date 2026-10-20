@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Runner::spawn_detached starts a program with null stdio in its own process group and returns its pid without waiting", "spawn_detached honours the tool allowlist and reports a missing program as a typed error"]
+moved = []
+at = "2026-10-20T17:43:09Z"
+actor = "lognd"
+rev = 1
