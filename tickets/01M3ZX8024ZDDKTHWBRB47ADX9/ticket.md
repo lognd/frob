@@ -2,7 +2,8 @@
 id = "01M3ZX8024ZDDKTHWBRB47ADX9"
 title = "Plugin findings name file handles from the subject set, never strings"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
