@@ -24,3 +24,12 @@ nudge
 ```text expect=clean
 none
 ```
+
+## Unresolved when the mirror config cannot be read
+
+A `[mirror]` table of the wrong type means the expected nudge workflow cannot be rendered, so the
+tree is not judged (an evaluation failure, never a silent pass).
+
+```text expect=unresolved
+bad-mirror
+```

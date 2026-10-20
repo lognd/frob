@@ -48,3 +48,9 @@ nudge
 ```text
 none
 ```
+
+### TICK010 a .github tree on the ticket branch / Unresolved when the mirror config cannot be read #5 (line 33) (unresolved)
+
+```text
+bad-mirror
+```

@@ -446,6 +446,8 @@ fn tick_branch_runner(case: &Case) -> Vec<Finding> {
             env!("CARGO_PKG_VERSION")
         );
         commit_files(ledger.repo(), &tip, &[(TASK, Some(bytes))], &msg);
+    } else if script == "bad-mirror" {
+        write_file(root, "frob.toml", "[tickets]\nref_mode = \"orphan\"\n[mirror]\nbot_ids = \"not-a-list\"\n");
     } else if script == "reindex" {
         let epic = ledger
             .new_ticket(NewTicket::new("Beta", TicketType::Epic))
