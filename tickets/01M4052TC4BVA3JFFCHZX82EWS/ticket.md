@@ -2,7 +2,8 @@
 id = "01M4052TC4BVA3JFFCHZX82EWS"
 title = "Per-issue reconcile: revert repository-owned fields changed by others and propose"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
