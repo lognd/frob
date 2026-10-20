@@ -24,7 +24,7 @@ pub mod write;
 use frob_ledger::model::{Category, Class, Outcome, Priority, TicketType};
 use frob_ledger::{Applied, Ledger, LedgerError, TicketId};
 use gob_cli::{CliError, Context};
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -73,7 +73,9 @@ pub(crate) fn resolve(ledger: &Ledger, input: &str) -> Result<TicketId, CliError
                 RefusalClass::UsageError,
                 format!("that file is {}; pass the id", view.summary.handle),
             )
-            .with_remedy(format!("frob ticket show {}", view.summary.handle))
+            .with_command(
+                RemedyCommand::new("frob", "ticket show").arg(view.summary.handle.clone()),
+            )
             .into());
         }
     }

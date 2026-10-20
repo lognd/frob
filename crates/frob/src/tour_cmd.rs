@@ -13,6 +13,7 @@ use std::time::Duration;
 use frob_ledger::Ledger;
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use gob_exec::{Limits, Program, Runner, Spec};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -269,7 +270,7 @@ impl Command for TourVerb {
                 RefusalClass::GuardNeedsAction,
                 "the ticket branch has no generated tour yet",
             )
-            .with_remedy("frob ticket reindex")
+            .with_command(RemedyCommand::new("frob", "ticket reindex"))
             .into());
         }
         let interactive = !self.all

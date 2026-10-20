@@ -34,6 +34,7 @@ use frob_pm::model::{Cycle, Day, State};
 use frob_pm::{NewObject, ObjectKind, PmError, PmStore};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -246,7 +247,7 @@ fn refusal(e: &CycleError) -> CliError {
         }
         CycleError::Conflict { alias, .. } => {
             Refusal::new("E-CYCLE-EXISTS", GuardNeedsAction, e.to_string())
-                .with_remedy(format!("frob cycle show {alias}"))
+                .with_command(RemedyCommand::new("frob", "cycle show").arg(alias.clone()))
         }
         CycleError::Unknown { suggestions, .. } => {
             let msg = match suggestions.as_slice() {
@@ -254,10 +255,10 @@ fn refusal(e: &CycleError) -> CliError {
                 s => format!("{e}; did you mean {}?", s.join(", ")),
             };
             let remedy = match suggestions.first() {
-                Some(s) => format!("frob cycle show {s}"),
-                None => "frob cycle list".to_owned(),
+                Some(s) => RemedyCommand::new("frob", "cycle show").arg(s.as_str()),
+                None => RemedyCommand::new("frob", "cycle list"),
             };
-            Refusal::new("E-CYCLE-NOT-FOUND", GuardNeedsAction, msg).with_remedy(remedy)
+            Refusal::new("E-CYCLE-NOT-FOUND", GuardNeedsAction, msg).with_command(remedy)
         }
         CycleError::LiveLease { handles, .. } => {
             Refusal::new("E-CYCLE-LEASE", GuardNeedsAction, e.to_string()).with_remedy(format!(
@@ -273,7 +274,7 @@ fn refusal(e: &CycleError) -> CliError {
         }
         CycleError::BadCarryTarget { .. } => {
             Refusal::new("E-CYCLE-CARRY-TARGET", GuardNeedsAction, e.to_string())
-                .with_remedy("frob cycle list")
+                .with_command(RemedyCommand::new("frob", "cycle list"))
         }
     };
     r.into()
@@ -288,14 +289,14 @@ fn assign_refusal(e: &AssignError, cycle: &str) -> CliError {
                 .with_remedy("create one (`frob cycle new --start YYYY-MM-DD --goal <text>`) or name a cycle")
         }
         AssignError::Closed { .. } => Refusal::new("E-CYCLE-CLOSED", GuardNeedsAction, e.to_string())
-            .with_remedy("frob cycle list"),
+            .with_command(RemedyCommand::new("frob", "cycle list")),
         AssignError::NotAssignable { handle, .. } => {
             Refusal::new("E-CYCLE-NOT-ASSIGNABLE", GuardNeedsAction, e.to_string())
                 .with_remedy(format!("assign one of its children (`frob ticket list --parent {handle}`)"))
         }
         AssignError::NoPoints { handle } => {
             Refusal::new("E-CYCLE-NO-POINTS", GuardNeedsAction, e.to_string())
-                .with_remedy(format!("frob ticket update {handle} --points N"))
+                .with_command(RemedyCommand::new("frob", "ticket update").arg(handle.clone()).flag("points", "N"))
         }
         AssignError::OverCapacity { handle, .. } => {
             Refusal::new("E-CYCLE-OVER-CAPACITY", GuardNeedsAction, e.to_string()).with_remedy(format!(
@@ -315,7 +316,7 @@ fn cycle_pm_err(e: PmError) -> CliError {
             RefusalClass::GuardNeedsAction,
             e.to_string(),
         )
-        .with_remedy("frob cycle list")
+        .with_command(RemedyCommand::new("frob", "cycle list"))
         .into(),
         other => pm_err(other),
     }
@@ -643,7 +644,11 @@ impl Command for CycleShow {
                         RefusalClass::GuardNeedsAction,
                         "there are no cycles yet",
                     )
-                    .with_remedy("frob cycle new --start YYYY-MM-DD --goal <text>"),
+                    .with_command(
+                        RemedyCommand::new("frob", "cycle new")
+                            .flag("start", "YYYY-MM-DD")
+                            .flag("goal", "<text>"),
+                    ),
                 )
             })?
         };
@@ -1610,7 +1615,7 @@ fn plan_refusal(e: &PlanError) -> CliError {
             RefusalClass::GuardNeedsAction,
             e.to_string(),
         )
-        .with_remedy("frob cycle plan --points N")
+        .with_command(RemedyCommand::new("frob", "cycle plan").flag("points", "N"))
         .into(),
     }
 }
