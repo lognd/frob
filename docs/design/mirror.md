@@ -482,6 +482,7 @@ byte-identical output. Neutralisation and render limits layer on top.
 item id, field, actor id, time, digest, the origin (always `tracker`) and an
 excerpt. The excerpt is untrusted tracker text, so it is escaped for its
 origin and capped at 200 characters before it is printed.
+`frob ticket proposals accept TICKET TRACKER_EVENT` is TTY-only and refuses an agent marker; it refuses editors without a `[mirror.identities]` tracker user id and edits to scope, acceptance, evidence or links, fetches the full value, shows the escaped diff and, once confirmed, updates the field citing the tracker user id and appends `proposal-accepted`. A value gone from the tracker closes the proposal as unavailable (`proposal-expired`, reason `unavailable`).
 `frob ticket proposals decline TICKET TRACKER_EVENT --reason TEXT` appends a
 `proposal-declined` event carrying the reason; the proposal then leaves the
 pending list, and repeating the command is a no-op. `frob check` prints the

@@ -11,6 +11,7 @@ pub mod doctor_cmd;
 pub mod fragment_cmd;
 pub mod merge_cmd;
 pub mod migrate_cmd;
+pub mod proposals_accept;
 pub mod proposals_cmd;
 pub mod read;
 pub mod reindex_cmd;
@@ -212,6 +213,7 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<triage_cmd::InboxList>()
         .register::<proposals_cmd::List>()
         .register::<proposals_cmd::Decline>()
+        .register::<proposals_accept::Accept>()
         .register::<fragment_cmd::Fragment>()
         .register::<branch_cmd::BranchInit>()
         .register::<migrate_cmd::Migrate>()

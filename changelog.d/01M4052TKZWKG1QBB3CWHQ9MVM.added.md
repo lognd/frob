@@ -1,0 +1,1 @@
+frob ticket proposals accept applies a held tracker edit at a terminal: it refuses without a TTY or with an agent marker, refuses unmapped editors and scope, acceptance, evidence and links edits, shows the escaped diff, fetches the full value (closing the proposal as unavailable when it is gone) and records the change as an event citing the tracker user id.
