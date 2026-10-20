@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-worktree/tests/claim_restore.rs"]
+at = "2026-10-20T23:47:12Z"
+actor = "lognd"
+rev = 1

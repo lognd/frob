@@ -8,5 +8,6 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T23:31:56Z"
-updated = "2026-10-20T23:45:26Z"
+updated = "2026-10-20T23:47:12Z"
+scope = ["crates/frob-worktree/tests/claim_restore.rs"]
 +++
