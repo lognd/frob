@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-20T15:04:37Z"
+digest = "116893b8158ff15fc49f9a1a0595e9478adbd2955f4d149cd9b020b5d7e845d6"
+exit_code = 0
+inline = """
+
+running 1 test
+test ticket_branch::doctor_fix_creates_the_missing_ticket_branch_from_origin ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 341 filtered out; finished in 0.11s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.68s
+     Running tests/it/main.rs (target/debug/deps/it-f5b08b2dee4f2fa1)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-cli --test it doctor_fix_creates_the_missing_ticket_branch_from_origin"
+size = 341
+status = "measured"
+at = "2026-10-20T15:04:37Z"
+actor = "lognd"
+rev = 1
