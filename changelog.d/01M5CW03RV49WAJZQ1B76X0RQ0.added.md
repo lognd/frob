@@ -1,0 +1,1 @@
+land: with --push, trunk mode now pushes after the ledger step so one push carries the code and the close, and orphan mode pushes the base then the ticket branch, keeping the ticket branch and worktree (W-LAND-LEDGER-PENDING) until both pushes succeed.

@@ -297,6 +297,48 @@ fn happy_path_lands_closes_and_cleans_up() {
     assert!(again.already && !again.closed, "second land is a no-op");
 }
 
+// frob:ticket 01M5CW03RV49WAJZQ1B76X0RQ0
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn trunk_land_pushes_after_the_ledger_step_so_origin_has_the_close() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let origin = fx.root.with_file_name("origin.git");
+    git(&fx.root, &["init", "-q", "--bare", "../origin.git"]);
+    git(&fx.root, &["remote", "add", "origin", "../origin.git"]);
+    let s = fx.start("Add pushed", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/p.rs", "fn p() {}\n");
+    Fixture::evidence(&s, "src/p.rs");
+
+    let out = land(
+        &fx.root,
+        &LandOptions {
+            push: true,
+            ..Fixture::opts(&s)
+        },
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land");
+    assert!(out.closed && out.pushed, "{:?}", out.warnings);
+    let (_, remote_tip) = git_out(&origin, &["rev-parse", "main"]);
+    assert_eq!(
+        remote_tip.trim(),
+        fx.main_tip(),
+        "one push carried code and close"
+    );
+    let (_, log) = git_out(&origin, &["log", "--format=%s", "main"]);
+    assert!(
+        log.contains("tickets(land)"),
+        "origin lacks the land event: {log}"
+    );
+    assert!(
+        log.contains("tickets(close)") || log.contains("tickets(transition)"),
+        "origin lacks the close: {log}"
+    );
+}
+
 /// Counts `repository discovered` events per git dir on the thread that installs it.
 #[derive(Clone, Default)]
 struct DiscoverCounter {

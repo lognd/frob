@@ -88,7 +88,7 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   (crates/frob-land/src/verb.rs:42), and the train pushes once per drain
   (crates/frob-land/src/train.rs:831-833). A push failure is a warning:
   "landed locally but the push failed" (crates/frob-land/src/land.rs:1506-1520).
-- VERIFIED. Ordering bug: `finish` pushes the base (land.rs:501-503)
+- FIXED by DT01 (trunk pushes after the ledger step; orphan pushes base, then `frob-tickets`, keeping the ticket branch on a partial push). Was: ordering bug: `finish` pushes the base (land.rs:501-503)
   BEFORE `close_after_advance` writes the `land` and close events
   (land.rs:504, 537-559). In trunk mode the pushed base therefore lacks
   the `tickets(land)` and `tickets(close)` commits until some later push;

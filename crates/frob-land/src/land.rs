@@ -497,12 +497,49 @@ impl Ready {
         oid: Oid,
         actor: &str,
     ) -> LandOutcome {
-        let on_branch = self.site.ledger.config().mode == RefMode::Branch;
-        if opts.push {
-            self.out.pushed = push_base(&self.repo, &self.base, &mut self.out.warnings);
-        }
-        if !on_branch && !self.close_after_advance(opts) {
-            return self.out;
+        let mode = self.site.ledger.config().mode;
+        // Design sec 3.4: trunk pushes after the ledger step so one push carries code and
+        // close; orphan pushes the base, then the ledger branch; branch mode already
+        // carries the close in the advance.
+        let mut pending = false;
+        match mode {
+            RefMode::Branch => {
+                if opts.push {
+                    self.out.pushed = push_base(&self.repo, &self.base, &mut self.out.warnings);
+                }
+            }
+            RefMode::Trunk => {
+                let closed = self.close_after_advance(opts, opts.push);
+                if opts.push {
+                    self.out.pushed = push_base(&self.repo, &self.base, &mut self.out.warnings);
+                }
+                if !closed {
+                    return self.out;
+                }
+            }
+            RefMode::Orphan => {
+                if opts.push {
+                    self.out.pushed = push_base(&self.repo, &self.base, &mut self.out.warnings);
+                }
+                if !self.close_after_advance(opts, self.out.pushed) {
+                    return self.out;
+                }
+                if opts.push {
+                    let ledger_pushed = self.out.pushed
+                        && push_ledger(
+                            &self.repo,
+                            self.site.ledger.config(),
+                            &mut self.out.warnings,
+                        );
+                    pending = !ledger_pushed;
+                    if self.out.pushed && pending {
+                        self.out.warnings.push(format!(
+                            "W-LAND-LEDGER-PENDING: {} is on origin but the close is not; the branch {} was kept",
+                            self.base, self.branch
+                        ));
+                    }
+                }
+            }
         }
         self.out.closed = true;
         self.out.outcome = Some(opts.outcome);
@@ -510,7 +547,13 @@ impl Ready {
             .changelog_exempt
             .clone_from(&opts.no_changelog_reason);
         release(leases, self.id, actor, &mut self.out.warnings);
-        if !opts.keep_worktree && self.wt_path != self.primary {
+        if pending {
+            tracing::warn!(ticket = %self.id, branch = %self.branch, "push incomplete; ticket branch kept");
+            self.out.warnings.push(format!(
+                "the worktree and branch {} were kept until the base and the ledger are both pushed",
+                self.branch
+            ));
+        } else if !opts.keep_worktree && self.wt_path != self.primary {
             self.out.worktree_removed = remove_worktree(
                 &self.repo,
                 &self.primary,
@@ -539,7 +582,7 @@ impl Ready {
     /// Point of no return: the base has already moved, so a failure is a warning,
     /// never an error. The ticket stays open with its lease and worktree so
     /// `frob ticket close` can finish it.
-    fn close_after_advance(&mut self, opts: &LandOptions) -> bool {
+    fn close_after_advance(&mut self, opts: &LandOptions, pushed: bool) -> bool {
         let closed = ledger_step(
             &self.site.ledger,
             self.id,
@@ -547,7 +590,7 @@ impl Ready {
             opts,
             &self.base,
             &self.branch,
-            self.out.pushed,
+            pushed,
         );
         let Err(e) = closed else {
             return true;
@@ -1520,6 +1563,33 @@ pub(crate) fn push_base(repo: &Repo, base: &str, warnings: &mut Vec<String>) -> 
     }
 }
 
+/// Push the orphan ledger branch to `origin` (no-op success in other modes); a failure is a warning.
+///
+/// A plain non-force push, so a diverged remote ledger is rejected rather than overwritten.
+pub(crate) fn push_ledger(
+    repo: &Repo,
+    config: &frob_ledger::LedgerConfig,
+    warnings: &mut Vec<String>,
+) -> bool {
+    if config.mode != RefMode::Orphan {
+        return true;
+    }
+    let branch = &config.branch;
+    match repo.push("origin", &format!("refs/heads/{branch}")) {
+        Ok(()) => {
+            tracing::info!(branch, "ledger branch pushed");
+            true
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, branch, "ledger push failed after landing");
+            warnings.push(format!(
+                "W-LAND-LEDGER-PENDING: the ledger push failed: {e}; run `git push origin {branch}`"
+            ));
+            false
+        }
+    }
+}
+
 /// Release the lease after landing; a failure is a warning.
 fn release(leases: &LeaseStore, id: TicketId, actor: &str, warnings: &mut Vec<String>) {
     match leases.release(id, Some(actor)) {
@@ -1651,6 +1721,62 @@ fn remove_worktree(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn run_git(repo: &Repo, dir: &Path, args: &[&str]) {
+        let run = git(repo, dir, args).expect("spawn git");
+        assert!(run.ok(), "git {args:?}: {}", run.text);
+    }
+
+    // frob:ticket 01M5CW03RV49WAJZQ1B76X0RQ0
+    // frob:tests crates/frob-land/src/land.rs::push_ledger
+    #[test]
+    fn push_ledger_pushes_only_the_orphan_branch_and_warns_on_failure() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo_dir = tmp.path().join("repo");
+        let origin = tmp.path().join("origin.git");
+        std::fs::create_dir(&repo_dir).expect("mkdir");
+        let repo = Repo::init(&repo_dir).expect("init");
+        run_git(&repo, tmp.path(), &["init", "-q", "--bare", "origin.git"]);
+        run_git(
+            &repo,
+            &repo_dir,
+            &["symbolic-ref", "HEAD", "refs/heads/frob-tickets"],
+        );
+        run_git(&repo, &repo_dir, &["config", "user.name", "T"]);
+        run_git(&repo, &repo_dir, &["config", "user.email", "t@example.com"]);
+        run_git(
+            &repo,
+            &repo_dir,
+            &["commit", "-q", "--allow-empty", "-m", "ledger"],
+        );
+        let orphan = frob_ledger::LedgerConfig {
+            mode: RefMode::Orphan,
+            ..frob_ledger::LedgerConfig::default()
+        };
+        let mut warnings = Vec::new();
+
+        // Not orphan: nothing to push, so success without touching the remote.
+        assert!(push_ledger(
+            &repo,
+            &frob_ledger::LedgerConfig::default(),
+            &mut warnings
+        ));
+        // Orphan with no origin: a warning, not an error.
+        assert!(!push_ledger(&repo, &orphan, &mut warnings));
+        assert!(
+            warnings[0].contains("W-LAND-LEDGER-PENDING"),
+            "{warnings:?}"
+        );
+
+        run_git(
+            &repo,
+            &repo_dir,
+            &["remote", "add", "origin", "../origin.git"],
+        );
+        assert!(push_ledger(&repo, &orphan, &mut warnings));
+        let out = git(&repo, &origin, &["rev-parse", "frob-tickets"]).expect("spawn git");
+        assert!(out.ok(), "origin has the ledger branch: {}", out.text);
+    }
 
     fn note(rule: &str, message: &str) -> ratchet::FindingNote {
         ratchet::FindingNote {
