@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-20T03:49:07Z"
+updated = "2026-10-20T03:53:28Z"
 idempotency_key = "m2-diag-render-help"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/gob-diagnostics/src/text.rs", "crates/gob-diagnostics/src/lib.rs"]
+scope = ["crates/gob-diagnostics/src/text.rs", "crates/gob-diagnostics/src/lib.rs", "docs/design/diagnostics.md"]
 
 [[links]]
 kind = "blocked-by"
