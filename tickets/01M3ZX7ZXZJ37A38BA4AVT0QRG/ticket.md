@@ -2,13 +2,13 @@
 id = "01M3ZX7ZXZJ37A38BA4AVT0QRG"
 title = "Plugin fix model: file handle, byte range inside the primary span, replacement"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-03T03:34:38Z"
+updated = "2026-10-20T10:15:21Z"
 idempotency_key = "m2-sec-plugin-fixes"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-rules/src/fix.rs", "crates/gob-check/src/fix_validate.rs"]
