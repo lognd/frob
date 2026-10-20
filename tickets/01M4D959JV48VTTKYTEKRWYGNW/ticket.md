@@ -2,13 +2,13 @@
 id = "01M4D959JV48VTTKYTEKRWYGNW"
 title = "VIS001: item visibility wider than its uses (Advisory), binding rustc unreachable_pub where present"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:13:00Z"
-updated = "2026-10-08T08:13:00Z"
+updated = "2026-10-20T13:51:55Z"
 scope = ["changelog.d/**", "crates/grimble-arch/**"]
 
 [[acceptance]]
