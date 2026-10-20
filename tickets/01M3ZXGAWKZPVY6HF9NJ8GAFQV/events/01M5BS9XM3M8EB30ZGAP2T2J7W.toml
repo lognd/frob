@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-20T04:31:50Z"
+digest = "a7eeacb06b55d4520b9cb47eb799431eb313f21c1eb90a43af0cdf79c13ecf28"
+exit_code = 0
+inline = """
+
+running 1 test
+test ticket_proposals::a_pending_proposal_is_listed_then_declined_with_a_reason_and_leaves_the_list ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 333 filtered out; finished in 0.34s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 32.20s
+     Running tests/it/main.rs (target/debug/deps/it-202c4dbe25a08e4f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-cli --test it a_pending_proposal_is_listed_then_declined_with_a_reason_and_leaves_the_list"
+size = 419
+status = "measured"
+at = "2026-10-20T04:31:50Z"
+actor = "lognd"
+rev = 1
