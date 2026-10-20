@@ -318,6 +318,16 @@ fn sync(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) -> Result
         sync_ledger(ledger, plan, branch, rep, &mut conflicts)?;
     }
     rep.base_sync = fast_forward_base(repo, plan);
+    // frob:ticket 01M5CW0609NX9MJ45G2R4CQE0R
+    // A squash or rebase merge on the host leaves only a trailer; record it as a land.
+    match frob_land::hostland::record_host_lands(
+        ledger,
+        plan.base,
+        &tracking(plan.remote, plan.base),
+    ) {
+        Ok(lands) => tracing::info!(count = lands.len(), "host lands recorded"),
+        Err(e) => tracing::warn!(error = %e, "host land detection failed"),
+    }
     tracing::info!(ledger = %rep.ledger, pushed = rep.pushed, base = %rep.base_sync, "refresh sync done");
     if conflicts.is_empty() {
         return Ok(());

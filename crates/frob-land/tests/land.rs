@@ -2883,3 +2883,36 @@ fn relaunch_refuses_an_unlanded_ticket_and_is_a_no_op_when_origin_has_the_land()
     let out = frob_land::relaunch::relaunch(&fx.root, &Fixture::opts(&s), &clock).expect("noop");
     assert!(out.already);
 }
+
+// frob:tests crates/frob-land/src/hostland.rs::record_host_lands
+#[test]
+fn a_hosting_side_squash_with_the_ticket_trailer_is_recorded_as_a_land_and_closes_the_ticket() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("hosted", &["src/**"]);
+    let ledger = fx.ledger();
+    let none = frob_land::hostland::record_host_lands(&ledger, "main", MAIN).expect("scan");
+    assert!(none.is_empty(), "no trailer yet: {none:?}");
+    git(
+        &fx.root,
+        &[
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            &format!("squash\n\nFrob-Ticket: {}", s.id),
+        ],
+    );
+    let tip = fx.main_tip();
+    let found = frob_land::hostland::record_host_lands(&ledger, "main", MAIN).expect("record");
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].commit, tip);
+    assert_eq!(
+        ledger.show(s.id).expect("show").summary.category,
+        Category::Done
+    );
+    let again = frob_land::hostland::record_host_lands(&ledger, "main", MAIN).expect("again");
+    assert!(again.is_empty(), "a done ticket is not recorded twice");
+}

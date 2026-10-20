@@ -454,3 +454,59 @@ impl Command for Requeue {
         Ok(Payload::new(RequeueData::from(&done)).with_already(done.already))
     }
 }
+
+/// Output of `claim restore`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct RestoreData {
+    /// Full ULID.
+    pub id: TicketId,
+    /// Handle with `~`.
+    pub handle: String,
+    /// The parked branch the work came from.
+    pub parked: String,
+    /// The restored `ticket/<handle>` tip.
+    pub tip: String,
+}
+
+/// Put an evicted claim's parked work back as its `ticket/<handle>` branch; anyone may, until someone else claims.
+// frob:ticket 01M5DN9Q57S88B7DQQH8BAXZ01
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "claim restore",
+    product = "frob",
+    idempotent = false,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ClaimRestore {
+    ticket: String,
+    reason: String,
+}
+
+impl Command for ClaimRestore {
+    type Data = RestoreData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<RequeueArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<RequeueArgs>(m)?;
+        Ok(Self {
+            ticket: a.ticket.ticket,
+            reason: a.reason,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<RestoreData> {
+        let opened = Opened::new(ctx)?;
+        let r = opened
+            .workspace()
+            .restore_claim(&self.ticket, &self.reason)?;
+        Ok(Payload::new(RestoreData {
+            id: r.id,
+            handle: r.handle,
+            parked: r.parked,
+            tip: r.tip,
+        }))
+    }
+}
