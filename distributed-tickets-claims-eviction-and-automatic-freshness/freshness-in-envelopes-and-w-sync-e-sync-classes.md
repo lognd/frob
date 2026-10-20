@@ -4,11 +4,11 @@ title = "Freshness in envelopes and W-SYNC/E-SYNC classes"
 type = "task"
 category = "todo"
 priority = "high"
-points = 2
+points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T14:38:42Z"
+updated = "2026-10-20T18:28:22Z"
 idempotency_key = "dt-DT07"
 
 [[links]]
