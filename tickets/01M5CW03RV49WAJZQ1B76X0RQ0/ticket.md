@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
 updated = "2026-10-20T14:58:40Z"
 idempotency_key = "dt-DT01"
-scope = ["crates/frob-land/src/land.rs"]
+scope = ["crates/frob-land/src/land.rs", "crates/frob-land/src/train.rs"]
 
 [[acceptance]]
 text = "Trunk land --push pushes after the ledger step so origin has the land and close commits; orphan mode pushes the ledger branch after the base"
