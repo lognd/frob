@@ -12,9 +12,11 @@ use std::sync::OnceLock;
 
 use gob_walk::LanguageHint;
 
+use crate::actions::{ActionsAdapter, is_workflow_path};
 use crate::adapter::{Adapter, Capability, Fidelity, Precision};
 use crate::csharp::CSharpAdapter;
 use crate::css::{CssAdapter, EXTENSIONS as CSS_EXTENSIONS};
+use crate::dockerfile::{DockerfileAdapter, is_dockerfile_path};
 use crate::html::{EXTENSIONS as HTML_EXTENSIONS, HtmlAdapter};
 use crate::markdown::MarkdownAdapter;
 use crate::opaque::OpaqueAdapter;
@@ -35,6 +37,9 @@ static TYPESCRIPT: TypeScriptAdapter = TypeScriptAdapter;
 static CSS: CssAdapter = CssAdapter;
 // frob:ticket 01M47QKT10CG0RSF784EEYTQ0J
 static HTML: HtmlAdapter = HtmlAdapter;
+// frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
+static ACTIONS: ActionsAdapter = ActionsAdapter;
+static DOCKERFILE: DockerfileAdapter = DockerfileAdapter;
 static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Extensions (no dot, lowercase) claimed by the built-in adapters, by language.
@@ -197,6 +202,18 @@ pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
                 .map(|&i| reg.registered[i].adapter)
         }
     }
+}
+
+// frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
+/// The adapter for the file at `path` with language `hint`: path-aware, so workflows and Dockerfiles win over plain YAML or no adapter.
+pub fn adapter_for_entry(path: &str, hint: &LanguageHint) -> Option<&'static dyn Adapter> {
+    if is_workflow_path(path) {
+        return Some(&ACTIONS);
+    }
+    if is_dockerfile_path(path) {
+        return Some(&DOCKERFILE);
+    }
+    adapter_for(hint)
 }
 
 /// The adapter claiming `path` by its extension, or `None`.

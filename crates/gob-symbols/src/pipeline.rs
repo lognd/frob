@@ -17,7 +17,7 @@ use crate::dotnet::MalformedProject;
 use crate::fold::{base_file, opaque_file};
 use crate::graph::SymbolGraph;
 use crate::model::FileSymbols;
-use crate::registry::adapter_for;
+use crate::registry::adapter_for_entry;
 use crate::types::TypeFacts;
 
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
@@ -114,7 +114,7 @@ fn input_of<'a>(entry: &'a FileEntry, digest: &'a str, text_len: usize) -> FileI
 /// [`crate::FoldError`] only when an adapter builds an ill-formed term (a bug).
 pub fn fold_file(entry: &FileEntry, text: &str) -> Result<Folded, crate::FoldError> {
     let digest = entry.digest.to_string();
-    let Some(adapter) = adapter_for(&entry.language) else {
+    let Some(adapter) = adapter_for_entry(&entry.path, &entry.language) else {
         let size = u32::try_from(entry.size).unwrap_or(u32::MAX);
         let input = FileInput {
             path: &entry.path,
@@ -209,7 +209,7 @@ pub fn build_graph_with_stats_typed(
                 chunk
                     .iter()
                     .filter_map(|entry| {
-            let Some(adapter) = adapter_for(&entry.language) else {
+            let Some(adapter) = adapter_for_entry(&entry.path, &entry.language) else {
                 opaque.fetch_add(1, Ordering::Relaxed);
                 return Some(extract_file(entry, ""));
             };

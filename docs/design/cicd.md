@@ -100,6 +100,17 @@ May for tags, Unknown for `latest`), `COPY --from` is a dependency edge
 between stages, `RUN` is an embedded shell region, `USER`, `EXPOSE`,
 `HEALTHCHECK` are attributes.
 
+Implementation status: `gob-symbols` ships `ActionsAdapter`
+(`.github/workflows/*.yml|yaml`) and `DockerfileAdapter` (`Dockerfile`,
+`Dockerfile.*`, `*.dockerfile`) at F2, selected by path through
+`adapter_for_entry`. Jobs and stages are units; `uses:`, `FROM` and
+`COPY --from=image` become `Instantiates` edges (Must for a commit SHA or
+digest, May for a tag or branch, Unknown with `GapReason::Floating` when
+unpinned or `latest`); `needs:`, `FROM stage` and `COPY --from=stage|index`
+become `Depends` edges (Must, or Unknown when the target is missing).
+Steps, `${{ }}` expression regions and shell regions are not modelled yet,
+which is the gap to F3.
+
 Terraform and Helm: resources and templates are units; references are
 Must inside a module, May across providers until schemas are loaded;
 both need an external binary or provider schema for anything beyond

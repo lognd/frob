@@ -71,6 +71,10 @@ mod languages_page;
 mod nodejs;
 mod opaque;
 mod paths;
+// frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
+mod actions;
+mod dockerfile;
+mod pin;
 mod pipeline;
 mod python;
 mod qualifier;
@@ -88,6 +92,7 @@ mod unity_project;
 mod view;
 mod yaml;
 
+pub use actions::{ActionsAdapter, is_workflow_path};
 pub use adapter::{
     Adapter, Capability, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded,
     ParseStatus, Precision,
@@ -100,6 +105,7 @@ pub use csharp::{
 };
 pub use css::{CssAdapter, is_css_path};
 pub use def_use::{PYTHON_SYNTAX, RUST_SYNTAX, TYPESCRIPT_SYNTAX, def_use_of, syntax_for};
+pub use dockerfile::{DockerfileAdapter, is_dockerfile_path};
 pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
     parse_project, parse_solution,
@@ -133,8 +139,8 @@ pub use python::{
 };
 pub use qualifier::{Admit, CallQualifier};
 pub use registry::{
-    AdapterEntry, AdapterReport, DuplicateExtension, adapter_for, adapter_for_path, adapters,
-    fidelity_report, opaque_adapter, registry_conflicts,
+    AdapterEntry, AdapterReport, DuplicateExtension, adapter_for, adapter_for_entry,
+    adapter_for_path, adapters, fidelity_report, opaque_adapter, registry_conflicts,
 };
 pub use rust::RustAdapter;
 pub use types::{AnnotationWeight, TypeFacts, TypesTrust};

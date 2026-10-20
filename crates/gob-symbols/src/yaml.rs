@@ -238,7 +238,7 @@ fn fold_key(
     Ok(())
 }
 
-fn fold_text(text: &str, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+pub(crate) fn fold_text(text: &str, input: &FileInput<'_>) -> Result<Folded, FoldError> {
     let mut cx = Cx::new(input.path, "yaml", text);
     let keys = scan_keys(text);
     let mut units = Vec::new();
