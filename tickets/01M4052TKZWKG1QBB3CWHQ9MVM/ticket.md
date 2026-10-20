@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a proposal by an unmapped identity, when accept runs, then it refuses"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a proposal on scope, acceptance, evidence or links, when accept runs, then it refuses to apply it"
