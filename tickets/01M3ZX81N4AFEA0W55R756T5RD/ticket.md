@@ -2,7 +2,8 @@
 id = "01M3ZX81N4AFEA0W55R756T5RD"
 title = "check --teach [RULE] and teach reset [RULE]"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
