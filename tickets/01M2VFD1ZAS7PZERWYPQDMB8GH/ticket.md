@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "logging uses the repo logging conventions and is proven by a test"
-bound = false
+bound = true
 +++
 
 Leaf 4 of T-5101. See scratchpad/HOOK-AUDIT.md section 3.3.
