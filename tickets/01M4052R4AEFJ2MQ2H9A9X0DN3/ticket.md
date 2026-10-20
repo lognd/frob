@@ -2,7 +2,8 @@
 id = "01M4052R4AEFJ2MQ2H9A9X0DN3"
 title = "GitHub schema validation and the repository inventory of managed labels, milestones and issue types"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
