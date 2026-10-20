@@ -88,7 +88,7 @@ pub use filecheck::{CheckCtx, FileCheck, SharedCtx};
 pub use gob_cache::ArtifactKey;
 #[doc(hidden)]
 pub use gob_rules as __rules;
-pub use options::RunOptions;
+pub use options::{RunOptions, TrustFromSpec};
 pub use packages::public_surface_differs;
 pub use pipeline::run;
 pub use product::{

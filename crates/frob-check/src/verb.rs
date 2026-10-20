@@ -143,6 +143,7 @@ pub struct Check {
     base: Option<String>,
     tools: ToolFlags,
     allow_concurrent: bool,
+    trust_from: Option<String>,
 }
 
 /// The tool-stage switches of a run (`--quick`, `--skip-tools`), grouped to keep `Check` lean.
@@ -265,6 +266,13 @@ fn cli_error(err: CheckError) -> CliError {
             &err,
             "rerun `frob check`, then `frob check --fix`",
         ),
+        // frob:ticket 01M5C2Q5V7NRJTW8Y3DX625YAT
+        CheckError::TrustFrom(_) => refusal(
+            "E-CHECK-TRUST-FROM",
+            RefusalClass::GuardNeedsAction,
+            &err,
+            "pass a resolvable REF that holds the pack lock, or drop --trust-from",
+        ),
         CheckError::Walk(_) | CheckError::FixIo(_) | CheckError::ReadOnlyViolated(_) => {
             CliError::internal(err)
         }
@@ -355,6 +363,12 @@ struct CheckArgs {
         help = "Run even if another full check holds this worktree's lock (recorded in .frob/check-overrides.log)"
     )]
     allow_concurrent: bool,
+    #[arg(
+        long,
+        value_name = "REF",
+        help = "Trust only the pack lock at REF (CI: the protected base); a pack absent from it is Unresolved untrusted-in-change"
+    )]
+    trust_from: Option<String>,
 }
 
 impl Command for Check {
@@ -380,6 +394,7 @@ impl Command for Check {
                 skip: a.skip_tools,
             },
             allow_concurrent: a.allow_concurrent,
+            trust_from: a.trust_from,
         })
     }
 
@@ -419,6 +434,7 @@ impl Command for Check {
             base: self.base.clone(),
             quick: self.tools.quick,
             skip_tools: self.tools.skip,
+            trust_from: self.trust_from.clone(),
             clock: Some(ctx.clock.clone()),
             ..CheckOptions::default()
         };

@@ -1,6 +1,7 @@
 //! What a check run was asked to do, independent of the product driving it.
 
 use crate::config::FailOn;
+use crate::trust_from::LivePack;
 
 /// Inputs of [`crate::run`] besides the repository root and the product; `Default` is a plain full check.
 #[derive(Debug, Clone, Default)]
@@ -26,4 +27,17 @@ pub struct RunOptions {
     /// Trust source for tool programs; when present an untrusted program is Unresolved and not run,
     /// and one resolving inside the work tree is refused (security.md 2.4). Absent leaves stages unvetted.
     pub tool_trust: Option<std::sync::Arc<dyn crate::tools::ToolTrust>>,
+    /// `--trust-from REF`: base-ref trust for the product's live packs (security.md 2.3).
+    pub trust_from: Option<TrustFromSpec>,
+}
+
+/// What `check --trust-from REF` trusts against: the ref, the lock path and the live packs.
+#[derive(Debug, Clone)]
+pub struct TrustFromSpec {
+    /// The protected ref whose pack lock is the only trust source.
+    pub base_ref: String,
+    /// Repo-relative path of the pack lock, read from git objects at `base_ref`.
+    pub lock_path: String,
+    /// The packs the work tree enables; each is decided against the lock at `base_ref`.
+    pub packs: Vec<LivePack>,
 }

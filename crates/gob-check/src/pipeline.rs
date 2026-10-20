@@ -543,6 +543,11 @@ fn pass<P: Product>(
         &mut files,
     ));
 
+    // frob:ticket 01M5C2Q5V7NRJTW8Y3DX625YAT
+    if let Some(spec) = &opts.trust_from {
+        raw.extend(crate::trust_from::findings(root, spec)?);
+    }
+
     let external = product.join_external(&snap, &mut files, &mut tally.timing);
     // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
     if let Some(name) = only.iter().find(|n| {

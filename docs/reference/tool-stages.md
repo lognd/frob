@@ -33,7 +33,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 
 ## Skipping stages
 
-`frob check --skip-tools` runs no `[[check.tool]]` stage at all. CI passes it from the `check` step (`cargo dev ci --step check`) because fmt, clippy, docs, gen, zizmor, actionlint, deny, shear and typos each already run as a dedicated step; the built-in rules still run.
+`frob check --skip-tools` runs no `[[check.tool]]` stage at all. CI passes it from the `check` step (`cargo dev ci --step check`) because fmt, clippy, docs, gen, zizmor, actionlint, deny, shear and typos each already run as a dedicated step; the built-in rules still run. It also passes `--trust-from origin/experimental`, so a pack absent from `frob.packs.lock` at that ref is reported as Unresolved `untrusted-in-change`; no other trust flag is used.
 
 ## Tool definitions
 
