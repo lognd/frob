@@ -2,12 +2,12 @@
 id = "01M5D17PG2S8RMQ3GJDHP76EES"
 title = "DT04 flip step: goway with_refs, frob.toml orphan mode and ticket migrate"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T16:10:12Z"
-updated = "2026-10-20T16:53:04Z"
+updated = "2026-10-20T16:54:21Z"
 scope = ["goway.toml", "frob.toml", ".gitattributes"]
 
 [[links]]
