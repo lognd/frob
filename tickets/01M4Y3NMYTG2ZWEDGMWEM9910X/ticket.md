@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-14T21:04:10Z"
-updated = "2026-10-20T13:57:19Z"
+updated = "2026-10-20T14:01:06Z"
 scope = ["crates/frob/src/profile.rs"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M3ZX7ZNF2PJ2E8WJH3CSCDFK"
 
 [[acceptance]]
 text = "Given teaching state from ~3CSCDFK, when a newcomer runs check, then the profile teach count comes from seen.toml and [ui] teach"
-bound = false
+bound = true
 +++
 
 Follow-up of ~77EBEJP: Profile::teach_for exists as a pure function; connect it to the teaching state built by ~3CSCDFK once that lands.
