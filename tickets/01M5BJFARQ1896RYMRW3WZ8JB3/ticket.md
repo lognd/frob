@@ -4,9 +4,10 @@ title = "Mark lexical rules needs = Lexical and add their opaque_fire island cas
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T02:32:59Z"
-updated = "2026-10-20T02:32:59Z"
+updated = "2026-10-20T02:47:21Z"
 scope = ["crates/*/src/rules/**", "crates/gob-mdtest/coverage-allowlist.toml"]
 +++
 
