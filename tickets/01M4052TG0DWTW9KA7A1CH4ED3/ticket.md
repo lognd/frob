@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-20T12:21:51Z"
+updated = "2026-10-20T12:21:52Z"
 idempotency_key = "m2-mirror2-contest"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/contest.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a contested field, when a ledger event on the field or an accept or decline occurs, then the contested state is cleared"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.4 (Revert wars end; MIR-AUD-06).
