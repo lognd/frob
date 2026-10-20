@@ -2,13 +2,13 @@
 id = "01M4052TKZWKG1QBB3CWHQ9MVM"
 title = "frob ticket proposals accept: TTY, no agent marker, escaped diff, mapped identities, full value fetched"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-03T05:51:38Z"
+updated = "2026-10-20T06:45:23Z"
 idempotency_key = "m2-mirror2-accept-guards"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/ticket/proposals_accept.rs"]
