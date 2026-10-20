@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-evidence/**,crates/frob-ledger/**,crates/frob-ack/**,crates/frob-tests/**,crates/frob-check/**", "changelog.d/01M5CVQC3K7RTFXEFWSG1SM00V.changed.md", "crates/frob-check/src/verb.rs", "crates/frob-evidence/src/error.rs", "crates/frob-ledger/src/error.rs"]
+new = ["crates/frob-evidence/**,crates/frob-ledger/**,crates/frob-ack/**,crates/frob-tests/**,crates/frob-check/**", "changelog.d/01M5CVQC3K7RTFXEFWSG1SM00V.changed.md", "crates/frob-check/src/verb.rs", "crates/frob-evidence/src/error.rs", "crates/frob-ledger/src/error.rs", "crates/frob-tests/Cargo.toml"]
+at = "2026-10-20T20:37:55Z"
+actor = "lognd"
+rev = 1
