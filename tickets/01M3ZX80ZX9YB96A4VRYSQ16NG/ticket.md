@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:39Z"
-updated = "2026-10-20T03:48:57Z"
+updated = "2026-10-20T03:49:01Z"
 idempotency_key = "m2-sec-agent-brief"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/frob-ledger/src/brief.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/tests/ledger.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a suggested command outside allowed_tools, when composing the brief, then it is omitted"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.11 (last bullets).
