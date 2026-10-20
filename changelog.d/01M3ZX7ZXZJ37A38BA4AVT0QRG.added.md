@@ -1,0 +1,1 @@
+Plugin fixes are validated before they become host fixes: an edit must name a subject-set file and lie inside the finding's primary span, `machine` is capped to `maybe-incorrect` unless the pack holds `fix.machine`, and a fix touching the control plane is refused at every applicability.
