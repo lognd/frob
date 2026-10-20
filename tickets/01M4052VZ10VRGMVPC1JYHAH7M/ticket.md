@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-20T11:45:41Z"
+updated = "2026-10-20T11:58:31Z"
 idempotency_key = "m2-mirror2-status"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/src/status.rs"]
+scope = ["crates/frob-mirror/src/status.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -31,15 +31,15 @@ target = "01M4052VTX4T6W688PQXVTQV56"
 
 [[acceptance]]
 text = "Given N issues and K per run, when status runs, then it states ceil(N/K) runs as the visit bound"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a gap and a contested field, when status runs, then both are listed with ticket and field"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a create-uncertain ticket, when status runs, then it is listed with its create-start time"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.2 (the stated sweep bound), 3.4 (gaps, contested) and 3.3 (uncertain creates, unmirrored).
