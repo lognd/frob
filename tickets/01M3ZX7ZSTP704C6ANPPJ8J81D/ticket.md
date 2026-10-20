@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-20T04:58:58Z"
+updated = "2026-10-20T04:58:59Z"
 idempotency_key = "m2-sec-host-remedies"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/remedy.rs", "crates/gob-diagnostics/src/lib.rs", "docs/design/diagnostics.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a pack rule seen for the first time, when check runs, then no inline explain is printed"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.10 (remedies are host-only); diagnostics.md section 5.
