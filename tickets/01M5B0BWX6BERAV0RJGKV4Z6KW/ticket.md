@@ -2,7 +2,8 @@
 id = "01M5B0BWX6BERAV0RJGKV4Z6KW"
 title = "Mirror config: add [mirror] bot_ids and feed it to TICK010 instead of an empty list"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
