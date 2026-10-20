@@ -8,12 +8,12 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-11T02:44:06Z"
-updated = "2026-10-20T14:00:43Z"
+updated = "2026-10-20T14:09:40Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/frob-check/tests/it/tool_bind.rs"]
 
 [[acceptance]]
 text = "Given a workflow with a frob:accept CI001 directive above one '- uses:' step, when frob check runs with the zizmor stage, then only that step's CI001 finding is suppressed and a sibling step's finding is not"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a YAML file with an anchor and an alias, when gob-symbols folds it, then the alias is a reference edge to the anchored key unit"
