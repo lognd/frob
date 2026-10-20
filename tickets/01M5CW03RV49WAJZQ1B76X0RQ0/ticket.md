@@ -2,7 +2,8 @@
 id = "01M5CW03RV49WAJZQ1B76X0RQ0"
 title = "Land pushes after the ledger step"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
