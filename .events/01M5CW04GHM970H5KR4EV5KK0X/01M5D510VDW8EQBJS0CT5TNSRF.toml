@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/sync_policy.rs", "crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/read.rs", "crates/frob/src/sync_hook.rs"]
+new = ["crates/frob-ledger/src/sync_policy.rs", "crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/read.rs", "crates/frob/src/sync_hook.rs", "crates/frob/src/lib.rs"]
+at = "2026-10-20T17:16:28Z"
+actor = "lognd"
+rev = 1
