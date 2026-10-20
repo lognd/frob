@@ -185,6 +185,13 @@ implemented yet.
   candidate (at most 8 attempts, never waiting). When nothing is
   claimable it refuses with `E-NO-DOABLE-TICKET` (remedy `frob ticket
   doable`). `--next` conflicts with a ticket argument and with `--here`.
+  `frob work <ticket> --anyway --reason TEXT` is the escape valve over
+  another clone's claim (`E-CLAIM-LOST`): nothing is pushed and no claim
+  transfers; the work proceeds, optionally limited to `--anyway-scope
+  GLOB` (repeatable, replaces the ticket scope for the lease), and a note
+  on the ticket records the reason, scope and an expiry (`--anyway-days
+  N`, default 7). `land` shows `worked over the claim on <branch>:
+  <reason>`, flagging an expired escape.
 - Acceptance: `ticket update <id> --add-acceptance TEXT` (repeatable,
   the text is taken whole, commas included), `--remove-acceptance N`
   (repeatable, 1-based as `show` and `brief` number them) and

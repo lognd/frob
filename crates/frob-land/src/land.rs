@@ -358,6 +358,8 @@ fn prepare(
     let mut done_view = view.ticket.clone();
     done_view.front.outcome = Some(opts.outcome);
     warnings.extend(done.warnings(&done_view));
+    // frob:ticket 01M5CW05JQZKCQKV68ZEQ5WASD
+    warnings.extend(frob_worktree::anyway::land_notices(&site.ledger, id));
     let out = LandOutcome {
         branch: Some(branch.clone()),
         worktree: Some(wt_path.clone()),

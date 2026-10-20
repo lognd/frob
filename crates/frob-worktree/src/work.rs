@@ -23,6 +23,7 @@ use gob_diagnostics::{Refusal, RefusalClass};
 use gob_exec::{Outcome, Program, Spec};
 use gob_git::{MergeOutcome, Repo};
 
+use crate::anyway::Anyway;
 use crate::claim::{E_CLAIM_LOST, Publication, W_CLAIM_UNPUBLISHED};
 use crate::config::WorktreeConfig;
 use crate::error::WorktreeError;
@@ -40,6 +41,8 @@ pub struct WorkOptions {
     pub wait_secs: u64,
     /// Apply the sprint gate (`[pm] sprint_gate`): refuse a ticket outside the active cycle; off in a default `WorkOptions`.
     pub sprint_gate: bool,
+    /// Work over someone else's claim instead of refusing `E-CLAIM-LOST` (frob:ticket 01M5CW05JQZKCQKV68ZEQ5WASD).
+    pub anyway: Option<Anyway>,
 }
 
 /// What `work` and `start` did.
@@ -89,6 +92,7 @@ struct Escapes<'a> {
     unplanned: Option<&'a str>,
     sprint_gate: bool,
     wait_secs: u64,
+    anyway: Option<&'a Anyway>,
 }
 
 /// Where the holder works: a fresh worktree for `work`, the current checkout for `start`.
@@ -127,6 +131,7 @@ impl Workspace<'_> {
                 unplanned: opts.unplanned.as_deref(),
                 sprint_gate: opts.sprint_gate,
                 wait_secs: opts.wait_secs,
+                anyway: opts.anyway.as_ref(),
             },
         )
     }
@@ -171,6 +176,7 @@ impl Workspace<'_> {
                 unplanned: opts.unplanned.as_deref(),
                 sprint_gate: opts.sprint_gate,
                 wait_secs: opts.wait_secs,
+                anyway: opts.anyway.as_ref(),
             },
         )
     }
@@ -226,12 +232,16 @@ impl Workspace<'_> {
             unplanned,
             sprint_gate,
             wait_secs,
+            anyway,
         }: Escapes<'_>,
     ) -> Result<Started, WorktreeError> {
         let id = self.ledger.resolve(ticket)?;
         let view = self.ledger.show(id)?;
         let handle = view.summary.handle.clone();
-        let scope = view.ticket.front.scope.clone();
+        let scope = match anyway {
+            Some(a) if !a.scope.is_empty() => a.scope.clone(),
+            _ => view.ticket.front.scope.clone(),
+        };
         let actor = self.ledger.actor()?;
         let existing = self.leases.live_lease(id)?;
         let resumed =
@@ -257,7 +267,7 @@ impl Workspace<'_> {
         let (lease, fresh, stolen_from) =
             self.take_waiting(taking, needs_slot, (&holder, &scope), steal, wait_secs)?;
         let (claim, built) =
-            match self.claim_and_build(plan, (id, &handle), &lease, branch.as_deref()) {
+            match self.claim_and_build(plan, (id, &handle), &lease, branch.as_deref(), anyway) {
                 Ok(done) => done,
                 Err(e) => {
                     if fresh {
@@ -351,8 +361,9 @@ impl Workspace<'_> {
         (id, handle): (TicketId, &str),
         lease: &Lease,
         branch: Option<&str>,
+        anyway: Option<&Anyway>,
     ) -> Result<(Option<String>, Built), WorktreeError> {
-        let claim = self.claim(plan, handle, lease, branch)?;
+        let claim = self.claim(plan, (id, handle), lease, branch, anyway)?;
         let built = self.build(plan, id, handle, lease, branch)?;
         Ok((claim, built))
     }
@@ -479,13 +490,18 @@ impl Workspace<'_> {
     /// Publish the claim (create-only push of the ticket branch at the base tip) before a fresh worktree is made.
     ///
     /// Nothing is pushed for `start`, for an existing worktree, or without a remote.
+    ///
+    /// With `anyway`, losing the race is not a refusal: the claim stays
+    /// theirs, the work proceeds and a note records the reason.
     // frob:ticket 01M5CW04QCRZ860BZMT46BECG2
+    // frob:ticket 01M5CW05JQZKCQKV68ZEQ5WASD
     fn claim(
         &self,
         plan: &Plan,
-        handle: &str,
+        (id, handle): (TicketId, &str),
         lease: &Lease,
         branch: Option<&str>,
+        anyway: Option<&Anyway>,
     ) -> Result<Option<String>, WorktreeError> {
         let (Plan::Work { .. }, Some(branch)) = (plan, branch) else {
             return Ok(None);
@@ -495,6 +511,13 @@ impl Workspace<'_> {
         }
         let base = base_branch(self.ledger);
         let published = crate::claim::publish(self.ledger.repo(), branch, &base)?;
+        if let (Publication::Lost { tip }, Some(anyway)) = (&published, anyway) {
+            crate::anyway::record(self.ledger, id, anyway, branch, tip)?;
+            return Ok(Some(format!(
+                "worked over the claim on {branch} at {tip}: {}",
+                anyway.reason
+            )));
+        }
         if let Publication::Lost { tip } = &published {
             return Err(WorktreeError::Refused(
                 Refusal::new(
@@ -503,7 +526,7 @@ impl Workspace<'_> {
                     format!("{handle} is already claimed: {branch} exists on the remote at {tip}"),
                 )
                 .with_remedy(format!(
-                    "pick another ticket; if the claim is yours from another clone, fetch {branch} and resume there"
+                    "pick another ticket; if the claim is yours from another clone, fetch {branch} and resume there, or rerun with `--anyway --reason <why>`"
                 )),
             ));
         }

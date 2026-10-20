@@ -225,6 +225,7 @@ fn another_holder_is_refused_and_can_steal_with_a_reason() {
                 steal: Some("alice is gone".to_owned()),
                 unplanned: None,
                 sprint_gate: false,
+                anyway: None,
                 wait_secs: 0,
             },
         )
@@ -278,6 +279,7 @@ fn work_events_carry_no_absolute_path() {
             steal: Some("alice is gone".to_owned()),
             unplanned: None,
             sprint_gate: false,
+            anyway: None,
             wait_secs: 0,
         },
     )

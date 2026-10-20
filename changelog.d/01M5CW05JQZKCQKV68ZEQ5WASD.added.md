@@ -1,0 +1,1 @@
+Add `frob work --anyway --reason TEXT` (with `--anyway-scope`, `--anyway-days`): work on a ticket another clone has claimed without taking the claim, recording the reason, scope and expiry on the ticket and showing them at land.

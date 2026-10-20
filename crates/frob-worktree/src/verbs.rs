@@ -12,6 +12,7 @@ use gob_git::Repo;
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::anyway::{Anyway, DEFAULT_EXPIRY_DAYS};
 use crate::config::{WorktreeConfig, ledger_config};
 use crate::error::WorktreeError;
 use crate::gc::{GcConfig, Mode, glue};
@@ -148,23 +149,29 @@ struct TicketArg {
     ticket: String,
 }
 
-/// The reason of `--steal` and `--unplanned`: one `--reason` serves whichever flags are set, and it is required by both and meaningless alone.
+/// The `--reason` of each flag that needs one: the stolen-lease, unplanned and anyway reasons.
+type Reasons = (Option<String>, Option<String>, Option<String>);
+
+/// The reason of `--steal`, `--unplanned` and `--anyway`: one `--reason` serves whichever flags are set, and it is required by each and meaningless alone.
 fn flag_reasons(
     steal: bool,
     unplanned: bool,
+    anyway: bool,
     reason: Option<String>,
-) -> Result<(Option<String>, Option<String>), CliError> {
-    match (steal || unplanned, reason) {
-        (true, Some(r)) if !r.trim().is_empty() => {
-            Ok((steal.then(|| r.clone()), unplanned.then_some(r)))
-        }
+) -> Result<Reasons, CliError> {
+    match (steal || unplanned || anyway, reason) {
+        (true, Some(r)) if !r.trim().is_empty() => Ok((
+            steal.then(|| r.clone()),
+            unplanned.then(|| r.clone()),
+            anyway.then_some(r),
+        )),
         (true, _) => Err(CliError::Usage(
-            "--steal and --unplanned need a non-empty --reason".into(),
+            "--steal, --unplanned and --anyway need a non-empty --reason".into(),
         )),
         (false, Some(_)) => Err(CliError::Usage(
-            "--reason is only used with --steal or --unplanned".into(),
+            "--reason is only used with --steal, --unplanned or --anyway".into(),
         )),
-        (false, None) => Ok((None, None)),
+        (false, None) => Ok((None, None, None)),
     }
 }
 
@@ -214,9 +221,28 @@ struct WorkArgs {
     #[arg(
         long,
         value_name = "TEXT",
-        help = "Why the lease is stale (with --steal) or why the work is unplanned (with --unplanned)"
+        help = "Why the lease is stale (--steal), the work is unplanned (--unplanned) or the claim is worked over (--anyway)"
     )]
     reason: Option<String>,
+    #[arg(
+        long,
+        help = "Work on a ticket another clone has claimed, without taking the claim (needs --reason)"
+    )]
+    anyway: bool,
+    #[arg(
+        long = "anyway-scope",
+        value_name = "GLOB",
+        requires = "anyway",
+        help = "Limit the --anyway work to these globs instead of the ticket's scope (repeatable)"
+    )]
+    anyway_scope: Vec<String>,
+    #[arg(
+        long = "anyway-days",
+        value_name = "N",
+        requires = "anyway",
+        help = "Days until the --anyway escape expires (default 7)"
+    )]
+    anyway_days: Option<u32>,
 }
 
 /// The flags of `start`, declared once.
@@ -273,7 +299,12 @@ impl Command for Work {
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         let a = gob_cli::parse::<WorkArgs>(m)?;
-        let (steal, unplanned) = flag_reasons(a.steal, a.unplanned, a.reason)?;
+        let (steal, unplanned, anyway) = flag_reasons(a.steal, a.unplanned, a.anyway, a.reason)?;
+        let anyway = anyway.map(|reason| Anyway {
+            reason,
+            scope: a.anyway_scope,
+            expiry_days: a.anyway_days.unwrap_or(DEFAULT_EXPIRY_DAYS),
+        });
         Ok(Self {
             ticket: a.ticket,
             opts: WorkOptions {
@@ -282,6 +313,7 @@ impl Command for Work {
                 unplanned,
                 wait_secs: a.wait.unwrap_or(0),
                 sprint_gate: false,
+                anyway,
             },
             here: a.here,
         })
@@ -337,7 +369,7 @@ impl Command for Start {
         Ok(Self {
             ticket: a.ticket.ticket,
             opts: WorkOptions {
-                steal: flag_reasons(a.steal, false, a.reason)?.0,
+                steal: flag_reasons(a.steal, false, false, a.reason)?.0,
                 ..WorkOptions::default()
             },
         })

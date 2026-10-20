@@ -8,6 +8,7 @@ use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
+use frob_worktree::anyway::{Anyway, land_notices};
 use frob_worktree::claim::{E_CLAIM_LOST, W_CLAIM_UNPUBLISHED, remote_claim};
 use frob_worktree::{WorkOptions, Workspace, WorktreeConfig, WorktreeError};
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
@@ -181,6 +182,56 @@ fn a_branch_already_on_the_remote_loses_the_claim_and_releases_the_lease() {
             .is_none()
     );
     assert!(fx.bare.exists());
+}
+
+// frob:tests land_notices
+// frob:tests record
+#[test]
+fn anyway_works_over_a_lost_claim_and_land_shows_the_reason() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let (id, handle) = new_ticket(&ledger);
+    let repo = Repo::discover(&fx.root).expect("repo");
+    repo.commit_paths(
+        "refs/heads/rival",
+        &[(
+            RelPath::new("rival.txt").expect("path"),
+            Some(b"x\n".to_vec()),
+        )],
+        "rival work",
+        &CommitOptions::default(),
+    )
+    .expect("rival commit");
+    let dst = format!("refs/heads/rival:refs/heads/ticket/{handle}");
+    assert!(git(&fx.root, &["push", "--quiet", "origin", &dst]));
+    let rival_tip = remote_tip(&fx, &handle);
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let opts = WorkOptions {
+        anyway: Some(Anyway {
+            reason: "owner is away".to_owned(),
+            scope: vec!["crates/y/**".to_owned()],
+            expiry_days: 3,
+        }),
+        ..WorkOptions::default()
+    };
+    let started = ws.work(&id, &opts).expect("worked over the claim");
+    assert!(
+        started
+            .warnings
+            .iter()
+            .any(|w| w.contains("worked over the claim"))
+    );
+    assert_eq!(started.lease.scope, vec!["crates/y/**".to_owned()]);
+    assert_eq!(remote_tip(&fx, &handle), rival_tip, "nothing was pushed");
+    let notices = land_notices(&ledger, ledger.resolve(&id).expect("id"));
+    assert_eq!(notices.len(), 1);
+    assert!(notices[0].contains("owner is away"));
+    assert!(!notices[0].contains("expired"));
 }
 
 // frob:tests crates/frob-worktree/src/claim.rs::publish
