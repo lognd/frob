@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-20T14:09:33Z"
+digest = "31be64a661a2fbca3c84938316b9889cb2606858e0b87e9052a565305639fad3"
+exit_code = 0
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 1 test
+test vis_is_clean_for_an_item_re_exported_from_the_crate_root ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.03s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running unittests src/lib.rs (target/debug/deps/grimble_arch-1c43214ffbe4b337)
+     Running tests/rules.rs (target/debug/deps/rules-7f7260cdedbfc464)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-arch vis_is_clean_for_an_item_re_exported_from_the_crate_root"
+size = 522
+status = "measured"
+at = "2026-10-20T14:09:33Z"
+actor = "lognd"
+rev = 1
