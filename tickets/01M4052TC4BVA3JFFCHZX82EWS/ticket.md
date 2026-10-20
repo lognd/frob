@@ -55,7 +55,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an edit made between the mirror's read and its write, when the next run reads history, then the edit is recorded and nothing is lost"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.4 (Per issue in a run; owner decision: never block).
