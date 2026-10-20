@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-20T22:51:46Z"
+digest = "3ebfe0e26e1dd2e1020c8d6ba5f6c68fe9aa66a3b61e5e6dfdd830fdac5ebdbb"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6932119b-2ffe-4def-a3b3-39f38012ce6b with nextest profile: default
+    Starting 1 test across 16 binaries (55 tests skipped)
+        PASS [   0.008s] crunk::gallery default_build_says_the_gallery_is_not_built_in_and_how_to_get_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 55 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk default_build_says"
+size = 626
+status = "measured"
+test_count = 1
+tests_digest = "9691cb936dd26944f75022d737e973fba5524e9baffd37b29bc5dd499d9c7c0b"
+at = "2026-10-20T22:51:46Z"
+actor = "lognd"
+rev = 1
