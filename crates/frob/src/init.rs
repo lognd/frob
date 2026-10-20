@@ -13,6 +13,8 @@ use gob_git::Repo;
 use schemars::JsonSchema;
 use serde::Serialize;
 
+mod freshness_hooks;
+
 use crate::PRODUCT;
 use crate::config::{FrobConfig, RefModeKnob};
 use crate::config_cmd::{SyncData, sync_config};
@@ -104,6 +106,8 @@ pub struct Init {
     fix_driver: bool,
     /// Ledger ref to write as `[tickets] ref` instead of the detected default branch.
     ledger_ref: Option<String>,
+    /// Remove the freshness git hooks instead of installing them.
+    remove_hooks: bool,
 }
 
 /// One file-or-config step of init.
@@ -132,6 +136,8 @@ pub struct InitData {
     pub gitattributes: Step,
     /// The local ticket branch created from origin or fresh (orphan mode only); absent otherwise.
     pub ticket_branch: Option<Step>,
+    /// The `post-checkout` and `post-merge` freshness hooks (installed, or removed by `--remove-hooks`).
+    pub freshness_hooks: Step,
 }
 
 /// The merge driver command init settled on and the reason, in the output.
@@ -745,6 +751,11 @@ struct InitArgs {
         help = "Rewrite an existing merge driver that points at a different frob"
     )]
     fix_driver: bool,
+    #[arg(
+        long = "remove-hooks",
+        help = "Remove the freshness git hooks init installs instead of installing them"
+    )]
+    remove_hooks: bool,
 }
 
 impl Command for Init {
@@ -760,6 +771,7 @@ impl Command for Init {
             driver_command: a.driver_command,
             fix_driver: a.fix_driver,
             ledger_ref: a.ledger_ref,
+            remove_hooks: a.remove_hooks,
         })
     }
 
@@ -809,7 +821,19 @@ impl Command for Init {
             target: format!("refs/heads/{branch}"),
             changed: true,
         });
+        let hooks_dir = repo.common_dir().join("hooks");
+        let hook_paths = if self.remove_hooks {
+            freshness_hooks::remove(&hooks_dir, ctx.dry_run)
+        } else {
+            freshness_hooks::install(&hooks_dir, ctx.dry_run)
+        }
+        .map_err(CliError::internal)?;
+        let freshness = Step {
+            target: Shown::of(&hooks_dir).to_string(),
+            changed: !hook_paths.is_empty(),
+        };
         let already = config.added.is_empty()
+            && !freshness.changed
             && ticket_branch.is_none()
             && !python_stage
             && !web_stages
@@ -826,6 +850,7 @@ impl Command for Init {
             driver,
             gitattributes,
             ticket_branch,
+            freshness_hooks: freshness,
         })
         .with_already(already);
         Ok(match driver_warning {

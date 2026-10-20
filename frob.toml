@@ -201,5 +201,6 @@ preview = ["grimble", "crunk"]
 items = [
     "hook:frob-suggest = scripts/claude-hooks/frob-suggest.py",
     "support:_shellscan = scripts/claude-hooks/_shellscan.py",
+    "hook:frob-refresh = scripts/claude-hooks/frob-refresh.sh",
 ]
-hooks = ["frob-suggest:PreToolUse:Bash|Edit"]
+hooks = ["frob-suggest:PreToolUse:Bash|Edit", "frob-refresh:SessionStart:"]
