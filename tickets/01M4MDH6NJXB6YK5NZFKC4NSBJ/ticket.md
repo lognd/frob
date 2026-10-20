@@ -2,7 +2,8 @@
 id = "01M4MDH6NJXB6YK5NZFKC4NSBJ"
 title = "gob-symbols: tree-sitter-yaml F2 adapter with anchors and aliases as references"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
