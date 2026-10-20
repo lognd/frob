@@ -129,3 +129,13 @@ A repository with tickets under `tickets/` on the code branch moves them with
 `frob ticket migrate --to-branch` (see
 [../design/navigation.md](../design/navigation.md) section 2.3). The migration
 is a one-shot, verified copy that keeps every ULID and event id.
+
+## Readiness audit for the orphan flip
+
+Under `ref_mode = "orphan"` nothing reads a `tickets/` directory from the work
+tree. The audit found only path classifiers (diff-path prefixes such as
+`INTERNAL_PREFIXES` in `frob-pm`, `is_frob_owned` in `frob-check`, `Roles` in
+`gob-walk`, `plan-jobs.py` in CI); they match nothing in orphan mode and are
+harmless. Every ledger reader goes through the ledger API (branch or dir), and
+`frob check`, `ticket reindex` and `frob land` already branch on the mode.
+`crates/frob/tests/it/orphan_readiness.rs` pins this on an orphan fixture.
