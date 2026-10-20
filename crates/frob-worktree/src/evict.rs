@@ -490,6 +490,154 @@ pub fn reclaim_plan(
         .ok_or(ReclaimRefusal::NothingParked)
 }
 
+/// Days within which a second eviction of the same holder on the same ticket is a flap (section 4.7).
+pub const FLAP_REPEAT_DAYS: u64 = 14;
+
+/// Seconds in a day.
+const DAY_SECS: i64 = 86_400;
+
+/// Whether an eviction may go ahead unattended, given the holder's recent history on this ticket.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FlapReview {
+    /// No recent eviction of this holder here: the normal rules apply.
+    Normal,
+    /// A repeat inside [`FLAP_REPEAT_DAYS`]: a human must confirm, and the board flags the ticket.
+    NeedsHuman,
+}
+
+/// Review a pending eviction against `prior_evictions`, the ages in seconds of earlier evictions of this holder on this ticket.
+#[must_use]
+pub fn flap_review(prior_evictions: &[u64]) -> FlapReview {
+    let limit = FLAP_REPEAT_DAYS * 86_400;
+    if prior_evictions.iter().any(|age| *age < limit) {
+        tracing::info!(
+            prior = prior_evictions.len(),
+            "repeat eviction inside the flap window needs a human"
+        );
+        FlapReview::NeedsHuman
+    } else {
+        FlapReview::Normal
+    }
+}
+
+/// Seconds from the last reclaim to `now`, for [`EvictContext::since_reclaim_secs`]; `None` when never reclaimed.
+#[must_use]
+pub fn since_reclaim(reclaimed_at: Option<i64>, now: i64) -> Option<u64> {
+    reclaimed_at.map(|t| u64::try_from(now.saturating_sub(t)).unwrap_or(0))
+}
+
+/// How many of `evicted_at` (epoch seconds of one actor's evictions) fall on the local day of `now`.
+///
+/// `utc_offset_secs` is the actor's zone east of UTC; the count feeds [`EvictContext::evictions_today`].
+#[must_use]
+pub fn evictions_today(evicted_at: &[i64], now: i64, utc_offset_secs: i64) -> u32 {
+    let day = |t: i64| (t + utc_offset_secs).div_euclid(DAY_SECS);
+    let today = day(now);
+    let n = evicted_at.iter().filter(|t| day(**t) == today).count();
+    u32::try_from(n).unwrap_or(u32::MAX)
+}
+
+/// Evictions an actor may still perform today under `evict_rate`.
+#[must_use]
+pub fn rate_left(evict_rate: u32, evictions_today: u32) -> u32 {
+    evict_rate.saturating_sub(evictions_today)
+}
+
+/// Why `frob claim restore` is refused.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RestoreRefusal {
+    /// A restore needs a stated reason.
+    EmptyReason,
+    /// Somebody re-claimed the ticket (or `ticket/<handle>` exists): too late to restore.
+    Taken(String),
+    /// There is no parked ref to restore from.
+    NothingParked,
+}
+
+/// Plan `frob claim restore ~X --reason TEXT`: put the newest parked work back as `ticket/<handle>`.
+///
+/// Anyone may restore, holder or not, while nobody else has started. Returns the parked ref name.
+///
+/// # Errors
+/// [`RestoreRefusal`] for an empty reason, a ticket someone else holds, or nothing parked.
+pub fn restore_plan(
+    reason: &str,
+    other_holder: Option<&str>,
+    branch_present: bool,
+    parked: &[String],
+    handle: &str,
+) -> Result<String, RestoreRefusal> {
+    if reason.trim().is_empty() {
+        return Err(RestoreRefusal::EmptyReason);
+    }
+    if let Some(h) = other_holder {
+        return Err(RestoreRefusal::Taken(h.to_owned()));
+    }
+    if branch_present {
+        return Err(RestoreRefusal::Taken(
+            "an unrecorded claim branch".to_owned(),
+        ));
+    }
+    newest_parked(parked, handle)
+        .map(|r| r.strip_prefix("refs/heads/").unwrap_or(r).to_owned())
+        .ok_or(RestoreRefusal::NothingParked)
+}
+
+/// How a restore attempt ended.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RestoreOutcome {
+    /// `ticket/<handle>` exists again at `tip`, the parked tip.
+    Restored {
+        /// The restored branch tip.
+        tip: String,
+    },
+    /// Someone created `ticket/<handle>` first.
+    Taken,
+    /// The remote could not be reached; nothing changed.
+    Offline(String),
+}
+
+/// Recreate `ticket/<handle>` from `parked` (a name from [`restore_plan`]) by a create-only push.
+///
+/// The ledger `lease` op `restore` is the caller's step. The parked ref is kept as history.
+///
+/// # Errors
+/// [`WorktreeError`] when git cannot be started.
+pub fn restore(repo: &Repo, handle: &str, parked: &str) -> Result<RestoreOutcome, WorktreeError> {
+    let (remote, timeout) = sync_settings(repo);
+    if repo.remote_url(&remote).is_none() {
+        return Ok(RestoreOutcome::Offline("no remote configured".to_owned()));
+    }
+    let tip = match remote_claim(repo, &remote, parked, timeout)? {
+        Ok(Some(tip)) => tip,
+        Ok(None) => return Ok(RestoreOutcome::Offline(format!("{parked} is gone"))),
+        Err(why) => return Ok(RestoreOutcome::Offline(why)),
+    };
+    let spec = format!("refs/heads/{parked}");
+    match repo.fetch_refs(&remote, &[spec], timeout)? {
+        RemoteRun::Done => {}
+        RemoteRun::Rejected(t) | RemoteRun::Failed { text: t, .. } => {
+            return Ok(RestoreOutcome::Offline(t));
+        }
+        RemoteRun::TimedOut => return Ok(RestoreOutcome::Offline("the fetch timed out".into())),
+    }
+    match remote_claim(repo, &remote, &format!("ticket/{handle}"), timeout)? {
+        Ok(None) => {}
+        Ok(Some(_)) => return Ok(RestoreOutcome::Taken),
+        Err(why) => return Ok(RestoreOutcome::Offline(why)),
+    }
+    let dst = format!("refs/heads/ticket/{handle}");
+    match repo.push_cas(&remote, &tip, &dst, None, timeout)? {
+        RemoteRun::Done => {
+            tracing::info!(handle, parked, "claim restored from parked work");
+            Ok(RestoreOutcome::Restored { tip })
+        }
+        RemoteRun::Rejected(_) => Ok(RestoreOutcome::Taken),
+        RemoteRun::TimedOut => Ok(RestoreOutcome::Offline("the push timed out".into())),
+        RemoteRun::Failed { text, .. } => Ok(RestoreOutcome::Offline(text)),
+    }
+}
+
 /// The result of one item of a batch eviction.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BatchItem {
@@ -723,6 +871,59 @@ mod tests {
         assert_eq!(
             reclaim_plan(None, &[], "ABC"),
             Err(ReclaimRefusal::NothingParked)
+        );
+    }
+
+    // frob:tests flap_review
+    // frob:tests since_reclaim
+    #[test]
+    fn repeat_eviction_within_fourteen_days_needs_a_human() {
+        let day = 86_400;
+        assert_eq!(flap_review(&[]), FlapReview::Normal);
+        assert_eq!(flap_review(&[15 * day]), FlapReview::Normal);
+        assert_eq!(flap_review(&[15 * day, 13 * day]), FlapReview::NeedsHuman);
+        assert_eq!(since_reclaim(None, 100), None);
+        assert_eq!(since_reclaim(Some(40), 100), Some(60));
+        assert_eq!(since_reclaim(Some(200), 100), Some(0));
+    }
+
+    // frob:tests evictions_today
+    // frob:tests rate_left
+    #[test]
+    fn rate_counts_the_actors_local_day() {
+        let h = 3600;
+        // 23:00 and 01:00 UTC are the same day at +2h, different days at UTC.
+        let times = [23 * h, 25 * h, 26 * h];
+        assert_eq!(evictions_today(&times, 27 * h, 0), 2);
+        assert_eq!(evictions_today(&times, 27 * h, 2 * h), 3);
+        assert_eq!(rate_left(5, 3), 2);
+        assert_eq!(rate_left(5, 9), 0);
+    }
+
+    // frob:tests restore_plan
+    #[test]
+    fn restore_needs_reason_nobody_else_and_parked_work() {
+        let parked = vec!["refs/heads/parked/ABC-1".to_owned()];
+        let plan = |r, o, b, p: &[String]| restore_plan(r, o, b, p, "ABC");
+        assert_eq!(
+            plan("oops", None, false, &parked),
+            Ok("parked/ABC-1".to_owned())
+        );
+        assert_eq!(
+            plan(" ", None, false, &parked),
+            Err(RestoreRefusal::EmptyReason)
+        );
+        assert_eq!(
+            plan("oops", Some("carl"), false, &parked),
+            Err(RestoreRefusal::Taken("carl".to_owned()))
+        );
+        assert!(matches!(
+            plan("oops", None, true, &parked),
+            Err(RestoreRefusal::Taken(_))
+        ));
+        assert_eq!(
+            plan("oops", None, false, &[]),
+            Err(RestoreRefusal::NothingParked)
         );
     }
 }
