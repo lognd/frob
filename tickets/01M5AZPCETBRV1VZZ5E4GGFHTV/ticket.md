@@ -4,9 +4,10 @@ title = "Frob rule corpora: add the polarity-shaped unresolved case for 39 rules
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T21:04:48Z"
-updated = "2026-10-19T21:04:48Z"
+updated = "2026-10-20T01:45:27Z"
 scope = ["crates/frob-check/tests/mdtest/**", "crates/*/tests/mdtest/**"]
 +++
 

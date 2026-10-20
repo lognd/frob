@@ -25,6 +25,27 @@ remove the marker, or re-point it at a live ticket.
 
 ## Examples
 
+### TODO002 todo owned by a terminal ticket / Fires when the ticket is done #1 (line 8) (fire)
+
+```rust
+/* frob:todo {{DONE}} finish it */ // warn: TODO002
+fn a() {}
+```
+
+### TODO002 todo owned by a terminal ticket / Clean when the ticket is open #2 (line 15) (clean)
+
+```rust
+/* frob:todo {{OPEN}} finish it */
+fn a() {}
+```
+
+### TODO002 todo owned by a terminal ticket / Unresolved when the ledger holds no ticket to own the todo #3 (line 25) (unresolved)
+
+```rust
+/* frob:todo T-9999 finish it */ // {{VACUOUS}}
+fn a() {}
+```
+
 ### TODO002 todo owned by a terminal ticket / Fires when the ticket is done #1 (line 6) (fire)
 
 ```rust
