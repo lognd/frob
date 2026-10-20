@@ -169,6 +169,7 @@ fn flag_reasons(
 }
 
 /// The flags of `work`, declared once.
+#[allow(clippy::struct_excessive_bools)] // one bool per CLI flag
 #[derive(Debug, Clone, clap::Args)]
 #[command(about = None, long_about = None)]
 struct WorkArgs {
