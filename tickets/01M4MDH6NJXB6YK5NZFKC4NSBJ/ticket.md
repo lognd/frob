@@ -4,11 +4,11 @@ title = "gob-symbols: tree-sitter-yaml F2 adapter with anchors and aliases as re
 type = "task"
 category = "todo"
 priority = "medium"
-points = 5
+points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-11T02:44:06Z"
-updated = "2026-10-11T02:44:06Z"
+updated = "2026-10-20T13:51:44Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
