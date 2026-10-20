@@ -62,6 +62,12 @@ Talk to the hush-term team.
 Talk to the platform team.
 ```
 
+### TICK005 private term in a committed ticket / A fire inside an opaque island still fires #3 (line 23) (fire)
+
+```text
+Talk to the hush-term team.
+```
+
 ### TICK005 private-term / Examples #1 (line 22) (fire)
 
 ```rust

@@ -62,6 +62,12 @@ See /home/someone/projects/secret for the notes.
 See the notes in the repository.
 ```
 
+### TICK004 home path in a committed ticket / A fire inside an opaque island still fires #3 (line 22) (fire)
+
+```text
+See /home/someone/projects/secret for the notes.
+```
+
 ### TICK004 absolute-home-path / Examples #1 (line 22) (fire)
 
 ```rust
