@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-20T08:16:50Z"
+updated = "2026-10-20T08:45:13Z"
 idempotency_key = "m2-bench-b1"
 labels = ["milestone:2", "area:grl", "kind:test"]
-scope = ["crates/gob-plan/benches/**", "crates/gob-plan/Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md"]
+scope = ["crates/gob-plan/benches/**", "crates/gob-plan/Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md", "docs/reference/rules/TICK011.md"]
 
 [[links]]
 kind = "blocked-by"
@@ -23,11 +23,11 @@ target = "01M3ZX7HW6V59EBYZ2A0HC06TD"
 
 [[acceptance]]
 text = "Given TODO001, DOC002 and COV001 as plans and as handwritten Rust on the 100k-line fixture, when the bench runs, then the per-file ratio is reported and the gate fails above 1.3x"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given findings from both forms, when compared, then they are equal"
-bound = false
+bound = true
 +++
 
 Implements plugins.md section 6.6 (B1).
