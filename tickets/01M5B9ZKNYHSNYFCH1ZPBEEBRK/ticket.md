@@ -4,9 +4,10 @@ title = "Ledger parse_shard: treat a shard without issue as unmapped, not malfor
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T00:04:36Z"
-updated = "2026-10-20T00:04:36Z"
+updated = "2026-10-20T00:25:41Z"
 scope = ["crates/frob-ledger/src/mirror_map.rs"]
 +++
 
