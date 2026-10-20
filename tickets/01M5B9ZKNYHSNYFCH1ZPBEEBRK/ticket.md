@@ -12,7 +12,7 @@ scope = ["crates/frob-ledger/src/mirror_map.rs"]
 
 [[acceptance]]
 text = "A map shard without an issue key parses as unmapped (None), not malformed"
-bound = false
+bound = true
 +++
 
 found while working ~Q7FE2A0: the branch shard store only writes issue = N once issue_number is known; mirror_issue should return None for a shard with no issue instead of a malformed error. Also consider a real TOML codec in mapfile encode/decode.
