@@ -92,6 +92,18 @@ adapter. The mirror is two stages with a typed value between them:
 | `state` | category (todo, doing, done), outcome (done, dropped, superseded, duplicate) and reason | mapping table to open/closed with reason, or to workflow transitions |
 | `relations` | typed edges with target identity: parent, child, blocked-by, blocks, relates, duplicates, supersedes | adapters choose native relations, else body links, and must say which in `capabilities` |
 | `people` | owner and assignee as frob identities | resolved through `[mirror.identities]`; unmapped identities are left unassigned and noted |
+
+**Decision: identities are tracker user ids, never logins.** Both
+`[mirror.identities]` (frob identity to tracker user id) and
+`[mirror] bot_ids` hold numeric user ids: a login can be renamed,
+released and claimed by someone else, an id cannot. A login string where
+an id belongs is a config error, and two identities may not share an id.
+An unmapped owner or assignee leaves the issue unassigned and adds a
+note line. The tracker key (`PROJ-123`) is added to the ticket's aliases
+so a lookup by that key resolves. Implemented in
+`crates/frob-mirror/src/identity.rs` (`IdentityConfig`, `resolve_people`,
+`add_tracker_alias`, `resolve_reference`). The `frob mirror recreate`
+verb still reads `bot_ids` as logins until it is moved to ids.
 | `provenance` | last event ULID, render digest, producer version | the digest is what divergence detection compares |
 | `private` | fields withheld by `[mirror] exclude` | never sent; recorded so a reader knows something was withheld |
 
@@ -297,7 +309,7 @@ and in `frob mirror status`.
   needs `GH_TOKEN` or `GITHUB_TOKEN`, and the marker key in
   `FROB_MIRROR_KEY`; the key id, repository and bot login come from
   `[mirror] kid` (default `k1`), `repo` (default `origin`) and `bot_ids`
-  (default the token's login).
+  (default the token's user id).
 - **Own writes.** A dedicated App identity (`[mirror] bot_ids`, by
   user id). Before each mutation the run journals (issue, field, value
   digest, run id); a history entry is "own" only if its actor is a bot
