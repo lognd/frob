@@ -35,6 +35,7 @@ use crate::workspace::{Located, config_refusal};
 pub(crate) fn open(ctx: &Context) -> Result<Ledger, CliError> {
     let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
     let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
+    crate::sync_hook::kick(&repo, &cfg, ctx);
     let ledger = Ledger::open(repo, cfg.ledger(), ctx.clock.clone());
     // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
     crate::workspace::note_ledger_site(&ledger);

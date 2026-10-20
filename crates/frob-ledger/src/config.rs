@@ -105,6 +105,15 @@ pub struct SyncTable {
     /// Ceiling in seconds of the exponential backoff after failed probes.
     #[config(default = 3600)]
     pub backoff_max_secs: u32,
+    /// Seconds of cache age after which read verbs footnote that the ticket view is old.
+    #[config(default = 3600)]
+    pub warn_after_secs: u32,
+    /// Seconds of cache age past which mutating verbs refuse (`E-SYNC-STALE`) when the remote cannot be reached.
+    #[config(default = 86400)]
+    pub stale_error_secs: u32,
+    /// Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache.
+    #[config(default = 3000)]
+    pub foreground_budget_ms: u32,
 }
 
 impl LedgerConfig {

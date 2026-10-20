@@ -10,12 +10,6 @@ use tracing::debug;
 
 use frob_ledger::refresh::{ProbeClass, RefreshState, human_age};
 
-/// Default age in seconds past which a view earns `W-SYNC-STALE` (`[sync] warn_after`, 1 h).
-pub const DEFAULT_WARN_AFTER_SECS: u32 = 3600;
-
-/// Default age in seconds past which claiming verbs refuse (`[sync] stale_error`, 24 h).
-pub const DEFAULT_STALE_ERROR_SECS: u32 = 86_400;
-
 /// The ages that turn a cached view into a warning and into an error.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(clippy::struct_field_names)]
@@ -29,13 +23,13 @@ pub struct Thresholds {
 }
 
 impl Thresholds {
-    /// The design defaults around the configured `ttl_secs`.
+    /// The thresholds configured under `[sync]`.
     #[must_use]
-    pub fn with_ttl(ttl_secs: u32) -> Self {
+    pub fn from_sync(sync: &frob_ledger::config::SyncTable) -> Self {
         Self {
-            ttl_secs,
-            warn_after_secs: DEFAULT_WARN_AFTER_SECS,
-            stale_error_secs: DEFAULT_STALE_ERROR_SECS,
+            ttl_secs: sync.ttl_secs,
+            warn_after_secs: sync.warn_after_secs,
+            stale_error_secs: sync.stale_error_secs,
         }
     }
 }
@@ -321,7 +315,27 @@ mod tests {
     }
 
     fn t() -> Thresholds {
-        Thresholds::with_ttl(300)
+        Thresholds {
+            ttl_secs: 300,
+            warn_after_secs: 3600,
+            stale_error_secs: 86_400,
+        }
+    }
+
+    // frob:tests crates/frob/src/refresh_cmd/freshness.rs::Thresholds.from_sync
+    #[test]
+    fn thresholds_follow_the_sync_table() {
+        let sync = frob_ledger::config::SyncTable {
+            ttl_secs: 7,
+            warn_after_secs: 8,
+            stale_error_secs: 9,
+            ..frob_ledger::config::SyncTable::default()
+        };
+        let t = Thresholds::from_sync(&sync);
+        assert_eq!(
+            (t.ttl_secs, t.warn_after_secs, t.stale_error_secs),
+            (7, 8, 9)
+        );
     }
 
     #[test]

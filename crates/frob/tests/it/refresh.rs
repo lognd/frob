@@ -214,3 +214,35 @@ fn fresh_probe_reports_age_zero_and_no_warnings() {
     assert!(v["data"]["age_secs"].as_i64().expect("age") < 60, "{v}");
     assert_eq!(v["warnings"].as_array().map_or(0, Vec::len), 0, "{v}");
 }
+
+// frob:tests crates/frob/src/refresh_cmd.rs::Refresh
+#[test]
+fn background_returns_at_once_and_quiet_prints_nothing() {
+    let (_origin, clone) = clone_with_origin();
+    let out = common::frob_command()
+        .current_dir(clone.path())
+        .env_remove("FROB_LOG")
+        .env_remove("CI")
+        .env_remove("FROB_SYNC_INNER")
+        .args(["--json", "refresh", "--background"])
+        .output()
+        .expect("run frob");
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    let v: Value = serde_json::from_slice(&out.stdout).expect("json");
+    assert_eq!(v["data"]["outcome"], "background", "{v}");
+
+    let (_quiet_origin, quiet) = clone_with_origin();
+    let out = common::frob_command()
+        .current_dir(quiet.path())
+        .env_remove("FROB_LOG")
+        .args(["--text", "--quiet", "refresh", "--force"])
+        .output()
+        .expect("run frob");
+    assert_eq!(out.status.code(), Some(0));
+    assert!(out.stdout.is_empty(), "{:?}", out.stdout);
+}

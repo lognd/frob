@@ -831,6 +831,13 @@
           "minimum": 0,
           "type": "integer"
         },
+        "foreground_budget_ms": {
+          "default": 3000,
+          "description": "Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "probe_timeout_ms": {
           "default": 2500,
           "description": "Milliseconds before a hung `git ls-remote` is killed.",
@@ -843,9 +850,23 @@
           "description": "The one authoritative remote; other remotes are never probed.",
           "type": "string"
         },
+        "stale_error_secs": {
+          "default": 86400,
+          "description": "Seconds of cache age past which mutating verbs refuse (`E-SYNC-STALE`) when the remote cannot be reached.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "ttl_secs": {
           "default": 300,
           "description": "Seconds a successful probe stays fresh before the next one is due.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "warn_after_secs": {
+          "default": 3600,
+          "description": "Seconds of cache age after which read verbs footnote that the ticket view is old.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
