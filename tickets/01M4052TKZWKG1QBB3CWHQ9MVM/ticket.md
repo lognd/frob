@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-20T06:52:57Z"
+updated = "2026-10-20T06:53:36Z"
 idempotency_key = "m2-mirror2-accept-guards"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/ticket/proposals_accept.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/it/ticket_proposals_accept.rs", "crates/frob/tests/it/main.rs", "docs/design/mirror.md", "docs/reference/cli/frob.md", "crates/gob-dev/profile.toml"]
@@ -31,7 +31,7 @@ target = "01M4052SZYWSD45GEYNTTTJMDB"
 
 [[acceptance]]
 text = "Given no TTY or an agent marker, when accept runs, then it refuses and changes nothing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a proposal by an unmapped identity, when accept runs, then it refuses"
