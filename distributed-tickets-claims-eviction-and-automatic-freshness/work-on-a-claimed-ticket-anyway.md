@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
 updated = "2026-10-20T21:48:34Z"
 idempotency_key = "dt-DT18"
-scope = ["crates/frob-worktree/src/anyway.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/anyway.rs", "crates/frob-land/src/land.rs", "docs/design/cli.md"]
+scope = ["crates/frob-worktree/src/anyway.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/anyway.rs", "crates/frob-land/src/land.rs", "docs/design/cli.md", "changelog.d/01M5CW05JQZKCQKV68ZEQ5WASD.added.md"]
 
 [[links]]
 kind = "blocked-by"
