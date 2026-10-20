@@ -2,13 +2,13 @@
 id = "01M5CW05JQZKCQKV68ZEQ5WASD"
 title = "Work on a claimed ticket anyway"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T14:38:43Z"
+updated = "2026-10-20T21:47:08Z"
 idempotency_key = "dt-DT18"
 
 [[links]]
