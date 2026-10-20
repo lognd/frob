@@ -2,13 +2,13 @@
 id = "01M3ZX81C81M8ZQWTGQZK2SR2P"
 title = "doctor and a TICK rule check ledger-branch protection through the hosting API"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-03T03:34:40Z"
+updated = "2026-10-20T04:15:20Z"
 idempotency_key = "m2-sec-ledger-protect"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/frob/src/doctor.rs", "crates/frob-obligations/src/tick_protect.rs"]
