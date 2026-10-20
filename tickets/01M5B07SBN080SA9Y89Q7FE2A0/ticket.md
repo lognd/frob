@@ -2,7 +2,8 @@
 id = "01M5B07SBN080SA9Y89Q7FE2A0"
 title = "Mirror: shard store writes .json under .mirror/map but ledger parse_shard expects .toml"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
