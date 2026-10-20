@@ -2,7 +2,8 @@
 id = "01M5C7AA69TZRHHMZJGMRX2DYV"
 title = "CI: schedule the B1 bench (cargo bench -p gob-plan --bench b1_plan_vs_handwritten)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
