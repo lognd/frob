@@ -77,6 +77,12 @@ pub fn default_close_guards() -> Vec<Box<dyn CloseGuard>> {
 pub trait LeaseCheck {
     /// True when no other holder's lease overlaps this ticket's scope.
     fn is_free(&self, ticket: &Summary, scope: &[String]) -> bool;
+
+    /// The live claims by claimed ticket, so `doable` can hide what an epic claim covers (offline, from the local view).
+    // frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
+    fn claims(&self) -> std::collections::HashMap<crate::id::TicketId, crate::claim_cover::Claim> {
+        std::collections::HashMap::new()
+    }
 }
 
 /// The default lease check: every ticket is free.

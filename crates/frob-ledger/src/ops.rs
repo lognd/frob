@@ -207,6 +207,41 @@ impl Ledger {
         self.synced()?.index.list(filter)
     }
 
+    /// The coverage map of every ticket against the live `claims`, from the cached view (no network).
+    ///
+    /// # Errors
+    ///
+    /// Store failures.
+    // frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
+    pub fn cover_map(
+        &self,
+        claims: std::collections::HashMap<TicketId, crate::claim_cover::Claim>,
+    ) -> Result<crate::claim_cover::CoverMap> {
+        Self::cover_from(&self.synced()?, claims)
+    }
+
+    /// Build the coverage map from an already synced view; an empty claim set skips reading the tree.
+    fn cover_from(
+        s: &Synced,
+        claims: std::collections::HashMap<TicketId, crate::claim_cover::Claim>,
+    ) -> Result<crate::claim_cover::CoverMap> {
+        use crate::claim_cover::{CoverMap, Node};
+        if claims.is_empty() {
+            return Ok(CoverMap::default());
+        }
+        let nodes = s
+            .index
+            .list(&ListFilter::default())?
+            .into_iter()
+            .map(|t| Node {
+                id: t.id,
+                parent: t.parent,
+                epic: t.ty == TicketType::Epic,
+                open: !t.category.is_terminal(),
+            });
+        Ok(CoverMap::new(nodes, claims))
+    }
+
     /// Tickets in `todo` with no open blocker whose scope is lease-free.
     ///
     /// Epics are excluded: they cannot be worked directly (tickets.md section 3).
@@ -221,9 +256,16 @@ impl Ledger {
             blocked: Some(false),
             ..ListFilter::default()
         })?;
+        // frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
+        let cover = Self::cover_from(&s, lease.claims())?;
+        let viewer = self.actor().unwrap_or_default();
         let mut out = Vec::new();
         for c in candidates {
             if c.ty == TicketType::Epic {
+                continue;
+            }
+            if cover.blocked_for(c.id, &viewer) {
+                tracing::debug!(ticket = %c.id, "excluded from doable: covered by another holder's claim");
                 continue;
             }
             let scope = s

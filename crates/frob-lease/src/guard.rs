@@ -1,7 +1,10 @@
 //! The [`LeaseCheck`] `doable` consults: hide tickets whose scope overlaps a live lease.
 
+use std::collections::HashMap;
 use std::path::Path;
 
+use frob_ledger::TicketId;
+use frob_ledger::claim_cover::Claim;
 use frob_ledger::guards::LeaseCheck;
 use frob_ledger::index::Summary;
 
@@ -51,6 +54,21 @@ impl LeaseGuard {
 }
 
 impl LeaseCheck for LeaseGuard {
+    // frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
+    fn claims(&self) -> HashMap<TicketId, Claim> {
+        self.live
+            .iter()
+            .map(|l| {
+                (
+                    l.ticket,
+                    Claim {
+                        holder: l.holder.actor.clone(),
+                    },
+                )
+            })
+            .collect()
+    }
+
     fn is_free(&self, ticket: &Summary, scope: &[String]) -> bool {
         // frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
         let mine = effective_scope(scope, self.store.shared(), ticket.id);

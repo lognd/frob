@@ -694,7 +694,7 @@ fn lease_check(ctx: &Context) -> (Box<dyn LeaseCheck>, Option<String>) {
 }
 
 /// Snapshot live leases with the materialized `[lease]` config.
-fn build_lease_guard(
+pub(super) fn build_lease_guard(
     cwd: &std::path::Path,
     clock: std::sync::Arc<dyn gob_time::Clock>,
 ) -> Result<frob_lease::LeaseGuard, String> {

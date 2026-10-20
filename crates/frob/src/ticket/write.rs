@@ -197,8 +197,16 @@ impl Command for New {
         let f = &applied.ticket.front;
         let misses =
             frob_lease::unmatched::scope_warnings(ledger.repo(), f.id, &f.scope, &f.labels);
+        // frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
+        let split = if applied.already {
+            None
+        } else {
+            f.parent
+                .and_then(|p| claim_cover(ctx, &ledger).split_notice(p, f.id))
+        };
         Ok(misses
             .into_iter()
+            .chain(split)
             .fold(payload(&applied), gob_cli::Payload::with_warning))
     }
 }
@@ -514,6 +522,13 @@ impl Command for Update {
             patch.sets.push((name.clone(), value));
         }
         let lost = lost_evidence(&ledger, id, &patch)?;
+        // frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
+        let moved = patch
+            .sets
+            .iter()
+            .find(|(name, _)| name == "parent")
+            .and_then(|(_, v)| move_target(v.as_ref()))
+            .and_then(|new_parent| claim_cover(ctx, &ledger).move_warning(id, new_parent));
         let (applied, warnings) = crate::lease_cmd::update_with_lease(ctx, &ledger, id, &patch)?;
         tracing::info!(ticket = %id, already = applied.already, lost = lost.len(), "ticket update");
         // frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
@@ -537,10 +552,39 @@ impl Command for Update {
         let out = warnings
             .into_iter()
             .chain(note)
+            .chain(moved.filter(|_| !applied.already))
             .chain(reindex_note)
             .chain(applied.warnings.iter().cloned())
             .fold(out, gob_cli::Payload::with_warning);
         Ok(out)
+    }
+}
+
+/// The live claims folded into a coverage map; empty (nothing covered) when the lease view or the ledger is unavailable.
+// frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
+fn claim_cover(ctx: &Context, ledger: &frob_ledger::Ledger) -> frob_ledger::claim_cover::CoverMap {
+    use frob_ledger::guards::LeaseCheck;
+    let claims = match super::read::build_lease_guard(&ctx.cwd, ctx.clock.clone()) {
+        Ok(g) => g.claims(),
+        Err(msg) => {
+            tracing::warn!(error = %msg, "claim coverage unavailable: lease view failed");
+            return frob_ledger::claim_cover::CoverMap::default();
+        }
+    };
+    ledger.cover_map(claims).unwrap_or_else(|e| {
+        tracing::warn!(error = %e, "claim coverage unavailable: ledger view failed");
+        frob_ledger::claim_cover::CoverMap::default()
+    })
+}
+
+/// The new parent a `parent` patch value names: `Some(None)` for unset, `Some(Some(id))` for a ticket, `None` when unparseable.
+// frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
+fn move_target(value: Option<&toml::Value>) -> Option<Option<frob_ledger::TicketId>> {
+    match value {
+        None => Some(None),
+        Some(toml::Value::String(s)) if s.is_empty() => Some(None),
+        Some(toml::Value::String(s)) => s.parse().ok().map(Some),
+        Some(_) => None,
     }
 }
 
