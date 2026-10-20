@@ -1299,3 +1299,41 @@ fn lease_list_and_contention_report_waiters_with_age_and_blocker() {
     assert_eq!((info[0].ticket, info[0].age_secs), (w, 7));
     assert_eq!(info[0].blockers, [a]);
 }
+
+// frob:tests LeaseStore.touch
+// frob:tests LeaseStore.rekind
+// frob:tests LeaseStore.with_agent
+#[test]
+fn agent_claim_touch_and_rekind() {
+    use frob_ledger::claim_window::HolderKind;
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default()).with_agent(Some("claude".to_owned()));
+    let t = TicketId::mint();
+    let lease = store
+        .acquire(t, &holder("a"), &scope(&["src/a/**"]))
+        .expect("acquire")
+        .lease;
+    assert_eq!(lease.holder_kind(), HolderKind::Agent);
+    assert!(lease.touched_at.is_none());
+
+    let touched = store
+        .touch(t, &holder("a"), Some("running tests"))
+        .expect("touch");
+    assert!(touched.touched_at.is_some());
+    assert_eq!(touched.touch_note.as_deref(), Some("running tests"));
+    assert!(matches!(
+        store.touch(t, &holder("b"), None),
+        Err(LeaseError::Held { .. })
+    ));
+
+    let human = store.rekind(t, &holder("a"), None).expect("rekind");
+    assert_eq!(human.holder_kind(), HolderKind::Human);
+    assert!(human.touched_at.is_none());
+    // Persisted, and a second rekind to the same kind changes nothing.
+    assert_eq!(store.live_lease(t).expect("read"), Some(human.clone()));
+    assert_eq!(store.rekind(t, &holder("a"), None).expect("again"), human);
+    assert!(matches!(
+        store.rekind(TicketId::mint(), &holder("a"), None),
+        Err(LeaseError::NotHeld { .. })
+    ));
+}

@@ -165,19 +165,7 @@ impl Command for LeaseWiden {
         let id = resolve(&ledger, &self.ticket)?;
         let (store, _) = open_lease_store(ctx)?;
         let actor = ledger.actor().map_err(cli_err)?;
-        let Some(lease) = classify(&store, id, &actor)? else {
-            return Err(LeaseError::NotHeld { ticket: id }.into());
-        };
-        if lease.holder.actor != actor {
-            tracing::info!(ticket = %id, holder = %lease.holder, %actor, "lease widen refused: not the holder");
-            return Err(LeaseError::Held {
-                holder: lease.holder,
-                ticket: id,
-                since: lease.acquired_at,
-                overlap: SAME_TICKET.to_owned(),
-            }
-            .into());
-        }
+        let lease = own_lease(&store, id, &actor)?;
         let patch = Patch {
             add_scope: [self.globs.clone(), self.new_globs.clone()].concat(),
             add_labels: self
@@ -252,5 +240,142 @@ impl Command for LeaseRelease {
             released: released.clone(),
         })
         .with_already(released.is_none()))
+    }
+}
+
+/// The caller's live lease on `id`, or the refusal for no lease or someone else's.
+fn own_lease(store: &LeaseStore, id: TicketId, actor: &str) -> Result<Lease, CliError> {
+    let Some(lease) = classify(store, id, actor)? else {
+        return Err(LeaseError::NotHeld { ticket: id }.into());
+    };
+    if lease.holder.actor != actor {
+        tracing::info!(ticket = %id, holder = %lease.holder, %actor, "refused: not the holder");
+        return Err(LeaseError::Held {
+            holder: lease.holder,
+            ticket: id,
+            since: lease.acquired_at,
+            overlap: SAME_TICKET.to_owned(),
+        }
+        .into());
+    }
+    Ok(lease)
+}
+
+/// Output of `claim touch` and `lease rekind`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ClaimData {
+    /// The ticket whose claim changed.
+    pub ticket: TicketId,
+    /// The lease after the change.
+    pub lease: Lease,
+}
+
+/// The `--note` flag of `claim touch`.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct TouchArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long = "note",
+        value_name = "TEXT",
+        help = "What the holder is doing; shown next to the claim"
+    )]
+    note: Option<String>,
+}
+
+/// Soft heartbeat for the caller's claim; an agent harness runs it from a hook while its session lives.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "claim touch",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ClaimTouch {
+    ticket: String,
+    note: Option<String>,
+}
+
+impl Command for ClaimTouch {
+    type Data = ClaimData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<TouchArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<TouchArgs>(m)?;
+        Ok(Self {
+            ticket: a.ticket.ticket,
+            note: a.note,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<ClaimData> {
+        let ledger = open(ctx)?;
+        let id = resolve(&ledger, &self.ticket)?;
+        let (store, _) = open_lease_store(ctx)?;
+        let actor = ledger.actor().map_err(cli_err)?;
+        let held = own_lease(&store, id, &actor)?;
+        let lease = store.touch(id, &held.holder, self.note.as_deref())?;
+        tracing::info!(ticket = %id, %actor, "claim touch");
+        Ok(Payload::new(ClaimData { ticket: id, lease }))
+    }
+}
+
+/// The `--agent` flag of `lease rekind`.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct RekindArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long = "agent",
+        value_name = "LABEL",
+        help = "Re-claim as this agent (short window); omit to re-claim as a human"
+    )]
+    agent: Option<String>,
+}
+
+/// Re-claim the caller's lease as a human (or as `--agent LABEL`), switching its idle window.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "lease rekind",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct LeaseRekind {
+    ticket: String,
+    agent: Option<String>,
+}
+
+impl Command for LeaseRekind {
+    type Data = ClaimData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<RekindArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<RekindArgs>(m)?;
+        Ok(Self {
+            ticket: a.ticket.ticket,
+            agent: a.agent,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<ClaimData> {
+        let ledger = open(ctx)?;
+        let id = resolve(&ledger, &self.ticket)?;
+        let (store, _) = open_lease_store(ctx)?;
+        let actor = ledger.actor().map_err(cli_err)?;
+        let held = own_lease(&store, id, &actor)?;
+        let before = held.holder_kind();
+        let lease = store.rekind(id, &held.holder, self.agent.clone())?;
+        let changed = before != lease.holder_kind();
+        tracing::info!(ticket = %id, %actor, changed, "lease rekind");
+        Ok(Payload::new(ClaimData { ticket: id, lease }).with_already(!changed))
     }
 }

@@ -12,6 +12,7 @@
 | `agent uninstall` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Remove only the files and registrations frob installed, leaving user additions alone. |
 | `board` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the scrumban board: columns by category with WIP limits, the expedite lane and card ages. |
 | `check` | no | no | 0 ok, 1 negative, 2 usage, 3 refused, 4 internal | Run the rules over the repository and report findings; exit 1 at or above `fail_on`. |
+| `claim touch` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Soft heartbeat for the caller's claim; an agent harness runs it from a hook while its session lives. |
 | `config show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print every config table merged (defaults, then frob.toml) with provenance. |
 | `config sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Add every knob a materialized table is missing to `frob.toml`; comments are kept. |
 | `cycle assign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Assign a ticket to a cycle (default: the open one containing today, else the next planned); refused past capacity unless over-committed. |
@@ -28,6 +29,7 @@
 | `init` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Write frob.toml knobs, ignore .frob/, and install the ledger merge driver; safe to repeat. |
 | `land` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Land a leased ticket branch onto the base branch, close the ticket and clean up. |
 | `lease list` | yes | no | 0 ok, 3 refused, 4 internal | List the live scope leases of this clone; `--contention` adds the files claimed by more than one. |
+| `lease rekind` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-claim the caller's lease as a human (or as `--agent LABEL`), switching its idle window. |
 | `lease release` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Give up the caller's lease on a finished-but-unlanded ticket; the ticket stays in-progress and `land` re-takes the lease. |
 | `lease widen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-read the ticket scope (optionally adding globs to it) and rescope the caller's lease to match. |
 | `merge-driver` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Union both sides' event files of a conflicted ticket.md and re-fold it (git invokes this). |

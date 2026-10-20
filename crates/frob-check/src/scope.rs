@@ -286,6 +286,9 @@ pub(crate) fn resolve(
                 ttl_secs: 0,
                 history: Vec::new(),
                 queued: false,
+                agent: None,
+                touched_at: None,
+                touch_note: None,
             };
             (globs, lease)
         }
