@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T17:28:28Z"
-updated = "2026-10-20T17:43:09Z"
+updated = "2026-10-20T17:43:18Z"
 scope = ["crates/gob-exec/**"]
 
 [[acceptance]]
 text = "Runner::spawn_detached starts a program with null stdio in its own process group and returns its pid without waiting"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "spawn_detached honours the tool allowlist and reports a missing program as a typed error"
