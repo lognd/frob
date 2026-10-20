@@ -2,13 +2,13 @@
 id = "01M3ZX7ZHBHNASXSNNCMHSZ4M6"
 title = "Renderer: help, note, fix and explain lines; secondary spans; quiet drops help"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-03T03:34:38Z"
+updated = "2026-10-20T03:45:18Z"
 idempotency_key = "m2-diag-render-help"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/gob-diagnostics/src/text.rs"]
