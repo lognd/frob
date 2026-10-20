@@ -8,9 +8,9 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T16:15:07Z"
-updated = "2026-10-20T16:16:21Z"
+updated = "2026-10-20T16:16:22Z"
 idempotency_key = "dt-audit-tickets-paths"
-scope = ["crates/frob/tests/it/orphan_readiness.rs"]
+scope = ["crates/frob/tests/it/orphan_readiness.rs", "crates/frob/tests/it/main.rs"]
 
 [[acceptance]]
 text = "Given an orphan-mode repo, when frob check and gen run, then no rule reports missing tickets/ paths"
