@@ -247,7 +247,7 @@ pub type Result<T, E = LedgerError> = std::result::Result<T, E>;
 mod tests {
     use super::*;
 
-    // frob:tests LedgerError::to_refusal
+    // frob:tests LedgerError.to_refusal
     /// Given a not-found and a terminal error, when refused, then each carries a structured command.
     #[test]
     fn remedies_are_structured_commands() {
