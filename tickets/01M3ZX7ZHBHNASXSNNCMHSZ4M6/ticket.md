@@ -2,7 +2,8 @@
 id = "01M3ZX7ZHBHNASXSNNCMHSZ4M6"
 title = "Renderer: help, note, fix and explain lines; secondary spans; quiet drops help"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
