@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-10-20T23:52:00Z"
+digest = "861a92590579299d1d2d3d9c42003558177cebd8299b8c8dbe028399604e8daf"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.61s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 830c78d7-4ab5-42d0-9be5-dace7d33341b with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   0.020s] frob-ledger::claim_cover cover_map_feeds_split_and_move_notices
+        PASS [   0.025s] frob-ledger::claim_cover another_holders_epic_claim_hides_its_leaves_but_not_the_holders
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger --test claim_cover"
+size = 714
+status = "measured"
+test_count = 2
+tests_digest = "11d0b9b77c1880d0e29c784912b1255d5a1757d3b3da911f21d5c25056ab23a8"
+at = "2026-10-20T23:52:00Z"
+actor = "lognd"
+rev = 1
