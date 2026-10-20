@@ -193,9 +193,11 @@ fn a_foreign_product_gets_findings_caches_and_subject_counts() {
     assert_eq!(first.subjects_examined.get("TOY002"), Some(&4));
     assert!(first.stats.file_misses > 0);
     assert!(
-        dir.path().join(".toy").is_dir(),
-        "state lives under the product's own directory"
+        !dir.path().join(".toy").exists(),
+        "the cache is per-user, so no state directory lands in the worktree"
     );
+    let shared = gob_cache::shared_dir(dir.path(), ".toy").expect("per-user cache dir");
+    assert!(shared.is_dir(), "state lives in the shared cache directory");
 
     let second = run(&toy, dir.path(), &quiet()).expect("second run");
     assert_eq!(second.stats.file_misses, 0, "served from the cache");

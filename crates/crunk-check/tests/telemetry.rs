@@ -26,7 +26,9 @@ fn a_crunk_check_leaves_no_state_directory_in_the_worktree() {
         !dir.path().join(".crunk").exists(),
         "telemetry and cache must not land in the worktree"
     );
-    let telemetry = dir.path().join(".git/frob/cache/crunk/telemetry.jsonl");
+    let telemetry = gob_cache::shared_dir(dir.path(), ".crunk")
+        .expect("per-user cache dir")
+        .join("telemetry.jsonl");
     let text = std::fs::read_to_string(&telemetry).expect("telemetry in the cache dir");
     assert_eq!(text.lines().count(), 1, "one line per run: {text}");
 }
