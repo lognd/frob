@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
 updated = "2026-10-20T22:23:15Z"
 idempotency_key = "dt-DT20"
-scope = ["crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/verbs.rs"]
+scope = ["crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/src/guard.rs"]
 +++
 
 Evidence carries head; land checks ancestry. See docs/design/distributed-tickets.md.
