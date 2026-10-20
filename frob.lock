@@ -2,6 +2,17 @@ version = 2
 digest_scheme = 2
 
 [[symbol]]
+identity = ".github/workflows/bench.yml::jobs.b1.steps"
+symref = ".github/workflows/bench.yml::jobs.b1.steps"
+sig = "f63c0a3294fb97e385bac5723be2574fe7093bca0f2b54424881ff41bc708e24"
+body = "ab8991ba9d279068791ab55191b02e62a60cc4658c951af1d251155a4778ee9d"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+contract = "d54656bdc4cbdf9619192a2ebf0bbd2d7caa4480624d54891c42c03c2a60976f"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-20T10:24:30.91496896Z"
+
+[[symbol]]
 identity = ".github/workflows/build-smoke.yml::jobs.smoke.steps"
 symref = ".github/workflows/build-smoke.yml::jobs.smoke.steps"
 sig = "f63c0a3294fb97e385bac5723be2574fe7093bca0f2b54424881ff41bc708e24"
