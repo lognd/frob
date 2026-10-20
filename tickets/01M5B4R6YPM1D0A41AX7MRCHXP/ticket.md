@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-19T22:33:10Z"
 updated = "2026-10-20T01:49:16Z"
-scope = ["docs/reference/config.md", "docs/schemas/config.json", "crates/frob-evidence/src/config.rs"]
+scope = ["docs/reference/config.md", "docs/schemas/config.json", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/provider.rs"]
 +++
 
 Follow-up of ~46VKHER (deliver items 2 and the command-provider/land-verify part of 1): the structured providers now refuse green runs that executed nothing (E-EVIDENCE-NOT-EXECUTED), but the generic command provider and land-time evidence re-verification remain exit-code-only.
