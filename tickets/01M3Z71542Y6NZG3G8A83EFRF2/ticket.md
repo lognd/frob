@@ -2,13 +2,14 @@
 id = "01M3Z71542Y6NZG3G8A83EFRF2"
 title = "GitHub Actions and Dockerfile adapters in gob-languages and gob-symbols"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:26Z"
-updated = "2026-10-20T11:28:19Z"
+updated = "2026-10-20T12:00:22Z"
 idempotency_key = "m2-actions"
 labels = ["milestone:2"]
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "docs/design/cicd.md"]

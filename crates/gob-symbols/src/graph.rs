@@ -51,6 +51,10 @@ pub enum EdgeKind {
     References,
     /// Markdown link from a section (or document) to a section or file.
     Links,
+    /// A unit instantiating an external action, workflow or image (`apply(kind=instantiate)`).
+    Instantiates,
+    /// A unit depending on a sibling unit (a job `needs:`, a Dockerfile `COPY --from`).
+    Depends,
 }
 
 /// Edge payload.
@@ -74,6 +78,8 @@ pub enum GapReason {
     BrokenLink,
     /// The import names a package outside the repository (a `node_modules` dependency or a Node builtin).
     External,
+    /// An external reference with no pin (no tag, or `latest`): it resolves to whatever is current.
+    Floating,
 }
 
 /// One edge with its resolution status; `to` is `None` for an `Unknown` edge.
@@ -2353,6 +2359,8 @@ impl SymbolGraph {
                 match r.kind {
                     RefKind::Value => self.link_value(r, idx),
                     RefKind::Link => self.link_link(r),
+                    RefKind::Instantiate => self.link_instantiate(r),
+                    RefKind::Depends => self.link_depends(r),
                 }
             }
         }
@@ -2451,6 +2459,62 @@ impl SymbolGraph {
                 status: Status::Unknown,
                 name: Some(r.name.clone()),
                 reason: Some(GapReason::BrokenLink),
+                qualifier: None,
+                line: None,
+                text: None,
+            });
+        }
+    }
+
+    // frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
+    /// An external reuse is an `Instantiates` edge: Must when pinned to a digest or SHA, May for a tag, Unknown when floating.
+    fn link_instantiate(&mut self, r: &RefSite) {
+        let status = crate::pin::pin_status(&r.name);
+        let reason = (status == Status::Unknown).then_some(GapReason::Floating);
+        tracing::debug!(from = %r.from, reference = %r.name, ?status, "instantiate edge");
+        self.status_edges.push(StatusEdge {
+            from: r.from.clone(),
+            to: None,
+            kind: EdgeKind::Instantiates,
+            status,
+            name: Some(r.name.clone()),
+            reason,
+            qualifier: None,
+            line: None,
+            text: None,
+        });
+    }
+
+    // frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
+    /// A dependency on a sibling unit is a Must `Depends` edge, or an Unknown one when the target does not exist.
+    fn link_depends(&mut self, r: &RefSite) {
+        let target = Symref::parse(&r.name).ok();
+        let from = self.index.get(&r.from).copied();
+        let to = target
+            .as_ref()
+            .and_then(|t| self.index.get(t).copied().map(|n| (t.clone(), n)));
+        if let (Some(a), Some((t, b))) = (from, to) {
+            self.link(a, b, EdgeKind::Depends, Status::Must);
+            self.status_edges.push(StatusEdge {
+                from: r.from.clone(),
+                to: Some(t),
+                kind: EdgeKind::Depends,
+                status: Status::Must,
+                name: Some(r.name.clone()),
+                reason: None,
+                qualifier: None,
+                line: None,
+                text: None,
+            });
+        } else {
+            tracing::debug!(from = %r.from, target = %r.name, "unresolved dependency");
+            self.status_edges.push(StatusEdge {
+                from: r.from.clone(),
+                to: None,
+                kind: EdgeKind::Depends,
+                status: Status::Unknown,
+                name: Some(r.name.clone()),
+                reason: Some(GapReason::Unbound),
                 qualifier: None,
                 line: None,
                 text: None,

@@ -5,6 +5,7 @@
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
 mod call_edges;
+mod cicd;
 mod corpus;
 mod crosscrate;
 mod csharp;

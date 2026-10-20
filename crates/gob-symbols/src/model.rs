@@ -458,6 +458,10 @@ pub enum RefKind {
     Value,
     /// A markdown link (`apply(kind=link)`); `name` is the raw destination.
     Link,
+    /// A pinned-or-floating external reuse (`apply(kind=instantiate)`): an action, reusable workflow or image; `name` is the reference as written.
+    Instantiate,
+    /// A dependency on a sibling unit (a job in `needs:`, a stage in `COPY --from`); `name` is the target symref.
+    Depends,
 }
 
 /// A reference that is not a call (references are a superset of calls).
