@@ -11,6 +11,7 @@ use std::path::Path;
 
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use gob_path::Shown;
 use grimble_vet::{Allowlist, Snapshot, VetReport, parse_lockfile, vet};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -71,7 +72,7 @@ pub fn run_vet(
     advisory_db: Option<&str>,
 ) -> Result<Option<VetData>, CliError> {
     let Ok(head_text) = std::fs::read_to_string(root.join(LOCKFILE)) else {
-        tracing::debug!(root = %root.display(), "no Cargo.lock, nothing to vet");
+        tracing::debug!(root = %Shown::of(root), "no Cargo.lock, nothing to vet");
         return Ok(None);
     };
     let bad = |e: grimble_vet::VetError| CliError::Usage(e.to_string());
@@ -100,10 +101,10 @@ pub fn run_vet(
     } else if advisory_db.is_some() {
         return Err(CliError::Usage(format!(
             "no advisory snapshot at {}",
-            db_dir.display()
+            Shown::of(&db_dir)
         )));
     } else {
-        tracing::warn!(dir = %db_dir.display(), "no advisory snapshot; advisories not checked");
+        tracing::warn!(dir = %Shown::of(&db_dir), "no advisory snapshot; advisories not checked");
         None
     };
     let report = vet(
@@ -137,7 +138,7 @@ impl Command for Vet {
     fn run(&self, ctx: &Context) -> Outcome<VetData> {
         let root = locate_root(&ctx.cwd);
         let data = run_vet(&root, self.base.as_deref(), self.advisory_db.as_deref())?
-            .ok_or_else(|| CliError::Usage(format!("no {LOCKFILE} at {}", root.display())))?;
+            .ok_or_else(|| CliError::Usage(format!("no {LOCKFILE} at {}", Shown::of(&root))))?;
         let errors = data.report.errors();
         if errors > 0 {
             let message = format!("{errors} vetting error(s): {}", summary(&data.report));

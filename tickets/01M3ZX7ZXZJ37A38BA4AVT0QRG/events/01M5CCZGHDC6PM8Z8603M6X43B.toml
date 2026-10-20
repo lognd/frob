@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/src/fix.rs", "crates/gob-check/src/fix_validate.rs", "crates/gob-rules/src/lib.rs"]
+new = ["crates/gob-rules/src/fix.rs", "crates/gob-check/src/fix_validate.rs", "crates/gob-rules/src/lib.rs", "crates/gob-check/src/lib.rs"]
+at = "2026-10-20T10:16:12Z"
+actor = "lognd"
+rev = 1

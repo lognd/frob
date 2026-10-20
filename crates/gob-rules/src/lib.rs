@@ -18,6 +18,7 @@ extern crate self as gob_rules;
 mod decl;
 mod exception;
 mod finding;
+mod fix;
 mod id;
 mod index;
 pub mod indexgen;
@@ -36,6 +37,7 @@ pub use exception::{
     BoundException, Exception, ExceptionCtx, ExceptionKind, Resolved, apply_exceptions,
 };
 pub use finding::{Finding, Fingerprint, Fix, TextEdit};
+pub use fix::{FixDrop, PluginEdit, PluginFix, cap_applicability};
 pub use gob_caps as caps;
 pub use gob_macros::{Rule, rule};
 pub use gob_text::FileInterner;

@@ -7,6 +7,7 @@ use std::path::Path;
 
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use gob_path::Shown;
 use gob_plan::verbs::catalog::{CatalogResult, lookup};
 use gob_plan::verbs::check::{FileCheck, RuleCost, check_source};
 use gob_plan::verbs::fmt::{Formatted, format_text};
@@ -449,7 +450,7 @@ impl Command for RuleNew {
             }
             if let Some(dir) = target.parent() {
                 std::fs::create_dir_all(dir).map_err(|e| {
-                    CliError::internal(format!("cannot create {}: {e}", dir.display()))
+                    CliError::internal(format!("cannot create {}: {e}", Shown::of(dir)))
                 })?;
             }
             std::fs::write(&target, &rule.text)

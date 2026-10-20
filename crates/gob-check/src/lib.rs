@@ -57,6 +57,7 @@ mod defs;
 mod error;
 mod filecheck;
 mod fix;
+pub mod fix_validate;
 pub mod gate001;
 mod options;
 mod packages;

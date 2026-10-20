@@ -2,16 +2,17 @@
 id = "01M3ZX7ZXZJ37A38BA4AVT0QRG"
 title = "Plugin fix model: file handle, byte range inside the primary span, replacement"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-03T03:34:38Z"
+updated = "2026-10-20T10:37:35Z"
 idempotency_key = "m2-sec-plugin-fixes"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-rules/src/fix.rs", "crates/gob-check/src/fix_validate.rs"]
+scope = ["crates/gob-rules/src/fix.rs", "crates/gob-check/src/fix_validate.rs", "crates/gob-rules/src/lib.rs", "crates/gob-check/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
@@ -27,11 +28,11 @@ target = "01M3ZX7YW7S3BJ72FPRQ85F72V"
 
 [[acceptance]]
 text = "Given a plugin fix editing outside the primary span, when validated, then it is dropped and reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a plugin fix to frob.toml, when validated, then it is refused even with fix.machine"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.10 (fixes).

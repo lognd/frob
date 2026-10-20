@@ -34,6 +34,7 @@ gob-lock = { version = "0.532.0", path = "../gob-lock" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-trust = { version = "0.532.0", path = "../gob-trust" }
 gob-plan = { version = "0.532.0", path = "../gob-plan" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 grimble-bind = { version = "0.532.0", path = "../grimble-bind" }

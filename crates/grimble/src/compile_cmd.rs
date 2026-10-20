@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use gob_path::{RelPath, Shown};
 use gob_plan::check::{Severity, compile_diagnostics, compile_report};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -58,8 +59,12 @@ fn discover(root: &Path, dir: &Path, out: &mut Vec<String>) -> std::io::Result<(
                 discover(root, &path, out)?;
             }
         } else if path.extension().is_some_and(|e| e == "grl") {
-            let rel = path.strip_prefix(root).unwrap_or(&path);
-            out.push(rel.to_string_lossy().replace('\\', "/"));
+            match RelPath::from_host(root, &path) {
+                Ok(rel) => out.push(rel.as_str().to_owned()),
+                Err(e) => {
+                    tracing::warn!(path = %Shown::of(&path), error = %e, "skipping a path outside the root");
+                }
+            }
         }
     }
     Ok(())
