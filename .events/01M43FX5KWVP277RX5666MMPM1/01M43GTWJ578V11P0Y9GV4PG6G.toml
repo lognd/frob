@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-land/src/land.rs", "crates/frob-land/tests/land.rs", "docs/design/tickets.md"]
+at = "2026-10-04T13:14:44Z"
+actor = "lognd"
+rev = 1

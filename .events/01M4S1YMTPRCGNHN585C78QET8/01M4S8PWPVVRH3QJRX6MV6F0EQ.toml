@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-12T23:56:00Z"
+digest = "5cf503c23bd446c4fdcbfd1839b97f97d20f68b0b3c4a1d09152cae4aa72a910"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 852338e7-0e63-499c-94ff-1267df277c27 with nextest profile: default
+    Starting 2 tests across 3 binaries (28 tests skipped)
+        PASS [   0.027s] gob-diagnostics::contract error_carries_host_origin_and_schema_lists_it
+        PASS [   0.215s] gob-diagnostics::contract json_refusal_snapshot
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.217s] 2 tests run: 2 passed, 28 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-diagnostics -E 'test(=error_carries_host_origin_and_schema_lists_it) | test(=json_refusal_snapshot)'"
+size = 637
+status = "measured"
+test_count = 2
+tests_digest = "d016e3eb3cbf6dce691879aff73c09761ab4c480c068a69f2f9d968a537f04e7"
+at = "2026-10-12T23:56:00Z"
+actor = "lognd"
+rev = 1

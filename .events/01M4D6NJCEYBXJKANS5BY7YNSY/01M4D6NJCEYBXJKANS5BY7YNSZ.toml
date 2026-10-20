@@ -1,0 +1,13 @@
+kind = "create"
+title = "gob-git/gob-walk: one repository, index and filter pipeline per process; hash each file once"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4D6NB00MBEV0PRHN15CXZP8"
+scope = ["changelog.d/**", "crates/gob-git/**", "crates/gob-walk/**"]
+acceptance = ["Given a warm grimble check, when traced, then the repository and index are opened once and each file hashed once"]
+body = "notes/research/profile-2026-10-07.md section 5 item 9 (content.rs:144 WorktreeSource::with_reader per rayon chunk)."
+at = "2026-10-08T07:29:28Z"
+actor = "lognd"
+rev = 1

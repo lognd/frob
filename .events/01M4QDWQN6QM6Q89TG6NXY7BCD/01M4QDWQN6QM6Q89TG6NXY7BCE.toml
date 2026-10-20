@@ -1,0 +1,11 @@
+kind = "create"
+title = "Windows: land tool-pass reuse test spawns no tool (sh probe writes nothing on the runner)"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+scope = ["crates/frob-land/tests/land.rs"]
+body = "land_reuses_a_recorded_tool_pass... sees 0 spawns on windows-latest; the sh-based tool probably cannot spawn there. Test is ignored on Windows until a Windows-capable probe exists."
+at = "2026-10-12T06:48:07Z"
+actor = "lognd"
+rev = 1

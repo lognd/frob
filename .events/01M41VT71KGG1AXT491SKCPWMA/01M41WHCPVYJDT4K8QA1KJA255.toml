@@ -1,0 +1,105 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T22:00:47Z"
+digest = "368b4f7526acdf5114c81c7cf4dca78840290527a63524455545164bef3e0156"
+exit_code = 0
+inline = '''
+   Compiling syn v3.0.6
+   Compiling darling_core v0.20.11
+   Compiling winnow v1.0.4
+   Compiling clap_builder v4.6.7
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling thiserror v2.0.21
+   Compiling gix-path v0.12.6
+   Compiling gix-packetline v0.22.2
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-config-value v0.19.1
+   Compiling serde v1.0.229
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-url v0.38.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-pathspec v0.20.0
+   Compiling tracing-serde v0.2.0
+   Compiling darling_macro v0.20.11
+   Compiling gix-zlib v0.1.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling darling v0.20.11
+   Compiling schemars_derive v1.2.2
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling ref-cast v1.0.27
+   Compiling gix-index v0.55.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-worktree v0.56.0
+   Compiling gix-shallow v0.13.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-transport v0.59.2
+   Compiling gix-refspec v0.45.1
+   Compiling gix-protocol v0.65.1
+   Compiling gob-log v0.0.0 (<worktree>/crates/gob-log)
+   Compiling gix-status v0.34.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-odb v0.84.0
+   Compiling schemars v1.2.2
+   Compiling gob-macros v0.0.0 (<worktree>/crates/gob-macros)
+   Compiling gob-exec v0.0.0 (<worktree>/crates/gob-exec)
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling gix v0.87.1
+   Compiling gob-rules v0.0.0 (<worktree>/crates/gob-rules)
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling ciborium v0.2.2
+   Compiling gob-diagnostics v0.0.0 (<worktree>/crates/gob-diagnostics)
+   Compiling tinytemplate v1.2.1
+   Compiling clap v4.6.7
+   Compiling criterion v0.5.1
+   Compiling gob-git v0.0.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.0.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b6e294b1-f76f-4788-96dd-18e44fed85c9 with nextest profile: default
+    Starting 11 tests across 2 binaries (3 binaries skipped)
+        PASS [   0.009s] frob-ledger::privacy spellings_and_lookalikes
+        PASS [   0.009s] frob-ledger::privacy tick004_is_an_error_naming_the_repair
+        PASS [   0.009s] frob-ledger::privacy worktree_dir_matches_both_styles
+        PASS [   0.010s] frob-ledger::privacy placeholder_account_names_are_not_hits
+        PASS [   0.010s] frob-ledger::privacy home_root_range_stops_after_the_user_name
+        PASS [   0.010s] frob-ledger::privacy finding_names_file_and_remedy
+        PASS [   0.108s] frob-ledger::scrub a_digest_that_never_matched_is_left_alone
+        PASS [   0.109s] frob-ledger::privacy ledger_walk_reports_only_dirty_files
+        PASS [   0.119s] frob-ledger::scrub survivors_are_reported_not_guessed
+        PASS [   0.130s] frob-ledger::scrub second_run_is_a_no_op
+        PASS [   0.137s] frob-ledger::scrub one_commit_scrubs_and_the_ledger_still_folds
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.138s] 11 tests run: 11 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'binary(privacy) | binary(scrub)'"
+size = 3929
+status = "measured"
+tests = ["spellings_and_lookalikes", "tick004_is_an_error_naming_the_repair", "worktree_dir_matches_both_styles", "placeholder_account_names_are_not_hits", "home_root_range_stops_after_the_user_name", "finding_names_file_and_remedy", "ledger_walk_reports_only_dirty_files", "a_digest_that_never_matched_is_left_alone", "survivors_are_reported_not_guessed", "second_run_is_a_no_op", "one_commit_scrubs_and_the_ledger_still_folds"]
+at = "2026-10-03T22:00:47Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/F17DMKH; scope: crates/frob-evidence/src/provider.rs, crates/frob-evidence/src/record.rs, crates/frob-evidence/src/verbs.rs, crates/frob-evidence/tests/unity.rs, crates/frob-tests/src/select.rs, crates/frob-tests/src/run.rs, crates/frob-tests/tests/**, docs/reference/config.md, docs/design/build-test-ci.md; ttl 7200s"
+at = "2026-10-17T17:57:58Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,12 @@
+kind = "create"
+title = "ticket close and drop leave the lease behind, blocking the next work on overlapping scope"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+scope = ["crates/frob/src/ticket/**"]
+acceptance = ["Given a leased ticket, when it is closed or dropped, then its lease is released and an overlapping work succeeds"]
+body = "Reproduced: close leaves the lease (contradicts the design: leases release on every terminal transition). Release on close and drop, and reap leases of terminal tickets. Evidence and repro: notes/review/v1-gap/D-incidents.md (P-03)."
+at = "2026-10-04T04:59:48Z"
+actor = "lognd"
+rev = 1

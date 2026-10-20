@@ -1,0 +1,16 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-09T21:34:46Z"
+digest = "9fa8dc9570625be2be53d308f958332981ec8fb8137d3dd7ba0ae5da317eaa7d"
+exit_code = 0
+inline = """
+[]
+"""
+passed = true
+provider = "command"
+ref = 'python3 -c "import pathlib,sys; t=pathlib.Path(\"notes/README.md\").read_text(); bad=[str(p) for p in pathlib.Path(\"notes\").rglob(\"*.md\") if p.name!=\"README.md\" and not p.name.startswith(\"docs-consolidation-\") and \"(\"+str(p.relative_to(\"notes\"))+\")\" not in t]; print(bad); sys.exit(1 if bad else 0)"'
+size = 3
+status = "measured"
+at = "2026-10-09T21:34:46Z"
+actor = "lognd"
+rev = 1

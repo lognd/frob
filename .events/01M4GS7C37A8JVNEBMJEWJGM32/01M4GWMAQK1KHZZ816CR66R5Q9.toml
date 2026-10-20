@@ -1,0 +1,6 @@
+kind = "field"
+field = "labels"
+old = ["creates:crates/gob-check/build.rs"]
+at = "2026-10-09T17:50:47Z"
+actor = "lognd"
+rev = 1

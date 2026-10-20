@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/gob-languages/src/comments.rs", "crates/gob-languages/src/lib.rs", "crates/gob-languages/src/grmb.rs", "crates/gob-languages/tests/corpus/*", "crates/gob-directives/src/comments.rs", "crates/gob-directives/Cargo.toml", "crates/frob-obligations/src/comments.rs", "Cargo.lock"]
+at = "2026-10-04T22:43:32Z"
+actor = "lognd"
+rev = 1

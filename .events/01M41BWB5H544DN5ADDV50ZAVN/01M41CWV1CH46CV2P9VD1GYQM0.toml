@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T17:27:24Z"
+digest = "e90b202fc1e71d322570ba10b033ba35c32304e10cb3970006765e1ac0212b7d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f6e27fbc-02e3-4ba0-8ddf-09a198ffaa83 with nextest profile: default
+    Starting 2 tests across 10 binaries (103 tests skipped)
+        PASS [   0.034s] frob-release::changelog a_notice_leads_the_section_above_the_product_and_type_groups
+        PASS [   0.036s] frob-release::changelog a_second_notice_is_refused_naming_both_files
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.037s] 2 tests run: 2 passed, 103 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(a_notice_leads_the_section_above_the_product_and_type_groups) | test(a_second_notice_is_refused_naming_both_files)'"
+size = 674
+status = "measured"
+tests = ["a_notice_leads_the_section_above_the_product_and_type_groups", "a_second_notice_is_refused_naming_both_files"]
+at = "2026-10-03T17:27:24Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,11 @@
+kind = "create"
+title = "v1 importer: merge into an existing ledger and import open tickets as triage"
+type = "task"
+category = "todo"
+priority = "high"
+points = 2
+scope = ["crates/gob-dev/src/import_v1.rs", "crates/gob-dev/src/import_v1/**", "crates/gob-dev/tests/import_v1.rs", "docs/design/migration.md"]
+acceptance = ["Given an existing ledger, when the importer runs with --merge, then it adds only new ticket directories and refuses on any id or alias collision without writing", "Given --open-category triage, when open v1 tickets import, then their create events place them in triage"]
+at = "2026-10-04T11:40:29Z"
+actor = "lognd"
+rev = 1

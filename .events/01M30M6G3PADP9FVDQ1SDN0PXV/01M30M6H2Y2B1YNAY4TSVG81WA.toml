@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-22: duplicate of T-5205 (ops natives --path parity) (absorbed by T-5205)"
+at = "2026-09-21T00:00:01Z"
+actor = "import"
+rev = 1

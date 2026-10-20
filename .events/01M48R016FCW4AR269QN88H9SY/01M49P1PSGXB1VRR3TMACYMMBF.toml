@@ -1,0 +1,6 @@
+kind = "field"
+field = "labels"
+new = ["creates:changelog.d/01M48R016FCW4AR269QN88H9SY.*.md"]
+at = "2026-10-06T22:41:15Z"
+actor = "lognd"
+rev = 1

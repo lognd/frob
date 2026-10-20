@@ -1,0 +1,13 @@
+kind = "create"
+title = "gob-mdtest: snapshot-diagnostics header writes an insta snapshot of the rendered diagnostics"
+type = "story"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/gob-mdtest/**"]
+acceptance = ["a corpus with the header produces and checks per-block snapshots", "a changed rendering fails with an insta diff", "FORMAT.md documents the header"]
+body = "build-test-ci.md section 6, ty's mdtest snapshot-diagnostics. A suite header comment snapshot-diagnostics makes the harness render every finding of each block with the full text renderer (source excerpt, labels, help) and assert it with insta, one snapshot per block, beside the corpus. Document it in crates/gob-mdtest/FORMAT.md."
+at = "2026-10-06T04:33:59Z"
+actor = "lognd"
+rev = 1

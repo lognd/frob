@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T16:31:32Z"
+digest = "45741fe5772f2c4eaef4a802c397f5825212849e068d85f2e1af809102c6abe4"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 36760919-b675-462e-a9c1-a4fe732412d7 with nextest profile: default
+    Starting 1 test across 1 binary (27 tests skipped)
+        PASS [   0.938s] frob-cli::cycle plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.939s] 1 test run: 1 passed, 27 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test cycle plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently"
+size = 568
+status = "measured"
+tests = ["plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently"]
+at = "2026-10-03T16:31:32Z"
+actor = "lognd"
+rev = 1

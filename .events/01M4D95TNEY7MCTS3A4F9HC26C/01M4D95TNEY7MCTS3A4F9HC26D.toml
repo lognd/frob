@@ -1,0 +1,13 @@
+kind = "create"
+title = "Client route change without document.title update or focus move or announcement (crunk-web A11Y, Advisory)"
+type = "task"
+category = "todo"
+priority = "low"
+points = 3
+parent = "01M2Y1SS0MVHB8M891RN134SE7"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/gob-frameworks/**"]
+acceptance = ["Given routes that render without setting the title or moving focus, when crunk check runs, then one finding per route", "Given a route-level title and focus handler, when checked, then clean"]
+body = "notes/research/lint-catalogue-2026-10-08.md row W05 (4.2 N23); notes/research/creators-web-2026-10-08.md WADV045, WADV058 (Sutton, O'Hara, Pickering, de Vries, W3C) and 5.3 (hullbreach applies)."
+at = "2026-10-08T08:13:18Z"
+actor = "lognd"
+rev = 1

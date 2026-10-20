@@ -1,0 +1,22 @@
+kind = "create"
+title = "indexes/by-id lookup pages"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M3ZX776JJSRQXW8Q0327K9QN"
+idempotency_key = "m2-nav-gen-by-id"
+labels = ["milestone:2", "area:navigation"]
+scope = ["crates/frob-ledger/src/gen/by_id.rs"]
+acceptance = ["Given any ticket, when generated, then exactly one by-id page lists it with its current path", "Given a moved ticket, when regenerated, then its row shows the new path"]
+body = """
+Implements navigation.md section 1.
+
+indexes/by-id/<xx>.md split by the two ULID characters after the time part, listing ULID, handle, title and current path."""
+at = "2026-10-03T03:34:45Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX85S7ASFGT31GDYMRB5JX"

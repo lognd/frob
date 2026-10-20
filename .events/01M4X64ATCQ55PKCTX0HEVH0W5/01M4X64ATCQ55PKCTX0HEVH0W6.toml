@@ -1,0 +1,12 @@
+kind = "create"
+title = "frob test: Argument list too long (E2BIG) on full-workspace base run"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+scope = ["crates/frob-test/**"]
+acceptance = ["Given a full-workspace run, when frob test --base experimental runs, then no spawn fails with E2BIG"]
+body = "frob test --base experimental fails with E-INTERNAL failed to spawn child: Argument list too long. Pass package/test filters via file or chunk them."
+at = "2026-10-14T12:27:54Z"
+actor = "Claude"
+rev = 1

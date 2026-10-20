@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-16T16:35:24Z"
+digest = "87a9d57fe2c5e89c9fbc175eb3730c302979f51cd854bc78c1ba9803da33954c"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c92df803-1091-4421-9d2b-26aae042b773 with nextest profile: default
+    Starting 1 test across 5 binaries (84 tests skipped)
+        PASS [   0.006s] gob-directives::scan legacy_aliases_migrate_to_the_same_claim_with_a_fix
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives -E test(legacy_aliases_migrate_to_the_same_claim_with_a_fix)"
+size = 618
+status = "measured"
+test_count = 1
+tests_digest = "75e3cf646ec5907baf459a4fb92df4c61e688240c1453874f20ac4b8541254c5"
+at = "2026-10-16T16:35:24Z"
+actor = "lognd"
+rev = 1

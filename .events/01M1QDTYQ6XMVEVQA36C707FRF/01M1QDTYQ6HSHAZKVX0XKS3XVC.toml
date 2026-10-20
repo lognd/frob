@@ -1,0 +1,10 @@
+kind = "create"
+title = "F-012: add a Playwright (@playwright/test) test collector so specs can be bound as frob:tests evidence"
+type = "task"
+category = "triage"
+priority = "medium"
+aliases = ["T-3814"]
+labels = ["milestone:1.1.0", "v1-cluster:B2", "area:crunk"]
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1

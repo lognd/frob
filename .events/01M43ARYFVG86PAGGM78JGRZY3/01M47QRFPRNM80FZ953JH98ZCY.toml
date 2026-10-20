@@ -1,0 +1,8 @@
+kind = "field"
+field = "title"
+old = "crunk-ingest: JSX style props and className static fragments"
+new = "crunk-ingest: map JSX style props and className class_tokens into ProjectStyles"
+reason = "D96: extraction moves to gob (~VGKB025); crunk keeps the mapping"
+at = "2026-10-06T04:32:43Z"
+actor = "lognd"
+rev = 1

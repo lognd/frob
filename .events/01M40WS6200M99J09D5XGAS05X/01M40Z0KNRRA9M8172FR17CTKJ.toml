@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T13:24:48Z"
+digest = "ed2ca2aeeb640354b4de79de8ad388f89d0d33f1e586b9143ff7037cb1ec160b"
+exit_code = 0
+inline = """
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+────────────
+ Nextest run ID bc085972-d7ec-4945-be03-4c2512a7756b with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   1.012s] (1/1) frob-cli::close_guards the_running_frob_is_an_allowed_command_tool_without_listing_it
+────────────
+     Summary [   1.015s] 1 test run: 1 passed, 7 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test close_guards -E 'test(~the_running_frob)'"
+size = 510
+status = "measured"
+tests = ["the_running_frob_is_an_allowed_command_tool_without_listing_it"]
+at = "2026-10-03T13:24:48Z"
+actor = "lognd"
+rev = 1

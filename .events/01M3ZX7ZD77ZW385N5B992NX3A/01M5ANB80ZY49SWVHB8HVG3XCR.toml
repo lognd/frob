@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T18:03:45Z"
+digest = "6d2d3ded67d4df1dbd511aa12fa151ae85faa52c775fd3bf1616eb123f0bcde9"
+exit_code = 0
+inline = """
+
+running 1 test
+test explain_of_an_unknown_id_suggests_the_closest_and_exits_2 ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.47s
+     Running tests/explain.rs (target/debug/deps/explain-eb1b43fbd75f2c23)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble --test explain explain_of_an_unknown_id_suggests_the_closest_and_exits_2"
+size = 385
+status = "measured"
+at = "2026-10-19T18:03:45Z"
+actor = "lognd"
+rev = 1

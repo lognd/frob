@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-12T00:26:38Z"
+digest = "1c68063b731b1cecb902503b1c81643379a99b464225df12cd738f7bb06b36fe"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized] target(s) in 8.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 24522847-0595-4fc4-9d98-d83e7a6bda8e with nextest profile: default
+    Starting 1 test across 21 binaries (202 tests skipped)
+        PASS [   0.007s] gob-plan::rule_new the_scaffold_fails_only_on_the_missing_clean_example
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 202 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=the_scaffold_fails_only_on_the_missing_clean_example)'"
+size = 613
+status = "measured"
+tests = ["the_scaffold_fails_only_on_the_missing_clean_example"]
+at = "2026-10-12T00:26:38Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: the ticket is Python-side only (AttrKey registry in v1 _store_base_attrs); v2 attr vocabulary lives in pack registries (packs.md tier-1 vocabularies, ~HC9450N) and typed attrs (grmb-spec.md section 3)."
+at = "2026-10-04T20:58:43Z"
+actor = "lognd"
+rev = 1

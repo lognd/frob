@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T06:04:27Z"
+digest = "c9327cdfe566e9874ebee6ad80403d33429857ca27329cb3e627bf3e8523d666"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 04640995-252b-4427-b970-1ee0c7e12a2f with nextest profile: default
+    Starting 2 tests across 16 binaries (162 tests skipped)
+        PASS [   0.006s] gob-symbols::gaps an_undecodable_file_is_listed_with_its_reason_not_only_counted
+        PASS [   0.025s] frob-check::unreadable fidelity_counts_skipped_files_by_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 2 tests run: 2 passed, 162 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -p gob-symbols -E 'test(fidelity_counts_skipped_files_by_reason) or test(an_undecodable_file_is_listed_with_its_reason_not_only_counted)'"
+size = 664
+status = "measured"
+tests = ["an_undecodable_file_is_listed_with_its_reason_not_only_counted", "fidelity_counts_skipped_files_by_reason"]
+at = "2026-10-04T06:04:27Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,12 @@
+kind = "create"
+title = "Design: fast lands in docs/design/cli.md and build-test-ci.md (affected cone, CI split, guardrails, precedents with citations)"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
+scope = ["docs/design/**", "changelog.d/**"]
+acceptance = ["Given the fast-lands epic design, when this lands, then the behaviour in the title holds with a test"]
+at = "2026-10-09T16:44:24Z"
+actor = "lognd"
+rev = 1

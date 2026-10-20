@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T12:17:20Z"
+digest = "52197129965612d42abd0a06b1f612c4e5b4b8f47617a8b9c4f0db05fc85c41c"
+exit_code = 0
+inline = '''
+   Compiling frob-tests v0.0.0 (<worktree>/crates/frob-tests)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.46s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9adab13d-9034-47e8-8498-f50b23cd52ae with nextest profile: default
+    Starting 2 tests across 3 binaries (15 tests skipped)
+        PASS [   0.128s] frob-tests::selection a_changed_python_function_selects_the_pytest_tests_reaching_it
+        PASS [   0.768s] frob-tests::selection test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.769s] 2 tests run: 2 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests -E 'test(=a_changed_python_function_selects_the_pytest_tests_reaching_it) | test(=test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence)'"
+size = 751
+status = "measured"
+tests = ["a_changed_python_function_selects_the_pytest_tests_reaching_it", "test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence"]
+at = "2026-10-04T12:17:20Z"
+actor = "lognd"
+rev = 1

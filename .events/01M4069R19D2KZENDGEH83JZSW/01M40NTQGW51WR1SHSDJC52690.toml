@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-pm/src/config.rs", "crates/frob/src/init.rs", "docs/reference/config/**", "crates/frob-pm/Cargo.toml", "crates/frob-pm/src/lib.rs", "crates/frob-pm/tests/config.rs", "crates/frob/src/config.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__*", "docs/reference/config.md", "docs/schemas/config.json", "frob.toml"]
+new = ["crates/frob-pm/src/config.rs", "crates/frob/src/init.rs", "docs/reference/config/**", "crates/frob-pm/Cargo.toml", "crates/frob-pm/src/lib.rs", "crates/frob-pm/tests/config.rs", "crates/frob/src/config.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/snapshots/cli__*", "docs/reference/config.md", "docs/schemas/config.json", "frob.toml", "crates/frob/tests/pm_config.rs"]
+at = "2026-10-03T10:44:18Z"
+actor = "lognd"
+rev = 1

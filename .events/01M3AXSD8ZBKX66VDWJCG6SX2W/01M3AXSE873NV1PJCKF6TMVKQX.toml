@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-25: dynamic-only: becomes a frob:tests / EXPLAIN-style obligation, never a static rule"
+at = "2026-09-25T00:00:01Z"
+actor = "import"
+rev = 1

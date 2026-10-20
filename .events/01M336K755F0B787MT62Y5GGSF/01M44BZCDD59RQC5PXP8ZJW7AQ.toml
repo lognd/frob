@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: the v1 Python CLI shim announcing at INFO onto stdout."
+at = "2026-10-04T21:09:03Z"
+actor = "lognd"
+rev = 1

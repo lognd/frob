@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-16T00:05:52Z"
+digest = "a9c39556e546f885a78b5b0aad41dbc08d133919576b3475cfab5165c4fbfc4d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a0f581f4-57f1-4fbe-9257-012b169e36d2 with nextest profile: default
+    Starting 1 test across 2 binaries (3 tests skipped)
+        PASS [   0.005s] gob-fix::fix changed_file_is_refused_and_untouched
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-fix -E 'test(changed_file_is_refused_and_untouched)'"
+size = 539
+status = "measured"
+test_count = 1
+tests_digest = "24c1106d5ff42a5004df1a57768f2d96c6dbf397107835c9fc94c42db4951563"
+at = "2026-10-16T00:05:52Z"
+actor = "lognd"
+rev = 1

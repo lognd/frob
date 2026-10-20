@@ -1,0 +1,38 @@
++++
+id = "01M3Z7141TW2H3HXJRK1QBHP7T"
+title = "G10: grimble-arch: CYCLE, LARGE, DEAD"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "medium"
+points = 8
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-02T21:06:24Z"
+updated = "2026-10-19T12:38:10Z"
+idempotency_key = "m2-arch"
+labels = ["milestone:2"]
+scope = ["crates/grimble-arch/**", "crates/grimble-check/**", "docs/**", "Cargo.lock", "Cargo.toml"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3Z713YNM5666B7YFEHPFVKD"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7F1SGDAFM6ZQ8BP7TEN3"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7FYE5D1N2SY01VNVVACK"
+
+[[acceptance]]
+text = "Given two crates importing each other, when grimble check runs, then CYCLE names both"
+bound = true
+
+[[acceptance]]
+text = "Given a private fn reachable only through a May edge, when DEAD evaluates, then it reports Unresolved, not dead"
+bound = true
++++
+
+The first model-free findings over the U graph: import cycles (CYCLE), oversized units by a knob (LARGE), unreferenced non-public units (DEAD with May edges respected: Unresolved when any Unknown edge could reach the unit).

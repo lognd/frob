@@ -1,0 +1,11 @@
+kind = "create"
+title = "frob init mentions the private-term privacy.toml locations"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/src/init.rs", "docs/design/architecture.md"]
+acceptance = ["frob init output names the user and git-common-dir privacy.toml paths and writes neither"]
+body = "follow-up from ~2GXRW72: call frob_ledger::redact::RuleSet::mention_local_files(repo.common_dir()) in init (as doctor does), then drop the 'frob init to follow' note in architecture.md section 6"
+at = "2026-10-04T03:58:53Z"
+actor = "lognd"
+rev = 1

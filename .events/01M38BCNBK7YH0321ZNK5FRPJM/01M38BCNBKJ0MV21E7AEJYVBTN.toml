@@ -1,0 +1,16 @@
+kind = "create"
+title = "land CAS publish: ledger-only sibling commits are not absorbed by the T-4572 fast path"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 5
+aliases = ["T-5491"]
+labels = ["milestone:v0.534.0"]
+scope = ["src/frob/tickets/_land_squash.py", "tests/unit/test_land_cas_ledger_retry.py"]
+body = """
+Measured 2026-09-24: three lands (T-5324, T-5326, T-5474) were refused with "dev moved away while this land was composing" and each drift was ONE or TWO ledger-only sibling commits (chore(tickets): points T-5467; mirror scope T-5351; points T-5470), i.e. exactly the tickets/**-only advance T-4572's ledger-only CAS-retry fast path exists to absorb. Under a seven-agent fleet such commits arrive every few minutes, so the refusal now costs a full drain slot (10-25 minutes) several times per hour.
+
+Fix: measure why the fast path did not absorb these (the log shows no ledger_only= line or attempt count near the refusal), make its attempt bound proportional to drift rate (or unbounded with backoff for pure-ledger advances), and log each attempt with the sibling commit list. Positive control: a test that advances dev with a tickets/**-only commit between compose and publish must land without a refusal."""
+at = "2026-09-24T00:00:00Z"
+actor = "human"
+rev = 1

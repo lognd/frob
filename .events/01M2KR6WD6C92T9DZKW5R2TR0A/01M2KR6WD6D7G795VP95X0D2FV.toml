@@ -1,0 +1,18 @@
+kind = "create"
+title = "Unity project model: detection, walk-ignores, asmdef as strata nodes, scaffold, doctor"
+type = "story"
+category = "todo"
+priority = "medium"
+flavour = "user_story"
+points = 1
+parent = "01M2KR6WD1KXN9PGT16RCMBYFN"
+aliases = ["T-4518"]
+labels = ["milestone:0.533.0"]
+scope = ["src/frob/scaffold/data/types/unity-project/**", "src/frob/scaffold/project.py", "src/frob/app/doctor.py"]
+body = """
+Story: recognize and scaffold Unity projects. Parent for the four leaves below.
+
+Deliverables: detect a Unity project by Assets/, Packages/manifest.json, ProjectSettings/ProjectVersion.txt; exclude Library/, Temp/, Logs/, obj/, *.meta from the walker; read each .asmdef as a strata component boundary (one strata node per asmdef by default); a 'unity-project' scaffold type or frob init detection producing a starter frob.toml + design/*.strata for an existing Unity project; frob doctor recognizing the Unity toolchain (Unity Hub / editor path, optional not required)."""
+at = "2026-09-16T00:00:00Z"
+actor = "agent"
+rev = 1

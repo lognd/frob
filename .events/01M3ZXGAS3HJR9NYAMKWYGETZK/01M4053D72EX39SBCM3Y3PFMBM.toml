@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by mirror.md 3.5 and 3.4 (proposals by reference keyed by tracker event id, cursor as history position, read-time capture and gap reporting); replaced by m2-mirror2-proposal-record, m2-mirror2-cursor, m2-mirror2-capture, m2-mirror2-ledger-proposal-events."
+at = "2026-10-03T05:51:57Z"
+actor = "lognd"
+rev = 1

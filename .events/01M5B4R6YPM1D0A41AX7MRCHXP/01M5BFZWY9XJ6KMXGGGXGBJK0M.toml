@@ -1,0 +1,58 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T01:49:22Z"
+digest = "651a5239c39f2c921073721390b0fe666c65059e8c9079fe36508f152677dea8"
+exit_code = 0
+inline = """
+
+running 1 test
+test provider::tests::a_command_with_a_report_field_must_have_executed_tests ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 33 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.21s
+     Running unittests src/lib.rs (target/debug/deps/frob_evidence-43a1145bec8eae87)
+     Running tests/attestation.rs (target/debug/deps/attestation-e64a82267bc9e9f1)
+     Running tests/dotnet.rs (target/debug/deps/dotnet-6536182392b7269f)
+     Running tests/evidence.rs (target/debug/deps/evidence-7329684c84a6a98c)
+     Running tests/providers.rs (target/debug/deps/providers-98698e8aefa67b66)
+     Running tests/unity.rs (target/debug/deps/unity-71865f93926c08fa)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-evidence a_command_with_a_report_field_must_have_executed_tests"
+size = 1632
+status = "measured"
+at = "2026-10-20T01:49:22Z"
+actor = "lognd"
+rev = 1

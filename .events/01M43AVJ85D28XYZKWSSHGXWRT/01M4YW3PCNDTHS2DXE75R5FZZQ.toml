@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked by ~X5W2SPP (crunk-web scaffold, still in-progress; packs/crunk-web absent)"
+at = "2026-10-15T04:11:16Z"
+actor = "lognd"
+rev = 1

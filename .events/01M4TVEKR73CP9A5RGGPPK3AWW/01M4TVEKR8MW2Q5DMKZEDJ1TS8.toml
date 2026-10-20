@@ -1,0 +1,9 @@
+kind = "create"
+title = "COH001 follow-up: wire [coh] knobs into grimble.toml and register COH001 via product_rules!"
+type = "task"
+category = "todo"
+priority = "medium"
+idempotency_key = "coh001-followup"
+at = "2026-10-13T14:42:48Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Built by design (D44): directives bind only to comment tokens found by the language comment scanners (crates/gob-directives), so directive-shaped text in string literals is never read or rewritten; v1 FMT001 wrap pass does not exist in v2."
+at = "2026-10-04T21:09:28Z"
+actor = "lognd"
+rev = 1

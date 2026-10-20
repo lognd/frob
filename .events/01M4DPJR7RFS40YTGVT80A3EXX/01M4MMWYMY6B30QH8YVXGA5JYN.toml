@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T04:52:38Z"
+digest = "968134003617362723c6336f7f85f5b71fdb38ac93848966d4a76445deec3b27"
+exit_code = 0
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+    Finished `test` profile [unoptimized] target(s) in 12.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b9d3be10-bb3d-4c25-8507-a418b504ffc0 with nextest profile: default
+    Starting 1 test across 6 binaries (71 tests skipped)
+        PASS [   0.021s] crunk-ingest::ingest many_files_parse_in_parallel_but_place_in_path_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 71 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-ingest -E 'test(=many_files_parse_in_parallel_but_place_in_path_order)'"
+size = 1221
+status = "measured"
+tests = ["many_files_parse_in_parallel_but_place_in_path_order"]
+at = "2026-10-11T04:52:38Z"
+actor = "lognd"
+rev = 1

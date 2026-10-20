@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T13:44:52Z"
+digest = "89b67d383094b89624beb2acd08ba69688324743f8b05e20e9dd77a0ba8d1e27"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+────────────
+ Nextest run ID 1e64c9b0-7207-4fea-98a3-adfd0756864a with nextest profile: ci
+    Starting 4 tests across 30 binaries (235 tests skipped)
+        PASS [   0.006s] (1/4) frob-release::skeleton ticket_types_map_to_documented_fragment_types
+        PASS [   0.010s] (2/4) frob-release::skeleton an_invalid_text_writes_nothing
+        PASS [   0.024s] (3/4) frob-release::skeleton writes_a_valid_fragment_from_the_title_that_passes_the_changelog_check
+        PASS [   1.099s] (4/4) frob-cli::fragment writes_a_valid_fragment_from_the_title_with_the_mapped_type
+────────────
+     Summary [   1.105s] 4 tests run: 4 passed, 235 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-release -p frob-cli --profile ci -E 'test(writes_a_valid_fragment) | test(ticket_types_map) | test(an_invalid_text_writes)'"
+size = 765
+status = "measured"
+tests = ["ticket_types_map_to_documented_fragment_types", "an_invalid_text_writes_nothing", "writes_a_valid_fragment_from_the_title_that_passes_the_changelog_check", "writes_a_valid_fragment_from_the_title_with_the_mapped_type"]
+at = "2026-10-03T13:44:52Z"
+actor = "lognd"
+rev = 1

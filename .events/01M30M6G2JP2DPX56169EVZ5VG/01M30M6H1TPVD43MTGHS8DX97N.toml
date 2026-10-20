@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-21: PERF015-018 registration shipped directly in T-5136 (real land at close refused with UnregisteredGateRuleConstructed until registration accompanied the detectors) (absorbed by T-5136)"
+at = "2026-09-21T00:00:01Z"
+actor = "import"
+rev = 1

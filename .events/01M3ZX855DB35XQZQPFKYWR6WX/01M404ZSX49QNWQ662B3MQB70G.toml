@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "[mirror.identities] and tracker key stored as a ticket alias"
+new = "[mirror.identities] by tracker user id, [mirror] bot_ids, and tracker key as a ticket alias"
+at = "2026-10-03T05:49:59Z"
+actor = "lognd"
+rev = 1

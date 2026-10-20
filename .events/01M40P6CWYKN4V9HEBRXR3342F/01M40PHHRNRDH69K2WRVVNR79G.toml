@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T10:56:46Z"
+digest = "71a2033302c0da2545c80af65a0a443db1e95c87d118d2c6e035550c31e75e53"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+────────────
+ Nextest run ID 876f4ffd-60f3-4469-8530-4b9967b4a0b5 with nextest profile: default
+    Starting 4 tests across 2 binaries (31 tests skipped)
+        PASS [   0.004s] (1/4) gob-plan::lex regex_flags_and_classes
+        PASS [   0.004s] (2/4) gob-plan::lex interpolation_expression_relexes
+        PASS [   0.005s] (3/4) gob-plan grl::parse::tests::regex_string_quantifiers_and_knob_defaults_keep_braces_literally
+        PASS [   0.005s] (4/4) gob-plan::lex acceptance_one_comment_snippets_block_regex
+────────────
+     Summary [   0.006s] 4 tests run: 4 passed, 31 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(lex) | test(regex)'"
+size = 707
+status = "measured"
+tests = ["grl::parse::tests::regex_string_quantifiers_and_knob_defaults_keep_braces_literally", "regex_flags_and_classes", "interpolation_expression_relexes", "acceptance_one_comment_snippets_block_regex"]
+at = "2026-10-03T10:56:46Z"
+actor = "lognd"
+rev = 1

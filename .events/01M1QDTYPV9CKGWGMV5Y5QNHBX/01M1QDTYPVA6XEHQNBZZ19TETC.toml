@@ -1,0 +1,10 @@
+kind = "create"
+title = "F-001: frob serve (MCP) exits 1 in a repo with no frob.toml -- give a clear reason or a scaffold/init bootstrap tool instead of CONNECTION_CLOSED"
+type = "bug"
+category = "triage"
+priority = "medium"
+aliases = ["T-3803"]
+labels = ["milestone:1.1.0", "v1-cluster:E1"]
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1

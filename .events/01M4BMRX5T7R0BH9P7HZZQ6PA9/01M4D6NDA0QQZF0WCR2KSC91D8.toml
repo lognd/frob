@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Profile notes/research/profile-2026-10-07.md finding 3: refuted as a steady state: release build 18 ms warm, about 0.5 s cold; the primary's debug binary 6.3 s cold. The 23 s was a debug-build index rebuild (opt-level 0 gix and zlib) on a loaded host. Remaining work moves to the dev-profile opt-level ticket and the incremental index sync ticket."
+at = "2026-10-08T07:29:23Z"
+actor = "lognd"
+rev = 1

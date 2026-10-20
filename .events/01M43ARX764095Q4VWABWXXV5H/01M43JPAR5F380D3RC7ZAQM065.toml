@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T13:47:12Z"
+digest = "ee0717f79f44984b1d8c5da7ee6a5a1f2205486a06a7fa375e46f4d8efecceb3"
+exit_code = 0
+inline = '''
+   Compiling gob-dev v0.0.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1028abce-32aa-4bea-9499-e7ecda0336ba with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.022s] gob-dev::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.066s] gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.102s] gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.130s] gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.190s] gob-dev::generate output_is_deterministic_and_check_passes
+        PASS [   0.564s] gob-dev::generate one_required_reason_and_one_polarity
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.566s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test generate"
+size = 1040
+status = "measured"
+tests = ["committed_pages_have_no_orphans_on_disk", "every_rule_has_a_page_and_every_page_a_rule", "crunk_config_reference_and_schema_are_generated_apart_from_frobs", "check_reports_stale_and_missing_files_without_writing", "output_is_deterministic_and_check_passes", "one_required_reason_and_one_polarity"]
+at = "2026-10-04T13:47:12Z"
+actor = "lognd"
+rev = 1

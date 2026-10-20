@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T22:32:54Z"
+digest = "12f9f5ecb6203c3e5fbc4967929d78fc825567d295be0af3aed3d537d558d30c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 372321b8-47f3-45a5-9708-02497c3b4469 with nextest profile: default
+    Starting 2 tests across 5 binaries (47 tests skipped)
+        PASS [   0.005s] gob-dev::ci_parity ci_yml_installs_every_linux_step_prerequisite
+        PASS [   0.005s] gob-dev::ci_parity a_missing_prerequisite_install_fails_naming_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 2 tests run: 2 passed, 47 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(ci_yml_installs_every) | test(a_missing_prerequisite)'"
+size = 648
+status = "measured"
+tests = ["ci_yml_installs_every_linux_step_prerequisite", "a_missing_prerequisite_install_fails_naming_it"]
+at = "2026-10-03T22:32:54Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/ticket/reindex_cmd.rs", "crates/frob-ledger/src/ops.rs"]
+new = ["crates/frob/src/ticket/reindex_cmd.rs", "crates/frob-ledger/src/ops.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/write.rs", "crates/frob/src/config.rs", "crates/gob-dev/profile.toml", "docs/reference/**", "docs/design/navigation.md", "frob.toml", "crates/frob/tests/ticket_reindex.rs"]
+at = "2026-10-11T18:12:45Z"
+actor = "lognd"
+rev = 1

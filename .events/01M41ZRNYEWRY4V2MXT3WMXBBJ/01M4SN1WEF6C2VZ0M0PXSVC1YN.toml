@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T03:31:38Z"
+digest = "e69881534d06c890d925c0a0dd3121a045a1cf7b28760c5c020b3e1ac784520d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.77s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 71a6eebc-d417-4d77-8137-b34ff171182b with nextest profile: default
+    Starting 1 test across 340 binaries (2992 tests skipped)
+        PASS [   0.222s] frob-lease::lease lease_list_and_contention_report_waiters_with_age_and_blocker
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.263s] 1 test run: 1 passed, 2992 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "lease_list_and_contention_report_waiters"
+size = 576
+status = "measured"
+test_count = 1
+tests_digest = "1edb581048f828808b77a4db7e396f46adab55e61e2b791c040ae3e25150e338"
+at = "2026-10-13T03:31:38Z"
+actor = "lognd"
+rev = 1

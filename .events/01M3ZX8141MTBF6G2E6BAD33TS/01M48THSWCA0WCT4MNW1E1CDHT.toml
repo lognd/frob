@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/branch.rs", "crates/frob/src/ticket/branch_cmd.rs", "crates/frob-ledger/src/lib.rs", "crates/frob/src/config.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/ticket_branch.rs", "changelog.d/*BAD33TS*", "docs/reference/config.md", "docs/schemas/config.json", "docs/reference/cli/frob.md", "docs/design/architecture.md"]
+new = ["crates/frob-ledger/src/branch.rs", "crates/frob/src/ticket/branch_cmd.rs", "crates/frob-ledger/src/lib.rs", "crates/frob/src/config.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/cli.rs", "crates/frob/tests/ticket_branch.rs", "changelog.d/*BAD33TS*", "docs/reference/config.md", "docs/schemas/config.json", "docs/reference/cli/frob.md", "docs/design/architecture.md", "crates/frob/tests/snapshots/cli__*.snap", "crates/frob-ledger/tests/branch.rs"]
+at = "2026-10-06T14:40:42Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a candidate of N tickets, when checked, then one check runs over the union of cones", "Given member evidence still valid for the candidate, then it is reused not re-run", "Given a red check, then the failing evidence is returned for the bisection planner"]
+new = ["Given a candidate of N tickets, when checked, then one check runs over the union of cones", "Given member evidence still valid for the candidate, then it is reused not re-run", "Given a red check, then the failing evidence is returned for the bisection planner", "Given a candidate, then per-member cheap ticket rules run per member, one diff_base tool run covers the union, and the ratchet runs once"]
+moved = [1, 2, 3]
+at = "2026-10-15T21:17:57Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: wires the v1 Python frob_core.py_function_metrics into archgate; v2 architecture metrics are grimble-arch."
+at = "2026-10-04T21:08:44Z"
+actor = "lognd"
+rev = 1

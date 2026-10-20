@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["the pinned typos 1.50.3 run over the repository exits 0, while a genuine misspelling still fails"]
+new = ["the pinned typos 1.50.3 run over the repository exits 0, while a genuine misspelling still fails", "the committed docs/crunk/rules/README.md equals the generated registry page (crunk-check waive001 the_committed_registry_page_is_fresh passes)", "frob profile completes within its 500 ms budget on a large ledger because the closed-ticket count stops at the suggestion threshold (frob profile test the_closed_count_stops_at_the_suggestion_threshold)"]
+moved = [1]
+at = "2026-10-11T13:44:32Z"
+actor = "Claude"
+rev = 1

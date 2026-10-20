@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4XBAPBBMQ5TMT0EH30ZJZBC"
+committed = 516
+text = "unblocks INV002 fixture for ~0HC06TD"
+capacity = 101
+at = "2026-10-14T13:58:53Z"
+actor = "lognd"
+rev = 1

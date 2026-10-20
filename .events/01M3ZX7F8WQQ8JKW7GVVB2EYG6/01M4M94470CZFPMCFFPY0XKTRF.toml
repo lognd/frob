@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T01:27:02Z"
+digest = "136df4c121d2a6eda4392ec348ecdf4ad19a28360131f3d027b280be7a9f223c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1ab4778e-c5e8-4483-9c79-7a7d315947ec with nextest profile: default
+    Starting 1 test across 13 binaries (171 tests skipped)
+        PASS [   0.006s] gob-plan::example_runner a_known_gap_that_starts_firing_fails_with_grl016_and_a_diff
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 171 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=a_known_gap_that_starts_firing_fails_with_grl016_and_a_diff)'"
+size = 566
+status = "measured"
+tests = ["a_known_gap_that_starts_firing_fails_with_grl016_and_a_diff"]
+at = "2026-10-11T01:27:02Z"
+actor = "lognd"
+rev = 1

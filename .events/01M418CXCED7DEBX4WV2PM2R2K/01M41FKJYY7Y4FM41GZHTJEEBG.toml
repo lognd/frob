@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T18:14:47Z"
+digest = "7e24268b3646b2770768e0df0f93f30435f7648ea4d3f1303432e898e6b231e0"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 76736541-5c7d-4e2a-9d5a-1975dc319473 with nextest profile: default
+    Starting 8 tests across 18 binaries (216 tests skipped)
+        PASS [   0.008s] gob-symbols yaml::tests::sequence_items_and_block_scalars_hide_keys
+        PASS [   0.008s] gob-symbols yaml::tests::nested_keys_and_extents
+        PASS [   0.009s] gob-directives::scan yaml_blank_line_gap_does_not_attach_to_the_next_key
+        PASS [   0.010s] gob-directives::scan yaml_accept_binds_to_the_key_on_the_next_line
+        PASS [   0.010s] gob-directives::scan yaml_trailing_comment_binds_to_its_own_key
+        PASS [   0.010s] gob-directives::scan yaml_stacked_comments_bind_to_the_same_key
+        PASS [   0.125s] frob-check::tool_bind a_yaml_accept_above_another_key_does_not_suppress_the_finding
+        PASS [   0.128s] frob-check::tool_bind a_yaml_accept_above_a_key_suppresses_the_finding_inside_that_key
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.129s] 8 tests run: 8 passed, 216 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives -p frob-check -p gob-symbols -E 'test(/yaml/)'"
+size = 1226
+status = "measured"
+tests = ["yaml::tests::sequence_items_and_block_scalars_hide_keys", "yaml::tests::nested_keys_and_extents", "yaml_blank_line_gap_does_not_attach_to_the_next_key", "yaml_accept_binds_to_the_key_on_the_next_line", "yaml_trailing_comment_binds_to_its_own_key", "yaml_stacked_comments_bind_to_the_same_key", "a_yaml_accept_above_another_key_does_not_suppress_the_finding", "a_yaml_accept_above_a_key_suppresses_the_finding_inside_that_key"]
+at = "2026-10-03T18:14:47Z"
+actor = "lognd"
+rev = 1

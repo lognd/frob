@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T19:28:49Z"
+digest = "cc2f29d8067ef7fbd59c22625171ddfa8e9af1e0ef88862e03de4547e5deaca4"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 01d56487-9c21-4a77-835f-825d0495f29e with nextest profile: default
+    Starting 1 test across 4 binaries (101 tests skipped)
+        PASS [   0.050s] frob-check::it check::diff_base_scopes_a_run_without_a_ticket
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.051s] 1 test run: 1 passed, 101 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E test(diff_base_scopes_a_run_without_a_ticket)"
+size = 672
+status = "measured"
+test_count = 1
+tests_digest = "0cec488e2f478c0265621912eabd9e65af2f0e938f9fefeb103330989fcf19ca"
+at = "2026-10-15T19:28:49Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D103: the fix invariants run inside the mdtest runner for every case with a fixable finding (as ruff_mdtest reuses ruff's test_contents), not in a separate fixture loop; fix snapshots need ~14C4ZGJ (renderer shows the fix diff) first."
+at = "2026-10-06T13:27:44Z"
+actor = "lognd"
+rev = 1

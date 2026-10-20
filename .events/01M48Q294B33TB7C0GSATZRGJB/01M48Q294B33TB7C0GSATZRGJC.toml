@@ -1,0 +1,10 @@
+kind = "create"
+title = "Views and metrics: board --brief, backlog tree, frob-metrics, stats, forecast, frob-live (D105)"
+type = "epic"
+category = "todo"
+priority = "high"
+acceptance = ["every child closed or dropped with a reason"]
+body = "Implements D105: human-readable views as text renderings of the same JSON; metrics in a new crate frob-metrics; the live dashboard as the sibling binary frob-live shipped in the frob wheel and reached by --live; activity inferred from observed signals, never declared; telemetry in a local .frob journal summarised onto the ticket branch."
+at = "2026-10-06T13:39:49Z"
+actor = "lognd"
+rev = 1

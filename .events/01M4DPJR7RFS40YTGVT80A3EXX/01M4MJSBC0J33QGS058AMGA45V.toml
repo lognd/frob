@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T04:15:53Z"
+digest = "785bf1ee7589c78afb1410c6f5b99a97193200cfa6d50f3b72cea5be89d81425"
+exit_code = 0
+inline = '''
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+    Finished `test` profile [unoptimized] target(s) in 2.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eaa4eefa-227d-4665-9bc2-751d45033553 with nextest profile: default
+    Starting 1 test across 6 binaries (71 tests skipped)
+        PASS [   0.043s] crunk-ingest::ingest many_files_parse_in_parallel_but_place_in_path_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.044s] 1 test run: 1 passed, 71 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-ingest -E 'test(=many_files_parse_in_parallel_but_place_in_path_order)'"
+size = 620
+status = "measured"
+tests = ["many_files_parse_in_parallel_but_place_in_path_order"]
+at = "2026-10-11T04:15:53Z"
+actor = "lognd"
+rev = 1

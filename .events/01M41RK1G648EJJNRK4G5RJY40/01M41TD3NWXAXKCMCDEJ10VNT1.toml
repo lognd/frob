@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T21:23:29Z"
+digest = "4f75993be28d1f892a9cd64d21010e1acaec066863742bceadc2baf48b4ebd3a"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.71s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 74e662ff-a8f1-4ff6-ba68-7245b7514b08 with nextest profile: default
+    Starting 8 tests across 148 binaries (1318 tests skipped)
+        PASS [   0.015s] gob-exec::cmdline known_lines_for_the_merge_driver
+        PASS [   0.018s] gob-exec::cmdline arg_new_wraps_an_os_string_and_exposes_it
+        PASS [   0.018s] frob-cli init::tests::the_driver_command_is_built_by_command_line_and_keeps_git_placeholders
+        PASS [   0.033s] frob-cli init::tests::windows_paths_become_forward_slash_sh_words
+        PASS [   0.279s] gob-exec::cmdline powershell_round_trips
+        PASS [   0.281s] gob-exec::cmdline git_for_windows_sh_round_trips
+        PASS [   0.281s] gob-exec::cmdline cmd_round_trips
+        PASS [   0.294s] gob-exec::cmdline posix_round_trips
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.300s] 8 tests run: 8 passed, 1318 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(windows_paths_become) | test(the_driver_command_is_built) | binary(cmdline)'"
+size = 1103
+status = "measured"
+tests = ["init::tests::the_driver_command_is_built_by_command_line_and_keeps_git_placeholders", "init::tests::windows_paths_become_forward_slash_sh_words", "known_lines_for_the_merge_driver", "arg_new_wraps_an_os_string_and_exposes_it", "powershell_round_trips", "git_for_windows_sh_round_trips", "cmd_round_trips", "posix_round_trips"]
+at = "2026-10-03T21:23:29Z"
+actor = "lognd"
+rev = 1

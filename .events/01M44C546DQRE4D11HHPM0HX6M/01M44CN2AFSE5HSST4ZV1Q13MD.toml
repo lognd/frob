@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T21:20:53Z"
+digest = "c0fffe184ad97f7f119c150f4aa38a5db5908e59dda3bc4b9dabcc013ada958f"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4149eb20-6bfd-483f-b022-83f5eff8d687 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   1.014s] frob-cli::triage a_snoozed_ticket_is_hidden_until_its_date_and_shown_after
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.014s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test triage -E 'test(a_snoozed_ticket_is_hidden)'"
+size = 561
+status = "measured"
+tests = ["a_snoozed_ticket_is_hidden_until_its_date_and_shown_after"]
+at = "2026-10-04T21:20:53Z"
+actor = "lognd"
+rev = 1

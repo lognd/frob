@@ -1,0 +1,16 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T03:00:07Z"
+digest = "de39377b63adf372b38169c5152b016f4634bf82fdbd069a3e5deb558fcf8d4b"
+exit_code = 0
+inline = """
+{"verb":"check","already":false,"ok":true,"data":{"counts":{"advisory":0,"error":0,"unresolved":0,"warn":0},"elsewhere":[],"explain":null,"fail_on":"error","fail_on_unresolved":"required","fidelity":{"languages":{"markdown":{"fidelity":"F4","files":648,"files_examined":0,"not_applicable":{},"partial_parse":0,"unresolved":{}},"opaque":{"fidelity":"F0","files":2467,"files_examined":0,"not_applicable":{},"partial_parse":0,"unresolved":{}},"rust":{"fidelity":"F3","files":554,"files_examined":0,"not_applicable":{},"partial_parse":0,"unresolved":{}},"yaml":{"fidelity":"F1","files":7,"files_examined":0,"not_applicable":{},"partial_parse":0,"unresolved":{}}}},"findings":[],"fix":null,"lines":[],"notes":[],"required_unresolved":0,"sibling_lines":[],"siblings":[],"stats":{"directives_cached":86,"directives_scanned":3468,"file_hits":0,"file_misses":0,"files":3676,"files_checked":3676,"graph_cached":1099,"graph_extracted":110,"repo_hits":0,"repo_misses":0},"suppressed":0,"ticket":null,"timing":null},"findings":[],"warnings":[],"error":null,"schema_version":1}
+"""
+passed = true
+provider = "command"
+ref = "<worktree>/target/debug/frob check --only CFG --fail-on error"
+size = 1064
+status = "measured"
+at = "2026-10-04T03:00:07Z"
+actor = "lognd"
+rev = 1

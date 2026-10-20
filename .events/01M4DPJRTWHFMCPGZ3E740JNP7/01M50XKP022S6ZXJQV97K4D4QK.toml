@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T23:07:38Z"
+digest = "e4935a8c04261491f992b8713b3aafdc0aa6c9415e2c4991e0690df5d3a3cba5"
+exit_code = 100
+failed_tests = ["every_leaf_command_has_a_scenario_or_a_skip_reason"]
+passed = false
+provider = "nextest"
+ref = "package(gob-plan) and (test(golden_grl017) or test(golden_grl018))"
+size = 199497
+status = "measured"
+test_count = 1915
+tests_digest = "dc9867e37c9c78ecd71bcaf9fb8e59c2785530bda969edcdf6830e2d984da177"
+uri = "dir:.git/frob/artifacts/e4935a8c04261491f992b8713b3aafdc0aa6c9415e2c4991e0690df5d3a3cba5"
+at = "2026-10-15T23:07:38Z"
+actor = "lognd"
+rev = 1

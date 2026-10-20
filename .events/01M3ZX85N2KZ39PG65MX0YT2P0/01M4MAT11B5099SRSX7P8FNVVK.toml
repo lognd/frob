@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T01:56:19Z"
+digest = "57f12383532222a61c3446c77bd0b6fcf6bad974d7ba10d4b3d69812928006df"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized] target(s) in 9.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 955c1cb7-6958-4d4f-8788-e237b520374f with nextest profile: ci
+    Starting 1 test across 8 binaries (141 tests skipped)
+        PASS [   0.012s] gob-dev::generate check_prints_a_capped_diff_for_a_hand_edited_page
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 141 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(=check_prints_a_capped_diff_for_a_hand_edited_page)'"
+size = 773
+status = "measured"
+tests = ["check_prints_a_capped_diff_for_a_hand_edited_page"]
+at = "2026-10-11T01:56:19Z"
+actor = "lognd"
+rev = 1

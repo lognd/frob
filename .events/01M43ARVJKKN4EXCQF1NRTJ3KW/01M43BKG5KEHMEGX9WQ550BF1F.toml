@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T11:43:19Z"
+digest = "55016d0a93220948cddcdc07288d12c45a751052623c5de99004498c19eac4d4"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 12b67d61-9cc6-49ee-b360-22a396bc8549 with nextest profile: default
+    Starting 2 tests across 2 binaries (8 tests skipped)
+        PASS [   0.013s] crunk-values::values contrast_basics
+        PASS [   0.013s] crunk-values::values contrast_and_distance_match_python_vectors
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 2 tests run: 2 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-values -E test(contrast_and_distance_match_python_vectors)|test(contrast_basics)"
+size = 616
+status = "measured"
+tests = ["contrast_basics", "contrast_and_distance_match_python_vectors"]
+at = "2026-10-04T11:43:19Z"
+actor = "lognd"
+rev = 1

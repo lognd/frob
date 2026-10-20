@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 Python modules printing to stdout; v2 uses tracing and the module logger by construction (gob-log)."
+at = "2026-10-04T21:01:30Z"
+actor = "lognd"
+rev = 1

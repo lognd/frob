@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-12T07:54:22Z"
+digest = "23d7e6daec9a647174c3e578c276f721ce8e116f79092a9c2aed6816ba8b7473"
+exit_code = 0
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 87a4e330-9b87-4bee-ab6e-12bc602b1e1e with nextest profile: default
+    Starting 1 test across 5 binaries (23 tests skipped)
+        PASS [   0.040s] grimble-check::document a_template_excuse_without_because_is_mdl008
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.041s] 1 test run: 1 passed, 23 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(=a_template_excuse_without_because_is_mdl008)"
+size = 758
+status = "measured"
+test_count = 1
+tests_digest = "0808b97a788070aa87ee1cbdfd1fc88bcb2fce55328a994acae78e6501832577"
+at = "2026-10-12T07:54:22Z"
+actor = "lognd"
+rev = 1

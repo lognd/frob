@@ -1,0 +1,11 @@
+kind = "create"
+title = "Bounded GC for land-target and speed cache that never evicts the warm set"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+acceptance = ["Eviction is LRU by last-use stamp with a size budget; entries used in the last N hours or by any live worktree are never evicted", "A before/after timing of frob check and frob land on a warm tree shows no regression", "GC runs off the hot path (idle or explicit verb) and reports bytes freed", "A test asserts a recently used entry survives GC and a stale one is removed"]
+body = "9.1 GB under .git/frob (land-target 6.8 GB, cache 2.3 GB). Speed first: GC must never slow a land or check."
+at = "2026-10-11T18:00:19Z"
+actor = "lognd"
+rev = 1

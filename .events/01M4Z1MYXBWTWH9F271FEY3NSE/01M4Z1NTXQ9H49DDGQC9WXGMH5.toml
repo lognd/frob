@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["area:land"]
+new = ["area:land", "creates:crates/frob-land/src/train_check.rs"]
+at = "2026-10-15T05:48:34Z"
+actor = "lognd"
+rev = 1

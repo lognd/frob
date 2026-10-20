@@ -1,0 +1,91 @@
+kind = "create"
+title = "Delete every CLI alias and duplicate name: the four group verbs, fmt, docs/docs-search, three spellings of status, whereis"
+type = "task"
+category = "todo"
+priority = "high"
+aliases = ["T-4690"]
+labels = ["cli-debloat", "points-3", "milestone:0.533.0", "component:cli"]
+scope = ["src/frob/_cli_parsers/_explore.py", "src/frob/_cli_parsers/_quality.py", "src/frob/_cli_parsers/_design.py", "src/frob/_cli_parsers/_status.py", "src/frob/_cli_parsers/_core.py", "src/frob/_cli_parsers/_misc.py", "src/frob/_cli_parsers/_reporting.py", "src/frob/_cli_parsers/_verify.py", "src/frob/_cli_parsers/_shims.py", "src/frob/__main__.py", "src/frob/app/explore_runner.py", "src/frob/app/quality_runner.py", "src/frob/app/design_runner.py", "src/frob/app/status_runner.py", "src/frob/app/fmt_runner.py", "src/frob/app/docs_runner.py", "src/frob/app/doctor_runner.py", "tests/unit/test_cli_shims.py", "tests/unit/test_main_entry.py", "tests/unit/test_cli_group_parity.py", "src/frob/app/app.py", "src/frob/app/_config_external.py", "docs/commands/outline.md", "docs/commands/map.md", "docs/commands/xref.md", "docs/commands/scaffold.md", "docs/commands/exports.md", "changelog.d/T-4690.md", "tests/test_app.py", "src/frob/gates/_sys_provenance.py", "src/frob/strata/_pii.py", "src/frob/worktrees/_disposable_sweep.py", "src/frob/_cli_parsers/_ticket/_new.py", "src/frob/doctor.py", "src/frob/gates/_docptr.py", "src/frob/gates/_fix_engine_scope.py", "src/frob/gates/_prework.py", "src/frob/tickets/_land_squash.py", "src/frob/verify/_quarantine.py", "src/frob/app/ticket_runner/_verify.py", "docs/modules/clean.md"]
+acceptance = ["Given the built argparse tree, when frob --help runs after this ticket, then explore SURVIVES in the usage line while its standalone mirrors outline, map, xref and docs-search are absent, and quality, design, ops, fmt, docs, whereis and the verify status / fleet status spellings are absent", "Given a deprecated spelling before its sunset date, when it is invoked, then it prints the surviving spelling on stderr and exits 0; given the same spelling after the sunset date, then it exits non-zero", "Given git grep over .claude/ docs/ scripts/ src/ tests/ for every deleted name, when the sweep is re-run at close, then it returns zero hits outside the shim definitions themselves; the hits in ~/.claude/refs/frob.md are listed in the Done report instead of edited", "Given frob explore map, frob explore outline, frob explore xref and frob explore docs-search after this ticket, when each runs, then it works unchanged -- explore is the surviving verb and this ticket must not delete or rebuild it; _mirror_subparser is removed once it has no callers"]
+body = """
+POINTS: 3. Parent story T-4687. blocked_by: none (runs in parallel with T-4689).
+This leaf also builds the shared deprecation-shim helper that T-4692, T-4695,
+T-4696 and T-4698 all import, which is why those four are blocked on it.
+
+OWNER DECISION: "Delete the duplicates."
+
+AMENDED 2026-09-19 (coordinator review): the earlier version of this ticket
+deleted `explore` and had T-4695 rebuild it. That was delete-then-rebuild churn
+on the same verb. REVISED: `explore` is the SURVIVING verb and is never deleted.
+This leaf deletes its standalone mirrors; T-4695 then moves more leaves under it.
+
+MEASURED 2026-09-19. Four verb GROUPS exist that added names and removed none:
+  explore  (T-1238) -> map, outline, xref, docs-search
+  quality  (T-1567) -> check, test, dup, arch, bind, cycle, mutate, perf
+  design   (T-1568) -> sys, registry, docs, graph, exports
+  ops      (T-1569) -> release, natives, doctor, clean, fleet, deploy,
+                       scaffold, gitlog, stats, process
+`_cli_parsers/_explore.py::_mirror_subparser` proves the duplication literally:
+it writes the FLAT parser object into the group's `choices` dict, so
+`frob explore xref` and `frob xref` are the same ArgumentParser instance.
+None of these four group verbs has ever been recorded in a kind=cli row.
+
+KEEP: `explore`. It has 95 citations across .claude/ docs/ scripts/ src/ tests/
+("frob show" has 0), and T-4695 folds the rest of the read-only surface under
+it. Keeping it here is what makes T-4695 an additive move rather than a rebuild.
+
+DELETE, each with a one-minor-version shim:
+  - the standalone top-level mirrors of explore's four existing leaves:
+    `outline`, `map`, `xref`, `docs-search`. The surviving spelling for each is
+    `frob explore <leaf>`. `xref` has 16 recorded kind=cli invocations -- it is
+    the one mirror with a live consumer, so its shim must actually work, not
+    merely exist.
+  - the three remaining group verbs `quality`, `design`, `ops`
+  - `fmt` -> `format` (already marked DEPRECATED, sunset 2026-12-01; finish it)
+  - `docs` vs `docs-search`: keep `docs-search` (under `explore`) as the search
+    surface; `docs`'s docstring-extraction mode survives under that one name
+  - `status` vs `verify status` vs `fleet status`: three spellings, one concept.
+    Keep top-level `status`; `verify status` and `fleet status` become shims.
+  - `whereis` folded into `doctor` (a whereis option on doctor (planned) or a section of
+    plain `frob doctor` output). `whereis` (T-4299) answers "which interpreter
+    is this frob" -- that is a doctor question.
+
+ONCE `_mirror_subparser` HAS NO CALLERS, DELETE IT. It exists only to make one
+parser object answer to two names, which is the duplication this story removes.
+
+BUILD, once, for the whole story: a single shim helper (suggested home
+src/frob/_cli_parsers/_shims.py) that registers a deprecated name, prints the
+surviving spelling to stderr on every use, and exits non-zero once the sunset
+date has passed. It MUST be expressed through the existing frob:deprecated
+machinery (src/frob/gates/_debt_deprecated.py, _deprecated_baseline.py,
+src/frob/app/deprecated_runner.py) and follow the `fmt` precedent in
+src/frob/app/fmt_runner.py. Do NOT invent a second mechanism -- a second
+deprecation path is exactly the duplication this story is deleting.
+
+CITATION SWEEP (acceptance evidence): `git grep` every deleted name across
+.claude/, docs/, scripts/, src/, tests/ and update each citation to the
+surviving spelling. ~/.claude/refs/frob.md is the OWNER'S file and is OUT OF
+SCOPE -- list the edits it needs in the Done report, do not touch it.
+
+FILES (declared scope):
+  src/frob/_cli_parsers/_explore.py, _quality.py, _design.py, _ops.py,
+  _status.py, _core.py, _misc.py, _reporting.py, _verify.py, _shims.py (new)
+  src/frob/__main__.py
+  src/frob/app/explore_runner.py, quality_runner.py, design_runner.py,
+  ops_runner.py, status_runner.py, fmt_runner.py, docs_runner.py,
+  doctor_runner.py
+  tests/unit/test_cli_shims.py (new), tests/unit/test_main_entry.py
+NOTE: _core.py, _misc.py, _reporting.py, _explore.py and __main__.py are
+contended with T-4692 and T-4695; that is why those two are blocked on this
+ticket rather than declared disjoint. A frob scope is a write lease and cannot
+be shared.
+
+TITLE DRIFT: this ticket's title still says "the four group verbs". After this
+amendment it is three group verbs plus four standalone mirrors. `frob ticket`
+has no title setter; this paragraph is the correction of record.
+
+## Reopen log
+- 2026-09-21: closed-but-unlanded: a refused drain wrote state=done with land_commit null and no code on dev; reopen to land for real"""
+at = "2026-09-19T00:00:00Z"
+actor = "human"
+rev = 1

@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T16:09:06Z"
+digest = "afb98cc90df748c07e9538bafa3d72b6e52033099e628d738e3c2100f34ccc86"
+exit_code = 0
+inline = '''
+   Compiling libc v0.2.189
+   Compiling tracing-core v0.1.36
+   Compiling tracing v0.1.44
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling getrandom v0.3.4
+   Compiling getrandom v0.4.3
+   Compiling wait-timeout v0.2.1
+   Compiling rand_core v0.9.5
+   Compiling tempfile v3.27.0
+   Compiling console v0.16.6
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling rusty-fork v0.3.1
+   Compiling rand_chacha v0.9.0
+   Compiling insta v1.48.0
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling proptest v1.11.0
+    Finished `test` profile [unoptimized] target(s) in 5.68s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 760d51e7-4000-40bc-9826-0b5705c7ccc2 with nextest profile: default
+    Starting 1 test across 3 binaries (24 tests skipped)
+        PASS [   0.007s] gob-diagnostics::state_tracked state_tracked_refusal_exits_3_and_names_files
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 24 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-diagnostics -E 'test(=state_tracked_refusal_exits_3_and_names_files)'"
+size = 1142
+status = "measured"
+tests = ["state_tracked_refusal_exits_3_and_names_files"]
+at = "2026-10-10T16:09:06Z"
+actor = "Claude"
+rev = 1

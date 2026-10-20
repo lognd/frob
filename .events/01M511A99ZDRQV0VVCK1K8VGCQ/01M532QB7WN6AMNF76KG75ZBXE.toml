@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-plan/tests/ten_rules/main.rs", "crates/gob-symbols/src/source_model.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-plan/src/examples/runner.rs", "crates/gob-plan/src/exec/core/field.rs"]
+new = ["crates/gob-plan/tests/ten_rules/main.rs", "crates/gob-symbols/src/source_model.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-plan/src/examples/runner.rs", "crates/gob-plan/src/exec/core/field.rs", "crates/gob-plan/src/exec/core/kind.rs"]
+at = "2026-10-16T19:23:49Z"
+actor = "lognd"
+rev = 1

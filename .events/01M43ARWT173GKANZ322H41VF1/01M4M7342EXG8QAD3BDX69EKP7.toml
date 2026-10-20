@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-11T00:51:32Z"
+digest = "f9afceebe1a62f1eb06c12efdd3211c2631d0422f02c41f648fa1cd9686046c9"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4f477d35-74bb-494f-bc71-2195f4ee655d with nextest profile: default
+    Starting 1 test across 8 binaries (137 tests skipped)
+        PASS [   0.054s] gob-dev::ci_plan the_optional_node_job_never_gates_anything
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.055s] 1 test run: 1 passed, 137 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(=the_optional_node_job_never_gates_anything)'"
+size = 540
+status = "measured"
+tests = ["the_optional_node_job_never_gates_anything"]
+at = "2026-10-11T00:51:32Z"
+actor = "lognd"
+rev = 1

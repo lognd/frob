@@ -1,0 +1,23 @@
++++
+id = "01M2Y1SS1M8JA99KSJV34AZSW9"
+title = "frob ticket attach --remove PATH: first-class attachment removal with ledger record cleanup"
+type = "task"
+category = "done"
+outcome = "wont-fix"
+priority = "medium"
+reporter = "human"
+created = "2026-09-20T00:00:00Z"
+updated = "2026-09-20T00:00:02Z"
+aliases = ["T-5172"]
+labels = ["milestone:0.534.0", "component:tickets"]
+scope = ["src/frob/app/ticket_runner/_attach.py", "src/frob/tickets/_attach.py"]
+
+[[acceptance]]
+text = "given a ticket with one attachment, when frob ticket attach ID --remove PATH runs, then the file is gone, the record is gone, and the ledger commit is made"
+bound = false
++++
+
+Measured 2026-09-20: no verb removes an attachment; the owner asked for research attachments to be removed and the only path was a script over the attachments: frontmatter block plus git rm, i.e. a hand-edit of the ledger the ticket-ledger-gotchas lesson forbids. Add --remove PATH (and --remove-all) that deletes the file, drops the Attachment record, and auto-commits like attach does; refuse when the path is referenced by a done-report.
+
+## Drop reason
+- 2026-09-21: exact duplicate of T-5151 (filed twice, same title/scope/body: frob ticket attach --remove PATH) (absorbed by T-5151)

@@ -1,0 +1,41 @@
++++
+id = "01M38BCPARXJ0V6VXSJ8XWB8TN"
+title = "verify: ruff-format drift (warning-only nonzero exit) classified unmeasurable, watermark never advances"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-24T00:00:00Z"
+updated = "2026-09-24T00:00:02Z"
+aliases = ["T-6488"]
+labels = ["milestone:v0.534.0"]
+scope = ["src/frob/check/_python.py", "src/frob/verify/_worker.py", "tests/unit/verify/test_worker.py", "src/frob/process/parsers/ruff.py", "tests/unit/test_ruff_reformat_parser.py"]
++++
+
+Measured 2026-09-24 in ~/projects/crunk: `frob verify now` logs
+"`frob check --json` run had 1 tool result(s) (ruff-format) that exited
+nonzero with NO error-severity diagnostic explaining why -- error-finding
+identities are unmeasured" and then "the verification pass produced no
+parsable result -- watermark left untouched". The watermark has sat at
+5e4e46ae5688 since 2026-09-06 (46 commits behind); every land there now
+trips the standard-profile backpressure ceiling (depth 5) and blocks for
+the full 30-minute timeout.
+
+Root cause: `src/frob/check/_python.py::_ruff_format_result` returns
+exit_code=1 with WARNING-severity "needs formatting" diagnostics, while
+the T-2521 completeness check in the verify worker path only accepts an
+ERROR-severity diagnostic as the explanation of a nonzero exit. A real,
+fully explained result (N files would be reformatted) is therefore
+classified as a crashed tool stage, and the watermark can never advance
+while any queue tip has format drift -- which is exactly the case where
+verification should REPORT the drift as a finding, not refuse to measure.
+
+Fix (pick one, prefer the first): make the completeness check accept any
+diagnostic (warning included) attributable to the tool as explaining its
+nonzero exit; or emit the drift diagnostic at error severity when the
+exit is nonzero. Positive control: a fixture repo whose tip has one
+unformatted file must produce a measured verify pass with one
+ruff-format finding and an advanced watermark, not Unmeasurable.
+Also cover `frob check`'s own summary path so a format-only failure is
+never a silent zero.

@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "mirror.toml on the ticket branch: ULID to tracker key, last event, render hash"
+new = "Mirror map shards on the ticket branch: per-ticket cache of tracker identity, cursors and observed values"
+at = "2026-10-03T05:49:56Z"
+actor = "lognd"
+rev = 1

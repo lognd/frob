@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the stale tool_bind test, when it runs, then it passes", "Given the exc017 corpus, when mdtest_corpus runs, then it passes"]
+moved = []
+at = "2026-10-12T22:22:20Z"
+actor = "lognd"
+rev = 1

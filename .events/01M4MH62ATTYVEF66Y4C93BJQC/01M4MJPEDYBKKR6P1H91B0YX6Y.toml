@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T04:14:06Z"
+digest = "d7e838f9ff2afd9d7cf52fb97d962378a3b73bff86e24168a4249afba7daf59a"
+exit_code = 0
+inline = '''
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling trybuild v1.0.121
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized] target(s) in 14.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 813afeba-8e24-434e-b6d5-58016bfc2809 with nextest profile: default
+    Starting 2 tests across 6 binaries (76 tests skipped)
+        PASS [   0.007s] gob-check packages::tests::a_body_only_change_names_direct_dependents_and_an_api_change_the_closure
+        PASS [   0.008s] gob-check packages::tests::the_public_surface_ignores_bodies_and_sees_signatures_and_variants
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 2 tests run: 2 passed, 76 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(=packages::tests::a_body_only_change_names_direct_dependents_and_an_api_change_the_closure) + test(=packages::tests::the_public_surface_ignores_bodies_and_sees_signatures_and_variants)'"
+size = 1293
+status = "measured"
+tests = ["packages::tests::a_body_only_change_names_direct_dependents_and_an_api_change_the_closure", "packages::tests::the_public_surface_ignores_bodies_and_sees_signatures_and_variants"]
+at = "2026-10-11T04:14:06Z"
+actor = "lognd"
+rev = 1

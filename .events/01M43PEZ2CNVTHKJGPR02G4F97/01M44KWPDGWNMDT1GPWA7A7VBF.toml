@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "internal refactor: comment discovery owned by gob-languages, consumed by gob-directives and frob-obligations"
+at = "2026-10-04T23:27:23Z"
+actor = "lognd"
+rev = 1

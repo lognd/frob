@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 bump_patch_version pin rewriting; v2 lockstep bump is built in crates/frob-release (release cut)."
+at = "2026-10-04T21:01:53Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-rules/src/layers/**", "crates/crunk-rules/src/org/**", "crates/crunk-rules/tests/org*.rs", "crates/crunk-rules/tests/layers*.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/src/sheets.rs", "crates/crunk-rules/tests/rules.rs", "docs/crunk/rules/README.md", "changelog.d/01M43ATBPPR5QCY0CSPPTNEDQ0*", "crates/crunk-rules/src/rules/layer001*", "crates/crunk-rules/src/rules/org00*", "crates/crunk-check/tests/waive001.rs"]
+new = ["crates/crunk-rules/src/layers/**", "crates/crunk-rules/src/org/**", "crates/crunk-rules/tests/org*.rs", "crates/crunk-rules/tests/layers*.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/src/sheets.rs", "crates/crunk-rules/tests/rules.rs", "docs/crunk/rules/README.md", "changelog.d/01M43ATBPPR5QCY0CSPPTNEDQ0*", "crates/crunk-rules/src/rules/layer001*", "crates/crunk-rules/src/rules/org00*", "crates/crunk-check/tests/waive001.rs", "crates/crunk-check/tests/color001.rs"]
+at = "2026-10-09T17:23:34Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,9 @@
+kind = "create"
+title = "probe-do-not-keep"
+type = "chore"
+category = "todo"
+priority = "medium"
+idempotency_key = "probe-x"
+at = "2026-10-05T02:34:43Z"
+actor = "lognd"
+rev = 1

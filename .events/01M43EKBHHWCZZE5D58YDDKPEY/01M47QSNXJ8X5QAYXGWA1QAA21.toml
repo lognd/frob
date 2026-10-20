@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by ~BVCRKXA (D97): the shared finding-record and sibling-document code moves into gob-check::sibling for all three products, not only crunk-check and grimble-check."
+at = "2026-10-06T04:33:22Z"
+actor = "lognd"
+rev = 1

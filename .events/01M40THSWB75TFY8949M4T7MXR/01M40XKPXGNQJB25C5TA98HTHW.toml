@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-git/**", "crates/gob-lock/**", "crates/frob-ack/**", "crates/gob-text/**", "crates/frob-ledger/**", "crates/gob-walk/**", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/Cargo.toml", "changelog.d/01M40THSWB75TFY8949M4T7MXR.fixed.md", "crates/frob-obligations/tests/repo.rs"]
+new = ["crates/gob-git/**", "crates/gob-lock/**", "crates/frob-ack/**", "crates/gob-text/**", "crates/frob-ledger/**", "crates/gob-walk/**", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/Cargo.toml", "changelog.d/01M40THSWB75TFY8949M4T7MXR.fixed.md", "crates/frob-obligations/tests/repo.rs", "docs/design/git-io.md"]
+at = "2026-10-03T13:00:17Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~KHCKTS3: the secrets hook blocking text that mentions import.meta.env is a case for the frob hook corpus (PT-3)."
+at = "2026-10-04T21:08:25Z"
+actor = "lognd"
+rev = 1

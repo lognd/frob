@@ -1,0 +1,13 @@
+kind = "evidence"
+at = "2026-09-19T00:00:01Z"
+actor = "import"
+rev = 1
+provider = "command"
+ref = 'bash -c "set -x; grep -q \"~/.claude/refs/frob.md:7-10\" tickets/T-4702/done-report.md && grep -q \"Replacement:\" tickets/T-4702/done-report.md && ! git diff --name-only dev...HEAD -- \"**/refs/frob.md\" | grep -q . && echo OK-acceptance3"'
+digest = "a74fa0920442"
+status = "measured"
+captured_at = "2026-09-19T00:00:01Z"
+accepts = [3]
+passed = true
+exit_code = 0
+size = 0

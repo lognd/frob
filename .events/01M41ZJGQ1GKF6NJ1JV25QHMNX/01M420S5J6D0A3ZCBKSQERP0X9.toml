@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T23:14:56Z"
+digest = "f5c4d17c565b1ac6014c6622bee5b48fb50d0626d7c5955635c23cd5da865f1e"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f752589d-dad8-452f-aa6b-f43c06f563b0 with nextest profile: default
+    Starting 12 tests across 2 binaries
+        PASS [   0.014s] gob-dev::ci_parity ci_yml_installs_the_windows_target
+        PASS [   0.016s] gob-dev::ci_parity ci_yml_installs_every_linux_step_prerequisite
+        PASS [   0.018s] frob-release::dev_workflow every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permissions
+        PASS [   0.022s] gob-dev::ci_parity a_check_missing_from_cargo_dev_ci_fails_naming_it
+        PASS [   0.021s] gob-dev::ci_parity dev_alias_builds_into_a_separate_target_dir
+        PASS [   0.024s] gob-dev::ci_parity ci_yml_runs_exactly_the_cargo_dev_ci_steps
+        PASS [   0.024s] gob-dev::ci_parity a_missing_prerequisite_install_fails_naming_it
+        PASS [   0.026s] frob-release::dev_workflow both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha
+        PASS [   0.024s] frob-release::dev_workflow nothing_is_published_to_pypi_or_crates_io
+        PASS [   0.030s] frob-release::dev_workflow dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job
+        PASS [   0.035s] gob-dev::ci_parity a_raw_or_dropped_check_in_ci_yml_fails_naming_it
+        PASS [   0.038s] frob-release::dev_workflow assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.042s] 12 tests run: 12 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release --test dev_workflow -p gob-dev --test ci_parity"
+size = 1663
+status = "measured"
+tests = ["ci_yml_installs_the_windows_target", "ci_yml_installs_every_linux_step_prerequisite", "a_check_missing_from_cargo_dev_ci_fails_naming_it", "dev_alias_builds_into_a_separate_target_dir", "ci_yml_runs_exactly_the_cargo_dev_ci_steps", "a_missing_prerequisite_install_fails_naming_it", "a_raw_or_dropped_check_in_ci_yml_fails_naming_it", "every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permissions", "both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha", "nothing_is_published_to_pypi_or_crates_io", "dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job", "assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones"]
+at = "2026-10-03T23:14:56Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,12 @@
+kind = "create"
+title = "One corrupt lease file blocks lease list and frob work for the whole clone"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+scope = ["crates/frob-lease/**"]
+acceptance = ["Given a corrupt lease file, when lease list and work run, then they proceed and report the corrupt file"]
+body = "Reproduced. Skip and report a corrupt lease (doctor can quarantine it); never let one bad file block every verb. Evidence and repro: notes/review/v1-gap/D-incidents.md (probe list)."
+at = "2026-10-04T04:59:49Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the workspace, when the products test runs, then the binary set, dist set, archive names and PyPI product list each contain exactly frob, grimble and crunk", "Given a dev build of the release workflow, when it runs, then it produces one crunk archive per target with a .sha256 and nothing else new", "Given the wheel set, when smoke runs from the directory only, then crunk installs alone and `frob` pulls crunk at the same version"]
+new = ["Given the workspace, when the products test runs, then the binary set, dist set, archive names and PyPI product list each contain exactly frob, grimble and crunk", "Given a dev build of the release workflow, when it runs, then it produces one crunk archive per target with a .sha256 and nothing else new", "Given the wheel set, when smoke runs from the directory only, then crunk installs alone, frob does not yet depend on crunk, and the crunk wheels are excluded from the PyPI upload until the Python crunk is retired"]
+moved = [1, 2, 0]
+at = "2026-10-04T13:26:54Z"
+actor = "lognd"
+rev = 1

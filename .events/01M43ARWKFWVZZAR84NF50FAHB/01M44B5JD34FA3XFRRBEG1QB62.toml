@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T20:54:57Z"
+digest = "543aa37c360327727f42b6c6853ea288126450b444a1ec97a2d1db37f0160dbe"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 70e1cee5-d4f9-49f7-b9d7-9b8800bfb742 with nextest profile: default
+    Starting 1 test across 1 binary (11 tests skipped)
+        PASS [   0.362s] frob-check::sibling crunk_findings_are_merged_under_crunks_namespace
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.363s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-check --test sibling -E 'test(crunk_findings_are_merged_under_crunks_namespace)'"
+size = 557
+status = "measured"
+tests = ["crunk_findings_are_merged_under_crunks_namespace"]
+at = "2026-10-04T20:54:57Z"
+actor = "lognd"
+rev = 1

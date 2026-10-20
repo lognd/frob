@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4CTDYG696JWM20AZPYFAH0T"
+text = "drain wave: coordinator-assigned"
+at = "2026-10-10T14:59:13Z"
+actor = "Claude"
+rev = 1

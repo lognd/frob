@@ -1,0 +1,13 @@
+kind = "create"
+title = "playbook: a failure-injection repro test must assert every field of the response, not only the test-plan's named field"
+type = "docs"
+category = "triage"
+priority = "low"
+parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
+aliases = ["T-4193"]
+labels = ["milestone:1.1.0", "v1-cluster:F1"]
+scope = ["docs/modules"]
+body = "Consumer F-307/H3-6 (T-4109): a process rule, not a code rule -- a test-plan row written as 'reports db and redis' was satisfied literally while a roll-up field stayed constant. Extends the prior audit's failing-dependency rule to cover every field of the response, not just the one named. Not fixture-testable as code; document the convention."
+at = "2026-09-07T00:00:00Z"
+actor = "agent"
+rev = 1

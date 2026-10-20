@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Node runtime-mounted artifact set and relative-import resolution; grmb node model."
+at = "2026-10-04T21:02:28Z"
+actor = "lognd"
+rev = 1

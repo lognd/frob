@@ -1,0 +1,160 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T00:32:59Z"
+digest = "b5163ef439b6fc8b3b7ce757bfbe57627d4eeb8f1cdd7d21547e319d46a34755"
+exit_code = 0
+inline = '''
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: no helper has disk room for this repository's recorded footprint (about 211.2 GiB; the roomiest, quasar, can free 202.7 GiB); running there anyway. The record may be stale: `goway gc --repo 34f5a9e78cc30b56` forgets it, `--ignore-footprint` skips the check
+goway: note: picked quasar (load 0.03 on 12 cores, 0 goway jobs)
+goway: note: tool versions differ across your hosts: clang 21.1.8 here (major: 10 vs 21) (cached by goway doctor 8h ago; builds may behave differently here)
+goway: note: synced 14276 files (48 sent, 17018140 bytes, 4 deleted)
+goway: note: quasar has 7.0 GiB free: running with 1 of 12 jobs (CARGO_BUILD_JOBS=1, NEXTEST_TEST_THREADS=1, MOLD_JOBS=1, GOWAY_LINK_THREADS=1, estimated peak 6.4 GiB); even this may not fit, it is the lowest there is
+goway: info: running on quasar (x86_64, Quasar) at 192.168.4.61 [cores>=8 (12 cores)]: cargo nextest run --profile ci -p frob-worktree -p frob-land
+   Compiling gob-exec v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-exec)
+   Compiling gob-git v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-git)
+   Compiling gob-walk v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-walk)
+   Compiling gob-cache v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-cache)
+   Compiling frob-ledger v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-cli)
+   Compiling frob-pm v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-pm)
+   Compiling similar v2.7.0
+   Compiling frob-release v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-release)
+   Compiling frob-lease v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-lease)
+   Compiling gob-ir v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-directives)
+   Compiling gob-lock v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-lock)
+   Compiling frob-evidence v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-tests)
+   Compiling frob-ack v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-ack)
+   Compiling gob-check v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/gob-check)
+   Compiling frob-obligations v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-check)
+   Compiling frob-land v0.532.0 (~/.cache/goway/cache/34f5a9e78cc30b56/tree-0/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.78s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e32c1dbf-2a94-4bf5-bded-8cb88dd5f680 with nextest profile: ci
+    Starting 105 tests across 5 binaries
+        PASS [   0.004s] (  1/105) frob-land base_ci::tests::a_failing_code_job_refuses_naming_the_run_url
+        PASS [   0.004s] (  2/105) frob-land base_ci::tests::a_publish_only_failure_does_not_block
+        PASS [   0.004s] (  3/105) frob-land base_ci::tests::a_required_list_narrows_the_gate_to_the_named_jobs
+        PASS [   0.004s] (  4/105) frob-land base_ci::tests::an_override_lets_a_red_base_through_with_an_audit_note
+        PASS [   0.004s] (  5/105) frob-land base_ci::tests::unknown_is_unresolved_by_default_and_refuses_when_configured
+        PASS [   0.003s] (  6/105) frob-land base_ci::tests::wildcards_match_case_insensitively
+        PASS [   0.004s] (  7/105) frob-land land::tests::a_detached_worktree_vanishes_at_once_and_its_leftover_is_swept
+        PASS [   0.004s] (  8/105) frob-land land::tests::is_inside_is_true_for_the_dir_and_its_descendants_only
+        PASS [   0.158s] (  9/105) frob-land ratchet::count_tests::a_config_change_invalidates_the_cached_base_set
+        PASS [   0.004s] ( 10/105) frob-land ratchet::count_tests::a_new_engine_invalidates_the_cached_base_set
+        PASS [   0.003s] ( 11/105) frob-land ratchet::count_tests::counts_are_per_fingerprint_multiplicities
+        PASS [   0.005s] ( 12/105) frob-land ratchet::tests::a_checkout_without_a_target_shares_the_land_target_and_one_with_keeps_its_own
+        PASS [   0.003s] ( 13/105) frob-land ratchet::tests::the_base_checkout_path_is_stable_and_outside_the_gc_swept_prefix
+        PASS [   0.649s] ( 14/105) frob-land::land a_base_commit_changing_code_misses_the_cached_base_set
+        PASS [   0.286s] ( 15/105) frob-land::land a_check_in_a_fresh_worktree_hits_the_cache_the_primary_warmed
+        PASS [   0.188s] ( 16/105) frob-land::land a_configured_block_on_unknown_refuses_an_unreadable_base_ci
+        PASS [   1.294s] ( 17/105) frob-land::land a_conflict_confined_to_cargo_lock_is_regenerated_at_land
+        PASS [   0.159s] ( 18/105) frob-land::land a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts
+        PASS [   0.204s] ( 19/105) frob-land::land a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses
+        PASS [   0.187s] ( 20/105) frob-land::land a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree
+        PASS [   0.666s] ( 21/105) frob-land::land a_finding_already_on_the_base_lands_and_is_reported_pre_existing
+        PASS [   0.464s] ( 22/105) frob-land::land a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path
+        PASS [   0.567s] ( 23/105) frob-land::land a_new_finding_refuses_naming_only_the_new_one
+        PASS [   0.899s] ( 24/105) frob-land::land a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary
+        PASS [   0.607s] ( 25/105) frob-land::land a_publish_only_failure_on_the_base_does_not_block_the_land
+        PASS [   0.171s] ( 26/105) frob-land::land a_red_base_ci_refuses_naming_the_run_and_moves_nothing
+        PASS [   0.583s] ( 27/105) frob-land::land a_release_finding_the_ticket_introduces_refuses
+        PASS [   0.653s] ( 28/105) frob-land::land a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket
+        PASS [   0.563s] ( 29/105) frob-land::land a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one
+        PASS [   0.600s] ( 30/105) frob-land::land a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check
+        PASS [   0.968s] ( 31/105) frob-land::land a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands
+        PASS [   0.204s] ( 32/105) frob-land::land an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap
+        PASS [   0.668s] ( 33/105) frob-land::land an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since
+        PASS [   0.665s] ( 34/105) frob-land::land an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket
+        PASS [   0.624s] ( 35/105) frob-land::land an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing
+        PASS [   0.242s] ( 36/105) frob-land::land an_unleased_ticket_and_another_worktree_are_refused
+        PASS [   0.643s] ( 37/105) frob-land::land an_unreadable_base_ci_is_reported_unresolved_and_the_default_policy_lands
+        PASS [   0.623s] ( 38/105) frob-land::land base_commits_differing_only_under_tickets_share_the_cached_base_set
+        PASS [   0.154s] ( 39/105) frob-land::land conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean
+        PASS [   0.136s] ( 40/105) frob-land::land dirty_worktree_refuses_and_lists_paths
+        PASS [   0.624s] ( 41/105) frob-land::land dry_run_plan_is_deterministic_and_changes_nothing
+        PASS [   0.573s] ( 42/105) frob-land::land dry_run_treats_a_base_that_moved_only_by_ledger_commits_as_merged
+        PASS [   0.661s] ( 43/105) frob-land::land fixing_a_base_finding_is_reported_resolved
+        PASS [   0.672s] ( 44/105) frob-land::land happy_path_lands_closes_and_cleans_up
+        PASS [   0.653s] ( 45/105) frob-land::land land_runs_the_throttled_gc_pass_after_removing_the_worktree
+        PASS [   0.642s] ( 46/105) frob-land::land landing_from_inside_the_worktree_defaults_to_its_ticket
+        PASS [   0.698s] ( 47/105) frob-land::land lock_contention_refuses_retryably_naming_the_holder
+        PASS [   0.705s] ( 48/105) frob-land::land missing_evidence_refuses_unless_bypassed_with_a_reason
+        PASS [   0.762s] ( 49/105) frob-land::land no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event
+        PASS [   0.564s] ( 50/105) frob-land::land red_check_lists_only_blocking_findings_and_counts_the_rest
+        PASS [   0.596s] ( 51/105) frob-land::land red_check_refuses_with_exit_3_and_moves_nothing
+        PASS [   0.642s] ( 52/105) frob-land::land require_base_green_false_skips_the_ci_read_entirely
+        PASS [   0.652s] ( 53/105) frob-land::land the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it
+        PASS [   1.024s] ( 54/105) frob-land::land two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings
+        PASS [   0.587s] ( 55/105) frob-land::land wait_gives_up_naming_the_attempts_when_the_base_keeps_moving
+        PASS [   0.633s] ( 56/105) frob-land::land wait_retries_a_base_that_moved_once_with_ledger_only_commits
+        PASS [   0.769s] ( 57/105) frob-land::land wait_retries_a_base_that_moved_with_a_code_change
+        PASS [   0.858s] ( 58/105) frob-land::land without_wait_a_moved_base_is_not_retried
+        PASS [   0.003s] ( 59/105) frob-worktree cycle_gate::tests::no_overdue_cycle_means_no_refusal
+        PASS [   0.003s] ( 60/105) frob-worktree cycle_gate::tests::not_in_cycle_hint_names_assign_and_unplanned
+        PASS [   0.019s] ( 61/105) frob-worktree::gc a_symlinked_target_dir_is_not_collected
+        PASS [   0.046s] ( 62/105) frob-worktree::gc abandoned_land_base_checkouts_are_swept_and_recent_ones_left
+        PASS [   0.010s] ( 63/105) frob-worktree::gc cache_budget_evicts_least_recent_and_only_allowlisted_files
+        PASS [   0.010s] ( 64/105) frob-worktree::gc cargo_adapter_groups_a_compilation_unit_and_skips_kept_binaries
+        PASS [   0.080s] ( 65/105) frob-worktree::gc clean_closed_ticket_worktree_is_removed_and_a_merged_branch_deleted
+        PASS [   0.050s] ( 66/105) frob-worktree::gc closed_ticket_worktree_with_uncommitted_changes_is_kept_and_reported
+        PASS [   0.010s] ( 67/105) frob-worktree::gc disabled_gc_skips_auto_and_a_dry_run_changes_nothing
+        PASS [   0.005s] ( 68/105) frob-worktree::gc jail_admits_by_components_not_string_prefix_and_refuses_roots_and_dotdot
+        PASS [   0.005s] ( 69/105) frob-worktree::gc jail_refuses_symlinks_out_of_the_tree_and_never_deletes_their_target
+        PASS [   0.009s] ( 70/105) frob-worktree::gc only_old_unreferenced_digest_named_blobs_are_collected
+        PASS [   0.075s] ( 71/105) frob-worktree::gc open_ticket_with_nothing_unsaved_is_removed_only_when_its_lease_is_not_live
+        PASS [   0.093s] ( 72/105) frob-worktree::gc open_ticket_with_unpushed_commits_is_never_removed
+        PASS [   0.004s] ( 73/105) frob-worktree::gc plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build
+        PASS [   0.004s] ( 74/105) frob-worktree::gc plan_never_evicts_the_latest_build_even_over_budget
+        PASS [   0.004s] ( 75/105) frob-worktree::gc plan_removes_stale_incremental_regardless_of_budget_and_keeps_fresh_incremental
+        PASS [   0.010s] ( 76/105) frob-worktree::gc shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_else
+        PASS [   0.020s] ( 77/105) frob-worktree::gc stale_incremental_directories_are_removed_and_fresh_ones_kept
+        PASS [   0.020s] ( 78/105) frob-worktree::gc target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries
+        PASS [   0.004s] ( 79/105) frob-worktree::gc the_automatic_pass_only_reports_on_windows_and_nothing_else_does
+        PASS [   0.032s] ( 80/105) frob-worktree::gc throttle_is_honored_and_the_guard_forces_a_pass
+        PASS [   0.017s] ( 81/105) frob-worktree::gc unreadable_open_ticket_evidence_removes_no_blob_and_warns
+        PASS [   0.048s] ( 82/105) frob-worktree::gc unregistered_removing_leftovers_are_swept_and_registered_ones_kept
+        PASS [   0.004s] ( 83/105) frob-worktree::gc windows_verbatim_dotdot_was_outside_not_admitted_and_literal_dotdot_is_refused
+        PASS [   0.058s] ( 84/105) frob-worktree::gc worktrees_outside_the_frob_parent_or_unknown_to_the_ledger_are_kept
+        PASS [   0.204s] ( 85/105) frob-worktree::work a_second_expedite_exits_3_while_one_is_running
+        PASS [   0.263s] ( 86/105) frob-worktree::work a_stale_in_progress_ticket_does_not_count_and_is_named
+        PASS [   0.148s] ( 87/105) frob-worktree::work an_overdue_active_cycle_refuses_standard_work_but_not_expedite
+        PASS [   0.175s] ( 88/105) frob-worktree::work another_holder_is_refused_and_can_steal_with_a_reason
+        PASS [   0.173s] ( 89/105) frob-worktree::work cli_work_past_the_repository_limit_exits_3_with_the_wip_code
+        PASS [   0.173s] ( 90/105) frob-worktree::work cli_work_twice_reports_already_and_other_actor_gets_exit_3
+        PASS [   0.867s] ( 91/105) frob-worktree::work concurrent_work_for_the_last_wip_slot_grants_exactly_one
+        PASS [   0.133s] ( 92/105) frob-worktree::work concurrent_work_on_overlapping_tickets_grants_exactly_one
+        PASS [   0.136s] ( 93/105) frob-worktree::work doable_hides_tickets_overlapping_a_live_lease
+        PASS [   0.309s] ( 94/105) frob-worktree::work expedite_is_granted_as_the_single_exception_when_the_limit_is_reached
+        PASS [   0.328s] ( 95/105) frob-worktree::work limit_zero_is_off_and_reentry_is_not_a_new_slot
+        PASS [   0.139s] ( 96/105) frob-worktree::work start_leases_the_current_checkout_and_requeue_releases
+        PASS [   0.255s] ( 97/105) frob-worktree::work the_gate_and_pm013_count_the_same_holders
+        PASS [   0.311s] ( 98/105) frob-worktree::work the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it
+        PASS [   0.139s] ( 99/105) frob-worktree::work unworkable_tickets_are_refused
+        PASS [   0.228s] (100/105) frob-worktree::work work_creates_worktree_and_is_idempotent_for_the_holder
+        PASS [   0.146s] (101/105) frob-worktree::work work_events_carry_no_absolute_path
+        PASS [   0.210s] (102/105) frob-worktree::work work_from_its_own_worktree_refuses_when_an_overlapping_lease_was_taken_since
+        PASS [   0.157s] (103/105) frob-worktree::work work_from_its_own_worktree_releases_an_expired_in_progress_ticket
+        PASS [   0.257s] (104/105) frob-worktree::work work_refuses_past_the_repository_limit_naming_both_holders
+        PASS [   0.115s] (105/105) frob-worktree::work worktree_dir_knob_moves_the_worktree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  31.709s] 105 tests run: 105 passed, 0 skipped
+goway: done: exit 0 on quasar in 122.2s
+'''
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo nextest run --profile ci -p frob-worktree -p frob-land"
+size = 15801
+status = "measured"
+at = "2026-10-10T00:32:59Z"
+actor = "lognd"
+rev = 1

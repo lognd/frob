@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T14:00:39Z"
+digest = "883ab93f8b508a3cf25d6aa75209268d01d30feebc0b87415e76b9f5d3bfa125"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 54.42s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fbd9ba0e-f17b-4e25-8a47-75cccb253fe2 with nextest profile: default
+    Starting 1 test across 6 binaries (33 tests skipped)
+        PASS [   0.005s] gob-packs::std_pack std_lists_as_builtin_with_a_digest_and_every_tier0_family_as_an_exception
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 33 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs -E test(std_lists_as_builtin)"
+size = 639
+status = "measured"
+test_count = 1
+tests_digest = "106aa113bdeb89f50892182051dd75b631c3fe6cb4c19e1eded9d510783c74e5"
+at = "2026-10-15T14:00:39Z"
+actor = "lognd"
+rev = 1

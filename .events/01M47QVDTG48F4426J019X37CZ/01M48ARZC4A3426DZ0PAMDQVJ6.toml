@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/**", ".github/workflows/ci.yml", "deny.toml", "typos.toml", "frob.toml", "Cargo.toml", "crates/*/Cargo.toml"]
+new = ["crates/gob-dev/**", ".github/workflows/ci.yml", "deny.toml", "typos.toml", "frob.toml", "Cargo.toml"]
+reason = "dep removals tracked in ~MKG678C; ~2DRPX3B holds the manifests"
+at = "2026-10-06T10:05:02Z"
+actor = "lognd"
+rev = 1

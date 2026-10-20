@@ -1,0 +1,13 @@
+kind = "evidence"
+at = "2026-09-11T00:00:01Z"
+actor = "import"
+rev = 1
+provider = "command"
+ref = "/tmp/claude-1000/-home-logan-projects-frob/a42444f0-d505-4990-88ee-806296379a83/scratchpad/t4420_evidence_run.sh"
+digest = "7440b8a5c31c"
+status = "measured"
+captured_at = "2026-09-11T00:00:01Z"
+accepts = [1]
+passed = true
+exit_code = 0
+size = 0

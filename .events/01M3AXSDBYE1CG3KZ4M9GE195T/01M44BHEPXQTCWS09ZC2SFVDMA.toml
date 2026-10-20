@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: the v1 a11y_findings repo-root plumbing (_locate_statement_page) has no v2 counterpart; crunk-web (D89) is written fresh."
+at = "2026-10-04T21:01:26Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "transition"
+from = "planned"
+to = "closed"
+ended = "2026-10-03"
+at = "2026-10-03T13:32:45Z"
+actor = "lognd"
+rev = 1

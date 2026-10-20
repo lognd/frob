@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-22: VET012 registration and fetch_url edge landed inside T-5138 (absorbed by T-5138)"
+at = "2026-09-21T00:00:01Z"
+actor = "import"
+rev = 1

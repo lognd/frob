@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:51:44Z"
+digest = "1eaf96535db8424ae838aca9e89c2417d861fc2050f76ecd07cae0bb574f42cf"
+exit_code = 0
+inline = '''
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized] target(s) in 3.04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3089e454-fb38-4097-b815-1bf0e13697a8 with nextest profile: default
+    Starting 1 test across 6 binaries (74 tests skipped)
+        PASS [   0.008s] frob-evidence provider::tests::a_rootdir_below_the_repository_prefixes_the_node_ids
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 74 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(=provider::tests::a_rootdir_below_the_repository_prefixes_the_node_ids)'"
+size = 632
+status = "measured"
+tests = ["provider::tests::a_rootdir_below_the_repository_prefixes_the_node_ids"]
+at = "2026-10-10T20:51:44Z"
+actor = "Claude"
+rev = 1

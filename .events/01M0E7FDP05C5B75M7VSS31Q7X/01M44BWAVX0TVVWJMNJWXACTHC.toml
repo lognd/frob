@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: documents the v1 waiver-liveness classifier in docs/modules."
+at = "2026-10-04T21:07:23Z"
+actor = "lognd"
+rev = 1

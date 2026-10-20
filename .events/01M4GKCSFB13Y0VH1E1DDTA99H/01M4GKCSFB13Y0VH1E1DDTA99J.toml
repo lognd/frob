@@ -1,0 +1,13 @@
+kind = "create"
+title = "Generated report directories (coverage HTML, playwright-report, htmlcov) are walked by crunk and frob rules; exclude them by default"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["adoption:logand-app"]
+scope = ["crates/gob-walk/**", "crates/gob-config/**", "crates/crunk-check/**", "changelog.d/**"]
+acceptance = ["Given a vitest HTML coverage report at the repository root, when frob check runs, then crunk and frob rules skip it by default (a documented default exclude list), and config can opt back in"]
+body = "logand.app-v2 F-555: 122 COLOR001 findings blocked land."
+at = "2026-10-09T15:09:35Z"
+actor = "lognd"
+rev = 1

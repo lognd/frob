@@ -1,0 +1,21 @@
+kind = "cut"
+version = "0.532.0"
+commit = "8612ab1421043826d1733590270df49b8a3ae83b"
+at = "2026-10-05T05:50:35Z"
+actor = "lognd"
+rev = 1
+
+[[tags]]
+name = "frob-v0.532.0"
+object = "ac96feb25721662808f58a1472aaa3b755906374"
+commit = "8612ab1421043826d1733590270df49b8a3ae83b"
+
+[[tags]]
+name = "grimble-v0.532.0"
+object = "2e807e38c8bc167421e56ec6a62a9debf241ce37"
+commit = "8612ab1421043826d1733590270df49b8a3ae83b"
+
+[[tags]]
+name = "crunk-v0.532.0"
+object = "707858aab0125e5cdf8d2f4440cf47abfbe77d7c"
+commit = "8612ab1421043826d1733590270df49b8a3ae83b"

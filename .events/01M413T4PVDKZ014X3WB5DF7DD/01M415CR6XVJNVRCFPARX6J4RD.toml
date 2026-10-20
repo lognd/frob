@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T15:16:17Z"
+digest = "817f8631f39dcfa2b9accc5aa2e068e1a691412337d654c1015e29a40fb80931"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+────────────
+ Nextest run ID 6041eb27-6c2e-4a0f-9f24-322dc6814f79 with nextest profile: default
+    Starting 1 test across 141 binaries (1186 tests skipped)
+        PASS [   0.011s] (1/1) frob-release::changelog a_hand_written_changelog_is_adopted_above_its_first_version_heading
+────────────
+     Summary [   0.014s] 1 test run: 1 passed, 1186 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "a_hand_written_changelog_is_adopted_above_its_first_version_heading"
+size = 474
+status = "measured"
+tests = ["a_hand_written_changelog_is_adopted_above_its_first_version_heading"]
+at = "2026-10-03T15:16:17Z"
+actor = "lognd"
+rev = 1

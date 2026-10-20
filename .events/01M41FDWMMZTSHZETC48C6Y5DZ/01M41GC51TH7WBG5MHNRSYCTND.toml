@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T18:28:12Z"
+digest = "793f71fa0d7a880957a9f72e4e0382063b9e99afcc48913797a1be09bf8c17b9"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bada2c05-2a24-4bd7-b4ff-b9b698a5f59f with nextest profile: default
+    Starting 4 tests across 1 binary
+        PASS [   0.049s] frob-lease::overlap_prop literal_vs_literal_unchanged
+        PASS [   0.308s] frob-lease::overlap_prop wild_overlap_is_symmetric
+        PASS [   0.722s] frob-lease::overlap_prop literal_vs_wild_unchanged
+        PASS [   1.349s] frob-lease::overlap_prop disjoint_wild_pairs_share_no_path
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.351s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease --test overlap_prop"
+size = 760
+status = "measured"
+tests = ["literal_vs_literal_unchanged", "wild_overlap_is_symmetric", "literal_vs_wild_unchanged", "disjoint_wild_pairs_share_no_path"]
+at = "2026-10-03T18:28:12Z"
+actor = "lognd"
+rev = 1

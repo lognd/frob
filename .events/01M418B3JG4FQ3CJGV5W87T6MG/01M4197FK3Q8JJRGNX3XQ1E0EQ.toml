@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "duplicate"
+reason = "duplicate of ~7HWFTBP, which now does this work"
+at = "2026-10-03T16:23:19Z"
+actor = "lognd"
+rev = 1

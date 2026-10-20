@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the GRL rules, when the std pack builds, then findings equal the removed Rust rules on the corpus", "Given the conformance test, when it runs, then compiled and plan findings are byte identical"]
+new = ["Given a string value, when a GRL rule tests it with is integer, then signed whole numbers hold and keywords such as auto, decimals and units do not"]
+moved = [0, 0]
+at = "2026-10-16T21:49:52Z"
+actor = "lognd"
+rev = 1

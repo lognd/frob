@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/SVTM10F; scope: changelog.d/**, crates/frob-worktree/src/gc/pass.rs, crates/frob-worktree/src/gc/mod.rs, crates/frob-worktree/tests/gc.rs, crates/frob-worktree/src/gc/removing.rs; ttl 7200s"
+at = "2026-10-10T00:30:45Z"
+actor = "lognd"
+rev = 1

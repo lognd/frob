@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "live-token criterion cannot run without a GitHub token here; tracked by ~9XNT7VK; base CI red on unrelated jobs, user pre-authorized"
+at = "2026-10-19T13:15:30Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,44 @@
+kind = "evidence"
+captured_at = "2026-10-16T10:15:41Z"
+digest = "d024cfde60f30bb2e9155d279cb6822fe05c2e7655d5dbbd31b0629329a9cd09"
+exit_code = 0
+inline = """
+
+running 22 tests
+test train_check::tests::fault_is_not_red ... ok
+test candidate::tests::overlapping_scopes_go_to_separate_trains ... ok
+test train_check::tests::disjoint_member_rules_are_reused ... ok
+test train_check::tests::own_rule_red_member_costs_one_union_run ... ok
+test train_check::tests::one_union_run_covers_all_members ... ok
+test train_check::tests::member_red_on_own_rules_is_a_suspect ... ok
+test train_check::tests::path_attributed_union_finding_is_a_suspect ... ok
+test train_check::tests::touched_cone_reruns_member_rules ... ok
+test train_check::tests::red_union_attributes_by_path ... ok
+test train_state::tests::batch_size_is_bounded_and_defaults ... ok
+test train_state::tests::invalid_run_is_refused_and_unknown_schema_discarded ... ok
+test train_check::tests::red_member_rules_skip_the_union_run ... ok
+test train_state::tests::resume_trusts_git_over_the_stored_phase ... ok
+test train_state::tests::queue_entries_are_independent_files_and_results_prune ... ok
+test train_state::tests::crashed_driver_is_reported_stale_and_resumable ... ok
+test train_state::tests::written_run_round_trips_and_matches_schema ... ok
+test train_close::tests::a_member_that_cannot_close_stays_pending_in_the_train_state ... ok
+test train_close::tests::moved_base_without_wait_is_stale ... ok
+test train_close::tests::ledger_only_base_move_is_folded_when_waiting ... ok
+test train_close::tests::green_batch_lands_and_closes_in_one_ledger_commit ... ok
+test train_close::tests::resume_after_the_fast_forward_closes_only_the_remaining_members ... ok
+test train_close::tests::code_move_gives_up_when_the_budget_is_spent ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 36 filtered out; finished in 0.19s
+
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.70s
+     Running unittests src/lib.rs (target/debug/deps/frob_land-0c9d1bb7546f735f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-land --lib train"
+size = 1943
+status = "measured"
+at = "2026-10-16T10:15:41Z"
+actor = "lognd"
+rev = 1

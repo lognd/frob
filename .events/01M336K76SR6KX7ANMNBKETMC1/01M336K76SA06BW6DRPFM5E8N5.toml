@@ -1,0 +1,18 @@
+kind = "create"
+title = "ORM N+1 and pooling rules (Python/TS) + DB pool config, cache-layer, migration-TTL scan"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M2Y1SS0WSW1HNM4S14V8BH51"
+aliases = ["T-5337"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/sql/_orm_rules.py", "tests/fixtures/sql/**", "design/frob.strata", "docs/modules/sql.md"]
+body = "AST lint for lazy-relationship access inside a loop with no joinedload/selectinload (SQLAlchemy), no select_related/prefetch_related (Django), no include (Prisma); .all() without .limit() on a request path; filter-after-fetch; missing-index cross-check against migration files' declared indexes vs ORM model FK/WHERE/ORDER columns; missing transaction wrapper around multi-statement writes; missing connection-pool config (PgBouncer/SQLAlchemy pool) and no server-cache-layer-for-repeated-expensive-queries -- this leaf is the canonical owner of DB-pool-config and the migration-schema-scan helper; T-5147-6 (WEBPERF) blocks on this leaf for pool config instead of reimplementing it, and T-5145-3 (COMPLY GDPR storage-limitation) blocks on this leaf's migration-scan helper for the PII-retention-TTL-column check instead of building a second migration parser. Fixture per rule id."
+at = "2026-09-22T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K76PVKPGD3ZGMGFC5MF4"

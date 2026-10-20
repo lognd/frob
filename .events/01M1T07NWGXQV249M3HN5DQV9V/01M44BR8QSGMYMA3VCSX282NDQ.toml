@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Built: the subject-count primitive this epic asks for is `must_measure` (crates/frob-check, gob-ir program.rs); the remaining gap (explicit declaration on every rule) is PT-19 and its children are imported individually."
+at = "2026-10-04T21:05:09Z"
+actor = "lognd"
+rev = 1

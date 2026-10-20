@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-14T20:50:36Z"
+digest = "ea21123ef131c432e89acba470d77861b3cae3344cd13bb9d89ff83b99713989"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 27.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 80fc0d0b-3fdc-47f5-a9a0-8bc44edafb01 with nextest profile: default
+    Starting 1 test across 52 binaries (330 tests skipped)
+        PASS [   0.274s] frob-cli profile::tests::check_findings_and_exit_code_do_not_depend_on_the_profile
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.275s] 1 test run: 1 passed, 330 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli profile::tests::check_findings_and_exit_code_do_not_depend_on_the_profile"
+size = 787
+status = "measured"
+test_count = 1
+tests_digest = "9a95432de182c55041a3ccd9e052491cb27f4b54beee076ece7125f5cddadd2b"
+at = "2026-10-14T20:50:36Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T02:07:32Z"
+digest = "522454f834f508064a06782dc819bbc2a43b8b477e08ca8d99eaa1a058e2a7ac"
+exit_code = 0
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized] target(s) in 12.89s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 784ee4c9-015b-4f3d-8919-16515a3b83e4 with nextest profile: default
+    Starting 1 test across 15 binaries (178 tests skipped)
+        PASS [   0.007s] gob-plan::grammar_ambiguity a_where_on_its_own_line_is_a_clause_and_one_on_the_binding_line_is_its_filter
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 178 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=a_where_on_its_own_line_is_a_clause_and_one_on_the_binding_line_is_its_filter)'"
+size = 766
+status = "measured"
+tests = ["a_where_on_its_own_line_is_a_clause_and_one_on_the_binding_line_is_its_filter"]
+at = "2026-10-11T02:07:32Z"
+actor = "lognd"
+rev = 1

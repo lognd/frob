@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a commit in a ticket worktree starts a background check for the touched packages; a later check --ticket on the same tree reads the finished result instead of re-running it, measured by a test that asserts zero tool spawns on the second call"]
+new = ["a second check on an unchanged tree reuses every recorded Done tool-stage result and spawns no tool process, and changing one input file misses, measured by a unit test counting spawns"]
+moved = [0]
+at = "2026-10-11T16:36:06Z"
+actor = "lognd"
+rev = 1

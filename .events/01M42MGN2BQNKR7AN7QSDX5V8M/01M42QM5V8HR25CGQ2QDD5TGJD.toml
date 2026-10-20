@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T05:54:09Z"
+digest = "24b1a08584224369929ce51afbc3b4612fcb0cacc31220a0a8b9ae95e53d16fb"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.0.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.69s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a053c627-e751-4fc0-8ae6-373e59e10542 with nextest profile: default
+    Starting 2 tests across 6 binaries (70 tests skipped)
+        PASS [   0.059s] frob-ledger::ledger fence_text_survives_an_index_rebuild_and_doctor_repairs_a_corrupt_card
+        PASS [   0.367s] frob-ledger doc::tests::arbitrary_field_text_round_trips
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.368s] 2 tests run: 2 passed, 70 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(fence_text_survives) | test(arbitrary_field_text_round_trips)'"
+size = 729
+status = "measured"
+tests = ["fence_text_survives_an_index_rebuild_and_doctor_repairs_a_corrupt_card", "doc::tests::arbitrary_field_text_round_trips"]
+at = "2026-10-04T05:54:09Z"
+actor = "lognd"
+rev = 1

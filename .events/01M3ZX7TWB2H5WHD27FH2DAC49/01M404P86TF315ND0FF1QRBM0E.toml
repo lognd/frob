@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Rescoped by D85 (~FDTYYEE, security.md 2.2): do not move .frob/cache.sqlite or .grimble/cache.sqlite out of the worktree. Instead MAC every row with the per-machine key (keyed blake3) and scope rows by the engine fingerprint (already done by ~1EZ3QHP); a row without a valid MAC is a miss. Executable artifacts (plans, cwasm, compiled grammars) go to XDG under ~MJK3JME and ~EY3W5YJ. Update the title and acceptance before starting."
+at = "2026-10-03T05:44:46Z"
+actor = "lognd"
+rev = 1

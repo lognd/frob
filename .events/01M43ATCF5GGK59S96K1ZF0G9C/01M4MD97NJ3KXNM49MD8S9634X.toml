@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the corpus projects, when `crunk check --json` runs, then violations equal the Python output after the documented field mapping", "Given an error-severity violation, when check runs, then the exit is 1; given an unreadable config, then 2", "Given a warm cache, when check runs twice, then the second run reuses cached ingest and reports the same findings"]
+new = ["Given a warm cache, when check runs twice, then the second run reuses cached ingest and reports the same findings", "Given an error-severity violation, when crunk check --json runs, then the exit is 1; given a clean project, then 0", "Given an unreadable crunk.toml, when check runs, then it is refused with E-CONFIG (exit 3, the shared refusal code), and a bad flag exits 2"]
+moved = [0, 0, 1]
+at = "2026-10-11T02:39:45Z"
+actor = "lognd"
+rev = 1

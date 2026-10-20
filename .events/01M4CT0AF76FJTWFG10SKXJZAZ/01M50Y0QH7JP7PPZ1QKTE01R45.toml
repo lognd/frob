@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-10-15T23:22:59Z"
+digest = "aa554669f0f12fd358b5d1b19eacd2cadd0f16763ffea97098adb96a1443b3c6"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.92s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1b9bf69b-ba05-4271-abe8-2cdf7585b8f1 with nextest profile: default
+    Starting 2 tests across 4 binaries (84 tests skipped)
+        PASS [   0.006s] frob-pm rules::aging::tests::pm009_fires_without_points
+        PASS [   0.068s] frob-pm::corpus pm009
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.069s] 2 tests run: 2 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E test(pm009)"
+size = 649
+status = "measured"
+test_count = 2
+tests_digest = "56f94d1db0e779e892f5f40c95a138a62286066afca17129018dd3ec7b23d461"
+at = "2026-10-15T23:22:59Z"
+actor = "lognd"
+rev = 1

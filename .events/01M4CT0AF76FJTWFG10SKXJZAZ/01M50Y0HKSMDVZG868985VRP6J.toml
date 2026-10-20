@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-10-15T23:22:49Z"
+digest = "dc794526f1adf7da6680cc814aef5e3633c5f857c859fea56c60b714311b13a3"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 97bd9d4e-5b52-4ab9-b5b1-caf54ad6e942 with nextest profile: default
+    Starting 2 tests across 4 binaries (84 tests skipped)
+        PASS [   0.006s] frob-pm rules::aging::tests::pm008_fires_only_past_the_limit
+        PASS [   0.119s] frob-pm::corpus pm008
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.120s] 2 tests run: 2 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E test(pm008)"
+size = 712
+status = "measured"
+test_count = 2
+tests_digest = "edeb9d345656605612a167a061ee510fc3b904fa0323323292b17d6dcdeb8c2f"
+at = "2026-10-15T23:22:49Z"
+actor = "lognd"
+rev = 1

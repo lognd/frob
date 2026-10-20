@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T22:38:48Z"
+digest = "7da75edb7dcf66e5265b8906330244c2fc83521c651de74dabe3b4539cebe1e5"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 08d04ff2-27ba-4ad2-b9a1-74d7d6894fd7 with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   0.009s] frob-check verb::tests::a_stale_fix_is_a_guard_refusal_with_its_own_code_and_a_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-check --lib a_stale_fix_is_a_guard_refusal"
+size = 554
+status = "measured"
+tests = ["verb::tests::a_stale_fix_is_a_guard_refusal_with_its_own_code_and_a_remedy"]
+at = "2026-10-04T22:38:48Z"
+actor = "lognd"
+rev = 1

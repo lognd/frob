@@ -1,0 +1,49 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T22:29:58Z"
+digest = "05d4563b4ff52782c6e47c0d18694dd07b99fa801be10e688d782239d6e4820b"
+exit_code = 0
+inline = '''
+   Compiling memchr v2.8.3
+   Compiling similar v2.7.0
+   Compiling aho-corasick v1.1.5
+   Compiling serde_json v1.0.151
+   Compiling tree-sitter v0.27.0
+   Compiling regex-automata v0.4.18
+   Compiling gob-languages v0.0.0 (<worktree>/crates/gob-languages)
+   Compiling gob-symbols v0.0.0 (<worktree>/crates/gob-symbols)
+   Compiling regex v1.13.1
+   Compiling error_set_impl v0.9.2
+   Compiling error_set v0.9.2
+   Compiling frob-ledger v0.0.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-directives v0.0.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.0.0 (<worktree>/crates/gob-check)
+   Compiling frob-ack v0.0.0 (<worktree>/crates/frob-ack)
+   Compiling frob-pm v0.0.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+   Compiling frob-evidence v0.0.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.0.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.0.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.0.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.0.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c2b50aaa-1e45-4345-9ef6-78f013eb2790 with nextest profile: default
+    Starting 3 tests across 1 binary (27 tests skipped)
+        PASS [   0.836s] frob-land::land dry_run_plan_is_deterministic_and_changes_nothing
+        PASS [   1.415s] frob-land::land land_runs_the_throttled_gc_pass_after_removing_the_worktree
+        PASS [   2.430s] frob-land::land a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.431s] 3 tests run: 3 passed, 27 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-land --test land a_story_without_criteria_refuses_its_own_land"
+size = 2020
+status = "measured"
+tests = ["dry_run_plan_is_deterministic_and_changes_nothing", "land_runs_the_throttled_gc_pass_after_removing_the_worktree", "a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands"]
+at = "2026-10-04T22:29:58Z"
+actor = "lognd"
+rev = 1

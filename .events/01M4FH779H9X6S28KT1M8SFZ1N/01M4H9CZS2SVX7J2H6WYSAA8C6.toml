@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["changelog.d/**", "crates/crunk-check/src/product.rs", "crates/crunk-spec/src/error.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-check/tests/spec_errors.rs", "crates/crunk-spec/tests/spec.rs"]
+new = ["changelog.d/**", "crates/crunk-check/src/product.rs", "crates/crunk-spec/src/error.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-check/tests/spec_errors.rs", "crates/crunk-spec/tests/spec.rs", "crates/crunk/tests/verbs.rs", "crates/crunk-check/tests/color001.rs", "crates/crunk-check/tests/waive001.rs"]
+at = "2026-10-09T21:33:52Z"
+actor = "lognd"
+rev = 1

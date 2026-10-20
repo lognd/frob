@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/DWRJEZV; scope: crates/frob-land/src/ratchet.rs, changelog.d/**; ttl 7200s"
+at = "2026-10-09T23:50:06Z"
+actor = "lognd"
+rev = 1

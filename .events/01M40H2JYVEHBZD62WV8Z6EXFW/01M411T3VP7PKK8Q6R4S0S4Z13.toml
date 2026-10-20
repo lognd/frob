@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-directives/**", "crates/frob-ack/src/inputs.rs"]
+new = ["crates/gob-directives/**", "crates/frob-ack/src/inputs.rs", "docs/design/code-model.md"]
+at = "2026-10-03T14:13:41Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,41 @@
+kind = "evidence"
+at = "2026-10-03T06:33:01Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo dist plan --tag frob-cli-v0.0.0"
+digest = "aced79d80e3bb7d5d0e63ae52b95093aa592b5fca438b3137f03e10c210ba5d0"
+status = "measured"
+captured_at = "2026-10-03T06:33:01Z"
+accepts = [1]
+passed = true
+exit_code = 0
+inline = """
+announcing v0.0.0
+  frob-cli 0.0.0
+    source.tar.gz
+      [checksum] source.tar.gz.sha256
+    sha256.sum
+    frob-cli-aarch64-apple-darwin.tar.xz
+      [bin] frob
+      [misc] CHANGELOG.md, LICENSE, README.md
+      [checksum] frob-cli-aarch64-apple-darwin.tar.xz.sha256
+    frob-cli-aarch64-unknown-linux-gnu.tar.xz
+      [bin] frob
+      [misc] CHANGELOG.md, LICENSE, README.md
+      [checksum] frob-cli-aarch64-unknown-linux-gnu.tar.xz.sha256
+    frob-cli-x86_64-apple-darwin.tar.xz
+      [bin] frob
+      [misc] CHANGELOG.md, LICENSE, README.md
+      [checksum] frob-cli-x86_64-apple-darwin.tar.xz.sha256
+    frob-cli-x86_64-pc-windows-msvc.zip
+      [bin] frob.exe
+      [misc] CHANGELOG.md, LICENSE, README.md
+      [checksum] frob-cli-x86_64-pc-windows-msvc.zip.sha256
+    frob-cli-x86_64-unknown-linux-gnu.tar.xz
+      [bin] frob
+      [misc] CHANGELOG.md, LICENSE, README.md
+      [checksum] frob-cli-x86_64-unknown-linux-gnu.tar.xz.sha256
+
+"""
+size = 950

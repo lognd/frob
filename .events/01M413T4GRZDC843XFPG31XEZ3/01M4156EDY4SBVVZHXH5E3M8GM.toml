@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T15:12:51Z"
+digest = "f87b2886c02f8170a44f7faadd6dfe0ec30f2b56d59d064aa450775566c92e92"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID da3a6187-91d5-48c4-beba-4f449d2becbf with nextest profile: default
+    Starting 1 test across 3 binaries (31 tests skipped)
+        PASS [   0.899s] frob-evidence::evidence nextest_evidence_runs_the_provider_plain_and_writes_ascii
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.900s] 1 test run: 1 passed, 31 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(=nextest_evidence_runs_the_provider_plain_and_writes_ascii)'"
+size = 572
+status = "measured"
+tests = ["nextest_evidence_runs_the_provider_plain_and_writes_ascii"]
+at = "2026-10-03T15:12:51Z"
+actor = "lognd"
+rev = 1

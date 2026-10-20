@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T03:49:23Z"
+digest = "50baae26f962837ec91c64431d6aaba37ba228485877ff9fba1b2fa1a64d41a4"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7d0e96b3-5ce6-4902-9d31-28dbeffbf7f7 with nextest profile: default
+    Starting 2 tests across 34 binaries (289 tests skipped)
+        PASS [   0.339s] frob-ledger::scrub private_terms_are_scrubbed_like_home_paths
+        PASS [   1.925s] frob-cli::redact check_flags_and_doctor_fix_repairs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.927s] 2 tests run: 2 passed, 289 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-ledger -E 'test(=private_terms_are_scrubbed_like_home_paths) | test(=check_flags_and_doctor_fix_repairs)'"
+size = 634
+status = "measured"
+tests = ["private_terms_are_scrubbed_like_home_paths", "check_flags_and_doctor_fix_repairs"]
+at = "2026-10-04T03:49:23Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,12 @@
++++
+id = "01M41S1JXXN380WPE29ATR5EP7"
+title = "Path discipline: types, confinement, both-style tests, PATH lint (D86, paths.md)"
+type = "epic"
+category = "todo"
+priority = "high"
+reporter = "lognd"
+created = "2026-10-03T20:59:43Z"
+updated = "2026-10-03T20:59:43Z"
++++
+
+Owner request 2026-10-03: a structural fix for the / versus \ class of bugs. Design: docs/design/paths.md. Children implement sections 1-5 in the order of section 6.

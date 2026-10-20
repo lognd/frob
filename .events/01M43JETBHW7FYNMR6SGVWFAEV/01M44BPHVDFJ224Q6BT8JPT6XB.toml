@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T21:04:13Z"
+digest = "2270e7334ec00a7f966bc5bee7e9427f2f32f2a3b192810d071bc89e4c7a4639"
+exit_code = 0
+inline = '''
+   Compiling gob-fs v0.0.0 (<worktree>/crates/gob-fs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3bf8d65c-1aa3-4a07-8953-b9b628b2ca7c with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.005s] gob-fs tests::killed_write_leaves_the_old_file_whole
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-fs --lib killed_write_leaves_the_old_file_whole"
+size = 593
+status = "measured"
+tests = ["tests::killed_write_leaves_the_old_file_whole"]
+at = "2026-10-04T21:04:13Z"
+actor = "lognd"
+rev = 1

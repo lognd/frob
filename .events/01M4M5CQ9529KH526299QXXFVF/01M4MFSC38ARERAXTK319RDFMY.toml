@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T03:23:23Z"
+digest = "25f6d4e322638f2c98eb0a0b31537390834091f98c0b0db1222f058abc365b1e"
+exit_code = 0
+inline = '''
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized] target(s) in 7.04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 373f2492-21a1-4811-a771-c58e67c7e4e8 with nextest profile: default
+    Starting 1 test across 6 binaries (17 tests skipped)
+        PASS [   0.010s] grimble::verbs compile_passes_a_valid_file_silently
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 17 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'test(=compile_passes_a_valid_file_silently)'"
+size = 970
+status = "measured"
+tests = ["compile_passes_a_valid_file_silently"]
+at = "2026-10-11T03:23:23Z"
+actor = "lognd"
+rev = 1

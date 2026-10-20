@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T22:29:29Z"
+digest = "72339e41882af9e133b9d969184e7af6445b91e1ef59ea86177e851d3e860beb"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b5d9f885-0ad7-4a4f-860b-1199f8ca65c6 with nextest profile: default
+    Starting 2 tests across 1 binary (21 tests skipped)
+        PASS [   2.140s] frob-cli::close_guards the_running_frob_is_an_allowed_command_tool_without_listing_it
+        PASS [   5.363s] frob-cli::close_guards exempt_types_and_tickets_with_criteria_still_close
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   5.364s] 2 tests run: 2 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-cli --test close_guards exempt_types_and_tickets_with_criteria"
+size = 675
+status = "measured"
+tests = ["the_running_frob_is_an_allowed_command_tool_without_listing_it", "exempt_types_and_tickets_with_criteria_still_close"]
+at = "2026-10-04T22:29:29Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T01:01:05Z"
+digest = "0250dae9921a82ee2fe0f6c2d974e743c9059c6b75a6c2466446aa2d93a265ba"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.37s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5acf9f72-ee6e-430e-b9ad-c5cbb5abf093 with nextest profile: default
+    Starting 1 test across 154 binaries (1366 tests skipped)
+        PASS [   0.843s] frob-cli::sibling_discovery check_runs_the_grimble_next_to_frob_when_path_has_none
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.847s] 1 test run: 1 passed, 1366 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "check_runs_the_grimble_next_to_frob_when_path_has_none"
+size = 579
+status = "measured"
+tests = ["check_runs_the_grimble_next_to_frob_when_path_has_none"]
+at = "2026-10-04T01:01:05Z"
+actor = "lognd"
+rev = 1

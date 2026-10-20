@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "The crunk entry already exists in crates/frob-release/tests/products.rs as UNWIRED_PRODUCTS (added by ~FYH8FGQ), used only by published_packages_declare_only_product_binaries. Fold it into PRODUCTS when registering the product, and delete UNWIRED_PRODUCTS."
+at = "2026-10-04T12:35:39Z"
+actor = "lognd"
+rev = 1

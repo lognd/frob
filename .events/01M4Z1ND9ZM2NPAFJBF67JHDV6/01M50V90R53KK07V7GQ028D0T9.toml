@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-15T22:35:10Z"
+digest = "b457a13b8e86c9e7724454d5a2715d773d5ab95c488a7c6a7498334c0929e2d5"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ea42611f-d4e5-44cb-9078-5b519ed7196c with nextest profile: default
+    Starting 1 test across 3 binaries (113 tests skipped)
+        PASS [   0.335s] frob-land::land a_lone_ticket_lands_through_the_plain_land_path
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.335s] 1 test run: 1 passed, 113 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(/a_lone_ticket_lands_through/)'"
+size = 556
+status = "measured"
+test_count = 1
+tests_digest = "4b67483de157fe89dd0c1f92da0f16ffe7afe89bff8558ceeaf452290c9b4015"
+at = "2026-10-15T22:35:10Z"
+actor = "lognd"
+rev = 1

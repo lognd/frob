@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T05:49:09Z"
+digest = "e9ca4e9588d624d2b03588a07790c830c5e3babbad901d5eee9b8276754be2d5"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.86s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8852f0df-bade-43e2-8ffe-c8a418a68b08 with nextest profile: default
+    Starting 2 tests across 3 binaries (32 tests skipped)
+        PASS [   0.088s] gob-diagnostics::contract fix_renders_diff_and_tier_safe
+        PASS [   0.091s] gob-diagnostics::contract fix_renders_unsafe_tier_note
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.093s] 2 tests run: 2 passed, 32 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-diagnostics fix_renders_"
+size = 684
+status = "measured"
+test_count = 2
+tests_digest = "4a065e2b0c46c0b24f18bfb6a944d0a1771184c25cd18f61de33b71f2538d285"
+at = "2026-10-13T05:49:09Z"
+actor = "lognd"
+rev = 1

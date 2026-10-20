@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "Land train: design section in build-test-ci.md and tickets.md land-lock note"
+new = "Land train: design first - amend D25, foreground driver, invariants, cost model"
+at = "2026-10-15T07:58:24Z"
+actor = "lognd"
+rev = 1

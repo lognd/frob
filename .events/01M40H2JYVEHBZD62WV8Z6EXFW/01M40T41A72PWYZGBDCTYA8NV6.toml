@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Also reported from the cloc repository (FROB_FEEDBACK.md item 5): five stacked frob:tests lines bound only the last; the TEST001 message for the others ('names no test function in the graph; fix the symref') points at the wrong cause. Besides binding every directive in the block, a directive that is not attached to a test item must say exactly that."
+at = "2026-10-03T11:59:17Z"
+actor = "lognd"
+rev = 1

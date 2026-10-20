@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T00:16:35Z"
+digest = "1a7ed0033e178f24166a88260cd33578402469aa650ae43800ade34c4959ffff"
+exit_code = 0
+inline = '''
+   Compiling frob-check v0.0.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 790604e1-aa89-49de-8cea-31c9dbdd7e34 with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   8.479s] frob-check::warm_cache second_run_on_an_unchanged_repository_extracts_and_scans_zero_files
+        PASS [  12.748s] frob-check::warm_cache editing_one_file_rescans_only_that_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  12.751s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check --test warm_cache"
+size = 712
+status = "measured"
+tests = ["second_run_on_an_unchanged_repository_extracts_and_scans_zero_files", "editing_one_file_rescans_only_that_file"]
+at = "2026-10-04T00:16:35Z"
+actor = "lognd"
+rev = 1

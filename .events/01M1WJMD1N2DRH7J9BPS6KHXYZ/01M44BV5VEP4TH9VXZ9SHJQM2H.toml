@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Decide and document the policy when no test runner is declared; v2 has nextest, command and file providers only (milestone 1)."
+at = "2026-10-04T21:06:45Z"
+actor = "lognd"
+rev = 1

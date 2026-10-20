@@ -1,0 +1,13 @@
+kind = "create"
+title = "A leftover v1 frob.lock aborts frob check with E-CHECK-LOCK without naming the file or saying it is a v1 artifact"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+labels = ["adoption:logand-app"]
+scope = ["crates/gob-lock/**", "crates/frob-check/**", "changelog.d/**"]
+acceptance = ["Given a v1-format frob.lock, when frob check runs, then the error names the file, says it is a v1 lock and gives the remedy (delete it and run frob ack)"]
+body = "logand.app-v2 F-548."
+at = "2026-10-09T15:05:08Z"
+actor = "lognd"
+rev = 1

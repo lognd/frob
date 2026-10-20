@@ -1,0 +1,22 @@
+kind = "evidence"
+captured_at = "2026-10-03T22:32:55Z"
+digest = "0c81f137bb2c7a7b54ccc6294b6bd6507685fde37e2e088a2b6a18c819adeca6"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d0c5e9da-554b-49fe-b713-4ecbdeefa2f3 with nextest profile: default
+    Starting 1 test across 5 binaries (48 tests skipped)
+        PASS [   0.004s] gob-dev::ci_parity dev_alias_builds_into_a_separate_target_dir
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 48 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(dev_alias_builds)'"
+size = 553
+status = "measured"
+tests = ["dev_alias_builds_into_a_separate_target_dir"]
+at = "2026-10-03T22:32:55Z"
+actor = "lognd"
+rev = 1

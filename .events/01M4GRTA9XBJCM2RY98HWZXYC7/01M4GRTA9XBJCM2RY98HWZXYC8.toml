@@ -1,0 +1,13 @@
+kind = "create"
+title = "Fast lands: testmon-style affected-cone checks at land, full check and suite on CI, red CI stops the line, automatic culprit finding"
+type = "epic"
+category = "todo"
+priority = "medium"
+points = 13
+acceptance = ["Given a code ticket touching one crate, when it lands, then only the affected cone is checked (rules, scoped cargo stages, gated gen check, scoped siblings) and the land takes under 60 s on this repository; the full check runs on CI for the land commit", "Given a land whose post-land CI goes red, when frob land runs next, then it refuses, names the culprit land range, and a fix ticket exists"]
+body = """
+Owner 2026-10-09: "take a page out of testmon for the ticket lands; the full runs can be on CI/CD; I want to keep lands really quick."
+Design: at land, check only the affected cone: frob rules over touched files plus their dependency cone (the frob test touched-set graph); cargo stages scoped to affected crates and their reverse dependencies; dev gen --check only when its inputs changed; siblings with --ticket-scope; cheap guards first. Full check and full suite run on CI for every land commit (already true for tests). Guardrails: (1) Unknown/May/opaque edges are included, never skipped; (2) lands refuse onto a red base (exists, ~GHMWDGG); (3) culprit finding: a red post-land CI names the culprit lands between last green and first red and files a fix ticket that blocks further lands. Precedents to cite in the design doc: Google TAP (affected presubmit, full postsubmit, culprit finding), Uber SubmitQueue (EuroSys 2019). Later option: batch lands with one full check per batch."""
+at = "2026-10-09T16:44:21Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T01:32:46Z"
+digest = "5cb197ea5d6c83dc26eaeed40b95806305eeea1d23ceb876d91fdb4f8bae09b4"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d1b70812-1646-4114-abdd-dfe9ea061bc4 with nextest profile: default
+    Starting 1 test across 153 binaries (1374 tests skipped)
+        PASS [   0.399s] frob-land::land fixing_a_base_finding_is_reported_resolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.403s] 1 test run: 1 passed, 1374 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(fixing_a_base_finding_is_reported_resolved)'"
+size = 607
+status = "measured"
+tests = ["fixing_a_base_finding_is_reported_resolved"]
+at = "2026-10-04T01:32:46Z"
+actor = "lognd"
+rev = 1

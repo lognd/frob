@@ -1,0 +1,12 @@
+kind = "create"
+title = "agent: frob agent heavy (native lock, env and test-executable cleanup replacing heavy.sh)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
+scope = ["crates/frob-cli/**"]
+acceptance = ["heavy takes the shared build lock under the git common dir, sets the target dir, runs the command, cleans regenerable test executables, releases the lock", "lock is released on failure and on interrupt", "concurrent heavy invocations serialize"]
+at = "2026-10-11T18:12:27Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,60 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T07:27:06Z"
+digest = "7d5522096319504f14dd89b2a8fbd68f807147d9e66273f1f2a16f2eeaabe741"
+exit_code = 0
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+
+running 1 test
+test config_diff_lists_the_weakenings_between_base_and_head ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.02s
+
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.01s
+     Running unittests src/lib.rs (target/debug/deps/grimble-b37c155c53fd0412)
+     Running unittests src/main.rs (target/debug/deps/grimble-661eaff593269c81)
+     Running tests/ack.rs (target/debug/deps/ack-26390e29d385b26c)
+     Running tests/boundary.rs (target/debug/deps/boundary-9708228c94d8c232)
+     Running tests/caps.rs (target/debug/deps/caps-56bec61fe5231d08)
+     Running tests/rule_verbs.rs (target/debug/deps/rule_verbs-76ffe8e7772d9f26)
+     Running tests/verbs.rs (target/debug/deps/verbs-46b512d8c2d4966c)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble config_diff_lists_the_weakenings_between_base_and_head"
+size = 1513
+status = "measured"
+at = "2026-10-19T07:27:06Z"
+actor = "lognd"
+rev = 1

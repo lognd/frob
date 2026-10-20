@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T13:47:07Z"
+digest = "dc006962912e80038fd64e1301a949a1f73501746ccd2b9d2fae0332b660a549"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5e31e4ea-5ebc-4080-a24d-49181dcf1569 with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   0.007s] crunk-spec::parity corpus_covers_every_section
+        PASS [   0.031s] crunk-spec::parity every_fixture_equals_the_python_spec_dump
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.032s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec --test parity"
+size = 603
+status = "measured"
+tests = ["corpus_covers_every_section", "every_fixture_equals_the_python_spec_dump"]
+at = "2026-10-04T13:47:07Z"
+actor = "lognd"
+rev = 1

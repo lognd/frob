@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-03T12:57:33Z"
+digest = "b45534a68619ae01ad1f909184804fd56fc3eb1f45bebbb53988cc496ce93c4a"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.40s
+────────────
+ Nextest run ID c1d95ef7-4655-4028-ab6d-e9fd4c949463 with nextest profile: default
+    Starting 1 test across 135 binaries (1102 tests skipped)
+        PASS [   0.168s] (1/1) frob-ack::ack crlf_checkout_under_autocrlf_is_not_drift_but_a_real_edit_still_is
+────────────
+     Summary [   0.171s] 1 test run: 1 passed, 1102 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "crlf_checkout_under_autocrlf_is_not_drift_but_a_real_edit_still_is"
+size = 463
+status = "measured"
+tests = ["crlf_checkout_under_autocrlf_is_not_drift_but_a_real_edit_still_is"]
+at = "2026-10-03T12:57:33Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 DOCARCH002 Tier-A docstring fix."
+at = "2026-10-04T21:07:56Z"
+actor = "lognd"
+rev = 1

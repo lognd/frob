@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["PM013 and the work gate share one lease-aware, lane-aware WIP count (frob_pm::rules::wip::count), documented in pm-enforcement.md", "The gate and PM013 agree on the same fixture"]
+new = ["PM013 and the work gate share one lease-aware, lane-aware WIP count (frob_pm::rules::wip::count), documented in pm-enforcement.md", "The gate and PM013 agree on the same fixture", "PM013 mdtest corpus covers expedite exempt, expedite over max, closed lane and stale"]
+moved = [1, 2]
+at = "2026-10-03T16:21:19Z"
+actor = "lognd"
+rev = 1

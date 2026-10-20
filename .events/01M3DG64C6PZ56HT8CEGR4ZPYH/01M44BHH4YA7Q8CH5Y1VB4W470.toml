@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Precision target for web rules (12 measured false-positive shapes, about 5 percent true positives); carry the shapes as fire/clean GRL examples (D80) in the packs."
+at = "2026-10-04T21:01:29Z"
+actor = "lognd"
+rev = 1

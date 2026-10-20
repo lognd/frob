@@ -1,0 +1,63 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-15T04:30:28Z"
+digest = "1b8dbc470df918d784d191bcf205709b4e738559134cb4388521f7f65582ebe5"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling indexmap v2.14.2
+   Compiling schemars v1.2.2
+   Compiling serde_json v1.0.151
+   Compiling bstr v1.13.1
+   Compiling tree-sitter v0.27.0
+   Compiling globset v0.4.20
+   Compiling ignore v0.4.33
+   Compiling hashbrown v0.14.5
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling hashlink v0.9.1
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling winnow v1.0.4
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling rusqlite v0.32.1
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling cobs v0.3.0
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling petgraph v0.8.3
+   Compiling postcard v1.1.3
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling rand_chacha v0.9.0
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling rand v0.9.5
+   Compiling proptest v1.11.0
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8m 19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 47d52bd4-b923-4840-8294-c67bd46f22db with nextest profile: default
+    Starting 2 tests across 4 binaries (23 tests skipped)
+        PASS [   0.006s] gob-packs::plan_cache an_entry_with_an_invalid_mac_is_discarded_and_rebuilt
+        PASS [   0.006s] gob-packs::plan_cache a_pack_loaded_twice_is_read_from_the_cache_not_recompiled
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 2 tests run: 2 passed, 23 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs -E test(/pack_loaded_twice|invalid_mac/)"
+size = 2350
+status = "measured"
+test_count = 2
+tests_digest = "f2208bfaf4d6121f79c89d9ebf471c14030402ed0eb07f69a873442d2e744af9"
+at = "2026-10-15T04:30:28Z"
+actor = "lognd"
+rev = 1

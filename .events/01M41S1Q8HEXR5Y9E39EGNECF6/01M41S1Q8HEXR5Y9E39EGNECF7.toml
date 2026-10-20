@@ -1,0 +1,17 @@
+kind = "create"
+title = "Migrate grimble-* crates to gob-path; remove them from the allow list"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M41S1JXXN380WPE29ATR5EP7"
+scope = ["crates/grimble*/**"]
+acceptance = ["Given the grimble crates, when clippy runs without their allow-list entries, then it is clean and the allow list holds only gob-path"]
+body = "paths.md migration step 3 for the grimble crates."
+at = "2026-10-03T20:59:47Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M41S1KX3ZVF51H8KPJ3YXZF9"

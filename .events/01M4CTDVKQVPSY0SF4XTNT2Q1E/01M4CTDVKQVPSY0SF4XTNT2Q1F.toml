@@ -1,0 +1,10 @@
+kind = "create"
+title = "Audit 2026-10-07: structural fixes for land cost, build cost and adoption readiness"
+type = "epic"
+category = "todo"
+priority = "high"
+acceptance = ["Given the audit tickets, when the epic closes, then every HIGH and MEDIUM finding is fixed or dropped with a reason"]
+body = "Findings in notes/review/audit-2026-10-07.md (1 HIGH, 18 MEDIUM, 14 LOW). Outcome: lands no longer go onto a red base, a land re-check costs seconds not minutes, product builds stop pulling gix under the model crates, config and repository are opened once per command, CI stops duplicating work. Owner goal 2026-10-07: the repository usable for another project soon."
+at = "2026-10-08T03:55:32Z"
+actor = "lognd"
+rev = 1

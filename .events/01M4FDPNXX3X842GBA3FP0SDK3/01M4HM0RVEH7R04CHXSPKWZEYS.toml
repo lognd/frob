@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "3893e873576d0bbc32dc54155ad950897a83d98c"
+branch = "ticket/FP0SDK3"
+pushed = false
+at = "2026-10-10T00:30:18Z"
+actor = "lognd"
+rev = 1

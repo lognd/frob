@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "agent restart after crash"
+at = "2026-10-10T02:10:34Z"
+actor = "lognd"
+rev = 1

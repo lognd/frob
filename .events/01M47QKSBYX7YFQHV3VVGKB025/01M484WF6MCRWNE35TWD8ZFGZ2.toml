@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/**"]
+new = ["crates/gob-symbols/**", "docs/reference/fidelity.md"]
+at = "2026-10-06T08:22:04Z"
+actor = "lognd"
+rev = 1

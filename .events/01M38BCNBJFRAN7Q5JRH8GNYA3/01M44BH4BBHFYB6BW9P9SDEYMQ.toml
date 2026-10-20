@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: reuse of v1 secret-pattern code between WEBSEC316 and WEBSEC317; the rules themselves are covered by the T-5141 story (~VPYYSEE) in the grimble-websec pack."
+at = "2026-10-04T21:01:16Z"
+actor = "lognd"
+rev = 1

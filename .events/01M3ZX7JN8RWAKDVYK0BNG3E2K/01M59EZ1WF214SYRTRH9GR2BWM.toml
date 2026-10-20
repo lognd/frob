@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T06:53:11Z"
+digest = "121ff698c75f9722b815c12b3cc55f5e5d7018acc2b5ac1eebd6b7ea4f47a35e"
+exit_code = 0
+inline = """
+
+running 1 test
+test equal_priority_ties_break_by_pack_name_on_every_run ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running tests/hooks.rs (target/debug/deps/hooks-353deb4cc6b48020)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-packs --test hooks equal_priority_ties_break_by_pack_name_on_every_run"
+size = 320
+status = "measured"
+at = "2026-10-19T06:53:11Z"
+actor = "lognd"
+rev = 1

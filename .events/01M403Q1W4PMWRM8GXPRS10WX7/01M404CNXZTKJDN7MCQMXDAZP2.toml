@@ -1,0 +1,14 @@
+kind = "evidence"
+at = "2026-10-03T05:39:32Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci"
+digest = "b211bcd14b19a6a417f02aa92b8c252e3e754ad15dddff6985b4b8805bf36b2a"
+uri = "dir:.git/frob/artifacts/b211bcd14b19a6a417f02aa92b8c252e3e754ad15dddff6985b4b8805bf36b2a"
+status = "measured"
+captured_at = "2026-10-03T05:39:32Z"
+accepts = [1]
+passed = true
+exit_code = 0
+size = 76524

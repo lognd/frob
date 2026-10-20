@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-cli/src/render.rs"]
+new = ["crates/gob-cli/src/render.rs", "crates/gob-diagnostics/src/envelope.rs"]
+at = "2026-10-12T23:54:56Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 LANG003 burn-down (21 findings in the v1 repository)."
+at = "2026-10-04T21:08:48Z"
+actor = "lognd"
+rev = 1

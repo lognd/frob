@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["Given 59 opaque text files, when frob check runs, then one unresolved notice names the count and the rules that could not read them, instead of one finding per rule", "Given .env.example and other dotfile templates, when classified, then they are read as text (key=value) where a reader exists rather than opaque (logand F-556)"]
+new = ["Given 59 opaque text files, when frob check runs, then one unresolved notice names the count and the rules that could not read them, instead of one finding per rule"]
+reason = "no key=value reader exists and the classifier lives outside this scope; split to a follow-up ticket"
+moved = [1, 0]
+at = "2026-10-10T18:32:30Z"
+actor = "Claude"
+rev = 1

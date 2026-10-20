@@ -1,0 +1,101 @@
+kind = "evidence"
+at = "2026-10-02T21:39:13Z"
+actor = "lognd"
+rev = 1
+provider = "nextest"
+ref = "-p frob-check -p frob-lease -p frob-ledger -p frob-tests -p gob-config -p gob-dev -p gob-diagnostics -p gob-git -E '(package(=frob-check) & (test(=a_changed_side_input_misses_the_cache) | test(=a_failing_tool_stage_yields_tool001_outside_the_budget) | test(=a_frob_accept_suppresses_a_tool_finding_like_a_native_one) | test(=a_missing_tool_binary_fails_under_required_and_passes_under_never) | test(=a_non_required_unresolved_finding_passes_under_required_and_fails_under_all) | test(=a_tool_outside_its_version_range_yields_one_non_required_unresolved) | test(=actionlint_findings_map_to_ci014_and_configured_labels_are_dropped) | test(=an_annotation_required_unresolved_finding_is_marked_required) | test(=an_optional_missing_tool_is_unresolved_but_not_required) | test(=bare_marker_fires_and_second_run_hits_the_cache_with_identical_output) | test(=editing_a_file_invalidates_only_its_entries) | test(=fail_on_maps_severity_to_the_exit_code) | test(=fix_is_refused_without_a_ticket_when_the_knob_requires_scope) | test(=fix_rewrites_the_file_and_the_next_run_is_clean) | test(=only_filters_by_family_and_rejects_unknown_names) | test(=perf001_fires_only_when_enforced_and_over_budget) | test(=required::tests::annotation_prefix_maps_to_a_required_reason) | test(=required::tests::pending_mark_matches_by_rule_and_message) | test(=required::tests::unrelated_unresolved_is_not_marked) | test(=telemetry_line_is_appended_when_enabled) | test(=ticket_restricts_per_file_rules_to_its_scope) | test(=ticket_without_a_ledger_is_an_error) | test(=tool_parse::tests::actionlint_output_parses_with_line_and_column) | test(=tool_parse::tests::actionlint_runner_labels_follow_the_labels_knob) | test(=tool_parse::tests::id_map_overrides_and_bad_targets_fall_back) | test(=tool_parse::tests::version_range_is_inclusive_and_numeric) | test(=tool_parse::tests::versions_are_found_in_banner_text) | test(=tool_parse::tests::zizmor_ids_map_to_ci_ids_and_the_rest_is_tool002) | test(=tool_parse::tests::zizmor_output_parses_with_byte_spans) | test(=tools::tests::printed_paths_become_repo_relative) | test(=unparseable_output_is_a_tool001_error) | test(=zizmor_findings_carry_ci_ids_and_real_spans))) | (package(=frob-lease) & (test(=contention_ranks_shared_files))) | (package(=frob-ledger) & (test(=alias_ambiguity_lists_both_candidates) | test(=branch_mode_commits_to_the_current_branch) | test(=concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent) | test(=doctor_flags_and_fixes_a_stale_frontmatter) | test(=index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise) | test(=lifecycle_new_update_link_comment_close) | test(=link_topology_is_enforced) | test(=new_is_idempotent_on_the_key) | test(=tick002_and_tick003) | test(=trunk_mode_commits_to_trunk_even_on_another_branch) | test(=update_validates_and_repeats_are_already))) | (package(=frob-tests) & (test(=an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests) | test(=attribute_scan_recognises_tests_outside_a_tests_module) | test(=dry_run_prints_the_selection_and_runs_nothing) | test(=flags_targets_that_resolve_to_no_test_or_no_symbol) | test(=only_tests_reaching_the_changed_function_are_selected) | test(=test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree))) | (package(=gob-config) & (test(=check_emits_cfg001_per_missing_knob) | test(=file_beats_default_and_override_beats_file) | test(=materialize_preserves_comments_and_order) | test(=nested_table_loads) | test(=unknown_key_suggests_nearest) | test(=unknown_key_without_close_match_has_no_suggestion) | test(=wrong_type_is_invalid))) | (package(=gob-dev) & (test(=imports_maps_and_verifies) | test(=refuses_a_non_empty_target) | test(=renders_the_migration_report) | test(=renders_the_summary_table) | test(=ulids_keep_creation_order))) | (package(=gob-diagnostics) & (test(=fail_on_threshold) | test(=json_success_snapshot) | test(=required_reason_serializes_tagged_and_summary_counts_required) | test(=slug_resolves_from_registry) | test(=text_color_snapshot) | test(=text_plain_snapshot) | test(=unresolved_policy_composes_with_the_threshold) | test(=unresolved_policy_matrix))) | (package(=gob-git) & (test(=cas_exhausted_when_ref_keeps_churning) | test(=cas_succeeds_after_one_lost_race) | test(=commit_from_linked_worktree_syncs_primary_checkout) | test(=concurrent_writers_lose_nothing) | test(=delete_via_none_and_local_edit_refusal) | test(=primary_with_local_edit_is_reported_and_keeps_it) | test(=read_apis) | test(=root_commit_on_missing_ref_and_checkout_sync) | test(=spawn_fallbacks_worktree_merge_push) | test(=staged_unrelated_file_is_untouched)))'"
+digest = "b695a382c537a9eac572448d7482c0d07e80f619b37b8b92d6feab8538b97f7a"
+status = "measured"
+captured_at = "2026-10-02T21:39:13Z"
+passed = true
+exit_code = 0
+tests = ["tool_parse::tests::version_range_is_inclusive_and_numeric", "required::tests::annotation_prefix_maps_to_a_required_reason", "tool_parse::tests::actionlint_output_parses_with_line_and_column", "tool_parse::tests::id_map_overrides_and_bad_targets_fall_back", "required::tests::unrelated_unresolved_is_not_marked", "required::tests::pending_mark_matches_by_rule_and_message", "tools::tests::printed_paths_become_repo_relative", "tool_parse::tests::actionlint_runner_labels_follow_the_labels_knob", "tool_parse::tests::versions_are_found_in_banner_text", "tool_parse::tests::zizmor_ids_map_to_ci_ids_and_the_rest_is_tool002", "tool_parse::tests::zizmor_output_parses_with_byte_spans", "contention_ranks_shared_files", "a_frob_accept_suppresses_a_tool_finding_like_a_native_one", "a_tool_outside_its_version_range_yields_one_non_required_unresolved", "actionlint_findings_map_to_ci014_and_configured_labels_are_dropped", "zizmor_findings_carry_ci_ids_and_real_spans", "unparseable_output_is_a_tool001_error", "an_optional_missing_tool_is_unresolved_but_not_required", "attribute_scan_recognises_tests_outside_a_tests_module", "flags_targets_that_resolve_to_no_test_or_no_symbol", "imports_maps_and_verifies", "refuses_a_non_empty_target", "renders_the_migration_report", "renders_the_summary_table", "ulids_keep_creation_order", "file_beats_default_and_override_beats_file", "nested_table_loads", "unknown_key_without_close_match_has_no_suggestion", "wrong_type_is_invalid", "check_emits_cfg001_per_missing_knob", "materialize_preserves_comments_and_order", "unknown_key_suggests_nearest", "fail_on_threshold", "required_reason_serializes_tagged_and_summary_counts_required", "slug_resolves_from_registry", "unresolved_policy_matrix", "unresolved_policy_composes_with_the_threshold", "json_success_snapshot", "text_color_snapshot", "text_plain_snapshot", "fix_is_refused_without_a_ticket_when_the_knob_requires_scope", "a_failing_tool_stage_yields_tool001_outside_the_budget", "an_annotation_required_unresolved_finding_is_marked_required", "a_changed_side_input_misses_the_cache", "ticket_without_a_ledger_is_an_error", "telemetry_line_is_appended_when_enabled", "only_filters_by_family_and_rejects_unknown_names", "bare_marker_fires_and_second_run_hits_the_cache_with_identical_output", "a_non_required_unresolved_finding_passes_under_required_and_fails_under_all", "fail_on_maps_severity_to_the_exit_code", "fix_rewrites_the_file_and_the_next_run_is_clean", "a_missing_tool_binary_fails_under_required_and_passes_under_never", "perf001_fires_only_when_enforced_and_over_budget", "editing_a_file_invalidates_only_its_entries", "ticket_restricts_per_file_rules_to_its_scope", "cas_succeeds_after_one_lost_race", "concurrent_writers_lose_nothing", "cas_exhausted_when_ref_keeps_churning", "root_commit_on_missing_ref_and_checkout_sync", "delete_via_none_and_local_edit_refusal", "read_apis", "commit_from_linked_worktree_syncs_primary_checkout", "primary_with_local_edit_is_reported_and_keeps_it", "staged_unrelated_file_is_untouched", "spawn_fallbacks_worktree_merge_push", "doctor_flags_and_fixes_a_stale_frontmatter", "branch_mode_commits_to_the_current_branch", "alias_ambiguity_lists_both_candidates", "new_is_idempotent_on_the_key", "tick002_and_tick003", "trunk_mode_commits_to_trunk_even_on_another_branch", "update_validates_and_repeats_are_already", "concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent", "index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise", "link_topology_is_enforced", "lifecycle_new_update_link_comment_close", "dry_run_prints_the_selection_and_runs_nothing", "an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests", "only_tests_reaching_the_changed_function_are_selected", "test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree"]
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+────────────
+ Nextest run ID c5e87a34-6dbc-4c69-9d3a-5f7a84a82c9b with nextest profile: default
+    Starting 80 tests across 21 binaries (71 tests skipped)
+        PASS [   0.009s] ( 1/80) frob-check tool_parse::tests::version_range_is_inclusive_and_numeric
+        PASS [   0.009s] ( 2/80) frob-check required::tests::annotation_prefix_maps_to_a_required_reason
+        PASS [   0.009s] ( 3/80) frob-check tool_parse::tests::actionlint_output_parses_with_line_and_column
+        PASS [   0.009s] ( 4/80) frob-check tool_parse::tests::id_map_overrides_and_bad_targets_fall_back
+        PASS [   0.010s] ( 5/80) frob-check required::tests::unrelated_unresolved_is_not_marked
+        PASS [   0.011s] ( 6/80) frob-check required::tests::pending_mark_matches_by_rule_and_message
+        PASS [   0.011s] ( 7/80) frob-check tools::tests::printed_paths_become_repo_relative
+        PASS [   0.014s] ( 8/80) frob-check tool_parse::tests::actionlint_runner_labels_follow_the_labels_knob
+        PASS [   0.014s] ( 9/80) frob-check tool_parse::tests::versions_are_found_in_banner_text
+        PASS [   0.016s] (10/80) frob-check tool_parse::tests::zizmor_ids_map_to_ci_ids_and_the_rest_is_tool002
+        PASS [   0.016s] (11/80) frob-check tool_parse::tests::zizmor_output_parses_with_byte_spans
+        PASS [   0.016s] (12/80) frob-check::check fix_is_refused_without_a_ticket_when_the_knob_requires_scope
+        PASS [   0.288s] (13/80) frob-check::check a_failing_tool_stage_yields_tool001_outside_the_budget
+        PASS [   0.329s] (14/80) frob-check::check an_annotation_required_unresolved_finding_is_marked_required
+        PASS [   0.367s] (15/80) frob-check::check a_changed_side_input_misses_the_cache
+        PASS [   0.115s] (16/80) frob-check::check ticket_without_a_ledger_is_an_error
+        PASS [   0.432s] (17/80) frob-check::check telemetry_line_is_appended_when_enabled
+        PASS [   0.452s] (18/80) frob-check::check only_filters_by_family_and_rejects_unknown_names
+        PASS [   0.464s] (19/80) frob-check::check bare_marker_fires_and_second_run_hits_the_cache_with_identical_output
+        PASS [   0.471s] (20/80) frob-check::check a_non_required_unresolved_finding_passes_under_required_and_fails_under_all
+        PASS [   0.490s] (21/80) frob-check::check fail_on_maps_severity_to_the_exit_code
+        PASS [   0.494s] (22/80) frob-check::check fix_rewrites_the_file_and_the_next_run_is_clean
+        PASS [   0.524s] (23/80) frob-check::check a_missing_tool_binary_fails_under_required_and_passes_under_never
+        PASS [   0.168s] (24/80) frob-check::tool_bind a_frob_accept_suppresses_a_tool_finding_like_a_native_one
+        PASS [   0.039s] (25/80) frob-lease::lease contention_ranks_shared_files
+        PASS [   0.153s] (26/80) frob-check::tool_bind a_tool_outside_its_version_range_yields_one_non_required_unresolved
+        PASS [   0.258s] (27/80) frob-check::tool_bind actionlint_findings_map_to_ci014_and_configured_labels_are_dropped
+        PASS [   0.242s] (28/80) frob-check::tool_bind zizmor_findings_carry_ci_ids_and_real_spans
+        PASS [   0.249s] (29/80) frob-check::tool_bind unparseable_output_is_a_tool001_error
+        PASS [   0.345s] (30/80) frob-check::tool_bind an_optional_missing_tool_is_unresolved_but_not_required
+        PASS [   0.837s] (31/80) frob-check::check perf001_fires_only_when_enforced_and_over_budget
+        PASS [   0.348s] (32/80) frob-ledger::ledger doctor_flags_and_fixes_a_stale_frontmatter
+        PASS [   0.367s] (33/80) frob-ledger::ledger branch_mode_commits_to_the_current_branch
+        PASS [   0.010s] (34/80) frob-tests::rule attribute_scan_recognises_tests_outside_a_tests_module
+        PASS [   0.009s] (35/80) frob-tests::rule flags_targets_that_resolve_to_no_test_or_no_symbol
+        PASS [   0.938s] (36/80) frob-check::check editing_a_file_invalidates_only_its_entries
+        PASS [   0.452s] (37/80) frob-ledger::ledger alias_ambiguity_lists_both_candidates
+        PASS [   0.325s] (38/80) frob-ledger::ledger new_is_idempotent_on_the_key
+        PASS [   0.154s] (39/80) frob-tests::selection dry_run_prints_the_selection_and_runs_nothing
+        PASS [   0.197s] (40/80) frob-tests::selection an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests
+        PASS [   0.010s] (41/80) gob-config::config file_beats_default_and_override_beats_file
+        PASS [   0.327s] (42/80) frob-ledger::ledger tick002_and_tick003
+        PASS [   0.008s] (43/80) gob-config::config nested_table_loads
+        PASS [   0.194s] (44/80) frob-tests::selection only_tests_reaching_the_changed_function_are_selected
+        PASS [   0.310s] (45/80) frob-ledger::ledger trunk_mode_commits_to_trunk_even_on_another_branch
+        PASS [   0.009s] (46/80) gob-config::config unknown_key_without_close_match_has_no_suggestion
+        PASS [   0.010s] (47/80) gob-config::config wrong_type_is_invalid
+        PASS [   0.077s] (48/80) gob-config::config check_emits_cfg001_per_missing_knob
+        PASS [   0.030s] (49/80) gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.024s] (50/80) gob-dev::import_v1 refuses_a_non_empty_target
+        PASS [   0.018s] (51/80) gob-dev::import_v1 renders_the_migration_report
+        PASS [   0.072s] (52/80) gob-config::config materialize_preserves_comments_and_order
+        PASS [   0.008s] (53/80) gob-diagnostics::contract fail_on_threshold
+        PASS [   0.007s] (54/80) gob-diagnostics::contract required_reason_serializes_tagged_and_summary_counts_required
+        PASS [   0.008s] (55/80) gob-diagnostics::contract slug_resolves_from_registry
+        PASS [   0.029s] (56/80) gob-dev::import_v1 renders_the_summary_table
+        PASS [   0.029s] (57/80) gob-dev::import_v1 ulids_keep_creation_order
+        PASS [   0.075s] (58/80) gob-config::config unknown_key_suggests_nearest
+        PASS [   0.006s] (59/80) gob-diagnostics::contract unresolved_policy_matrix
+        PASS [   0.007s] (60/80) gob-diagnostics::contract unresolved_policy_composes_with_the_threshold
+        PASS [   0.366s] (61/80) frob-ledger::ledger update_validates_and_repeats_are_already
+        PASS [   0.064s] (62/80) gob-diagnostics::contract json_success_snapshot
+        PASS [   0.060s] (63/80) gob-diagnostics::contract text_color_snapshot
+        PASS [   0.064s] (64/80) gob-diagnostics::contract text_plain_snapshot
+        PASS [   0.765s] (65/80) frob-ledger::ledger concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent
+        PASS [   0.073s] (66/80) gob-git::ledger cas_succeeds_after_one_lost_race
+        PASS [   0.070s] (67/80) gob-git::ledger concurrent_writers_lose_nothing
+        PASS [   0.114s] (68/80) gob-git::ledger cas_exhausted_when_ref_keeps_churning
+        PASS [   0.041s] (69/80) gob-git::ledger root_commit_on_missing_ref_and_checkout_sync
+        PASS [   0.081s] (70/80) gob-git::ledger delete_via_none_and_local_edit_refusal
+        PASS [   0.072s] (71/80) gob-git::ledger read_apis
+        PASS [   0.147s] (72/80) gob-git::ledger commit_from_linked_worktree_syncs_primary_checkout
+        PASS [   0.114s] (73/80) gob-git::ledger primary_with_local_edit_is_reported_and_keeps_it
+        PASS [   0.802s] (74/80) frob-ledger::ledger index_rebuilds_when_the_ledger_tree_changes_and_updates_in_place_otherwise
+        PASS [   0.063s] (75/80) gob-git::ledger staged_unrelated_file_is_untouched
+        PASS [   1.142s] (76/80) frob-check::check ticket_restricts_per_file_rules_to_its_scope
+        PASS [   0.202s] (77/80) gob-git::ledger spawn_fallbacks_worktree_merge_push
+        PASS [   0.907s] (78/80) frob-ledger::ledger link_topology_is_enforced
+        PASS [   0.913s] (79/80) frob-ledger::ledger lifecycle_new_update_link_comment_close
+        PASS [   1.378s] (80/80) frob-tests::selection test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree
+────────────
+     Summary [   2.429s] 80 tests run: 80 passed, 71 skipped
+"""
+size = 8083

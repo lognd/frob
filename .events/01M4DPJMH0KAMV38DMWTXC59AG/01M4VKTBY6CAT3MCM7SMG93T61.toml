@@ -1,0 +1,56 @@
+kind = "evidence"
+captured_at = "2026-10-13T21:48:14Z"
+digest = "cc86aba0514c2b70ae223572835b1dbf2b45a50fc2c8a42cfd304ebc2caf1055"
+exit_code = 0
+inline = '''
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d6896aa4-ff3e-4457-a5e9-bff66372237f with nextest profile: default
+    Starting 32 tests across 7 binaries
+        PASS [   0.204s] gob-git::ledger delete_via_none_and_local_edit_refusal
+        PASS [   0.231s] gob-git::ledger a_cas_retry_reruns_the_local_edit_check
+        PASS [   0.253s] gob-git::ledger crlf_checkout_rewrite_is_not_a_local_edit
+        PASS [   0.267s] gob-git::ledger blobs_listed_in_one_walk_are_read_by_oid
+        PASS [   0.382s] gob-git::ledger concurrent_writers_lose_nothing
+        PASS [   0.380s] gob-git::ledger cas_succeeds_after_one_lost_race
+        PASS [   0.176s] gob-git::ledger read_apis
+        PASS [   0.129s] gob-git::ledger rel_path_validation_and_error_codes
+        PASS [   0.419s] gob-git::ledger primary_with_local_edit_still_receives_the_unblocked_new_paths
+        PASS [   0.177s] gob-git::ledger root_commit_on_missing_ref_and_checkout_sync
+        PASS [   0.440s] gob-git::ledger losing_sync_order_leaves_checkout_equal_to_head
+        PASS [   0.300s] gob-git::ledger real_edit_still_refused_under_autocrlf
+        PASS [   0.188s] gob-git::shared_reader readers_across_threads_share_one_opened_repository
+        PASS [   0.488s] gob-git::ledger staged_unrelated_file_is_untouched
+        PASS [   0.567s] gob-git::symlinks crlf_checkout_without_content_change_is_not_reported
+        PASS [   1.027s] gob-git::ledger primary_with_local_edit_is_reported_and_keeps_it
+        PASS [   0.584s] gob-git::symlinks symlink_replaced_by_regular_file_with_target_text_is_reported
+        PASS [   1.040s] gob-git::ledger a_held_index_lock_is_waited_out_and_the_write_succeeds
+        PASS [   0.051s] gob-git::walk_content outside_a_repository_bytes_are_read_raw
+        PASS [   0.708s] gob-git::symlinks retargeted_symlink_is_reported_committed_and_uncommitted
+        PASS [   0.075s] gob-git::walk_content symlink_reads_as_its_target_string_and_crlf_text_as_lf
+        PASS [   0.323s] gob-git::tag an_annotated_tag_peels_to_its_commit_and_is_never_overwritten
+        PASS [   0.217s] gob-git::tag first_parent_subjects_lists_newest_first_and_honours_the_limit
+        PASS [   0.232s] gob-git::tag list_tags_returns_every_tag_name_sorted
+        PASS [   1.262s] gob-git::ledger cas_exhausted_when_ref_keeps_churning
+        PASS [   0.723s] gob-git::symlinks worktree_content_as_git_matches_what_git_would_store
+        PASS [   1.308s] gob-git::ledger commit_from_linked_worktree_syncs_primary_checkout
+        PASS [   0.336s] gob-git::walk_content crlf_checkout_digests_like_its_lf_twin_and_a_real_edit_differs
+        PASS [   0.960s] gob-git::symlinks untouched_symlinks_are_not_reported
+        PASS [   0.345s] gob-git::walk_paths walk_paths_lists_without_reading_any_file
+        PASS [   1.304s] gob-git::ledger spawn_fallbacks_worktree_merge_push
+        PASS [   2.598s] gob-git::ledger twenty_four_concurrent_writers_never_lose_an_update
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.987s] 32 tests run: 32 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-git"
+size = 3372
+status = "measured"
+test_count = 32
+tests_digest = "00df80de8453d16a6675eb8c2288309c046b69045a3a441e478987e805974cc1"
+at = "2026-10-13T21:48:14Z"
+actor = "lognd"
+rev = 1

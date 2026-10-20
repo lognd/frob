@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["changelog.d/**", "crates/grimble-bind/Cargo.toml", "crates/grimble-bind/src/code.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/live.rs", "crates/grimble-bind/src/edges.rs", "crates/grimble-bind/src/rules.rs", "crates/grimble-bind/src/relation.rs", "crates/grimble-bind/src/owner.rs", "crates/grimble-bind/src/directives.rs", "crates/grimble-bind/tests/warm_cache.rs"]
+new = ["changelog.d/**", "crates/grimble-bind/Cargo.toml", "crates/grimble-bind/src/code.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/live.rs", "crates/grimble-bind/src/edges.rs", "crates/grimble-bind/src/rules.rs", "crates/grimble-bind/src/relation.rs", "crates/grimble-bind/src/owner.rs", "crates/grimble-bind/src/directives.rs", "crates/grimble-bind/tests/warm_cache.rs", "Cargo.lock"]
+at = "2026-10-09T21:12:29Z"
+actor = "lognd"
+rev = 1

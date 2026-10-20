@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~KHCKTS3: converging retries counted as a stuck streak is a case for the hook attempt counter (PT-3)."
+at = "2026-10-04T21:08:23Z"
+actor = "lognd"
+rev = 1

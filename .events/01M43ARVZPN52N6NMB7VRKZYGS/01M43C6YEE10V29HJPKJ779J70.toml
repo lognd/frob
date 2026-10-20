@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:53:56Z"
+digest = "453c17dfd7bd5ff0197bdd939f5b24559a29ffafa2704729dacbba03df703b1e"
+exit_code = 0
+inline = '''
+   Compiling crunk-tailwind v0.0.0 (<worktree>/crates/crunk-tailwind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.67s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ccbeefdc-ca0a-4fd5-89b6-31c1dc6b7038 with nextest profile: default
+    Starting 1 test across 3 binaries (13 tests skipped)
+        PASS [   0.128s] crunk-tailwind::candidate full_class_splits_into_separate_fields
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.131s] 1 test run: 1 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-tailwind -E 'test(full_class_splits_into_separate_fields)'"
+size = 625
+status = "measured"
+tests = ["full_class_splits_into_separate_fields"]
+at = "2026-10-04T11:53:56Z"
+actor = "lognd"
+rev = 1

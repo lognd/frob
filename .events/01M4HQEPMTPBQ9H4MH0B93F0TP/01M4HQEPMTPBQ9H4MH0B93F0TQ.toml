@@ -1,0 +1,12 @@
+kind = "create"
+title = "experimental CI red: clippy-windows fails on unused variable 'shared' in frob-land ratchet.rs share_build_dir (symlink code is unix-only), from ~DWRJEZV"
+type = "bug"
+category = "todo"
+priority = "critical"
+points = 1
+scope = ["crates/frob-land/src/ratchet.rs", "changelog.d/**"]
+acceptance = ["Given the Windows clippy job, when cargo dev ci runs clippy-windows, then frob-land compiles with -D warnings (the canonical-path binding is cfg-gated with the unix symlink code or used on both targets)"]
+body = "CI run 38013006212 (c1731c380): clippy-windows error: unused variable shared at crates/frob-land/src/ratchet.rs:360. Culprit land: ~DWRJEZV."
+at = "2026-10-10T01:39:46Z"
+actor = "lognd"
+rev = 1

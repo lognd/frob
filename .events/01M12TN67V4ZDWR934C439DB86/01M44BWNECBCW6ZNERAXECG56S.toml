@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 WAIVE009 ignoring follow_up=; v2 exceptions are D21."
+at = "2026-10-04T21:07:33Z"
+actor = "lognd"
+rev = 1

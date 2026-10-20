@@ -1,0 +1,14 @@
++++
+id = "01M2VFD1YW5SHJSDB2K53G3DP9"
+title = "land-status.json keeps phase=running entries for dead pids (T-4562 and T-4230 today, 2-4 hours old) and LandInProgress then refuses ledger writes from ROOT while no land runs; prune entries whose pid is gone on every read and treat only live pids as in progress"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "high"
+reporter = "human"
+created = "2026-09-19T00:00:00Z"
+updated = "2026-09-19T00:00:02Z"
+aliases = ["T-5084"]
+labels = ["milestone:0.533.0"]
+scope = ["tests/ticket_land_suite/test_land_lock.py", "src/frob/tickets/_land.py"]
++++

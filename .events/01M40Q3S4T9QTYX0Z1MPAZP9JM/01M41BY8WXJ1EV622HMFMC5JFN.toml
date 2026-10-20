@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T17:10:43Z"
+digest = "122cbc02de17ae421599ecc61ed89ea233edb49a1f3734959ef65522a50b3aca"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 45c95ca4-255d-4827-ada4-d30e63d1f3c3 with nextest profile: default
+    Starting 2 tests across 143 binaries (1250 tests skipped)
+        PASS [   0.197s] frob-lease::lease admission_count_and_acquire_are_one_critical_section
+        PASS [   0.934s] frob-worktree::work concurrent_work_for_the_last_wip_slot_grants_exactly_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.938s] 2 tests run: 2 passed, 1250 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(concurrent_work_for_the_last_wip_slot_grants_exactly_one) | test(admission_count_and_acquire_are_one_critical_section)'"
+size = 671
+status = "measured"
+tests = ["admission_count_and_acquire_are_one_critical_section", "concurrent_work_for_the_last_wip_slot_grants_exactly_one"]
+at = "2026-10-03T17:10:43Z"
+actor = "lognd"
+rev = 1

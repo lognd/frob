@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T04:34:18Z"
+digest = "881bb2b79af245a18e1472cfba12fd06e7b1cfbf5723d9cf5e42834c903c2541"
+exit_code = 0
+inline = '''
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+    Finished `test` profile [unoptimized] target(s) in 3.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a3255374-56fb-4de9-9976-8c6635401f02 with nextest profile: default
+    Starting 1 test across 2 binaries (49 tests skipped)
+        PASS [   0.023s] gob-walk tests::walk_paths_lists_without_reading_any_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.024s] 1 test run: 1 passed, 49 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-walk -E 'test(=tests::walk_paths_lists_without_reading_any_file)'"
+size = 714
+status = "measured"
+tests = ["tests::walk_paths_lists_without_reading_any_file"]
+at = "2026-10-11T04:34:18Z"
+actor = "lognd"
+rev = 1

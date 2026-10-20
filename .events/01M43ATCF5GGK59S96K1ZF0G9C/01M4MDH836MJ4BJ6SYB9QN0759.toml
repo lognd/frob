@@ -1,0 +1,88 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T02:43:21Z"
+digest = "837493a680e5023687ad1bf3e4406895c1f6cdbdfff192ccd172ccbf9eff32f1"
+exit_code = 0
+inline = '''
+   Compiling gix-path v0.12.6
+   Compiling gix-packetline v0.22.2
+   Compiling schemars v1.2.2
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-config-value v0.19.1
+   Compiling gix-ignore v0.22.1
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-url v0.38.0
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-index v0.55.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-discover v0.55.0
+   Compiling gix-dir v0.29.1
+   Compiling gix-config v0.60.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-transport v0.59.2
+   Compiling gix-pack v0.74.2
+   Compiling gix-shallow v0.13.0
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gix-refspec v0.45.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-submodule v0.34.0
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gix-protocol v0.65.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gix v0.87.1
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized] target(s) in 46.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b92029cb-7c76-48bf-984f-83b1741dffd1 with nextest profile: default
+    Starting 1 test across 8 binaries (22 tests skipped)
+        PASS [   0.066s] crunk-check::warm_cache the_second_run_reuses_cached_ingest_and_reports_the_same_findings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.066s] 1 test run: 1 passed, 22 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E 'test(=the_second_run_reuses_cached_ingest_and_reports_the_same_findings)'"
+size = 3445
+status = "measured"
+tests = ["the_second_run_reuses_cached_ingest_and_reports_the_same_findings"]
+at = "2026-10-11T02:43:21Z"
+actor = "lognd"
+rev = 1

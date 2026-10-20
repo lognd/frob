@@ -1,0 +1,8 @@
+kind = "field"
+field = "priority"
+old = "medium"
+new = "high"
+reason = "2026-10-06: 290 of 456 commits on experimental were ledger commits; every ledger write moves the land base (stale-land retries, held ticket edits). Moving the ledger off the code branch is now a throughput fix."
+at = "2026-10-06T13:21:03Z"
+actor = "lognd"
+rev = 1

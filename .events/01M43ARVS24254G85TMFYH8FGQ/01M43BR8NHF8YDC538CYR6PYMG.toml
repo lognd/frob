@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:45:53Z"
+digest = "c5116a32d5e9403b7146e0e6f437c3612d247560f85fbd52e740b36189aaf065"
+exit_code = 0
+inline = '''
+   Compiling crunk-check v0.0.0 (<worktree>/crates/crunk-check)
+   Compiling crunk v0.0.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.61s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 17a7acc0-dbcb-4602-92fa-9e0016500117 with nextest profile: default
+    Starting 1 test across 4 binaries (5 tests skipped)
+        PASS [   0.035s] crunk::verbs check_without_crunk_toml_refuses_with_the_shared_no_config_code
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.036s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p crunk -E 'test(check_without_crunk_toml)'"
+size = 682
+status = "measured"
+tests = ["check_without_crunk_toml_refuses_with_the_shared_no_config_code"]
+at = "2026-10-04T11:45:55Z"
+actor = "lognd"
+rev = 1

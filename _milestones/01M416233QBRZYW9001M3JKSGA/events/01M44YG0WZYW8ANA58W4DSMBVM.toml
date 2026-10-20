@@ -1,0 +1,6 @@
+kind = "criterion"
+op = "add"
+text = "Owner decision 2026-10-05 (relaxed from two full cycles): cloc and mdcat are managed by frob v2, and at cut time ticket doctor is clean in both with no event count lower than at the previous check; the Unity and Python trial on project-hullbreach follows the release"
+at = "2026-10-05T02:32:42Z"
+actor = "lognd"
+rev = 1

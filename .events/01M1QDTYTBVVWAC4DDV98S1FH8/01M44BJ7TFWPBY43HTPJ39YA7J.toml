@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by D87 and monorepo.md 4: crates and PyPI projects are version-locked in lockstep, so a sibling-distribution pin rule is not needed."
+at = "2026-10-04T21:01:52Z"
+actor = "lognd"
+rev = 1

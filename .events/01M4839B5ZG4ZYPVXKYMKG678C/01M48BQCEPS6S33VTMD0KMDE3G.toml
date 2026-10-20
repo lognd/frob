@@ -1,0 +1,27 @@
+kind = "comment"
+subtype = "note"
+body = """
+cargo-shear 1.14.0 hit list (found while working ~19X37CZ). Each is allowed in root Cargo.toml [workspace.metadata.cargo-shear] ignored with 'removal tracked in ~MKG678C'; delete the dependency and then its allow entry (names are workspace-wide).
+- unused_dependency crates/crunk/Cargo.toml unused dependency `gob-check`
+- unused_dependency crates/crunk-check/Cargo.toml unused dependency `gob-diagnostics`
+- unused_dependency crates/crunk-check/Cargo.toml unused dependency `tempfile`
+- unused_dependency crates/frob/Cargo.toml unused dependency `gob-rules`
+- unused_dependency crates/frob-land/Cargo.toml unused dependency `gob-rules`
+- unused_dependency crates/frob-land/Cargo.toml unused dependency `toml`
+- misplaced_dependency crates/frob-lease/Cargo.toml misplaced dependency `serde_json`
+- misplaced_dependency crates/frob-tests/Cargo.toml misplaced dependency `frob-ledger`
+- misplaced_dependency crates/frob-worktree/Cargo.toml misplaced dependency `gob-time`
+- unused_dependency crates/gob-cache/Cargo.toml unused dependency `thiserror`
+- unused_dependency crates/gob-cli/Cargo.toml unused dependency `tempfile`
+- unlinked_files - 13 unlinked files in `gob-macros`
+- unused_dependency crates/gob-rules/Cargo.toml unused dependency `serde_json`
+- unlinked_files - 13 unlinked files in `gob-symbols`
+- unused_dependency crates/grimble/Cargo.toml unused dependency `gob-rules`
+- unused_dependency crates/grimble/Cargo.toml unused dependency `gob-time`
+- unused_dependency crates/grimble/Cargo.toml unused dependency `gob-walk`
+- unlinked_files - 28 unlinked files in `grimble-bind`
+- unused_dependency crates/grimble-check/Cargo.toml unused dependency `gob-diagnostics`
+- unused_dependency crates/grimble-check/Cargo.toml unused dependency `toml`"""
+at = "2026-10-06T10:21:34Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~AA0PAPK: the NARR001 requirement is the epic's; the 447 comment-block migration is v1 repository cleanup."
+at = "2026-10-04T21:07:54Z"
+actor = "lognd"
+rev = 1

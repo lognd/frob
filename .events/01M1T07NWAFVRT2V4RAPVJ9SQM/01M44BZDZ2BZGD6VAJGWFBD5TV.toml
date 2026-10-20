@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-2: scope entries linted when written (bare names, whitespace, zero matches). v2 overlap.rs normalize accepts all three silently."
+at = "2026-10-04T21:09:04Z"
+actor = "lognd"
+rev = 1

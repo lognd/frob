@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-tests/**", "crates/frob-evidence/**"]
+new = ["crates/frob-tests/**", "crates/frob-evidence/**", "crates/gob-symbols/src/typescript/mod.rs", "crates/gob-symbols/src/lib.rs", "crates/gob-testsupport/src/lib.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/code-model.md"]
+at = "2026-10-07T02:28:08Z"
+actor = "lognd"
+rev = 1

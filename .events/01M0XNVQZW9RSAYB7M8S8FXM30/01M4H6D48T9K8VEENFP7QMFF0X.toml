@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/gates/_tdd_order.py", "tests/gates/test_tdd_order.py", "docs/modules/gates.md"]
+new = ["src/frob/gates/_tdd_order.py", "tests/gates/test_tdd_order.py", "docs/modules/gates.md", "docs/design/rules.md"]
+at = "2026-10-09T20:41:49Z"
+actor = "lognd"
+rev = 1

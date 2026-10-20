@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/moves.rs", "creates:crates/frob/tests/ticket_moves.rs", "creates:crates/gob-mdtest/coverage-allowlist.toml", "creates:crates/frob-ledger/src/rules.rs", "creates:crates/frob-ledger/src/lib.rs", "creates:crates/frob-check/src/product.rs", "creates:docs/reference/rules/TICK008.md"]
+new = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/moves.rs", "creates:crates/frob/tests/ticket_moves.rs", "creates:crates/gob-mdtest/coverage-allowlist.toml", "creates:crates/frob-ledger/src/rules.rs", "creates:crates/frob-ledger/src/lib.rs", "creates:crates/frob-check/src/product.rs", "creates:docs/reference/rules/TICK008.md", "creates:docs/reference/rules/README.md"]
+at = "2026-10-11T19:24:49Z"
+actor = "lognd"
+rev = 1

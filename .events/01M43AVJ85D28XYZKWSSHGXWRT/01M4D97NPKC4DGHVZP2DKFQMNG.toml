@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Bind eslint-plugin-jsx-a11y for JSX and TSX (web profile ticket, notes/research/lint-catalogue-2026-10-08.md row W01); write GRL A11Y rules only for HTML, Vue, USS and cross-file checks."
+at = "2026-10-08T08:14:18Z"
+actor = "lognd"
+rev = 1

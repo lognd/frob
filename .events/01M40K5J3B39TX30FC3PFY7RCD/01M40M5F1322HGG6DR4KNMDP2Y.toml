@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T10:15:13Z"
+digest = "ecd77da11f710802b6c78b5268db128e617a6c96f4a051c1a4566d8c384af37d"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+────────────
+ Nextest run ID 4f85647a-6a9b-44e3-9dba-0ba328311501 with nextest profile: default
+    Starting 2 tests across 2 binaries (12 tests skipped)
+        PASS [   0.004s] (1/2) frob-evidence provider::tests::zero_matched_tests_is_told_apart_from_a_failed_build
+        PASS [   0.581s] (2/2) frob-evidence::evidence a_filter_matching_no_test_refuses_and_records_nothing
+────────────
+     Summary [   0.581s] 2 tests run: 2 passed, 12 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(a_filter_matching_no_test_refuses_and_records_nothing) | test(zero_matched_tests_is_told_apart_from_a_failed_build)'"
+size = 571
+status = "measured"
+tests = ["provider::tests::zero_matched_tests_is_told_apart_from_a_failed_build", "a_filter_matching_no_test_refuses_and_records_nothing"]
+at = "2026-10-03T10:15:13Z"
+actor = "lognd"
+rev = 1

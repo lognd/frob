@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "lease: exempt changelog.d fragments from scope overlap (shared_files)"
+new = "A ticket's own changelog fragment is always in scope and never contends for a lease"
+at = "2026-10-03T13:48:10Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,22 @@
+kind = "create"
+title = "Render limits and per-ticket isolation"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror2-render-limits"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-mirror/src/limits.rs"]
+acceptance = ["Given a projection whose body is 65537 characters, when planned, then MIR001 is reported for that ticket and no write is made for it", "Given one over-limit ticket among ten, when a run executes, then the other nine are published", "Given a label over its length limit, when planned, then the ticket is isolated with a reason"]
+body = """
+Implements mirror.md section 3.6 (Publishing safely; MIR-AUD-18, 19).
+
+Body size (65536 characters), label count and length and sub-issue limits are checked before any write. A ticket that cannot be published is isolated: MIR001 for that ticket only, and the run continues."""
+at = "2026-10-03T05:51:38Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX83T22GTC94BW4PM742G1"

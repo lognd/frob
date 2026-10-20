@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Design updated by ~N2P06HZ after the trust UX audit: implement security.md 2.3 (follow ceremony on a recorded exact ref, tip advanced only by frob fast-forward fetch, merge-base evaluation, high-risk widening held pending, revocation list, agent-marker refusal) and 2.12 (bounded review flow, type-to-confirm of the scope, deny default, partial and once trust, input hygiene, verified provenance only, rate limits). Acceptance should be extended accordingly before work starts."
+at = "2026-10-03T03:51:19Z"
+actor = "lognd"
+rev = 1

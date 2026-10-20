@@ -1,0 +1,17 @@
+kind = "evidence"
+captured_at = "2026-10-13T19:00:34Z"
+digest = "b44d402340274f6ae9428ad2d6d84b426791c78b17f427591bc8213999b67154"
+exit_code = 1
+inline = """
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'yaml'
+"""
+passed = false
+provider = "command"
+ref = """python3 -c 'import yaml;yaml.safe_load(open(".github/workflows/ci.yml"))'"""
+size = 118
+status = "measured"
+at = "2026-10-13T19:00:34Z"
+actor = "lognd"
+rev = 1

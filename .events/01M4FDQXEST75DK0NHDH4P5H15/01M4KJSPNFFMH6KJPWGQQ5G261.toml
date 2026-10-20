@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T18:56:52Z"
+digest = "26b1c7b0724d38370f042bdd881f05653a2fbb135e1ff6cd94941cacbef0c8f2"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9225a6f9-1691-4320-b4ae-8edb47c89c40 with nextest profile: default
+    Starting 1 test across 39 binaries (273 tests skipped)
+        PASS [   0.312s] frob-cli::fragment a_configured_fragment_prefix_starts_the_skeleton
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.313s] 1 test run: 1 passed, 273 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=a_configured_fragment_prefix_starts_the_skeleton)'"
+size = 549
+status = "measured"
+tests = ["a_configured_fragment_prefix_starts_the_skeleton"]
+at = "2026-10-10T18:56:52Z"
+actor = "Claude"
+rev = 1

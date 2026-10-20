@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 CPLACE001/002 burn-down (2149 findings in the v1 repository)."
+at = "2026-10-04T21:07:37Z"
+actor = "lognd"
+rev = 1

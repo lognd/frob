@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a pytest rootdir below the repository root, when evidence is recorded, then node ids are repository-relative", "Given a ticket of type test or chore whose diff touches only tests, when it lands, then the changelog fragment guard is satisfied without --no-changelog, per a [pm.done] knob"]
+new = ["Given a pytest rootdir below the repository root, when evidence is recorded, then node ids are repository-relative"]
+moved = [1, 0]
+at = "2026-10-10T20:49:07Z"
+actor = "Claude"
+rev = 1

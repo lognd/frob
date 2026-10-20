@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Scope narrowed to transport (mirror.md 3.2): the client also exposes rate-limit headers. Additional acceptance: Given a response with rate-limit headers, when read, then remaining, used and reset reach the caller as typed values; given a response without them, then the absence is reported as such (assumption TA4), never defaulted. Retry-After acceptance above stays here; stop-at-no-budget, 60 s doubling and GraphQL errors arrays moved to m2-mirror2-gh-error-policy."
+at = "2026-10-03T05:49:55Z"
+actor = "lognd"
+rev = 1

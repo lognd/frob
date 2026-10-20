@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T11:27:20Z"
+digest = "b9cfe57ab59d4538715d479209f7c2bc49f3fa49650e798e87be94d00f2e3475"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1c4755ff-9c89-464c-93e2-3e2809498d04 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.013s] gob-dev::import_v1 home_paths_and_private_terms_are_redacted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test import_v1 home_paths_and_private_terms_are_redacted"
+size = 547
+status = "measured"
+tests = ["home_paths_and_private_terms_are_redacted"]
+at = "2026-10-04T11:27:20Z"
+actor = "lognd"
+rev = 1

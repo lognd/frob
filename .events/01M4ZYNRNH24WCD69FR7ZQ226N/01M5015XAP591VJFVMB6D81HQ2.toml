@@ -1,0 +1,153 @@
+kind = "evidence"
+captured_at = "2026-10-15T14:57:35Z"
+digest = "e27df44ab6e06cb7c05a4b7d78385da7075a943601fd912cece1c6c51fadcfc4"
+exit_code = 0
+inline = '''
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.14
+   Compiling cc v1.5.1
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling tree-sitter-language v0.1.8
+   Compiling cfg-if v1.0.5
+   Compiling syn v3.0.6
+   Compiling once_cell v1.21.4
+   Compiling memchr v2.8.3
+   Compiling serde_core v1.0.229
+   Compiling syn v2.0.119
+   Compiling zmij v1.0.23
+   Compiling itoa v1.0.18
+   Compiling regex-syntax v0.8.11
+   Compiling serde v1.0.229
+   Compiling thiserror v2.0.21
+   Compiling crossbeam-utils v0.8.23
+   Compiling zerocopy v0.8.59
+   Compiling tracing-attributes v0.1.31
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling aho-corasick v1.1.5
+   Compiling tracing-core v0.1.36
+   Compiling hashbrown v0.17.1
+   Compiling crossbeam-epoch v0.9.21
+   Compiling pin-project-lite v0.2.17
+   Compiling fnv v1.0.7
+   Compiling equivalent v1.0.2
+   Compiling tracing v0.1.44
+   Compiling regex-automata v0.4.18
+   Compiling crossbeam-deque v0.8.8
+   Compiling serde_json v1.0.151
+   Compiling ref-cast v1.0.27
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling blake3 v1.8.7
+   Compiling ident_case v1.0.1
+   Compiling strsim v0.11.1
+   Compiling bitflags v2.13.2
+   Compiling version_check v0.9.5
+   Compiling schemars_derive v1.2.2
+   Compiling ahash v0.8.12
+   Compiling darling_core v0.20.11
+   Compiling indexmap v2.14.2
+   Compiling cpufeatures v0.3.1
+   Compiling rayon-core v1.13.0
+   Compiling arrayvec v0.7.8
+   Compiling constant_time_eq v0.4.2
+   Compiling dyn-clone v1.0.20
+   Compiling schemars v1.2.2
+   Compiling darling_macro v0.20.11
+   Compiling bstr v1.13.1
+   Compiling vcpkg v0.2.15
+   Compiling getrandom v0.3.4
+   Compiling same-file v1.0.6
+   Compiling log v0.4.34
+   Compiling pkg-config v0.3.34
+   Compiling globset v0.4.20
+   Compiling libsqlite3-sys v0.30.1
+   Compiling walkdir v2.5.0
+   Compiling darling v0.20.11
+   Compiling tree-sitter v0.27.0
+   Compiling tree-sitter-css v0.25.0
+   Compiling tree-sitter-typescript v0.23.2
+   Compiling tree-sitter-toml-ng v0.7.0
+   Compiling tree-sitter-rust v0.24.2
+   Compiling tree-sitter-javascript v0.25.0
+   Compiling tree-sitter-python v0.25.0
+   Compiling tree-sitter-md v0.5.3
+   Compiling tree-sitter-html v0.23.2
+   Compiling tree-sitter-c-sharp v0.23.5
+   Compiling getrandom v0.4.3
+   Compiling either v1.18.0
+   Compiling rustix v1.1.5
+   Compiling rayon v1.12.0
+   Compiling hashbrown v0.14.5
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling ignore v0.4.33
+   Compiling regex v1.13.1
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling linux-raw-sys v0.12.1
+   Compiling inventory v0.3.24
+   Compiling jiff-core v0.1.1
+   Compiling streaming-iterator v0.1.9
+   Compiling jiff v0.2.37
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling rand_core v0.9.5
+   Compiling hashlink v0.9.1
+   Compiling fastrand v2.5.0
+   Compiling autocfg v1.5.1
+   Compiling winnow v1.0.4
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling foldhash v0.1.5
+   Compiling smallvec v1.16.2
+   Compiling fallible-iterator v0.3.0
+   Compiling hashbrown v0.15.5
+   Compiling rusqlite v0.32.1
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling num-traits v0.2.19
+   Compiling tempfile v3.27.0
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling cobs v0.3.0
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling fixedbitset v0.5.7
+   Compiling petgraph v0.8.3
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling postcard v1.1.3
+   Compiling ppv-lite86 v0.2.21
+   Compiling wait-timeout v0.2.1
+   Compiling rusty-fork v0.3.1
+   Compiling rand_chacha v0.9.0
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling rand v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling console v0.16.6
+   Compiling similar v2.7.0
+   Compiling proptest v1.11.0
+   Compiling insta v1.48.0
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f72625b4-5e13-4439-acbd-96b39396975f with nextest profile: default
+    Starting 2 tests across 24 binaries (252 tests skipped)
+        PASS [   0.005s] gob-plan grl::lexer::rule_id_tests::rule_id_rejects_bad_shapes
+        PASS [   0.005s] gob-plan grl::lexer::rule_id_tests::rule_id_accepts_digits_in_family
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 2 tests run: 2 passed, 252 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan rule_id_tests"
+size = 5154
+status = "measured"
+test_count = 2
+tests_digest = "cc84a906bf708bb0ca18af646f684cb07668e6f93ed79af1b772fb0a84303492"
+at = "2026-10-15T14:57:35Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-11: a directive in a file with no scanned language must be reported (DSL004), not silently inert; gob-directives takes a Language and never sees such files."
+at = "2026-10-04T21:09:17Z"
+actor = "lognd"
+rev = 1

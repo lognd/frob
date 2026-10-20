@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T01:58:13Z"
+digest = "a863e2d8bd2c23dad13266beef413f17052a071807bc720c8fbcd14ef1fe1ab1"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 831dbb40-ed4f-41d4-8983-67e10a4ebcc2 with nextest profile: default
+    Starting 1 test across 13 binaries (125 tests skipped)
+        PASS [   0.008s] frob-release::products the_smoke_steps_name_each_product_archive_and_run_each_binary
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 125 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(the_smoke_steps_name_each_product_archive_and_run_each_binary)'"
+size = 578
+status = "measured"
+tests = ["the_smoke_steps_name_each_product_archive_and_run_each_binary"]
+at = "2026-10-04T01:58:13Z"
+actor = "lognd"
+rev = 1

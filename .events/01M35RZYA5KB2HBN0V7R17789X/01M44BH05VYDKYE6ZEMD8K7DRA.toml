@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. SQL103/SQL107 and Prisma N+1 rules; grimble-websec SQL family (D89)."
+at = "2026-10-04T21:01:11Z"
+actor = "lognd"
+rev = 1

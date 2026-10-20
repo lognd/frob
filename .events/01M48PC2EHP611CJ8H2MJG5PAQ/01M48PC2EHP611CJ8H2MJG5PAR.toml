@@ -1,0 +1,16 @@
+kind = "create"
+title = "gob-mdtest: unknown directives and attribute keys are parse errors"
+type = "story"
+category = "todo"
+priority = "low"
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
+acceptance = ["parse tests for each case", "all corpora pass or are fixed"]
+body = "Any HTML comment directive other than a known one (plus a small formatter allowlist) and any unknown info-string key are parse errors, and a fence with rule= but no expect= is an error instead of silent documentation (ty parser). Source: notes/research/rule-testing.md (D103)."
+at = "2026-10-06T13:27:42Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M48PBZRJ30T8TKEE31X6M6MS"

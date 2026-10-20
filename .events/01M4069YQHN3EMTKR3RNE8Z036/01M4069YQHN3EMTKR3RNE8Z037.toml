@@ -1,0 +1,19 @@
+kind = "create"
+title = "Dev channel: every green land builds artifacts to a GitHub prerelease dev"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4065Y4N6DQG30TRSP2QNP8T"
+idempotency_key = "m2-rel-dev-channel"
+labels = ["milestone:2", "area:release", "release:0.532.0"]
+scope = [".github/workflows/dev.yml", ".github/workflows/ci.yml"]
+acceptance = ["Given a green CI run on the base branch, when dev.yml runs, then the dev prerelease holds fresh archives naming the sha", "Given a failed CI run, when dev.yml triggers, then it does nothing"]
+body = "workflow_run (CI success on the base branch) rebuilds the cargo-dist archives and replaces assets on the prerelease tagged dev with the tested sha in the body; contents: write only on the publishing job, never secrets from forks, nothing published to registries, timeouts on all jobs. This repository's tip is branch experimental until main is cut; the trigger branch list is one knob in the workflow env."
+at = "2026-10-03T06:13:00Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4069XFWGEFARNVXTXHT82FS"

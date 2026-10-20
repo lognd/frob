@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T12:02:48Z"
+digest = "85a27f6939572c953336ef07a35527899cba238abf9fa487588bca70c9960106"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+────────────
+ Nextest run ID 5fd74df3-b5fd-448c-ad64-a01f3366723a with nextest profile: default
+    Starting 2 tests across 1 binary (4 tests skipped)
+        PASS [   0.092s] (1/2) frob-cli::merge_driver_path doctor_reports_a_mismatched_driver_with_the_fix
+        PASS [   0.157s] (2/2) frob-cli::merge_driver_path doctor_reports_unresolvable_and_ok_drivers
+────────────
+     Summary [   0.158s] 2 tests run: 2 passed, 4 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test merge_driver_path -E 'test(doctor_reports)'"
+size = 552
+status = "measured"
+tests = ["doctor_reports_a_mismatched_driver_with_the_fix", "doctor_reports_unresolvable_and_ok_drivers"]
+at = "2026-10-03T12:02:48Z"
+actor = "lognd"
+rev = 1

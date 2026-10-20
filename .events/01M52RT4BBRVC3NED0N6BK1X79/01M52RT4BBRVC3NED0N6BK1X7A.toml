@@ -1,0 +1,11 @@
+kind = "create"
+title = "land train: push once per drain"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
+scope = ["crates/frob-land/**"]
+at = "2026-10-16T16:30:35Z"
+actor = "lognd"
+rev = 1

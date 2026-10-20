@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T05:26:17Z"
+digest = "4137d67ed2660dd50fd8b6b6f22849d9b82ca75be3cabb0852fdb53e62b3c86d"
+exit_code = 0
+inline = '''
+   Compiling frob-land v0.0.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.56s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6598d177-de5f-4854-a0c1-2513e1e08569 with nextest profile: default
+    Starting 1 test across 1 binary (25 tests skipped)
+        PASS [   0.599s] frob-land::land happy_path_lands_closes_and_cleans_up
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.600s] 1 test run: 1 passed, 25 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land --test land happy_path_lands_closes_and_cleans_up"
+size = 602
+status = "measured"
+tests = ["happy_path_lands_closes_and_cleans_up"]
+at = "2026-10-04T05:26:17Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["self-tests cover insert, rewrite, remove and the three failures", "FORMAT.md documents it", "cargo dev ci fails if the update env is set"]
+new = ["self-tests cover insert, rewrite, remove and the three failures", "FORMAT.md documents it", "cargo dev ci fails if the update env is set", "the update mode never changes a case's outcome class without a second explicit switch", "an Unresolved snapshot shows the reason in words and its remedy"]
+reason = "D106 (testing against U)"
+moved = [1, 2, 3]
+at = "2026-10-06T13:41:06Z"
+actor = "lognd"
+rev = 1

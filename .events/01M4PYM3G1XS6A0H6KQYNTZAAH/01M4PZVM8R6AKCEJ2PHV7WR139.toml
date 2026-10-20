@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["docs/design/cli.md", "docs/design/universal-model.md", "docs/design/sibling-contract.md"]
+at = "2026-10-12T02:42:50Z"
+actor = "lognd"
+rev = 1

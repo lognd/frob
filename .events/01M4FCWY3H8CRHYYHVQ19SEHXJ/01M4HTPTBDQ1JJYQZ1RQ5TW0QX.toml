@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "research-notes-only-no-user-visible-change"
+at = "2026-10-10T02:32:16Z"
+actor = "lognd"
+rev = 1

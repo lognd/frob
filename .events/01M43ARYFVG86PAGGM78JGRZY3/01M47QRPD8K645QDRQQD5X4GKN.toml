@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D96 (language-engines.md): JSX element, attribute, style-object and class-token extraction is gob work in ~VGKB025 and ~4N35GSV. This ticket now only maps those answers into crunk's ProjectStyles; it must not walk syntax trees."
+at = "2026-10-06T04:32:50Z"
+actor = "lognd"
+rev = 1

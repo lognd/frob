@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "internal-tooling-or-internal-fix"
+at = "2026-10-04T12:13:42Z"
+actor = "lognd"
+rev = 1

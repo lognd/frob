@@ -1,0 +1,18 @@
+kind = "create"
+title = "WEBSEC310-317: debug/info-leak config"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M2Y1SS0Q1MXMXDHZ5ZJAD3XB"
+aliases = ["T-5329"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/webapp/_websec_debug_config.py", "tests/fixtures/webapp/websec3xx/debug/**", "tests/unit/test_websec_debug_config.py", "docs/modules/webapp-websec-debug-config.md"]
+body = "DEBUG=True in prod, source maps deployed to prod (webpack/vite config AST for devtool:'source-map' plus build-output .map-file check), verbose stack traces in error handler, directory listing (nginx/Apache config), .git/.svn deployed (deploy-pipeline/Dockerfile COPY lint), public S3/GCS/Supabase buckets (IaC regex-scan for public-read/AllUsers, not a full HCL parser), secrets in front-end bundles (reuses 5141-1's secret-pattern table, grepped against compiled JS output -- does not reimplement it). Default-creds cross-refs SEC001-003, not duplicated here. Fixture per rule id."
+at = "2026-09-22T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K76D807X6VTTB7V8QPT1"

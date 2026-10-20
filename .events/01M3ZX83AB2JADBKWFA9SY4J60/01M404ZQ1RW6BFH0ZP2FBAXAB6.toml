@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Points 3 to 5, scope unchanged (adapter.rs). Added acceptance: (1) Given a fake adapter, when history after event id E is read, then entries arrive ordered with actor id, field, value digest and event id. (2) Given a label change, when expressed through the trait, then only add and remove operations exist, never a replace-all set (mirror.md 3.4). (3) Given a create, when issued, then it carries the nonce and its outcome is created, failed or unknown (mirror.md 3.3). (4) Given the capabilities record, then it states history retention (original plus latest 99 body edits on GitHub) so gaps can be reported."
+at = "2026-10-03T05:49:56Z"
+actor = "lognd"
+rev = 1

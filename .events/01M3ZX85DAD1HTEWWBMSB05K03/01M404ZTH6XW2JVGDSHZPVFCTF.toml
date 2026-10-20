@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Points 2 to 3 for the added setup text. Added acceptance: Given `frob mirror init`, when run, then the output states that credentials belong in an environment whose deployment branches are the default branch only, and that the job refuses to run from any other ref. Existing acceptance stands."
+at = "2026-10-03T05:49:59Z"
+actor = "lognd"
+rev = 1

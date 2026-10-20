@@ -1,0 +1,13 @@
+kind = "create"
+title = "Decide frob-gh: wire it in (mirror, CI) or remove it (audit M11)"
+type = "task"
+category = "todo"
+priority = "low"
+points = 1
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+scope = ["changelog.d/**", "crates/frob-gh/**", "Cargo.toml"]
+acceptance = ["Given the decision, when recorded, then frob-gh is either consumed or deleted with a dropped-ticket note"]
+body = "~GHMWDGG chose frob-release::ci over frob-gh; frob-gh has no consumer."
+at = "2026-10-08T07:29:40Z"
+actor = "lognd"
+rev = 1

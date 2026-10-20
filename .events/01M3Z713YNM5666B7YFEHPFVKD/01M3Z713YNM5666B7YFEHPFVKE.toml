@@ -1,0 +1,27 @@
+kind = "create"
+title = "G09: grimble binary skeleton: check --json, init, doctor, fmt, exceptions list"
+type = "task"
+category = "todo"
+priority = "high"
+points = 8
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+idempotency_key = "m2-grimblebin"
+labels = ["milestone:2"]
+scope = ["crates/grimble/**", "crates/grimble-check/**"]
+acceptance = ["Given a repository with grimble.toml and no .grmb file, when grimble check --json runs, then a valid sibling document with zero findings and a fidelity report is produced"]
+body = "boundaries.md and grimble-model.md 9.7: standalone grimble over gob-check with the sibling JSON schema (G03), grimble.toml with materialized knobs, doctor with fidelity report, fmt via grimble-model, exceptions list; no frob dependency."
+at = "2026-10-02T21:06:24Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3Z712PSRGMHPGJ01CMBK6TR"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3Z713NBP986Q2ZDHKKR84AW"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3Z713VGKF4Z0JJ3263XJMC3"

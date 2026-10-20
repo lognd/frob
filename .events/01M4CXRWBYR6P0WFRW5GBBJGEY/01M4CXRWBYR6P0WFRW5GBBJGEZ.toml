@@ -1,0 +1,13 @@
+kind = "create"
+title = "Solver-browser parity test in CI with a pixel tolerance"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
+scope = ["changelog.d/**", "crates/crunk-gallery/**", ".github/workflows/**"]
+acceptance = ["Given a scene whose solver and browser boxes differ beyond tolerance, when CI runs, then the parity job fails naming the node"]
+body = "docs/design/crunk.md section 3."
+at = "2026-10-08T04:53:59Z"
+actor = "lognd"
+rev = 1

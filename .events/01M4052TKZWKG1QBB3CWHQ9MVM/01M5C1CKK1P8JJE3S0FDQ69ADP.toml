@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-20T06:53:38Z"
+digest = "d6267a4803f955c16683bc67c4101807cef0b2d4232bcb72cf899722bdcb382f"
+exit_code = 0
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 38 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test ticket_proposals_accept::a_valid_proposal_is_applied_after_the_diff_and_closes_as_accepted ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 339 filtered out; finished in 0.14s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running unittests src/lib.rs (target/debug/deps/frob_cli-847a5beaf15fafe5)
+     Running unittests src/main.rs (target/debug/deps/frob-524148eead86ed35)
+     Running tests/it/main.rs (target/debug/deps/it-aeb231910c0b1159)
+     Running tests/siblings/main.rs (target/debug/deps/siblings-e0c3c3ba1614eecd)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-cli a_valid_proposal_is_applied_after_the_diff_and_closes_as_accepted"
+size = 939
+status = "measured"
+at = "2026-10-20T06:53:38Z"
+actor = "lognd"
+rev = 1

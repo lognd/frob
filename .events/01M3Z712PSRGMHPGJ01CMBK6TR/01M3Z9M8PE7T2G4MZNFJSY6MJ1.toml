@@ -1,0 +1,11 @@
+kind = "evidence"
+at = "2026-10-02T21:51:49Z"
+actor = "lognd"
+rev = 1
+provider = "file"
+ref = "docs/design/sibling-contract.md"
+digest = "38a3dab59e0475398dba8ebf895ce33a3f15dc9e465b7998f23aaff9cf9cf8ea"
+status = "measured"
+captured_at = "2026-10-02T21:51:49Z"
+accepts = [1]
+size = 41045

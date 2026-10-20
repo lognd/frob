@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Express handler support for the authz substrate; uncertain: v1 FrameworkKind is Python, v2 needs a TS adapter first (~6KKJF80)."
+at = "2026-10-04T21:01:08Z"
+actor = "lognd"
+rev = 1

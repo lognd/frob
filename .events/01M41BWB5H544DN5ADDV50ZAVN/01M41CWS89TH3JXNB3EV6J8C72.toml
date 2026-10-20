@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T17:27:23Z"
+digest = "475786ae07f234474477b4e3e012b4699f47a29dab769318bb7b2e73c44364c5"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e3cf259a-bd27-4a1f-8093-75d1cd5d3c79 with nextest profile: default
+    Starting 1 test across 10 binaries (104 tests skipped)
+        PASS [   0.014s] frob-release::changelog the_v2_notice_fragment_is_a_lead_notice
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.025s] 1 test run: 1 passed, 104 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(the_v2_notice_fragment_is_a_lead_notice)'"
+size = 557
+status = "measured"
+tests = ["the_v2_notice_fragment_is_a_lead_notice"]
+at = "2026-10-03T17:27:23Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,90 @@
+kind = "create"
+title = "Gate stages are not verbs: fold dup arch cycle bind perf mutate coverage parse pool profile narrative debt deprecated into frob check --only"
+type = "task"
+category = "todo"
+priority = "high"
+aliases = ["T-4692"]
+labels = ["cli-debloat", "points-3", "milestone:0.533.0", "component:cli"]
+scope = ["src/frob/_cli_parsers/_check.py", "src/frob/app/check_runner.py", "src/frob/app/dup_runner.py", "src/frob/app/arch_runner.py", "src/frob/app/cycle_runner.py", "src/frob/app/bind_runner.py", "src/frob/app/exports_runner.py", "src/frob/app/perf_runner.py", "src/frob/app/mutate_runner.py", "src/frob/app/coverage_runner.py", "src/frob/app/pool_runner.py", "src/frob/app/profile_runner.py", "tests/unit/test_check_only_stages.py", "tests/fixtures/check_stages/**", "src/frob/app/scaffold_runner.py", "src/frob/check/__init__.py", "docs/commands/cycle.md"]
+acceptance = ["Given a committed fixture tree containing a planted duplicate block, when frob check --only dup runs on it, then it reports that duplicate -- the same finding frob dup reported before the fold (golden comparison, not a no-crash assertion)", "Given frob check --list-stages, when it runs, then it prints exactly the folded stages (dup arch cycle bind narrative exports) and every printed name is accepted by frob check --only; pool, profile, debt, deprecated and parse are absent because none of them is a check stage. mutate, coverage and perf are ALSO absent, each for a measured reason (2026-09-21, while implementing T-4692): frob mutate requires a mandatory single-file argument no --only stage takes; frob coverage's own docstring is 'refresh coverage.xml... via native_coverage_refresh' -- a WRITE operation, not a check, genuinely distinct from the read-only COV001-008 gate --only coverage already names; frob perf's profile/collect subcommands likewise WRITE telemetry/ratchet artifacts (frob perf collect is PERF009's own data producer) that the read-only PERF001-009 perf_gate --only perf already names only READS -- shimming any of the three flat verbs to --only would silently stop them doing the write their callers (including frob check's own PERF009 rule, T-0712's regression ratchet) depend on. All three stay top-level verbs, undeprecated, not folded -- the same reasoning the ticket's own pool/profile carve-out already applies, generalized to every verb this ticket's initial fold list named that turns out to mutate state", "Given the exports verb is split, when this ticket closes, then its CHECK half runs as frob check --only exports and its GENERATE half (generate __init__.py from public symbols in a package directory) is reachable under frob scaffold -- owner decision 2026-09-19, scaffold not refactor -- and a test exercises each half", "Given pool and profile, when this ticket closes, then neither is reachable through frob check --only (they mutate ratchet and profile state) and each is either a frob check pool|profile subverb or is documented in the Done report as deliberately left top-level, with the reason"]
+body = """
+POINTS: 3. Parent story T-4687. blocked_by T-4690 (needs the shim helper, and
+shares _core.py/_misc.py/_reporting.py/__main__.py with it).
+
+PRINCIPLE: a gate stage is not a verb. `frob check` already runs these stages;
+having each one ALSO be a top-level verb doubles the surface for zero new
+capability, and it is why `frob --help` lists 51 entries.
+
+AMENDED 2026-09-19 (coordinator review): the first version of this ticket swept
+`pool`, `profile`, `debt`, `deprecated` and `parse` into `--only`. Measured,
+none of the five is a check stage. Corrected classification below.
+
+FOLD INTO frob check --only <stage> (planned) (these ARE stages -- read-only analyses
+that `frob check` already runs and that emit findings):
+  dup  arch  cycle  bind  perf  mutate  coverage  narrative
+Each keeps a one-minor-version shim (the T-4690 helper) that prints
+frob check --only <stage> (planned) and exits non-zero after the sunset date.
+
+ADD frob check --list-stages (planned): prints every stage name, one per line, so the
+shims' suggested spelling is discoverable and testable. `--only` already exists
+on `frob check`; verify it accepts every folded stage name before deleting the
+verb, and add the stage if it does not.
+
+`pool` AND `profile` ARE NOT STAGES -- THEY MUTATE STATE. `frob pool snapshot`
+freezes a ratchet baseline and `frob profile` performs the one-way auto-ratchet
+downgrade; T-4663 used `frob pool snapshot` as recently as this sprint. Putting
+a state-mutating command behind `--only` would be a real footgun: `--only`
+reads as "run just this gate", and a reader reasonably expects `frob check
+--only pool` to REPORT, not to rewrite the baseline.
+DECISION (stated here as the ticket's reason, per the coordinator's "your call
+with a reason"): make them SUBVERBS of check -- frob check pool <op> (planned) and
+frob check profile <op> (planned) -- keeping their own flags and their mutating
+semantics intact. This removes two top-level names without lying about what
+they do. If the implementer finds the subverb form collides with `check`'s own
+positional/flag grammar, the fallback is to leave both as top-level verbs and
+record that in the Done report; do NOT force them under `--only`.
+
+`debt` AND `deprecated` MOVE TO T-4695, NOT HERE. They are read-only listings
+("list outstanding frob:debt entries", "list outstanding frob:deprecated
+entries") and belong with the rest of the read-only analysis surface under
+frob explore (planned). Do not touch them in this ticket.
+
+`parse` MOVES TO T-4698's VERDICT TABLE, NOT HERE. It is a tool-output adapter
+(pytest/ruff/ty/clang/junit -> compact summary), not a gate stage and not
+analysis. MEASURED 2026-09-19: `git grep "frob parse "` finds 23 hits, and
+every one is in its own implementation (src/frob/_cli_parsers/_core.py,
+src/frob/app/parse_runner.py), its own test (tests/unit/test_parse.py), or its
+own doc page (docs/commands/parse.md, docs/design/cli-regrouping.md).
+.claude/ = 0 hits. scripts/ = 0 hits. No consumer outside itself.
+
+`exports` -- OWNER DECISION 2026-09-19: split it. The CHECK half folds into
+frob check --only exports (planned). The GENERATE half ("generate __init__.py from
+public symbols in a package directory") moves under `scaffold`, NOT refactor.
+
+POSITIVE CONTROL (acceptance): a golden test on a committed fixture tree that
+plants a real duplicate block, asserts `frob dup` and frob check --only dup (planned)
+produce IDENTICAL findings on it before the deletion, and after the deletion
+asserts frob check --only dup (planned) still reports the planted duplicate. A test that
+only asserts "no crash" does not close this ticket -- the fixture must contain a
+finding the tool is REQUIRED to report.
+
+FILES (declared scope):
+  src/frob/_cli_parsers/_core.py, _misc.py, _reporting.py, _check.py
+  src/frob/__main__.py
+  src/frob/app/check_runner.py
+  src/frob/app/dup_runner.py, arch_runner.py, cycle_runner.py, bind_runner.py,
+  exports_runner.py, perf_runner.py, mutate_runner.py, coverage_runner.py,
+  pool_runner.py, profile_runner.py, scaffold_runner.py
+  tests/unit/test_check_only_stages.py (new), tests/fixtures/check_stages/ (new)
+NOTE: parse_runner.py, debt_runner.py and deprecated_runner.py are NO LONGER in
+this ticket's scope -- they belong to T-4698 and T-4695 respectively. The
+declared scope on the ledger still lists them from the original filing; the
+implementer must run `frob ticket scope T-4692 --remove` for those three (and
+`--add scaffold_runner.py`) before starting, or hand them back at close."""
+at = "2026-09-19T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M2VFD1JJD17QEF1ZFXA7C3R1"

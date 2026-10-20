@@ -1,0 +1,13 @@
+kind = "create"
+title = "Deterministic instruction-count PR benchmarks compared against the base"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/*/benches/**", "crates/gob-dev/**", ".github/workflows/**", "docs/design/build-test-ci.md", "Cargo.toml", "Cargo.lock"]
+acceptance = ["benchmarks run under the harness on Linux", "the PR comment lists per-benchmark instruction deltas", "the harness choice is recorded in build-test-ci.md"]
+body = "build-test-ci.md section 6, ruff on CodSpeed but with no external service. Pin a maintained Valgrind-based instruction-count harness (iai-callgrind or its successor; record the choice) for cold and warm check, the plan executor and the parsers; a PR job runs base and head on Linux and comments the deltas; criterion stays for scheduled wall-clock runs."
+at = "2026-10-06T04:34:12Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/tickets/_land.py", "src/frob/tickets/_land_verify.py", "src/frob/coord/_status.py", "tests/unit/tickets/test_land_hunk_presence.py", "docs/modules/tickets-landing.md", "docs/design/tickets.md"]
+new = ["src/frob/tickets/_land.py", "src/frob/tickets/_land_verify.py", "src/frob/coord/_status.py", "tests/unit/tickets/test_land_hunk_presence.py", "docs/design/tickets.md"]
+at = "2026-10-09T20:42:26Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,13 @@
+kind = "field"
+field = "body"
+old = """
+Implements mirror.md section 3 (partial failure, rate limits).
+
+Each ledger event needing publishing becomes an operation keyed by ticket ULID plus event ULID; an operation whose hash matches the tracker's current state is skipped; failures retry next run; incremental by default."""
+new = """
+Implements mirror.md sections 3.2 (work class 2) and 3.4.
+
+Each ledger event needing publishing becomes an operation keyed by ticket ULID plus event ULID. Operations are set-field-to-value, so a replay or a late duplicate is harmless; an operation whose value equals the tracker's normalized current value is skipped; failures retry next run; incremental by default, with a full-resync mode that diffs every ticket within the budget over several runs. Ordering within the class is oldest first with round-robin resumption (m2-mirror2-work-classes)."""
+at = "2026-10-03T05:49:57Z"
+actor = "lognd"
+rev = 1

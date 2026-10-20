@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "widen"
+at = "2026-10-14T12:42:38Z"
+actor = "Claude"
+rev = 1

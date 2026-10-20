@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = [".github/workflows/build-smoke.yml", "crates/frob-release/tests/products.rs", "crates/frob-release/tests/release_workflow.rs", "crates/gob-dev/Cargo.toml", "Cargo.lock", "crates/gob-dev/src/lib.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/src/wheel.rs", "crates/gob-dev/src/wheel_smoke.rs", "docs/design/releases.md", "docs/guides/release.md", "packaging/pypi/**", "packaging/smoke/fixture-loop.sh", "changelog.d/*1T8TCTA*"]
+at = "2026-10-05T03:20:50Z"
+actor = "lognd"
+rev = 1

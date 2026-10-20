@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-12T20:51:57Z"
+digest = "8961cd5f0fd75ea3e7d9f2c9fa9d9709aa4d23e2cc03536be31b16576ccf0346"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e0bac0e5-5a54-4ac5-abdc-0acee827f41d with nextest profile: default
+    Starting 1 test across 337 binaries (2956 tests skipped)
+        PASS [   0.006s] gob-packs activation::tests::activation_ignores_nested_pack_toml
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 2956 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "activation_ignores_nested"
+size = 561
+status = "measured"
+test_count = 1
+tests_digest = "ab261e670dfe7869c9d252af5a01565bcbe0dcbd0013cdb346acac6f983c3be7"
+at = "2026-10-12T20:51:57Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,11 @@
+kind = "create"
+title = "crunk in the monorepo"
+type = "epic"
+category = "todo"
+priority = "medium"
+points = 13
+labels = ["area:crunk"]
+body = "test"
+at = "2026-10-04T11:27:07Z"
+actor = "lognd"
+rev = 1

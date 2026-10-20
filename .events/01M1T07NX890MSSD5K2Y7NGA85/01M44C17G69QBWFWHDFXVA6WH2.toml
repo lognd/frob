@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~Y32GVV7: zero subjects examined must read Unmeasured, never Passed (PT-4 third acceptance line); must_measure itself is built."
+at = "2026-10-04T21:10:03Z"
+actor = "lognd"
+rev = 1

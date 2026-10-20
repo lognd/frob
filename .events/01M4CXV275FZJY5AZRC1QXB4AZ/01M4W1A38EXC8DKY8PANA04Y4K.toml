@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-14T01:44:22Z"
+digest = "4cba1f7608fcf5424af5aff42375c2ebf8926b8178488509f0d236dcf0eaf383"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.91s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ce2a7b46-0994-4fc8-8f73-c083a5bee8b2 with nextest profile: default
+    Starting 2 tests across 1 binary (3 tests skipped)
+        PASS [   0.025s] gob-plan::grammar_ambiguity a_braced_quantifier_body_ends_before_the_connective_and_a_bare_one_runs_on
+        PASS [   0.037s] gob-plan::grammar_ambiguity an_unclosed_quantifier_brace_is_a_parse_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.042s] 2 tests run: 2 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test grammar_ambiguity a_braced_quantifier_body an_unclosed_quantifier_brace"
+size = 744
+status = "measured"
+test_count = 2
+tests_digest = "0f6c26bcef1d5899596a82f71972491f597a05d75d7d481b145552ccd3cfe07e"
+at = "2026-10-14T01:44:22Z"
+actor = "lognd"
+rev = 1

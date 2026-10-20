@@ -1,0 +1,13 @@
+kind = "create"
+title = "land cache miss runs two checks; share one throwaway worktree"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+scope = ["changelog.d/**", "crates/frob-land/**"]
+acceptance = ["Given a cache miss, when land checks the base, then one worktree serves both passes"]
+body = "Follow-up from ~KJ95784."
+at = "2026-10-08T07:29:36Z"
+actor = "lognd"
+rev = 1

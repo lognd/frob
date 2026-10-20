@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T07:00:07Z"
+digest = "9af26ec2843ac56af89c2f4fb3cf11cf49c706f4a2792e63d583bd97f749555d"
+exit_code = 101
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+error[E0432]: unresolved imports `crunk_rules::rules::slop001`, `crunk_rules::rules::slop003`, `crunk_rules::rules::slop004`, `crunk_rules::rules::slop010`, `crunk_rules::rules::slop011`, `crunk_rules::rules::slop014`, `crunk_rules::rules::slop022`, `crunk_rules::rules::slop040`, `crunk_rules::rules::slop060`
+  --> crates/crunk-rules/tests/rules.rs:12:45
+   |
+12 |     radius001::Radius001, size001::Size001, slop001::Slop001, slop003::Slop003, slop004::Slop004,
+   |                                             ^^^^^^^           ^^^^^^^           ^^^^^^^ could not find `slop004` in `rules`
+   |                                             |                 |
+   |                                             |                 could not find `slop003` in `rules`
+   |                                             could not find `slop001` in `rules`
+13 |     slop010::Slop010, slop011::Slop011, slop014::Slop014, slop022::Slop022, slop040::Slop040,
+   |     ^^^^^^^           ^^^^^^^           ^^^^^^^           ^^^^^^^           ^^^^^^^ could not find `slop040` in `rules`
+   |     |                 |                 |                 |
+   |     |                 |                 |                 could not find `slop022` in `rules`
+   |     |                 |                 could not find `slop014` in `rules`
+   |     |                 could not find `slop011` in `rules`
+   |     could not find `slop010` in `rules`
+14 |     slop060::Slop060, space001::Space001, tokens001::Tokens001, tw001::Tw001, tw002::Tw002,
+   |     ^^^^^^^ could not find `slop060` in `rules`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `crunk-rules` (test "rules") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: command `~/.rustup/toolchains/1.98.0-aarch64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "package(crunk-spec) & test(decisions_table_declares_known_decisions_with_reasons)"
+size = 2149
+status = "measured"
+at = "2026-10-13T07:00:07Z"
+actor = "lognd"
+rev = 1

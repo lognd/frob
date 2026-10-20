@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: registers PRECHECK rules in v1 _KNOWN_GATE_RULES and design/frob.strata."
+at = "2026-10-04T21:02:57Z"
+actor = "lognd"
+rev = 1

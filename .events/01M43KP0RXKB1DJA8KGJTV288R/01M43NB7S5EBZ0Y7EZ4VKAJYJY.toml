@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T14:33:34Z"
+digest = "047b07d16d507a2f42b0826ac09422897fcac104215b0187c45cd3c7a2ee45a9"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4a90896b-a803-4db3-a816-502b6e14c48a with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   0.157s] frob-check::ledger_inert bare_markers_in_ledger_files_are_not_examined
+        PASS [   0.248s] frob-check::ledger_inert text_in_the_ledger_tree_is_never_a_live_directive
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.249s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check --test ledger_inert"
+size = 641
+status = "measured"
+tests = ["bare_markers_in_ledger_files_are_not_examined", "text_in_the_ledger_tree_is_never_a_live_directive"]
+at = "2026-10-04T14:33:34Z"
+actor = "lognd"
+rev = 1

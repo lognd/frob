@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+new = ["creates:crates/gob-frameworks/**"]
+reason = "new crate"
+at = "2026-10-06T10:28:09Z"
+actor = "lognd"
+rev = 1

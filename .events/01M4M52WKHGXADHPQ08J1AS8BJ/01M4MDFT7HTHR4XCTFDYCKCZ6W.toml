@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T02:43:16Z"
+digest = "4ad7f4f8e44391369a21df141cfdedcfb9e2139b5168a0a416975cb2198fc3d8"
+exit_code = 0
+inline = '''
+   Compiling getrandom v0.3.4
+   Compiling ppv-lite86 v0.2.21
+   Compiling wait-timeout v0.2.1
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling rand_core v0.9.5
+   Compiling rusty-fork v0.3.1
+   Compiling rand_xorshift v0.4.0
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.5
+   Compiling proptest v1.11.0
+    Finished `test` profile [unoptimized] target(s) in 3.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d0bb7653-9d06-4b5b-b02f-339856ca3455 with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   0.009s] gob-fs::gitdir a_linked_worktree_and_its_primary_share_one_common_dir_and_a_plain_dir_has_none
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-fs --test gitdir -E 'test(=a_linked_worktree_and_its_primary_share_one_common_dir_and_a_plain_dir_has_none)'"
+size = 884
+status = "measured"
+tests = ["a_linked_worktree_and_its_primary_share_one_common_dir_and_a_plain_dir_has_none"]
+at = "2026-10-11T02:43:16Z"
+actor = "lognd"
+rev = 1

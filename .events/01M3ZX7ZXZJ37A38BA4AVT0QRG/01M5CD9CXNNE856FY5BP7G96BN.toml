@@ -1,0 +1,54 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T10:21:34Z"
+digest = "c015b277bea58e1f0e6a6092668489e0b654a83870b4b84b758678d2de6a641b"
+exit_code = 0
+inline = """
+
+running 1 test
+test fix_validate::tests::edit_outside_primary_span_is_dropped_and_reported ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 110 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.88s
+     Running unittests src/lib.rs (target/debug/deps/gob_check-88c7675a4a6187ae)
+     Running tests/boundary.rs (target/debug/deps/boundary-33531631d8090233)
+     Running tests/pipeline.rs (target/debug/deps/pipeline-630f4aa929d9821f)
+     Running tests/product_rules.rs (target/debug/deps/product_rules-4abadf5847404e98)
+     Running tests/rule_defs.rs (target/debug/deps/rule_defs-9a3f0dd4ffe664fc)
+     Running tests/ui_product.rs (target/debug/deps/ui_product-145e8e3fe643f515)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-check edit_outside_primary_span_is_dropped_and_reported"
+size = 1380
+status = "measured"
+at = "2026-10-20T10:21:34Z"
+actor = "lognd"
+rev = 1

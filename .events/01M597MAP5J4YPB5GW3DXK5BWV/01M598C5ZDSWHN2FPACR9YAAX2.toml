@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T04:58:00Z"
+digest = "a555dfd6355d107bce8fc54eca442d8cce43a713e341e64b4bd7fb42b90b38be"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1d13ba65-7ec6-4423-969d-edddfd763721 with nextest profile: default
+    Starting 1 test across 292 binaries (3447 tests skipped)
+        PASS [   0.046s] gob-dev::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.053s] 1 test run: 1 passed, 3447 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "every_leaf_command_has_a_scenario_or_a_skip_reason"
+size = 625
+status = "measured"
+test_count = 1
+tests_digest = "59d2af6bb7068fe222677a5063f60036dc54cff05a7a1fa4739af6a172414e15"
+at = "2026-10-19T04:58:00Z"
+actor = "lognd"
+rev = 1

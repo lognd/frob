@@ -1,0 +1,10 @@
+kind = "create"
+title = "Document the ruff-json parser in tool-stages.md"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["docs/reference/tool-stages.md"]
+body = "found while working 17FNR3C: ruff-json id map and init stage need a docs row"
+at = "2026-10-12T18:05:00Z"
+actor = "lognd"
+rev = 1

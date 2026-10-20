@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4K3BPQ72DVFEMK8EXQSD03K"
+text = "experimental is red with 5 CAP001 errors; every land is refused until it is fixed"
+at = "2026-10-10T14:27:17Z"
+actor = "Claude"
+rev = 1

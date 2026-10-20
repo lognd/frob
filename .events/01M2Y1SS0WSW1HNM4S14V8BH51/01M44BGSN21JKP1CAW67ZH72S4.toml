@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. SQL family beyond the first slice ~DP8SN2M; uncertain: v1 used sqlfluff (Python), v2 needs a GRL or tool-stage equivalent."
+at = "2026-10-04T21:01:05Z"
+actor = "lognd"
+rev = 1

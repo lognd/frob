@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T04:32:15Z"
+digest = "37abd3150bc32da229cf947ffc93895873549efbe930a30d44782b14c4defa6a"
+exit_code = 0
+inline = """
+    Checking frob-evidence v0.0.0 (<worktree>/crates/frob-evidence)
+    Checking frob-tests v0.0.0 (<worktree>/crates/frob-tests)
+    Checking frob-obligations v0.0.0 (<worktree>/crates/frob-obligations)
+    Checking frob-check v0.0.0 (<worktree>/crates/frob-check)
+    Checking frob-land v0.0.0 (<worktree>/crates/frob-land)
+    Checking frob-cli v0.0.0 (<worktree>/crates/frob)
+    Checking gob-dev v0.0.0 (<worktree>/crates/gob-dev)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 18.52s
+"""
+passed = true
+provider = "command"
+ref = "cargo clippy --workspace --all-targets -- -D warnings"
+size = 509
+status = "measured"
+at = "2026-10-04T04:32:15Z"
+actor = "lognd"
+rev = 1

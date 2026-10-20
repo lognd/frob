@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by mirror.md 3.3 (read-your-writes listing, creation-revision-only markers; adopting any issue carrying the ULID marker is the spoofing hole) and 3.2; replaced by m2-mirror2-gh-lookup, m2-mirror2-gh-history-reads, m2-mirror2-gh-schema-inventory."
+at = "2026-10-03T05:51:57Z"
+actor = "lognd"
+rev = 1

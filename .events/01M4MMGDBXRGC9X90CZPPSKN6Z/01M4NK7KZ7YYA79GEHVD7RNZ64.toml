@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["typos.toml"]
+new = ["typos.toml", "docs/crunk/rules/README.md", "crates/frob/src/profile_cmd.rs", "crates/frob/tests/profile.rs", "crates/gob-dev/profile.toml"]
+at = "2026-10-11T13:42:52Z"
+actor = "Claude"
+rev = 1

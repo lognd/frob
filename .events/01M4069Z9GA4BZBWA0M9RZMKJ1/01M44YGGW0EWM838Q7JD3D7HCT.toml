@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Owner decision 2026-10-05: criterion relaxed ('skipped-ish'). Milestone 0.532.0 criterion now: cloc and mdcat managed by frob v2, ticket doctor clean in both at cut time and no event count lower than at the previous check. Two full 7-day cycles are no longer required; the real-world trial moves to project-hullbreach (game: Unity/C#, platform: Python and TS) after the release."
+at = "2026-10-05T02:32:58Z"
+actor = "lognd"
+rev = 1

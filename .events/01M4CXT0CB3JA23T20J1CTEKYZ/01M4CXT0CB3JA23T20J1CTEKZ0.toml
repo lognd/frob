@@ -1,0 +1,13 @@
+kind = "create"
+title = "Directive admission (D120): merge into grimble:effects, rename core/shell/calls to grimble:, drop pure/honest/dispatcher/trusted/idempotent/hook, admission registry test"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
+scope = ["changelog.d/**", "crates/gob-directives/**", "crates/grimble-check/**", "crates/gob-check/**"]
+acceptance = ["Given every registered directive verb, when the admission test runs, then each has a row naming not-derivable, not-an-exception and its consumers", "Given a file using frob:pure or frob:dispatcher, when checked, then a deprecation finding offers the fix to grimble:effects none or an accept exception"]
+body = "docs/design/cohesion.md 4. Old spellings parse for one minor release with a DSL deprecation finding and an automatic fix."
+at = "2026-10-08T04:54:36Z"
+actor = "lognd"
+rev = 1

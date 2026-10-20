@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the TODO001 rule, when its examples run through run_example, then all pass (kind directive is supported)", "Given the COV001 and NEAT013 rules, when their examples run, then the calls and resolves to edge relations are supplied and the examples pass", "Given the SCOPE001 rule (lang -), when its language-less examples with diff, lease and config inputs run, then they pass"]
+new = ["Given the TODO001 rule, when its examples run through run_example, then all pass (kind directive is supported)", "Given COV001 and NEAT013, when examples run, then the calls and resolves to edge relations are supplied and the examples not blocked on model gaps (~M5HEN3Y, ~WNH8N7X) pass", "Given the SCOPE001 rule (lang -), when its language-less examples with diff, lease and config inputs run, then they pass"]
+reason = "narrowed: model gaps filed as follow-ups"
+moved = [0, 0, 0]
+at = "2026-10-14T16:17:08Z"
+actor = "lognd"
+rev = 1

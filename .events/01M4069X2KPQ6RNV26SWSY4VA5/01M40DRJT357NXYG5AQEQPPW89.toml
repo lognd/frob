@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T08:23:19Z"
+digest = "a9070386cab2b718cf1bd83c5de1555b94083ecb1d420ca55579986409377ae9"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+────────────
+ Nextest run ID 7bc3641a-2962-42ce-bfb6-2b136c8c76eb with nextest profile: default
+    Starting 1 test across 4 binaries (28 tests skipped)
+        PASS [   0.056s] (1/1) frob-release::bump repeat_changes_nothing
+────────────
+     Summary [   0.056s] 1 test run: 1 passed, 28 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E test(repeat_changes_nothing)"
+size = 418
+status = "measured"
+tests = ["repeat_changes_nothing"]
+at = "2026-10-03T08:23:19Z"
+actor = "lognd"
+rev = 1

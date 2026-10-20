@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T13:05:39Z"
+digest = "969a8dfac6e757f8bc4c54832b9b434cb13de0dfa545218b68ba837ace43ad2b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3b859caa-4e5c-432a-94b7-53a282dfbde8 with nextest profile: default
+    Starting 7 tests across 2 binaries (23 tests skipped)
+        PASS [   0.008s] frob-release::release_workflow retired_runner_and_manylinux_auto_never_appear
+        PASS [   0.008s] frob-release::release_workflow every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive
+        PASS [   0.009s] frob-release::products crunk_is_a_preview_release_product_whose_wheel_is_not_uploaded_yet
+        PASS [   0.008s] frob-release::release_workflow rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs
+        PASS [   0.009s] frob-release::products the_smoke_steps_name_each_product_archive_and_run_each_binary
+        PASS [   0.008s] frob-release::products frob_depends_on_grimble_at_the_same_version_and_grimble_and_crunk_on_nothing
+        PASS [   0.009s] frob-release::release_workflow smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 7 tests run: 7 passed, 23 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-release --test products --test release_workflow"
+size = 1319
+status = "measured"
+tests = ["crunk_is_a_preview_release_product_whose_wheel_is_not_uploaded_yet", "the_smoke_steps_name_each_product_archive_and_run_each_binary", "frob_depends_on_grimble_at_the_same_version_and_grimble_and_crunk_on_nothing", "retired_runner_and_manylinux_auto_never_appear", "every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive", "rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs", "smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption"]
+at = "2026-10-04T13:05:39Z"
+actor = "lognd"
+rev = 1

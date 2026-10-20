@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 TS walker syntax gaps cascading into false TEST002/REF002; v2 reports parse gaps as Unresolved or opaque, not findings (D57, D62)."
+at = "2026-10-04T21:08:52Z"
+actor = "lognd"
+rev = 1

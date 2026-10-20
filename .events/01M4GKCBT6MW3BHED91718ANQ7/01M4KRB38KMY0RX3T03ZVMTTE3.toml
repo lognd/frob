@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:33:45Z"
+digest = "cafc000121b6aeda48ff7e825bfb3ba1bdba41514c811edd91184d9e456e6d79"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2449ce7e-6bba-4f22-b6a8-ced3511cd269 with nextest profile: default
+    Starting 1 test across 6 binaries (74 tests skipped)
+        PASS [   0.008s] gob-check tools::tests::the_excerpt_shows_error_lines_and_the_tail_not_leading_info_noise
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 74 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(=tools::tests::the_excerpt_shows_error_lines_and_the_tail_not_leading_info_noise)'"
+size = 568
+status = "measured"
+tests = ["tools::tests::the_excerpt_shows_error_lines_and_the_tail_not_leading_info_noise"]
+at = "2026-10-10T20:33:45Z"
+actor = "Claude"
+rev = 1

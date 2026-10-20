@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T11:52:04Z"
+digest = "c88a3f2654400a0bd34c64794416f29bc3f9dc2d179fa5bf1dfdcb3435819211"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 28f10091-9752-4141-9239-1bd943022b50 with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.032s] gob-symbols::python pytest_functions_and_test_class_methods_are_tests
+        PASS [   0.031s] gob-symbols::python imports_and_self_calls_resolve_to_must_edges
+        PASS [   0.042s] gob-symbols::python local_dynamic_and_external_callees_are_unknown_never_clean
+        PASS [   0.042s] gob-symbols::python imports_link_files_and_symbols
+        PASS [   0.047s] gob-symbols::python tests_reach_through_constructors_reexports_and_unknown_receivers
+        PASS [   0.065s] gob-symbols::python the_package_yields_modules_classes_methods_and_functions
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.066s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols --test python"
+size = 1022
+status = "measured"
+tests = ["pytest_functions_and_test_class_methods_are_tests", "imports_and_self_calls_resolve_to_must_edges", "local_dynamic_and_external_callees_are_unknown_never_clean", "imports_link_files_and_symbols", "tests_reach_through_constructors_reexports_and_unknown_receivers", "the_package_yields_modules_classes_methods_and_functions"]
+at = "2026-10-04T11:52:04Z"
+actor = "lognd"
+rev = 1

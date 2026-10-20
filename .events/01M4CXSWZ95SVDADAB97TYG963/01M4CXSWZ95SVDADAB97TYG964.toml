@@ -1,0 +1,13 @@
+kind = "create"
+title = "Python type facts from ty or pyright as a bound tool, with [types] trust = checked | annotated | none"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
+scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/gob-check/**", "crates/gob-exec/**"]
+acceptance = ["Given a file that ty checks clean, when resolved, then annotated call targets are Must; given a failing check, then they are claimed (May)"]
+body = "docs/design/cohesion.md 2.2. hullbreach platform has ty.toml. Annotations count as exact only when the checker ran clean in strict mode on that file; ignore comments demote their line."
+at = "2026-10-08T04:54:33Z"
+actor = "lognd"
+rev = 1

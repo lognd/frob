@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T21:40:10Z"
+digest = "39b3eee411024f9bc90c05d0ac645c7e132296b61d451545e0538cfcd0bfa39c"
+exit_code = 0
+inline = '''
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized] target(s) in 2.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1e0cdc75-65a5-4362-a4c3-f8fc755ff9e9 with nextest profile: default
+    Starting 3 tests across 7 binaries (19 tests skipped)
+        PASS [   0.015s] grimble::rule_verbs rule_catalog_json_returns_the_entry_or_a_did_you_mean
+        PASS [   0.015s] grimble::rule_verbs rule_check_json_lists_cost_or_compile_errors_with_codes
+        PASS [   0.017s] grimble::rule_verbs rule_fmt_check_fails_on_a_messy_file_and_fmt_rewrites_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 3 tests run: 3 passed, 19 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'test(=rule_check_json_lists_cost_or_compile_errors_with_codes) | test(=rule_catalog_json_returns_the_entry_or_a_did_you_mean) | test(=rule_fmt_check_fails_on_a_messy_file_and_fmt_rewrites_it)'"
+size = 815
+status = "measured"
+tests = ["rule_catalog_json_returns_the_entry_or_a_did_you_mean", "rule_check_json_lists_cost_or_compile_errors_with_codes", "rule_fmt_check_fails_on_a_messy_file_and_fmt_rewrites_it"]
+at = "2026-10-11T21:40:10Z"
+actor = "lognd"
+rev = 1

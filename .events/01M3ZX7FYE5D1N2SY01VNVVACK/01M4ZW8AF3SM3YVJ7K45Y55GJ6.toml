@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-packs/src/std/**", "packs/std/**"]
+new = ["crates/gob-packs/src/std/**", "packs/std/**", "crates/gob-packs/src/lib.rs"]
+at = "2026-10-15T13:33:02Z"
+actor = "lognd"
+rev = 1

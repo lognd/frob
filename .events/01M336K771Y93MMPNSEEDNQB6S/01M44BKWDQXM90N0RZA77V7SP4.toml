@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: bulk removal of T-#### prose from v1 docs; v2 ledger text is inert and paths are presentation (D81, D91)."
+at = "2026-10-04T21:02:46Z"
+actor = "lognd"
+rev = 1

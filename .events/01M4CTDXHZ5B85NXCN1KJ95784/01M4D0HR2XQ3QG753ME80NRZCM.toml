@@ -1,0 +1,85 @@
+kind = "evidence"
+captured_at = "2026-10-08T05:40:28Z"
+digest = "16ca2d6751b6b61dd50ea9381f46d54a1ff4495bde92957cb8d5dd91023bb4f6"
+exit_code = 0
+inline = '''
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.87s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1d60f92e-9b6a-4d31-98a4-06fe5a61edd9 with nextest profile: default
+    Starting 51 tests across 8 binaries (97 tests skipped)
+        PASS [  16.916s] frob-land::land a_check_in_a_fresh_worktree_hits_the_cache_the_primary_warmed
+        SLOW [> 30.000s] frob-land::land a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts
+        SLOW [> 30.000s] frob-land::land a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses
+        SLOW [> 30.000s] frob-land::land a_base_commit_changing_code_misses_the_cached_base_set
+        SLOW [> 30.000s] frob-land::land a_conflict_confined_to_cargo_lock_is_regenerated_at_land
+        SLOW [> 30.000s] frob-land::land a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree
+        SLOW [> 30.000s] frob-land::land a_release_finding_the_ticket_introduces_refuses
+        SLOW [> 30.000s] frob-land::land a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path
+        SLOW [> 30.000s] frob-land::land a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket
+        SLOW [> 30.000s] frob-land::land a_finding_already_on_the_base_lands_and_is_reported_pre_existing
+        SLOW [> 30.000s] frob-land::land a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary
+        SLOW [> 30.000s] frob-land::land a_new_finding_refuses_naming_only_the_new_one
+        PASS [  39.986s] frob-land::land a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree
+        PASS [  40.029s] frob-land::land a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts
+        PASS [  42.648s] frob-land::land a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses
+        PASS [  45.274s] frob-land::land a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path
+        PASS [   3.514s] frob-land::land an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap
+        PASS [  29.492s] frob-land::land a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one
+        PASS [  46.546s] frob-land::land a_release_finding_the_ticket_introduces_refuses
+        PASS [  46.787s] frob-land::land a_new_finding_refuses_naming_only_the_new_one
+        PASS [  46.873s] frob-land::land a_finding_already_on_the_base_lands_and_is_reported_pre_existing
+        PASS [  47.222s] frob-land::land a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary
+        PASS [  47.273s] frob-land::land a_base_commit_changing_code_misses_the_cached_base_set
+        PASS [  47.332s] frob-land::land a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket
+        PASS [   7.673s] frob-land::land a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check
+        PASS [   0.968s] frob-land::land dirty_worktree_refuses_and_lists_paths
+        PASS [   1.375s] frob-land::land conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean
+        PASS [   3.735s] frob-land::land an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since
+        PASS [   2.773s] frob-land::land an_unleased_ticket_and_another_worktree_are_refused
+        PASS [   1.983s] frob-land::land dry_run_plan_is_deterministic_and_changes_nothing
+        PASS [   3.577s] frob-land::land an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing
+        PASS [   4.259s] frob-land::land base_commits_differing_only_under_tickets_share_the_cached_base_set
+        PASS [   3.829s] frob-land::land fixing_a_base_finding_is_reported_resolved
+        PASS [  11.332s] frob-land::land a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands
+        PASS [   4.310s] frob-land::land happy_path_lands_closes_and_cleans_up
+        PASS [   4.263s] frob-land::land land_runs_the_throttled_gc_pass_after_removing_the_worktree
+        PASS [   4.181s] frob-land::land landing_from_inside_the_worktree_defaults_to_its_ticket
+        PASS [   3.003s] frob-land::land red_check_lists_only_blocking_findings_and_counts_the_rest
+        PASS [   0.021s] gob-dev render::rules::tests::fence_grows_past_inner_backticks
+        PASS [   0.035s] gob-dev render::rules::tests::page_has_title_table_explanation_examples
+        PASS [   0.038s] gob-dev render::rules::tests::page_without_examples_has_no_examples_section
+        PASS [   2.583s] frob-land::land red_check_refuses_with_exit_3_and_moves_nothing
+        PASS [   0.054s] gob-dev tests::real_workspace_found_regardless_of_compile_time_path
+        PASS [   0.215s] gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.301s] gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [  52.678s] frob-land::land a_conflict_confined_to_cargo_lock_is_regenerated_at_land
+        PASS [   0.114s] gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.038s] gob-dev::bin/gob-dev tests::gen_check_parses
+        PASS [   0.021s] gob-dev::bin/gob-dev tests::import_parses
+        PASS [   0.020s] gob-dev::bin/gob-dev tests::publish_reserve_parses_and_apply_needs_reserve
+        PASS [   0.044s] gob-dev::bin/gob-dev tests::publish_parses
+        PASS [   0.033s] gob-dev::bin/gob-dev tests::wheel_and_wheel_smoke_parse_the_workflow_arguments
+        PASS [   4.674s] frob-land::land lock_contention_refuses_retryably_naming_the_holder
+        PASS [   0.604s] gob-dev::generate output_is_deterministic_and_check_passes
+        PASS [   5.899s] frob-land::land missing_evidence_refuses_unless_bypassed_with_a_reason
+        PASS [   5.966s] frob-land::land no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event
+        PASS [   4.401s] frob-land::land wait_gives_up_naming_the_attempts_when_the_base_keeps_moving
+        PASS [   5.144s] frob-land::land the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it
+        PASS [   4.900s] frob-land::land wait_retries_a_base_that_moved_once_with_ledger_only_commits
+        PASS [   5.377s] frob-land::land wait_retries_a_base_that_moved_with_a_code_change
+        PASS [   5.386s] frob-land::land without_wait_a_moved_base_is_not_retried
+        PASS [   6.997s] frob-land::land two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  58.104s] 51 tests run: 51 passed (11 slow), 97 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -p gob-dev -E '(package(=frob-land) & (test(=a_base_commit_changing_code_misses_the_cached_base_set) | test(=a_check_in_a_fresh_worktree_hits_the_cache_the_primary_warmed) | test(=a_conflict_confined_to_cargo_lock_is_regenerated_at_land) | test(=a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts) | test(=a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses) | test(=a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree) | test(=a_finding_already_on_the_base_lands_and_is_reported_pre_existing) | test(=a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path) | test(=a_new_finding_refuses_naming_only_the_new_one) | test(=a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary) | test(=a_release_finding_the_ticket_introduces_refuses) | test(=a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket) | test(=a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one) | test(=a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check) | test(=a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands) | test(=an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap) | test(=an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since) | test(=an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing) | test(=an_unleased_ticket_and_another_worktree_are_refused) | test(=base_commits_differing_only_under_tickets_share_the_cached_base_set) | test(=conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean) | test(=dirty_worktree_refuses_and_lists_paths) | test(=dry_run_plan_is_deterministic_and_changes_nothing) | test(=fixing_a_base_finding_is_reported_resolved) | test(=happy_path_lands_closes_and_cleans_up) | test(=land_runs_the_throttled_gc_pass_after_removing_the_worktree) | test(=landing_from_inside_the_worktree_defaults_to_its_ticket) | test(=lock_contention_refuses_retryably_naming_the_holder) | test(=missing_evidence_refuses_unless_bypassed_with_a_reason) | test(=no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event) | test(=red_check_lists_only_blocking_findings_and_counts_the_rest) | test(=red_check_refuses_with_exit_3_and_moves_nothing) | test(=the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it) | test(=two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings) | test(=wait_gives_up_naming_the_attempts_when_the_base_keeps_moving) | test(=wait_retries_a_base_that_moved_once_with_ledger_only_commits) | test(=wait_retries_a_base_that_moved_with_a_code_change) | test(=without_wait_a_moved_base_is_not_retried))) | (package(=gob-dev) & (test(=check_reports_stale_and_missing_files_without_writing) | test(=crunk_config_reference_and_schema_are_generated_apart_from_frobs) | test(=every_rule_has_a_page_and_every_page_a_rule) | test(=output_is_deterministic_and_check_passes) | test(=render::rules::tests::fence_grows_past_inner_backticks) | test(=render::rules::tests::page_has_title_table_explanation_examples) | test(=render::rules::tests::page_without_examples_has_no_examples_section) | test(=tests::gen_check_parses) | test(=tests::import_parses) | test(=tests::publish_parses) | test(=tests::publish_reserve_parses_and_apply_needs_reserve) | test(=tests::real_workspace_found_regardless_of_compile_time_path) | test(=tests::wheel_and_wheel_smoke_parse_the_workflow_arguments)))'"
+size = 6893
+status = "measured"
+tests = ["render::rules::tests::fence_grows_past_inner_backticks", "render::rules::tests::page_has_title_table_explanation_examples", "render::rules::tests::page_without_examples_has_no_examples_section", "tests::real_workspace_found_regardless_of_compile_time_path", "tests::gen_check_parses", "tests::import_parses", "tests::publish_reserve_parses_and_apply_needs_reserve", "tests::publish_parses", "tests::wheel_and_wheel_smoke_parse_the_workflow_arguments", "crunk_config_reference_and_schema_are_generated_apart_from_frobs", "check_reports_stale_and_missing_files_without_writing", "every_rule_has_a_page_and_every_page_a_rule", "output_is_deterministic_and_check_passes", "a_check_in_a_fresh_worktree_hits_the_cache_the_primary_warmed", "a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree", "a_conflict_in_a_lockfile_without_a_resolver_refuses_and_aborts", "a_conflict_in_frob_toml_and_a_lockfile_probes_with_the_committed_config_and_refuses", "a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path", "an_expired_lease_is_not_renewed_when_another_holder_took_an_overlap", "a_second_identical_finding_in_the_ticket_refuses_though_the_base_has_one", "a_release_finding_the_ticket_introduces_refuses", "a_new_finding_refuses_naming_only_the_new_one", "a_finding_already_on_the_base_lands_and_is_reported_pre_existing", "a_pruned_expired_lease_is_renewed_for_the_ticket_worktree_when_landing_from_the_primary", "a_base_commit_changing_code_misses_the_cached_base_set", "a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket", "a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check", "dirty_worktree_refuses_and_lists_paths", "conflicting_base_refuses_with_paths_and_leaves_the_worktree_clean", "an_expired_lease_is_renewed_and_lands_when_nothing_overlapped_since", "an_unleased_ticket_and_another_worktree_are_refused", "dry_run_plan_is_deterministic_and_changes_nothing", "an_unbound_criterion_refuses_the_land_naming_it_and_the_bypass_and_moves_nothing", "base_commits_differing_only_under_tickets_share_the_cached_base_set", "fixing_a_base_finding_is_reported_resolved", "a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands", "happy_path_lands_closes_and_cleans_up", "land_runs_the_throttled_gc_pass_after_removing_the_worktree", "landing_from_inside_the_worktree_defaults_to_its_ticket", "red_check_lists_only_blocking_findings_and_counts_the_rest", "red_check_refuses_with_exit_3_and_moves_nothing", "a_conflict_confined_to_cargo_lock_is_regenerated_at_land", "lock_contention_refuses_retryably_naming_the_holder", "missing_evidence_refuses_unless_bypassed_with_a_reason", "no_changelog_with_a_reason_lands_without_a_fragment_and_records_the_event", "wait_gives_up_naming_the_attempts_when_the_base_keeps_moving", "the_base_is_resolved_by_full_ref_so_a_same_named_tag_cannot_shadow_it", "wait_retries_a_base_that_moved_once_with_ledger_only_commits", "wait_retries_a_base_that_moved_with_a_code_change", "without_wait_a_moved_base_is_not_retried", "two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings"]
+at = "2026-10-08T05:40:28Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Owner 2026-10-09: strata is deprecated and grimble is a different thing, not its successor; no .strata migration path. migration.md's grimble migrate row is to be removed."
+at = "2026-10-09T04:36:14Z"
+actor = "lognd"
+rev = 1

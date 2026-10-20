@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-14T15:07:21Z"
+digest = "3501661735236000e4145a639cedc1733904f657930b40131340158c500a45d3"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dcda1a58-055b-4ad1-95ba-4f29e12563b2 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.005s] gob-plan::lower_snippets a_snippet_plan_round_trips_through_the_codec
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test lower_snippets -E test(a_snippet_plan_round_trips_through_the_codec)"
+size = 556
+status = "measured"
+test_count = 1
+tests_digest = "b644edebb78ca35d25400770356db7cc66a1b6a02092b49436a921d7275f38fa"
+at = "2026-10-14T15:07:21Z"
+actor = "lognd"
+rev = 1

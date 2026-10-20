@@ -1,0 +1,35 @@
+kind = "create"
+title = "Land train: driver and verbs (frob land --train, frob train status|run|drain)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
+idempotency_key = "train-driver"
+labels = ["area:land"]
+scope = ["crates/frob-land/src/train.rs,crates/frob-land/src/verb.rs,crates/frob/src/**"]
+acceptance = ["Given 12 ready tickets with one failing, when the train runs, then 11 land and the culprit returns to its agent with the failing evidence", "Given frob train status, then it reports queue, current candidate and batch size as an envelope with a schema", "Given one ticket or the train disabled, then single-ticket frob land behaves as before"]
+body = "Wire planner, batch-size controller, candidate builder and state store into the driver: take ready enqueued tickets (reuse the enqueue queue of ~3V4VKC9, done; do not duplicate), build candidate, check, close via the ledger-close slice on green, bisect on red, parallel halves via goway shards when available. Verbs: frob land --train, frob train status|run|drain with envelopes and schemas; single-ticket frob land stays as fallback; require_base_green and CI unchanged. Log per stage. Replaces prefix bisection in train.rs (~DSD1QBK, done)."
+at = "2026-10-15T05:48:20Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4Z1MYF3JKB73KCCX5BPJ7WJ"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4Z1MYJSZJ8CMH8NEA8K30K4"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4Z1MYPEJ6HDVBJVPDVHR8MA"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4Z1MYSTFADV8FJM8SEXKGZ7"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4Z1N93S11HX3DGGKBJF5WGP"

@@ -1,0 +1,16 @@
+kind = "create"
+title = "land: rebuild stale natives after squash-apply, before post-merge evidence re-verification"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 5
+aliases = ["T-5518"]
+labels = ["milestone:v0.534.0"]
+scope = ["src/frob/tickets/_land_verify.py", "tests/unit/tickets/test_land_verify*.py", "docs/modules/tickets-landing.md"]
+body = """
+Measured 2026-09-24 (T-3010, two land attempts): the T-1213 stale-natives auto-rebuild runs in the pre-squash gates phase. The squash-apply then brings the ticket's Rust changes (strata-core/src/lib.rs, graph/vmodel/closure.rs) into the tree, and the post-merge evidence re-verification runs against a strata_core extension built before that, so every evidence test importing the new PyO3 export failed "individually" and the land was refused. The same tests pass in the worktree after frob natives build with no source change; the dry-run was clean because it stops before squash-apply. A pre-land natives rebuild in the worktree (coordinator hygiene) did not help, so the extension used at evidence time is not the worktree's freshly built one.
+
+Fix: after squash-apply and before evidence re-verification, run the stale-natives check against the squash-applied tree and rebuild into the interpreter the evidence run will use (same T-1213 detector, second call site), and log which interpreter and extension file the evidence run resolved. Positive control: a ticket adding a PyO3 export plus an evidence test that imports it lands on the first attempt."""
+at = "2026-09-24T00:00:00Z"
+actor = "human"
+rev = 1

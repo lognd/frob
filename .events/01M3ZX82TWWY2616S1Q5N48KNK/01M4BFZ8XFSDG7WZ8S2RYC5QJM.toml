@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "lease stolen from lognd in frob-v2 by lognd in frob-v2-wt/5N48KNK: a land run from the primary re-acquired the expired lease there; rebind to the ticket worktree"
+at = "2026-10-07T15:33:34Z"
+actor = "lognd"
+rev = 1

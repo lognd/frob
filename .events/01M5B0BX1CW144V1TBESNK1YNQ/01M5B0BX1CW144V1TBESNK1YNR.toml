@@ -1,0 +1,10 @@
+kind = "create"
+title = "docs/design/mirror.md: rename TICK008 ledger-branch-workflow to TICK010"
+type = "docs"
+category = "todo"
+priority = "medium"
+scope = ["docs/design/mirror.md"]
+body = "Found while working ~Z9B82RZ (blocked by the lease of ~1KH6CCV). The workflow rule is TICK010; mirror.md still says TICK008."
+at = "2026-10-19T21:16:33Z"
+actor = "lognd"
+rev = 1

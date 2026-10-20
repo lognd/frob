@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked by ~VNVVACK; releasing lease from skipped drain attempt"
+at = "2026-10-12T01:17:39Z"
+actor = "lognd"
+rev = 1

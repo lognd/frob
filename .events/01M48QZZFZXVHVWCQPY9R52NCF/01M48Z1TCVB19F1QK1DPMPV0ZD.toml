@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-macros/**", "crates/gob-rules/**"]
+new = ["crates/gob-macros/**", "crates/gob-rules/**", ".config/nextest.toml"]
+at = "2026-10-06T15:59:23Z"
+actor = "lognd"
+rev = 1

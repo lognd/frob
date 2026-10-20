@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-05T00:11:24Z"
+digest = "1b03a022558789fc627cd25de8d9818c66640405dc16b234f63924b12b16365f"
+exit_code = 0
+inline = '''
+warning: unused import: `frob_ledger::model::Stamp`
+  --> crates/frob-pm/src/store.rs:23:5
+   |
+23 | use frob_ledger::model::Stamp;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `frob-pm` (lib) generated 1 warning (run `cargo fix --lib -p frob-pm` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8353a667-7481-4167-b4d7-ded01e716411 with nextest profile: default
+    Starting 1 test across 1 binary (30 tests skipped)
+        PASS [   2.091s] frob-cli::cycle velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.092s] 1 test run: 1 passed, 30 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-cli --test cycle"
+size = 928
+status = "measured"
+tests = ["velocity_truncates_an_early_closed_cycle_window_and_rejects_last_zero"]
+at = "2026-10-05T00:11:24Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T22:43:49Z"
+digest = "88827f93d50e089265b1f99c1c5b555534ef1b0407c22eb514a5df8287d8267b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 37e41070-3891-420d-acbb-9dc3c5c84969 with nextest profile: default
+    Starting 4 tests across 1 binary (26 tests skipped)
+        PASS [   0.005s] gob-languages comments::tests::text_fallback_agrees_on_the_corpus
+        PASS [   0.006s] gob-languages comments::tests::corpus_spans_are_exact
+        PASS [   0.005s] gob-languages comments::tests::rust_spans_skip_strings
+        PASS [   0.006s] gob-languages comments::tests::front_matter_is_not_markdown_but_a_later_html_comment_is
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 4 tests run: 4 passed, 26 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-languages comments::tests"
+size = 828
+status = "measured"
+tests = ["comments::tests::text_fallback_agrees_on_the_corpus", "comments::tests::corpus_spans_are_exact", "comments::tests::rust_spans_skip_strings", "comments::tests::front_matter_is_not_markdown_but_a_later_html_comment_is"]
+at = "2026-10-04T22:43:49Z"
+actor = "lognd"
+rev = 1

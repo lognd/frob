@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Design updated by ~N2P06HZ: security.md 2.4 adds honest classes (runs-repository-code, fetches-and-runs-code with pinned hashes), declared inputs with untrusted-in-change on foreign-authored input changes, and placeholder guards (./path, --). Extend acceptance before work starts."
+at = "2026-10-03T03:51:20Z"
+actor = "lognd"
+rev = 1

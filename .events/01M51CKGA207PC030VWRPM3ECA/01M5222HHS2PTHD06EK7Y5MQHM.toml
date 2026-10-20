@@ -1,0 +1,22 @@
+kind = "evidence"
+captured_at = "2026-10-16T09:53:13Z"
+digest = "361b15653ff508868b2c73478d9d163aafa7f101de4429cb4e87ac67b28a19f3"
+exit_code = 0
+inline = """
+
+running 1 test
+test the_driver_renews_a_queued_members_lease_each_round ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 59 filtered out; finished in 0.19s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+     Running tests/land.rs (target/debug/deps/land-33fa3638cceee2f5)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-land --test land -- renews"
+size = 319
+status = "measured"
+at = "2026-10-16T09:53:13Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,53 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T18:11:23Z"
+digest = "21e38d5081de7ba9e2c7b3fae1c5fba5ff199fcebf968f1d007e257d0311da0f"
+exit_code = 0
+inline = """
+dry run: 35 crates in publish order, nothing published
+  1. gob-cache 0.0.0
+  2. gob-log 0.0.0
+  3. gob-macros 0.0.0
+  4. gob-text 0.0.0
+  5. gob-trust 0.0.0
+  6. gob-exec 0.0.0
+  7. gob-languages 0.0.0
+  8. gob-rules 0.0.0
+  9. gob-config 0.0.0
+ 10. gob-diagnostics 0.0.0
+ 11. gob-git 0.0.0
+ 12. gob-plan 0.0.0
+ 13. frob-ledger 0.0.0
+ 14. gob-cli 0.0.0
+ 15. gob-walk 0.0.0
+ 16. frob-pm 0.0.0
+ 17. gob-ir 0.0.0
+ 18. frob-release 0.0.0
+ 19. gob-lock 0.0.0
+ 20. gob-symbols 0.0.0
+ 21. frob-evidence 0.0.0
+ 22. frob-lease 0.0.0
+ 23. gob-check 0.0.0
+ 24. gob-directives 0.0.0
+ 25. frob-ack 0.0.0
+ 26. frob-tests 0.0.0
+ 27. frob-worktree 0.0.0
+ 28. grimble-model 0.0.0
+ 29. frob-obligations 0.0.0
+ 30. grimble-bind 0.0.0
+ 31. frob-check 0.0.0
+ 32. grimble-check 0.0.0
+ 33. frob-land 0.0.0
+ 34. grimble 0.0.0
+ 35. frob-cli 0.0.0
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.29s
+     Running `target/debug/gob-dev publish --dry-run`
+"""
+passed = true
+provider = "command"
+ref = "cargo dev publish --dry-run"
+size = 949
+status = "measured"
+at = "2026-10-03T18:11:23Z"
+actor = "lognd"
+rev = 1

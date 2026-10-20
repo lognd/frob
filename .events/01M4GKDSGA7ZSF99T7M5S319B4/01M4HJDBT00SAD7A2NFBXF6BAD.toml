@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["adoption:logand-app", "creates:crates/frob-worktree/tests/python_env.rs"]
+new = ["adoption:logand-app", "creates:crates/frob-worktree/tests/python_env.rs", "creates:crates/frob-worktree/src/python_env.rs"]
+at = "2026-10-10T00:11:34Z"
+actor = "lognd"
+rev = 1

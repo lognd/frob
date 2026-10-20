@@ -1,0 +1,20 @@
++++
+id = "01M47QSB9W3BVYZ4NPRVX11TG4"
+title = "One product front end: shared sibling document, Product trait, registered artifacts (D97)"
+type = "epic"
+category = "todo"
+priority = "high"
+reporter = "lognd"
+created = "2026-10-06T04:33:11Z"
+updated = "2026-10-06T04:33:11Z"
+
+[[acceptance]]
+text = "Every child closed or dropped with a reason"
+bound = false
+
+[[acceptance]]
+text = "crunk/src and grimble/src contain no check, doctor or workspace code beyond their Product impl"
+bound = false
++++
+
+Implements docs/design/products.md section 7 (D97). crunk and grimble binaries share 106 of 142 lines in check.rs; three crates build the gob.sibling/1 document and frob-check parses it a fourth way. Move the product-neutral parts down once so every later product or pack instantiates instead of copying.

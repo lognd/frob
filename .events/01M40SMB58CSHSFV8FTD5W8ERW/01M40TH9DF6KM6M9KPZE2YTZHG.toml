@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Coordinator: frob.toml removed from scope because ~4PT3KZB holds it; the [pm] cycle_days = 2 setting for this repository will be made separately after that lease clears. This ticket covers the Rust work only."
+at = "2026-10-03T12:06:32Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-22: duplicate of T-5300 (same leaf, filed twice by a crashed earlier run) (absorbed by T-5300)"
+at = "2026-09-22T00:00:01Z"
+actor = "import"
+rev = 1

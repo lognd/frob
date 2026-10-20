@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "notes/research/deslop-research-2026-10-08.md has no defect data (convergence and vendor observation only); keep SLOP Advisory and never gating (notes/research/lint-catalogue-2026-10-08.md 3.3)."
+at = "2026-10-08T08:14:13Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,26 @@
+kind = "create"
+title = "GitHub lookup: list the bot's issues by creator newest first (read-your-writes)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror2-gh-lookup"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-gh/src/list.rs", "crates/frob-mirror/src/github/lookup.rs"]
+acceptance = ["Given a recorded listing of bot issues, when a ticket's issues are looked up, then they are found through listing only and the search endpoint is never called", "Given a live token and an ignored test, when an issue is created and listed at once, then it appears in the listing and the result is recorded in the ticket as the verification of the UNVERIFIED fact", "Given more than one page of bot issues, when looked up back to a create-start time, then paging continues until that time is passed"]
+body = """
+Implements mirror.md section 3.3 (Lookup is read-your-writes; F5).
+
+The mirror finds a ticket's issues by listing the bot's issues by creator, newest first, never through search, which lags. The read-your-writes behaviour of GitHub's list endpoint is UNVERIFIED and is the first thing this adapter tests against the live API."""
+at = "2026-10-03T05:51:35Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX8182AHQF2XB4WYNC30Q8"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX83AB2JADBKWFA9SY4J60"

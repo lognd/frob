@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-19T20:26:43Z"
+digest = "bd304585aa5ae5a8d469efbebd2e168695285849a57b927bd9c0eb6f6fae99ca"
+exit_code = 0
+inline = """
+
+running 1 test
+test measured::every_adapter_has_matrix_garbage_and_partial_parse_cases ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 207 filtered out; finished in 0.08s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running tests/it/main.rs (target/debug/deps/it-67a1a5f67609aca3)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-symbols --test it every_adapter_has_matrix_garbage_and_partial_parse_cases"
+size = 336
+status = "measured"
+at = "2026-10-19T20:26:43Z"
+actor = "lognd"
+rev = 1

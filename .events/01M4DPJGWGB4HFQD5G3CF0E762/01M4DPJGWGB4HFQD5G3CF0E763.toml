@@ -1,0 +1,13 @@
+kind = "create"
+title = "cycle velocity: done_facts reads events with events_many, not one call per ticket"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M4D6NB00MBEV0PRHN15CXZP8"
+scope = ["changelog.d/**", "crates/frob-pm/**"]
+acceptance = ["Given cycle velocity, when traced, then events are read in one batch"]
+body = "Follow-up from ~VXFAY3P (769 calls)."
+at = "2026-10-08T12:07:25Z"
+actor = "lognd"
+rev = 1

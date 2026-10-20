@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T11:18:58Z"
+digest = "05c3d10f8b33e5bda65957dda805928b4032f27c6c0ef4abf5cbc185d8bc44f7"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+────────────
+ Nextest run ID 39936a7d-ad31-4e12-a2a5-76f971946682 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.471s] (1/1) frob-cli::cycle close_is_refused_while_a_member_is_in_progress_with_a_live_lease
+────────────
+     Summary [   0.471s] 1 test run: 1 passed, 5 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test cycle -E 'test(close_is_refused_while_a_member_is_in_progress_with_a_live_lease)'"
+size = 453
+status = "measured"
+tests = ["close_is_refused_while_a_member_is_in_progress_with_a_live_lease"]
+at = "2026-10-03T11:18:58Z"
+actor = "lognd"
+rev = 1

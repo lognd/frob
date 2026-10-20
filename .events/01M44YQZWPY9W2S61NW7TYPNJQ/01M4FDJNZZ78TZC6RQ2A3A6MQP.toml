@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-10-09T04:08:40Z"
+digest = "0dd6b92b0b5010d5e79680704a94697632f3cad31b07e994c30ada5e8819bf69"
+exit_code = 0
+inline = '''
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3609c520-4405-40b5-935b-5b32785d3388 with nextest profile: default
+    Starting 9 tests across 1 binary
+        PASS [   0.013s] frob-evidence::unity version_is_read_from_project_version_txt
+        PASS [   0.016s] frob-evidence::unity no_version_file_and_no_config_refuses_without_guessing
+        PASS [   0.017s] frob-evidence::unity hub_locations_follow_each_operating_system
+        PASS [   0.017s] frob-evidence::unity a_missing_editor_refuses_naming_the_version_and_the_config_key
+        PASS [   0.017s] frob-evidence::unity the_current_host_matches_the_build_target
+        PASS [   0.018s] frob-evidence::unity a_configured_editor_wins_whatever_the_version_file_says
+        PASS [   0.025s] frob-evidence::unity only_the_exact_required_version_is_ever_used
+        PASS [   0.393s] frob-evidence::unity a_licensed_editor_log_is_not_a_license_refusal
+        PASS [   0.413s] frob-evidence::unity an_editor_without_a_valid_license_refuses_with_a_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.415s] 9 tests run: 9 passed, 0 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -p frob-evidence --test unity"
+size = 1377
+status = "measured"
+at = "2026-10-09T04:08:40Z"
+actor = "lognd"
+rev = 1

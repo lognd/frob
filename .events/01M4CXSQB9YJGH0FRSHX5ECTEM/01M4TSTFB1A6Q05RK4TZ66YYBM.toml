@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T14:09:35Z"
+digest = "2cb93897e81f900909195ef3809101b4025d0d17748b7699c3c0c67e171b9f83"
+exit_code = 101
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+error[E0432]: unresolved import `grimble_check::coh001`
+  --> crates/grimble-check/tests/coh001.rs:10:20
+   |
+10 | use grimble_check::coh001::{Coh001, CohOptions, coh001};
+   |                    ^^^^^^ could not find `coh001` in `grimble_check`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `grimble-check` (test "coh001") due to 1 previous error
+error: command `~/.rustup/toolchains/1.98.0-aarch64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "package(grimble-check) & test(coh001)"
+size = 693
+status = "measured"
+at = "2026-10-13T14:09:35Z"
+actor = "lognd"
+rev = 1

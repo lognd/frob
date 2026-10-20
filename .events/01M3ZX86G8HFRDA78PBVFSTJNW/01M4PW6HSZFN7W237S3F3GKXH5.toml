@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T01:38:48Z"
+digest = "9d8f28435dc74be6ba93e7efc9a727422d0b9ce4a2a35aa6c61dbe5c1feaa172"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized] target(s) in 5.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3f5590f9-33aa-4db3-b698-8a2ea4402e2c with nextest profile: default
+    Starting 1 test across 14 binaries (153 tests skipped)
+        PASS [   0.007s] frob-ledger::gen_guide reindex_installs_guide_pages_filled_in_that_name_their_profile_and_link_across
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 153 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(=reindex_installs_guide_pages_filled_in_that_name_their_profile_and_link_across)'"
+size = 649
+status = "measured"
+tests = ["reindex_installs_guide_pages_filled_in_that_name_their_profile_and_link_across"]
+at = "2026-10-12T01:38:48Z"
+actor = "lognd"
+rev = 1

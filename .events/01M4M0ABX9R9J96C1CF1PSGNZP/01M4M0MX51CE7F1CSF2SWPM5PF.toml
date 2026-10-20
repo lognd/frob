@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at 5d7f77a3d9b0 (rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/38091484361/job/114328709189): this ticket repairs red base CI: a_crate_under_a_subdirectory_runs_nextest_from_that_directory and a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code (profile 'ci' not found)"
+at = "2026-10-10T22:56:50Z"
+actor = "lognd"
+rev = 1

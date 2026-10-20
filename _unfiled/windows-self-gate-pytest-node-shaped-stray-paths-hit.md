@@ -1,0 +1,38 @@
++++
+id = "01M3AXSDBZ6PFEP29ZCSS4H7FM"
+title = "Windows self-gate: pytest-node-shaped stray paths hit WinError2 stat failures"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "agent"
+created = "2026-09-25T00:00:00Z"
+updated = "2026-09-25T00:00:02Z"
+aliases = ["T-6527"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/process/_derived_lock.py", "tests/unit/test_process_lock.py"]
++++
+
+Found while draining CI run 36173008509 (dev 473cee7656), windows-latest
+job only, "frob check (self-gate)" step.
+
+The self-gate parse pass tries to stat pytest node-id-shaped paths that do
+not exist as files, e.g.:
+
+  ERROR: failed to stat D:\a\frob\frob\TestDerivedStateWriteLock.test_standalone_rebuild_takes_exclusive:
+  [WinError 2] The system cannot find the file specified
+  WARNING: no grammar registered for extension '.test_standalone_rebuild_takes_exclusive'
+
+and similarly for TestLandLockWaitBudgetFromDeclaredDeadline.test_no_declaration_keeps_the_flat_timeout_unchanged.
+These look like pytest ids that leaked into a file-list the self-gate scans
+(e.g. from a --lf/failed-node cache, coverage artifact, or a git-status
+diff computed against a stale worktree state on this runner), rather than
+real paths. This is a different symptom from T-5812 (cache.db lock-wait
+"holder detection unsupported on this platform") but hits the same
+Windows self-gate step and may share a root cause in how the step builds
+its target file list on Windows.
+
+Proposed fix: find where the self-gate step (or its parse-artifacts cache)
+derives its file list on Windows and filter out non-path-shaped entries
+before handing them to the stat/parse call; needs windows-latest (or
+winrun) to reproduce.

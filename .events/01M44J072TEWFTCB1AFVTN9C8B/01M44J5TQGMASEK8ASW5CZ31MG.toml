@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a junit report whose testcase file attribute uses Windows backslash separators, when parse_junit builds node ids, then they are portable slash paths with the class segments kept (tests/test_probe.py::TestK::test_bad)", "Given Windows CI with python and pytest installed, when FROB_REQUIRE_PYTHON_TESTS=1, then the pytest evidence and frob-tests pytest tests pass on Windows"]
+moved = []
+at = "2026-10-04T22:57:25Z"
+actor = "lognd"
+rev = 1

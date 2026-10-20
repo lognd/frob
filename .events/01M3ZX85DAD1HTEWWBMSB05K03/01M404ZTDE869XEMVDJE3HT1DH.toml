@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "frob mirror init: setup guidance including the GitHub autolink"
+new = "frob mirror init: print the default-branch job, environment and App setup, and the GitHub autolink"
+at = "2026-10-03T05:49:59Z"
+actor = "lognd"
+rev = 1

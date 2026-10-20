@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Test selection must ignore fixture data files in the touched set instead of reporting NoRunner; same class as ~VZBDJTE."
+at = "2026-10-04T21:07:18Z"
+actor = "lognd"
+rev = 1

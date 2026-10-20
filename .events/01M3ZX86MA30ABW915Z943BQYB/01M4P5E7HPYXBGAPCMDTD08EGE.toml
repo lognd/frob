@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T19:01:07Z"
+digest = "295e19f6aab637e02ab0880fecd85869097523a952e66f640fc3f1dea3db3029"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 51717941-d35b-4492-b70a-f873b3981783 with nextest profile: default
+    Starting 1 test across 42 binaries (288 tests skipped)
+        PASS [   0.202s] frob-cli::ticket_path_refs generated_pages_and_non_ticket_markdown_links_do_not_fire
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.203s] 1 test run: 1 passed, 288 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(=generated_pages_and_non_ticket_markdown_links_do_not_fire)'"
+size = 566
+status = "measured"
+tests = ["generated_pages_and_non_ticket_markdown_links_do_not_fire"]
+at = "2026-10-11T19:01:07Z"
+actor = "lognd"
+rev = 1

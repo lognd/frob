@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the TODO001 rule, when its examples run through run_example, then all pass (kind directive is supported)", "Given the COV001 and NEAT013 rules, when their examples run, then the calls and resolves to edge relations are supplied and the examples pass", "Given the SCOPE001 rule (lang -), when its language-less examples with diff, lease and config inputs run, then they pass"]
+moved = []
+at = "2026-10-14T16:08:37Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T19:44:30Z"
+digest = "e9420753069cfc267aefce404d78cd44001680afc042d5ac47b513b5cf5a813b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 37e42f2e-c309-4b93-b759-74418bbf5ac7 with nextest profile: default
+    Starting 1 test across 1 binary (16 tests skipped)
+        PASS [   1.095s] frob-cli::close_guards fixed_on_a_bug_without_evidence_is_still_refused
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.096s] 1 test run: 1 passed, 16 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test close_guards -E 'test(fixed_on_a_bug_without_evidence_is_still_refused)'"
+size = 560
+status = "measured"
+tests = ["fixed_on_a_bug_without_evidence_is_still_refused"]
+at = "2026-10-03T19:44:30Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T18:34:38Z"
+digest = "b4ed37d6495a64ec2ad8b3d144d4c7eb4838f288e2fd775fe396ed5a76da6a21"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized] target(s) in 14.75s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aac90889-e18c-4e38-9d59-1a7880d3c03b with nextest profile: default
+    Starting 1 test across 5 binaries (21 tests skipped)
+        PASS [   0.008s] grimble-check::packs the_packs_table_doc_and_generated_references_describe_what_loads
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(=the_packs_table_doc_and_generated_references_describe_what_loads)'"
+size = 619
+status = "measured"
+tests = ["the_packs_table_doc_and_generated_references_describe_what_loads"]
+at = "2026-10-10T18:34:38Z"
+actor = "Claude"
+rev = 1

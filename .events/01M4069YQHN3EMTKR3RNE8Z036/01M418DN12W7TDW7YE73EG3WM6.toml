@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T16:09:12Z"
+digest = "e14156e85feae060408780409e8dc051340b3f986db69af4b7dfbbc2dc4c3a46"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5aadb09b-570a-4593-b1da-a696ca9f83be with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.010s] frob-release::dev_workflow assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "cargo nextest run -p frob-release --test dev_workflow"
+size = 588
+status = "measured"
+tests = ["assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones"]
+at = "2026-10-03T16:09:12Z"
+actor = "lognd"
+rev = 1

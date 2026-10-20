@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Uncertain: v1 socketd is Python; v2's daemon is an optional design (git-io.md s6, undecided), so a Windows transport only matters if it is built."
+at = "2026-10-04T21:08:03Z"
+actor = "lognd"
+rev = 1

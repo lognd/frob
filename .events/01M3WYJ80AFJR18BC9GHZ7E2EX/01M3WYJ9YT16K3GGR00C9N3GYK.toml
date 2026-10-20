@@ -1,0 +1,31 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+gob-git per git-io.md sections 1-3 and D23 over gix 0.87.1 (0.88 does not resolve on crates.io): discover from linked worktrees, head, status, diff_names over TreeRef, merge_base, rev_parse, read_blob_at, list_worktrees, config_user; commit_paths builds the new tree from the ref's tree plus the changes (never from an index), commits, CAS-updates the ref with bounded retry (CasExhausted), and when the ref is checked out updates index and worktree for exactly those paths under index.lock, refusing with LocalEdits when a path has divergent local content; spawn fallbacks only for worktree add, merge and push through gob-exec Program::Git; SpawnClass enum mirrors git-io.md. Concurrent-writer test proves no lost update. Deviations: merge_branch decides up-to-date in gix and otherwise spawns one git merge because gix merges only in memory; names without refs/ resolve as refs/heads/.
+
+### Changed
+```
+ Cargo.lock                     | 1481 ++++++++++++++++++++++++++++++++++++++--
+ crates/gob-git/Cargo.toml      |   22 +
+ crates/gob-git/src/error.rs    |  109 +++
+ crates/gob-git/src/fallback.rs |  185 +++++
+ crates/gob-git/src/ledger.rs   |  414 +++++++++++
+ crates/gob-git/src/lib.rs      |   28 +
+ crates/gob-git/src/read.rs     |  228 +++++++
+ crates/gob-git/src/relpath.rs  |   39 ++
+ crates/gob-git/src/spawn.rs    |   69 ++
+ crates/gob-git/src/status.rs   |  361 ++++++++++
+ crates/gob-git/tests/ledger.rs |  385 +++++++++++
+ tickets/T-0010/ticket.md       |    6 +-
+ 12 files changed, 3274 insertions(+), 53 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)"""
+at = "2026-10-02T00:00:02Z"
+actor = "import"
+rev = 1

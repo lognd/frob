@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T12:24:13Z"
+digest = "8cbff71ddecda0ccd852a8a856516d8c4e23f6e4ffed310dd842ac9896a98fbf"
+exit_code = 0
+inline = """
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.65s
+────────────
+ Nextest run ID 6e12ee77-9bb0-48fe-a637-487c76da0427 with nextest profile: default
+    Starting 1 test across 133 binaries (1060 tests skipped)
+        PASS [   0.139s] (1/1) gob-git::symlinks untouched_symlinks_are_not_reported
+────────────
+     Summary [   0.145s] 1 test run: 1 passed, 1060 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "untouched_symlinks_are_not_reported"
+size = 488
+status = "measured"
+tests = ["untouched_symlinks_are_not_reported"]
+at = "2026-10-03T12:24:13Z"
+actor = "lognd"
+rev = 1

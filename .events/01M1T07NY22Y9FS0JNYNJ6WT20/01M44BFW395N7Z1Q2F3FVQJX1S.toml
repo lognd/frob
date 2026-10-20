@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. frob:tests kind=a11y obligation; crunk-web A11Y pack (D89)."
+at = "2026-10-04T21:00:34Z"
+actor = "lognd"
+rev = 1

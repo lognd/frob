@@ -1,0 +1,23 @@
+kind = "create"
+title = "gob-git: gix reads, ledger commit from a ref tree, CAS ref update"
+type = "task"
+category = "todo"
+priority = "high"
+points = 8
+parent = "01M3WYJ802ZVWE6E3050EVRCSV"
+aliases = ["T-0010"]
+labels = ["milestone:2.0.0", "component:gob-git"]
+scope = ["crates/gob-git/**"]
+acceptance = ["Given two writers committing different ticket files to the same ref concurrently, when both finish, then the ref contains both changes and no commit swept in unrelated staged files", "Given a checkout with trunk checked out and a staged unrelated file, when commit_paths writes tickets/x, then the staged file is untouched and tickets/x is updated in index and worktree"]
+body = "Implement crates/gob-git per git-io.md sections 1 to 3 and D23. Over gix: discover(repo from cwd, including worktrees and the common dir), head/branch info, status (changed and untracked paths honoring ignores), diff of paths between two trees or tree and worktree, merge_base, rev_parse, blob read at a ref, list worktrees. Ledger write primitive: commit_paths(ref_name, changes: Vec<(path, Option<bytes>)>, message, author from git config) that builds a new tree from the ref's current tree plus the given changes (never from any index), writes the commit, and updates the ref with compare-and-swap, retrying up to [git] cas_retries times by re-reading the ref and re-applying the changes; when the ref is checked out in the current worktree, update the index and worktree files for exactly those paths. Spawn fallbacks via gob-exec only for: worktree add, merge with conflicts, push. Record the git-io.md spawn list as an enum. Tests use temporary repositories created with gix (no git binary) and cover concurrent CAS writers (two threads) proving no lost update."
+at = "2026-10-02T00:00:00Z"
+actor = "agent"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3WYJ8070P06AN3YYSFBR9ZG"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3WYJ809HJ88ZWB20SCTJS3K"

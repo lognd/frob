@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-check/**", "crates/gob-check/**", "crates/frob-ack/tests/**", "crates/gob-exec/tests/**", "crates/frob-evidence/**", "crates/frob-tests/**", "crates/gob-dev/src/import_v1.rs"]
+new = ["crates/frob-check/**", "crates/gob-check/**", "crates/frob-ack/tests/**", "crates/gob-exec/tests/**", "crates/frob-evidence/**", "crates/frob-tests/**", "crates/gob-dev/src/import_v1.rs", ".config/nextest.toml"]
+at = "2026-10-03T01:56:08Z"
+actor = "lognd"
+rev = 1

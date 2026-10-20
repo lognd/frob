@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T17:33:05Z"
+digest = "e05c2ec936d06a6f874396c528763f3b00a61c32b24046fe2eced8a24216f8f0"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9d9f4bed-28f2-4828-a79c-0ab84f8e7e92 with nextest profile: default
+    Starting 2 tests across 143 binaries (1252 tests skipped)
+        PASS [   0.010s] gob-cli render::tests::rendered_rows_print_raw_in_text_and_stay_out_of_json
+        PASS [   1.515s] frob-cli::board text_mode_prints_ascii_rows_at_the_requested_width
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.521s] 2 tests run: 2 passed, 1252 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(text_mode_prints_ascii_rows) | test(rendered_rows_print_raw)'"
+size = 666
+status = "measured"
+tests = ["render::tests::rendered_rows_print_raw_in_text_and_stay_out_of_json", "text_mode_prints_ascii_rows_at_the_requested_width"]
+at = "2026-10-03T17:33:05Z"
+actor = "lognd"
+rev = 1

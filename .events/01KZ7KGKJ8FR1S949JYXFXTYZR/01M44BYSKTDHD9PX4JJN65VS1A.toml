@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Cross-language stress test over one obligation graph; needs more than one adapter first."
+at = "2026-10-04T21:08:43Z"
+actor = "lognd"
+rev = 1

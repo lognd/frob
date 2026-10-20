@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T17:51:04Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+inline = ""
+passed = true
+provider = "command"
+ref = "git grep --no-index -qF 'continues at the first' -- docs/guides/release.md"
+size = 0
+status = "measured"
+at = "2026-10-03T17:51:04Z"
+actor = "lognd"
+rev = 1

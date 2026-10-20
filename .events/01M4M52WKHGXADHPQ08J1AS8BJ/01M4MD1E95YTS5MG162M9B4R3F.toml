@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-fs/**", "crates/gob-cache/**", "crates/gob-exec/**", "changelog.d/**"]
+new = ["crates/gob-fs/**", "crates/gob-cache/**", "crates/gob-exec/**", "clippy.toml"]
+at = "2026-10-11T02:35:28Z"
+actor = "lognd"
+rev = 1

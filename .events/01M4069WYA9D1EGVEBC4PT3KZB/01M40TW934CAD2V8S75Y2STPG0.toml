@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T12:12:32Z"
+digest = "0fc70b8fff7cd49a60adaa2d545fb1f72373459d71535c9bff5f33da973b4311"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+────────────
+ Nextest run ID c06f8bfa-4ff4-49e9-9ac5-695172529da1 with nextest profile: default
+    Starting 1 test across 7 binaries (69 tests skipped)
+        PASS [   0.016s] (1/1) frob-release ci::tests::gh_missing_is_unknown_with_the_install_remedy
+────────────
+     Summary [   0.018s] 1 test run: 1 passed, 69 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(gh_missing_is_unknown_with_the_install_remedy)'"
+size = 446
+status = "measured"
+tests = ["ci::tests::gh_missing_is_unknown_with_the_install_remedy"]
+at = "2026-10-03T12:12:32Z"
+actor = "lognd"
+rev = 1

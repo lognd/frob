@@ -1,0 +1,20 @@
+kind = "evidence"
+captured_at = "2026-10-10T14:36:36Z"
+digest = "68f38843c0c268783b319d49671ad816440bd04b18b3774d86e03c4cf21013c9"
+exit_code = 101
+inline = """
+error: no such command: `nextest`
+
+help: a command with a similar name exists: `test`
+
+help: view all installed commands with `cargo --list`
+help: find a package to install `nextest` with `cargo search cargo-nextest`
+"""
+passed = false
+provider = "nextest"
+ref = "-p grimble-bind -E '(package(=grimble-bind) & (test(=a_clap_command_is_not_a_process_spawn_but_std_process_command_is) | test(=a_cross_owner_import_and_call_with_no_flow_fires) | test(=a_flow_in_either_direction_between_the_owners_allows_the_edges) | test(=a_grant_or_a_parent_grant_silences_cap001) | test(=a_granted_atom_never_observed_is_a_cap002_warning) | test(=a_method_name_is_a_use_only_beside_its_companion_call) | test(=a_model_with_nodes_examines_ownership_subjects) | test(=a_model_with_only_a_flow_has_no_node_to_own_files) | test(=a_model_without_such_entities_is_not_applicable_not_zero_subjects) | test(=a_node_with_neither_use_nor_grant_is_a_clean_subject_of_both) | test(=a_parent_grant_and_an_alias_grant_cover_their_children_and_canonical_atom) | test(=a_repository_with_no_entity_at_all_is_not_applicable) | test(=a_vocabulary_method_on_an_unresolved_receiver_is_a_may_use_never_clean) | test(=ack_flow_records_both_ends_and_a_second_ack_is_a_no_op_and_clean) | test(=ack_refuse_may_unbound_and_node_targets_with_the_rows) | test(=ack_without_a_reason_is_refused_and_a_rename_is_logged) | test(=an_unknown_edge_is_unresolved_never_clean) | test(=common_python_file_apis_are_fs_uses) | test(=every_corpus_case_matches_its_expectations) | test(=frob_owned_paths_are_never_unowned_but_other_loose_files_still_are) | test(=identity_body_rename_is_sys008_then_ack_rename_carries_the_entry) | test(=identity_body_rename_several_candidates_are_all_listed_and_trivial_bodies_are_gone) | test(=identity_rename_and_edit_is_not_paired_and_ack_rename_refuses_a_different_body) | test(=inline_path_chains_annotated_parameters_and_locals_are_path_receivers) | test(=no_model_entity_makes_sys001_sys002_sys004_not_applicable) | test(=one_code_owning_node_leaves_sys013_not_applicable) | test(=path_writes_are_fs_write_and_a_read_grant_does_not_cover_them) | test(=read_text_on_a_module_level_path_constant_is_a_must_fs_read) | test(=rename_min_tokens_knob_decides_whether_a_body_can_be_paired) | test(=rules_sys006_consumer_behind_is_warn_under_backward_and_error_otherwise) | test(=rules_sys006_matrix_both_equal_one_behind_both_behind_and_ends_differ) | test(=rules_sys006_producer_contract_changed_names_flow_and_both_ends) | test(=rules_sys006_shape_changed_under_both_acks_is_error_even_under_backward) | test(=rules_sys006_shape_contract_clean_when_all_three_agree) | test(=rules_sys006_unresolved_when_an_end_is_hidden_or_the_lock_is_unreadable) | test(=rules_sys007_kinds_facet_gone_and_the_body_edit_is_not_a_contract_skew) | test(=rules_sys007_scheme_change_is_one_finding_per_entry_and_forces_reattest) | test(=rules_without_a_lock_have_no_subjects_so_must_measure_is_not_vacuous) | test(=rust_fs_paths_read_and_write_including_qualified_forms) | test(=sys003_examines_a_singleton_clause_and_is_clean_on_a_good_one) | test(=sys003_examines_operands_and_fires_on_a_dangling_one) | test(=sys008_with_a_lock_and_no_gone_anchor_is_a_measured_clean) | test(=sys008_without_a_lock_is_not_applicable_with_a_reason) | test(=sys009_examines_a_flow_end_and_fires_on_an_unbound_one) | test(=sys010_examines_a_claim_and_fires_without_evidence) | test(=sys011_examines_a_vmodel_link_and_fires_when_it_is_broken) | test(=ungranted_open_exec_and_listen_are_cap001_errors)))'"
+size = 217
+status = "measured"
+at = "2026-10-10T14:36:36Z"
+actor = "Claude"
+rev = 1

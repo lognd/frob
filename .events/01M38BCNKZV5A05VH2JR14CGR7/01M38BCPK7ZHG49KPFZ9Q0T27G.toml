@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-24: folded into T-3008 once T-3010's lease on gates/__init__.py and _waive.py released -- INVLVL001 registered directly in T-3008's own land (absorbed by T-3008)"
+at = "2026-09-24T00:00:01Z"
+actor = "import"
+rev = 1

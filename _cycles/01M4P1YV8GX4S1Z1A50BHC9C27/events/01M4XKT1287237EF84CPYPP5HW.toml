@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M3ZX7H37B9GKN45MPD6ZNBTY"
+committed = 560
+text = "0.533.0 milestone drain: coordinator-assigned"
+capacity = 101
+at = "2026-10-14T16:26:56Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "duplicate"
+reason = "folded into ~BDHEZAT (commit_events surfaces unsynced checkouts as envelope warnings; E-GIT-LOCAL-EDITS carries a remedy)"
+at = "2026-10-04T14:28:35Z"
+actor = "lognd"
+rev = 1

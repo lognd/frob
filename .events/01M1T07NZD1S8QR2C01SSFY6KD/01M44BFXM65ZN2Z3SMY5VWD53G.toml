@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Error-state a11y assertion lint; crunk-web A11Y pack (D89)."
+at = "2026-10-04T21:00:36Z"
+actor = "lognd"
+rev = 1

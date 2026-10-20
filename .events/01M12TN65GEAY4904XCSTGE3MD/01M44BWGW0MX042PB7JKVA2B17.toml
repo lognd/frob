@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: migrating v1 docstring archaeology (DOCARCH001) into tickets."
+at = "2026-10-04T21:07:29Z"
+actor = "lognd"
+rev = 1

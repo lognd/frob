@@ -1,0 +1,19 @@
++++
+id = "01M5CW0609NX9MJ45G2R4CQE0R"
+title = "Detect hosting-side squash and rebase lands"
+type = "task"
+category = "todo"
+priority = "high"
+points = 2
+parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
+reporter = "lognd"
+created = "2026-10-20T14:38:43Z"
+updated = "2026-10-20T14:38:43Z"
+idempotency_key = "dt-DT22"
+
+[[links]]
+kind = "blocked-by"
+target = "01M5CW05WX0TMSBKDFTPEHB5R3"
++++
+
+Recognise a ticket landed by the host and close it. See docs/design/distributed-tickets.md.

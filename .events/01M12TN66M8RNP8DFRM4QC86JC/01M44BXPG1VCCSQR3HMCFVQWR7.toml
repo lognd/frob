@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~KHCKTS3: false-positive cases (find -name mtime, make contradiction) for the frob hook precision corpus (PT-3)."
+at = "2026-10-04T21:08:07Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given frob.toml, when the change lands, then [pm.wip] in_progress is 16 with a comment stating why"]
+new = ["Given frob.toml, when the change lands, then [pm.wip] in_progress is 16 with a comment stating why", "Given frob.toml, when the change lands, then the three cargo tool stages have timeout_secs = 1200 and [lease] lock_timeout_ms is 30000, each with a comment stating why"]
+moved = [1]
+at = "2026-10-09T17:29:26Z"
+actor = "lognd"
+rev = 1

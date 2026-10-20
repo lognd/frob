@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["a product whose rule crate is dropped from the build fails the registry test naming the missing crate", "duplicate ids and slugs fail at test time with both declaring modules named", "renamed rule ids resolve through a redirect table and old ids in config and directives keep working", "gob-dev has no link anchor code"]
+new = ["a product whose rule crate is dropped from the build fails the registry test naming the missing crate", "duplicate ids and slugs fail at test time with both declaring modules named", "renamed rule ids resolve through a redirect table and old ids in config and directives keep working", "gob-dev has no link anchor code", "a removed rule keeps its id reserved (a new rule reusing it fails), and no live id or slug is shadowed by a redirect (test)", "a source scan fails naming any derive(Rule) type that is not in its product's registry"]
+reason = "source review G4-G5"
+moved = [1, 2, 3, 4]
+at = "2026-10-06T13:14:12Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "field"
+field = "priority"
+old = "medium"
+new = "high"
+reason = "security advisory RUSTSEC-2026-0285 in a shipped dependency; do next once the manifests lease frees"
+at = "2026-10-06T10:55:33Z"
+actor = "lognd"
+rev = 1

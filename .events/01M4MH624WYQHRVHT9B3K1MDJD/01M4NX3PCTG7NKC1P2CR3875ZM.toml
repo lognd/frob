@@ -1,0 +1,59 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T16:34:51Z"
+digest = "ff3bbc9fffdb35b180a3fcb6271b3b9944287d8611a29845f2e5dba58cb13b08"
+exit_code = 0
+inline = '''
+   Compiling gix-tempfile v24.0.0
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-shallow v0.13.0
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-traverse v0.61.0
+   Compiling gix-index v0.55.0
+   Compiling gix-filter v0.34.0
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-dir v0.29.1
+   Compiling gix-revision v0.49.1
+   Compiling gix-pack v0.74.2
+   Compiling gix-odb v0.84.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-status v0.34.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-protocol v0.65.1
+   Compiling gix v0.87.1
+   Compiling trybuild v1.0.121
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized] target(s) in 43.51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a2181d01-a4d3-4df8-8a59-0b44e2473cd3 with nextest profile: default
+    Starting 1 test across 6 binaries (78 tests skipped)
+        PASS [   0.046s] gob-check tools::tests::a_recorded_pass_is_reused_until_one_input_changes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.047s] 1 test run: 1 passed, 78 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(=tools::tests::a_recorded_pass_is_reused_until_one_input_changes)'"
+size = 2075
+status = "measured"
+tests = ["tools::tests::a_recorded_pass_is_reused_until_one_input_changes"]
+at = "2026-10-11T16:34:51Z"
+actor = "lognd"
+rev = 1

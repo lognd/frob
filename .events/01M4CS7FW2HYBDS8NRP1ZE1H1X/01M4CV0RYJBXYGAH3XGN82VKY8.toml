@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Criterion 'CI on experimental passes the Windows nextest step after the land' moved out of acceptance (it is only observable after the land); the coordinator checks the post-land CI run and reopens on failure."
+at = "2026-10-08T04:05:52Z"
+actor = "lognd"
+rev = 1

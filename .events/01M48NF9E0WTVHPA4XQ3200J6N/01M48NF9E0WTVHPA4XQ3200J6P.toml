@@ -1,0 +1,12 @@
+kind = "create"
+title = "crunk-values: CSS Color 4 (oklch, oklab, color(), lab, lch) parsing and OKLab perceptual distance; COLOR001 reports unreadable colours as Unresolved"
+type = "story"
+category = "todo"
+priority = "high"
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+scope = ["crates/crunk-values/**", "crates/crunk-check/src/rules/**"]
+acceptance = ["oklch(), oklab(), lab(), lch(), color() and hwb() parse to the same value a reference implementation gives (test vectors from the CSS Color 4 spec)", "nearest-token suggestions use deltaE_OK and rank a known redmean misordering correctly", "an unreadable colour literal is reported Unresolved by COLOR001, not clean", "contrast results are unchanged (WCAG 2 luminance)"]
+body = "Found 2026-10-06 while reviewing perceptual colour checks: crunk-values parses hex/rgb/hsl only and measures palette distance in redmean-weighted sRGB (crates/crunk-values/src/color.rs:243, its own comment calls it a stand-in for perceptual distance). COLOR001 (~FWSQYH1) skips literals that do not parse, so a stylesheet written in oklch() (Tailwind v4 defines its palette in OKLCH) passes clean having checked nothing. (1) Parse CSS Color 4 functions: oklch, oklab, lab, lch, color(srgb|display-p3|...), hwb, with none/percent/angle forms. (2) Convert to OKLab and use Euclidean OKLab distance (deltaE_OK) for nearest-token suggestions and palette distance, with CSS Color 4 gamut mapping where a suggestion must be sRGB. (3) A colour-looking literal that cannot be read is an Unresolved subject for COLOR001, never silently clean. (4) Keep WCAG contrast on WCAG 2 relative luminance (compliance), not OKLab. Port v1's planned OKLab/OKLCH items (notes/crunk.md: T-0075, T-0079)."
+at = "2026-10-06T13:11:55Z"
+actor = "lognd"
+rev = 1

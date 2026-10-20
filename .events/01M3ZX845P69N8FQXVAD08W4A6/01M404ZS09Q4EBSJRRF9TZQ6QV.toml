@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Blocked additionally by the run driver, the default-branch job and the credentials and doctor ticket, so no live run precedes them (owner rule: job and credentials before any live run). Added acceptance: Given a held writer lock, when push runs, then it exits with a clear message and sends nothing. Given --dry-run, then the output lists the work classes with counts and the budget, and no tracker mutation is made."
+at = "2026-10-03T05:49:58Z"
+actor = "lognd"
+rev = 1

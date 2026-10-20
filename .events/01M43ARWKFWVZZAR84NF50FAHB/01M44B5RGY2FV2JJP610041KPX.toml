@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T20:55:03Z"
+digest = "c4e118e22b2acc29fe42b6edc1d550ec61c325620cedfce5f78b6b3834940040"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID af507dfe-70b2-4790-817d-13cc8e00bbe1 with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   1.158s] frob-cli::sibling_discovery a_crunk_with_another_schema_version_fails_check_with_exit_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.162s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-cli --test sibling_discovery -E 'test(a_crunk_with_another_schema_version_fails_check_with_exit_one)'"
+size = 628
+status = "measured"
+tests = ["a_crunk_with_another_schema_version_fails_check_with_exit_one"]
+at = "2026-10-04T20:55:03Z"
+actor = "lognd"
+rev = 1

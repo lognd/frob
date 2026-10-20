@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at 0e0f74dc2394 (rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/37949013217/job/113882641791; rust (windows-latest) (failure) https://github.com/lognd/frob/actions/runs/37949013217/job/113882641691): this ticket is the fix for the red base (gob-plan grl_spec tests broken by ~2SM2G7J)"
+at = "2026-10-09T15:52:08Z"
+actor = "lognd"
+rev = 1

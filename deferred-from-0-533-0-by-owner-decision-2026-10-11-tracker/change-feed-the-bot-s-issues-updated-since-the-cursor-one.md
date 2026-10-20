@@ -1,0 +1,40 @@
++++
+id = "01M4052RC6C32957W1A9PYQAEE"
+title = "Change feed: the bot's issues updated since the cursor, one GraphQL query per 100"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "medium"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+reporter = "lognd"
+created = "2026-10-03T05:51:35Z"
+updated = "2026-10-20T07:26:52Z"
+idempotency_key = "m2-mirror2-gh-change-feed"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-gh/src/feed.rs", "crates/frob-mirror/src/feed.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052QNSFSWV0SQ0A05XQ12K"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4052R0DZK01W7K8EE77637T"
+
+[[acceptance]]
+text = "Given 250 bot issues updated since the cursor, when the feed is read, then three queries are made and the results are ordered by update time"
+bound = true
+
+[[acceptance]]
+text = "Given an issue whose update time is not past its stored observed value, when the feed is processed, then it gets no history read"
+bound = true
+
+[[acceptance]]
+text = "Given an errors array in a feed page, when processed, then the feed stops for that scope and the cursor does not advance"
+bound = true
++++
+
+Implements mirror.md section 3.2 (Change feed; F1).
+
+One GraphQL query per 100 issues lists the bot's issues updated since the stored cursor, ordered by update time; only issues whose update time passed the stored observed value get a history read. Together with ledger-driven work it selects the run's work.

@@ -1,0 +1,31 @@
+kind = "create"
+title = "ticket reconcile stale-field detection regressed: always reports empty"
+type = "bug"
+category = "todo"
+priority = "high"
+aliases = ["T-6522"]
+labels = ["milestone:0.534.0"]
+scope = ["tests/test_ticket_reconcile.py", "src/frob/tickets/_reconcile.py"]
+body = """
+Found while draining CI run 36173008509 (dev 473cee7656). Reproduces on
+ubuntu-latest and macos-latest.
+
+All 4 tests in tests/test_ticket_reconcile.py::TestReconcileStripStaleFields
+fail with the same shape (assert {} == {'branch': '...stale-worktree'}):
+- test_dry_run_reports_but_does_not_strip
+- test_apply_strips_stale_fields
+- test_second_run_is_a_no_op
+- test_leased_ticket_is_skipped_not_written
+
+The reconcile pass that strips stale worktree/branch fields from a ticket's
+ledger entry appears to no longer detect (or no longer report) the stale
+'branch' field at all -- every test gets an empty dict where a populated one
+was expected. This looks like a real regression in the stale-field
+detection path, not a test/fixture drift issue.
+
+Proposed fix: bisect the reconcile stale-field detector against recent
+commits touching ticket reconcile/ledger field stripping; the dry-run and
+apply paths both regressed identically, suggesting a shared helper broke."""
+at = "2026-09-25T00:00:00Z"
+actor = "agent"
+rev = 1

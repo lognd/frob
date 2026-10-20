@@ -1,0 +1,33 @@
+kind = "evidence"
+captured_at = "2026-10-14T12:52:01Z"
+digest = "48f96e60381b931bb5ee57a1b09e4e015bf812f162a7140983efb00387a647f5"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 57186ae1-f614-434d-b464-6c6692fe0fed with nextest profile: default
+    Starting 1 test across 9 binaries (40 tests skipped)
+        PASS [   0.062s] frob-tests run::tests::huge_selection_is_chunked_within_the_argv_budget
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.070s] 1 test run: 1 passed, 40 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests -E 'test(=run::tests::huge_selection_is_chunked_within_the_argv_budget)'"
+size = 1201
+status = "measured"
+test_count = 1
+tests_digest = "220a860cbd7b43956c24251868098afa281aff370c1b6d9b5043bf87d6258a36"
+at = "2026-10-14T12:52:01Z"
+actor = "lognd"
+rev = 1

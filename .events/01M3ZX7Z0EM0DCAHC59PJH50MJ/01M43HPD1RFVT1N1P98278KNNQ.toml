@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-diagnostics/src/escape.rs", "crates/gob-diagnostics/src/text.rs", "crates/frob-evidence/src/attestation.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/Cargo.toml", "Cargo.lock"]
+new = ["crates/gob-diagnostics/src/escape.rs", "crates/gob-diagnostics/src/text.rs", "crates/frob-evidence/src/attestation.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/Cargo.toml", "Cargo.lock", "crates/gob-diagnostics/tests/contract.rs", "changelog.d/01M3ZX7Z0EM0DCAHC59PJH50MJ.changed.md"]
+at = "2026-10-04T13:29:45Z"
+actor = "lognd"
+rev = 1

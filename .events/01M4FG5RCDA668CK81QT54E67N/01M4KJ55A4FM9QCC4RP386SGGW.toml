@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T18:45:39Z"
+digest = "3853ea39ef712a88df5f54f9e2d871ed4fe0fc76e71c1872e81db03c24fd8d1a"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 49735b86-69b8-4bc5-8046-94fece4af825 with nextest profile: default
+    Starting 1 test across 6 binaries (72 tests skipped)
+        PASS [   0.007s] gob-check status::tests::opaque_notices_of_many_rules_merge_into_one_naming_count_and_rules
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 72 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(=status::tests::opaque_notices_of_many_rules_merge_into_one_naming_count_and_rules)'"
+size = 570
+status = "measured"
+tests = ["status::tests::opaque_notices_of_many_rules_merge_into_one_naming_count_and_rules"]
+at = "2026-10-10T18:45:39Z"
+actor = "Claude"
+rev = 1

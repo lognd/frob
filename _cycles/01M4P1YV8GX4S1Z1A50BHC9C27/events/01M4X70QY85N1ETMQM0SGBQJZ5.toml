@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4WGCDP6MTWDWNGRTNVMH9MV"
+committed = 496
+text = "0.533.0 milestone drain: unblocks 0HC06TD"
+capacity = 101
+at = "2026-10-14T12:43:23Z"
+actor = "Claude"
+rev = 1

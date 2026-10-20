@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["milestone:2", "area:security"]
+new = ["milestone:2", "area:security", "creates:crates/gob-trust/tests/guard.rs", "creates:crates/gob-trust/src/guard.rs"]
+at = "2026-10-10T15:59:33Z"
+actor = "Claude"
+rev = 1

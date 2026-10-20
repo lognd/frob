@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-12: decide whether code-changing tickets with zero acceptance criteria may close (tickets.md s9 allows with a warning on purpose)."
+at = "2026-10-04T21:09:45Z"
+actor = "lognd"
+rev = 1

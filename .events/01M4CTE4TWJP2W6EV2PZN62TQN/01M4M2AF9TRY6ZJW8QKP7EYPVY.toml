@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a crunk finding covered by a frob:waive exception, when crunk check runs, then it is reported as excepted, not open"]
+new = ["Given a COLOR001 finding covered by a crunk:waive comment with a reason, when crunk check runs, then it is reported in report.suppressed with that reason and is absent from the open findings", "Given a crunk:waive comment without a reason, when crunk check runs, then nothing is suppressed and WAIVE001 fires"]
+moved = [0]
+at = "2026-10-10T23:28:11Z"
+actor = "lognd"
+rev = 1

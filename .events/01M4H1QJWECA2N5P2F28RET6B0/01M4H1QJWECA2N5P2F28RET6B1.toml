@@ -1,0 +1,13 @@
+kind = "create"
+title = "frob land takes several tickets in one foreground invocation (land ~A ~B ~C): lands them in order, each checked against the base the previous one produced, reports every outcome and continues past a refusal"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
+scope = ["crates/frob-land/src/verb.rs", "crates/frob-land/tests/**", "changelog.d/**"]
+acceptance = ["Given three landable tickets and one that will be refused, when frob land ~A ~B ~X ~C runs, then A, B and C land in order with every guard and evidence rule unchanged, X's refusal is reported with its code, and the JSON envelope lists every ticket's outcome; nothing runs in the background (D25 holds)"]
+body = "Owner 2026-10-09: 'why are we hacking around it; what's with the land queue?' The coordinator was feeding single-ticket lands through a shell loop (scratchpad landq.sh). That loop is retired once this verb exists. Batched merge-queue checks are a later option only if lands stay slow after the fast-lands epic."
+at = "2026-10-09T19:20:09Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/build-test-ci.md,docs/design/tickets.md"]
+new = ["docs/design/build-test-ci.md", "docs/design/tickets.md"]
+at = "2026-10-15T05:48:34Z"
+actor = "lognd"
+rev = 1

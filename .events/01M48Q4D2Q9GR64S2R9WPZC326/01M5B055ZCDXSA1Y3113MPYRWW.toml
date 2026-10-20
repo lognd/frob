@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T21:12:04Z"
+digest = "f8f0c41138808c793d3925bed6151c3ff6432c37c188197d2d1a32bdf1110c8e"
+exit_code = 0
+inline = """
+
+running 1 test
+test removing_the_unresolved_case_fails_naming_the_rule_and_polarity ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 47.71s
+     Running tests/coverage.rs (target/debug/deps/coverage-bc370b968c065097)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-mdtest --test coverage removing_the_unresolved_case_fails_naming_the_rule_and_polarity"
+size = 394
+status = "measured"
+at = "2026-10-19T21:12:04Z"
+actor = "lognd"
+rev = 1

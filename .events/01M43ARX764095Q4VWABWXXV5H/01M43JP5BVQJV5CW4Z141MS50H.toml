@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:47:02Z"
+digest = "1826986a48ecca69197080e489d987bd5f786994714a14380e848baf863c36ca"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6f091f11-df13-413b-96af-cc664d2a13b6 with nextest profile: default
+    Starting 3 tests across 1 binary (41 tests skipped)
+        PASS [   0.008s] crunk-spec::spec unknown_key_without_a_close_match_has_no_suggestion
+        PASS [   0.009s] crunk-spec::spec unknown_key_in_a_section_names_key_line_and_suggestion
+        PASS [   0.011s] crunk-spec::spec unknown_key_inside_every_fixed_table_is_rejected
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 3 tests run: 3 passed, 41 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec --test spec -E 'test(unknown_key)'"
+size = 747
+status = "measured"
+tests = ["unknown_key_without_a_close_match_has_no_suggestion", "unknown_key_in_a_section_names_key_line_and_suggestion", "unknown_key_inside_every_fixed_table_is_rejected"]
+at = "2026-10-04T13:47:06Z"
+actor = "lognd"
+rev = 1

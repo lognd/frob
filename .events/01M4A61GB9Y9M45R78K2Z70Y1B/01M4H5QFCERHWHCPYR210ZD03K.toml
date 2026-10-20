@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/2Z70Y1B; scope: crates/frob/src/ticket/merge_cmd.rs, crates/frob/src/init.rs, crates/frob/src/ticket/branch_cmd.rs, crates/frob-ledger/src/branch.rs, crates/frob-ledger/src/layout.rs, crates/frob/tests/ticket_branch.rs, changelog.d/**, crates/frob/tests/merge_driver_branch.rs; ttl 7200s"
+at = "2026-10-09T20:29:39Z"
+actor = "lognd"
+rev = 1

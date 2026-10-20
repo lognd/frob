@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 close wanted a touched Python symbol for evidence; v2 evidence is bound by provider records and scope-independent (tickets.md s9)."
+at = "2026-10-04T21:02:14Z"
+actor = "lognd"
+rev = 1

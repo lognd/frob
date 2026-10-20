@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T22:27:53Z"
+digest = "656a7df2f17e21de12db5cd97405c50730950babc90b40cb791b0ab3e8a4abea"
+exit_code = 0
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test shared_target_inserts_once_and_multiline_signature_survives ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.08s
+     Running unittests src/lib.rs (target/debug/deps/gob_fix-4116023fa5a60afb)
+     Running tests/fix.rs (target/debug/deps/fix-5195c02195333ae8)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-fix shared_target_inserts_once_and_multiline_signature_survives"
+size = 571
+status = "measured"
+at = "2026-10-19T22:27:53Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs"]
+new = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs", "crates/frob-pm/src/lib.rs", "crates/frob/Cargo.toml", "crates/frob/src/lib.rs", "crates/frob/tests/board.rs", "crates/frob/tests/snapshots/board__board_text_100.snap", "crates/frob/tests/snapshots/board__board_text_50_stacked.snap", "docs/reference/cli/frob.md", "docs/design/releases.md"]
+at = "2026-10-03T16:48:05Z"
+actor = "lognd"
+rev = 1

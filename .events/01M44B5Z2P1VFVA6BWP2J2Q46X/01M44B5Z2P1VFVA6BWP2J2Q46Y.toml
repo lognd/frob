@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob bundle feature: wire grimble and crunk-check in-process dependencies"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/Cargo.toml"]
+body = "found while working ~F50FAHB: crates/frob has no bundle feature yet (neither grimble's nor crunk-check's); products.md section 6"
+at = "2026-10-04T20:55:10Z"
+actor = "lognd"
+rev = 1

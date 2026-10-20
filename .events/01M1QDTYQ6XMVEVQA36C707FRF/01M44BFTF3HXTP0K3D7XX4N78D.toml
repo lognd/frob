@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Playwright test provider is designed (tickets.md s9) but unbuilt; not covered by an open v2 ticket."
+at = "2026-10-04T21:00:33Z"
+actor = "lognd"
+rev = 1

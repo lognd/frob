@@ -1,0 +1,13 @@
+kind = "create"
+title = "cargo dev ecosystem: base vs PR finding diff over a pinned real-project corpus"
+type = "story"
+category = "todo"
+priority = "high"
+points = 8
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/gob-dev/**", "ecosystem.toml", ".github/workflows/**"]
+acceptance = ["the report lists per-rule deltas, crashes and timing for at least five pinned projects", "a crash in the head binary is reported, not hidden", "the PR job comments without failing the run"]
+body = "build-test-ci.md section 6, ruff ecosystem and ty mypy_primer. ecosystem.toml pins repositories by SHA (Rust, Python, TS/React, C#/Unity and this repository). cargo dev ecosystem builds the base and head binaries, runs frob, grimble and crunk check on each project, and reports per-rule added, removed and changed findings, crashes, Unresolved deltas and timing as markdown. A non-blocking PR job posts it as a comment; locally it runs on goway helpers."
+at = "2026-10-06T04:34:07Z"
+actor = "lognd"
+rev = 1

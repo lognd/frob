@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T16:28:10Z"
+digest = "616a95df82813879d5a7a6bf4afe2b0fb193b83acaaa2780d15590e7d069f626"
+exit_code = 0
+inline = '''
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized] target(s) in 8.04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 197932b0-603e-484a-a698-6a32f84058bc with nextest profile: default
+    Starting 1 test across 8 binaries (143 tests skipped)
+        PASS [   0.053s] gob-dev::generate generated_pages_carry_the_versioned_marker_and_visible_line
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.053s] 1 test run: 1 passed, 143 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(=generated_pages_carry_the_versioned_marker_and_visible_line)'"
+size = 616
+status = "measured"
+tests = ["generated_pages_carry_the_versioned_marker_and_visible_line"]
+at = "2026-10-11T16:28:10Z"
+actor = "lognd"
+rev = 1

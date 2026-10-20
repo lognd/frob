@@ -1,0 +1,12 @@
+kind = "create"
+title = "Trim the read verbs per D104, with one-minor hidden aliases"
+type = "story"
+category = "todo"
+priority = "high"
+parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
+scope = ["crates/frob/**", "crates/frob-ledger/**", "crates/frob-lease/**", "crates/frob-worktree/**", "docs/**"]
+acceptance = ["each folded verb's behaviour and JSON is reachable through its new form (tests moved, not deleted)", "each old spelling still works, is hidden from help, and prints the deprecation note", "generated CLI reference lists only the new forms"]
+body = "Fold `ticket brief` into `ticket show --format md`, `ticket triage list` into `ticket list --category triage`, `ticket contention` into `lease list --contention`, `start` into `work --here`. Each removed spelling stays as a hidden alias for one minor release that prints a one-line deprecation note on stderr naming the new form; generated CLI docs and agent-facing docs (CLAUDE.md templates, guides) use only the new forms."
+at = "2026-10-06T13:39:48Z"
+actor = "lognd"
+rev = 1

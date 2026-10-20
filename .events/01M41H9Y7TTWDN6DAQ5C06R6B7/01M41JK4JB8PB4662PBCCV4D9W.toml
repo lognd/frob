@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T19:06:58Z"
+digest = "9c9ab3033eaa1616dd73bf0cb81903e8faecc22218b90a9ac2bd3dacf48771eb"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3f1cc99d-b196-4510-b23a-09eea9eec1e4 with nextest profile: default
+    Starting 1 test across 4 binaries (35 tests skipped)
+        PASS [   0.033s] grimble-bind::applicability frob_owned_paths_are_never_unowned_but_other_loose_files_still_are
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.034s] 1 test run: 1 passed, 35 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(frob_owned_paths_are_never_unowned_but_other_loose_files_still_are)'"
+size = 585
+status = "measured"
+tests = ["frob_owned_paths_are_never_unowned_but_other_loose_files_still_are"]
+at = "2026-10-03T19:06:58Z"
+actor = "lognd"
+rev = 1

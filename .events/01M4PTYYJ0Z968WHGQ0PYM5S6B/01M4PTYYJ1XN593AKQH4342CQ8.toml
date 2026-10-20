@@ -1,0 +1,8 @@
+kind = "create"
+title = "Codegen: specialise operators instead of embedding the plan"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-10-12T01:17:17Z"
+actor = "lognd"
+rev = 1

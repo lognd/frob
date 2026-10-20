@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["crunk.toml [packs] crunk_web = true is accepted by crunk-spec and defaults to off", "crunk rule catalog lists the crunk-web pack rows only when the switch is on"]
+moved = []
+at = "2026-10-15T19:52:41Z"
+actor = "lognd"
+rev = 1

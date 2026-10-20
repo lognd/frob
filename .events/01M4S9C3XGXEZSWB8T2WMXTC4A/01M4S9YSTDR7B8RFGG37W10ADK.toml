@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["every_leaf_command_has_a_scenario_or_a_skip_reason passes with frob lease release skipped in crates/gob-dev/profile.toml"]
+moved = []
+at = "2026-10-13T00:17:49Z"
+actor = "lognd"
+rev = 1

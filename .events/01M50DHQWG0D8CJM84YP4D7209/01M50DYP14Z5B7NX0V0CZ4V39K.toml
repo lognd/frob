@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/reference/rules/**"]
+new = ["docs/reference/rules/**", "docs/schemas/**"]
+at = "2026-10-15T18:42:20Z"
+actor = "lognd"
+rev = 1

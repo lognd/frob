@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "lease lapsed while waiting on sandbox authorization"
+at = "2026-10-13T02:21:51Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~KHCKTS3: a command that merely names a protected file must be allowed is an explicit acceptance case of PT-3."
+at = "2026-10-04T21:08:21Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,13 @@
+kind = "create"
+title = "Change detection job: map changed paths to the CI job set"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/gob-dev/**", ".github/workflows/ci.yml"]
+acceptance = ["a docs-only diff selects only fmt, gen and check", "a Rust diff selects the full set", "the mapping has a unit test per class"]
+body = "build-test-ci.md section 6, ruff determine_changes. A first changes step in cargo dev ci (and job in ci.yml) maps the diff to job sets: Rust, docs only, workflows, crunk node and playwright (~2H41VF1). A docs-only PR runs fmt, gen check and frob check only. The mapping is data in gob-dev with a test per class."
+at = "2026-10-06T04:34:18Z"
+actor = "lognd"
+rev = 1

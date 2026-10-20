@@ -1,0 +1,19 @@
+kind = "create"
+title = "PyPI publish job: trusted publishing for frob, protected environment, release notes"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4065Y4N6DQG30TRSP2QNP8T"
+idempotency_key = "m2-rel-publish-pypi"
+labels = ["milestone:2", "area:release", "release:0.532.0"]
+scope = [".github/workflows/release.yml"]
+acceptance = ["Given smoke failed, when the workflow runs, then no publish job starts", "Given the job definition, when inspected, then id-token write is granted to no other job"]
+body = "Job upload-frob needs build, smoke, verify-ci and the crates publish; environment pypi with a required reviewer (owner step, documented), id-token: write only on that job, pypa/gh-action-pypi-publish pinned by SHA; GitHub release notes body is the compiled changelog section plus the 0.532.0 upgrade notice from the notes ticket."
+at = "2026-10-03T06:12:59Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4069Y1YR0XCN4BKDDH63PV1"

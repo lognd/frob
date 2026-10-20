@@ -1,0 +1,17 @@
++++
+id = "01M35RZY86A3YCMGF9P95QXK6H"
+title = "frob-exports: frob.doctor.lint_tool_version_lag/LintToolLagError/LintToolVersionLag missing from package export policy"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+points = 2
+reporter = "human"
+created = "2026-09-23T00:00:00Z"
+updated = "2026-09-23T00:00:02Z"
+aliases = ["T-5382"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/doctor.py", "src/frob/__init__.py", "src/frob/lang/__init__.py"]
++++
+
+CI run 35819358270 (all 3 platforms); re-verified failing on dev tip 39b89ed091: tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols fails -- src/frob reports 3 missing symbols per the frob-exports policy: frob.doctor.lint_tool_version_lag, frob.doctor.LintToolLagError, frob.doctor.LintToolVersionLag. These public symbols need adding to the package's declared export surface (or __all__/re-export) so the exports gate is satisfied. Not covered by any open ticket found.

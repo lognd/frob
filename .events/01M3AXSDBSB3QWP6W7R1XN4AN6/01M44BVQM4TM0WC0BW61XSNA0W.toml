@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 DSTACK001 autofix; the safe-fix requirement (verify round trip before applying) is D78 and ~29MKDDF (gob-fix)."
+at = "2026-10-04T21:07:03Z"
+actor = "lognd"
+rev = 1

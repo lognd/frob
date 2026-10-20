@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Framework detection must follow workspace members so pack activation works on monorepos; v2 pack activation is path-scoped (~2SB0498) but detection is not ticketed."
+at = "2026-10-04T21:01:34Z"
+actor = "lognd"
+rev = 1

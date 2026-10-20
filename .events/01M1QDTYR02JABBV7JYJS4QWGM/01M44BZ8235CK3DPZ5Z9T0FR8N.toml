@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by D13 (cli.md): every verb emits one JSON envelope on stdout and nothing else; the v1 unparseable-output defect cannot occur by design."
+at = "2026-10-04T21:08:58Z"
+actor = "lognd"
+rev = 1

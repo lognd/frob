@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["one trybuild case per compile-time row of the failure table (metadata, evaluation, applies, unknown language or capability, unsatisfiable need, missing .md or section or example, stem, since)", "RuleDef records file and line", "the old derive still compiles with a deprecation warning"]
+new = ["one trybuild case per compile-time row of the failure table (metadata, evaluation, applies, unknown language or capability, unsatisfiable need, missing .md or section or example, stem, since)", "RuleDef records file and line", "the old derive still compiles unchanged and its docs point to #[rule]"]
+moved = [1, 2, 0]
+at = "2026-10-06T23:19:43Z"
+actor = "lognd"
+rev = 1

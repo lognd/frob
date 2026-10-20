@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-16T00:05:17Z"
+digest = "e9a5806512fcd3f1d338f5338ab9d4aec8923336d6ed75eec34087dce5fb23a6"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 33.67s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7077208a-49be-457f-ad3e-26e6868f8d51 with nextest profile: default
+    Starting 1 test across 2 binaries (3 tests skipped)
+        PASS [   0.009s] gob-fix::fix dry_run_diff_equals_real_and_outside_bytes_unchanged
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-fix -E 'test(dry_run_diff_equals_real_and_outside_bytes_unchanged)'"
+size = 609
+status = "measured"
+test_count = 1
+tests_digest = "dcd2505eee56c645b09f6e0830e1d3e42f3ead27f095560d50609a754c3f4772"
+at = "2026-10-16T00:05:17Z"
+actor = "lognd"
+rev = 1

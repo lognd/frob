@@ -1,0 +1,114 @@
+kind = "evidence"
+captured_at = "2026-10-08T04:23:06Z"
+digest = "51458daa618d87ae1547780bb59c7de6024abdae95d238cca3d4279618916ff3"
+exit_code = 0
+inline = '''
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.42s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0abe0b8c-4ed6-4c32-8487-3a8f24f8ad2b with nextest profile: default
+    Starting 91 tests across 8 binaries (74 tests skipped)
+        PASS [   0.016s] gob-dev ci::tests::check_step_builds_the_workspace_siblings_before_running_frob
+        PASS [   0.016s] gob-dev ci::tests::pins_come_from_frob_toml
+        PASS [   0.017s] gob-dev ci::tests::clippy_windows_is_in_the_default_run_before_nextest
+        PASS [   0.017s] gob-dev ci::tests::nextest_runs_the_suite_once_through_insta_rejecting_unreferenced_snapshots
+        PASS [   0.017s] gob-dev ci::tests::clippy_windows_declares_target_and_mingw
+        PASS [   0.020s] gob-dev ci::tests::only_heavy_steps_are_offloadable
+        PASS [   0.022s] gob-dev ci::tests::docs_step_sets_rustdocflags_and_nextest_uses_ci_profile
+        PASS [   0.024s] gob-dev ci::tests::hygiene_steps_exist_pin_installs_inside_the_frob_toml_range_and_msrv_follows_manifest
+        PASS [   0.029s] gob-dev ci::tests::linux_only_steps_are_reported_skipped_elsewhere
+        PASS [   0.016s] gob-dev ci::tests::stops_at_first_failure_and_keep_going_continues
+        PASS [   0.011s] gob-dev profile::discover::tests::reads_the_commands_section_only
+        PASS [   0.013s] gob-dev ci::tests::unknown_step_names_the_valid_ones
+        PASS [   0.020s] gob-dev ci::tests::remote_step_calls_goway_with_the_exact_argv_and_env_and_names_the_host
+        PASS [   0.021s] gob-dev ci::tests::steps_not_marked_offload_stay_local
+        PASS [   0.011s] gob-dev profile::glob::tests::wildcards
+        PASS [   0.045s] gob-dev ci::tests::a_remote_command_failure_is_a_step_failure_naming_the_host
+        PASS [   0.010s] gob-dev profile::measure::tests::median_of_odd_even_and_empty
+        PASS [   0.010s] gob-dev profile::measure::tests::ticket_placeholder_expands
+        PASS [   0.013s] gob-dev profile::model::tests::budget_factor_scales_the_limit
+        PASS [   0.009s] gob-dev profile::render::tests::compare_shows_signed_deltas
+        PASS [   0.014s] gob-dev profile::model::tests::over_budget_names_command_measured_and_budget
+        PASS [   0.014s] gob-dev profile::model::tests::unexpected_exit_and_skips
+        PASS [   0.011s] gob-dev profile::scenarios::tests::measured_scenarios_need_a_budget_and_skips_a_reason
+        PASS [   0.011s] gob-dev profile::tests::a_leaf_without_a_scenario_is_named
+        PASS [   0.058s] gob-dev ci::tests::remote_prerequisites_are_probed_on_the_host_and_the_step_is_pinned_to_it
+        PASS [   0.058s] gob-dev ci::tests::stray_pending_snapshot_fails_the_guard_and_a_clean_tree_passes
+        PASS [   0.017s] gob-dev profile::scenarios::tests::shipped_file_parses
+        PASS [   0.024s] gob-dev profile::render::tests::table_lists_measured_and_skipped_rows
+        PASS [   0.013s] gob-dev profile::tests::a_scenario_for_a_hidden_verb_is_allowed
+        PASS [   0.084s] gob-dev ci::tests::goway_exit_125_is_a_goway_failure_after_retries_not_a_test_failure
+        PASS [   0.017s] gob-dev profile::tests::report_round_trips
+        PASS [   0.015s] gob-dev publish::tests::a_different_version_on_the_index_does_not_count
+        PASS [   0.014s] gob-dev publish::tests::a_failure_stops_the_run_and_a_rerun_resumes_at_the_failed_crate
+        PASS [   0.014s] gob-dev publish::tests::dry_run_prints_the_order_and_publishes_nothing
+        PASS [   0.012s] gob-dev publish::tests::rate_limit_past_the_budget_stops_resumably_naming_the_next_crate
+        PASS [   0.014s] gob-dev publish::tests::publish_starts_at_the_first_unpublished_crate
+        PASS [   0.017s] gob-dev publish::tests::rate_limit_within_the_budget_waits_and_continues
+        PASS [   0.077s] gob-dev profile::discover::tests::walks_the_help_tree_down_to_its_leaves
+        PASS [   0.013s] gob-dev publish::tests::reserve_apply_paces_after_the_burst_and_resumes_past_reserved_names
+        PASS [   0.011s] gob-dev render::rules::tests::fence_grows_past_inner_backticks
+        PASS [   0.016s] gob-dev publish::tests::the_budget_is_shared_across_crates
+        PASS [   0.016s] gob-dev publish::tests::reserve_without_apply_lists_missing_names_and_the_plan_and_publishes_nothing
+        PASS [   0.017s] gob-dev publish::tests::reserve_waits_out_a_rate_limit_and_stops_resumably_past_the_budget
+        PASS [   0.022s] gob-dev publish::tests::waits_for_the_index_between_dependents_and_times_out_if_it_never_shows
+        PASS [   0.016s] gob-dev render::rules::tests::page_has_title_table_explanation_examples
+        PASS [   0.018s] gob-dev render::rules::tests::page_without_examples_has_no_examples_section
+        PASS [   0.018s] gob-dev tests::finds_workspace_root_from_nested_dir
+        PASS [   0.016s] gob-dev wheel::tests::plan_builds_every_product_for_each_of_the_five_targets
+        PASS [   0.019s] gob-dev wheel_smoke::tests::on_path_finds_executables_with_the_host_suffix
+        PASS [   0.022s] gob-dev wheel::tests::product_filter_keeps_order_and_rejects_unknown_names
+        PASS [   0.016s] gob-dev::ci_parity a_missing_prerequisite_install_fails_naming_it
+        PASS [   0.017s] gob-dev::ci_parity a_check_missing_from_cargo_dev_ci_fails_naming_it
+        PASS [   0.013s] gob-dev::ci_parity ci_yml_installs_every_linux_step_prerequisite
+        PASS [   0.014s] gob-dev::ci_parity ci_definition_sets_require_python_tests_and_pins_pytest
+        PASS [   0.101s] gob-dev profile::measure::tests::measure_times_runs_checks_exit_codes_and_clears_the_cold_cache
+        PASS [   0.105s] gob-dev profile::fixture::tests::tmp_fixture_is_an_isolated_repository
+        PASS [   0.014s] gob-dev::ci_parity pytest_step_installs_with_uv_not_pip_and_nextest_sees_it
+        PASS [   0.037s] gob-dev tests::real_workspace_found_regardless_of_compile_time_path
+        PASS [   0.018s] gob-dev::ci_parity ci_yml_runs_exactly_the_cargo_dev_ci_steps
+        PASS [   0.023s] gob-dev::ci_parity windows_steps_use_the_isolated_alias_with_the_same_names_and_order
+        PASS [   0.037s] gob-dev::ci_parity a_raw_or_dropped_check_in_ci_yml_fails_naming_it
+        PASS [   0.023s] gob-dev::import_v1 an_unmapped_open_ticket_stops_the_run
+        PASS [   0.027s] gob-dev::import_v1 imports_maps_and_verifies
+        PASS [   0.029s] gob-dev::import_v1 merge_adds_only_new_ticket_directories
+        PASS [   0.031s] gob-dev::import_v1 home_paths_and_private_terms_are_redacted
+        PASS [   0.046s] gob-dev::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.030s] gob-dev::import_v1 open_category_triage_places_open_tickets_in_triage
+        PASS [   0.019s] gob-dev::import_v1 renders_the_id_map
+        PASS [   0.028s] gob-dev::import_v1 refuses_a_non_empty_target
+        PASS [   0.017s] gob-dev::import_v1 renders_the_migration_report
+        PASS [   0.038s] gob-dev::import_v1 merge_refuses_id_and_alias_collisions_without_writing
+        PASS [   0.021s] gob-dev::import_v1 renders_the_summary_table
+        PASS [   0.017s] gob-dev::profile_coverage skips_carry_a_reason_and_measured_scenarios_a_budget
+        PASS [   0.014s] gob-dev::rules_index a_crate_without_a_families_key_is_not_family_checked
+        PASS [   0.025s] gob-dev::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+        PASS [   0.009s] gob-dev::bin/gob-dev tests::gen_check_parses
+        PASS [   0.030s] gob-dev::import_v1 ulids_keep_creation_order
+        PASS [   0.026s] gob-dev::rules_index a_crate_with_attribute_rules_gets_a_generated_mod_rs_path
+        PASS [   0.035s] gob-dev::import_v1 selection_imports_requirement_bearing_open_tickets_only
+        PASS [   0.011s] gob-dev::bin/gob-dev tests::import_parses
+        PASS [   0.026s] gob-dev::rules_index a_rule_in_a_crate_that_does_not_own_its_family_is_rejected
+        PASS [   0.012s] gob-dev::bin/gob-dev tests::profile_parses_its_knobs
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::wheel_and_wheel_smoke_parse_the_workflow_arguments
+        PASS [   0.012s] gob-dev::bin/gob-dev tests::publish_parses
+        PASS [   0.009s] gob-languages query::tests::toml_table_headers
+        PASS [   0.092s] gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.011s] gob-dev::bin/gob-dev tests::publish_reserve_parses_and_apply_needs_reserve
+        PASS [   0.098s] gob-dev::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.314s] gob-dev ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command
+        PASS [   0.364s] gob-dev profile::fixture::tests::mutating_the_clone_leaves_the_source_checkout_untouched
+        PASS [   0.267s] gob-dev::generate output_is_deterministic_and_check_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.406s] 91 tests run: 91 passed, 74 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -p gob-languages -E '(package(=gob-dev) & (test(=a_check_missing_from_cargo_dev_ci_fails_naming_it) | test(=a_crate_with_attribute_rules_gets_a_generated_mod_rs_path) | test(=a_crate_without_a_families_key_is_not_family_checked) | test(=a_missing_prerequisite_install_fails_naming_it) | test(=a_raw_or_dropped_check_in_ci_yml_fails_naming_it) | test(=a_rule_in_a_crate_that_does_not_own_its_family_is_rejected) | test(=an_unmapped_open_ticket_stops_the_run) | test(=check_reports_stale_and_missing_files_without_writing) | test(=ci::tests::a_remote_command_failure_is_a_step_failure_naming_the_host) | test(=ci::tests::check_step_builds_the_workspace_siblings_before_running_frob) | test(=ci::tests::clippy_windows_declares_target_and_mingw) | test(=ci::tests::clippy_windows_is_in_the_default_run_before_nextest) | test(=ci::tests::docs_step_sets_rustdocflags_and_nextest_uses_ci_profile) | test(=ci::tests::goway_exit_125_is_a_goway_failure_after_retries_not_a_test_failure) | test(=ci::tests::hygiene_steps_exist_pin_installs_inside_the_frob_toml_range_and_msrv_follows_manifest) | test(=ci::tests::linux_only_steps_are_reported_skipped_elsewhere) | test(=ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command) | test(=ci::tests::nextest_runs_the_suite_once_through_insta_rejecting_unreferenced_snapshots) | test(=ci::tests::only_heavy_steps_are_offloadable) | test(=ci::tests::pins_come_from_frob_toml) | test(=ci::tests::remote_prerequisites_are_probed_on_the_host_and_the_step_is_pinned_to_it) | test(=ci::tests::remote_step_calls_goway_with_the_exact_argv_and_env_and_names_the_host) | test(=ci::tests::steps_not_marked_offload_stay_local) | test(=ci::tests::stops_at_first_failure_and_keep_going_continues) | test(=ci::tests::stray_pending_snapshot_fails_the_guard_and_a_clean_tree_passes) | test(=ci::tests::unknown_step_names_the_valid_ones) | test(=ci_definition_sets_require_python_tests_and_pins_pytest) | test(=ci_yml_installs_every_linux_step_prerequisite) | test(=ci_yml_runs_exactly_the_cargo_dev_ci_steps) | test(=crunk_config_reference_and_schema_are_generated_apart_from_frobs) | test(=every_leaf_command_has_a_scenario_or_a_skip_reason) | test(=every_rule_has_a_page_and_every_page_a_rule) | test(=home_paths_and_private_terms_are_redacted) | test(=imports_maps_and_verifies) | test(=merge_adds_only_new_ticket_directories) | test(=merge_refuses_id_and_alias_collisions_without_writing) | test(=open_category_triage_places_open_tickets_in_triage) | test(=output_is_deterministic_and_check_passes) | test(=profile::discover::tests::reads_the_commands_section_only) | test(=profile::discover::tests::walks_the_help_tree_down_to_its_leaves) | test(=profile::fixture::tests::mutating_the_clone_leaves_the_source_checkout_untouched) | test(=profile::fixture::tests::tmp_fixture_is_an_isolated_repository) | test(=profile::glob::tests::wildcards) | test(=profile::measure::tests::measure_times_runs_checks_exit_codes_and_clears_the_cold_cache) | test(=profile::measure::tests::median_of_odd_even_and_empty) | test(=profile::measure::tests::ticket_placeholder_expands) | test(=profile::model::tests::budget_factor_scales_the_limit) | test(=profile::model::tests::over_budget_names_command_measured_and_budget) | test(=profile::model::tests::unexpected_exit_and_skips) | test(=profile::render::tests::compare_shows_signed_deltas) | test(=profile::render::tests::table_lists_measured_and_skipped_rows) | test(=profile::scenarios::tests::measured_scenarios_need_a_budget_and_skips_a_reason) | test(=profile::scenarios::tests::shipped_file_parses) | test(=profile::tests::a_leaf_without_a_scenario_is_named) | test(=profile::tests::a_scenario_for_a_hidden_verb_is_allowed) | test(=profile::tests::report_round_trips) | test(=publish::tests::a_different_version_on_the_index_does_not_count) | test(=publish::tests::a_failure_stops_the_run_and_a_rerun_resumes_at_the_failed_crate) | test(=publish::tests::dry_run_prints_the_order_and_publishes_nothing) | test(=publish::tests::publish_starts_at_the_first_unpublished_crate) | test(=publish::tests::rate_limit_past_the_budget_stops_resumably_naming_the_next_crate) | test(=publish::tests::rate_limit_within_the_budget_waits_and_continues) | test(=publish::tests::reserve_apply_paces_after_the_burst_and_resumes_past_reserved_names) | test(=publish::tests::reserve_waits_out_a_rate_limit_and_stops_resumably_past_the_budget) | test(=publish::tests::reserve_without_apply_lists_missing_names_and_the_plan_and_publishes_nothing) | test(=publish::tests::the_budget_is_shared_across_crates) | test(=publish::tests::waits_for_the_index_between_dependents_and_times_out_if_it_never_shows) | test(=pytest_step_installs_with_uv_not_pip_and_nextest_sees_it) | test(=refuses_a_non_empty_target) | test(=render::rules::tests::fence_grows_past_inner_backticks) | test(=render::rules::tests::page_has_title_table_explanation_examples) | test(=render::rules::tests::page_without_examples_has_no_examples_section) | test(=renders_the_id_map) | test(=renders_the_migration_report) | test(=renders_the_summary_table) | test(=selection_imports_requirement_bearing_open_tickets_only) | test(=skips_carry_a_reason_and_measured_scenarios_a_budget) | test(=tests::finds_workspace_root_from_nested_dir) | test(=tests::gen_check_parses) | test(=tests::import_parses) | test(=tests::profile_parses_its_knobs) | test(=tests::publish_parses) | test(=tests::publish_reserve_parses_and_apply_needs_reserve) | test(=tests::real_workspace_found_regardless_of_compile_time_path) | test(=tests::wheel_and_wheel_smoke_parse_the_workflow_arguments) | test(=ulids_keep_creation_order) | test(=wheel::tests::plan_builds_every_product_for_each_of_the_five_targets) | test(=wheel::tests::product_filter_keeps_order_and_rejects_unknown_names) | test(=wheel_smoke::tests::on_path_finds_executables_with_the_host_suffix) | test(=windows_steps_use_the_isolated_alias_with_the_same_names_and_order))) | (package(=gob-languages) & (test(=query::tests::toml_table_headers)))'"
+size = 9141
+status = "measured"
+tests = ["a_missing_prerequisite_install_fails_naming_it", "a_check_missing_from_cargo_dev_ci_fails_naming_it", "ci_yml_installs_every_linux_step_prerequisite", "ci_definition_sets_require_python_tests_and_pins_pytest", "pytest_step_installs_with_uv_not_pip_and_nextest_sees_it", "ci_yml_runs_exactly_the_cargo_dev_ci_steps", "windows_steps_use_the_isolated_alias_with_the_same_names_and_order", "a_raw_or_dropped_check_in_ci_yml_fails_naming_it", "skips_carry_a_reason_and_measured_scenarios_a_budget", "every_leaf_command_has_a_scenario_or_a_skip_reason", "an_unmapped_open_ticket_stops_the_run", "imports_maps_and_verifies", "merge_adds_only_new_ticket_directories", "home_paths_and_private_terms_are_redacted", "open_category_triage_places_open_tickets_in_triage", "renders_the_id_map", "refuses_a_non_empty_target", "renders_the_migration_report", "merge_refuses_id_and_alias_collisions_without_writing", "renders_the_summary_table", "ulids_keep_creation_order", "selection_imports_requirement_bearing_open_tickets_only", "a_crate_without_a_families_key_is_not_family_checked", "a_crate_with_attribute_rules_gets_a_generated_mod_rs_path", "a_rule_in_a_crate_that_does_not_own_its_family_is_rejected", "query::tests::toml_table_headers", "tests::gen_check_parses", "tests::import_parses", "tests::profile_parses_its_knobs", "tests::wheel_and_wheel_smoke_parse_the_workflow_arguments", "tests::publish_parses", "tests::publish_reserve_parses_and_apply_needs_reserve", "ci::tests::check_step_builds_the_workspace_siblings_before_running_frob", "ci::tests::pins_come_from_frob_toml", "ci::tests::clippy_windows_is_in_the_default_run_before_nextest", "ci::tests::nextest_runs_the_suite_once_through_insta_rejecting_unreferenced_snapshots", "ci::tests::clippy_windows_declares_target_and_mingw", "ci::tests::only_heavy_steps_are_offloadable", "ci::tests::docs_step_sets_rustdocflags_and_nextest_uses_ci_profile", "ci::tests::hygiene_steps_exist_pin_installs_inside_the_frob_toml_range_and_msrv_follows_manifest", "ci::tests::linux_only_steps_are_reported_skipped_elsewhere", "ci::tests::stops_at_first_failure_and_keep_going_continues", "profile::discover::tests::reads_the_commands_section_only", "ci::tests::unknown_step_names_the_valid_ones", "ci::tests::remote_step_calls_goway_with_the_exact_argv_and_env_and_names_the_host", "ci::tests::steps_not_marked_offload_stay_local", "profile::glob::tests::wildcards", "ci::tests::a_remote_command_failure_is_a_step_failure_naming_the_host", "profile::measure::tests::median_of_odd_even_and_empty", "profile::measure::tests::ticket_placeholder_expands", "profile::model::tests::budget_factor_scales_the_limit", "profile::render::tests::compare_shows_signed_deltas", "profile::model::tests::over_budget_names_command_measured_and_budget", "profile::model::tests::unexpected_exit_and_skips", "profile::scenarios::tests::measured_scenarios_need_a_budget_and_skips_a_reason", "profile::tests::a_leaf_without_a_scenario_is_named", "ci::tests::remote_prerequisites_are_probed_on_the_host_and_the_step_is_pinned_to_it", "ci::tests::stray_pending_snapshot_fails_the_guard_and_a_clean_tree_passes", "profile::scenarios::tests::shipped_file_parses", "profile::render::tests::table_lists_measured_and_skipped_rows", "profile::tests::a_scenario_for_a_hidden_verb_is_allowed", "ci::tests::goway_exit_125_is_a_goway_failure_after_retries_not_a_test_failure", "profile::tests::report_round_trips", "publish::tests::a_different_version_on_the_index_does_not_count", "publish::tests::a_failure_stops_the_run_and_a_rerun_resumes_at_the_failed_crate", "publish::tests::dry_run_prints_the_order_and_publishes_nothing", "publish::tests::rate_limit_past_the_budget_stops_resumably_naming_the_next_crate", "publish::tests::publish_starts_at_the_first_unpublished_crate", "publish::tests::rate_limit_within_the_budget_waits_and_continues", "profile::discover::tests::walks_the_help_tree_down_to_its_leaves", "publish::tests::reserve_apply_paces_after_the_burst_and_resumes_past_reserved_names", "render::rules::tests::fence_grows_past_inner_backticks", "publish::tests::the_budget_is_shared_across_crates", "publish::tests::reserve_without_apply_lists_missing_names_and_the_plan_and_publishes_nothing", "publish::tests::reserve_waits_out_a_rate_limit_and_stops_resumably_past_the_budget", "publish::tests::waits_for_the_index_between_dependents_and_times_out_if_it_never_shows", "render::rules::tests::page_has_title_table_explanation_examples", "render::rules::tests::page_without_examples_has_no_examples_section", "tests::finds_workspace_root_from_nested_dir", "wheel::tests::plan_builds_every_product_for_each_of_the_five_targets", "wheel_smoke::tests::on_path_finds_executables_with_the_host_suffix", "wheel::tests::product_filter_keeps_order_and_rejects_unknown_names", "profile::measure::tests::measure_times_runs_checks_exit_codes_and_clears_the_cold_cache", "profile::fixture::tests::tmp_fixture_is_an_isolated_repository", "tests::real_workspace_found_regardless_of_compile_time_path", "ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command", "profile::fixture::tests::mutating_the_clone_leaves_the_source_checkout_untouched", "every_rule_has_a_page_and_every_page_a_rule", "crunk_config_reference_and_schema_are_generated_apart_from_frobs", "check_reports_stale_and_missing_files_without_writing", "output_is_deterministic_and_check_passes"]
+at = "2026-10-08T04:23:06Z"
+actor = "lognd"
+rev = 1

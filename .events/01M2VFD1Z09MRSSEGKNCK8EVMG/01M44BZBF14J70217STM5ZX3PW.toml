@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 argparse help and usage-error telemetry rows."
+at = "2026-10-04T21:09:02Z"
+actor = "lognd"
+rev = 1

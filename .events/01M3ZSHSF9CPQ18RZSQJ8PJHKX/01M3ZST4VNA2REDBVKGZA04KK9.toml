@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Acceptance deviation: docs/schemas/*.json are generated from Rust types by cargo dev gen schemas (GEN001), so a hand-written issue-projection.json would be stale-by-construction. The projection is specified as a field table in mirror.md 2.1 and the schema file is generated when the producer is implemented (mirror implementation ticket). Also: decision dates use 2026-10-04 to stay monotonic with D75 and D77 in the log."
+at = "2026-10-03T02:34:39Z"
+actor = "lognd"
+rev = 1

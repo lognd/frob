@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T01:32:44Z"
+digest = "d78d5a7abc7441b38c656c87d5145274d207a119d102d2ea1c1d63c097751334"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0822cec1-db0c-49b5-b78c-4d255e40b5c4 with nextest profile: default
+    Starting 1 test across 153 binaries (1374 tests skipped)
+        PASS [   0.748s] frob-land::land a_new_finding_refuses_naming_only_the_new_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.752s] 1 test run: 1 passed, 1374 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(a_new_finding_refuses_naming_only_the_new_one)'"
+size = 558
+status = "measured"
+tests = ["a_new_finding_refuses_naming_only_the_new_one"]
+at = "2026-10-04T01:32:44Z"
+actor = "lognd"
+rev = 1

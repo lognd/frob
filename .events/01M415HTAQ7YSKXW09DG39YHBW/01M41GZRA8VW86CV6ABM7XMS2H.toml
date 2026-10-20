@@ -1,0 +1,39 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T18:38:54Z"
+digest = "8f88a702d7162d061eba39a0ae2689e06c0a0a1d97b4c710ec2620e3aef59dc2"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e2e97477-9d68-410b-84b4-0124d6db9e9c with nextest profile: default
+    Starting 16 tests across 2 binaries (25 binaries skipped)
+        PASS [   0.446s] frob-evidence::attestation a_non_ascii_statement_or_fact_is_refused_naming_the_character
+        PASS [   0.448s] frob-evidence::attestation a_tampered_statement_degrades_to_unmeasured
+        PASS [   0.450s] frob-evidence::attestation an_agent_marker_or_a_pipe_refuses_and_names_a_human_remedy
+        PASS [   0.737s] frob-evidence::attestation a_non_attester_and_an_empty_list_refuse
+        PASS [   0.495s] frob-evidence::attestation an_ascii_statement_still_attests
+        PASS [   0.520s] frob-evidence::attestation an_empty_statement_refuses
+        PASS [   0.603s] frob-evidence::attestation facts_must_have_a_shape_and_commits_and_tickets_must_exist
+        PASS [   0.977s] frob-evidence::attestation an_attester_at_a_terminal_binds_a_ticket_criterion
+        PASS [   3.379s] frob-cli::attestation init_materializes_the_owner_as_the_attester
+        PASS [   3.849s] frob-cli::attestation the_flags_of_the_provider_are_checked
+        PASS [   4.280s] frob-cli::attestation a_non_attester_an_empty_statement_and_a_missing_fact_refuse_through_the_milestone_path
+        PASS [   4.313s] frob-cli::attestation the_binary_refuses_without_a_terminal_and_with_an_agent_marker_writing_nothing
+        PASS [   4.595s] frob-cli::attestation a_non_ascii_statement_is_a_usage_error_on_both_verbs_and_writes_nothing
+        PASS [   4.727s] frob-cli::attestation an_attestation_on_a_ticket_criterion_binds_and_show_and_brief_label_it
+        PASS [   4.911s] frob-cli::attestation an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it
+        PASS [   7.171s] frob-cli::attestation removing_a_criterion_reports_the_evidence_it_loses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   7.171s] 16 tests run: 16 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-evidence -E binary(attestation)"
+size = 2205
+status = "measured"
+tests = ["a_non_ascii_statement_or_fact_is_refused_naming_the_character", "a_tampered_statement_degrades_to_unmeasured", "an_agent_marker_or_a_pipe_refuses_and_names_a_human_remedy", "a_non_attester_and_an_empty_list_refuse", "an_ascii_statement_still_attests", "an_empty_statement_refuses", "facts_must_have_a_shape_and_commits_and_tickets_must_exist", "an_attester_at_a_terminal_binds_a_ticket_criterion", "init_materializes_the_owner_as_the_attester", "the_flags_of_the_provider_are_checked", "a_non_attester_an_empty_statement_and_a_missing_fact_refuse_through_the_milestone_path", "the_binary_refuses_without_a_terminal_and_with_an_agent_marker_writing_nothing", "a_non_ascii_statement_is_a_usage_error_on_both_verbs_and_writes_nothing", "an_attestation_on_a_ticket_criterion_binds_and_show_and_brief_label_it", "an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it", "removing_a_criterion_reports_the_evidence_it_loses"]
+at = "2026-10-03T18:38:54Z"
+actor = "lognd"
+rev = 1

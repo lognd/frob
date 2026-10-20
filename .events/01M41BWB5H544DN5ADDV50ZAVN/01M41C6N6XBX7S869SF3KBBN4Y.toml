@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-release/**", "docs/reference/changelog.md"]
+new = ["crates/frob-release/**", "docs/reference/changelog.md", "changelog.d/01M4069YE7SYCYT7YGT2FCV344.added.md", "changelog.d/01M4069YE7SYCYT7YGT2FCV344.notice.md", "docs/design/documentation.md", "docs/design/releases.md"]
+at = "2026-10-03T17:15:18Z"
+actor = "lognd"
+rev = 1

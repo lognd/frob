@@ -1,0 +1,13 @@
+kind = "create"
+title = "Tour: materialize [tour] pins, code map and gates from configuration"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+at = "2026-10-12T01:48:17Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX887RZB82G8HR5JKQ2FER"

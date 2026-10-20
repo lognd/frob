@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T23:34:22Z"
+digest = "6a04f33a8509dda12c331b33aebdec771c65923337d7181ec5ef31a15ca04856"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized] target(s) in 10.78s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fb9c82ea-bb52-4aaa-9e1b-031b265e9efe with nextest profile: default
+    Starting 1 test across 7 binaries (134 tests skipped)
+        PASS [   0.087s] gob-dev::generate stale_grl_catalog_page_is_reported
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.088s] 1 test run: 1 passed, 134 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(=stale_grl_catalog_page_is_reported)'"
+size = 588
+status = "measured"
+tests = ["stale_grl_catalog_page_is_reported"]
+at = "2026-10-10T23:34:22Z"
+actor = "lognd"
+rev = 1

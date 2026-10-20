@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-19T16:41:24Z"
+digest = "59f5034f058426d2f2709e9d968cb4b58f0a9c901b6622ced539f67a4e2bdbbb"
+exit_code = 0
+inline = """
+
+running 1 test
+test a_hand_written_expectation_contradicting_the_derived_one_fails ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.44s
+     Running tests/matrix.rs (target/debug/deps/matrix-f641a881e0e16955)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-mdtest --test matrix a_hand_written_expectation_contradicting_the_derived_one_fails"
+size = 533
+status = "measured"
+at = "2026-10-19T16:41:24Z"
+actor = "lognd"
+rev = 1

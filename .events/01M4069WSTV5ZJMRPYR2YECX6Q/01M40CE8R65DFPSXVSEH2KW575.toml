@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-release/src/status.rs", "crates/frob/src/release_cmd.rs", "crates/frob-release/Cargo.toml", "crates/frob-pm/src/rules/membership.rs", "crates/frob-release/src/lib.rs", "crates/frob/tests/release_status.rs", "Cargo.lock", "docs/reference/**"]
+new = ["crates/frob-release/src/status.rs", "crates/frob/src/release_cmd.rs", "crates/frob-release/Cargo.toml", "crates/frob-pm/src/rules/membership.rs", "crates/frob-release/src/lib.rs", "crates/frob/tests/release_status.rs", "Cargo.lock", "docs/reference/**", "crates/frob-release/src/error.rs"]
+at = "2026-10-03T08:00:13Z"
+actor = "lognd"
+rev = 1

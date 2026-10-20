@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "CI workflow refactor; no user-visible change"
+at = "2026-10-03T18:55:09Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A green run that executed no test (skipped-only or empty selection) is refused as E-EVIDENCE-NOT-EXECUTED; a matching run is recorded"]
+moved = []
+at = "2026-10-19T22:28:35Z"
+actor = "lognd"
+rev = 1

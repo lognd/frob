@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["SYS013 (the id binding.md 11.3 assigns to undeclared flow) fires once per ordered owner pair when a Must TS import or call edge, JSX component uses included, crosses owners with no flow in that direction; the web conformance fixture fires ui to api.", "A flow from the caller's owner to the callee's owner allows the edges; a reversed flow does not.", "An Unknown or May edge, or a May owner, is Unresolved (unresolved-edge or may-only-owner), never clean; an external package is not an edge between owners; foreign ends are unchecked.", "The rule consumes the one SymbolGraph of the snapshot through the existing binding path (owners, flows, Cx), with no web-specific side path; it is not applicable with fewer than two code-owning nodes or no import or call edge."]
+new = ["SYS013 (the id binding.md 11.3 assigns to undeclared flow) fires once per ordered owner pair when a Must TS import or call edge, JSX component uses included, crosses owners with no flow in that direction; the web conformance fixture fires ui to api.", "An Unknown or May edge, or a May owner, is Unresolved (unresolved-edge or may-only-owner), never clean; an external package is not an edge between owners; foreign ends are unchecked.", "The rule consumes the one SymbolGraph of the snapshot through the existing binding path (owners, flows, Cx), with no web-specific side path; it is not applicable with fewer than two code-owning nodes or no import or call edge.", "A flow in either direction between the two owners allows the edge; with no flow between them it fires."]
+moved = [1, 0, 2, 3]
+at = "2026-10-06T13:56:15Z"
+actor = "lognd"
+rev = 1

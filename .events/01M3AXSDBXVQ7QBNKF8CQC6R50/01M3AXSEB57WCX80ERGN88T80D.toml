@@ -1,0 +1,51 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Fixed all four named residues from the SQL/LAUNCH tool-family landing:
+1. REG008: LAUNCH101-107 now carry real frob:enforces edges (they are
+   genuinely implemented in src/frob/webapp/_launch_checklist.py); SQL123-130
+   re-dispositioned deferred:T-5148 since only Frob_L001-004 AST rules ship
+   today (_sqlfluff_plugin.py's own scope-cut docstring), not these ids.
+2. Fixed the doubled doctor finding by fixing the TEST's assumption instead
+   of the code: squawk (T-5333) legitimately shares sql_relevance with
+   sqlfluff as a second REQUIRED_FOR_FAMILY entry, so 2 findings on a
+   SQL-relevant repo with all tools mocked absent is correct, not a bug.
+3. Exported frob.doctor.FamilyToolFinding/family_required_tool_findings
+   from src/frob/__init__.py.
+4. Declared sqlfluff in tests/unit/test_runtime_deps.py's
+   _ALLOWED_UNDECLARED (entry-points-gated import, same shape as z3),
+   not _DIST_FOR_IMPORT (it is an optional sql extra, not a core dep).
+
+Discovered scope creep: TestCheckCoverageReg008BurnDown and
+test_gate_rule_entries_match_live_known_rules both already fail on true
+dev HEAD independent of this ticket -- ~233 other reserved-not-yet-
+implemented gate rule ids (WEBSEC/COMPLY/A11Y/SEO/WEBPERF/SQL101-122)
+carry the same handled_by-with-no-frob:enforces-edge shape. Filed
+T-6553 for that pre-existing debt; it is too broad for this
+ticket's own small patch and was not introduced by the SQL/LAUNCH
+landing this ticket closes out.
+
+### Changed
+```
+ docs/design/registry/check-coverage.yaml | 30 ++++++++++++-------------
+ src/frob/__init__.py                     |  4 ++++
+ src/frob/webapp/_launch_checklist.py     |  7 ++++++
+ tests/unit/test_doctor.py                | 17 +++++++++++---
+ tests/unit/test_runtime_deps.py          |  7 ++++++
+ tickets/T-6525/ticket.md                 | 11 ++++++---
+ tickets/T-6553/ticket.md       | 38 ++++++++++++++++++++++++++++++++
+ 7 files changed, 93 insertions(+), 21 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_sql_relevant_missing_sqlfluff_is_a_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/test_doctor.py::TestFamilyRequiredToolFindings::test_sql_relevant_present_sqlfluff_is_not_a_finding` (pytest node id, verified passing when recorded)
+- `tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols` (pytest node id, verified passing when recorded)
+- `tests/unit/test_runtime_deps.py::TestRuntimeDepsDeclared::test_every_unguarded_third_party_import_is_declared` (pytest node id, verified passing when recorded)"""
+at = "2026-09-25T00:00:01Z"
+actor = "import"
+rev = 1

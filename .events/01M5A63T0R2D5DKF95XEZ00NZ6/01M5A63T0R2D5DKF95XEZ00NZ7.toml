@@ -1,0 +1,9 @@
+kind = "create"
+title = "grimble vet: licence, yanked, maintenance and typosquat checks"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-vet/**"]
+at = "2026-10-19T13:37:44Z"
+actor = "lognd"
+rev = 1

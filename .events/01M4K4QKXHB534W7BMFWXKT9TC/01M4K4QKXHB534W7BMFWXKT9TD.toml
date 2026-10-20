@@ -1,0 +1,12 @@
+kind = "create"
+title = "frob doctor fails CFG001: frob.toml lacks the materialized tickets.branch knob"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+scope = ["frob.toml"]
+acceptance = ["frob doctor reports 0 errors"]
+body = "found while coordinating the drain: frob doctor on experimental reports CFG001 missing-materialized-knob tickets.branch; frob config sync writes it."
+at = "2026-10-10T14:51:04Z"
+actor = "Claude"
+rev = 1

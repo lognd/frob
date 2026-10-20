@@ -1,0 +1,30 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+gob-mdtest per build-test-ci.md section 2 and rules.md section 8 with the positive-control doctrine (audit L18): hand-parsed markdown suites with headings as cases and fenced blocks carrying rule=, expect=fire|clean, config=, file=; inline error:/warn: markers assert findings by block-relative line; failures render a side-by-side table; every rule in a file must have a fire and a clean block or the file fails with MissingControl; mdtest! macro generates one test per corpus directory that reports every file. FORMAT.md documents the format. Deviations: no pulldown-cmark or similar dependency; one nextest case per corpus directory rather than per file; blocks without expect= are documentation.
+
+### Changed
+```
+ Cargo.lock                                         |  11 +
+ crates/gob-mdtest/Cargo.toml                       |  20 ++
+ crates/gob-mdtest/FORMAT.md                        |  41 +++
+ crates/gob-mdtest/src/lib.rs                       |  59 +++++
+ crates/gob-mdtest/src/parse.rs                     | 263 ++++++++++++++++++
+ crates/gob-mdtest/src/run.rs                       | 295 +++++++++++++++++++++
+ crates/gob-mdtest/tests/mdtest/toy.md              |  40 +++
+ .../tests/mdtest_fail/missing_control.md           |   6 +
+ crates/gob-mdtest/tests/mdtest_fail/wrong_line.md  |  12 +
+ crates/gob-mdtest/tests/selftest.rs                |  70 +++++
+ tickets/T-0015/ticket.md                           |   6 +-
+ 11 files changed, 820 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)"""
+at = "2026-10-02T00:00:02Z"
+actor = "import"
+rev = 1

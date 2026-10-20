@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-trust/src/prompt.rs", "crates/frob/src/trust_cmd.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/prompt.rs", "crates/frob/src/lib.rs"]
+new = ["crates/gob-trust/src/prompt.rs", "crates/frob/src/trust_cmd.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/prompt.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs"]
+at = "2026-10-19T07:46:33Z"
+actor = "lognd"
+rev = 1

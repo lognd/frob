@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by grmb-spec.md section 3: `attr timeout = 30 s;` is a generic typed attr, so there is no per-keyword grammar gap to resolve (v1 strata Flow.timeout grammar_flow.rs detail)."
+at = "2026-10-04T20:58:15Z"
+actor = "lognd"
+rev = 1

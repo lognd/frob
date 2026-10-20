@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Timeout attribute on every net.connect/fetch_url grant; SYS/REL rule on grmb attrs."
+at = "2026-10-04T21:02:31Z"
+actor = "lognd"
+rev = 1

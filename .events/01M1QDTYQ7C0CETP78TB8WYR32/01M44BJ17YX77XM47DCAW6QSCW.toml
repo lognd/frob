@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. V-model import from spec docs and per-milestone closure; uncertain how much ~QNDWNDM (G16 VMOD port) already covers."
+at = "2026-10-04T21:01:45Z"
+actor = "lognd"
+rev = 1

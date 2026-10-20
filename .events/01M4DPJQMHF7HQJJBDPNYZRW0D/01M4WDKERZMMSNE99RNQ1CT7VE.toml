@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "scope too narrow: needs gob-rules and gob-check/tests; re-lease after 7TYG963 frees gob-check"
+at = "2026-10-14T05:19:15Z"
+actor = "Claude"
+rev = 1

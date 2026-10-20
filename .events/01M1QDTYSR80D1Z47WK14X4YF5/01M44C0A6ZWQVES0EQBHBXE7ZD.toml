@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~JHA8CYK: a green merge that broke tests through a shared contract is the PT-6 post-merge proof case."
+at = "2026-10-04T21:09:33Z"
+actor = "lognd"
+rev = 1

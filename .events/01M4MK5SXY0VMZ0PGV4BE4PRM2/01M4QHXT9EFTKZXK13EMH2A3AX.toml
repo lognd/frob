@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T07:58:22Z"
+digest = "fa91d9383af5d5dcf986455038e35fcbb691b7cdeaf02e6b72e98c330a55d844"
+exit_code = 0
+inline = '''
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.60s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dcf03566-efe3-4a68-986e-7a428604a5ec with nextest profile: default
+    Starting 1 test across 15 binaries (93 tests skipped)
+        PASS [   0.140s] frob-check::check an_unrelated_ledger_event_does_not_miss_any_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.142s] 1 test run: 1 passed, 93 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E test(=an_unrelated_ledger_event_does_not_miss_any_file)"
+size = 1273
+status = "measured"
+test_count = 1
+tests_digest = "a1c36b914cb8b89373c13c3faf8cba28d8e87401558fcf7225c526fee8291b5f"
+at = "2026-10-12T07:58:22Z"
+actor = "lognd"
+rev = 1

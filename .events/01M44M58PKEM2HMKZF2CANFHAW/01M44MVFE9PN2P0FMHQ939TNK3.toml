@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T23:44:12Z"
+digest = "41ce96943be6913da77a4b041b4a3cba1e9ba575be64903d1a70ea3cc325b8bf"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cb7efc86-4f8d-42ec-ae43-eb48f8cc3a03 with nextest profile: default
+    Starting 1 test across 5 binaries (82 tests skipped)
+        PASS [   0.005s] gob-dev::ci_parity goway_toml_declares_uv_as_a_required_tool
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 82 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E test(goway_toml_declares_uv_as_a_required_tool)"
+size = 551
+status = "measured"
+tests = ["goway_toml_declares_uv_as_a_required_tool"]
+at = "2026-10-04T23:44:12Z"
+actor = "lognd"
+rev = 1

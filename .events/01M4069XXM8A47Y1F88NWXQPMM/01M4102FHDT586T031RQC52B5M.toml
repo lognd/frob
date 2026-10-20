@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T13:43:18Z"
+digest = "5924f6bc2532d4da22f780522d0f048e1cbea977093b91f771ce7932b200bae4"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+────────────
+ Nextest run ID b4e45ef9-8170-4461-a9ee-d0c0fa342933 with nextest profile: default
+    Starting 8 tests across 1 binary
+        PASS [   0.013s] (1/8) frob-release::release_workflow retired_runner_and_manylinux_auto_never_appear
+        PASS [   0.014s] (2/8) frob-release::release_workflow wheels_are_uploaded_as_artifacts_and_nothing_publishes_to_an_index
+        PASS [   0.017s] (3/8) frob-release::release_workflow every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive
+        PASS [   0.021s] (4/8) frob-release::release_workflow the_matrix_is_exactly_the_five_wheel_targets
+        PASS [   0.024s] (5/8) frob-release::release_workflow linux_wheels_build_in_digest_pinned_manylinux_2_28_images_and_others_natively
+        PASS [   0.025s] (6/8) frob-release::release_workflow macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross
+        PASS [   0.026s] (7/8) frob-release::release_workflow maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
+        PASS [   0.027s] (8/8) frob-release::release_workflow only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit
+────────────
+     Summary [   0.029s] 8 tests run: 8 passed, 0 skipped
+"""
+passed = true
+provider = "command"
+ref = "cargo nextest run -p frob-release --test release_workflow"
+size = 1354
+status = "measured"
+at = "2026-10-03T13:43:18Z"
+actor = "lognd"
+rev = 1

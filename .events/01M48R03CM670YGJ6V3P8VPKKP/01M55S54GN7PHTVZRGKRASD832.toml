@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "builder cap; start next tick"
+at = "2026-10-17T20:34:19Z"
+actor = "lognd"
+rev = 1

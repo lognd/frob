@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: bare frob:tests directives in v1 _land.py (Windows stat bug)."
+at = "2026-10-04T21:07:04Z"
+actor = "lognd"
+rev = 1

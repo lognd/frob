@@ -1,0 +1,12 @@
+kind = "create"
+title = "frob ticket list --tree: the backlog as milestone, epic, story, task with roll-ups"
+type = "story"
+category = "todo"
+priority = "high"
+parent = "01M48Q294B33TB7C0GSATZRGJB"
+scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/**", "crates/frob/tests/**"]
+acceptance = ["a fixture ledger renders the expected tree (snapshot) with roll-up points and percent done", "orphans appear under Unparented", "JSON carries the same tree"]
+body = "The backlog view (D104: a flag, not a verb): a hierarchy by parent links (milestone, epic, story, task), rank order within a level, points and roll-up points with percent done per node, blocked and doable markers, folding below a depth (--depth N, like clocx --rows), filters shared with ticket list. Orphans are listed under an Unparented node, never dropped."
+at = "2026-10-06T13:39:51Z"
+actor = "lognd"
+rev = 1

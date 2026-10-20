@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/BWK6MXR; scope: crates/crunk-rules/src/tailwind/**, crates/crunk-rules/src/breakpoints/**, crates/crunk-rules/src/tokens_drift.rs, crates/crunk-rules/tests/tailwind*.rs, crates/crunk-rules/tests/breakpoints*.rs, crates/crunk-rules/src/rules/mod.rs, crates/crunk-rules/src/lib.rs, crates/crunk-rules/src/host.rs, crates/crunk-rules/Cargo.toml, crates/crunk-rules/tests/rules.rs, crates/crunk-rules/tests/support/mod.rs, crates/crunk-check/Cargo.toml, crates/crunk-check/tests/rule_coverage.rs, docs/crunk/rules/README.md, crates/crunk-rules/src/rules/bp00*, crates/crunk-rules/src/rules/tw00*, crates/crunk-rules/src/rules/tokens001*, changelog.d/01M43ATBY4CHA4FYVC7BWK6MXR.added.md; ttl 7200s"
+at = "2026-10-09T20:59:18Z"
+actor = "lognd"
+rev = 1

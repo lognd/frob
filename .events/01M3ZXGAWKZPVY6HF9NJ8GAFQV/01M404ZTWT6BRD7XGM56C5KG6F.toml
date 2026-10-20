@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "frob ticket proposals list|accept|decline and the pending count in check"
+new = "frob ticket proposals list and decline, and the pending count in check"
+at = "2026-10-03T05:50:00Z"
+actor = "lognd"
+rev = 1

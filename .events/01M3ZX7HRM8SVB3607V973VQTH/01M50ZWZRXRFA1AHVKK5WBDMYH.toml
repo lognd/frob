@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-15T23:55:58Z"
+digest = "d4b480cd2ff602d9940b96dd68199215578e3c0fb36626219c024c8d62fc23f5"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b99d76a6-457f-44d1-97fd-82756b716ee9 with nextest profile: default
+    Starting 1 test across 276 binaries (3283 tests skipped)
+        PASS [   0.014s] gob-plan::conformance a_divergent_generated_rule_fails_naming_the_rule_and_the_first_differing_finding
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 1 test run: 1 passed, 3283 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_divergent_generated_rule_fails_naming_the_rule_and_the_first_differing_finding"
+size = 599
+status = "measured"
+test_count = 1
+tests_digest = "10a0c3e8af53d46330719f5ae018794fb477a379bbfa2f22d18c4f237f46757a"
+at = "2026-10-15T23:55:58Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,16 @@
++++
+id = "01M38BCNGTFVTX209G7YRQJDFJ"
+title = "WEBSEC316 fixture: placeholder key must not match GitHub push-protection detectors"
+type = "docs"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-24T00:00:00Z"
+updated = "2026-09-24T00:00:02Z"
+aliases = ["T-5658"]
+labels = ["milestone:v0.534.0"]
+scope = ["tests/fixtures/webapp/websec3xx/debug/webesc316_positive/static/main.js"]
++++
+
+T-5329's WEBSEC316 positive fixture (tests/fixtures/webapp/websec3xx/debug/webesc316_positive/static/main.js) contains a string shaped like a real Stripe live secret key (sk_live_ + 24+ alphanumeric-only trailing chars), which GitHub push protection blocks on every push of dev (commit 8ff633a0). Change the placeholder to something WEBSEC316's own _SECRET_ASSIGNMENT_RE in src/frob/webapp/_websec_debug_config.py still reports (>=16 char quoted value) but GitHub's Stripe detector does not: keep the sk_live_ prefix but use fewer than 24 trailing characters AND include an underscore in the trailing portion (the regex already permits underscores in the captured value, so no regex change is needed). Keep the positive control firing (test_websec_debug_config_findings_fixture[webesc316_positive-WEBSEC316-True] must still pass).

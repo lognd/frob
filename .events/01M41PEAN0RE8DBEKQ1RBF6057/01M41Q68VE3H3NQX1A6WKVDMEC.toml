@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T20:27:19Z"
+digest = "7d5a9a0f8180bed6ee2d77c150d23a3f9106a26fb8d60f5d91bc70a940011388"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.93s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d44755c6-be61-4d6e-bff4-c3a8a3964f1e with nextest profile: default
+    Starting 5 tests across 1 binary (145 binaries skipped)
+        PASS [   0.010s] frob-release::ci_pins ci_installs_no_unpinned_cargo_tools_beyond_nextest
+        PASS [   0.011s] frob-release::ci_pins dist_pin_matches_dist_workspace
+        PASS [   0.012s] frob-release::ci_pins ci_zizmor_pin_matches_frob_toml
+        PASS [   0.012s] frob-release::ci_pins ci_actionlint_pin_matches_frob_toml
+        PASS [   0.012s] frob-release::ci_pins ci_rust_toolchain_comes_from_rust_toolchain_toml
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 5 tests run: 5 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'binary(ci_pins)'"
+size = 903
+status = "measured"
+tests = ["ci_installs_no_unpinned_cargo_tools_beyond_nextest", "dist_pin_matches_dist_workspace", "ci_zizmor_pin_matches_frob_toml", "ci_actionlint_pin_matches_frob_toml", "ci_rust_toolchain_comes_from_rust_toolchain_toml"]
+at = "2026-10-03T20:27:19Z"
+actor = "lognd"
+rev = 1

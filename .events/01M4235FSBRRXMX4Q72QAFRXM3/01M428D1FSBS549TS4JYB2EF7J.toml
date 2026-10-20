@@ -1,0 +1,22 @@
+kind = "evidence"
+captured_at = "2026-10-04T01:28:07Z"
+digest = "0c543277e21dfae5938a3dd460819ddf9aa1effa1f8be2b3b7770dec7f78c787"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.63s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7e62dfff-9fd9-4547-b31c-9cd86c6eebdb with nextest profile: default
+    Starting 1 test across 153 binaries (1372 tests skipped)
+        PASS [   1.780s] frob-land::land a_finding_already_on_the_base_lands_and_is_reported_pre_existing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.786s] 1 test run: 1 passed, 1372 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(a_finding_already_on_the_base_lands_and_is_reported_pre_existing)'"
+size = 577
+status = "measured"
+tests = ["a_finding_already_on_the_base_lands_and_is_reported_pre_existing"]
+at = "2026-10-04T01:28:07Z"
+actor = "lognd"
+rev = 1

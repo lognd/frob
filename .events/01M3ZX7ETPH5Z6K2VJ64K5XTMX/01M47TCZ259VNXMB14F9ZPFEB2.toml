@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "~4N35GSV added crates/gob-plan/src/exec.rs, a temporary find/where/report executor over the element and attribute kinds only, so web rules could be tested before this ticket. This ticket absorbs it: the plan executor core runs those kinds through the general path and exec.rs is deleted, with its tests (crates/gob-plan/tests/web_rule.rs) kept passing against the general executor. No second executor may survive this ticket."
+at = "2026-10-06T05:18:47Z"
+actor = "lognd"
+rev = 1

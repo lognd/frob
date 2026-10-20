@@ -1,0 +1,18 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-15T08:15:57Z"
+digest = "fff02872ad38f9d1699a4a260cb781b2a4e54043b4f7985b30ee929421f1bbc3"
+exit_code = 0
+inline = """
+117 generated files up to date
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.65s
+     Running `target/debug/gob-dev gen --check all`
+"""
+passed = true
+provider = "command"
+ref = "cargo dev gen --check all"
+size = 155
+status = "measured"
+at = "2026-10-15T08:15:57Z"
+actor = "lognd"
+rev = 1

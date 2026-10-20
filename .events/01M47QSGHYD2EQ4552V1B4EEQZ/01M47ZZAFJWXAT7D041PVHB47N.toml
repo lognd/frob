@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-product/**", "crates/crunk/**", "crates/grimble/**", "Cargo.toml", "Cargo.lock"]
+new = ["crates/gob-product/**", "crates/crunk/**", "crates/grimble/**", "Cargo.lock"]
+reason = "workspace members = crates/*, so a new crate needs no root manifest edit; Cargo.lock is a lease-exempt registry file"
+at = "2026-10-06T06:56:15Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by ~R20ASKS (D107): the scaffold writes two files and needs no registration step."
+at = "2026-10-06T13:56:13Z"
+actor = "lognd"
+rev = 1

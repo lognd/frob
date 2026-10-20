@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-16: language aliasing (ts, typescript, js) must resolve to one canonical id before runners bind evidence; applies to every non-nextest provider."
+at = "2026-10-04T21:07:07Z"
+actor = "lognd"
+rev = 1

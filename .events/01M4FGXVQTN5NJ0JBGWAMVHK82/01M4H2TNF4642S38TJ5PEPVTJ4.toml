@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/AMVHK82; scope: changelog.d/**, crates/grimble-check/src/lib.rs, crates/grimble-check/src/config.rs, crates/grimble-check/src/packs.rs, crates/grimble-check/tests/packs.rs, crates/grimble-model/src/model.rs, crates/grimble-model/src/atoms.rs, crates/grimble/src/doctor.rs, crates/grimble-model/src/rules.rs; ttl 7200s"
+at = "2026-10-09T19:38:52Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a feature ticket with no fragment, when land runs, then the land commit includes a skeleton fragment titled from the ticket", "Given an existing fragment, when land runs, then it is not overwritten"]
+new = ["Given a ticket with no fragment, when frob ticket fragment runs, then changelog.d/<ULID>.<type>.md is written from the title with the type mapped from the ticket type and it passes release changelog --check", "Given an existing fragment, when frob ticket fragment runs without --force, then it is refused and not overwritten; with --force it is replaced", "Given the changelog_fragment close or land refusal, then its remedy names the exact frob ticket fragment command, and after running it the guard passes"]
+moved = [0, 0]
+at = "2026-10-03T13:37:26Z"
+actor = "lognd"
+rev = 1

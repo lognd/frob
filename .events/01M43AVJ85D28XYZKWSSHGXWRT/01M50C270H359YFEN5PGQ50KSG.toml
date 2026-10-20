@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-10-15T18:09:19Z"
+digest = "cdc71935003aedbb6b1cefa9b7ba0a17218afe3c9d5d579380647b2aafa13a4e"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID acd79c61-a1cf-49d5-ba6b-b821e4b3e430 with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.005s] crunk-check::crunk_web_pack a11y_rules_fire_with_teaching_text_on_a_violation
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test crunk_web_pack a11y_rules_fire_with"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "8e3f17d0d1e7e33b69b94d1a9652f1a3b9b75ccf53ee2a30e42adb54dbd6bf4f"
+at = "2026-10-15T18:09:19Z"
+actor = "lognd"
+rev = 1

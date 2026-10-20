@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["grl::print emits one canonical layout and print(print(x)) equals print(x) over every GRL fixture and every rule in grl-spec.md", "parse(print(t)) equals t (ignoring source ranges) over the fixtures and a proptest generator of whole files", "a deliberately broken printer fails the harness with a shrunk minimal example (self-test)"]
+reason = "criteria for what ~NH92W1H built; the ticket was filed without any (D92)"
+moved = []
+at = "2026-10-06T14:49:58Z"
+actor = "lognd"
+rev = 1

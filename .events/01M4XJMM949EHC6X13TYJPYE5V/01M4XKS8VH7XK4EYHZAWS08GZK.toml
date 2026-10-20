@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+at = "2026-10-14T16:23:17Z"
+actor = "lognd"
+rev = 1

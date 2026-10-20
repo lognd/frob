@@ -1,0 +1,11 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T12:03:53Z"
+digest = "fa2ee12c5ef6948a6b6b33da9638b2e8dc0eabd0e3a9dc8216945d1a4c431af4"
+provider = "file"
+ref = "tests/crunk-parity/index.json"
+size = 54819
+status = "measured"
+at = "2026-10-04T12:03:53Z"
+actor = "lognd"
+rev = 1

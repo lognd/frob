@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-04T02:13:00Z"
+digest = "53a86088eb39d6b0d04f11e2fe54af11a75e9c132e779da26a7d24f6953e97e8"
+exit_code = 0
+inline = '''
+   Compiling frob-worktree v0.0.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-land v0.0.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.0.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5242b4a9-f055-4d47-ae9f-3495425b045a with nextest profile: default
+    Starting 1 test across 27 binaries (217 tests skipped)
+        PASS [  14.574s] frob-cli::gc doctor_reports_the_last_pass_and_fix_runs_one_unthrottled
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  14.581s] 1 test run: 1 passed, 217 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(doctor_reports_the_last_pass)'"
+size = 747
+status = "measured"
+tests = ["doctor_reports_the_last_pass_and_fix_runs_one_unthrottled"]
+at = "2026-10-04T02:13:00Z"
+actor = "lognd"
+rev = 1

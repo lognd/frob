@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Priority low to medium because the accept guards depend on the mapping. Added acceptance: Given a user whose login was released and claimed by another person, when mapped, then the mapping still resolves by user id to the original identity. Given a history actor whose id is in bot_ids, then it is classified as a bot actor."
+at = "2026-10-03T05:49:59Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,63 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T22:53:23Z"
+digest = "04a6c094dc1471bf8190c0a5b5ae087dd7af06f788ed117c08e3b673f089b711"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 535b7e6a-d40e-4371-b9b4-f943425dbb7b with nextest profile: default
+    Starting 4 tests across 1 binary (84 tests skipped)
+        PASS [   0.008s] gob-dev render::std_rules::tests::the_generated_tree_has_no_grants_in_the_model
+        PASS [   0.009s] gob-dev render::std_rules::tests::a_broken_source_fails_generation
+        PASS [   0.009s] gob-dev render::std_rules::tests::a_generated_module_forbids_unsafe_and_touches_no_ambient_effect
+        PASS [   0.011s] gob-dev render::std_rules::tests::a_changed_source_is_reported_stale_by_check_mode
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 4 tests run: 4 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --lib render::std_rules"
+size = 3204
+status = "measured"
+test_count = 4
+tests_digest = "81265bcb27a68a4c95d485fc46ceb73ad0eecc461e830257738747c1ae52d1ac"
+at = "2026-10-15T22:53:23Z"
+actor = "lognd"
+rev = 1

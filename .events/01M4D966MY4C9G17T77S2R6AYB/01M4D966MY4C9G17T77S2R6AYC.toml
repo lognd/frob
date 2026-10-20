@@ -1,0 +1,13 @@
+kind = "create"
+title = "Apply the lint-catalogue-2026-10-08 design changes to rules, boundaries, neatness, cohesion, crunk, dotnet-unity, universal-model, plugins, rule-authoring and lint-requirements"
+type = "docs"
+category = "todo"
+priority = "high"
+points = 2
+parent = "01M4CXTDZGE80G5TWDCWY08EWT"
+scope = ["changelog.d/**", "docs/design/**", "notes/research/**"]
+acceptance = ["Given the change list, when the docs are updated, then each listed section carries the change and frob check reports no DRIFT or SYNC finding", "Given boundaries.md 2.5, when read, then every new family has an owner and a crate"]
+body = "notes/research/lint-catalogue-2026-10-08.md section 5 (eleven changes: bind-before-own policy, parser ownership in gob-check, new families ERR, TESTQ, PAIR, TYPING, VIS, FMT, SPELL, NAME, LINT, REACT and UNITY ranges, hot and teardown capabilities, NEAT026 numbering fix, COH Advisory until measured, crunk build order)."
+at = "2026-10-08T08:13:21Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,13 @@
+kind = "create"
+title = "Docs phase 1 leftovers: status header on the four leased design docs and the tickets.md section 6 citations in frob-lease"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M4H0WWHV461NXWVCCNKAH3YP"
+scope = ["docs/design/README.md", "docs/design/tickets.md", "docs/design/cli.md", "docs/design/build-test-ci.md", "crates/frob-lease/src/config.rs", "crates/frob-lease/src/lib.rs", "docs/schemas/config.json", "docs/reference/config.md", "changelog.d/**"]
+acceptance = ["Given docs/design/README.md, tickets.md, cli.md and build-test-ci.md, when this lands, then each starts with the Status/Owner/Decisions/Audience block and docs/README.md lists them as current instead of current*", "Given the doc comments in crates/frob-lease/src/config.rs and lib.rs and their generated copies docs/schemas/config.json and docs/reference/config.md, when this lands, then they cite tickets.md section 3 instead of the nonexistent section 6, and cargo dev gen --check is clean"]
+body = "found while working ~EE8MASY: these files were leased by in-flight tickets (MQ1NM4Q, 76AS8XH, FP0SDK3, TSYTGDE, ZZQ6PA9) so phase 1 left them; docs/README.md marks the four docs current*. Do after those tickets land."
+at = "2026-10-09T20:45:41Z"
+actor = "lognd"
+rev = 1

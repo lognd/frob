@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:25:54Z"
+digest = "8385d3e479f3d70e6c3d741462c3eeac7bc99eee6425d78ff3a498258308cabd"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+   Compiling gob-check v0.0.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.72s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c976bd8b-3d94-4949-8a09-7691aeac83ce with nextest profile: default
+    Starting 7 tests across 3 binaries (31 tests skipped)
+        PASS [   0.013s] gob-check fix::tests::one_out_of_range_edit_skips_the_whole_fix
+        PASS [   0.014s] gob-check fix::tests::refuses_a_file_edited_since_the_check_and_writes_nothing
+        PASS [   0.018s] gob-check atomic::tests::killed_write_leaves_the_old_file_whole
+        PASS [   0.027s] gob-check atomic::tests::completed_write_is_wholly_new
+        PASS [   0.027s] gob-check fix::tests::a_fix_that_breaks_syntax_is_rolled_back_and_not_applied
+        PASS [   0.027s] gob-check fix::tests::applies_a_fix_atomically_to_a_fresh_file
+        PASS [   0.035s] gob-check fix::tests::a_failed_second_write_restores_the_first_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.036s] 7 tests run: 7 passed, 31 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(/^(fix|atomic)::tests/)'"
+size = 1225
+status = "measured"
+tests = ["fix::tests::one_out_of_range_edit_skips_the_whole_fix", "fix::tests::refuses_a_file_edited_since_the_check_and_writes_nothing", "atomic::tests::killed_write_leaves_the_old_file_whole", "atomic::tests::completed_write_is_wholly_new", "fix::tests::a_fix_that_breaks_syntax_is_rolled_back_and_not_applied", "fix::tests::applies_a_fix_atomically_to_a_fresh_file", "fix::tests::a_failed_second_write_restores_the_first_file"]
+at = "2026-10-04T13:25:54Z"
+actor = "lognd"
+rev = 1

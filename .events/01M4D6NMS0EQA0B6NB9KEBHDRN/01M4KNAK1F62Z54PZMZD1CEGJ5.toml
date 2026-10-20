@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T19:41:03Z"
+digest = "0c240630b5654d80a89b6a63dfbaed593afef57bd72297061fd71792b8780ae9"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f429934a-76a9-45ff-89d4-ed743c727d9f with nextest profile: default
+    Starting 1 test across 5 binaries (14 tests skipped)
+        PASS [   0.022s] grimble::ack invalid_arguments_are_refused_before_the_repository_is_bound
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 14 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'test(=invalid_arguments_are_refused_before_the_repository_is_bound)'"
+size = 552
+status = "measured"
+tests = ["invalid_arguments_are_refused_before_the_repository_is_bound"]
+at = "2026-10-10T19:41:03Z"
+actor = "Claude"
+rev = 1

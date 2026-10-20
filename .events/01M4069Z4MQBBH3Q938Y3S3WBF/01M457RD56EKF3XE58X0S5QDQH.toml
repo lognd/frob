@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "release verification only: the dry-run evidence file, no user-visible change"
+at = "2026-10-05T05:14:34Z"
+actor = "lognd"
+rev = 1

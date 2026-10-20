@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-10-08T07:41:25Z"
+digest = "431f74773e275165407d56d2a3a029369a1ab7e9d350825a20c4ced787b8772c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2cf62bba-e17b-410c-954c-d10fad1c52c8 with nextest profile: default
+    Starting 5 tests across 13 binaries (131 tests skipped)
+        PASS [   0.024s] frob-release::dev_workflow nothing_is_published_to_pypi_or_crates_io
+        PASS [   0.026s] frob-release::dev_workflow dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job
+        PASS [   0.034s] frob-release::dev_workflow assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones
+        PASS [   0.037s] frob-release::dev_workflow every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permissions
+        PASS [   0.043s] frob-release::dev_workflow both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.044s] 5 tests run: 5 passed, 131 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E '(package(=frob-release) & (test(=assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones) | test(=both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha) | test(=dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job) | test(=every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permissions) | test(=nothing_is_published_to_pypi_or_crates_io)))'"
+size = 1061
+status = "measured"
+tests = ["nothing_is_published_to_pypi_or_crates_io", "dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job", "assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones", "every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permissions", "both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha"]
+at = "2026-10-08T07:41:25Z"
+actor = "lognd"
+rev = 1

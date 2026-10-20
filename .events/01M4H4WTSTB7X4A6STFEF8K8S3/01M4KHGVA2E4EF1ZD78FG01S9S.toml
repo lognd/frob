@@ -1,0 +1,31 @@
+kind = "evidence"
+captured_at = "2026-10-10T18:34:10Z"
+digest = "e8d765798a7a9c36cdbb8f3c5b3fd991e9449b732475f33c0426b0961628acb9"
+exit_code = 0
+inline = '''
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized] target(s) in 6.82s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6ff3dca8-9240-45cc-8f4d-d69982e5591b with nextest profile: default
+    Starting 5 tests across 5 binaries (17 tests skipped)
+        PASS [   0.236s] grimble-check::packs a_missing_pack_file_is_mdl004_naming_the_path
+        PASS [   0.243s] grimble-check::packs a_loaded_repo_pack_clears_the_not_loaded_warning
+        PASS [   0.010s] grimble-check::packs the_packs_table_doc_and_generated_references_describe_what_loads
+        PASS [   0.422s] grimble-check::packs a_malformed_pack_file_is_mdl004
+        PASS [   0.422s] grimble-check::packs an_enabled_repo_pack_supplies_atoms_and_satisfies_the_pack_entity
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.423s] 5 tests run: 5 passed, 17 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E '(package(=grimble-check) & (test(=a_loaded_repo_pack_clears_the_not_loaded_warning) | test(=a_malformed_pack_file_is_mdl004) | test(=a_missing_pack_file_is_mdl004_naming_the_path) | test(=an_enabled_repo_pack_supplies_atoms_and_satisfies_the_pack_entity) | test(=the_packs_table_doc_and_generated_references_describe_what_loads)))'"
+size = 1287
+status = "measured"
+tests = ["a_missing_pack_file_is_mdl004_naming_the_path", "a_loaded_repo_pack_clears_the_not_loaded_warning", "the_packs_table_doc_and_generated_references_describe_what_loads", "a_malformed_pack_file_is_mdl004", "an_enabled_repo_pack_supplies_atoms_and_satisfies_the_pack_entity"]
+at = "2026-10-10T18:34:10Z"
+actor = "Claude"
+rev = 1

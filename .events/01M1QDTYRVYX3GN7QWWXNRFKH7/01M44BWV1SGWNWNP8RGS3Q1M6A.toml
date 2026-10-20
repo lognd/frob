@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 NARR001 burn-down over v1 sources."
+at = "2026-10-04T21:07:39Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Uncertain: v1 asked for new strata grammar keywords; in v2 the vocabulary should be pack-defined typed attrs (grmb-spec.md section 3, ~XEZW79B). Re-read against the pack before building."
+at = "2026-10-04T20:59:22Z"
+actor = "lognd"
+rev = 1

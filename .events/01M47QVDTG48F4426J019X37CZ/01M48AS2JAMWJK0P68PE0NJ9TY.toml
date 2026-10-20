@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/19X37CZ; scope: crates/gob-dev/**, .github/workflows/ci.yml, deny.toml, typos.toml, frob.toml, Cargo.toml; ttl 7200s"
+at = "2026-10-06T10:05:02Z"
+actor = "lognd"
+rev = 1

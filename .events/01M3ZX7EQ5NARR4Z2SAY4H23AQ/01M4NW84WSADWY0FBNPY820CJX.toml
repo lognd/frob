@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T16:20:26Z"
+digest = "dbdd63f9961f428531bb7e99e80a56162ce7a71bc3a5e1de49244a6512cbf82a"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized] target(s) in 5.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7c6b16dc-8702-41f4-92fb-1dfeea883a15 with nextest profile: default
+    Starting 1 test across 15 binaries (180 tests skipped)
+        PASS [   0.006s] gob-plan::lower the_prefilter_lists_exactly_the_found_kinds_and_not_negated_ones
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 180 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=the_prefilter_lists_exactly_the_found_kinds_and_not_negated_ones)'"
+size = 622
+status = "measured"
+tests = ["the_prefilter_lists_exactly_the_found_kinds_and_not_negated_ones"]
+at = "2026-10-11T16:20:26Z"
+actor = "lognd"
+rev = 1

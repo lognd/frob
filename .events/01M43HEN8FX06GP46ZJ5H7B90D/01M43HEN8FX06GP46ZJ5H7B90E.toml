@@ -1,0 +1,9 @@
+kind = "create"
+title = "E-GIT-LOCAL-EDITS refusal carries a null remedy"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-ledger/src/error.rs"]
+at = "2026-10-04T13:25:32Z"
+actor = "lognd"
+rev = 1

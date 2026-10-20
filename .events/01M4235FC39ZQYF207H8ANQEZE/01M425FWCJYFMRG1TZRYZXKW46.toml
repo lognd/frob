@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T00:37:14Z"
+digest = "49ef92286de2a63407ce9020595456ef5332fb94ac32dacec031e2fbb4de55ac"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.59s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1e757096-2bed-40d7-9b96-d71575d2b941 with nextest profile: default
+    Starting 2 tests across 1 binary (10 tests skipped)
+        PASS [   3.279s] frob-cli::release_cut adopt_releases_an_existing_milestone_instead_of_creating_one
+        PASS [   3.919s] frob-cli::release_cut adopt_records_hand_made_tags_as_an_adopted_cut_and_clears_rel001
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.919s] 2 tests run: 2 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test release_cut -E 'test(adopt_records_hand_made_tags_as_an_adopted_cut_and_clears_rel001) | test(adopt_releases_an_existing_milestone_instead_of_creating_one)'"
+size = 685
+status = "measured"
+tests = ["adopt_releases_an_existing_milestone_instead_of_creating_one", "adopt_records_hand_made_tags_as_an_adopted_cut_and_clears_rel001"]
+at = "2026-10-04T00:37:14Z"
+actor = "lognd"
+rev = 1

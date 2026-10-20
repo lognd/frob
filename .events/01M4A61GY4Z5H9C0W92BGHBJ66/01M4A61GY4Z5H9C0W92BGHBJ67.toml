@@ -1,0 +1,17 @@
+kind = "create"
+title = "Triage, scrub and privacy walks read and write ticket paths directly (Dir layout only)"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+labels = ["area:mirror"]
+scope = ["crates/frob-ledger/src/triage.rs", "crates/frob-ledger/src/scrub.rs", "crates/frob-ledger/src/privacy.rs"]
+acceptance = ["Given Layout::Branch, when a triage promote, scrub or privacy walk runs, then it finds ticket files and events through ULIDs and passes the ledger fixture tests for both layouts"]
+body = "Found while working ~5N48KNK. triage.rs, scrub.rs and privacy.rs build tickets/<ULID>/ticket.md and tickets/<ULID>/events paths from cfg.dir; under Layout::Branch they must resolve the file through Ledger::ticket_file_at / branch_scan_at and events through layout::branch_events_dir. Must land before the live ledger migration (~128J4NT)."
+at = "2026-10-07T03:20:48Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX82TWWY2616S1Q5N48KNK"

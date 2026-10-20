@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-24: 2026-09-24: duplicate of T-5780 created by a land_compose splice recovering draft T-draft-ea1c92d6 before its promote; T-5780 is the canonical TIER003 leaf (absorbed by T-5780)"
+at = "2026-09-24T00:00:01Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in repo-wt/92KDR1Q; scope: crates/frob/src/ticket/write.rs; ttl 7200s"
+at = "2026-10-11T21:12:53Z"
+actor = "lognd"
+rev = 1

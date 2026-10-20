@@ -1,0 +1,35 @@
++++
+id = "01M3ZX81GJ7SG6R1YF368WCNEH"
+title = "Effectful findings are not cached across runs and are marked effect-derived"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
+reporter = "lognd"
+created = "2026-10-03T03:34:40Z"
+updated = "2026-10-03T03:34:40Z"
+idempotency_key = "m2-sec-effect-derived"
+labels = ["milestone:2", "area:security"]
+scope = ["crates/gob-check/src/cache_key.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7JACXBTB74QS6TX6YZZE"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7SCND92D383E8X9CEWJ7"
+
+[[acceptance]]
+text = "Given a finding derived from a network read, when the next run starts, then it is recomputed unless the fetched-bytes digest matches"
+bound = false
+
+[[acceptance]]
+text = "Given its JSON, when read, then it carries effect-derived"
+bound = false
++++
+
+Implements security.md section 2.10 (last bullet).
+
+Cache key includes the fetched bytes digest of the effect inputs, or the finding is not cached; JSON marks effect-derived.

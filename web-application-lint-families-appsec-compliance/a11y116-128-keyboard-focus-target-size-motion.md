@@ -1,0 +1,30 @@
++++
+id = "01M336K769AW22WDA1P2E3VYKG"
+title = "A11Y116-128: keyboard, focus, target size, motion"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "high"
+points = 5
+parent = "01M2Y1SS0T6ZDPMY6DRJGEK1XJ"
+reporter = "human"
+created = "2026-09-22T00:00:00Z"
+updated = "2026-09-22T00:00:02Z"
+aliases = ["T-5321"]
+labels = ["milestone:0.534.0"]
+scope = ["src/frob/webapp/_a11y_interaction.py", "tests/fixtures/webapp/a11y1xx/interaction/**", "docs/modules/webapp-a11y-interaction.md", "tests/unit/test_webapp_a11y_interaction.py"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K75Q1WF4Q0HYZP31HTJV"
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K761THP29CQDQMKTE07D"
++++
+
+Skip link (SC 2.4.1), focus-visible not suppressed (outline:none without replacement -- needs CSS grammar, WEBSUB-1b), tabindex>0, aria-hidden on a focusable element, target size 24x24/44x44 CSS px (SC 2.5.8 -- needs CSS grammar), prefers-reduced-motion respected when animations exist (CSS grammar), autoplay media without controls, video without captions track. Fixture per rule id.
+
+## Reopen log
+- 2026-09-23: earlier land attempt was refused on DOC006 after leaving state=done; dev's own ledger still has T-5321 in-progress, reopening the worktree's stale local state to match before a fresh land
+- 2026-09-23: concurrent land-runner retry of the earlier queued entry finalized/closed T-5321 again while this worktree's evidence was being fixed; reopening to in-progress before a fresh land

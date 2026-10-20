@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: wiring CONFIGPATH001/ROUTE001 into the v1 gate registry and gates.md."
+at = "2026-10-04T21:07:52Z"
+actor = "lognd"
+rev = 1

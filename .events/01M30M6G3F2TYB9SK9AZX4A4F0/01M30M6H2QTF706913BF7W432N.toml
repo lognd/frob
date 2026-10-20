@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-22: the three guard tests pass on dev tip after T-3612's follow-ups; no fix needed (CI agent verdict)"
+at = "2026-09-21T00:00:01Z"
+actor = "import"
+rev = 1

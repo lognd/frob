@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T19:46:59Z"
+digest = "e1d17e9d9559b6a72ee020c1180fc7b744ee95673c4575fec5f3dbf22f9acb26"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3bf0d335-267a-4c8b-8827-43d8c7a1050f with nextest profile: default
+    Starting 2 tests across 1 binary (8 tests skipped)
+        PASS [   0.007s] frob-pm::pm a_genuinely_wrong_from_is_still_a_conflict
+        PASS [   0.007s] frob-pm::pm a_legacy_close_recorded_from_planned_on_a_started_day_folds_cleanly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm --test pm a_legacy_close_recorded_from_planned_on_a_started_day_folds_cleanly a_genuinely_wrong_from_is_still_a_conflict"
+size = 648
+status = "measured"
+tests = ["a_genuinely_wrong_from_is_still_a_conflict", "a_legacy_close_recorded_from_planned_on_a_started_day_folds_cleanly"]
+at = "2026-10-03T19:46:59Z"
+actor = "lognd"
+rev = 1

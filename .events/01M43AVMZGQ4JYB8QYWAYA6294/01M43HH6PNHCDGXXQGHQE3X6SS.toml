@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the milestone, when `frob release status` runs, then every criterion is bound and ready", "Given the cut, when tags are listed, then crunk-v<version> exists beside frob and grimble tags at the same commit", "Given `uv tool install frob` on a clean machine, when run, then crunk is installed beside frob and `frob doctor` finds it"]
+new = ["Given the milestone, when `frob release status` runs, then every criterion is bound and ready", "Given the cut, when tags are listed, then crunk-v<version> exists beside frob and grimble tags at the same commit", "Given `uv tool install frob` on a clean machine, when run, then crunk is installed beside frob and `frob doctor` finds it", "Given the wheel set at the crunk preview release, when smoke runs from the directory only, then installing frob pulls crunk at the same version"]
+moved = [1, 2, 3]
+at = "2026-10-04T13:26:55Z"
+actor = "lognd"
+rev = 1

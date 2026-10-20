@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Waiver budgets are designed (exceptions.md s4, D21) and are Milestone 2 but unticketed."
+at = "2026-10-04T21:04:56Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 close resolving a pytest verdict for rust-only evidence (BUG002); v2 evidence is per provider."
+at = "2026-10-04T21:06:31Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D106: allowlist entries become (rule, case kind) pairs per testing.md 3; do not close on fire and clean alone."
+at = "2026-10-06T13:41:12Z"
+actor = "lognd"
+rev = 1

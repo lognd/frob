@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T19:20:54Z"
+digest = "7dbe2a2f64460928fbe0c3118283b2eb93f45634b007c21c2857ff33ea6be19c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 915b8411-0357-4b15-9d1e-e5872fee60d8 with nextest profile: default
+    Starting 19 tests across 1 binary
+        PASS [   0.014s] frob-release::release_workflow pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_only_other_id_token
+        PASS [   0.014s] frob-release::release_workflow linux_wheels_build_in_digest_pinned_manylinux_2_28_images_and_others_natively
+        PASS [   0.015s] frob-release::release_workflow retired_runner_and_manylinux_auto_never_appear
+        PASS [   0.017s] frob-release::release_workflow crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke
+        PASS [   0.018s] frob-release::release_workflow release_notes_come_from_the_verb_output_not_generated_or_inline_text
+        PASS [   0.022s] frob-release::release_workflow macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross
+        PASS [   0.021s] frob-release::release_workflow only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit
+        PASS [   0.021s] frob-release::release_workflow maturin_is_installed_only_from_a_hash_pinned_requirements_file
+        PASS [   0.022s] frob-release::release_workflow every_job_has_a_timeout_and_the_failure_names_the_job
+        PASS [   0.025s] frob-release::release_workflow maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
+        PASS [   0.023s] frob-release::release_workflow every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive
+        PASS [   0.013s] frob-release::release_workflow rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs
+        PASS [   0.028s] frob-release::release_workflow every_publishing_job_needs_smoke
+        PASS [   0.009s] frob-release::release_workflow the_unhashed_install_checks_reject_a_stripped_pin
+        PASS [   0.014s] frob-release::release_workflow smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption
+        PASS [   0.014s] frob-release::release_workflow the_matrix_is_exactly_the_five_wheel_targets
+        PASS [   0.015s] frob-release::release_workflow the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_pin
+        PASS [   0.015s] frob-release::release_workflow wheels_are_uploaded_as_artifacts_and_the_wheel_job_never_publishes
+        PASS [   0.015s] frob-release::release_workflow triggers_are_tag_only_and_every_action_is_sha_pinned
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.039s] 19 tests run: 19 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release --test release_workflow"
+size = 2772
+status = "measured"
+tests = ["pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_only_other_id_token", "linux_wheels_build_in_digest_pinned_manylinux_2_28_images_and_others_natively", "retired_runner_and_manylinux_auto_never_appear", "crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke", "release_notes_come_from_the_verb_output_not_generated_or_inline_text", "macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross", "only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit", "maturin_is_installed_only_from_a_hash_pinned_requirements_file", "every_job_has_a_timeout_and_the_failure_names_the_job", "maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions", "every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive", "rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs", "every_publishing_job_needs_smoke", "the_unhashed_install_checks_reject_a_stripped_pin", "smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption", "the_matrix_is_exactly_the_five_wheel_targets", "the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_pin", "wheels_are_uploaded_as_artifacts_and_the_wheel_job_never_publishes", "triggers_are_tag_only_and_every_action_is_sha_pinned"]
+at = "2026-10-03T19:20:54Z"
+actor = "lognd"
+rev = 1

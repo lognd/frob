@@ -1,0 +1,10 @@
+kind = "create"
+title = "F-034: gate:SCOPE / CROSSTICKET flag sibling tickets that share one series worktree"
+type = "bug"
+category = "triage"
+priority = "medium"
+aliases = ["T-3839"]
+labels = ["milestone:1.1.0", "v1-cluster:C3"]
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-16: a runner must record PASS only when every bound id executed and passed; nextest does (E-EVIDENCE-NO-TESTS) but the other providers in tickets.md s9 do not exist yet."
+at = "2026-10-04T21:07:13Z"
+actor = "lognd"
+rev = 1

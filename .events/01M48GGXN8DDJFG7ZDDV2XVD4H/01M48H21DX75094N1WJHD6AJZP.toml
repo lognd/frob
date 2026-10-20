@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Duplicate of ~AJSY97A, filed earlier for the same unused insta dev-dependency in gob-frameworks"
+at = "2026-10-06T11:54:50Z"
+actor = "lognd"
+rev = 1

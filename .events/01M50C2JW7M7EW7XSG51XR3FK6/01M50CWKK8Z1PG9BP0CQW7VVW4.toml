@@ -1,0 +1,56 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T18:19:51Z"
+digest = "b0e7e512e59722dd7105b5624117830569bb404aab0ef038172f3e80b944e1f5"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+warning: unused imports: `CliError` and `Value`
+  --> crates/crunk/src/gallery.rs:88:17
+   |
+88 |     use super::{CliError, Context, GalleryCheck, GalleryData, Outcome, Value, refusal};
+   |                 ^^^^^^^^                                               ^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `crunk` (lib) generated 1 warning (run `cargo fix --lib -p crunk` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aeefc73e-b595-4224-b668-47d1cc8971a2 with nextest profile: default
+    Starting 23 tests across 12 binaries (138 tests skipped)
+        PASS [   0.013s] gob-dev profile::discover::tests::reads_the_commands_section_only
+        PASS [   0.014s] gob-dev profile::measure::tests::ticket_placeholder_expands
+        PASS [   0.015s] gob-dev profile::measure::tests::median_of_odd_even_and_empty
+        PASS [   0.017s] gob-dev profile::model::tests::over_budget_names_command_measured_and_budget
+        PASS [   0.017s] gob-dev profile::model::tests::budget_factor_scales_the_limit
+        PASS [   0.018s] gob-dev profile::glob::tests::wildcards
+        PASS [   0.021s] gob-dev ci::tests::nextest_ci_profile_is_a_hang_guard_not_a_speed_budget
+        PASS [   0.022s] gob-dev ci::tests::docs_step_sets_rustdocflags_and_nextest_uses_ci_profile
+        PASS [   0.016s] gob-dev profile::scenarios::tests::measured_scenarios_need_a_budget_and_skips_a_reason
+        PASS [   0.017s] gob-dev profile::render::tests::table_lists_measured_and_skipped_rows
+        PASS [   0.019s] gob-dev profile::render::tests::compare_shows_signed_deltas
+        PASS [   0.019s] gob-dev profile::model::tests::unexpected_exit_and_skips
+        PASS [   0.016s] gob-dev profile::scenarios::tests::shipped_file_parses
+        PASS [   0.015s] gob-dev profile::tests::a_leaf_without_a_scenario_is_named
+        PASS [   0.014s] gob-dev profile::tests::a_scenario_for_a_hidden_verb_is_allowed
+        PASS [   0.014s] gob-dev profile::tests::report_round_trips
+        PASS [   0.009s] gob-dev::bin/gob-dev tests::profile_parses_its_knobs
+        PASS [   0.016s] gob-dev::ci_plan the_crunk_job_lists_every_crunk_package
+        PASS [   0.075s] gob-dev profile::discover::tests::walks_the_help_tree_down_to_its_leaves
+        PASS [   0.093s] gob-dev profile::fixture::tests::tmp_fixture_is_an_isolated_repository
+        PASS [   0.099s] gob-dev profile::measure::tests::measure_times_runs_checks_exit_codes_and_clears_the_cold_cache
+        PASS [   0.170s] gob-path::confinement allow_list_matches_markers
+        PASS [   0.258s] gob-dev profile::fixture::tests::mutating_the_clone_leaves_the_source_checkout_untouched
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.259s] 23 tests run: 23 passed, 138 skipped
+'''
+passed = true
+provider = "nextest"
+ref = '-p gob-dev -p gob-path -E "test(the_crunk_job_lists_every_crunk_package) | test(allow_list_matches_markers) | test(profile)"'
+size = 3052
+status = "measured"
+test_count = 23
+tests_digest = "a882207ab7cdb5ec689866d5dd867abb4022a9730d3e228391fb889a91bc3ab5"
+at = "2026-10-15T18:19:51Z"
+actor = "lognd"
+rev = 1

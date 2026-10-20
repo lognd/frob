@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A warning naming the glob fires on a zero-match glob in a populated repo", "A glob declared with a creates: label (new-file carve-out) stays quiet", "Empty repos and matching globs do not warn; a zero-match glob with no near candidate warns plainly", "All fixtures committed"]
+moved = []
+at = "2026-10-06T06:07:42Z"
+actor = "lognd"
+rev = 1

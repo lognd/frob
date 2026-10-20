@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-11T13:52:40Z"
+digest = "449938410e5d5f596447cf31f3807ccd073ccdf3665924835c7c1ea43e0586d5"
+exit_code = 0
+inline = '''
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized] target(s) in 0.93s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ba5ad6c1-09c4-4a9d-bcca-7e8aeff967ff with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.009s] crunk-check::waive001 the_committed_registry_page_is_fresh
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test waive001 -E 'test(=the_committed_registry_page_is_fresh)'"
+size = 599
+status = "measured"
+tests = ["the_committed_registry_page_is_fresh"]
+at = "2026-10-11T13:52:40Z"
+actor = "lognd"
+rev = 1

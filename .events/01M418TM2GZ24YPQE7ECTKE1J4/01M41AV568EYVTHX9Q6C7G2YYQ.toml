@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T16:51:32Z"
+digest = "72289454f65385243ee592ac96279b4781ca62a60a25c06ea0d8812dd3c21c86"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b22ead4c-6c2f-44b2-a0bd-c5894f26600f with nextest profile: default
+    Starting 1 test across 1 binary (21 tests skipped)
+        PASS [   0.028s] frob-lease::lease unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.029s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease --test lease unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them"
+size = 591
+status = "measured"
+tests = ["unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them"]
+at = "2026-10-03T16:51:32Z"
+actor = "lognd"
+rev = 1

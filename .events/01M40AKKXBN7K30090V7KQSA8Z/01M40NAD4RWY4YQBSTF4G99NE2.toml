@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T10:35:23Z"
+digest = "f6a04f0bd14ef003253ea8a553ae1c526c52fabb02ee90287c3004618386f4a9"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+────────────
+ Nextest run ID e5d82a5b-31ee-4c8b-9ed9-4cef79fd7afc with nextest profile: default
+    Starting 6 tests across 19 binaries (130 tests skipped)
+        PASS [   0.068s] (1/6) frob-evidence::attestation an_agent_marker_or_a_pipe_refuses_and_names_a_human_remedy
+        PASS [   0.069s] (2/6) frob-evidence::attestation an_empty_statement_refuses
+        PASS [   0.083s] (3/6) frob-evidence::attestation facts_must_have_a_shape_and_commits_and_tickets_must_exist
+        PASS [   0.109s] (4/6) frob-evidence::attestation a_non_attester_and_an_empty_list_refuse
+        PASS [   0.160s] (5/6) frob-cli::attestation a_non_attester_an_empty_statement_and_a_missing_fact_refuse_through_the_milestone_path
+        PASS [   0.162s] (6/6) frob-cli::attestation the_binary_refuses_without_a_terminal_and_with_an_agent_marker_writing_nothing
+────────────
+     Summary [   0.163s] 6 tests run: 6 passed, 130 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-evidence -E 'test(=the_binary_refuses_without_a_terminal_and_with_an_agent_marker_writing_nothing) | test(=a_non_attester_an_empty_statement_and_a_missing_fact_refuse_through_the_milestone_path) | test(=an_agent_marker_or_a_pipe_refuses_and_names_a_human_remedy) | test(=a_non_attester_and_an_empty_list_refuse) | test(=an_empty_statement_refuses) | test(=facts_must_have_a_shape_and_commits_and_tickets_must_exist)'"
+size = 1039
+status = "measured"
+tests = ["an_agent_marker_or_a_pipe_refuses_and_names_a_human_remedy", "an_empty_statement_refuses", "facts_must_have_a_shape_and_commits_and_tickets_must_exist", "a_non_attester_and_an_empty_list_refuse", "a_non_attester_an_empty_statement_and_a_missing_fact_refuse_through_the_milestone_path", "the_binary_refuses_without_a_terminal_and_with_an_agent_marker_writing_nothing"]
+at = "2026-10-03T10:35:23Z"
+actor = "lognd"
+rev = 1

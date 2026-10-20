@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T23:26:44Z"
+digest = "11382bcb5de52ea066c06711edcb1006b6ab71ea74780527cbf5465964986de7"
+exit_code = 101
+inline = """
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+error[E0432]: unresolved import `crunk_spec::tells`
+  --> crates/crunk-rules/src/rules/slop060.rs:13:17
+   |
+13 | use crunk_spec::tells::TellList;
+   |                 ^^^^^ could not find `tells` in `crunk_spec`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `crunk-rules` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package crunk` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p crunk -E 'test(explain_rule_id_prints_each_tells_date_and_source)'"
+size = 730
+status = "measured"
+at = "2026-10-15T23:26:44Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T04:25:31Z"
+digest = "39b8423ee08e4001c4f69b969200b67a1c7e869bd8172aad4d13d398cdd4d01e"
+exit_code = 0
+inline = '''
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+    Finished `test` profile [unoptimized] target(s) in 0.56s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b2db606c-30c6-4f84-8cda-d4bf8c929786 with nextest profile: default
+    Starting 1 test across 2 binaries (11 tests skipped)
+        PASS [   0.006s] gob-cache tests::engine_is_build_independent_unless_strict
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-cache -E 'test(=tests::engine_is_build_independent_unless_strict)'"
+size = 599
+status = "measured"
+tests = ["tests::engine_is_build_independent_unless_strict"]
+at = "2026-10-11T04:25:31Z"
+actor = "lognd"
+rev = 1

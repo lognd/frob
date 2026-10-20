@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T12:35:33Z"
+digest = "828f6c58d3c0ea31b616e13d6ea3b4494cbc6e1045427015427b2adb9da001d1"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.37s
+────────────
+ Nextest run ID dd067977-38f7-4562-ad87-136c3ff31add with nextest profile: default
+    Starting 2 tests across 1 binary (1 test and 134 binaries skipped)
+        PASS [   0.462s] (1/2) frob-check::proc001 declared_spawners_enforce_command_but_not_exit_code
+        PASS [   0.472s] (2/2) frob-check::proc001 this_repositorys_own_config_enforces_command_and_spares_exit_code
+────────────
+     Summary [   0.473s] 2 tests run: 2 passed, 1 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-E 'binary(proc001) & (test(declared_spawners) | test(this_repositorys_own))'"
+size = 579
+status = "measured"
+tests = ["declared_spawners_enforce_command_but_not_exit_code", "this_repositorys_own_config_enforces_command_and_spares_exit_code"]
+at = "2026-10-03T12:35:33Z"
+actor = "lognd"
+rev = 1

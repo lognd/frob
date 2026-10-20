@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T08:09:57Z"
+digest = "2593a33b564196e29a0d5d395a9f8edad6aaa0b7ae39ff541ea27eb2a98fa9c0"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 86bdfc34-75ce-4450-9e30-5041efbebfda with nextest profile: default
+    Starting 1 test across 1 binary (45 tests skipped)
+        PASS [   0.005s] crunk-spec::spec decisions_table_declares_known_decisions_with_reasons
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 45 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec --test spec decisions_table_declares_known_decisions_with_reasons"
+size = 878
+status = "measured"
+test_count = 1
+tests_digest = "98edf35d118fac47a78ca66102c3773aeb7f2aa88a1ebf0f09a8316c729a353c"
+at = "2026-10-13T08:09:57Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:50:15Z"
+digest = "4124198b79771dd27666726830d0afcd347addb49350f87f40cec852373cdbb2"
+exit_code = 0
+inline = '''
+   Compiling gob-symbols v0.0.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.05s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 64bb2922-72ee-423e-90d4-d02d94f4f64d with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.276s] gob-symbols::corpus python_corpus_covers_every_claimed_operator
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.276s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols --test corpus python_corpus"
+size = 614
+status = "measured"
+tests = ["python_corpus_covers_every_claimed_operator"]
+at = "2026-10-04T11:50:15Z"
+actor = "lognd"
+rev = 1

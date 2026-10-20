@@ -1,0 +1,10 @@
+kind = "create"
+title = "Rule authoring: one rule, two files, compile errors first (D107)"
+type = "epic"
+category = "todo"
+priority = "high"
+acceptance = ["every child closed or dropped with a reason", "a new rule in an existing crate is two hand-written files and nothing else"]
+body = "Owner requirement: adding a universal or language-specific rule must be simple and impossible to get wrong, compile errors over runtime errors, and one rule's information side by side. Design: docs/design/rule-authoring.md (D107); detail and the failure table: notes/research/rule-authoring.md section 4."
+at = "2026-10-06T13:56:02Z"
+actor = "lognd"
+rev = 1

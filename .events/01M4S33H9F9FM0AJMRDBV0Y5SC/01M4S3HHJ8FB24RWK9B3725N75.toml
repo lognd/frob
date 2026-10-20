@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-12T22:25:42Z"
+digest = "4051c4fd7de19963cdb42b3d35e15ea384711b02752988d7c13474c03df0e457"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7efb6c9c-2b59-4fcb-8268-35f736379c1a with nextest profile: default
+    Starting 1 test across 338 binaries (2975 tests skipped)
+        PASS [   0.033s] gob-dev::layering workspace_layering_holds_and_every_crate_has_a_layer
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.042s] 1 test run: 1 passed, 2975 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "workspace_layering"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "29fb0b3726eb310e761de0c3213391bc3f4612f159f1228a0207371086ef922b"
+at = "2026-10-12T22:25:42Z"
+actor = "lognd"
+rev = 1

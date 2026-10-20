@@ -1,0 +1,150 @@
+kind = "evidence"
+at = "2026-10-02T22:36:48Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-walk -p gob-ir"
+digest = "17365e39efb57a4b3fe4857ccd4b0ff08b3ac9cc24973d8fd15ffb43517ceaa5"
+status = "measured"
+captured_at = "2026-10-02T22:36:48Z"
+accepts = [1]
+passed = true
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+────────────
+ Nextest run ID 2205fa51-a3cb-42a0-9233-f8f45f90ae16 with nextest profile: ci
+    Starting 129 tests across 8 binaries
+        PASS [   0.009s] (  1/129) gob-ir::corpus grid::opaque_indirect_reads_scope_lexically_and_payload_is_exact
+        PASS [   0.008s] (  2/129) gob-ir::corpus opaque::hole_makes_facets_unknown_and_binders_unknown
+        PASS [   0.009s] (  3/129) gob-ir::corpus grid::grid_locations_order_row_major_and_contain_only_themselves
+        PASS [   0.008s] (  4/129) gob-ir::corpus grid::cell_symrefs_and_must_references
+        PASS [   0.009s] (  5/129) gob-ir::corpus markdown::sections_are_units_with_anchor_symrefs
+        PASS [   0.008s] (  6/129) gob-ir::corpus opaque::opaque_may_define_downgrades_must_to_may_and_unknown_stays_unknown
+        PASS [   0.009s] (  7/129) gob-ir::corpus markdown::link_by_anchor_resolves_must
+        PASS [   0.008s] (  8/129) gob-ir::corpus opaque::lexical_queries_read_the_opaque_payload
+        PASS [   0.009s] (  9/129) gob-ir::corpus notebook::group_carries_user_history_order
+        PASS [   0.010s] ( 10/129) gob-ir::corpus markdown::nested_section_edit_changes_ancestor_body_today
+        PASS [   0.017s] ( 11/129) gob-ir::corpus notebook::cross_cell_use_is_may_never_must
+        PASS [   0.017s] ( 12/129) gob-ir::corpus notebook::notebook_locations_order_by_cell_then_range
+        PASS [   0.013s] ( 13/129) gob-ir::corpus rustlike::free_variables_binders_and_occurrences
+        PASS [   0.014s] ( 14/129) gob-ir::corpus rustlike::resolution_is_must_for_lexical_and_unknown_for_external
+        PASS [   0.015s] ( 15/129) gob-ir::corpus rustlike::attachments_and_facets
+        PASS [   0.015s] ( 16/129) gob-ir::corpus rustlike::identity_anchors_on_symref_with_body_as_content
+        PASS [   0.014s] ( 17/129) gob-ir::eval an_exact_answer_computed_through_poison_is_downgraded_to_unknown
+        PASS [   0.015s] ( 18/129) gob-ir::corpus rustlike::units_and_symrefs_in_document_order
+        PASS [   0.015s] ( 19/129) gob-ir::corpus rustlike::trivia_never_changes_a_digest
+        PASS [   0.015s] ( 20/129) gob-ir::eval a_wholly_not_applicable_scope_emits_no_findings
+        PASS [   0.017s] ( 21/129) gob-ir::corpus rustlike::contract_erases_names_but_sig_keeps_them
+        PASS [   0.008s] ( 22/129) gob-ir::eval kleene_connectives
+        PASS [   0.008s] ( 23/129) gob-ir::eval malformed_programs_are_errors
+        PASS [   0.009s] ( 24/129) gob-ir::eval must_measure_makes_a_vacuous_rule_required
+        PASS [   0.020s] ( 25/129) gob-ir::eval annotation_required_opaque_is_required_when_configured
+        PASS [   0.008s] ( 26/129) gob-ir::eval p0_requires_exact_on_both_sides
+        PASS [   0.007s] ( 27/129) gob-ir::eval p_plus_clean_when_no_offender_in_hi
+        PASS [   0.009s] ( 28/129) gob-ir::eval opaque_subject_reports_one_rolled_up_unresolved_with_the_reason_code
+        PASS [   0.007s] ( 29/129) gob-ir::eval p_minus_fires_when_no_good_thing_and_is_clean_when_one_exists
+        PASS [   0.007s] ( 30/129) gob-ir::eval p_plus_fires_on_lo_and_certifies_clean_elsewhere
+        PASS [   0.009s] ( 31/129) gob-ir::eval p_plus_bounds_table
+        PASS [   0.010s] ( 32/129) gob-ir::eval p_minus_bounds_table
+        PASS [   0.008s] ( 33/129) gob-ir::eval p_plus_over_an_opaque_cone_is_unresolved_never_error_or_clean
+        PASS [   0.010s] ( 34/129) gob-ir::eval pc_may_cycle_is_unresolved_but_a_must_cycle_elsewhere_still_fires
+        PASS [   0.013s] ( 35/129) gob-ir::eval pc_must_cycle_fires_and_acyclic_is_clean
+        PASS [   0.008s] ( 36/129) gob-ir::eval zero_subjects_is_vacuous_unresolved_never_clean
+        PASS [   0.011s] ( 37/129) gob-ir::eval pn_max_and_min_thresholds
+        PASS [   0.010s] ( 38/129) gob-ir::eval relation_closure_is_a_kleene_least_fixpoint
+        PASS [   0.012s] ( 39/129) gob-ir::eval pc_reach_table
+        PASS [   0.011s] ( 40/129) gob-ir::eval strata_derive_relations_read_by_later_strata_and_checks
+        PASS [   0.013s] ( 41/129) gob-ir::properties a_token_change_always_changes_the_body_digest
+        PASS [   0.011s] ( 42/129) gob-ir::properties golden_digest_is_stable_across_runs
+        PASS [   0.014s] ( 43/129) gob-ir::eval unknown_subject_set_is_unresolved
+        PASS [   0.007s] ( 44/129) gob-ir::queries atom_registry_and_callee_vocabulary
+        PASS [   0.006s] ( 45/129) gob-ir::queries identity_delta_distinguishes_change_from_rename
+        PASS [   0.007s] ( 46/129) gob-ir::queries builder_rejects_malformed_terms
+        PASS [   0.007s] ( 47/129) gob-ir::queries by_digest_finds_units_with_equal_facets
+        PASS [   0.008s] ( 48/129) gob-ir::queries location_queries
+        PASS [   0.008s] ( 49/129) gob-ir::queries packs_extend_vocabularies_through_inventory
+        PASS [   0.006s] ( 50/129) gob-ir::queries symref_grammar_cases
+        PASS [   0.009s] ( 51/129) gob-ir::queries occurrences_literals_and_free_variables_of_subterms
+        PASS [   0.010s] ( 52/129) gob-ir::queries multi_part_units_are_one_identity_with_combined_facets
+        PASS [   0.007s] ( 53/129) gob-ir::scope may_edge_downgrades_a_found_declaration
+        PASS [   0.009s] ( 54/129) gob-ir::queries structure_queries
+        PASS [   0.010s] ( 55/129) gob-ir::scope multi_part_unit_is_one_declaration
+        PASS [   0.008s] ( 56/129) gob-ir::scope must_import_shadows_lexical_but_may_import_does_not
+        PASS [   0.007s] ( 57/129) gob-ir::scope must_through_lexical_nesting
+        PASS [   0.007s] ( 58/129) gob-ir::scope nearer_may_declaration_does_not_shadow
+        PASS [   0.007s] ( 59/129) gob-ir::scope opaque_may_define_any_makes_undeclared_names_unknown_and_declared_ones_may
+        PASS [   0.008s] ( 60/129) gob-ir::scope nearer_must_declaration_shadows
+        PASS [   0.009s] ( 61/129) gob-ir::scope opaque_reader_makes_declarations_possibly_used
+        PASS [   0.007s] ( 62/129) gob-ir::scope status_is_ordered_and_meets_to_the_weaker
+        PASS [   0.008s] ( 63/129) gob-ir::scope scope_cycles_terminate
+        PASS [   0.013s] ( 64/129) gob-ir::scope opaque_may_define_downgrades_only_the_names_it_covers
+        PASS [   0.007s] ( 65/129) gob-ir::scope two_must_declarations_are_ambiguous_so_may
+        PASS [   0.007s] ( 66/129) gob-ir::scope undeclared_names_and_unknown_edges_are_unknown
+        PASS [   0.008s] ( 67/129) gob-ir::scope unknown_status_declaration_is_unknown
+        PASS [   0.011s] ( 68/129) gob-ir::select a_hidden_remainder_blocks_foreign
+        PASS [   0.009s] ( 69/129) gob-ir::select acceptance_glob_lang_kind_gives_must_and_excludes_markdown
+        PASS [   0.009s] ( 70/129) gob-ir::select attribute_predicates_are_exact_or_unknown_by_provision
+        PASS [   0.015s] ( 71/129) gob-ir::select attribute_comparisons
+        PASS [   0.011s] ( 72/129) gob-ir::select literal_resolution_exact_then_unique_suffix_then_candidates
+        PASS [   0.013s] ( 73/129) gob-ir::select file_selector_includes_the_module_unit_and_everything_inside
+        PASS [   0.013s] ( 74/129) gob-ir::select files_outside_the_walk_are_not_unknown_just_silent
+        PASS [   0.013s] ( 75/129) gob-ir::select hidden_placeholders_only_where_the_selector_may_reach
+        PASS [   0.007s] ( 76/129) gob-ir::select may_edge_on_an_ancestor_degrades_its_descendants
+        PASS [   0.006s] ( 77/129) gob-ir::select owner_of_a_unit_prefers_the_symbol_level_selector
+        PASS [   0.011s] ( 78/129) gob-ir::select markdown_heading_is_selected_by_kind
+        PASS [   0.008s] ( 79/129) gob-ir::select owner_through_a_may_edge_is_may
+        PASS [   0.008s] ( 80/129) gob-ir::select owner_ties_are_unknown_with_both_candidates_recorded
+        PASS [   0.008s] ( 81/129) gob-ir::select unknown_edge_degrades_to_may_never_to_absent
+        PASS [   0.008s] ( 82/129) gob-walk owner::tests::most_specific_must_wins
+        PASS [   0.010s] ( 83/129) gob-walk owner::tests::may_only_candidates_may_be_foreign
+        PASS [   0.008s] ( 84/129) gob-walk owner::tests::must_dominates_less_specific_may
+        PASS [   0.011s] ( 85/129) gob-walk owner::tests::may_more_specific_over_must_broader_gives_bounds
+        PASS [   0.007s] ( 86/129) gob-walk owner::tests::tie_with_a_higher_may_is_not_a_tie
+        PASS [   0.009s] ( 87/129) gob-walk owner::tests::nobody_is_foreign_unless_something_is_hidden
+        PASS [   0.008s] ( 88/129) gob-walk owner::tests::tie_of_must_candidates_is_unknown_with_both_recorded
+        PASS [   0.019s] ( 89/129) gob-ir::select unknown_attribute_makes_the_narrower_candidate_may_and_the_owner_bounds
+        PASS [   0.013s] ( 90/129) gob-walk owner::tests::same_entity_rows_never_tie_with_themselves
+        PASS [   0.011s] ( 91/129) gob-walk select::tests::negation_is_the_complement_within_the_walk
+        PASS [   0.012s] ( 92/129) gob-walk select::tests::glob_and_lang_select_files_with_must
+        PASS [   0.008s] ( 93/129) gob-walk select::tests::owner_of_path_uses_the_review_m12_order
+        PASS [   0.013s] ( 94/129) gob-walk select::tests::oversized_matches_are_reported_as_unseen
+        PASS [   0.008s] ( 95/129) gob-walk select::tests::owner_ties_on_a_path_are_unknown_with_both_recorded
+        PASS [   0.009s] ( 96/129) gob-walk select::tests::predicate_narrowing_wins_a_directory_tie
+        PASS [   0.007s] ( 97/129) gob-walk select::tests::unit_predicates_and_symbol_globs_degrade_to_may
+        PASS [   0.010s] ( 98/129) gob-walk select::tests::symbol_globs_do_not_claim_the_module_unit_unless_they_match_it
+        PASS [   0.009s] ( 99/129) gob-walk selector::glob::tests::path_matching_table
+        PASS [   0.010s] (100/129) gob-walk selector::glob::tests::literal_detection
+        PASS [   0.007s] (101/129) gob-walk selector::glob::tests::rejections_carry_offsets
+        PASS [   0.009s] (102/129) gob-walk selector::glob::tests::specificity_follows_the_spec_examples
+        PASS [   0.010s] (103/129) gob-walk selector::glob::tests::qual_matching_table
+        PASS [   0.011s] (104/129) gob-walk selector::glob::tests::wildcard_text_matching
+        PASS [   0.010s] (105/129) gob-walk selector::tests::glob_error_offsets_map_through_escapes
+        PASS [   0.008s] (106/129) gob-walk selector::tests::literal_selectors
+        PASS [   0.013s] (107/129) gob-walk selector::tests::errors_carry_exact_positions
+        PASS [   0.011s] (108/129) gob-walk selector::tests::or_keeps_both_a_must_row_and_a_more_specific_may_row
+        PASS [   0.012s] (109/129) gob-walk selector::tests::kleene_combinators_and_specificity_rows
+        PASS [   0.010s] (110/129) gob-walk selector::tests::precedence_is_not_then_and_then_or
+        PASS [   0.006s] (111/129) gob-walk specificity::tests::and_takes_the_larger_glob_and_adds_predicates
+        PASS [   0.010s] (112/129) gob-walk selector::tests::spans_cover_the_source_and_honor_the_base
+        PASS [   0.008s] (113/129) gob-walk selector::tests::string_escapes_round_trip
+        PASS [   0.011s] (114/129) gob-walk selector::tests::spec_examples_parse_and_print_canonically
+        PASS [   0.007s] (115/129) gob-walk specificity::tests::bottom_is_below_any_glob
+        PASS [   0.007s] (116/129) gob-walk specificity::tests::level_dominates_everything_below_it
+        PASS [   0.011s] (117/129) gob-walk specificity::tests::fewer_double_stars_beat_more_at_equal_literals
+        PASS [   0.010s] (118/129) gob-walk specificity::tests::predicates_break_the_last_tie_only
+        PASS [   0.011s] (119/129) gob-walk specificity::tests::review_m12_example_orders_the_nested_glob_first
+        PASS [   0.108s] (120/129) gob-ir::properties symref_display_parse_round_trip
+        PASS [   0.011s] (121/129) gob-walk tests::digest_is_hex_and_content_addressed
+        PASS [   0.027s] (122/129) gob-walk tests::config_exclude_and_bad_glob
+        PASS [   0.022s] (123/129) gob-walk tests::oversized_files_are_reported_not_hashed
+        PASS [   0.029s] (124/129) gob-walk tests::gitignore_excludes_target_and_order_is_stable
+        PASS [   0.208s] (125/129) gob-ir::properties trivia_is_outside_every_facet_digest
+        PASS [   0.231s] (126/129) gob-ir::properties building_twice_is_deterministic
+        PASS [   0.161s] (127/129) gob-walk selector::tests::parser_never_panics
+        PASS [   0.273s] (128/129) gob-ir::properties alpha_equivalent_terms_print_and_digest_identically
+        PASS [   0.303s] (129/129) gob-walk selector::tests::parse_of_print_is_identity
+────────────
+     Summary [   0.420s] 129 tests run: 129 passed, 0 skipped
+"""
+size = 12629

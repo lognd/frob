@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T21:26:35Z"
+digest = "1f39892fdb45eaf1aed9d3ca8202458e9e327355edf5e86d422a3a2707db6c0a"
+exit_code = 0
+inline = '''
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+    Finished `test` profile [unoptimized] target(s) in 10.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c0273d8e-fb98-4274-aa97-83f2122ab321 with nextest profile: default
+    Starting 1 test across 3 binaries (43 tests skipped)
+        PASS [   0.034s] frob-lease::lease lease_config_reads_the_base_ref_over_a_stale_worktree_copy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.035s] 1 test run: 1 passed, 43 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease -E 'test(=lease_config_reads_the_base_ref_over_a_stale_worktree_copy)'"
+size = 990
+status = "measured"
+tests = ["lease_config_reads_the_base_ref_over_a_stale_worktree_copy"]
+at = "2026-10-10T21:26:35Z"
+actor = "Claude"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "duplicate"
+reason = "duplicate of ~EE8MASY (docs consolidation phase 1: docs/README.md is the one index)"
+at = "2026-10-09T20:45:26Z"
+actor = "lognd"
+rev = 1

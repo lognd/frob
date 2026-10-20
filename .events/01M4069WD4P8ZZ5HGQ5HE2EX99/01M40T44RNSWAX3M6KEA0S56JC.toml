@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Reported from the cloc repository (FROB_FEEDBACK.md item 6): land closed a ticket with no changelog fragment and no warning while [pm] done_requires lists changelog_fragment. A configured requirement that nothing enforces is a silent gap: until this ticket lands, an unenforced done_requires entry must at least be reported (doctor or a warning at close)."
+at = "2026-10-03T11:59:21Z"
+actor = "lognd"
+rev = 1

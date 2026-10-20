@@ -1,0 +1,13 @@
+kind = "field"
+field = "body"
+old = """
+Implements security.md section 2.11; mirror.md section 3.1.
+
+The mirror adopts or updates an issue only if its author is the mirror's bot identity (by user id) and the marker carries an HMAC of the ULID under a CI-secret key; anything else carrying a marker is MIR003 (Advisory) and ignored."""
+new = """
+Implements mirror.md section 3.3 (marker format, trust) and security.md section 2.11.
+
+Format `frob:v1 kid=<id> ulid=<ULID> nonce=<n> mac=<...>`; the MAC covers (repository node id, ULID, nonce) under key kid from the keyring (m2-mirror2-keyring). A marker counts only in the bot-authored creation revision of the issue body (first revision, author a mirror bot id by user id); markers in later revisions change nothing. Any other issue carrying a marker is MIR003 (Advisory) and ignored; a marker under an unknown kid on a bot issue is MIR001 marker-key-unknown, never a recreate."""
+at = "2026-10-03T05:49:58Z"
+actor = "lognd"
+rev = 1

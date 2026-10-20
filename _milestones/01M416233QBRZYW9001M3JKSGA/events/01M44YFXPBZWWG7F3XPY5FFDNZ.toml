@@ -1,0 +1,7 @@
+kind = "criterion"
+op = "remove"
+position = 2
+moved = [1, 0, 2]
+at = "2026-10-05T02:32:39Z"
+actor = "lognd"
+rev = 1

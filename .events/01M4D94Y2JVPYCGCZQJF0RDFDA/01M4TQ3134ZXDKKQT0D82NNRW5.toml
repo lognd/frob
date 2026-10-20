@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-13T13:26:33Z"
+digest = "5b5765864611b35216b669dead79fb33d27da329374da440d2246b6938f41dec"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f7b995c1-3a04-4366-a0e3-8b9730c0cf71 with nextest profile: default
+    Starting 4 tests across 30 binaries (359 tests skipped)
+        PASS [   0.007s] gob-ir hot::tests::may_edge_gives_may_and_unknown_edge_gives_unresolved
+        PASS [   0.008s] gob-ir hot::tests::helper_called_from_update_is_must_hot
+        PASS [   0.008s] gob-ir hot::tests::disabled_pack_is_not_applicable
+        PASS [   0.013s] gob-symbols::gaps hot_context_reaches_helpers_and_poisons_on_unknown_calls
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 4 tests run: 4 passed, 359 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir -p gob-symbols -E 'test(/hot::tests/) | test(=hot_context_reaches_helpers_and_poisons_on_unknown_calls)'"
+size = 825
+status = "measured"
+test_count = 4
+tests_digest = "00a14ba2636a8580e6bb70c559c2822aae0ae545cbd691e01ef68ab164bbe57d"
+at = "2026-10-13T13:26:33Z"
+actor = "lognd"
+rev = 1

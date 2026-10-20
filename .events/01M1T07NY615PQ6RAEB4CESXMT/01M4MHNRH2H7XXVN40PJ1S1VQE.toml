@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-11T03:56:28Z"
+digest = "8eb8217748d124ca6f312b4833ef82ad0dbbee828a85f0fcd4f6bffa64001af4"
+exit_code = 0
+inline = '''
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+    Finished `test` profile [unoptimized] target(s) in 0.93s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1531bbf2-dfc0-4b9f-b49c-5b1c4e630a77 with nextest profile: default
+    Starting 2 tests across 1 binary (9 tests skipped)
+        PASS [   0.007s] grimble-lints res::tests::release_on_another_receiver_or_in_another_scope_does_not_pair
+        PASS [   0.007s] grimble-lints res::tests::paired_release_in_scope_is_quiet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 2 tests run: 2 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints -E 'test(=res::tests::paired_release_in_scope_is_quiet) | test(=res::tests::release_on_another_receiver_or_in_another_scope_does_not_pair)'"
+size = 788
+status = "measured"
+tests = ["res::tests::release_on_another_receiver_or_in_another_scope_does_not_pair", "res::tests::paired_release_in_scope_is_quiet"]
+at = "2026-10-11T03:56:28Z"
+actor = "lognd"
+rev = 1

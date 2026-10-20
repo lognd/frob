@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Now blocked by the new GitHub writes ticket instead of the dropped one. Not here (own tickets): write journal, budget, lock and watermark, create protocol. Added acceptance: Given a converged state, when a run starts from a fresh map, then no tracker mutation and no ledger commit happens (model property S9 Idempotent). Existing acceptance stands."
+at = "2026-10-03T05:49:57Z"
+actor = "lognd"
+rev = 1

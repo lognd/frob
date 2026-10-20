@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T13:46:48Z"
+digest = "59fadc400da4ab35d22328ffd4dd2b37d3c4f1d9a63fc4eb460a655f04f1b183"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fb1985fb-6f56-4981-8d89-0befa97caf67 with nextest profile: default
+    Starting 6 tests across 3 binaries (28 tests skipped)
+        PASS [   0.009s] frob-obligations comments::tests::python_comments_skip_strings
+        PASS [   0.009s] frob-obligations comments::tests::markdown_comments_skip_fences
+        PASS [   0.009s] frob-obligations comments::tests::toml_multiline_strings_hide_hash
+        PASS [   0.009s] frob-obligations comments::tests::rust_comments_skip_strings
+        PASS [   0.016s] frob-obligations comments::tests::toml_comments_skip_quotes
+        PASS [   0.040s] frob-obligations::repo evaluate_file_runs_the_per_file_rules_on_toml_text
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.041s] 6 tests run: 6 passed, 28 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-obligations comments"
+size = 1006
+status = "measured"
+tests = ["comments::tests::python_comments_skip_strings", "comments::tests::markdown_comments_skip_fences", "comments::tests::toml_multiline_strings_hide_hash", "comments::tests::rust_comments_skip_strings", "comments::tests::toml_comments_skip_quotes", "evaluate_file_runs_the_per_file_rules_on_toml_text"]
+at = "2026-10-04T13:46:48Z"
+actor = "lognd"
+rev = 1

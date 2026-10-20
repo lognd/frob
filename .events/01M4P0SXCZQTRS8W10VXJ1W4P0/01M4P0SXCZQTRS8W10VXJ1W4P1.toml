@@ -1,0 +1,11 @@
+kind = "create"
+title = "dup index: content-addressed clone index under the git common dir, incremental, fail closed (DUP003)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
+acceptance = ["Index is built once and updated only for changed files", "Missing or corrupt index fails closed with DUP003 and a rebuild hint", "Shared by all worktrees"]
+at = "2026-10-11T17:40:09Z"
+actor = "lognd"
+rev = 1

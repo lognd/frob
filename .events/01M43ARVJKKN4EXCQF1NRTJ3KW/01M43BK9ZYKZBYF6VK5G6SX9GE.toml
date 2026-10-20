@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:43:12Z"
+digest = "5e4e4e81407355b7c9919ab049619c11bcff78c61e452278e7fa17fe386acd80"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6996f40c-eadf-4f4e-9c96-56ba2d717296 with nextest profile: default
+    Starting 2 tests across 2 binaries (8 tests skipped)
+        PASS [   0.012s] crunk-values::values length_kinds_and_typed_errors
+        PASS [   0.013s] crunk-values::values length_parse_matches_python_vectors
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 2 tests run: 2 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-values -E test(length_parse_matches_python_vectors)|test(length_kinds_and_typed_errors)"
+size = 623
+status = "measured"
+tests = ["length_kinds_and_typed_errors", "length_parse_matches_python_vectors"]
+at = "2026-10-04T11:43:12Z"
+actor = "lognd"
+rev = 1

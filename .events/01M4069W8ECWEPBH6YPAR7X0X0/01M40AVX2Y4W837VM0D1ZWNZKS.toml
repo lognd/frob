@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-release/**", "Cargo.toml", "changelog.d/.gitkeep", "docs/reference/changelog.md", "CHANGELOG.md", "CHANGELOG-v1.md", "crates/frob/src/release_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/Cargo.toml"]
+new = ["crates/frob-release/**", "Cargo.toml", "changelog.d/.gitkeep", "docs/reference/changelog.md", "CHANGELOG.md", "CHANGELOG-v1.md", "crates/frob/src/release_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/Cargo.toml", "frob.toml", "docs/reference/cli/frob.md", "docs/reference/cli/any.md", "crates/frob/tests/release.rs", "crates/frob/tests/snapshots/**", "Cargo.lock"]
+at = "2026-10-03T07:32:42Z"
+actor = "lognd"
+rev = 1

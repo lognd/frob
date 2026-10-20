@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Consumer audit container epic (round-3 backend); ten proposed rules, each to be checked against the pack carriers (D76, D80)."
+at = "2026-10-04T21:02:03Z"
+actor = "lognd"
+rev = 1

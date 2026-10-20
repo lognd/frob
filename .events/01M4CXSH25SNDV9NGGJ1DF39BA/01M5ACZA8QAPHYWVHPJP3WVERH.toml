@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T15:37:33Z"
+digest = "a8fffd4aecb8fdb5971838b1748369117d4465637e9f2e3707d955adbe8597e0"
+exit_code = 0
+inline = """
+
+running 3 tests
+test every_divergence_row_has_a_nonempty_reason ... ok
+test every_known_divergence_module_doc_is_covered_by_the_page ... ok
+test the_ci_step_passes_on_a_scaffolded_web_project ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.08s
+     Running tests/hullbreach_exit.rs (target/debug/deps/hullbreach_exit-3224c114fe13a696)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p crunk --test hullbreach_exit"
+size = 514
+status = "measured"
+at = "2026-10-19T15:37:33Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 DOC006 citation of a nonexistent command; v2 uses checked facts with planned declarations (D84)."
+at = "2026-10-04T21:07:36Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T15:40:37Z"
+digest = "c10153e1f7c07b8d921c2f3fa6db0071c25eb2bf7846c9bcca9e0cc1a072d4c6"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e6057995-a4cd-4d8a-ba8b-a156c55c1f01 with nextest profile: default
+    Starting 1 test across 141 binaries (1205 tests skipped)
+        PASS [   0.011s] gob-dev publish::tests::publish_starts_at_the_first_unpublished_crate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 1205 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "publish::tests::publish_starts_at_the_first_unpublished_crate"
+size = 566
+status = "measured"
+tests = ["publish::tests::publish_starts_at_the_first_unpublished_crate"]
+at = "2026-10-03T15:40:37Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T16:09:13Z"
+digest = "391a8d8d202ff0bd92c7b351873fb05848bd8dc5678220901aee9d33148d29a0"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 851e6afe-475d-4683-bff0-5a5a93702ce9 with nextest profile: default
+    Starting 1 test across 8 binaries (38 tests skipped)
+        PASS [   0.815s] frob-tests::rust_root a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.815s] 1 test run: 1 passed, 38 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests -E 'test(=a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code)'"
+size = 577
+status = "measured"
+tests = ["a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code"]
+at = "2026-10-10T16:09:13Z"
+actor = "Claude"
+rev = 1

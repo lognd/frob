@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T15:04:06Z"
+digest = "5f08637bcb62f3b34e511974486cd64d9d18e274698162267bc975a56ee09afd"
+exit_code = 0
+inline = """
+
+running 1 test
+test shallow_single_branch_clone_fetches_the_ticket_branch ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.06s
+
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.59s
+     Running tests/branch.rs (target/debug/deps/branch-759732d7db503515)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-git -p frob-ledger --test branch shallow_single_branch_clone_fetches_the_ticket_branch"
+size = 708
+status = "measured"
+at = "2026-10-20T15:04:06Z"
+actor = "lognd"
+rev = 1

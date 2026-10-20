@@ -1,0 +1,17 @@
+kind = "create"
+title = "TICK008 flags real ledger branch/worktree fields it itself wrote"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+aliases = ["T-5292"]
+labels = ["milestone:0.534.0"]
+scope = ["tests/gates_suite/test_tick.py", "src/frob/gates/_tickets_gate.py", "src/frob/tickets/_reconcile.py"]
+body = "gh run 35717833933 ubuntu Test job; re-verified on dev tip 3acf8c6b30: tests/gates_suite/test_tick.py::TestTick008UnknownLedgerFields::test_real_repo_ledger_is_tick008_clean fails -- ~35 real tickets carry unknown ledger field(s) ['branch','worktree'], gate treats as TICK008 violation on the live repo ledger itself."
+at = "2026-09-22T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M336K75SPP0VYHFWDKX51F59"

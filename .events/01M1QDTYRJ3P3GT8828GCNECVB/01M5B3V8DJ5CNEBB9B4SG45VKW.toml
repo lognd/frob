@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T22:17:19Z"
+digest = "c33f957b53de1315398f929b7c5b7fb0836e8d1d0e2d9adf2841c0e4e0b4e592"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a8a8f015-c83e-4c55-8f95-aeb92af5d51f with nextest profile: default
+    Starting 1 test across 327 binaries (3806 tests skipped)
+        PASS [   0.008s] gob-directives::unparsed v1_waive_in_no_grammar_file_is_reported_not_silent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 3806 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "v1_waive_in_no_grammar_file_is_reported_not_silent"
+size = 572
+status = "measured"
+test_count = 1
+tests_digest = "a677e99356f75610c191387ba24afc26127ab3ee0b21a4e5b4258c8b51f92f61"
+at = "2026-10-19T22:17:19Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "already resolved by 12895609b (frob-gh in PLANNED); layering test passes"
+at = "2026-10-15T05:21:17Z"
+actor = "lognd"
+rev = 1

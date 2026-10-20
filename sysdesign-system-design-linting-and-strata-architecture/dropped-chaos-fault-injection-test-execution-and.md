@@ -1,0 +1,35 @@
++++
+id = "01M3AXSD9MTNRWM4QAE32MHGS9"
+title = "dropped: chaos/fault-injection test execution and verification (research row 9.8)"
+type = "task"
+category = "done"
+outcome = "wont-fix"
+priority = "medium"
+parent = "01M3AXSD815BE5WXEJ8JDTSV9J"
+reporter = "agent"
+created = "2026-09-25T00:00:00Z"
+updated = "2026-09-25T00:00:01Z"
+aliases = ["T-6452"]
+labels = ["milestone:0.539.0"]
++++
+
+frob:waive DOC006 reason="future-facing paths: every file named here is created by this ticket or its story scaffold, none exists on dev yet"
+title: dropped: chaos/fault-injection test execution and verification (research row 9.8)
+kind: feature
+tier: dropped
+parent: T-SYS-SH
+scope: --
+blocked_by: []
+
+Reason: research row 9.8 ("Chaos testing / fault injection practiced, not just designed for")
+<!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->is explicitly tagged dynamic-only in scratchpad/sysdesign-research.md's tag column: "A service
+with circuit breakers/retries/graceful-degradation declared (sec. 6) but no chaos/fault-
+injection test referencing it flags as an unverified resilience claim | dynamic-only". Per the
+owner stance, dynamic-only rows become a frob:tests obligation, never a static rule -- whether
+a chaos experiment actually ran and passed is a runtime/CI-pipeline fact, not something static
+analysis of source can prove. STRATA-EXPRESSIVENESS.md's finding that the `scenario`/
+RemoveNode/ScaleRate/SetTrust rewrite machinery is already "structurally chaos-engineering-
+shaped" is noted for a future frob:tests obligation documenting `scenario` as the chaos idiom,
+but that documentation-only follow-up is not itself a lint rule and is not filed as a separate
+ticket here (it is a docs/strata/surface.md note the T-SYS-A-LATTICE or a future docs pass can
+pick up incidentally, not a scoped leaf of its own).

@@ -1,0 +1,28 @@
++++
+id = "01M38BCNAVXFTEC5S1ZCQ25VQC"
+title = "lang_support: frob.tickets and frob.webapp unregistered in source-tree facet audit"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+points = 3
+reporter = "agent"
+created = "2026-09-24T00:00:00Z"
+updated = "2026-09-24T00:00:02Z"
+aliases = ["T-5467"]
+labels = ["milestone:v0.534.0"]
+scope = ["src/frob/lang/_support.py"]
++++
+
+Found while draining CI run 35951365410 (dev 9e0c89bb19). Failing:
+tests/test_lang_support.py::TestPackageAudit::test_real_repo_source_tree_is_fully_registered
+
+unfaceted_packages(src_root) returns ('frob.tickets', 'frob.webapp')
+instead of (); both packages exist in src tree but are not registered in
+whatever facet/registry list this audit checks against.
+
+frob.webapp is OWNED by another agent (out of touch-scope per this drain's
+brief -- do not touch src/frob/webapp/**). frob.tickets registration is
+fixable in-scope. This ticket may need to land in two halves, or the
+frob.webapp half handed to its owning agent while frob.tickets is fixed
+here.

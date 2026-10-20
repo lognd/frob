@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["docs/reference/languages.md is produced by cargo dev gen and checked by GEN001", "cargo dev gen --dry-run prints a capped diff and writes nothing", "a generated-files manifest lists every generated path and GEN001 fails on an unlisted generated file"]
+new = ["docs/reference/languages.md is produced by cargo dev gen and checked by GEN001", "cargo dev gen --dry-run prints a capped diff and writes nothing", "a generated-files manifest lists every generated path and GEN001 fails on an unlisted generated file", "cargo test -p gob-dev has one freshness test per generated kind (a stale rule page fails cargo test naming the path), and a test fails when a new kind has no freshness test", ".gitattributes marks every generated path linguist-generated -diff from the generated-files manifest, and GEN001 fails when that block is stale"]
+reason = "source review G6-G8 (ruff per-generator up_to_date tests, ruff .gitattributes)"
+moved = [1, 2, 3]
+at = "2026-10-06T13:14:13Z"
+actor = "lognd"
+rev = 1

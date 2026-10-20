@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble"]
+new = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
+at = "2026-10-04T20:59:51Z"
+actor = "lognd"
+rev = 1

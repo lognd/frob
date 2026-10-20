@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Declared generated-files block for consumer repositories; v2 GEN001 covers only this repository's own generated files (gob-dev gen)."
+at = "2026-10-04T21:05:13Z"
+actor = "lognd"
+rev = 1

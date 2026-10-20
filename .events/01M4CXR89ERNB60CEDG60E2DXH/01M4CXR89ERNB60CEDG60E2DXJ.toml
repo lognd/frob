@@ -1,0 +1,13 @@
+kind = "create"
+title = "Screen spec files extend [[screen]]: states, platforms, landmarks, copy keys, status and content hash; STATE001-006"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
+scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**"]
+acceptance = ["Given a screen spec, when checked, then STATE coverage and status hash rules apply and old [[screen]] tables still load"]
+body = "docs/design/crunk.md section 2."
+at = "2026-10-08T04:53:39Z"
+actor = "lognd"
+rev = 1

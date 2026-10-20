@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T15:16:16Z"
+digest = "bfc7c10d2529b43c83a1c676f412c2f479f277eb83f2f22a4b9cfad4a5a317d8"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+────────────
+ Nextest run ID 100da160-b829-42c0-8f7b-d3f051a0a230 with nextest profile: default
+    Starting 1 test across 141 binaries (1186 tests skipped)
+        PASS [   0.083s] (1/1) frob-release::cut configured_tag_and_products_make_one_tag_per_product_following_the_pattern
+────────────
+     Summary [   0.087s] 1 test run: 1 passed, 1186 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "configured_tag_and_products_make_one_tag_per_product_following_the_pattern"
+size = 475
+status = "measured"
+tests = ["configured_tag_and_products_make_one_tag_per_product_following_the_pattern"]
+at = "2026-10-03T15:16:16Z"
+actor = "lognd"
+rev = 1

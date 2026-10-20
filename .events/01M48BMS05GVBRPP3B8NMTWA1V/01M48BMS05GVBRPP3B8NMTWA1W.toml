@@ -1,0 +1,11 @@
+kind = "create"
+title = "gob-symbols: evaluate function-local const bindings and namespace-import members in TS const_value"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
+scope = ["crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/consteval.rs"]
+body = "found while working ~C2F4ZMQ. Only module-level const units carry a value to const_value; a const declared inside a component function (const cls = 'a') is a binder with no value node, and ns.NAME through a namespace import is not followed, so both stay Unknown. Lower local const declarators with their value and resolve member access through the module graph."
+at = "2026-10-06T10:20:10Z"
+actor = "lognd"
+rev = 1

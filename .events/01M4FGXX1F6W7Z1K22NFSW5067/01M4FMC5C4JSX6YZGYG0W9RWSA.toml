@@ -1,0 +1,162 @@
+kind = "evidence"
+accepts = [1, 2, 3, 4]
+captured_at = "2026-10-09T06:06:39Z"
+digest = "32c5a86419ad10bc5f6199a760509dd4af9ce536e556e64c2dd765539e97aa69"
+exit_code = 0
+inline = '''
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: skipped for disk room: xanders-laptop: 10.2 GiB free (919.0 MiB of it evictable), this repository needs about 66.4 GiB; using quasar
+goway: note: picked quasar (load 16.45 on 12 cores, 1 goway jobs)
+goway: note: tool versions differ across your hosts: clang 21.1.8 here (major: 10 vs 21 vs 18) (cached by goway doctor 51m ago; builds may behave differently here)
+goway: note: synced 13238 files (0 sent, 0 bytes, 0 deleted)
+goway: note: quasar has 6.1 GiB free: running with 4 of 12 jobs (CARGO_BUILD_JOBS=4, NEXTEST_TEST_THREADS=4, MOLD_JOBS=1, GOWAY_LINK_THREADS=4, estimated peak 3.6 GiB)
+goway: info: running on quasar (x86_64, Quasar) at 192.168.4.61 [cores>=8 (12 cores)]: cargo nextest run --profile ci -p grimble-bind -p grimble-check -p grimble-model -p grimble -p gob-mdtest
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.90s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2d7510f8-1014-407f-abaa-b7e1f4462773 with nextest profile: ci
+    Starting 129 tests across 25 binaries
+        PASS [   0.024s] (  1/129) gob-mdtest::coverage fire_without_clean_is_not_coverage
+        PASS [   0.015s] (  2/129) gob-mdtest::coverage fixture_needs_its_snapshot
+        PASS [   0.040s] (  3/129) gob-mdtest::coverage allowlist_hides_a_gap_and_only_shrinks
+        PASS [   0.043s] (  4/129) gob-mdtest::coverage allowlist_entry_needs_a_ticket_handle
+        PASS [   0.052s] (  5/129) gob-mdtest::coverage allowlist_file_rejects_a_missing_ticket
+        PASS [   0.017s] (  6/129) gob-mdtest::coverage pair_covers_and_removing_it_fails_naming_the_rule
+        PASS [   0.022s] (  7/129) gob-mdtest::selftest a_runner_may_return_a_rule_report
+        PASS [   0.013s] (  8/129) gob-mdtest::selftest fail_dir_reports_every_file
+        PASS [   0.029s] (  9/129) gob-mdtest::coverage the_checked_in_allowlist_parses
+        PASS [   0.014s] ( 10/129) gob-mdtest::selftest mdtest_corpus
+        PASS [   0.016s] ( 11/129) gob-mdtest::selftest missing_control_fails_naming_rule
+        PASS [   0.020s] ( 12/129) gob-mdtest::selftest wrong_line_fails_showing_both_lines
+        PASS [   0.055s] ( 13/129) grimble::ack ack_dry_run_writes_nothing_and_a_node_target_is_refused
+        PASS [   0.101s] ( 14/129) grimble::ack ack_honours_the_grimble_table_like_check
+        PASS [   0.041s] ( 15/129) grimble::ack ack_without_a_reason_is_a_usage_error_with_the_remedy
+        PASS [   0.214s] ( 16/129) gob-mdtest::selftest changed_rendering_fails_with_snapshot_mismatch
+        PASS [   0.218s] ( 17/129) gob-mdtest::selftest mdtest_snapshots
+        PASS [   0.041s] ( 18/129) grimble::boundary no_frob_crate_is_a_direct_or_transitive_dependency_of_a_grimble_crate
+        PASS [   0.025s] ( 19/129) grimble::verbs a_bad_grimble_toml_is_a_refusal
+        PASS [   0.310s] ( 20/129) grimble::ack ack_refuses_a_stale_scheme_for_a_targeted_ack_and_all_with_reason_migrates
+        PASS [   0.317s] ( 21/129) grimble::ack ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit
+        PASS [   0.269s] ( 22/129) grimble::verbs an_accept_clause_parks_its_finding_and_is_listed
+        PASS [   0.023s] ( 23/129) grimble::verbs doctor_reports_fidelity_model_and_config_status
+        PASS [   0.324s] ( 24/129) grimble::verbs a_model_error_exits_one_and_the_finding_is_in_the_document
+        PASS [   0.053s] ( 25/129) grimble::verbs fmt_check_fails_on_an_unformatted_file_and_fmt_fixes_it
+        PASS [   0.019s] ( 26/129) grimble-bind frob_owned::tests::the_four_frob_owned_paths_are_owned
+        PASS [   0.015s] ( 27/129) grimble-bind frob_owned::tests::the_ledger_dir_comes_from_the_argument_and_matches_whole_components
+        PASS [   0.008s] ( 28/129) grimble-bind owner::tests::a_directive_against_a_may_selector_is_no_conflict
+        PASS [   0.008s] ( 29/129) grimble-bind owner::tests::a_may_in_the_top_tie_is_an_unresolved_tie
+        PASS [   0.235s] ( 30/129) grimble::verbs check_json_without_a_model_is_a_valid_empty_sibling_document
+        PASS [   0.008s] ( 31/129) grimble-bind owner::tests::possible_worlds_keeps_a_may_narrower_candidate_in_hi
+        PASS [   0.013s] ( 32/129) grimble-bind owner::tests::a_must_tie_fires_and_a_directive_naming_one_node_resolves_it
+        PASS [   0.018s] ( 33/129) grimble-bind types::tests::a_message_that_looks_like_the_old_prefix_yields_no_reason
+        PASS [   0.022s] ( 34/129) grimble-bind types::tests::an_unresolved_bind_finding_lifts_its_reason_into_the_typed_field
+        PASS [   0.045s] ( 35/129) grimble-bind types::tests::a_resolved_bind_finding_has_no_reason
+        PASS [   0.041s] ( 36/129) grimble-bind::applicability a_model_with_nodes_examines_ownership_subjects
+        PASS [   0.098s] ( 37/129) grimble-bind types::tests::the_typed_mapping_inverts_for_every_binding_reason
+        PASS [   0.049s] ( 38/129) grimble-bind::applicability a_model_with_only_a_flow_has_no_node_to_own_files
+        PASS [   0.053s] ( 39/129) grimble-bind::applicability a_model_without_such_entities_is_not_applicable_not_zero_subjects
+        PASS [   0.055s] ( 40/129) grimble-bind::applicability a_repository_with_no_entity_at_all_is_not_applicable
+        PASS [   0.041s] ( 41/129) grimble-bind::applicability no_model_entity_makes_sys001_sys002_sys004_not_applicable
+        PASS [   0.055s] ( 42/129) grimble-bind::applicability frob_owned_paths_are_never_unowned_but_other_loose_files_still_are
+        PASS [   0.051s] ( 43/129) grimble-bind::applicability sys003_examines_a_singleton_clause_and_is_clean_on_a_good_one
+        PASS [   0.073s] ( 44/129) grimble-bind::applicability sys003_examines_operands_and_fires_on_a_dangling_one
+        PASS [   0.445s] ( 45/129) grimble::verbs init_twice_is_idempotent
+        PASS [   0.053s] ( 46/129) grimble-bind::applicability sys009_examines_a_flow_end_and_fires_on_an_unbound_one
+        PASS [   0.036s] ( 47/129) grimble-bind::applicability sys010_examines_a_claim_and_fires_without_evidence
+        PASS [   0.037s] ( 48/129) grimble-bind::applicability sys011_examines_a_vmodel_link_and_fires_when_it_is_broken
+        PASS [   0.036s] ( 49/129) grimble-bind::caps a_grant_or_a_parent_grant_silences_cap001
+        PASS [   0.455s] ( 50/129) grimble::verbs the_binary_prints_exactly_one_envelope_line_on_stdout
+        PASS [   0.043s] ( 51/129) grimble-bind::caps a_granted_atom_never_observed_is_a_cap002_warning
+        PASS [   0.035s] ( 52/129) grimble-bind::caps a_method_name_is_a_use_only_beside_its_companion_call
+        PASS [   0.047s] ( 53/129) grimble-bind::caps a_node_with_neither_use_nor_grant_is_a_clean_subject_of_both
+        PASS [   0.042s] ( 54/129) grimble-bind::caps ungranted_open_exec_and_listen_are_cap001_errors
+        PASS [   0.312s] ( 55/129) grimble-bind::drift ack_refuse_may_unbound_and_node_targets_with_the_rows
+        PASS [   0.429s] ( 56/129) grimble-bind::drift ack_flow_records_both_ends_and_a_second_ack_is_a_no_op_and_clean
+        PASS [   1.260s] ( 57/129) grimble-bind::drift ack_without_a_reason_is_refused_and_a_rename_is_logged
+        PASS [   1.021s] ( 58/129) grimble-bind::drift identity_body_rename_is_sys008_then_ack_rename_carries_the_entry
+        PASS [   0.942s] ( 59/129) grimble-bind::drift identity_body_rename_several_candidates_are_all_listed_and_trivial_bodies_are_gone
+        PASS [   0.086s] ( 60/129) grimble-bind::drift identity_rename_and_edit_is_not_paired_and_ack_rename_refuses_a_different_body
+        PASS [   0.119s] ( 61/129) grimble-bind::drift rename_min_tokens_knob_decides_whether_a_body_can_be_paired
+        PASS [   0.198s] ( 62/129) grimble-bind::drift rules_sys006_matrix_both_equal_one_behind_both_behind_and_ends_differ
+        PASS [   0.116s] ( 63/129) grimble-bind::drift rules_sys006_producer_contract_changed_names_flow_and_both_ends
+        PASS [   0.091s] ( 64/129) grimble-bind::drift rules_sys006_shape_changed_under_both_acks_is_error_even_under_backward
+        PASS [   0.096s] ( 65/129) grimble-bind::drift rules_sys006_shape_contract_clean_when_all_three_agree
+        PASS [   0.100s] ( 66/129) grimble-bind::drift rules_sys006_unresolved_when_an_end_is_hidden_or_the_lock_is_unreadable
+        PASS [   0.100s] ( 67/129) grimble-bind::drift rules_sys007_kinds_facet_gone_and_the_body_edit_is_not_a_contract_skew
+        PASS [   0.426s] ( 68/129) grimble-bind::drift rules_sys006_consumer_behind_is_warn_under_backward_and_error_otherwise
+        PASS [   0.031s] ( 69/129) grimble-bind::drift rules_without_a_lock_have_no_subjects_so_must_measure_is_not_vacuous
+        PASS [   0.055s] ( 70/129) grimble-bind::drift sys008_without_a_lock_is_not_applicable_with_a_reason
+        PASS [   0.081s] ( 71/129) grimble-bind::drift sys008_with_a_lock_and_no_gone_anchor_is_a_measured_clean
+        PASS [   0.040s] ( 72/129) grimble-bind::edges a_cross_owner_import_and_call_with_no_flow_fires
+        PASS [   0.146s] ( 73/129) grimble-bind::drift rules_sys007_scheme_change_is_one_finding_per_entry_and_forces_reattest
+        PASS [   0.055s] ( 74/129) grimble-bind::edges a_flow_in_either_direction_between_the_owners_allows_the_edges
+        PASS [   0.043s] ( 75/129) grimble-bind::edges an_unknown_edge_is_unresolved_never_clean
+        PASS [   0.036s] ( 76/129) grimble-bind::edges one_code_owning_node_leaves_sys013_not_applicable
+        PASS [   0.011s] ( 77/129) grimble-check::binding a_summary_survives_its_encoding
+        PASS [   0.143s] ( 78/129) grimble-check::binding a_repository_with_no_model_entity_lists_the_ownership_rules_not_applicable
+        PASS [   0.176s] ( 79/129) grimble-check::binding an_applicable_rule_wired_to_no_subject_stays_a_zero_subject_row
+        PASS [   0.138s] ( 80/129) grimble-check::binding no_model_means_no_binding_rows
+        PASS [   0.323s] ( 81/129) grimble-check::binding a_warm_run_reuses_the_binding_and_an_edit_rebuilds_it
+        PASS [   0.290s] ( 82/129) grimble-check::binding cap_rules_are_listed_fire_and_are_writable_in_accept
+        PASS [   0.147s] ( 83/129) grimble-check::binding rules_without_subjects_are_not_applicable_and_never_zero_subject_rows
+        PASS [   0.161s] ( 84/129) grimble-check::binding ownership_rules_wired_to_no_subject_stay_zero_subject_rows
+        PASS [   0.213s] ( 85/129) grimble-check::binding the_configured_ledger_dir_is_frob_owned_and_nothing_else_moves
+        PASS [   0.020s] ( 86/129) grimble-check::document frob_toml_wins_over_grimble_toml_for_compute
+        PASS [   0.492s] ( 87/129) grimble-check::binding the_document_carries_bindings_and_sys_findings
+        PASS [   0.014s] ( 88/129) grimble-check::document the_default_compute_digest_is_the_blake3_of_the_canonical_object
+        PASS [   0.922s] ( 89/129) grimble-check::document only_the_declared_roots_tree_is_the_model_and_an_orphan_warns
+        PASS [   0.059s] ( 90/129) grimble-check::rule_coverage every_grimble_rule_has_a_corpus
+        PASS [   0.012s] ( 91/129) grimble-model directive::tests::code_side_verbs_are_mdl013
+        PASS [   0.006s] ( 92/129) grimble-model directive::tests::finds_line_and_block_directives
+        PASS [   0.014s] ( 93/129) grimble-model fmt::tests::a_hole_is_never_formatted_away
+        PASS [   0.016s] ( 94/129) grimble-model fmt::tests::long_selectors_wrap_after_operators
+        PASS [   0.009s] ( 95/129) grimble-model fmt::tests::prints_canonical_text_and_is_idempotent
+        PASS [   0.011s] ( 96/129) grimble-model lex::tests::comments_nest_and_leave_the_token_stream
+        PASS [   0.019s] ( 97/129) grimble-model lex::tests::quantities_dates_and_strings
+        PASS [   0.014s] ( 98/129) grimble-model lex::tests::raw_newline_in_string_is_reported
+        PASS [   0.016s] ( 99/129) grimble-model parse::tests::bare_cr_and_bom_are_opaque
+        PASS [   0.020s] (100/129) grimble-model parse::tests::comments_bind_by_rule
+        PASS [   0.010s] (101/129) grimble-model parse::tests::minimal_model_parses
+        PASS [   0.021s] (102/129) grimble-model parse::tests::missing_header_refuses_the_file
+        PASS [   0.029s] (103/129) grimble-model parse::tests::pathological_nesting_does_not_overflow_the_stack
+        PASS [   0.010s] (104/129) grimble-model parse::tests::syntax_error_becomes_hole_and_parsing_continues
+        PASS [   0.627s] (105/129) grimble-model::corpus conformance_corpus
+        PASS [   0.008s] (106/129) grimble-model::model a_binary_linking_grimble_model_sees_grmb_at_f4_in_the_report
+        PASS [   0.008s] (107/129) grimble-model::model an_exception_edit_changes_only_the_attr_facet
+        PASS [   0.008s] (108/129) grimble-model::model an_extension_is_one_identity_with_two_parts
+        PASS [   0.008s] (109/129) grimble-model::model duplicate_entities_are_reported_independent_of_include_order
+        PASS [   0.006s] (110/129) grimble-model::model glob_includes_expand_in_byte_order_and_the_diamond_loads_once
+        PASS [   0.008s] (111/129) grimble-model::model mounting_prefixes_anchors_and_the_term_binds_the_prefix
+        PASS [   0.009s] (112/129) grimble-model::model the_adapter_declares_exactly_its_matrix_row
+        PASS [   0.013s] (113/129) grimble-model::model the_adapter_is_f4_and_folds_through_the_gob_symbols_contract
+        PASS [   0.010s] (114/129) grimble-model::model the_file_symbols_of_a_grmb_file_list_its_entities
+        PASS [   0.009s] (115/129) grimble-model::model the_registry_knows_the_mdl_family
+        PASS [   4.901s] (116/129) grimble-bind::corpus every_corpus_case_matches_its_expectations
+        PASS [   2.632s] (117/129) grimble-check::document a_climbing_include_without_the_marker_is_an_mdl_error_and_no_root_is_required
+        PASS [   0.071s] (118/129) grimble-model::roundtrip the_pipeline_is_total_on_arbitrary_bytes
+        PASS [   2.221s] (119/129) grimble-check::document the_document_lists_the_languages_the_walk_saw
+        PASS [   0.020s] (120/129) grimble-model::selectors literal_selectors_are_must_and_holes_add_a_hidden_placeholder
+        PASS [   0.015s] (121/129) grimble-model::selectors owner_distinguishes_owned_foreign_and_unknown
+        PASS [   0.022s] (122/129) grimble-model::selectors specificity_is_a_total_order_and_ties_are_unknown
+        PASS [   0.039s] (123/129) grimble-model::stability a_broken_printer_fails_with_a_shrunk_minimal_example
+        PASS [   0.176s] (124/129) grimble-model::roundtrip the_pipeline_is_total_on_token_soup
+        PASS [   0.097s] (125/129) grimble-model::stability the_real_formatter_is_stable_over_generated_sizes
+        PASS [   0.008s] (126/129) grimble-model::tracked_paths the_detector_catches_the_known_bad_shapes
+        PASS [   0.670s] (127/129) grimble-model::roundtrip the_generator_makes_valid_models
+        PASS [   0.373s] (128/129) grimble-model::tracked_paths no_tracked_path_uses_a_windows_reserved_name_or_character
+        PASS [   1.614s] (129/129) grimble-model::roundtrip fmt_is_a_fixed_point_and_preserves_u
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   7.236s] 129 tests run: 129 passed, 0 skipped
+goway: done: exit 0 on quasar in 37.0s
+'''
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 60m -- cargo nextest run --profile ci -p grimble-bind -p grimble-check -p grimble-model -p grimble -p gob-mdtest"
+size = 15553
+status = "measured"
+at = "2026-10-09T06:06:39Z"
+actor = "lognd"
+rev = 1

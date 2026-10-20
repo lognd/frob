@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T01:28:36Z"
+digest = "6932fc9d9d20e21624c6fde2ccf42b943a1438afdd80d1d08e13417d5706ea9c"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bad220cc-6ee2-4fc6-935d-1ea282af4bf0 with nextest profile: default
+    Starting 1 test across 153 binaries (1372 tests skipped)
+        PASS [   0.362s] frob-land::land fixing_a_base_finding_is_reported_resolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.366s] 1 test run: 1 passed, 1372 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(fixing_a_base_finding_is_reported_resolved)'"
+size = 555
+status = "measured"
+tests = ["fixing_a_base_finding_is_reported_resolved"]
+at = "2026-10-04T01:28:36Z"
+actor = "lognd"
+rev = 1

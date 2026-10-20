@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["sync installs the manifest into an empty home, is idempotent, and uninstall preserves user additions", "status reports drift (exit 1) and is surfaced by doctor"]
+new = ["sync installs the manifest into an empty home, is idempotent, and uninstall preserves user additions", "status reports drift (exit 1) and is surfaced by doctor", "an Emitter trait lets a second (fake) agent be driven by the shared engine with no core change"]
+reason = "design change: agent-neutral"
+moved = [1, 2]
+at = "2026-10-20T03:06:49Z"
+actor = "lognd"
+rev = 1

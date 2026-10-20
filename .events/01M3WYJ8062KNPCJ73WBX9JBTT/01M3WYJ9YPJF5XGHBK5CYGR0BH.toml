@@ -1,0 +1,42 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+gob-config and the ConfigTable derive per architecture.md section 6 and D22/D34: derive generates describe(), Default, Deserialize rejecting unknown keys, and an inventory TableEntry; load/load_with layer defaults < file < overrides with per-key provenance and UnknownKey errors carrying a did-you-mean; materialize uses toml_edit to add absent enforcement knobs with doc comments while preserving comments and order; check emits CFG001 (Rule derive, family CFG, Error, Repo, Deterministic) per missing knob naming key, default and remedy; schema() builds one JSON Schema via schemars; trybuild case for an enforcement field without a default; insta snapshots. Deviations: inventory stores a describe function rather than a value; check returns Result so an unreadable file is not silently clean; dotted table paths supported; FieldDescription carries a per-field JSON schema.
+
+### Changed
+```
+ Cargo.lock                                         | 134 ++++++++++++++
+ crates/gob-config/Cargo.toml                       |  30 +++
+ crates/gob-config/src/check.rs                     |  70 +++++++
+ crates/gob-config/src/describe.rs                  |  83 +++++++++
+ crates/gob-config/src/error.rs                     |  46 +++++
+ crates/gob-config/src/lib.rs                       |  51 ++++++
+ crates/gob-config/src/load.rs                      | 166 +++++++++++++++++
+ crates/gob-config/src/materialize.rs               | 134 ++++++++++++++
+ crates/gob-config/src/schema.rs                    |  79 ++++++++
+ crates/gob-config/tests/config.rs                  | 203 +++++++++++++++++++++
+ ...onfig__check_emits_cfg001_per_missing_knob.snap |   8 +
+ .../config__defaults_when_file_absent.snap         |   9 +
+ ...config__describe_carries_docs_and_defaults.snap |  46 +++++
+ .../config__materialize_creates_absent_file.snap   |  13 ++
+ ...__materialize_preserves_comments_and_order.snap |  17 ++
+ .../config__schema_has_property_per_table.snap     |  52 ++++++
+ .../config__unknown_key_suggests_nearest.snap      |   5 +
+ crates/gob-macros/Cargo.toml                       |   3 +-
+ crates/gob-macros/src/config_table.rs              | 181 ++++++++++++++++++
+ crates/gob-macros/src/lib.rs                       |  23 ++-
+ .../tests/ui/config_enforcement_no_default.rs      |  12 ++
+ .../tests/ui/config_enforcement_no_default.stderr  |   5 +
+ tickets/T-0006/ticket.md                           |   6 +-
+ 23 files changed, 1369 insertions(+), 7 deletions(-)
+```
+
+### Evidence
+(no evidence recorded)"""
+at = "2026-10-02T00:00:02Z"
+actor = "import"
+rev = 1

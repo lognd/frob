@@ -1,0 +1,13 @@
+kind = "create"
+title = "Concurrent ledger writes (ticket new, update, evidence) race on .git/index.lock; retry with backoff instead of failing"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["adoption:hullbreach"]
+scope = ["crates/gob-git/**", "crates/frob-ledger/**", "changelog.d/**"]
+acceptance = ["Given several processes writing ledger events concurrently in one repository, when one finds .git/index.lock held, then it retries with bounded backoff (configurable via [git] cas_retries) and succeeds without the caller retrying"]
+body = "hullbreach repro: agents writing tickets concurrently hit index.lock races; also seen here with ~15 agents. Related: ~W7NXA6R (land advance on index.lock), ~V58QYKH (coalesce writes)."
+at = "2026-10-09T17:02:34Z"
+actor = "lognd"
+rev = 1

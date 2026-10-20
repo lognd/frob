@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/replay.rs", "creates:crates/frob/tests/ticket_replay.rs", "creates:crates/gob-mdtest/coverage-allowlist.toml", "creates:crates/gob-git/src/tag.rs", "creates:crates/gob-git/src/lib.rs", "creates:crates/frob-ledger/src/rules.rs", "creates:crates/frob-ledger/src/lib.rs", "creates:crates/frob-ledger/src/reindex.rs"]
+new = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/replay.rs", "creates:crates/frob/tests/ticket_replay.rs", "creates:crates/gob-mdtest/coverage-allowlist.toml", "creates:crates/gob-git/src/tag.rs", "creates:crates/gob-git/src/lib.rs", "creates:crates/frob-ledger/src/rules.rs", "creates:crates/frob-ledger/src/lib.rs", "creates:crates/frob-ledger/src/reindex.rs", "creates:crates/frob-check/src/product.rs"]
+at = "2026-10-11T19:09:02Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal docs task for v1 ledger tiers; v2 tiers, flavour and milestones are documented in tickets.md and pm-enforcement.md (D17, D19, D83)."
+at = "2026-10-04T21:02:50Z"
+actor = "lognd"
+rev = 1

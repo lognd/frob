@@ -1,0 +1,67 @@
+kind = "evidence"
+captured_at = "2026-10-18T04:41:17Z"
+digest = "353dd93f57df68c3b054291ed3d1dfb63e9ef79f1d252bcca6226d05d4ba5fdc"
+exit_code = 101
+inline = """
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+error[E0425]: cannot find function `open_store_from_repo` in crate `frob_lease`
+   --> crates/frob-land/src/land.rs:634:35
+    |
+634 |     let (leases, _) = frob_lease::open_store_from_repo(&repo, clock.clone())?;
+    |                                   ^^^^^^^^^^^^^^^^^^^^
+    |
+   --> crates/frob-lease/src/lib.rs:73:0
+   ::: crates/frob-lease/src/lib.rs:76:46
+    |
+    = note: similarly named function `open_store_from_file` defined here
+help: a function with a similar name exists
+    |
+634 -     let (leases, _) = frob_lease::open_store_from_repo(&repo, clock.clone())?;
+634 +     let (leases, _) = frob_lease::open_store_from_file(&repo, clock.clone())?;
+    |
+
+error[E0599]: no associated function or constant named `open_repo` found for struct `frob_evidence::Workspace` in the current scope
+   --> crates/frob-land/src/land.rs:252:20
+    |
+252 |         Workspace::open_repo(wt.clone(), clock.clone())?
+    |                    ^^^^^^^^^ associated function or constant not found in `frob_evidence::Workspace`
+    |
+note: if you're trying to build a new `frob_evidence::Workspace`, consider using `frob_evidence::Workspace::open` which returns `Result<frob_evidence::Workspace, EvidenceError>`
+   --> crates/frob-evidence/src/workspace.rs:47:4
+
+error[E0599]: no method named `clone` found for struct `gob_git::Repo` in the current scope
+   --> crates/frob-land/src/land.rs:252:33
+    |
+252 |         Workspace::open_repo(wt.clone(), clock.clone())?
+    |                                 ^^^^^ method not found in `gob_git::Repo`
+
+error[E0599]: no associated function or constant named `open_repo` found for struct `frob_evidence::Workspace` in the current scope
+   --> crates/frob-land/src/land.rs:633:27
+    |
+633 |     let here = Workspace::open_repo(repo.clone(), clock.clone())?;
+    |                           ^^^^^^^^^ associated function or constant not found in `frob_evidence::Workspace`
+    |
+note: if you're trying to build a new `frob_evidence::Workspace`, consider using `frob_evidence::Workspace::open` which returns `Result<frob_evidence::Workspace, EvidenceError>`
+   --> crates/frob-evidence/src/workspace.rs:47:4
+
+error[E0599]: no method named `clone` found for struct `gob_git::Repo` in the current scope
+   --> crates/frob-land/src/land.rs:633:42
+    |
+633 |     let here = Workspace::open_repo(repo.clone(), clock.clone())?;
+    |                                          ^^^^^ method not found in `gob_git::Repo`
+
+Some errors have detailed explanations: E0425, E0599.
+For more information about an error, try `rustc --explain E0425`.
+error: could not compile `frob-land` (lib) due to 5 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `frob-land` (lib test) due to 5 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "land_opens_each_repository_once"
+size = 3002
+status = "measured"
+at = "2026-10-18T04:41:17Z"
+actor = "lognd"
+rev = 1

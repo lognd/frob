@@ -1,0 +1,141 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T18:42:46Z"
+digest = "686e507e8cea4cc210ea3136e0ba08b81b869fd5ee8dc08689cfe216cca6dee9"
+exit_code = 1
+inline = """
+--- a/docs/schemas/envelope.json
++++ b/docs/schemas/envelope.json
+@@ -329,6 +329,114 @@
+             "stage"
+           ],
+           "type": "object"
++        },
++        {
++          "description": "A required pack was not trusted, so its rules did not run.",
++          "properties": {
++            "kind": {
++              "const": "untrusted",
++              "type": "string"
++            },
++            "pack": {
++              "description": "The pack that was not trusted.",
++              "type": "string"
++            }
++          },
++          "required": [
++            "kind",
++            "pack"
++          ],
++          "type": "object"
++        },
++        {
++          "description": "A required pack changed in this change and so is not trusted for it.",
++          "properties": {
++            "kind": {
++              "const": "untrusted_in_change",
++              "type": "string"
++            },
++            "pack": {
++              "description": "The pack that changed.",
++              "type": "string"
++            }
++          },
++          "required": [
++            "kind",
++            "pack"
++          ],
++          "type": "object"
++        },
++        {
++          "description": "A required pack exhausted its compute budget.",
++          "properties": {
++            "kind": {
++              "const": "budget",
++              "type": "string"
++            },
++            "pack": {
++              "description": "The pack that ran out of budget.",
++              "type": "string"
++            }
++          },
++          "required": [
++            "kind",
++            "pack"
++          ],
++          "type": "object"
+... 57 more diff lines not shown
+--- a/docs/schemas/sibling.json
++++ b/docs/schemas/sibling.json
+@@ -1224,6 +1224,114 @@
+             "stage"
+           ],
+           "type": "object"
++        },
++        {
++          "description": "A required pack was not trusted, so its rules did not run.",
++          "properties": {
++            "kind": {
++              "const": "untrusted",
++              "type": "string"
++            },
++            "pack": {
++              "description": "The pack that was not trusted.",
++              "type": "string"
++            }
++          },
++          "required": [
++            "kind",
++            "pack"
++          ],
++          "type": "object"
++        },
++        {
++          "description": "A required pack changed in this change and so is not trusted for it.",
++          "properties": {
++            "kind": {
++              "const": "untrusted_in_change",
++              "type": "string"
++            },
++            "pack": {
++              "description": "The pack that changed.",
++              "type": "string"
++            }
++          },
++          "required": [
++            "kind",
++            "pack"
++          ],
++          "type": "object"
++        },
++        {
++          "description": "A required pack exhausted its compute budget.",
++          "properties": {
++            "kind": {
++              "const": "budget",
++              "type": "string"
++            },
++            "pack": {
++              "description": "The pack that ran out of budget.",
++              "type": "string"
++            }
++          },
++          "required": [
++            "kind",
++            "pack"
++          ],
++          "type": "object"
+... 57 more diff lines not shown
+GEN001: 2 of 117 generated files are stale and 0 marker problems; run `cargo dev gen all`
+2026-10-15T18:44:17.658888Z  WARN gob_dev::files: generated file differs path=docs/schemas/envelope.json missing=false
+2026-10-15T18:44:17.660463Z  WARN gob_dev::files: generated file differs path=docs/schemas/sibling.json missing=false
+Error: check failed
+"""
+passed = false
+provider = "command"
+ref = "cargo run -q -p gob-dev -- gen all --check"
+size = 3723
+status = "measured"
+at = "2026-10-15T18:42:46Z"
+actor = "lognd"
+rev = 1

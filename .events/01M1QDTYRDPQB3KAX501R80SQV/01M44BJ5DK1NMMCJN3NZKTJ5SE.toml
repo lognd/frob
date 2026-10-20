@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Scaffold generation is dropped for the product (boundaries.md 2.6, D1 family); v1 strata scaffolding does not carry over."
+at = "2026-10-04T21:01:49Z"
+actor = "lognd"
+rev = 1

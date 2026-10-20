@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T13:14:32Z"
+digest = "df98891e2a72b057b0dfccdaee3ee3040f5ac7cd341cdfa56b192fa3a4f794e1"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 88ebc29e-eedb-4991-beda-b7dc3ed74fb2 with nextest profile: default
+    Starting 3 tests across 2 binaries (29 tests skipped)
+        PASS [   0.458s] frob-land::land a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree
+        PASS [   0.538s] frob-land::land dry_run_plan_is_deterministic_and_changes_nothing
+        PASS [   0.992s] frob-land::land land_runs_the_throttled_gc_pass_after_removing_the_worktree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.993s] 3 tests run: 3 passed, 29 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p frob-land a_conflict_in_frob_toml"
+size = 781
+status = "measured"
+tests = ["a_conflict_in_frob_toml_refuses_with_the_conflict_code_and_restores_the_worktree", "dry_run_plan_is_deterministic_and_changes_nothing", "land_runs_the_throttled_gc_pass_after_removing_the_worktree"]
+at = "2026-10-04T13:14:32Z"
+actor = "lognd"
+rev = 1

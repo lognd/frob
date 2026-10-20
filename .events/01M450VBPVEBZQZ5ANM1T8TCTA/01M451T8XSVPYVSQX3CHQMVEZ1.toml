@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "internal CI tooling: wheel build and smoke ported from shell to cargo dev wheel"
+at = "2026-10-05T03:26:14Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,129 @@
+kind = "evidence"
+at = "2026-10-02T22:27:36Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-check -p gob-rules -p frob-check -p frob-obligations -p frob-cli"
+digest = "4c8eea4ff54136934c3215ef482534957c0e37c9e40515e27851d8e192003ade"
+status = "measured"
+captured_at = "2026-10-02T22:27:36Z"
+accepts = [1]
+passed = true
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+────────────
+ Nextest run ID 89010b55-82b2-4779-a46b-cb45fc87cde0 with nextest profile: ci
+    Starting 108 tests across 19 binaries
+        PASS [   0.197s] (  1/108) frob-check::check a_failing_tool_stage_yields_tool001_outside_the_budget
+        PASS [   0.017s] (  2/108) frob-check::check fix_is_refused_without_a_ticket_when_the_knob_requires_scope
+        PASS [   0.320s] (  3/108) frob-check::check an_annotation_required_unresolved_finding_is_marked_required
+        PASS [   0.357s] (  4/108) frob-check::check a_changed_side_input_misses_the_cache
+        PASS [   0.433s] (  5/108) frob-check::check bare_marker_fires_and_second_run_hits_the_cache_with_identical_output
+        PASS [   0.445s] (  6/108) frob-check::check fail_on_maps_severity_to_the_exit_code
+        PASS [   0.517s] (  7/108) frob-check::check a_configured_ledger_that_is_absent_fails_the_gate_but_an_unconfigured_one_does_not
+        PASS [   0.525s] (  8/108) frob-check::check a_branch_touching_an_out_of_scope_file_still_fires_scope001
+        PASS [   0.533s] (  9/108) frob-check::check a_non_required_unresolved_finding_passes_under_required_and_fails_under_all
+        PASS [   0.592s] ( 10/108) frob-check::check a_missing_tool_binary_fails_under_required_and_passes_under_never
+        PASS [   0.637s] ( 11/108) frob-check::check base_advancing_does_not_leak_into_scope001
+        PASS [   0.637s] ( 12/108) frob-check::check cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language
+        PASS [   0.204s] ( 13/108) frob-check::check ticket_without_a_ledger_is_an_error
+        PASS [   0.757s] ( 14/108) frob-check::check editing_a_file_invalidates_only_its_entries
+        PASS [   0.604s] ( 15/108) frob-check::check fix_rewrites_the_file_and_the_next_run_is_clean
+        PASS [   0.506s] ( 16/108) frob-check::check only_filters_by_family_and_rejects_unknown_names
+        PASS [   0.187s] ( 17/108) frob-check::tool_bind a_frob_accept_suppresses_a_tool_finding_like_a_native_one
+        PASS [   0.177s] ( 18/108) frob-check::tool_bind a_tool_outside_its_version_range_yields_one_non_required_unresolved
+        PASS [   0.568s] ( 19/108) frob-check::check telemetry_line_is_appended_when_enabled
+        PASS [   0.008s] ( 20/108) frob-cli config::tests::registry_files_alias_extends_lease_shared_files_without_duplicates
+        PASS [   0.207s] ( 21/108) frob-check::tool_bind actionlint_findings_map_to_ci014_and_configured_labels_are_dropped
+        PASS [   0.046s] ( 22/108) frob-cli::check_verb explain_prints_the_rule_page_and_unknown_is_usage
+        PASS [   0.028s] ( 23/108) frob-cli::cli config_show_effective_reports_provenance
+        PASS [   0.190s] ( 24/108) frob-check::tool_bind unparseable_output_is_a_tool001_error
+        PASS [   0.178s] ( 25/108) frob-check::tool_bind zizmor_findings_carry_ci_ids_and_real_spans
+        PASS [   0.669s] ( 26/108) frob-check::check the_ledger_directory_is_exempt_from_scope001
+        PASS [   0.041s] ( 27/108) frob-cli::cli config_show_rejects_unknown_keys_with_a_suggestion
+        PASS [   0.054s] ( 28/108) frob-cli::cli config_sync_adds_missing_knobs_once
+        PASS [   0.041s] ( 29/108) frob-cli::cli dry_run_is_rejected_on_verbs_that_do_not_opt_in
+        PASS [   0.017s] ( 30/108) frob-cli::cli every_verb_is_in_the_command_inventory
+        PASS [   0.714s] ( 31/108) frob-check::check uncommitted_out_of_scope_edits_still_fire_scope001
+        PASS [   0.188s] ( 32/108) frob-cli::cli doctor_outside_a_repo_still_succeeds
+        PASS [   0.087s] ( 33/108) frob-cli::cli in_process_root_matches_the_binary_contract
+        PASS [   0.956s] ( 34/108) frob-check::check perf001_fires_only_when_enforced_and_over_budget
+        PASS [   0.075s] ( 35/108) frob-cli::cli init_dry_run_writes_nothing
+        PASS [   0.020s] ( 36/108) frob-cli::cli init_outside_a_repo_is_a_refusal
+        PASS [   0.723s] ( 37/108) frob-check::equivalence fixture_b_matches_the_recorded_findings
+        PASS [   0.050s] ( 38/108) frob-cli::cli schema_verb_dumps_envelope_and_config
+        PASS [   0.555s] ( 39/108) frob-check::tool_bind an_optional_missing_tool_is_unresolved_but_not_required
+        PASS [   0.402s] ( 40/108) frob-cli::check_verb error_finding_exits_1_and_fail_on_none_exits_0
+        PASS [   0.041s] ( 41/108) frob-cli::cli unknown_verb_exits_2_with_a_suggestion
+        PASS [   0.307s] ( 42/108) frob-cli::cli doctor_languages_prints_fidelity_precisions_and_f0_extensions
+        PASS [   0.096s] ( 43/108) frob-cli::cli schema_flag_prints_the_verb_schema
+        PASS [   0.859s] ( 44/108) frob-check::equivalence fixture_a_matches_the_recorded_findings
+        PASS [   0.952s] ( 45/108) frob-check::check ticket_restricts_per_file_rules_to_its_scope
+        PASS [   0.371s] ( 46/108) frob-cli::cli doctor_piped_is_json_envelope_even_with_cfg001
+        PASS [   0.216s] ( 47/108) frob-cli::cli json_flag_is_an_alias_and_conflicts_with_text
+        PASS [   0.184s] ( 48/108) frob-cli::cli text_format_goes_to_stdout_and_errors_to_stderr
+        PASS [   0.202s] ( 49/108) frob-cli::ticket merge_driver_fails_with_exit_1_when_the_fold_fails
+        PASS [   0.470s] ( 50/108) frob-cli::cli init_twice_second_is_already_and_changes_nothing
+        PASS [   0.180s] ( 51/108) frob-cli::wiring registry_files_alias_is_accepted_and_shared_tables_are_listed
+        PASS [   0.009s] ( 52/108) frob-obligations comments::tests::markdown_comments_skip_fences
+        PASS [   0.008s] ( 53/108) frob-obligations comments::tests::rust_comments_skip_strings
+        PASS [   0.370s] ( 54/108) frob-cli::ticket new_with_the_same_key_returns_already
+        PASS [   0.007s] ( 55/108) frob-obligations comments::tests::toml_comments_skip_quotes
+        PASS [   0.008s] ( 56/108) frob-obligations doc::tests::destinations_and_schemes
+        PASS [   0.010s] ( 57/108) frob-obligations doc::tests::resolve_normalizes_and_rejects_escape
+        PASS [   0.010s] ( 58/108) frob-obligations inv::tests::crate_names_match_directories_not_files
+        PASS [   0.008s] ( 59/108) frob-obligations inv::tests::prefixes_respect_boundaries_and_hyphens
+        PASS [   0.008s] ( 60/108) frob-obligations inv::tests::slugs_only_for_top_level_invariant_documents
+        PASS [   0.477s] ( 61/108) frob-cli::ticket ambiguous_handle_exits_3_listing_both_candidates
+        PASS [   0.361s] ( 62/108) frob-cli::wiring close_of_a_task_without_evidence_is_refused_with_the_test_remedy
+        PASS [   0.178s] ( 63/108) frob-cli::wiring sibling_verbs_print_schemas
+        PASS [   0.612s] ( 64/108) frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   0.174s] ( 65/108) frob-obligations::repo accept_with_a_bad_reason_raises_exc001_but_still_suppresses
+        PASS [   0.174s] ( 66/108) frob-obligations::repo an_exception_covers_only_its_bound_symbol
+        PASS [   0.237s] ( 67/108) frob-obligations::repo accept_attestation_is_checked_against_frob_lock
+        PASS [   0.561s] ( 68/108) frob-cli::wiring doable_hides_tickets_overlapping_a_live_lease_and_shows_them_otherwise
+        PASS [   0.009s] ( 69/108) frob-obligations::repo every_rule_is_registered_exactly_once
+        PASS [   0.557s] ( 70/108) frob-cli::wiring no_evidence_with_a_reason_closes_and_records_a_bypass_event
+        PASS [   0.166s] ( 71/108) frob-obligations::repo cov001_counts_a_test_in_another_file_and_a_cross_file_call
+        PASS [   0.158s] ( 72/108) frob-obligations::repo cov003_is_declared_but_never_emitted
+        PASS [   0.825s] ( 73/108) frob-cli::ticket merge_driver_unions_events_from_both_branches_and_refolds
+        PASS [   0.167s] ( 74/108) frob-obligations::repo evaluate_file_runs_the_per_file_rules_on_toml_text
+        PASS [   0.012s] ( 75/108) gob-check required::tests::a_reason_carried_by_the_finding_is_marked
+        PASS [   0.010s] ( 76/108) gob-check required::tests::annotation_prefix_maps_to_a_required_reason
+        PASS [   0.008s] ( 77/108) gob-check required::tests::only_an_applicable_rule_with_zero_subjects_is_flagged
+        PASS [   0.007s] ( 78/108) gob-check required::tests::unrelated_unresolved_is_not_marked
+        PASS [   0.009s] ( 79/108) gob-check tool_parse::tests::actionlint_output_parses_with_line_and_column
+        PASS [   0.008s] ( 80/108) gob-check tool_parse::tests::actionlint_runner_labels_follow_the_labels_knob
+        PASS [   0.006s] ( 81/108) gob-check tool_parse::tests::id_map_overrides_and_bad_targets_fall_back
+        PASS [   0.008s] ( 82/108) gob-check tool_parse::tests::version_range_is_inclusive_and_numeric
+        PASS [   0.012s] ( 83/108) gob-check tool_parse::tests::versions_are_found_in_banner_text
+        PASS [   0.194s] ( 84/108) frob-obligations::repo file_level_accept_covers_the_whole_file
+        PASS [   0.010s] ( 85/108) gob-check tool_parse::tests::zizmor_ids_map_to_ci_ids_and_the_rest_is_tool002
+        PASS [   0.009s] ( 86/108) gob-check tools::tests::printed_paths_become_repo_relative
+        PASS [   0.893s] ( 87/108) frob-cli::ticket links_blocked_doable_and_repeat_semantics
+        PASS [   0.013s] ( 88/108) gob-check tool_parse::tests::zizmor_output_parses_with_byte_spans
+        PASS [   0.011s] ( 89/108) gob-check::boundary no_frob_crate_is_a_direct_or_transitive_dependency
+        PASS [   0.853s] ( 90/108) frob-cli::ticket update_set_comment_brief_and_parent
+        PASS [   0.007s] ( 91/108) gob-rules exception::tests::covered_findings_are_suppressed_and_the_rest_stand
+        PASS [   0.008s] ( 92/108) gob-rules exception::tests::the_tightest_binding_wins_and_a_file_binding_covers_everything
+        PASS [   0.007s] ( 93/108) gob-rules::derive duplicate_ids_are_reported_with_both_modules
+        PASS [   0.010s] ( 94/108) gob-rules::derive fingerprint_ignores_numbers_and_whitespace_but_not_anchor
+        PASS [   0.255s] ( 95/108) frob-obligations::repo inv001_is_satisfied_by_a_directive_in_another_file
+        PASS [   0.011s] ( 96/108) gob-rules::derive reasons_are_vetted
+        PASS [   0.012s] ( 97/108) gob-rules::derive polarity_defaults_to_pplus_and_must_measure_to_false
+        PASS [   0.250s] ( 98/108) frob-obligations::repo inv002_reports_a_forbidden_import_from_frob_toml
+        PASS [   0.185s] ( 99/108) frob-obligations::repo ledger_rules_stay_silent_without_a_ledger
+        PASS [   0.012s] (100/108) gob-rules::derive registry_lists_derived_rules_by_id_and_slug
+        PASS [   0.142s] (101/108) gob-check::pipeline a_foreign_product_gets_findings_caches_and_subject_counts
+        PASS [   0.145s] (102/108) gob-check::pipeline only_accepts_this_products_rules_and_rejects_the_others
+        PASS [   0.154s] (103/108) gob-check::pipeline a_must_measure_rule_with_zero_subjects_is_a_required_unresolved
+        PASS [   0.155s] (104/108) gob-check::pipeline zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out
+        PASS [   0.479s] (105/108) frob-obligations::repo defer_bound_to_a_done_ticket_raises_exc003_and_lists_the_suppressed_finding
+        PASS [   0.525s] (106/108) frob-obligations::repo defer_to_an_open_ticket_suppresses_quietly_and_a_missing_one_is_exc007
+        PASS [   3.628s] (107/108) frob-obligations::corpus mdtest_corpus
+        PASS [  10.131s] (108/108) frob-check::perf warm_run_on_this_repository_is_under_two_seconds
+────────────
+     Summary [  10.769s] 108 tests run: 108 passed, 0 skipped
+"""
+size = 11542

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-05T00:11:38Z"
+digest = "9537f3f6b905956b89210d5e43a53397c86116da1c2bf0a3aaa0dbe7109c4438"
+exit_code = 0
+inline = '''
+   Compiling frob-pm v0.0.0 (<worktree>/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 83220ee5-5148-4701-b5c7-4e91607cc864 with nextest profile: default
+    Starting 1 test across 4 binaries (54 tests skipped)
+        PASS [   0.004s] frob-pm cycle::lifecycle::tests::the_day_is_the_utc_day_even_when_a_local_zone_is_still_on_the_previous_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 54 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E 'test(the_day_is_the_utc_day)'"
+size = 654
+status = "measured"
+tests = ["cycle::lifecycle::tests::the_day_is_the_utc_day_even_when_a_local_zone_is_still_on_the_previous_one"]
+at = "2026-10-05T00:11:38Z"
+actor = "lognd"
+rev = 1

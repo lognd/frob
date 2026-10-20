@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "Tracker adapter trait and capabilities record"
+new = "Tracker adapter trait and capabilities record (listing, history by event id, additive edits, journaled writes)"
+at = "2026-10-03T05:49:56Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "create"
+title = "mdtest fire control accepts Unresolved findings (PACK006 runner shows Error)"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-10-19T13:21:52Z"
+actor = "lognd"
+rev = 1

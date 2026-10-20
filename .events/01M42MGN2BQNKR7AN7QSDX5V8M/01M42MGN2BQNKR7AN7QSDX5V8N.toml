@@ -1,0 +1,12 @@
+kind = "create"
+title = "A field line equal to the frontmatter fence (+++) makes a ticket unreadable; it vanishes on index rebuild and doctor --fix cannot repair it"
+type = "bug"
+category = "todo"
+priority = "critical"
+points = 3
+scope = ["crates/frob-ledger/**"]
+acceptance = ["Given any field text containing a line +++, when the ticket is written, rebuilt and read, then it round-trips and doctor reports nothing"]
+body = "Reproduced against the v2 binary: a title, persona or acceptance line '+++' corrupts ticket.md (v1 T-1536 class). Render so no field line can equal the fence (escape or quote multi-line fields) and make doctor --fix re-render ticket.md from the events. Evidence and repro: notes/review/v1-gap/D-incidents.md (P-01)."
+at = "2026-10-04T04:59:48Z"
+actor = "lognd"
+rev = 1

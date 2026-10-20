@@ -1,0 +1,13 @@
+kind = "create"
+title = "GRL017/GRL018 follow-ups: keyword-only span, spec section 10 rows, explain pages, may_be_unknown type checks"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+scope = ["changelog.d/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
+acceptance = ["Given GRL017, when reported, then the span covers only the keyword and verb; grl-spec section 10 lists GRL017 and GRL018"]
+body = "Follow-ups from ~E8Q56WW."
+at = "2026-10-08T12:07:33Z"
+actor = "lognd"
+rev = 1

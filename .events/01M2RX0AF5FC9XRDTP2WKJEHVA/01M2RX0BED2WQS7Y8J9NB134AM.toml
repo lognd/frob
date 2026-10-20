@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-21: T-4514's land already removed the stale generated csharp/net excuse; TestMatrixExhaustiveness passes unmodified against current dev, nothing left to fix (absorbed by T-4514)"
+at = "2026-09-18T00:00:01Z"
+actor = "import"
+rev = 1

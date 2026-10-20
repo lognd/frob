@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: declares a v1 Python exec site in design/frob.strata; v2 binds by .grmb and inference (binding.md)."
+at = "2026-10-04T21:02:41Z"
+actor = "lognd"
+rev = 1

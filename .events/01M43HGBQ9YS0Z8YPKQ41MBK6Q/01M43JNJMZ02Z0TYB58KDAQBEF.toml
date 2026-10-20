@@ -1,0 +1,39 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:46:47Z"
+digest = "2cc0d4c0a742366151ded3c328ba1cb3abcef5d5d60f879964bf0d3e8fc0209f"
+exit_code = 0
+inline = '''
+   Compiling memchr v2.8.3
+   Compiling zmij v1.0.23
+   Compiling indexmap v2.14.2
+   Compiling regex-syntax v0.8.11
+   Compiling aho-corasick v1.1.5
+   Compiling syn v2.0.119
+   Compiling tracing-core v0.1.36
+   Compiling serde_json v1.0.151
+   Compiling regex-automata v0.4.18
+   Compiling tree-sitter v0.27.0
+   Compiling tracing-attributes v0.1.31
+   Compiling regex v1.13.1
+   Compiling tracing v0.1.44
+   Compiling gob-languages v0.0.0 (<worktree>/crates/gob-languages)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.87s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e2be5e0c-d64f-498d-b635-aa1de2ef4391 with nextest profile: default
+    Starting 3 tests across 1 binary (23 tests skipped)
+        PASS [   0.008s] gob-languages hash::tests::yaml_strings_and_block_scalars_hide_hash
+        PASS [   0.008s] gob-languages hash::tests::toml_strings_hide_hash_in_every_form
+        PASS [   0.009s] gob-languages inline::tests::unmatched_run_is_not_a_span
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 3 tests run: 3 passed, 23 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-languages hash"
+size = 1205
+status = "measured"
+tests = ["hash::tests::yaml_strings_and_block_scalars_hide_hash", "hash::tests::toml_strings_hide_hash_in_every_form", "inline::tests::unmatched_run_is_not_a_span"]
+at = "2026-10-04T13:46:47Z"
+actor = "lognd"
+rev = 1

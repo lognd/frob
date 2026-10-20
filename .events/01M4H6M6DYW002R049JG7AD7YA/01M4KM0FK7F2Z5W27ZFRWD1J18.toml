@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-10T19:18:04Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c 'import sys;t=open("docs/design/sibling-contract.md").read();sys.exit(0 if "Skipping a sibling for a ticket" in t and "not evaluated" in t and "known code language" in t else 1)'"""
+size = 0
+status = "measured"
+at = "2026-10-10T19:18:04Z"
+actor = "Claude"
+rev = 1

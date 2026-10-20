@@ -1,0 +1,22 @@
++++
+id = "01M3ZV9022FDZNMYNZHPXWP8TB"
+title = "Navigation: slug follows the title; sub-epics flattened (close D81 open questions)"
+type = "docs"
+category = "done"
+outcome = "done"
+priority = "medium"
+points = 1
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+reporter = "lognd"
+created = "2026-10-03T03:00:14Z"
+updated = "2026-10-03T03:03:07Z"
+idempotency_key = "m2-navigation-reslug"
+labels = ["milestone:2"]
+scope = ["docs/design/**"]
+
+[[acceptance]]
+text = "Given navigation.md, when read, then the path function uses the current title with the slug rules, sub-epics are flattened, and section 7 has no open questions"
+bound = false
++++
+
+Owner decisions 2026-10-04: a title change renames the ticket file (through the same verifiable reindex commit), because a file name that disagrees with its title confuses newcomers and paths are never references; sub-epics are flattened into the top epic's directory (no hierarchy). Specify slug rules: derived from the current title, ASCII lowercase kebab, length cap, collision suffix with the handle, fallback to the handle for an empty slug.

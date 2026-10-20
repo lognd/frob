@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Markdown scanning reads only HTML comments outside code and front matter: prose and front matter mentioning frob:waive yield no directive, an HTML comment still does", "Text under the ledger directory is never a live directive: one FileRole classification makes directive scans and the per-file obligation rules skip ledger files"]
+moved = []
+at = "2026-10-04T14:32:53Z"
+actor = "lognd"
+rev = 1

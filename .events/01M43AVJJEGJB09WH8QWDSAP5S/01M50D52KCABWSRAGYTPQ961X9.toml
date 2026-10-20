@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-15T18:28:21Z"
+digest = "c5b357bf2ab1521e9bca6731d5066a697144287a11fd60012720cd33573f5b5d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 552ad8e8-7cd5-4f60-860a-f81cd4463f81 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.007s] crunk-check::crunk_web_pack seo_rules_carry_teaching_text_and_a_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test crunk_web_pack -E test(seo_rules_carry_teaching_text_and_a_remedy)"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "a169515878565510f990064ec24c71e9c02d1057c578fd551846c25a7cc19fd4"
+at = "2026-10-15T18:28:21Z"
+actor = "lognd"
+rev = 1

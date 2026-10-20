@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["a self-test where a second rule fires unexpectedly fails", "all existing corpora pass after migration"]
+new = ["a self-test where a second rule fires unexpectedly fails", "all existing corpora pass after migration", "an Unresolved or Advisory finding of a selected rule that no marker matches fails the case, and a rolled-up spanless Unresolved is matched by a header assertion", "the unmatched-finding report prints class, severity and reason"]
+reason = "D106 (testing against U)"
+moved = [1, 2]
+at = "2026-10-06T13:41:02Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-check/src/**", "crates/frob-check/tests/check.rs", "crates/frob-check/tests/evaluation.rs", "crates/gob-rules/src/required.rs", "crates/grimble-check/src/sibling.rs", "docs/schemas/envelope.json", "crates/gob-check/src/repo.rs"]
+new = ["crates/frob-check/src/**", "crates/frob-check/tests/check.rs", "crates/frob-check/tests/evaluation.rs", "crates/gob-rules/src/required.rs", "crates/grimble-check/src/sibling.rs", "docs/schemas/envelope.json", "crates/gob-check/src/repo.rs", "crates/gob-diagnostics/tests/contract.rs"]
+at = "2026-10-04T14:11:37Z"
+actor = "lognd"
+rev = 1

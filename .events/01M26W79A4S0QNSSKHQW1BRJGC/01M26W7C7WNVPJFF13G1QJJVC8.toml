@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "imported from v1 state `done`"
+at = "2026-09-11T00:00:03Z"
+actor = "import"
+rev = 1

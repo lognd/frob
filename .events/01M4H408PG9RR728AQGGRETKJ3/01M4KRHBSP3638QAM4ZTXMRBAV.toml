@@ -1,0 +1,136 @@
+kind = "evidence"
+captured_at = "2026-10-10T20:35:50Z"
+digest = "eb6030a76778554bdac12d15b57a789da40cd4bc2c91bbb506bc3dd8b9cc8b90"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling frob-gh v0.532.0 (<worktree>/crates/frob-gh)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized] target(s) in 57.56s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID be6b2833-eab6-4c34-8157-c5c687713606 with nextest profile: default
+    Starting 75 tests across 77 binaries (548 tests skipped)
+        PASS [   0.038s] crunk-ingest::ingest an_absent_css_root_is_a_diagnostic_and_a_file_css_root_is_an_error
+        PASS [   0.063s] crunk-ingest::ingest a_css_root_outside_the_project_still_places_buckets
+        PASS [   0.087s] crunk-ingest::ingest an_unchanged_tree_ingested_twice_reads_the_cache_and_gives_the_same_result
+        PASS [   0.117s] crunk-ingest::parity every_corpus_project_equals_the_python_projectstyles_dump
+        PASS [   0.106s] frob-check::tool_bind a_frob_accept_suppresses_a_tool_finding_like_a_native_one
+        PASS [   0.088s] frob-check::tool_bind a_tool_outside_its_version_range_yields_one_non_required_unresolved
+        PASS [   0.102s] frob-check::tool_bind a_yaml_accept_above_a_key_suppresses_the_finding_inside_that_key
+        PASS [   0.093s] frob-check::tool_bind a_yaml_accept_above_another_key_does_not_suppress_the_finding
+        PASS [   0.006s] frob-gh::client attempts_are_capped
+        PASS [   0.009s] frob-gh::client graphql_posts_query_and_exposes_the_body
+        PASS [   0.009s] frob-gh::client missing_rate_limit_headers_are_an_explicit_none
+        PASS [   0.007s] frob-gh::client plain_403_is_a_status_error_and_the_token_never_prints
+        PASS [   0.013s] frob-gh::client plain_http_base_is_refused
+        PASS [   0.105s] frob-check::tool_bind unparseable_output_is_a_required_tool_failed
+        PASS [   0.006s] frob-gh::client second_get_is_conditional_and_served_from_cache_on_304
+        PASS [   0.008s] frob-gh::client retry_after_beyond_the_cap_stops_instead_of_waiting
+        PASS [   0.006s] frob-gh::client unrecorded_requests_fail_instead_of_reaching_the_network
+        PASS [   0.007s] frob-gh::client waits_at_least_retry_after_then_retries
+        PASS [   0.132s] frob-check::tool_bind actionlint_findings_map_to_ci014_and_configured_labels_are_dropped
+        PASS [   0.020s] frob-release::adopt a_bad_version_is_refused
+        PASS [   0.018s] frob-release::adopt a_missing_tag_is_refused_naming_every_missing_tag
+        PASS [   0.026s] frob-release::adopt hand_made_annotated_and_lightweight_tags_resolve_to_the_cut_they_would_have_recorded
+        PASS [   0.017s] frob-release::rel001 a_matching_recorded_cut_is_silent
+        PASS [   0.118s] frob-check::tool_bind zizmor_findings_carry_ci_ids_and_real_spans
+        PASS [   0.021s] frob-release::rel001 a_moved_tag_fires_naming_the_recorded_commit
+        PASS [   0.019s] frob-release::rel001 a_tag_made_by_plain_tag_creation_fires
+        PASS [   0.016s] frob-release::rel001 a_version_mismatch_at_the_tagged_commit_fires
+        PASS [   0.028s] frob-release::rel001 annotated_tags_recorded_in_the_real_event_shape_are_silent
+        PASS [   0.035s] frob-release::rel001 no_tags_and_no_cuts_is_not_applicable_with_a_reason
+        PASS [   0.025s] frob-release::rel001 tags_outside_the_product_prefixes_are_ignored
+        PASS [   0.030s] frob-release::rel001 the_version_is_read_from_the_commit_not_the_working_tree
+        PASS [   0.032s] frob-release::rel001 the_stray_tag_remedy_names_adopt_before_deletion
+        PASS [   0.050s] frob-release::rel001 the_configured_tag_pattern_decides_which_tags_are_product_tags
+        PASS [   0.301s] frob-release::rel001 tags_made_by_release_cut_itself_are_silent
+        PASS [   0.294s] frob-tests::dotnet a_crlf_test_file_keeps_every_test_detectable
+        PASS [   0.299s] frob-tests::dotnet a_method_no_test_reaches_selects_nothing_and_the_gap_is_reported
+        PASS [   0.308s] frob-tests::dotnet a_changed_method_selects_exactly_the_two_tests_that_reach_it
+        PASS [   0.160s] frob-tests::dotnet the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies
+        PASS [   0.294s] frob-tests::dotnet a_touched_unity_assembly_prints_the_selection_and_the_run_refuses_with_a_remedy
+        PASS [   0.254s] frob-tests::dotnet groups_run_one_project_with_its_ids_and_all_runs_every_test_project_whole
+        PASS [   0.210s] frob-tests::dotnet touching_one_part_of_a_partial_type_selects_tests_reaching_any_part
+        PASS [   0.213s] frob-tests::selection a_changed_file_with_no_adapter_is_unresolved_not_ignored
+        PASS [   0.183s] frob-tests::selection a_changed_python_function_selects_the_pytest_tests_reaching_it
+        PASS [   0.191s] frob-tests::selection a_touched_python_test_file_selects_its_tests
+        PASS [   0.273s] frob-tests::selection an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests
+        PASS [   0.300s] frob-tests::selection dry_run_prints_the_resolved_pytest_runner
+        PASS [   0.190s] frob-tests::selection dry_run_prints_the_selection_and_runs_nothing
+        PASS [   0.241s] frob-tests::selection only_tests_reaching_the_changed_function_are_selected
+        PASS [   0.208s] frob-tests::selection python_dry_run_lists_pytest_node_ids_and_runs_nothing
+        PASS [   0.656s] frob-tests::selection test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence
+        PASS [  11.552s] frob-tests::rust_root a_crate_under_a_subdirectory_runs_nextest_from_that_directory
+        PASS [  12.063s] frob-tests::dotnet the_test_verb_runs_the_selected_ids_through_the_dotnet_provider
+        PASS [   0.505s] frob-tests::typescript a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip
+        PASS [   9.487s] frob-tests::selection test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree
+        PASS [  12.239s] frob-tests::rust_root a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code
+        PASS [   0.442s] frob-tests::typescript run_groups_selected_tests_by_member_and_maps_results_back_to_units
+        PASS [   0.055s] gob-exec::runner captured_output_is_redacted_and_env_added
+        PASS [   0.406s] frob-tests::typescript touched_typescript_tests_select_vitest_and_jest_targets_per_member
+        PASS [   0.036s] gob-exec::runner spawn_counter_counts_only_real_spawns
+        PASS [   0.488s] frob-tests::typescript test_verb_runs_vitest_and_jest_per_member_and_appends_per_test_evidence
+        PASS [   0.445s] gob-exec::runner concurrency_is_bounded_by_jobs
+        PASS [   0.235s] gob-exec::runner timeout_kills_group
+        PASS [   0.010s] gob-exec::runner unlisted_program_is_not_allowed
+        PASS [   0.055s] gob-plan::exec_core executor_connectives_follow_the_kleene_tables
+        PASS [   0.434s] gob-exec::runner timeout_kills_setsid_grandchild_and_returns_promptly
+        PASS [   0.008s] gob-plan::print_stability a_printer_that_never_settles_fails_with_a_shrunk_minimal_example
+        PASS [   0.441s] gob-exec::runner timeout_leaves_no_grandchild
+        PASS [   0.024s] gob-plan::print_stability the_real_printer_is_stable_over_generated_sizes
+        PASS [   0.007s] gob-time::time frob_lock_ack_text_round_trips_byte_identically
+        PASS [   0.080s] grimble::caps standalone_check_lists_and_fires_the_cap_rules
+        PASS [   0.007s] grimble-model::stability a_broken_printer_fails_with_a_shrunk_minimal_example
+        PASS [   0.038s] grimble-model::stability the_real_formatter_is_stable_over_generated_sizes
+        PASS [   1.032s] gob-exec::runner normal_exit_does_not_block_on_pipe_held_by_background_child
+        PASS [   0.351s] gob-plan::print_stability generated_trees_round_trip_and_print_to_a_fixed_point
+        PASS [   0.853s] gob-plan::print_stability a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  14.600s] 75 tests run: 75 passed, 548 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-ingest -p frob-check -p frob-gh -p frob-release -p frob-tests -p gob-exec -p gob-plan -p gob-time -p grimble -p grimble-model -E '(package(=crunk-ingest) & (test(=a_css_root_outside_the_project_still_places_buckets) | test(=an_absent_css_root_is_a_diagnostic_and_a_file_css_root_is_an_error) | test(=an_unchanged_tree_ingested_twice_reads_the_cache_and_gives_the_same_result) | test(=every_corpus_project_equals_the_python_projectstyles_dump))) | (package(=frob-check) & (test(=a_frob_accept_suppresses_a_tool_finding_like_a_native_one) | test(=a_tool_outside_its_version_range_yields_one_non_required_unresolved) | test(=a_yaml_accept_above_a_key_suppresses_the_finding_inside_that_key) | test(=a_yaml_accept_above_another_key_does_not_suppress_the_finding) | test(=actionlint_findings_map_to_ci014_and_configured_labels_are_dropped) | test(=unparseable_output_is_a_required_tool_failed) | test(=zizmor_findings_carry_ci_ids_and_real_spans))) | (package(=frob-gh) & (test(=attempts_are_capped) | test(=graphql_posts_query_and_exposes_the_body) | test(=missing_rate_limit_headers_are_an_explicit_none) | test(=plain_403_is_a_status_error_and_the_token_never_prints) | test(=plain_http_base_is_refused) | test(=retry_after_beyond_the_cap_stops_instead_of_waiting) | test(=second_get_is_conditional_and_served_from_cache_on_304) | test(=unrecorded_requests_fail_instead_of_reaching_the_network) | test(=waits_at_least_retry_after_then_retries))) | (package(=frob-release) & (test(=a_bad_version_is_refused) | test(=a_matching_recorded_cut_is_silent) | test(=a_missing_tag_is_refused_naming_every_missing_tag) | test(=a_moved_tag_fires_naming_the_recorded_commit) | test(=a_tag_made_by_plain_tag_creation_fires) | test(=a_version_mismatch_at_the_tagged_commit_fires) | test(=annotated_tags_recorded_in_the_real_event_shape_are_silent) | test(=hand_made_annotated_and_lightweight_tags_resolve_to_the_cut_they_would_have_recorded) | test(=no_tags_and_no_cuts_is_not_applicable_with_a_reason) | test(=tags_made_by_release_cut_itself_are_silent) | test(=tags_outside_the_product_prefixes_are_ignored) | test(=the_configured_tag_pattern_decides_which_tags_are_product_tags) | test(=the_stray_tag_remedy_names_adopt_before_deletion) | test(=the_version_is_read_from_the_commit_not_the_working_tree))) | (package(=frob-tests) & (test(=a_changed_file_with_no_adapter_is_unresolved_not_ignored) | test(=a_changed_method_selects_exactly_the_two_tests_that_reach_it) | test(=a_changed_python_function_selects_the_pytest_tests_reaching_it) | test(=a_crate_under_a_subdirectory_runs_nextest_from_that_directory) | test(=a_crlf_test_file_keeps_every_test_detectable) | test(=a_method_no_test_reaches_selects_nothing_and_the_gap_is_reported) | test(=a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip) | test(=a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code) | test(=a_touched_python_test_file_selects_its_tests) | test(=a_touched_unity_assembly_prints_the_selection_and_the_run_refuses_with_a_remedy) | test(=an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests) | test(=dry_run_prints_the_resolved_pytest_runner) | test(=dry_run_prints_the_selection_and_runs_nothing) | test(=groups_run_one_project_with_its_ids_and_all_runs_every_test_project_whole) | test(=only_tests_reaching_the_changed_function_are_selected) | test(=python_dry_run_lists_pytest_node_ids_and_runs_nothing) | test(=run_groups_selected_tests_by_member_and_maps_results_back_to_units) | test(=test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence) | test(=test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree) | test(=test_verb_runs_vitest_and_jest_per_member_and_appends_per_test_evidence) | test(=the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies) | test(=the_test_verb_runs_the_selected_ids_through_the_dotnet_provider) | test(=touched_typescript_tests_select_vitest_and_jest_targets_per_member) | test(=touching_one_part_of_a_partial_type_selects_tests_reaching_any_part))) | (package(=gob-exec) & (test(=captured_output_is_redacted_and_env_added) | test(=concurrency_is_bounded_by_jobs) | test(=normal_exit_does_not_block_on_pipe_held_by_background_child) | test(=spawn_counter_counts_only_real_spawns) | test(=timeout_kills_group) | test(=timeout_kills_setsid_grandchild_and_returns_promptly) | test(=timeout_leaves_no_grandchild) | test(=unlisted_program_is_not_allowed))) | (package(=gob-plan) & (test(=a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree) | test(=a_printer_that_never_settles_fails_with_a_shrunk_minimal_example) | test(=executor_connectives_follow_the_kleene_tables) | test(=generated_trees_round_trip_and_print_to_a_fixed_point) | test(=the_real_printer_is_stable_over_generated_sizes))) | (package(=gob-time) & (test(=frob_lock_ack_text_round_trips_byte_identically))) | (package(=grimble) & (test(=standalone_check_lists_and_fires_the_cap_rules))) | (package(=grimble-model) & (test(=a_broken_printer_fails_with_a_shrunk_minimal_example) | test(=the_real_formatter_is_stable_over_generated_sizes)))'"
+size = 10464
+status = "measured"
+tests = ["an_absent_css_root_is_a_diagnostic_and_a_file_css_root_is_an_error", "a_css_root_outside_the_project_still_places_buckets", "an_unchanged_tree_ingested_twice_reads_the_cache_and_gives_the_same_result", "every_corpus_project_equals_the_python_projectstyles_dump", "attempts_are_capped", "graphql_posts_query_and_exposes_the_body", "missing_rate_limit_headers_are_an_explicit_none", "plain_403_is_a_status_error_and_the_token_never_prints", "plain_http_base_is_refused", "second_get_is_conditional_and_served_from_cache_on_304", "retry_after_beyond_the_cap_stops_instead_of_waiting", "unrecorded_requests_fail_instead_of_reaching_the_network", "waits_at_least_retry_after_then_retries", "a_bad_version_is_refused", "a_missing_tag_is_refused_naming_every_missing_tag", "hand_made_annotated_and_lightweight_tags_resolve_to_the_cut_they_would_have_recorded", "a_frob_accept_suppresses_a_tool_finding_like_a_native_one", "a_tool_outside_its_version_range_yields_one_non_required_unresolved", "a_yaml_accept_above_a_key_suppresses_the_finding_inside_that_key", "a_yaml_accept_above_another_key_does_not_suppress_the_finding", "unparseable_output_is_a_required_tool_failed", "actionlint_findings_map_to_ci014_and_configured_labels_are_dropped", "zizmor_findings_carry_ci_ids_and_real_spans", "a_matching_recorded_cut_is_silent", "a_moved_tag_fires_naming_the_recorded_commit", "a_tag_made_by_plain_tag_creation_fires", "a_version_mismatch_at_the_tagged_commit_fires", "annotated_tags_recorded_in_the_real_event_shape_are_silent", "no_tags_and_no_cuts_is_not_applicable_with_a_reason", "tags_outside_the_product_prefixes_are_ignored", "the_version_is_read_from_the_commit_not_the_working_tree", "the_stray_tag_remedy_names_adopt_before_deletion", "the_configured_tag_pattern_decides_which_tags_are_product_tags", "tags_made_by_release_cut_itself_are_silent", "a_crlf_test_file_keeps_every_test_detectable", "a_method_no_test_reaches_selects_nothing_and_the_gap_is_reported", "a_changed_method_selects_exactly_the_two_tests_that_reach_it", "the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies", "a_touched_unity_assembly_prints_the_selection_and_the_run_refuses_with_a_remedy", "groups_run_one_project_with_its_ids_and_all_runs_every_test_project_whole", "touching_one_part_of_a_partial_type_selects_tests_reaching_any_part", "the_test_verb_runs_the_selected_ids_through_the_dotnet_provider", "a_changed_file_with_no_adapter_is_unresolved_not_ignored", "a_changed_python_function_selects_the_pytest_tests_reaching_it", "a_touched_python_test_file_selects_its_tests", "an_untouched_tree_selects_nothing_and_a_touched_test_file_selects_its_tests", "dry_run_prints_the_resolved_pytest_runner", "dry_run_prints_the_selection_and_runs_nothing", "only_tests_reaching_the_changed_function_are_selected", "python_dry_run_lists_pytest_node_ids_and_runs_nothing", "test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence", "test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree", "a_crate_under_a_subdirectory_runs_nextest_from_that_directory", "a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code", "a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip", "run_groups_selected_tests_by_member_and_maps_results_back_to_units", "touched_typescript_tests_select_vitest_and_jest_targets_per_member", "test_verb_runs_vitest_and_jest_per_member_and_appends_per_test_evidence", "executor_connectives_follow_the_kleene_tables", "frob_lock_ack_text_round_trips_byte_identically", "standalone_check_lists_and_fires_the_cap_rules", "a_broken_printer_fails_with_a_shrunk_minimal_example", "the_real_formatter_is_stable_over_generated_sizes", "captured_output_is_redacted_and_env_added", "spawn_counter_counts_only_real_spawns", "concurrency_is_bounded_by_jobs", "timeout_kills_group", "unlisted_program_is_not_allowed", "timeout_kills_setsid_grandchild_and_returns_promptly", "timeout_leaves_no_grandchild", "normal_exit_does_not_block_on_pipe_held_by_background_child", "a_printer_that_never_settles_fails_with_a_shrunk_minimal_example", "the_real_printer_is_stable_over_generated_sizes", "generated_trees_round_trip_and_print_to_a_fixed_point", "a_printer_that_changes_the_tree_fails_with_a_shrunk_minimal_tree"]
+at = "2026-10-10T20:35:50Z"
+actor = "Claude"
+rev = 1

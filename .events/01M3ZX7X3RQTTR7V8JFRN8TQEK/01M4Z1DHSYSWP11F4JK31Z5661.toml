@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-diagnostics/src/required.rs", "crates/gob-rules/src/required.rs", "crates/gob-rules/src/lib.rs"]
+new = ["crates/gob-diagnostics/src/required.rs", "crates/gob-rules/src/required.rs", "crates/gob-rules/src/lib.rs", "crates/grimble-check/src/sibling.rs"]
+at = "2026-10-15T05:44:02Z"
+actor = "lognd"
+rev = 1

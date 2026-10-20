@@ -1,0 +1,70 @@
+kind = "evidence"
+captured_at = "2026-10-19T04:52:00Z"
+digest = "f22f93a18b5cc2ea5923feb705bb74960e1ee704adfc3561fd41c1bc1259bf3f"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5m 25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e7875c80-7259-446e-aa14-d2d91aa39d09 with nextest profile: default
+    Starting 40 tests across 6 binaries
+        PASS [   0.007s] gob-packs digest::tests::hardlink_is_pack005
+        PASS [   0.009s] gob-packs digest::tests::exec_bit_changes_digest
+        PASS [   0.011s] gob-packs activation::tests::activation_scopes_react_to_frontend_and_names_line
+        PASS [   0.009s] gob-packs digest::tests::included_digests_change_digest
+        PASS [   0.011s] gob-packs activation::tests::activation_rejects_bad_glob_with_line
+        PASS [   0.009s] gob-packs names::tests::every_reserved_prefix_is_refused_and_others_pass
+        PASS [   0.010s] gob-packs digest::tests::symlink_is_pack005
+        PASS [   0.011s] gob-packs digest::tests::doc_change_changes_digest
+        PASS [   0.011s] gob-packs digest::tests::hex_is_64_chars
+        PASS [   0.011s] gob-packs names::tests::config_table_outside_packs_is_pack005
+        PASS [   0.012s] gob-packs digest::tests::symlink_root_is_pack005
+        PASS [   0.016s] gob-packs activation::tests::activation_ignores_nested_pack_toml
+        PASS [   0.007s] gob-packs names::tests::provenance_labels_match_the_three_origins
+        PASS [   0.007s] gob-packs::lock missing_and_stale_are_typed_pack001
+        PASS [   0.009s] gob-packs validate::family_tests::family_accepts_letters_and_digits_after_first
+        PASS [   0.009s] gob-packs validate::family_tests::family_rejects_bad_shapes
+        PASS [   0.013s] gob-packs names::tests::repo_pack_named_grimble_extras_is_pack005_naming_the_prefix
+        PASS [   0.010s] gob-packs::lock doc_only_edit_changes_tree_not_items
+        PASS [   0.013s] gob-packs::lock write_read_round_trip
+        PASS [   0.013s] gob-packs::lock vocab_names_are_a_set
+        PASS [   0.015s] gob-packs::lock semantic_change_reports_item_and_scheme
+        PASS [   0.014s] gob-packs::manifest bounds_and_shapes_are_refused
+        PASS [   0.008s] gob-packs::manifest codes_print_their_stable_ids
+        PASS [   0.007s] gob-packs::manifest example_manifest_loads_typed
+        PASS [   0.008s] gob-packs::manifest duplicate_name_is_pack004
+        PASS [   0.011s] gob-packs::manifest duplicate_family_is_pack004_naming_both
+        PASS [   0.010s] gob-packs::manifest unknown_key_is_pack005_naming_file_key_line
+        PASS [   0.012s] gob-packs::manifest load_reads_a_file_and_refuses_oversize_or_binary
+        PASS [   0.008s] gob-packs::plan_cache an_entry_with_an_invalid_mac_is_discarded_and_rebuilt
+        PASS [   0.013s] gob-packs::plan_cache a_pack_loaded_twice_is_read_from_the_cache_not_recompiled
+        PASS [   0.010s] gob-packs::std_pack a_plugin_declaring_cap_or_the_name_std_is_pack004
+        PASS [   0.010s] gob-packs::std_pack embedded_plans_are_exactly_what_the_grl_source_lowers_to
+        PASS [   0.010s] gob-packs::std_pack the_lock_entry_is_frozen_to_the_binary_and_matches_the_entry
+        PASS [   0.008s] gob-packs::std_pack std_lists_as_builtin_with_a_digest_and_every_tier0_family_as_an_exception
+        PASS [   0.007s] gob-packs::tier1 template_on_foreign_atom_is_pack005
+        PASS [   0.008s] gob-packs::tier1 pack_content_answers_like_an_inventory_atom
+        PASS [   0.010s] gob-packs::tier1 duplicate_atom_is_pack004_naming_both_packs
+        PASS [   0.054s] gob-packs::manifest arbitrary_bytes_load_never_panics
+        PASS [   0.100s] gob-packs::manifest arbitrary_toml_shaped_text_never_panics
+        PASS [   0.174s] gob-packs::manifest arbitrary_text_never_panics
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.193s] 40 tests run: 40 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs"
+size = 4358
+status = "measured"
+test_count = 40
+tests_digest = "8f792784ce86250bee7da19e6264a234a8e1eabeb4d6b26693e6e1c4ac47fe44"
+at = "2026-10-19T04:52:00Z"
+actor = "lognd"
+rev = 1

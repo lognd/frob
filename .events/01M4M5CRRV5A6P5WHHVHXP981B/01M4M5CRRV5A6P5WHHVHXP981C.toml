@@ -1,0 +1,17 @@
+kind = "create"
+title = "Wire GRL config column checking to the shipped config schema"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+scope = ["crates/grimble/**", "crates/gob-plan/**", "changelog.d/**"]
+acceptance = ["Given a GRL rule with a misspelt config column (f.frm on config.invariants.forbid_imports), when compiled by the shipped binary, then GRL001 names the column"]
+body = "Follow-up of ~41PCRHB. Needs the GRL compile verb and the config schema $defs from ~PHFBHDJ. Load docs/schemas/config.json (ConfigSchema::from_json) and pass it to check_file_with / a compile_report variant."
+at = "2026-10-11T00:21:52Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4DGHT8H530QHR7VJPHFBHDJ"

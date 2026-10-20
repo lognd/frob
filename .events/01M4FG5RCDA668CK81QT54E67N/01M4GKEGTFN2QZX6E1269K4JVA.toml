@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given 59 opaque text files, when frob check runs, then one unresolved notice names the count and the rules that could not read them, instead of one finding per rule"]
+new = ["Given 59 opaque text files, when frob check runs, then one unresolved notice names the count and the rules that could not read them, instead of one finding per rule", "Given .env.example and other dotfile templates, when classified, then they are read as text (key=value) where a reader exists rather than opaque (logand F-556)"]
+moved = [1]
+at = "2026-10-09T15:10:32Z"
+actor = "lognd"
+rev = 1

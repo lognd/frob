@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-10T15:47:40Z"
+digest = "695a3fd4a3fe378ed9cb54425aff1a03902c38500790db68e3651725b47bcff4"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 749e5bea-7eb4-40c0-9256-5b35e5dd20cc with nextest profile: default
+    Starting 1 test across 11 binaries (162 tests skipped)
+        PASS [   0.008s] gob-plan::check_names certainly_in_an_earlier_report_when_is_negative
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 162 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=certainly_in_an_earlier_report_when_is_negative)'"
+size = 551
+status = "measured"
+tests = ["certainly_in_an_earlier_report_when_is_negative"]
+at = "2026-10-10T15:47:40Z"
+actor = "Claude"
+rev = 1

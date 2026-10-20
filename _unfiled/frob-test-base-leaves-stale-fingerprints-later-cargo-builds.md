@@ -1,0 +1,20 @@
++++
+id = "01M4VN38GBQAPJWK0FZPSDN1CC"
+title = "frob test --base leaves stale fingerprints: later cargo builds in the worktree compile old sources"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "high"
+points = 3
+reporter = "lognd"
+created = "2026-10-13T22:10:58Z"
+updated = "2026-10-19T21:56:59Z"
+idempotency_key = "base-swap-stale-fingerprints"
+scope = ["crates/frob/**", "crates/frob-tests/**", "docs/guides/quickstart.md"]
+
+[[acceptance]]
+text = "After frob test --base, a cargo build in the same worktree rebuilds every file changed versus the base"
+bound = true
++++
+
+Seen four times in cadetta (worktrees whose target links to .git/frob/land-target): after frob test --base main, later cargo build/nextest in the worktree compiled OLD sources (removed struct field still present, bogus compile errors) until every changed .rs file was touched. Hypothesis: the base-ref source swap and restore leaves restored file mtimes no newer than the fingerprints written while base sources were in place, so cargo treats them as fresh; the shared land-target makes it visible across runs. Fix idea: bump mtimes of restored files, or build the base in a separate checkout and target; add a regression test. Reporter: cadetta coordinator session.

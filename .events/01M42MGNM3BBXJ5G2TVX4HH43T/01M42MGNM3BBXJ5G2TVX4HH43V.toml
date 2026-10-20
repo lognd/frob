@@ -1,0 +1,12 @@
+kind = "create"
+title = "Concurrent ledger writes fail with E-LEDGER-CAS: retries have no backoff (10 of 24 concurrent ticket new failed)"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+scope = ["crates/gob-git/src/ledger.rs"]
+acceptance = ["Given 24 concurrent ticket new, when they run, then all succeed"]
+body = "Reproduced with 24 concurrent ticket new. Retry the CAS with jittered backoff within a bounded budget. Evidence and repro: notes/review/v1-gap/D-incidents.md (probe list)."
+at = "2026-10-04T04:59:49Z"
+actor = "lognd"
+rev = 1

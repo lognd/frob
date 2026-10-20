@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: Claude in repo-wt/DRQ36JC; scope: crates/grimble-model/src/directive.rs, changelog.d/**; ttl 7200s"
+at = "2026-10-10T19:26:01Z"
+actor = "Claude"
+rev = 1

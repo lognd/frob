@@ -1,0 +1,13 @@
+kind = "create"
+title = "Wire Profile::teach_for to [ui] teach and .frob/seen.toml"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M3ZX776JJSRQXW8Q0327K9QN"
+scope = ["crates/frob/src/profile.rs"]
+acceptance = ["Given teaching state from ~3CSCDFK, when a newcomer runs check, then the profile teach count comes from seen.toml and [ui] teach"]
+body = "Follow-up of ~77EBEJP: Profile::teach_for exists as a pure function; connect it to the teaching state built by ~3CSCDFK once that lands."
+at = "2026-10-14T21:04:10Z"
+actor = "lognd"
+rev = 1

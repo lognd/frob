@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T03:21:19Z"
+digest = "aa558378ad6f69d05dfc4569befd455b32d3591208fc3deaed2860b66cc241cd"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bd7c8f66-1a18-4948-9d01-62bb669845be with nextest profile: default
+    Starting 1 test across 160 binaries (1425 tests skipped)
+        PASS [   0.251s] frob-land::land a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.255s] 1 test run: 1 passed, 1425 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check)'"
+size = 593
+status = "measured"
+tests = ["a_second_ticket_on_the_same_base_reuses_the_shared_base_set_without_a_base_check"]
+at = "2026-10-04T03:21:19Z"
+actor = "lognd"
+rev = 1

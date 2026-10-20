@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-cut 2026-10-03 for the rewritten protocol. Scope narrowed from crates/frob/** and crates/frob-ledger/** to two files; the ledger event kinds moved to m2-mirror2-ledger-proposal-events and accept to m2-mirror2-accept-guards. Acceptance 1 (accept) is superseded by that ticket; acceptance 2 (check count, exit status unaffected) stays. Added acceptance: Given a proposal declined, when the same tracker event is read again, then it does not come back (model property S8 NoReopen)."
+at = "2026-10-03T05:50:00Z"
+actor = "lognd"
+rev = 1

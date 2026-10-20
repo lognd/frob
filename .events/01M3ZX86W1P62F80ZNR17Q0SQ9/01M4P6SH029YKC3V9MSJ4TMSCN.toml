@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-obligations/src/tick_moves.rs", "crates/frob-ledger/src/moves.rs", "crates/frob/tests/ticket_moves.rs", "crates/gob-mdtest/coverage-allowlist.toml"]
+new = ["crates/frob-obligations/src/tick_moves.rs", "crates/frob-ledger/src/moves.rs", "crates/frob/tests/ticket_moves.rs", "crates/gob-mdtest/coverage-allowlist.toml", "crates/frob-ledger/src/rules.rs"]
+at = "2026-10-11T19:24:47Z"
+actor = "lognd"
+rev = 1

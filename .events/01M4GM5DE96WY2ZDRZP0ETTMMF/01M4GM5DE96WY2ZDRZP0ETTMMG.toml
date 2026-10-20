@@ -1,0 +1,13 @@
+kind = "create"
+title = "Server route and client call-site extraction (FastAPI, Flask, axum, Express; fetch/axios/ky) so cross-language impl hops match by method and path"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+labels = ["grimble"]
+scope = ["crates/gob-frameworks/**", "changelog.d/**"]
+acceptance = ["Given a TSX component calling fetch('/api/orders', {method: 'POST'}) and a FastAPI route @router.post('/api/orders'), when the framework layer runs, then both are extracted with method and path template and matched as one cross-language edge (May when the path is built dynamically, Unknown when opaque)"]
+body = "Needed by grmb planning impl chains (owner 2026-10-09: ui button -> API -> ... traceable). gob-frameworks today extracts Next.js and React Router routes only."
+at = "2026-10-09T15:23:02Z"
+actor = "lognd"
+rev = 1

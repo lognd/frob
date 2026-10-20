@@ -1,0 +1,13 @@
+kind = "field"
+field = "body"
+old = """
+Implements mirror.md sections 2.1 (people) and 3 (identity).
+
+Unmapped identities are left unassigned and noted; the tracker key becomes an alias so `frob ticket show PROJ-123` works."""
+new = """
+Implements mirror.md sections 2.1 (people), 3.3 (own writes, bot ids) and 3.5 (identities by user id).
+
+Identities are mapped by tracker user id, never login (logins can be released and claimed); [mirror] bot_ids lists the App identities by user id. Unmapped identities are left unassigned and noted; the tracker key becomes an alias so `frob ticket show PROJ-123` works."""
+at = "2026-10-03T05:49:59Z"
+actor = "lognd"
+rev = 1

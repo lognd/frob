@@ -1,0 +1,60 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T02:07:49Z"
+digest = "f28a64eca5fed7388aa54a66520cb488154a739f7c512a91cc763571dd583e8e"
+exit_code = 0
+inline = '''
+   Compiling serde_json v1.0.151
+   Compiling error_set_impl v0.9.2
+   Compiling assert_cmd v2.2.2
+   Compiling pest_generator v2.9.2
+   Compiling wait-timeout v0.2.1
+   Compiling pest_derive v2.9.2
+   Compiling insta v1.48.0
+   Compiling tree-sitter v0.27.0
+   Compiling error_set v0.9.2
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized] target(s) in 27.86s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a914dfc5-6cb7-4c0d-86fc-1c1fc66eef11 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.008s] frob-cli::tour tty_session_starts_at_stop_one_and_moves_with_next_and_previous
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test tour -E 'test(=tty_session_starts_at_stop_one_and_moves_with_next_and_previous)'"
+size = 2677
+status = "measured"
+tests = ["tty_session_starts_at_stop_one_and_moves_with_next_and_previous"]
+at = "2026-10-12T02:07:49Z"
+actor = "lognd"
+rev = 1

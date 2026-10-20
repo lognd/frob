@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given this repository's frob.toml, when frob check runs, then no CFG001 finding is reported"]
+moved = []
+at = "2026-10-04T02:59:18Z"
+actor = "lognd"
+rev = 1

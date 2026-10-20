@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T16:09:08Z"
+digest = "53378882cc9e6936c2a360476889645afe17cf9a440da323b21a5a1c50b01f9d"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized] target(s) in 3.82s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 19272ae9-a341-4dc6-be31-d19e0600daa5 with nextest profile: default
+    Starting 1 test across 8 binaries (38 tests skipped)
+        PASS [   0.667s] frob-tests::rust_root a_crate_under_a_subdirectory_runs_nextest_from_that_directory
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.667s] 1 test run: 1 passed, 38 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests -E 'test(=a_crate_under_a_subdirectory_runs_nextest_from_that_directory)'"
+size = 616
+status = "measured"
+tests = ["a_crate_under_a_subdirectory_runs_nextest_from_that_directory"]
+at = "2026-10-10T16:09:08Z"
+actor = "Claude"
+rev = 1

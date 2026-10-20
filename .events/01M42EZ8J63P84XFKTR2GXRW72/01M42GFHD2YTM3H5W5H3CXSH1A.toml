@@ -1,0 +1,74 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T03:49:17Z"
+digest = "ff577b4d725654bdf9d0aaa7034199007501a15c4fe353b6991134c62e789687"
+exit_code = 0
+inline = '''
+   Compiling gix-tempfile v24.0.0
+   Compiling gob-cache v0.0.0 (<worktree>/crates/gob-cache)
+   Compiling tinytemplate v1.2.1
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling criterion v0.5.1
+   Compiling gix-shallow v0.13.0
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-pack v0.74.2
+   Compiling gix-index v0.55.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-status v0.34.1
+   Compiling gix-merge v0.20.1
+   Compiling gix v0.87.1
+   Compiling gob-git v0.0.0 (<worktree>/crates/gob-git)
+   Compiling gob-walk v0.0.0 (<worktree>/crates/gob-walk)
+   Compiling frob-ledger v0.0.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-ir v0.0.0 (<worktree>/crates/gob-ir)
+   Compiling frob-pm v0.0.0 (<worktree>/crates/frob-pm)
+   Compiling gob-symbols v0.0.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-lock v0.0.0 (<worktree>/crates/gob-lock)
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+   Compiling gob-directives v0.0.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.0.0 (<worktree>/crates/gob-check)
+   Compiling frob-evidence v0.0.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-lease v0.0.0 (<worktree>/crates/frob-lease)
+   Compiling frob-ack v0.0.0 (<worktree>/crates/frob-ack)
+   Compiling frob-worktree v0.0.0 (<worktree>/crates/frob-worktree)
+   Compiling grimble-model v0.0.0 (<worktree>/crates/grimble-model)
+   Compiling frob-tests v0.0.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.0.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-bind v0.0.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-check v0.0.0 (<worktree>/crates/frob-check)
+   Compiling grimble-check v0.0.0 (<worktree>/crates/grimble-check)
+   Compiling frob-land v0.0.0 (<worktree>/crates/frob-land)
+   Compiling grimble v0.0.0 (<worktree>/crates/grimble)
+   Compiling frob-cli v0.0.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 43.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0d0ef354-3daf-4a06-b6f5-166267d2e7e2 with nextest profile: default
+    Starting 3 tests across 34 binaries (288 tests skipped)
+        PASS [   0.759s] frob-ledger::scrub write_with_a_private_term_is_refused
+        PASS [  11.662s] frob-cli::redact fragment_with_a_private_term_is_refused
+        PASS [  12.173s] frob-cli::redact writes_with_a_private_term_exit_2_and_write_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  12.176s] 3 tests run: 3 passed, 288 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-ledger -E 'test(=writes_with_a_private_term_exit_2_and_write_nothing) | test(=write_with_a_private_term_is_refused) | test(=fragment_with_a_private_term_is_refused)'"
+size = 3020
+status = "measured"
+tests = ["write_with_a_private_term_is_refused", "fragment_with_a_private_term_is_refused", "writes_with_a_private_term_exit_2_and_write_nothing"]
+at = "2026-10-04T03:49:17Z"
+actor = "lognd"
+rev = 1

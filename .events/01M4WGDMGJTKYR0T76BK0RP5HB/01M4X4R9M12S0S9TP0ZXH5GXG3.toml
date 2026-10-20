@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-14T12:01:42Z"
+digest = "d2013c89f33542df9caf2fd5860ee1e7c68614cde23e37848d8b24a404eea268"
+exit_code = 0
+passed = true
+provider = "command"
+ref = "cargo test --release -p gob-dev -p gob-fs"
+size = 47893
+status = "measured"
+uri = "dir:.git/frob/artifacts/d2013c89f33542df9caf2fd5860ee1e7c68614cde23e37848d8b24a404eea268"
+at = "2026-10-14T12:01:42Z"
+actor = "Claude"
+rev = 1

@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-05T03:23:44Z"
+digest = "9c4781df842d9cf1859c9bb4c4eee9e78cea8662c3d73f2dc99988cdb565a4b9"
+exit_code = 0
+inline = '''
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cc566816-18a8-4f0d-b708-8c78572dd2e5 with nextest profile: default
+    Starting 4 tests across 13 binaries (129 tests skipped)
+        PASS [   0.008s] frob-release::release_workflow the_pypi_job_checks_each_products_wheel_count_before_uploading_both
+        PASS [   0.028s] frob-release::cut several_products_with_a_pattern_lacking_the_product_placeholder_are_refused
+        PASS [   0.102s] frob-release::cut without_release_products_one_tag_named_by_the_default_pattern_is_created
+        PASS [   0.119s] frob-release::cut configured_tag_and_products_make_one_tag_per_product_following_the_pattern
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.120s] 4 tests run: 4 passed, 129 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release release_workflow products"
+size = 1013
+status = "measured"
+tests = ["the_pypi_job_checks_each_products_wheel_count_before_uploading_both", "several_products_with_a_pattern_lacking_the_product_placeholder_are_refused", "without_release_products_one_tag_named_by_the_default_pattern_is_created", "configured_tag_and_products_make_one_tag_per_product_following_the_pattern"]
+at = "2026-10-05T03:23:44Z"
+actor = "lognd"
+rev = 1

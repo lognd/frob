@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "test-only: REL001 test uses the real annotated-tag and event shape; changelog test uses its own fixture"
+at = "2026-10-05T06:17:49Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,19 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-12T21:16:24Z"
+digest = "195d0d83a42d34d6b954911eae006790c7e757e229719d096f5cdfcee518e33a"
+exit_code = 0
+inline = '''
+No findings to report. Good job!
+ INFO zizmor: \u{1f308} zizmor v1.30.1
+ WARN audit: zizmor: zizmor is running in offline mode by default; some audits and auto-fixes will not be available. see https://docs.zizmor.sh/usage/#operating-modes for details
+ INFO audit: zizmor: \u{1f308} completed .github/workflows/mirror.yml
+'''
+passed = true
+provider = "command"
+ref = """python3 -c 'import subprocess,sys;w=".github/workflows/mirror.yml";sys.exit(subprocess.call(["uvx","zizmor","--pedantic",w]) or subprocess.call(["uvx","--from","actionlint-py","actionlint",w]))'"""
+size = 321
+status = "measured"
+at = "2026-10-12T21:16:24Z"
+actor = "lognd"
+rev = 1

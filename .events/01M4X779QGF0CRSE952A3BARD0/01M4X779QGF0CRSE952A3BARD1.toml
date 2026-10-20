@@ -1,0 +1,11 @@
+kind = "create"
+title = 'GRL lowering: kind with a string argument (directive "todo")'
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/gob-plan/**"]
+body = 'Found while working ~C6W2KWJ. TODO001 (acceptance corpus ~0HC06TD) has `no d: directive "todo" where d adjoins c`; lowering reports "cannot lower a kind with a string argument yet" (convert.rs binding_parts and with_object). Covered by none of ~C6W2KWJ ~26X4K6K ~8Q9444T ~NVMH9MV ~HZ73YP7. Needs a decision on which field of the node the argument tests, and executor/model support for directive nodes.'
+at = "2026-10-14T12:47:00Z"
+actor = "logan"
+rev = 1

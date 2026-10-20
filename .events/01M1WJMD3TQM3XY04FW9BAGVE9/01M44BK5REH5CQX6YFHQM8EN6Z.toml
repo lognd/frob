@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Client-persisted browser storage as a capability with cleared_on triggers; grmb capability model."
+at = "2026-10-04T21:02:22Z"
+actor = "lognd"
+rev = 1

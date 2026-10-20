@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-04T03:49:26Z"
+digest = "8673843f0c270b8553ac4984f42b396854d493557aed00fea77b6b89864cf48b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fa0d8575-9638-417f-84a0-d71394beb26b with nextest profile: default
+    Starting 2 tests across 34 binaries (289 tests skipped)
+        PASS [   0.014s] frob-ledger::redact tick005_reports_label_not_term
+        PASS [   2.023s] frob-cli::redact check_flags_and_doctor_fix_repairs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.025s] 2 tests run: 2 passed, 289 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-ledger -E 'test(=check_flags_and_doctor_fix_repairs) | test(=tick005_reports_label_not_term)'"
+size = 623
+status = "measured"
+tests = ["tick005_reports_label_not_term", "check_flags_and_doctor_fix_repairs"]
+at = "2026-10-04T03:49:26Z"
+actor = "lognd"
+rev = 1

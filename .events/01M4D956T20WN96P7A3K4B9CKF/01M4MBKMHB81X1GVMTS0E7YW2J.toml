@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T02:10:28Z"
+digest = "0a01c81cfbf9d10af7b7b24021d05a73eb6bf2a24e06744cb7539e3a482570e2"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dd98ae29-3883-4dc3-ae84-5b311e067892 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.031s] grimble-lints err::tests::each_language_flags_an_empty_catch_all_once
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.031s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints -E 'test(=err::tests::each_language_flags_an_empty_catch_all_once)'"
+size = 544
+status = "measured"
+tests = ["err::tests::each_language_flags_an_empty_catch_all_once"]
+at = "2026-10-11T02:10:28Z"
+actor = "lognd"
+rev = 1

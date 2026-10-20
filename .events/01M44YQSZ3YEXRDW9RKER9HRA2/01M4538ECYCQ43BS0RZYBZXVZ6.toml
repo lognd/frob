@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-05T03:55:56Z"
+digest = "bed29bfae9548551e4b4f9bce1cac53fab5a9dbbe82392125e16dd714bf213f8"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a5d76af8-8008-4ee4-9be4-02656b963584 with nextest profile: default
+    Starting 3 tests across 1 binary (14 tests skipped)
+        PASS [   0.008s] gob-symbols::csharp a_syntax_error_is_a_hole_never_a_clean_file
+        PASS [   0.014s] gob-symbols::csharp a_conditional_inside_a_member_body_is_unresolved_for_that_member_only
+        PASS [   0.015s] gob-symbols::csharp top_level_statements_are_unmodelled_and_the_gate_reads_partial
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 3 tests run: 3 passed, 14 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-symbols --test csharp top_level_statements_are_unmodelled_and_the_gate_reads_partial a_conditional_inside_a_member_body_is_unresolved_for_that_member_only a_syntax_error_is_a_hole_never_a_clean_file"
+size = 777
+status = "measured"
+tests = ["a_syntax_error_is_a_hole_never_a_clean_file", "a_conditional_inside_a_member_body_is_unresolved_for_that_member_only", "top_level_statements_are_unmodelled_and_the_gate_reads_partial"]
+at = "2026-10-05T03:55:56Z"
+actor = "lognd"
+rev = 1

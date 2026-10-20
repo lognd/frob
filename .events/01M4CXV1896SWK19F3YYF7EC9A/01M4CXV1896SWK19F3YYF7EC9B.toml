@@ -1,0 +1,13 @@
+kind = "create"
+title = "One relational structure for rules: lower SymbolGraph status edges into U relations with lo/hi"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M4CXTT0JWKFTX1HBB703QA80"
+scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-symbols/**"]
+acceptance = ["Given a rule reading call or import edges, when evaluated, then it reads one relation with status from gob-ir, and SymbolGraph is a view over it"]
+body = "notes/review/formal-review-2026-10-08.md section 4 item 4."
+at = "2026-10-08T04:55:10Z"
+actor = "lognd"
+rev = 1

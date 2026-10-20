@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-v2-wt/B6VY10G; scope: crates/frob-check/tests/perf.rs, crates/frob-check/benches/**, crates/frob-check/Cargo.toml, crates/gob-ir/tests/deep.rs, crates/frob-ack/tests/workspace.rs, Cargo.toml, .config/nextest.toml, crates/gob-dev/src/ci.rs, docs/design/build-test-ci.md, Cargo.lock; ttl 7200s"
+at = "2026-10-03T22:58:04Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T15:58:28Z"
+digest = "0dffa99551c5f7a896ef9ced6ca084d94d8256fe59805cd0e155e007fdb2ff0f"
+exit_code = 0
+inline = """
+
+running 1 test
+test work_in_orphan_mode_branches_from_the_code_ref_and_writes_the_ticket_branch ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 27 filtered out; finished in 0.08s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running tests/work.rs (target/debug/deps/work-b3eaf9c36975707a)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-worktree --test work work_in_orphan_mode_branches_from_the_code_ref_and_writes_the_ticket_branch"
+size = 343
+status = "measured"
+at = "2026-10-20T15:58:28Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T12:24:14Z"
+digest = "c786e8d9df924c01460759ffa96244179f798ab8f7818e3055f52b04cbdacbc1"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+────────────
+ Nextest run ID b81bf9d3-2338-4129-a4f6-c4e4248b9b74 with nextest profile: default
+    Starting 1 test across 133 binaries (1060 tests skipped)
+        PASS [   0.203s] (1/1) gob-git::symlinks retargeted_symlink_is_reported_committed_and_uncommitted
+────────────
+     Summary [   0.208s] 1 test run: 1 passed, 1060 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "retargeted_symlink_is_reported_committed_and_uncommitted"
+size = 457
+status = "measured"
+tests = ["retargeted_symlink_is_reported_committed_and_uncommitted"]
+at = "2026-10-03T12:24:14Z"
+actor = "lognd"
+rev = 1

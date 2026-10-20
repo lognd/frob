@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-04T02:57:22Z"
+digest = "7a269439b43dde625f3ffbbee0b4ab0b99f1565648ab6b1d3d375abe7643c089"
+exit_code = 0
+inline = '''
+   Compiling frob-release v0.0.0 (<worktree>/crates/frob-release)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 69a87278-8517-4c47-9e63-0df92ccba378 with nextest profile: default
+    Starting 5 tests across 13 binaries (126 tests skipped)
+        PASS [   0.006s] frob-release::products the_wheel_smoke_installs_from_local_wheels_only_in_three_scenarios
+        PASS [   0.006s] frob-release::products the_pypi_product_list_is_the_product_list
+        PASS [   0.007s] frob-release::products frob_depends_on_grimble_at_the_same_version_and_grimble_on_nothing
+        PASS [   0.008s] frob-release::products the_workflows_count_wheels_for_every_pypi_product
+        PASS [   0.012s] frob-release::release_workflow the_pypi_job_checks_each_products_wheel_count_before_uploading_both
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 5 tests run: 5 passed, 126 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E 'test(the_pypi_job_checks_each_products_wheel_count_before_uploading_both) | test(the_workflows_count_wheels_for_every_pypi_product) | test(the_wheel_smoke_installs_from_local_wheels_only_in_three_scenarios) | test(frob_depends_on_grimble_at_the_same_version_and_grimble_on_nothing) | test(the_pypi_product_list_is_the_product_list)'"
+size = 1078
+status = "measured"
+tests = ["the_wheel_smoke_installs_from_local_wheels_only_in_three_scenarios", "the_pypi_product_list_is_the_product_list", "frob_depends_on_grimble_at_the_same_version_and_grimble_on_nothing", "the_workflows_count_wheels_for_every_pypi_product", "the_pypi_job_checks_each_products_wheel_count_before_uploading_both"]
+at = "2026-10-04T02:57:22Z"
+actor = "lognd"
+rev = 1

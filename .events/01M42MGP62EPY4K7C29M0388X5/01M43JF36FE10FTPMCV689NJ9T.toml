@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T13:43:05Z"
+digest = "8be8d260752b9fcc57d2c462e682b9c560d47c67ff2dc43f5253f8e97f55f959"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.0.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 39.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f4e4045b-74d9-4dae-af21-cbbde6feb739 with nextest profile: default
+    Starting 1 test across 29 binaries (229 tests skipped)
+        PASS [  26.438s] frob-cli::gc doctor_reports_a_corrupt_lease_and_fix_quarantines_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  26.440s] 1 test run: 1 passed, 229 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(doctor_reports_a_corrupt_lease_and_fix_quarantines_it)'"
+size = 615
+status = "measured"
+tests = ["doctor_reports_a_corrupt_lease_and_fix_quarantines_it"]
+at = "2026-10-04T13:43:14Z"
+actor = "lognd"
+rev = 1

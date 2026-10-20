@@ -1,0 +1,17 @@
+kind = "create"
+title = "TAINT-IDENT001: store-read value used as identifier"
+type = "security"
+category = "triage"
+priority = "medium"
+parent = "01M1QDTYV6Z35XFTPNT4QW70Y2"
+aliases = ["T-3963"]
+labels = ["milestone:0.539.0", "v1-cluster:B4"]
+scope = ["src/frob/vet/_taint.py"]
+acceptance = ["given a value read from a store (DB row, cache) later interpolated into a table/column-name f-string or expanded via ** into column names, with no allowlist check between read and use, when frob check runs, then TAINT-IDENT001 fires", "given the same flow passing through a recognized allowlist/validator call first, when frob check runs, then the rule stays quiet"]
+body = """
+F-176 (T-3942 item 2). VERIFIED: src/frob/vet/_taint.py already implements SEC005, an intra-function/intra-module taint rule, but for a DIFFERENT shape -- a value from a repo-writable state file (.git/.frob) reaching a subprocess argv without validation. It does not track data read from a data STORE (a DB row, cache value) later used as an IDENTIFIER (a table name, column name, or a **values expansion key). No existing rule covers that shape; this is a genuinely new taint kind, not a duplicate of SEC005.
+
+FINDING THIS WOULD HAVE CAUGHT: data read from a store and later used to build an identifier -- e.g. a value pulled from a row and interpolated into a table/column name or expanded via **kwargs into a query's column set -- without passing through an allowlist between the read and the use. This is the identifier-injection analog of classic SQL string-interpolation, but through IDENTIFIER positions rather than value positions, so ordinary parameterized-query safety does not cover it. Proposed rule: TAINT-IDENT001, an intra-function/intra-module flow (mirror SEC005's scope discipline: intra-module first, interprocedural later) from a store-read call to an identifier-construction site (f-string into a table/column name, or a **mapping expansion used as column/field names), flagging any such flow with no allowlist check in between."""
+at = "2026-09-06T00:00:00Z"
+actor = "agent"
+rev = 1

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:37:11Z"
+digest = "eecc5e234e0781dfa0b9d5acfd5ec262dd3ccf91f9ff7b28f99338a2e38befe1"
+exit_code = 0
+inline = '''
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized] target(s) in 2.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fb237925-c8c6-4c0d-8a20-22a4f25b22b9 with nextest profile: default
+    Starting 1 test across 6 binaries (15 tests skipped)
+        PASS [   0.268s] grimble::caps standalone_check_lists_and_fires_the_cap_rules
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.268s] 1 test run: 1 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'test(=standalone_check_lists_and_fires_the_cap_rules)'"
+size = 597
+status = "measured"
+tests = ["standalone_check_lists_and_fires_the_cap_rules"]
+at = "2026-10-10T20:37:11Z"
+actor = "Claude"
+rev = 1

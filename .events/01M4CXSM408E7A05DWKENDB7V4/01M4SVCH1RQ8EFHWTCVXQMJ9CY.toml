@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-13T05:22:11Z"
+digest = "6a2a71444fdc9ce11c1bcc90e2fc0a3eae8c63eb4d613225c8e7997ee4ffb6c3"
+exit_code = 0
+inline = '''
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e8093b1c-1db3-4df7-9570-04d5e5a798f9 with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.270s] crunk-check::review a_changed_token_makes_human001_name_the_screen_and_token_until_reacked
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.272s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test review -E test(a_changed_token_makes_human001_name_the_screen_and_token_until_reacked)"
+size = 1032
+status = "measured"
+test_count = 1
+tests_digest = "8a93ab64e137266924c609b8470eff03ebe7231d4597085129efd2919dcb34c3"
+at = "2026-10-13T05:22:11Z"
+actor = "lognd"
+rev = 1

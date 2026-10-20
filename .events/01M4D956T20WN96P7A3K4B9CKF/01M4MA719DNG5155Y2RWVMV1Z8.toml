@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given Rust, Python, TS and C# fixtures with an empty catch, let _ = on a Result, except: pass and an empty catch of Exception, when grimble check runs, then each fires once", "Given a handler that logs or rethrows, when checked, then clean; given a callee whose fallibility is Unknown, then ERR002 is Unresolved, never Warn"]
+new = ["Given Rust, Python, TS and C# fixtures with an empty handler (Err(_) => {}, except: pass, catch {}, catch (Exception) {}) and a Rust let _ = of a known-fallible call, when grimble_lints::err::scan runs, then each yields exactly one site of the right kind (ERR001 or ERR002)", "Given a catch-all handler in Python, TS and C# whose body is non-empty and neither rethrows nor logs, when scanned, then one ERR003 site; given one that logs or rethrows, then no site", "Given a Rust let _ = of a callee whose fallibility the file does not show, when scanned, then the ERR002 site is Certainty::Unknown, never Certain"]
+moved = [0, 0]
+at = "2026-10-11T01:46:06Z"
+actor = "lognd"
+rev = 1

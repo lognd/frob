@@ -1,0 +1,11 @@
+kind = "create"
+title = "Write the frob v2 design doc (Rust rewrite, design-first)"
+type = "epic"
+category = "todo"
+priority = "high"
+points = 8
+aliases = ["T-0001"]
+scope = ["docs/**", "notes/**"]
+at = "2026-10-01T00:00:00Z"
+actor = "human"
+rev = 1

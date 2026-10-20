@@ -1,0 +1,92 @@
++++
+id = "01M2VFD1JQJT6H8RBEMNSTDSVN"
+title = "Fold the read-only analysis surface into one verb: explore map/outline/xref/docs-search/gitlog/stats and the graph queries"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "high"
+reporter = "human"
+created = "2026-09-19T00:00:00Z"
+updated = "2026-09-19T00:00:02Z"
+aliases = ["T-4695"]
+labels = ["cli-debloat", "points-3", "milestone:0.533.0", "component:cli"]
+scope = ["src/frob/_cli_parsers/_explore.py", "src/frob/app/explore_runner.py", "src/frob/app/gitlog_runner.py", "src/frob/app/stats_runner.py", "src/frob/app/graph_runner.py", "tests/unit/test_explore_verb.py", "src/frob/app/debt_runner.py", "src/frob/app/deprecated_runner.py", "docs/commands/gitlog.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M2VFD1JJD17QEF1ZFXA7C3R1"
+
+[[links]]
+kind = "blocked-by"
+target = "01M2VFD1JM87727BCPQ26VDTSN"
+
+[[acceptance]]
+text = "Given a fixture repo with a KNOWN conventional-commit history, when frob explore gitlog runs on it, then the expected type/granularity rollup appears -- a no-crash assertion does not satisfy this criterion"
+bound = false
+
+[[acceptance]]
+text = "Given the deprecated top-level frob gitlog before its sunset date, when it runs, then it prints the frob explore gitlog spelling on stderr and returns output identical to the new spelling; the same holds for stats, debt and deprecated"
+bound = false
+
+[[acceptance]]
+text = "Given frob --help after this ticket, then gitlog, stats, debt and deprecated are absent from the top-level usage line and present under frob explore --help, and graph query/why/affects are reachable through frob explore while frob graph keeps its cache-building and write-side subverbs"
+bound = false
++++
+
+POINTS: 3. Parent story T-4687. blocked_by T-4690 and T-4692 -- it shares
+_core.py/_misc.py/_reporting.py/_explore.py/__main__.py with both, and a frob
+scope is a write lease that cannot be shared.
+
+OWNER DECISION: "start removing subverbs and the read-only analysis."
+
+AMENDED 2026-09-19 (coordinator review): this ticket no longer creates `explore`
+and no longer moves map/outline/xref/docs-search. T-4690 keeps `explore` as the
+surviving verb and deletes their standalone mirrors, so those four leaves are
+ALREADY under `explore` when this ticket starts. This ticket only ADDS to it.
+
+MOVE UNDER frob explore (planned), deleting each top-level spelling with a T-4690 shim:
+  gitlog                          -> frob explore gitlog
+  stats                           -> frob explore stats
+  graph query|why|affects         -> frob explore graph-query|graph-why|
+                                     graph-affects (or a nested `explore graph`
+                                     subgroup -- pick one and say which)
+  debt      (moved here from T-4692) -> frob explore debt
+  deprecated (moved here from T-4692) -> frob explore deprecated
+`debt` and `deprecated` are read-only listings ("list outstanding frob:debt
+entries", "list outstanding frob:deprecated entries"), which is why they belong
+here and not behind frob check --only (planned).
+
+NAME: `explore`, not `show`. MEASURED by `git grep -c` over .claude/ docs/
+scripts/ src/ tests/: "frob explore" 95 citations, "frob show" 0. The name is
+chosen by existing citations, not taste.
+
+`graph`'s non-read-only halves (cache build, and any drift explanation with a
+write side) STAY on `frob graph`. Only the pure queries move. State in the Done
+report which graph subverbs moved and which did not, with the reason.
+
+TOP-LEVEL `debt`/`deprecated` VS `frob ticket debt`/`frob ticket deprecated`:
+these are four names for two concepts. T-4698 renders the verdict on the
+`ticket` side; coordinate so the two tickets do not both decide, and record the
+agreed outcome in whichever closes second.
+
+POSITIVE CONTROL (acceptance): a test that runs frob explore gitlog (planned) on a
+fixture repo with a KNOWN conventional-commit history and asserts the expected
+type/granularity rollup appears; plus a test asserting the deprecated top-level
+`frob gitlog` prints the frob explore gitlog (planned) spelling on stderr and returns
+the identical output before the sunset date. "Runs without crashing" does not
+close this ticket.
+
+FILES (declared scope):
+  src/frob/_cli_parsers/_explore.py, _core.py, _misc.py, _reporting.py
+  src/frob/__main__.py
+  src/frob/app/explore_runner.py, gitlog_runner.py, stats_runner.py,
+  graph_runner.py, debt_runner.py, deprecated_runner.py
+  tests/unit/test_explore_verb.py (new)
+NOTE: map_runner.py and outline_runner.py are no longer needed here (T-4690
+handles those mirrors); debt_runner.py and deprecated_runner.py are new arrivals
+from T-4692. Reconcile the ledger scope with `frob ticket scope T-4695 --add/
+--remove` before starting.
+
+TITLE DRIFT: this ticket's title still lists map/outline/xref/docs-search. After
+this amendment it covers gitlog, stats, the graph queries, debt and deprecated.
+`frob ticket` has no title setter; this paragraph is the correction of record.

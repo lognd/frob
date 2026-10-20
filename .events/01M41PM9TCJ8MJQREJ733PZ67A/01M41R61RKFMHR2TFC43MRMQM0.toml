@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T20:44:41Z"
+digest = "9294f4d51ba9bbfe327192234ef368d6335660a4f5fe715168443e2791d81a35"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.0.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 43308dfb-fc20-42ce-9c0f-3da6e8fc1199 with nextest profile: default
+    Starting 3 tests across 1 binary (3 binaries skipped)
+        PASS [   0.006s] frob-ledger::privacy spellings_and_lookalikes
+        PASS [   0.006s] frob-ledger::privacy finding_names_file_and_remedy
+        PASS [   0.074s] frob-ledger::privacy ledger_walk_reports_only_dirty_files
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.075s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'binary(privacy)'"
+size = 760
+status = "measured"
+tests = ["spellings_and_lookalikes", "finding_names_file_and_remedy", "ledger_walk_reports_only_dirty_files"]
+at = "2026-10-03T20:44:41Z"
+actor = "lognd"
+rev = 1

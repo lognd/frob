@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/gen/by_id.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/reindex.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/src/replay.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_by_id.rs"]
+new = ["crates/frob-ledger/src/gen/by_id.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/reindex.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/src/replay.rs", "crates/frob-ledger/src/gen/mod.rs", "crates/frob-ledger/tests/gen_by_id.rs", "docs/guides/ticket-branch.md"]
+at = "2026-10-11T20:56:43Z"
+actor = "lognd"
+rev = 1

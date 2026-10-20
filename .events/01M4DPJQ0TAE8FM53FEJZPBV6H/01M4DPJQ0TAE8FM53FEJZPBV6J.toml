@@ -1,0 +1,13 @@
+kind = "create"
+title = "Share numeric_raw and the React unitless list from gob-symbols; TS adapter keeps a hole for MISSING nodes"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/crunk-ingest/**"]
+acceptance = ["Given const y = ;, when parsed, then a parse-error hole exists and crunk reports the JSX syntax error"]
+body = "Follow-ups from ~8JGRZY3."
+at = "2026-10-08T12:07:32Z"
+actor = "lognd"
+rev = 1

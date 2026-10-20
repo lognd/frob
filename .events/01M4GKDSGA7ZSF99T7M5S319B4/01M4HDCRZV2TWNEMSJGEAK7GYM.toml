@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["changelog.d/**", "crates/gob-check/src/tools.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/tests/python_env.rs", "docs/design/cicd.md"]
+new = ["changelog.d/**", "crates/gob-check/src/tools.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/tests/python_env.rs"]
+at = "2026-10-09T22:43:57Z"
+actor = "lognd"
+rev = 1

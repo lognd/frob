@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "duplicate"
+reason = "Duplicate of ~0G7VZJ5: same token-boundary defect as T-4015 (PT-18): UT-/SIT- ids must not read as T- ticket citations."
+at = "2026-10-04T21:02:17Z"
+actor = "lognd"
+rev = 1

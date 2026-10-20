@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T17:33:07Z"
+digest = "f7fdf883f01cb561d65fcba5d3e578e8176ac918c2308e4e9ae4c3a8520a033d"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c86e58c3-c2e1-4777-aa3f-dc4c53ce3761 with nextest profile: default
+    Starting 2 tests across 143 binaries (1252 tests skipped)
+        PASS [   0.007s] gob-cli render::tests::rendered_rows_print_raw_in_text_and_stay_out_of_json
+        PASS [   1.159s] frob-cli::board json_shape_carries_the_lane_and_the_five_columns
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.171s] 2 tests run: 2 passed, 1252 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(json_shape_carries) | test(rendered_rows_print_raw)'"
+size = 664
+status = "measured"
+tests = ["render::tests::rendered_rows_print_raw_in_text_and_stay_out_of_json", "json_shape_carries_the_lane_and_the_five_columns"]
+at = "2026-10-03T17:33:07Z"
+actor = "lognd"
+rev = 1

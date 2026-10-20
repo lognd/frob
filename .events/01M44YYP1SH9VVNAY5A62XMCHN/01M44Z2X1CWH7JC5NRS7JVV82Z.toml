@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Owner decision 2026-10-05: no frob migrate verbs; v1 to v2 migrations are done by hand (the project-hullbreach repositories first). migration.md records the decision."
+at = "2026-10-05T02:43:01Z"
+actor = "lognd"
+rev = 1

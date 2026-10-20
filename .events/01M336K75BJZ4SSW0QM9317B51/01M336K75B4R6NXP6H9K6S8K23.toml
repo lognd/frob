@@ -1,0 +1,13 @@
+kind = "create"
+title = "test_strata_tmlanguage.py grammar/keyword bidirectional coverage drifted"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+aliases = ["T-5291"]
+labels = ["milestone:0.534.0"]
+scope = ["tests/unit/test_strata_tmlanguage.py", "strata-core"]
+body = "gh run 35717833933; re-verified on dev tip 3acf8c6b30: test_construct_keywords_match_parser_bidirectionally and test_clause_keywords_covered_by_grammar both fail -- tmLanguage grammar and parser keyword sets have drifted apart."
+at = "2026-09-22T00:00:00Z"
+actor = "human"
+rev = 1

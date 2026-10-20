@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "lease stolen from Claude in frob-wt/HEVH0W5 by lognd in frob-wt/HEVH0W5: own lease held under pre-rewrite identity Claude; now lognd"
+at = "2026-10-14T12:58:03Z"
+actor = "lognd"
+rev = 1

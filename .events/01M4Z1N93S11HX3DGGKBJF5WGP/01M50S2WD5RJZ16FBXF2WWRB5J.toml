@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-15T21:56:52Z"
+digest = "5b89dc5ab9655c71aad2327ded6fdfb760dcfba4d172619c999f41129d5ebc86"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0f253671-53c6-48a5-95c2-124687c74b75 with nextest profile: default
+    Starting 3 tests across 3 binaries (109 tests skipped)
+        PASS [   0.124s] frob-land train_close::tests::moved_base_without_wait_is_stale
+        PASS [   0.126s] frob-land train_close::tests::ledger_only_base_move_is_folded_when_waiting
+        PASS [   0.194s] frob-land train_close::tests::code_move_gives_up_when_the_budget_is_spent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.195s] 3 tests run: 3 passed, 109 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(/ledger_only_base_move_is_folded_when_waiting|moved_base_without_wait_is_stale|code_move_gives_up/)'"
+size = 756
+status = "measured"
+test_count = 3
+tests_digest = "db9ceac2bf5b3b71108ce8ed2ecf800c9c474fc7c4bfdcfb6808caf0766c51ae"
+at = "2026-10-15T21:56:52Z"
+actor = "lognd"
+rev = 1

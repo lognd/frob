@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/**", "frob.toml", ".github/workflows/**"]
+new = ["crates/gob-check/**", "crates/gob-exec/**", "crates/frob-check/**", "frob.toml", ".github/workflows/**", "crates/gob-rules/src/required.rs", "crates/grimble-check/src/sibling.rs", "docs/design/rules.md", "docs/design/sibling-contract.md", "docs/schemas/envelope.json"]
+at = "2026-10-03T06:47:46Z"
+actor = "lognd"
+rev = 1

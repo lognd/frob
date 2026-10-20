@@ -1,0 +1,29 @@
++++
+id = "01M4FGZ7AH5DNBRQ0BMK257DSA"
+title = "Decide data categories (carries), secret and resource kinds, and calendar durations"
+type = "docs"
+category = "todo"
+priority = "low"
+points = 3
+parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
+reporter = "lognd"
+created = "2026-10-09T05:07:59Z"
+updated = "2026-10-09T05:07:59Z"
+idempotency_key = "logand-gaps-D2"
+labels = ["adoption:logand-app", "grimble"]
+scope = ["docs/design/grmb-spec.md", "docs/design/packs.md", "docs/design/grimble-model.md", "changelog.d/**"]
+
+[[acceptance]]
+text = "Given the decision, when grmb-spec 14.1 item 16 is read, then it states where carries, secret and resource live and the interim spelling"
+bound = false
+
+[[acceptance]]
+text = "Given the unit table, when read, then y and mo are either added with a calendar-dimension rule or refused with the d workaround stated"
+bound = false
+
+[[acceptance]]
+text = "Given attr keys, when read, then string keys are either allowed with their grammar or refused with the reason"
+bound = false
++++
+
+Repros 05-carries-pii-no-construct (~/projects/frob-v2-repros/logand-grimble-20261009/05-carries-pii-no-construct), 07-secret-and-resource-kinds (~/projects/frob-v2-repros/logand-grimble-20261009/07-secret-and-resource-kinds) and 08-retention-years (~/projects/frob-v2-repros/logand-grimble-20261009/08-retention-years). 14.1 item 16 says carries becomes a PII pack (~QVSC54Z) and secret/resource are kinds, but core kinds are six and node_kind needs the unloaded packs. Decide: (1) the attr convention for data categories until the PII pack, (2) whether secret and resource are core kinds or pack node_kinds with REL200 and SYS203 semantics, (3) calendar units y and mo for retention and string attr keys. Record in grmb-spec 2.2, 4.1, 14.1 and packs.md.

@@ -1,0 +1,11 @@
+kind = "evidence"
+at = "2026-10-02T23:25:26Z"
+actor = "lognd"
+rev = 1
+provider = "file"
+ref = "docs/design/grmb-spec.md"
+digest = "1de89bdbf6f78f2bb4bbb59fc8ddc053d3cb6e5cfceab4c3e89a865dd8a4380a"
+status = "measured"
+captured_at = "2026-10-02T23:25:26Z"
+accepts = [1]
+size = 77534

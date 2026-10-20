@@ -1,0 +1,35 @@
++++
+id = "01M3ZX7SGH76R4Z6WYCEY3W5YJ"
+title = "AOT compiled component cache keyed by digest, engine version and target"
+type = "task"
+category = "todo"
+priority = "low"
+points = 3
+parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
+reporter = "lognd"
+created = "2026-10-03T03:34:32Z"
+updated = "2026-10-03T03:34:32Z"
+idempotency_key = "m2-wasm-cache"
+labels = ["milestone:2", "area:packs"]
+scope = ["crates/gob-wasm/src/cache.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7JACXBTB74QS6TX6YZZE"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX7SCND92D383E8X9CEWJ7"
+
+[[acceptance]]
+text = "Given a component compiled once, when loaded again, then compilation is skipped and the pooling allocator is used"
+bound = false
+
+[[acceptance]]
+text = "Given a .cwasm file shipped inside a pack, when the pack loads, then it is ignored and a fresh compile is made"
+bound = false
++++
+
+Implements plugins.md section 6.4; security.md section 2.2.
+
+Cranelift AOT on first use; entries live outside the work tree and carry a MAC so a shipped .cwasm is never loaded.

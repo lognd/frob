@@ -1,0 +1,22 @@
+kind = "create"
+title = "frob mirror push [--dry-run] and full resync"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror-push-verb"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob/src/mirror_cmd.rs"]
+acceptance = ["Given pending events, when `frob mirror push --dry-run` runs, then the planned operations are printed and nothing is sent", "Given `frob mirror push --full-resync`, when run, then every ticket is diffed against the tracker"]
+body = """
+Implements mirror.md section 3 (who runs it).
+
+One writer; local pushes are opt-in; --dry-run previews the operations."""
+at = "2026-10-03T03:34:43Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX841SP0ZXM4CT18A4B8CV"

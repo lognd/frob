@@ -1,0 +1,16 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T12:08:50Z"
+digest = "1c5d3b3ca7586fde1b6ce313949691b653778d475516b550653a0681a1d6dbba"
+exit_code = 0
+inline = """
+INFO crunk_parity.verify: text: 0 problem(s)
+"""
+passed = true
+provider = "command"
+ref = "python3 tests/crunk-parity/verify.py text"
+size = 45
+status = "measured"
+at = "2026-10-04T12:08:50Z"
+actor = "lognd"
+rev = 1

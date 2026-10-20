@@ -1,0 +1,12 @@
+kind = "create"
+title = "gob-exec: Windows timeout kill uses taskkill /T, untested; replace with a job object or cover it with a windows-gated test"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/gob-exec/**"]
+acceptance = ["a Windows test proves a timed-out child's descendants are killed"]
+body = "found while coordinating: ~PYFAH0T landed unix process-tree kill; the Windows half is taskkill /PID /T /F because windows-sys is not a dependency; it is untested."
+at = "2026-10-10T15:57:45Z"
+actor = "Claude"
+rev = 1

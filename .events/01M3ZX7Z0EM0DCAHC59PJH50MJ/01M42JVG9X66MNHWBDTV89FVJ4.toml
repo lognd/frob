@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T04:30:47Z"
+digest = "6e7e36c13d9e19f98d4aae285da84f7f42d69f8e57a5499ed4a192cae5d62f36"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.37s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8df02d70-8c7c-4859-9899-a1abdc907563 with nextest profile: default
+    Starting 1 test across 2 binaries (21 tests skipped)
+        PASS [   0.026s] gob-diagnostics::contract text_escapes_hostile_message_and_json_keeps_it_exact
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-diagnostics -E 'test(text_escapes_hostile_message_and_json_keeps_it_exact)'"
+size = 569
+status = "measured"
+tests = ["text_escapes_hostile_message_and_json_keeps_it_exact"]
+at = "2026-10-04T04:30:47Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Jest test provider is listed in tickets.md s9 and unbuilt; no v2 ticket."
+at = "2026-10-04T21:06:25Z"
+actor = "lognd"
+rev = 1

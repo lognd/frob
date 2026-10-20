@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. PT-13: skipped, ignored and xfail tests never satisfy evidence (no handling in crates/frob-evidence today; ~1CTNHZG only stops pytest skipping in CI)."
+at = "2026-10-04T21:05:03Z"
+actor = "lognd"
+rev = 1

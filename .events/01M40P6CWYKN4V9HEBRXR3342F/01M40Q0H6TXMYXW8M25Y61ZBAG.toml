@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Not reproduced: the union -E filter records a measured pass with the landing binary and with the pre-fix tokenizer; the original refusal most likely came from a binary older than ~PFY7RCD. Landed for the hardening (full POSIX quoting, trailing-backslash error, four end-to-end tests, documented tokenization in cli.md 3). Root cause unconfirmed."
+at = "2026-10-03T11:04:57Z"
+actor = "lognd"
+rev = 1

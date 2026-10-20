@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["src/frob/webapp/_seo_spam.py", "tests/fixtures/webapp/seo1xx/spam/**", "tests/unit/test_seo_spam.py", "docs/modules/webapp-seo-spam.md"]
+new = ["src/frob/webapp/_seo_spam.py", "tests/fixtures/webapp/seo1xx/spam/**", "tests/unit/test_seo_spam.py", "docs/modules/webapp-seo-spam.md", "docs/design/crunk.md"]
+at = "2026-10-09T20:42:04Z"
+actor = "lognd"
+rev = 1

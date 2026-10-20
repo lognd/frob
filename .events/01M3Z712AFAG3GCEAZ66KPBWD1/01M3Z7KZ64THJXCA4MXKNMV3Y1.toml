@@ -1,0 +1,82 @@
+kind = "evidence"
+at = "2026-10-02T21:16:42Z"
+actor = "lognd"
+rev = 1
+provider = "command"
+ref = "cargo nextest run --profile ci -p gob-diagnostics -p frob-check -p frob-cli"
+digest = "dbfe533691cd1437a57f4b521a10b7c4ae2c76fa8f75521c1e13aa7bdeaf11ed"
+status = "measured"
+captured_at = "2026-10-02T21:16:42Z"
+accepts = [1, 2]
+passed = true
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+────────────
+ Nextest run ID 7b568af0-3c57-43d5-b751-2f7da87d2135 with nextest profile: ci
+    Starting 61 tests across 11 binaries
+        PASS [   0.007s] ( 1/61) frob-check required::tests::pending_mark_matches_by_rule_and_message
+        PASS [   0.008s] ( 2/61) frob-check required::tests::unrelated_unresolved_is_not_marked
+        PASS [   0.008s] ( 3/61) frob-check required::tests::annotation_prefix_maps_to_a_required_reason
+        PASS [   0.011s] ( 4/61) frob-check::check fix_is_refused_without_a_ticket_when_the_knob_requires_scope
+        PASS [   0.157s] ( 5/61) frob-check::check an_annotation_required_unresolved_finding_is_marked_required
+        PASS [   0.161s] ( 6/61) frob-check::check a_failing_tool_stage_yields_tool001_outside_the_budget
+        PASS [   0.185s] ( 7/61) frob-check::check a_changed_side_input_misses_the_cache
+        PASS [   0.211s] ( 8/61) frob-check::check telemetry_line_is_appended_when_enabled
+        PASS [   0.222s] ( 9/61) frob-check::check only_filters_by_family_and_rejects_unknown_names
+        PASS [   0.010s] (10/61) frob-cli config::tests::registry_files_alias_extends_lease_shared_files_without_duplicates
+        PASS [   0.245s] (11/61) frob-check::check a_non_required_unresolved_finding_passes_under_required_and_fails_under_all
+        PASS [   0.093s] (12/61) frob-check::check ticket_without_a_ledger_is_an_error
+        PASS [   0.260s] (13/61) frob-check::check fix_rewrites_the_file_and_the_next_run_is_clean
+        PASS [   0.268s] (14/61) frob-check::check bare_marker_fires_and_second_run_hits_the_cache_with_identical_output
+        PASS [   0.267s] (15/61) frob-check::check fail_on_maps_severity_to_the_exit_code
+        PASS [   0.045s] (16/61) frob-cli::check_verb explain_prints_the_rule_page_and_unknown_is_usage
+        PASS [   0.039s] (17/61) frob-cli::cli config_show_effective_reports_provenance
+        PASS [   0.011s] (18/61) frob-cli::cli every_verb_is_in_the_command_inventory
+        PASS [   0.043s] (19/61) frob-cli::cli config_show_rejects_unknown_keys_with_a_suggestion
+        PASS [   0.023s] (20/61) frob-cli::cli dry_run_is_rejected_on_verbs_that_do_not_opt_in
+        PASS [   0.017s] (21/61) frob-cli::cli init_outside_a_repo_is_a_refusal
+        PASS [   0.051s] (22/61) frob-cli::cli config_sync_adds_missing_knobs_once
+        PASS [   0.352s] (23/61) frob-check::check editing_a_file_invalidates_only_its_entries
+        PASS [   0.065s] (24/61) frob-cli::cli init_dry_run_writes_nothing
+        PASS [   0.075s] (25/61) frob-cli::cli in_process_root_matches_the_binary_contract
+        PASS [   0.109s] (26/61) frob-cli::cli doctor_outside_a_repo_still_succeeds
+        PASS [   0.026s] (27/61) frob-cli::cli schema_verb_dumps_envelope_and_config
+        PASS [   0.391s] (28/61) frob-check::check perf001_fires_only_when_enforced_and_over_budget
+        PASS [   0.032s] (29/61) frob-cli::cli unknown_verb_exits_2_with_a_suggestion
+        PASS [   0.191s] (30/61) frob-cli::check_verb error_finding_exits_1_and_fail_on_none_exits_0
+        PASS [   0.091s] (31/61) frob-cli::cli schema_flag_prints_the_verb_schema
+        PASS [   0.167s] (32/61) frob-cli::cli json_flag_is_an_alias_and_conflicts_with_text
+        PASS [   0.227s] (33/61) frob-cli::cli doctor_piped_is_json_envelope_even_with_cfg001
+        PASS [   0.148s] (34/61) frob-cli::cli text_format_goes_to_stdout_and_errors_to_stderr
+        PASS [   0.383s] (35/61) frob-check::check ticket_restricts_per_file_rules_to_its_scope
+        PASS [   0.209s] (36/61) frob-cli::ticket merge_driver_fails_with_exit_1_when_the_fold_fails
+        PASS [   0.657s] (37/61) frob-check::check a_missing_tool_binary_fails_under_required_and_passes_under_never
+        PASS [   0.355s] (38/61) frob-cli::cli init_twice_second_is_already_and_changes_nothing
+        PASS [   0.355s] (39/61) frob-cli::ticket ambiguous_handle_exits_3_listing_both_candidates
+        PASS [   0.007s] (40/61) gob-diagnostics::contract exit_code_table
+        PASS [   0.006s] (41/61) gob-diagnostics::contract fail_on_threshold
+        PASS [   0.285s] (42/61) frob-cli::ticket new_with_the_same_key_returns_already
+        PASS [   0.266s] (43/61) frob-cli::wiring close_of_a_task_without_evidence_is_refused_with_the_test_remedy
+        PASS [   0.009s] (44/61) gob-diagnostics::contract required_reason_serializes_tagged_and_summary_counts_required
+        PASS [   0.007s] (45/61) gob-diagnostics::contract schema_has_envelope_fields
+        PASS [   0.006s] (46/61) gob-diagnostics::contract slug_resolves_from_registry
+        PASS [   0.162s] (47/61) frob-cli::wiring registry_files_alias_is_accepted_and_shared_tables_are_listed
+        PASS [   0.077s] (48/61) gob-diagnostics::contract json_refusal_snapshot
+        PASS [   0.068s] (49/61) gob-diagnostics::contract json_success_snapshot
+        PASS [   0.008s] (50/61) gob-diagnostics::contract unresolved_policy_composes_with_the_threshold
+        PASS [   0.006s] (51/61) gob-diagnostics::contract unresolved_policy_matrix
+        PASS [   0.411s] (52/61) frob-cli::ticket new_update_close_makes_three_commits_and_frontmatter_equals_the_fold
+        PASS [   0.183s] (53/61) frob-cli::wiring sibling_verbs_print_schemas
+        PASS [   0.060s] (54/61) gob-diagnostics::contract text_plain_snapshot
+        PASS [   0.071s] (55/61) gob-diagnostics::contract text_color_snapshot
+        PASS [   0.383s] (56/61) frob-cli::wiring doable_hides_tickets_overlapping_a_live_lease_and_shows_them_otherwise
+        PASS [   0.312s] (57/61) frob-cli::wiring no_evidence_with_a_reason_closes_and_records_a_bypass_event
+        PASS [   2.644s] (58/61) frob-cli::ticket merge_driver_unions_events_from_both_branches_and_refolds
+        PASS [   2.701s] (59/61) frob-cli::ticket links_blocked_doable_and_repeat_semantics
+        PASS [   6.737s] (60/61) frob-cli::ticket update_set_comment_brief_and_parent
+        PASS [  12.721s] (61/61) frob-check::perf warm_run_on_this_repository_is_under_two_seconds
+────────────
+     Summary [  12.907s] 61 tests run: 61 passed, 0 skipped
+"""
+size = 6194

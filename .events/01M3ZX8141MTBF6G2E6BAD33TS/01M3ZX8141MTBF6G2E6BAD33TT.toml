@@ -1,0 +1,18 @@
+kind = "create"
+title = "Ticket branch: [tickets] branch knob and orphan-branch bootstrap"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-tb-config-init"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob-ledger/src/branch.rs", "crates/frob/src/ticket/branch_cmd.rs"]
+acceptance = ["Given a repository without the branch, when `frob ticket branch init` runs, then an orphan branch frob-tickets with a README placeholder exists and the code checkout is unchanged", "Given the branch already exists, when run again, then the verb reports already and changes nothing"]
+body = """
+Implements mirror.md section 1; tickets.md (ledger ref, D23).
+
+Materialized [tickets] branch (default frob-tickets); `frob ticket branch init` creates the orphan branch through gob-git commit_paths with CAS so the code checkout is untouched; the existing [tickets] ref knob points at it."""
+at = "2026-10-03T03:34:40Z"
+actor = "lognd"
+rev = 1

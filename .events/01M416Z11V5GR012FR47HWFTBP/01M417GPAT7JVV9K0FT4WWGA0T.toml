@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Coordinator, 2026-10-03: ~ZQRNCXY has landed (class field, expedite lane in crates/frob-worktree/src/wip.rs). Scope for this ticket: one in-progress count shared by the work gate and PM013, with one definition of what counts (decide stale: the gate ignores tickets whose lease is stale, PM013 counts them; make both use the same rule, lease-aware if PM013 can read leases, and document it), and fill split_lanes in frob-pm/src/rules/wip.rs from the class field so PM013 exempts the expedite lane exactly as the gate does."
+at = "2026-10-03T15:53:24Z"
+actor = "lognd"
+rev = 1

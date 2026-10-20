@@ -1,0 +1,10 @@
+kind = "create"
+title = "Rule tests observe the universal model: outcome classes, certified clean, required cases, language matrix (D106)"
+type = "epic"
+category = "todo"
+priority = "high"
+acceptance = ["every child closed or dropped with a reason"]
+body = "Implements testing.md: rule tests assert U's outcomes (fire, clean, unresolved, notapplicable) with subject accounting, required cases per polarity/tier/must_measure, universal rules across fidelity classes, measured fidelity, U-aware fix and snapshot invariants. Design: docs/design/testing.md (D106); audit: notes/research/u-testing-audit.md."
+at = "2026-10-06T13:40:57Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T16:24:00Z"
+digest = "e7d6f9c2492b2e0f9a3e6fbbe22f8d9e04e2949a8481c87e8a3e6899d715423c"
+exit_code = 0
+inline = '''
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized] target(s) in 13.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8f75d8c1-944d-402f-993f-fbce3392df82 with nextest profile: default
+    Starting 1 test across 3 binaries (48 tests skipped)
+        PASS [   1.321s] frob-worktree::work a_new_worktree_keeps_unchanged_sources_no_newer_than_the_tip_commit
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.321s] 1 test run: 1 passed, 48 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(=a_new_worktree_keeps_unchanged_sources_no_newer_than_the_tip_commit)'"
+size = 1307
+status = "measured"
+tests = ["a_new_worktree_keeps_unchanged_sources_no_newer_than_the_tip_commit"]
+at = "2026-10-11T16:24:00Z"
+actor = "lognd"
+rev = 1

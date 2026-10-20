@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-19T16:24:22Z"
+digest = "4097dee70f634fd9ebbe4b8dfb70d5be943dceb3c1651ca1357a01a23e21d2a3"
+exit_code = 0
+inline = """
+
+running 1 test
+test github::write::tests::a_5xx_is_recorded_failed_and_retried_next_run ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 80 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-1ff17a4595a82125)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror a_5xx_is_recorded"
+size = 349
+status = "measured"
+at = "2026-10-19T16:24:22Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,28 @@
++++
+id = "01M4P0SX8PWMV49CTPDX2SAP57"
+title = "dup T0: diff-scoped normalized token-window clone check in frob check (DUP001/DUP002), error by default"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
+reporter = "lognd"
+created = "2026-10-11T17:40:09Z"
+updated = "2026-10-11T17:40:09Z"
+
+[[acceptance]]
+text = "A diff that adds a clone of an existing symbol fails frob check with DUP001 (exact) or DUP002 (renamed identifiers)"
+bound = false
+
+[[acceptance]]
+text = "Warm-cache run on an unchanged tree adds under 50 ms; typical diff adds under 1 s (telemetry before/after)"
+bound = false
+
+[[acceptance]]
+text = "Mutating one input file produces a cache miss"
+bound = false
+
+[[acceptance]]
+text = "Default severity is error; no opt-in knob required"
+bound = false
++++

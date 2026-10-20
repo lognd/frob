@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "From ~BAD33TS: the switch also needs frob.toml ([tickets] ref = refs/heads/frob-tickets) and crates/frob-worktree/src/config.rs (its own raw [tickets] reader ignores branch); .gitattributes still routes tickets/** to the merge driver (update with ~VY4E868/~5N48KNK); on a fresh clone only origin/frob-tickets exists, so the clone flow and doctor must create the local branch (git branch frob-tickets origin/frob-tickets) because branch init refuses remote-only. Also re-point CI's ledger-ref step and goway.toml with_refs."
+at = "2026-10-06T15:10:07Z"
+actor = "lognd"
+rev = 1

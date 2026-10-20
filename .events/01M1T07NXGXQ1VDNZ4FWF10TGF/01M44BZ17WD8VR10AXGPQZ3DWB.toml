@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. The TS adapter must emit symbols for describe()/it() call expressions so frob:tests can bind vitest tests; note for ~6KKJF80 (TS/TSX adapter)."
+at = "2026-10-04T21:08:51Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T05:47:42Z"
+digest = "cca15383775f939f4c877146fc61e2947e2af80ca1a584705a0ee5c04570a5fc"
+exit_code = 0
+inline = '''
+   Compiling gob-exec v0.0.0 (<worktree>/crates/gob-exec)
+   Compiling gob-git v0.0.0 (<worktree>/crates/gob-git)
+   Compiling gob-cache v0.0.0 (<worktree>/crates/gob-cache)
+   Compiling gob-walk v0.0.0 (<worktree>/crates/gob-walk)
+   Compiling gob-ir v0.0.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.0.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 20176a7c-d006-4d3b-bdf2-39afd5020d20 with nextest profile: default
+    Starting 1 test across 6 binaries (95 tests skipped)
+        PASS [   0.118s] gob-symbols::gaps graph_is_identical_at_one_and_many_threads
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.118s] 1 test run: 1 passed, 95 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(graph_is_identical_at_one_and_many_threads)'"
+size = 901
+status = "measured"
+tests = ["graph_is_identical_at_one_and_many_threads"]
+at = "2026-10-04T05:47:42Z"
+actor = "lognd"
+rev = 1

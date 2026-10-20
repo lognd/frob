@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Coordinator, 2026-10-04: all 32 missing names were reserved at 0.0.0 by a paced run (new-crate limit observed: a burst of 5, then about one per 10 minutes; 429 messages carried the retry time). The first release now publishes only new versions, so the reserve mode is no longer needed for this repository but stays useful for others; 429 handling and decoupling PyPI from crates remain required."
+at = "2026-10-04T03:38:13Z"
+actor = "lognd"
+rev = 1

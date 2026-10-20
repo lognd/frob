@@ -1,0 +1,15 @@
+kind = "create"
+title = "enumerates: the doc's own list is the claim; no members attribute"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+idempotency_key = "m2-enumerates-no-members"
+labels = ["milestone:2"]
+scope = ["docs/design/**"]
+acceptance = ["Given doc-consistency.md, when read, then enumerates has no members attribute, the claim is the following list or table, and the subset, order and generate-instead guidance is specified"]
+body = """Owner report 2026-10-03: v1 frob:enumerates carried a members="..." attribute that duplicated the doc's list on one line (up to 5879 characters), unreadable and hand-maintained. v2: the directive names only the symbol; the claim is the list or table that follows it, parsed structurally (first column of a table, or list item code spans); exact or subset mode; optional order check; machine fix adds missing rows with placeholders and removes extra ones; large or description-free lists are generated with an include instead of claimed."""
+at = "2026-10-03T04:32:09Z"
+actor = "lognd"
+rev = 1

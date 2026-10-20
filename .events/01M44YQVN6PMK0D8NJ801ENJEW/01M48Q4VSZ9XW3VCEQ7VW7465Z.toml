@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "D106: the C# matrix cells come from the generated per-adapter capability snapshot (~QKJ78C2) and the universal-rule matrix (~42DZ0RZ); C# is F1, the first real exercise of F1."
+at = "2026-10-06T13:41:14Z"
+actor = "lognd"
+rev = 1

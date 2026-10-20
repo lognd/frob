@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-17T08:54:26Z"
+digest = "f084d5429442de73c281ae061b04c09b05cbda60664b5827fa7514acfa93af95"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c25c8ad8-aea9-498d-9a83-3e6c89c6fd7f with nextest profile: default
+    Starting 1 test across 26 binaries (269 tests skipped)
+        PASS [   0.005s] gob-plan::web_rule class_selector_kind_finds_only_class_selector_nodes_by_name
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 269 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E test(class_selector_kind_finds_only_class_selector_nodes_by_name)"
+size = 1057
+status = "measured"
+test_count = 1
+tests_digest = "ba87e8ac5b447d32794b7ef6890f025b70e1a6257699e77baf329f5956a31aff"
+at = "2026-10-17T08:54:26Z"
+actor = "lognd"
+rev = 1

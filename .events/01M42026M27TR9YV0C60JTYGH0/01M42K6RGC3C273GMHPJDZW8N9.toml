@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T04:36:55Z"
+digest = "741d1fee3b15d09c99855179dc6c07ed4f8cd2e02aa54f04038cdac4003ff4b7"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dbeea677-714d-4878-b4c3-c0972a97afb5 with nextest profile: default
+    Starting 1 test across 5 binaries (65 tests skipped)
+        PASS [   0.015s] gob-dev publish::tests::reserve_without_apply_lists_missing_names_and_the_plan_and_publishes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 65 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(reserve_without_apply_lists_missing_names_and_the_plan_and_publishes_nothing)'"
+size = 591
+status = "measured"
+tests = ["publish::tests::reserve_without_apply_lists_missing_names_and_the_plan_and_publishes_nothing"]
+at = "2026-10-04T04:36:55Z"
+actor = "lognd"
+rev = 1

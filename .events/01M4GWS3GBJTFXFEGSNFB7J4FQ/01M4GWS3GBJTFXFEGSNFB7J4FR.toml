@@ -1,0 +1,21 @@
+kind = "create"
+title = "frob-land: wire culprit finding into the base-red refusal and file the blocking fix ticket"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
+scope = ["crates/frob-land/**", "changelog.d/**"]
+acceptance = ["Given a red base, when land refuses, then E-LAND-BASE-RED names the tickets(land) commits between the last green and first red run", "Given the same red base, when land is retried, then no second fix ticket is filed (idempotency key from frob_gh::find_culprit) and lands stay blocked until the fix ticket closes"]
+body = "found while working ~WFY48QC; consumes frob_gh::find_culprit / Client::workflow_runs; cycle ~XAFQ008"
+at = "2026-10-09T17:53:24Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4D6NFCDSW5E4FD9X8J3BE8W"
+
+[[links]]
+kind = "blocked-by"
+target = "01M4GRXFQYZRDJ2TP68WFY48QC"

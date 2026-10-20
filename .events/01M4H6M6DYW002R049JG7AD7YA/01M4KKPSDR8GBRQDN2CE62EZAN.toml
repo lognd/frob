@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: Claude in repo-wt/G7AD7YA; scope: docs/design/README.md, docs/design/tickets.md, docs/design/cli.md, docs/design/build-test-ci.md, crates/frob-lease/src/config.rs, crates/frob-lease/src/lib.rs, docs/schemas/config.json, docs/reference/config.md, changelog.d/**, docs/README.md, docs/design/sibling-contract.md, docs/reference/tool-stages.md, docs/design/tool-binding.md; ttl 7200s"
+at = "2026-10-10T19:12:43Z"
+actor = "Claude"
+rev = 1

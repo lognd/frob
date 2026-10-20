@@ -1,0 +1,11 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = ["tickets/01M4095RVEYWMEWQJFT5Y8JFGW/events/01M40RSE31WG5DZ4CA1DHP8DH4.toml", "tickets/01M4095RVEYWMEWQJFT5Y8JFGW/events/01M40SGGAMX2GJ42BTSSCZ9BT6.toml"]
+at = "2026-10-03T21:24:59Z"
+actor = "lognd"
+rev = 1
+
+[[digests]]
+file = "tickets/01M4095RVEYWMEWQJFT5Y8JFGW/events/01M40SGGAMX2GJ42BTSSCZ9BT6.toml"
+old = "aa52ed0e89c54d161e8cae99e8c8fc1ef75a068ec5f846f7e8b6e2ab9db8f422"
+new = "46b56afc552c005a4557c38c89570f6ac0b92a56a080a12ba0c28da3a8d5ba64"

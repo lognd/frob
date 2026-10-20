@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-diagnostics/src/refusal.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/src/error.rs", "docs/design/security.md", "crates/gob-trust/tests/guard.rs", "crates/gob-trust/src/guard.rs"]
+new = ["crates/gob-diagnostics/src/refusal.rs", "crates/gob-trust/src/lib.rs", "crates/gob-trust/src/error.rs", "docs/design/security.md", "crates/gob-trust/tests/guard.rs", "crates/gob-trust/src/guard.rs", "crates/gob-diagnostics/tests/state_tracked.rs"]
+at = "2026-10-10T16:00:11Z"
+actor = "Claude"
+rev = 1

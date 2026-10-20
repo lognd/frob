@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: bulk migration of v1 prose citing tickets; ticket text is inert in v2 (D91)."
+at = "2026-10-04T21:07:28Z"
+actor = "lognd"
+rev = 1

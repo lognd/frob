@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-08T10:27:07Z"
+digest = "a2f6ea6399bf633c8dd08b297e41f6c9bb999bc1b9cc2febc071a078528f21f7"
+exit_code = 0
+passed = true
+provider = "command"
+ref = "goway run --with-git --needs cores:8 --wait 20m -- cargo nextest run --profile ci --workspace"
+size = 240835
+status = "measured"
+uri = "dir:.git/frob/artifacts/a2f6ea6399bf633c8dd08b297e41f6c9bb999bc1b9cc2febc071a078528f21f7"
+at = "2026-10-08T10:27:07Z"
+actor = "lognd"
+rev = 1

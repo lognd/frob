@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-evidence/src/done.rs", "crates/frob-evidence/src/guard.rs", "crates/frob/src/ticket/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/doctor.rs", "docs/design/tickets.md"]
+new = ["crates/frob-evidence/src/done.rs", "crates/frob-evidence/src/guard.rs", "crates/frob/src/ticket/**", "crates/frob/tests/close_guards.rs", "crates/frob-ledger/src/doctor.rs", "docs/design/tickets.md", "crates/gob-git/src/read.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs"]
+at = "2026-10-04T04:52:43Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Coordinator 2026-10-08: blocked-by ~CDMAECH removed. The checks ship with a stand-in vocabulary in gob-plan/src/check/vocab.rs; ~CDMAECH replaces it with the real catalog and re-keys GRL018 on capabilities. Order reversed deliberately so the checks land first."
+at = "2026-10-08T09:56:17Z"
+actor = "lognd"
+rev = 1

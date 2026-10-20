@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: Claude in frob-wt/3A9N1B2; scope: crates/gob-plan/src/lower/**, crates/gob-plan/src/plan/**, crates/gob-plan/tests/**, crates/gob-plan/src/exec/**; ttl 7200s"
+at = "2026-10-14T11:40:21Z"
+actor = "Claude"
+rev = 1

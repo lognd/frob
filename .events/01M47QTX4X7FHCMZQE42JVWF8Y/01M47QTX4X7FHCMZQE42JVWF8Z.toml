@@ -1,0 +1,13 @@
+kind = "create"
+title = "Formatter and printer idempotence: grimble fmt and the GRL printer"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/grimble-model/**", "crates/gob-plan/**"]
+acceptance = ["idempotence and round-trip tests over all fixtures", "a proptest generator for each language with a shrinking failure example in a self-test"]
+body = "build-test-ci.md section 6, ruff_python_formatter stability checks. format(format(x)) equals format(x) and parse(print(t)) equals t over every .grmb and GRL fixture and a proptest generator."
+at = "2026-10-06T04:34:02Z"
+actor = "lognd"
+rev = 1

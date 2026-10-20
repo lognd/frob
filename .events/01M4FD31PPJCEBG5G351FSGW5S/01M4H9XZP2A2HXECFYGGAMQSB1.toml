@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["adoption:hullbreach"]
+new = ["adoption:hullbreach", "creates:crates/frob-evidence/tests/providers.rs"]
+at = "2026-10-09T21:43:27Z"
+actor = "lognd"
+rev = 1

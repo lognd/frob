@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-05T02:45:41Z"
+digest = "19933ed102be9cc640d35a46971957d7b64cfe500cfc75eaa592b172038738c9"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9ff1f62a-37dc-4952-b27a-351a5031872a with nextest profile: default
+    Starting 4 tests across 1 binary (28 tests skipped)
+        PASS [   0.007s] gob-languages inline::tests::unmatched_run_is_not_a_span
+        PASS [   0.007s] gob-languages comments::tests::text_fallback_agrees_on_the_corpus
+        PASS [   0.007s] gob-languages comments::tests::csharp_block_and_doc_forms_and_unterminated_strings
+        PASS [   0.008s] gob-languages comments::tests::corpus_spans_are_exact
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 4 tests run: 4 passed, 28 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-languages corpus_spans_are_exact text_fallback_agrees_on_the_corpus csharp_block_and_doc_forms"
+size = 825
+status = "measured"
+tests = ["inline::tests::unmatched_run_is_not_a_span", "comments::tests::text_fallback_agrees_on_the_corpus", "comments::tests::csharp_block_and_doc_forms_and_unterminated_strings", "comments::tests::corpus_spans_are_exact"]
+at = "2026-10-05T02:45:41Z"
+actor = "lognd"
+rev = 1

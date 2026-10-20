@@ -1,0 +1,14 @@
++++
+id = "01M4MBJ35HGM0P2MH4B7YMB3EQ"
+title = "Declare ERR001-ERR003 as rules over grimble_lints::err::scan, with pages and corpora, and run them in grimble check"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+reporter = "lognd"
+created = "2026-10-11T02:09:38Z"
+updated = "2026-10-11T02:09:38Z"
+scope = ["crates/grimble-lints/**", "crates/grimble-check/src/product_rules.rs", "crates/grimble-check/Cargo.toml", "docs/reference/rules/ERR*.md"]
++++
+
+found while working ~K4B9CKF: the detectors landed; still needed: #[rule] declarations (Unknown sites are Unresolved, Certain ones Warn), rule pages with fire and clean mdtest cases, product_rules wiring, ramp-in (new_rule_warn_releases), depends on the FileCx language ticket

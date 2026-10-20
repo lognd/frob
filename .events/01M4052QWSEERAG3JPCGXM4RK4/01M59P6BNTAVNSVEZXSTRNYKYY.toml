@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-19T08:59:31Z"
+digest = "e03053085d668f35532e9364cb81cd7023f6c285b748f5f661ad37198c1263e4"
+exit_code = 0
+inline = """
+
+running 1 test
+test github::lookup::tests::paging_continues_until_the_start_time_is_passed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 47 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-9c7a4f86665bb5e8)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror paging_continues_until_the_start_time_is_passed"
+size = 352
+status = "measured"
+at = "2026-10-19T08:59:31Z"
+actor = "lognd"
+rev = 1

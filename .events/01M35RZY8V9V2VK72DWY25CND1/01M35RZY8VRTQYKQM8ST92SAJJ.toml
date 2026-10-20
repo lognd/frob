@@ -1,0 +1,13 @@
+kind = "create"
+title = "land --dry-run stops before squash-apply so T-3324 self-conformance and DOC006 pointer refusals never run; DRY RUN clean is a false READY"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 5
+aliases = ["T-5403"]
+labels = ["milestone:v0.534.0"]
+scope = ["src/frob/tickets/_land_squash.py", "src/frob/tickets/_land.py", "tests/ticket_land_suite/test_land_dry_run_squash_preview.py"]
+body = "Observed twice today (T-5302, T-5360): agent reports 'DRY RUN clean -- merged=True wip_committed=False', the real land then refuses with SELFAUDIT001 (undeclared fs.read via-list) and DOC006 (illustrative paths) attributable to the land's own touched files. Cause: src/frob/app/ticket_runner/_land_cmd.py ~3469 returns at 'would finalize/close/squash-apply/commit' before src/frob/tickets/_land_squash.py::_run_pre_commit_checks (the unscoped pre-commit sweep, _refuse_if_selfaudit_findings_in_touched_files, docptr and sys111 findings) ever executes, so the dry-run never measures the checks that most often refuse a land. Fix: in dry-run, build the staged squash preview on a throwaway ref exactly as the real land does, run _run_pre_commit_checks against it, report its findings as the dry-run verdict, then unwind; never commit. Positive control: a fixture worktree that reads a file from a module not in the strata via-list must make the dry-run report SELFAUDIT001. Update docs/guides (land dry-run contract) and the BRIEF idiom that dry-run is the READY proof."
+at = "2026-09-23T00:00:00Z"
+actor = "human"
+rev = 1

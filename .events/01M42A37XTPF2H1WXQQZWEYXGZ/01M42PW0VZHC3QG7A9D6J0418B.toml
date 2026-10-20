@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "developer tooling only: opt-in remote cargo dev ci"
+at = "2026-10-04T05:40:58Z"
+actor = "lognd"
+rev = 1

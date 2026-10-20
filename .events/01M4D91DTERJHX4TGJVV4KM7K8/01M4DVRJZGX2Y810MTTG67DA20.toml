@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Re-scoped by D122 (docs/design/tool-binding.md section 3): the web profile defaults to oxlint (SARIF via ~WAZA1EH; react-hooks, jsx-a11y and 59 of 61 typescript-eslint rules through tsgolint, type-aware opt-in), with ESLint as the escape hatch for ESLint-only plugins and Biome when a repository already uses it. The ESLint JSON parser is kept for that escape hatch."
+at = "2026-10-08T13:38:07Z"
+actor = "lognd"
+rev = 1

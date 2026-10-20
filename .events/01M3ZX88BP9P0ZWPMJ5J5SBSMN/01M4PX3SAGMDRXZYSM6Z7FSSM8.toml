@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["milestone:2", "area:navigation"]
+new = ["milestone:2", "area:navigation", "creates:crates/frob/src/tour_cmd.rs", "creates:crates/frob/tests/tour.rs"]
+at = "2026-10-12T01:54:52Z"
+actor = "lognd"
+rev = 1

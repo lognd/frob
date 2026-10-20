@@ -1,0 +1,67 @@
+kind = "evidence"
+captured_at = "2026-10-14T12:23:34Z"
+digest = "4632ca160eb1689cf48715086d4d3687b500a3242f3f4ff575d6478b9a5172f5"
+exit_code = 101
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+error[E0432]: unresolved imports `gob_symbols::TypeFacts`, `gob_symbols::TypesTrust`
+ --> crates/gob-symbols/tests/python_types.rs:6:49
+  |
+6 |     EdgeKind, FileSymbols, Status, SymbolGraph, TypeFacts, TypesTrust, extract_file,
+  |                                                 ^^^^^^^^^  ^^^^^^^^^^ no `TypesTrust` in the root
+  |                                                 |
+  |                                                 no `TypeFacts` in the root
+
+error[E0599]: no associated function or constant named `from_files_typed` found for struct `SymbolGraph` in the current scope
+  --> crates/gob-symbols/tests/python_types.rs:35:37
+   |
+35 |     let exact = edges(&SymbolGraph::from_files_typed(files(), facts));
+   |                                     ^^^^^^^^^^^^^^^^ associated function or constant not found in `SymbolGraph`
+   |
+note: if you're trying to build a new `SymbolGraph` consider using one of the following associated functions:
+      SymbolGraph::from_files
+      SymbolGraph::from_files_with_deps
+  --> crates/gob-symbols/src/graph.rs:757:4
+help: there is an associated function `from_files` with a similar name
+  --> crates/gob-symbols/src/graph.rs:757:4
+
+error[E0599]: no associated function or constant named `from_files_typed` found for struct `SymbolGraph` in the current scope
+  --> crates/gob-symbols/tests/python_types.rs:38:39
+   |
+38 |     let claimed = edges(&SymbolGraph::from_files_typed(
+   |                                       ^^^^^^^^^^^^^^^^ associated function or constant not found in `SymbolGraph`
+   |
+note: if you're trying to build a new `SymbolGraph` consider using one of the following associated functions:
+      SymbolGraph::from_files
+      SymbolGraph::from_files_with_deps
+  --> crates/gob-symbols/src/graph.rs:757:4
+help: there is an associated function `from_files` with a similar name
+  --> crates/gob-symbols/src/graph.rs:757:4
+
+error[E0599]: no associated function or constant named `from_files_typed` found for struct `SymbolGraph` in the current scope
+  --> crates/gob-symbols/tests/python_types.rs:44:41
+   |
+44 |     let annotated = edges(&SymbolGraph::from_files_typed(
+   |                                         ^^^^^^^^^^^^^^^^ associated function or constant not found in `SymbolGraph`
+   |
+note: if you're trying to build a new `SymbolGraph` consider using one of the following associated functions:
+      SymbolGraph::from_files
+      SymbolGraph::from_files_with_deps
+  --> crates/gob-symbols/src/graph.rs:757:4
+help: there is an associated function `from_files` with a similar name
+  --> crates/gob-symbols/src/graph.rs:757:4
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `gob-symbols` (test "python_types") due to 4 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "package(gob-symbols) | package(gob-check)"
+size = 3107
+status = "measured"
+at = "2026-10-14T12:23:34Z"
+actor = "Claude"
+rev = 1

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = [".github/workflows/release.yml"]
+new = [".github/workflows/release.yml", "packaging/pypi/build-wheel.sh"]
+at = "2026-10-03T11:35:42Z"
+actor = "lognd"
+rev = 1

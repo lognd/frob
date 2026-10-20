@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Audit notes/review/audit-2026-10-07.md M1: no point-of-no-return discipline in frob-land/src/land.rs, bare branch names, git errors after close. Fix with the point-of-no-return split described there."
+at = "2026-10-08T03:55:59Z"
+actor = "lognd"
+rev = 1

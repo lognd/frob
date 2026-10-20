@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "pausing for a history rewrite; disk-starved test run; branch ticket/6QH12NZ kept"
+at = "2026-10-10T22:12:12Z"
+actor = "Claude"
+rev = 1

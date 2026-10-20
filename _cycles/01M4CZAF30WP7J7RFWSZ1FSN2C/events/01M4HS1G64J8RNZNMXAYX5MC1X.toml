@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4CTE2T943ATA1PKVBN7DCP3"
+text = "owner observation: CI recompiles over and over; coordinator dispatched"
+at = "2026-10-10T02:07:31Z"
+actor = "lognd"
+rev = 1

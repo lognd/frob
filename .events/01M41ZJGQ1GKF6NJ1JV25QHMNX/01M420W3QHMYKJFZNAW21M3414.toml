@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "CI only: dev channel moved into ci.yml as a gated job"
+at = "2026-10-03T23:16:32Z"
+actor = "lognd"
+rev = 1

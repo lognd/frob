@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = 'Lexer decisions from ~DP3BZJZ for the parser: hyphenated words (known-gap, maybe-incorrect, has-placeholders) lex as ident - ident with adjacent spans and must be joined by the parser; every string is split into text and interpolation parts, so the parser must reject interpolation where it is not allowed (globs, paths, config values) or rejoin; \{ and \} are string escapes (spec addition, update grl-spec 3); list<int>= needs a space before = (>= lexes as one token); P+ and P- are polarity tokens only when adjacent; lexical errors have no GRL code yet (the goldens ticket ~YTQ622S should assign one); the lexer stops at the first error.'
+at = "2026-10-03T05:24:28Z"
+actor = "lognd"
+rev = 1

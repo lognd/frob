@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-lock/**", "crates/frob-ack/**", "crates/gob-symbols/**", "frob.lock"]
+new = ["crates/gob-lock/**", "crates/frob-ack/**", "crates/gob-symbols/**", "frob.lock", "Cargo.lock", "docs/reference/**"]
+reason = "DRIFT004 and the attr facet change generated rule pages"
+at = "2026-10-02T22:45:01Z"
+actor = "lognd"
+rev = 1

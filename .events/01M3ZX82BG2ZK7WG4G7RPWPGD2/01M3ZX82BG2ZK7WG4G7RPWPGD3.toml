@@ -1,0 +1,22 @@
+kind = "create"
+title = "Teaching moments: first run, missing ledger branch, missing model root, Unresolved reasons in words"
+type = "task"
+category = "todo"
+priority = "low"
+points = 3
+parent = "01M3ZX76ZV963F3AXRKJ8F744N"
+idempotency_key = "m2-diag-moments-state"
+labels = ["milestone:2", "area:diagnostics"]
+scope = ["crates/frob/src/init.rs", "crates/frob-ledger/src/error.rs", "crates/gob-diagnostics/src/reason_words.rs"]
+acceptance = ["Given a clone without the ticket branch, when a ticket verb runs, then the note and the single fetch command are printed", "Given an Unresolved with reason annotation-required, when rendered, then the reason is explained in words and names the annotation to add"]
+body = """
+Implements diagnostics.md section 5 (rows 1, 2, 5, 7).
+
+First run without frob.toml prints what the tool is in two sentences and the one init command; a missing ledger branch prints `note: tickets live on the branch frob-tickets` and `help: git fetch origin frob-tickets`; each Unresolved reason code is explained in words with the exact annotation or capability that would decide."""
+at = "2026-10-03T03:34:41Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX8141MTBF6G2E6BAD33TS"

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-16T13:08:34Z"
+digest = "bbece1b8b5ce237f357784ed068bf3e438f48e571ffe2eb5917a371046e5e411"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5cffb16f-1d12-47ab-8b05-19c98f423f32 with nextest profile: default
+    Starting 1 test across 6 binaries (112 tests skipped)
+        PASS [   0.006s] gob-check tool_def::tests::version_in_a_renamed_flag_range_selects_the_variant
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 112 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(version_in_a_renamed_flag_range_selects_the_variant)'"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "b4eaa5920210e3ec65e2ae87230e1a7e84de3d382315d1e118e8d30dd5a0ee44"
+at = "2026-10-16T13:08:34Z"
+actor = "lognd"
+rev = 1

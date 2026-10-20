@@ -1,0 +1,23 @@
+kind = "create"
+title = "crunk-tailwind: node runtime bridge through gob-exec and the first-run notice"
+type = "story"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+idempotency_key = "crunk-plan-twrt"
+labels = ["area:crunk"]
+scope = ["crates/crunk-tailwind/src/runtime/**", "crates/crunk-tailwind/node/**", "crates/crunk-tailwind/tests/runtime*.rs"]
+acceptance = ["Given a project with tailwind installed, when the runtime runs, then compiled utilities are returned and cached", "Given no node on PATH, when TW rules need the runtime, then the finding state is Unresolved with that reason, never clean", "Given a helper that exceeds the timeout or output cap, when run, then it is killed and reported with the cap named"]
+body = "Port tailwind_runtime (1195 LOC, node/helper.mjs): run the project's own tailwindcss out of process behind gob-exec (timeout, scrubbed env via ~S0S9G93, output cap), parse compiled CSS with the CSS adapter, cache results, first-run notice (it executes project code: a trust note per security.md), `doctor` presence table; without node the result is Unresolved 'unresolved-by-tailwind'. Tests that need node are in the optional CI job."
+at = "2026-10-04T11:28:49Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M40VH6HES1X3P57WZS0S9G93"
+
+[[links]]
+kind = "blocked-by"
+target = "01M43ARVZPN52N6NMB7VRKZYGS"

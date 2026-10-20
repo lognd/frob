@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-22: same root cause: the TEST010 Tier-A handler corrupting files in the pre-land pass (absorbed by T-5289)"
+at = "2026-09-22T00:00:01Z"
+actor = "import"
+rev = 1

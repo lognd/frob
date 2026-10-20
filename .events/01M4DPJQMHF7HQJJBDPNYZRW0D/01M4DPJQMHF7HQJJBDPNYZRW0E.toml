@@ -1,0 +1,13 @@
+kind = "create"
+title = "release_severity per rule in #[rule] and a --gate release consumer in frob release status"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+scope = ["changelog.d/**", "crates/gob-macros/**", "crates/crunk-rules/**", "crates/frob-release/**"]
+acceptance = ["Given a rule with release_severity Error and severity Advisory, when release status runs, then the finding blocks; in check it stays Advisory"]
+body = "Follow-ups from ~JY79XVV; design crunk.md 4.1 (D117)."
+at = "2026-10-08T12:07:32Z"
+actor = "lognd"
+rev = 1

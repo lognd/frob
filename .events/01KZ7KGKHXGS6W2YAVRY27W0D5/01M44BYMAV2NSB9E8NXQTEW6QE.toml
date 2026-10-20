@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Container epic for adapters beyond rust/markdown/toml (code-model.md s3); python is ~HKNM4VV, every other language is unticketed."
+at = "2026-10-04T21:08:38Z"
+actor = "lognd"
+rev = 1

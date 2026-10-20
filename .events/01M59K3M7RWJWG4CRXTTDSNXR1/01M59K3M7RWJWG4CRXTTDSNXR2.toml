@@ -1,0 +1,10 @@
+kind = "create"
+title = "trust: discover packs awaiting review from the lock for the trust verb"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/src/trust_cmd.rs"]
+body = "found while working ~28YRZ8Z: trust_cmd::pending() returns an empty list because no pack source exists; derive ReviewFacts from lock/store state."
+at = "2026-10-19T08:05:36Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,16 @@
++++
+id = "01M2VFD1G3S1W1EMJCKCYHQ3VN"
+title = "land's own refusal-avoidance quarantine-raised log line does not name the undisposed findings forcing synchronous verification"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-19T00:00:00Z"
+updated = "2026-09-19T00:00:02Z"
+aliases = ["T-4611"]
+labels = ["milestone:0.533.0"]
+scope = ["tests/unit/test_land_cmd_quarantine.py", "src/frob/app/ticket_runner/_land_cmd.py"]
++++
+
+T-4581 why-file finding: T-3233's land spent 27.3s (+3.4s to +30.7s) in fully-synchronous verification because 'ticket land: T-3233 quarantine is raised ... deferred landing is OFF ... 16 finding(s) undisposed' (T-1693) -- the log line names only a COUNT, never which (rule, file) pairs, so triaging requires a separate 'frob verify dispose'/quarantine-read round trip mid-land. This ticket's own T-4581 fix cuts the false-positive share of this cost (lease-file/doc noise), but a real quarantine raise still pays this 27s+ blind. Have the land refusal/degrade log line enumerate (or summarize) the undisposed (rule, file) identities inline, so the very first log line is enough to triage.

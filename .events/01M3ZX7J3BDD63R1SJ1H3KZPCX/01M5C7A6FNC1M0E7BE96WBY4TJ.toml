@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T08:36:46Z"
+digest = "a5d0136d9aa4ba25a3feb1b6ac0f04d517ece103afe4436ce4cf5af544a09b6b"
+exit_code = 0
+inline = """
+
+running 1 test
+test b1_gate_fails_above_limit ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.09s
+     Running benches/b1_equality.rs (target/debug/deps/b1_equality-91162127e3471c1f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-plan --bench b1_equality b1_gate_fails_above_limit"
+size = 423
+status = "measured"
+at = "2026-10-20T08:36:46Z"
+actor = "lognd"
+rev = 1

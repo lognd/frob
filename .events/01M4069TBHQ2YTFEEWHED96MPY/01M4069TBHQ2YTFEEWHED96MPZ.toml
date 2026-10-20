@@ -1,0 +1,19 @@
+kind = "create"
+title = "PM013 WIP limit exceeded rule"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M4065Y4N6DQG30TRSP2QNP8T"
+idempotency_key = "m2-rel-pm013"
+labels = ["milestone:2", "area:release", "release:0.532.0"]
+scope = ["crates/frob-pm/src/rules/wip.rs", "docs/reference/rules/pm/**"]
+acceptance = ["Given three in-progress tickets and limit 2, when frob check runs, then PM013 fires naming the holders", "Given two, when frob check runs, then PM013 is silent"]
+body = "Fires when the in-progress count exceeds [pm.wip] in_progress (expedite tickets counted separately, section classes) or a category limit; the message names the holders. Reads the ledger index only."
+at = "2026-10-03T06:12:55Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4069T76A6WSNHT3NZERXHAH"

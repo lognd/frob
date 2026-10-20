@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-13T04:02:12Z"
+digest = "ff8ffc06912176db4277ee53903b1ff482b883f7ba6f4be15526de84b7adc7ab"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.71s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a1d46f40-38d0-4aae-992f-88be51530f82 with nextest profile: default
+    Starting 1 test across 340 binaries (2988 tests skipped)
+        PASS [   0.022s] frob-worktree gc::cargo::tests::land_target_layout_evicts_the_stale_unit_and_keeps_the_recent_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.039s] 1 test run: 1 passed, 2988 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "land_target_layout_evicts_the_stale_unit_and_keeps_the_recent_one"
+size = 594
+status = "measured"
+test_count = 1
+tests_digest = "a351cd7302ab806f47c780da9d292ff59314b0b13b932b6f5b3d9b14e46afd26"
+at = "2026-10-13T04:02:12Z"
+actor = "lognd"
+rev = 1

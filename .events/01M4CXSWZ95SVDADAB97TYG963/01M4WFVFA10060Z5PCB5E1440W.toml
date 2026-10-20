@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "scope too narrow: generated docs/schemas and crates/frob wiring"
+at = "2026-10-14T05:58:35Z"
+actor = "Claude"
+rev = 1

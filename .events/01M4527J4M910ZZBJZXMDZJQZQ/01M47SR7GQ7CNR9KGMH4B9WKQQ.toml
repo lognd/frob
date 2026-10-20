@@ -1,0 +1,39 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-06T05:01:53Z"
+digest = "f6adddc091846f465fcf5a282d0b085a02f349f0c4b139755d5fff2358e69621"
+exit_code = 125
+inline = """
+goway: warning: CROSS-OS: `cargo` is portable, but this run stays on linux hosts
+goway: note:   other-OS hosts that could take it: nova-windows
+goway: note:   allow every OS for this run:      goway run --any-os -- ...
+goway: note:   allow it for this project:        cross_os = true in goway.toml
+goway: note:   silence this hint:                cross_os = false in goway.toml
+goway: note: no host has room yet (xanders-laptop: 1.4 GiB free, 1.5 GiB needed per job); queued at position 2, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 0.4 GiB free, 1.5 GiB needed per job); queued at position 2, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 0.2 GiB free, 1.5 GiB needed per job); queued at position 2, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 1.6 GiB of memory free, this repository needs about 3.7 GiB); queued at position 2, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 0.3 GiB free, 1.5 GiB needed per job); queued at position 2, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 2.8 GiB of memory free, this repository needs about 3.8 GiB); queued at position 2, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 0.0 GiB free, 1.5 GiB needed per job); queued at position 2, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 0.0 GiB free, 1.5 GiB needed per job); queued at position 1, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 2.3 GiB of memory free, this repository needs about 3.8 GiB); queued at position 1, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 2.4 GiB of memory free, this repository needs about 3.8 GiB); queued at position 1, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 2.3 GiB of memory free, this repository needs about 3.8 GiB); queued at position 1, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 2.0 GiB of memory free, this repository needs about 3.8 GiB); queued at position 1, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 1.6 GiB of memory free, this repository needs about 3.8 GiB); queued at position 1, waiting up to 5m
+goway: note: no host has room yet (xanders-laptop: 0.9 GiB free, 1.5 GiB needed per job); queued at position 1, waiting up to 5m
+2026-10-06T05:07:29.324247Z  WARN gave up waiting for a host elapsed=300.000065158s
+goway: error: no usable host:
+  |   waited 5m in the queue (position 1) for a host with a free job slot, memory and disk for one more job
+  |   xanders-laptop: 0.9 GiB free, 1.5 GiB needed per job
+  |   next: `goway status` shows each host's state; `goway add NAME` adds another helper; `goway run --host local -- CMD` runs on this machine, and `[local] fallback = true` in the config does that automatically when no helper is reachable
+"""
+passed = false
+provider = "command"
+ref = "goway run --with-git --needs cores:8 -- cargo nextest run --profile ci --workspace"
+size = 2866
+status = "measured"
+at = "2026-10-06T05:01:53Z"
+actor = "lognd"
+rev = 1

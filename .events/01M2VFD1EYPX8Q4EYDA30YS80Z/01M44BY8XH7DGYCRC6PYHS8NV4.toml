@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 WIRE001 resolution of callers through .claude/hooks sys.path imports."
+at = "2026-10-04T21:08:26Z"
+actor = "lognd"
+rev = 1

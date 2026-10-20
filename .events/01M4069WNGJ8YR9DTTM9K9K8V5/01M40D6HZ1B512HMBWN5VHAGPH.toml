@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-03T08:13:28Z"
+digest = "2846a47f73bc17a70c79b8853dba5571287df0d8d81b987da29919559a5c6aa5"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+────────────
+ Nextest run ID 6f3975f2-c258-478f-9d12-d15e350b6a38 with nextest profile: default
+    Starting 7 tests across 1 binary (2 binaries skipped)
+        PASS [   0.009s] (1/7) frob-release::rel002 all_equal_is_silent
+        PASS [   0.009s] (2/7) frob-release::rel002 an_unparseable_member_manifest_is_unresolved_with_the_reason
+        PASS [   0.009s] (3/7) frob-release::rel002 one_crate_with_a_different_version_fires_naming_it
+        PASS [   0.009s] (4/7) frob-release::rel002 inherited_versions_count_as_equal
+        PASS [   0.010s] (5/7) frob-release::rel002 this_repository_is_clean
+        PASS [   0.013s] (6/7) frob-release::rel002 wheel_metadata_absent_is_fine_and_present_is_compared
+        PASS [   0.013s] (7/7) frob-release::rel002 mdtest_corpus
+────────────
+     Summary [   0.014s] 7 tests run: 7 passed, 0 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E binary(rel002)"
+size = 969
+status = "measured"
+tests = ["all_equal_is_silent", "an_unparseable_member_manifest_is_unresolved_with_the_reason", "one_crate_with_a_different_version_fires_naming_it", "inherited_versions_count_as_equal", "this_repository_is_clean", "wheel_metadata_absent_is_fine_and_present_is_compared", "mdtest_corpus"]
+at = "2026-10-03T08:13:28Z"
+actor = "lognd"
+rev = 1

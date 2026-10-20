@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-check/**", "crates/gob-rules/**", "crates/gob-macros/**", "crates/frob-check/**", "crates/frob-obligations/**", "docs/reference/**"]
+reason = "RuleMeta gains polarity and must_measure; two struct literals outside the crate must list them"
+at = "2026-10-02T22:28:13Z"
+actor = "lognd"
+rev = 1

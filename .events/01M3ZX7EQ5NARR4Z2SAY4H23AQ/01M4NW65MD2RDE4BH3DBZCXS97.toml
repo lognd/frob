@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-11T16:19:21Z"
+digest = "52e0e45a57f77b62dff102352250cf5272fc7b3ad92f1acb58cdec06135cbfc5"
+exit_code = 0
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized] target(s) in 6.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e8174a6c-f594-4e70-9c8b-96cc38293921 with nextest profile: default
+    Starting 1 test across 15 binaries (180 tests skipped)
+        PASS [   0.008s] gob-plan plan::tests::cost_class_reads_the_deepest_reaches_else_the_scope
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 180 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=plan::tests::cost_class_reads_the_deepest_reaches_else_the_scope)'"
+size = 615
+status = "measured"
+tests = ["plan::tests::cost_class_reads_the_deepest_reaches_else_the_scope"]
+at = "2026-10-11T16:19:21Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T11:57:53Z"
+digest = "3993a00408a4c12c25222dc94a53c748254a4b515b3eb021e4f96221caf67ca9"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 48e59c78-bc91-47af-a266-fd80c83799ea with nextest profile: default
+    Starting 1 test across 3 binaries (41 tests skipped)
+        PASS [   1.592s] frob-evidence done::tests::an_open_blocker_refuses_a_done_close_and_is_named_but_not_other_outcomes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.597s] 1 test run: 1 passed, 41 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence open_blocker"
+size = 746
+status = "measured"
+tests = ["done::tests::an_open_blocker_refuses_a_done_close_and_is_named_but_not_other_outcomes"]
+at = "2026-10-04T11:57:53Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "CI config only: removed a v1 directive comment"
+at = "2026-10-03T21:01:48Z"
+actor = "lognd"
+rev = 1

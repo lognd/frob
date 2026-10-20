@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Also fix two stale sentences found by ~SF903MG: docs/design/architecture.md line ~250 and docs/design/code-model.md line ~265 still say [directives] is not yet a ConfigTable; it is now (gob-directives DirectivesConfig, default namespaces frob, grimble, crunk). Note that frob-check, frob-ack and frob-obligations still scan with ScanConfig::default() (frob only) until grimble and crunk register verbs."
+at = "2026-10-02T23:20:49Z"
+actor = "lognd"
+rev = 1

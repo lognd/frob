@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a v1 branch and v2 main, when a reader follows the guide's recipe, then the merge resolves with main's tickets/ tree and no ticket data is lost; the importer report points at the recipe", "Given the upgrade guide, when it lands, then it states that 0.532.0 is on PyPI (logand F-552)"]
+new = ["Given a v1 branch and v2 main, when a reader follows the guide's recipe, then the merge resolves with main's tickets/ tree and no ticket data is lost; the importer report points at the recipe", "Given the upgrade guide, when it lands, then it states that 0.532.0 is on PyPI (logand F-552)", "Given the owner decision of 2026-10-09 (no migrate command), when the guide lands, then it carries the complete v1 to v2 frob.toml key mapping (each v1 key: v2 key or removed, with reason), the frob:waive to frob:accept/frob:defer rewrite rules, and the frob:tests direction flip, for by-hand migration"]
+moved = [1, 2]
+at = "2026-10-09T16:28:40Z"
+actor = "lognd"
+rev = 1

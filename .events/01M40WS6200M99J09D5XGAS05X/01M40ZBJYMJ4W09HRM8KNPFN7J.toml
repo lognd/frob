@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-03T13:30:48Z"
+digest = "46d5bcd980277152528075fb38155a858da1e13dd490590914e22a9f96236ed5"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+────────────
+ Nextest run ID a5c09e1e-a7a4-40cd-b476-8f227fc03ee2 with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.615s] (1/1) frob-cli::close_guards the_running_frob_is_an_allowed_command_tool_without_listing_it
+────────────
+     Summary [   0.616s] 1 test run: 1 passed, 7 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test close_guards -E 'test(~the_running_frob)'"
+size = 458
+status = "measured"
+tests = ["the_running_frob_is_an_allowed_command_tool_without_listing_it"]
+at = "2026-10-03T13:30:48Z"
+actor = "lognd"
+rev = 1

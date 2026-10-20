@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-21: exact duplicate of T-5151 (filed twice, same title/scope/body: frob ticket attach --remove PATH) (absorbed by T-5151)"
+at = "2026-09-20T00:00:01Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,77 @@
+kind = "evidence"
+captured_at = "2026-10-10T22:54:20Z"
+digest = "d65bddb366b04965290b077c78f5f501a9550ddb7bad71bad3ce464abe099a29"
+exit_code = 0
+inline = '''
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized] target(s) in 39.72s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8007b7e6-2eb4-47bc-9633-9c391ef7460c with nextest profile: ci
+    Starting 13 tests across 53 binaries (381 tests skipped)
+        PASS [   0.008s] frob-evidence provider::tests::an_inherited_profile_the_project_lacks_falls_back_to_default
+        PASS [   0.504s] frob-evidence::evidence a_missing_blob_is_unmeasured_not_failed
+        PASS [   0.575s] frob-cli::attestation a_non_attester_an_empty_statement_and_a_missing_fact_refuse_through_the_milestone_path
+        PASS [   0.604s] frob-cli::attestation a_non_ascii_statement_is_a_usage_error_on_both_verbs_and_writes_nothing
+        PASS [   0.630s] frob-cli::attestation an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it
+        PASS [   0.129s] frob-evidence::evidence captured_paths_become_placeholders_in_the_event_data
+        PASS [   0.145s] frob-evidence::evidence command_tools_outside_the_allowlist_are_refused
+        PASS [   0.130s] frob-evidence::evidence command_transcripts_are_redacted_before_they_are_stored
+        PASS [   0.170s] frob-tests::dotnet the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies
+        PASS [   0.227s] frob-tests::typescript a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip
+        PASS [   0.269s] frob-tests::typescript run_groups_selected_tests_by_member_and_maps_results_back_to_units
+        PASS [   0.547s] frob-tests::rust_root a_crate_under_a_subdirectory_runs_nextest_from_that_directory
+        PASS [   0.735s] frob-tests::rust_root a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.458s] 13 tests run: 13 passed, 381 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p frob-evidence -p frob-tests -E '(package(=frob-cli) & (test(=a_non_ascii_statement_is_a_usage_error_on_both_verbs_and_writes_nothing) | test(=a_non_attester_an_empty_statement_and_a_missing_fact_refuse_through_the_milestone_path) | test(=an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it))) | (package(=frob-evidence) & (test(=a_missing_blob_is_unmeasured_not_failed) | test(=captured_paths_become_placeholders_in_the_event_data) | test(=command_tools_outside_the_allowlist_are_refused) | test(=command_transcripts_are_redacted_before_they_are_stored) | test(=provider::tests::an_inherited_profile_the_project_lacks_falls_back_to_default))) | (package(=frob-tests) & (test(=a_crate_under_a_subdirectory_runs_nextest_from_that_directory) | test(=a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip) | test(=a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code) | test(=run_groups_selected_tests_by_member_and_maps_results_back_to_units) | test(=the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies)))'"
+size = 4687
+status = "measured"
+tests = ["provider::tests::an_inherited_profile_the_project_lacks_falls_back_to_default", "a_non_attester_an_empty_statement_and_a_missing_fact_refuse_through_the_milestone_path", "a_non_ascii_statement_is_a_usage_error_on_both_verbs_and_writes_nothing", "an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it", "a_missing_blob_is_unmeasured_not_failed", "captured_paths_become_placeholders_in_the_event_data", "command_tools_outside_the_allowlist_are_refused", "command_transcripts_are_redacted_before_they_are_stored", "the_run_refuses_before_running_anything_and_all_finds_the_test_assemblies", "a_missing_node_refuses_the_run_with_a_named_reason_not_a_skip", "run_groups_selected_tests_by_member_and_maps_results_back_to_units", "a_crate_under_a_subdirectory_runs_nextest_from_that_directory", "a_runner_that_fails_before_running_tests_shows_its_stderr_tail_and_exit_code"]
+at = "2026-10-10T22:54:20Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-04T04:43:59Z"
+digest = "53e992d4abe69cf4ce3134c5d40480139359caa2e1a3ed59d2a543e5b937daa8"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dd15be6a-360b-4c1a-a186-e5c174927569 with nextest profile: default
+    Starting 2 tests across 1 binary (9 tests skipped)
+        PASS [   0.032s] gob-trust::state truncation_at_every_length_is_discarded
+        PASS [   0.038s] gob-trust::state ci_ignores_in_tree_cache_and_tree_root_is_refused
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.042s] 2 tests run: 2 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-trust --test state ci_ignores_in_tree_cache_and_tree_root_is_refused"
+size = 637
+status = "measured"
+tests = ["truncation_at_every_length_is_discarded", "ci_ignores_in_tree_cache_and_tree_root_is_refused"]
+at = "2026-10-04T04:43:59Z"
+actor = "lognd"
+rev = 1

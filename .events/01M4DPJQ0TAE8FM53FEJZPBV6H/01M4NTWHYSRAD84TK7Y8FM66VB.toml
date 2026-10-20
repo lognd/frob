@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "Share numeric_raw and the React unitless list from gob-symbols; TS adapter keeps a hole for MISSING nodes"
+new = "Share numeric_raw and the React unitless list from gob-symbols with crunk-ingest"
+at = "2026-10-11T15:56:44Z"
+actor = "lognd"
+rev = 1

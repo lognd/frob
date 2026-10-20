@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-11T00:51:11Z"
+digest = "b17bdcfc82562d0c4cc2fd3ca5fb2a89e7353bc358b1e2f64259e7724245aade"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2437ccd3-f11f-4167-a4f0-089c4f565007 with nextest profile: default
+    Starting 1 test across 4 binaries (41 tests skipped)
+        PASS [   0.006s] frob-obligations native::tests::finds_rust_zizmor_and_eslint_suppressions
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 41 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(=native::tests::finds_rust_zizmor_and_eslint_suppressions)'"
+size = 552
+status = "measured"
+tests = ["native::tests::finds_rust_zizmor_and_eslint_suppressions"]
+at = "2026-10-11T00:51:11Z"
+actor = "lognd"
+rev = 1

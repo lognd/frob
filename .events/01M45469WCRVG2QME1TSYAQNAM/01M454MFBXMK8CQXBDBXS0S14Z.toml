@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-10-05T04:19:51Z"
+digest = "5c6f88ec479d7bc8e34de9c284f4cb10aeff85b38669cc594cef6b7c87d10400"
+exit_code = 0
+inline = '''
+   Compiling gob-dev v0.0.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.66s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8da1af4c-38bb-4b77-8e34-816b229fc35d with nextest profile: default
+    Starting 14 tests across 5 binaries (80 tests skipped)
+        PASS [   0.014s] gob-dev wheel_smoke::tests::wheel_info_script_is_valid_json_producer
+        PASS [   0.014s] gob-dev wheel_smoke::tests::on_path_finds_executables_with_the_host_suffix
+        PASS [   0.013s] gob-dev publish::tests::a_failure_stops_the_run_and_a_rerun_resumes_at_the_failed_crate
+        PASS [   0.015s] gob-dev isolation::tests::isolated_non_windows_and_non_rebuilding_runs_pass
+        PASS [   0.015s] gob-dev publish::tests::dry_run_prints_the_order_and_publishes_nothing
+        PASS [   0.016s] gob-dev wheel_smoke::tests::fixture_loop_gets_a_forward_slash_script_path_and_the_bin_dir
+        PASS [   0.018s] gob-dev wheel_smoke::tests::tool_install_sets_isolated_tool_and_bin_dirs
+        PASS [   0.018s] gob-dev wheel_smoke::tests::installs_use_the_local_wheels_only_for_each_venv_layout
+        PASS [   0.019s] gob-dev::ci_parity ci_yml_runs_exactly_the_cargo_dev_ci_steps
+        PASS [   0.019s] gob-dev wheel::tests::the_real_products_file_lists_frob_grimble_and_crunk
+        PASS [   0.010s] gob-dev::bin/gob-dev tests::wheel_and_wheel_smoke_parse_the_workflow_arguments
+        PASS [   0.011s] gob-dev::import_v1 an_unmapped_open_ticket_stops_the_run
+        PASS [   0.056s] gob-dev::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.128s] gob-dev ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.130s] 14 tests run: 14 passed, 80 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "run -p gob-dev wheel_smoke"
+size = 1947
+status = "measured"
+tests = ["ci_yml_runs_exactly_the_cargo_dev_ci_steps", "tests::wheel_and_wheel_smoke_parse_the_workflow_arguments", "an_unmapped_open_ticket_stops_the_run", "crunk_config_reference_and_schema_are_generated_apart_from_frobs", "wheel_smoke::tests::wheel_info_script_is_valid_json_producer", "wheel_smoke::tests::on_path_finds_executables_with_the_host_suffix", "publish::tests::a_failure_stops_the_run_and_a_rerun_resumes_at_the_failed_crate", "isolation::tests::isolated_non_windows_and_non_rebuilding_runs_pass", "publish::tests::dry_run_prints_the_order_and_publishes_nothing", "wheel_smoke::tests::fixture_loop_gets_a_forward_slash_script_path_and_the_bin_dir", "wheel_smoke::tests::tool_install_sets_isolated_tool_and_bin_dirs", "wheel_smoke::tests::installs_use_the_local_wheels_only_for_each_venv_layout", "wheel::tests::the_real_products_file_lists_frob_grimble_and_crunk", "ci::tests::missing_system_tool_fails_before_running_and_names_the_install_command"]
+at = "2026-10-05T04:19:51Z"
+actor = "lognd"
+rev = 1

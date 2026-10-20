@@ -1,0 +1,95 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-04T04:32:37Z"
+digest = "5c87413789b3f6619991563f4cf2fcda00e9bbe80f56cfe576892dbc5824d58e"
+exit_code = 0
+inline = '''
+   Compiling gob-exec v0.0.0 (<worktree>/crates/gob-exec)
+   Compiling frob-worktree v0.0.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5ce1e28c-bb79-45cf-a2f0-c984c0ef6f4a with nextest profile: default
+    Starting 71 tests across 8 binaries
+        PASS [   0.063s] frob-worktree::gc jail_admits_by_components_not_string_prefix_and_refuses_roots_and_dotdot
+        PASS [   0.077s] frob-worktree::gc jail_refuses_symlinks_out_of_the_tree_and_never_deletes_their_target
+        PASS [   0.082s] frob-worktree::gc a_symlinked_target_dir_is_not_collected
+        PASS [   0.089s] frob-worktree::gc cargo_adapter_groups_a_compilation_unit_and_skips_kept_binaries
+        PASS [   0.034s] frob-worktree::gc plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build
+        PASS [   0.021s] frob-worktree::gc plan_removes_stale_incremental_regardless_of_budget_and_keeps_fresh_incremental
+        PASS [   0.050s] frob-worktree::gc plan_never_evicts_the_latest_build_even_over_budget
+        PASS [   0.147s] frob-worktree::gc disabled_gc_skips_auto_and_a_dry_run_changes_nothing
+        PASS [   0.151s] frob-worktree::gc cache_budget_evicts_least_recent_and_only_allowlisted_files
+        PASS [   0.031s] frob-worktree::gc the_automatic_pass_only_reports_on_windows_and_nothing_else_does
+        PASS [   0.058s] frob-worktree::gc target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries
+        PASS [   0.083s] frob-worktree::gc shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_else
+        PASS [   0.021s] frob-worktree::gc windows_verbatim_dotdot_was_outside_not_admitted_and_literal_dotdot_is_refused
+        PASS [   0.189s] frob-worktree::gc only_old_unreferenced_digest_named_blobs_are_collected
+        PASS [   0.199s] frob-worktree::gc closed_ticket_worktree_with_uncommitted_changes_is_kept_and_reported
+        PASS [   0.125s] frob-worktree::gc stale_incremental_directories_are_removed_and_fresh_ones_kept
+        PASS [   0.088s] frob-worktree::gc unreadable_open_ticket_evidence_removes_no_blob_and_warns
+        PASS [   0.104s] frob-worktree::gc throttle_is_honored_and_the_guard_forces_a_pass
+        PASS [   0.258s] frob-worktree::gc abandoned_land_base_checkouts_are_swept_and_recent_ones_left
+        PASS [   0.290s] frob-worktree::gc clean_closed_ticket_worktree_is_removed_and_a_merged_branch_deleted
+        PASS [   0.374s] frob-worktree::gc open_ticket_with_nothing_unsaved_is_removed_only_when_its_lease_is_not_live
+        PASS [   0.245s] frob-worktree::gc worktrees_outside_the_frob_parent_or_unknown_to_the_ledger_are_kept
+        PASS [   0.501s] frob-worktree::gc open_ticket_with_unpushed_commits_is_never_removed
+        PASS [   0.986s] frob-worktree::work cli_work_twice_reports_already_and_other_actor_gets_exit_3
+        PASS [   1.081s] frob-worktree::work concurrent_work_on_overlapping_tickets_grants_exactly_one
+        PASS [   1.172s] frob-worktree::work cli_work_past_the_repository_limit_exits_3_with_the_wip_code
+        PASS [   1.051s] frob-worktree::work start_leases_the_current_checkout_and_requeue_releases
+        PASS [   1.495s] frob-worktree::work another_holder_is_refused_and_can_steal_with_a_reason
+        PASS [   1.574s] frob-worktree::work doable_hides_tickets_overlapping_a_live_lease
+        PASS [   0.037s] gob-exec path::tests::canonical_resolves_and_errors_on_missing
+        PASS [   0.018s] gob-exec path::tests::dot_components_are_found_in_every_style
+        PASS [   0.107s] gob-exec path::tests::no_admitted_windows_path_escapes_the_root
+        PASS [   0.016s] gob-exec path::tests::verbatim_prefixes_strip_only_when_safe
+        PASS [   0.054s] gob-exec path::tests::windows_style_inputs_are_contained_by_components
+        PASS [   1.897s] frob-worktree::work a_second_expedite_exits_3_while_one_is_running
+        PASS [   0.029s] gob-exec proc001::tests::exit_code_and_exit_are_not_spawns
+        PASS [   0.028s] gob-exec proc001::tests::flags_code_and_skips_comments
+        PASS [   0.015s] gob-exec proc001::tests::grouped_and_multiline_imports_match_spawn_names
+        PASS [   0.024s] gob-exec::cmdline arg_new_wraps_an_os_string_and_exposes_it
+        PASS [   0.048s] gob-exec proc001::tests::scan_fires_outside_spawner_crates
+        PASS [   0.934s] frob-worktree::work work_creates_worktree_and_is_idempotent_for_the_holder
+        PASS [   0.020s] gob-exec::cmdline known_lines_for_the_merge_driver
+        PASS [   0.665s] frob-worktree::work worktree_dir_knob_moves_the_worktree
+        PASS [   2.258s] frob-worktree::work a_stale_in_progress_ticket_does_not_count_and_is_named
+        PASS [   1.065s] frob-worktree::work work_events_carry_no_absolute_path
+        PASS [   0.028s] gob-exec::discover beside_dirs_resolve_symlinks_to_the_real_directory_first
+        PASS [   0.119s] gob-exec::discover a_windows_scripts_dir_copy_beats_path_and_both_are_reported
+        PASS [   0.025s] gob-exec::discover path_dirs_are_searched_in_order_and_a_missing_beside_falls_back_to_path
+        PASS [   1.373s] frob-worktree::work unworkable_tickets_are_refused
+        PASS [   0.014s] gob-exec::discover windows_does_not_match_a_suffixless_file_and_unix_does_not_add_exe
+        PASS [   0.067s] gob-exec::discover windows_names_take_exe_ignoring_case_and_unix_names_are_bare
+        PASS [   0.063s] gob-exec::runner a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error
+        PASS [   2.436s] frob-worktree::work expedite_is_granted_as_the_single_exception_when_the_limit_is_reached
+        PASS [   2.354s] frob-worktree::work limit_zero_is_off_and_reentry_is_not_a_new_slot
+        PASS [   0.127s] gob-exec::runner captured_output_is_redacted_and_env_added
+        PASS [   0.765s] gob-exec::cmdline cmd_round_trips
+        PASS [   0.077s] gob-exec::runner output_under_the_cap_is_returned_whole
+        PASS [   0.221s] gob-exec::runner missing_tool_is_not_found
+        PASS [   2.492s] frob-worktree::work the_gate_and_pm013_count_the_same_holders
+        PASS [   0.017s] gob-exec::runner unlisted_program_is_not_allowed
+        PASS [   0.732s] gob-exec::cmdline posix_round_trips
+        PASS [   0.600s] gob-exec::discover find_sibling_refuses_path_like_names_and_reports_absence
+        PASS [   0.948s] gob-exec::cmdline git_for_windows_sh_round_trips
+        PASS [   0.316s] gob-exec::runner timeout_kills_group
+        PASS [   0.553s] gob-exec::runner concurrency_is_bounded_by_jobs
+        PASS [   1.864s] frob-worktree::work work_refuses_past_the_repository_limit_naming_both_holders
+        PASS [   0.541s] gob-exec::runner timeout_leaves_no_grandchild
+        PASS [   1.224s] gob-exec::cmdline powershell_round_trips
+        PASS [   0.723s] gob-exec::runner spawn_counter_counts_only_real_spawns
+        PASS [   1.036s] gob-exec::proc001_self workspace_has_no_forbidden_process_references
+        PASS [   6.822s] frob-worktree::work concurrent_work_for_the_last_wip_slot_grants_exactly_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   7.063s] 71 tests run: 71 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-exec -p frob-worktree"
+size = 7324
+status = "measured"
+tests = ["jail_admits_by_components_not_string_prefix_and_refuses_roots_and_dotdot", "jail_refuses_symlinks_out_of_the_tree_and_never_deletes_their_target", "a_symlinked_target_dir_is_not_collected", "cargo_adapter_groups_a_compilation_unit_and_skips_kept_binaries", "plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build", "plan_removes_stale_incremental_regardless_of_budget_and_keeps_fresh_incremental", "plan_never_evicts_the_latest_build_even_over_budget", "disabled_gc_skips_auto_and_a_dry_run_changes_nothing", "cache_budget_evicts_least_recent_and_only_allowlisted_files", "the_automatic_pass_only_reports_on_windows_and_nothing_else_does", "target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries", "shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_else", "windows_verbatim_dotdot_was_outside_not_admitted_and_literal_dotdot_is_refused", "only_old_unreferenced_digest_named_blobs_are_collected", "closed_ticket_worktree_with_uncommitted_changes_is_kept_and_reported", "stale_incremental_directories_are_removed_and_fresh_ones_kept", "unreadable_open_ticket_evidence_removes_no_blob_and_warns", "throttle_is_honored_and_the_guard_forces_a_pass", "abandoned_land_base_checkouts_are_swept_and_recent_ones_left", "clean_closed_ticket_worktree_is_removed_and_a_merged_branch_deleted", "open_ticket_with_nothing_unsaved_is_removed_only_when_its_lease_is_not_live", "worktrees_outside_the_frob_parent_or_unknown_to_the_ledger_are_kept", "open_ticket_with_unpushed_commits_is_never_removed", "path::tests::canonical_resolves_and_errors_on_missing", "path::tests::dot_components_are_found_in_every_style", "path::tests::no_admitted_windows_path_escapes_the_root", "path::tests::verbatim_prefixes_strip_only_when_safe", "path::tests::windows_style_inputs_are_contained_by_components", "proc001::tests::exit_code_and_exit_are_not_spawns", "proc001::tests::flags_code_and_skips_comments", "proc001::tests::grouped_and_multiline_imports_match_spawn_names", "proc001::tests::scan_fires_outside_spawner_crates", "beside_dirs_resolve_symlinks_to_the_real_directory_first", "a_windows_scripts_dir_copy_beats_path_and_both_are_reported", "path_dirs_are_searched_in_order_and_a_missing_beside_falls_back_to_path", "windows_does_not_match_a_suffixless_file_and_unix_does_not_add_exe", "windows_names_take_exe_ignoring_case_and_unix_names_are_bare", "find_sibling_refuses_path_like_names_and_reports_absence", "arg_new_wraps_an_os_string_and_exposes_it", "known_lines_for_the_merge_driver", "cmd_round_trips", "posix_round_trips", "git_for_windows_sh_round_trips", "powershell_round_trips", "a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error", "captured_output_is_redacted_and_env_added", "output_under_the_cap_is_returned_whole", "missing_tool_is_not_found", "unlisted_program_is_not_allowed", "timeout_kills_group", "concurrency_is_bounded_by_jobs", "timeout_leaves_no_grandchild", "spawn_counter_counts_only_real_spawns", "workspace_has_no_forbidden_process_references", "cli_work_twice_reports_already_and_other_actor_gets_exit_3", "concurrent_work_on_overlapping_tickets_grants_exactly_one", "cli_work_past_the_repository_limit_exits_3_with_the_wip_code", "start_leases_the_current_checkout_and_requeue_releases", "another_holder_is_refused_and_can_steal_with_a_reason", "doable_hides_tickets_overlapping_a_live_lease", "a_second_expedite_exits_3_while_one_is_running", "work_creates_worktree_and_is_idempotent_for_the_holder", "worktree_dir_knob_moves_the_worktree", "a_stale_in_progress_ticket_does_not_count_and_is_named", "work_events_carry_no_absolute_path", "unworkable_tickets_are_refused", "expedite_is_granted_as_the_single_exception_when_the_limit_is_reached", "limit_zero_is_off_and_reentry_is_not_a_new_slot", "the_gate_and_pm013_count_the_same_holders", "work_refuses_past_the_repository_limit_naming_both_holders", "concurrent_work_for_the_last_wip_slot_grants_exactly_one"]
+at = "2026-10-04T04:32:37Z"
+actor = "lognd"
+rev = 1

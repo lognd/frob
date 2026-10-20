@@ -1,0 +1,14 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-10T19:06:32Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+inline = ""
+passed = true
+provider = "command"
+ref = '''python3 -c 'import re,sys;sys.exit(0 if re.search(r"rewritten by hand as .\.grmb., with no tool",open("docs/design/migration.md").read()) else 1)''''
+size = 0
+status = "measured"
+at = "2026-10-10T19:06:32Z"
+actor = "Claude"
+rev = 1

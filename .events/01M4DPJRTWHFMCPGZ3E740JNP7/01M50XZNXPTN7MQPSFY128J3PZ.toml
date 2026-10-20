@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-15T23:21:45Z"
+digest = "42883ab4d2b4af8db87cf9b25941356b72a7054d75acf2bcab245682cee1ae29"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 42.62s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a16914c6-af6a-4ee5-a378-46c19636703b with nextest profile: default
+    Starting 1 test across 275 binaries (3273 tests skipped)
+        PASS [   0.007s] gob-plan::grl_errors golden_grl017
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 3273 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E 'test(=golden_grl017)'"
+size = 586
+status = "measured"
+test_count = 1
+tests_digest = "ab215cc5189cb3d8b42d959deccc11ef5ea21c4fa725141b089fcb0bb04645af"
+at = "2026-10-15T23:21:45Z"
+actor = "lognd"
+rev = 1

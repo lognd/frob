@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T10:18:18Z"
+digest = "2a2dcdddd8d7ef98817ffe1a282238732972f4d15a09501fc2f2382d91cd0616"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+────────────
+ Nextest run ID fc2a9182-aabc-4d78-bf4f-2fa73a9eaf77 with nextest profile: default
+    Starting 3 tests across 2 binaries (28 tests skipped)
+        PASS [   0.004s] (1/3) gob-plan grl::parse::tests::multi_word_relations_are_single_nodes
+        PASS [   0.006s] (2/3) gob-plan grl::parse::tests::spans_cover_every_clause_header_example_and_explain
+        PASS [   0.052s] (3/3) gob-plan grl::parse::tests::spec_rules_parse_without_error_and_match_snapshots
+────────────
+     Summary [   0.052s] 3 tests run: 3 passed, 28 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E test(spec_rules_parse_without_error_and_match_snapshots)|test(spans_cover_every_clause_header_example_and_explain)|test(multi_word_relations_are_single_nodes)"
+size = 665
+status = "measured"
+tests = ["grl::parse::tests::multi_word_relations_are_single_nodes", "grl::parse::tests::spans_cover_every_clause_header_example_and_explain", "grl::parse::tests::spec_rules_parse_without_error_and_match_snapshots"]
+at = "2026-10-03T10:18:18Z"
+actor = "lognd"
+rev = 1

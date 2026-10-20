@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: documents v1 strata review/decision node kinds in docs/strata/vmodel.md; v2 grammar is grmb-spec.md."
+at = "2026-10-04T21:02:54Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T18:45:40Z"
+digest = "0e2c8b8eea63f255d5374ff201b6f8d72be399507f2e9f70d419306effcdb4f6"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cc2a2f74-75df-470e-843c-542a6ade283b with nextest profile: default
+    Starting 1 test across 15 binaries (85 tests skipped)
+        PASS [   0.066s] frob-check::fidelity a_p_plus_rule_over_an_opaque_text_file_is_unresolved_not_silent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.067s] 1 test run: 1 passed, 85 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'test(=a_p_plus_rule_over_an_opaque_text_file_is_unresolved_not_silent)'"
+size = 564
+status = "measured"
+tests = ["a_p_plus_rule_over_an_opaque_text_file_is_unresolved_not_silent"]
+at = "2026-10-10T18:45:40Z"
+actor = "Claude"
+rev = 1

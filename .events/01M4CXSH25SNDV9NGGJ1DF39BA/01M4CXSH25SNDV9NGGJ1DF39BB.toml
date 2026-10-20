@@ -1,0 +1,13 @@
+kind = "create"
+title = "Exit: hullbreach platform CI runs the Rust crunk instead of uv run crunk, with a reasoned divergence list"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+scope = ["changelog.d/**", "crates/crunk/**", "docs/crunk/**"]
+acceptance = ["Given hullbreach platform, when its CI crunk step runs the Rust crunk, then it passes and every divergence from the Python crunk is listed with a reason"]
+body = "docs/design/crunk.md section 9 phase 1 exit."
+at = "2026-10-08T04:54:20Z"
+actor = "lognd"
+rev = 1

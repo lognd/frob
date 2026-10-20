@@ -1,0 +1,12 @@
+kind = "create"
+title = "Packs and plugins: loader, tiers, std pack, WASM host, adapters (D76)"
+type = "epic"
+category = "todo"
+priority = "high"
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+idempotency_key = "m2-epic-packs"
+labels = ["milestone:2", "area:packs"]
+body = "Epic grouping the tickets that implement docs/design/plugins.md and packs.md. Children carry area:packs."
+at = "2026-10-03T03:34:13Z"
+actor = "lognd"
+rev = 1

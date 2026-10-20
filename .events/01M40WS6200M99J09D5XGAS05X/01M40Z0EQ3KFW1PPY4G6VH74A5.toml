@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-03T13:24:43Z"
+digest = "0cc5f472db2d72d1192030e4cf94dd7960210fc14e0ecc0079c81a1e03e61a35"
+exit_code = 0
+inline = """
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+────────────
+ Nextest run ID c34c3c2d-8158-4eca-9d84-ed6625dc1bde with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.996s] (1/1) frob-cli::close_guards a_chore_with_an_unbound_criterion_is_refused_naming_the_criterion_and_the_bypass
+────────────
+     Summary [   0.997s] 1 test run: 1 passed, 7 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test close_guards -E 'test(~a_chore_with_an_unbound)'"
+size = 684
+status = "measured"
+tests = ["a_chore_with_an_unbound_criterion_is_refused_naming_the_criterion_and_the_bypass"]
+at = "2026-10-03T13:24:43Z"
+actor = "lognd"
+rev = 1

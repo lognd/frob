@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-tailwind/src/runtime/**", "crates/crunk-tailwind/node/**", "crates/crunk-tailwind/tests/runtime*.rs"]
+new = ["crates/crunk-tailwind/src/runtime/**", "crates/crunk-tailwind/node/**", "crates/crunk-tailwind/tests/runtime*.rs", "crates/crunk-tailwind/Cargo.toml", "crates/crunk-tailwind/src/lib.rs", "Cargo.lock", "crates/crunk-tailwind/README.md", "crates/crunk-tailwind/tests/fixtures/**"]
+at = "2026-10-08T12:51:57Z"
+actor = "lognd"
+rev = 1

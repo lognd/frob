@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Local unused findings come from bound tools (notes/research/lint-catalogue-2026-10-08.md row K02, bind profiles); DEAD here is the cross-file rule (row K03)."
+at = "2026-10-08T08:14:22Z"
+actor = "lognd"
+rev = 1

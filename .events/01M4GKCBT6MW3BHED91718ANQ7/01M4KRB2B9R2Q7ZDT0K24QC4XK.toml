@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-10T20:33:40Z"
+digest = "a60a4152c22955f46af8616c1146f8796efc814e2db6c06da0880b5024e0d128"
+exit_code = 0
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized] target(s) in 3.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f31d8133-2cb4-49e0-9032-8d8729d6b2c7 with nextest profile: default
+    Starting 1 test across 6 binaries (74 tests skipped)
+        PASS [   0.032s] gob-check tools::tests::a_failing_tool_with_info_noise_quotes_its_error_line_in_tool001
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.032s] 1 test run: 1 passed, 74 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(=tools::tests::a_failing_tool_with_info_noise_quotes_its_error_line_in_tool001)'"
+size = 628
+status = "measured"
+tests = ["tools::tests::a_failing_tool_with_info_noise_quotes_its_error_line_in_tool001"]
+at = "2026-10-10T20:33:40Z"
+actor = "Claude"
+rev = 1

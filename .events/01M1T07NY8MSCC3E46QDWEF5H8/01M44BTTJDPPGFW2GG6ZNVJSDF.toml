@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Waived frob:tests directive should still record its claimed kind; uncertain how the v2 directive model treats waived bindings."
+at = "2026-10-04T21:06:33Z"
+actor = "lognd"
+rev = 1

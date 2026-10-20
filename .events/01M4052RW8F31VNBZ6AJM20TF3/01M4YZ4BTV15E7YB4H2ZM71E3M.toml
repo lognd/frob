@@ -1,0 +1,56 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-10-15T04:51:26Z"
+digest = "f2747358198e7c4d282216c970e71948f1ef93520ced482bf1d6b414dbcd2b29"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12m 35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a05cf42a-1174-493b-b99e-6b64b46e8f55 with nextest profile: default
+    Starting 32 tests across 261 binaries (3137 tests skipped)
+        PASS [   0.007s] frob-pm cycle::plan::tests::next_milestone_leads_the_plain_lane_only
+        PASS [   0.007s] frob-pm cycle::plan::tests::unenforced_capacity_and_closed_cycles_are_refused
+        PASS [   0.007s] frob-pm cycle::plan::tests::fills_in_rank_order_and_leaves_out_what_does_not_fit
+        PASS [   0.009s] gob-plan plan::tests::binding_defects_are_rejected
+        PASS [   0.009s] gob-plan plan::tests::accessors_expose_the_validated_fields
+        PASS [   0.009s] gob-plan plan::tests::call_operands_round_trip_and_their_arguments_are_range_checked
+        PASS [   0.010s] frob-pm cycle::plan::tests::next_milestone_is_the_earliest_open_target
+        PASS [   0.009s] gob-plan plan::tests::cost_class_reads_the_deepest_reaches_else_the_scope
+        PASS [   0.010s] frob-pm cycle::plan::tests::milestone_members_follow_epics_and_claims
+        PASS [   0.011s] frob-pm cycle::plan::tests::members_and_other_cycles_are_not_reassigned_and_replanning_is_stable
+        PASS [   0.012s] gob-plan plan::tests::a_find_nested_in_a_condition_is_misplaced
+        PASS [   0.013s] gob-plan plan::tests::a_later_def_may_call_an_earlier_one
+        PASS [   0.008s] gob-plan plan::tests::count_limits_and_def_calls_are_checked
+        PASS [   0.008s] gob-plan plan::tests::cycles_and_forward_references_are_rejected_from_bytes
+        PASS [   0.009s] gob-plan plan::tests::deep_nesting_is_rejected_not_overflowed
+        PASS [   0.009s] gob-plan plan::tests::needs_prefilter_and_cost_must_agree_with_the_ops
+        PASS [   0.010s] gob-plan plan::tests::names_and_canonical_sets_are_checked
+        PASS [   0.009s] gob-plan plan::tests::out_of_range_references_are_rejected
+        PASS [   0.012s] gob-plan plan::tests::header_defects_are_named
+        PASS [   0.011s] gob-plan plan::tests::hostile_counts_do_not_allocate_or_panic
+        PASS [   0.012s] gob-plan plan::tests::embedded_load_matches_checked_load
+        PASS [   0.017s] gob-plan plan::tests::every_truncation_is_an_error
+        PASS [   0.008s] gob-plan plan::tests::std_provenance_and_other_polarities_round_trip
+        PASS [   0.009s] gob-plan plan::tests::round_trip_keeps_every_header_field
+        PASS [   0.009s] gob-plan plan::tests::shared_and_orphan_ops_are_rejected
+        PASS [   0.008s] gob-plan plan::tests::the_p_minus_split_and_unresolved_clauses_are_checked
+        PASS [   0.033s] gob-plan plan::tests::props::valid_plans_round_trip_exactly
+        PASS [   0.112s] gob-plan plan::tests::props::truncated_valid_plans_are_refused
+        PASS [   0.122s] gob-plan plan::tests::props::mutated_valid_plans_are_safe
+        PASS [   0.319s] gob-plan plan::tests::props::arbitrary_bytes_are_safe
+        PASS [   0.362s] gob-plan plan::tests::props::arbitrary_bytes_behind_a_valid_header_are_safe
+        PASS [   1.224s] gob-plan plan::tests::props::any_plan_value_is_either_refused_or_round_trips
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.243s] 32 tests run: 32 passed, 3137 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "plan::tests"
+size = 3442
+status = "measured"
+test_count = 32
+tests_digest = "469279f969f24197abbade1d81d5966be90a799e9401907efaa299905769b53f"
+at = "2026-10-15T04:51:26Z"
+actor = "lognd"
+rev = 1

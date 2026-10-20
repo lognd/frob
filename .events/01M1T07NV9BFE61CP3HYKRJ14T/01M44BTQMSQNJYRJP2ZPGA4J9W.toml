@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "V1-internal: v1 normalize_evidence_separator and kotlin ids; v2 nextest ids are not rewritten."
+at = "2026-10-04T21:06:30Z"
+actor = "lognd"
+rev = 1

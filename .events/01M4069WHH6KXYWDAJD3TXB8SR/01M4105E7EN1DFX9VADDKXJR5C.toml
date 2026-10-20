@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T13:44:55Z"
+digest = "3a615a675615434f2fc87a166388d52c808f24ea52329f710fc942c96df1ed70"
+exit_code = 0
+inline = """
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+────────────
+ Nextest run ID 25c5866a-c693-45ce-b2b0-bae1a5b0a8e5 with nextest profile: ci
+    Starting 2 tests across 30 binaries (237 tests skipped)
+        PASS [   0.017s] (1/2) frob-release::skeleton refuses_when_one_exists_and_force_replaces_it
+        PASS [   0.929s] (2/2) frob-cli::fragment type_and_text_flags_override_and_an_existing_fragment_is_refused_until_force
+────────────
+     Summary [   0.931s] 2 tests run: 2 passed, 237 skipped
+"""
+passed = true
+provider = "nextest"
+ref = "-p frob-release -p frob-cli --profile ci -E 'test(refuses_when_one_exists) | test(type_and_text_flags)'"
+size = 572
+status = "measured"
+tests = ["refuses_when_one_exists_and_force_replaces_it", "type_and_text_flags_override_and_an_existing_fragment_is_refused_until_force"]
+at = "2026-10-03T13:44:55Z"
+actor = "lognd"
+rev = 1

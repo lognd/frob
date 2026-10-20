@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-05T00:59:16Z"
+digest = "3e1c328e5c6bedac706bb4dd38dd0c53cf019fffed9a522d706e6eccce53d1e6"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a8138e8e-19f4-4e0b-8884-b6bd3843c378 with nextest profile: default
+    Starting 2 tests across 2 binaries (6 tests skipped)
+        PASS [   0.004s] gob-time::time today_is_derived_from_the_same_snapshot_as_now
+        PASS [   1.107s] gob-time::time a_pinned_clock_gives_every_date_of_a_command_one_snapshot
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.109s] 2 tests run: 2 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-time a_pinned_clock today_is_derived"
+size = 650
+status = "measured"
+tests = ["today_is_derived_from_the_same_snapshot_as_now", "a_pinned_clock_gives_every_date_of_a_command_one_snapshot"]
+at = "2026-10-05T00:59:16Z"
+actor = "lognd"
+rev = 1

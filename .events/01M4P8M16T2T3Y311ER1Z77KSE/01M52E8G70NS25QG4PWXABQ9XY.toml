@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-10-16T13:26:01Z"
+digest = "557aeafb9423cd3a1ac68c35f9813e7e2fadabff87cd8eb66831745f59688d2d"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d2be73d0-a42c-4ef2-8dca-51ace0979bbf with nextest profile: default
+    Starting 3 tests across 4 binaries (330 tests skipped)
+        PASS [   0.163s] frob-cli::it ticket_path_refs::generated_pages_and_non_ticket_markdown_links_do_not_fire
+        PASS [   0.174s] frob-cli::it ticket_path_refs::a_ticket_body_linking_a_ticket_path_fires_on_the_ledger_file_without_a_fix
+        PASS [   0.288s] frob-cli::it ticket_path_refs::a_ticket_branch_url_and_a_bare_ticket_path_fire_and_fix_rewrites_both_to_the_ulid
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.289s] 3 tests run: 3 passed, 330 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(ticket_path_refs)'"
+size = 908
+status = "measured"
+test_count = 3
+tests_digest = "9d31bb4027076b4c25f4ca03a4d4feca30c1d311f32fbc3feba257b865905ac9"
+at = "2026-10-16T13:26:01Z"
+actor = "lognd"
+rev = 1

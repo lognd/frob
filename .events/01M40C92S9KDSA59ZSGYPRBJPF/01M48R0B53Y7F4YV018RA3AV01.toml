@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by ~60SBHYV (D107): the one resolver reports applicability reasons."
+at = "2026-10-06T13:56:15Z"
+actor = "lognd"
+rev = 1

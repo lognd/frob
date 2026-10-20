@@ -1,0 +1,12 @@
+kind = "create"
+title = "ci: remedies test flags 'land --train' as unknown flag"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+scope = ["crates/frob-land/src/candidate.rs", "crates/frob/tests/siblings/remedies.rs"]
+acceptance = ["siblings remedies test passes"]
+body = "frob-cli siblings remedies_name_only_existing_commands_and_flags fails: crates/frob-land/src/candidate.rs:285 names 'frob land --train' which does not exist. Fix the remedy text to an existing flag/command (or add the flag if train is intended)."
+at = "2026-10-15T18:09:32Z"
+actor = "lognd"
+rev = 1

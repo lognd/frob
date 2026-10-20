@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-tokens/src/model.rs", "crates/crunk-tokens/src/naming.rs", "crates/crunk-tokens/Cargo.toml", "Cargo.lock"]
+new = ["crates/crunk-tokens/src/model.rs", "crates/crunk-tokens/src/naming.rs", "crates/crunk-tokens/Cargo.toml", "Cargo.lock", "crates/crunk-tokens/src/lib.rs", "crates/crunk-tokens/tests/**", "crates/crunk-tokens/README.md"]
+at = "2026-10-08T07:33:09Z"
+actor = "lognd"
+rev = 1

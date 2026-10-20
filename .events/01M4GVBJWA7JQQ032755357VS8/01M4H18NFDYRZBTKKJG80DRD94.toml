@@ -1,0 +1,21 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-09T19:06:51Z"
+digest = "5f29ab69faace90e555bea099b1e2ace091afc69d61a86f43369ef5bbbeda4f5"
+exit_code = 125
+inline = """
+goway: note: queued at position 5 behind other runs, waiting up to 5m
+goway: note: queued at position 4 behind other runs, waiting up to 5m
+2026-10-09T19:12:00.008765Z  WARN gave up waiting for a host elapsed=300.006761507s
+goway: error: no usable host:
+  |   waited 5m in the queue (position 4) for a host with a free job slot, memory and disk for one more job
+  |   next: `goway status` shows each host's state; `goway add NAME` adds another helper; `goway run --host local -- CMD` runs on this machine, and `[local] fallback = true` in the config does that automatically when no helper is reachable
+"""
+passed = false
+provider = "command"
+ref = "goway run --with-git --needs cores:8 -- frob check --json (built from this worktree): ok, zero CAP001/CAP002 findings"
+size = 602
+status = "measured"
+at = "2026-10-09T19:06:51Z"
+actor = "lognd"
+rev = 1

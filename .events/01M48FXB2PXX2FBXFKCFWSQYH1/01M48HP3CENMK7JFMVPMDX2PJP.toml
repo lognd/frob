@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a CSS declaration or TSX style prop with a colour literal outside the palette, when crunk check runs, then COLOR001 fires naming the nearest palette token", "Given a palette colour, a translucent variant of an opaque palette colour, a var() token reference or a non-colour keyword, when checked, then COLOR001 is clean", "Given the shared web fixture with the default preset, when crunk check runs, then its rules list carries COLOR001 and it reports the off-palette CSS and TSX literals"]
+moved = []
+at = "2026-10-06T12:05:43Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,12 @@
+kind = "create"
+title = "Diagnostic message convention test over the registry and snapshots"
+type = "story"
+category = "todo"
+priority = "low"
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
+scope = ["crates/gob-rules/**", "crates/gob-diagnostics/**"]
+acceptance = ["the test scans registry messages and snapshots", "an offending message fails naming the rule"]
+body = "Port clippy's lint-message convention test: every rule message and rendered finding starts lower-case and has no trailing period (or whatever docs/design/diagnostics.md states), with a shrink-only allowlist. Source: notes/research/rule-testing.md (D103)."
+at = "2026-10-06T13:27:42Z"
+actor = "lognd"
+rev = 1

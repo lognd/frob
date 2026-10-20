@@ -1,0 +1,38 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Extended the T-5403 dry-run squash-preview check to also run the T-1514
+unscoped pre-land sweep (pre_commit_sweep) -- a clean --dry-run previously
+never ran it, so it still reported READY while the real land it was
+previewing refused on SELFAUDIT001/DOC004/REG findings the sweep alone
+catches (measured: T-4759, T-4114, T-4115). Runs the sweep against the
+SAME persistent warm sweep stage (T-3135) the real land uses, not the
+bare per-call disposable preview T-5403 built -- reusing the warm stage
+avoids the missing-venv/natives false-positive class that stage exists to
+prevent (per _squash_apply_on_disposable_stage's own T-3135 docstring).
+If the warm stage cannot be prepared, degrades to skipping the sweep only
+(self-conformance/DOC006/SELFAUDIT001 check from T-5403 still runs) and
+logs a warning, matching every other best-effort step in this function.
+
+### Changed
+```
+ src/frob/tickets/_land.py                          | 93 +++++++++++++++++++---
+ .../test_land_dry_run_squash_preview.py            | 77 +++++++++++++++++-
+ tickets/T-5161/ticket.md                           |  3 +
+ 3 files changed, 159 insertions(+), 14 deletions(-)
+```
+
+### Evidence
+- `tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks::test_dry_run_refuses_when_the_pre_commit_sweep_finds_something` (pytest node id, verified passing when recorded)
+- `tests/ticket_land_suite/test_land_dry_run_squash_preview.py::TestDryRunSquashPreviewPreCommitChecks::test_dry_run_pre_commit_sweep_preview_is_clean_when_the_sweep_passes` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)"""
+at = "2026-09-20T00:00:01Z"
+actor = "import"
+rev = 1

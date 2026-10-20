@@ -1,0 +1,8 @@
+kind = "transition"
+from = "triage"
+to = "done"
+outcome = "wont-fix"
+reason = "Dropped on purpose: `refactor` is removed from frob (cli.md removed list); v2 architecture tooling is grimble-arch."
+at = "2026-10-04T21:08:46Z"
+actor = "lognd"
+rev = 1

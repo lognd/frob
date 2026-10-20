@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Compare a module docstring against its own module code (v1 DRIFT); doc-consistency SYNC (D84) is the carrier, uncertain it covers code docstrings."
+at = "2026-10-04T21:07:45Z"
+actor = "lognd"
+rev = 1

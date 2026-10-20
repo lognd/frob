@@ -1,0 +1,26 @@
+kind = "create"
+title = "Credentials environment restricted to the default branch: doctor checks through the API"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
+idempotency_key = "m2-mirror2-creds-doctor"
+labels = ["milestone:2", "area:mirror"]
+scope = ["crates/frob/src/doctor_mirror.rs", "crates/frob-mirror/src/envcheck.rs"]
+acceptance = ["Given an API answering that the environment's deployment branches are not restricted to the default branch, when doctor runs, then an Error is reported", "Given an App key or keyring present as a repository secret, when doctor runs, then an Error is reported", "Given no token or an unreachable API, when doctor runs, then the result is Unresolved, not clean"]
+body = """
+Implements mirror.md section 3.1 (Credentials) and security.md 2.11.
+
+Credentials (the App key, the marker keyring) live in an environment whose deployment branches are restricted to the default branch, never in repository secrets. doctor verifies it through the API: Error where the API answers that it is not so, Unresolved where it cannot answer."""
+at = "2026-10-03T05:51:39Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX8182AHQF2XB4WYNC30Q8"
+
+[[links]]
+kind = "blocked-by"
+target = "01M3ZX85DAD1HTEWWBMSB05K03"

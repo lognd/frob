@@ -1,0 +1,16 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T20:27:21Z"
+digest = "9e8e7d171ae80c92d5aec8c729a81877f3db5f22df9b569ba40a8d87e6264547"
+exit_code = 0
+inline = """
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.19s
+"""
+passed = true
+provider = "command"
+ref = "cargo clippy --workspace --all-targets --target x86_64-pc-windows-gnu -- -D warnings"
+size = 72
+status = "measured"
+at = "2026-10-03T20:27:21Z"
+actor = "lognd"
+rev = 1

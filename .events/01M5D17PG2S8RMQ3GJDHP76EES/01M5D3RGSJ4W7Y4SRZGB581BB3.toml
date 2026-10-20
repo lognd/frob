@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "flip done by hand from main checkout, needs quiesced ledger"
+at = "2026-10-20T16:54:21Z"
+actor = "lognd"
+rev = 1

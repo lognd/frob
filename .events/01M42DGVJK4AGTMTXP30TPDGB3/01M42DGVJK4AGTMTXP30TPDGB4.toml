@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob check fails CFG001: frob.toml lacks materialized knob pm.strict"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["frob.toml"]
+body = "found while working ~3YYNHAC; cargo dev ci --step check fails only on CFG001 (run frob config sync)"
+at = "2026-10-04T02:57:35Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,12 @@
+kind = "create"
+title = "frob test and frob land spawn cargo builds that ignore CARGO_PROFILE and CARGO_INCREMENTAL env, filling the disk with debuginfo test binaries"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/frob-tests/**"]
+acceptance = ["frob test passes through the caller's CARGO_* profile env to cargo"]
+body = "found while coordinating: with per-command env set, frob test still grew target/debug/deps to 16G; only a user-level cargo config fixed it."
+at = "2026-10-10T15:57:45Z"
+actor = "Claude"
+rev = 1

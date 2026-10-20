@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded by mirror.md 3.4 (one owner per field, per-issue reconcile, revert backoff and contested fields); replaced by m2-mirror2-fields, m2-mirror2-reconcile, m2-mirror2-contest. The old text allowed a host comment per issue per day, which 3.4 now disables by default."
+at = "2026-10-03T05:51:56Z"
+actor = "lognd"
+rev = 1

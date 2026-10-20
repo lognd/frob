@@ -1,0 +1,13 @@
+kind = "create"
+title = "Spike: per-site type facts latency, ty server LSP for Python and a typescript6 getTypeAtLocation helper for TypeScript, on 1000 sites"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M4D8X558Q07HCMEBP224NQP4"
+scope = ["changelog.d/**", "notes/research/**"]
+acceptance = ["Given 1000 call sites in hullbreach platform and a TS corpus, when queried, then the report gives latency percentiles and a recorded go or no-go per language"]
+body = "docs/design/tool-binding.md section 4; D119. Measure cold and warm latency, memory, failure modes; decide adoption."
+at = "2026-10-08T13:38:06Z"
+actor = "lognd"
+rev = 1

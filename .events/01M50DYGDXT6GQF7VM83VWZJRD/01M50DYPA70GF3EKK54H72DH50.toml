@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "folded into ~P4D7209 (lease widened to docs/schemas)"
+at = "2026-10-15T18:42:21Z"
+actor = "lognd"
+rev = 1

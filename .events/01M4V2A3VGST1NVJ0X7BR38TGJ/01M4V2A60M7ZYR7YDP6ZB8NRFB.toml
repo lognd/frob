@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["gen all --check is clean on experimental"]
+moved = []
+at = "2026-10-13T16:42:43Z"
+actor = "lognd"
+rev = 1

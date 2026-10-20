@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4HQEPMTPBQ9H4MH0B93F0TP"
+text = "urgent: experimental CI red (clippy-windows), directed by coordinator"
+at = "2026-10-10T01:40:43Z"
+actor = "lognd"
+rev = 1

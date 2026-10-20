@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Post-land check 2026-10-08: run 37756440256 (cf9cb8173, push to experimental) moved the dev tag in place with no 403 although ci.yml changed between the old tag target b92bad6ba and the new one, so the old-tag-diff hypothesis is refuted and the fallback did not run. The 10-08 04:51 cause is unknown; the step now self-heals (in-place, then release-based recreate, then verify). Dev publish green; the follow-up to pin the cause on a throwaway ref stays useful."
+at = "2026-10-08T10:15:10Z"
+actor = "lognd"
+rev = 1

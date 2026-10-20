@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-03T16:27:57Z"
+digest = "3416c0ab244ac40938f03fcea7fb8a9bafaedad23003530f2f9c29d739d7939f"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d0aeb259-c7f2-47bd-ac9c-f81483646144 with nextest profile: default
+    Starting 1 test across 2 binaries (15 tests skipped)
+        PASS [   0.485s] frob-land::land wait_gives_up_naming_the_attempts_when_the_base_keeps_moving
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.485s] 1 test run: 1 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(wait_gives_up_naming_the_attempts_when_the_base_keeps_moving)'"
+size = 567
+status = "measured"
+tests = ["wait_gives_up_naming_the_attempts_when_the_base_keeps_moving"]
+at = "2026-10-03T16:27:57Z"
+actor = "lognd"
+rev = 1

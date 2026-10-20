@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Triage (v1 import): accepted. Bash adapter (code-model.md s3) is designed but unticketed."
+at = "2026-10-04T21:04:43Z"
+actor = "lognd"
+rev = 1
