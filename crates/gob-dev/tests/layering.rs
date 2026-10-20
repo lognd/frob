@@ -18,6 +18,7 @@ const ALLOWED: &[(&str, &str, &str)] = &[
     ("gob-dev", "frob-check", "~M8WETW7"),
     ("gob-dev", "frob-cli", "~M8WETW7"),
     ("gob-dev", "frob-evidence", "~M8WETW7"),
+    ("gob-dev", "frob-mirror", "~M8WETW7"),
     ("gob-dev", "frob-ledger", "~M8WETW7"),
     ("gob-dev", "grimble-check", "~M8WETW7"),
 ];

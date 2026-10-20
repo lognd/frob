@@ -369,17 +369,17 @@ fails the test. Every workspace crate must appear here exactly once.
 | Layer | Name | Crates |
 |---|---|---|
 | 0 | base | crunk-values, gob-caps, gob-fs, gob-log, gob-macros, gob-path, gob-text, gob-time |
-| 1 | io | gob-cache, gob-exec, gob-languages, gob-lock, gob-walk |
+| 1 | io | gob-exec, gob-languages, gob-lock, gob-walk |
 | 2 | repo | gob-git, gob-trust |
-| 3 | model | gob-ir |
+| 3 | model | gob-cache, gob-ir |
 | 4 | rules | gob-pattern, gob-rules, gob-symbols |
 | 5 | config | gob-config, gob-diagnostics, gob-fix, gob-frameworks, gob-plan |
 | 6 | pipeline | gob-check, gob-cli, gob-directives, gob-mdtest, gob-packs, gob-testsupport |
-| 7 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, frob-mirror, gob-product, grimble-lints, grimble-model |
-| 8 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-pm, grimble-bind |
-| 9 | product mid | crunk-query, crunk-rules, frob-release, frob-worktree, grimble-check |
-| 10 | product upper | crunk-check, frob-evidence, frob-gh, grimble |
-| 11 | product top | crunk-fix, frob-tests |
+| 7 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, gob-product, grimble-capabilities, grimble-lints, grimble-model, grimble-vet |
+| 8 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-mirror, frob-pm, grimble-bind |
+| 9 | product mid | crunk-query, crunk-rules, frob-metrics, frob-release, frob-worktree, grimble-arch |
+| 10 | product upper | crunk-check, frob-evidence, frob-gh, grimble-check |
+| 11 | product top | crunk-fix, frob-tests, grimble |
 | 12 | product apex | crunk |
 | 13 | obligations | frob-obligations |
 | 14 | check | frob-check |
