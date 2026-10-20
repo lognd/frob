@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:39Z"
-updated = "2026-10-20T03:46:21Z"
+updated = "2026-10-20T03:48:57Z"
 idempotency_key = "m2-sec-agent-brief"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/frob-ledger/src/brief.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/tests/ledger.rs"]
@@ -19,7 +19,7 @@ target = "01M3ZX7YW7S3BJ72FPRQ85F72V"
 
 [[acceptance]]
 text = "Given a ticket body containing a shell command, when the brief renders, then the text carries origin ledger and the command is not offered as a suggestion"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a suggested command outside allowed_tools, when composing the brief, then it is omitted"
