@@ -2,7 +2,8 @@
 id = "01M3ZX81T4DCMKXZXNSR5QDX7H"
 title = "check --fix applies machine fixes within the ticket scope"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
