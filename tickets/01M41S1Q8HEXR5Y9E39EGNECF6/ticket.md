@@ -8,7 +8,7 @@ points = 3
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:47Z"
-updated = "2026-10-20T09:30:38Z"
+updated = "2026-10-20T09:52:05Z"
 scope = ["crates/grimble*/**", "crates/gob-path/tests/confinement.rs"]
 
 [[links]]
