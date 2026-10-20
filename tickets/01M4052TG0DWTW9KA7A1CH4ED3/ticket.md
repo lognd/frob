@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-20T12:19:34Z"
+updated = "2026-10-20T12:21:51Z"
 idempotency_key = "m2-mirror2-contest"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/contest.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given three re-applications by the same actor, when reconciled, then the field is contested, no further revert is made and one pending proposal holds the latest value"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a contested field, when a ledger event on the field or an accept or decline occurs, then the contested state is cleared"
