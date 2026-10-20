@@ -2,13 +2,13 @@
 id = "01M5CW04M17256SKGTF195YEC4"
 title = "Freshness hooks"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T18:28:26Z"
+updated = "2026-10-20T18:28:27Z"
 idempotency_key = "dt-DT09"
 
 [[links]]
