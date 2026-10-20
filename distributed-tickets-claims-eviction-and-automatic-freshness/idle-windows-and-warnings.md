@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
 updated = "2026-10-20T19:31:13Z"
 idempotency_key = "dt-DT12"
-scope = ["crates/frob-ledger/src/claim_window.rs", "crates/frob-ledger/src/lib.rs"]
+scope = ["crates/frob-ledger/src/claim_window.rs", "crates/frob-ledger/src/lib.rs", "crates/frob/src/config.rs"]
 
 [[links]]
 kind = "blocked-by"
