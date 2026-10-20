@@ -2,7 +2,8 @@
 id = "01M5CW04GHM970H5KR4EV5KK0X"
 title = "Per-verb auto-refresh policy"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
