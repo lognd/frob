@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T16:37:49Z"
+updated = "2026-10-20T16:38:01Z"
 idempotency_key = "dt-DT05"
 
 [[acceptance]]
@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "An unreachable remote exits 3 with a W-SYNC warning class"
-bound = false
+bound = true
 +++
 
 refresh.toml state, bounded non-prompting ls-remote (2.5s), backoff, lock, frob refresh --status under 10ms, remote and base validation. See docs/design/distributed-tickets.md.
