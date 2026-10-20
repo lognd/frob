@@ -1,0 +1,28 @@
+kind = "evidence"
+captured_at = "2026-10-20T22:30:19Z"
+digest = "6b4bc98b37d4cddfde015748804cea2b560c0268f273e4ae8bfa2ae32f783fff"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `release` profile [optimized] target(s) in 2m 31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1af14039-22b1-41ed-882d-cebab612c0f2 with nextest profile: default
+    Starting 1 test across 18 binaries (240 tests skipped)
+        SLOW [> 30.000s] frob-ledger::scale a_read_after_a_foreign_write_at_50k_tickets_patches_without_rebuilding
+        SLOW [> 60.000s] frob-ledger::scale a_read_after_a_foreign_write_at_50k_tickets_patches_without_rebuilding
+        SLOW [> 90.000s] frob-ledger::scale a_read_after_a_foreign_write_at_50k_tickets_patches_without_rebuilding
+        SLOW [>120.000s] frob-ledger::scale a_read_after_a_foreign_write_at_50k_tickets_patches_without_rebuilding
+        PASS [ 127.402s] frob-ledger::scale a_read_after_a_foreign_write_at_50k_tickets_patches_without_rebuilding
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [ 127.408s] 1 test run: 1 passed (1 slow), 240 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger --release --run-ignored only a_read_after_a_foreign_write_at_50k"
+size = 1108
+status = "measured"
+test_count = 1
+tests_digest = "047eb0934c8b62f575045de035ec5e4a24a1edbd6d50ed9d0a5671aeab407431"
+at = "2026-10-20T22:30:19Z"
+actor = "lognd"
+rev = 1
