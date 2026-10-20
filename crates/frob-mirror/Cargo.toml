@@ -11,6 +11,7 @@ publish = false
 
 [dependencies]
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
+gob-log = { version = "0.532.0", path = "../gob-log" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-time = { version = "0.532.0", path = "../gob-time" }

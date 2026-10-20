@@ -501,6 +501,12 @@ and never changes the exit status. Accepting a proposal is a separate step.
 - Transfer, conversion to a discussion, lock and pin are classified and
   reported, never acted on blindly.
 
+**Privacy scrub (implemented in `frob-mirror/src/privacy.rs`).**
+`project_private` sanitizes every free-text field of the facts before
+`project` runs: lease worktree paths become `[worktree]`, registered
+secret values and secret-shaped text (via `gob-log` redaction) become
+`[REDACTED]`. `[mirror] exclude` is still applied by `project`.
+
 **Write gate (implemented in `frob-mirror/src/fields.rs`).** The
 `WriteOp` type is only constructible through `FieldOwnership::authorize`,
 so the publishing path cannot build a write to a tracker-owned target.

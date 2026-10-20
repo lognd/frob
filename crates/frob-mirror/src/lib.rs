@@ -21,6 +21,7 @@ pub mod mapping;
 pub mod marker;
 pub mod outbox;
 pub mod plan;
+pub mod privacy;
 pub mod progress;
 pub mod projection;
 pub mod proposals;
