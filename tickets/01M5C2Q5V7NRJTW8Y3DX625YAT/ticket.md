@@ -2,7 +2,8 @@
 id = "01M5C2Q5V7NRJTW8Y3DX625YAT"
 title = "frob check accepts --trust-from REF and the CI check step passes it"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
