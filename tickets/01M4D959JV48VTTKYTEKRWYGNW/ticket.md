@@ -2,7 +2,8 @@
 id = "01M4D959JV48VTTKYTEKRWYGNW"
 title = "VIS001: item visibility wider than its uses (Advisory), binding rustc unreachable_pub where present"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
