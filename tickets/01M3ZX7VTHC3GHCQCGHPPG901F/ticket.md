@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-20T07:15:22Z"
+updated = "2026-10-20T07:16:56Z"
 idempotency_key = "m2-sec-self-trust"
 labels = ["milestone:2", "area:security"]
 scope = ["frob.toml", ".github/workflows/ci.yml", "docs/design/security.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX7VPGRERTZNVS5VR437JY"
 
 [[acceptance]]
 text = "Given a fresh clone and an untrusted cargo dev gen stage, when check runs, then the stage is Unresolved untrusted with the trust command in the remedy"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the CI workflow, when it runs check, then it uses --trust-from and no other trust flag"
