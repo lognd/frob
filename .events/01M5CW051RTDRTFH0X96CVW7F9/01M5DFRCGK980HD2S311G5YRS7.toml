@@ -1,0 +1,76 @@
+kind = "evidence"
+captured_at = "2026-10-20T20:19:23Z"
+digest = "70631e2502be97c9a26bfaf46048d674d12fe247cce0a12fc02fd8fc2b87935e"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6a6b683e-ee47-4d33-91c5-a05c5ceb111d with nextest profile: default
+    Starting 18 tests across 331 binaries (4050 tests skipped)
+        PASS [   0.015s] frob-worktree evict::tests::crash_between_delete_and_record_is_recognised
+        PASS [   0.017s] frob-worktree evict::tests::returning_holder_pushes_to_the_next_parked_ref
+        PASS [   0.020s] frob-worktree evict::tests::every_refusal_has_a_distinct_code
+        PASS [   0.021s] frob-worktree evict::tests::park_message_round_trips
+        PASS [   0.022s] frob-worktree gc::cargo::tests::land_target_layout_evicts_the_stale_unit_and_keeps_the_recent_one
+        PASS [   0.025s] frob-worktree evict::tests::parked_names_sequence_per_handle
+        PASS [   0.026s] frob-worktree evict::tests::reclaim_restores_from_newest_unless_someone_holds_it
+        PASS [   0.033s] frob-worktree evict::tests::idle_claim_is_evictable_and_each_precondition_refuses
+        PASS [   0.024s] frob-worktree::gc plan_never_evicts_the_latest_build_even_over_budget
+        PASS [   0.028s] frob-worktree::gc plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build
+        PASS [   0.038s] frob-worktree::gc cache_budget_evicts_least_recent_and_only_allowlisted_files
+        PASS [   0.037s] frob-worktree::gc target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries
+        PASS [   0.045s] frob-worktree::gc shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_else
+        PASS [   0.354s] frob-worktree::evict eviction_parks_the_work_and_deletes_the_claim
+        PASS [   0.408s] frob-worktree::evict batch_eviction_stops_at_the_rate_limit
+        PASS [   0.489s] frob-worktree::evict a_second_evictor_sees_already_evicted
+        PASS [   3.520s] frob-land::land a_member_that_does_not_merge_is_evicted_and_the_rest_land
+        PASS [   3.782s] frob-land::land a_member_dropped_from_the_final_candidate_is_evicted_not_a_round_fault
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.805s] 18 tests run: 18 passed, 4050 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "evict"
+size = 4634
+status = "measured"
+test_count = 18
+tests_digest = "29909ff800879c5abcd56820afb36de4456b2b6121650837dff1ad579d3638cb"
+at = "2026-10-20T20:19:23Z"
+actor = "lognd"
+rev = 1
