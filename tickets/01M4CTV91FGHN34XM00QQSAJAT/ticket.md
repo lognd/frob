@@ -2,13 +2,13 @@
 id = "01M4CTV91FGHN34XM00QQSAJAT"
 title = "grimble user guide: model files, check, fmt and the rule families an adopter turns on first"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:52Z"
-updated = "2026-10-08T04:02:52Z"
+updated = "2026-10-20T05:45:41Z"
 scope = ["docs/guides/**", "changelog.d/**"]
 
 [[acceptance]]
