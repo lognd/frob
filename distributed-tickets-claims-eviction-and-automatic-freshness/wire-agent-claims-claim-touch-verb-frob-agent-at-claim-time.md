@@ -8,7 +8,7 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T21:18:32Z"
-updated = "2026-10-20T22:49:41Z"
+updated = "2026-10-20T22:49:42Z"
 idempotency_key = "dt-DT15-wire"
-scope = ["crates/frob-lease/src/model.rs", "crates/frob-lease/src/store.rs", "crates/frob-check/src/scope.rs"]
+scope = ["crates/frob-lease/src/model.rs", "crates/frob-lease/src/store.rs", "crates/frob-check/src/scope.rs", "crates/frob/src/lease_cmd.rs"]
 +++
