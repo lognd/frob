@@ -362,7 +362,7 @@ mod tests {
         assert_eq!(classify_event("lease", true), None);
     }
 
-    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims::observe
+    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims.observe
     #[test]
     fn same_key_keeps_its_first_seen_time() {
         let mut o = ObservedClaims::default();
@@ -372,7 +372,7 @@ mod tests {
         assert!(o.observe("T", ActivityKind::Hard, "b", 600));
     }
 
-    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims::idle_secs
+    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims.idle_secs
     #[test]
     fn idle_uses_local_first_seen_and_clamps() {
         let mut o = ObservedClaims::default();
@@ -383,7 +383,7 @@ mod tests {
         assert_eq!(o.idle_secs("T", 50), Some(0));
     }
 
-    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims::observe_tip
+    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims.observe_tip
     #[test]
     fn unchanged_or_uncounted_tip_is_not_activity() {
         let mut o = ObservedClaims::default();
@@ -399,7 +399,7 @@ mod tests {
         assert_eq!(o.claims["T"].tip.as_deref(), Some("t2"));
     }
 
-    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims::save
+    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims.save
     #[test]
     fn state_round_trips_through_toml() {
         let dir = tempfile::tempdir().unwrap();
@@ -425,16 +425,21 @@ mod tests {
     #[test]
     fn commit_facts_reads_a_real_history() {
         let dir = tempfile::tempdir().unwrap();
+        let repo = Repo::init(dir.path()).unwrap();
         let git = |args: &[&str]| {
-            let s = std::process::Command::new("git")
-                .args(["-c", "user.name=ann", "-c", "user.email=a@x"])
-                .args(args)
-                .current_dir(dir.path())
-                .output()
-                .unwrap();
-            assert!(s.status.success(), "{args:?}");
+            let mut full = vec!["-c", "user.name=ann", "-c", "user.email=a@x"];
+            full.extend_from_slice(args);
+            let spec = Spec {
+                program: Program::Git,
+                args: full.iter().map(|a| (*a).to_owned()).collect(),
+                cwd: Some(dir.path().to_path_buf()),
+                env: Vec::new(),
+                timeout: Duration::from_secs(30),
+                capture: true,
+            };
+            let out = repo.runner().run(&spec).unwrap();
+            assert_eq!(out.status, Outcome::Exited(0), "{args:?}");
         };
-        git(&["init", "-q"]);
         std::fs::write(dir.path().join("f"), "1").unwrap();
         git(&["add", "f"]);
         git(&["commit", "-q", "-m", "one"]);
@@ -446,7 +451,6 @@ mod tests {
             "-m",
             "sync\n\nFrob-Sync: base",
         ]);
-        let repo = Repo::discover(dir.path()).unwrap();
         let v = commit_facts(&repo, "HEAD", None).unwrap();
         assert_eq!(v.len(), 3);
         assert!(v[0].frob_sync && v[0].empty);
