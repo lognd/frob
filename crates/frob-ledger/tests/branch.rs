@@ -53,3 +53,124 @@ fn bad_names_are_refused_before_any_write() {
     assert!(init_branch(&repo, "a..b", 5).is_err());
     assert!(repo.rev_parse("refs/heads/a..b").is_err());
 }
+
+/// Run `git` in `dir`, panicking on failure.
+fn git(dir: &std::path::Path, args: &[&str]) {
+    let out = std::process::Command::new("git")
+        .current_dir(dir)
+        .args(args)
+        .output()
+        .expect("spawn git");
+    assert!(
+        out.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+/// A bare `origin` holding `main` and a ledger branch `frob-tickets` with one extra commit.
+fn origin_with_ticket_branch() -> (std::path::PathBuf, gob_git::Oid) {
+    let work = fresh();
+    let dir = work.work_dir().expect("work dir").to_path_buf();
+    init_branch(&work, "frob-tickets", 5).expect("create");
+    work.commit_paths(
+        "refs/heads/frob-tickets",
+        &[(
+            RelPath::new("note.txt").expect("path"),
+            Some(b"x\n".to_vec()),
+        )],
+        "tickets: second",
+        &CommitOptions::default(),
+    )
+    .expect("second commit");
+    let tip = work.rev_parse("refs/heads/frob-tickets").expect("tip");
+    let bare = tempfile::tempdir().expect("tempdir").keep();
+    git(
+        &bare,
+        &[
+            "clone",
+            "--bare",
+            gob_path::Shown::with_home(&dir, None).as_str(),
+            "o.git",
+        ],
+    );
+    (bare.join("o.git"), tip)
+}
+
+// frob:tests crates/frob-ledger/src/branch.rs::init_branch
+#[test]
+fn adopts_origin_tracking_ref_instead_of_forking() {
+    let (origin, tip) = origin_with_ticket_branch();
+    let clones = tempfile::tempdir().expect("tempdir").keep();
+    git(
+        &clones,
+        &[
+            "clone",
+            gob_path::Shown::with_home(&origin, None).as_str(),
+            "c",
+        ],
+    );
+    let dir = clones.join("c");
+    git(&dir, &["config", "user.name", "Test User"]);
+    git(&dir, &["config", "user.email", "test@example.com"]);
+    git(&dir, &["branch", "-D", "-r", "origin/HEAD"]);
+    let repo = Repo::discover(&dir).expect("discover");
+    assert!(repo.rev_parse("refs/heads/frob-tickets").is_err());
+    assert_eq!(
+        init_branch(&repo, "frob-tickets", 5).expect("adopt"),
+        BranchInit::Adopted(tip)
+    );
+    assert_eq!(
+        repo.rev_parse("refs/heads/frob-tickets").expect("local"),
+        tip
+    );
+}
+
+// frob:tests crates/frob-ledger/src/branch.rs::init_branch
+#[test]
+fn shallow_single_branch_clone_fetches_the_ticket_branch() {
+    let (origin, tip) = origin_with_ticket_branch();
+    let clones = tempfile::tempdir().expect("tempdir").keep();
+    let url = format!(
+        "file://{}",
+        gob_path::Shown::with_home(&origin, None).as_str()
+    );
+    git(
+        &clones,
+        &["clone", "--depth=1", "--branch", "main", &url, "c"],
+    );
+    let dir = clones.join("c");
+    git(&dir, &["config", "user.name", "Test User"]);
+    git(&dir, &["config", "user.email", "test@example.com"]);
+    let repo = Repo::discover(&dir).expect("discover");
+    assert!(repo.is_shallow());
+    assert!(repo.rev_parse("refs/remotes/origin/frob-tickets").is_err());
+    assert_eq!(
+        init_branch(&repo, "frob-tickets", 5).expect("adopt"),
+        BranchInit::Adopted(tip)
+    );
+    assert_eq!(
+        repo.rev_parse("refs/heads/frob-tickets").expect("local"),
+        tip
+    );
+}
+
+// frob:tests crates/frob-ledger/src/branch.rs::init_branch
+#[test]
+fn origin_without_the_branch_still_gets_a_fresh_orphan() {
+    let (origin, _) = origin_with_ticket_branch();
+    let clones = tempfile::tempdir().expect("tempdir").keep();
+    let url = format!(
+        "file://{}",
+        gob_path::Shown::with_home(&origin, None).as_str()
+    );
+    git(&clones, &["clone", &url, "c"]);
+    let dir = clones.join("c");
+    git(&dir, &["config", "user.name", "Test User"]);
+    git(&dir, &["config", "user.email", "test@example.com"]);
+    let repo = Repo::discover(&dir).expect("discover");
+    assert!(matches!(
+        init_branch(&repo, "other-tickets", 5).expect("orphan"),
+        BranchInit::Created(_)
+    ));
+}

@@ -1,0 +1,1 @@
+Fresh and shallow clones and CI checkouts now get a local `frob-tickets` branch: `frob init`, `frob ticket doctor --fix` and `frob ticket branch init` adopt it from `origin` (fetching depth 1 when shallow) instead of refusing or forking an orphan.

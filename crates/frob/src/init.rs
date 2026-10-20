@@ -16,6 +16,7 @@ use serde::Serialize;
 use crate::PRODUCT;
 use crate::config::{FrobConfig, RefModeKnob};
 use crate::config_cmd::{SyncData, sync_config};
+use crate::ticket::branch_cmd::ensure_ticket_branch;
 use crate::workspace::{Located, config_refusal};
 
 /// Merge driver arguments (`%O` ancestor, `%A` ours, `%B` theirs, `%P` path), after the program.
@@ -129,6 +130,8 @@ pub struct InitData {
     pub driver: DriverInfo,
     /// The `.gitattributes` lines (tickets, milestones, cycles).
     pub gitattributes: Step,
+    /// The local ticket branch created from origin or fresh (orphan mode only); absent otherwise.
+    pub ticket_branch: Option<Step>,
 }
 
 /// The merge driver command init settled on and the reason, in the output.
@@ -802,7 +805,12 @@ impl Command for Init {
         } else {
             ensure_gitattributes(root, Layout::Dir, &cfg.tickets.dir, ctx.dry_run)?
         };
+        let ticket_branch = ensure_ticket_branch(repo, &cfg, ctx.dry_run)?.map(|branch| Step {
+            target: format!("refs/heads/{branch}"),
+            changed: true,
+        });
         let already = config.added.is_empty()
+            && ticket_branch.is_none()
             && !python_stage
             && !web_stages
             && !dotnet_stage
@@ -817,6 +825,7 @@ impl Command for Init {
             merge_driver,
             driver,
             gitattributes,
+            ticket_branch,
         })
         .with_already(already);
         Ok(match driver_warning {

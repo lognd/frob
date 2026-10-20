@@ -1,4 +1,4 @@
-//! The only spawns gob-git makes: `worktree add`, `merge`, `push`, via gob-exec.
+//! The only spawns gob-git makes: `worktree add`, `merge`, `fetch`, `push`, via gob-exec.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -181,5 +181,44 @@ impl Repo {
                 detail: text,
             })
         }
+    }
+
+    /// Fetch `branch` of `remote` into `refs/remotes/<remote>/<branch>`, shallowly when this repository is shallow.
+    ///
+    /// Spawns `git fetch` (class [`SpawnClass::GitFetch`]); a shallow or single-branch
+    /// clone has no tracking ref for other branches until this runs. The ref is
+    /// force-updated; no tags are fetched.
+    ///
+    /// # Errors
+    /// [`GitError::Spawn`] when git is missing, the remote is unreachable or the branch is not on it.
+    pub fn fetch_branch(&self, remote: &str, branch: &str) -> Result<(), GitError> {
+        let cwd: PathBuf = self
+            .work_dir()
+            .unwrap_or_else(|| self.git_dir())
+            .to_path_buf();
+        let refspec = format!("+refs/heads/{branch}:refs/remotes/{remote}/{branch}");
+        let mut args = vec!["fetch", "--no-tags", "--quiet"];
+        if self.is_shallow() {
+            args.push("--depth=1");
+        }
+        args.push(remote);
+        args.push(&refspec);
+        let (code, text) = self.run_git(SpawnClass::GitFetch, &cwd, &args)?;
+        if code == 0 {
+            info!(remote, branch, "fetched ticket branch");
+            Ok(())
+        } else {
+            warn!(remote, branch, "fetch failed");
+            Err(GitError::Spawn {
+                args: args.join(" "),
+                detail: text,
+            })
+        }
+    }
+
+    /// True when this repository is a shallow clone (its common dir has a `shallow` file).
+    #[must_use]
+    pub fn is_shallow(&self) -> bool {
+        self.common_dir().join("shallow").is_file()
     }
 }

@@ -98,10 +98,10 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   `[land]` table (docs/reference/config.md) has none. It also says
   `ticket doctor` lists unpushed ledger commits; INFERRED unimplemented
   (no `unpushed` logic in frob-ledger or the doctor).
-- VERIFIED. `ticket branch init` refuses when only
-  `origin/frob-tickets` exists (branch.rs:108-111); the guide tells users
-  to `git fetch origin +refs/heads/frob-tickets:refs/heads/frob-tickets`
-  by hand. No verb merges a diverged local and remote ticket branch.
+- VERIFIED. `ticket branch init` used to refuse when only
+  `origin/frob-tickets` existed; ~P418XYE removed that refusal: `init`,
+  `ticket doctor --fix` and `branch init` now adopt (fetching, depth 1 when
+  shallow) the origin branch. No verb merges a diverged local and remote ticket branch.
 
 ### 1.5 Code branches and the tie to tickets
 

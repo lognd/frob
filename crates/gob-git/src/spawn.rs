@@ -12,6 +12,8 @@ pub enum SpawnClass {
     GitWorktreeAdd,
     /// A repo-configured hook (`pre-commit`, `pre-push`); 1 per commit or push when enabled.
     RepoHook,
+    /// `git fetch` of one ticket-branch ref; 1 per bootstrap of a missing local ticket branch.
+    GitFetch,
     /// `git push` over SSH until gix push is stable; 1 per `--push`.
     GitPush,
     /// The user-invoked `frob git -- ...` escape hatch; explicit only.
@@ -30,10 +32,11 @@ pub enum SpawnClass {
 
 impl SpawnClass {
     /// Every class, in `git-io.md` table order.
-    pub const ALL: [SpawnClass; 10] = [
+    pub const ALL: [SpawnClass; 11] = [
         Self::GitMerge,
         Self::GitWorktreeAdd,
         Self::RepoHook,
+        Self::GitFetch,
         Self::GitPush,
         Self::GitEscapeHatch,
         Self::TestRunner,
@@ -47,7 +50,11 @@ impl SpawnClass {
     pub fn is_git(self) -> bool {
         matches!(
             self,
-            Self::GitMerge | Self::GitWorktreeAdd | Self::GitPush | Self::GitEscapeHatch
+            Self::GitMerge
+                | Self::GitWorktreeAdd
+                | Self::GitFetch
+                | Self::GitPush
+                | Self::GitEscapeHatch
         )
     }
 
@@ -57,6 +64,7 @@ impl SpawnClass {
             Self::GitMerge => "git-merge",
             Self::GitWorktreeAdd => "git-worktree-add",
             Self::RepoHook => "repo-hook",
+            Self::GitFetch => "git-fetch",
             Self::GitPush => "git-push",
             Self::GitEscapeHatch => "git-escape-hatch",
             Self::TestRunner => "test-runner",

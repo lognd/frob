@@ -97,15 +97,19 @@ the same commits land on the trunk branch instead.
 Push the ledger with the code: `git push origin main frob-tickets`. A fresh
 clone gets the branch with the rest of the heads, but frob reads
 `refs/heads/frob-tickets`, a local branch. After cloning (and in CI, whose
-checkout creates no local branches) run:
+checkout creates no local branches) run `frob init`, or `frob ticket doctor
+--fix`, or `frob ticket branch init`: each creates the local branch from
+`origin`'s `frob-tickets` instead of forking a fresh orphan. A shallow or
+single-branch clone is handled too: frob fetches just that branch (depth 1
+when the clone is shallow). When `origin` has no such branch a fresh orphan is
+created; when `origin` cannot be reached the verb refuses with
+`E-TICKET-BRANCH-REMOTE-UNREACHABLE` rather than risk forking the ledger.
+Without `--fix`, `frob ticket doctor` reports a missing local branch as
+`E-DOCTOR-TICKET-BRANCH-MISSING`.
 
-```sh no-run
-git fetch origin +refs/heads/frob-tickets:refs/heads/frob-tickets
-```
-
-In GitHub Actions put that step right after `actions/checkout` (with
-`fetch-depth: 0`), before `frob check`, or the TICK rules cannot read the
-ledger. Protect `frob-tickets` against force pushes on the hosting side.
+In GitHub Actions put `frob init` right after `actions/checkout`, before
+`frob check`, or the TICK rules cannot read the ledger. Protect
+`frob-tickets` against force pushes on the hosting side.
 
 ## Moving an existing ledger
 

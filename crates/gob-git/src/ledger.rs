@@ -262,6 +262,35 @@ impl Repo {
         })
     }
 
+    /// Create `ref_name` at `oid` only if it does not exist yet (compare-and-swap on absence); no checkout is touched.
+    ///
+    /// # Errors
+    /// [`GitError::NoIdentity`] without an author, [`GitError::CasExhausted`] when the ref appeared
+    /// meanwhile, plus ref failures.
+    pub fn create_ref(&self, ref_name: &str, oid: Oid, message: &str) -> Result<(), GitError> {
+        let full = full_ref_name(ref_name);
+        let (name, email) = self.config_user().ok_or(GitError::NoIdentity)?;
+        let sig = gix::actor::Signature {
+            name: name.into(),
+            email: email.into(),
+            time: gix::date::Time::now_utc(),
+        };
+        match self.cas(&full, None, oid, &sig, message) {
+            Ok(()) => {
+                info!(ref_name = %full, %oid, "ref created");
+                Ok(())
+            }
+            Err(CasError::Lost(why)) => {
+                warn!(ref_name = %full, %why, "ref already exists");
+                Err(GitError::CasExhausted {
+                    ref_name: full,
+                    attempts: 1,
+                })
+            }
+            Err(CasError::Fatal(e)) => Err(e),
+        }
+    }
+
     fn plan<'a>(
         &self,
         changes: &'a [(RelPath, Option<Vec<u8>>)],

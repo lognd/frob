@@ -12,8 +12,12 @@ use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use super::branch_cmd::{ensure_ticket_branch, ticket_branch_missing};
 use super::{cli_err, open, terminal_lease};
+use crate::config::FrobConfig;
 use crate::milestone_cmd::pm_err;
+use crate::workspace::{Located, config_refusal};
+use gob_cli::{Refusal, RefusalClass};
 
 /// Output of `ticket doctor`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
@@ -50,6 +54,8 @@ pub struct DoctorData {
     pub pm_fixed: Vec<String>,
     /// Tickets whose lease (held for a terminal ticket) `--fix` removed.
     pub reaped_leases: Vec<TicketId>,
+    /// The local ticket branch `--fix` created from origin or fresh (orphan mode, branch was missing).
+    pub ticket_branch_created: Option<String>,
 }
 
 /// A milestone or cycle problem as reported by `ticket doctor`.
@@ -112,6 +118,7 @@ impl Command for TicketDoctor {
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<DoctorData> {
+        let ticket_branch_created = Self::ensure_branch(ctx, self.fix)?;
         let ledger = open(ctx)?;
         let mut report = ledger.doctor(self.fix).map_err(cli_err)?;
         report.issues.extend(unmerged_done_issues(&ledger)?);
@@ -131,9 +138,12 @@ impl Command for TicketDoctor {
                 }));
             Vec::new()
         };
-        let scrub = if self.fix {
+        let scrub = if self.fix && ledger.layout() == frob_ledger::Layout::Dir {
             scrub_ledger(&ledger)?
         } else {
+            if self.fix {
+                tracing::warn!("scrub skipped: not implemented for the ticket-branch layout");
+            }
             ScrubReport::default()
         };
         let pm = PmStore::new(&ledger).doctor(self.fix).map_err(pm_err)?;
@@ -178,8 +188,35 @@ impl Command for TicketDoctor {
             pm_issues: pm.issues.into_iter().map(PmIssueView::from).collect(),
             pm_fixed: pm.fixed.iter().map(ToString::to_string).collect(),
             reaped_leases,
+            ticket_branch_created,
         };
         Ok(Payload::new(data).with_findings(findings))
+    }
+}
+
+impl TicketDoctor {
+    /// In orphan mode with no local ticket branch: create it under `--fix` (from origin when it has one), else refuse with the fix as the remedy.
+    // frob:ticket 01M5CW03W58HQWBGDANP418XYE
+    fn ensure_branch(ctx: &Context, fix: bool) -> Result<Option<String>, CliError> {
+        let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
+        if !ticket_branch_missing(&repo, &cfg) {
+            return Ok(None);
+        }
+        if !fix {
+            tracing::warn!(branch = %cfg.tickets.branch, "ticket branch missing locally");
+            return Err(Refusal::new(
+                "E-DOCTOR-TICKET-BRANCH-MISSING",
+                RefusalClass::GuardNeedsAction,
+                format!(
+                    "ref_mode is orphan but the local branch `{}` does not exist",
+                    cfg.tickets.branch
+                ),
+            )
+            .with_remedy("frob ticket doctor --fix")
+            .into());
+        }
+        ensure_ticket_branch(&repo, &cfg, false)
     }
 }
 

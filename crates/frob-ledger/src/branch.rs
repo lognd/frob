@@ -19,6 +19,8 @@ pub enum BranchInit {
     Created(Oid),
     /// The branch already existed at this tip; nothing was written.
     Already(Oid),
+    /// The branch was missing locally and was created at the tip of `origin`'s copy (fetched when needed); no new history.
+    Adopted(Oid),
 }
 
 /// Why the ticket branch could not be bootstrapped.
@@ -32,15 +34,15 @@ pub enum BranchError {
         /// What is wrong with it.
         why: &'static str,
     },
-    /// Only a remote-tracking copy exists; creating a fresh orphan would fork the ledger history.
+    /// `origin` could not be asked whether it has the branch; creating a fresh orphan might fork the ledger history.
     #[error(
-        "`{remote_ref}` exists but no local branch `{branch}`; creating an orphan would fork the ledger"
+        "cannot tell whether origin has `{branch}` ({detail}); creating an orphan could fork the ledger"
     )]
-    RemoteOnly {
+    RemoteUnreachable {
         /// The configured branch.
         branch: String,
-        /// The remote-tracking ref found.
-        remote_ref: String,
+        /// What the fetch reported.
+        detail: String,
     },
     /// A git operation failed.
     #[error(transparent)]
@@ -87,13 +89,39 @@ pub fn check_branch_name(name: &str) -> Result<(), BranchError> {
     }
 }
 
-/// Create the orphan ticket branch `branch` with a placeholder `README.md` and the merge-driver `.gitattributes`, or report it as already there.
+/// Create the local `full` ref at `origin`'s copy of `branch`, fetching it first when no tracking ref exists (fresh, shallow and single-branch clones); `None` when origin has no such branch.
+fn adopt_from_origin(repo: &Repo, branch: &str, full: &str) -> Result<Option<Oid>, BranchError> {
+    let remote_ref = format!("refs/remotes/origin/{branch}");
+    if repo.rev_parse(&remote_ref).is_err() {
+        if repo.remote_url("origin").is_none() {
+            tracing::info!(%branch, "no origin remote; nothing to adopt");
+            return Ok(None);
+        }
+        if let Err(e) = repo.fetch_branch("origin", branch) {
+            let detail = e.to_string();
+            if detail.contains("couldn't find remote ref") {
+                tracing::info!(%branch, "origin has no such branch");
+                return Ok(None);
+            }
+            tracing::warn!(%branch, %detail, "fetching the ticket branch failed");
+            return Err(BranchError::RemoteUnreachable {
+                branch: branch.to_owned(),
+                detail,
+            });
+        }
+    }
+    let tip = repo.rev_parse(&remote_ref)?;
+    repo.create_ref(full, tip, &format!("branch: adopted from origin/{branch}"))?;
+    tracing::info!(%branch, %tip, shallow = repo.is_shallow(), "ticket branch adopted from origin");
+    Ok(Some(tip))
+}
+
+/// Create the local ticket branch `branch`: adopt `origin`'s copy when it has one (fetching it, shallowly in a shallow clone), else a fresh orphan with a placeholder `README.md` and the merge-driver `.gitattributes`; report it as already there when it is.
 ///
 /// # Errors
 ///
-/// [`BranchError::InvalidName`], [`BranchError::RemoteOnly`] when only
-/// `refs/remotes/origin/<branch>` exists, or a git failure (CAS exhaustion,
-/// missing identity).
+/// [`BranchError::InvalidName`], [`BranchError::RemoteUnreachable`] when
+/// origin cannot be asked, or a git failure (CAS exhaustion, missing identity).
 pub fn init_branch(repo: &Repo, branch: &str, cas_retries: u32) -> Result<BranchInit, BranchError> {
     check_branch_name(branch)?;
     let full = format!("refs/heads/{branch}");
@@ -105,13 +133,8 @@ pub fn init_branch(repo: &Repo, branch: &str, cas_retries: u32) -> Result<Branch
         Err(GitError::Rev { .. }) => {}
         Err(e) => return Err(e.into()),
     }
-    let remote_ref = format!("refs/remotes/origin/{branch}");
-    if repo.rev_parse(&remote_ref).is_ok() {
-        tracing::warn!(%branch, %remote_ref, "ticket branch exists only on the remote");
-        return Err(BranchError::RemoteOnly {
-            branch: branch.to_owned(),
-            remote_ref,
-        });
+    if let Some(tip) = adopt_from_origin(repo, branch, &full)? {
+        return Ok(BranchInit::Adopted(tip));
     }
     let changes = [
         (
