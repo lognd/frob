@@ -2,13 +2,13 @@
 id = "01M5CW04GHM970H5KR4EV5KK0X"
 title = "Per-verb auto-refresh policy"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T14:38:42Z"
+updated = "2026-10-20T17:15:18Z"
 idempotency_key = "dt-DT08"
 
 [[links]]
