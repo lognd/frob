@@ -1,0 +1,42 @@
+kind = "evidence"
+captured_at = "2026-10-20T21:52:35Z"
+digest = "75e2f7e279676d4b2bec1fad4d3f8e80bca3471d7c01ea74547faa54545135a3"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID da7f3bba-89bb-4af1-94ac-4b904a7995d6 with nextest profile: default
+    Starting 19 tests across 6 binaries (69 tests skipped)
+        PASS [   0.008s] frob-worktree evict::tests::crash_between_delete_and_record_is_recognised
+        PASS [   0.008s] frob-worktree gc::cargo::tests::land_target_layout_evicts_the_stale_unit_and_keeps_the_recent_one
+        PASS [   0.009s] frob-worktree evict::tests::idle_claim_is_evictable_and_each_precondition_refuses
+        PASS [   0.009s] frob-worktree evict::tests::repeat_eviction_within_fourteen_days_needs_a_human
+        PASS [   0.009s] frob-worktree evict::tests::every_refusal_has_a_distinct_code
+        PASS [   0.009s] frob-worktree evict::tests::rate_counts_the_actors_local_day
+        PASS [   0.010s] frob-worktree evict::tests::returning_holder_pushes_to_the_next_parked_ref
+        PASS [   0.010s] frob-worktree evict::tests::park_message_round_trips
+        PASS [   0.012s] frob-worktree evict::tests::parked_names_sequence_per_handle
+        PASS [   0.013s] frob-worktree evict::tests::restore_needs_reason_nobody_else_and_parked_work
+        PASS [   0.016s] frob-worktree evict::tests::reclaim_restores_from_newest_unless_someone_holds_it
+        PASS [   0.010s] frob-worktree::gc plan_never_evicts_the_latest_build_even_over_budget
+        PASS [   0.013s] frob-worktree::gc cache_budget_evicts_least_recent_and_only_allowlisted_files
+        PASS [   0.013s] frob-worktree::gc shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_else
+        PASS [   0.014s] frob-worktree::gc plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build
+        PASS [   0.014s] frob-worktree::gc target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries
+        PASS [   0.164s] frob-worktree::evict eviction_parks_the_work_and_deletes_the_claim
+        PASS [   0.180s] frob-worktree::evict batch_eviction_stops_at_the_rate_limit
+        PASS [   0.194s] frob-worktree::evict a_second_evictor_sees_already_evicted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.199s] 19 tests run: 19 passed, 69 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree evict"
+size = 2420
+status = "measured"
+test_count = 19
+tests_digest = "61a45541361479e9468b125336d1df0c461235fd846d5804f5c5fcc209a741ec"
+at = "2026-10-20T21:52:35Z"
+actor = "lognd"
+rev = 1
