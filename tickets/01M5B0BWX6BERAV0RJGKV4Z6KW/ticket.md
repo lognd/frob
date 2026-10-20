@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:16:33Z"
-updated = "2026-10-20T00:58:38Z"
+updated = "2026-10-20T01:01:32Z"
 scope = ["crates/frob-check/src/product.rs", "crates/frob-config/**"]
+
+[[acceptance]]
+text = "TICK010 renders the expected nudge with numeric [mirror] bot_ids; logins are skipped"
+bound = false
 +++
 
 Found while working ~Z9B82RZ. tick010_findings renders the expected nudge with empty bot_ids because no [mirror] config exists; an installed nudge with real bot ids is then flagged as edited. Add the config and use it.
