@@ -2,7 +2,8 @@
 id = "01M4CTTWD4YG8CKEX9FW1F0AP5"
 title = "A fresh repository's frob check prints no Unresolved lines that come from frob's own defaults"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
