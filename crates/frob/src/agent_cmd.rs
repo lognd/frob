@@ -121,13 +121,26 @@ fn stale_sources(repo: &Repo, root: &Path, base: &str, manifest: &Manifest) -> V
         .items
         .iter()
         .filter(|i| {
-            let work = std::fs::read(root.join(&i.src)).ok();
+            // autocrlf checkouts hold CRLF where the blob holds LF; compare LF forms.
+            let work = std::fs::read(root.join(&i.src)).ok().map(|b| lf_only(&b));
             let at_mb = repo.read_blob_at(&mb, &i.src).ok().flatten();
             let at_base = repo.read_blob_at(base, &i.src).ok().flatten();
             work.is_some() && work == at_mb && at_base.is_some() && at_base != at_mb
         })
         .map(|i| i.src.clone())
         .collect()
+}
+
+/// The bytes with every CRLF folded to LF, so a CRLF checkout compares equal to its blob.
+fn lf_only(bytes: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(bytes.len());
+    for (n, b) in bytes.iter().enumerate() {
+        if *b == b'\r' && bytes.get(n + 1) == Some(&b'\n') {
+            continue;
+        }
+        out.push(*b);
+    }
+    out
 }
 
 fn plan(t: &Target, root: &Path, manifest: &Manifest) -> Result<Vec<Planned>, CliError> {
