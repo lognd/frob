@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-20T12:17:33Z"
+updated = "2026-10-20T12:19:34Z"
 idempotency_key = "m2-mirror2-contest"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/contest.rs"]
@@ -19,7 +19,7 @@ target = "01M4052TC4BVA3JFFCHZX82EWS"
 
 [[acceptance]]
 text = "Given the same actor re-applying a field within the window, when reconciled over runs, then reverts occur after 1, 2 and 4 runs and at most once a day"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given three re-applications by the same actor, when reconciled, then the field is contested, no further revert is made and one pending proposal holds the latest value"
