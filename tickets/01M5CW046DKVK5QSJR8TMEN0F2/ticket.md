@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T16:37:46Z"
+updated = "2026-10-20T16:37:48Z"
 idempotency_key = "dt-DT05"
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "A held refresh lock yields the cached state instead of a second probe"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob refresh --status reads only the cache and takes under 10 ms"
