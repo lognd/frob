@@ -7,8 +7,8 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:04:55Z"
-updated = "2026-10-20T02:19:19Z"
-scope = ["crates/gob-mdtest/**", "crates/gob-rules/**"]
+updated = "2026-10-20T02:20:01Z"
+scope = ["crates/gob-mdtest/**", "crates/gob-rules/**", "crates/gob-macros/src/rule_attr.rs"]
 +++
 
 testing.md 3 requires a fire inside an opaque region for lexical rules, but RuleMeta carries no needs; add it, then a CaseKind for it. Found while working ~WPZC326.
