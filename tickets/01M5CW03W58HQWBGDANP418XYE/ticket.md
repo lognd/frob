@@ -8,7 +8,7 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T15:04:06Z"
+updated = "2026-10-20T15:04:09Z"
 idempotency_key = "dt-DT02"
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "frob init in orphan mode creates the local ticket branch from origin"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "ticket doctor --fix creates the missing ticket branch and plain doctor refuses with E-DOCTOR-TICKET-BRANCH-MISSING"
