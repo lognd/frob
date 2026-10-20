@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-20T04:54:46Z"
+updated = "2026-10-20T04:55:39Z"
 idempotency_key = "m2-sec-host-remedies"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/gob-diagnostics/src/remedy.rs"]
+scope = ["crates/gob-diagnostics/src/remedy.rs", "crates/gob-diagnostics/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
