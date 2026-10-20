@@ -617,6 +617,7 @@ fn evidence_events(
             inline: None,
             size: 0,
             attestation: None,
+            head: None,
         };
         out.push(evidence_text(id, at, &record)?);
     }

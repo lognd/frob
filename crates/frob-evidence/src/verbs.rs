@@ -372,7 +372,8 @@ impl CaptureArgs {
         presence: &Presence,
     ) -> crate::error::Result<EvidenceRecord> {
         if self.provider == Provider::Attestation {
-            return attestation::attest(
+            // frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
+            let mut record = attestation::attest(
                 ws,
                 presence,
                 &Request {
@@ -380,7 +381,9 @@ impl CaptureArgs {
                     facts: self.facts.clone(),
                     accepts: self.accepts.clone(),
                 },
-            );
+            )?;
+            record.head = crate::guard::head_of(ws.ledger.repo());
+            return Ok(record);
         }
         provider::capture(ws, self.provider, &self.reference, &self.accepts)
     }

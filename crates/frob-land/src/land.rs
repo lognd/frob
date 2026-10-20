@@ -30,7 +30,7 @@ use frob_ledger::model::Category;
 use frob_ledger::model::CommentSubtype;
 use frob_ledger::ops::TicketView;
 use frob_ledger::{Ledger, RefMode, TicketId};
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
 use crate::base_ci;
@@ -358,6 +358,8 @@ fn prepare(
     let mut done_view = view.ticket.clone();
     done_view.front.outcome = Some(opts.outcome);
     warnings.extend(done.warnings(&done_view));
+    // frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
+    warnings.extend(stale_evidence_heads(&wt, &site.ledger, id));
     // frob:ticket 01M5CW05JQZKCQKV68ZEQ5WASD
     warnings.extend(frob_worktree::anyway::land_notices(&site.ledger, id));
     let out = LandOutcome {
@@ -1179,7 +1181,7 @@ fn flaky_refusal(new: &[ratchet::FindingNote], handle: &str) -> LandError {
             RefusalClass::GuardRetryByWaiting,
             format!("tool stage(s) {names} failed then passed on an immediate rerun (flaky)"),
         )
-        .with_remedy(format!("frob land {handle}")),
+        .with_command(RemedyCommand::new("frob", "land").arg(handle)),
     )
 }
 
@@ -1192,6 +1194,19 @@ fn timed<T>(stages: &mut Vec<StageTiming>, name: &str, f: impl FnOnce() -> T) ->
 }
 
 /// The warning a debug build earns when it lands.
+// frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
+/// Warnings for bound evidence whose measured commit is no longer an ancestor of the ticket branch tip.
+fn stale_evidence_heads(wt: &Repo, ledger: &Ledger, id: TicketId) -> Vec<String> {
+    let Ok(stored) = frob_evidence::events::list(ledger, id) else {
+        return Vec::new();
+    };
+    let Ok(tip) = wt.rev_parse("HEAD") else {
+        return Vec::new();
+    };
+    let records: Vec<_> = stored.into_iter().map(|s| s.record).collect();
+    frob_evidence::guard::stale_head_warnings(wt, &records, &tip.to_string())
+}
+
 fn debug_build_notice() -> Option<String> {
     crate::lock::is_debug_build().then(|| {
         "this frob is an unoptimized debug build; use the optimized binary for lands".to_owned()
@@ -1275,7 +1290,7 @@ fn refuse(
                 listed.join("; ")
             ),
         )
-        .with_remedy(format!("frob check --ticket {handle}")),
+        .with_command(RemedyCommand::new("frob", "check").flag("ticket", handle)),
     )
 }
 
@@ -1339,8 +1354,11 @@ impl Publish<'_> {
             ),
         };
         LandError::Refused(
-            Refusal::new(CODE_STALE, RefusalClass::GuardRetryByWaiting, message)
-                .with_remedy(format!("frob land {} --wait <secs>", self.handle)),
+            Refusal::new(CODE_STALE, RefusalClass::GuardRetryByWaiting, message).with_command(
+                RemedyCommand::new("frob", "land")
+                    .arg(self.handle)
+                    .flag("wait", "<secs>"),
+            ),
         )
     }
 

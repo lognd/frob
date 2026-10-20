@@ -13,7 +13,7 @@ use std::collections::HashSet;
 
 use frob_ledger::TicketId;
 use frob_ledger::guards::NoLeases;
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 
 use crate::claim::E_CLAIM_LOST;
 use crate::cycle_gate::NOT_IN_CYCLE_CODE;
@@ -89,7 +89,7 @@ impl Workspace<'_> {
         };
         Err(WorktreeError::Refused(
             Refusal::new(E_NO_DOABLE, RefusalClass::GuardRetryByWaiting, message)
-                .with_remedy("frob ticket doable"),
+                .with_command(RemedyCommand::new("frob", "ticket doable")),
         ))
     }
 }
