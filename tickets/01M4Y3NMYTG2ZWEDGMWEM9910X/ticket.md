@@ -4,11 +4,11 @@ title = "Wire Profile::teach_for to [ui] teach and .frob/seen.toml"
 type = "task"
 category = "todo"
 priority = "medium"
-points = 2
+points = 3
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-14T21:04:10Z"
-updated = "2026-10-16T13:17:39Z"
+updated = "2026-10-20T13:51:38Z"
 scope = ["crates/frob/src/profile.rs"]
 
 [[links]]
