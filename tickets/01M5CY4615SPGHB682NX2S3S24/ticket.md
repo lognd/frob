@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T15:15:51Z"
-updated = "2026-10-20T15:54:16Z"
+updated = "2026-10-20T15:56:01Z"
+scope = ["crates/frob-ledger/src/branch.rs"]
 +++
 
 found while working ~P418XYE
