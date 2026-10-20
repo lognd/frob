@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
 updated = "2026-10-20T18:29:14Z"
 idempotency_key = "dt-DT09"
-scope = ["crates/frob/src/freshness_hooks.rs", "crates/frob/src/init.rs"]
+scope = ["crates/frob/src/freshness_hooks.rs", "crates/frob/src/init.rs", "crates/frob/tests/it/freshness_hooks.rs"]
 
 [[links]]
 kind = "blocked-by"
