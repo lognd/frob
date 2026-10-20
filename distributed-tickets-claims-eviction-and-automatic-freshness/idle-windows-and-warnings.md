@@ -2,13 +2,13 @@
 id = "01M5CW04YABDJW6ZXSWFGTCB9E"
 title = "Idle windows and warnings"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T14:38:42Z"
+updated = "2026-10-20T19:30:04Z"
 idempotency_key = "dt-DT12"
 
 [[links]]
