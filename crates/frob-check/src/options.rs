@@ -118,7 +118,7 @@ impl CheckOptions {
                 gob_check::TrustFromSpec {
                     base_ref: base_ref.clone(),
                     lock_path: TRUST_LOCK_PATH.to_owned(),
-                    // frob loads no repository packs yet, so no live pack can be untrusted.
+                    // filled with the live repo packs by `run_with_cone`, which knows the root.
                     packs: Vec::new(),
                 }
             }),

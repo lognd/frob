@@ -39,6 +39,7 @@ pub mod grl;
 mod host;
 mod memo;
 mod options;
+mod packs;
 mod product;
 pub mod product_rules;
 pub mod proposals_summary;
@@ -133,6 +134,9 @@ pub fn run_with_cone(
     if run_opts.tool_memo.is_none() {
         run_opts.tool_memo =
             FileToolMemo::for_repo(root).map(|m| Arc::new(m) as Arc<dyn gob_check::ToolMemo>);
+    }
+    if let Some(spec) = run_opts.trust_from.as_mut() {
+        spec.packs = packs::live_packs(root);
     }
     let report = gob_check::run(&product, root, &run_opts)?;
     Ok((report, product.diff_paths(), product.cone_paths()))

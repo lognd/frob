@@ -30,6 +30,7 @@ gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-plan = { version = "0.532.0", path = "../gob-plan" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-packs = { version = "0.532.0", path = "../gob-packs" }
 gob-lock = { version = "0.532.0", path = "../gob-lock" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-time = { version = "0.532.0", path = "../gob-time" }

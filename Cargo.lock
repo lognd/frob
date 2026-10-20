@@ -1071,6 +1071,7 @@ dependencies = [
  "gob-languages",
  "gob-lock",
  "gob-mdtest",
+ "gob-packs",
  "gob-plan",
  "gob-rules",
  "gob-symbols",
