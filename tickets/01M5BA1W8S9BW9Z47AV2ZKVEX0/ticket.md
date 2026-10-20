@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T00:05:50Z"
-updated = "2026-10-20T00:38:35Z"
-scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/config.rs", "docs/reference/config.md", "docs/schemas/config.json"]
+updated = "2026-10-20T00:50:06Z"
+scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/config.rs", "docs/reference/config.md", "docs/schemas/config.json", "docs/design/mirror.md"]
 
 [[acceptance]]
 text = "frob mirror recreate reads repo, kid and bot_ids from the [mirror] table of frob.toml (FrobConfig) instead of FROB_MIRROR_KID"
