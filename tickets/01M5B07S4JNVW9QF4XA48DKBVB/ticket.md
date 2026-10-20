@@ -2,7 +2,8 @@
 id = "01M5B07S4JNVW9QF4XA48DKBVB"
 title = "Mirror: add a [mirror] config table (repo, kid, bot ids) so recreate needs no env vars"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
