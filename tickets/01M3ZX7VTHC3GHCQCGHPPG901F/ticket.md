@@ -2,13 +2,13 @@
 id = "01M3ZX7VTHC3GHCQCGHPPG901F"
 title = "This repository's own tool stages need one-time trust (maintainer step and CI flag)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-09T20:43:05Z"
+updated = "2026-10-20T07:15:22Z"
 idempotency_key = "m2-sec-self-trust"
 labels = ["milestone:2", "area:security"]
 scope = ["frob.toml", ".github/workflows/ci.yml", "docs/design/security.md"]
