@@ -67,6 +67,9 @@ impl ProbeClass {
 pub struct RefreshState {
     /// Unix seconds of the last probe attempt; 0 when never probed.
     pub probed_at: i64,
+    /// Unix seconds of the last probe the remote answered (`Ok` or `NoBase`); 0 when none did. Failed probes leave it, so it measures how old the ticket view is.
+    #[serde(default)]
+    pub last_ok_at: i64,
     /// What that probe found.
     pub class: ProbeClass,
     /// The remote that was probed.
@@ -338,6 +341,7 @@ pub fn probe(
                 .map(|r| (r.name, r.oid))
                 .collect();
             changed = oids != previous;
+            state.last_ok_at = now;
             state.failures = 0;
             state.next_attempt_at = now + i64::from(cfg.ttl_secs);
             if oids.contains_key(&format!("refs/heads/{base}")) {

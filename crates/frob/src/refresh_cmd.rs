@@ -42,6 +42,11 @@ struct RefreshArgs {
     status: bool,
     #[arg(long, help = "Probe even inside the ttl or a failure backoff window")]
     force: bool,
+    #[arg(
+        long,
+        help = "Start a detached refresh and return at once (used by git hooks)"
+    )]
+    background: bool,
 }
 
 /// Probe the remote for freshness (bounded, never prompts) or, with `--status`, print the cached one-line freshness.
@@ -55,6 +60,7 @@ struct RefreshArgs {
 pub struct Refresh {
     status: bool,
     force: bool,
+    background: bool,
 }
 
 /// What `frob refresh` reports.
@@ -64,7 +70,7 @@ pub struct RefreshReport {
     pub status: String,
     /// `ok`, `offline`, `timeout`, `auth`, `rate`, `no-base` or `unknown`; `local-only` without a remote.
     pub class: String,
-    /// `probed`, `cached`, `busy`, `local-only` or `status`.
+    /// `probed`, `cached`, `busy`, `local-only`, `status`, `background` or `skipped`.
     pub outcome: String,
     /// Whether any remote ref moved since the previous probe.
     pub changed: bool,
@@ -108,6 +114,7 @@ impl Command for Refresh {
         Ok(Self {
             status: a.status,
             force: a.force,
+            background: a.background,
         })
     }
 
@@ -116,6 +123,9 @@ impl Command for Refresh {
         let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
         let now = ctx.clock.now().unix();
         let base = cfg.tickets.r#ref.clone();
+        if self.background && !self.status {
+            return Ok(background(&repo, &root, &cfg, now));
+        }
         if self.status {
             let state = RefreshState::load(repo.common_dir());
             tracing::debug!(class = ?state.class, "refresh --status from cache");
@@ -132,7 +142,7 @@ impl Command for Refresh {
                 has_remote,
                 Signals::default(),
                 now,
-                cfg.sync.ttl_secs,
+                &cfg.sync,
             ));
         }
         let ledger = cfg.ledger();
@@ -174,9 +184,41 @@ impl Command for Refresh {
             has_remote,
             signals,
             now,
-            cfg.sync.ttl_secs,
+            &cfg.sync,
         ))
     }
+}
+
+/// `--background`: start a detached refresh and report it at once; never waits on the network.
+fn background(
+    repo: &Repo,
+    root: &std::path::Path,
+    cfg: &FrobConfig,
+    now: i64,
+) -> Payload<RefreshReport> {
+    let state = RefreshState::load(repo.common_dir());
+    let has_remote = repo.remote_url(&cfg.sync.remote).is_some();
+    let started = has_remote
+        && !frob_ledger::sync_policy::sync_disabled(|k| std::env::var(k).ok())
+        && std::env::current_exe().is_ok_and(|exe| {
+            match frob_ledger::sync_policy::spawn_refresh(&exe, root) {
+                Ok(pid) => {
+                    tracing::info!(pid, "refresh --background started");
+                    true
+                }
+                Err(e) => {
+                    tracing::warn!(error = %e, "cannot start the background refresh");
+                    false
+                }
+            }
+        });
+    let outcome = if started { "background" } else { "skipped" };
+    let status = if has_remote {
+        state.status_line(now, cfg.sync.ttl_secs)
+    } else {
+        "frob:local-only".to_owned()
+    };
+    render(report(&state, status, outcome, false))
 }
 
 /// Which remote and branches one sync touches.
@@ -444,15 +486,9 @@ fn with_freshness(
     has_remote: bool,
     signals: Signals,
     now: i64,
-    ttl_secs: u32,
+    sync: &frob_ledger::config::SyncTable,
 ) -> Payload<RefreshReport> {
-    let fresh = assess(
-        state,
-        has_remote,
-        signals,
-        now,
-        Thresholds::with_ttl(ttl_secs),
-    );
+    let fresh = assess(state, has_remote, signals, now, Thresholds::from_sync(sync));
     out.warnings.extend(fresh.messages());
     out.data.age_secs = fresh.age_secs;
     out.data.freshness = fresh.state;

@@ -31,6 +31,7 @@ pub mod refresh_cmd;
 pub mod release_cmd;
 pub mod rule_cmd;
 pub mod stats_cmd;
+mod sync_hook;
 pub mod teach_cmd;
 pub mod ticket;
 pub mod tour_cmd;

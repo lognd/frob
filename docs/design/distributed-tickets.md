@@ -457,6 +457,16 @@ environment variable a session inherits. Ranked, highest first:
 diverged branch, ledger field conflict, auth failure, rate limited,
 offline, base not fast-forwardable (dirty checkout), stale.
 
+Implementation status (DT08, partial): every `frob ticket` verb kicks
+a detached `frob refresh` when the cache is older than `[sync] ttl`
+(one spawn per ttl, marked by `<common>/frob/kick`); `doable` probes
+in the foreground within `[sync] foreground_budget_ms` and appends the
+`W-SYNC-*` notice; `CI` disables both. `[sync]` gained `warn_after_secs`,
+`stale_error_secs` and `foreground_budget_ms`, and the refresh state
+records `last_ok_at`. Still open: `work`/`land` foreground sync and the
+`E-SYNC-STALE` gate (`sync_policy::stale_gate`), per-row "may be taken",
+read-verb footers, and `--background`/`--quiet` on `frob refresh`.
+
 ### 5.4 Hooks, so nobody has to remember
 
 - `frob init` installs git `post-checkout` and `post-merge` hooks that

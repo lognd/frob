@@ -38,6 +38,7 @@ mod release_cut;
 mod release_status;
 mod shared_files;
 mod sibling_discovery;
+mod sync_policy;
 mod terminal_lease;
 mod ticket;
 mod ticket_branch;

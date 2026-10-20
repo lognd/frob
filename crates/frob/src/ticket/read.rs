@@ -583,6 +583,7 @@ impl Command for Doable {
     fn run(&self, ctx: &Context) -> CliOutcome<ListData> {
         let ledger = open(ctx)?;
         let (leases, warning) = lease_check(ctx);
+        let freshness = freshness_notice(ctx);
         let tickets = ledger.doable(&*leases).map_err(cli_err)?;
         let mut data = if self.newcomer {
             newcomer_rows(&ledger, tickets)?
@@ -596,11 +597,25 @@ impl Command for Doable {
             data.count = data.tickets.len();
         }
         let payload = Payload::new(data);
-        Ok(match warning {
+        let payload = match warning {
             Some(w) => payload.with_warning(w),
+            None => payload,
+        };
+        Ok(match freshness {
+            Some(n) => payload.with_warning(n),
             None => payload,
         })
     }
+}
+
+/// Probe the remote within the foreground budget and describe a stale ticket view, if it is one (`distributed-tickets.md` section 5.3, `doable`).
+// frob:ticket 01M5CW04GHM970H5KR4EV5KK0X
+fn freshness_notice(ctx: &Context) -> Option<String> {
+    let (repo, root) = crate::workspace::Located::discover(&ctx.cwd)
+        .into_repo()
+        .ok()?;
+    let cfg = FrobConfig::load(&root).ok()?;
+    crate::sync_hook::foreground(&repo, &cfg, ctx)
 }
 
 /// Every ticket in `tickets`: the good-first ones first (as `--newcomer` orders them, with start notes), then the rest in priority order.

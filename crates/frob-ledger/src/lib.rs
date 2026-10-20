@@ -96,6 +96,7 @@ pub mod rules;
 pub mod schema;
 pub mod scrub;
 pub mod slug; // frob:ticket 01M3ZX82FBZHFCX6P69NRTFCH7
+pub mod sync_policy; // frob:ticket 01M5CW04GHM970H5KR4EV5KK0X
 pub mod tick;
 pub mod triage;
 
