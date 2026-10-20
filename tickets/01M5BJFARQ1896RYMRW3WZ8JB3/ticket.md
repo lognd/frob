@@ -2,7 +2,8 @@
 id = "01M5BJFARQ1896RYMRW3WZ8JB3"
 title = "Mark lexical rules needs = Lexical and add their opaque_fire island cases"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
