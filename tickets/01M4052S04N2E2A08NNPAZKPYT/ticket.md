@@ -2,13 +2,13 @@
 id = "01M4052S04N2E2A08NNPAZKPYT"
 title = "Round-robin sweep: reconcile the next K issues of a persisted cursor"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-03T05:51:36Z"
+updated = "2026-10-20T07:45:26Z"
 idempotency_key = "m2-mirror2-sweep"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/sweep.rs"]
