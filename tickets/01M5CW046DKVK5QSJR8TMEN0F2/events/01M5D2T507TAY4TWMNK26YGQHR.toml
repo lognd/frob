@@ -1,0 +1,60 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T16:37:44Z"
+digest = "45a2eb48a87342ef3e14859cb00a1bb8f53e6eaba44a8e0bbf7d78091a441b44"
+exit_code = 0
+inline = """
+
+running 1 test
+test remote::tests::ssh_command_gains_batch_mode ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.36s
+     Running unittests src/lib.rs (target/debug/deps/gob_git-a054e376563659c6)
+     Running tests/ledger.rs (target/debug/deps/ledger-47381647074adb40)
+     Running tests/shared_reader.rs (target/debug/deps/shared_reader-51cebd36ab2f31ad)
+     Running tests/symlinks.rs (target/debug/deps/symlinks-9bd0d46ec1ce2c44)
+     Running tests/tag.rs (target/debug/deps/tag-dcc0714c90ad9011)
+     Running tests/walk_content.rs (target/debug/deps/walk_content-161497628327ae6c)
+     Running tests/walk_paths.rs (target/debug/deps/walk_paths-f13532e40e5f0d11)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-git ssh_command_gains_batch_mode"
+size = 1527
+status = "measured"
+at = "2026-10-20T16:37:44Z"
+actor = "lognd"
+rev = 1
