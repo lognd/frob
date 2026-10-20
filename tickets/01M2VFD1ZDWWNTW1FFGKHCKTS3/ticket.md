@@ -3,11 +3,12 @@ id = "01M2VFD1ZDWWNTW1FFGKHCKTS3"
 title = "Claude Code hooks: 10% precision on frob-suggest, double registration doubles the attempt counter, blind FROB_SUGGEST_ACK on 97% of uses, no logging"
 type = "story"
 flavour = "user_story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
+points = 3
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-10-04T22:22:23Z"
+updated = "2026-10-20T02:15:12Z"
 aliases = ["T-5101"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 +++

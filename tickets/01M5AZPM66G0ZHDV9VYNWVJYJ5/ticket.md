@@ -4,9 +4,10 @@ title = "Coverage meta-test: lexical-rule opaque-region fire case needs a RuleMe
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T21:04:55Z"
-updated = "2026-10-19T21:04:55Z"
+updated = "2026-10-20T02:15:09Z"
 scope = ["crates/gob-mdtest/**", "crates/gob-rules/**"]
 +++
 
