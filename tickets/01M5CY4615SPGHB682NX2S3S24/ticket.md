@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T15:15:51Z"
 updated = "2026-10-20T15:56:01Z"
-scope = ["crates/frob-ledger/src/branch.rs"]
+scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-worktree/src/verbs.rs"]
 +++
 
 found while working ~P418XYE
