@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T05:35:01Z"
-updated = "2026-10-20T06:14:41Z"
-scope = ["crates/grimble-check/src/lib.rs", "crates/grimble-check/src/product.rs", "crates/grimble-check/src/report_cache.rs", "crates/grimble-lints/Cargo.toml"]
+updated = "2026-10-20T06:14:42Z"
+scope = ["crates/grimble-check/src/lib.rs", "crates/grimble-check/src/product.rs", "crates/grimble-check/src/report_cache.rs", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/src/pass.rs"]
 
 [[acceptance]]
 text = "grimble check and grimble exceptions list stay within the profile.toml budgets in cargo dev profile"
