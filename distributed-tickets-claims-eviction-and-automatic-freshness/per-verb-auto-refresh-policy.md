@@ -8,9 +8,9 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T17:16:29Z"
+updated = "2026-10-20T17:17:13Z"
 idempotency_key = "dt-DT08"
-scope = ["crates/frob-ledger/src/sync_policy.rs", "crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/read.rs", "crates/frob/src/sync_hook.rs", "crates/frob/src/lib.rs", "docs/schemas/config.json", "docs/reference/config.md", "docs/design/distributed-tickets.md"]
+scope = ["crates/frob-ledger/src/sync_policy.rs", "crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/read.rs", "crates/frob/src/sync_hook.rs", "crates/frob/src/lib.rs", "docs/schemas/config.json", "docs/reference/config.md", "docs/design/distributed-tickets.md", "crates/frob-ledger/src/refresh.rs"]
 
 [[links]]
 kind = "blocked-by"
