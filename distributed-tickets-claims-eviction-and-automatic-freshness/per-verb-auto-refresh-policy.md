@@ -22,11 +22,11 @@ target = "01M5CW04D5QJCJ5S72V8PE22M6"
 
 [[acceptance]]
 text = "Reads kick a detached background refresh at most once per ttl and CI disables it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "doable probes in the foreground within the budget and appends a W-SYNC notice"
-bound = false
+bound = true
 +++
 
 Background kick for reads (never network inline), foreground 3s budget for work, doable and land, stale_error 24h refusal for mutating verbs, off in CI. See docs/design/distributed-tickets.md.
