@@ -166,6 +166,7 @@ mod tests {
         fix: gob_rules::FixKind::Manual,
         polarity: gob_rules::Polarity::Pplus,
         must_measure: true,
+        needs: gob_rules::Needs::Structural,
         version: 1,
         since: "2.0.0",
         module: "t",

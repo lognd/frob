@@ -223,6 +223,7 @@ mod tests {
         fix: FixKind::Manual,
         polarity: Polarity::Pplus,
         must_measure: false,
+        needs: crate::meta::Needs::Structural,
         version: 1,
         since: "0.1.0",
         module: "std_mod",

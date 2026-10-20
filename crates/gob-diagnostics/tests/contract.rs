@@ -343,6 +343,7 @@ fn slug_resolves_from_registry() {
         fix: FixKind::Manual,
         polarity: gob_rules::Polarity::Pplus,
         must_measure: false,
+        needs: gob_rules::Needs::Structural,
         version: 1,
         since: "0.0.0",
         module: "t",

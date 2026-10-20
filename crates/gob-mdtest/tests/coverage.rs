@@ -8,10 +8,11 @@ use std::path::Path;
 use gob_mdtest::coverage::{
     ALLOWLIST_PATH, Allowlist, CaseKind, CoverageRule, Gap, analyze, scan_corpus,
 };
-use gob_rules::Polarity;
+use gob_rules::{Needs, Polarity};
 
 const PAIR: &str = "<!-- mdtest: rule=ZZZ001 -->\n# ZZZ001\n\n```rust expect=fire\nfn a() {}\n```\n\n```rust expect=clean\nfn b() {}\n```\n";
 const UNRESOLVED: &str = "\n```rust expect=unresolved reason=fidelity\nfn c() {}\n```\n";
+const ISLAND_FIRE: &str = "\n```rust expect=fire cell=island\nfn e() {}\n```\n";
 const VACUOUS: &str = "\n```rust expect=unresolved reason=vacuous\nfn d() {}\n```\n";
 
 /// A full suite for `ZZZ001`: the pair plus its unresolved case.
@@ -263,6 +264,61 @@ fn every_polarity_names_its_own_unresolved_shape() {
             rep.render()
         );
     }
+}
+
+// frob:tests crates/gob-mdtest/src/coverage.rs::analyze
+#[test]
+fn lexical_rule_requires_a_fire_inside_an_opaque_region() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "crates/x/tests/mdtest/zzz001.md", &full());
+    let mut r = rule("ZZZ001");
+    // A structural rule is not asked for the case.
+    let plain = analyze(
+        "frob",
+        &[r.clone()],
+        &scan_corpus(dir.path()),
+        &Allowlist::default(),
+    );
+    assert!(plain.passed(), "{}", plain.render());
+
+    r.needs = Needs::Lexical;
+    let bad = analyze(
+        "frob",
+        &[r.clone()],
+        &scan_corpus(dir.path()),
+        &Allowlist::default(),
+    );
+    assert_eq!(kinds(&bad), [CaseKind::OpaqueFire]);
+    assert!(bad.render().contains("ZZZ001 lexical opaque_fire"));
+
+    // An allowlisted gap is tolerated; a present case makes the entry stale.
+    let listed = analyze(
+        "frob",
+        &[r.clone()],
+        &scan_corpus(dir.path()),
+        &gap_kind("ZZZ001", CaseKind::OpaqueFire, "~ABCDEFG"),
+    );
+    assert!(listed.passed(), "{}", listed.render());
+
+    write(
+        dir.path(),
+        "crates/x/tests/mdtest/zzz001.md",
+        &format!("{}{ISLAND_FIRE}", full()),
+    );
+    let ok = analyze(
+        "frob",
+        &[r.clone()],
+        &scan_corpus(dir.path()),
+        &Allowlist::default(),
+    );
+    assert!(ok.passed(), "{}", ok.render());
+    let stale = analyze(
+        "frob",
+        &[r],
+        &scan_corpus(dir.path()),
+        &gap_kind("ZZZ001", CaseKind::OpaqueFire, "~ABCDEFG"),
+    );
+    assert_eq!(stale.stale, ["ZZZ001 [opaque_fire]"]);
 }
 
 // frob:tests crates/gob-mdtest/src/coverage.rs::analyze

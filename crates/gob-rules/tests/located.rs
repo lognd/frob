@@ -16,6 +16,7 @@ static DEF: RuleDef = RuleDef {
     release_severity: None,
     polarity: Polarity::Pplus,
     must_measure: false,
+    needs: gob_rules::Needs::Structural,
     scope: Scope::Repo,
     fix: FixKind::Manual,
     applies: Applies::Project,

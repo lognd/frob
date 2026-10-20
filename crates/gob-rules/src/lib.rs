@@ -45,7 +45,7 @@ pub use index::{
 };
 pub use inventory;
 pub use meta::{
-    Applicability, FixKind, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier,
+    Applicability, FixKind, Needs, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier,
 };
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};

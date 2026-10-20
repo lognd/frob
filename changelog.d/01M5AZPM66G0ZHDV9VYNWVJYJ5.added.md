@@ -1,0 +1,1 @@
+coverage: `RuleMeta` and `RuleDef` carry `needs` (`Structural` by default, `Lexical` via `needs = Lexical` in `#[rule]`), and the coverage meta-test requires an `opaque_fire` case (an `expect=fire cell=island` block) of every lexical rule.

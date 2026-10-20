@@ -175,6 +175,7 @@ pub(crate) fn doc_lines(attrs: &[syn::Attribute]) -> Vec<String> {
         .collect()
 }
 
+#[allow(clippy::too_many_lines)] // the superseded derive (~H5W28EA) is one flat field list
 fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
     let args = RuleArgs::from_derive_input(input)?;
     let mut errors = darling::Error::accumulator();
@@ -266,6 +267,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
                 fix: ::gob_rules::FixKind::#fix,
                 polarity: ::gob_rules::Polarity::#polarity,
                 must_measure: #must_measure,
+                needs: ::gob_rules::Needs::Structural,
                 version: #version,
                 since: #since,
                 module: ::core::module_path!(),

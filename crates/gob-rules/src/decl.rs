@@ -12,7 +12,7 @@ use gob_text::{FileId, FileInterner, Span, TextRange, TextSize};
 
 use crate::finding::Finding;
 use crate::id::RuleId;
-use crate::meta::{FixKind, Polarity, Scope, Severity};
+use crate::meta::{FixKind, Needs, Polarity, Scope, Severity};
 
 /// Which files a rule applies to; maps 1:1 onto GRL `lang *`, `lang [..]` and `lang -`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -75,6 +75,8 @@ pub struct RuleDef {
     pub polarity: Polarity,
     /// Whether the rule must account for the subjects it measured.
     pub must_measure: bool,
+    /// What the rule reads (`needs = Lexical` declares a text-only rule).
+    pub needs: Needs,
     /// File or repo scope.
     pub scope: Scope,
     /// Fix kind.
@@ -114,6 +116,7 @@ impl RuleDef {
         release_severity: None,
         polarity: Polarity::P0,
         must_measure: false,
+        needs: Needs::Structural,
         scope: Scope::File,
         fix: FixKind::Manual,
         applies: Applies::Project,

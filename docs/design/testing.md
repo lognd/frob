@@ -66,7 +66,7 @@ checked by the coverage meta-test, with a shrink-only allowlist keyed by
 | polarity Pc | `unresolved`: the path runs only through May edges; the poisoned frontier is named |
 | `must_measure` | `unresolved reason=vacuous required`: zero subjects is Unresolved, never clean |
 | tier Universal | the language matrix of section 4 |
-| lexical rule (needs only text, literals, prose) | a `fire` inside an opaque region, beside an `unresolved` structural rule over the same region |
+| lexical rule (`needs = Lexical`: text, literals, prose only) | `opaque_fire`: an `expect=fire cell=island` block, a `fire` inside an opaque region, beside an `unresolved` structural rule over the same region |
 
 Each rule's fire and clean cases live in one suite file.
 

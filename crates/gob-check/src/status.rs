@@ -499,6 +499,7 @@ mod tests {
             fix: FixKind::Manual,
             polarity: Polarity::Pplus,
             must_measure: false,
+            needs: gob_rules::Needs::Structural,
             version: 1,
             since: "2.0.0",
             module: "t",

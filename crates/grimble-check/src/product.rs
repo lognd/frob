@@ -96,6 +96,7 @@ fn legacy_meta(def: &'static RuleDef) -> &'static RuleMeta {
         fix: def.fix,
         polarity: def.polarity,
         must_measure: def.must_measure,
+        needs: def.needs,
         version: def.version,
         since: def.since,
         module: "grimble",

@@ -12,7 +12,9 @@
 //! are derived from the rule's [`RuleMeta`]: an `unresolved` case for every
 //! polarity, and a `vacuous` case (`expect=unresolved reason=vacuous`) for a
 //! `must_measure` rule. A rule's fire and clean blocks must live in one suite
-//! file. The Universal-tier language matrix is checked by [`crate::matrix`].
+//! file. A `needs = Lexical` rule (text, literals, prose only) also requires an
+//! `opaque_fire` case: an `expect=fire` block with `cell=island`, so the rule is
+//! shown firing inside an opaque region. The Universal-tier language matrix is checked by [`crate::matrix`].
 //!
 //! Known gaps live in one allowlist file ([`ALLOWLIST_PATH`]), keyed by
 //! (product, rule, case kind) with a ticket handle per entry. The allowlist may
@@ -26,7 +28,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use gob_rules::{Polarity, Registry, RuleMeta};
+use gob_rules::{Needs, Polarity, Registry, RuleMeta};
 use serde::Deserialize;
 use walkdir::WalkDir;
 
@@ -38,6 +40,9 @@ use crate::parse::{Expect, parse_suite};
 /// have no corpus of its own; it is exempt, its target's coverage standing for it. Mirrors
 /// `frob_obligations::COV003_ALIAS_OF`.
 pub const RULE_ALIASES: &[(&str, &str)] = &[("COV003", "TEST001")];
+
+/// The matrix cell whose fire block proves a lexical rule fires inside an opaque region.
+pub const OPAQUE_CELL: &str = "island";
 
 /// Allowlist location relative to the workspace root.
 pub const ALLOWLIST_PATH: &str = "crates/gob-mdtest/coverage-allowlist.toml";
@@ -74,6 +79,8 @@ pub struct CoverageRule {
     pub polarity: Polarity,
     /// True when zero subjects must be a required Unresolved (`vacuous` case).
     pub must_measure: bool,
+    /// What the rule reads; a lexical rule requires an `opaque_fire` case.
+    pub needs: Needs,
 }
 
 impl CoverageRule {
@@ -85,6 +92,7 @@ impl CoverageRule {
             family: id.trim_end_matches(char::is_numeric).to_owned(),
             polarity: Polarity::Pplus,
             must_measure: false,
+            needs: Needs::Structural,
         }
     }
 
@@ -94,6 +102,9 @@ impl CoverageRule {
         let mut kinds = vec![CaseKind::Fire, CaseKind::Clean, CaseKind::Unresolved];
         if self.must_measure {
             kinds.push(CaseKind::Vacuous);
+        }
+        if self.needs == Needs::Lexical {
+            kinds.push(CaseKind::OpaqueFire);
         }
         kinds
     }
@@ -106,6 +117,7 @@ impl From<&RuleMeta> for CoverageRule {
             family: m.family.to_owned(),
             polarity: m.polarity,
             must_measure: m.must_measure,
+            needs: m.needs,
         }
     }
 }
@@ -122,6 +134,9 @@ pub enum CaseKind {
     Unresolved,
     /// An `expect=unresolved reason=vacuous` case, required of `must_measure` rules.
     Vacuous,
+    /// An `expect=fire cell=island` case, required of `needs = Lexical` rules.
+    #[serde(rename = "opaque_fire")]
+    OpaqueFire,
 }
 
 impl std::fmt::Display for CaseKind {
@@ -131,6 +146,7 @@ impl std::fmt::Display for CaseKind {
             Self::Clean => "clean",
             Self::Unresolved => "unresolved",
             Self::Vacuous => "vacuous",
+            Self::OpaqueFire => "opaque_fire",
         })
     }
 }
@@ -217,6 +233,8 @@ pub struct Corpus {
     pub unresolved: BTreeSet<String>,
     /// Rules with an `expect=unresolved reason=vacuous` block.
     pub vacuous: BTreeSet<String>,
+    /// Rules with an `expect=fire cell=island` block (a fire inside an opaque region).
+    pub opaque_fire: BTreeSet<String>,
     /// `(family, rule)` pairs with a fixture and a snapshot.
     pub fixtures: BTreeSet<(String, String)>,
 }
@@ -307,6 +325,9 @@ pub fn scan_corpus(root: &Path) -> Corpus {
                         let id = b.rule.as_str().to_owned();
                         match b.expect {
                             Expect::Fire => {
+                                if b.cell.as_deref() == Some(OPAQUE_CELL) {
+                                    corpus.opaque_fire.insert(id.clone());
+                                }
                                 corpus.fire.entry(id).or_default().insert(path.to_owned());
                             }
                             Expect::Clean => {
@@ -460,6 +481,10 @@ fn missing_kinds(rule: &CoverageRule, corpus: &Corpus) -> Vec<(CaseKind, String)
             )),
             CaseKind::Vacuous if !corpus.vacuous.contains(&rule.id) => Some(
                 "must_measure vacuous (zero subjects is Unresolved reason=vacuous, never clean)"
+                    .to_owned(),
+            ),
+            CaseKind::OpaqueFire if !corpus.opaque_fire.contains(&rule.id) => Some(
+                "lexical opaque_fire (needs only text, so it must fire inside an opaque region: expect=fire cell=island)"
                     .to_owned(),
             ),
             _ => None,

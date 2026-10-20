@@ -69,6 +69,7 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
     polarity = P-,                // P+ | P- | P0 | Pn | Pc (required; universal-model.md 4.2)
     needs(Q::PublicApi, Q::Doc),  // the queries the rule reads (universal-model.md 5)
     must_measure = false,         // true: zero subjects examined is a required Unresolved
+    needs = Structural,           // optional; Lexical: reads only text, so it needs an opaque-region fire case
 )]
 /// A public symbol has no doc anchor describing it.
 ///

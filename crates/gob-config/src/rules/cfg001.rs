@@ -43,6 +43,7 @@ static META: gob_rules::RuleMeta = gob_rules::RuleMeta {
     fix: gob_rules::FixKind::Deterministic,
     polarity: gob_rules::Polarity::Pminus,
     must_measure: false,
+    needs: gob_rules::Needs::Structural,
     version: 1,
     since: "0.532.0",
     module: "gob_config",

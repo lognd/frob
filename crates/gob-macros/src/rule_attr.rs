@@ -31,7 +31,8 @@ const REQUIRED: &[&str] = &[
     "since",
 ];
 /// Fields a rule may omit; `body = relay` is the only one (a repo rule whose findings a stage computed).
-const OPTIONAL: &[&str] = &["body", "release_severity"];
+const OPTIONAL: &[&str] = &["body", "release_severity", "needs"];
+const NEEDS: &[&str] = &["Structural", "Lexical"];
 const BODY: &[&str] = &["relay"];
 const RT: &str = "::gob_rules";
 const MATRIX_PATH: &str = "crates/gob-caps/src/matrix.rs";
@@ -493,6 +494,8 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     } else {
         None
     };
+    let needs = choice_of(&args, "needs", NEEDS, &mut errs)
+        .map_or_else(|| "Structural".to_owned(), |i| i.to_string());
     let polarity = choice_of(&args, "polarity", POLARITY, &mut errs);
     let scope = choice_of(&args, "scope", SCOPE, &mut errs);
     let fix = choice_of(&args, "fix", FIX, &mut errs);
@@ -545,6 +548,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
         enum_tokens("Scope", &scope),
         enum_tokens("FixKind", &fix),
     );
+    let needs_ts = enum_tokens("Needs", &Ident::new(&needs, Span::call_site()));
     let release_ts = if let Some(s) = &release_severity {
         let e = enum_tokens("Severity", s);
         quote!(::core::option::Option::Some(#e))
@@ -587,6 +591,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
                 release_severity: #release_ts,
                 polarity: #pol,
                 must_measure: #must_measure,
+                needs: #needs_ts,
                 scope: #sc,
                 fix: #fx,
                 applies: #applies_ts,
