@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a gap and a contested field, when status runs, then both are listed with ticket and field"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a create-uncertain ticket, when status runs, then it is listed with its create-start time"
