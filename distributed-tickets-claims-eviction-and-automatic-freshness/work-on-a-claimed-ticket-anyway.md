@@ -8,8 +8,9 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T21:47:08Z"
+updated = "2026-10-20T21:48:30Z"
 idempotency_key = "dt-DT18"
+scope = ["crates/frob-worktree/src/anyway.rs"]
 
 [[links]]
 kind = "blocked-by"
