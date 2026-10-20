@@ -203,6 +203,8 @@ and in `frob mirror status`.
   round-robin cursor, so every issue is visited within ceil(N/K) runs
   even when the feed misses a change (repository-level renames do not
   bump issue update times). `frob mirror status` states that bound.
+  `frob-mirror::sweep::next_batch` selects the batch (sorted ULIDs after
+  the cursor, wrapping) and `visit_bound` computes ceil(N/K).
 - **Budget planner.** At start the run reads the rate-limit headers and
   spends at most a configured share (default half) of what remains, at
   most C creates (default 50) and M mutations (default 300), serially,

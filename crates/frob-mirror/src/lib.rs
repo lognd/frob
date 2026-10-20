@@ -29,3 +29,4 @@ pub mod progress;
 pub mod projection;
 pub mod proposals;
 pub mod shardstore;
+pub mod sweep;
