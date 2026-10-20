@@ -1,0 +1,9 @@
+kind = "create"
+title = "Resume a claim on another clone as the same actor"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~46BECG2. Fetch the remote ticket branch and record a lease move event instead of reporting E-CLAIM-LOST; publish currently only recognises ancestry-of-local as resumed."
+at = "2026-10-20T19:15:57Z"
+actor = "lognd"
+rev = 1
