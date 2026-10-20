@@ -2,7 +2,8 @@
 id = "01M5B4R6YPM1D0A41AX7MRCHXP"
 title = "evidence/test runners: declare a per-runner report field in frob.toml; runners without one are UNMEASURED for granular evidence; extend executed-and-passed to the command provider and land re-verification"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
