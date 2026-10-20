@@ -9,6 +9,7 @@ use frob_ledger::ops::TicketView;
 use frob_ledger::triage::InboxEntry;
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
+use gob_path::Shown;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -686,7 +687,7 @@ fn build_lease_guard(
     let root = repo
         .work_dir()
         .map(std::path::Path::to_path_buf)
-        .ok_or_else(|| format!("{} is not inside a git work tree", cwd.display()))?;
+        .ok_or_else(|| format!("{} is not inside a git work tree", Shown::of(cwd)))?;
     let cfg = FrobConfig::load(&root).map_err(|e| e.to_string())?.lease;
     let store = frob_lease::LeaseStore::open(&repo, cfg, clock).map_err(|e| e.to_string())?;
     frob_lease::LeaseGuard::new(store).map_err(|e| e.to_string())

@@ -14,6 +14,7 @@
 //! label and a short hash of its pattern ([`Hit`]). The built-in home-path rule shares detection and
 //! audit with the private rules; its rewrite stays with the caller's path scrub (the evidence crate).
 
+use gob_path::{RelPath, Shown};
 use std::path::Path;
 
 use gob_rules::{Finding, Severity};
@@ -216,7 +217,7 @@ impl RuleSet {
     /// Log where private-term rules are read from, for `frob init` and `frob doctor` (local-only; never committed).
     pub fn mention_local_files(common_dir: &Path) {
         for p in Self::local_paths(common_dir) {
-            tracing::info!(path = %p.display(), present = p.is_file(), "private-term rules file (local-only, never committed)");
+            tracing::info!(path = %Shown::of(&p), present = p.is_file(), "private-term rules file (local-only, never committed)");
         }
     }
 
@@ -352,13 +353,15 @@ pub fn fragment_findings(root: &Path, rel_dir: &str, rules: &RuleSet) -> Vec<Fin
     if rules.no_private() {
         return Vec::new();
     }
-    let Ok(rd) = std::fs::read_dir(root.join(rel_dir)) else {
+    let dir = root.join(rel_dir);
+    let Ok(rd) = std::fs::read_dir(&dir) else {
         return Vec::new();
     };
     let mut names: Vec<String> = rd
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_ok_and(|t| t.is_file()))
-        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .filter_map(|e| RelPath::from_host(&dir, &e.path()).ok())
+        .map(|r| r.as_str().to_owned())
         .collect();
     names.sort();
     names

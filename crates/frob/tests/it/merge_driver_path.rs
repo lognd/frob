@@ -3,6 +3,7 @@
 #![cfg(unix)]
 
 use crate::common;
+use gob_path::Shown;
 
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
@@ -32,7 +33,7 @@ fn frob_bin() -> PathBuf {
 fn path_with(first: &Path) -> String {
     format!(
         "{}:{}",
-        first.display(),
+        Shown::of(first),
         std::env::var("PATH").unwrap_or_default()
     )
 }
@@ -100,14 +101,17 @@ fn init_writes_the_absolute_path_when_path_has_another_frob() {
     assert_eq!(out.status.code(), Some(0), "{}", json(&out));
     let exe = gob_exec::canonical(&frob_bin()).expect("canonical");
     let cmd = driver(dir.path()).expect("driver set");
-    assert_eq!(cmd, format!("{} merge-driver %O %A %B %P", exe.display()));
+    assert_eq!(
+        cmd,
+        format!("{} merge-driver %O %A %B %P", Shown::with_home(&exe, None))
+    );
     let env = json(&out);
     let info = &env["data"]["driver"];
     assert_eq!(info["command"], cmd);
     let reason = info["reason"].as_str().expect("reason");
     assert!(reason.contains("different frob"), "{reason}");
     assert!(
-        reason.contains(&other.path().display().to_string()),
+        reason.contains(&Shown::with_home(other.path(), None).to_string()),
         "{reason}"
     );
 }
@@ -162,7 +166,10 @@ fn doctor_reports_a_mismatched_driver_with_the_fix() {
     let d = &env["data"]["driver"];
     assert_eq!(d["state"], "mismatch");
     let exe = gob_exec::canonical(&frob_bin()).expect("canonical");
-    assert_eq!(d["fix"], format!("{} init --fix-driver", exe.display()));
+    assert_eq!(
+        d["fix"],
+        format!("{} init --fix-driver", Shown::with_home(&exe, None))
+    );
     assert!(
         env["warnings"].to_string().contains("init --fix-driver"),
         "{env}"

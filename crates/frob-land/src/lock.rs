@@ -12,6 +12,7 @@
 //!   chance), is terminated and, when the lock is still pinned, the lock file is
 //!   replaced; every takeover is logged with its reason.
 
+use gob_path::Shown;
 use std::fs::{File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
@@ -201,7 +202,7 @@ impl LandLock {
         let path = Self::path(common_dir);
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir)
-                .map_err(|e| LandError::io(format!("creating {}", dir.display()), e))?;
+                .map_err(|e| LandError::io(format!("creating {}", Shown::of(dir)), e))?;
         }
         let sidecar = Self::sidecar_path(common_dir);
         let mut file = open_lock(&path)?;
@@ -222,7 +223,7 @@ impl LandLock {
                     std::thread::sleep(POLL);
                 }
                 Err(TryLockError::Error(e)) => {
-                    return Err(LandError::io(format!("locking {}", path.display()), e));
+                    return Err(LandError::io(format!("locking {}", Shown::of(&path)), e));
                 }
             }
         }
@@ -236,7 +237,7 @@ impl LandLock {
             build: build_profile().to_owned(),
         };
         write_record(&sidecar, &record)?;
-        tracing::info!(lock = %path.display(), holder, build = %record.build, "land lock taken");
+        tracing::info!(lock = %Shown::of(&path), holder, build = %record.build, "land lock taken");
         let file = Arc::new(file);
         let shared = Arc::new(Shared {
             sidecar,
@@ -298,11 +299,11 @@ impl LandLock {
                 }
                 Err(TryLockError::WouldBlock) => true,
                 Err(TryLockError::Error(e)) => {
-                    return Err(LandError::io(format!("locking {}", path.display()), e));
+                    return Err(LandError::io(format!("locking {}", Shown::of(&path)), e));
                 }
             },
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => false,
-            Err(e) => return Err(LandError::io(format!("opening {}", path.display()), e)),
+            Err(e) => return Err(LandError::io(format!("opening {}", Shown::of(&path)), e)),
         };
         let now = clock.now().unix();
         let alive = record.as_ref().is_some_and(|r| pid_alive(r.pid));
@@ -377,7 +378,7 @@ fn open_lock(path: &Path) -> Result<File, LandError> {
         .truncate(false)
         .write(true)
         .open(path)
-        .map_err(|e| LandError::io(format!("opening {}", path.display()), e))
+        .map_err(|e| LandError::io(format!("opening {}", Shown::of(path)), e))
 }
 
 fn locked_refusal(path: &Path, sidecar: &Path) -> LandError {
@@ -396,7 +397,7 @@ fn locked_refusal(path: &Path, sidecar: &Path) -> LandError {
             )
         },
     );
-    tracing::warn!(lock = %path.display(), holder = %who, "land lock is held");
+    tracing::warn!(lock = %Shown::of(path), holder = %who, "land lock is held");
     LandError::Refused(
         Refusal::new(
             CODE_LOCKED,
@@ -412,7 +413,7 @@ fn write_record(sidecar: &Path, record: &HolderRecord) -> Result<(), LandError> 
     let text = serde_json::to_string(record)
         .map_err(|e| LandError::Config(format!("encoding the holder record: {e}")))?;
     gob_fs::write_atomic(sidecar, format!("{text}\n").as_bytes())
-        .map_err(|e| LandError::io(format!("writing {}", sidecar.display()), e))
+        .map_err(|e| LandError::io(format!("writing {}", Shown::of(sidecar)), e))
 }
 
 fn read_record(sidecar: &Path) -> Option<HolderRecord> {

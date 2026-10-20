@@ -5,11 +5,13 @@ use std::path::Path;
 
 use gob_cache::Cache;
 use gob_git::{Repo, TreeRef};
+use gob_path::Shown;
 use gob_rules::{Finding, RuleDecl, RuleId, Severity};
 use gob_symbols::{
     BuildStats, Digests, FileSymbols, SymbolGraph, SymbolKind, SymbolRecord, Symref, Target,
     adapter_for_path, build_graph_with_stats, extract_file,
 };
+use gob_time::Clock;
 use gob_walk::{Digest, FileEntry, LanguageHint, WalkConfig, walk};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -143,7 +145,7 @@ fn base_symbols(repo: &Repo, base: &str, path: &str) -> Result<BTreeMap<Symref, 
 /// would otherwise hide the edits. Bumping the changed files after a `--base` run makes the next
 /// cargo build in the work tree recompile all of them. Best effort: failures are logged and skipped.
 pub fn bump_mtimes(root: &Path, files: &[String]) -> usize {
-    let now = std::time::SystemTime::now();
+    let now = gob_time::SystemClock.now().to_system_time();
     let mut bumped = 0;
     for rel in files {
         let file = root.join(rel);
@@ -157,7 +159,7 @@ pub fn bump_mtimes(root: &Path, files: &[String]) -> usize {
             .and_then(|f| f.set_modified(now));
         match set {
             Ok(()) => bumped += 1,
-            Err(e) => tracing::warn!(file = %file.display(), error = %e, "mtime not bumped"),
+            Err(e) => tracing::warn!(file = %Shown::of(&file), error = %e, "mtime not bumped"),
         }
     }
     tracing::info!(bumped, "bumped mtimes of files changed against the base");

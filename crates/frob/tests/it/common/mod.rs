@@ -192,7 +192,7 @@ impl FrobCmd {
         let argv: Vec<String> = self
             .args
             .iter()
-            .map(|a| a.to_string_lossy().into_owned())
+            .map(|a| gob_path::Shown::with_home(std::path::Path::new(a), None).to_string())
             .collect();
         let argv: Vec<&str> = argv.iter().map(String::as_str).collect();
         let (code, stdout, stderr) = gob_cli::run_for_test(&frob_cli::cli(), &argv, &cwd);

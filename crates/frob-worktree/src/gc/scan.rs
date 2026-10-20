@@ -1,6 +1,7 @@
 //! Size and recency of a tree, never following symlinks.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 
+use gob_path::Shown;
 use std::path::Path;
 use std::time::SystemTime;
 
@@ -29,7 +30,7 @@ pub fn scan(path: &Path) -> Scan {
         let meta = match std::fs::symlink_metadata(&p) {
             Ok(m) => m,
             Err(e) => {
-                tracing::debug!(path = %p.display(), error = %e, "scan skipped an entry");
+                tracing::debug!(path = %Shown::of(&p), error = %e, "scan skipped an entry");
                 continue;
             }
         };
@@ -38,7 +39,7 @@ pub fn scan(path: &Path) -> Scan {
         if meta.is_dir() {
             match std::fs::read_dir(&p) {
                 Ok(rd) => stack.extend(rd.filter_map(Result::ok).map(|e| e.path())),
-                Err(e) => tracing::debug!(path = %p.display(), error = %e, "scan could not list"),
+                Err(e) => tracing::debug!(path = %Shown::of(&p), error = %e, "scan could not list"),
             }
         }
     }

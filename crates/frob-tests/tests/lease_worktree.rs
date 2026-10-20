@@ -1,13 +1,10 @@
 //! `lease_ticket` from a linked worktree: the shape every ticket worktree has.
 
 // frob:ticket 01M4DPJKMT0JYSBXXXHPSJRG93
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use frob_tests::lease_ticket;
 use gob_git::Repo;
+use gob_path::Shown;
 
 mod common;
 use common::{git, write};
@@ -33,7 +30,7 @@ fn a_linked_worktree_finds_the_lease_it_holds() {
             "-q",
             "-b",
             "ticket/X",
-            linked.to_str().expect("utf8"),
+            Shown::with_home(&linked, None).as_str(),
         ],
     );
     let leases = primary.join(".git/frob/leases");
@@ -42,7 +39,7 @@ fn a_linked_worktree_finds_the_lease_it_holds() {
         leases.join("X.toml"),
         format!(
             "ticket = \"01TICKETX\"\n\n[holder]\nactor = \"t\"\nworktree = '{}'\n",
-            linked.display()
+            Shown::of(&linked)
         ),
     )
     .expect("lease");

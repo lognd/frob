@@ -5,6 +5,7 @@
 //! the stored key differs from the ledger's, the index is rebuilt from the
 //! ticket documents. The database is a pure cache: deleting it is always safe.
 
+use gob_path::Shown;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -186,7 +187,7 @@ impl Index {
             conn.execute_batch(&format!("PRAGMA user_version = {INDEX_FORMAT};"))?;
         }
         conn.execute_batch(SCHEMA)?;
-        tracing::debug!(path = %path.display(), "index opened");
+        tracing::debug!(path = %Shown::of(path), "index opened");
         Ok(Self { conn })
     }
 

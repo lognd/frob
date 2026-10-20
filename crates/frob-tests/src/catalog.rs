@@ -12,6 +12,7 @@
 //! file under a `tests/` directory. The fallback over-approximates helpers in
 //! `tests/`; selecting a helper only adds a filter that matches nothing.
 
+use gob_path::Shown;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -98,7 +99,7 @@ pub fn csharp_test(rec: &SymbolRecord, text: &str) -> Option<gob_symbols::Csharp
 pub fn module_prefix(path_in_package: &Path) -> Vec<String> {
     let comps: Vec<String> = path_in_package
         .components()
-        .map(|c| c.as_os_str().to_string_lossy().into_owned())
+        .map(|c| Shown::with_home(std::path::Path::new(c.as_os_str()), None).to_string())
         .collect();
     let Some((first, rest)) = comps.split_first() else {
         return Vec::new();
@@ -183,7 +184,7 @@ impl Packages {
                     .as_str()
                     .map(|n| (n.to_owned(), dir.to_path_buf()))
             });
-        tracing::trace!(manifest = %manifest.display(), found = ?found, "package lookup");
+        tracing::trace!(manifest = %Shown::of(&manifest), found = ?found, "package lookup");
         self.cache.insert(dir.to_path_buf(), found.clone());
         found
     }

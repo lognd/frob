@@ -6,6 +6,7 @@
 
 // frob:ticket 01M3ZX88BP9P0ZWPMJ5J5SBSMN
 
+use gob_path::Shown;
 use std::io::{BufRead, IsTerminal, Write};
 use std::time::Duration;
 
@@ -207,7 +208,7 @@ impl Opener for PagerOpener<'_> {
             std::env::temp_dir().join(format!("frob-tour-{}-{name_of_file}", std::process::id()));
         std::fs::write(&tmp, &bytes).map_err(|e| e.to_string())?;
         let mut args: Vec<String> = words.collect();
-        args.push(tmp.display().to_string());
+        args.push(Shown::with_home(&tmp, None).to_string());
         let spec = Spec {
             program: Program::Tool { name },
             args,

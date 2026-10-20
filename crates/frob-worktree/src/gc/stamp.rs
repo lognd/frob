@@ -1,6 +1,7 @@
 //! The throttle stamp and last-pass record under `<git common dir>/frob/gc.json`.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use schemars::JsonSchema;
@@ -48,7 +49,7 @@ pub fn load(common_dir: &Path) -> Stamp {
     let p = path(common_dir);
     match std::fs::read_to_string(&p) {
         Ok(text) => serde_json::from_str(&text).unwrap_or_else(|e| {
-            tracing::warn!(path = %p.display(), error = %e, "gc stamp unreadable; treating as absent");
+            tracing::warn!(path = %Shown::of(&p), error = %e, "gc stamp unreadable; treating as absent");
             Stamp::default()
         }),
         Err(_) => Stamp::default(),
@@ -63,9 +64,9 @@ pub fn load(common_dir: &Path) -> Stamp {
 pub fn save(common_dir: &Path, stamp: &Stamp) -> Result<(), String> {
     let p = path(common_dir);
     let dir = p.parent().unwrap_or(common_dir);
-    std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", Shown::of(dir)))?;
     let json = serde_json::to_string_pretty(stamp).map_err(|e| e.to_string())?;
-    gob_fs::write_atomic(&p, json.as_bytes()).map_err(|e| format!("{}: {e}", p.display()))?;
-    tracing::debug!(path = %p.display(), "gc stamp saved");
+    gob_fs::write_atomic(&p, json.as_bytes()).map_err(|e| format!("{}: {e}", Shown::of(&p)))?;
+    tracing::debug!(path = %Shown::of(&p), "gc stamp saved");
     Ok(())
 }

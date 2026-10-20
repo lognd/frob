@@ -1,9 +1,6 @@
 //! The `dotnet` evidence provider end to end, against the `fake-dotnet` stand-in executable (no .NET SDK needed).
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::path::Path;
 use std::time::Duration;
 
@@ -68,7 +65,10 @@ fn repo(dotnet: &Path, trx: Option<&str>, exit: Option<u8>) -> tempfile::TempDir
     git(p, &["config", "core.autocrlf", "false"]);
     std::fs::write(
         p.join("frob.toml"),
-        format!("[evidence.dotnet]\npath = '{}'\n", dotnet.display()),
+        format!(
+            "[evidence.dotnet]\npath = '{}'\n",
+            Shown::with_home(dotnet, None)
+        ),
     )
     .expect("frob.toml");
     if let Some(trx) = trx {

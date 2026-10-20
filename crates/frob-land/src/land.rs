@@ -15,6 +15,7 @@
 //! `git update-ref <ref> <new> <old>` (compare-and-swap) when no checkout
 //! has it. `gob-git` has no ref-update or worktree-removal API yet.
 
+use gob_path::Shown;
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
@@ -773,7 +774,7 @@ pub(crate) fn resolve(
         .ok_or_else(|| {
             needs_action(
                 "E-LAND-NOT-LEASED",
-                format!("no ticket is leased by {}", cwd_root.display()),
+                format!("no ticket is leased by {}", Shown::of(cwd_root)),
                 "frob land <ticket>",
             )
         })
@@ -869,20 +870,20 @@ fn check_worktree(
         needs_action(
             "E-LAND-WRONG-WORKTREE",
             why,
-            format!("cd {} && frob land {handle}", wt_path.display()),
+            format!("cd {} && frob land {handle}", Shown::of(wt_path)),
         )
     };
     if !wt_path.join(".git").exists() {
         return Err(wrong(format!(
             "the leased worktree {} does not exist",
-            wt_path.display()
+            Shown::of(wt_path)
         )));
     }
     if repo.is_linked_worktree() && canon(cwd_root) != canon(wt_path) {
         return Err(wrong(format!(
             "{handle} is leased to {}, not this worktree ({})",
-            wt_path.display(),
-            cwd_root.display()
+            Shown::of(wt_path),
+            Shown::of(cwd_root)
         )));
     }
     Ok(())
@@ -893,10 +894,10 @@ fn ticket_branch(wt: &Repo, base: &str, wt_path: &Path, handle: &str) -> Result<
     let wrong =
         |why: String| needs_action("E-LAND-WRONG-WORKTREE", why, format!("frob work {handle}"));
     match wt.current_branch()? {
-        None => Err(wrong(format!("{} has a detached HEAD", wt_path.display()))),
+        None => Err(wrong(format!("{} has a detached HEAD", Shown::of(wt_path)))),
         Some(b) if b == base => Err(wrong(format!(
             "{} is on the base branch {base}; there is nothing to land",
-            wt_path.display()
+            Shown::of(wt_path)
         ))),
         Some(b) => Ok(b),
     }
@@ -926,11 +927,11 @@ fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
     }
     Err(needs_action(
         "E-LAND-DIRTY",
-        format!("{} has uncommitted changes: {listed}", wt_path.display()),
+        format!("{} has uncommitted changes: {listed}", Shown::of(wt_path)),
         format!(
             "git -C {} add -A && git -C {} commit -m <message>",
-            wt_path.display(),
-            wt_path.display()
+            Shown::of(wt_path),
+            Shown::of(wt_path)
         ),
     ))
 }
@@ -971,7 +972,7 @@ fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<
                 format!("merging {base} conflicts in: {}", paths.join(", ")),
                 format!(
                     "git -C {} merge {base}, resolve, commit, then frob land {handle}",
-                    wt_path.display()
+                    Shown::of(wt_path)
                 ),
             ))
         }
@@ -1380,7 +1381,7 @@ impl Publish<'_> {
         }
         let hex = head.to_string();
         let run = if let Some(w) = &checked_out {
-            tracing::info!(base = self.base, at = %w.path.display(), "fast-forwarding the checked-out base");
+            tracing::info!(base = self.base, at = %Shown::of(&w.path), "fast-forwarding the checked-out base");
             git(self.repo, &w.path, &["merge", "--ff-only", &hex])?
         } else {
             tracing::info!(
@@ -1546,7 +1547,7 @@ fn leave_worktree(wt_path: &Path, primary: &Path) {
         return;
     }
     match std::env::set_current_dir(primary) {
-        Ok(()) => tracing::info!(to = %primary.display(), "left the worktree before removing it"),
+        Ok(()) => tracing::info!(to = %Shown::of(primary), "left the worktree before removing it"),
         Err(e) => tracing::warn!(error = %e, "could not leave the worktree; removal may fail"),
     }
 }
@@ -1572,7 +1573,7 @@ fn detach_worktree(wt_path: &Path) -> bool {
         tracing::warn!(error = %e, "worktree not renamed aside; removing it through git");
         return false;
     }
-    tracing::info!(aside = %aside.display(), "worktree renamed aside; deleting in the background");
+    tracing::info!(aside = %Shown::of(&aside), "worktree renamed aside; deleting in the background");
     let parent = parent.to_path_buf();
     std::thread::spawn(move || sweep_removing(&parent));
     true
@@ -1584,15 +1585,18 @@ fn sweep_removing(parent: &Path) {
         return;
     };
     for e in entries.flatten() {
-        if !e.file_name().to_string_lossy().ends_with(REMOVING_SUFFIX) {
+        if !Shown::with_home(Path::new(&e.file_name()), None)
+            .as_str()
+            .ends_with(REMOVING_SUFFIX)
+        {
             continue;
         }
         match std::fs::remove_dir_all(e.path()) {
             Ok(()) => {
-                tracing::info!(dir = %e.path().display(), "background worktree deletion done");
+                tracing::info!(dir = %Shown::of(&e.path()), "background worktree deletion done");
             }
             Err(err) => {
-                tracing::warn!(dir = %e.path().display(), error = %err, "background worktree deletion failed");
+                tracing::warn!(dir = %Shown::of(&e.path()), error = %err, "background worktree deletion failed");
             }
         }
     }
@@ -1608,7 +1612,7 @@ fn remove_worktree(
     warnings: &mut Vec<String>,
 ) -> bool {
     leave_worktree(wt_path, primary);
-    let path = wt_path.to_string_lossy();
+    let path = Shown::with_home(wt_path, None).to_string();
     let merged = repo
         .rev_parse(branch)
         .is_ok_and(|b| repo.merge_base(&base_ref(base), branch).ok().flatten() == Some(b));

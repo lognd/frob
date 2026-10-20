@@ -5,6 +5,7 @@
 //! every file below the tickets directory at the ledger tip; it never parses TOML
 //! or Markdown and never rewrites anything.
 
+use gob_path::Shown;
 use gob_rules::{Finding, Severity};
 
 use crate::error::Result;
@@ -267,7 +268,7 @@ impl Ledger {
             return;
         }
         if let Err(e) = std::fs::write(&path, format!("{CLEAN_SCAN_VERSION} {hex}\n")) {
-            tracing::warn!(error = %e, path = %path.display(), "cannot record the clean TICK004 scan");
+            tracing::warn!(error = %e, path = %Shown::of(&path), "cannot record the clean TICK004 scan");
         }
     }
 }

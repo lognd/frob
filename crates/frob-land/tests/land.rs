@@ -1,9 +1,6 @@
 //! `land` end to end in temporary repositories (system git required: gob-git spawns it for worktrees and merges).
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -361,7 +358,7 @@ fn land_opens_each_repository_once() {
     let seen = counter.seen.lock().expect("lock").clone();
     // The invoking (primary) checkout is opened once and shared by the workspace, the lease
     // store and gc; the ticket worktree and the ratchet checkout are opened by frob-check.
-    let primary = fx.repo().git_dir().display().to_string();
+    let primary = Shown::with_home(fx.repo().git_dir(), None).to_string();
     let opens = seen
         .iter()
         .filter(|d| d.trim_matches('"') == primary)
@@ -1583,7 +1580,7 @@ fn a_check_in_a_fresh_worktree_hits_the_cache_the_primary_warmed() {
             "worktree",
             "add",
             "--detach",
-            wt.to_str().expect("utf8"),
+            gob_path::Shown::with_home(&wt, None).as_str(),
             "main",
         ],
     );
@@ -2178,7 +2175,7 @@ fn same_dir(logged: &str, wt: &Path) -> bool {
             .replace('\\', "/")
             .to_lowercase()
     };
-    norm(logged) == norm(&wt.to_string_lossy())
+    norm(logged) == norm(&gob_path::Shown::with_home(wt, None).to_string())
 }
 
 // frob:ticket 01M4MH61ZJD4VYYXPANZ8132AR
@@ -2199,7 +2196,7 @@ fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_in
     let extra = format!(
         "[[check.tool]]\nname = \"probe\"\ncommand = \"git\"\nargs = [\"-c\", \"alias.probe=!(pwd -W 2>/dev/null || pwd) >> '{}'\", \"probe\"]\ninputs = [\"src/**\"]\n",
         // Forward slashes: backslashes are TOML escapes and sh escapes alike on Windows.
-        log.display().to_string().replace('\\', "/")
+        Shown::with_home(&log, None).to_string().replace('\\', "/")
     );
     // The probe logs its working directory, so spawns in a ticket worktree are told apart from
     // the one land's base-set run makes in the persistent base checkout.
@@ -2721,7 +2718,10 @@ fn a_cache_miss_checks_out_the_base_once_for_both_passes() {
     let hook = hooks.join("post-checkout");
     std::fs::write(
         &hook,
-        format!("#!/bin/sh\necho \"$PWD\" >> \"{}\"\n", log.display()),
+        format!(
+            "#!/bin/sh\necho \"$PWD\" >> \"{}\"\n",
+            Shown::with_home(&log, None)
+        ),
     )
     .expect("hook");
     std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).expect("chmod");

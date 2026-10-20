@@ -4,6 +4,7 @@
 //! through [`gob_git::Repo::commit_paths`] on that ref, so staged changes of a
 //! user can never enter a ledger commit (decision D23).
 
+use gob_path::Shown;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
@@ -155,11 +156,11 @@ pub(crate) fn unsynced_warnings(unsynced: &[gob_git::UnsyncedCheckout]) -> Vec<S
         .iter()
         .map(|u| {
             let paths = u.paths_with_local_edits.join(", ");
-            tracing::warn!(checkout = %u.path.display(), %paths, "checkout left stale by ledger commit");
+            tracing::warn!(checkout = %Shown::of(&u.path), %paths, "checkout left stale by ledger commit");
             format!(
                 "checkout {dir} was not synced to the ledger commit: local edits to {paths}; \
                  run `git -C {dir} diff -- {paths}`, then commit it or `git restore --source=HEAD --staged --worktree -- {paths}`",
-                dir = u.path.display(),
+                dir = Shown::of(&u.path),
             )
         })
         .collect()
@@ -194,7 +195,7 @@ impl Ledger {
         } else {
             Layout::Dir
         };
-        tracing::debug!(index = %index_path.display(), ref_name = %cfg.ref_name, mode = ?cfg.mode, ?layout, "ledger opened");
+        tracing::debug!(index = %Shown::of(&index_path), ref_name = %cfg.ref_name, mode = ?cfg.mode, ?layout, "ledger opened");
         Self {
             repo,
             cfg,

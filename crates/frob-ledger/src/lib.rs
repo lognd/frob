@@ -54,10 +54,6 @@
 //! with `frob-evidence`), [`guards::LeaseCheck`] the lease hook `doable`
 //! consults (`frob-lease`). [`rules`] declares `TICK001` to `TICK005` (`TICK004` is [`privacy`], a byte scan of committed ledger files, repaired by [`scrub`]; `TICK005` is the same scan for the local private terms of [`redact`]); [`legacy`] holds `TICK007` to `TICK010`;
 //! `frob-check` supplies the ticket ids [`tick::tick002`] checks.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 pub mod backlog;
 pub mod branch;

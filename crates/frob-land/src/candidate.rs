@@ -6,6 +6,7 @@
 //! trains. The temp ref is removed when the [`Candidate`] drops, and is never
 //! created when the build fails.
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use gob_git::Repo;
@@ -180,7 +181,7 @@ fn checkout_paths(common: &Path) -> (PathBuf, PathBuf) {
 
 /// Move the persistent train checkout to `oid`, creating it on first use or when unusable.
 fn prepare_checkout(repo: &Repo, primary: &Path, dir: &Path, oid: &str) -> Result<(), LandError> {
-    let text = dir.to_string_lossy().into_owned();
+    let text = Shown::with_home(dir, None).to_string();
     if dir.join(".git").exists() {
         let _ = git(repo, dir, &["merge", "--abort"]);
         let moved = git(
@@ -190,10 +191,10 @@ fn prepare_checkout(repo: &Repo, primary: &Path, dir: &Path, oid: &str) -> Resul
         );
         if moved.as_ref().is_ok_and(crate::git::GitRun::ok) {
             let _ = git(repo, dir, &["clean", "-fdq"]);
-            tracing::info!(oid, dir = %dir.display(), "train checkout reused");
+            tracing::info!(oid, dir = %Shown::of(dir), "train checkout reused");
             return Ok(());
         }
-        tracing::warn!(dir = %dir.display(), "train checkout unusable; recreating");
+        tracing::warn!(dir = %Shown::of(dir), "train checkout unusable; recreating");
         let _ = git(repo, primary, &["worktree", "remove", "--force", &text]);
     }
     if dir.exists() {
@@ -211,7 +212,7 @@ fn prepare_checkout(repo: &Repo, primary: &Path, dir: &Path, oid: &str) -> Resul
             add.text
         )));
     }
-    tracing::info!(oid, dir = %dir.display(), "train checkout created");
+    tracing::info!(oid, dir = %Shown::of(dir), "train checkout created");
     Ok(())
 }
 

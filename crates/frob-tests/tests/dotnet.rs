@@ -1,11 +1,8 @@
 //! C# test selection and runs: `.csproj` projects run through the dotnet provider, Unity assemblies run through the unity provider (~J5RTJ6, ~F17DMKH).
 
 // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::path::Path;
 
 use frob_tests::{
@@ -131,7 +128,10 @@ fn the_test_verb_runs_the_selected_ids_through_the_dotnet_provider() {
         write(
             p,
             "frob.toml",
-            &format!("[evidence.dotnet]\npath = '{}'\n", fake.display()),
+            &format!(
+                "[evidence.dotnet]\npath = '{}'\n",
+                Shown::with_home(&fake, None)
+            ),
         );
         write(p, "fake-dotnet.trx", TRX);
     });
@@ -257,7 +257,10 @@ fn a_touched_unity_assembly_prints_the_selection_and_the_run_goes_through_the_un
     write(
         dir.path(),
         "frob.toml",
-        &format!("[evidence.unity]\neditor = '{}'\n", fake.display()),
+        &format!(
+            "[evidence.unity]\neditor = '{}'\n",
+            Shown::with_home(&fake, None)
+        ),
     );
     write(dir.path(), "fake-unity.xml", NUNIT_PASS);
     write(
@@ -336,7 +339,7 @@ fn a_play_mode_only_test_runs_play_mode_and_edit_mode_tests_run_edit_mode() {
         Vec::new(),
         false,
     );
-    opts.unity_editor = fake.display().to_string();
+    opts.unity_editor = Shown::with_home(&fake, None).to_string();
     let groups = unity_groups(&got, &opts);
     let modes: Vec<&str> = groups.iter().map(|g| g.mode).collect();
     assert!(modes.contains(&"PlayMode"), "{groups:?}");

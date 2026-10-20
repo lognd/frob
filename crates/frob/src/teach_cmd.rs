@@ -5,6 +5,7 @@
 
 // frob:ticket 01M3ZX81N4AFEA0W55R756T5RD
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
@@ -61,7 +62,7 @@ pub fn reset_at(root: &Path, rule: Option<&str>) -> Result<PathBuf, TeachError> 
     let mut store = SeenStore::load(&path)?;
     store.reset(rule);
     store.save(&path)?;
-    tracing::info!(?rule, path = %path.display(), "teach state reset");
+    tracing::info!(?rule, path = %Shown::of(&path), "teach state reset");
     Ok(path)
 }
 
@@ -84,7 +85,7 @@ impl Command for Teach {
         let rows = vec![format!("reset teaching state for {what}")];
         Ok(Payload::new(TeachResetData {
             rule: self.rule.clone(),
-            path: path.display().to_string(),
+            path: Shown::of(&path).to_string(),
         })
         .with_rendered(rows))
     }

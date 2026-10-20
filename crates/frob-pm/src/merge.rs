@@ -8,6 +8,7 @@
 //! other side's event files are checked out, so [`resolve_with`] also takes events
 //! read from the merged commits.
 
+use gob_path::{RelPath, Shown};
 use std::collections::BTreeSet;
 use std::path::Path;
 
@@ -35,13 +36,9 @@ pub struct MergeReport {
 ///
 /// [`PmError::Invalid`] when the path is not an object frontmatter file.
 pub fn object_of_path(path: &str) -> Result<(ObjectKind, ObjectId)> {
-    let p = Path::new(path);
-    let file = p.file_name().and_then(|n| n.to_str()).unwrap_or_default();
-    let dir = p
-        .parent()
-        .and_then(Path::file_name)
-        .and_then(|n| n.to_str())
-        .unwrap_or_default();
+    let mut parts = path.rsplit('/');
+    let file = parts.next().unwrap_or_default();
+    let dir = parts.next().unwrap_or_default();
     ObjectKind::ALL
         .into_iter()
         .find(|k| k.file() == file)
@@ -65,7 +62,7 @@ pub fn read_events_on_disk(dir: &Path) -> Result<Vec<PmEvent>> {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
         Err(e) => {
             return Err(PmError::malformed(
-                events_dir.display().to_string(),
+                Shown::of(&events_dir).to_string(),
                 e.to_string(),
             ));
         }
@@ -73,20 +70,19 @@ pub fn read_events_on_disk(dir: &Path) -> Result<Vec<PmEvent>> {
     let mut events = Vec::new();
     for entry in read {
         let path = entry
-            .map_err(|e| PmError::malformed(events_dir.display().to_string(), e.to_string()))?
+            .map_err(|e| PmError::malformed(Shown::of(&events_dir).to_string(), e.to_string()))?
             .path();
-        let Some(id) = path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .and_then(|s| s.parse::<EventId>().ok())
-        else {
+        let Ok(rel) = RelPath::from_host(&events_dir, &path) else {
             continue;
         };
-        if path.extension().and_then(|e| e.to_str()) != Some("toml") {
+        let Some((stem, "toml")) = rel.as_str().rsplit_once('.') else {
             continue;
-        }
+        };
+        let Ok(id) = stem.parse::<EventId>() else {
+            continue;
+        };
         let text = std::fs::read_to_string(&path)
-            .map_err(|e| PmError::malformed(path.display().to_string(), e.to_string()))?;
+            .map_err(|e| PmError::malformed(Shown::of(&path).to_string(), e.to_string()))?;
         events.push(PmEvent::parse(id, &text)?);
     }
     Ok(events)
@@ -132,7 +128,7 @@ pub fn resolve_with(
     let from_extra = events.len() - on_disk;
     let folded = fold(kind, id, &events)?;
     std::fs::write(ours, folded.object.render()?)
-        .map_err(|e| PmError::malformed(ours.display().to_string(), e.to_string()))?;
+        .map_err(|e| PmError::malformed(Shown::of(ours).to_string(), e.to_string()))?;
     tracing::info!(object = %id, events = events.len(), from_extra, "frontmatter re-folded by pm merge");
     Ok(MergeReport {
         id,

@@ -1,5 +1,6 @@
 //! Running the selected tests: `cargo nextest run -p <pkg> -E '<filter>'`, `pytest <node id>...`, `vitest run` or `jest` per member and `dotnet test` per project through gob-exec.
 
+use gob_path::Shown;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -220,7 +221,7 @@ pub fn nextest_groups(root: &Path, selected: &[TestTarget]) -> Vec<(String, Vec<
         let file = t.symref.split("::").next().unwrap_or_default();
         let dir = packages
             .cargo_root(file)
-            .map(|d| d.to_string_lossy().replace('\\', "/"))
+            .map(|d| Shown::with_home(&d, None).to_string().replace('\\', "/"))
             .unwrap_or_default();
         by_dir.entry(dir).or_default().push(t.clone());
     }
@@ -640,7 +641,7 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
     let home = std::env::var_os("HOME").map(PathBuf::from);
     for group in unity_groups(selected, opts) {
         tracing::info!(
-            project = %group.project.display(),
+            project = %Shown::of(&group.project),
             mode = group.mode,
             assemblies = group.assemblies.len(),
             ids = group.ids.len(),

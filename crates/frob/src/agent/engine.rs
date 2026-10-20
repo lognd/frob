@@ -6,6 +6,7 @@
 
 // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
 
+use gob_path::Shown;
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -108,7 +109,7 @@ pub fn plan(
         out.push(Planned {
             expected: em.render(item, &rel, &bytes),
             executable: is_executable(&path),
-            dest: rel.to_string_lossy().replace('\\', "/"),
+            dest: crate::pathtext::text(&rel).replace('\\', "/"),
             item: item.clone(),
         });
     }
@@ -176,7 +177,7 @@ pub fn backup(path: &Path) -> Result<(), AgentError> {
     name.push(BACKUP_SUFFIX);
     let bak = path.with_file_name(name);
     std::fs::write(&bak, old).map_err(|e| io(&bak, e))?;
-    tracing::info!(backup = %bak.display(), "backup written");
+    tracing::info!(backup = %Shown::of(&bak), "backup written");
     Ok(())
 }
 

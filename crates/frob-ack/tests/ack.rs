@@ -1,9 +1,6 @@
 //! Dogfood: ack and the DRIFT and AFFECT rules against a temporary git copy of a fixture crate.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::path::Path;
 use std::time::Duration;
 
@@ -573,9 +570,10 @@ fn a_fresh_worktree_shares_the_primary_checkouts_cache_not_its_own() {
         "no per-checkout cache"
     );
     let wt = fx.root().join("wt");
+    let wt_arg = Shown::with_home(&wt, None);
     git(
         fx.root(),
-        &["worktree", "add", "-q", "-b", "side", wt.to_str().unwrap()],
+        &["worktree", "add", "-q", "-b", "side", wt_arg.as_str()],
     );
     let inputs = Inputs::collect(&wt).expect("collect in the worktree");
     let _ = evaluate(&wt, &inputs);

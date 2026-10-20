@@ -366,7 +366,12 @@ fn push_sends_the_branch_and_the_tags_to_origin() {
     git(remote.path(), &["init", "-q", "--bare"]);
     git(
         d,
-        &["remote", "add", "origin", &remote.path().to_string_lossy()],
+        &[
+            "remote",
+            "add",
+            "origin",
+            &gob_path::Shown::with_home(remote.path(), None).to_string(),
+        ],
     );
     let v = repo.ok(&["release", "cut", "0.532.0", "--push"]);
     assert_eq!(v["data"]["pushed"], true);

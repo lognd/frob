@@ -5,6 +5,7 @@
 //! `.git/frob/artifacts` by default (outside `.frob/`, non-authoritative), and
 //! `https://` URIs are recorded but never downloaded or uploaded.
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use gob_git::Repo;
@@ -161,12 +162,12 @@ impl BlobStore {
         let dir = self.resolve(rel);
         let path = dir.join(&hex);
         if path.is_file() {
-            tracing::debug!(path = %path.display(), "blob already stored");
+            tracing::debug!(path = %Shown::of(&path), "blob already stored");
         } else {
             std::fs::create_dir_all(&dir).map_err(|e| EvidenceError::io(&dir, e))?;
             gob_fs::write_atomic(&path, text.as_bytes())
                 .map_err(|e| EvidenceError::io(&path, e))?;
-            tracing::info!(path = %path.display(), bytes = text.len(), "blob stored");
+            tracing::info!(path = %Shown::of(&path), bytes = text.len(), "blob stored");
         }
         Ok(format!("dir:{rel}/{hex}"))
     }
@@ -189,7 +190,7 @@ impl BlobStore {
         match std::fs::read(&path) {
             Ok(bytes) => Fetched::Found(bytes),
             Err(e) => {
-                tracing::info!(uri, path = %path.display(), error = %e, "blob missing; evidence is unmeasured");
+                tracing::info!(uri, path = %Shown::of(&path), error = %e, "blob missing; evidence is unmeasured");
                 Fetched::Unmeasured {
                     uri: uri.to_owned(),
                     reason: format!("blob missing: {e}"),

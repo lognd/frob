@@ -1,5 +1,6 @@
 //! The lease file: who holds which scope, since when, and how it changed hands.
 
+use gob_path::Shown;
 use std::path::PathBuf;
 
 use frob_ledger::TicketId;
@@ -18,7 +19,7 @@ pub struct Holder {
 
 impl std::fmt::Display for Holder {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} in {}", self.actor, self.worktree.display())
+        write!(f, "{} in {}", self.actor, Shown::of(&self.worktree))
     }
 }
 

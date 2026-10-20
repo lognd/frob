@@ -6,6 +6,7 @@
 //! `PM034` and the changelog dry-run into [`frob_release::status::Input`] and reports; it never refuses
 //! over what it finds.
 
+use gob_path::Shown;
 use std::collections::BTreeSet;
 
 use frob_ledger::index::ListFilter;
@@ -233,7 +234,7 @@ impl Command for ReleaseNotes {
             .into()
         };
         let text = std::fs::read_to_string(&path)
-            .map_err(|e| refuse_notes(format!("cannot read {}: {e}", path.display())))?;
+            .map_err(|e| refuse_notes(format!("cannot read {}: {e}", Shown::of(&path))))?;
         let Some(notes) = frob_release::changelog::section_body(&text, &self.version) else {
             return Err(refuse_notes(format!(
                 "CHANGELOG.md has no section for {}",

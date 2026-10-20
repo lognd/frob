@@ -14,10 +14,6 @@
 //! contention), [`LeaseGuard`] (the [`LeaseCheck`](frob_ledger::guards::LeaseCheck)
 //! for `ticket doable`), [`scope001`], and [`register`] for the `lease list` and
 //! `lease list --contention` verbs.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 pub mod config;
 pub mod error;
@@ -31,6 +27,7 @@ pub mod store;
 pub mod unmatched;
 pub mod verbs;
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 pub use config::LeaseConfig;
@@ -71,9 +68,9 @@ pub fn open_store_in(
     clock: std::sync::Arc<dyn gob_time::Clock>,
 ) -> Result<(LeaseStore, PathBuf), LeaseError> {
     let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
-        LeaseError::Repo(format!("{} is not a work tree", repo.git_dir().display()))
+        LeaseError::Repo(format!("{} is not a work tree", Shown::of(repo.git_dir())))
     })?;
-    tracing::debug!(root = %root.display(), shared = cfg.shared_files.len(), "opening lease store");
+    tracing::debug!(root = %Shown::of(&root), shared = cfg.shared_files.len(), "opening lease store");
     Ok((LeaseStore::open(repo, cfg, clock)?, root))
 }
 
@@ -103,7 +100,7 @@ pub fn open_store_from_repo(
     clock: std::sync::Arc<dyn gob_time::Clock>,
 ) -> Result<(LeaseStore, PathBuf), LeaseError> {
     let root = repo.work_dir().map(Path::to_path_buf).ok_or_else(|| {
-        LeaseError::Repo(format!("{} is not a work tree", repo.git_dir().display()))
+        LeaseError::Repo(format!("{} is not a work tree", Shown::of(repo.git_dir())))
     })?;
     // frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W
     let ledger_ref = frob_ledger::config::load_ledger_config(&root)
@@ -128,7 +125,9 @@ pub fn heartbeat(cwd: &Path, clock: std::sync::Arc<dyn gob_time::Clock>) {
         }
     };
     match store.renew_for_worktree(&root) {
-        Ok(renewed) => tracing::debug!(count = renewed.len(), root = %root.display(), "heartbeat"),
+        Ok(renewed) => {
+            tracing::debug!(count = renewed.len(), root = %Shown::of(&root), "heartbeat");
+        }
         Err(e) => tracing::warn!(error = %e, "heartbeat failed"),
     }
 }

@@ -6,6 +6,7 @@
 
 // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
@@ -162,7 +163,7 @@ pub struct PerAgent<R> {
 fn per<R>(t: &Target, report: R) -> PerAgent<R> {
     PerAgent {
         agent: t.em.id().to_owned(),
-        home: t.home.display().to_string(),
+        home: Shown::of(&t.home).to_string(),
         report,
     }
 }
@@ -398,7 +399,7 @@ pub(crate) fn drift_warnings(root: &Path, cfg: &FrobConfig) -> Vec<String> {
         if drifted {
             out.push(format!(
                 "{} ({}) has drifted from the repository's [agent] manifest; fix: frob agent sync --agent {}",
-                home.display(),
+                Shown::of(&home),
                 em.id(),
                 em.id()
             ));

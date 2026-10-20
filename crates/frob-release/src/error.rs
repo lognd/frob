@@ -1,5 +1,6 @@
 //! Typed, teaching errors for the changelog compile.
 
+use gob_path::Shown;
 use std::path::PathBuf;
 
 use crate::fragment::Kind;
@@ -136,7 +137,7 @@ pub enum ReleaseError {
     )]
     Unmarked(String),
     /// A file operation failed.
-    #[error("{op} {}: {reason}", path.display())]
+    #[error("{op} {}: {reason}", Shown::of(path))]
     Io {
         /// What was attempted.
         op: &'static str,

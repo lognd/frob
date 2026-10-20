@@ -1,6 +1,7 @@
 //! The error type of the evidence crate and its mapping to CLI refusals.
 
 use gob_cli::{CliError, Refusal, RefusalClass};
+use gob_path::Shown;
 
 /// Everything evidence capture, storage and lookup can fail with.
 #[derive(Debug, thiserror::Error)]
@@ -175,7 +176,7 @@ impl EvidenceError {
     /// Wrap an I/O failure with the path it concerns.
     pub fn io(path: impl AsRef<std::path::Path>, source: std::io::Error) -> Self {
         Self::Io {
-            path: path.as_ref().display().to_string(),
+            path: Shown::of(path.as_ref()).to_string(),
             source,
         }
     }

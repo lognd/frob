@@ -10,15 +10,12 @@
 //! ([`WorktreeConfig`], default `../<repo>-wt`).
 //!
 //! [`register`] adds the three verbs to a product root.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 pub mod config;
 pub mod cycle_gate;
 pub mod error;
 pub mod gc;
+pub(crate) mod pathtext;
 pub mod verbs;
 pub mod wip;
 pub mod work;

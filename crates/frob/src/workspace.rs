@@ -1,5 +1,6 @@
 //! Locating the repository root and mapping config errors to refusals.
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use frob_ledger::{Ledger, RefMode};
@@ -23,7 +24,7 @@ impl Located {
                 let root = repo
                     .work_dir()
                     .map_or_else(|| cwd.to_path_buf(), Path::to_path_buf);
-                tracing::debug!(root = %root.display(), "repository discovered");
+                tracing::debug!(root = %Shown::of(&root), "repository discovered");
                 Self {
                     repo: Some(repo),
                     root,
@@ -56,7 +57,7 @@ impl Located {
             _ => Err(Refusal::new(
                 "E-NOT-A-REPO",
                 RefusalClass::GuardNeedsAction,
-                format!("{} is not inside a git work tree", self.root.display()),
+                format!("{} is not inside a git work tree", Shown::of(&self.root)),
             )
             .with_remedy("git init")
             .into()),

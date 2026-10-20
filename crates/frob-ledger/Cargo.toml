@@ -15,6 +15,7 @@ gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-macros = { version = "0.532.0", path = "../gob-macros" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 inventory = "0.3"

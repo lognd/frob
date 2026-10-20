@@ -1,5 +1,6 @@
 //! The options and results of a land, and the deterministic dry-run plan.
 
+use gob_path::Shown;
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -243,11 +244,11 @@ pub fn steps(p: &PlanInputs<'_>) -> Vec<String> {
     ));
     v.push("release the lease".to_owned());
     v.push(if p.keep_worktree {
-        format!("keep worktree {}", p.worktree.display())
+        format!("keep worktree {}", Shown::of(p.worktree))
     } else {
         format!(
             "remove worktree {} and branch {}",
-            p.worktree.display(),
+            Shown::of(p.worktree),
             p.branch
         )
     });

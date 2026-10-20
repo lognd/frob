@@ -2,6 +2,7 @@
 
 // frob:ticket 01M3ZX7FCFBJSWMTZGCQMW7215
 
+use gob_path::Shown;
 use std::fmt::Write as _;
 use std::path::Path;
 
@@ -449,7 +450,7 @@ impl Command for RuleNew {
             }
             if let Some(dir) = target.parent() {
                 std::fs::create_dir_all(dir).map_err(|e| {
-                    CliError::internal(format!("cannot create {}: {e}", dir.display()))
+                    CliError::internal(format!("cannot create {}: {e}", Shown::of(dir)))
                 })?;
             }
             std::fs::write(&target, &rule.text)

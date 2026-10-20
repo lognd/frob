@@ -57,7 +57,7 @@ fn comment_from_a_linked_worktree_warns_about_the_blocked_primary() {
             "-q",
             "-b",
             "feature",
-            wt.to_str().unwrap(),
+            gob_path::Shown::with_home(&wt, None).as_str(),
             "main",
         ],
     );

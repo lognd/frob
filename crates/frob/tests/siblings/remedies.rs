@@ -1,6 +1,7 @@
 //! Every `frob ...` / `grimble ...` command a remedy or help string names must exist in the CLI registry.
 // frob:ticket 01M40YQZF4422S88TN6992AN0Q
 
+use gob_path::Shown;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
@@ -27,7 +28,8 @@ fn source_files() -> Vec<PathBuf> {
     while let Some(dir) = stack.pop() {
         for entry in std::fs::read_dir(&dir).expect("read dir").flatten() {
             let path = entry.path();
-            let name = entry.file_name().to_string_lossy().into_owned();
+            let name = gob_path::Shown::with_home(std::path::Path::new(&entry.file_name()), None)
+                .to_string();
             if path.is_dir() {
                 // Only each crate's src tree; tests and fixtures legitimately name bad commands.
                 let in_crates_root = dir.ends_with("..");
@@ -173,7 +175,7 @@ fn problems() -> (usize, Vec<String>) {
         if let Some(why) = check_span(s, surface) {
             bad.push(format!(
                 "{}:{}: {why} (in `{}`)",
-                s.file.display(),
+                Shown::of(&s.file),
                 s.line,
                 s.text
             ));

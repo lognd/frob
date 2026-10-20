@@ -6,6 +6,7 @@
 //! the blob store. Processes only ever run through `gob-exec` with a bounded
 //! timeout.
 
+use gob_path::Shown;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -549,7 +550,7 @@ fn rootdir_prefix(transcript: &str, root: &Path) -> String {
     let canon = |p: &Path| gob_exec::canonical(p).unwrap_or_else(|_| p.to_path_buf());
     let rel = canon(dir)
         .strip_prefix(canon(root))
-        .map(|r| r.to_string_lossy().into_owned())
+        .map(crate::pathtext::text)
         .unwrap_or_default();
     portable_file(&rel)
 }
@@ -579,9 +580,10 @@ impl PytestRunner {
 /// Without it the project's own `.venv` interpreter in `root` runs `-m pytest`; with neither, `pytest` on `PATH`.
 pub fn pytest_runner(root: &Path, python: &str) -> PytestRunner {
     let interpreter = |path: PathBuf| {
-        let label = path
-            .strip_prefix(root)
-            .map_or_else(|_| path.display().to_string(), |r| r.display().to_string());
+        let label = path.strip_prefix(root).map_or_else(
+            |_| Shown::of(&path).to_string(),
+            |r| Shown::of(r).to_string(),
+        );
         PytestRunner {
             label: format!("{} -m pytest", label.replace('\\', "/")),
             program: Program::Hook { path },
@@ -696,7 +698,7 @@ pub fn run_pytest(
         "-o".to_owned(),
         "junit_family=xunit1".to_owned(),
         "-rX".to_owned(),
-        format!("--junitxml={}", junit.display()),
+        format!("--junitxml={}", Shown::with_home(&junit, None)),
     ]);
     full.extend(args.iter().cloned());
     let out = runner.run(&spec(launcher.program, full, cwd, timeout));
@@ -704,7 +706,7 @@ pub fn run_pytest(
     if junit.exists()
         && let Err(e) = std::fs::remove_file(&junit)
     {
-        tracing::warn!(path = %junit.display(), error = %e, "could not remove the junit file");
+        tracing::warn!(path = %Shown::of(&junit), error = %e, "could not remove the junit file");
     }
     let out = out?;
     let prefix = rootdir_prefix(&out.stdout, cwd);
@@ -770,7 +772,7 @@ pub const NODE_PROGRAM: &str = "node";
 fn js_rel_path(file: &str, cwd: &Path, member: &str) -> String {
     let rel = Path::new(file)
         .strip_prefix(cwd)
-        .map_or_else(|_| file.to_owned(), |r| r.to_string_lossy().into_owned());
+        .map_or_else(|_| file.to_owned(), crate::pathtext::text);
     let rel = portable_file(&rel);
     if member.is_empty() {
         rel
@@ -944,13 +946,13 @@ pub fn run_js_tests(runner: &Runner, job: &JsRun<'_>) -> Result<Capture> {
             "run".to_owned(),
             "--reporter=default".to_owned(),
             "--reporter=json".to_owned(),
-            format!("--outputFile.json={}", report.display()),
+            format!("--outputFile.json={}", Shown::with_home(&report, None)),
         ]
     } else {
         vec![
             "--ci".to_owned(),
             "--json".to_owned(),
-            format!("--outputFile={}", report.display()),
+            format!("--outputFile={}", Shown::with_home(&report, None)),
         ]
     };
     full.extend(args.iter().cloned());
@@ -959,7 +961,7 @@ pub fn run_js_tests(runner: &Runner, job: &JsRun<'_>) -> Result<Capture> {
     if report.exists()
         && let Err(e) = std::fs::remove_file(&report)
     {
-        tracing::warn!(path = %report.display(), error = %e, "could not remove the JSON report");
+        tracing::warn!(path = %Shown::of(&report), error = %e, "could not remove the JSON report");
     }
     let out = out?;
     let seen = parse_js_json(&json, &cwd, member);
@@ -1013,7 +1015,7 @@ pub fn run_command(
             },
         }
     } else if let Some(path) = builtin_tool(tool, &builtin_tools()) {
-        tracing::debug!(tool, path = %path.display(), "command evidence: running frob tool allowed by default");
+        tracing::debug!(tool, path = %Shown::of(&path), "command evidence: running frob tool allowed by default");
         Program::Hook { path }
     } else {
         tracing::warn!(tool, "command evidence refused: tool not allowlisted");
@@ -1416,7 +1418,7 @@ pub fn run_dotnet(runner: &Runner, job: &DotnetRun<'_>) -> Result<Capture> {
         "--logger".to_owned(),
         format!("trx;LogFileName={TRX_FILE}"),
         "--results-directory".to_owned(),
-        results.display().to_string(),
+        Shown::with_home(&results, None).to_string(),
     ]);
     if !ids.is_empty() {
         full.extend(["--filter".to_owned(), dotnet_filter(&ids)]);
@@ -1424,7 +1426,7 @@ pub fn run_dotnet(runner: &Runner, job: &DotnetRun<'_>) -> Result<Capture> {
     let out = runner.run(&spec(program, full, cwd, timeout));
     let xml = std::fs::read_to_string(results.join(TRX_FILE)).unwrap_or_default();
     if let Err(e) = std::fs::remove_dir_all(&results) {
-        tracing::warn!(path = %results.display(), error = %e, "could not remove the results directory");
+        tracing::warn!(path = %Shown::of(&results), error = %e, "could not remove the results directory");
     }
     let out = out?;
     let trx = parse_trx(&xml);
@@ -1561,10 +1563,10 @@ pub fn find_unity_editor(look: &UnityLookup<'_>) -> Result<UnityEditor> {
     if !look.configured.is_empty() {
         let path = look.base.join(look.configured);
         if path.is_file() {
-            tracing::info!(editor = %path.display(), "unity editor taken from [evidence.unity] editor");
+            tracing::info!(editor = %Shown::of(&path), "unity editor taken from [evidence.unity] editor");
             return Ok(UnityEditor { path, version });
         }
-        tracing::warn!(editor = %path.display(), "unity editor refused: configured path is not a file");
+        tracing::warn!(editor = %Shown::of(&path), "unity editor refused: configured path is not a file");
         return Err(EvidenceError::UnityEditor {
             problem: format!(
                 "[evidence.unity] editor is `{}` but no file exists there",
@@ -1573,7 +1575,7 @@ pub fn find_unity_editor(look: &UnityLookup<'_>) -> Result<UnityEditor> {
         });
     }
     let Some(wanted) = version.clone() else {
-        tracing::warn!(file = %version_file.display(), "unity editor refused: no editor version");
+        tracing::warn!(file = %Shown::of(&version_file), "unity editor refused: no editor version");
         return Err(EvidenceError::UnityEditor {
             problem: format!(
                 "cannot tell which editor version the project needs ({UNITY_VERSION_FILE} is missing or has no m_EditorVersion) and [evidence.unity] editor is not set"
@@ -1586,7 +1588,7 @@ pub fn find_unity_editor(look: &UnityLookup<'_>) -> Result<UnityEditor> {
         .map(|root| look.host.editor_in(root, &wanted))
         .collect();
     if let Some(path) = tried.iter().find(|p| p.is_file()) {
-        tracing::info!(editor = %path.display(), version = %wanted, "unity editor found in the Hub");
+        tracing::info!(editor = %Shown::of(path), version = %wanted, "unity editor found in the Hub");
         return Ok(UnityEditor {
             path: path.clone(),
             version,
@@ -1599,7 +1601,7 @@ pub fn find_unity_editor(look: &UnityLookup<'_>) -> Result<UnityEditor> {
             "looked for {}",
             tried
                 .iter()
-                .map(|p| format!("`{}`", p.display()))
+                .map(|p| format!("`{}`", Shown::of(p)))
                 .collect::<Vec<_>>()
                 .join(", ")
         )
@@ -1742,9 +1744,9 @@ pub fn unity_assembly_name(root: &Path, id: &str) -> String {
 pub fn check_unity_unlocked(project: &Path) -> Result<()> {
     let lock = project.join(UNITY_LOCK_FILE);
     if lock.exists() {
-        tracing::warn!(lock = %lock.display(), "unity project is open in another editor; refusing");
+        tracing::warn!(lock = %Shown::of(&lock), "unity project is open in another editor; refusing");
         return Err(EvidenceError::UnityProjectOpen {
-            project: project.display().to_string(),
+            project: Shown::with_home(project, None).to_string(),
         });
     }
     Ok(())
@@ -1851,12 +1853,12 @@ pub fn run_unity(runner: &Runner, job: &UnityTestRun<'_>, timeout: Duration) -> 
     ]
     .map(str::to_owned)
     .to_vec();
-    args.push(file.display().to_string());
+    args.push(Shown::with_home(&file, None).to_string());
     args.extend([
         "-logFile".to_owned(),
         "-".to_owned(),
         "-projectPath".to_owned(),
-        job.run.project.display().to_string(),
+        Shown::with_home(job.run.project, None).to_string(),
     ]);
     if !job.assemblies.is_empty() {
         args.extend(["-assemblyNames".to_owned(), job.assemblies.join(";")]);
@@ -1873,7 +1875,7 @@ pub fn run_unity(runner: &Runner, job: &UnityTestRun<'_>, timeout: Duration) -> 
     ));
     let xml = std::fs::read_to_string(&file).unwrap_or_default();
     if let Err(e) = std::fs::remove_dir_all(&results) {
-        tracing::warn!(path = %results.display(), error = %e, "could not remove the results directory");
+        tracing::warn!(path = %Shown::of(&results), error = %e, "could not remove the results directory");
     }
     let out = out?;
     let mut transcript = out.stdout;
@@ -2461,7 +2463,7 @@ mod tests {
         std::fs::create_dir_all(&sub).unwrap();
         let header = format!(
             "============ test session starts ============\nrootdir: {}, configfile: pytest.ini\n",
-            sub.display()
+            Shown::of(&sub)
         );
         let prefix = rootdir_prefix(&header, root.path());
         assert_eq!(prefix, "py/sub");

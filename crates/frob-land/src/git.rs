@@ -3,6 +3,7 @@
 //! `gob-git` has no ref update, worktree removal or branch deletion, so these
 //! run `git` through the repository's own runner (the spawn counter sees them).
 
+use gob_path::Shown;
 use std::path::Path;
 use std::time::Duration;
 
@@ -93,7 +94,7 @@ fn spawn(repo: &Repo, cwd: &Path, program: Program, args: &[&str]) -> Result<Git
         timeout: TIMEOUT,
         capture: true,
     };
-    tracing::info!(program = %name, args = %args.join(" "), cwd = %cwd.display(), "land spawn");
+    tracing::info!(program = %name, args = %args.join(" "), cwd = %Shown::of(cwd), "land spawn");
     let out = repo
         .runner()
         .run(&spec)
@@ -115,16 +116,16 @@ fn spawn(repo: &Repo, cwd: &Path, program: Program, args: &[&str]) -> Result<Git
 pub(crate) fn lock_exclusive(lock: &Path) -> Result<std::fs::File, LandError> {
     if let Some(parent) = lock.parent() {
         std::fs::create_dir_all(parent)
-            .map_err(|e| LandError::io(format!("creating {}", parent.display()), e))?;
+            .map_err(|e| LandError::io(format!("creating {}", Shown::of(parent)), e))?;
     }
     let file = std::fs::OpenOptions::new()
         .create(true)
         .truncate(false)
         .write(true)
         .open(lock)
-        .map_err(|e| LandError::io(format!("opening {}", lock.display()), e))?;
+        .map_err(|e| LandError::io(format!("opening {}", Shown::of(lock)), e))?;
     file.lock()
-        .map_err(|e| LandError::io(format!("locking {}", lock.display()), e))?;
+        .map_err(|e| LandError::io(format!("locking {}", Shown::of(lock)), e))?;
     Ok(file)
 }
 

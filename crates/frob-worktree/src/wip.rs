@@ -14,6 +14,7 @@
 // frob:ticket 01M416Z11V5GR012FR47HWFTBP
 // frob:ticket 01M40Q3S4T9QTYX0Z1MPAZP9JM
 
+use gob_path::Shown;
 use std::collections::BTreeSet;
 use std::fmt::Write;
 
@@ -65,7 +66,7 @@ fn write_holders<'a>(msg: &mut String, holdings: impl Iterator<Item = &'a Holdin
             h.handle,
             h.title,
             h.lease.holder.actor,
-            h.lease.holder.worktree.display(),
+            Shown::of(&h.lease.holder.worktree),
             h.lease.acquired_at
         );
     }

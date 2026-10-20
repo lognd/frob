@@ -7,11 +7,13 @@
 //! workspace version. A manifest that cannot be read is an Unresolved finding naming it and
 //! the reason, never a silent skip.
 
+use gob_path::Shown;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use gob_rules::{Finding, RuleDecl, RuleId, Severity};
 
+use crate::pathtext::{name_text, rel_text};
 use crate::rules::rel002::Rel002;
 use toml::{Table, Value};
 
@@ -124,10 +126,10 @@ fn expand(root: &Path, pattern: &str) -> Result<Vec<String>, ManifestError> {
     }
     let dir = root.join(parent);
     let mut found: Vec<String> = std::fs::read_dir(&dir)
-        .map_err(|e| ManifestError::Read(format!("{}: {e}", dir.display())))?
+        .map_err(|e| ManifestError::Read(format!("{}: {e}", Shown::of(&dir))))?
         .filter_map(Result::ok)
         .filter(|e| e.path().join("Cargo.toml").is_file())
-        .filter_map(|e| e.file_name().to_str().map(|n| format!("{parent}/{n}")))
+        .map(|e| format!("{parent}/{}", name_text(&e.file_name())))
         .collect();
     found.sort();
     Ok(found)
@@ -331,11 +333,7 @@ pub fn evaluate(root: &Path) -> Evaluation {
     }
     if let Some(path) = wheel_path(root) {
         out.subjects += 1;
-        let rel = path
-            .strip_prefix(root)
-            .unwrap_or(&path)
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel = rel_text(root, &path);
         match wheel_version(&path) {
             Ok(Wheel::Static(v)) if v != expected => {
                 let name = wheel_name(&path).unwrap_or_else(|| "wheel".to_owned());

@@ -1,9 +1,6 @@
 //! The `unity` evidence provider: editor discovery and license refusal, against the `fake-unity` stand-in editor.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -143,7 +140,7 @@ fn a_configured_editor_wins_whatever_the_version_file_says() {
     std::fs::write(&mine, "fake").expect("editor");
     let got = find_unity_editor(&look(
         proj.path(),
-        mine.to_str().expect("utf8"),
+        Shown::with_home(&mine, None).as_str(),
         &[],
         UnityHost::Linux,
     ))
@@ -171,7 +168,7 @@ fn run_fake(proj: &Path) -> String {
         args: vec![
             "-batchmode".into(),
             "-projectPath".into(),
-            proj.display().to_string(),
+            Shown::with_home(proj, None).to_string(),
         ],
         cwd: Some(proj.to_path_buf()),
         env: Vec::new(),
@@ -288,7 +285,7 @@ fn a_batch_run_stores_the_measured_per_test_results() {
         &unity_run(
             dir.path(),
             home.path(),
-            fake.to_str().expect("utf8"),
+            Shown::with_home(&fake, None).as_str(),
             UnityMode::PlayMode,
         ),
         Duration::from_secs(30),
@@ -319,7 +316,7 @@ fn edit_mode_is_passed_through_and_a_clean_run_passes() {
         &unity_run(
             dir.path(),
             home.path(),
-            fake.to_str().expect("utf8"),
+            Shown::with_home(&fake, None).as_str(),
             UnityMode::EditMode,
         ),
         Duration::from_secs(30),
@@ -347,7 +344,7 @@ fn a_project_open_in_another_editor_refuses_with_a_remedy() {
         &unity_run(
             dir.path(),
             home.path(),
-            fake.to_str().expect("utf8"),
+            Shown::with_home(&fake, None).as_str(),
             UnityMode::EditMode,
         ),
         Duration::from_secs(30),

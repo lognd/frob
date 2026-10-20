@@ -4,6 +4,7 @@
 //! so the TOML is read loosely: a top-level string `ticket` and a string
 //! `holder.worktree`. Every file under `<common_dir>/frob/leases/` is tried.
 
+use gob_path::Shown;
 use std::path::Path;
 
 /// The ticket reference of the lease whose `holder.worktree` is `worktree`, if any.
@@ -19,7 +20,7 @@ pub fn lease_ticket(common_dir: &Path, worktree: &Path) -> Option<String> {
             continue;
         };
         let Ok(table) = text.parse::<toml::Table>() else {
-            tracing::debug!(path = %path.display(), "lease file is not TOML; skipped");
+            tracing::debug!(path = %Shown::of(&path), "lease file is not TOML; skipped");
             continue;
         };
         let held = table
@@ -30,11 +31,11 @@ pub fn lease_ticket(common_dir: &Path, worktree: &Path) -> Option<String> {
         if let (Some(held), Some(ticket)) = (held, ticket)
             && canonical(Path::new(held)) == want
         {
-            tracing::info!(ticket, lease = %path.display(), "worktree lease found");
+            tracing::info!(ticket, lease = %Shown::of(&path), "worktree lease found");
             return Some(ticket.to_owned());
         }
     }
-    tracing::debug!(dir = %dir.display(), "no lease for this worktree");
+    tracing::debug!(dir = %Shown::of(&dir), "no lease for this worktree");
     None
 }
 

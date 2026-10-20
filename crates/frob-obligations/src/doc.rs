@@ -1,5 +1,6 @@
 //! DOC001 (undocumented public items) and DOC002 (broken markdown links).
 
+use gob_path::Shown;
 use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path, PathBuf};
 
@@ -210,7 +211,9 @@ fn check_link(
     } else {
         return Some(format!("link target `{target}` leaves the repository"));
     };
-    let rel = resolved.to_string_lossy().replace('\\', "/");
+    let rel = Shown::with_home(&resolved, None)
+        .to_string()
+        .replace('\\', "/");
     if !target.is_empty() && !root.join(&resolved).exists() {
         return Some(format!("link target `{target}` does not exist"));
     }

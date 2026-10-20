@@ -8,6 +8,7 @@
 //! [`TrainCloser::close_run`] again (after a crash, or later) closes only the
 //! members that are still pending.
 
+use gob_path::Shown;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -233,7 +234,7 @@ impl TrainCloser<'_> {
             .into_iter()
             .find(|w| w.branch.as_deref() == Some(self.base));
         let outcome = if let Some(w) = &checked_out {
-            tracing::info!(at = %w.path.display(), "fast-forwarding the checked-out base");
+            tracing::info!(at = %Shown::of(&w.path), "fast-forwarding the checked-out base");
             git(self.repo, &w.path, &["merge", "--ff-only", &hex])?
         } else {
             tracing::info!("updating the base ref by compare-and-swap");
@@ -630,9 +631,9 @@ mod tests {
     /// Commit `path` = `body` on top of ref `name` with plumbing and a throwaway work tree.
     fn commit(repo: &Repo, name: &str, path: &str, body: &str) {
         let gd = repo.git_dir().to_path_buf();
-        let gd_s = gd.to_string_lossy().into_owned();
+        let gd_s = Shown::with_home(&gd, None).to_string();
         let tmp = tempfile::tempdir().expect("tempdir");
-        let wt = tmp.path().to_string_lossy().into_owned();
+        let wt = Shown::with_home(tmp.path(), None).to_string();
         let run = |args: &[&str]| -> String {
             let mut full = vec!["--git-dir", gd_s.as_str(), "--work-tree", wt.as_str()];
             full.extend_from_slice(args);

@@ -1,5 +1,6 @@
 //! Lease failures and their mapping to CLI refusals.
 
+use gob_path::Shown;
 use std::path::PathBuf;
 
 use frob_ledger::TicketId;
@@ -59,7 +60,10 @@ pub enum LeaseError {
         ticket: TicketId,
     },
     /// The lock file stayed busy for the whole wait.
-    #[error("E-LEASE-LOCK-TIMEOUT: {} stayed locked for {waited_ms} ms", path.display())]
+    #[error(
+        "E-LEASE-LOCK-TIMEOUT: {} stayed locked for {waited_ms} ms",
+        Shown::of(path)
+    )]
     LockTimeout {
         /// The lock file.
         path: PathBuf,
@@ -83,7 +87,7 @@ pub enum LeaseError {
         glob: String,
     },
     /// A lease file exists but cannot be read as a lease.
-    #[error("E-LEASE-FORMAT: {}: {message}", path.display())]
+    #[error("E-LEASE-FORMAT: {}: {message}", Shown::of(path))]
     Format {
         /// The lease file.
         path: PathBuf,

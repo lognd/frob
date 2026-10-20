@@ -1,5 +1,6 @@
 //! The CLI verbs: `work [--here]` and `requeue`; `start` stays as a hidden alias of `work --here`.
 
+use gob_path::Shown;
 use std::path::PathBuf;
 
 use frob_lease::{Holder, Lease, LeaseStore};
@@ -35,7 +36,7 @@ impl Opened {
             .ok_or_else(|| {
                 WorktreeError::Config(format!(
                     "{} is not inside a git work tree",
-                    ctx.cwd.display()
+                    Shown::of(&ctx.cwd)
                 ))
             })?;
         let ledger_cfg = ledger_config(&root).map_err(WorktreeError::Config)?;

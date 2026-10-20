@@ -2,6 +2,7 @@
 // frob:ticket 01M4069WHH6KXYWDAJD3TXB8SR
 // frob:ticket 01M4FDQXEST75DK0NHDH4P5H15
 
+use gob_path::Shown;
 use std::path::PathBuf;
 
 use frob_release::fragment::sentence_required;
@@ -132,7 +133,7 @@ impl Command for Fragment {
             force: self.force,
         };
         let written = write(&req, &resolver).map_err(|e| refuse(&e, &view.summary.handle))?;
-        tracing::info!(file = %written.file, root = %root.display(), "ticket fragment written");
+        tracing::info!(file = %written.file, root = %Shown::of(&root), "ticket fragment written");
         Ok(Payload::new(FragmentData {
             id: ulid,
             handle: view.summary.handle,
@@ -155,7 +156,7 @@ fn fragment_root(ctx: &Context, id: frob_ledger::TicketId) -> Result<(PathBuf, S
         .map(|l| l.holder.worktree);
     match held {
         Some(wt) if wt.is_dir() => {
-            tracing::debug!(worktree = %wt.display(), "writing into the lease holder's worktree");
+            tracing::debug!(worktree = %Shown::of(&wt), "writing into the lease holder's worktree");
             Ok((wt, cfg.release.fragment_prefix))
         }
         _ => Ok((root, cfg.release.fragment_prefix)),

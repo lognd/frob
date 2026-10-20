@@ -1,6 +1,7 @@
 //! The few git commands the pass spawns, through the repository's own runner.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 
+use gob_path::Shown;
 use std::path::Path;
 use std::time::Duration;
 
@@ -24,7 +25,7 @@ pub fn git(repo: &Repo, cwd: &Path, args: &[&str]) -> Result<(i32, String), Stri
         timeout: TIMEOUT,
         capture: true,
     };
-    tracing::debug!(args = %args.join(" "), cwd = %cwd.display(), "gc git spawn");
+    tracing::debug!(args = %args.join(" "), cwd = %Shown::of(cwd), "gc git spawn");
     let out = repo
         .runner()
         .run(&spec)

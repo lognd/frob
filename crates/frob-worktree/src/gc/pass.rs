@@ -1,6 +1,7 @@
 //! The pass: decide whether to run, collect each category within a time bound, and report.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 
+use gob_path::Shown;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -172,14 +173,14 @@ impl Run<'_> {
         self.report.reclaimed_bytes = self.report.reclaimed_bytes.saturating_add(bytes);
         self.report.actions.push(Action {
             category: category.to_owned(),
-            target: target.display().to_string(),
+            target: Shown::of(target).to_string(),
             bytes,
         });
     }
 
     fn kept(&mut self, target: &Path, reason: impl Into<String>) {
         self.report.kept.push(Kept {
-            target: target.display().to_string(),
+            target: Shown::of(target).to_string(),
             reason: reason.into(),
         });
     }
@@ -384,7 +385,7 @@ fn collect_worktrees(run: &mut Run<'_>, wenv: &WorktreeEnv<'_>) {
                 {
                     run.kept(&cand.path, why.clone());
                 } else {
-                    tracing::debug!(path = %cand.path.display(), why, "gc kept worktree");
+                    tracing::debug!(path = %Shown::of(&cand.path), why, "gc kept worktree");
                 }
             }
             Decision::Remove { .. } if run.dry => {
@@ -434,7 +435,7 @@ fn land_base_dirs(common: &Path) -> Vec<PathBuf> {
         return Vec::new();
     };
     rd.filter_map(Result::ok)
-        .filter(|e| e.file_name().to_string_lossy().starts_with("land-base-"))
+        .filter(|e| crate::pathtext::name_text(&e.file_name()).starts_with("land-base-"))
         .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
         .map(|e| e.path())
         .collect()
@@ -451,7 +452,7 @@ fn collect_land_base(run: &mut Run<'_>, common: &Path, jail: &Jail) {
             .and_then(|n| env.now.duration_since(n).ok())
             .unwrap_or_default();
         if age < LAND_BASE_MAX_AGE {
-            tracing::debug!(dir = %dir.display(), "gc left a recent base checkout (a land may be running)");
+            tracing::debug!(dir = %Shown::of(&dir), "gc left a recent base checkout (a land may be running)");
             continue;
         }
         if run.dry {
@@ -461,11 +462,11 @@ fn collect_land_base(run: &mut Run<'_>, common: &Path, jail: &Jail) {
         let Ok(canon) = jail.admit(&dir) else {
             run.warn(format!(
                 "{} is not an admissible base checkout",
-                dir.display()
+                Shown::of(&dir)
             ));
             continue;
         };
-        let text = canon.to_string_lossy().into_owned();
+        let text = crate::pathtext::text(&canon);
         // A real worktree registration must be dropped through git; the directory is then removed under the jail.
         let _ = git(
             env.repo,

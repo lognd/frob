@@ -6,6 +6,7 @@
 //! (repository WIP limit, PM033 replenish, cycles) read [`PmConfig`].
 // frob:ticket 01M4069R19D2KZENDGEH83JZSW
 
+use gob_path::Shown;
 use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
@@ -223,7 +224,7 @@ impl PmConfig {
     /// The [`ConfigError`] for an unreadable file, bad TOML, an unknown key or requirement name (with a did-you-mean) or a mistyped value.
     pub fn load(root: &Path) -> Result<Self, ConfigError> {
         let cfg = Self::from_document(&gob_config::ConfigDocument::read(root, PRODUCT)?)?;
-        tracing::debug!(root = %root.display(), "pm config loaded");
+        tracing::debug!(root = %Shown::of(root), "pm config loaded");
         Ok(cfg)
     }
 
