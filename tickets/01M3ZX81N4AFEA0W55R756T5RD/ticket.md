@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:40Z"
 updated = "2026-10-20T04:56:27Z"
 idempotency_key = "m2-diag-teach-flags"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/frob/src/teach_cmd.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/verb.rs", "crates/frob/src/lib.rs"]
+scope = ["crates/frob/src/teach_cmd.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/verb.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs"]
 
 [[links]]
 kind = "blocked-by"
