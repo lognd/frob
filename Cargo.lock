@@ -1093,6 +1093,7 @@ name = "frob-cli"
 version = "0.532.0"
 dependencies = [
  "assert_cmd",
+ "blake3",
  "clap",
  "crunk",
  "frob-ack",
@@ -1128,6 +1129,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror",
  "toml",
  "tracing",
 ]

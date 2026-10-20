@@ -6,6 +6,17 @@
 
 Knobs marked `enforcement` change what the tool enforces. Tables marked materialized must be written out with their defaults in the product config file (`config sync` adds missing knobs; rule CFG001 flags absent ones).
 
+## `[agent]`
+
+The agent-neutral manifest `frob agent sync` publishes into each coding agent's home.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `hooks` | `Vec<String>` | `[]` | no | Hook registrations, each `"NAME:EVENT:MATCHER"` naming a `hook` item. |
+| `items` | `Vec<String>` | `[]` | no | Canonical items, each `"KIND:NAME = SRC"` (kind: instruction, hook, agent, skill, support). |
+
 ## `[cache]`
 
 Settings of the per-worktree cache.

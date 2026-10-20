@@ -4,6 +4,7 @@
     clippy::disallowed_methods,
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
+mod agent;
 mod attestation;
 mod board;
 mod build_identity;

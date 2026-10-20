@@ -71,6 +71,9 @@ impl Product for FrobProduct {
             cli.register::<init::Init>()
                 .register::<crate::config_cmd::ConfigShow>()
                 .register::<crate::config_cmd::ConfigSync>()
+                .register::<crate::agent_cmd::AgentSync>()
+                .register::<crate::agent_cmd::AgentStatus>()
+                .register::<crate::agent_cmd::AgentUninstall>()
                 .register::<lease_cmd::LeaseWiden>()
                 .register::<lease_cmd::LeaseRelease>()
                 .register::<crate::board_cmd::BoardVerb>(),

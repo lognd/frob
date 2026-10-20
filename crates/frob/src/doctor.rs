@@ -442,6 +442,8 @@ impl Doctor {
                 c.message
             ));
         }
+        // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
+        warnings.extend(crate::agent_cmd::drift_warnings(&located.root, &cfg));
         for row in &siblings {
             if let Some(other) = row.other.as_ref().filter(|o| o.differs) {
                 warnings.push(format!(

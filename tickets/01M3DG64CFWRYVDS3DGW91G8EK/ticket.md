@@ -2,15 +2,19 @@
 id = "01M3DG64CFWRYVDS3DGW91G8EK"
 title = "`frob ticket done-report` (no --fix) mutates the tree: its internal scoped check wrote 60 frob:tests directive lines into test files"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-20T03:15:26Z"
+updated = "2026-10-20T03:23:33Z"
 aliases = ["T-6543"]
 labels = ["v1-cluster:C2", "triage:accepted"]
-scope = ["src/frob/tickets/_done_report.py", "src/frob/check/__init__.py", "src/frob/gates/_fix_engine.py", "tests/unit/tickets/test_done_report_readonly.py", "docs/design/tickets.md"]
+scope = ["src/frob/tickets/_done_report.py", "src/frob/check/__init__.py", "src/frob/gates/_fix_engine.py", "tests/unit/tickets/test_done_report_readonly.py", "docs/design/tickets.md", "crates/gob-check/src/fix.rs", "crates/gob-check/src/error.rs", "crates/gob-check/src/pipeline.rs", "crates/frob-check/src/verb.rs", "crates/frob/tests/it/check_verb.rs"]
+
+[[acceptance]]
+text = "A check run without --fix leaves a fixable tree unchanged (git status clean) while --fix rewrites it, and the read-only guard names any fix-bearing file written during a read-only run"
+bound = true
 +++
 
 Source: logand.app-v2 FROBLEMS.md (peer coordinator report, 2026-09-26, frob 0.531.1.dev332). Reproduction lives in that repo (read-only for frob agents); the frob-side positive control must be a fixture here.

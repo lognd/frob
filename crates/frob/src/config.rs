@@ -21,6 +21,19 @@ pub struct CacheTable {
     pub busy_timeout_ms: u64,
 }
 
+// frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
+/// The agent-neutral manifest `frob agent sync` publishes into each coding agent's home.
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "agent")]
+pub struct AgentTable {
+    /// Canonical items, each `"KIND:NAME = SRC"` (kind: instruction, hook, agent, skill, support).
+    #[config(default = Vec::<String>::new())]
+    pub items: Vec<String>,
+    /// Hook registrations, each `"NAME:EVENT:MATCHER"` naming a `hook` item.
+    #[config(default = Vec::<String>::new())]
+    pub hooks: Vec<String>,
+}
+
 /// Every table above, loaded and validated from one `frob.toml`.
 #[derive(Debug, Clone, Default)]
 pub struct FrobConfig {
@@ -34,6 +47,8 @@ pub struct FrobConfig {
     pub types: gob_check::TypesTable,
     /// `[cache]`.
     pub cache: CacheTable,
+    /// `[agent]`.
+    pub agent: AgentTable,
     /// `[git]`.
     pub git: GitTable,
     /// `[lease]`, owned by `frob-lease`.
@@ -77,6 +92,7 @@ impl FrobConfig {
             perf: doc.table::<PerfTable>()?.value,
             types: gob_check::TypesTable::from_document(&doc)?,
             cache: doc.table::<CacheTable>()?.value,
+            agent: doc.table::<AgentTable>()?.value,
             git: doc.table::<GitTable>()?.value,
             lease: doc.table::<frob_lease::LeaseConfig>()?.value,
             worktree: doc.table::<frob_worktree::WorktreeConfig>()?.value,

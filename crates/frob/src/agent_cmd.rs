@@ -1,0 +1,395 @@
+//! `frob agent sync`, `frob agent status` and `frob agent uninstall`.
+//!
+//! Thin verbs over the agent-neutral engine in [`crate::agent`]: they resolve the repository, the
+//! `[agent]` manifest and the selected emitters (`--agent claude|...|all`), then report per agent. The
+//! stale-source guard lives here because it needs the repository.
+
+// frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
+
+use std::path::{Path, PathBuf};
+
+use gob_cli::clap::{ArgMatches, Command as ClapCommand};
+use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_git::Repo;
+use schemars::JsonSchema;
+use serde::Serialize;
+
+use crate::agent::engine::{self, Planned, StatusReport, SyncReport, UninstallReport};
+use crate::agent::{self, AgentError, Emitter, Manifest};
+use crate::config::FrobConfig;
+use crate::workspace::{Located, config_refusal};
+
+/// The shared `--agent` and `--home` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct AgentArgs {
+    #[arg(
+        long,
+        value_name = "AGENT",
+        default_value = "all",
+        help = "Agent to act on: an emitter id such as claude, or all"
+    )]
+    agent: String,
+    #[arg(
+        long,
+        value_name = "DIR",
+        help = "Target directory (single agent only; default: the agent's usual home)"
+    )]
+    home: Option<PathBuf>,
+}
+
+/// The flags of `agent sync`.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct SyncArgs {
+    #[command(flatten)]
+    target: AgentArgs,
+    #[arg(long, help = "Sync even a source file that is behind the base branch")]
+    allow_stale: bool,
+}
+
+fn agent_refusal(e: &AgentError) -> CliError {
+    tracing::error!(error = %e, "agent operation failed");
+    if matches!(e, AgentError::UnknownAgent(_)) {
+        return CliError::Usage(e.to_string());
+    }
+    Refusal::new("E-AGENT", RefusalClass::GuardNeedsAction, e.to_string())
+        .with_remedy("fix the path, file or [agent] entry named above, then rerun")
+        .into()
+}
+
+/// An emitter paired with the home directory it acts on.
+struct Target {
+    em: Box<dyn Emitter>,
+    home: PathBuf,
+}
+
+/// Resolve `--agent` / `--home` into targets; `--home` needs exactly one agent.
+fn targets(agent: &str, home: Option<&Path>) -> Result<Vec<Target>, CliError> {
+    let picked = agent::select(agent).map_err(|e| agent_refusal(&e))?;
+    if home.is_some() && picked.len() != 1 {
+        return Err(CliError::Usage(
+            "--home needs a single --agent (not `all`)".to_owned(),
+        ));
+    }
+    picked
+        .into_iter()
+        .map(|em| {
+            let home = match home {
+                Some(h) => h.to_path_buf(),
+                None => em.default_home().ok_or_else(|| {
+                    CliError::Usage(format!(
+                        "no default home for agent {}; pass --home DIR",
+                        em.id()
+                    ))
+                })?,
+            };
+            Ok(Target { em, home })
+        })
+        .collect()
+}
+
+/// The repository, its root and its parsed, non-empty manifest.
+fn setup(ctx: &Context) -> Result<(Repo, PathBuf, FrobConfig, Manifest), CliError> {
+    let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
+    let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
+    let manifest =
+        Manifest::parse(&cfg.agent.items, &cfg.agent.hooks).map_err(|e| agent_refusal(&e))?;
+    if manifest.is_empty() {
+        return Err(Refusal::new(
+            "E-AGENT-NO-MANIFEST",
+            RefusalClass::GuardNeedsAction,
+            "frob.toml has no [agent] items or hooks to manage".to_owned(),
+        )
+        .with_remedy("add `items = [\"hook:NAME = SRC\"]` under [agent] in frob.toml")
+        .into());
+    }
+    Ok((repo, root, cfg, manifest))
+}
+
+/// Source files whose worktree copy equals the merge-base copy while `base` holds a newer one.
+fn stale_sources(repo: &Repo, root: &Path, base: &str, manifest: &Manifest) -> Vec<String> {
+    if repo.rev_parse(base).is_err() {
+        tracing::debug!(base, "base ref does not resolve; stale guard skipped");
+        return Vec::new();
+    }
+    let Ok(Some(mb)) = repo.merge_base("HEAD", base) else {
+        return Vec::new();
+    };
+    let mb = mb.to_string();
+    manifest
+        .items
+        .iter()
+        .filter(|i| {
+            let work = std::fs::read(root.join(&i.src)).ok();
+            let at_mb = repo.read_blob_at(&mb, &i.src).ok().flatten();
+            let at_base = repo.read_blob_at(base, &i.src).ok().flatten();
+            work.is_some() && work == at_mb && at_base.is_some() && at_base != at_mb
+        })
+        .map(|i| i.src.clone())
+        .collect()
+}
+
+fn plan(t: &Target, root: &Path, manifest: &Manifest) -> Result<Vec<Planned>, CliError> {
+    engine::plan(t.em.as_ref(), root, manifest).map_err(|e| agent_refusal(&e))
+}
+
+/// One agent's slice of a report.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct PerAgent<R> {
+    /// The emitter id.
+    pub agent: String,
+    /// The directory acted on.
+    pub home: String,
+    /// What happened there.
+    #[serde(flatten)]
+    pub report: R,
+}
+
+fn per<R>(t: &Target, report: R) -> PerAgent<R> {
+    PerAgent {
+        agent: t.em.id().to_owned(),
+        home: t.home.display().to_string(),
+        report,
+    }
+}
+
+/// Output of `agent sync`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct SyncData {
+    /// One entry per agent.
+    pub agents: Vec<PerAgent<SyncReport>>,
+    /// True when `--dry-run` wrote nothing.
+    pub dry_run: bool,
+}
+
+/// Publish the manifest into each selected agent's home behind a do-not-edit banner and register its hooks.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "agent sync",
+    product = "frob",
+    idempotent = true,
+    dry_run,
+    exits(ok, refused, usage, internal)
+)]
+pub struct AgentSync {
+    agent: String,
+    home: Option<PathBuf>,
+    allow_stale: bool,
+}
+
+impl Command for AgentSync {
+    type Data = SyncData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<SyncArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<SyncArgs>(m)?;
+        Ok(Self {
+            agent: a.target.agent,
+            home: a.target.home,
+            allow_stale: a.allow_stale,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<SyncData> {
+        let (repo, root, cfg, manifest) = setup(ctx)?;
+        let targets = targets(&self.agent, self.home.as_deref())?;
+        if !self.allow_stale {
+            let stale = stale_sources(&repo, &root, &cfg.check.base, &manifest);
+            if !stale.is_empty() {
+                return Err(Refusal::new(
+                    "E-AGENT-STALE",
+                    RefusalClass::GuardNeedsAction,
+                    format!(
+                        "worktree copy is behind {}: {}",
+                        cfg.check.base,
+                        stale.join(", ")
+                    ),
+                )
+                .with_remedy("rebase onto the base branch, or pass --allow-stale")
+                .into());
+            }
+        }
+        let mut agents = Vec::new();
+        for t in &targets {
+            let planned = plan(t, &root, &manifest)?;
+            let report = engine::sync(t.em.as_ref(), &t.home, &manifest, &planned, ctx.dry_run)
+                .map_err(|e| agent_refusal(&e))?;
+            tracing::info!(
+                agent = t.em.id(),
+                written = report.written.len(),
+                "agent sync done"
+            );
+            agents.push(per(t, report));
+        }
+        let already = agents.iter().all(|a| {
+            a.report.written.is_empty()
+                && a.report.removed.is_empty()
+                && !a.report.registration_changed
+        });
+        Ok(Payload::new(SyncData {
+            agents,
+            dry_run: ctx.dry_run,
+        })
+        .with_already(already))
+    }
+}
+
+/// Output of `agent status`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct StatusData {
+    /// One entry per agent.
+    pub agents: Vec<PerAgent<StatusReport>>,
+    /// True when any agent has drifted.
+    pub drift: bool,
+}
+
+/// Report drift between the repository manifest and each selected agent's home; exits 1 on drift.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "agent status",
+    product = "frob",
+    idempotent = true,
+    read_only,
+    exits(ok, negative, refused, usage, internal)
+)]
+pub struct AgentStatus {
+    agent: String,
+    home: Option<PathBuf>,
+}
+
+impl Command for AgentStatus {
+    type Data = StatusData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<AgentArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<AgentArgs>(m)?;
+        Ok(Self {
+            agent: a.agent,
+            home: a.home,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<StatusData> {
+        let (_repo, root, _cfg, manifest) = setup(ctx)?;
+        let targets = targets(&self.agent, self.home.as_deref())?;
+        let mut agents = Vec::new();
+        for t in &targets {
+            let planned = plan(t, &root, &manifest)?;
+            let report = engine::status(t.em.as_ref(), &t.home, &manifest, &planned)
+                .map_err(|e| agent_refusal(&e))?;
+            agents.push(per(t, report));
+        }
+        let drift = agents.iter().any(|a| a.report.drift);
+        let data = StatusData { agents, drift };
+        if drift {
+            tracing::warn!("agent drift detected");
+            return Err(CliError::Gate {
+                message: "an agent home has drifted from the repository; run `frob agent sync`"
+                    .to_owned(),
+                data: serde_json::to_value(&data).map_err(|e| CliError::Internal(Box::new(e)))?,
+                warnings: Vec::new(),
+            });
+        }
+        Ok(Payload::new(data))
+    }
+}
+
+/// Output of `agent uninstall`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct UninstallData {
+    /// One entry per agent.
+    pub agents: Vec<PerAgent<UninstallReport>>,
+    /// True when `--dry-run` removed nothing.
+    pub dry_run: bool,
+}
+
+/// Remove only the files and registrations frob installed, leaving user additions alone.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "agent uninstall",
+    product = "frob",
+    idempotent = true,
+    dry_run,
+    exits(ok, refused, usage, internal)
+)]
+pub struct AgentUninstall {
+    agent: String,
+    home: Option<PathBuf>,
+}
+
+impl Command for AgentUninstall {
+    type Data = UninstallData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<AgentArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<AgentArgs>(m)?;
+        Ok(Self {
+            agent: a.agent,
+            home: a.home,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<UninstallData> {
+        let (_repo, root, _cfg, manifest) = setup(ctx)?;
+        let targets = targets(&self.agent, self.home.as_deref())?;
+        let mut agents = Vec::new();
+        for t in &targets {
+            let planned = plan(t, &root, &manifest)?;
+            let report =
+                engine::uninstall(t.em.as_ref(), &t.home, &manifest, &planned, ctx.dry_run)
+                    .map_err(|e| agent_refusal(&e))?;
+            tracing::info!(
+                agent = t.em.id(),
+                removed = report.removed.len(),
+                "agent uninstall done"
+            );
+            agents.push(per(t, report));
+        }
+        let already = agents
+            .iter()
+            .all(|a| a.report.removed.is_empty() && a.report.registrations_removed == 0);
+        Ok(Payload::new(UninstallData {
+            agents,
+            dry_run: ctx.dry_run,
+        })
+        .with_already(already))
+    }
+}
+
+/// `frob doctor` warnings for every previously synced agent home that has drifted.
+pub(crate) fn drift_warnings(root: &Path, cfg: &FrobConfig) -> Vec<String> {
+    let Ok(manifest) = Manifest::parse(&cfg.agent.items, &cfg.agent.hooks) else {
+        return Vec::new();
+    };
+    if manifest.is_empty() {
+        return Vec::new();
+    }
+    let mut out = Vec::new();
+    for em in agent::emitters() {
+        let Some(home) = em.default_home().filter(|h| engine::has_state(h)) else {
+            continue;
+        };
+        let drifted = engine::plan(em.as_ref(), root, &manifest)
+            .and_then(|p| engine::status(em.as_ref(), &home, &manifest, &p))
+            .is_ok_and(|r| r.drift);
+        if drifted {
+            out.push(format!(
+                "{} ({}) has drifted from the repository's [agent] manifest; fix: frob agent sync --agent {}",
+                home.display(),
+                em.id(),
+                em.id()
+            ));
+        }
+    }
+    out
+}

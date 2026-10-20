@@ -195,3 +195,11 @@ tag = "{product}-v{version}"
 products = ["frob", "grimble", "crunk"]
 # Products that ship as a preview: their tag message and changelog heading say so (grimble until 0.533.0, crunk until parity).
 preview = ["grimble", "crunk"]
+
+# frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
+[agent]
+items = [
+    "hook:frob-suggest = scripts/claude-hooks/frob-suggest.py",
+    "support:_shellscan = scripts/claude-hooks/_shellscan.py",
+]
+hooks = ["frob-suggest:PreToolUse:Bash|Edit"]
