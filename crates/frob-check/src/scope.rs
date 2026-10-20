@@ -507,6 +507,9 @@ mod tests {
             ttl_secs: 0,
             history: Vec::new(),
             queued: false,
+            agent: None,
+            touched_at: None,
+            touch_note: None,
         };
         let scope = TicketScope {
             handle: "~T".to_owned(),
