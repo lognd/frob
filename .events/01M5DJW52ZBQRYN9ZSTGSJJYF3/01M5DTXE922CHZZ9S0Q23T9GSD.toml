@@ -1,0 +1,35 @@
+kind = "evidence"
+captured_at = "2026-10-20T23:38:52Z"
+digest = "8661c82a839eb2f92d97b7df05df4f6dca3603faeafb8b773dfcd85d67fd697e"
+exit_code = 0
+inline = '''
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e9701767-fd28-4cdd-a222-62500c91247a with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.006s] frob-worktree::next only_candidate_scoped_refusals_are_skippable
+        PASS [   0.095s] frob-worktree::next work_next_refuses_when_every_candidate_is_taken_or_none_exist
+        PASS [   0.143s] frob-worktree::next confirm_mode_and_a_fresh_claim_never_evict
+        PASS [   0.152s] frob-worktree::next a_lost_race_moves_on_to_the_next_candidate
+        PASS [   0.191s] frob-worktree::next an_idle_agent_claim_is_evicted_and_parked
+        PASS [   0.204s] frob-worktree::next work_next_evicts_then_claims_the_freed_ticket
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.205s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree --test next"
+size = 1442
+status = "measured"
+test_count = 6
+tests_digest = "d3942ac0975d209351a14f8a3fec34f8bd5d367f95f8e87eef3eb74320ccc0e2"
+at = "2026-10-20T23:38:52Z"
+actor = "lognd"
+rev = 1
