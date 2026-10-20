@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T08:37:15Z"
-updated = "2026-10-20T10:18:31Z"
+updated = "2026-10-20T10:20:44Z"
 scope = ["crates/gob-plan/src/**"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Executor core results are unchanged by the domain, operand and index caches"
-bound = false
+bound = true
 +++
 
 found while working ~H3KZPCX: median per-file ratios TODO001 4.58x, COV001 25.2x, DOC002 63.4x; bench b1_plan_vs_handwritten exits non-zero
