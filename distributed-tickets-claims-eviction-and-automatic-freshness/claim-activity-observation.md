@@ -2,13 +2,13 @@
 id = "01M5CW04TYF2SQ101BQB1BGNPJ"
 title = "Claim activity observation"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T19:29:35Z"
+updated = "2026-10-20T19:29:36Z"
 idempotency_key = "dt-DT11"
 
 [[links]]
