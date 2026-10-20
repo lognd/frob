@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-20T16:01:31Z"
+digest = "0f43d9fbf74bc8d57611327f304255a28929ea587e876244ee96c9074015c6f9"
+exit_code = 0
+inline = """
+
+running 1 test
+test ticket_branch_refs::goway_syncs_the_ticket_branch_in_orphan_mode ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 343 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+     Running tests/it/main.rs (target/debug/deps/it-f5b08b2dee4f2fa1)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-cli --test it goway_syncs_the_ticket_branch_in_orphan_mode"
+size = 334
+status = "measured"
+at = "2026-10-20T16:01:31Z"
+actor = "lognd"
+rev = 1

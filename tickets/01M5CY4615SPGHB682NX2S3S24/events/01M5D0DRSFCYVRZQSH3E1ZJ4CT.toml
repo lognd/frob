@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/branch.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/work.rs"]
+new = ["crates/frob-ledger/src/branch.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/work.rs", ".github/workflows/ci.yml"]
+at = "2026-10-20T15:56:03Z"
+actor = "lognd"
+rev = 1

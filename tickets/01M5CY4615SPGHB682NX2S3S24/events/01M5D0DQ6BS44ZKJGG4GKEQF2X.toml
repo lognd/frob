@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-ledger/src/branch.rs"]
+at = "2026-10-20T15:56:01Z"
+actor = "lognd"
+rev = 1
