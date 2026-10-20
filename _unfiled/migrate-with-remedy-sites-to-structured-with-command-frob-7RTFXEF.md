@@ -7,6 +7,6 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T14:33:55Z"
-updated = "2026-10-20T20:24:27Z"
-scope = ["crates/frob-evidence/**,crates/frob-ledger/**,crates/frob-ack/**,crates/frob-tests/**,crates/frob-check/**", "changelog.d/01M5CVQC3K7RTFXEFWSG1SM00V.changed.md"]
+updated = "2026-10-20T20:37:53Z"
+scope = ["crates/frob-evidence/**,crates/frob-ledger/**,crates/frob-ack/**,crates/frob-tests/**,crates/frob-check/**", "changelog.d/01M5CVQC3K7RTFXEFWSG1SM00V.changed.md", "crates/frob-check/src/verb.rs"]
 +++
