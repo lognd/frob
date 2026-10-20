@@ -2,13 +2,13 @@
 id = "01M4052TC4BVA3JFFCHZX82EWS"
 title = "Per-issue reconcile: revert repository-owned fields changed by others and propose"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-03T05:51:37Z"
+updated = "2026-10-20T09:04:01Z"
 idempotency_key = "m2-mirror2-reconcile"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/reconcile.rs"]
