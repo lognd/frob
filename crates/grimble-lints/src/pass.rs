@@ -143,7 +143,10 @@ pub fn analyze(files: &[PathFile<'_>], options: &Options) -> PathReport {
                 u32::from(site.range.start()) as usize,
                 u32::from(site.range.end()) as usize,
             );
-            let line_text = lines.get(site.line.saturating_sub(1)).copied().unwrap_or("");
+            let line_text = lines
+                .get(site.line.saturating_sub(1))
+                .copied()
+                .unwrap_or("");
             report.findings.push(PathFinding {
                 rule: site.kind.rule_id(),
                 severity,
