@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob refresh --background and --quiet flags"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/src/refresh_cmd.rs"]
+body = "found while working ~EV5KK0X: the kick spawns plain frob refresh; add the flags after ~QD7BPB3 lands."
+at = "2026-10-20T17:28:28Z"
+actor = "lognd"
+rev = 1
