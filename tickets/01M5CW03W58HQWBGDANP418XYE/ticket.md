@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
 updated = "2026-10-20T15:05:44Z"
 idempotency_key = "dt-DT02"
-scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-ledger/tests/branch.rs"]
+scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-ledger/tests/branch.rs", "crates/frob/src/init.rs"]
 
 [[acceptance]]
 text = "ticket branch init adopts origin's frob-tickets instead of refusing, including a shallow single-branch clone"
