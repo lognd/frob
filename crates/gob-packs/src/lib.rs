@@ -29,6 +29,7 @@
 mod activation;
 mod digest;
 mod error;
+mod finding_handle;
 pub mod hooks;
 mod limits;
 pub mod loader;
@@ -44,6 +45,9 @@ mod validate;
 pub use activation::{Activation, Active, Enable};
 pub use digest::{Digest, to_hex, tree_digest};
 pub use error::{PackCode, PackError};
+pub use finding_handle::{
+    Dropped, FileHandle, FileRef, Finding, RawFinding, RawSpan, Span, SubjectSet,
+};
 pub use limits::{MAX_MANIFEST_BYTES, Owner};
 pub use manifest::{Manifest, PackTable, Provides, check_unique, load};
 pub use names::{Provenance, RESERVED_PREFIXES, check_reserved};
