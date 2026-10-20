@@ -4,9 +4,10 @@ title = "grimble check and exceptions list exceed profile budget (8s vs 3s)"
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T05:35:01Z"
-updated = "2026-10-20T05:35:01Z"
+updated = "2026-10-20T05:35:08Z"
 
 [[acceptance]]
 text = "grimble check and grimble exceptions list stay within the profile.toml budgets in cargo dev profile"
