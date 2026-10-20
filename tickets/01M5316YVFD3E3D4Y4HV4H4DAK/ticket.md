@@ -13,5 +13,5 @@ scope = ["crates/**"]
 
 [[acceptance]]
 text = "Lease-held and worktree-exists refusals carry a structured RemedyCommand (partial migration; remaining sites filed as follow-ups)"
-bound = false
+bound = true
 +++
