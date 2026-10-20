@@ -748,3 +748,128 @@ fn a_cas_retry_reruns_the_local_edit_check() {
         b"mine\n"
     );
 }
+
+const LED: &str = "refs/heads/led";
+
+fn git_in(dir: &Path, args: &[&str]) {
+    let s = std::process::Command::new("git")
+        .args(args)
+        .current_dir(dir)
+        .status()
+        .unwrap();
+    assert!(s.success(), "git {args:?}");
+}
+
+/// A bare origin plus a fixture repo whose `main` is pushed there.
+fn fixture_with_origin() -> (tempfile::TempDir, Repo, tempfile::TempDir) {
+    let (dir, repo) = fixture();
+    let origin = tempfile::tempdir().unwrap();
+    git_in(origin.path(), &["init", "--bare", "-b", "main"]);
+    git_in(
+        dir.path(),
+        &["remote", "add", "origin", &origin.path().to_string_lossy()],
+    );
+    (dir, repo, origin)
+}
+
+// frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+// frob:tests crates/gob-git/src/remote.rs::Repo.push_cas
+#[test]
+fn push_cas_creates_then_rejects_stale_expectation() {
+    use gob_git::RemoteRun;
+    let t = std::time::Duration::from_secs(20);
+    let (_dir, repo, _origin) = fixture_with_origin();
+    // Must-be-absent creates the branch.
+    assert_eq!(
+        repo.push_cas("origin", MAIN, MAIN, None, t).unwrap(),
+        RemoteRun::Done
+    );
+    let tip = repo.rev_parse(MAIN).unwrap().to_string();
+    repo.commit_paths(MAIN, &[change("a.md", "a\n")], "a", &opts())
+        .unwrap();
+    // A create-only push of a new tip loses the CAS (the branch now exists).
+    assert!(matches!(
+        repo.push_cas("origin", MAIN, MAIN, None, t).unwrap(),
+        RemoteRun::Rejected(_)
+    ));
+    // Wrong expectation is rejected, right one succeeds.
+    assert!(matches!(
+        repo.push_cas("origin", MAIN, MAIN, Some(&"0".repeat(40)), t)
+            .unwrap(),
+        RemoteRun::Rejected(_)
+    ));
+    assert_eq!(
+        repo.push_cas("origin", MAIN, MAIN, Some(&tip), t).unwrap(),
+        RemoteRun::Done
+    );
+}
+
+// frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+// frob:tests crates/gob-git/src/remote.rs::Repo.fetch_refs
+#[test]
+fn fetch_refs_updates_only_the_named_tracking_ref() {
+    use gob_git::RemoteRun;
+    let t = std::time::Duration::from_secs(20);
+    let (_dir, repo, _origin) = fixture_with_origin();
+    repo.push_cas("origin", MAIN, MAIN, None, t).unwrap();
+    let spec = "+refs/heads/main:refs/remotes/origin/main".to_owned();
+    assert_eq!(
+        repo.fetch_refs("origin", &[spec], t).unwrap(),
+        RemoteRun::Done
+    );
+    assert_eq!(
+        repo.rev_parse("refs/remotes/origin/main").unwrap(),
+        repo.rev_parse(MAIN).unwrap()
+    );
+    let bad = repo
+        .fetch_refs(
+            "nonexistent-remote",
+            &["+refs/heads/x:refs/remotes/o/x".into()],
+            t,
+        )
+        .unwrap();
+    assert!(matches!(bad, RemoteRun::Failed { .. }));
+}
+
+// frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+// frob:tests crates/gob-git/src/ledger.rs::Repo.update_ref_cas
+// frob:tests crates/gob-git/src/ledger.rs::Repo.commit_merge
+#[test]
+fn update_ref_cas_and_commit_merge() {
+    let (_dir, repo) = fixture();
+    let base = repo
+        .commit_paths(LED, &[change("README.md", "hello\n")], "root", &opts())
+        .unwrap()
+        .oid;
+    let theirs = repo
+        .commit_paths(LED, &[change("t.md", "t\n")], "theirs", &opts())
+        .unwrap()
+        .oid;
+    // Move main back to base so `theirs` is a divergent tip.
+    repo.update_ref_cas(LED, Some(theirs), base, "rewind")
+        .unwrap();
+    assert_eq!(repo.rev_parse(LED).unwrap(), base);
+    // A stale expectation loses.
+    assert!(matches!(
+        repo.update_ref_cas(LED, Some(theirs), theirs, "stale"),
+        Err(GitError::CasExhausted { .. })
+    ));
+    // Merge: two parents, tree = ours + changes.
+    let merged = repo
+        .commit_merge(
+            LED,
+            base,
+            theirs,
+            &[change("t.md", "t\n")],
+            "merge",
+            &opts(),
+        )
+        .unwrap();
+    assert_eq!(repo.rev_parse(LED).unwrap(), merged);
+    assert_eq!(repo.rev_parse(&format!("{merged}^2")).unwrap(), theirs);
+    assert_eq!(repo.read_blob_at(LED, "t.md").unwrap().unwrap(), b"t\n");
+    assert_eq!(
+        repo.read_blob_at(LED, "README.md").unwrap().unwrap(),
+        b"hello\n"
+    );
+}

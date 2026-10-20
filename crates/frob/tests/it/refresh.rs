@@ -102,3 +102,70 @@ fn unreachable_remote_exits_three() {
     assert_eq!(code, 3, "{v}");
     assert_eq!(v["error"]["code"], "W-SYNC-OFFLINE", "{v}");
 }
+
+/// Origin and clone sharing one root commit, so the clone's `main` can fast-forward.
+fn shared_history() -> (tempfile::TempDir, tempfile::TempDir) {
+    let origin = common::git_repo();
+    git(
+        origin.path(),
+        &["commit", "-q", "--allow-empty", "-m", "c1"],
+    );
+    let url = gob_path::Shown::of(origin.path()).to_string();
+    let clone = tempfile::tempdir().expect("tmp");
+    let st = std::process::Command::new("git")
+        .args(["clone", "-q", &url, "."])
+        .current_dir(clone.path())
+        .status()
+        .expect("clone");
+    assert!(st.success());
+    std::fs::write(
+        clone.path().join("frob.toml"),
+        "[tickets]\nref = \"main\"\n",
+    )
+    .expect("toml");
+    git(
+        origin.path(),
+        &["commit", "-q", "--allow-empty", "-m", "c2"],
+    );
+    (origin, clone)
+}
+
+// frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+// frob:tests crates/frob/src/refresh_cmd.rs::Refresh
+#[test]
+fn refresh_fast_forwards_a_behind_base() {
+    let (origin, clone) = shared_history();
+    let want = String::from_utf8(
+        std::process::Command::new("git")
+            .args(["rev-parse", "main"])
+            .current_dir(origin.path())
+            .output()
+            .expect("rp")
+            .stdout,
+    )
+    .expect("utf8");
+    let (code, v) = frob(clone.path(), &["refresh"]);
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["data"]["base_sync"], "fast-forwarded", "{v}");
+    let got = String::from_utf8(
+        std::process::Command::new("git")
+            .args(["rev-parse", "HEAD"])
+            .current_dir(clone.path())
+            .output()
+            .expect("rp")
+            .stdout,
+    )
+    .expect("utf8");
+    assert_eq!(got, want);
+}
+
+// frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+// frob:tests crates/frob/src/refresh_cmd.rs::Refresh
+#[test]
+fn refresh_reports_an_ahead_base_without_failing() {
+    let (_origin, clone) = clone_with_origin();
+    let (code, v) = frob(clone.path(), &["refresh"]);
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["data"]["pushed"], false);
+    assert_eq!(v["data"]["ledger"], "none");
+}
