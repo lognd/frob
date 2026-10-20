@@ -2,7 +2,8 @@
 id = "01M5CVQC3K7RTFXEFWSG1SM00V"
 title = "Migrate with_remedy sites to structured with_command: frob-evidence and frob-ledger and frob-ack and frob-tests and frob-check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
