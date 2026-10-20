@@ -8,8 +8,9 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T22:48:57Z"
+updated = "2026-10-20T23:03:50Z"
 idempotency_key = "dt-DT21"
+scope = ["crates/frob-land/src/relaunch.rs"]
 
 [[links]]
 kind = "blocked-by"
