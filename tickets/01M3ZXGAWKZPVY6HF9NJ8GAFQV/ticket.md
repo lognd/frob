@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:39:12Z"
-updated = "2026-10-20T04:36:24Z"
+updated = "2026-10-20T04:36:26Z"
 idempotency_key = "m2-ticket-proposals-verbs"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob/src/ticket/proposals_cmd.rs", "crates/frob-check/src/proposals_summary.rs", "crates/frob/src/ticket/mod.rs", "crates/frob-check/src/lib.rs", "crates/frob-check/src/verb.rs", "docs/design/mirror.md", "crates/frob/tests/it/main.rs"]
+scope = ["crates/frob/src/ticket/proposals_cmd.rs", "crates/frob-check/src/proposals_summary.rs", "crates/frob/src/ticket/mod.rs", "crates/frob-check/src/lib.rs", "crates/frob-check/src/verb.rs", "docs/design/mirror.md", "crates/frob/tests/it/main.rs", "crates/frob/tests/it/ticket_proposals.rs"]
 
 [[links]]
 kind = "blocked-by"
