@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T00:08:08Z"
-updated = "2026-10-20T00:34:11Z"
+updated = "2026-10-20T00:38:30Z"
 scope = ["docs/design/mirror.md"]
 
 [[acceptance]]
