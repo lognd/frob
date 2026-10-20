@@ -2,7 +2,8 @@
 id = "01M5CW05WX0TMSBKDFTPEHB5R3"
 title = "Repair code and ledger mismatches"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
