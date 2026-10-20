@@ -34,5 +34,9 @@ harness = false
 [[bench]]
 name = "b2_equality"
 
+# The B2 bench reuses the gob-plan B1 harness through #[path]; shear cannot see those files.
+[package.metadata.cargo-shear]
+ignored = ["gob-symbols", "gob-text", "regex"]
+
 [lints]
 workspace = true
