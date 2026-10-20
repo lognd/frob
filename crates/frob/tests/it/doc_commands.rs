@@ -161,6 +161,26 @@ fn ticket_branch_guide_runs_in_a_fresh_repository() {
     run_script(&script, &work, &config);
 }
 
+/// The grimble guide runs end to end in a fresh repository: init, fmt, a failing check, the fix and a clean check.
+// frob:ticket 01M4CTV91FGHN34XM00QQSAJAT
+#[test]
+fn grimble_guide_runs_in_a_fresh_repository() {
+    if !bin_dir().join("grimble").exists() {
+        assert!(
+            std::env::var_os("CI").is_none(),
+            "grimble must be built in CI"
+        );
+        // A local `-p frob-cli` run does not build the siblings.
+        return;
+    }
+    let text =
+        std::fs::read_to_string(repo_root().join("docs/guides/grimble.md")).expect("grimble guide");
+    let script = prepare(&sh_blocks(&text));
+    assert!(script.contains("grimble init"), "guide initialises grimble");
+    let (_tmp, config, work) = sandbox();
+    run_script(&script, &work, &config);
+}
+
 /// GitHub-style slug of a heading.
 fn slug(heading: &str) -> String {
     heading
