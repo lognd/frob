@@ -1,0 +1,39 @@
+kind = "evidence"
+captured_at = "2026-10-20T23:47:13Z"
+digest = "0cc0362f5951e86a1626aab140f254bacd9cdd79601e137eb20e54ee4759cd4c"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 884d1249-2dfd-4c1a-9874-93e4378a3766 with nextest profile: default
+    Starting 3 tests across 7 binaries (95 tests skipped)
+        PASS [   0.005s] frob-worktree evict::tests::reclaim_restores_from_newest_unless_someone_holds_it
+        PASS [   0.005s] frob-worktree claim_restore::tests::note_names_source_tip_and_reason
+        PASS [   0.005s] frob-worktree claim_restore::tests::refusals_carry_their_codes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 3 tests run: 3 passed, 95 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree claim_restore"
+size = 1636
+status = "measured"
+test_count = 3
+tests_digest = "4b3c13a4bea033791e6e7ed9f8ffd8ce6274d814a9bad249b112376bd2539a24"
+at = "2026-10-20T23:47:13Z"
+actor = "lognd"
+rev = 1
