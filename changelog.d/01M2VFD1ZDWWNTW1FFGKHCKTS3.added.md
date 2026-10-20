@@ -1,0 +1,1 @@
+Claude hook frob-suggest: per-rule FROB_SUGGEST_ALLOW token replaces blanket ACK, decisions logged to .frob/telemetry.jsonl, duplicate registrations no longer overcount, reversible settings installer.
