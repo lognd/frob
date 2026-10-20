@@ -1,0 +1,42 @@
+kind = "evidence"
+captured_at = "2026-10-20T21:55:14Z"
+digest = "84cd359c997bef4ff7accd5ec2cad5da282f620b108e0fdbadec939c14012bbd"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 897f0a9e-647e-4ac6-9ab0-a7422e3ebb0a with nextest profile: default
+    Starting 20 tests across 6 binaries (68 tests skipped)
+        PASS [   0.012s] frob-worktree evict::tests::every_refusal_has_a_distinct_code
+        PASS [   0.012s] frob-worktree evict::tests::returning_holder_pushes_to_the_next_parked_ref
+        PASS [   0.012s] frob-worktree evict::tests::crash_between_delete_and_record_is_recognised
+        PASS [   0.012s] frob-worktree evict::tests::repeat_eviction_within_fourteen_days_needs_a_human
+        PASS [   0.012s] frob-worktree evict::tests::restore_needs_reason_nobody_else_and_parked_work
+        PASS [   0.012s] frob-worktree evict::tests::reclaim_restores_from_newest_unless_someone_holds_it
+        PASS [   0.012s] frob-worktree evict::tests::rate_counts_the_actors_local_day
+        PASS [   0.013s] frob-worktree evict::tests::idle_claim_is_evictable_and_each_precondition_refuses
+        PASS [   0.013s] frob-worktree evict::tests::park_message_round_trips
+        PASS [   0.013s] frob-worktree gc::cargo::tests::land_target_layout_evicts_the_stale_unit_and_keeps_the_recent_one
+        PASS [   0.016s] frob-worktree evict::tests::parked_names_sequence_per_handle
+        PASS [   0.009s] frob-worktree::gc plan_never_evicts_the_latest_build_even_over_budget
+        PASS [   0.009s] frob-worktree::gc plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build
+        PASS [   0.012s] frob-worktree::gc cache_budget_evicts_least_recent_and_only_allowlisted_files
+        PASS [   0.012s] frob-worktree::gc target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries
+        PASS [   0.012s] frob-worktree::gc shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_else
+        PASS [   0.149s] frob-worktree::evict batch_eviction_stops_at_the_rate_limit
+        PASS [   0.150s] frob-worktree::evict eviction_parks_the_work_and_deletes_the_claim
+        PASS [   0.165s] frob-worktree::evict a_second_evictor_sees_already_evicted
+        PASS [   0.187s] frob-worktree::evict restore_recreates_the_claim_from_parked_work_once
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.201s] 20 tests run: 20 passed, 68 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E test(/evict|restore/)"
+size = 2462
+status = "measured"
+test_count = 20
+tests_digest = "d9c30f89d9b69410c4e67d07a9ea26603bf295e3fb92cfb1a546975e458488b6"
+at = "2026-10-20T21:55:14Z"
+actor = "lognd"
+rev = 1
