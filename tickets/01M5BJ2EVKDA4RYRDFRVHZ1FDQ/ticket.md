@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T02:25:58Z"
-updated = "2026-10-20T03:06:50Z"
+updated = "2026-10-20T03:09:51Z"
 idempotency_key = "claude-sync-verb"
 scope = ["crates/frob/src/claude_sync.rs", "crates/frob/src/claude_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/src/config.rs", "crates/frob/src/doctor.rs", "crates/frob/Cargo.toml", "crates/frob/tests/it/claude.rs", "crates/frob/tests/it/main.rs", "frob.toml", "docs/guides/claude-hooks.md", "crates/frob/src/agent", "crates/frob/src/agent_cmd.rs", "crates/frob/tests/it/agent.rs", "Cargo.lock"]
 
 [[acceptance]]
 text = "sync installs the manifest into an empty home, is idempotent, and uninstall preserves user additions"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "status reports drift (exit 1) and is surfaced by doctor"
