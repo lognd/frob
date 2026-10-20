@@ -8,5 +8,5 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T14:33:55Z"
 updated = "2026-10-20T22:32:44Z"
-scope = ["crates/frob-land/**,crates/frob-worktree/**,crates/frob-lease/**", "crates/frob-worktree/src/next.rs"]
+scope = ["crates/frob-land/**,crates/frob-worktree/**,crates/frob-lease/**", "crates/frob-worktree/src/next.rs", "changelog.d/01M5CVQC79WFEJNTY15HT9GAKY.changed.md"]
 +++
