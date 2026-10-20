@@ -2,7 +2,8 @@
 id = "01M5BJ2EVKDA4RYRDFRVHZ1FDQ"
 title = "frob agent: agent-neutral sync/status/uninstall of tracked agent config (claude emitter first)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
