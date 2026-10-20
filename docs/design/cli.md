@@ -179,7 +179,12 @@ implemented yet.
   the holder reuses the worktree found through the lease (or, if the
   lease is gone, through the branch name). `frob work --here` (hidden alias `start`) takes the
   lease for the current checkout and records that checkout's root as the
-  holder path.
+  holder path. `frob work --next` takes no ticket: it picks the best
+  doable ticket, claims it, and when the claim race is lost or the
+  ticket is leased or not workable it re-queries and tries the next
+  candidate (at most 8 attempts, never waiting). When nothing is
+  claimable it refuses with `E-NO-DOABLE-TICKET` (remedy `frob ticket
+  doable`). `--next` conflicts with a ticket argument and with `--here`.
 - Acceptance: `ticket update <id> --add-acceptance TEXT` (repeatable,
   the text is taken whole, commas included), `--remove-acceptance N`
   (repeatable, 1-based as `show` and `brief` number them) and
@@ -285,7 +290,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `cycle new\|assign\|plan\|close`; `forecast <milestone\|epic\|ticket\|release>` (the one forecast) | frob | frob-pm | yes | 0 2 3 4 | 2 |
 | `board [--brief] [--live]` | frob | frob-pm | yes, read-only | 0 2 4 | 1 |
 | `lease list [--contention]` | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
-| `work <ticket>` | frob | frob-worktree | only for the same holder; others get 3 | 0 2 3 4 | 1 |
+| `work <ticket>\|--next` | frob | frob-worktree | only for the same holder; others get 3 | 0 2 3 4 | 1 |
 | `worktree sweep\|remove` | frob | frob-worktree | yes | 0 2 3 4 | 2 |
 | `land <ticket> [--train] [--wait <secs>] [--dry-run]` | frob | frob-land | yes, a landed ticket returns `already` | 0 2 3 4 | 1 |
 | `train status` | frob | frob-land | yes, read only | 0 3 | 1 |

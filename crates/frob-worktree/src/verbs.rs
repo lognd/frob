@@ -172,8 +172,19 @@ fn flag_reasons(
 #[derive(Debug, Clone, clap::Args)]
 #[command(about = None, long_about = None)]
 struct WorkArgs {
-    #[command(flatten)]
-    ticket: TicketArg,
+    #[arg(
+        value_name = "TICKET",
+        required_unless_present = "next",
+        conflicts_with = "next",
+        help = "Full ULID, ~handle or alias of the ticket"
+    )]
+    ticket: Option<String>,
+    #[arg(
+        long,
+        conflicts_with = "here",
+        help = "Claim the best doable ticket instead of naming one, retrying when another clone wins the race"
+    )]
+    next: bool,
     #[arg(
         long,
         value_name = "PATH",
@@ -247,7 +258,7 @@ struct RequeueArgs {
     exits(ok, refused, usage, internal)
 )]
 pub struct Work {
-    ticket: String,
+    ticket: Option<String>,
     opts: WorkOptions,
     here: bool,
 }
@@ -263,7 +274,7 @@ impl Command for Work {
         let a = gob_cli::parse::<WorkArgs>(m)?;
         let (steal, unplanned) = flag_reasons(a.steal, a.unplanned, a.reason)?;
         Ok(Self {
-            ticket: a.ticket.ticket,
+            ticket: a.ticket,
             opts: WorkOptions {
                 worktree: a.worktree,
                 steal,
@@ -277,14 +288,22 @@ impl Command for Work {
 
     fn run(&self, ctx: &Context) -> Outcome<StartData> {
         let opened = Opened::new(ctx)?;
+        let Some(ticket) = &self.ticket else {
+            // frob:ticket 01M5CW05BZQR83F5SJTQEH8MRN
+            let notices = opened.collect_garbage();
+            let started = opened
+                .workspace()
+                .work_next(&opened.gated(&self.opts), crate::next::MAX_ATTEMPTS)?;
+            return Ok(notices
+                .into_iter()
+                .fold(start_payload(started), Payload::with_warning));
+        };
         if self.here {
-            tracing::debug!(ticket = %self.ticket, "work --here: leasing for this checkout");
-            return start_here(&opened, ctx, &self.ticket, &self.opts);
+            tracing::debug!(ticket = %ticket, "work --here: leasing for this checkout");
+            return start_here(&opened, ctx, ticket, &self.opts);
         }
         let notices = opened.collect_garbage();
-        let started = opened
-            .workspace()
-            .work(&self.ticket, &opened.gated(&self.opts))?;
+        let started = opened.workspace().work(ticket, &opened.gated(&self.opts))?;
         Ok(notices
             .into_iter()
             .fold(start_payload(started), Payload::with_warning))

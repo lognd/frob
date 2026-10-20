@@ -18,6 +18,7 @@ pub mod cycle_gate;
 pub mod error;
 pub mod evict;
 pub mod gc;
+pub mod next;
 pub(crate) mod pathtext;
 pub mod verbs;
 pub mod wip;
