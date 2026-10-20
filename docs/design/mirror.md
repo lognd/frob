@@ -205,6 +205,10 @@ and in `frob mirror status`.
   bump issue update times). `frob mirror status` states that bound.
   `frob-mirror::sweep::next_batch` selects the batch (sorted ULIDs after
   the cursor, wrapping) and `visit_bound` computes ceil(N/K).
+  `frob-mirror::status::build` assembles the `mirror status` report (last
+  success, MIR001 reasons per scope, the ceil(N/K) bound, gaps, contested
+  fields, create-uncertain tickets with start time, unmirrored tickets) and
+  `StatusReport::render` prints it.
 - **Budget planner.** At start the run reads the rate-limit headers and
   spends at most a configured share (default half) of what remains, at
   most C creates (default 50) and M mutations (default 300), serially,

@@ -31,4 +31,5 @@ pub mod projection;
 pub mod proposals;
 pub mod reconcile;
 pub mod shardstore;
+pub mod status;
 pub mod sweep;
