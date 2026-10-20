@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-20T05:04:48Z"
+updated = "2026-10-20T05:07:04Z"
 idempotency_key = "m2-diag-teach-flags"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/frob/src/teach_cmd.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/verb.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob-check/src/lib.rs", "docs/reference/cli/frob.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given `teach reset`, when run, then seen.toml is emptied and the next check teaches again"
-bound = false
+bound = true
 +++
 
 Implements diagnostics.md section 5.1.
