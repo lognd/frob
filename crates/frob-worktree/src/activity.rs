@@ -77,6 +77,10 @@ pub struct ObservedClaims {
     /// Per-claim observations.
     #[serde(default)]
     pub claims: BTreeMap<String, ClaimObservation>,
+    /// Unix seconds of the evictions this clone performed, for the `evict_rate` limit.
+    // frob:ticket 01M5DJW52ZBQRYN9ZSTGSJJYF3
+    #[serde(default)]
+    pub evictions: Vec<i64>,
 }
 
 /// Where the observation file lives for a repository.
