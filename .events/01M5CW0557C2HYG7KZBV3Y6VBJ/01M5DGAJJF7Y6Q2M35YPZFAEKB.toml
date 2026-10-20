@@ -1,0 +1,29 @@
+kind = "evidence"
+captured_at = "2026-10-20T20:33:54Z"
+digest = "0da3e599eef7e2551d9825ceed573cd6e1aa972e4f35a91f05ebae73dc7f1805"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 40a77b8c-70b1-4f8a-a051-b3b123ff3e10 with nextest profile: default
+    Starting 7 tests across 17 binaries (220 tests skipped)
+        PASS [   0.007s] frob-ledger claim_hold::tests::pause_credit_is_capped
+        PASS [   0.007s] frob-ledger claim_hold::tests::pause_notices
+        PASS [   0.007s] frob-ledger claim_hold::tests::hold_stops_then_restarts_the_clock
+        PASS [   0.007s] frob-ledger claim_hold::tests::hold_validation
+        PASS [   0.007s] frob-ledger claim_hold::tests::pauses_stop_the_clock_until_the_cap
+        PASS [   0.007s] frob-ledger claim_hold::tests::hold_notice_names_end_date
+        PASS [   0.008s] frob-ledger claim_hold::tests::resume_ends_early_once
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 7 tests run: 7 passed, 220 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger claim_hold"
+size = 1036
+status = "measured"
+test_count = 7
+tests_digest = "bc63180e1e056f68fe66d2d31d5c5a8fc7f00a9fca42de95b2a9bc0415d72238"
+at = "2026-10-20T20:33:54Z"
+actor = "lognd"
+rev = 1
