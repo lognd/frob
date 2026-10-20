@@ -130,11 +130,23 @@ fn read_only_check_leaves_a_fixable_tree_untouched_while_fix_rewrites_it() {
 
     let plain = frob(dir.path(), &["check", "--json", "--fail-on", "none"]);
     assert!(String::from_utf8_lossy(&plain.stdout).contains("DSL003"));
-    assert_eq!(porcelain(dir.path()), "", "a read-only check changed the tree");
+    assert_eq!(
+        porcelain(dir.path()),
+        "",
+        "a read-only check changed the tree"
+    );
     assert_eq!(std::fs::read_to_string(&file).expect("read"), before);
 
-    let fixed = frob(dir.path(), &["check", "--fix", "--json", "--fail-on", "none"]);
-    assert_eq!(code(&fixed), 0, "{}", String::from_utf8_lossy(&fixed.stderr));
+    let fixed = frob(
+        dir.path(),
+        &["check", "--fix", "--json", "--fail-on", "none"],
+    );
+    assert_eq!(
+        code(&fixed),
+        0,
+        "{}",
+        String::from_utf8_lossy(&fixed.stderr)
+    );
     assert_ne!(std::fs::read_to_string(&file).expect("read"), before);
     assert!(porcelain(dir.path()).contains("lib.rs"));
 }
