@@ -114,7 +114,7 @@ lock_timeout_ms = 30000
 # on that branch; it becomes `refs/heads/main` at the merge to main.
 ref = "refs/heads/experimental"
 # `trunk` commits to `ref`; `branch` commits to the checked-out branch.
-ref_mode = "trunk"
+ref_mode = "orphan"
 # Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1).
 branch = "frob-tickets"
 
