@@ -8,9 +8,9 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T16:38:30Z"
+updated = "2026-10-20T16:38:31Z"
 idempotency_key = "dt-DT05"
-scope = ["crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/refresh.rs", "crates/frob/src/config.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob/tests/it/main.rs", "crates/frob/tests/it/refresh.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/src/remote.rs"]
+scope = ["crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/refresh.rs", "crates/frob/src/config.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob/tests/it/main.rs", "crates/frob/tests/it/refresh.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/src/remote.rs", "crates/gob-git/src/spawn.rs"]
 
 [[acceptance]]
 text = "The remote probe never prompts: ls-remote runs with terminal prompts off and ssh BatchMode"
