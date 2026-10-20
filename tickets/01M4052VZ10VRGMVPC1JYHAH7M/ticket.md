@@ -2,13 +2,13 @@
 id = "01M4052VZ10VRGMVPC1JYHAH7M"
 title = "frob mirror status: sweep bound, reasons, gaps, contested fields, uncertain creates"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-20T12:24:26Z"
+updated = "2026-10-20T13:00:30Z"
 idempotency_key = "m2-mirror2-status"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/status.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
