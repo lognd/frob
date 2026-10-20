@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-20T04:56:00Z"
+updated = "2026-10-20T04:58:58Z"
 idempotency_key = "m2-sec-host-remedies"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-diagnostics/src/remedy.rs", "crates/gob-diagnostics/src/lib.rs", "docs/design/diagnostics.md"]
@@ -23,7 +23,7 @@ target = "01M3ZX7ZNF2PJ2E8WJH3CSCDFK"
 
 [[acceptance]]
 text = "Given a plugin finding whose message contains a command, when rendered, then the help line is built from a host template and the plugin text appears only as labelled data"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a pack rule seen for the first time, when check runs, then no inline explain is printed"
