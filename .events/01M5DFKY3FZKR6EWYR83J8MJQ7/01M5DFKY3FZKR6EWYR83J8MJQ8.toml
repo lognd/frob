@@ -1,0 +1,9 @@
+kind = "create"
+title = "evict ledger record and crash completion in sync"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~6CVW7F9: lease op evict, in-progress to todo, comment naming previous holder, use needs_completion/read_park_record"
+at = "2026-10-20T20:21:33Z"
+actor = "lognd"
+rev = 1
