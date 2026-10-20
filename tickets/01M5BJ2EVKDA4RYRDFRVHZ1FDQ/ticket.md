@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T02:25:58Z"
-updated = "2026-10-20T02:50:19Z"
+updated = "2026-10-20T02:50:20Z"
 idempotency_key = "claude-sync-verb"
-scope = ["crates/frob/src/claude_sync.rs", "crates/frob/src/claude_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/src/config.rs", "crates/frob/src/doctor.rs", "crates/frob/Cargo.toml", "crates/frob/tests/it/claude.rs", "crates/frob/tests/it/main.rs"]
+scope = ["crates/frob/src/claude_sync.rs", "crates/frob/src/claude_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/src/config.rs", "crates/frob/src/doctor.rs", "crates/frob/Cargo.toml", "crates/frob/tests/it/claude.rs", "crates/frob/tests/it/main.rs", "frob.toml"]
 
 [[acceptance]]
 text = "sync installs the manifest into an empty home, is idempotent, and uninstall preserves user additions"
