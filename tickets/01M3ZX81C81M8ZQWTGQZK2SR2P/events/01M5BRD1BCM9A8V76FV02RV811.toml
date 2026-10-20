@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/doctor.rs", "crates/frob-obligations/src/tick_protect.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/Cargo.toml", "crates/frob/Cargo.toml"]
+new = ["crates/frob/src/doctor.rs", "crates/frob-obligations/src/tick_protect.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/Cargo.toml", "crates/frob/Cargo.toml", "crates/frob/src/mirror_recreate_cmd.rs"]
+at = "2026-10-20T04:16:35Z"
+actor = "lognd"
+rev = 1
