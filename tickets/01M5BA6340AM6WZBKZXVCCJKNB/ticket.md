@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T00:08:08Z"
-updated = "2026-10-20T00:25:38Z"
+updated = "2026-10-20T00:26:13Z"
 scope = ["docs/design/mirror.md"]
+
+[[acceptance]]
+text = "docs/design/mirror.md describes the recreate verb's live transport as NativeTransport (ureq/rustls), not curl"
+bound = false
 +++
 
 found while working ~3CPVHZS: line ~296 says GithubAdapter over a curl transport; replace with the native ureq transport. Blocked from that ticket by a lease held by ~Q7FE2A0.

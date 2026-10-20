@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["docs/design/mirror.md describes the recreate verb's live transport as NativeTransport (ureq/rustls), not curl"]
+moved = []
+at = "2026-10-20T00:26:13Z"
+actor = "lognd"
+rev = 1
