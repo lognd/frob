@@ -22,6 +22,21 @@ gob-trust = { version = "0.532.0", path = "../gob-trust" }
 [dev-dependencies]
 proptest = "1"
 tempfile = "3"
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+regex = "1"
+serde_json = "1"
+
+[[bench]]
+name = "b2_disk_vs_compiled"
+harness = false
+
+[[bench]]
+name = "b2_equality"
+
+# The B2 bench reuses the gob-plan B1 harness through #[path]; shear cannot see those files.
+[package.metadata.cargo-shear]
+ignored = ["gob-symbols", "gob-text", "regex"]
 
 [lints]
 workspace = true

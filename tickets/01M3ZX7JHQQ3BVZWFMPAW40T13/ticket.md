@@ -2,13 +2,14 @@
 id = "01M3ZX7JHQQ3BVZWFMPAW40T13"
 title = "Benchmark B2: compiled-in GRL rule versus the same rule as a cached disk plan"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-20T09:39:58Z"
+updated = "2026-10-20T10:00:19Z"
 idempotency_key = "m2-bench-b2"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/benches/**", "crates/gob-plan/Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md", "crates/gob-packs/Cargo.toml", "crates/gob-packs/benches/**"]

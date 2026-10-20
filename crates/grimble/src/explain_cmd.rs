@@ -52,19 +52,18 @@ mod tests {
     // frob:tests crates/grimble/src/explain_cmd.rs::PAGES
     #[test]
     fn the_table_covers_every_generated_page_of_the_product() {
-        let dir =
-            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/reference/rules");
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .nth(2)
+            .expect("workspace root")
+            .join("docs/reference/rules");
         let mut on_disk = Vec::new();
         for entry in std::fs::read_dir(&dir).expect("rules dir") {
             let path = entry.expect("entry").path();
             let text = std::fs::read_to_string(&path).expect("page");
             if text.contains("| product | grimble |") {
-                on_disk.push(
-                    path.file_stem()
-                        .expect("stem")
-                        .to_string_lossy()
-                        .into_owned(),
-                );
+                let rel = gob_path::RelPath::from_host(&dir, &path).expect("under rules dir");
+                on_disk.push(rel.as_str().trim_end_matches(".md").to_owned());
             }
         }
         on_disk.sort();

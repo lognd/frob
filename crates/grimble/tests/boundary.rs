@@ -1,10 +1,6 @@
 //! grimble never depends on a frob crate (boundaries.md): walk every grimble crate's path
 //! dependencies transitively and fail on any `frob-*` crate.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
-
+use gob_path::RelPath;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -28,17 +24,18 @@ fn path_dependencies(manifest: &Path) -> Vec<(String, PathBuf)> {
 // frob:tests crates/grimble/src/lib.rs::cli
 #[test]
 fn no_frob_crate_is_a_direct_or_transitive_dependency_of_a_grimble_crate() {
-    let crates = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    let crates = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("crates dir")
+        .to_path_buf();
     let mut roots: Vec<(String, PathBuf)> = std::fs::read_dir(&crates)
         .expect("read crates dir")
         .filter_map(Result::ok)
-        .filter(|e| e.file_name().to_string_lossy().starts_with("grimble"))
-        .map(|e| {
-            (
-                e.file_name().to_string_lossy().into_owned(),
-                e.path().join("Cargo.toml"),
-            )
+        .filter_map(|e| {
+            let name = RelPath::from_host(&crates, &e.path()).ok()?;
+            Some((name.as_str().to_owned(), e.path().join("Cargo.toml")))
         })
+        .filter(|(n, _)| n.starts_with("grimble"))
         .filter(|(_, m)| m.is_file())
         .collect();
     assert!(
