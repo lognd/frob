@@ -20,20 +20,24 @@ pub fn shard_path(id: TicketId) -> String {
     format!("{MAP_DIR}/{id}.toml")
 }
 
-/// The tracker issue number a map shard binds its ticket to.
+/// The tracker issue number a map shard binds its ticket to, `None` while the shard has no `issue` yet.
 ///
 /// # Errors
 ///
-/// [`LedgerError`] (malformed) when `text` is not TOML, has no integer `issue`, or `issue` is zero or negative.
-pub fn parse_shard(path: &str, text: &str) -> Result<u64> {
+/// [`LedgerError`] (malformed) when `text` is not TOML, or `issue` is present but not a positive integer.
+pub fn parse_shard(path: &str, text: &str) -> Result<Option<u64>> {
     let table: toml::Table = text
         .parse()
         .map_err(|e: toml::de::Error| LedgerError::malformed(path, e.message()))?;
-    table
-        .get("issue")
-        .and_then(toml::Value::as_integer)
+    let Some(value) = table.get("issue") else {
+        tracing::debug!(path, "map shard has no issue yet; treating as unmapped");
+        return Ok(None);
+    };
+    value
+        .as_integer()
         .and_then(|n| u64::try_from(n).ok())
         .filter(|n| *n > 0)
+        .map(Some)
         .ok_or_else(|| LedgerError::malformed(path, "`issue` must be a positive integer"))
 }
 
@@ -80,12 +84,12 @@ impl Ledger {
             .map(|(id, _)| *id))
     }
 
-    /// The tracker issue number ticket `id` is mirrored to, `None` when it has no map shard.
+    /// The tracker issue number ticket `id` is mirrored to, `None` when it has no map shard or the shard has no `issue` yet.
     ///
     /// # Errors
     ///
     /// [`LedgerError::NotFound`] when the ticket is absent, [`LedgerError`] (malformed) for a
-    /// shard without a positive `issue`, or store failures.
+    /// shard whose `issue` is not a positive integer, or store failures.
     pub fn mirror_issue(&self, id: TicketId) -> Result<Option<u64>> {
         let s = self.synced()?;
         Self::load(&s, id)?;
@@ -96,6 +100,7 @@ impl Ledger {
         self.text(&tip.to_string(), &path)?
             .map(|t| parse_shard(&path, &t))
             .transpose()
+            .map(Option::flatten)
     }
 }
 
@@ -106,10 +111,16 @@ mod tests {
     #[test]
     fn shard_binds_a_positive_issue_number() {
         // frob:tests crates/frob-ledger/src/mirror_map.rs::parse_shard
-        assert_eq!(parse_shard("p", "issue = 42\n").ok(), Some(42));
+        assert_eq!(parse_shard("p", "issue = 42\n").ok(), Some(Some(42)));
         assert!(parse_shard("p", "issue = 0\n").is_err());
         assert!(parse_shard("p", "issue = \"x\"\n").is_err());
         assert!(parse_shard("p", "not toml [").is_err());
-        assert!(parse_shard("p", "other = 1\n").is_err());
+    }
+
+    #[test]
+    fn shard_without_issue_is_unmapped_not_malformed() {
+        // frob:tests crates/frob-ledger/src/mirror_map.rs::parse_shard
+        assert_eq!(parse_shard("p", "other = 1\n").ok(), Some(None));
+        assert_eq!(parse_shard("p", "").ok(), Some(None));
     }
 }
