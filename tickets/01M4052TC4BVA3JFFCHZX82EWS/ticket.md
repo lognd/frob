@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-20T09:07:18Z"
+updated = "2026-10-20T09:07:19Z"
 idempotency_key = "m2-mirror2-reconcile"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/reconcile.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
@@ -47,7 +47,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a tracker-owned field edited by a human, when reconciled, then it is left unchanged"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a bot-id history entry with no matching journaled write, when reconciled, then it is treated as an edit by unknown automation and reverted"
