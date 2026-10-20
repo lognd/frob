@@ -7,6 +7,8 @@ pub mod cycle001;
 pub mod dead001;
 /// Rule `LARGE001`.
 pub mod large001;
+/// Rule `VIS001`.
+pub mod vis001;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -14,6 +16,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <cycle001::Cycle001 as gob_rules::RuleDecl>::DEF,
     <dead001::Dead001 as gob_rules::RuleDecl>::DEF,
     <large001::Large001 as gob_rules::RuleDecl>::DEF,
+    <vis001::Vis001 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -33,11 +36,13 @@ where
     cycle001::Cycle001: gob_rules::Measured<P>,
     dead001::Dead001: gob_rules::Measured<P>,
     large001::Large001: gob_rules::Measured<P>,
+    vis001::Vis001: gob_rules::Measured<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::measured(cycle001::Cycle001));
     rules.push(gob_rules::BoundRule::measured(dead001::Dead001));
     rules.push(gob_rules::BoundRule::measured(large001::Large001));
+    rules.push(gob_rules::BoundRule::measured(vis001::Vis001));
     rules
 }
 

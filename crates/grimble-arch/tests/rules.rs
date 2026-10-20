@@ -1,4 +1,4 @@
-//! The CYCLE001, LARGE001 and DEAD001 rule pages as an mdtest corpus, plus the acceptance tests.
+//! The CYCLE001, LARGE001, DEAD001 and VIS001 rule pages as an mdtest corpus, plus the acceptance tests.
 
 // frob:ticket 01M3Z7141TW2H3HXJRK1QBHP7T
 
@@ -69,6 +69,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-arch/src/rules/cycle001.rs::Cycle001
     // frob:tests crates/grimble-arch/src/rules/large001.rs::Large001
     // frob:tests crates/grimble-arch/src/rules/dead001.rs::Dead001
+    // frob:tests crates/grimble-arch/src/rules/vis001.rs::Vis001
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
     let words = case.config.as_deref().unwrap_or("");
@@ -145,7 +146,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-arch/src/rules/mod.rs::bind
     // frob:tests crates/grimble-arch/src/host.rs::ArchHost.arch_subjects_of
     // frob:tests crates/grimble-arch/src/finding.rs::ArchFinding.into_finding
-    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 3);
+    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 4);
     assert_eq!(
         grimble_arch::host::ArchHost::arch_subjects_of(&Fixed, "DEAD001"),
         7
@@ -160,7 +161,7 @@ fn host_binds_and_converts() {
     assert!(converted.iter().any(|f| f.rule.as_str() == "CYCLE001"));
 }
 
-/// A repository with no source units marks all three rules not applicable instead of vacuous.
+/// A repository with no source units marks all four rules not applicable instead of vacuous.
 #[test]
 fn empty_repository_makes_the_rules_not_applicable() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -176,5 +177,63 @@ fn empty_repository_makes_the_rules_not_applicable() {
         read: &read,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
-    assert_eq!(ids, ["CYCLE001", "DEAD001", "LARGE001"]);
+    assert_eq!(ids, ["CYCLE001", "DEAD001", "LARGE001", "VIS001"]);
+}
+
+/// The findings of `rule` over the repository at `root`.
+fn of_rule(root: &Path, rule: &str) -> Vec<ArchFinding> {
+    run(root, 0)
+        .into_iter()
+        .filter(|f| f.rule == rule)
+        .collect()
+}
+
+/// A package `a` whose `helper` sits in a private module, used only inside `a`.
+fn narrow(root: &Path) {
+    krate(root, "a", None);
+    write(
+        root,
+        "a/src/lib.rs",
+        "mod inner {\n    pub fn helper() {}\n}\n\npub fn api() {\n    inner::helper();\n}\n",
+    );
+}
+
+#[test]
+fn vis_fires_when_only_its_own_package_uses_the_item() {
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let dir = tempfile::tempdir().expect("tempdir");
+    narrow(dir.path());
+    let found = of_rule(dir.path(), "VIS001");
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].severity, Severity::Advisory);
+}
+
+#[test]
+fn vis_is_unresolved_on_an_unknown_edge_from_outside() {
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let dir = tempfile::tempdir().expect("tempdir");
+    narrow(dir.path());
+    krate(dir.path(), "b", None);
+    write(
+        dir.path(),
+        "b/src/lib.rs",
+        "pub fn q(x: u8) {\n    x.helper();\n}\n",
+    );
+    let found = of_rule(dir.path(), "VIS001");
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].severity, Severity::Unresolved);
+    assert_eq!(found[0].reason, Some(UnresolvedReason::EdgeUnknown));
+}
+
+#[test]
+fn vis_is_clean_for_an_item_re_exported_from_the_crate_root() {
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let dir = tempfile::tempdir().expect("tempdir");
+    krate(dir.path(), "a", None);
+    write(
+        dir.path(),
+        "a/src/lib.rs",
+        "mod inner {\n    pub fn helper() {}\n}\n\npub use crate::inner::helper;\n",
+    );
+    assert!(of_rule(dir.path(), "VIS001").is_empty());
 }

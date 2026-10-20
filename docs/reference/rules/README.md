@@ -426,6 +426,12 @@
 | [TYPE002](TYPE002.md) | font-family-off-stack | error | manual | P+ | true | Font families must come from the declared stacks. Each block is one source file in a project whose |
 | [TYPE003](TYPE003.md) | font-weight-off-scale | warn | manual | P+ | true | Font weights must be declared weights. Each block is one source file in a project whose `crunk.toml` |
 
+## VIS
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [VIS001](VIS001.md) | arch-wide-visibility | advisory | manual | P- | true | A `pub` function that no other package uses. |
+
 ## WAIVE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
