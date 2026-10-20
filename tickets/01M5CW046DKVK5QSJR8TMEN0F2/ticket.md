@@ -2,7 +2,8 @@
 id = "01M5CW046DKVK5QSJR8TMEN0F2"
 title = "Refresh state and remote probe"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
