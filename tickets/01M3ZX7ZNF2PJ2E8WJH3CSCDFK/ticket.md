@@ -2,7 +2,8 @@
 id = "01M3ZX7ZNF2PJ2E8WJH3CSCDFK"
 title = "Teaching state: [ui] teach knob and .frob/seen.toml, first-occurrence inline explain"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
