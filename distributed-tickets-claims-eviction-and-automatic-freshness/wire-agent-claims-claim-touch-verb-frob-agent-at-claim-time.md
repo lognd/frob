@@ -8,7 +8,7 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T21:18:32Z"
-updated = "2026-10-20T22:58:40Z"
+updated = "2026-10-20T22:59:47Z"
 idempotency_key = "dt-DT15-wire"
-scope = ["crates/frob-lease/src/model.rs", "crates/frob-lease/src/store.rs", "crates/frob-check/src/scope.rs", "crates/frob/src/lease_cmd.rs", "crates/frob/src/product.rs", "crates/frob/src/claim_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/src/ticket/mod.rs", "crates/frob-lease/tests/lease.rs"]
+scope = ["crates/frob-lease/src/model.rs", "crates/frob-lease/src/store.rs", "crates/frob-check/src/scope.rs", "crates/frob/src/lease_cmd.rs", "crates/frob/src/product.rs", "crates/frob/src/claim_cmd.rs", "crates/frob/src/lib.rs", "crates/frob/src/ticket/mod.rs", "crates/frob-lease/tests/lease.rs", "docs/reference/cli/frob.md", "changelog.d/01M5DJW8TX3N6X71EQMD3FT7PC.added.md"]
 +++
