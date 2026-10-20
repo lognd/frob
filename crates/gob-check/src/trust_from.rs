@@ -7,10 +7,14 @@
 
 // frob:ticket 01M3ZX7V587K71E94E0AE4GWW8
 
+use std::path::Path;
+
 use gob_git::{GitError, Repo};
-use gob_rules::{PackFailure, RequiredReason};
+use gob_rules::{Finding, PackFailure, RequiredReason, RuleId, Severity, UnresolvedReason};
 use gob_trust::baseref::{BaseRefError, BaseRefTrust, BaseRefVerdict};
 use tracing::{debug, info};
+
+pub use crate::options::TrustFromSpec;
 
 /// Why the base-ref lock could not be loaded.
 #[derive(Debug, thiserror::Error)]
@@ -90,6 +94,39 @@ pub fn evaluate(trust: &BaseRefTrust, packs: &[LivePack]) -> Vec<PackTrust> {
 #[must_use]
 pub fn gate_fails(decisions: &[PackTrust]) -> bool {
     decisions.iter().any(|d| d.required.is_some())
+}
+
+/// The required Unresolved findings of a `--trust-from` run: one per live pack the lock at the ref does not vouch for.
+///
+/// # Errors
+/// [`TrustFromError`] when the repo is not git, the ref does not resolve or the lock is malformed.
+pub fn findings(root: &Path, spec: &TrustFromSpec) -> Result<Vec<Finding>, TrustFromError> {
+    let repo = Repo::discover(root)?;
+    let trust = load(&repo, &spec.base_ref, &spec.lock_path)?;
+    let decisions = evaluate(&trust, &spec.packs);
+    let out: Vec<Finding> = decisions
+        .into_iter()
+        .filter_map(|d| {
+            let required = d.required?;
+            let rule = "PACK001".parse::<RuleId>().ok()?;
+            info!(pack = %d.pack, base_ref = %spec.base_ref, "pack untrusted in this change");
+            Some(
+                Finding::new(
+                    rule,
+                    Severity::Unresolved,
+                    None,
+                    format!(
+                        "pack `{}` is absent from or changed against the lock at {}; untrusted in this change",
+                        d.pack, spec.base_ref
+                    ),
+                    &d.pack,
+                )
+                .with_reason(UnresolvedReason::Opaque("untrusted-in-change".to_owned()))
+                .with_required(required),
+            )
+        })
+        .collect();
+    Ok(out)
 }
 
 #[cfg(test)]

@@ -238,6 +238,9 @@ fn pytest_install() -> Step {
 /// goblins it discovers next to its own executable.
 pub const SIBLING_PACKAGES: [&str; 3] = ["frob-cli", "grimble", "crunk"];
 
+/// The protected ref whose pack lock is the only trust the CI `check` step honours (security.md 2.3).
+const TRUST_FROM_REF: &str = "origin/experimental";
+
 /// The `check` step: build this workspace's own sibling binaries, then run `frob check` from the
 /// same target dir so sibling discovery (next to the frob executable, D87) finds them and never
 /// falls back to whatever is on `PATH`. `--skip-tools`: each tool stage is its own CI step. One shell command so a remote host builds and runs on the
@@ -246,7 +249,7 @@ pub const SIBLING_PACKAGES: [&str; 3] = ["frob-cli", "grimble", "crunk"];
 fn sibling_check() -> Step {
     let build: Vec<String> = SIBLING_PACKAGES.iter().map(|p| format!("-p {p}")).collect();
     let script = format!(
-        "cargo build {} && exec cargo run -p frob-cli -- check --skip-tools",
+        "cargo build {} && exec cargo run -p frob-cli -- check --skip-tools --trust-from {TRUST_FROM_REF}",
         build.join(" ")
     );
     Step {
@@ -1635,7 +1638,21 @@ mod tests {
     fn check_step_skips_tool_stages_the_dedicated_steps_already_ran() {
         let step = step_named("check");
         let script = step.args.last().expect("script");
-        assert!(script.ends_with("-- check --skip-tools"), "{script}");
+        assert!(script.contains("-- check --skip-tools"), "{script}");
+    }
+
+    // frob:ticket 01M5C2Q5V7NRJTW8Y3DX625YAT
+    // frob:tests crates/gob-dev/src/ci.rs::sibling_check
+    #[cfg(unix)]
+    #[test]
+    fn check_step_passes_trust_from_and_no_other_trust_flag() {
+        let step = step_named("check");
+        let script = step.args.last().expect("script");
+        assert!(
+            script.ends_with("--trust-from origin/experimental"),
+            "{script}"
+        );
+        assert_eq!(script.matches("--trust").count(), 1, "{script}");
     }
 
     #[test]

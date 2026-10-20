@@ -78,9 +78,14 @@ pub struct CheckOptions {
     pub clock: Option<Arc<dyn gob_time::Clock>>,
     /// Treat the `--ticket` ticket as exempt from the changelog fragment (`land --no-changelog --reason`, not yet recorded).
     pub changelog_exempt: bool,
+    /// `--trust-from REF`: trust only the pack lock at this ref (security.md 2.3); the only CI trust flag.
+    pub trust_from: Option<String>,
     /// `--teach [RULE]`: print the full explain text for the selected findings of this run.
     pub teach: Option<TeachSelect>,
 }
+
+/// Repo-relative path of frob's pack lock, read at the `--trust-from` ref.
+pub(crate) const TRUST_LOCK_PATH: &str = "frob.packs.lock";
 
 impl CheckOptions {
     /// The tool tier of this run: `ticket` under `--quick`, `train` for a ticket run, else every tier.
@@ -109,6 +114,14 @@ impl CheckOptions {
             clock: self.clock.clone(),
             tool_memo: None,
             tool_trust: None,
+            trust_from: self.trust_from.as_ref().map(|base_ref| {
+                gob_check::TrustFromSpec {
+                    base_ref: base_ref.clone(),
+                    lock_path: TRUST_LOCK_PATH.to_owned(),
+                    // frob loads no repository packs yet, so no live pack can be untrusted.
+                    packs: Vec::new(),
+                }
+            }),
         }
     }
 }

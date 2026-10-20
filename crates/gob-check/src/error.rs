@@ -15,6 +15,9 @@ pub enum CheckError {
     /// The product's lock file (`frob.lock`) is malformed.
     #[error("E-CHECK-LOCK: {0}")]
     Lock(#[from] gob_lock::LockError),
+    /// `--trust-from REF` could not read a valid pack lock at the ref.
+    #[error("{0}")]
+    TrustFrom(#[from] crate::trust_from::TrustFromError),
     /// `--only` named neither a rule family nor a rule id.
     #[error("E-CHECK-ONLY: `{0}` is neither a rule family nor a rule id")]
     UnknownFamily(String),

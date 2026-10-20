@@ -326,3 +326,55 @@ fn a_scoped_run_skips_full_only_groups_with_a_reason_and_a_full_run_keeps_them()
     assert_eq!(full.subjects_examined.get("TOY002"), Some(&4));
     assert!(full.fidelity.inapplicable.is_empty());
 }
+
+// frob:ticket 01M5C2Q5V7NRJTW8Y3DX625YAT
+// frob:tests crates/gob-check/src/trust_from.rs::findings
+#[test]
+fn trust_from_reports_a_pack_absent_from_the_lock_at_the_ref_as_untrusted_in_change() {
+    let dir = tree();
+    let repo = gob_git::Repo::init(dir.path()).expect("init");
+    let path = gob_git::RelPath::new("toy.packs.lock").expect("path");
+    let commit = gob_git::CommitOptions {
+        cas_retries: 5,
+        author: Some(("Test".into(), "test@example.com".into())),
+    };
+    let lock = "lock_version = 1\ndigest_scheme = 1\n";
+    repo.commit_paths(
+        "refs/heads/main",
+        &[(path, Some(lock.as_bytes().to_vec()))],
+        "base",
+        &commit,
+    )
+    .expect("commit");
+    let spec = |required| gob_check::TrustFromSpec {
+        base_ref: "refs/heads/main".to_owned(),
+        lock_path: "toy.packs.lock".to_owned(),
+        packs: vec![gob_check::trust_from::LivePack {
+            name: "newpack".to_owned(),
+            tree: "blake3:abc".to_owned(),
+            required,
+        }],
+    };
+    let toy = Toy {
+        subjects: 1,
+        applicable: true,
+    };
+    let opts = RunOptions {
+        trust_from: Some(spec(true)),
+        ..quiet()
+    };
+    let report = run(&toy, dir.path(), &opts).expect("run");
+    let hit: Vec<_> = report
+        .findings
+        .iter()
+        .filter(|f| f.severity == Severity::Unresolved)
+        .filter_map(|f| f.required.as_ref().map(ToString::to_string))
+        .collect();
+    assert_eq!(hit, ["untrusted-in-change: newpack"]);
+    let none = RunOptions {
+        trust_from: None,
+        ..opts
+    };
+    let clean = run(&toy, dir.path(), &none).expect("run");
+    assert!(clean.findings.iter().all(|f| f.required.is_none()));
+}
