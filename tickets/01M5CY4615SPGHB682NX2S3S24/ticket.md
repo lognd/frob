@@ -12,7 +12,7 @@ scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-worktree/src/verbs.rs"
 
 [[acceptance]]
 text = "Given orphan mode, when frob work runs, then the worktree branches from the code ref and the transition lands on the ticket branch"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a fresh clone with no local ticket branch, when frob work runs, then it adopts origin's ticket branch and succeeds"
