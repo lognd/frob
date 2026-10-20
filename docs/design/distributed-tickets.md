@@ -43,7 +43,11 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   2026-10-10 when the migrate VERB landed; the flip itself never ran.
   Its own notes list what the flip still needs (frob.toml ref, the
   worktree crate's raw `[tickets]` reader, `.gitattributes`, creating
-  the local branch on fresh clones, CI and goway `with_refs`). Its
+  the local branch on fresh clones, CI and goway `with_refs`). Of
+  these, the raw reader is fixed, `frob work` now bootstraps the local
+  ticket branch (`frob_ledger::branch::ensure_for_config`), CI uses
+  `.github/scripts/ensure-ledger-refs.sh`, and a guard test requires
+  the goway `with_refs` entries at flip time. Its
   priority was raised because 290 of 456 `experimental` commits were
   ledger commits that move the land base. Former blocker
   01M4HQ2T0QV27JHJP0DRF7ZZHA is resolved: triage and scrub now work on

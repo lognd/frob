@@ -198,13 +198,7 @@ jobs:
       - name: Make the ledger ref resolvable
         if: runner.os == 'Linux'
         shell: bash
-        run: |
-          # Pull requests check out a detached merge commit; frob needs the
-          # [tickets] ref (refs/heads/experimental) as a local branch.
-          if ! git rev-parse --verify -q refs/heads/experimental >/dev/null; then
-            git fetch --no-tags origin '+refs/heads/experimental:refs/remotes/origin/experimental'
-            git update-ref refs/heads/experimental refs/remotes/origin/experimental
-          fi
+        run: bash .github/scripts/ensure-ledger-refs.sh
       - name: Fetch zizmor (version from frob.toml)
         if: runner.os == 'Linux'
         run: cargo dev ci --step zizmor
@@ -392,11 +386,7 @@ jobs:
       - uses: ./.github/actions/install-linker
       - name: Make the ledger ref resolvable
         shell: bash
-        run: |
-          if ! git rev-parse --verify -q refs/heads/experimental >/dev/null; then
-            git fetch --no-tags origin '+refs/heads/experimental:refs/remotes/origin/experimental'
-            git update-ref refs/heads/experimental refs/remotes/origin/experimental
-          fi
+        run: bash .github/scripts/ensure-ledger-refs.sh
       - name: Fetch the newest successful experimental report (optional baseline)
         shell: bash
         run: |
@@ -453,11 +443,7 @@ jobs:
       - uses: ./.github/actions/install-linker
       - name: Make the ledger ref resolvable
         shell: bash
-        run: |
-          if ! git rev-parse --verify -q refs/heads/experimental >/dev/null; then
-            git fetch --no-tags origin '+refs/heads/experimental:refs/remotes/origin/experimental'
-            git update-ref refs/heads/experimental refs/remotes/origin/experimental
-          fi
+        run: bash .github/scripts/ensure-ledger-refs.sh
       - name: Build frob
         run: cargo build --release -p frob-cli
       - name: Unit-test the comparison

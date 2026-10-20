@@ -39,6 +39,7 @@ mod sibling_discovery;
 mod terminal_lease;
 mod ticket;
 mod ticket_branch;
+mod ticket_branch_refs;
 mod ticket_code_readme;
 mod ticket_migrate;
 mod ticket_misfiled;

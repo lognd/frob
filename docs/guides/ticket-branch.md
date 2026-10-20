@@ -42,6 +42,18 @@ plumbing, so your checkout is untouched. It also commits the branch's
 `.gitattributes`, which routes ticket files to the frob merge driver. Run
 `frob init` in every clone so the driver itself is configured.
 
+In a fresh or shallow clone, and in a CI checkout, the local `frob-tickets`
+branch does not exist yet. `frob work` and the other worktree verbs create it
+from `origin/frob-tickets` (fetching it when needed) before opening the ledger,
+so no manual step is required. CI runs `.github/scripts/ensure-ledger-refs.sh`,
+which makes the code base ref and, in orphan mode, the ticket branch local.
+
+goway refuses a `with_refs` entry that does not exist locally, so
+`goway.toml` lists `refs/heads/frob-tickets` and
+`refs/remotes/origin/frob-tickets` only once the repository has flipped to
+orphan mode; a test in `crates/frob/tests/it/ticket_branch_refs.rs` fails when
+the flip lands without them.
+
 ## Use it
 
 Everything works as before; only the storage moved:

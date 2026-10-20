@@ -1402,3 +1402,121 @@ fn work_shares_the_warm_primary_cache_with_the_new_worktree() {
     let hit = gob_cache::Cache::open_shared(&started.path, ".frob").get_findings(&key);
     assert_eq!(hit.as_deref(), Some(&b"warm"[..]));
 }
+
+const ORPHAN_TOML: &str =
+    "[tickets]\nref = \"refs/heads/main\"\nref_mode = \"orphan\"\nbranch = \"frob-tickets\"\n";
+
+/// Run `git` with `args` in `dir`, panicking on failure, and return trimmed stdout.
+fn git_in(dir: &Path, args: &[&str]) -> String {
+    let out = std::process::Command::new("git")
+        .args(args)
+        .current_dir(dir)
+        .output()
+        .expect("git runs");
+    assert!(
+        out.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8_lossy(&out.stdout).trim().to_owned()
+}
+
+/// A fixture in orphan mode: `frob.toml` committed to `main`, the ticket branch created, and one ticket on it.
+fn orphan_fixture() -> (Fixture, TicketId) {
+    let fx = Fixture::new();
+    commit_base_config(&fx, ORPHAN_TOML);
+    std::fs::write(fx.root.join("frob.toml"), ORPHAN_TOML).expect("frob.toml");
+    let repo = Repo::discover(&fx.root).expect("repo");
+    frob_ledger::branch::init_branch(&repo, "frob-tickets", 5).expect("init branch");
+    let cfg = LedgerConfig {
+        mode: frob_ledger::RefMode::Orphan,
+        ..LedgerConfig::default()
+    };
+    let ledger = Ledger::open(repo, cfg, std::sync::Arc::new(gob_time::SystemClock));
+    let id = Fixture::ticket(&ledger, "Do it", TicketType::Task, &["crates/x/**"]);
+    (fx, id)
+}
+
+// frob:ticket 01M5CY4615SPGHB682NX2S3S24
+// frob:tests crates/frob-worktree/src/verbs.rs::Work
+#[test]
+fn work_in_orphan_mode_branches_from_the_code_ref_and_writes_the_ticket_branch() {
+    if !git_available() {
+        return;
+    }
+    let (fx, id) = orphan_fixture();
+    let main_before = git_in(&fx.root, &["rev-parse", "refs/heads/main"]);
+    let tix_before = git_in(&fx.root, &["rev-parse", "refs/heads/frob-tickets"]);
+    let cli = frob_worktree::register(gob_cli::Cli::new("frob", "0.0.0"));
+
+    let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &id.to_string()], &fx.root);
+    assert_eq!(code, 0, "{out}{err}");
+    let path = PathBuf::from(json(&out)["data"]["path"].as_str().expect("path"));
+
+    assert!(
+        path.join("README.md").exists(),
+        "code files are checked out"
+    );
+    assert!(!path.join("tickets").exists(), "no ledger in the code tree");
+    assert_eq!(
+        git_in(&fx.root, &["rev-parse", "refs/heads/main"]),
+        main_before,
+        "the transition does not touch the code ref"
+    );
+    assert_ne!(
+        git_in(&fx.root, &["rev-parse", "refs/heads/frob-tickets"]),
+        tix_before,
+        "the transition lands on the ticket branch"
+    );
+    let cfg = LedgerConfig {
+        mode: frob_ledger::RefMode::Orphan,
+        ..LedgerConfig::default()
+    };
+    let ledger = Ledger::open(
+        Repo::discover(&fx.root).expect("repo"),
+        cfg,
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
+    assert_eq!(category(&ledger, id), Category::InProgress);
+}
+
+// frob:ticket 01M5CY4615SPGHB682NX2S3S24
+// frob:tests crates/frob-ledger/src/branch.rs::ensure_for_config
+#[test]
+fn work_in_a_fresh_clone_adopts_the_ticket_branch_from_origin() {
+    if !git_available() {
+        return;
+    }
+    let (fx, id) = orphan_fixture();
+    let parent = fx.root.parent().expect("tempdir parent").to_path_buf();
+    let clone = parent.join("clone");
+    git_in(&parent, &["clone", "-q", "--no-tags", "repo", "clone"]);
+    git_in(&clone, &["config", "user.name", "Test User"]);
+    git_in(&clone, &["config", "user.email", "test@example.com"]);
+    git_in(
+        &clone,
+        &["remote", "set-branches", "--add", "origin", "frob-tickets"],
+    );
+    git_in(&clone, &["fetch", "-q", "origin", "frob-tickets"]);
+    let origin_tip = git_in(&clone, &["rev-parse", "refs/remotes/origin/frob-tickets"]);
+    assert!(
+        std::process::Command::new("git")
+            .args(["rev-parse", "--verify", "-q", "refs/heads/frob-tickets"])
+            .current_dir(&clone)
+            .output()
+            .expect("git")
+            .stdout
+            .is_empty(),
+        "a fresh clone has no local ticket branch"
+    );
+    let cli = frob_worktree::register(gob_cli::Cli::new("frob", "0.0.0"));
+
+    let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &id.to_string()], &clone);
+    assert_eq!(code, 0, "{out}{err}");
+
+    let base = git_in(
+        &clone,
+        &["merge-base", "refs/heads/frob-tickets", &origin_tip],
+    );
+    assert_eq!(base, origin_tip, "the local branch descends from origin's");
+}

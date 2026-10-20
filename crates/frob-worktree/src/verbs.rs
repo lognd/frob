@@ -40,6 +40,9 @@ impl Opened {
                 ))
             })?;
         let ledger_cfg = ledger_config(&root).map_err(WorktreeError::Config)?;
+        // frob:ticket 01M5CY4615SPGHB682NX2S3S24
+        frob_ledger::branch::ensure_for_config(&repo, &ledger_cfg)
+            .map_err(|e| WorktreeError::Config(e.to_string()))?;
         let config =
             WorktreeConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
         let gc = GcConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;

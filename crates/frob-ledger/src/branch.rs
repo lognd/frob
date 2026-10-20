@@ -160,6 +160,31 @@ pub fn init_branch(repo: &Repo, branch: &str, cas_retries: u32) -> Result<Branch
     Ok(BranchInit::Created(out.oid))
 }
 
+/// Make the ticket branch exist locally when `cfg` is in orphan mode (adopting origin's copy, else a fresh orphan); `None` in any other mode or when the branch is already there.
+///
+/// Verbs that open the ledger in a fresh or CI clone call this first so an orphan-mode ledger never fails with a missing ref.
+///
+/// # Errors
+///
+/// As [`init_branch`].
+// frob:ticket 01M5CY4615SPGHB682NX2S3S24
+pub fn ensure_for_config(
+    repo: &Repo,
+    cfg: &crate::LedgerConfig,
+) -> Result<Option<BranchInit>, BranchError> {
+    if cfg.mode != crate::RefMode::Orphan {
+        tracing::debug!(mode = ?cfg.mode, "not orphan mode; no ticket branch to ensure");
+        return Ok(None);
+    }
+    match init_branch(repo, &cfg.branch, cfg.cas_retries)? {
+        BranchInit::Already(_) => Ok(None),
+        made => {
+            tracing::info!(branch = %cfg.branch, ?made, "local ticket branch ensured");
+            Ok(Some(made))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
