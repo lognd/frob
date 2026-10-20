@@ -14,6 +14,7 @@
 pub mod activity;
 pub mod anyway;
 pub mod claim;
+pub mod claim_restore;
 pub mod config;
 pub mod cycle_gate;
 pub mod error;
@@ -31,9 +32,10 @@ pub use error::WorktreeError;
 pub use gc::GcConfig;
 pub use work::{Requeued, Started, WorkOptions, Workspace, normalize_mtimes, seed_caches};
 
-/// Register `work`, `start` and `requeue` on a product root.
+/// Register `work`, `start`, `requeue` and `claim restore` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<verbs::Work>()
         .register::<verbs::Start>()
         .register::<verbs::Requeue>()
+        .register::<verbs::ClaimRestore>()
 }
