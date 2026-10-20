@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M5CVQC3K7RTFXEFWSG1SM00V"
+committed = 1038
+text = "0.533 remedy migration"
+capacity = 137
+at = "2026-10-20T20:15:17Z"
+actor = "lognd"
+rev = 1
