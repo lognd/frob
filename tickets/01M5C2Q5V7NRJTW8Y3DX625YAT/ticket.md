@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T07:16:54Z"
-updated = "2026-10-20T08:36:38Z"
-scope = ["crates/frob/src/**", "crates/gob-check/src/**", "crates/gob-dev/src/ci.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/verb.rs", "crates/gob-check/tests/pipeline.rs", "docs/reference/tool-stages.md"]
+updated = "2026-10-20T08:45:13Z"
+scope = ["crates/frob/src/**", "crates/gob-check/src/**", "crates/gob-dev/src/ci.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/verb.rs", "crates/gob-check/tests/pipeline.rs", "docs/reference/tool-stages.md", "docs/reference/rules/TICK011.md"]
 
 [[acceptance]]
 text = "Given frob check --trust-from REF, when a pack is absent from the lock at REF, then it reports Unresolved untrusted-in-change"
