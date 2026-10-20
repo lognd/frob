@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T16:37:48Z"
+updated = "2026-10-20T16:37:49Z"
 idempotency_key = "dt-DT05"
 
 [[acceptance]]
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "frob refresh --status reads only the cache and takes under 10 ms"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A missing base on the remote exits 1 with E-SYNC-NO-BASE naming the remote HEAD"
