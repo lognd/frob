@@ -31,7 +31,7 @@ pub fn lang_of(id: &str) -> Option<Lang> {
 pub const fn comment_markers(lang: Lang) -> &'static [&'static str] {
     match lang {
         Lang::Rust | Lang::CSharp | Lang::TypeScript | Lang::Grmb => &["//", "/*"],
-        Lang::Python | Lang::Yaml | Lang::Toml => &["#"],
+        Lang::Python | Lang::Yaml | Lang::Toml | Lang::GithubActions | Lang::Dockerfile => &["#"],
         Lang::Css => &["/*"],
         Lang::Html | Lang::Markdown => &["<!--"],
         Lang::OpaqueText | Lang::Binary => &[],

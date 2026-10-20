@@ -45,7 +45,7 @@ pub struct ActionsAdapter;
 
 impl Adapter for ActionsAdapter {
     fn language(&self) -> &'static str {
-        "yaml"
+        "github-actions"
     }
 
     fn identity(&self) -> String {
@@ -60,7 +60,7 @@ impl Adapter for ActionsAdapter {
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::for_lang(Lang::Yaml)
+        CapabilityDecl::for_lang(Lang::GithubActions)
     }
 
     fn parse(&self, text: &str, _limits: &ParseLimits) -> ConcreteTree {

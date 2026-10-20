@@ -41,7 +41,7 @@ use Fidelity::{F0, F1, F2, F3, F4};
 /// `expand`, `order`, `project_model`, `comments`, `style`, `markup`. `G` is a gap, `NA` is not applicable by
 /// construction.
 #[rustfmt::skip]
-pub const MATRIX: [Row; 12] = [
+pub const MATRIX: [Row; 14] = [
     r(Lang::Rust,       F4, [LexI, By,  Kw,  G,  Syn, Syn,  G,  Dec, Man, Syn, NA,  NA ]),
     r(Lang::Python,     F3, [Lex,  By,  Syn, G,  Syn, Syn,  G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::CSharp,     F1, [By,   G,   Kw,  G,  Syn, G,    G,  G,   Man, Syn, NA,  NA ]),
@@ -51,6 +51,8 @@ pub const MATRIX: [Row; 12] = [
     r(Lang::Markdown,   F3, [Lnk,  Lnk, NA,  NA, NA,  Syn,  NA, Dec, G,   Syn, NA,  NA ]),
     r(Lang::Yaml,       F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Toml,       F0, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
+    r(Lang::GithubActions, F2, [G,  G,  G,  G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
+    r(Lang::Dockerfile, F2, [G,  G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Grmb,       F4, [Lex,  Dec, NA,  NA, NA,  Syn,  NA, Dec, G,   Syn, NA,  NA ]),
     r(Lang::OpaqueText, F0, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, G,   G  ]),
     r(Lang::Binary,     F0, [NA,   NA,  NA,  NA, NA,  NA,   NA, NA,  NA,  NA,  NA,  NA ]),

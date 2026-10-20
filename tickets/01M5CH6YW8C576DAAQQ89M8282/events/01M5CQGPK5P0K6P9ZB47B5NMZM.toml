@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["GitHub Actions and Dockerfile are matrix languages and registered adapters"]
+moved = []
+at = "2026-10-20T13:20:22Z"
+actor = "lognd"
+rev = 1

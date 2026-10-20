@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T13:20:24Z"
+digest = "9359f8d785d3b279449723739ee5a9f1fd842b68af81f697513d5f350a2d8d65"
+exit_code = 0
+inline = """
+
+running 1 test
+test registry::tests::workflow_and_dockerfile_adapters_are_registered_under_their_own_tags ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 64 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running unittests src/lib.rs (target/debug/deps/gob_symbols-107ed5c65797b21e)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-symbols --lib workflow_and_dockerfile_adapters_are_registered_under_their_own_tags"
+size = 367
+status = "measured"
+at = "2026-10-20T13:20:24Z"
+actor = "lognd"
+rev = 1

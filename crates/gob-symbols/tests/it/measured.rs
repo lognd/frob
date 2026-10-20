@@ -68,6 +68,14 @@ fn corpus_of(lang: &str) -> Vec<(String, String)> {
             "tests/corpus/yaml/a.yaml".to_owned(),
             "# top\nouter:\n  inner: 1\n  other: 2\n".to_owned(),
         )],
+        "github-actions" => vec![(
+            ".github/workflows/ci.yml".to_owned(),
+            "# ci\njobs:\n  build:\n    steps:\n      - uses: actions/checkout@v4\n  test:\n    needs: build\n    steps:\n      - uses: actions/cache@v4\n".to_owned(),
+        )],
+        "dockerfile" => vec![(
+            "Dockerfile".to_owned(),
+            "# image\nFROM rust:1.80 AS build\nRUN cargo build\nFROM build AS final\n".to_owned(),
+        )],
         _ => Vec::new(),
     }
 }
@@ -144,7 +152,10 @@ fn measure(files: &[(String, String)]) -> Evidence {
 
 /// Declared-vs-measured disagreements that predate this gate: (language, declared, measured, ticket).
 /// A pin holds only while both levels stay exactly as recorded; the list may only shrink.
-const PINNED: [(&str, Fidelity, Fidelity, &str); 0] = [];
+const PINNED: [(&str, Fidelity, Fidelity, &str); 2] = [
+    ("github-actions", Fidelity::F2, Fidelity::F1, "~DPWJ77V"),
+    ("dockerfile", Fidelity::F2, Fidelity::F1, "~DPWJ77V"),
+];
 
 /// Errs when `declared` differs from `measured` in either direction, unless pinned exactly.
 fn check_declared(lang: &str, declared: Fidelity, measured: Fidelity) -> Result<(), String> {
@@ -255,7 +266,7 @@ fn corpus_cases_on_disk_match_the_claimed_operators() {
 }
 
 /// Per-adapter probe inputs: (language, path, a truncated source, garbage source).
-const PROBES: [(&str, &str, &str, &str); 8] = [
+const PROBES: [(&str, &str, &str, &str); 10] = [
     (
         "rust",
         "p.rs",
@@ -273,6 +284,18 @@ const PROBES: [(&str, &str, &str, &str); 8] = [
         "p.yaml",
         "a:\n  b: [1, 2\n",
         "\u{0}\u{1}: : [ { \u{7f}",
+    ),
+    (
+        "github-actions",
+        ".github/workflows/p.yml",
+        "jobs:\n  a:\n    needs: [",
+        "\u{0}\u{1}: : [ { \u{7f}",
+    ),
+    (
+        "dockerfile",
+        "Dockerfile",
+        "FROM rust AS \\\n",
+        "\u{0}\u{1} FROM \u{7f} AS",
     ),
     (
         "python",

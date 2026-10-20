@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T13:18:23Z"
+digest = "a8e4c0182838cfafe5bde1ba44ed39f0d02227ffe3aae3796a953e644e1a8d83"
+exit_code = 0
+inline = """
+
+running 1 test
+test persisted_types_hold_no_host_paths ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.01s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 40.52s
+     Running tests/persisted_paths.rs (target/debug/deps/persisted_paths-f5860ce34e15ca4f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-ledger --test persisted_paths persisted_types_hold_no_host_paths"
+size = 378
+status = "measured"
+at = "2026-10-20T13:18:23Z"
+actor = "lognd"
+rev = 1
