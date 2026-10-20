@@ -2,7 +2,8 @@
 id = "01M5BWWMJ7J8Q6G1SRRSNJ3PH5"
 title = "grimble check and exceptions list exceed profile budget (8s vs 3s)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
