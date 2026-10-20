@@ -8,8 +8,9 @@ points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T17:15:15Z"
+updated = "2026-10-20T17:18:26Z"
 idempotency_key = "dt-DT06"
+scope = ["crates/gob-git/src/remote.rs"]
 
 [[links]]
 kind = "blocked-by"
