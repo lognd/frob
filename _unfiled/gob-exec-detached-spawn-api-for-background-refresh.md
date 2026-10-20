@@ -2,7 +2,8 @@
 id = "01M5D5PZP5BZFRWT9W86STF8MV"
 title = "gob-exec: detached spawn API for background refresh"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
