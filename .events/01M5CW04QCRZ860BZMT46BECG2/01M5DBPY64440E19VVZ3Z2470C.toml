@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-20T19:13:02Z"
+digest = "f39ed37c2b61a372cc9aa420aa7507a15671a598b70e368839f7ce4c9781afe4"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.87s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 23ba8336-2d53-4b9d-8688-60d1f1a08376 with nextest profile: default
+    Starting 1 test across 330 binaries (4021 tests skipped)
+        PASS [   0.384s] frob-worktree::claim a_branch_already_on_the_remote_loses_the_claim_and_releases_the_lease
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.391s] 1 test run: 1 passed, 4021 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_branch_already_on_the_remote_loses_the_claim_and_releases_the_lease"
+size = 642
+status = "measured"
+test_count = 1
+tests_digest = "c41aa3b26f1960e220a5e596ff38d37a629012c15019400aa636132afb5eb02a"
+at = "2026-10-20T19:13:02Z"
+actor = "lognd"
+rev = 1
