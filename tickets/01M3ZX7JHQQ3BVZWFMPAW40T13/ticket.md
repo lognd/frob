@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-20T09:03:58Z"
+updated = "2026-10-20T09:04:50Z"
 idempotency_key = "m2-bench-b2"
 labels = ["milestone:2", "area:grl", "kind:test"]
-scope = ["crates/gob-plan/benches/**"]
+scope = ["crates/gob-plan/benches/**", "crates/gob-plan/Cargo.toml"]
 
 [[links]]
 kind = "blocked-by"
