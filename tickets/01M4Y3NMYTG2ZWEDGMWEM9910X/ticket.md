@@ -2,7 +2,8 @@
 id = "01M4Y3NMYTG2ZWEDGMWEM9910X"
 title = "Wire Profile::teach_for to [ui] teach and .frob/seen.toml"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
