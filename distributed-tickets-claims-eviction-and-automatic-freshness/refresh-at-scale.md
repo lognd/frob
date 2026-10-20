@@ -8,9 +8,9 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T22:22:47Z"
+updated = "2026-10-20T22:23:00Z"
 idempotency_key = "dt-DT23"
-scope = ["crates/frob-ledger/tests/scale.rs", "changelog.d/01M5CW063S30GRFG41DERAA0Q8.test.md"]
+scope = ["crates/frob-ledger/tests/scale.rs", "changelog.d/01M5CW063S30GRFG41DERAA0Q8.test.md", "changelog.d/01M5CW063S30GRFG41DERAA0Q8.added.md"]
 
 [[links]]
 kind = "blocked-by"
