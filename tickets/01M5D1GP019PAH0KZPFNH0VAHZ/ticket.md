@@ -2,13 +2,13 @@
 id = "01M5D1GP019PAH0KZPFNH0VAHZ"
 title = "Audit working-tree tickets/ path assumptions before the orphan flip"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T16:15:07Z"
-updated = "2026-10-20T16:15:07Z"
+updated = "2026-10-20T16:15:14Z"
 idempotency_key = "dt-audit-tickets-paths"
 
 [[acceptance]]
