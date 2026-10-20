@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
 updated = "2026-10-20T16:38:26Z"
 idempotency_key = "dt-DT05"
-scope = ["crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs"]
+scope = ["crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/refresh.rs"]
 
 [[acceptance]]
 text = "The remote probe never prompts: ls-remote runs with terminal prompts off and ssh BatchMode"
