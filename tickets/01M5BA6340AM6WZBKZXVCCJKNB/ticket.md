@@ -2,7 +2,8 @@
 id = "01M5BA6340AM6WZBKZXVCCJKNB"
 title = "docs/design/mirror.md: recreate section still says 'curl transport'; now NativeTransport (ureq)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
