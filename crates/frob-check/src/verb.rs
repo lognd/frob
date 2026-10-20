@@ -86,6 +86,8 @@ pub struct CheckData {
     pub fail_on_unresolved: Option<String>,
     /// Non-fatal notes.
     pub notes: Vec<String>,
+    /// Tracker proposals awaiting a decision: advisory, never part of the exit status.
+    pub pending_proposals: usize,
     /// The rule page, present with `--explain`.
     pub explain: Option<Explained>,
     // frob:ticket 01M4D95B4W3XEMKKFG4B2ZBRER
@@ -113,6 +115,7 @@ impl CheckData {
             not_evaluated: 0,
             fail_on_unresolved: None,
             notes: Vec::new(),
+            pending_proposals: 0,
             explain: None,
             precision: Vec::new(),
         }
@@ -409,13 +412,19 @@ impl Command for Check {
         let lead = (!ctx.json && ctx.verbosity == 0)
             .then_some(diff.as_ref())
             .flatten();
-        let data = data_of(
+        let mut data = data_of(
             &root,
             &report,
             ctx.json,
             self.timing || ctx.verbosity > 0,
             lead,
         );
+        // frob:ticket 01M3ZXGAWKZPVY6HF9NJ8GAFQV
+        data.pending_proposals =
+            crate::proposals_summary::pending_count_at(&root, ctx.clock.clone()).unwrap_or(0);
+        data.notes.extend(crate::proposals_summary::summary_line(
+            data.pending_proposals,
+        ));
         if report.exit_code() == ExitCode::Negative {
             let c = data.counts;
             let summary = format!(
@@ -585,6 +594,7 @@ fn data_of(
             .count(),
         fail_on_unresolved: Some(report.fail_on_unresolved.name().to_owned()),
         notes: Vec::new(),
+        pending_proposals: 0,
         explain: None,
         precision: if json {
             report.precision().rows()
