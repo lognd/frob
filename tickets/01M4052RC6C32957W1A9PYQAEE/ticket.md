@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an errors array in a feed page, when processed, then the feed stops for that scope and the cursor does not advance"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.2 (Change feed; F1).
