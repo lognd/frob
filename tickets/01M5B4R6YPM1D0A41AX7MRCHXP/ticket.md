@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T22:33:10Z"
-updated = "2026-10-20T01:49:37Z"
+updated = "2026-10-20T02:01:00Z"
 scope = ["docs/reference/config.md", "docs/schemas/config.json", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/tests/evidence.rs"]
 
 [[acceptance]]
