@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Reads kick a detached background refresh at most once per ttl and CI disables it", "doable probes in the foreground within the budget and appends a W-SYNC notice"]
+moved = []
+at = "2026-10-20T17:33:43Z"
+actor = "lognd"
+rev = 1
