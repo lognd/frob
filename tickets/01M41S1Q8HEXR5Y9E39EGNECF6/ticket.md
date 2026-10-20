@@ -2,7 +2,8 @@
 id = "01M41S1Q8HEXR5Y9E39EGNECF6"
 title = "Migrate grimble-* crates to gob-path; remove them from the allow list"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M41S1JXXN380WPE29ATR5EP7"
