@@ -2,7 +2,8 @@
 id = "01M5CW04QCRZ860BZMT46BECG2"
 title = "Publish the claim on work"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
