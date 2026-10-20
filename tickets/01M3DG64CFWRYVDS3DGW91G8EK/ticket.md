@@ -2,7 +2,8 @@
 id = "01M3DG64CFWRYVDS3DGW91G8EK"
 title = "`frob ticket done-report` (no --fix) mutates the tree: its internal scoped check wrote 60 frob:tests directive lines into test files"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "agent"
