@@ -8,10 +8,14 @@ priority = "medium"
 points = 3
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-10-20T02:33:17Z"
+updated = "2026-10-20T02:33:44Z"
 aliases = ["T-5101"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 scope = ["scripts/claude-hooks/**", "tests/claude_hooks/**", "docs/guides/claude-hooks.md"]
+
+[[acceptance]]
+text = "Hook installer is reversible and idempotent, and the hook logs every decision"
+bound = true
 +++
 
 Audit at scratchpad/HOOK-AUDIT.md. frob-suggest.py precision 10.4%, dual hook registration double-counts attempts per Bash call, FROB_SUGGEST_ACK is a blind blanket bypass used blindly in 97.3% of uses, hook logs nothing. Story tracks 4 leaves: registration/counter fix, rule verdict narrowing, per-rule ack token, and decision logging.
