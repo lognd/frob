@@ -293,7 +293,7 @@ and in `frob mirror status`.
   404 ("may be invisible, not deleted"), a live issue and a moved one.
   The verb `frob mirror recreate <ticket> [--repo OWNER/NAME]` wires it
   to `BranchShardStore` (on the ledger ref, under `.mirror/map`) and
-  `GithubAdapter` over a `curl` transport. It needs `GH_TOKEN` or
+  `GithubAdapter` over the native `NativeTransport` (`ureq`/rustls). It needs `GH_TOKEN` or
   `GITHUB_TOKEN`, and the marker key in `FROB_MIRROR_KEY` (id from
   `FROB_MIRROR_KID`, default `k1`); the repository defaults to `origin`.
 - **Own writes.** A dedicated App identity (`[mirror] bot_ids`, by
