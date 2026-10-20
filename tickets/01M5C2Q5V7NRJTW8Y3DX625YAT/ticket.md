@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T07:16:54Z"
-updated = "2026-10-20T08:15:50Z"
-scope = ["crates/frob/src/**", "crates/gob-check/src/**", "crates/gob-dev/src/ci.rs"]
+updated = "2026-10-20T08:17:31Z"
+scope = ["crates/frob/src/**", "crates/gob-check/src/**", "crates/gob-dev/src/ci.rs", "crates/frob-check/src/options.rs"]
 
 [[acceptance]]
 text = "Given frob check --trust-from REF, when a pack is absent from the lock at REF, then it reports Unresolved untrusted-in-change"
