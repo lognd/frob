@@ -176,6 +176,7 @@ Jobs, all on PR and main:
 | spawn budget | snapshot test of subprocess counts per CLI scenario (git-io.md section 7) | in test linux |
 | command profile | `cargo dev profile`: every leaf command of frob, grimble and crunk against `profile.toml` budgets, report artifact, deltas against the last experimental run (Command profile below) | 20 min |
 | bench (scheduled) | criterion cold and warm check on the 100k-line fixture, regression threshold (architecture.md section 9) | 10 min |
+| bench B1 (scheduled) | `cargo bench -p gob-plan --bench b1_plan_vs_handwritten`: TODO001, COV001 and DOC002 as plans and as handwritten Rust over the 100k-line fixture (80 Rust files of 1000 lines, 40 Markdown files of 500); findings must be equal, the median per-file ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6.6). `cargo test -p gob-plan --bench b1_equality` runs the equality and gate checks on a small fixture | 5 min |
 | deny | cargo-deny advisories, licenses, bans; cargo-shear | 1 min |
 | workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (cicd.md section 6; adopted before the CI adapters exist) | 1 min |
 | release (tag) | cargo-dist per binary on `frob-v*`, `grimble-v*`, `crunk-v*`; linux x86_64/aarch64, macos arm64, windows; crates.io publish of the full crate set in lockstep versions (monorepo.md section 4); `uv tool`-installable PyPI shims (the `frob` wheel bundles all three); Milestone 2 or later (D36) | 10 min |

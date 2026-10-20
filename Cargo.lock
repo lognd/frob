@@ -2738,6 +2738,7 @@ dependencies = [
 name = "gob-plan"
 version = "0.532.0"
 dependencies = [
+ "criterion",
  "globset",
  "gob-caps",
  "gob-ir",

@@ -26,6 +26,14 @@ tracing = "0.1"
 [dev-dependencies]
 proptest = "1"
 insta = "1"
+criterion = { version = "0.5", default-features = false }
+
+[[bench]]
+name = "b1_plan_vs_handwritten"
+harness = false
+
+[[bench]]
+name = "b1_equality"
 
 [lints]
 workspace = true

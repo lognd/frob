@@ -1,0 +1,1 @@
+gob-plan: benchmark B1 (`cargo bench -p gob-plan --bench b1_plan_vs_handwritten`) races the plan executor against handwritten Rust on TODO001, COV001 and DOC002 over a 100k-line fixture, requires equal findings and fails above a 1.3x median per-file ratio.
