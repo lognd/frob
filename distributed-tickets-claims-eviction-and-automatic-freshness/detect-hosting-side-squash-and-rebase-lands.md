@@ -2,7 +2,8 @@
 id = "01M5CW0609NX9MJ45G2R4CQE0R"
 title = "Detect hosting-side squash and rebase lands"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
