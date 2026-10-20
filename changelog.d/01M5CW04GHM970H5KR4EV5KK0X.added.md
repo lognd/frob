@@ -1,0 +1,1 @@
+`frob refresh --background` starts a detached refresh and returns at once (used by the git hooks), the background kick now spawns through the shared process runner, and `[sync] warn_after_secs` / `stale_error_secs` drive the freshness notices.

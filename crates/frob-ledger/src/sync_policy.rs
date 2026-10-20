@@ -8,8 +8,9 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::time::Duration;
 
+use gob_exec::{EnvPolicy, ExecError, Limits, Program, Runner, Spec};
 use gob_git::{GitError, Repo};
 use gob_path::Shown;
 use tracing::{debug, info, warn};
@@ -178,6 +179,24 @@ pub enum KickOutcome {
     Failed,
 }
 
+/// Start a detached `<exe> refresh` in `cwd` and return its pid; the child never kicks another refresh.
+///
+/// # Errors
+/// [`ExecError`] when the executable cannot be started.
+pub fn spawn_refresh(exe: &Path, cwd: &Path) -> Result<u32, ExecError> {
+    let spec = Spec {
+        program: Program::Hook {
+            path: exe.to_path_buf(),
+        },
+        args: vec!["refresh".to_owned()],
+        cwd: Some(cwd.to_path_buf()),
+        env: vec![(INNER_VAR.to_owned(), "1".to_owned())],
+        timeout: Duration::ZERO,
+        capture: false,
+    };
+    Runner::new(Limits { jobs: 1 }).spawn_detached(&spec, &EnvPolicy::Inherit)
+}
+
 /// Start a detached `<exe> refresh` when one is due; never waits and never touches the network inline.
 ///
 /// At most one spawn per `ttl` per clone: the spawn time is kept in `<common_dir>/frob/kick`.
@@ -204,17 +223,9 @@ pub fn background_kick(
         warn!(error = %e, "cannot record the refresh kick; skipping it");
         return KickOutcome::Failed;
     }
-    match Command::new(exe)
-        .arg("refresh")
-        .current_dir(repo.work_dir().unwrap_or(common))
-        .env(INNER_VAR, "1")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-    {
-        Ok(_child) => {
-            info!(exe = %Shown::of(exe), "background refresh started");
+    match spawn_refresh(exe, repo.work_dir().unwrap_or(common)) {
+        Ok(pid) => {
+            info!(exe = %Shown::of(exe), pid, "background refresh started");
             KickOutcome::Spawned
         }
         Err(e) => {

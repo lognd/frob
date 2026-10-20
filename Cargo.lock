@@ -1240,6 +1240,7 @@ dependencies = [
  "error_set",
  "gob-config",
  "gob-diagnostics",
+ "gob-exec",
  "gob-git",
  "gob-macros",
  "gob-path",

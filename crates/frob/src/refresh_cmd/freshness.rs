@@ -29,6 +29,16 @@ pub struct Thresholds {
 }
 
 impl Thresholds {
+    /// The thresholds configured under `[sync]`.
+    #[must_use]
+    pub fn from_sync(sync: &frob_ledger::config::SyncTable) -> Self {
+        Self {
+            ttl_secs: sync.ttl_secs,
+            warn_after_secs: sync.warn_after_secs,
+            stale_error_secs: sync.stale_error_secs,
+        }
+    }
+
     /// The design defaults around the configured `ttl_secs`.
     #[must_use]
     pub fn with_ttl(ttl_secs: u32) -> Self {
