@@ -1,12 +1,27 @@
 //! The `refresh` verb: probe the configured remote for freshness and report the cached answer (`distributed-tickets.md` section 5).
 //!
-//! DT05 covers the probe and its state only; fetch, integrate and publish belong to the
-//! follow-up ticket. `--status` reads the cache and never touches the network.
+//! After a healthy probe the verb fetches only the changed refs (base and ledger branch), unions
+//! the ledger into the local ref by plumbing, publishes it with a server-side compare-and-swap and
+//! fast-forwards the base when that is safe (`distributed-tickets.md` sections 3.2, 4.6, 5.1).
+//! `--status` reads the cache and never touches the network.
 
 // frob:ticket 01M5CW046DKVK5QSJR8TMEN0F2
+// frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+// frob:ticket 01M5CW04D5QJCJ5S72V8PE22M6
+
+mod freshness;
+
+use std::time::Duration;
+
+use self::freshness::{FreshState, Notice, Signals, Thresholds, assess};
+use frob_ledger::Ledger;
+use frob_ledger::objects::integrate::Integration;
+use gob_git::{MergeOutcome, RemoteRun, Repo};
 
 use frob_ledger::RefMode;
-use frob_ledger::refresh::{ProbeClass, ProbeMode, ProbeOutcome, ProbeReport, RefreshState, probe};
+use frob_ledger::refresh::{
+    ProbeClass, ProbeMode, ProbeOutcome, ProbeReport, RefreshLock, RefreshState, probe,
+};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
 use gob_diagnostics::{Refusal, RefusalClass};
@@ -59,7 +74,27 @@ pub struct RefreshReport {
     pub base: String,
     /// Problem text, empty when ok.
     pub detail: String,
+    /// What happened to the ledger ref: `none`, `unchanged`, `created`, `fast-forward`, `merged` or `conflict`.
+    pub ledger: String,
+    /// Whether the ledger branch was published to the remote.
+    pub pushed: bool,
+    /// What happened to the local base: `none`, `up-to-date`, `fast-forwarded`, `ahead`, `diverged` or `skipped-<why>`.
+    pub base_sync: String,
+    /// Paths the ledger union could not resolve.
+    pub conflicts: Vec<String>,
+    /// Seconds since the last probe; `None` when never probed or local-only.
+    pub age_secs: Option<i64>,
+    /// How the cached view relates to the remote: `fresh`, `stale`, `degraded`, `unknown` or `local-only`.
+    pub freshness: FreshState,
+    /// Ranked `W-SYNC-*` / `E-SYNC-*` notices, highest first; also in the envelope warnings.
+    pub notices: Vec<Notice>,
 }
+
+/// Longest a fetch or push may run before it is killed (nothing changes when it is).
+const FETCH_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Re-integrate attempts after a lost compare-and-swap, local or remote.
+const SYNC_ATTEMPTS: usize = 3;
 
 impl Command for Refresh {
     type Data = RefreshReport;
@@ -89,7 +124,16 @@ impl Command for Refresh {
             } else {
                 state.status_line(now, cfg.sync.ttl_secs)
             };
-            return Ok(render(report(&state, status, "status", false)));
+            let has_remote = repo.remote_url(&cfg.sync.remote).is_some();
+            let out = render(report(&state, status, "status", false));
+            return Ok(with_freshness(
+                out,
+                &state,
+                has_remote,
+                Signals::default(),
+                now,
+                cfg.sync.ttl_secs,
+            ));
         }
         let ledger = cfg.ledger();
         let ledger_branch = (ledger.mode == RefMode::Orphan).then_some(ledger.branch.as_str());
@@ -106,7 +150,270 @@ impl Command for Refresh {
             ))
         })?;
         tracing::info!(outcome = ?done.outcome, class = ?done.state.class, "refresh");
-        finish(&done, now, cfg.sync.ttl_secs)
+        let mut out = finish(&done, now, cfg.sync.ttl_secs)?;
+        if done.state.class == ProbeClass::Ok
+            && !matches!(done.outcome, ProbeOutcome::Busy | ProbeOutcome::LocalOnly)
+        {
+            let ledger = Ledger::open(repo.clone(), ledger.clone(), ctx.clock.clone());
+            let plan = SyncPlan {
+                remote: &cfg.sync.remote,
+                base: short(&base),
+                ledger_branch: ledger_branch.map(short),
+            };
+            sync(&ledger, &plan, &mut out.data)?;
+        }
+        let signals = Signals {
+            diverged: out.data.base_sync == "diverged",
+            ledger_conflict: false,
+            base_blocked: out.data.base_sync == "skipped-local-changes",
+        };
+        let has_remote = done.outcome != ProbeOutcome::LocalOnly;
+        Ok(with_freshness(
+            out,
+            &done.state,
+            has_remote,
+            signals,
+            now,
+            cfg.sync.ttl_secs,
+        ))
+    }
+}
+
+/// Which remote and branches one sync touches.
+struct SyncPlan<'a> {
+    remote: &'a str,
+    base: &'a str,
+    ledger_branch: Option<&'a str>,
+}
+
+/// `main` for both `main` and `refs/heads/main`.
+fn short(name: &str) -> &str {
+    name.strip_prefix("refs/heads/").unwrap_or(name)
+}
+
+/// The tracking ref a fetch of `branch` fills.
+fn tracking(remote: &str, branch: &str) -> String {
+    format!("refs/remotes/{remote}/{branch}")
+}
+
+/// The refspec that fetches only `branch` into its tracking ref.
+fn refspec(remote: &str, branch: &str) -> String {
+    format!("+refs/heads/{branch}:{}", tracking(remote, branch))
+}
+
+/// A retryable refusal.
+fn retry(code: &str, msg: String) -> CliError {
+    Refusal::new(code, RefusalClass::GuardRetryByWaiting, msg).into()
+}
+
+/// A git failure (spawn, ref, object) as an internal-looking domain refusal.
+fn git_err(e: &impl std::fmt::Display) -> CliError {
+    Refusal::new("E-SYNC-GIT", RefusalClass::DomainNegative, e.to_string()).into()
+}
+
+/// Map a failed fetch or push to the retryable refusal that names why.
+fn run_refusal(what: &str, run: &RemoteRun) -> Option<CliError> {
+    match run {
+        RemoteRun::Done => None,
+        RemoteRun::TimedOut => Some(retry(
+            "W-SYNC-TIMEOUT",
+            format!("{what} timed out after {}s", FETCH_TIMEOUT.as_secs()),
+        )),
+        RemoteRun::Rejected(t) => Some(retry(
+            "W-SYNC-RACE",
+            format!(
+                "{what} lost a race with another writer; run refresh again: {}",
+                t.trim()
+            ),
+        )),
+        RemoteRun::Failed { text, .. } => {
+            let lower = text.to_lowercase();
+            let code = if [
+                "authentication",
+                "permission denied",
+                "could not read username",
+            ]
+            .iter()
+            .any(|m| lower.contains(m))
+            {
+                "W-SYNC-AUTH"
+            } else {
+                "W-SYNC-OFFLINE"
+            };
+            Some(retry(code, format!("{what} failed: {}", text.trim())))
+        }
+    }
+}
+
+/// Fetch one branch; `Ok(false)` when the remote has no such branch.
+fn fetch_branch(repo: &Repo, plan: &SyncPlan<'_>, branch: &str) -> Result<bool, CliError> {
+    let run = repo
+        .fetch_refs(plan.remote, &[refspec(plan.remote, branch)], FETCH_TIMEOUT)
+        .map_err(|e| git_err(&e))?;
+    if let RemoteRun::Failed { text, .. } = &run
+        && text.contains("couldn't find remote ref")
+    {
+        tracing::info!(branch, "remote has no such branch yet");
+        return Ok(false);
+    }
+    match run_refusal(&format!("fetch of {branch}"), &run) {
+        Some(e) => Err(e),
+        None => Ok(true),
+    }
+}
+
+/// Fetch, integrate, publish and fast-forward, filling `rep`; a conflict is the only refusal that needs action.
+// frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+fn sync(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) -> Result<(), CliError> {
+    let repo = ledger.repo();
+    let Some(_lock) = RefreshLock::try_acquire(repo.common_dir()).map_err(|e| git_err(&e))? else {
+        tracing::info!("another refresh holds the lock; sync skipped");
+        return Ok(());
+    };
+    fetch_branch(repo, plan, plan.base)?;
+    let mut conflicts = Vec::new();
+    if let Some(branch) = plan.ledger_branch {
+        sync_ledger(ledger, plan, branch, rep, &mut conflicts)?;
+    }
+    rep.base_sync = fast_forward_base(repo, plan);
+    tracing::info!(ledger = %rep.ledger, pushed = rep.pushed, base = %rep.base_sync, "refresh sync done");
+    if conflicts.is_empty() {
+        return Ok(());
+    }
+    rep.conflicts = conflicts.iter().map(|(p, _)| p.clone()).collect();
+    let list = conflicts
+        .iter()
+        .map(|(p, why)| format!("{p}: {why}"))
+        .collect::<Vec<_>>()
+        .join("; ");
+    Err(Refusal::new(
+        "E-SYNC-CONFLICT",
+        RefusalClass::DomainNegative,
+        format!("the ledger cannot be united automatically ({list})"),
+    )
+    .with_remedy("resolve the listed ledger paths on the remote or locally, then run frob refresh")
+    .into())
+}
+
+/// Integrate the fetched ledger branch and publish the result, retrying on lost races.
+fn sync_ledger(
+    ledger: &Ledger,
+    plan: &SyncPlan<'_>,
+    branch: &str,
+    rep: &mut RefreshReport,
+    conflicts: &mut Vec<(String, String)>,
+) -> Result<(), CliError> {
+    let repo = ledger.repo();
+    let ours_ref = format!("refs/heads/{branch}");
+    let theirs_ref = tracking(plan.remote, branch);
+    let mut has_remote = fetch_branch(repo, plan, branch)?;
+    "unchanged".clone_into(&mut rep.ledger);
+    for attempt in 1..=SYNC_ATTEMPTS {
+        if has_remote {
+            match ledger.integrate(&ours_ref, &theirs_ref) {
+                Ok(Integration::Unchanged) => {}
+                Ok(Integration::Created(_)) => "created".clone_into(&mut rep.ledger),
+                Ok(Integration::FastForward(_)) => "fast-forward".clone_into(&mut rep.ledger),
+                Ok(Integration::Merged { .. }) => "merged".clone_into(&mut rep.ledger),
+                Ok(Integration::Conflicts(c)) => {
+                    "conflict".clone_into(&mut rep.ledger);
+                    conflicts.extend(c.into_iter().map(|c| (c.path, c.reason)));
+                    return Ok(());
+                }
+                Err(e) => return Err(git_err(&e)),
+            }
+        }
+        let Ok(local) = repo.rev_parse(&ours_ref) else {
+            return Ok(());
+        };
+        let remote_tip = repo.rev_parse(&theirs_ref).ok().filter(|_| has_remote);
+        if remote_tip == Some(local) {
+            return Ok(());
+        }
+        let expected = remote_tip.map(|o| o.to_string());
+        let run = repo
+            .push_cas(
+                plan.remote,
+                &ours_ref,
+                &ours_ref,
+                expected.as_deref(),
+                FETCH_TIMEOUT,
+            )
+            .map_err(|e| git_err(&e))?;
+        if let RemoteRun::Rejected(_) = run
+            && attempt < SYNC_ATTEMPTS
+        {
+            tracing::warn!(
+                attempt,
+                "ledger push lost the race; fetching and integrating again"
+            );
+            has_remote = fetch_branch(repo, plan, branch)?;
+            continue;
+        }
+        if let Some(e) = run_refusal("push of the ledger", &run) {
+            return Err(e);
+        }
+        rep.pushed = true;
+        return Ok(());
+    }
+    Ok(())
+}
+
+/// Fast-forward the local base to its fetched tracking ref when nothing could be lost.
+fn fast_forward_base(repo: &Repo, plan: &SyncPlan<'_>) -> String {
+    use frob_land::LandLock;
+    let local_ref = format!("refs/heads/{}", plan.base);
+    let theirs_ref = tracking(plan.remote, plan.base);
+    let (Ok(local), Ok(theirs)) = (repo.rev_parse(&local_ref), repo.rev_parse(&theirs_ref)) else {
+        return "none".to_owned();
+    };
+    if local == theirs {
+        return "up-to-date".to_owned();
+    }
+    let Ok(Some(mb)) = repo.merge_base(&local.to_string(), &theirs.to_string()) else {
+        return "diverged".to_owned();
+    };
+    if mb == theirs {
+        return "ahead".to_owned();
+    }
+    if mb != local {
+        return "diverged".to_owned();
+    }
+    let _land = match LandLock::acquire(repo.common_dir(), Duration::ZERO, "refresh") {
+        Ok(l) => l,
+        Err(e) => {
+            tracing::info!(error = %e, "a land holds the lock; base not moved");
+            return "skipped-landing".to_owned();
+        }
+    };
+    let checked_out = repo.list_worktrees().ok().and_then(|w| {
+        w.into_iter()
+            .find(|w| w.branch.as_deref() == Some(plan.base))
+    });
+    let moved = match checked_out {
+        Some(w) => match repo.merge_branch(&w.path, &theirs_ref) {
+            Ok(MergeOutcome::FastForward | MergeOutcome::UpToDate) => Ok(()),
+            Ok(other) => Err(format!("unexpected merge result {other:?}")),
+            Err(e) => Err(e.to_string()),
+        },
+        None => repo
+            .update_ref_cas(
+                &local_ref,
+                Some(local),
+                theirs,
+                "frob refresh: fast-forward base",
+            )
+            .map_err(|e| e.to_string()),
+    };
+    match moved {
+        Ok(()) => {
+            tracing::info!(base = plan.base, to = %theirs, "base fast-forwarded");
+            "fast-forwarded".to_owned()
+        }
+        Err(why) => {
+            tracing::warn!(base = plan.base, %why, "base not fast-forwarded");
+            "skipped-local-changes".to_owned()
+        }
     }
 }
 
@@ -120,7 +427,37 @@ fn report(state: &RefreshState, status: String, outcome: &str, changed: bool) ->
         remote: state.remote.clone(),
         base: state.base.clone(),
         detail: state.detail.clone(),
+        ledger: "none".to_owned(),
+        pushed: false,
+        base_sync: "none".to_owned(),
+        conflicts: Vec::new(),
+        age_secs: None,
+        freshness: FreshState::Unknown,
+        notices: Vec::new(),
     }
+}
+
+/// Fill the freshness fields of `out` from the cache at `now` and put the ranked notices in its warnings.
+fn with_freshness(
+    mut out: Payload<RefreshReport>,
+    state: &RefreshState,
+    has_remote: bool,
+    signals: Signals,
+    now: i64,
+    ttl_secs: u32,
+) -> Payload<RefreshReport> {
+    let fresh = assess(
+        state,
+        has_remote,
+        signals,
+        now,
+        Thresholds::with_ttl(ttl_secs),
+    );
+    out.warnings.extend(fresh.messages());
+    out.data.age_secs = fresh.age_secs;
+    out.data.freshness = fresh.state;
+    out.data.notices = fresh.notices;
+    out
 }
 
 /// The payload whose rendered text is the one status line.

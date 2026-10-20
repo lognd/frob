@@ -291,6 +291,113 @@ impl Repo {
         }
     }
 
+    /// Move `ref_name` from `expected` (`None` = must not exist) to `new` by compare-and-swap, touching no checkout.
+    ///
+    /// Used to fast-forward a ref to a fetched commit; the caller has already proved `new` descends from `expected`.
+    ///
+    /// # Errors
+    /// [`GitError::Unsupported`] when the ref is checked out here (its files would go stale),
+    /// [`GitError::CasExhausted`] when the ref moved meanwhile, [`GitError::NoIdentity`] without an author.
+    // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+    pub fn update_ref_cas(
+        &self,
+        ref_name: &str,
+        expected: Option<Oid>,
+        new: Oid,
+        message: &str,
+    ) -> Result<(), GitError> {
+        let full = full_ref_name(ref_name);
+        if self.is_checked_out(&full)? {
+            return Err(GitError::Unsupported(format!(
+                "{full} is checked out here; refusing to move it under the work tree"
+            )));
+        }
+        let sig = self.signature(None)?;
+        match self.cas(&full, expected, new, &sig, message) {
+            Ok(()) => {
+                info!(ref_name = %full, from = ?expected, to = %new, "ref moved by cas");
+                Ok(())
+            }
+            Err(CasError::Lost(why)) => {
+                warn!(ref_name = %full, %why, "ref cas lost");
+                Err(GitError::CasExhausted {
+                    ref_name: full,
+                    attempts: 1,
+                })
+            }
+            Err(CasError::Fatal(e)) => Err(e),
+        }
+    }
+
+    /// Write a two-parent merge commit (`ours`, `theirs`) whose tree is `ours` plus `changes`, and move `ref_name` from `ours` to it by compare-and-swap.
+    ///
+    /// Cost is proportional to the changed paths: the tree is edited, never rebuilt. One attempt only,
+    /// because `changes` were computed against `ours`; the caller re-integrates after a loss.
+    ///
+    /// # Errors
+    /// [`GitError::Unsupported`] when the ref is checked out here, [`GitError::CasExhausted`] when the ref
+    /// is no longer at `ours`, [`GitError::NoIdentity`] without an author, plus object and ref failures.
+    // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+    pub fn commit_merge(
+        &self,
+        ref_name: &str,
+        ours: Oid,
+        theirs: Oid,
+        changes: &[(RelPath, Option<Vec<u8>>)],
+        message: &str,
+        opts: &CommitOptions,
+    ) -> Result<Oid, GitError> {
+        let full = full_ref_name(ref_name);
+        if self.is_checked_out(&full)? {
+            return Err(GitError::Unsupported(format!(
+                "{full} is checked out here; refusing to merge under the work tree"
+            )));
+        }
+        let sig = self.signature(opts.author.clone())?;
+        let planned = self.plan(changes)?;
+        let base_tree = self.tree_of(&ours)?.id;
+        let tree = self.build_tree(base_tree, &planned)?;
+        let commit = gix::objs::Commit {
+            tree,
+            parents: vec![ours, theirs].into(),
+            author: sig.clone(),
+            committer: sig.clone(),
+            encoding: None,
+            message: message.into(),
+            extra_headers: Vec::new(),
+        };
+        let new_id = self.gix.write_object(&commit).map_err(odb_err)?.detach();
+        match self.cas(&full, Some(ours), new_id, &sig, message) {
+            Ok(()) => {
+                info!(ref_name = %full, %new_id, %ours, %theirs, paths = planned.len(), "merge commit");
+                Ok(new_id)
+            }
+            Err(CasError::Lost(why)) => {
+                warn!(ref_name = %full, %why, "merge cas lost");
+                Err(GitError::CasExhausted {
+                    ref_name: full,
+                    attempts: 1,
+                })
+            }
+            Err(CasError::Fatal(e)) => Err(e),
+        }
+    }
+
+    /// The author/committer signature: `author` or the git config user, stamped now.
+    fn signature(
+        &self,
+        author: Option<(String, String)>,
+    ) -> Result<gix::actor::Signature, GitError> {
+        let (name, email) = author
+            .or_else(|| self.config_user())
+            .ok_or(GitError::NoIdentity)?;
+        Ok(gix::actor::Signature {
+            name: name.into(),
+            email: email.into(),
+            time: gix::date::Time::now_utc(),
+        })
+    }
+
     fn plan<'a>(
         &self,
         changes: &'a [(RelPath, Option<Vec<u8>>)],

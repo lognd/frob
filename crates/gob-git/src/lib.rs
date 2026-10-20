@@ -33,7 +33,10 @@ pub use gob_path::PathError;
 pub use ledger::{CommitOptions, CommitOutcome, UnsyncedCheckout};
 pub use read::{Head, Repo, WorktreeInfo};
 pub use relpath::RelPath;
-pub use remote::{RemoteProbe, RemoteRef, batch_ssh_command, parse_head_symref, parse_ls_remote};
+pub use remote::{
+    RemoteProbe, RemoteRef, RemoteRun, batch_ssh_command, is_push_rejection, parse_head_symref,
+    parse_ls_remote,
+};
 pub use spawn::SpawnClass;
 pub use status::{ChangeKind, ChangedPath, StatusEntry, StatusKind, StatusOptions, TreeRef};
 pub use tag::{CommitInfo, TagInfo};
