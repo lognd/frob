@@ -4,9 +4,10 @@ title = "Frob rule corpora: add the vacuous (reason=vacuous) case for must_measu
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T21:04:48Z"
-updated = "2026-10-19T21:04:48Z"
+updated = "2026-10-20T00:58:40Z"
 scope = ["crates/*/tests/mdtest/**"]
 +++
 
