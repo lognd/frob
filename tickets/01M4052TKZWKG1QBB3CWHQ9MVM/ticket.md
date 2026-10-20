@@ -11,7 +11,7 @@ created = "2026-10-03T05:51:38Z"
 updated = "2026-10-20T06:49:01Z"
 idempotency_key = "m2-mirror2-accept-guards"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob/src/ticket/proposals_accept.rs", "crates/frob/src/ticket/mod.rs"]
+scope = ["crates/frob/src/ticket/proposals_accept.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/it/ticket_proposals_accept.rs"]
 
 [[links]]
 kind = "blocked-by"
