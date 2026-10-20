@@ -2,13 +2,13 @@
 id = "01M5CW05FBNNJEAP2QQJ2S1737"
 title = "Epic claims cover their leaves"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T14:38:43Z"
+updated = "2026-10-20T20:56:49Z"
 idempotency_key = "dt-DT17"
 
 [[links]]
