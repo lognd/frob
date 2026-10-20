@@ -2,12 +2,12 @@
 id = "01M5BA1W8S9BW9Z47AV2ZKVEX0"
 title = "Mirror recreate: read [mirror] repo/kid/bot_ids from FrobConfig instead of env vars"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T00:05:50Z"
-updated = "2026-10-20T00:25:28Z"
+updated = "2026-10-20T00:25:29Z"
 scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/config.rs"]
 +++
 
