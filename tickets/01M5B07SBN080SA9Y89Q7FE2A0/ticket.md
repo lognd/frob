@@ -12,7 +12,7 @@ scope = ["crates/frob-mirror/src/shardstore.rs"]
 
 [[acceptance]]
 text = "The shard store writes .toml files carrying issue = N, and get returns the exact bytes put"
-bound = false
+bound = true
 +++
 
 found while working ~1KH6CCV
