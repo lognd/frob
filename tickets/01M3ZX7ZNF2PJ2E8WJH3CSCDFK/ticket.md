@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-20T04:18:42Z"
+updated = "2026-10-20T04:22:56Z"
 idempotency_key = "m2-diag-teach-state"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/gob-diagnostics/src/teach.rs", "crates/gob-config/src/**", "crates/gob-diagnostics/Cargo.toml", "crates/gob-diagnostics/src/lib.rs", "docs/design/diagnostics.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = 'Given `[ui] teach = "never"`, when check runs, then only help lines are printed, and with "always" the full text prints every time'
-bound = false
+bound = true
 +++
 
 Implements diagnostics.md sections 5 and 7.1.
