@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-20T03:14:20Z"
+digest = "002361310724c5821c0406630254f8b26f3cd095493b7ac5f078bdd193f4570e"
+exit_code = 0
+inline = """
+
+running 1 test
+test agent::status_exits_one_on_drift_and_zero_when_clean ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 330 filtered out; finished in 0.05s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running tests/it/main.rs (target/debug/deps/it-202c4dbe25a08e4f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-cli --test it status_exits_one_on_drift_and_zero_when_clean"
+size = 322
+status = "measured"
+at = "2026-10-20T03:14:20Z"
+actor = "lognd"
+rev = 1
