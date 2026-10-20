@@ -2,7 +2,8 @@
 id = "01M5CW03W58HQWBGDANP418XYE"
 title = "Fresh clones and CI get a local frob-tickets branch"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
