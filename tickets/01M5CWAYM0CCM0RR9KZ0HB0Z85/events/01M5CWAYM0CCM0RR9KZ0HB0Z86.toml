@@ -1,0 +1,11 @@
+kind = "create"
+title = "tickets.md section 10 still cites a [land] push key"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["docs/design/tickets.md"]
+acceptance = ["docs/design/tickets.md section 10 no longer cites a [land] push key; push is the frob land --push flag"]
+body = "found while working ~9XM2VJC: docs/design/tickets.md line ~754 says 'Push is opt-in ([land] push)'; no such config key exists (LandConfig in crates/frob-land/src/base_ci.rs has none; push is the frob land --push flag). Also note the land ordering bug in docs/design/distributed-tickets.md 1.4: finish pushes the base before the land/close events are written."
+at = "2026-10-20T14:44:36Z"
+actor = "lognd"
+rev = 1
