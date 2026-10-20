@@ -360,6 +360,16 @@ callee vocabulary, attribute, pack-declared pattern, or none; it is
 exposed as the U capability query `detectors(lang, atom) ->
 NotApplicable | None | Some(precision)`.
 
+### 9.6a Report caching and batched reads
+
+The architecture and PATH reports are pure in the walked file digests, the
+lock file and the `[grimble]` knobs (plus `large_lines`), so `grimble check`
+stores them as artifacts under the same digest as the binding summary
+(`grimble-check::report_cache`). A hit reads and parses no file. On a miss
+both passes share one git content reader (`Core::with_content`) instead of
+reopening the repository per file, and the PATH scan runs per file in
+parallel with a sequential, deterministic fold.
+
 ### 9.7 Orchestration and crates
 
 The check pipeline (walk, inputs, per-file and repo rules, exceptions,

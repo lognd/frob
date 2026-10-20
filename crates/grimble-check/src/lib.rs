@@ -47,6 +47,7 @@ pub mod model_view;
 pub mod packs;
 mod product;
 pub mod product_rules;
+pub mod report_cache;
 pub mod sibling;
 
 use std::collections::BTreeMap;

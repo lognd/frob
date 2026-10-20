@@ -2989,6 +2989,7 @@ dependencies = [
  "gob-mdtest",
  "gob-rules",
  "gob-text",
+ "rayon",
  "thiserror",
  "tracing",
  "tree-sitter",

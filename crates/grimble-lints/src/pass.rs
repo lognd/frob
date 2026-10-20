@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use gob_languages::Language;
 use gob_rules::{Finding, RuleId, Severity, UnresolvedReason};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
+use rayon::prelude::*;
 
 use crate::path::{self, Kind, Options};
 
@@ -108,13 +109,24 @@ pub fn analyze(files: &[PathFile<'_>], options: &Options) -> PathReport {
     let mut report = PathReport::default();
     let mut examined = [0usize; 3];
     let mut undecided: BTreeSet<(Kind, &'static str)> = BTreeSet::new();
-    for f in files {
-        let scanned = match path::scan(f.language, f.text, options) {
+    // The parse-and-scan of each file is independent and is the whole cost of the pass, so it
+    // runs on the rayon pool; the fold below stays sequential so the report is deterministic.
+    let scans: Vec<Result<path::Report, path::ScanError>> = files
+        .par_iter()
+        .map(|f| path::scan(f.language, f.text, options))
+        .collect();
+    for (f, scanned) in files.iter().zip(scans) {
+        let scanned = match scanned {
             Ok(r) => r,
             Err(err) => {
                 tracing::debug!(file = f.path, %err, "path scan skipped an unparsable file");
                 continue;
             }
+        };
+        let lines: Vec<&str> = if scanned.sites.is_empty() {
+            Vec::new()
+        } else {
+            f.text.lines().collect()
         };
         if scanned_any(f.language) {
             examined[0] += 1;
@@ -131,11 +143,7 @@ pub fn analyze(files: &[PathFile<'_>], options: &Options) -> PathReport {
                 u32::from(site.range.start()) as usize,
                 u32::from(site.range.end()) as usize,
             );
-            let line_text = f
-                .text
-                .lines()
-                .nth(site.line.saturating_sub(1))
-                .unwrap_or("");
+            let line_text = lines.get(site.line.saturating_sub(1)).copied().unwrap_or("");
             report.findings.push(PathFinding {
                 rule: site.kind.rule_id(),
                 severity,

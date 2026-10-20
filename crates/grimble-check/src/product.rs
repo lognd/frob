@@ -20,6 +20,7 @@ use crate::bind_cache::{self, BindSummary};
 use crate::config::{GrimbleTable, PRODUCT};
 use crate::fidelity::language_tag;
 use crate::model_view::ModelView;
+use crate::report_cache;
 use crate::{bind_models, read_models};
 
 /// Extension of a model file.
@@ -241,6 +242,60 @@ fn remap(findings: Vec<Finding>, from: &FileInterner, to: &mut FileInterner) -> 
         .collect()
 }
 
+/// The architecture and PATH reports of the walk, from the cache when `digest` has them.
+fn reports(cx: &mut CollectCx<'_>, digest: &str, table: &GrimbleTable) -> (ArchReport, PathReport) {
+    // The architecture and PATH reports are pure in the same digest plus `large_lines`, so a
+    // hit skips reading and parsing every file (~SNJ3PH5).
+    let started = std::time::Instant::now();
+    let engine = cx.cache.engine().to_owned();
+    let arch_key = report_cache::key("arch", digest, &engine, table.large_lines);
+    let path_key = report_cache::key("path", digest, &engine, table.large_lines);
+    let arch_hit = cx
+        .cache
+        .get_artifact(&arch_key)
+        .and_then(|b| report_cache::decode_arch(&b));
+    let path_hit = cx
+        .cache
+        .get_artifact(&path_key)
+        .and_then(|b| report_cache::decode_path(&b));
+    let (arch_cached, path_cached) = (arch_hit.is_some(), path_hit.is_some());
+    let (arch, path) = if let (Some(arch), Some(path)) = (arch_hit.clone(), path_hit.clone()) {
+        tracing::info!(digest = %digest, "architecture and path reports reused from cache");
+        (arch, path)
+    } else {
+        // One reader for both passes: `Core::text` opens the repository per call, which on
+        // a 20k-file walk is the dominant cost of the run.
+        let (arch, arch_took, path, path_took) = cx.core.with_content(|reader| {
+            let reader = std::cell::RefCell::new(reader);
+            let read = |p: &str| reader.borrow_mut().read_text(p).ok();
+            let started = std::time::Instant::now();
+            let arch = arch_hit
+                .unwrap_or_else(|| arch_report(&cx.core.root, &cx.core.entries, table, &read));
+            let arch_took = started.elapsed();
+            let started = std::time::Instant::now();
+            let path = path_hit.unwrap_or_else(|| path_report(&cx.core.entries, &read));
+            (arch, arch_took, path, started.elapsed())
+        });
+        if !arch_cached {
+            cx.cache
+                .put_artifact(&arch_key, &report_cache::encode_arch(&arch));
+        }
+        if !path_cached {
+            cx.cache
+                .put_artifact(&path_key, &report_cache::encode_path(&path));
+        }
+        tracing::info!(
+            ?arch_took,
+            ?path_took,
+            "architecture and path reports computed"
+        );
+        (arch, path)
+    };
+    cx.timing.push("architecture", started.elapsed(), false);
+    cx.timing.push("path", std::time::Duration::ZERO, false);
+    (arch, path)
+}
+
 impl Product for Grimble {
     type Shared = GrimbleShared;
     type Inputs = GrimbleInputs;
@@ -287,14 +342,7 @@ impl Product for Grimble {
             summary
         };
         cx.timing.push("binding", started.elapsed(), true);
-        let started = std::time::Instant::now();
-        let arch = arch_report(&cx.core.root, &cx.core.entries, &table, &|p| {
-            cx.core.text(p).ok()
-        });
-        cx.timing.push("architecture", started.elapsed(), false);
-        let started = std::time::Instant::now();
-        let path = path_report(&cx.core.entries, &|p| cx.core.text(p).ok());
-        cx.timing.push("path", started.elapsed(), false);
+        let (arch, path) = reports(cx, &digest, &table);
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
             trace.view = Some(Arc::clone(&view));

@@ -1,0 +1,1 @@
+grimble: `grimble check` and `grimble exceptions list` no longer reopen the git content reader per file, scan PATH sites in parallel, and cache the architecture and PATH reports by the binding digest, so a warm run drops from about 11s to under 1s on a 21k-file tree (~SNJ3PH5).
