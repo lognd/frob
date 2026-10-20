@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use frob_lease::LeaseError;
 use frob_ledger::LedgerError;
 use gob_cli::CliError;
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use gob_git::GitError;
 
 /// Why a worktree verb did not complete.
@@ -69,7 +69,11 @@ impl From<WorktreeError> for CliError {
                 RefusalClass::GuardNeedsAction,
                 format!("{} exists and is not a git worktree", Shown::of(&p)),
             )
-            .with_remedy("frob work <ticket> --worktree <another path>")
+            .with_command(
+                RemedyCommand::new("frob", "work")
+                    .arg("<ticket>")
+                    .flag("worktree", "<another path>"),
+            )
             .into(),
             WorktreeError::Usage(m) => Self::Usage(m),
             WorktreeError::Config(m) => Refusal::new("E-CONFIG", RefusalClass::GuardNeedsAction, m)

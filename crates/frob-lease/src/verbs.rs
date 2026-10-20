@@ -3,6 +3,7 @@
 use frob_ledger::TicketId;
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use gob_diagnostics::RemedyCommand;
 use gob_path::Shown;
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -20,18 +21,23 @@ impl From<LeaseError> for CliError {
                 let r = match &e {
                     LeaseError::Held {
                         ticket, overlap, ..
-                    } if overlap == SAME_TICKET => r.with_remedy(format!(
-                        "wait and rerun, or take it over with `frob work {ticket} --steal --reason <why>`"
-                    )),
+                    } if overlap == SAME_TICKET => r.with_command(
+                        RemedyCommand::new("frob", "work")
+                            .arg(ticket.to_string())
+                            .switch("steal")
+                            .flag("reason", "<why>"),
+                    ),
                     // frob:ticket 01M418TM2GZ24YPQE7ECTKE1J4
                     LeaseError::Held {
                         ticket, overlap, ..
                     } if overlap_is_lockfiles(overlap) => r.with_remedy(format!(
                         "the overlap is only generated lockfiles: ({overlap}) add them to `[lease] shared_files` in frob.toml, or delete that key to get the default lockfile list, so tickets can run in parallel; or wait until the lease on {ticket} ends"
                     )),
-                    LeaseError::Held { ticket, .. } => r.with_remedy(format!(
-                        "wait until the lease on {ticket} ends (`frob requeue {ticket} --reason <why>` frees it), then rerun"
-                    )),
+                    LeaseError::Held { ticket, .. } => r.with_command(
+                        RemedyCommand::new("frob", "requeue")
+                            .arg(ticket.to_string())
+                            .flag("reason", "<why>"),
+                    ),
                     LeaseError::Queued { waiter, .. } => r.with_remedy(format!(
                         "ticket {waiter} is queued first for this scope; wait for it, or queue yourself with `--wait <secs>`"
                     )),

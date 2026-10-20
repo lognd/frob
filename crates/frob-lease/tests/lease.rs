@@ -863,6 +863,9 @@ fn a_lockfile_only_overlap_names_shared_files_in_the_remedy() {
     let gob_cli::CliError::Refusal(r) = gob_cli::CliError::from(err) else {
         panic!("not a refusal")
     };
+    let cmd = r.command.as_deref().expect("structured command");
+    assert_eq!(cmd.verb_path(), "requeue");
+    assert!(cmd.flags.iter().any(|f| f.name == "reason"));
     assert!(!r.remedy.expect("remedy").contains("shared_files"));
 }
 
