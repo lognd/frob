@@ -2,7 +2,8 @@
 id = "01M41S1SMY1V34MP6Y4YGK8FGN"
 title = "Persisted types hold RelPath only: ledger, locks, findings JSON, config"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M41S1JXXN380WPE29ATR5EP7"
