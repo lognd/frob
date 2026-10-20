@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
 updated = "2026-10-20T23:03:54Z"
 idempotency_key = "dt-DT21"
-scope = ["crates/frob-land/src/relaunch.rs", "crates/frob-land/src/land.rs", "crates/frob-land/src/lib.rs", "crates/frob-land/src/verb.rs", "crates/frob-land/tests/land.rs", "docs/design/distributed-tickets.md"]
+scope = ["crates/frob-land/src/relaunch.rs", "crates/frob-land/src/land.rs", "crates/frob-land/src/lib.rs", "crates/frob-land/src/verb.rs", "crates/frob-land/tests/land.rs", "docs/design/distributed-tickets.md", "changelog.d/01M5CW05WX0TMSBKDFTPEHB5R3.added.md"]
 
 [[links]]
 kind = "blocked-by"
