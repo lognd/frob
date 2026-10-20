@@ -2,7 +2,8 @@
 id = "01M5CW0557C2HYG7KZBV3Y6VBJ"
 title = "Claim holds and pauses"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
