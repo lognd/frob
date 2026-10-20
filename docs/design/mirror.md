@@ -193,6 +193,12 @@ and in `frob mirror status`.
   issues whose update time passed the stored observed value get a
   history read. Ledger-driven work comes from tickets with unpublished
   events. Both sources select work (F1: not only ledger changes).
+  Implemented in `frob_mirror::feed`: `read_feed` pages a `FeedSource`
+  (GraphQL `filterBy {createdBy, since}`, `orderBy UPDATED_AT ASC`, 100 per
+  query), sorts by update time and returns the new cursor; `parse_page`
+  fails the page on any `errors` entry or partial data, so the cursor does
+  not advance. `needs_history` selects only issues whose update time is
+  past the shard's observed `updated_at`.
 - **Sweep.** Each run also reconciles the next K issues of a persisted
   round-robin cursor, so every issue is visited within ceil(N/K) runs
   even when the feed misses a change (repository-level renames do not

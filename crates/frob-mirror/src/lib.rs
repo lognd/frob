@@ -10,6 +10,7 @@ pub mod config;
 pub mod create;
 pub mod cursor;
 pub mod dups;
+pub mod feed;
 pub mod fields;
 pub mod github;
 pub mod identity;
