@@ -1,0 +1,74 @@
+kind = "evidence"
+captured_at = "2026-10-20T20:24:27Z"
+digest = "b1fea772b8d23d7b6e7b7b92ae8517818260aa7821d3ecb853b1d0ee32cdbe3f"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 37s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 67b660d3-c5df-4e66-b06b-85b36a618f08 with nextest profile: default
+    Starting 1 test across 330 binaries (4056 tests skipped)
+        PASS [   0.007s] frob-ledger error::tests::remedies_are_structured_commands
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 4056 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "remedies_are_structured_commands"
+size = 3894
+status = "measured"
+test_count = 1
+tests_digest = "dade9a3ebe6bd32a926fa03733a26b10957677ade92b0ac2055bc15e751964d7"
+at = "2026-10-20T20:24:27Z"
+actor = "lognd"
+rev = 1
