@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
 updated = "2026-10-20T21:48:32Z"
 idempotency_key = "dt-DT18"
-scope = ["crates/frob-worktree/src/anyway.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/work.rs"]
+scope = ["crates/frob-worktree/src/anyway.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs"]
 
 [[links]]
 kind = "blocked-by"
