@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:38Z"
 updated = "2026-10-20T04:16:01Z"
 idempotency_key = "m2-diag-teach-state"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/gob-diagnostics/src/teach.rs", "crates/gob-config/src/**", "crates/gob-diagnostics/Cargo.toml", "crates/gob-diagnostics/src/lib.rs"]
+scope = ["crates/gob-diagnostics/src/teach.rs", "crates/gob-config/src/**", "crates/gob-diagnostics/Cargo.toml", "crates/gob-diagnostics/src/lib.rs", "docs/design/diagnostics.md"]
 
 [[links]]
 kind = "blocked-by"
