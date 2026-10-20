@@ -2,7 +2,8 @@
 id = "01M5B0BX1CW144V1TBESNK1YNQ"
 title = "docs/design/mirror.md: rename TICK008 ledger-branch-workflow to TICK010"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
