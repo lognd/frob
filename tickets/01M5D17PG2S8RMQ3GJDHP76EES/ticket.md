@@ -4,9 +4,10 @@ title = "DT04 flip step: goway with_refs, frob.toml orphan mode and ticket migra
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T16:10:12Z"
-updated = "2026-10-20T16:15:12Z"
+updated = "2026-10-20T16:53:02Z"
 scope = ["goway.toml", "frob.toml", ".gitattributes"]
 
 [[links]]
