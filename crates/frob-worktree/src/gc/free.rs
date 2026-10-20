@@ -25,6 +25,6 @@ pub fn free_bytes(path: &Path) -> Option<u64> {
 /// Free space is not measured on this platform, so the guard never forces a pass.
 #[cfg(not(unix))]
 pub fn free_bytes(path: &Path) -> Option<u64> {
-    tracing::debug!(path = %path.display(), "free space is not measured on this platform");
+    tracing::debug!(path = %Shown::of(path), "free space is not measured on this platform");
     None
 }

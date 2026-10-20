@@ -1,5 +1,6 @@
 //! TypeScript tests: vitest and jest selection, runs through fake runners, and the missing-tool refusal (~RNQ92ZK).
 
+#[cfg(unix)]
 use gob_path::Shown;
 use std::path::Path;
 

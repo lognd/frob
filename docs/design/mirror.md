@@ -368,6 +368,14 @@ and in `frob mirror status`.
   proposals and capture gaps. Own writes are skipped; a bot id with no
   journaled write is unknown automation; tracker-owned fields are untouched.
   It returns data and never an error, so MIR002 stays Advisory.
+  Revert wars end in `frob_mirror::contest`: `ContestBook::observe` takes what a
+  run saw for one (item, field) and returns `Decision`. The n-th re-application
+  by the same actor is reverted only after 2^n runs saw it (1, 2, 4) and at most
+  once a day; the third makes the field contested (MIR002 Advisory): no more
+  reverts and `Decision::Propose` carries the latest value for the one pending
+  proposal. `ContestBook::clear` (ledger event on the field, accept or decline)
+  ends the contested state; `ContestBook::contested` lists `ContestedField`s for
+  `frob mirror status`.
 - **What "nothing is lost" means, precisely** (MIR-AUD-03). The value
   present at read time is always captured (read-time capture compares
   it with the last observed value). Intermediate values and authors are
