@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["scripts/claude-hooks/**", "tests/claude_hooks/**"]
+new = ["scripts/claude-hooks/**", "tests/claude_hooks/**", "docs/guides/claude-hooks.md"]
+at = "2026-10-20T02:24:42Z"
+actor = "lognd"
+rev = 1

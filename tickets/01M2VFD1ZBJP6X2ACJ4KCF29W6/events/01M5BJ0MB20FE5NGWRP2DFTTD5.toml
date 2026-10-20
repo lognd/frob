@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-20T02:24:57Z"
+digest = "378f141e9fdb1b14e351e24f0d373906fa0845101294f70cdd0762abeba0d5fe"
+exit_code = 0
+inline = """
+.                                                                        [100%]
+1 passed in 0.07s
+"""
+passed = true
+provider = "command"
+ref = "pytest -q tests/claude_hooks/test_frob_suggest.py::test_stale_ack_is_ignored_with_notice"
+size = 98
+status = "measured"
+at = "2026-10-20T02:24:57Z"
+actor = "lognd"
+rev = 1
