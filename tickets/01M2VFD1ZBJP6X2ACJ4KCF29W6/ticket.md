@@ -7,7 +7,7 @@ priority = "low"
 parent = "01M2VFD1ZDWWNTW1FFGKHCKTS3"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-10-20T02:24:57Z"
+updated = "2026-10-20T02:24:58Z"
 aliases = ["T-5099"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 scope = [".claude/hooks/*", "tests/test_hook_frob_suggest.py", "docs/guides/*"]
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "a stale FROB_SUGGEST_ACK=1 prints a one-line notice and is ignored (not honored as a bypass)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "repo-shipped docs describing the ack (agent playbook or equivalent) are updated in the same change"
