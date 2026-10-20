@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-20T10:21:34Z"
+updated = "2026-10-20T10:21:37Z"
 idempotency_key = "m2-sec-plugin-fixes"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-rules/src/fix.rs", "crates/gob-check/src/fix_validate.rs", "crates/gob-rules/src/lib.rs", "crates/gob-check/src/lib.rs"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a plugin fix to frob.toml, when validated, then it is refused even with fix.machine"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.10 (fixes).
