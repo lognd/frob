@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:14:18Z"
-updated = "2026-10-19T23:57:50Z"
-scope = ["crates/gob-config/**"]
+updated = "2026-10-20T00:16:34Z"
+scope = ["crates/gob-config/**", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "[mirror] table (repo, kid, bot_ids) loads from frob.toml with defaults"
