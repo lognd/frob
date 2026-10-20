@@ -2,7 +2,8 @@
 id = "01M5AZPCETBRV1VZZ5E4GGFHTV"
 title = "Frob rule corpora: add the polarity-shaped unresolved case for 39 rules (see coverage-allowlist.toml kind=unresolved)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
