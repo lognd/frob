@@ -6,7 +6,8 @@ use std::time::Duration;
 
 use frob_worktree::claim::remote_claim;
 use frob_worktree::evict::{
-    BatchItem, EvictOutcome, EvictRequest, evict, evict_batch, parked_refs, read_park_record,
+    BatchItem, EvictOutcome, EvictRequest, RestoreOutcome, evict, evict_batch, parked_refs,
+    read_park_record, restore,
 };
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use gob_git::Repo;
@@ -200,4 +201,26 @@ fn no_remote_is_offline() {
     git(&fx.root, &["remote", "remove", "origin"]).expect("remove");
     let out = evict(&fx.repo(), &request("ABC", "deadbeef")).expect("evict");
     assert!(matches!(out, EvictOutcome::Offline(_)), "{out:?}");
+}
+
+// frob:tests restore
+#[test]
+fn restore_recreates_the_claim_from_parked_work_once() {
+    let Some(fx) = Fixture::new() else { return };
+    let Some(x) = fx.claim("RST") else { return };
+    let repo = fx.repo();
+    let out = evict(&repo, &request("RST", &x)).expect("evict");
+    let EvictOutcome::Evicted { parked } = out else {
+        panic!("expected eviction, got {out:?}");
+    };
+    assert_eq!(fx.tip("RST"), None);
+    let first = restore(&repo, "RST", &parked).expect("restore");
+    let RestoreOutcome::Restored { tip } = first else {
+        panic!("expected restore, got {first:?}");
+    };
+    assert_eq!(fx.tip("RST"), Some(tip));
+    assert_eq!(
+        restore(&repo, "RST", &parked).expect("restore again"),
+        RestoreOutcome::Taken
+    );
 }
