@@ -2,6 +2,7 @@
 // frob:ticket 01M4CTTQFF84AWJZKH89X572Y1
 #![cfg(unix)]
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -236,7 +237,7 @@ fn every_readme_and_guide_link_resolves() {
                 file.parent().expect("parent").join(path_part)
             };
             if !dest.exists() {
-                broken.push(format!("{}: {target}", file.display()));
+                broken.push(format!("{}: {target}", Shown::of(file)));
                 continue;
             }
             if let (Some(anchor), true) = (anchor, dest.is_file()) {
@@ -246,7 +247,7 @@ fn every_readme_and_guide_link_resolves() {
                     .filter_map(|l| l.strip_prefix('#'))
                     .any(|h| slug(h.trim_start_matches('#')) == anchor);
                 if !found {
-                    broken.push(format!("{}: {target} (no such heading)", file.display()));
+                    broken.push(format!("{}: {target} (no such heading)", Shown::of(file)));
                 }
             }
         }

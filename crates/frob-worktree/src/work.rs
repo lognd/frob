@@ -11,6 +11,7 @@
 
 // frob:ticket 01M40Q3S4T9QTYX0Z1MPAZP9JM
 
+use gob_path::Shown;
 use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
 
@@ -309,11 +310,11 @@ impl Workspace<'_> {
             warnings.push(format!(
                 "merging the base left {} conflicted path(s); resolve them in {}",
                 built.conflicts.len(),
-                path.display()
+                Shown::of(&path)
             ));
         }
         let already = !fresh && stolen_from.is_none() && !built.created && applied.already;
-        tracing::info!(ticket = %id, path = %path.display(), already, created = built.created, "ticket started");
+        tracing::info!(ticket = %id, path = %Shown::of(&path), already, created = built.created, "ticket started");
         Ok(Started {
             id,
             handle,
@@ -361,7 +362,7 @@ impl Workspace<'_> {
         let branch = format!("ticket/{}", handle.trim_start_matches('~'));
         let own =
             repo.is_linked_worktree() && repo.current_branch().ok()?.as_deref() == Some(&branch);
-        tracing::debug!(handle, here = %here.display(), own, "work: resumed worktree check");
+        tracing::debug!(handle, here = %Shown::of(here), own, "work: resumed worktree check");
         own.then(|| clean(here))
     }
 
@@ -470,7 +471,7 @@ impl Workspace<'_> {
             }
             if let Some(parent) = path.parent() {
                 std::fs::create_dir_all(parent).map_err(|e| {
-                    WorktreeError::Config(format!("creating {}: {e}", parent.display()))
+                    WorktreeError::Config(format!("creating {}: {e}", Shown::of(parent)))
                 })?;
             }
             repo.worktree_add(path, branch, &base)?;
@@ -480,7 +481,7 @@ impl Workspace<'_> {
             share_build_dir(repo.common_dir(), path);
             // frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
             seed_caches(&self.primary_root());
-            tracing::info!(ticket = %id, handle, path = %path.display(), branch, base = %base, aged, "worktree created");
+            tracing::info!(ticket = %id, handle, path = %Shown::of(path), branch, base = %base, aged, "worktree created");
         }
         let (merge, conflicts) = if exists {
             (None, Vec::new())
@@ -539,7 +540,7 @@ impl Workspace<'_> {
                 };
                 let dir_name = path
                     .file_name()
-                    .map_or_else(|| name.to_owned(), |n| n.to_string_lossy().into_owned());
+                    .map_or_else(|| name.to_owned(), crate::pathtext::name_text);
                 (path, Some(format!("ticket/{dir_name}")))
             }
         }
@@ -588,7 +589,7 @@ pub fn primary_root(ledger: &Ledger) -> PathBuf {
 pub fn worktree_parent(primary: &Path, config: &WorktreeConfig) -> PathBuf {
     let repo_name = primary
         .file_name()
-        .map_or_else(|| "repo".to_owned(), |n| n.to_string_lossy().into_owned());
+        .map_or_else(|| "repo".to_owned(), crate::pathtext::name_text);
     let dir = PathBuf::from(config.dir.replace("{repo}", &repo_name));
     let parent = if dir.is_absolute() {
         dir
@@ -691,7 +692,7 @@ fn ledger_relative(path: &Path, base: &Path) -> String {
     let join = |p: &Path| {
         p.components()
             .filter_map(|c| match c {
-                Component::Normal(n) => Some(n.to_string_lossy().into_owned()),
+                Component::Normal(n) => Some(crate::pathtext::name_text(n)),
                 _ => None,
             })
             .collect::<Vec<_>>()
@@ -715,7 +716,7 @@ pub fn normalize_mtimes(repo: &Repo, root: &Path) -> usize {
     let Some(commit_secs) = git_out(repo, root, &["log", "-1", "--format=%ct", "HEAD"])
         .and_then(|t| t.trim().parse::<u64>().ok())
     else {
-        tracing::debug!(root = %root.display(), "no commit time; mtimes left alone");
+        tracing::debug!(root = %Shown::of(root), "no commit time; mtimes left alone");
         return 0;
     };
     let Some(listing) = git_out(repo, root, &["ls-files", "-z"]) else {
@@ -790,19 +791,19 @@ pub fn share_build_dir(common: &Path, checkout: &Path) {
     let link = checkout.join("target");
     if let Ok(meta) = std::fs::symlink_metadata(&link) {
         if meta.file_type().is_symlink() && std::fs::metadata(&link).is_err() {
-            tracing::warn!(link = %link.display(), "dangling build directory link; repairing");
+            tracing::warn!(link = %Shown::of(&link), "dangling build directory link; repairing");
             if let Err(e) = std::fs::remove_file(&link) {
                 tracing::warn!(error = %e, "dangling link not removed; cargo stages run cold");
                 return;
             }
         } else {
-            tracing::debug!(link = %link.display(), "checkout already has a build directory");
+            tracing::debug!(link = %Shown::of(&link), "checkout already has a build directory");
             return;
         }
     }
     let shared = common.join("frob").join(SHARED_TARGET_DIR);
     if let Err(e) = std::fs::create_dir_all(&shared) {
-        tracing::warn!(error = %e, dir = %shared.display(), "shared build directory not created; cargo stages run cold");
+        tracing::warn!(error = %e, dir = %Shown::of(&shared), "shared build directory not created; cargo stages run cold");
         return;
     }
     // Canonical and absolute: `common` may be spelled through a worktree's git dir
@@ -810,7 +811,7 @@ pub fn share_build_dir(common: &Path, checkout: &Path) {
     let shared = match gob_exec::canonical(&shared) {
         Ok(p) => p,
         Err(e) => {
-            tracing::warn!(error = %e, dir = %shared.display(), "shared build directory not canonicalized; cargo stages run cold");
+            tracing::warn!(error = %e, dir = %Shown::of(&shared), "shared build directory not canonicalized; cargo stages run cold");
             return;
         }
     };
@@ -818,7 +819,7 @@ pub fn share_build_dir(common: &Path, checkout: &Path) {
     #[cfg(unix)]
     match std::os::unix::fs::symlink(&shared, &link) {
         Ok(()) => {
-            tracing::info!(shared = %shared.display(), checkout = %checkout.display(), "checkout shares the land build directory");
+            tracing::info!(shared = %Shown::of(&shared), checkout = %Shown::of(checkout), "checkout shares the land build directory");
         }
         Err(e) => {
             tracing::warn!(error = %e, "build directory not shared; cargo stages run cold");
@@ -845,8 +846,8 @@ fn exclude_target(common: &Path) {
         std::fs::create_dir_all(common.join("info")).and_then(|()| std::fs::write(&path, next));
     match result {
         Ok(()) => {
-            tracing::info!(path = %path.display(), "excluded /target for the shared build link");
+            tracing::info!(path = %Shown::of(&path), "excluded /target for the shared build link");
         }
-        Err(e) => tracing::warn!(path = %path.display(), error = %e, "could not exclude /target"),
+        Err(e) => tracing::warn!(path = %Shown::of(&path), error = %e, "could not exclude /target"),
     }
 }

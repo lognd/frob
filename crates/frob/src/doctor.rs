@@ -1,5 +1,6 @@
 //! `frob doctor`: report the environment; findings never make it fail.
 
+use gob_path::Shown;
 use std::collections::BTreeMap;
 use std::time::Duration;
 
@@ -311,7 +312,7 @@ fn sibling_row(runner: &Runner, product: &str, cwd: &std::path::Path) -> Sibling
     let other = found.other.as_deref().map(|p| {
         let other_version = version_of(p);
         OtherCopy {
-            path: p.display().to_string(),
+            path: Shown::of(p).to_string(),
             differs: other_version != version,
             version: other_version,
         }
@@ -319,7 +320,7 @@ fn sibling_row(runner: &Runner, product: &str, cwd: &std::path::Path) -> Sibling
     SiblingRow {
         product: product.to_owned(),
         location: found.origin.label().to_owned(),
-        path: Some(found.path.display().to_string()),
+        path: Some(Shown::of(&found.path).to_string()),
         version,
         other,
     }
@@ -413,7 +414,7 @@ impl Doctor {
         let path = located.root.join(format!("{PRODUCT}.toml"));
         let config = ConfigInfo {
             present: path.is_file(),
-            path: path.display().to_string(),
+            path: Shown::of(&path).to_string(),
             missing_knobs: findings.len(),
             error: config_error,
         };
@@ -446,7 +447,7 @@ impl Doctor {
         for c in &leases.corrupt {
             warnings.push(format!(
                 "corrupt lease file {} ({}); remedy: run `frob doctor --fix` to move it aside as <name>.toml.corrupt",
-                c.path.display(),
+                Shown::of(&c.path),
                 c.message
             ));
         }
@@ -546,7 +547,7 @@ fn languages_report(root: &std::path::Path, cfg: &FrobConfig) -> LanguagesReport
         } else {
             let ext = std::path::Path::new(&f.path)
                 .extension()
-                .and_then(|e| e.to_str())
+                .map(crate::pathtext::name_text)
                 .map_or_else(
                     || "(none)".to_owned(),
                     |e| format!(".{}", e.to_ascii_lowercase()),
@@ -603,7 +604,7 @@ fn git_info(located: &Located, cwd: &std::path::Path) -> GitInfo {
             branch: None,
             head: None,
             linked_worktree: false,
-            error: Some(format!("no git repository at or above {}", cwd.display())),
+            error: Some(format!("no git repository at or above {}", Shown::of(cwd))),
         };
     };
     let (branch, head, error) = match repo.head() {
@@ -612,7 +613,7 @@ fn git_info(located: &Located, cwd: &std::path::Path) -> GitInfo {
     };
     GitInfo {
         discovered: true,
-        root: repo.work_dir().map(|p| p.display().to_string()),
+        root: repo.work_dir().map(|p| Shown::of(p).to_string()),
         branch,
         head,
         linked_worktree: repo.is_linked_worktree(),
@@ -640,7 +641,7 @@ fn cache_info(located: &Located, cfg: &FrobConfig) -> CacheInfo {
     let stats = cache.stats();
     CacheInfo {
         state: if stats.null { "null-fallback" } else { "ok" }.to_owned(),
-        dir: Some(dir.display().to_string()),
+        dir: Some(Shown::of(&dir).to_string()),
         artifacts: stats.artifacts,
         findings: stats.findings,
         repo_rule: stats.repo_rule,
@@ -773,7 +774,7 @@ fn lease_info(
     };
     let quarantined = if fix && !corrupt.is_empty() {
         match store.quarantine_corrupt() {
-            Ok(moved) => Some(moved.iter().map(|p| p.display().to_string()).collect()),
+            Ok(moved) => Some(moved.iter().map(|p| Shown::of(p).to_string()).collect()),
             Err(e) => {
                 tracing::warn!(error = %e, "lease quarantine failed");
                 None

@@ -2,6 +2,7 @@
 
 // frob:ticket 01M4FD03W4D4XZZ3XBP32Q9XFQ
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -273,9 +274,9 @@ fn append_tool_stages(
         }
         text.push_str(stages);
         std::fs::write(&path, text)
-            .map_err(|e| CliError::internal(format!("cannot write {}: {e}", path.display())))?;
+            .map_err(|e| CliError::internal(format!("cannot write {}: {e}", Shown::of(&path))))?;
     }
-    tracing::info!(path = %path.display(), dry_run, prefix, "tool stages added");
+    tracing::info!(path = %Shown::of(&path), dry_run, prefix, "tool stages added");
     Ok(true)
 }
 
@@ -331,7 +332,7 @@ fn ensure_gitignore(root: &Path, dry_run: bool) -> Result<Step, CliError> {
         append_line(&path, &existing, ".frob/")?;
     }
     Ok(Step {
-        target: path.display().to_string(),
+        target: Shown::of(&path).to_string(),
         changed: !present,
     })
 }
@@ -357,15 +358,15 @@ fn ensure_gitattributes(
             }
             text.push_str(&line);
             text.push('\n');
-            tracing::info!(path = %path.display(), line, "attribute line added");
+            tracing::info!(path = %Shown::of(&path), line, "attribute line added");
         }
     }
     if changed && !dry_run {
         std::fs::write(&path, text)
-            .map_err(|e| CliError::internal(format!("cannot write {}: {e}", path.display())))?;
+            .map_err(|e| CliError::internal(format!("cannot write {}: {e}", Shown::of(&path))))?;
     }
     Ok(Step {
-        target: path.display().to_string(),
+        target: Shown::of(&path).to_string(),
         changed,
     })
 }
@@ -376,7 +377,7 @@ fn read_or_empty(path: &Path) -> Result<String, CliError> {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
         Err(e) => Err(CliError::internal(format!(
             "cannot read {}: {e}",
-            path.display()
+            Shown::of(path)
         ))),
     }
 }
@@ -389,8 +390,8 @@ fn append_line(path: &Path, existing: &str, line: &str) -> Result<(), CliError> 
     text.push_str(line);
     text.push('\n');
     std::fs::write(path, text)
-        .map_err(|e| CliError::internal(format!("cannot write {}: {e}", path.display())))?;
-    tracing::info!(path = %path.display(), line, "line appended");
+        .map_err(|e| CliError::internal(format!("cannot write {}: {e}", Shown::of(path))))?;
+    tracing::info!(path = %Shown::of(path), line, "line appended");
     Ok(())
 }
 
@@ -442,7 +443,7 @@ fn version_line_of(path: &Path) -> Option<String> {
             out.stdout.lines().next().map(|l| l.trim().to_owned())
         }
         other => {
-            tracing::warn!(path = %path.display(), result = ?other.map(|o| o.status), "version probe failed");
+            tracing::warn!(path = %Shown::of(path), result = ?other.map(|o| o.status), "version probe failed");
             None
         }
     }
@@ -455,7 +456,7 @@ fn is_running_frob(path: &Path, exe: &Path) -> bool {
         return true;
     }
     let same = version_line_of(&canon).is_some_and(|v| v == running_version_line());
-    tracing::debug!(path = %canon.display(), same, "different path; compared versions");
+    tracing::debug!(path = %Shown::of(&canon), same, "different path; compared versions");
     same
 }
 
@@ -510,7 +511,7 @@ pub(crate) fn judge_driver(command: &str) -> Result<DriverVerdict, CliError> {
     Ok(match resolve_program(&program) {
         None => DriverVerdict::Unresolvable(format!("`{program}` does not resolve to a file")),
         Some(p) if is_running_frob(&p, &exe) => DriverVerdict::Same,
-        Some(p) => DriverVerdict::Other(p.display().to_string()),
+        Some(p) => DriverVerdict::Other(Shown::with_home(&p, None).to_string()),
     })
 }
 
@@ -540,7 +541,7 @@ pub(crate) fn windows_shell_path(path: &str) -> String {
 
 /// The executable path as written into a driver command: Windows paths are made `sh`-safe, others are untouched.
 fn exe_for_shell(exe: &Path) -> String {
-    let text = exe.display().to_string();
+    let text = Shown::with_home(exe, None).to_string();
     if cfg!(windows) {
         windows_shell_path(&text)
     } else {
@@ -572,19 +573,22 @@ fn default_driver() -> Result<(String, String), CliError> {
     Ok(match resolve_program(BARE_PROGRAM) {
         Some(p) if is_running_frob(&p, &exe) => (
             driver_command_for(BARE_PROGRAM),
-            format!("`frob` on PATH ({}) is the running executable", p.display()),
+            format!(
+                "`frob` on PATH ({}) is the running executable",
+                Shown::of(&p)
+            ),
         ),
         Some(p) => (
             abs,
             format!(
                 "`frob` on PATH ({}) is a different frob than the running {}",
-                p.display(),
-                exe.display()
+                Shown::of(&p),
+                Shown::of(&exe)
             ),
         ),
         None => (
             abs,
-            format!("no `frob` on PATH; using the running {}", exe.display()),
+            format!("no `frob` on PATH; using the running {}", Shown::of(&exe)),
         ),
     })
 }
@@ -792,7 +796,7 @@ impl Command for Init {
                 "ledger lives on the ticket branch; no ledger attributes on the code branch"
             );
             Step {
-                target: root.join(".gitattributes").display().to_string(),
+                target: Shown::of(&root.join(".gitattributes")).to_string(),
                 changed: false,
             }
         } else {
@@ -807,7 +811,7 @@ impl Command for Init {
             && !gitattributes.changed;
         tracing::info!(already, dry_run = ctx.dry_run, "init finished");
         let payload = Payload::new(InitData {
-            root: root.display().to_string(),
+            root: Shown::of(root).to_string(),
             config,
             gitignore,
             merge_driver,

@@ -1,10 +1,7 @@
 //! The garbage-collection pass on fixture directories with fake artifacts and controlled mtimes.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
@@ -191,7 +188,7 @@ fn names(dir: &Path) -> BTreeSet<String> {
     std::fs::read_dir(dir)
         .map(|rd| {
             rd.filter_map(Result::ok)
-                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .map(|e| Shown::with_home(std::path::Path::new(&e.file_name()), None).to_string())
                 .collect()
         })
         .unwrap_or_default()
@@ -725,7 +722,7 @@ fn shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_els
     );
     let jail = Jail::new([frob.clone()]);
     for p in evict.iter().flat_map(|e| &e.paths) {
-        assert!(jail.admit(p).is_ok(), "{}", p.display());
+        assert!(jail.admit(p).is_ok(), "{}", Shown::of(p));
     }
 }
 

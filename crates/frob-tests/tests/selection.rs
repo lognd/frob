@@ -1,9 +1,6 @@
 //! Selection, dry-run and a real nextest run against a tiny two-crate cargo workspace.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::path::Path;
 
 use frob_evidence::events;
@@ -233,7 +230,7 @@ fn test_verb_runs_the_selection_and_appends_evidence_in_a_leased_worktree() {
         // A TOML literal string: a Windows path's backslashes are not escapes in it.
         format!(
             "ticket = \"{id}\"\n\n[holder]\nworktree = '{}'\n",
-            p.display()
+            Shown::of(p)
         ),
     )
     .expect("lease");
@@ -476,7 +473,7 @@ fn test_verb_runs_selected_pytest_tests_and_appends_pytest_evidence() {
         leases.join("lease.toml"),
         format!(
             "ticket = \"{id}\"\n\n[holder]\nworktree = '{}'\n",
-            p.display()
+            Shown::of(p)
         ),
     )
     .expect("lease");

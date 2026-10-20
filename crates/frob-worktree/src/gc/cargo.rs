@@ -8,6 +8,7 @@
 //! `deps/` or elsewhere.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -137,7 +138,7 @@ impl CargoAdapter {
 
 fn file_name(p: &Path) -> String {
     p.file_name()
-        .map_or_else(String::new, |n| n.to_string_lossy().into_owned())
+        .map_or_else(String::new, crate::pathtext::name_text)
 }
 
 impl BuildAdapter for CargoAdapter {
@@ -161,7 +162,7 @@ impl BuildAdapter for CargoAdapter {
             units.extend(Self::dep_units(&profile, &policy.keep_binaries));
             units.extend(Self::build_units(&profile, &policy.keep_binaries));
         }
-        tracing::debug!(dir = %dir.display(), units = units.len(), "cargo units listed");
+        tracing::debug!(dir = %Shown::of(dir), units = units.len(), "cargo units listed");
         units
     }
 }

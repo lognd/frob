@@ -10,6 +10,7 @@ authors.workspace = true
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-time = { version = "0.532.0", path = "../gob-time" }
 blake3 = "1"
 frob-lease = { version = "0.532.0", path = "../frob-lease" }

@@ -3,6 +3,7 @@
 use frob_ledger::TicketId;
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use gob_path::Shown;
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -37,7 +38,7 @@ impl From<LeaseError> for CliError {
                     LeaseError::Format { path, .. } => {
                         r.with_remedy(format!(
                             "move {} aside (rename it to <name>.toml.corrupt) and rerun",
-                            path.display()
+                            Shown::of(path)
                         ))
                     }
                     _ => r,
@@ -119,7 +120,7 @@ impl Command for LeaseList {
         for c in payload.data.corrupt.clone() {
             payload = payload.with_warning(format!(
                 "corrupt lease file {} skipped ({}); move it aside (rename it to <name>.toml.corrupt)",
-                c.path.display(),
+                Shown::of(&c.path),
                 c.message
             ));
         }

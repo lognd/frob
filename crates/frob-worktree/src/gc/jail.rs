@@ -11,6 +11,7 @@
 //! delete on another.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 /// Why a path was not admitted.
@@ -49,7 +50,7 @@ impl Jail {
             .filter_map(|r| match gob_exec::canonical(&r) {
                 Ok(c) => Some(c),
                 Err(e) => {
-                    tracing::debug!(root = %r.display(), error = %e, "gc root absent; dropped");
+                    tracing::debug!(root = %Shown::of(&r), error = %e, "gc root absent; dropped");
                     None
                 }
             })
@@ -90,7 +91,7 @@ impl Jail {
         {
             Ok(canon)
         } else {
-            tracing::warn!(path = %path.display(), resolved = %canon.display(), "gc refused a path outside its roots");
+            tracing::warn!(path = %Shown::of(path), resolved = %Shown::of(&canon), "gc refused a path outside its roots");
             Err(JailError::Outside(path.to_path_buf()))
         }
     }
@@ -113,12 +114,12 @@ impl Jail {
         };
         match result {
             Ok(()) => {
-                tracing::info!(path = %canon.display(), "gc removed");
+                tracing::info!(path = %Shown::of(&canon), "gc removed");
                 Ok(canon)
             }
             Err(e) => {
-                tracing::warn!(path = %canon.display(), error = %e, "gc removal failed");
-                Err(format!("{}: {e}", canon.display()))
+                tracing::warn!(path = %Shown::of(&canon), error = %e, "gc removal failed");
+                Err(format!("{}: {e}", Shown::of(&canon)))
             }
         }
     }

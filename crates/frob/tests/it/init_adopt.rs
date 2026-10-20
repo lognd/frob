@@ -267,7 +267,10 @@ fn init_touches_only_config_files_and_installs_the_driver() {
     );
     let mut untracked: Vec<String> = std::fs::read_dir(dir.path())
         .expect("ls")
-        .map(|e| e.expect("entry").file_name().to_string_lossy().into_owned())
+        .map(|e| {
+            gob_path::Shown::with_home(std::path::Path::new(&e.expect("entry").file_name()), None)
+                .to_string()
+        })
         .filter(|n| n != ".git")
         .collect();
     untracked.sort();

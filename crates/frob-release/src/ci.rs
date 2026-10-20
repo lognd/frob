@@ -514,6 +514,7 @@ pub fn list_runs(
 mod tests {
     use super::*;
     use gob_exec::Limits;
+    use gob_path::Shown;
     use std::os::unix::fs::PermissionsExt;
 
     /// A directory holding a stub `gh` that prints recorded JSON per endpoint, or fails on request.
@@ -527,7 +528,7 @@ mod tests {
             let dir = tempfile::tempdir().expect("tempdir");
             std::fs::write(dir.path().join("runs.json"), runs).expect("runs");
             std::fs::write(dir.path().join("status.json"), status).expect("status");
-            let d = dir.path().display();
+            let d = Shown::with_home(dir.path(), None);
             let body = match fail {
                 Some((code, err)) => format!("echo '{err}' >&2\nexit {code}\n"),
                 None => format!(

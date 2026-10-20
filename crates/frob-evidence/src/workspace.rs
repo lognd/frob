@@ -1,5 +1,6 @@
 //! Opening the repository, ledger, store and `[evidence]` config for a verb.
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -47,7 +48,7 @@ impl Workspace {
     pub fn open(cwd: &Path, clock: std::sync::Arc<dyn gob_time::Clock>) -> Result<Self> {
         let repo = Repo::discover(cwd).map_err(|e| {
             tracing::debug!(error = %e, "no repository");
-            EvidenceError::NotARepo(cwd.display().to_string())
+            EvidenceError::NotARepo(Shown::of(cwd).to_string())
         })?;
         Self::open_repo(repo, clock)
     }
@@ -64,7 +65,7 @@ impl Workspace {
         let root = repo
             .work_dir()
             .map(Path::to_path_buf)
-            .ok_or_else(|| EvidenceError::NotARepo(cwd.display().to_string()))?;
+            .ok_or_else(|| EvidenceError::NotARepo(Shown::of(&cwd).to_string()))?;
         let evidence = gob_config::load::<EvidenceTable>(&root, PRODUCT)
             .map_err(|e| EvidenceError::Config(e.to_string()))?
             .value;
@@ -79,7 +80,7 @@ impl Workspace {
             .value;
         let ledger_cfg = ledger_config(&root)?;
         let store = BlobStore::open(&evidence, &repo)?;
-        tracing::debug!(root = %root.display(), "evidence workspace opened");
+        tracing::debug!(root = %Shown::of(&root), "evidence workspace opened");
         Ok(Self {
             ledger: Ledger::open(repo, ledger_cfg, clock),
             root,

@@ -1,6 +1,7 @@
 //! `[lease] shared_files` reaches every verb that opens the lease store.
 
 use crate::common;
+use gob_path::Shown;
 
 use std::path::Path;
 use std::process::Output;
@@ -40,7 +41,7 @@ fn repo(shared: &str, wt: &Path) -> tempfile::TempDir {
     let base = std::fs::read_to_string(&toml).expect("frob.toml");
     let extra = format!(
         "\n[lease]\nshared_files = [{shared}]\n\n[worktree]\ndir = {:?}\n",
-        wt.display().to_string()
+        Shown::of(wt).to_string()
     );
     std::fs::write(&toml, base + &extra).expect("write frob.toml");
     git(dir.path(), &["add", "-A"]);

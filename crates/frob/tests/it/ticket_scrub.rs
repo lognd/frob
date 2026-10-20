@@ -1,6 +1,7 @@
 //! `ticket doctor --fix` scrubs absolute home paths out of the ledger in one commit and the ledger still folds the same.
 
 use crate::common;
+use gob_path::Shown;
 
 use std::path::{Path, PathBuf};
 use std::process::Output;
@@ -103,12 +104,11 @@ fn tip(repo: &Repo) -> String {
 fn dirty() -> (Repo, String, PathBuf) {
     let repo = Repo::new();
     let parent = repo.path().parent().expect("parent").to_path_buf();
-    let name = repo
-        .path()
-        .file_name()
-        .expect("name")
-        .to_string_lossy()
-        .into_owned();
+    let name = Shown::with_home(
+        std::path::Path::new(repo.path().file_name().expect("name")),
+        None,
+    )
+    .to_string();
     let (_, v) = repo.json(&[
         "ticket",
         "new",
@@ -124,8 +124,8 @@ fn dirty() -> (Repo, String, PathBuf) {
     let tid: frob_ledger::TicketId = id.parse().expect("ticket id");
     let transcript = format!(
         "Compiling x ({}/crates/x)\nsibling {}/{name}-wt/T1/y\nhome /home/ann/.cargo and /home/bob/z\nok\n",
-        repo.path().display(),
-        parent.display()
+        Shown::of(repo.path()),
+        Shown::of(&parent)
     );
     let mut record = toml::Table::new();
     record.insert("provider".into(), "command".into());
@@ -243,12 +243,11 @@ fn doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same() {
 #[test]
 fn placeholders_follow_the_repair_rules() {
     let (repo, id, _parent) = dirty();
-    let name = repo
-        .path()
-        .file_name()
-        .expect("name")
-        .to_string_lossy()
-        .into_owned();
+    let name = Shown::with_home(
+        std::path::Path::new(repo.path().file_name().expect("name")),
+        None,
+    )
+    .to_string();
     let (c, fixed) = repo.json(&["ticket", "doctor", "--fix"]);
     assert_eq!(c, 0, "{fixed}");
     let events = std::fs::read_dir(repo.path().join(format!("tickets/{id}/events"))).expect("dir");

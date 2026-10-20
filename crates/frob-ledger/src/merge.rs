@@ -9,6 +9,7 @@
 //! while a ticket-branch file at `<epic>/<slug>.md` never does, so [`locate`] reads the ULID
 //! from the frontmatter of the versions git hands over (`mirror.md` section 1).
 
+use gob_path::{RelPath, Shown};
 use std::path::{Path, PathBuf};
 
 use crate::doc;
@@ -35,11 +36,7 @@ pub struct MergeReport {
 ///
 /// [`LedgerError::Invalid`] when the parent directory is not a ULID.
 pub fn ticket_id_of_path(path: &str) -> Result<TicketId> {
-    let dir = Path::new(path)
-        .parent()
-        .and_then(Path::file_name)
-        .and_then(|n| n.to_str())
-        .unwrap_or_default();
+    let dir = path.rsplit('/').nth(1).unwrap_or_default();
     dir.parse::<TicketId>().map_err(|_| {
         LedgerError::invalid(format!(
             "`{path}` is not a ticket.md inside a ULID directory"
@@ -107,14 +104,14 @@ pub fn read_events_dir(dir: &Path) -> Result<Vec<Event>> {
     };
     for entry in read {
         let path: PathBuf = entry?.path();
-        let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
+        let Ok(rel) = RelPath::from_host(dir, &path) else {
             continue;
         };
-        if path.extension().and_then(|e| e.to_str()) != Some("toml") {
+        let Some((stem, "toml")) = rel.as_str().rsplit_once('.') else {
             continue;
-        }
+        };
         let Ok(id) = stem.parse::<EventId>() else {
-            tracing::warn!(path = %path.display(), "ignoring non-ULID file in events/");
+            tracing::warn!(path = %Shown::of(&path), "ignoring non-ULID file in events/");
             continue;
         };
         let text = std::fs::read_to_string(&path)?;

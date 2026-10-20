@@ -1,9 +1,11 @@
 //! Reading and validating `changelog.d/<ulid>.<type>.md` fragments.
 
+use gob_path::Shown;
 use std::fs;
 use std::path::Path;
 
 use crate::error::FragmentError;
+use crate::pathtext::name_text;
 
 /// Products a fragment may name, in rendering order; unprefixed fragments belong to the first.
 pub const PRODUCTS: [&str; 4] = ["frob", "gob", "grimble", "crunk"];
@@ -259,7 +261,7 @@ pub fn files_of(dir: &Path, ulid: &str) -> Vec<String> {
     };
     let mut names: Vec<String> = rd
         .filter_map(Result::ok)
-        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .map(|e| name_text(&e.file_name()))
         .filter(|n| {
             n.to_ascii_lowercase().starts_with(&prefix)
                 && Path::new(n)
@@ -306,13 +308,13 @@ pub fn read_all(
     resolver: &dyn TicketResolver,
 ) -> Result<Vec<Fragment>, Vec<FragmentError>> {
     let Ok(rd) = fs::read_dir(dir) else {
-        tracing::debug!(dir = %dir.display(), "no changelog.d directory");
+        tracing::debug!(dir = %Shown::of(dir), "no changelog.d directory");
         return Ok(Vec::new());
     };
     let mut names: Vec<String> = rd
         .filter_map(Result::ok)
         .filter(|e| e.path().is_file())
-        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .map(|e| name_text(&e.file_name()))
         .filter(|n| n != ".gitkeep")
         .collect();
     names.sort();

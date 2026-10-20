@@ -1,6 +1,7 @@
 //! The whole newcomer loop on a fresh repository: init, ticket, work, edit, check, test, evidence, land.
 // frob:ticket 01M4069YW2EF551WF2J7R0EMJ4
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 use std::process::Output;
 use std::time::Duration;
@@ -259,7 +260,7 @@ fn full_loop_in(branch: &str, orphan: bool) {
     assert!(
         !wt.exists(),
         "worktree removed: {} (land warnings: {land_warnings})",
-        wt.display()
+        Shown::of(&wt)
     );
     let branches = git(root, &["branch", "--list", "ticket/*"]);
     assert!(branches.is_empty(), "ticket branch removed: {branches}");

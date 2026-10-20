@@ -61,10 +61,6 @@
 //! has passed stops suppressing and raises `EXC014`; `until` values holding a
 //! `:` are metric targets and are not evaluated here. An accept never parks an
 //! Unresolved finding: it raises `EXC016` and the finding stands.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod collect;
 mod comments;

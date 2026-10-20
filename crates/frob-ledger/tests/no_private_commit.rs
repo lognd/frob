@@ -1,9 +1,6 @@
 //! The evidence and land crates write events only through `Ledger::append`.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::path::Path;
 
 fn sources(crate_dir: &str) -> Vec<(String, String)> {
@@ -20,7 +17,7 @@ fn sources(crate_dir: &str) -> Vec<(String, String)> {
                 stack.push(path);
             } else if path.extension().is_some_and(|e| e == "rs") {
                 let text = std::fs::read_to_string(&path).expect("read");
-                out.push((path.display().to_string(), text));
+                out.push((Shown::of(&path).to_string(), text));
             }
         }
     }

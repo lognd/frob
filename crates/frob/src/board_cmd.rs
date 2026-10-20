@@ -16,6 +16,7 @@
 // frob:ticket 01M4069W45P08YPC4YH4XZVMNC
 // frob:ticket 01M48Q29NESQDWE88YC8HBYT4Z
 
+use gob_path::Shown;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::IsTerminal;
 use std::path::Path;
@@ -175,13 +176,13 @@ fn brief_input(src: BriefSources<'_>) -> Result<BriefInput, CliError> {
         let Some(list) = signals.get_mut(&t.handle) else {
             continue;
         };
-        worktrees.insert(t.handle.clone(), l.holder.worktree.display().to_string());
+        worktrees.insert(t.handle.clone(), Shown::of(&l.holder.worktree).to_string());
         list.push(Signal {
             kind: SignalKind::Lease,
             at: l.renewed_at,
         });
         if let Some(dir) = l.holder.worktree.file_name() {
-            let branch = format!("ticket/{}", dir.to_string_lossy());
+            let branch = format!("ticket/{}", crate::pathtext::name_text(dir));
             if let Some(at) = last_commit(&runner, root, &branch) {
                 list.push(Signal {
                     kind: SignalKind::Commit,

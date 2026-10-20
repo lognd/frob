@@ -1,5 +1,6 @@
 //! Failures of `work`, `start` and `requeue` and their mapping to CLI errors.
 
+use gob_path::Shown;
 use std::path::PathBuf;
 
 use frob_lease::LeaseError;
@@ -27,7 +28,7 @@ pub enum WorktreeError {
     #[error(transparent)]
     Refused(#[from] Refusal),
     /// The worktree path is taken by something that is not this ticket's worktree.
-    #[error("E-WORKTREE-EXISTS: {} exists and is not a git worktree", .0.display())]
+    #[error("E-WORKTREE-EXISTS: {} exists and is not a git worktree", Shown::of(&.0))]
     PathExists(PathBuf),
     /// The flags are inconsistent.
     #[error("usage: {0}")]
@@ -66,7 +67,7 @@ impl From<WorktreeError> for CliError {
             WorktreeError::PathExists(p) => Refusal::new(
                 "E-WORKTREE-EXISTS",
                 RefusalClass::GuardNeedsAction,
-                format!("{} exists and is not a git worktree", p.display()),
+                format!("{} exists and is not a git worktree", Shown::of(&p)),
             )
             .with_remedy("frob work <ticket> --worktree <another path>")
             .into(),

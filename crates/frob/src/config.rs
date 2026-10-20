@@ -1,5 +1,6 @@
 //! The `frob.toml` tables the M1 verbs need.
 
+use gob_path::Shown;
 use std::path::Path;
 
 use gob_config::{ConfigDocument, ConfigError, ConfigTable};
@@ -106,7 +107,7 @@ impl FrobConfig {
             // frob:ticket 01M5BA1W8S9BW9Z47AV2ZKVEX0
             mirror: doc.table::<gob_config::MirrorTable>()?.value,
         };
-        tracing::debug!(root = %root.display(), "frob config loaded");
+        tracing::debug!(root = %Shown::of(root), "frob config loaded");
         Ok(cfg)
     }
 }

@@ -10,6 +10,7 @@
 //! deleted only for a closed ticket whose branch is merged into the base.
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use gob_git::{Repo, StatusOptions};
@@ -85,7 +86,7 @@ pub fn assess(env: &WorktreeEnv<'_>) -> Vec<Candidate> {
             continue;
         }
         let decision = decide(env, parent.as_deref(), &info.path, info.branch.as_deref());
-        tracing::info!(path = %info.path.display(), ?decision, "gc worktree assessed");
+        tracing::info!(path = %Shown::of(&info.path), ?decision, "gc worktree assessed");
         out.push(Candidate {
             path: info.path,
             decision,
@@ -205,16 +206,16 @@ pub fn remove(env: &WorktreeEnv<'_>, cand: &Candidate) -> Result<u64, String> {
     };
     let canon = env.jail.admit(&cand.path).map_err(|e| e.to_string())?;
     let bytes = scan(&canon).bytes;
-    let text = canon.to_string_lossy().into_owned();
+    let text = crate::pathtext::text(&canon);
     let (code, out) = git(env.repo, env.primary, &["worktree", "remove", &text])?;
     if code != 0 {
         return Err(format!(
             "git refused to remove {}: {}",
-            canon.display(),
+            Shown::of(&canon),
             out.trim()
         ));
     }
-    tracing::info!(path = %canon.display(), bytes, "gc removed worktree");
+    tracing::info!(path = %Shown::of(&canon), bytes, "gc removed worktree");
     if *delete_branch {
         match git(env.repo, env.primary, &["branch", "-D", branch]) {
             Ok((0, _)) => tracing::info!(branch, "gc deleted merged ticket branch"),

@@ -9,6 +9,7 @@
 
 // frob:ticket 01M40Q3S4T9QTYX0Z1MPAZP9JM
 
+use gob_path::Shown;
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
@@ -134,7 +135,7 @@ impl LeaseStore {
         let base = common_dir.join("frob");
         // frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
         let shared = glob_set(cfg.shared_files.iter().chain(&cfg.generated_files))?;
-        tracing::debug!(dir = %base.display(), ttl_secs = cfg.ttl_secs, "lease store opened");
+        tracing::debug!(dir = %Shown::of(&base), ttl_secs = cfg.ttl_secs, "lease store opened");
         Ok(Self {
             dir: base.join("leases"),
             waiters_dir: base.join("waiters"),
@@ -233,13 +234,13 @@ impl LeaseStore {
 
     fn lock(&self) -> Result<LockGuard, LeaseError> {
         fs::create_dir_all(&self.dir)
-            .map_err(|e| LeaseError::io(format!("creating {}", self.dir.display()), e))?;
+            .map_err(|e| LeaseError::io(format!("creating {}", Shown::of(&self.dir)), e))?;
         let file = OpenOptions::new()
             .create(true)
             .truncate(false)
             .write(true)
             .open(&self.lock_path)
-            .map_err(|e| LeaseError::io(format!("opening {}", self.lock_path.display()), e))?;
+            .map_err(|e| LeaseError::io(format!("opening {}", Shown::of(&self.lock_path)), e))?;
         let start = Instant::now();
         let limit = Duration::from_millis(self.cfg.lock_timeout_ms);
         loop {
@@ -247,7 +248,7 @@ impl LeaseStore {
                 Ok(()) => return Ok(LockGuard(file)),
                 Err(TryLockError::WouldBlock) => {
                     if start.elapsed() >= limit {
-                        tracing::warn!(path = %self.lock_path.display(), "lease lock timed out");
+                        tracing::warn!(path = %Shown::of(&self.lock_path), "lease lock timed out");
                         return Err(LeaseError::LockTimeout {
                             path: self.lock_path.clone(),
                             waited_ms: self.cfg.lock_timeout_ms,
@@ -257,7 +258,7 @@ impl LeaseStore {
                 }
                 Err(TryLockError::Error(e)) => {
                     return Err(LeaseError::io(
-                        format!("locking {}", self.lock_path.display()),
+                        format!("locking {}", Shown::of(&self.lock_path)),
                         e,
                     ));
                 }
@@ -275,19 +276,24 @@ impl LeaseStore {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 return Ok((Vec::new(), Vec::new()));
             }
-            Err(e) => return Err(LeaseError::io(format!("reading {}", self.dir.display()), e)),
+            Err(e) => {
+                return Err(LeaseError::io(
+                    format!("reading {}", Shown::of(&self.dir)),
+                    e,
+                ));
+            }
         };
         let mut out = Vec::new();
         let mut corrupt = Vec::new();
         for entry in entries {
             let path = entry
-                .map_err(|e| LeaseError::io(format!("reading {}", self.dir.display()), e))?
+                .map_err(|e| LeaseError::io(format!("reading {}", Shown::of(&self.dir)), e))?
                 .path();
             if path.extension().is_some_and(|x| x == "toml") {
                 match read_lease(&path) {
                     Ok(l) => out.push(l),
                     Err(LeaseError::Format { path, message }) => {
-                        tracing::warn!(path = %path.display(), %message, "corrupt lease file skipped");
+                        tracing::warn!(path = %Shown::of(&path), %message, "corrupt lease file skipped");
                         corrupt.push(CorruptLease { path, message });
                     }
                     Err(e) => return Err(e),
@@ -324,8 +330,8 @@ impl LeaseStore {
         for c in self.scan()?.1 {
             let dest = c.path.with_extension("toml.corrupt");
             fs::rename(&c.path, &dest)
-                .map_err(|e| LeaseError::io(format!("quarantining {}", c.path.display()), e))?;
-            tracing::info!(from = %c.path.display(), to = %dest.display(), "corrupt lease quarantined");
+                .map_err(|e| LeaseError::io(format!("quarantining {}", Shown::of(&c.path)), e))?;
+            tracing::info!(from = %Shown::of(&c.path), to = %Shown::of(&dest), "corrupt lease quarantined");
             moved.push(dest);
         }
         Ok(moved)
@@ -344,7 +350,7 @@ impl LeaseStore {
                     Ok(()) => {}
                     Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
                     Err(e) => {
-                        return Err(LeaseError::io(format!("removing {}", path.display()), e));
+                        return Err(LeaseError::io(format!("removing {}", Shown::of(&path)), e));
                     }
                 }
             }
@@ -359,7 +365,7 @@ impl LeaseStore {
             message: e.to_string(),
         })?;
         gob_fs::write_atomic(&path, text.as_bytes())
-            .map_err(|e| LeaseError::io(format!("writing {}", path.display()), e))
+            .map_err(|e| LeaseError::io(format!("writing {}", Shown::of(&path)), e))
     }
 
     /// Take (or re-take) the lease on `ticket` for `holder` over `scope`.
@@ -408,7 +414,7 @@ impl LeaseStore {
             .into_iter()
             .find(|c| c.path == self.lease_path(ticket))
         {
-            tracing::warn!(%ticket, path = %c.path.display(), "acquire refused: own lease file is corrupt");
+            tracing::warn!(%ticket, path = %Shown::of(&c.path), "acquire refused: own lease file is corrupt");
             return Err(LeaseError::Format {
                 path: c.path,
                 message: c.message,
@@ -501,7 +507,7 @@ impl LeaseStore {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
             Err(e) => {
                 return Err(LeaseError::io(
-                    format!("reading {}", self.waiters_dir.display()),
+                    format!("reading {}", Shown::of(&self.waiters_dir)),
                     e,
                 ));
             }
@@ -509,17 +515,19 @@ impl LeaseStore {
         let mut out = Vec::new();
         for entry in entries {
             let path = entry
-                .map_err(|e| LeaseError::io(format!("reading {}", self.waiters_dir.display()), e))?
+                .map_err(|e| {
+                    LeaseError::io(format!("reading {}", Shown::of(&self.waiters_dir)), e)
+                })?
                 .path();
             if path.extension().is_none_or(|x| x != "toml") {
                 continue;
             }
             let text = fs::read_to_string(&path)
-                .map_err(|e| LeaseError::io(format!("reading {}", path.display()), e))?;
+                .map_err(|e| LeaseError::io(format!("reading {}", Shown::of(&path)), e))?;
             match toml::from_str::<Waiter>(&text) {
                 Ok(w) => out.push(w),
                 Err(e) => {
-                    tracing::warn!(path = %path.display(), error = %e, "corrupt waiter file skipped");
+                    tracing::warn!(path = %Shown::of(&path), error = %e, "corrupt waiter file skipped");
                 }
             }
         }
@@ -549,7 +557,7 @@ impl LeaseStore {
                 Ok(())
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(e) => Err(LeaseError::io(format!("removing {}", path.display()), e)),
+            Err(e) => Err(LeaseError::io(format!("removing {}", Shown::of(&path)), e)),
         }
     }
 
@@ -596,7 +604,7 @@ impl LeaseStore {
         let _lock = self.lock()?;
         let now = self.now();
         fs::create_dir_all(&self.waiters_dir)
-            .map_err(|e| LeaseError::io(format!("creating {}", self.waiters_dir.display()), e))?;
+            .map_err(|e| LeaseError::io(format!("creating {}", Shown::of(&self.waiters_dir)), e))?;
         let previous = self
             .read_waiters()?
             .into_iter()
@@ -618,7 +626,7 @@ impl LeaseStore {
             message: e.to_string(),
         })?;
         gob_fs::write_atomic(&path, text.as_bytes())
-            .map_err(|e| LeaseError::io(format!("writing {}", path.display()), e))?;
+            .map_err(|e| LeaseError::io(format!("writing {}", Shown::of(&path)), e))?;
         tracing::debug!(%ticket, %holder, "waiter enqueued or heartbeat");
         Ok(waiter)
     }
@@ -890,7 +898,7 @@ impl LeaseStore {
         }
         let path = self.lease_path(ticket);
         fs::remove_file(&path)
-            .map_err(|e| LeaseError::io(format!("removing {}", path.display()), e))?;
+            .map_err(|e| LeaseError::io(format!("removing {}", Shown::of(&path)), e))?;
         tracing::info!(%ticket, holder = %lease.holder, "lease released");
         Ok(Some(lease))
     }
@@ -966,7 +974,7 @@ impl LeaseStore {
         match path.try_exists() {
             Ok(true) => read_lease(&path).map(Some),
             Ok(false) => Ok(None),
-            Err(e) => Err(LeaseError::io(format!("probing {}", path.display()), e)),
+            Err(e) => Err(LeaseError::io(format!("probing {}", Shown::of(&path)), e)),
         }
     }
 
@@ -1013,7 +1021,7 @@ fn held_by(lease: &Lease, overlap: &str) -> LeaseError {
 
 fn read_lease(path: &Path) -> Result<Lease, LeaseError> {
     let text = fs::read_to_string(path)
-        .map_err(|e| LeaseError::io(format!("reading {}", path.display()), e))?;
+        .map_err(|e| LeaseError::io(format!("reading {}", Shown::of(path)), e))?;
     toml::from_str(&text).map_err(|e| LeaseError::Format {
         path: path.to_path_buf(),
         message: e.to_string(),

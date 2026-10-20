@@ -8,10 +8,6 @@
 // frob:ticket 01M4CT036SCVJMN2E3GHDTYDAJ
 // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8
 // frob:ticket 01M4CT0AF76FJTWFG10SKXJZAZ
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -408,7 +404,8 @@ fn every_corpus_file_has_a_test() {
     let mut files: Vec<String> = std::fs::read_dir(&dir)
         .expect("read corpus dir")
         .filter_map(Result::ok)
-        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .filter_map(|e| gob_path::RelPath::from_host(&dir, &e.path()).ok())
+        .map(|r| r.as_str().to_owned())
         .collect();
     files.sort();
     assert_eq!(

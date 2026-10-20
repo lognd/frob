@@ -1,5 +1,6 @@
 //! The `[tickets]` and `[git]` tables of `frob.toml`: the one parser of the ledger's settings, shared by every crate that opens a ledger.
 
+use gob_path::Shown;
 use std::path::Path;
 
 use gob_config::{ConfigDocument, ConfigError, ConfigTable};
@@ -111,7 +112,7 @@ impl LedgerConfig {
 pub fn load_ledger_config(root: &Path) -> Result<LedgerConfig, String> {
     let doc = ConfigDocument::read(root, PRODUCT).map_err(|e| e.to_string())?;
     let cfg = ledger_config_from(&doc).map_err(|e| e.to_string())?;
-    tracing::debug!(root = %root.display(), ref_name = %cfg.ref_name, mode = ?cfg.mode, "ledger settings read");
+    tracing::debug!(root = %Shown::of(root), ref_name = %cfg.ref_name, mode = ?cfg.mode, "ledger settings read");
     Ok(cfg)
 }
 

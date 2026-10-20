@@ -3,6 +3,7 @@
 #![cfg(unix)]
 
 use crate::common;
+use gob_path::Shown;
 
 use std::path::Path;
 use std::sync::Arc;
@@ -67,7 +68,7 @@ fn two_branches_adding_events_merge_through_the_driver_on_a_ticket_branch() {
         &[
             "config",
             "merge.frob-ledger.driver",
-            &format!("{} merge-driver %O %A %B %P", bin.display()),
+            &format!("{} merge-driver %O %A %B %P", Shown::with_home(bin, None)),
         ],
     );
     git(p, &["checkout", "-q", "left"]);

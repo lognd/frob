@@ -67,13 +67,14 @@ fn repo() -> tempfile::TempDir {
 }
 
 fn sync(repo: &Path, home: &Path, extra: &[&str]) -> Output {
+    let home_arg = gob_path::Shown::with_home(home, None);
     let mut args = vec![
         "agent",
         "sync",
         "--agent",
         "claude",
         "--home",
-        home.to_str().unwrap(),
+        home_arg.as_str(),
     ];
     args.extend_from_slice(extra);
     frob(repo, &args)
@@ -157,7 +158,7 @@ fn uninstall_keeps_user_hooks_settings_and_edited_files() {
             "--agent",
             "claude",
             "--home",
-            h.to_str().unwrap(),
+            gob_path::Shown::with_home(h, None).as_str(),
         ],
     );
     assert_eq!(code(&un), 0, "{}", String::from_utf8_lossy(&un.stdout));
@@ -191,7 +192,7 @@ fn status_exits_one_on_drift_and_zero_when_clean() {
                 "--agent",
                 "claude",
                 "--home",
-                h.to_str().unwrap(),
+                gob_path::Shown::with_home(h, None).as_str(),
             ],
         )
     };

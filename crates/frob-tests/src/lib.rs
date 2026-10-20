@@ -27,10 +27,6 @@
 //!
 //! What counts as a test is a heuristic documented in [`catalog`]; `TEST001`
 //! ([`test001`]) flags `frob:tests` directives that name nothing.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 pub mod catalog;
 pub mod error;

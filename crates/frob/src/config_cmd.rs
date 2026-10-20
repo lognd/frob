@@ -1,5 +1,6 @@
 //! `config show --effective` and `config sync`.
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
@@ -95,7 +96,7 @@ pub(crate) fn sync_config(
         tracing::info!(missing = added.len(), "config sync dry run");
         let created = !present && !added.is_empty();
         return Ok(SyncData {
-            path: root.join("frob.toml").display().to_string(),
+            path: Shown::of(&root.join("frob.toml")).to_string(),
             added,
             created,
             dry_run,
@@ -108,7 +109,7 @@ pub(crate) fn sync_config(
         "config synced"
     );
     Ok(SyncData {
-        path: report.path.display().to_string(),
+        path: Shown::of(&report.path).to_string(),
         added: report.added,
         created: report.created,
         dry_run,
@@ -272,7 +273,7 @@ impl Command for ConfigShow {
             });
         }
         Ok(Payload::new(ShowData {
-            file: file.display().to_string(),
+            file: Shown::of(&file).to_string(),
             file_present: present,
             tables,
         }))

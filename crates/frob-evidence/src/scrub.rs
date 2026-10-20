@@ -90,11 +90,11 @@ impl PathScrub {
             let (Some(parent), Some(name)) = (parent_of(root), root.file_name()) else {
                 continue;
             };
-            let dir = format!("{}-wt", name.to_string_lossy());
+            let dir = format!("{}-wt", crate::pathtext::name_text(name));
             scrub.add_text(&parent.join(&dir), &dir);
             for w in siblings.iter().filter(|w| w.starts_with(&parent)) {
                 if let Ok(rel) = w.strip_prefix(&parent) {
-                    scrub.add_text(w, &rel.to_string_lossy().replace('\\', "/"));
+                    scrub.add_text(w, &crate::pathtext::text(rel).replace('\\', "/"));
                 }
             }
         }
@@ -116,7 +116,7 @@ impl PathScrub {
     /// Remember the `<name>-wt` directory of `root` so sibling worktrees match in either path style.
     fn add_wt_dir(&mut self, root: &Path) {
         if let Some(name) = root.file_name() {
-            let dir = format!("{}-wt", name.to_string_lossy());
+            let dir = format!("{}-wt", crate::pathtext::name_text(name));
             if !self.wt_dirs.contains(&dir) {
                 self.wt_dirs.push(dir);
             }
@@ -210,9 +210,9 @@ fn rewrite_foreign_homes(text: &str) -> String {
 
 /// The spellings of `root` worth matching: as given, canonical, with `/` separators and with doubled backslashes.
 fn forms(root: &Path) -> Vec<String> {
-    let mut bases = vec![root.to_string_lossy().into_owned()];
+    let mut bases = vec![crate::pathtext::text(root)];
     if let Ok(c) = gob_exec::canonical(root) {
-        bases.push(c.to_string_lossy().into_owned());
+        bases.push(crate::pathtext::text(&c));
     }
     let mut out = Vec::new();
     for b in bases {

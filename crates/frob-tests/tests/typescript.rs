@@ -1,12 +1,6 @@
 //! TypeScript tests: vitest and jest selection, runs through fake runners, and the missing-tool refusal (~RNQ92ZK).
-#![cfg_attr(
-    unix,
-    expect(
-        clippy::disallowed_methods,
-        reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-    )
-)]
 
+use gob_path::Shown;
 use std::path::Path;
 
 #[cfg(unix)]
@@ -164,7 +158,7 @@ fn test_verb_runs_vitest_and_jest_per_member_and_appends_per_test_evidence() {
         leases.join("lease.toml"),
         format!(
             "ticket = \"{id}\"\n\n[holder]\nworktree = '{}'\n",
-            p.display()
+            Shown::of(p)
         ),
     )
     .expect("lease");

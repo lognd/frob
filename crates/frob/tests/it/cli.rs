@@ -111,7 +111,11 @@ fn doctor_outside_a_repo_still_succeeds() {
     let dir = tempfile::tempdir().expect("tempdir");
     let out = frob(
         dir.path(),
-        &["doctor", "--cwd", dir.path().to_str().expect("utf8")],
+        &[
+            "doctor",
+            "--cwd",
+            gob_path::Shown::with_home(dir.path(), None).as_str(),
+        ],
     );
     assert_eq!(code(&out), 0);
     let v = json(&out);
@@ -180,7 +184,11 @@ fn init_outside_a_repo_is_a_refusal() {
     let dir = tempfile::tempdir().expect("tempdir");
     let out = frob(
         dir.path(),
-        &["init", "--cwd", dir.path().to_str().expect("utf8")],
+        &[
+            "init",
+            "--cwd",
+            gob_path::Shown::with_home(dir.path(), None).as_str(),
+        ],
     );
     assert_eq!(code(&out), 3);
     let v = json(&out);

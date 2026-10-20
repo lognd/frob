@@ -3,6 +3,7 @@
 //!
 //! The text is built once by [`teaching_message`] so broader first-run teaching can reuse it.
 
+use gob_path::Shown;
 use std::path::Path;
 
 use gob_cli::{CliError, Context, Refusal, RefusalClass};
@@ -75,6 +76,6 @@ fn check_dir(verb: &str, cwd: &Path) -> Result<(), CliError> {
     if in_repo && located.root.join("frob.toml").is_file() {
         return Ok(());
     }
-    tracing::info!(verb, in_repo, root = %located.root.display(), "no frob.toml; teaching instead of running");
+    tracing::info!(verb, in_repo, root = %Shown::of(&located.root), "no frob.toml; teaching instead of running");
     Err(no_config_refusal(in_repo).into())
 }

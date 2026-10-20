@@ -61,7 +61,15 @@ fn hand_edited_commit(p: &Path, trailer: &str) {
     body.push_str("\nhand edit\n");
     let src = p.join("replay-body.md");
     std::fs::write(&src, body).expect("write");
-    let blob = git(p, None, &["hash-object", "-w", src.to_str().expect("utf8")]);
+    let blob = git(
+        p,
+        None,
+        &[
+            "hash-object",
+            "-w",
+            gob_path::Shown::with_home(&src, None).as_str(),
+        ],
+    );
     let cache = format!("100644,{blob},{path}");
     git(
         p,

@@ -8,6 +8,7 @@ use std::path::Path;
 use gob_config::ConfigTable;
 
 use crate::error::ReleaseError;
+use crate::pathtext::name_text;
 
 /// The product whose `frob.toml` holds the `[release]` table.
 const PRODUCT: &str = "frob";
@@ -199,8 +200,6 @@ fn repository_name(root: &Path) -> String {
             }
         })
         .unwrap_or_else(|| root.to_path_buf());
-    main.file_name().map_or_else(
-        || "repository".to_owned(),
-        |n| n.to_string_lossy().into_owned(),
-    )
+    main.file_name()
+        .map_or_else(|| "repository".to_owned(), name_text)
 }

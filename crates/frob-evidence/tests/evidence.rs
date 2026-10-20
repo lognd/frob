@@ -1,9 +1,6 @@
 //! Evidence end to end against temporary repositories: guard, store, verbs, redaction.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::path::Path;
 use std::time::Duration;
 
@@ -580,7 +577,7 @@ fn assert_tickets_ascii(root: &Path) {
     let files = files_under(&root.join("tickets"));
     assert!(!files.is_empty(), "no files under tickets/");
     for (path, bytes) in files {
-        assert!(bytes.is_ascii(), "non-ASCII bytes in {}", path.display());
+        assert!(bytes.is_ascii(), "non-ASCII bytes in {}", Shown::of(&path));
     }
 }
 
@@ -809,7 +806,7 @@ fn pytest_evidence_records_per_test_results_as_a_measured_record() {
         "captured text goes through the escape path"
     );
     assert!(
-        !inline.contains(&dir.path().display().to_string()),
+        !inline.contains(&Shown::with_home(dir.path(), None).to_string()),
         "captured text goes through the scrub path: {inline}"
     );
 }

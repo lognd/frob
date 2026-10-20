@@ -10,6 +10,7 @@
 //! The base checkout's check opens the repository-shared cache (gob-cache), so every file
 //! unchanged since an earlier check is a cache hit (~TSK0M4Y).
 
+use gob_path::Shown;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
@@ -209,7 +210,7 @@ fn read_cache(path: &Path, oid: &str, key: &str) -> Option<BaseSet> {
     match serde_json::from_str::<BaseSet>(&text) {
         Ok(set) if set.oid == oid && set.key == key => Some(set),
         Ok(_) | Err(_) => {
-            tracing::warn!(path = %path.display(), "land base cache unusable; recomputing");
+            tracing::warn!(path = %Shown::of(path), "land base cache unusable; recomputing");
             None
         }
     }
@@ -228,8 +229,8 @@ fn write_cache(path: &Path, set: &BaseSet) {
         std::fs::write(path, json)
     });
     match result {
-        Ok(()) => tracing::info!(path = %path.display(), "land base set cached"),
-        Err(e) => tracing::warn!(path = %path.display(), error = %e, "land base set not cached"),
+        Ok(()) => tracing::info!(path = %Shown::of(path), "land base set cached"),
+        Err(e) => tracing::warn!(path = %Shown::of(path), error = %e, "land base set not cached"),
     }
 }
 
@@ -257,7 +258,7 @@ fn base_checkout_paths(common: &Path) -> (PathBuf, PathBuf) {
 /// A stable path keeps cargo's path-dependent fingerprints of the workspace crates valid from
 /// one land to the next, which a fresh per-process directory never did.
 fn checkout_base(wt: &Repo, wt_path: &Path, dir: &Path, oid: &str) -> Result<(), LandError> {
-    let dir_text = dir.to_string_lossy().into_owned();
+    let dir_text = Shown::with_home(dir, None).to_string();
     if dir.join(".git").exists() {
         let moved = git(
             wt,
@@ -267,10 +268,10 @@ fn checkout_base(wt: &Repo, wt_path: &Path, dir: &Path, oid: &str) -> Result<(),
         if moved.as_ref().is_ok_and(crate::git::GitRun::ok) {
             // Untracked leftovers of an earlier check; ignored files (target/) stay.
             let _ = git(wt, dir, &["clean", "-fdq"]);
-            tracing::info!(oid, dir = %dir.display(), "land base checkout reused");
+            tracing::info!(oid, dir = %Shown::of(dir), "land base checkout reused");
             return Ok(());
         }
-        tracing::warn!(dir = %dir.display(), "land base checkout unusable; recreating");
+        tracing::warn!(dir = %Shown::of(dir), "land base checkout unusable; recreating");
         let _ = git(wt, wt_path, &["worktree", "remove", "--force", &dir_text]);
     }
     if dir.exists() {
@@ -290,7 +291,7 @@ fn checkout_base(wt: &Repo, wt_path: &Path, dir: &Path, oid: &str) -> Result<(),
     }
     // frob:ticket 01M4MNBNM0WGTXGH93PEV48F78
     let aged = frob_worktree::normalize_mtimes(wt, dir);
-    tracing::info!(oid, dir = %dir.display(), aged, "land base checkout created");
+    tracing::info!(oid, dir = %Shown::of(dir), aged, "land base checkout created");
     Ok(())
 }
 
@@ -309,7 +310,7 @@ impl BaseCheckout {
         let (dir, lock) = base_checkout_paths(common);
         if let Some(parent) = dir.parent() {
             std::fs::create_dir_all(parent)
-                .map_err(|e| LandError::Config(format!("{}: {e}", parent.display())))?;
+                .map_err(|e| LandError::Config(format!("{}: {e}", Shown::of(parent))))?;
         }
         let guard = crate::git::lock_exclusive(&lock)?;
         checkout_base(wt, wt_path, &dir, oid)?;

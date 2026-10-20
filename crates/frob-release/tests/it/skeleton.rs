@@ -75,9 +75,15 @@ fn refuses_when_one_exists_and_force_replaces_it() {
     );
     let w = write(&req(d.path(), Kind::Fixed, true), &resolver).unwrap();
     assert_eq!(w.replaced, vec![format!("{A}.added.md")]);
-    let names: Vec<_> = std::fs::read_dir(d.path().join("changelog.d"))
+    let changelog_d = d.path().join("changelog.d");
+    let names: Vec<_> = std::fs::read_dir(&changelog_d)
         .unwrap()
-        .map(|e| e.unwrap().file_name().into_string().unwrap())
+        .map(|e| {
+            gob_path::RelPath::from_host(&changelog_d, &e.unwrap().path())
+                .unwrap()
+                .as_str()
+                .to_owned()
+        })
         .collect();
     assert_eq!(names, vec![format!("{A}.fixed.md")]);
 }

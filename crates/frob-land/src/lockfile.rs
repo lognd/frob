@@ -13,6 +13,7 @@
 //! can, while `cargo update --workspace --offline` re-resolves workspace
 //! members and rewrites more of the file.
 
+use gob_path::Shown;
 use std::path::Path;
 
 use frob_lease::LeaseConfig;
@@ -98,7 +99,7 @@ pub(crate) fn resolve(
                 format!("merging {base} conflicts in {path}, a lockfile with no offline resolver"),
                 format!(
                     "git -C {} merge {base}, regenerate {path} with your package manager, commit, then frob land again",
-                    wt_path.display()
+                    Shown::of(wt_path)
                 ),
             ));
         }
@@ -110,7 +111,7 @@ pub(crate) fn resolve(
                 format!("taking the {base} side of {path} failed: {}", taken.text),
                 format!(
                     "git -C {} merge {base} and resolve by hand",
-                    wt_path.display()
+                    Shown::of(wt_path)
                 ),
             ));
         }
@@ -129,7 +130,7 @@ pub(crate) fn resolve(
                 ),
                 format!(
                     "git -C {} merge {base}, run cargo update in the failing crate, commit, then frob land again",
-                    wt_path.display()
+                    Shown::of(wt_path)
                 ),
             ));
         }
@@ -158,7 +159,7 @@ pub(crate) fn resolve(
             format!("committing the lockfile merge failed: {}", commit.text),
             format!(
                 "git -C {} merge {base} and resolve by hand",
-                wt_path.display()
+                Shown::of(wt_path)
             ),
         ));
     }
@@ -181,7 +182,7 @@ fn regenerate(
 ) -> Result<(), LandError> {
     let by_hand = format!(
         "git -C {} merge {base}, run `cargo dev gen all`, commit, then frob land again",
-        wt_path.display()
+        Shown::of(wt_path)
     );
     for path in generated_paths {
         let taken = git(wt, wt_path, &["checkout", "--theirs", "--", path])?;

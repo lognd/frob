@@ -12,6 +12,7 @@
 //! the workspace version) is `rel002`'s, not a second implementation. All TOML edits go
 //! through `toml_edit` and keep comments and layout. A repeat run changes nothing.
 
+use gob_path::Shown;
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -22,6 +23,7 @@ use semver::Version;
 use similar::TextDiff;
 use toml_edit::{DocumentMut, InlineTable, Item, Table, TableLike, Value};
 
+use crate::pathtext::rel_text;
 use crate::rel002::{self, Evaluation, Wheel};
 
 /// The dependency tables of a manifest, at the top level and under `target.<cfg>`.
@@ -101,13 +103,13 @@ pub enum BumpError {
         requested: String,
     },
     /// The root has no `Cargo.toml` with a `[workspace]` table.
-    #[error("no Cargo workspace or pyproject.toml with a static version at {}; run from the repository root", .0.display())]
+    #[error("no Cargo workspace or pyproject.toml with a static version at {}; run from the repository root", Shown::of(.0))]
     NotWorkspace(PathBuf),
     /// Discovery could not read a manifest; nothing was changed.
     #[error("cannot bump, manifests are unreadable (nothing was changed):\n{}", .0.join("\n"))]
     Unresolved(Vec<String>),
     /// A file operation failed.
-    #[error("{op} {}: {reason}", path.display())]
+    #[error("{op} {}: {reason}", Shown::of(path))]
     Io {
         /// What was attempted.
         op: &'static str,
@@ -361,11 +363,7 @@ fn plan_python(
     let Some(path) = rel002::wheel_path(root) else {
         return Err(BumpError::NotWorkspace(root.to_owned()));
     };
-    let rel = path
-        .strip_prefix(root)
-        .unwrap_or(&path)
-        .to_string_lossy()
-        .replace('\\', "/");
+    let rel = rel_text(root, &path);
     let current = match rel002::wheel_version(&path) {
         Ok(Wheel::Static(v)) => v,
         Ok(Wheel::Absent | Wheel::FollowsCargo) => {
@@ -462,11 +460,7 @@ fn plan(
         }
     }
     if let Some(path) = rel002::wheel_path(root) {
-        let rel = path
-            .strip_prefix(root)
-            .unwrap_or(&path)
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel = rel_text(root, &path);
         match rel002::wheel_version(&path) {
             Ok(Wheel::Static(_)) => {
                 let old = read(root, &rel)?;

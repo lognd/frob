@@ -6,6 +6,7 @@
 // frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
 // frob:ticket 01M41ZJGQ1GKF6NJ1JV25QHMNX
 
+use gob_path::Shown;
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
@@ -91,7 +92,7 @@ fn dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job() {
         assert!(
             !text.contains("workflow_run"),
             "{} must not use workflow_run",
-            path.display()
+            Shown::of(&path)
         );
     }
     let on = wf["on"].as_mapping().unwrap();

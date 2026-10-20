@@ -12,6 +12,7 @@
 //! comment and a label): it waits for its own result, driving the train itself when nobody else does, and
 //! falls back to the plain single-ticket [`land`] when `[land] train` is off; a lone ticket is a batch of one.
 
+use gob_path::Shown;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -1071,7 +1072,7 @@ pub fn enqueue(
         id,
         enqueued_at: clock.now().unix(),
         actor: pre.site.ledger.actor()?,
-        worktree: pre.wt_path.display().to_string(),
+        worktree: Shown::of(&pre.wt_path).to_string(),
         head_oid: head.to_string(),
         rules: Some(rules),
     })?;
@@ -1165,7 +1166,7 @@ pub fn land_train(
         probe.id,
         probe.handle.clone(),
         // Resolved now: a landed member's worktree dir vanishes, taking a `worktrees/<id>/../..` path with it.
-        std::fs::canonicalize(probe.repo.common_dir())
+        gob_exec::canonical(probe.repo.common_dir())
             .unwrap_or_else(|_| probe.repo.common_dir().to_path_buf()),
     );
     drop(probe);

@@ -127,12 +127,7 @@ mod tests {
             let path = entry.expect("entry").path();
             let text = std::fs::read_to_string(&path).expect("page");
             if text.contains("| product | frob |") {
-                on_disk.push(
-                    path.file_stem()
-                        .expect("stem")
-                        .to_string_lossy()
-                        .into_owned(),
-                );
+                on_disk.push(crate::pathtext::name_text(path.file_stem().expect("stem")));
             }
         }
         on_disk.sort();

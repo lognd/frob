@@ -16,6 +16,7 @@ gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 schemars = "1"

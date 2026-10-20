@@ -1,9 +1,6 @@
 //! Integration tests: the whole ticket lifecycle against temporary git repositories.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
+use gob_path::Shown;
 use std::path::Path;
 
 use frob_ledger::guards::{NoLeases, default_close_guards};
@@ -868,12 +865,13 @@ fn events_written_by_the_old_helpers_fold_and_round_trip() {
             continue;
         }
         let text = std::fs::read_to_string(&path).expect("read");
-        let stem = path.file_stem().expect("stem").to_string_lossy();
+        let rel = gob_path::RelPath::from_host(&dir, &path).expect("relative name");
+        let (stem, _) = rel.as_str().rsplit_once('.').expect("stem");
         let event = Event::parse(stem.parse().expect("event id"), &text).expect("parse");
         // The same keys and values come back out, so an older reader sees an unchanged file.
         let again: toml::Table = event.to_toml().expect("render").parse().expect("table");
         let original: toml::Table = text.parse().expect("table");
-        assert_eq!(again, original, "{}", path.display());
+        assert_eq!(again, original, "{}", Shown::of(&path));
         events.push(event);
     }
     assert!(

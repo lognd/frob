@@ -6,6 +6,7 @@
 
 // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use serde_json::{Map, Value, json};
@@ -71,8 +72,8 @@ impl Emitter for Claude {
 
 /// The shell command registered for a hook: a runner by extension, the script, then the owner marker.
 fn hook_command(r: &Reg) -> String {
-    let script = r.script.to_string_lossy();
-    let runner = match r.script.extension().and_then(|e| e.to_str()) {
+    let script = crate::pathtext::text(&r.script);
+    let runner = match crate::pathtext::ext_text(&r.script).as_deref() {
         Some("py") => "python3 ",
         Some("sh") => "bash ",
         _ => "",
@@ -83,7 +84,7 @@ fn hook_command(r: &Reg) -> String {
 fn script_name(r: &Reg) -> String {
     r.script
         .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
+        .map(crate::pathtext::name_text)
         .unwrap_or_default()
 }
 
@@ -137,7 +138,7 @@ fn write_settings(path: &Path, settings: &Value, dry_run: bool) -> Result<bool, 
         backup(path)?;
         write_atomic(path, text.as_bytes(), false)?;
     }
-    tracing::info!(path = %path.display(), dry_run, "settings updated");
+    tracing::info!(path = %Shown::of(path), dry_run, "settings updated");
     Ok(true)
 }
 

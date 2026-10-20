@@ -15,6 +15,7 @@
 //! schema version is logged and discarded, never an error loop. A run whose
 //! driver pid is dead is reported by [`TrainStore::status`] as stale and resumable.
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use frob_ledger::TicketId;
@@ -322,13 +323,13 @@ impl TrainStore {
             .and_then(serde_json::Value::as_u64)
             != Some(u64::from(SCHEMA_VERSION))
         {
-            tracing::warn!(path = %path.display(), "train run has an unknown schema version; discarded");
+            tracing::warn!(path = %Shown::of(&path), "train run has an unknown schema version; discarded");
             return Ok(None);
         }
         let run: TrainRun = serde_json::from_value(value)
-            .map_err(|e| LandError::Config(format!("{}: {e}", path.display())))?;
+            .map_err(|e| LandError::Config(format!("{}: {e}", Shown::of(&path))))?;
         run.validate()
-            .map_err(|why| LandError::Config(format!("{}: {why}", path.display())))?;
+            .map_err(|why| LandError::Config(format!("{}: {why}", Shown::of(&path))))?;
         Ok(Some(run))
     }
 
@@ -449,7 +450,7 @@ impl TrainStore {
         };
         batch
             .validate()
-            .map_err(|why| LandError::Config(format!("{}: {why}", path.display())))?;
+            .map_err(|why| LandError::Config(format!("{}: {why}", Shown::of(&path))))?;
         Ok(batch)
     }
 
@@ -510,36 +511,36 @@ pub fn run_schema() -> schemars::Schema {
 
 fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<(), LandError> {
     let text = serde_json::to_string_pretty(value)
-        .map_err(|e| LandError::Config(format!("encoding {}: {e}", path.display())))?;
+        .map_err(|e| LandError::Config(format!("encoding {}: {e}", Shown::of(path))))?;
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir)
-            .map_err(|e| LandError::io(format!("creating {}", dir.display()), e))?;
+            .map_err(|e| LandError::io(format!("creating {}", Shown::of(dir)), e))?;
     }
     gob_fs::write_atomic(path, format!("{text}\n").as_bytes())
-        .map_err(|e| LandError::io(format!("writing {}", path.display()), e))
+        .map_err(|e| LandError::io(format!("writing {}", Shown::of(path)), e))
 }
 
 fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> Result<Option<T>, LandError> {
     let text = match std::fs::read_to_string(path) {
         Ok(t) => t,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-        Err(e) => return Err(LandError::io(format!("reading {}", path.display()), e)),
+        Err(e) => return Err(LandError::io(format!("reading {}", Shown::of(path)), e)),
     };
     serde_json::from_str(&text)
         .map(Some)
-        .map_err(|e| LandError::Config(format!("{}: {e}", path.display())))
+        .map_err(|e| LandError::Config(format!("{}: {e}", Shown::of(path))))
 }
 
 fn read_dir_json<T: serde::de::DeserializeOwned>(dir: &Path) -> Result<Vec<T>, LandError> {
     let read = match std::fs::read_dir(dir) {
         Ok(r) => r,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
-        Err(e) => return Err(LandError::io(format!("listing {}", dir.display()), e)),
+        Err(e) => return Err(LandError::io(format!("listing {}", Shown::of(dir)), e)),
     };
     let mut out = Vec::new();
     for entry in read {
         let path = entry
-            .map_err(|e| LandError::io(format!("listing {}", dir.display()), e))?
+            .map_err(|e| LandError::io(format!("listing {}", Shown::of(dir)), e))?
             .path();
         if path.extension().is_none_or(|x| x != "json") {
             continue;
@@ -548,7 +549,7 @@ fn read_dir_json<T: serde::de::DeserializeOwned>(dir: &Path) -> Result<Vec<T>, L
             Ok(Some(v)) => out.push(v),
             Ok(None) => {}
             Err(e) => {
-                tracing::warn!(path = %path.display(), error = %e, "unreadable train file skipped");
+                tracing::warn!(path = %Shown::of(&path), error = %e, "unreadable train file skipped");
             }
         }
     }
@@ -559,7 +560,7 @@ fn remove_file(path: &Path) -> Result<(), LandError> {
     match std::fs::remove_file(path) {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(e) => Err(LandError::io(format!("removing {}", path.display()), e)),
+        Err(e) => Err(LandError::io(format!("removing {}", Shown::of(path)), e)),
     }
 }
 

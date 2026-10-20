@@ -60,7 +60,7 @@ fn list(common_dir: &Path) -> Vec<(PathBuf, u64, SystemTime)> {
         return Vec::new();
     };
     rd.filter_map(Result::ok)
-        .filter(|e| is_digest(&e.file_name().to_string_lossy()))
+        .filter(|e| is_digest(&crate::pathtext::name_text(&e.file_name())))
         .filter_map(|e| {
             let m = e.metadata().ok().filter(std::fs::Metadata::is_file)?;
             Some((e.path(), m.len(), m.modified().ok()?))
@@ -80,7 +80,7 @@ pub fn plan(
         .filter(|(p, _, m)| {
             let name = p
                 .file_name()
-                .map(|n| n.to_string_lossy().into_owned())
+                .map(crate::pathtext::name_text)
                 .unwrap_or_default();
             now.duration_since(*m).unwrap_or_default() > retention && !referenced.contains(&name)
         })

@@ -1,10 +1,6 @@
 //! `work`, `start` and `requeue` end to end in temporary repositories (system git required).
 // frob:ticket 01M4069T76A6WSNHT3NZERXHAH
 // frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -286,20 +282,14 @@ fn work_events_carry_no_absolute_path() {
         },
     )
     .expect("steal");
-    let tmp = fx
-        .root
-        .parent()
-        .expect("tmp parent")
-        .to_string_lossy()
-        .into_owned();
+    let tmp = gob_path::Shown::with_home(fx.root.parent().expect("tmp parent"), None).to_string();
     let text = format!("{:?}", bob.events(id).expect("events"));
     assert!(!text.contains(&tmp), "no absolute path in events: {text}");
-    let name = started
-        .path
-        .file_name()
-        .expect("name")
-        .to_string_lossy()
-        .into_owned();
+    let name = gob_path::Shown::with_home(
+        std::path::Path::new(started.path.file_name().expect("name")),
+        None,
+    )
+    .to_string();
     assert!(
         text.contains(&format!("repo-wt/{name}")),
         "the worktree is recorded relative to the repository parent: {text}"

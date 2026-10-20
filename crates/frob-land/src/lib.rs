@@ -6,10 +6,6 @@
 //! branch, writes a `land` event, closes the ticket, releases the lease and
 //! removes the worktree. Everything runs in the foreground; `--wait` bounds
 //! the lock acquisition and the retries of a stale base (`E-LAND-STALE`). [`register`] adds the verb to a product root.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 pub mod base_ci;
 pub mod batch_size;

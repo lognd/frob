@@ -2,6 +2,7 @@
 //! and deletes it on a thread that dies with the process, so the rest must be swept later.
 // frob:ticket 01M4HF7GJZZ2EX5JNABSVTM10F
 
+use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use gob_git::Repo;
@@ -27,7 +28,7 @@ pub fn leftovers(repo: &Repo, parent: &Path) -> Vec<PathBuf> {
     };
     let mut out: Vec<PathBuf> = entries
         .flatten()
-        .filter(|e| e.file_name().to_string_lossy().ends_with(SUFFIX))
+        .filter(|e| crate::pathtext::name_text(&e.file_name()).ends_with(SUFFIX))
         .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
         .map(|e| e.path())
         .filter(|p| !registered.contains(&canon(p)))
@@ -44,7 +45,7 @@ pub fn sweep(parent: &Path, dirs: &[PathBuf]) -> (Vec<(PathBuf, u64)>, Vec<Strin
         let bytes = scan(dir).bytes;
         match jail.remove(dir) {
             Ok(_) => {
-                tracing::info!(dir = %dir.display(), bytes, "removing leftover deleted");
+                tracing::info!(dir = %Shown::of(dir), bytes, "removing leftover deleted");
                 done.push((dir.clone(), bytes));
             }
             Err(e) => failed.push(e),

@@ -1,6 +1,7 @@
 //! `release status` end to end: the readiness report is always exit 0.
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
 
+use gob_path::Shown;
 use std::path::Path;
 use std::process::Output;
 use std::time::Duration;
@@ -399,7 +400,7 @@ fn fake_gh(body: &str, fail: Option<(i32, &str)>) -> tempfile::TempDir {
     use std::os::unix::fs::PermissionsExt;
     let dir = tempfile::tempdir().expect("tempdir");
     std::fs::write(dir.path().join("runs.json"), body).expect("runs");
-    let d = dir.path().display();
+    let d = Shown::of(dir.path());
     let script = match fail {
         Some((code, err)) => format!("#!/bin/sh\necho '{err}' >&2\nexit {code}\n"),
         None => format!(

@@ -11,6 +11,7 @@ authors.workspace = true
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-time = { version = "0.532.0", path = "../gob-time" }
 frob-release = { version = "0.532.0", path = "../frob-release" }
 globset = "0.4"
