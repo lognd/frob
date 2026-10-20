@@ -2,7 +2,8 @@
 id = "01M3ZX80ZX9YB96A4VRYSQ16NG"
 title = "Agent briefs render ledger text with origin ledger and restrict suggested commands"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
