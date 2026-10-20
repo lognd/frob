@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
 updated = "2026-10-20T15:05:49Z"
 idempotency_key = "dt-DT02"
-scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-ledger/tests/branch.rs", "crates/frob/src/init.rs", "crates/frob/src/ticket/branch_cmd.rs", "crates/frob/src/ticket/doctor_cmd.rs", "crates/frob/tests/it/ticket_branch.rs", "crates/gob-git/src/fallback.rs", "crates/gob-git/src/ledger.rs", "crates/gob-git/src/spawn.rs"]
+scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-ledger/tests/branch.rs", "crates/frob/src/init.rs", "crates/frob/src/ticket/branch_cmd.rs", "crates/frob/src/ticket/doctor_cmd.rs", "crates/frob/tests/it/ticket_branch.rs", "crates/gob-git/src/fallback.rs", "crates/gob-git/src/ledger.rs", "crates/gob-git/src/spawn.rs", "docs/guides/ticket-branch.md"]
 
 [[acceptance]]
 text = "ticket branch init adopts origin's frob-tickets instead of refusing, including a shallow single-branch clone"
