@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:36Z"
-updated = "2026-10-20T07:46:53Z"
+updated = "2026-10-20T07:46:56Z"
 idempotency_key = "m2-mirror2-sweep"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/sweep.rs", "crates/frob-mirror/src/lib.rs"]
@@ -23,7 +23,7 @@ target = "01M4052RW8F31VNBZ6AJM20TF3"
 
 [[acceptance]]
 text = "Given N issues and K per run and a feed that reports nothing, when runs repeat, then every issue is visited within ceil(N/K) runs"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a run stopped midway, when the next run starts, then the sweep resumes after the last completed issue"
