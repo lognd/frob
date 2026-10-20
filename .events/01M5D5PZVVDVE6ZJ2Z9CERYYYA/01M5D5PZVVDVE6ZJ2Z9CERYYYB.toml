@@ -1,0 +1,10 @@
+kind = "create"
+title = "doable per-row may-be-taken past stale_error; read-verb freshness footers"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/src/ticket/**"]
+body = "found while working ~EV5KK0X: doable only warns today; add per-row marker and footers on show/list/board/stats (needs ~8PE22M6 envelopes)."
+at = "2026-10-20T17:28:28Z"
+actor = "lognd"
+rev = 1
