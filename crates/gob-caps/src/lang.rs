@@ -24,6 +24,10 @@ pub enum Lang {
     Yaml,
     /// TOML.
     Toml,
+    /// GitHub Actions workflows (`.github/workflows/*.yml`), a path-selected YAML dialect.
+    GithubActions,
+    /// Dockerfiles (`Dockerfile`, `Dockerfile.*`, `*.dockerfile`), selected by file name.
+    Dockerfile,
     /// The grimble model language (`.grmb`).
     Grmb,
     /// Pseudo-language: text with no adapter.
@@ -34,7 +38,7 @@ pub enum Lang {
 
 impl Lang {
     /// Every language, in matrix row order.
-    pub const ALL: [Self; 12] = [
+    pub const ALL: [Self; 14] = [
         Self::Rust,
         Self::Python,
         Self::CSharp,
@@ -44,6 +48,8 @@ impl Lang {
         Self::Markdown,
         Self::Yaml,
         Self::Toml,
+        Self::GithubActions,
+        Self::Dockerfile,
         Self::Grmb,
         Self::OpaqueText,
         Self::Binary,
@@ -61,6 +67,8 @@ impl Lang {
             Self::Markdown => "markdown",
             Self::Yaml => "yaml",
             Self::Toml => "toml",
+            Self::GithubActions => "github-actions",
+            Self::Dockerfile => "dockerfile",
             Self::Grmb => "grmb",
             Self::OpaqueText => "opaque-text",
             Self::Binary => "binary",

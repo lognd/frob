@@ -59,7 +59,7 @@ impl Adapter for DockerfileAdapter {
     }
 
     fn capabilities(&self) -> CapabilityDecl {
-        CapabilityDecl::for_lang(Lang::Yaml)
+        CapabilityDecl::for_lang(Lang::Dockerfile)
     }
 
     fn parse(&self, text: &str, _limits: &ParseLimits) -> ConcreteTree {

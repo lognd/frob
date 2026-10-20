@@ -824,3 +824,9 @@ and fails with `E-CHECK-READONLY` (an internal error) naming any file that no
 longer matches its analysed digest. `check_verb.rs` holds the positive control:
 a fixable `DSL003` tree stays `git status` clean under `frob check` and changes
 under `frob check --fix`.
+
+Under `--ticket`, `--fix` edits only files the lease covers (its scope globs plus
+`[lease] shared_files`; dependents pulled in by `ticket_hops` are checked but never
+edited). A fix with an edit outside that set is left whole, unapplied, and listed in
+`fix.skipped_scope` with the `frob lease widen <ticket> --glob <path>` command that
+would cover it. A diff scope (`--diff-base`) edits only the files the diff names.

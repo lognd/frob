@@ -43,7 +43,7 @@ static DOCKERFILE: DockerfileAdapter = DockerfileAdapter;
 static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Extensions (no dot, lowercase) claimed by the built-in adapters, by language.
-const BUILTIN_EXTENSIONS: [(&str, &[&str]); 8] = [
+const BUILTIN_EXTENSIONS: [(&str, &[&str]); 10] = [
     ("rust", &["rs"]),
     ("markdown", &["md", "markdown"]),
     ("yaml", &["yml", "yaml"]),
@@ -52,6 +52,8 @@ const BUILTIN_EXTENSIONS: [(&str, &[&str]); 8] = [
     ("typescript", TYPESCRIPT_EXTENSIONS),
     ("css", CSS_EXTENSIONS),
     ("html", HTML_EXTENSIONS),
+    ("github-actions", &[]),
+    ("dockerfile", &["dockerfile"]),
 ];
 
 /// A registrable adapter: submit one with `inventory::submit!` to make it visible here.
@@ -170,6 +172,8 @@ pub fn adapters() -> Vec<&'static dyn Adapter> {
         &TYPESCRIPT,
         &CSS,
         &HTML,
+        &ACTIONS,
+        &DOCKERFILE,
     ];
     out.extend(registry().registered.iter().map(|r| r.adapter));
     out
@@ -190,6 +194,7 @@ pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
         LanguageHint::Other(ext) if matches!(ext.as_str(), "yml" | "yaml") => Some(&YAML),
         LanguageHint::Other(ext) if matches!(ext.as_str(), "py" | "pyi") => Some(&PYTHON),
         LanguageHint::Other(ext) if ext.as_str() == "cs" => Some(&CSHARP),
+        LanguageHint::Other(ext) if ext.as_str() == "dockerfile" => Some(&DOCKERFILE),
         LanguageHint::Other(ext) if TYPESCRIPT_EXTENSIONS.contains(&ext.as_str()) => {
             Some(&TYPESCRIPT)
         }
@@ -322,5 +327,14 @@ mod tests {
         assert!(registry_conflicts().is_empty());
         assert!(adapter_for_path("a/b.RS").is_some());
         assert!(adapter_for_path("a/b.zzz").is_none());
+    }
+
+    #[test]
+    // frob:tests crates/gob-symbols/src/registry.rs::adapters
+    fn workflow_and_dockerfile_adapters_are_registered_under_their_own_tags() {
+        let tags: Vec<&str> = adapters().iter().map(|a| a.language()).collect();
+        assert!(tags.contains(&"github-actions"));
+        assert!(tags.contains(&"dockerfile"));
+        assert_eq!(tags.iter().filter(|t| **t == "yaml").count(), 1);
     }
 }

@@ -383,6 +383,8 @@ Query: Q04. Languages: code languages (not data, prose or style files).
 | markdown | <!-- |
 | yaml | # |
 | toml | # |
+| github-actions | # |
+| dockerfile | # |
 | grmb | // /* |
 | opaque-text |  |
 | binary |  |

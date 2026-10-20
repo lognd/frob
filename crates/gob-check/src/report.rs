@@ -115,6 +115,17 @@ pub struct AppliedFix {
     pub title: String,
 }
 
+/// One Deterministic fix left alone because it edits outside the run's scope.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct SkippedFix {
+    /// Rule whose finding the fix would have resolved.
+    pub rule: String,
+    /// The repo-relative file outside the scope.
+    pub file: String,
+    /// The command that widens the scope to cover `file`; empty when the scope cannot say.
+    pub widen: String,
+}
+
 /// What `--fix` did.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct FixOutcome {
@@ -126,6 +137,9 @@ pub struct FixOutcome {
     pub skipped_invalid: usize,
     /// Fixes dropped because the rewritten file no longer parsed.
     pub rolled_back: usize,
+    /// Fixes left alone because an edit lies outside the scope, with the command that widens it.
+    #[serde(default)]
+    pub skipped_scope: Vec<SkippedFix>,
     /// Findings left after the re-run (all severities).
     pub remaining: usize,
 }
@@ -188,6 +202,8 @@ pub struct CheckReport {
     pub subjects_examined: BTreeMap<String, usize>,
     /// Files examined, `NotApplicable` and Unresolved per language (every checked file appears).
     pub fidelity: FidelityReport,
+    /// Paths the run's scope forbids `--fix` to edit, each with the command that widens the scope.
+    pub fix_blocked: BTreeMap<String, String>,
     /// Fingerprints of external findings, mapped to their namespaced form (`grimble:<hex>`).
     pub namespaces: std::collections::HashMap<gob_rules::Fingerprint, String>,
     /// Where each external product's binary was found and its version (D87).

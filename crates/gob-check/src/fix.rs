@@ -11,7 +11,7 @@ use gob_text::FileInterner;
 use gob_walk::{ContentSource, Digest};
 
 use crate::error::CheckError;
-use crate::report::AppliedFix;
+use crate::report::{AppliedFix, SkippedFix};
 use gob_fs::write_atomic;
 
 /// One edit resolved to a path and byte range.
@@ -32,6 +32,8 @@ pub(crate) struct FixRun {
     pub skipped_invalid: usize,
     /// Fixes dropped because their result no longer parsed.
     pub rolled_back: usize,
+    /// Fixes left alone because an edit lies outside the run's scope.
+    pub skipped_scope: Vec<SkippedFix>,
 }
 
 /// One Deterministic fix resolved to paths and byte ranges.
@@ -87,7 +89,30 @@ fn overlaps(accepted: &[(usize, usize)], start: usize, end: usize) -> bool {
         .any(|&(s, e)| start < e.max(s + 1) && s < end.max(start + 1))
 }
 
+/// Resolve the edits of `fix` to paths and byte ranges; `None` when one names an unknown file.
+fn resolve_edits(fix: &gob_rules::Fix, files: &FileInterner) -> Option<Vec<(String, Edit)>> {
+    fix.edits
+        .iter()
+        .map(|e| {
+            files.path(e.file).map(|p| {
+                (
+                    p.to_owned(),
+                    Edit {
+                        start: u32::from(e.range.start()) as usize,
+                        end: u32::from(e.range.end()) as usize,
+                        replacement: e.replacement.clone(),
+                    },
+                )
+            })
+        })
+        .collect()
+}
+
 /// Apply every Deterministic fix among `findings` and write the files.
+///
+/// `blocked` maps each path the run's scope forbids editing to the command that would widen the
+/// scope (empty when none is known); a fix with an edit on such a path is skipped whole, listed in
+/// [`FixRun::skipped_scope`], and its files are neither read nor written.
 ///
 /// A fix is atomic: when any of its edits is out of range, overlaps an edit
 /// already accepted for the same file, or leaves its file unparsable, the whole
@@ -106,32 +131,28 @@ pub(crate) fn apply(
     files: &FileInterner,
     analysed: &HashMap<String, String>,
     raw: &HashMap<String, String>,
+    blocked: &BTreeMap<String, String>,
 ) -> Result<FixRun, CheckError> {
     let mut candidates = Vec::new();
+    let mut skipped_scope = Vec::new();
     for f in findings {
         let Some(fix) = f.fix.as_ref().filter(|x| x.kind == FixKind::Deterministic) else {
             continue;
         };
-        let resolved: Option<Vec<(String, Edit)>> = fix
-            .edits
-            .iter()
-            .map(|e| {
-                files.path(e.file).map(|p| {
-                    (
-                        p.to_owned(),
-                        Edit {
-                            start: u32::from(e.range.start()) as usize,
-                            end: u32::from(e.range.end()) as usize,
-                            replacement: e.replacement.clone(),
-                        },
-                    )
-                })
-            })
-            .collect();
+        let resolved = resolve_edits(fix, files);
         let Some(edits) = resolved.filter(|r| !r.is_empty()) else {
             tracing::warn!(rule = %f.rule, "fix names an unknown file; skipped");
             continue;
         };
+        if let Some((path, _)) = edits.iter().find(|(p, _)| blocked.contains_key(p)) {
+            tracing::info!(rule = %f.rule, path, "fix is outside the scope; skipped");
+            skipped_scope.push(SkippedFix {
+                rule: f.rule.to_string(),
+                file: path.clone(),
+                widen: blocked[path].clone(),
+            });
+            continue;
+        }
         candidates.push(Candidate {
             rule: f.rule.to_string(),
             title: fix.title.clone(),
@@ -206,6 +227,7 @@ pub(crate) fn apply(
         skipped_overlap,
         skipped_invalid,
         rolled_back,
+        skipped_scope,
     })
 }
 
@@ -421,6 +443,7 @@ mod tests {
                 &self.files,
                 &self.analysed,
                 &self.raw,
+                &BTreeMap::new(),
             )
         }
 
@@ -486,7 +509,15 @@ mod tests {
             "a.txt".to_owned(),
             Digest::of(b"one\r\ntwo\r\n").to_string(),
         );
-        let err = apply(fx.dir.path(), &[f], &fx.files, &analysed, &fx.raw).unwrap_err();
+        let err = apply(
+            fx.dir.path(),
+            &[f],
+            &fx.files,
+            &analysed,
+            &fx.raw,
+            &BTreeMap::new(),
+        )
+        .unwrap_err();
         assert!(err.to_string().starts_with("E-FIX-STALE: a.txt"), "{err}");
         assert_eq!(fx.read("a.txt"), "one\r\ntwo\r\n");
     }
@@ -516,6 +547,34 @@ mod tests {
         assert_eq!(out.applied.len(), 1);
         assert_eq!(fx.read("a.rs"), "fn a() {}\n");
         assert_eq!(fx.read("b.txt"), "kept");
+    }
+
+    // frob:tests crates/gob-check/src/fix.rs::apply
+    #[test]
+    fn a_fix_outside_the_scope_is_skipped_unchanged_and_listed_with_its_widen_command() {
+        let mut fx = Fx::new(&[("in.txt", "hello world"), ("out.txt", "other")]);
+        let fa = Fx::finding(vec![fx.edit("in.txt", 0, 5, "howdy")]);
+        let fb = Fx::finding(vec![fx.edit("out.txt", 0, 5, "OTHER")]);
+        let blocked: BTreeMap<String, String> = [(
+            "out.txt".to_owned(),
+            "frob lease widen ~T --glob out.txt".to_owned(),
+        )]
+        .into();
+        let out = apply(
+            fx.dir.path(),
+            &[fa, fb],
+            &fx.files,
+            &fx.analysed,
+            &fx.raw,
+            &blocked,
+        )
+        .unwrap();
+        assert_eq!(out.applied.len(), 1);
+        assert_eq!(fx.read("in.txt"), "howdy world");
+        assert_eq!(fx.read("out.txt"), "other");
+        assert_eq!(out.skipped_scope.len(), 1);
+        assert_eq!(out.skipped_scope[0].file, "out.txt");
+        assert!(out.skipped_scope[0].widen.contains("lease widen"));
     }
 
     // frob:tests crates/gob-check/src/fix.rs::write_all

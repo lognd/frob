@@ -96,7 +96,9 @@ pub use product::{
     BranchChanges, CollectCx, Collected, CountFn, External, NoScope, Product, RepoGroup, RunFn,
     ScopeView, ScopedFindings, Snapshot,
 };
-pub use report::{AppliedFix, CheckReport, Counts, FixOutcome, StageTime, Stats, Timing};
+pub use report::{
+    AppliedFix, CheckReport, Counts, FixOutcome, SkippedFix, StageTime, Stats, Timing,
+};
 pub use rule_set::RuleSet;
 pub use rules::{
     Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Read001, Tool001, Tool002,
