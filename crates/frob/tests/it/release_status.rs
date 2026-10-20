@@ -1,6 +1,7 @@
 //! `release status` end to end: the readiness report is always exit 0.
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
 
+#[cfg(unix)]
 use gob_path::Shown;
 use std::path::Path;
 use std::process::Output;
