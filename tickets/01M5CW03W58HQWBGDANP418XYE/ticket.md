@@ -8,8 +8,9 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T15:04:37Z"
+updated = "2026-10-20T15:05:43Z"
 idempotency_key = "dt-DT02"
+scope = ["crates/frob-ledger/src/branch.rs"]
 
 [[acceptance]]
 text = "ticket branch init adopts origin's frob-tickets instead of refusing, including a shallow single-branch clone"
