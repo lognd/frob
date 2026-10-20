@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-19T23:57:50Z"
+digest = "d1f2dad91119eba3d08584adfac9b46291032206e3751545b2b9068959768f03"
+exit_code = 0
+inline = """
+
+running 1 test
+test mirror::tests::mirror_table_defaults_and_file_values ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 36.07s
+     Running unittests src/lib.rs (target/debug/deps/gob_config-2548f240c04fdac6)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-config --lib mirror_table_defaults_and_file_values"
+size = 387
+status = "measured"
+at = "2026-10-19T23:57:50Z"
+actor = "lognd"
+rev = 1
