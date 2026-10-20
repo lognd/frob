@@ -2,7 +2,8 @@
 id = "01M5D17PG2S8RMQ3GJDHP76EES"
 title = "DT04 flip step: goway with_refs, frob.toml orphan mode and ticket migrate"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
