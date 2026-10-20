@@ -36,6 +36,8 @@ enum Perms {
     Inherit,
     /// Owner read/write only (mode 0600 on Unix).
     Private,
+    /// Executable (mode 0755 on Unix), for scripts and hooks.
+    Executable,
 }
 
 /// The sibling temp path a write of `path` stages into.
@@ -54,9 +56,17 @@ fn create_staged(tmp: &Path, target: &Path, perms: Perms) -> io::Result<File> {
     let mut opts = OpenOptions::new();
     opts.write(true).create_new(true);
     #[cfg(unix)]
-    if matches!(perms, Perms::Private) {
+    {
         use std::os::unix::fs::OpenOptionsExt;
-        opts.mode(0o600);
+        match perms {
+            Perms::Private => {
+                opts.mode(0o600);
+            }
+            Perms::Executable => {
+                opts.mode(0o755);
+            }
+            Perms::Inherit => {}
+        }
     }
     let file = opts.open(tmp)?;
     if matches!(perms, Perms::Inherit)
@@ -142,6 +152,14 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> io::Result<()> {
 /// The I/O error from staging, syncing or renaming; the target is left untouched.
 pub fn write_atomic_private(path: &Path, bytes: &[u8]) -> io::Result<()> {
     write_with(path, bytes, Perms::Private, Write::write_all)
+}
+
+/// Write `bytes` to `path` atomically into an executable (0755 on Unix) file.
+///
+/// # Errors
+/// The I/O error from staging, syncing or renaming; the target is left untouched.
+pub fn write_atomic_executable(path: &Path, bytes: &[u8]) -> io::Result<()> {
+    write_with(path, bytes, Perms::Executable, Write::write_all)
 }
 
 #[cfg(test)]

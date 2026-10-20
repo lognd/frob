@@ -156,26 +156,12 @@ pub fn write_atomic(path: &Path, bytes: &[u8], executable: bool) -> Result<(), A
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(|e| io(dir, e))?;
     }
-    let mut tmp_name = path.file_name().unwrap_or_default().to_os_string();
-    tmp_name.push(format!(".frob-tmp-{}", std::process::id()));
-    let tmp = path.with_file_name(tmp_name);
-    let result = (|| {
-        std::fs::write(&tmp, bytes).map_err(|e| io(&tmp, e))?;
-        #[cfg(unix)]
-        if executable {
-            use std::os::unix::fs::PermissionsExt;
-            std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o755))
-                .map_err(|e| io(&tmp, e))?;
-        }
-        #[cfg(not(unix))]
-        let _ = executable;
-        std::fs::rename(&tmp, path).map_err(|e| io(path, e))
-    })();
-    if result.is_err() {
-        // Best effort: a leftover temp file is harmless but untidy.
-        let _ = std::fs::remove_file(&tmp);
-    }
-    result
+    let written = if executable {
+        gob_fs::write_atomic_executable(path, bytes)
+    } else {
+        gob_fs::write_atomic(path, bytes)
+    };
+    written.map_err(|e| io(path, e))
 }
 
 /// Copy the current content of `path` to `<path>.frob-bak` (no-op when `path` is absent).
