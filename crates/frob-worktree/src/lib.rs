@@ -16,6 +16,7 @@ pub mod claim;
 pub mod config;
 pub mod cycle_gate;
 pub mod error;
+pub mod evict;
 pub mod gc;
 pub(crate) mod pathtext;
 pub mod verbs;
