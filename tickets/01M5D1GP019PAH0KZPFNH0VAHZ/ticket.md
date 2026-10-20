@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T16:15:07Z"
-updated = "2026-10-20T16:21:22Z"
+updated = "2026-10-20T16:29:18Z"
 idempotency_key = "dt-audit-tickets-paths"
 scope = ["crates/frob/tests/it/orphan_readiness.rs", "crates/frob/tests/it/main.rs", "docs/design/orphan-readiness.md", "docs/guides/ticket-branch.md"]
 
