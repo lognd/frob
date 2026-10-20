@@ -2,13 +2,13 @@
 id = "01M5CW04D5QJCJ5S72V8PE22M6"
 title = "Freshness in envelopes and W-SYNC/E-SYNC classes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T18:28:22Z"
+updated = "2026-10-20T18:28:23Z"
 idempotency_key = "dt-DT07"
 
 [[links]]
