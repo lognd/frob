@@ -1,0 +1,28 @@
+kind = "evidence"
+captured_at = "2026-10-20T18:46:54Z"
+digest = "78acb6f4a8831a700c87715104155fd9cfb0b11cc078eb02b8b413cf10e53dba"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f433cfdd-ac02-4f6c-ae37-7fa6f55ebd29 with nextest profile: default
+    Starting 4 tests across 329 binaries (4009 tests skipped)
+        PASS [   0.009s] frob-cli init::freshness_hooks::tests::dry_run_writes_nothing
+        PASS [   0.010s] frob-cli init::freshness_hooks::tests::install_preserves_a_foreign_hook_and_remove_restores_it
+        PASS [   0.010s] frob-cli init::freshness_hooks::tests::remove_deletes_a_frob_only_hook_and_is_a_noop_twice
+        PASS [   0.010s] frob-cli init::freshness_hooks::tests::install_is_idempotent_and_executable
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 4 tests run: 4 passed, 4009 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "freshness_hooks"
+size = 1012
+status = "measured"
+test_count = 4
+tests_digest = "9e66c71a7ed0def346d5300ba81da1ff97e4bb47f7f4f3f68157516c0e3f3b73"
+at = "2026-10-20T18:46:54Z"
+actor = "lognd"
+rev = 1
