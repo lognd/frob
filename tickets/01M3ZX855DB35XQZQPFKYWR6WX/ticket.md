@@ -2,7 +2,8 @@
 id = "01M3ZX855DB35XQZQPFKYWR6WX"
 title = "[mirror.identities] by tracker user id, [mirror] bot_ids, and tracker key as a ticket alias"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
