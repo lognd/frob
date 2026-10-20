@@ -4,10 +4,10 @@ title = "Claim hold/resume verbs, lease events and pause detection"
 type = "task"
 category = "todo"
 priority = "medium"
-parent = "01M5CW0557C2HYG7KZBV3Y6VBJ"
+parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T20:36:55Z"
-updated = "2026-10-20T20:36:55Z"
+updated = "2026-10-20T20:52:44Z"
 +++
 
 follow-up of V3Y6VBJ: wire frob claim hold|resume to lease ops hold/resume and detect pauses (blocked-by, train, review, CI) from the ledger, feeding frob_ledger::claim_hold::effective_observation.
