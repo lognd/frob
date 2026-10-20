@@ -1,6 +1,7 @@
 //! The error type of the evidence crate and its mapping to CLI refusals.
 
 use gob_cli::{CliError, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use gob_path::Shown;
 
 /// Everything evidence capture, storage and lookup can fail with.
@@ -271,7 +272,7 @@ impl EvidenceError {
             Self::NotExecuted { .. } => Some(not_executed_refusal(self.to_string())),
             Self::BadIndex(_) => Some(
                 Refusal::new("E-EVIDENCE-INDEX", GuardNeedsAction, self.to_string())
-                    .with_remedy("frob ticket evidence list <ticket>"),
+                    .with_command(RemedyCommand::new("frob", "ticket evidence list").arg("<ticket>")),
             ),
             Self::NotARepo(_) => Some(
                 Refusal::new("E-NOT-A-REPO", GuardNeedsAction, self.to_string())

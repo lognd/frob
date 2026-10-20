@@ -1383,6 +1383,7 @@ dependencies = [
  "gob-cache",
  "gob-caps",
  "gob-cli",
+ "gob-diagnostics",
  "gob-directives",
  "gob-exec",
  "gob-git",
