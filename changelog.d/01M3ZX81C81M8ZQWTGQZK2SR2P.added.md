@@ -1,0 +1,1 @@
+frob: doctor checks through the hosting API that the ticket branch forbids force pushes and deletion (TICK011): an Error where the API says they are allowed, Unresolved when there is no token or the API cannot be reached.

@@ -160,7 +160,7 @@ pub fn recreate<S: ShardStore, A: TrackerAdapter>(
 /// Environment variable holding the 64-hex marker signing key.
 const KEY_VAR: &str = "FROB_MIRROR_KEY";
 /// Token variables, first set one wins.
-const TOKEN_VARS: [&str; 2] = ["GH_TOKEN", "GITHUB_TOKEN"];
+pub(crate) const TOKEN_VARS: [&str; 2] = ["GH_TOKEN", "GITHUB_TOKEN"];
 /// Refusal code when a person is not at a terminal.
 const CODE_NEEDS_HUMAN: &str = "E-MIRROR-NEEDS-HUMAN";
 /// Refusal code for a recreate that did not run.
@@ -201,7 +201,7 @@ struct RecreateArgs {
 }
 
 /// The `(owner, name)` of a GitHub remote URL (https or scp-like), if it is one.
-fn parse_remote(url: &str) -> Option<(String, String)> {
+pub(crate) fn parse_remote(url: &str) -> Option<(String, String)> {
     let tail = url
         .split_once("github.com/")
         .or_else(|| url.split_once("github.com:"))?
@@ -213,7 +213,11 @@ fn parse_remote(url: &str) -> Option<(String, String)> {
 }
 
 /// The repository to recreate in: the `--repo` flag, else `[mirror] repo`, else the remote URL.
-fn resolve_repo(flag: Option<&str>, cfg: &str, remote: &str) -> Option<(String, String)> {
+pub(crate) fn resolve_repo(
+    flag: Option<&str>,
+    cfg: &str,
+    remote: &str,
+) -> Option<(String, String)> {
     let chosen = flag
         .filter(|r| !r.is_empty())
         .or(Some(cfg).filter(|r| !r.is_empty()));

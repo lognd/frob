@@ -316,6 +316,7 @@ a time, with next and previous, and opens linked files in the pager.
 | TICK008 | Error, P+ | move-outside-reindex: a non-reindex ledger commit moved, deleted or edited existing ticket or event files |
 | TICK009 | Error, P+, machine fix | misfiled-ticket: a ticket file is not at its computed path |
 | TICK010 | Error, P+ | ledger-branch-workflow: a `.github/` file on the ticket branch other than the byte-exact generated nudge workflow |
+| TICK011 | Error, Unresolved when the API cannot answer | ledger-branch-unprotected: the hosting API says the ticket branch allows force pushes or deletion (`frob doctor`, security.md 2.11) |
 | PM031 | Error | good-first-incomplete |
 | PM032 | Warning | good-first-pool-low |
 | `E-TICKET-PATH` | CLI error | a file path was given where a ticket id is expected |

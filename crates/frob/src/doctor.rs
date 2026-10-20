@@ -3,6 +3,9 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
+use frob_mirror::github::adapter::{HttpRequest, HttpTransport, Method};
+use frob_mirror::github::http::NativeTransport;
+use frob_obligations::tick_protect::{self, ProtectionProbe, Reply, Verdict};
 use frob_worktree::gc::{self, Mode, pass::Report};
 use gob_cache::{Cache, CacheConfig};
 use gob_check::{OtherCopy, SiblingRow};
@@ -16,6 +19,7 @@ use serde::Serialize;
 use crate::PRODUCT;
 use crate::config::FrobConfig;
 use crate::init::{DriverVerdict, configured_driver, fix_command, judge_driver};
+use crate::mirror_recreate_cmd::{TOKEN_VARS, resolve_repo};
 use crate::workspace::{Located, registered_tables, table_refs};
 
 /// How long a `--version` probe may run.
@@ -148,6 +152,10 @@ pub struct LedgerInfo {
     pub oid: Option<String>,
     /// Why it does not resolve.
     pub error: Option<String>,
+    /// Ledger-branch protection through the hosting API: `protected`, `unprotected`, `unresolved` or `skipped`.
+    pub protection: String,
+    /// What the hosting API said (or why it could not be asked) when `protection` is not `protected`.
+    pub protection_detail: Option<String>,
 }
 
 /// The configured ledger merge driver against the running frob.
@@ -410,7 +418,7 @@ impl Doctor {
             error: config_error,
         };
 
-        let ledger = ledger_info(&located, &cfg);
+        let (ledger, protection) = ledger_with_protection(&located, &cfg);
         let driver = driver_check(&located)?;
         let siblings: Vec<SiblingRow> = SIBLING_PRODUCTS
             .iter()
@@ -466,7 +474,7 @@ impl Doctor {
             leases,
             languages,
         })
-        .with_findings(findings);
+        .with_findings(findings.into_iter().chain(protection).collect());
         Ok(warnings
             .into_iter()
             .fold(payload, gob_cli::Payload::with_warning))
@@ -651,14 +659,92 @@ fn ledger_info(located: &Located, cfg: &FrobConfig) -> LedgerInfo {
             reachable: true,
             oid: Some(oid.to_string()),
             error: None,
+            protection: "skipped".to_owned(),
+            protection_detail: None,
         },
         Err(e) => LedgerInfo {
             r#ref: name,
             reachable: false,
             oid: None,
             error: Some(e),
+            protection: "skipped".to_owned(),
+            protection_detail: None,
         },
     }
+}
+
+/// The ledger section with its branch-protection verdict, and the `TICK011` finding when there is one.
+// frob:ticket 01M3ZX81C81M8ZQWTGQZK2SR2P
+fn ledger_with_protection(
+    located: &Located,
+    cfg: &FrobConfig,
+) -> (LedgerInfo, Option<gob_rules::Finding>) {
+    let mut ledger = ledger_info(located, cfg);
+    let remote = located
+        .repo
+        .as_ref()
+        .and_then(|r| r.remote_url("origin"))
+        .unwrap_or_default();
+    let finding = protection_check(&mut ledger, cfg, &remote, &GithubProbe);
+    (ledger, finding)
+}
+
+/// A [`ProtectionProbe`] over the native GitHub transport, with the token from the environment.
+struct GithubProbe;
+
+impl ProtectionProbe for GithubProbe {
+    fn get(&self, path: &str) -> Result<Reply, String> {
+        let token = TOKEN_VARS
+            .iter()
+            .find_map(|v| std::env::var(v).ok().filter(|t| !t.is_empty()))
+            .ok_or_else(|| "no GH_TOKEN or GITHUB_TOKEN set".to_owned())?;
+        let req = HttpRequest {
+            method: Method::Get,
+            path: path.to_owned(),
+            query: vec![],
+            body: None,
+        };
+        NativeTransport::new(token)
+            .send(&req)
+            .map(|r| Reply {
+                status: r.status,
+                body: r.body,
+            })
+            .map_err(|e| format!("hosting API unreachable: {e}"))
+    }
+}
+
+/// Judge the ledger branch's protection into `info` and return the `TICK011` finding, if any.
+///
+/// Only the orphan ticket-branch layout has a ledger branch; any other layout is `skipped`.
+/// An answer that force pushes or deletion are allowed is an Error finding; no token, no
+/// GitHub remote or an unreachable API is Unresolved, never clean (security.md 2.11).
+// frob:ticket 01M3ZX81C81M8ZQWTGQZK2SR2P
+fn protection_check(
+    info: &mut LedgerInfo,
+    cfg: &FrobConfig,
+    remote: &str,
+    probe: &dyn ProtectionProbe,
+) -> Option<gob_rules::Finding> {
+    if cfg.tickets.ref_mode != crate::config::RefModeKnob::Orphan {
+        tracing::debug!("ledger protection skipped: not the orphan ticket-branch layout");
+        return None;
+    }
+    let branch = &cfg.tickets.branch;
+    let verdict = match resolve_repo(None, &cfg.mirror.repo, remote) {
+        Some((owner, repo)) => tick_protect::check_branch(probe, &owner, &repo, branch),
+        None => Verdict::Unresolved(
+            "no GitHub repository: set [mirror] repo or an origin remote".to_owned(),
+        ),
+    };
+    let (state, detail) = match &verdict {
+        Verdict::Protected => ("protected", None),
+        Verdict::Unprotected(open) => ("unprotected", Some(open.join("; "))),
+        Verdict::Unresolved(why) => ("unresolved", Some(why.clone())),
+    };
+    state.clone_into(&mut info.protection);
+    info.protection_detail = detail;
+    tick_protect::tick011(&verdict, branch)
 }
 
 /// The lease-file section: corrupt files, and with `fix` quarantine them (kept as `.toml.corrupt`, never deleted).
@@ -799,5 +885,71 @@ fn gc_info(
         would_reclaim_bytes: plan.reclaimed_bytes,
         kept: plan.kept,
         fixed,
+    }
+}
+
+#[cfg(test)]
+mod protection_tests {
+    use super::*;
+    use gob_rules::Severity;
+
+    struct Fixed(Result<Reply, String>);
+
+    impl ProtectionProbe for Fixed {
+        fn get(&self, _path: &str) -> Result<Reply, String> {
+            self.0.clone()
+        }
+    }
+
+    fn orphan() -> FrobConfig {
+        let mut cfg = FrobConfig::default();
+        cfg.tickets.ref_mode = crate::config::RefModeKnob::Orphan;
+        cfg
+    }
+
+    fn info() -> LedgerInfo {
+        LedgerInfo {
+            r#ref: "r".to_owned(),
+            reachable: true,
+            oid: None,
+            error: None,
+            protection: "skipped".to_owned(),
+            protection_detail: None,
+        }
+    }
+
+    const REMOTE: &str = "https://github.com/o/r.git";
+
+    // frob:tests crates/frob/src/doctor.rs::protection_check
+    #[test]
+    fn allowed_force_push_is_an_error() {
+        let body = r#"{"allow_force_pushes":{"enabled":true},"allow_deletions":{"enabled":false}}"#;
+        let probe = Fixed(Ok(Reply {
+            status: 200,
+            body: body.to_owned(),
+        }));
+        let mut i = info();
+        let f = protection_check(&mut i, &orphan(), REMOTE, &probe).expect("finding");
+        assert_eq!(f.severity, Severity::Error);
+        assert_eq!(i.protection, "unprotected");
+    }
+
+    // frob:tests crates/frob/src/doctor.rs::protection_check
+    #[test]
+    fn unreachable_api_is_unresolved_not_clean() {
+        let probe = Fixed(Err("no token".to_owned()));
+        let mut i = info();
+        let f = protection_check(&mut i, &orphan(), REMOTE, &probe).expect("finding");
+        assert_eq!(f.severity, Severity::Unresolved);
+        assert_eq!(i.protection, "unresolved");
+    }
+
+    // frob:tests crates/frob/src/doctor.rs::protection_check
+    #[test]
+    fn non_orphan_layout_is_skipped() {
+        let probe = Fixed(Err("never asked".to_owned()));
+        let mut i = info();
+        assert!(protection_check(&mut i, &FrobConfig::default(), REMOTE, &probe).is_none());
+        assert_eq!(i.protection, "skipped");
     }
 }

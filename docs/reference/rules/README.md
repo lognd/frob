@@ -373,6 +373,7 @@
 | [TICK008](TICK008.md) | move-outside-reindex | error | manual | P+ | false | A ledger commit without the reindex trailer renamed or deleted a ticket file, or touched an event file it did not add. |
 | [TICK009](TICK009.md) | misfiled-ticket | error | manual | P+ | false | A ticket file on the tip of the ticket branch is not at its computed path. |
 | [TICK010](TICK010.md) | ledger-branch-workflow | error | manual | P+ | false | A `.github/` tree on the ticket branch is not exactly the generated nudge workflow. |
+| [TICK011](TICK011.md) | ledger-branch-unprotected | error | manual | P+ | false | The ledger branch allows a force push or deletion, or the hosting API could not say it does not. |
 
 ## TODO
 

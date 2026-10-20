@@ -81,6 +81,7 @@ mod refs;
 pub mod rules;
 mod sibling;
 mod tick_paths;
+pub mod tick_protect;
 mod tickets;
 mod todo;
 mod util;
