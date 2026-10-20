@@ -464,6 +464,18 @@ items, never task-list checkboxes. The digest is the projection's own render
 digest, and rendering is a pure function, so the same projection yields
 byte-identical output. Neutralisation and render limits layer on top.
 
+#### Reading and declining proposals
+
+`frob ticket proposals list [TICKET]` shows every pending proposal: tracker
+item id, field, actor id, time, digest, the origin (always `tracker`) and an
+excerpt. The excerpt is untrusted tracker text, so it is escaped for its
+origin and capped at 200 characters before it is printed.
+`frob ticket proposals decline TICKET TRACKER_EVENT --reason TEXT` appends a
+`proposal-declined` event carrying the reason; the proposal then leaves the
+pending list, and repeating the command is a no-op. `frob check` prints the
+count of pending proposals as a note and in `pending_proposals`; it is advisory
+and never changes the exit status. Accepting a proposal is a separate step.
+
 ### 3.6 Publishing safely (MIR-AUD-18, 19, 21, 23, 28, 30, 32)
 
 - Render limits are checked before any write: body size (65536

@@ -71,6 +71,8 @@
 | `ticket list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List tickets from the index, filtered by category, type, parent, label or blocked; `--category triage` is the inbox. |
 | `ticket migrate` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Copy the legacy ledger onto the orphan ticket branch and verify it; `--dry-run` prints the mapping and writes nothing. |
 | `ticket new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a ticket; with `--idempotency-key` a repeat returns the first ticket. |
+| `ticket proposals decline` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Decline a pending proposal with a reason: appends `proposal-declined`; the ticket is untouched. |
+| `ticket proposals list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the pending tracker proposals, escaped and capped. |
 | `ticket reindex` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Move ticket files to the paths their titles and parents imply, in one `tickets(reindex)` commit; `--check` changes nothing and exits 1 with the diff when the branch is stale. |
 | `ticket reopen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Reopen a done ticket into todo with a required reason. |
 | `ticket show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one ticket from the index; `--events` adds its timeline, `--format md` prints it as markdown. |

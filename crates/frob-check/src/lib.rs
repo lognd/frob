@@ -41,6 +41,7 @@ mod memo;
 mod options;
 mod product;
 pub mod product_rules;
+pub mod proposals_summary;
 mod scope;
 mod sibling;
 mod snapshot;

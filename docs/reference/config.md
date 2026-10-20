@@ -338,6 +338,16 @@ Materialized: no.
 |---|---|---|---|---|
 | `trust` | `String` | `"checked"` | no | `checked` (annotations are exact only in files the bound checker ran clean on), `annotated` (claimed, May) or `none` (hints only). |
 
+## `[ui]`
+
+Terminal presentation settings.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `teach` | `String` | `"first"` | no | Inline explain text: `first` (once per rule, state in `.frob/seen.toml`), `never` (help lines only) or `always`. |
+
 ## `[worktree]`
 
 Where `frob work` creates worktrees.

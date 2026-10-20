@@ -910,6 +910,18 @@
       },
       "type": "object"
     },
+    "ui": {
+      "additionalProperties": false,
+      "description": "Terminal presentation settings.",
+      "properties": {
+        "teach": {
+          "default": "first",
+          "description": "Inline explain text: `first` (once per rule, state in `.frob/seen.toml`), `never` (help lines only) or `always`.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "worktree": {
       "additionalProperties": false,
       "description": "Where `frob work` creates worktrees.",

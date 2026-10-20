@@ -48,6 +48,7 @@ mod ticket_migrate;
 mod ticket_misfiled;
 mod ticket_moves;
 mod ticket_path_refs;
+mod ticket_proposals;
 mod ticket_reindex;
 mod ticket_replay;
 mod ticket_scrub;
