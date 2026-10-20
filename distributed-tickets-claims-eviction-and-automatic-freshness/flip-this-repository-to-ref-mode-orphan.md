@@ -2,7 +2,8 @@
 id = "01M5CW042Y1CDRVGXWTQ468BZE"
 title = "Flip this repository to ref_mode = orphan"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
