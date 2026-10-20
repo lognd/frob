@@ -4,8 +4,9 @@ title = "Migrate with_remedy sites to structured with_command: crunk, grimble, g
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T14:33:55Z"
-updated = "2026-10-20T14:33:55Z"
+updated = "2026-10-20T22:48:56Z"
 scope = ["crates/crunk/**,crates/grimble/**,crates/gob-product/**"]
 +++
