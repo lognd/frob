@@ -2,7 +2,8 @@
 id = "01M4052TG0DWTW9KA7A1CH4ED3"
 title = "Revert backoff and contested fields (MIR002 Advisory)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
