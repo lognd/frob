@@ -2,7 +2,8 @@
 id = "01M5B9ZKNYHSNYFCH1ZPBEEBRK"
 title = "Ledger parse_shard: treat a shard without issue as unmapped, not malformed"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
