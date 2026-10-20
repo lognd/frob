@@ -8,9 +8,9 @@ points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T17:18:29Z"
+updated = "2026-10-20T17:18:38Z"
 idempotency_key = "dt-DT06"
-scope = ["crates/gob-git/src/remote.rs", "crates/gob-git/src/ledger.rs", "crates/gob-git/src/lib.rs", "crates/frob-ledger/src/integrate.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob/tests/it/refresh.rs"]
+scope = ["crates/gob-git/src/remote.rs", "crates/gob-git/src/ledger.rs", "crates/gob-git/src/lib.rs", "crates/frob-ledger/src/integrate.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob/tests/it/refresh.rs", "crates/frob-ledger/src/objects.rs", "crates/frob-ledger/src/objects/*"]
 
 [[links]]
 kind = "blocked-by"
