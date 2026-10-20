@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T15:15:51Z"
-updated = "2026-10-20T15:58:28Z"
+updated = "2026-10-20T15:58:29Z"
 scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/work.rs", ".github/workflows/ci.yml", ".github/scripts/ensure-ledger-refs.sh", "crates/frob/tests/it/ticket_branch_refs.rs", "docs/design/distributed-tickets.md", "docs/guides/ticket-branch.md"]
 
 [[acceptance]]
