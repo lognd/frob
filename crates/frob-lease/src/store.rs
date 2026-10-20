@@ -105,6 +105,7 @@ pub struct LeaseStore {
     shared: GlobSet,
     resolver: Resolver,
     clock: Arc<dyn Clock>,
+    agent: Option<String>,
 }
 
 impl LeaseStore {
@@ -147,12 +148,22 @@ impl LeaseStore {
             shared,
             resolver: Resolver::new(root),
             clock,
+            agent: std::env::var(frob_ledger::claim_agent::AGENT_ENV)
+                .ok()
+                .filter(|a| !a.trim().is_empty()),
         })
     }
 
     /// The clock instant at the whole-second precision of lease files.
     fn now(&self) -> Stamp {
         self.clock.now().seconds()
+    }
+
+    /// Set the agent label stamped on newly taken claims (default: `FROB_AGENT` at open time).
+    #[must_use]
+    pub fn with_agent(mut self, agent: Option<String>) -> Self {
+        self.agent = agent;
+        self
     }
 
     /// Replace the clock (tests of TTL expiry).
@@ -487,6 +498,9 @@ impl LeaseStore {
                 ttl_secs: self.cfg.ttl_secs,
                 history: Vec::new(),
                 queued: false,
+                agent: self.agent.clone(),
+                touched_at: None,
+                touch_note: None,
             },
         };
         let already = existing.is_some_and(|e| e.scope == scope);
@@ -698,6 +712,66 @@ impl LeaseStore {
         lease.ttl_secs = self.cfg.ttl_secs;
         self.write(&lock, &lease)?;
         tracing::info!(%ticket, %holder, "lease renewed");
+        Ok(lease)
+    }
+
+    /// Soft heartbeat (`frob claim touch`): renew `holder`'s lease and record the touch time and `note`.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::NotHeld`] with no lease, [`LeaseError::Held`] for another holder, plus lock and I/O failures.
+    pub fn touch(
+        &self,
+        ticket: TicketId,
+        holder: &Holder,
+        note: Option<&str>,
+    ) -> Result<Lease, LeaseError> {
+        let lock = self.lock()?;
+        let now = self.now();
+        let mut lease = self.find(ticket)?.ok_or(LeaseError::NotHeld { ticket })?;
+        if &lease.holder != holder {
+            return Err(held_by(&lease, SAME_TICKET));
+        }
+        lease.renewed_at = now;
+        lease.ttl_secs = self.cfg.ttl_secs;
+        lease.touched_at = Some(now);
+        lease.touch_note = note.map(str::to_owned);
+        self.write(&lock, &lease)?;
+        tracing::info!(%ticket, %holder, "claim touched");
+        Ok(lease)
+    }
+
+    /// Re-claim as `agent` (`Some` label) or as a human (`None`): the lease's window kind switches (`lease` op `rekind`).
+    ///
+    /// The touch record is cleared because the idle clock restarts.
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::NotHeld`] with no lease, [`LeaseError::Held`] for another holder, plus lock and I/O failures.
+    pub fn rekind(
+        &self,
+        ticket: TicketId,
+        holder: &Holder,
+        agent: Option<String>,
+    ) -> Result<Lease, LeaseError> {
+        let lock = self.lock()?;
+        let now = self.now();
+        let mut lease = self.find(ticket)?.ok_or(LeaseError::NotHeld { ticket })?;
+        if &lease.holder != holder {
+            return Err(held_by(&lease, SAME_TICKET));
+        }
+        let before = lease.holder_kind();
+        lease.agent = agent;
+        if lease.holder_kind() == before {
+            tracing::debug!(%ticket, "rekind is a no-op");
+            return Ok(lease);
+        }
+        lease.renewed_at = now;
+        lease.ttl_secs = self.cfg.ttl_secs;
+        lease.touched_at = None;
+        lease.touch_note = None;
+        self.write(&lock, &lease)?;
+        tracing::info!(%ticket, %holder, from = ?before, to = ?lease.holder_kind(), "claim rekinded");
         Ok(lease)
     }
 

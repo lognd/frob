@@ -86,6 +86,7 @@ fn refusal(code: &str, message: &str) -> Refusal {
 #[cfg(not(feature = "gallery"))]
 mod imp {
     use super::{Context, GalleryCheck, GalleryData, Outcome, refusal};
+    use gob_diagnostics::RemedyCommand;
 
     /// Refuse: this binary was built without the gallery.
     pub(super) fn run(_cmd: &GalleryCheck, _ctx: &Context) -> Outcome<GalleryData> {
@@ -94,7 +95,11 @@ mod imp {
             "E-GALLERY-NOT-BUILT",
             "gallery support is not built into this crunk binary",
         )
-        .with_remedy("rebuild with the gallery feature: cargo install crunk --features gallery")
+        .with_command(
+            RemedyCommand::new("cargo", "install")
+                .arg("crunk")
+                .flag("features", "gallery"),
+        )
         .into())
     }
 }

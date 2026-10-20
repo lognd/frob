@@ -59,9 +59,24 @@ pub struct Lease {
     /// True while the ticket waits on the land train: the holder handed it off, so it no longer counts toward WIP.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub queued: bool,
+    /// The `FROB_AGENT` label when an agent took the claim (selects the short agent window); absent for a human.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent: Option<String>,
+    /// When the holder last ran `frob claim touch` (a soft heartbeat).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub touched_at: Option<Stamp>,
+    /// The note given to the last `frob claim touch`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub touch_note: Option<String>,
 }
 
 impl Lease {
+    /// The holder kind that fixes this claim's idle window (agent when an agent label was recorded).
+    #[must_use]
+    pub fn holder_kind(&self) -> frob_ledger::claim_window::HolderKind {
+        frob_ledger::claim_agent::holder_kind(self.agent.as_deref())
+    }
+
     /// Unix second at which the lease expires.
     pub fn expires_at(&self) -> i64 {
         self.renewed_at

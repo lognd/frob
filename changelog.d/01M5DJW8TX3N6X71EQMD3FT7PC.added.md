@@ -1,0 +1,1 @@
+Agent claims: `frob claim touch <ticket> --note TEXT` is the soft heartbeat, leases record `FROB_AGENT` at claim time, and `frob lease rekind <ticket> [--agent LABEL]` switches a claim between the human and agent idle windows.

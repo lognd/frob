@@ -76,6 +76,8 @@ impl Product for FrobProduct {
                 .register::<crate::agent_cmd::AgentUninstall>()
                 .register::<lease_cmd::LeaseWiden>()
                 .register::<lease_cmd::LeaseRelease>()
+                .register::<lease_cmd::LeaseRekind>()
+                .register::<lease_cmd::ClaimTouch>()
                 .register::<crate::board_cmd::BoardVerb>(),
         );
         let cli = crate::milestone_cmd::register(cli);
