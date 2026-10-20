@@ -2,7 +2,8 @@
 id = "01M5CW063S30GRFG41DERAA0Q8"
 title = "Refresh at scale"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
