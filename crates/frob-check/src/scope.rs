@@ -38,6 +38,29 @@ impl ScopeView for TicketScope {
     fn changes(&self) -> Option<&BranchChanges> {
         self.changes.as_ref()
     }
+
+    // frob:ticket 01M3ZX81T4DCMKXZXNSR5QDX7H
+    fn fix_allows(&self, path: &str) -> bool {
+        self.edits_allowed(path)
+    }
+
+    fn widen_hint(&self, path: &str) -> Option<String> {
+        self.lease
+            .as_ref()
+            .map(|_| format!("frob lease widen {} --glob {path}", self.handle))
+    }
+}
+
+impl TicketScope {
+    /// Whether `--fix` may edit `path`: it matches the lease globs or a shared file, or (a diff
+    /// scope, which has no lease) it is one of the files the diff names; dependents never count.
+    pub(crate) fn edits_allowed(&self, path: &str) -> bool {
+        let Some(lease) = &self.lease else {
+            return self.files.contains(path);
+        };
+        let matches = |globs: &[String]| glob_set(globs).is_ok_and(|set| set.is_match(path));
+        matches(&lease.scope) || matches(&self.shared_files)
+    }
 }
 
 /// The branch's changed files against `base`, and which of them can alter a crate's public API.
@@ -464,6 +487,44 @@ pub(crate) fn ticket_rules(
     reason = "a test reads the git config it just initialised"
 )]
 mod tests {
+    // frob:tests crates/frob-check/src/scope.rs::TicketScope.edits_allowed
+    #[test]
+    fn fix_edits_stop_at_the_lease_and_hint_the_widen_command() {
+        use gob_check::ScopeView;
+        let now: gob_time::Stamp = "2026-10-02T14:03:11Z".parse().expect("stamp");
+        let lease = Lease {
+            ticket: TicketId::mint(),
+            holder: Holder {
+                actor: String::new(),
+                worktree: std::path::PathBuf::new(),
+            },
+            scope: vec!["src/in/**".to_owned()],
+            acquired_at: now,
+            renewed_at: now,
+            ttl_secs: 0,
+            history: Vec::new(),
+            queued: false,
+        };
+        let scope = TicketScope {
+            handle: "~T".to_owned(),
+            lease: Some(lease),
+            files: BTreeSet::from(["src/dep.rs".to_owned()]),
+            shared_files: vec!["Cargo.lock".to_owned()],
+            changes: None,
+        };
+        assert!(scope.fix_allows("src/in/a.rs"));
+        assert!(scope.fix_allows("Cargo.lock"));
+        assert!(
+            !scope.fix_allows("src/dep.rs"),
+            "dependents are not editable"
+        );
+        assert!(!scope.fix_allows("src/out.rs"));
+        assert_eq!(
+            scope.widen_hint("src/out.rs").as_deref(),
+            Some("frob lease widen ~T --glob src/out.rs")
+        );
+    }
+
     use super::*;
     use frob_ledger::model::TicketType;
     use frob_ledger::ops::NewTicket;

@@ -1,5 +1,6 @@
 //! The check pipeline (rules.md section 4): collect once, run rules, resolve exceptions, report.
 
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::time::Instant;
 
@@ -576,7 +577,17 @@ fn pass<P: Product>(
         findings.push(f);
     }
 
+    let fix_blocked = if opts.fix {
+        scope
+            .as_ref()
+            .map(|s| fix_blocked(s, &findings, &files))
+            .unwrap_or_default()
+    } else {
+        BTreeMap::new()
+    };
+
     Ok(CheckReport {
+        fix_blocked,
         findings,
         suppressed,
         files,
@@ -593,6 +604,26 @@ fn pass<P: Product>(
         namespaces: external.namespaces,
         siblings: external.siblings,
     })
+}
+
+/// The paths `scope` forbids `--fix` to edit among the Deterministic fixes of `findings`, with widen hints.
+fn fix_blocked<S: ScopeView>(
+    scope: &S,
+    findings: &[Finding],
+    files: &gob_text::FileInterner,
+) -> BTreeMap<String, String> {
+    findings
+        .iter()
+        .filter_map(|f| {
+            f.fix
+                .as_ref()
+                .filter(|x| x.kind == gob_rules::FixKind::Deterministic)
+        })
+        .flat_map(|f| &f.edits)
+        .filter_map(|e| files.path(e.file))
+        .filter(|p| !scope.fix_allows(p))
+        .map(|p| (p.to_owned(), scope.widen_hint(p).unwrap_or_default()))
+        .collect()
 }
 
 /// Run the whole check of `product` for the repository at `root`.
@@ -625,7 +656,14 @@ pub fn run<P: Product>(
     }
     if opts.fix {
         let raw = fix::raw_digests(root, &report.findings, &report.files);
-        let applied = fix::apply(root, &report.findings, &report.files, &report.digests, &raw)?;
+        let applied = fix::apply(
+            root,
+            &report.findings,
+            &report.files,
+            &report.digests,
+            &raw,
+            &report.fix_blocked,
+        )?;
         if !applied.applied.is_empty() {
             tracing::info!(
                 fixes = applied.applied.len(),
@@ -638,6 +676,7 @@ pub fn run<P: Product>(
             skipped_overlap: applied.skipped_overlap,
             skipped_invalid: applied.skipped_invalid,
             rolled_back: applied.rolled_back,
+            skipped_scope: applied.skipped_scope,
             remaining: report.findings.len(),
         });
     }

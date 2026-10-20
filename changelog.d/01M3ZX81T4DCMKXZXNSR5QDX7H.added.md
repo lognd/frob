@@ -1,0 +1,1 @@
+`frob check --fix` inside a ticket worktree now edits only files the ticket's lease covers (plus shared files). A fix that needs an out-of-scope file is left unapplied and listed under `fix.skipped_scope` with the `frob lease widen` command that would cover it.

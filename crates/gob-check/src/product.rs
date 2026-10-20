@@ -33,6 +33,14 @@ pub trait ScopeView {
     fn changes(&self) -> Option<&BranchChanges> {
         None
     }
+    /// Whether `--fix` may edit `path` under this scope; the default allows every file.
+    fn fix_allows(&self, _path: &str) -> bool {
+        true
+    }
+    /// The command that would widen this scope to cover `path`, when the scope has one.
+    fn widen_hint(&self, _path: &str) -> Option<String> {
+        None
+    }
 }
 
 /// The files a branch changed since its base, and which of them may alter a crate's public API.
