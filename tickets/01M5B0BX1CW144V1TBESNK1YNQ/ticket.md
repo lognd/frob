@@ -4,9 +4,10 @@ title = "docs/design/mirror.md: rename TICK008 ledger-branch-workflow to TICK010
 type = "docs"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T21:16:33Z"
-updated = "2026-10-19T21:16:33Z"
+updated = "2026-10-20T00:58:33Z"
 scope = ["docs/design/mirror.md"]
 +++
 
