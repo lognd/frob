@@ -1010,6 +1010,27 @@ impl Ledger {
         Ok(crate::brief::render(&view, &events))
     }
 
+    /// [`Self::brief`] plus a Suggested commands section limited to the `suggested` commands whose program is in `allowed_tools`.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::NotFound`] or store failures.
+    pub fn brief_with(
+        &self,
+        id: TicketId,
+        suggested: &[String],
+        allowed_tools: &[String],
+    ) -> Result<String> {
+        let view = self.show(id)?;
+        let events = self.events(id)?;
+        Ok(crate::brief::render_with(
+            &view,
+            &events,
+            suggested,
+            allowed_tools,
+        ))
+    }
+
     /// All ticket ids at the ledger tip (not the index): the ground truth for doctor and rules.
     ///
     /// # Errors

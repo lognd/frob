@@ -424,6 +424,10 @@ docs/design/models/mirror/). The points that matter for I12:
   API answers, Unresolved otherwise.
 - Agent briefs render ledger text with `origin = ledger`; commands an
   agent brief suggests are limited to `[evidence] allowed_tools`.
+  Implemented in `frob-ledger` `brief.rs`: the ticket body is headed
+  `origin: ledger`, escaped by origin, and a command inside it is never
+  offered; `Ledger::brief_with` drops any suggestion whose first word is
+  not in `allowed_tools`.
 - CI rules: running a check with any trust other than `--trust-from` a
   protected ref inside a `pull_request_target` or `workflow_run`
   workflow is CI016 (Error; joins CI006 and CI011 in cicd.md).
