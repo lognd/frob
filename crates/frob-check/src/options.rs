@@ -9,6 +9,36 @@ use gob_check::{FailOn, FileCheck, RunOptions};
 
 use crate::product::Frob;
 
+/// Which findings `check --teach [RULE]` prints the full explain text for.
+// frob:ticket 01M3ZX81N4AFEA0W55R756T5RD
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TeachSelect {
+    /// Every rule that fired in this run (`--teach`, alias `--explain-all`).
+    All,
+    /// Only this rule id or slug (`--teach SYS003`).
+    Rule(String),
+}
+
+impl TeachSelect {
+    /// Parse the flag value: empty means every rule, anything else names one rule.
+    pub fn from_flag(value: &str) -> Self {
+        let v = value.trim();
+        if v.is_empty() {
+            Self::All
+        } else {
+            Self::Rule(v.to_owned())
+        }
+    }
+
+    /// True when a finding of rule `id` (with kebab-case `slug`) is printed in full.
+    pub fn selects(&self, id: &str, slug: &str) -> bool {
+        match self {
+            Self::All => true,
+            Self::Rule(r) => r.eq_ignore_ascii_case(id) || r == slug,
+        }
+    }
+}
+
 /// Inputs of [`crate::run`] besides the repository root; `Default` is a plain full check.
 #[expect(
     clippy::struct_excessive_bools,
@@ -48,6 +78,8 @@ pub struct CheckOptions {
     pub clock: Option<Arc<dyn gob_time::Clock>>,
     /// Treat the `--ticket` ticket as exempt from the changelog fragment (`land --no-changelog --reason`, not yet recorded).
     pub changelog_exempt: bool,
+    /// `--teach [RULE]`: print the full explain text for the selected findings of this run.
+    pub teach: Option<TeachSelect>,
 }
 
 impl CheckOptions {
@@ -83,7 +115,7 @@ impl CheckOptions {
 
 #[cfg(test)]
 mod tests {
-    use super::CheckOptions;
+    use super::{CheckOptions, TeachSelect};
     use gob_check::ToolTier;
 
     // frob:tests crates/frob-check/src/options.rs::CheckOptions.tool_tier
@@ -95,5 +127,15 @@ mod tests {
         assert_eq!(o.tool_tier(), Some(ToolTier::Train));
         o.quick = true;
         assert_eq!(o.tool_tier(), Some(ToolTier::Ticket));
+    }
+
+    // frob:tests crates/frob-check/src/options.rs::TeachSelect.selects
+    #[test]
+    fn teach_selects_one_rule_or_all() {
+        assert_eq!(TeachSelect::from_flag(""), TeachSelect::All);
+        assert!(TeachSelect::All.selects("DOC001", "x"));
+        let one = TeachSelect::from_flag("sys003");
+        assert!(one.selects("SYS003", "slug"));
+        assert!(!one.selects("DOC001", "other"));
     }
 }

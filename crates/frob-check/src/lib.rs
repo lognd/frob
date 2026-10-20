@@ -57,7 +57,7 @@ pub use gob_check::{
     Tool001, Tool002, ToolParser, ToolStage,
 };
 pub use memo::FileToolMemo;
-pub use options::CheckOptions;
+pub use options::{CheckOptions, TeachSelect};
 pub use product::Frob;
 pub use scope::TicketScope;
 pub use sibling::{ACCEPTED_SIBLING_MAJORS, Sib001};

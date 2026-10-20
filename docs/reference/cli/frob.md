@@ -55,6 +55,7 @@
 | `rule new` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold `rules/ID.grl` from the code at `FILE:LINE`; `--print` shows it without writing. |
 | `rule test` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run the examples of rule files; exits 1 when any example fails. |
 | `stats` | yes | no | 0 ok, 2 usage, 3 refused, 4 internal | Show velocity, capacity, points remaining, throughput, cycle and lead times and cost per point; a figure with too little history is Unresolved with its sample count. |
+| `teach` | yes | no | 0 ok, 2 usage, 3 refused, 4 internal | Forget taught rules (`teach reset`) or one rule (`teach reset RULE`) so the next check explains in full again. |
 | `test` | no | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run only the tests that reach the files changed against a base, and record the evidence. |
 | `ticket branch init` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create the orphan `[tickets] branch` with a README placeholder through gob-git compare-and-swap, leaving the code checkout alone. |
 | `ticket close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a ticket with an outcome once every close guard passes; repeating is a no-op. |

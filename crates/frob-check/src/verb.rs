@@ -15,7 +15,7 @@ use serde::Serialize;
 
 use gob_check::{CheckError, CheckReport, Counts, FailOn, FixOutcome, StageTime, Stats};
 
-use crate::options::CheckOptions;
+use crate::options::{CheckOptions, TeachSelect};
 use crate::run_with_diff;
 
 /// Adds the `check` verb to a product root.
@@ -90,6 +90,8 @@ pub struct CheckData {
     pub pending_proposals: usize,
     /// The rule page, present with `--explain`.
     pub explain: Option<Explained>,
+    /// Full rule pages of the findings selected by `--teach [RULE]`, one per rule that fired.
+    pub taught: Vec<Explained>,
     // frob:ticket 01M4D95B4W3XEMKKFG4B2ZBRER
     /// Per-rule accept, waive and open counts with the not-useful rate (filled in JSON mode only).
     pub precision: Vec<gob_rules::PrecisionRow>,
@@ -117,6 +119,7 @@ impl CheckData {
             notes: Vec::new(),
             pending_proposals: 0,
             explain: None,
+            taught: Vec::new(),
             precision: Vec::new(),
         }
     }
@@ -135,6 +138,7 @@ pub struct Check {
     fix: bool,
     fail_on: Option<FailOn>,
     explain: Option<String>,
+    teach: Option<TeachSelect>,
     timing: bool,
     base: Option<String>,
     tools: ToolFlags,
@@ -318,6 +322,15 @@ struct CheckArgs {
     fail_on: Option<String>,
     #[arg(long, value_name = "RULEID", help = "Print the rule page and exit 0")]
     explain: Option<String>,
+    #[arg(
+        long,
+        alias = "explain-all",
+        value_name = "RULE",
+        num_args = 0..=1,
+        default_missing_value = "",
+        help = "Print the full explain text for every finding of this run, or only for RULE"
+    )]
+    teach: Option<String>,
     #[arg(long, help = "Print the per-stage timing breakdown")]
     timing: bool,
     #[arg(
@@ -359,6 +372,7 @@ impl Command for Check {
             fix: a.fix,
             fail_on: a.fail_on.as_deref().and_then(FailOn::parse),
             explain: a.explain,
+            teach: a.teach.as_deref().map(TeachSelect::from_flag),
             timing: a.timing,
             base: a.base,
             tools: ToolFlags {
@@ -419,6 +433,10 @@ impl Command for Check {
             self.timing || ctx.verbosity > 0,
             lead,
         );
+        // frob:ticket 01M3ZX81N4AFEA0W55R756T5RD
+        if let Some(select) = &self.teach {
+            data.taught = taught_pages(report.findings.iter().map(|f| f.rule.as_str()), select);
+        }
         // frob:ticket 01M3ZXGAWKZPVY6HF9NJ8GAFQV
         data.pending_proposals =
             crate::proposals_summary::pending_count_at(&root, ctx.clock.clone()).unwrap_or(0);
@@ -596,11 +614,42 @@ fn data_of(
         notes: Vec::new(),
         pending_proposals: 0,
         explain: None,
+        taught: Vec::new(),
         precision: if json {
             report.precision().rows()
         } else {
             Vec::new()
         },
+    }
+}
+
+/// The full pages of the distinct `rules` that `select` keeps, in first-seen order (`--teach`).
+fn taught_pages<'a>(rules: impl Iterator<Item = &'a str>, select: &TeachSelect) -> Vec<Explained> {
+    let mut seen = BTreeSet::new();
+    let mut pages = Vec::new();
+    for id in rules {
+        if !seen.insert(id) {
+            continue;
+        }
+        let Some(meta) = Registry::global().by_id(id) else {
+            continue;
+        };
+        if select.selects(meta.id, meta.slug) {
+            tracing::debug!(rule = id, "teach: full explain text");
+            pages.push(page_of(meta));
+        }
+    }
+    pages
+}
+
+/// The [`Explained`] page of one registered rule.
+fn page_of(meta: &gob_rules::RuleMeta) -> Explained {
+    Explained {
+        id: meta.id.to_owned(),
+        slug: meta.slug.to_owned(),
+        severity: format!("{:?}", meta.severity).to_ascii_lowercase(),
+        summary: meta.summary.to_owned(),
+        explanation: meta.explanation.to_owned(),
     }
 }
 
@@ -612,13 +661,7 @@ fn explain(id: &str) -> Outcome<CheckData> {
         .or_else(|| Registry::global().by_slug(id.trim()))
         .ok_or_else(|| CliError::Usage(format!("no rule `{id}`; see docs/reference/rules")))?;
     let mut data = CheckData::empty();
-    data.explain = Some(Explained {
-        id: meta.id.to_owned(),
-        slug: meta.slug.to_owned(),
-        severity: format!("{:?}", meta.severity).to_ascii_lowercase(),
-        summary: meta.summary.to_owned(),
-        explanation: meta.explanation.to_owned(),
-    });
+    data.explain = Some(page_of(meta));
     Ok(Payload::new(data))
 }
 
@@ -678,5 +721,17 @@ mod tests {
                 .precision
                 .is_empty()
         );
+    }
+
+    // frob:tests crates/frob-check/src/verb.rs::taught_pages
+    #[test]
+    fn teach_with_a_rule_prints_only_that_rule_in_full() {
+        let fired = ["DOC001", "DOC002", "DOC001"];
+        let one = taught_pages(fired.iter().copied(), &TeachSelect::from_flag("DOC001"));
+        assert_eq!(one.len(), 1);
+        assert_eq!(one[0].id, "DOC001");
+        assert!(!one[0].explanation.is_empty());
+        let all = taught_pages(fired.iter().copied(), &TeachSelect::All);
+        assert_eq!(all.len(), 2);
     }
 }
