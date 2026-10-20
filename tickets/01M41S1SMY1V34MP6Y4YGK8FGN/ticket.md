@@ -2,13 +2,13 @@
 id = "01M41S1SMY1V34MP6Y4YGK8FGN"
 title = "Persisted types hold RelPath only: ledger, locks, findings JSON, config"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:50Z"
-updated = "2026-10-03T20:59:50Z"
+updated = "2026-10-20T13:10:03Z"
 scope = ["crates/frob-ledger/**", "crates/gob-lock/**", "crates/gob-diagnostics/**", "crates/gob-config/**"]
 
 [[links]]
