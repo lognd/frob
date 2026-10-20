@@ -422,6 +422,7 @@ mod tests {
     }
 
     // frob:tests crates/frob-worktree/src/activity.rs::commit_facts
+    // frob:tests crates/frob-worktree/src/activity.rs::observed_path
     #[test]
     fn commit_facts_reads_a_real_history() {
         let dir = tempfile::tempdir().unwrap();
@@ -456,6 +457,7 @@ mod tests {
         assert!(v[0].frob_sync && v[0].empty);
         assert!(v[1].empty && !v[1].frob_sync);
         assert!(!v[2].empty);
+        assert!(observed_path(&repo).ends_with("frob/claims-observed.toml"));
         let since = commit_facts(&repo, "HEAD", Some("HEAD~2")).unwrap();
         assert_eq!(since.len(), 2);
     }
