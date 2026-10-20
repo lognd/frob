@@ -8,8 +8,8 @@ points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:52Z"
-updated = "2026-10-20T05:45:41Z"
-scope = ["docs/guides/**", "changelog.d/**"]
+updated = "2026-10-20T05:54:08Z"
+scope = ["docs/guides/**", "changelog.d/**", "crates/frob/tests/it/doc_commands.rs"]
 
 [[acceptance]]
 text = "Given docs/guides/grimble.md, when its commands run in a fresh repository, then each succeeds (doc test)"
