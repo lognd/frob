@@ -391,7 +391,7 @@ mod tests {
         }
     }
 
-    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows::window_secs
+    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.window_secs
     #[test]
     fn window_resolution_order_and_never() {
         let w = ClaimWindows::default();
@@ -408,7 +408,7 @@ mod tests {
         assert_eq!(s(HolderKind::Human, Class::Expedite, Some(0)), None);
     }
 
-    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows::from_tables
+    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.from_tables
     #[test]
     fn tables_default_and_validate_warn_at() {
         let dir = tempfile::tempdir().unwrap();
@@ -454,7 +454,7 @@ mod tests {
         assert!(ClaimWindows::from_tables(&bad, &k).is_err());
     }
 
-    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows::idle_secs
+    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.idle_secs
     #[test]
     fn weekdays_skip_the_weekend_and_clock_jumps_clamp() {
         let all = ClaimWindows::default();
@@ -474,7 +474,7 @@ mod tests {
         assert_eq!(wk.idle_secs(fri_20, fri_20 + 42 * HOUR, 10 * HOUR), 0);
     }
 
-    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows::status
+    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.status
     #[test]
     fn status_levels_follow_warn_at() {
         let w = ClaimWindows::default();
@@ -510,7 +510,7 @@ mod tests {
 
     // frob:tests crates/frob-ledger/src/claim_window.rs::holder_notice
     // frob:tests crates/frob-ledger/src/claim_window.rs::others_notice
-    // frob:tests crates/frob-ledger/src/claim_window.rs::IdleStatus::idle_of_window
+    // frob:tests crates/frob-ledger/src/claim_window.rs::IdleStatus.idle_of_window
     #[test]
     fn notice_texts_by_audience() {
         let w = ClaimWindows::default();
@@ -560,7 +560,7 @@ mod tests {
     }
 
     // frob:tests crates/frob-ledger/src/claim_window.rs::aggregate_holder_notice
-    // frob:tests crates/frob-ledger/src/claim_window.rs::IdleStatus::needs_notice
+    // frob:tests crates/frob-ledger/src/claim_window.rs::IdleStatus.needs_notice
     #[test]
     fn notices_aggregate_and_acknowledgement_silences_until_next_threshold() {
         let w = ClaimWindows::default();
