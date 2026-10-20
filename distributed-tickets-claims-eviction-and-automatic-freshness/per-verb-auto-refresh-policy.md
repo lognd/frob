@@ -8,8 +8,9 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T17:15:18Z"
+updated = "2026-10-20T17:16:25Z"
 idempotency_key = "dt-DT08"
+scope = ["crates/frob-ledger/src/sync_policy.rs"]
 
 [[links]]
 kind = "blocked-by"
