@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/claim_agent.rs", "crates/frob-ledger/src/claim_window.rs", "docs/reference/config.md", "docs/schemas/config.json"]
+new = ["crates/frob-ledger/src/claim_agent.rs", "crates/frob-ledger/src/claim_window.rs", "docs/reference/config.md", "docs/schemas/config.json", "changelog.d/01M5CW058JVA3D7TKB6T62N4TW.added.md"]
+at = "2026-10-20T21:26:12Z"
+actor = "lognd"
+rev = 1
