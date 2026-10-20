@@ -8,8 +8,8 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:13:00Z"
-updated = "2026-10-20T13:51:55Z"
-scope = ["changelog.d/**", "crates/grimble-arch/**"]
+updated = "2026-10-20T14:04:58Z"
+scope = ["changelog.d/**", "crates/grimble-arch/**", "docs/reference/rules/README.md", "docs/reference/rules/VIS001.md"]
 
 [[acceptance]]
 text = "Given a pub item whose references_to hi set lies inside its own package, when checked, then VIS001 fires; given an Unknown edge from outside, then Unresolved"
