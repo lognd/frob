@@ -7,6 +7,6 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T14:33:55Z"
-updated = "2026-10-20T22:22:15Z"
+updated = "2026-10-20T22:26:37Z"
 scope = ["crates/frob-land/**,crates/frob-worktree/**,crates/frob-lease/**"]
 +++
