@@ -17,7 +17,7 @@ use super::kind::directive_name;
 use crate::plan::CmpOp;
 
 /// A known scalar.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Scalar {
     /// Text.
     Str(String),
@@ -149,7 +149,7 @@ pub(crate) struct Reader<'a> {
     pub(crate) source: Option<&'a SourceText>,
 }
 
-impl Reader<'_> {
+impl<'a> Reader<'a> {
     /// The 1-based line of `node`'s start, when the text is known.
     pub(crate) fn line_of(&self, node: NodeId) -> Option<u32> {
         let range = match self.model.term().node(node).location() {
@@ -330,6 +330,20 @@ impl Reader<'_> {
             }
             (None, Operator::Universal(Universal::Ref { name })) => Datum::text(name.clone()),
             (None, _) => Datum::Absent,
+        }
+    }
+
+    /// The `text` of a literal, comment or reference, borrowed from the model without a copy.
+    ///
+    /// frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST
+    pub(crate) fn text_str(&self, node: NodeId) -> Option<&'a str> {
+        match self.model.term().node(node).op() {
+            Operator::Universal(
+                Universal::Lit { lexeme: s, .. }
+                | Universal::Comment { text: s }
+                | Universal::Ref { name: s },
+            ) => Some(s),
+            _ => None,
         }
     }
 

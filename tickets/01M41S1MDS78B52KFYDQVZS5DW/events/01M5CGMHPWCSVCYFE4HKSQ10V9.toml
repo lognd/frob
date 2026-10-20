@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob*/**"]
+new = ["crates/frob*/**", "crates/gob-path/tests/confinement.rs"]
+at = "2026-10-20T11:20:07Z"
+actor = "lognd"
+rev = 1

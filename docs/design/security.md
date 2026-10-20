@@ -344,6 +344,8 @@ Read implies publish: the trust prompt and docs say "can read and print".
   impossible in CI by construction (intended: CI never passes the flag);
   locally it needs `--allow-replace ID` on every invocation, so it cannot arrive in
   a pull request. A new `replaces` is a GATE001 weakening.
+  Implemented in `gob_packs::replaces` (`check_replacement`, `divergences`,
+  `added_replacements`).
 - WASM grammars are trust-gated like tier 3, run in the worker under
   budgets (a parse over budget makes the file opaque, Unresolved
   `budget`), and query compilation and execution are budgeted. An

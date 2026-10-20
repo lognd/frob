@@ -37,6 +37,7 @@ pub mod lock;
 mod manifest;
 mod names;
 mod plan_cache;
+pub mod replaces;
 #[path = "std/mod.rs"]
 pub mod std_pack;
 pub mod tier1;

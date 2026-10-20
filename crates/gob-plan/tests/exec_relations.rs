@@ -68,6 +68,8 @@ fn reach_plan(n: u16) -> (gob_plan::plan::Plan, u16, u16) {
 }
 
 // frob:tests crates/gob-plan/src/exec/relations/edges.rs::reaches
+// frob:tests crates/gob-plan/src/exec/relations/edges.rs::reaches_in
+// frob:tests crates/gob-plan/src/exec/relations/edges.rs::Closure.of
 // frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
 #[test]
 fn reaches_across_a_may_edge_is_unknown_with_the_edge_on_the_frontier() {

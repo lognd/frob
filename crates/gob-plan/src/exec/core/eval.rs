@@ -14,11 +14,13 @@ use gob_text::SourceText;
 use regex::Regex;
 
 use super::field::{Datum, Reader, Scalar, compare};
-use super::kind::{KindTest, is_canonical_unit, may_hide_members};
+use super::fxmap::FastMap;
+use super::kind::{KindTest, is_canonical_unit};
 use super::verdict::{Doubt, Verdict};
 use crate::exec::relations::{self, Count, Knobs, PEER_OF, SideRow, SideTable};
 use crate::plan::{Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
 
+mod index;
 mod predicate;
 
 pub(crate) use predicate::is_test_word;
@@ -40,6 +42,30 @@ pub(crate) type Env = Vec<Option<Val>>;
 
 /// A kind's members in location order with their membership truth.
 pub(crate) type Domain = Rc<Vec<(NodeId, Truth)>>;
+
+/// The cache key of a computed comparison side: the op, the side, and the values of the (up to
+/// two) variables the operand reads.
+type OperandKey = (OpId, bool, Option<Val>, Option<Val>);
+
+/// A node's cached line span: `None` when the node has no location.
+type LineSpan = Option<(u32, u32)>;
+
+/// A comparison side: freshly read, or shared from the operand cache.
+enum Side {
+    Fresh(Datum),
+    Shared(Rc<Datum>),
+}
+
+impl std::ops::Deref for Side {
+    type Target = Datum;
+
+    fn deref(&self) -> &Datum {
+        match self {
+            Self::Fresh(d) => d,
+            Self::Shared(d) => d,
+        }
+    }
+}
 
 /// A compiled `matches` pattern.
 pub(crate) enum Matcher {
@@ -72,13 +98,60 @@ pub(crate) struct Eval<'a> {
     kinds: HashMap<StrId, KindTest>,
     matchers: HashMap<OpId, Matcher>,
     wired: Wired<'a>,
-    order: Vec<NodeId>,
-    domains: RefCell<HashMap<StrId, Domain>>,
+    /// Per-node (first line, last line) of its text span, filled on first use (`adjoins`).
+    spans: RefCell<Vec<Option<LineSpan>>>,
+    /// Bounded forward closures by (via relation, from, steps), computed once per run.
+    closures: RefCell<FastMap<(StrId, NodeId, u16), Rc<relations::Closure>>>,
+    /// Computed operands (`slug`, `resolve`, dotted fields) by (op, side, argument values).
+    operands: RefCell<FastMap<OperandKey, Rc<Datum>>>,
+    /// Equality-join indexes by the id of the equality conjunct they serve.
+    indexes: RefCell<FastMap<OpId, Rc<index::EqIndex>>>,
+    /// The unit each closure target stands for, computed once per node.
+    units: RefCell<FastMap<NodeId, NodeId>>,
+    domains: RefCell<FastMap<StrId, Domain>>,
     /// Materialised def views by (def, argument values): each is computed once (7.0.2).
-    views: RefCell<HashMap<(u16, Vec<Val>), Verdict>>,
+    views: RefCell<FastMap<(u16, Vec<Val>), Verdict>>,
     steps: Cell<u64>,
     /// Snippet matches by op: the byte ranges found in the file text, computed once per run.
-    snippets: RefCell<HashMap<OpId, SnippetRanges>>,
+    snippets: RefCell<FastMap<OpId, SnippetRanges>>,
+}
+
+/// Sorts `members` into location order, ties by id (the order of `nodes_by_location`).
+fn order_members(model: &Model, members: &mut [(NodeId, Truth)]) {
+    let term = model.term();
+    members.sort_by(|&(a, _), &(b, _)| {
+        term.node(a)
+            .location()
+            .cmp(term.node(b).location())
+            .then(a.cmp(&b))
+    });
+}
+
+/// One pass over the model: whether any part is unread, and every plan kind's ordered domain.
+///
+/// frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST
+/// Fusing these passes reads each node once instead of once per kind plus once for `hidden`;
+/// on cheap rules the repeated cold traversals dominated the run.
+fn scan(model: &Model, kinds: &HashMap<StrId, KindTest>) -> (bool, FastMap<StrId, Domain>) {
+    let term = model.term();
+    let tests: Vec<(StrId, KindTest)> = kinds.iter().map(|(&k, &t)| (k, t)).collect();
+    let mut found: Vec<Vec<(NodeId, Truth)>> = vec![Vec::new(); tests.len()];
+    let mut hidden = false;
+    for n in term.ids() {
+        let op = term.node(n).op();
+        hidden |= op.is_opaque() || op.is_hole();
+        for (i, (_, t)) in tests.iter().enumerate() {
+            if let Some(m) = t.member(model, n) {
+                found[i].push((n, m));
+            }
+        }
+    }
+    let mut domains = FastMap::default();
+    for ((kind, _), mut members) in tests.into_iter().zip(found) {
+        order_members(model, &mut members);
+        domains.insert(kind, Rc::new(members));
+    }
+    (hidden, domains)
 }
 
 impl<'a> Eval<'a> {
@@ -91,15 +164,20 @@ impl<'a> Eval<'a> {
         matchers: HashMap<OpId, Matcher>,
         wired: Wired<'a>,
     ) -> Self {
+        let (hidden, domains) = scan(model, &kinds);
         Self {
             plan,
             rd: Reader { model, source },
-            hidden: may_hide_members(model),
+            hidden,
             kinds,
             matchers,
             wired,
-            order: model.term().nodes_by_location(),
-            domains: RefCell::default(),
+            spans: RefCell::new(vec![None; model.term().ids().count()]),
+            closures: RefCell::default(),
+            units: RefCell::default(),
+            indexes: RefCell::default(),
+            operands: RefCell::default(),
+            domains: RefCell::new(domains),
             views: RefCell::default(),
             steps: Cell::new(0),
             snippets: RefCell::default(),
@@ -116,11 +194,13 @@ impl<'a> Eval<'a> {
             return Rc::clone(d);
         }
         let test = self.kinds[&kind];
-        let members: Vec<(NodeId, Truth)> = self
-            .order
-            .iter()
-            .filter_map(|&n| test.member(self.rd.model, n).map(|t| (n, t)))
-            .collect();
+        let mut members = Vec::new();
+        for n in self.rd.model.term().ids() {
+            if let Some(t) = test.member(self.rd.model, n) {
+                members.push((n, t));
+            }
+        }
+        order_members(self.rd.model, &mut members);
         tracing::debug!(
             kind = self.string(kind),
             members = members.len(),
@@ -170,6 +250,28 @@ impl<'a> Eval<'a> {
                 self.leaf_text(b.operand(), env),
             ),
         }
+    }
+
+    /// A comparison side; the loop-invariant computed operands are cached per argument values
+    /// (frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST).
+    fn side(&self, op: OpId, rhs: bool, o: &Operand, env: &Env) -> Side {
+        let val = |l: Operand| match l {
+            Operand::Var(v) | Operand::Field(v, _) => env[usize::from(v)],
+            _ => None,
+        };
+        let vals = match *o {
+            Operand::Slug(a) => (val(a.operand()), None),
+            Operand::Resolve(a, b) => (val(a.operand()), val(b.operand())),
+            Operand::Field(v, f) if self.string(f).contains('.') => (env[usize::from(v)], None),
+            _ => return Side::Fresh(self.datum(o, env)),
+        };
+        let key = (op, rhs, vals.0, vals.1);
+        if let Some(d) = self.operands.borrow().get(&key) {
+            return Side::Shared(Rc::clone(d));
+        }
+        let d = Rc::new(self.datum(o, env));
+        self.operands.borrow_mut().insert(key, Rc::clone(&d));
+        Side::Shared(d)
     }
 
     /// A call argument as a datum; a file node stands for its path.
@@ -279,9 +381,12 @@ impl<'a> Eval<'a> {
             }
             Op::Order { a, b, pos } => self.order(Self::node(env, *a), Self::node(env, *b), *pos),
             Op::Cmp { lhs, op, rhs } => {
-                let (l, r) = (self.datum(lhs, env), self.datum(rhs, env));
+                let (l, r) = (
+                    self.side(id, false, lhs, env),
+                    self.side(id, true, rhs, env),
+                );
                 Verdict::of(compare(*op, &l, &r), || {
-                    if l == Datum::Unknown {
+                    if *l == Datum::Unknown {
                         self.describe(lhs, env)
                     } else {
                         self.describe(rhs, env)
@@ -339,7 +444,15 @@ impl<'a> Eval<'a> {
                 certainty,
             } => {
                 let (a, b) = (Self::node(env, *from), self.unit_of(Self::node(env, *to)));
-                relations::reaches(self.wired.edges[via], a, b, *within, *certainty)
+                let rel = self.wired.edges[via];
+                let key = (*via, a, *within);
+                let cached = self.closures.borrow().get(&key).map(Rc::clone);
+                let closure = cached.unwrap_or_else(|| {
+                    let c = Rc::new(relations::Closure::of(rel, a, *within));
+                    self.closures.borrow_mut().insert(key, Rc::clone(&c));
+                    c
+                });
+                relations::reaches_in(&closure, a, b, *within, *certainty)
             }
             Op::Find { .. } | Op::FindSide { .. } => {
                 unreachable!("binders are clauses, enumerated by the run")
@@ -376,11 +489,32 @@ impl<'a> Eval<'a> {
     /// The unit a closure target stands for: the node itself if it is a unit, else the nearest
     /// enclosing unit (`f reaches call(...)` ends at the unit containing the call, 7.1).
     fn unit_of(&self, node: NodeId) -> NodeId {
+        if let Some(&u) = self.units.borrow().get(&node) {
+            return u;
+        }
         let model = self.rd.model;
-        std::iter::once(node)
+        let unit = std::iter::once(node)
             .chain(model.term().ancestors(node))
             .find(|&n| is_canonical_unit(model, n))
-            .unwrap_or(node)
+            .unwrap_or(node);
+        self.units.borrow_mut().insert(node, unit);
+        unit
+    }
+
+    /// The (first, last) line of `n`'s text span, cached per node; None without text or lines.
+    fn line_span(&self, n: NodeId, r: gob_text::TextRange) -> Option<(u32, u32)> {
+        if let Some(Some(s)) = self.spans.borrow().get(n.index()) {
+            return *s;
+        }
+        let last = if r.is_empty() {
+            r.start()
+        } else {
+            gob_text::TextSize::new(u32::from(r.end()) - 1)
+        };
+        let line = |o| self.rd.source.and_then(|s| s.line_col(o)).map(|lc| lc.line);
+        let span = line(r.start()).zip(line(last));
+        self.spans.borrow_mut()[n.index()] = Some(span);
+        span
     }
 
     /// `a peer of b`: distinct nodes under the same nearest enclosing unit (or both at the top).
@@ -418,7 +552,12 @@ impl<'a> Eval<'a> {
     /// `some var: kind where cond`: the `or` over the domain, plus the hidden-member disjunct.
     fn some(&self, var: VarId, kind: StrId, cond: OpId, env: &mut Env) -> Verdict {
         let mut acc = Verdict::no();
-        for &(n, member) in self.domain(kind).iter() {
+        let domain = self.domain(kind);
+        let visit = self.candidates(var, cond, &domain, env);
+        let count = visit.as_ref().map_or(domain.len(), Vec::len);
+        for i in 0..count {
+            let pos = visit.as_ref().map_or(i, |v| v[i] as usize);
+            let (n, member) = domain[pos];
             env[usize::from(var)] = Some(Val::Node(n));
             let mut v = self.eval(cond, env);
             if member == Truth::Unknown {
@@ -472,29 +611,16 @@ impl<'a> Eval<'a> {
         match pos {
             Position::Before => Verdict::certain(ra.end() <= rb.start()),
             Position::After => Verdict::certain(rb.end() <= ra.start()),
-            Position::Adjoins => {
-                let ends = |r: gob_text::TextRange| {
-                    let last = if r.is_empty() {
-                        r.start()
-                    } else {
-                        gob_text::TextSize::new(u32::from(r.end()) - 1)
-                    };
-                    (r.start(), last)
-                };
-                let (sa, ea) = ends(*ra);
-                let (sb, eb) = ends(*rb);
-                let line = |o| self.rd.source.and_then(|s| s.line_col(o)).map(|lc| lc.line);
-                match (line(sa), line(ea), line(sb), line(eb)) {
-                    (Some(sa), Some(ea), Some(sb), Some(eb)) => {
-                        let near = |end: u32, start: u32| end == start || end + 1 == start;
-                        Verdict::certain(near(ea, sb) || near(eb, sa))
-                    }
-                    _ => Verdict::unknown(Doubt::Dynamic {
-                        node: Some(a),
-                        field: "line".to_owned(),
-                    }),
+            Position::Adjoins => match (self.line_span(a, *ra), self.line_span(b, *rb)) {
+                (Some((sa, ea)), Some((sb, eb))) => {
+                    let near = |end: u32, start: u32| end == start || end + 1 == start;
+                    Verdict::certain(near(ea, sb) || near(eb, sa))
                 }
-            }
+                _ => Verdict::unknown(Doubt::Dynamic {
+                    node: Some(a),
+                    field: "line".to_owned(),
+                }),
+            },
         }
     }
 
@@ -548,13 +674,22 @@ impl<'a> Eval<'a> {
     }
 
     fn matches(&self, id: OpId, subject: &Operand, env: &Env) -> Verdict {
-        let d = self.datum(subject, env);
         let test = |s: &str| match &self.matchers[&id] {
             Matcher::Regex(r) => r.is_match(s),
             Matcher::Glob(g) => g.is_match(s),
             Matcher::Set(g) => g.is_match(s),
             Matcher::Snippet(_) => unreachable!("a snippet op tests a node, not a string"),
         };
+        // frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST
+        // `x.text` of a comment, literal or reference is matched in place, not copied.
+        if let Operand::Field(v, f) = *subject
+            && self.string(f) == "text"
+            && let Some(Val::Node(n)) = env[usize::from(v)]
+            && let Some(s) = self.rd.text_str(n)
+        {
+            return Verdict::certain(test(s));
+        }
+        let d = self.datum(subject, env);
         let truth = match &d {
             Datum::Known(Scalar::Str(s)) => Truth::from_bool(test(s)),
             Datum::OneOf(vs) => {
