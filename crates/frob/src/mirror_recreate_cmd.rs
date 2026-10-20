@@ -5,7 +5,7 @@
 //! create protocol, after which the ticket is mirrored again. A 404 is refused: the token may
 //! simply be unable to see the issue, so it is not known to be deleted. `recreate` is the
 //! transport-free core; `MirrorRecreate` is the verb that supplies the branch shard store, the
-//! GitHub adapter (over a `curl` transport) and the ticket projection.
+//! GitHub adapter (over the native `ureq` transport) and the ticket projection.
 
 // frob:ticket 01M4052V7BG4YBHSW863YZEJ9X
 // frob:ticket 01M5AREAW91T16PSWFS1KH6CCV
@@ -13,13 +13,12 @@
 use std::collections::BTreeSet;
 use std::fmt;
 use std::fmt::Write as _;
-use std::io::{IsTerminal, Write};
+use std::io::IsTerminal;
 use std::time::{Duration, Instant};
 
 use frob_ledger::mirror_map::MAP_DIR;
-use frob_mirror::github::adapter::{
-    GithubAdapter, GithubRest, HttpRequest, HttpResponse, HttpTransport, Method, TransportError,
-};
+use frob_mirror::github::adapter::{GithubAdapter, GithubRest, HttpRequest, HttpTransport, Method};
+use frob_mirror::github::http::NativeTransport;
 use frob_mirror::github::read::{BodyRevisions, HistorySource, TimelineEvent};
 use frob_mirror::github::write::Clock as WriteClock;
 use frob_mirror::keyring::Keyring;
@@ -28,8 +27,6 @@ use frob_mirror::projection;
 use frob_mirror::shardstore::BranchShardStore;
 use gob_cli::clap::{self, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
-use gob_exec::Outcome as ExecOutcome;
-use gob_exec::{Limits, Program, Runner, Spec};
 use gob_trust::prompt::{Presence, presence};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -166,8 +163,6 @@ const KID_VAR: &str = "FROB_MIRROR_KID";
 const DEFAULT_KID: &str = "k1";
 /// Token variables, first set one wins.
 const TOKEN_VARS: [&str; 2] = ["GH_TOKEN", "GITHUB_TOKEN"];
-/// GitHub API root.
-const API_ROOT: &str = "https://api.github.com";
 /// Refusal code when a person is not at a terminal.
 const CODE_NEEDS_HUMAN: &str = "E-MIRROR-NEEDS-HUMAN";
 /// Refusal code for a recreate that did not run.
@@ -232,136 +227,6 @@ fn enc(s: &str) -> String {
     out
 }
 
-/// Quote `s` as a curl config string.
-fn curl_quote(s: &str) -> String {
-    let mut out = String::from("\"");
-    for c in s.chars() {
-        match c {
-            '\\' => out.push_str("\\\\"),
-            '"' => out.push_str("\\\""),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-    out
-}
-
-/// Split a `curl --include` capture into status, `Location` and body.
-fn parse_response(raw: &str) -> Option<HttpResponse> {
-    let (head, body) = raw
-        .split_once("\r\n\r\n")
-        .or_else(|| raw.split_once("\n\n"))?;
-    let mut lines = head.lines();
-    let status = lines.next()?.split_whitespace().nth(1)?.parse().ok()?;
-    let location = lines.find_map(|l| {
-        let (k, v) = l.split_once(':')?;
-        k.eq_ignore_ascii_case("location")
-            .then(|| v.trim().to_owned())
-    });
-    Some(HttpResponse {
-        status,
-        location,
-        body: body.to_owned(),
-    })
-}
-
-/// An [`HttpTransport`] that shells out to `curl`; the token goes over stdin, never argv.
-#[derive(Clone)]
-struct CurlTransport {
-    token: String,
-}
-
-impl HttpTransport for CurlTransport {
-    fn send(&self, req: &HttpRequest) -> Result<HttpResponse, TransportError> {
-        let mut url = format!("{API_ROOT}{}", req.path);
-        for (i, (k, v)) in req.query.iter().enumerate() {
-            url.push(if i == 0 { '?' } else { '&' });
-            let _ = write!(url, "{}={}", enc(k), enc(v));
-        }
-        let method = match req.method {
-            Method::Get => "GET",
-            Method::Post => "POST",
-            Method::Patch => "PATCH",
-            Method::Delete => "DELETE",
-        };
-        let mut cfg = format!(
-            "url = {}\nrequest = {method}\nheader = {}\nheader = \"Accept: application/vnd.github+json\"\nheader = \"X-GitHub-Api-Version: 2022-11-28\"\nheader = \"User-Agent: frob-mirror\"\n",
-            curl_quote(&url),
-            curl_quote(&format!("Authorization: Bearer {}", self.token)),
-        );
-        if let Some(body) = &req.body {
-            let _ = write!(
-                cfg,
-                "header = \"Content-Type: application/json\"\ndata = {}\n",
-                curl_quote(&body.to_string())
-            );
-        }
-        tracing::debug!(%method, path = %req.path, "mirror recreate: http");
-        let cfg_path = write_private_config(&cfg)
-            .map_err(|e| TransportError::Other(format!("curl config: {e}")))?;
-        let spec = Spec {
-            program: Program::Tool {
-                name: "curl".to_owned(),
-            },
-            args: [
-                "--silent",
-                "--show-error",
-                "--include",
-                "--max-time",
-                "30",
-                "--config",
-            ]
-            .iter()
-            .map(|a| (*a).to_owned())
-            .chain([cfg_path.display().to_string()])
-            .collect(),
-            cwd: None,
-            env: Vec::new(),
-            timeout: Duration::from_secs(40),
-            capture: true,
-        };
-        let ran = Runner::new(Limits { jobs: 1 }).run(&spec);
-        if let Err(e) = std::fs::remove_file(&cfg_path) {
-            warn!(error = %e, "mirror recreate: could not remove curl config");
-        }
-        let out = ran.map_err(|e| TransportError::Other(format!("cannot run curl: {e}")))?;
-        match out.status {
-            ExecOutcome::Exited(0) => {}
-            ExecOutcome::Exited(28) | ExecOutcome::TimedOut => return Err(TransportError::Timeout),
-            _ => return Err(TransportError::Other(out.stderr.trim().to_owned())),
-        }
-        parse_response(&out.stdout_raw)
-            .ok_or_else(|| TransportError::Other("unparseable http response".into()))
-    }
-}
-
-/// Write `cfg` to a fresh owner-only temp file (it holds the token) and return its path.
-fn write_private_config(cfg: &str) -> std::io::Result<std::path::PathBuf> {
-    use std::os::unix::fs::OpenOptionsExt;
-    let path = std::env::temp_dir().join(format!(
-        "frob-mirror-{}-{}.curl",
-        std::process::id(),
-        rand_suffix()
-    ));
-    let mut f = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .mode(0o600)
-        .open(&path)?;
-    f.write_all(cfg.as_bytes())?;
-    Ok(path)
-}
-
-/// A per-call suffix so concurrent configs never collide.
-fn rand_suffix() -> u32 {
-    use std::sync::atomic::{AtomicU32, Ordering};
-    static N: AtomicU32 = AtomicU32::new(0);
-    N.fetch_add(1, Ordering::Relaxed)
-}
-
 /// Monotonic clock with real sleeps, for the adapter's write spacing.
 struct StdClock(Instant);
 
@@ -423,7 +288,7 @@ fn field(v: &Value, key: &str, what: &str) -> Result<String, CliError> {
 }
 
 /// One GET through the transport, 2xx only.
-fn get_json(http: &CurlTransport, path: &str) -> Result<Value, CliError> {
+fn get_json(http: &NativeTransport, path: &str) -> Result<Value, CliError> {
     let req = HttpRequest {
         method: Method::Get,
         path: path.to_owned(),
@@ -476,7 +341,7 @@ impl Command for MirrorRecreate {
             .ok_or_else(|| {
                 refuse("set GH_TOKEN or GITHUB_TOKEN to a token that can write issues")
             })?;
-        let http = CurlTransport { token };
+        let http = NativeTransport::new(token);
         let node_id = field(
             &get_json(&http, &format!("/repos/{}/{}", enc(&owner), enc(&name)))?,
             "node_id",
@@ -785,14 +650,11 @@ mod tests {
     }
 
     #[test]
-    fn curl_output_parses_status_location_and_body() {
-        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::parse_response
-        let r = parse_response("HTTP/2 301\r\nLocation: /x\r\n\r\n{}").unwrap();
-        assert_eq!(
-            (r.status, r.location.as_deref(), r.body.as_str()),
-            (301, Some("/x"), "{}")
-        );
-        assert_eq!(curl_quote("a\"b\\"), "\"a\\\"b\\\\\"");
+    fn get_json_reports_transport_failure_as_a_refusal() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::get_json
+        let http = NativeTransport::with_root("http://127.0.0.1:1", "tok");
+        let err = get_json(&http, "/repos/o/r").unwrap_err();
+        assert!(format!("{err:?}").contains("GET /repos/o/r"));
     }
 
     #[test]
