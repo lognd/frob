@@ -8,7 +8,7 @@ points = 3
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:47Z"
-updated = "2026-10-20T09:17:59Z"
+updated = "2026-10-20T09:30:38Z"
 scope = ["crates/grimble*/**", "crates/gob-path/tests/confinement.rs"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M41S1KX3ZVF51H8KPJ3YXZF9"
 
 [[acceptance]]
 text = "Given the grimble crates, when clippy runs without their allow-list entries, then it is clean and the allow list holds only gob-path"
-bound = false
+bound = true
 +++
 
 paths.md migration step 3 for the grimble crates.
