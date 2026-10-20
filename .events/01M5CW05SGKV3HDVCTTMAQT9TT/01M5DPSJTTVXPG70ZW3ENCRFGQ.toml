@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-20T22:26:57Z"
+digest = "6a9601827a1670fd102cd61cf9d5c071a5ef43323fc3969cf668dbd3f4d72890"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.53s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b3ce158c-914a-43bf-a1ef-c4422a720a41 with nextest profile: default
+    Starting 2 tests across 6 binaries (92 tests skipped)
+        PASS [   0.153s] frob-evidence::evidence capture_records_the_measured_head_commit
+        PASS [   0.172s] frob-evidence::evidence stale_head_warns_only_for_a_head_that_is_not_an_ancestor_of_the_tip
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.173s] 2 tests run: 2 passed, 92 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E test(head)"
+size = 674
+status = "measured"
+test_count = 2
+tests_digest = "8cd916dd7aa3406ceef2457c68a39ed9bb7de57366cc72266ff3b15c7f64d820"
+at = "2026-10-20T22:26:57Z"
+actor = "lognd"
+rev = 1
