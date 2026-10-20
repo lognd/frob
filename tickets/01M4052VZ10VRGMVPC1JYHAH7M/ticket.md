@@ -2,7 +2,8 @@
 id = "01M4052VZ10VRGMVPC1JYHAH7M"
 title = "frob mirror status: sweep bound, reasons, gaps, contested fields, uncertain creates"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
