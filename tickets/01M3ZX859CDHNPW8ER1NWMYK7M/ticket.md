@@ -2,7 +2,8 @@
 id = "01M3ZX859CDHNPW8ER1NWMYK7M"
 title = "Privacy: [mirror] exclude, redacted evidence, no worktree paths"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
