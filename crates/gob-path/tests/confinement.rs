@@ -46,9 +46,6 @@ const ALLOW: &[&str] = &[
     "gob-time",
     "gob-trust",
     "gob-walk",
-    "grimble",
-    "grimble-bind",
-    "grimble-model",
 ];
 
 /// Every `.rs` file under `dir`, recursively.
