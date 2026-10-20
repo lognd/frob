@@ -8,10 +8,10 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-20T06:45:23Z"
+updated = "2026-10-20T06:49:01Z"
 idempotency_key = "m2-mirror2-accept-guards"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob/src/ticket/proposals_accept.rs"]
+scope = ["crates/frob/src/ticket/proposals_accept.rs", "crates/frob/src/ticket/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
