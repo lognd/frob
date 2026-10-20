@@ -7,14 +7,14 @@ priority = "low"
 parent = "01M2VFD1ZDWWNTW1FFGKHCKTS3"
 reporter = "human"
 created = "2026-09-19T00:00:00Z"
-updated = "2026-10-04T22:22:23Z"
+updated = "2026-10-20T02:24:57Z"
 aliases = ["T-5099"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 scope = [".claude/hooks/*", "tests/test_hook_frob_suggest.py", "docs/guides/*"]
 
 [[acceptance]]
 text = "blanket FROB_SUGGEST_ACK=1 is replaced by a per-rule allow FROB_SUGGEST_ALLOW=<rule-id> that only suppresses that rule"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "paste-ready 'prefix it with FROB_SUGGEST_ACK=1 up front' wording is removed from every block message"
