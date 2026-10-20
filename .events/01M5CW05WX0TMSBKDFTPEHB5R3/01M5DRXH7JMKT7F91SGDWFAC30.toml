@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-10-20T23:04:01Z"
+digest = "1f4775d1aa36a0128edc07d55b11733813a08d1bdb92d71274ab6989c67644b3"
+exit_code = 0
+inline = '''
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6deebbb2-ed43-4a48-96f8-1b94744fa36d with nextest profile: default
+    Starting 2 tests across 3 binaries (131 tests skipped)
+        PASS [   0.554s] frob-land::land relaunch_refuses_an_unlanded_ticket_and_is_a_no_op_when_origin_has_the_land
+        PASS [   0.567s] frob-land::land relaunch_merges_the_remote_base_into_the_kept_branch_and_leaves_the_local_base
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.568s] 2 tests run: 2 passed, 131 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land relaunch"
+size = 768
+status = "measured"
+test_count = 2
+tests_digest = "5d1a848aeecde34bd04a823bf1ec3e1e0c61d435b820cdc68c0a7bc015133ee6"
+at = "2026-10-20T23:04:01Z"
+actor = "lognd"
+rev = 1
