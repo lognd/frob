@@ -8,9 +8,9 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:42Z"
-updated = "2026-10-20T18:29:14Z"
+updated = "2026-10-20T18:29:15Z"
 idempotency_key = "dt-DT09"
-scope = ["crates/frob/src/freshness_hooks.rs", "crates/frob/src/init.rs", "crates/frob/tests/it/freshness_hooks.rs"]
+scope = ["crates/frob/src/freshness_hooks.rs", "crates/frob/src/init.rs", "crates/frob/tests/it/freshness_hooks.rs", "scripts/claude-hooks/frob-refresh.sh"]
 
 [[links]]
 kind = "blocked-by"
