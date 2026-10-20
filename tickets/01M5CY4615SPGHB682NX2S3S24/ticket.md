@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a fresh clone with no local ticket branch, when frob work runs, then it adopts origin's ticket branch and succeeds"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given orphan mode, when goway.toml lacks the ticket-branch with_refs, then a guard test fails"
