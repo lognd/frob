@@ -2,7 +2,8 @@
 id = "01M5CW04M17256SKGTF195YEC4"
 title = "Freshness hooks"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
