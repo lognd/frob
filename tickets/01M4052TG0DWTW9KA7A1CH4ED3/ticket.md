@@ -2,13 +2,13 @@
 id = "01M4052TG0DWTW9KA7A1CH4ED3"
 title = "Revert backoff and contested fields (MIR002 Advisory)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-03T05:51:37Z"
+updated = "2026-10-20T12:17:33Z"
 idempotency_key = "m2-mirror2-contest"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/contest.rs"]
