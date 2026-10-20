@@ -2,13 +2,13 @@
 id = "01M3ZXGAWKZPVY6HF9NJ8GAFQV"
 title = "frob ticket proposals list and decline, and the pending count in check"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:39:12Z"
-updated = "2026-10-03T05:51:56Z"
+updated = "2026-10-20T04:15:16Z"
 idempotency_key = "m2-ticket-proposals-verbs"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob/src/ticket/proposals_cmd.rs", "crates/frob-check/src/proposals_summary.rs"]
