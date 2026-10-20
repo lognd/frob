@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "paste-ready 'prefix it with FROB_SUGGEST_ACK=1 up front' wording is removed from every block message"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a stale FROB_SUGGEST_ACK=1 prints a one-line notice and is ignored (not honored as a bypass)"
