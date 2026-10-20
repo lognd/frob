@@ -187,13 +187,6 @@
           "minimum": 0,
           "type": "integer"
         },
-        "soft_max_windows": {
-          "default": 2,
-          "description": "Consecutive windows soft-only activity (touch, comment, empty commit) may keep a claim alive; 0 means soft activity never extends a claim.",
-          "format": "uint32",
-          "minimum": 0,
-          "type": "integer"
-        },
         "warn_at": {
           "default": [
             0.5,
