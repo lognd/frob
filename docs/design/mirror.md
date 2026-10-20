@@ -560,7 +560,8 @@ fields) return only the authorized operations.
   adapter's capabilities record cites the result.
 
 The git-ref-backed shard store is `frob_mirror::shardstore::BranchShardStore`:
-each key is `<prefix>/<key>.json` on a ref, `put_if` is a content-hash
+each key is `<prefix>/<key>.toml` on a ref (`issue = N` for the ledger's
+reader, plus the exact shard bytes in a `payload` string), `put_if` is a content-hash
 compare-and-swap, and a lost ref race is re-read and re-checked rather than
 blindly retried.
 
