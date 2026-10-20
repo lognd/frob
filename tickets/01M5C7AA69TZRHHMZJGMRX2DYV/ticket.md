@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T08:37:15Z"
-updated = "2026-10-20T10:16:13Z"
+updated = "2026-10-20T10:19:57Z"
 scope = [".github/workflows/**"]
 
 [[acceptance]]
 text = "A scheduled workflow runs cargo bench -p gob-plan --bench b1_plan_vs_handwritten"
-bound = false
+bound = true
 +++
 
 found while working ~H3KZPCX: no scheduled bench step exists
