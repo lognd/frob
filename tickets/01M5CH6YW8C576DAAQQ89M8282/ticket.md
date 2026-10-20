@@ -2,7 +2,8 @@
 id = "01M5CH6YW8C576DAAQQ89M8282"
 title = "Register GitHub Actions and Dockerfile adapters in gob-caps and gob-walk"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
