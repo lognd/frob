@@ -1,0 +1,1 @@
+`frob work --next` can now evict an idle agent claim when nothing else is claimable and `[claims] evict_agent = "auto"` (default); `[claims] evict_rate` caps automatic evictions per day. The evicted work is parked at `parked/<handle>-<n>`.

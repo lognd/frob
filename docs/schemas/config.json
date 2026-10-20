@@ -166,6 +166,18 @@
           "default": "all",
           "description": "`all` counts every calendar day as idle time; `weekdays` skips Saturday and Sunday."
         },
+        "evict_agent": {
+          "$ref": "#/$defs/EvictKnob",
+          "default": "auto",
+          "description": "`auto` lets `frob work --next` evict an idle agent claim when nothing else is claimable; `confirm` never does."
+        },
+        "evict_rate": {
+          "default": 5,
+          "description": "Most automatic evictions one clone performs per local calendar day.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "idle_days": {
           "default": 3,
           "description": "Calendar days a human claim may sit idle before it is evictable; 0 means never evict.",

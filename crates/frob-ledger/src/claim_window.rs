@@ -28,6 +28,17 @@ pub enum CountKnob {
     Weekdays,
 }
 
+/// Whether `frob work --next` may evict idle claims on its own (`[claims] evict_agent`).
+// frob:ticket 01M5DJW52ZBQRYN9ZSTGSJJYF3
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum EvictKnob {
+    /// Evict an idle claim automatically when `work --next` finds nothing else to claim.
+    Auto,
+    /// Never evict from `work --next`; the operator evicts explicitly.
+    Confirm,
+}
+
 /// How long a claim may sit idle before it is evictable (`[claims]`).
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "claims", materialize)]
@@ -53,6 +64,12 @@ pub struct ClaimsTable {
     /// Longest stretch, in days, a blocked, review, train or CI pause stops the idle clock.
     #[config(default = 14)]
     pub paused_max_days: u32,
+    /// `auto` lets `frob work --next` evict an idle agent claim when nothing else is claimable; `confirm` never does.
+    #[config(default = EvictKnob::Auto)]
+    pub evict_agent: EvictKnob,
+    /// Most automatic evictions one clone performs per local calendar day.
+    #[config(default = 5)]
+    pub evict_rate: u32,
 }
 
 /// Per-class idle windows in days (`[claims.class]`); they override `idle_days`, and 0 means never evict.
@@ -88,6 +105,8 @@ pub struct ClaimWindows {
     soft_max_windows: u32,
     max_hold_days: u32,
     paused_max_days: u32,
+    evict_agent: EvictKnob,
+    evict_rate: u32,
 }
 
 impl Default for ClaimWindows {
@@ -102,6 +121,8 @@ impl Default for ClaimWindows {
             soft_max_windows: 2,
             max_hold_days: 30,
             paused_max_days: 14,
+            evict_agent: EvictKnob::Auto,
+            evict_rate: 5,
         }
     }
 }
@@ -134,7 +155,23 @@ impl ClaimWindows {
             soft_max_windows: claims.soft_max_windows,
             max_hold_days: claims.max_hold_days,
             paused_max_days: claims.paused_max_days,
+            evict_agent: claims.evict_agent,
+            evict_rate: claims.evict_rate,
         })
+    }
+
+    /// True when `[claims] evict_agent = "auto"`: `work --next` may evict an idle agent claim.
+    // frob:ticket 01M5DJW52ZBQRYN9ZSTGSJJYF3
+    #[must_use]
+    pub fn evict_agent_auto(&self) -> bool {
+        self.evict_agent == EvictKnob::Auto
+    }
+
+    /// Automatic evictions one clone may perform per day (`[claims] evict_rate`).
+    // frob:ticket 01M5DJW52ZBQRYN9ZSTGSJJYF3
+    #[must_use]
+    pub fn evict_rate(&self) -> u32 {
+        self.evict_rate
     }
 
     /// How many consecutive windows soft-only activity may extend a claim (`[claims] soft_max_windows`).
@@ -488,6 +525,25 @@ mod tests {
             ..c
         };
         assert!(ClaimWindows::from_tables(&bad, &k).is_err());
+    }
+
+    // frob:ticket 01M5DJW52ZBQRYN9ZSTGSJJYF3
+    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.evict_agent_auto
+    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.evict_rate
+    #[test]
+    fn evict_knobs_default_to_auto_and_five_and_follow_the_table() {
+        let k = ClaimsClassTable::default();
+        let d = ClaimWindows::from_tables(&ClaimsTable::default(), &k).expect("defaults");
+        assert!(d.evict_agent_auto());
+        assert_eq!(d.evict_rate(), 5);
+        let c = ClaimsTable {
+            evict_agent: EvictKnob::Confirm,
+            evict_rate: 2,
+            ..ClaimsTable::default()
+        };
+        let w = ClaimWindows::from_tables(&c, &k).expect("confirm");
+        assert!(!w.evict_agent_auto());
+        assert_eq!(w.evict_rate(), 2);
     }
 
     // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.idle_secs
