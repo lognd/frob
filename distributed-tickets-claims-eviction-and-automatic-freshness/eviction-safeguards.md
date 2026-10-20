@@ -2,13 +2,13 @@
 id = "01M5CW05P3TPW64S6Y4N95T88M"
 title = "Eviction safeguards"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T14:38:43Z"
+updated = "2026-10-20T21:47:11Z"
 idempotency_key = "dt-DT19"
 
 [[links]]
