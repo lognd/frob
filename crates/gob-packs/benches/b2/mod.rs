@@ -9,7 +9,7 @@
 
 // frob:ticket 01M3ZX7JHQQ3BVZWFMPAW40T13
 
-#[path = "../b1/mod.rs"]
+#[path = "../../../gob-plan/benches/b1/mod.rs"]
 #[allow(dead_code, reason = "B2 reuses only part of the B1 harness")]
 pub mod b1;
 
