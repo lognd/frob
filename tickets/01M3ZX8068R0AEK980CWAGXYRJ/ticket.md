@@ -2,7 +2,8 @@
 id = "01M3ZX8068R0AEK980CWAGXYRJ"
 title = "replaces as a privilege: shadow run and divergence"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
