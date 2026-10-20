@@ -2,12 +2,12 @@
 id = "01M5BJ2EVKDA4RYRDFRVHZ1FDQ"
 title = "frob claude: sync tracked hooks/agents/skills into ~/.claude (sync, status, uninstall)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T02:25:58Z"
-updated = "2026-10-20T02:47:06Z"
+updated = "2026-10-20T02:47:07Z"
 idempotency_key = "claude-sync-verb"
 +++
 
