@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T01:04:14Z"
+digest = "02de1665d14e725e015d580c227b23d98dc37fe631a0aff507e6eb51ba5fa5df"
+exit_code = 0
+inline = """
+
+running 1 test
+test mdtest_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.55s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.09s
+     Running tests/corpus.rs (target/debug/deps/corpus-9b8388f7d4464a7e)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-check --test corpus mdtest_corpus"
+size = 339
+status = "measured"
+at = "2026-10-20T01:04:14Z"
+actor = "lognd"
+rev = 1
