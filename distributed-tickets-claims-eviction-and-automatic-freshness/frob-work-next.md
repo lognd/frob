@@ -2,13 +2,13 @@
 id = "01M5CW05BZQR83F5SJTQEH8MRN"
 title = "frob work --next"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T14:38:43Z"
+updated = "2026-10-20T20:56:46Z"
 idempotency_key = "dt-DT16"
 
 [[links]]
