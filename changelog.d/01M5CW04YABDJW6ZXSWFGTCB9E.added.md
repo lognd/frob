@@ -1,0 +1,1 @@
+frob: claim idle windows are configurable under [claims] and [claims.class] (3 calendar days, 4 hours for agents, class overrides, 0 = never) with 50 and 80 percent warnings computed and aggregated; no verb reads them yet.

@@ -58,6 +58,7 @@
 pub mod backlog;
 pub mod branch;
 mod brief;
+pub mod claim_window; // frob:ticket 01M5CW04YABDJW6ZXSWFGTCB9E
 pub mod config;
 pub mod doc;
 pub mod doctor;

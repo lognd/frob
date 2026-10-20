@@ -55,6 +55,9 @@ pub struct FrobConfig {
     // frob:ticket 01M5CW046DKVK5QSJR8TMEN0F2
     /// `[sync]`, owned by `frob-ledger`: remote and freshness-probe settings.
     pub sync: SyncTable,
+    // frob:ticket 01M5CW04YABDJW6ZXSWFGTCB9E
+    /// `[claims]` and `[claims.class]`, owned by `frob-ledger`: claim idle windows and warnings.
+    pub claims: frob_ledger::claim_window::ClaimWindows,
     /// `[lease]`, owned by `frob-lease`.
     pub lease: frob_lease::LeaseConfig,
     /// `[worktree]`, owned by `frob-worktree`.
@@ -99,6 +102,15 @@ impl FrobConfig {
             agent: doc.table::<AgentTable>()?.value,
             git: doc.table::<GitTable>()?.value,
             sync: doc.table::<SyncTable>()?.value,
+            // frob:ticket 01M5CW04YABDJW6ZXSWFGTCB9E
+            claims: frob_ledger::claim_window::ClaimWindows::from_tables(
+                &doc.table::<frob_ledger::claim_window::ClaimsTable>()?.value,
+                &doc.table::<frob_ledger::claim_window::ClaimsClassTable>()?.value,
+            )
+            .map_err(|message| ConfigError::Invalid {
+                table: "claims".to_owned(),
+                message,
+            })?,
             lease: doc.table::<frob_lease::LeaseConfig>()?.value,
             worktree: doc.table::<frob_worktree::WorktreeConfig>()?.value,
             // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29

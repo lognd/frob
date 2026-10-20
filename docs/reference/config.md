@@ -49,6 +49,30 @@ Materialized: yes.
 | `ticket_hops` | `u32` | `1` | no | Hops of dependents (callers, via the symbol graph) added to a `--ticket` run. |
 | `tool` | `Vec<ToolStage>` | `[]` | no | External tool stages run after the built-in rules, outside the time budget. |
 
+## `[claims]`
+
+How long a claim may sit idle before it is evictable (`[claims]`).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `agent_idle_hours` | `u32` | `4` | no | Hours a claim held by an agent (`FROB_AGENT` set at claim time) may sit idle; 0 means never evict. |
+| `count` | `CountKnob` | `"all"` | no | `all` counts every calendar day as idle time; `weekdays` skips Saturday and Sunday. |
+| `idle_days` | `u32` | `3` | no | Calendar days a human claim may sit idle before it is evictable; 0 means never evict. |
+| `warn_at` | `Vec<f64>` | `[0.5, 0.8]` | no | Fractions of the window (each above 0 and below 1) at which the holder is warned. |
+
+## `[claims.class]`
+
+Per-class idle windows in days (`[claims.class]`); they override `idle_days`, and 0 means never evict.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `expedite` | `u32` | `1` | no | Days an expedite claim may sit idle: a critical fix must not be parked on someone's absence. |
+| `intangible` | `u32` | `7` | no | Days an intangible claim (chores, debt) may sit idle: slow upkeep gets a longer leash. |
+
 ## `[compute]`
 
 The substrate `[compute]` knobs every product reads (architecture.md section 6).
