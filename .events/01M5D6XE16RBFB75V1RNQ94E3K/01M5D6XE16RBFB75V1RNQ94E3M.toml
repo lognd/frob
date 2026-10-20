@@ -1,0 +1,9 @@
+kind = "create"
+title = "Ledger::integrate: refold pm docs (_cycles, _milestones) changed on both sides"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~QD7BPB3: currently reported as conflicts."
+at = "2026-10-20T17:49:27Z"
+actor = "lognd"
+rev = 1
