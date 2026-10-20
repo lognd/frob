@@ -1,0 +1,1 @@
+`ticket triage` (list, accept, decline, snooze, duplicate) and `ticket scrub` (also `ticket doctor --fix`) now work on the orphan ticket-branch layout (`ref_mode = "orphan"`) with the same results as the directory layout.

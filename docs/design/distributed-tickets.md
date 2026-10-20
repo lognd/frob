@@ -45,9 +45,9 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   worktree crate's raw `[tickets]` reader, `.gitattributes`, creating
   the local branch on fresh clones, CI and goway `with_refs`). Its
   priority was raised because 290 of 456 `experimental` commits were
-  ledger commits that move the land base. Open blocker:
-  01M4HQ2T0QV27JHJP0DRF7ZZHA (triage and scrub refuse the ticket-branch
-  layout).
+  ledger commits that move the land base. Former blocker
+  01M4HQ2T0QV27JHJP0DRF7ZZHA is resolved: triage and scrub now work on
+  the ticket-branch layout.
 
 ### 1.2 Events and merging
 

@@ -138,12 +138,9 @@ impl Command for TicketDoctor {
                 }));
             Vec::new()
         };
-        let scrub = if self.fix && ledger.layout() == frob_ledger::Layout::Dir {
+        let scrub = if self.fix {
             scrub_ledger(&ledger)?
         } else {
-            if self.fix {
-                tracing::warn!("scrub skipped: not implemented for the ticket-branch layout");
-            }
             ScrubReport::default()
         };
         let pm = PmStore::new(&ledger).doctor(self.fix).map_err(pm_err)?;

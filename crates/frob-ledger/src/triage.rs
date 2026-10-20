@@ -135,7 +135,6 @@ impl Ledger {
         req: &TriageRequest,
         now: Stamp,
     ) -> Result<TriageReport> {
-        self.require_dir_layout("ticket triage")?;
         validate(req, now)?;
         let s = self.synced()?;
         let hex = s.tip.map(|t| t.to_string());
@@ -216,6 +215,7 @@ impl Ledger {
             });
             planned.push((id, events));
         }
+        let paths = self.plan_paths(&s, &planned, hex.as_deref())?;
         drop(s);
         let mut report = TriageReport {
             entries,
@@ -226,23 +226,43 @@ impl Ledger {
             tracing::info!(action = %req.action, tickets = report.entries.len(), "triage: nothing to write");
             return Ok(report);
         }
-        let (oid, warnings) = self.commit_triage(&planned, req, hex.as_deref())?;
+        let (oid, warnings) = self.commit_triage(&planned, &paths, req, hex.as_deref())?;
         report.commit = Some(oid.to_string());
         report.warnings = warnings;
         Ok(report)
+    }
+
+    /// Where each planned ticket's file and events directory sit (or go) in the ledger tree.
+    fn plan_paths(
+        &self,
+        s: &crate::ledger::Synced,
+        planned: &[(TicketId, Vec<Event>)],
+        hex: Option<&str>,
+    ) -> Result<Vec<(String, String)>> {
+        let mut paths = Vec::with_capacity(planned.len());
+        for (id, events) in planned {
+            let mut all = match hex {
+                Some(h) => self.read_events_at(h, *id)?,
+                None => Vec::new(),
+            };
+            all.extend(events.iter().cloned());
+            let ticket = fold(*id, &all)?.ticket;
+            paths.push(self.write_paths(&s.index, s.tip, &ticket, false)?);
+        }
+        Ok(paths)
     }
 
     /// Write every planned ticket's events and re-folded frontmatter in one commit.
     fn commit_triage(
         &self,
         planned: &[(TicketId, Vec<Event>)],
+        paths: &[(String, String)],
         req: &TriageRequest,
         hex: Option<&str>,
     ) -> Result<(Oid, Vec<String>)> {
-        let dir = &self.cfg.dir;
         let mut changes = Vec::new();
         let mut titles = Vec::new();
-        for (id, events) in planned {
+        for ((id, events), (file, events_dir)) in planned.iter().zip(paths) {
             for ev in events {
                 self.refuse_private(&ev.to_toml()?)?;
             }
@@ -254,12 +274,12 @@ impl Ledger {
             let ticket = fold(*id, &all)?.ticket;
             titles.push(ticket.front.title.clone());
             changes.push((
-                RelPath::new(format!("{dir}/{id}/ticket.md"))?,
+                RelPath::new(file)?,
                 Some(crate::doc::render(&ticket)?.into_bytes()),
             ));
             for ev in events {
                 changes.push((
-                    RelPath::new(format!("{dir}/{id}/events/{}", ev.file_name()))?,
+                    RelPath::new(format!("{events_dir}/{}", ev.file_name()))?,
                     Some(ev.to_toml()?.into_bytes()),
                 ));
             }

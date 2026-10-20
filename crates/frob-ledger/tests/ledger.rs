@@ -1342,3 +1342,86 @@ fn brief_omits_suggested_commands_outside_allowed_tools(layout: Layout) {
     assert!(!brief.contains("curl"), "{brief}");
 }
 both_layouts!(brief_omits_suggested_commands_outside_allowed_tools);
+
+/// Triage list and accept give the same results in both layouts, and the accept lands one commit.
+// frob:ticket 01M4HQ2T0QV27JHJP0DRF7ZZHA
+// frob:tests crates/frob-ledger/src/triage.rs::Ledger.triage
+fn triage_list_and_accept_work_in_both_layouts(layout: Layout) {
+    use frob_ledger::model::TriageAction;
+    use frob_ledger::triage::{TriageRequest, TriageStatus};
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let mut req = NewTicket::new("Inbox item", TicketType::Task);
+    req.category = Category::Triage;
+    let id = ledger.new_ticket(req).expect("new").ticket.front.id;
+    let now = gob_time::Clock::now(&gob_time::SystemClock);
+    let inbox = ledger
+        .inbox(&ListFilter::default(), now, false)
+        .expect("inbox");
+    assert_eq!(inbox.len(), 1);
+    assert_eq!(inbox[0].summary.id, id);
+    let accept = TriageRequest {
+        action: TriageAction::Accept,
+        until: None,
+        reason: None,
+        target: None,
+    };
+    let report = ledger.triage(&[id], &accept, now).expect("accept");
+    assert_eq!(report.entries[0].status, TriageStatus::Applied);
+    assert_eq!(report.entries[0].category, Category::Todo);
+    assert!(report.commit.is_some());
+    assert!(
+        ledger
+            .inbox(&ListFilter::default(), now, true)
+            .expect("inbox")
+            .is_empty()
+    );
+    let tip = ledger.tip_hex().expect("tip").expect("some");
+    let ticket = ledger
+        .read_ticket_at(&tip, id)
+        .expect("read")
+        .expect("some");
+    assert_eq!(ticket.front.category, Category::Todo);
+    let again = ledger.triage(&[id], &accept, now).expect("repeat");
+    assert_eq!(again.entries[0].status, TriageStatus::Already);
+    assert!(again.commit.is_none());
+}
+both_layouts!(triage_list_and_accept_work_in_both_layouts);
+
+/// Scrub rewrites a home path in a ticket and keeps the fold, in both layouts, idempotently.
+// frob:ticket 01M4HQ2T0QV27JHJP0DRF7ZZHA
+// frob:tests crates/frob-ledger/src/scrub.rs::Ledger.scrub
+fn scrub_works_in_both_layouts(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let mut req = NewTicket::new("Dirty", TicketType::Task);
+    "built in /home/ann/work/app\n".clone_into(&mut req.body);
+    let id = ledger.new_ticket(req).expect("new").ticket.front.id;
+    let rewrite = |t: &str| t.replace("/home/ann", "~");
+    let digest = |b: &[u8]| format!("d{}", b.len());
+    let tools = frob_ledger::scrub::ScrubTools {
+        rewrite: &rewrite,
+        digest: &digest,
+    };
+    let report = ledger.scrub(&tools).expect("scrub");
+    assert_eq!(report.tickets, vec![id], "{report:?}");
+    assert!(report.unresolved.is_empty(), "{report:?}");
+    assert!(report.commit.is_some());
+    let tip = ledger.tip_hex().expect("tip").expect("some");
+    let ticket = ledger
+        .read_ticket_at(&tip, id)
+        .expect("read")
+        .expect("some");
+    assert!(ticket.body.contains("~/work/app") && !ticket.body.contains("/home/ann"));
+    assert!(
+        ledger
+            .read_events_at(&tip, id)
+            .expect("events")
+            .iter()
+            .any(|e| matches!(e.body, frob_ledger::event::EventBody::Scrub(_)))
+    );
+    let second = ledger.scrub(&tools).expect("again");
+    assert!(
+        second.commit.is_none() && second.files.is_empty(),
+        "{second:?}"
+    );
+}
+both_layouts!(scrub_works_in_both_layouts);

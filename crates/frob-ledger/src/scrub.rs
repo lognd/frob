@@ -26,6 +26,7 @@ use crate::error::Result;
 use crate::event::{DigestChange, Event, EventBody, ScrubData};
 use crate::fold::fold;
 use crate::id::TicketId;
+use crate::layout::{self, Layout};
 use crate::ledger::Ledger;
 use crate::redact::{Hit, RuleSet};
 
@@ -70,7 +71,7 @@ struct Touched {
     digests: Vec<DigestChange>,
     /// Rules that fired in this ticket's files (labels and hashes, never terms).
     rules: std::collections::BTreeSet<Hit>,
-    /// New text by path relative to the tickets directory.
+    /// New text by repository path.
     new_text: BTreeMap<String, String>,
 }
 
@@ -85,7 +86,6 @@ impl Ledger {
     ///
     /// Git read or commit failures, or a ticket whose scrubbed events no longer fold.
     pub fn scrub(&self, tools: &ScrubTools<'_>) -> Result<ScrubReport> {
-        self.require_dir_layout("ticket scrub")?;
         let rules = self.redaction()?.clone().with_home_path();
         let mut report = ScrubReport::default();
         let ref_name = self.ledger_write_ref()?;
@@ -93,12 +93,14 @@ impl Ledger {
             return Ok(report);
         };
         let hex = tip.to_string();
-        let dir = self.config().dir.clone();
+        let spec = self.tree_spec(&hex);
+        let prefix = self.tree_prefix();
+        let owners = self.owners_at(&hex)?;
         let mut changes: Vec<(RelPath, Option<Vec<u8>>)> = Vec::new();
         let mut touched: BTreeMap<TicketId, Touched> = BTreeMap::new();
         let mut others: Vec<String> = Vec::new();
-        for (rel, oid) in self.list_blobs(&format!("{hex}:{dir}"))? {
-            let path = format!("{dir}/{rel}");
+        for (rel, oid) in self.list_blobs(&spec)? {
+            let path = format!("{prefix}{rel}");
             let bytes = self.repo().read_blob(&oid)?;
             let fired = rules.hits(&bytes);
             if fired.is_empty() {
@@ -122,13 +124,13 @@ impl Ledger {
                 continue;
             };
             report.digests += digests.len();
-            match ticket_of(&rel) {
+            match owners.owner(&rel) {
                 Some(id) => {
                     let t = touched.entry(id).or_default();
                     t.files.push(rel_path.clone());
                     t.digests.extend(digests);
                     t.rules.extend(fired);
-                    t.new_text.insert(rel.clone(), new.clone());
+                    t.new_text.insert(path.clone(), new.clone());
                 }
                 None => others.push(path.clone()),
             }
@@ -155,7 +157,7 @@ impl Ledger {
                 }),
             );
             changes.push((
-                RelPath::new(format!("{dir}/{id}/events/{}", ev.file_name()))?,
+                RelPath::new(format!("{}/{}", self.events_dir_of(*id), ev.file_name()))?,
                 Some(ev.to_toml()?.into_bytes()),
             ));
             report.tickets.push(*id);
@@ -194,11 +196,10 @@ impl Ledger {
         touched: &Touched,
         changes: &mut Vec<(RelPath, Option<Vec<u8>>)>,
     ) -> Result<()> {
-        let dir = &self.config().dir;
         let old_events = self.read_events_at(hex, id)?;
         let was_clean =
             self.read_ticket_at(hex, id)?.as_ref() == Some(&fold(id, &old_events)?.ticket);
-        let events_dir = format!("{id}/events");
+        let events_dir = self.events_dir_of(id);
         let mut events = Vec::with_capacity(old_events.len());
         for ev in old_events {
             let rel = format!("{events_dir}/{}", ev.file_name());
@@ -208,15 +209,16 @@ impl Ledger {
             });
         }
         let folded = fold(id, &events)?.ticket;
-        let card = format!("{id}/ticket.md");
-        let text = match touched.new_text.get(&card) {
+        let Some(label) = self.ticket_file_at(hex, id, None)? else {
+            return Ok(());
+        };
+        let text = match touched.new_text.get(&label) {
             Some(t) => t.clone(),
-            None => match self.text(hex, &format!("{dir}/{card}"))? {
+            None => match self.text(hex, &label)? {
                 Some(t) => t,
                 None => return Ok(()),
             },
         };
-        let label = format!("{dir}/{card}");
         let agrees = doc::parse(&label, &text).is_ok_and(|t| t == folded);
         if was_clean && !agrees {
             tracing::info!(ticket = %id, "scrubbed ticket.md re-rendered from the fold of its scrubbed events");
@@ -245,9 +247,65 @@ fn reason_of(rules: &std::collections::BTreeSet<Hit>) -> String {
     }
 }
 
-/// The ticket directory a path (relative to the tickets directory) belongs to.
-fn ticket_of(rel: &str) -> Option<TicketId> {
-    rel.split('/').next()?.parse().ok()
+/// Which ticket each file of a ledger tree belongs to, in either layout.
+struct Owners {
+    layout: Layout,
+    /// Branch layout only: ticket file path (branch relative) to its ticket.
+    files: BTreeMap<String, TicketId>,
+}
+
+impl Owners {
+    /// The ticket owning `rel` (relative to the ledger tree), if any.
+    fn owner(&self, rel: &str) -> Option<TicketId> {
+        let mut parts = rel.split('/');
+        match self.layout {
+            Layout::Dir => parts.next()?.parse().ok(),
+            Layout::Branch => match parts.next()? {
+                layout::EVENTS_DIR => parts.next()?.parse().ok(),
+                _ => self.files.get(rel).copied(),
+            },
+        }
+    }
+}
+
+impl Ledger {
+    /// The file-to-ticket map of the tree at `hex`.
+    fn owners_at(&self, hex: &str) -> Result<Owners> {
+        let files = match self.layout() {
+            Layout::Dir => BTreeMap::new(),
+            Layout::Branch => self
+                .branch_scan_at(hex)?
+                .files
+                .iter()
+                .map(|(id, p)| (p.clone(), *id))
+                .collect(),
+        };
+        Ok(Owners {
+            layout: self.layout(),
+            files,
+        })
+    }
+
+    /// The revision spec of the ledger tree at `hex`.
+    fn tree_spec(&self, hex: &str) -> String {
+        match self.layout() {
+            Layout::Dir => format!("{hex}:{}", self.config().dir),
+            Layout::Branch => hex.to_owned(),
+        }
+    }
+
+    /// Repository path of the directory holding the event files of `id`.
+    fn events_dir_of(&self, id: TicketId) -> String {
+        match self.layout() {
+            Layout::Dir => format!("{}/{id}/events", self.config().dir),
+            Layout::Branch => layout::branch_events_dir(id),
+        }
+    }
+}
+
+/// Whether the repository path is an event file of either layout.
+fn is_event_path(path: &str) -> bool {
+    path.contains("/events/") || path.starts_with(".events/")
 }
 
 /// The rewritten text of one file and the digests recomputed in it; `None` when a home path survives.
@@ -262,7 +320,7 @@ fn rewrite_file(
         return None;
     }
     let mut digests = Vec::new();
-    if path.as_str().contains("/events/")
+    if is_event_path(path.as_str())
         && let Some(change) = recompute_digest(path, old, &mut new, tools)
     {
         digests.push(change);

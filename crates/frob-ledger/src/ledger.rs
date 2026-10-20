@@ -221,24 +221,6 @@ impl Ledger {
         self.layout
     }
 
-    /// Refuse `verb` on the ticket-branch layout, which it does not write yet.
-    ///
-    /// # Errors
-    ///
-    /// [`LedgerError::Invalid`] naming the verb when the layout is [`Layout::Branch`].
-    pub(crate) fn require_dir_layout(&self, verb: &str) -> Result<()> {
-        if self.layout == Layout::Branch {
-            tracing::warn!(
-                verb,
-                "verb refused: not implemented for the ticket-branch layout"
-            );
-            return Err(LedgerError::invalid(format!(
-                "`{verb}` does not support the ticket-branch layout yet (ref_mode = \"orphan\")"
-            )));
-        }
-        Ok(())
-    }
-
     /// Prefix that turns a path relative to the ledger tree into a repository path.
     pub fn tree_prefix(&self) -> String {
         match self.layout {
@@ -548,7 +530,7 @@ impl Ledger {
     /// A new ticket on the ticket branch goes to its computed path (`-<handle>` appended when
     /// another ticket already holds it); an existing one is rewritten where it is, because
     /// files move only in reindex commits (`navigation.md` 2.2).
-    fn write_paths(
+    pub(crate) fn write_paths(
         &self,
         index: &Index,
         tip: Option<Oid>,
