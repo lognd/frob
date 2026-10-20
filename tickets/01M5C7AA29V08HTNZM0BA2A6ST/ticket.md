@@ -12,7 +12,7 @@ scope = ["crates/gob-plan/src/**"]
 
 [[acceptance]]
 text = "Reachability through the cached closure keeps may-edge and frontier verdicts"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The Fx-hashed map used by executor caches round-trips keys"
