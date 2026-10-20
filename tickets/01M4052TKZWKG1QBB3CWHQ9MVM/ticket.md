@@ -47,7 +47,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a valid proposal on a TTY, when accepted after the escaped diff is shown, then the field changes through a recorded event and proposal-accepted closes the proposal"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.5 (accept guards) and security.md 2.11.
