@@ -2,7 +2,8 @@
 id = "01M3ZXGAWKZPVY6HF9NJ8GAFQV"
 title = "frob ticket proposals list and decline, and the pending count in check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
