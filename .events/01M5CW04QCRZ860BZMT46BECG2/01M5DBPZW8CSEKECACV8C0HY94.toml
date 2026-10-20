@@ -1,0 +1,23 @@
+kind = "evidence"
+captured_at = "2026-10-20T19:13:18Z"
+digest = "6e1fef6f2950bf8d62d8ab1631664a9927f13ec045923104e4ae8ef3d41a0b89"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ac14614c-5046-4701-8fb5-43b02d52081b with nextest profile: default
+    Starting 1 test across 330 binaries (4021 tests skipped)
+        PASS [   0.088s] frob-worktree::claim an_unreachable_remote_warns_and_proceeds_with_an_unpublished_claim
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.095s] 1 test run: 1 passed, 4021 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "an_unreachable_remote_warns_and_proceeds_with_an_unpublished_claim"
+size = 584
+status = "measured"
+test_count = 1
+tests_digest = "a268fafa34f3cb93608b26e232d1464ca67979725df37c819e579a1dbe79bd55"
+at = "2026-10-20T19:13:18Z"
+actor = "lognd"
+rev = 1
