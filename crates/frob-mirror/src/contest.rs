@@ -255,7 +255,7 @@ mod tests {
         }
     }
 
-    // frob:tests ContestBook::observe
+    // frob:tests observe
     #[test]
     fn reverts_after_one_two_and_four_runs_at_most_daily() {
         let mut b = ContestBook::default();
@@ -278,7 +278,7 @@ mod tests {
         assert_eq!(b.observe("7", "title", div("5", "c"), t), Decision::Revert);
     }
 
-    // frob:tests ContestBook::observe
+    // frob:tests observe
     #[test]
     fn at_most_one_revert_per_day() {
         let mut b = ContestBook::default();
@@ -293,7 +293,7 @@ mod tests {
         );
     }
 
-    // frob:tests ContestBook::observe
+    // frob:tests observe
     #[test]
     fn third_reapplication_contests_and_proposes_latest_value() {
         let mut b = ContestBook::default();
@@ -359,7 +359,7 @@ mod tests {
         b
     }
 
-    // frob:tests ContestBook::clear
+    // frob:tests clear
     #[test]
     fn ledger_event_accept_or_decline_clears_contested() {
         for cause in [
@@ -380,7 +380,7 @@ mod tests {
         }
     }
 
-    // frob:tests ContestBook::observe
+    // frob:tests observe
     #[test]
     fn a_different_actor_restarts_the_count_and_state_round_trips() {
         let mut b = ContestBook::default();
