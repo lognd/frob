@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a project field other than status, when reconciled, then it is read and never written"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.4 (repository-level inventory) and 3.6 (managed labels and types exist; project fields).

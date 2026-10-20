@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-20T06:47:33Z"
+digest = "e6f29a876b8f97a7d001a0288b66c2f0526b82fab21980885c7afafc37fdd888"
+exit_code = 0
+inline = """
+
+running 1 test
+test github::schema::tests::only_status_project_field_is_written ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 120 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running unittests src/lib.rs (target/debug/deps/frob_mirror-d9c70433aacc4bf6)
+     Running tests/create.rs (target/debug/deps/create-b636b84d7d328e8e)
+     Running tests/dups/main.rs (target/debug/deps/dups-d37fa0f73230b0a0)
+     Running tests/support/main.rs (target/debug/deps/support-2a6be0cb1aa6bb2b)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-mirror only_status_project_field_is_written"
+size = 908
+status = "measured"
+at = "2026-10-20T06:47:33Z"
+actor = "lognd"
+rev = 1
