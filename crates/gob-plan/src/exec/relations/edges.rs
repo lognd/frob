@@ -69,12 +69,38 @@ fn within(rel: &Relation, from: NodeId, steps: u16, only_yes: bool) -> (BTreeSet
     (reached, exhausted)
 }
 
-/// `from reaches to via rel within n`.
-///
-/// Yes iff a path of at most `n` certain edges leads to `to`; else Unknown `may-edge` if `to` is
-/// within `n` possible edges; else Unknown with the frontier if a node within `n` possible edges
-/// (`from` included) is on it; else No if the possible-edge search was exhausted; else Unknown
-/// `budget`. A certain path longer than `n` is therefore a budget Unknown, never No (7.0.3).
+/// The sure and possible forward closures of one node within a step bound, with the possible
+/// search's exhaustion flag; shared by every `reaches` query from that node.
+pub(crate) struct Closure {
+    sure: BTreeSet<NodeId>,
+    hi: BTreeSet<NodeId>,
+    exhausted: bool,
+    /// The nodes of `{from} + hi` with an unknown-out edge, in id order.
+    frontier: Vec<NodeId>,
+}
+
+impl Closure {
+    /// Searches `rel` from `from` within `n` steps (frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST).
+    pub(crate) fn of(rel: &Relation, from: NodeId, n: u16) -> Self {
+        let (sure, _) = within(rel, from, n, true);
+        let (hi, exhausted) = within(rel, from, n, false);
+        let frontier = std::iter::once(from)
+            .chain(hi.iter().copied())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .filter(|&x| rel.is_unknown_out(x))
+            .collect();
+        Self {
+            sure,
+            hi,
+            exhausted,
+            frontier,
+        }
+    }
+}
+
+/// `from reaches to via rel within n`, computing the closure afresh.
+#[cfg(test)]
 pub(crate) fn reaches(
     rel: &Relation,
     from: NodeId,
@@ -82,28 +108,34 @@ pub(crate) fn reaches(
     n: u16,
     certainty: Certainty,
 ) -> Verdict {
-    let (sure, _) = within(rel, from, n, true);
-    let v = if sure.contains(&to) {
+    reaches_in(&Closure::of(rel, from, n), from, to, n, certainty)
+}
+
+/// `from reaches to via rel within n` over a precomputed [`Closure`] of `from`.
+///
+/// Yes iff a path of at most `n` certain edges leads to `to`; else Unknown `may-edge` if `to` is
+/// within `n` possible edges; else Unknown with the frontier if a node within `n` possible edges
+/// (`from` included) is on it; else No if the possible-edge search was exhausted; else Unknown
+/// `budget`. A certain path longer than `n` is therefore a budget Unknown, never No (7.0.3).
+pub(crate) fn reaches_in(
+    closure: &Closure,
+    from: NodeId,
+    to: NodeId,
+    n: u16,
+    certainty: Certainty,
+) -> Verdict {
+    let v = if closure.sure.contains(&to) {
         Verdict::yes()
+    } else if closure.hi.contains(&to) {
+        Verdict::unknown(Doubt::MayEdge { from, to })
+    } else if !closure.frontier.is_empty() {
+        Verdict::unknown(Doubt::Frontier {
+            nodes: closure.frontier.clone(),
+        })
+    } else if closure.exhausted {
+        Verdict::no()
     } else {
-        let (hi, exhausted) = within(rel, from, n, false);
-        if hi.contains(&to) {
-            Verdict::unknown(Doubt::MayEdge { from, to })
-        } else {
-            let frontier: Vec<NodeId> = std::iter::once(from)
-                .chain(hi.iter().copied())
-                .collect::<BTreeSet<_>>()
-                .into_iter()
-                .filter(|&x| rel.is_unknown_out(x))
-                .collect();
-            if !frontier.is_empty() {
-                Verdict::unknown(Doubt::Frontier { nodes: frontier })
-            } else if exhausted {
-                Verdict::no()
-            } else {
-                Verdict::unknown(Doubt::Budget { from, within: n })
-            }
-        }
+        Verdict::unknown(Doubt::Budget { from, within: n })
     };
     tracing::trace!(?from, ?to, n, truth = ?v.truth, "reaches");
     collapse(v, certainty)

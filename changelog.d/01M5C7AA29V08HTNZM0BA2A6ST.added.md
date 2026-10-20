@@ -1,0 +1,1 @@
+gob-plan: the plan executor now caches kind domains, reachability closures, operand values and unit lookups, indexes equality joins in `some`/`no` bodies, and matches comment/literal text in place. B1 plan/handwritten per-file medians drop from 4.6x/25.8x/68.1x to 3.0x/4.2x/6.6x (TODO001/COV001/DOC002); the 1.3x target is tracked in follow-up tickets.
