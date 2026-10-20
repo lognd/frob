@@ -322,6 +322,13 @@ pub trait Product: Sized + Sync {
         false
     }
 
+    /// True when `path` is a file the product itself writes and owns (config, ledger, fragments).
+    ///
+    /// Such a file carries no directives a user wrote, so it is left out of the opaque-text count.
+    fn owns_file(&self, _path: &str) -> bool {
+        false
+    }
+
     /// Whether a `must_measure` rule has a non-empty scope in this repository.
     ///
     /// A rule whose whole scope is not applicable (no ledger configured, no

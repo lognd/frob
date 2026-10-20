@@ -287,6 +287,7 @@ fn opaque_repo_findings<P: Product>(
         };
         if info.is_opaque()
             && !product.scans_text(&e.path)
+            && !product.owns_file(&e.path)
             && !opaque_binary(&snap.core, &e.path, &info)
         {
             opaque.push(&e.path);

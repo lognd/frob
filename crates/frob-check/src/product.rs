@@ -600,6 +600,10 @@ impl Product for Frob {
         Language::detect(path).is_some()
     }
 
+    fn owns_file(&self, path: &str) -> bool {
+        is_frob_owned(path)
+    }
+
     fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
         if snap.inputs.ledger_missing.is_some() && LEDGER_RULES.contains(&meta.id) {
             // frob:ticket 01M44VQ57WQW4G5JTZDDYEVJPW
@@ -681,6 +685,13 @@ fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope) -> Option<Finding>
         return None;
     }
     frob_release::rel003::missing(&snap.core.root, &id.to_string(), &scope.handle)
+}
+
+/// True for the files `frob init` and the ledger write: config, git attributes and ignore, tickets, fragments.
+fn is_frob_owned(path: &str) -> bool {
+    matches!(path, "frob.toml" | ".gitattributes" | ".gitignore")
+        || path.starts_with("tickets/")
+        || path.starts_with("changelog.d/")
 }
 
 #[cfg(test)]

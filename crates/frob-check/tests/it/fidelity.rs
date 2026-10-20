@@ -182,3 +182,24 @@ fn pm_rules_inapplicable_reasons_appear_in_the_not_applicable_list() {
         report.fidelity.lines()
     );
 }
+
+// frob:tests crates/frob-check/src/product.rs::is_frob_owned
+#[test]
+fn a_fresh_repository_with_only_frob_owned_files_has_no_unresolved_finding() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path();
+    write(root, "frob.toml", b"# frob config\n");
+    write(
+        root,
+        ".gitattributes",
+        b"tickets/**/ticket.md merge=frob-ledger\n",
+    );
+    write(root, ".gitignore", b".frob/\n");
+    let report = run(root, &options()).expect("run");
+    let unresolved: Vec<_> = report
+        .findings
+        .iter()
+        .filter(|f| f.severity == Severity::Unresolved)
+        .collect();
+    assert!(unresolved.is_empty(), "{unresolved:?}");
+}

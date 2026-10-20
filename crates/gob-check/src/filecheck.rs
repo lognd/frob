@@ -160,6 +160,10 @@ fn account<P: Product>(
     };
     let mut opaque: BTreeMap<&str, (&'static str, Vec<&str>)> = BTreeMap::new();
     for path in paths {
+        if product.owns_file(path) {
+            tracing::debug!(path, "product-owned file: left out of fidelity accounting");
+            continue;
+        }
         let Some(info) = product.file_info(&snap.shared, path) else {
             continue;
         };
