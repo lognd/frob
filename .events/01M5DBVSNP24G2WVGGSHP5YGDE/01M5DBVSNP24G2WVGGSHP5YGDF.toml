@@ -1,0 +1,9 @@
+kind = "create"
+title = "Record a lease event (take/move/renew) and push the ledger after the claim"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~46BECG2. Design 3.3: after the create-only branch push, append a lease event with op, actor, clone id, agent label, branch and observed oid, then push the ledger. Needs a producible lease event kind in frob-ledger (EventBody::Other today)."
+at = "2026-10-20T19:15:57Z"
+actor = "lognd"
+rev = 1
