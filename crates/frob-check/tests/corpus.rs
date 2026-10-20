@@ -3,7 +3,8 @@
 //! The repository-rule corpora (`DRIFT*`, `EXC005`, `PERF001`, `PROC001`, `READ001`, `SCOPE001`,
 //! `SIB001`, `TEST001`) build a small repository from the block. A line `=== path` starts a file
 //! section (text up to the next `===` line); `=== git` commits the tree so far to `main`;
-//! `=== ack <symref>...` records an ack; a later section for a path overwrites the file.
+//! `=== ack <symref>...` records an ack; `=== binary <path>` writes a non-UTF-8 file the graph cannot read; a later
+//! section for a path overwrites the file.
 //!
 //! The ledger corpora (`TICK001`, `TICK003`, `TICK004`, `TICK005`, `TICK007`-`TICK009`) build a
 //! repository holding one ticket and apply the block as the scenario (see `tick_dir_runner` and
@@ -89,6 +90,8 @@ enum Step {
     Git,
     /// Ack the symrefs.
     Ack(Vec<String>),
+    /// Write `path` with bytes that are not UTF-8, so the graph build cannot read it.
+    Binary(String),
 }
 
 /// Split a block into steps; text before the first `===` line is the block's own file.
@@ -108,6 +111,8 @@ fn steps(case: &Case) -> Vec<Step> {
             let head = head.trim();
             if head == "git" {
                 out.push(Step::Git);
+            } else if let Some(path) = head.strip_prefix("binary ") {
+                out.push(Step::Binary(path.trim().to_owned()));
             } else if let Some(rest) = head.strip_prefix("ack ") {
                 out.push(Step::Ack(
                     rest.split_whitespace().map(str::to_owned).collect(),
@@ -166,6 +171,11 @@ fn repo_runner(case: &Case) -> Vec<Finding> {
     for step in steps(case) {
         match step {
             Step::File(path, text) => write_file(root, &path, &text),
+            Step::Binary(path) => {
+                let full = root.join(&path);
+                std::fs::create_dir_all(full.parent().expect("parent")).expect("mkdir");
+                std::fs::write(full, [0xff_u8, 0xfe, b'\n']).expect("write binary");
+            }
             Step::Git => {
                 git(root, &["init", "-q"]);
                 git(root, &["symbolic-ref", "HEAD", "refs/heads/main"]);
@@ -492,6 +502,52 @@ fn tool_runner(case: &Case) -> Vec<Finding> {
         .collect()
 }
 
+/// `REF001`/`TODO002`: a trunk-mode ledger with one open and one done ticket, or none for a `vacuous` block.
+///
+/// The block's `=== path` sections (or its own file) are written into the tree; `{{OPEN}}` and `{{DONE}}` expand to the
+/// two ticket ids. A `vacuous` block gets an empty ledger, so the rule is applicable yet examines nothing.
+fn ledger_ref_runner(case: &Case) -> Vec<Finding> {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path();
+    let repo = init_root_repo(root, &[(".gitignore", ".frob/\n")]);
+    let ledger = Ledger::open(
+        repo,
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
+    let vacuous = case.text.contains("{{VACUOUS}}");
+    let (mut open, mut done) = (String::new(), String::new());
+    if !vacuous {
+        let id = |title: &str| {
+            ledger
+                .new_ticket(NewTicket::new(title, TicketType::Task))
+                .expect("ticket")
+                .ticket
+                .front
+                .id
+        };
+        let open_id = id("Open work");
+        let done_id = id("Finished work");
+        ledger
+            .drop_ticket(done_id, "not needed any more")
+            .expect("drop ticket");
+        open = open_id.to_string();
+        done = done_id.to_string();
+    }
+    write_file(root, "frob.toml", "[tickets]\n");
+    for step in steps(case) {
+        if let Step::File(path, text) = step {
+            let text = text
+                .replace("{{VACUOUS}}", "")
+                .replace("{{OPEN}}", &open)
+                .replace("{{DONE}}", &done);
+            write_file(root, &path, &text);
+        }
+    }
+    tracing::debug!(rule = %case.rule, vacuous, "ledger-reference corpus block");
+    ledger_findings(root, case)
+}
+
 /// Route a block to the runner for its rule family.
 fn runner(case: &Case) -> Vec<Finding> {
     let rule = case.rule.as_str();
@@ -505,6 +561,8 @@ fn runner(case: &Case) -> Vec<Finding> {
         tick_branch_runner(case)
     } else if rule.starts_with("GRL") {
         grl_runner(case)
+    } else if matches!(rule, "REF001" | "TODO002") {
+        ledger_ref_runner(case)
     } else if rule == "SIB001" {
         sib_runner(case)
     } else if matches!(rule, "SCOPE001" | "TICK002") {

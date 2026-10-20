@@ -228,12 +228,6 @@ ticket = "~4GGFHTV"
 
 [[gap]]
 product = "frob"
-rule = "TODO002"
-kind = "unresolved"
-ticket = "~4GGFHTV"
-
-[[gap]]
-product = "frob"
 rule = "TOOL001"
 kind = "unresolved"
 ticket = "~4GGFHTV"
@@ -243,24 +237,6 @@ product = "frob"
 rule = "TOOL002"
 kind = "unresolved"
 ticket = "~4GGFHTV"
-
-[[gap]]
-product = "frob"
-rule = "COV001"
-kind = "vacuous"
-ticket = "~4KVRPBF"
-
-[[gap]]
-product = "frob"
-rule = "REF001"
-kind = "vacuous"
-ticket = "~4KVRPBF"
-
-[[gap]]
-product = "frob"
-rule = "TODO002"
-kind = "vacuous"
-ticket = "~4KVRPBF"
 
 # Language-matrix gaps (docs/design/testing.md section 4): a Universal rule cell with no block yet.
 
