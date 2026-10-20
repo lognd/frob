@@ -11,7 +11,7 @@ created = "2026-10-03T03:34:40Z"
 updated = "2026-10-20T13:11:09Z"
 idempotency_key = "m2-diag-fix-scope"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/frob-check/src/fix.rs", "crates/frob-check/src/scope.rs", "crates/gob-check/src/fix.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/report.rs"]
+scope = ["crates/frob-check/src/fix.rs", "crates/frob-check/src/scope.rs", "crates/gob-check/src/fix.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/report.rs", "crates/gob-check/src/product.rs"]
 
 [[links]]
 kind = "blocked-by"
