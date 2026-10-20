@@ -1,0 +1,91 @@
+kind = "evidence"
+captured_at = "2026-10-20T23:38:59Z"
+digest = "c06afff52bc65be1b58f91ad007387ac6aac569ee00347b137935af3fa06c300"
+exit_code = 0
+inline = '''
+   Compiling syn v3.0.6
+   Compiling nix v0.31.3
+   Compiling clap_builder v4.6.7
+   Compiling serde_derive_internals v0.30.0
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling ref-cast-impl v1.0.27
+   Compiling clap v4.6.7
+   Compiling ref-cast v1.0.27
+   Compiling schemars_derive v1.2.2
+   Compiling thiserror v2.0.21
+   Compiling gix-path v0.12.6
+   Compiling gix-packetline v0.22.2
+   Compiling gix-zlib v0.1.0
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-config-value v0.19.1
+   Compiling gix-url v0.38.0
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-transport v0.59.2
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-attributes v0.35.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-shallow v0.13.0
+   Compiling gix-pathspec v0.20.0
+   Compiling serde v1.0.229
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling schemars v1.2.2
+   Compiling tracing-serde v0.2.0
+   Compiling tinytemplate v1.2.1
+   Compiling ciborium v0.2.2
+   Compiling gix-traverse v0.61.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling criterion v0.5.1
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-worktree v0.56.0
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-protocol v0.65.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-status v0.34.1
+   Compiling gix-merge v0.20.1
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gix v0.87.1
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 54.01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 87b85b31-07f9-4edd-9e1c-ce6a52ad914e with nextest profile: default
+    Starting 1 test across 18 binaries (241 tests skipped)
+        PASS [   0.005s] frob-ledger claim_window::tests::evict_knobs_default_to_auto_and_five_and_follow_the_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 241 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger evict_knobs"
+size = 3080
+status = "measured"
+test_count = 1
+tests_digest = "ea81040c6da7fa22bd035514bb0438f58d949631502830d8d8a7ee386c6160a2"
+at = "2026-10-20T23:38:59Z"
+actor = "lognd"
+rev = 1
