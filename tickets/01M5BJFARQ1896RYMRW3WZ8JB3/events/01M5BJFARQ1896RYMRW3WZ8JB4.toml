@@ -1,0 +1,10 @@
+kind = "create"
+title = "Mark lexical rules needs = Lexical and add their opaque_fire island cases"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/*/src/rules/**", "crates/gob-mdtest/coverage-allowlist.toml"]
+body = "~NWVJYJ5 added RuleMeta needs and the opaque_fire case kind; no rule declares needs = Lexical yet. Classify text-only rules and add expect=fire cell=island blocks (or allowlist entries with tickets)."
+at = "2026-10-20T02:32:59Z"
+actor = "lognd"
+rev = 1
