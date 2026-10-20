@@ -2,7 +2,8 @@
 id = "01M5CVQC79WFEJNTY15HT9GAKY"
 title = "Migrate with_remedy sites to structured with_command: frob-land, frob-worktree remaining sites, frob-lease remaining prose sites"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
