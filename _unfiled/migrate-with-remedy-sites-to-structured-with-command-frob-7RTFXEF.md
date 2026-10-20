@@ -8,5 +8,5 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T14:33:55Z"
 updated = "2026-10-20T20:37:55Z"
-scope = ["crates/frob-evidence/**,crates/frob-ledger/**,crates/frob-ack/**,crates/frob-tests/**,crates/frob-check/**", "changelog.d/01M5CVQC3K7RTFXEFWSG1SM00V.changed.md", "crates/frob-check/src/verb.rs", "crates/frob-evidence/src/error.rs", "crates/frob-ledger/src/error.rs", "crates/frob-tests/Cargo.toml"]
+scope = ["crates/frob-evidence/**,crates/frob-ledger/**,crates/frob-ack/**,crates/frob-tests/**,crates/frob-check/**", "changelog.d/01M5CVQC3K7RTFXEFWSG1SM00V.changed.md", "crates/frob-check/src/verb.rs", "crates/frob-evidence/src/error.rs", "crates/frob-ledger/src/error.rs", "crates/frob-tests/Cargo.toml", "crates/frob-tests/src/error.rs"]
 +++
