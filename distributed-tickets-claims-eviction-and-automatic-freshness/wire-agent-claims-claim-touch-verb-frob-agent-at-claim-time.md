@@ -2,7 +2,8 @@
 id = "01M5DJW8TX3N6X71EQMD3FT7PC"
 title = "Wire agent claims: claim touch verb, FROB_AGENT at claim time, rekind lease op"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
