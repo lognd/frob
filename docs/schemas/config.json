@@ -3,6 +3,29 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
+    "agent": {
+      "additionalProperties": false,
+      "description": "The agent-neutral manifest `frob agent sync` publishes into each coding agent's home.",
+      "properties": {
+        "hooks": {
+          "default": [],
+          "description": "Hook registrations, each `\"NAME:EVENT:MATCHER\"` naming a `hook` item.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "items": {
+          "default": [],
+          "description": "Canonical items, each `\"KIND:NAME = SRC\"` (kind: instruction, hook, agent, skill, support).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "cache": {
       "additionalProperties": false,
       "description": "Settings of the per-worktree cache.",

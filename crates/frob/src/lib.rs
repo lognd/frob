@@ -5,13 +5,15 @@
 //! modules: [`doctor`], [`init`], [`config_cmd`] (`config show`, `config
 //! sync`), [`ticket`] (`ticket ...` and the hidden `merge-driver`) and the
 //! built-in `schema` from `gob-cli`; the lease, worktree, evidence, tests and
-//! ack, check and land verbs come from their sibling crates' `register`; [`milestone_cmd`] holds `milestone new/add/show/list`; [`cycle_cmd`] holds `cycle new/show/list/close`; [`release_cmd`] holds `release changelog`. Config knobs are the
+//! ack, check and land verbs come from their sibling crates' `register`; [`milestone_cmd`] holds `milestone new/add/show/list`; [`cycle_cmd`] holds `cycle new/show/list/close`; [`release_cmd`] holds `release changelog`; [`agent_cmd`] holds `agent sync/status/uninstall` over the emitters in [`agent`]. Config knobs are the
 //! `ConfigTable` structs in [`config`].
 #![expect(
     clippy::disallowed_methods,
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
 
+pub mod agent;
+pub mod agent_cmd;
 pub mod board_cmd;
 pub mod config;
 pub mod config_cmd;
