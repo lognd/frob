@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:04:48Z"
-updated = "2026-10-20T02:04:17Z"
+updated = "2026-10-20T02:07:55Z"
 scope = ["crates/frob-check/tests/mdtest/**", "crates/*/tests/mdtest/**"]
+
+[[acceptance]]
+text = "TICK010 has a polarity-shaped unresolved corpus case and rule_coverage passes for it"
+bound = false
 +++
 
 Burn down the [[gap]] kind=unresolved entries for product frob in crates/gob-mdtest/coverage-allowlist.toml; found while working ~WPZC326.
