@@ -7,7 +7,6 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 authors.workspace = true
-publish = false
 
 [dependencies]
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }

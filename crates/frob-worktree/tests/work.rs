@@ -1384,7 +1384,7 @@ fn wait_times_out_cleanly_and_a_queued_waiter_blocks_overlapping_work() {
 // frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
 // frob:tests crates/frob-worktree/src/work.rs::seed_caches
 #[test]
-fn work_seeds_the_shared_cache_from_a_warm_primary() {
+fn work_shares_the_warm_primary_cache_with_the_new_worktree() {
     if !git_available() {
         eprintln!("git not available; skipping");
         return;
@@ -1396,7 +1396,7 @@ fn work_seeds_the_shared_cache_from_a_warm_primary() {
         rule_version: 1,
         side_input_digest: "s".into(),
     };
-    gob_cache::Cache::open(&fx.root.join(".frob")).put_findings(&key, b"warm");
+    gob_cache::Cache::open_shared(&fx.root, ".frob").put_findings(&key, b"warm");
     let ledger = fx.ledger(None);
     let leases = fx.leases();
     let cfg = WorktreeConfig::load(&fx.root).expect("config");

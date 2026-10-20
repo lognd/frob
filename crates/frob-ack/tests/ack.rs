@@ -564,7 +564,9 @@ fn a_fresh_worktree_shares_the_primary_checkouts_cache_not_its_own() {
     let fx = Fixture::new();
     let _ = fx.findings();
     let _ = evaluate(fx.root(), &Inputs::collect(fx.root()).expect("collect"));
-    let shared = fx.root().join(".git/frob/cache/frob/cache.sqlite");
+    let shared = gob_cache::shared_dir(fx.root(), ".frob")
+        .expect("per-user cache dir")
+        .join("cache.sqlite");
     assert!(shared.exists(), "the primary run fills the shared cache");
     assert!(
         !fx.root().join(".frob/cache.sqlite").exists(),
