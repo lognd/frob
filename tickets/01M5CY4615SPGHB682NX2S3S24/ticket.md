@@ -7,8 +7,20 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T15:15:51Z"
-updated = "2026-10-20T15:56:05Z"
+updated = "2026-10-20T15:58:28Z"
 scope = ["crates/frob-ledger/src/branch.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/work.rs", ".github/workflows/ci.yml", ".github/scripts/ensure-ledger-refs.sh", "crates/frob/tests/it/ticket_branch_refs.rs", "docs/design/distributed-tickets.md", "docs/guides/ticket-branch.md"]
+
+[[acceptance]]
+text = "Given orphan mode, when frob work runs, then the worktree branches from the code ref and the transition lands on the ticket branch"
+bound = false
+
+[[acceptance]]
+text = "Given a fresh clone with no local ticket branch, when frob work runs, then it adopts origin's ticket branch and succeeds"
+bound = false
+
+[[acceptance]]
+text = "Given orphan mode, when goway.toml lacks the ticket-branch with_refs, then a guard test fails"
+bound = false
 +++
 
 found while working ~P418XYE
