@@ -2,13 +2,13 @@
 id = "01M4052SKTA49WCV6AXJFCAM9J"
 title = "Read-back normalization: compare after the tracker's own formatting"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-03T05:51:37Z"
+updated = "2026-10-20T08:15:35Z"
 idempotency_key = "m2-mirror2-normalize"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/normalize.rs"]
