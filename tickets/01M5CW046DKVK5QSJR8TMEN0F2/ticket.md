@@ -13,7 +13,7 @@ idempotency_key = "dt-DT05"
 
 [[acceptance]]
 text = "The remote probe never prompts: ls-remote runs with terminal prompts off and ssh BatchMode"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Probe results are cached in refresh.toml and failures back off exponentially"
