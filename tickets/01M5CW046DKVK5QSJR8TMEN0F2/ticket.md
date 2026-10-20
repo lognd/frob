@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T16:38:33Z"
+updated = "2026-10-20T16:48:01Z"
 idempotency_key = "dt-DT05"
 scope = ["crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/refresh.rs", "crates/frob/src/config.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob/tests/it/main.rs", "crates/frob/tests/it/refresh.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/src/remote.rs", "crates/gob-git/src/spawn.rs", "docs/design/git-io.md", "docs/reference/cli/frob.md", "docs/reference/config.md", "docs/schemas/config.json"]
 
