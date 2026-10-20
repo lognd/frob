@@ -43,6 +43,7 @@ mod materialize;
 mod mirror;
 pub mod rules;
 mod schema;
+mod ui;
 mod workspace;
 
 pub use artifact::{ArtifactBody, ArtifactEntry, ArtifactFamily, all_artifacts};
@@ -66,6 +67,7 @@ pub use rules::cfg001::Cfg001;
 pub use schema::schema;
 pub use serde;
 pub use toml;
+pub use ui::UiTable;
 pub use workspace::{nested_config_dirs, workspace_members};
 
 /// Path of the product config file under `root`: `<root>/<product>.toml`.

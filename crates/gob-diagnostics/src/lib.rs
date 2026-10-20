@@ -13,6 +13,7 @@ mod record;
 mod refusal;
 mod required;
 mod source;
+mod teach;
 mod text;
 
 pub use command::{RemedyCommand, RemedyFlag};
@@ -27,6 +28,7 @@ pub use record::{
 pub use refusal::{Refusal, RefusalClass};
 pub use required::UnresolvedPolicy;
 pub use source::{MemorySources, SourceProvider};
+pub use teach::{Disclosure, SeenStore, TeachError, TeachMode};
 pub use text::{
     Annotations, ColorChoice, FindingNotes, Report, SecondarySpan, TextOptions, is_tty,
     render_text, render_text_annotated, render_text_with_decisions, severity_label,
