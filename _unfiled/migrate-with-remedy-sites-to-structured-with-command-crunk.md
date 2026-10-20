@@ -7,6 +7,6 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T14:33:55Z"
-updated = "2026-10-20T22:51:46Z"
-scope = ["crates/crunk/**,crates/grimble/**,crates/gob-product/**"]
+updated = "2026-10-20T23:00:01Z"
+scope = ["crates/crunk/**,crates/grimble/**,crates/gob-product/**", "crates/crunk/src/gallery.rs"]
 +++
