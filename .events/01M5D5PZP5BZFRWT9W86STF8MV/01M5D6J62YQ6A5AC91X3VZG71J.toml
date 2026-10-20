@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-20T17:43:18Z"
+digest = "45c9c534fd0d019c74dacd38e0d38ad2d26ded72eadf270ffaeacc48d89954d1"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 00407d31-95f6-4534-9654-215a8d17f47d with nextest profile: default
+    Starting 1 test across 6 binaries (50 tests skipped)
+        PASS [   0.004s] gob-exec::runner spawn_detached_refuses_a_tool_off_the_allowlist_and_a_missing_hook
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 50 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-exec -E 'test(spawn_detached_refuses_a_tool_off_the_allowlist_and_a_missing_hook)'"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "28f5a693833d67bdc6ac42fef266f9dbcb10003aec5589c52c96de8efae1f668"
+at = "2026-10-20T17:43:18Z"
+actor = "lognd"
+rev = 1

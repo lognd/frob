@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "spawn_detached honours the tool allowlist and reports a missing program as a typed error"
-bound = false
+bound = true
 +++
 
 found while working ~EV5KK0X: sync_policy::background_kick spawns std::process::Command under a PROC001 waiver; add a detached spawn to gob_exec::Runner and drop the waiver.
