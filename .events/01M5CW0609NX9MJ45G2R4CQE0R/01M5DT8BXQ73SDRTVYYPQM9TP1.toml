@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-10-20T23:27:26Z"
+digest = "930afd407e98e8c9f3b33a5f0dba5a2e5beeaf0f9e7e5e0a4f874683f29af44d"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2235d22f-1185-4c58-a588-649ae36e3d9c with nextest profile: default
+    Starting 2 tests across 3 binaries (133 tests skipped)
+        PASS [   0.007s] frob-land hostland::tests::the_newest_commit_wins_and_blank_trailers_are_skipped
+        PASS [   0.147s] frob-land::land a_hosting_side_squash_with_the_ticket_trailer_is_recorded_as_a_land_and_closes_the_ticket
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.150s] 2 tests run: 2 passed, 133 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land host"
+size = 760
+status = "measured"
+test_count = 2
+tests_digest = "048fbd9efab4617e34fa392c80e8899d66c76e89e836b51b4eeb806690975295"
+at = "2026-10-20T23:27:26Z"
+actor = "lognd"
+rev = 1
