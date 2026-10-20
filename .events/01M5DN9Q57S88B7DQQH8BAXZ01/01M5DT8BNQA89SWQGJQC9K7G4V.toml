@@ -1,0 +1,27 @@
+kind = "evidence"
+captured_at = "2026-10-20T23:27:19Z"
+digest = "29069b49f6e93de940efef078b25a8d6b10c3c9567ca1e1d7c41d4b003bbfcf8"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.81s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dc7a83fa-a923-4b9d-aa66-40032dd0deea with nextest profile: default
+    Starting 3 tests across 6 binaries (91 tests skipped)
+        PASS [   0.005s] frob-worktree claim_restore::tests::note_names_source_tip_and_reason
+        PASS [   0.005s] frob-worktree evict::tests::reclaim_restores_from_newest_unless_someone_holds_it
+        PASS [   0.005s] frob-worktree claim_restore::tests::refusals_carry_their_codes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 91 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree claim_restore"
+size = 879
+status = "measured"
+test_count = 3
+tests_digest = "e52484876687de5a089c2d3b453c09fd3af3e7188fbc4323fb0d348cc2431fe4"
+at = "2026-10-20T23:27:19Z"
+actor = "lognd"
+rev = 1
