@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-20T15:31:19Z"
+digest = "a0b17d554379009941d718023ecd3e1957b90596bb0e3752a50a16b07164426a"
+exit_code = 0
+inline = """
+
+running 2 tests
+test scrub_works_in_both_layouts::dir ... ok
+test scrub_works_in_both_layouts::branch ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 53 filtered out; finished in 0.01s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running tests/ledger.rs (target/debug/deps/ledger-f3ea5c5b19a6fc32)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-ledger --test ledger scrub_works_in_both_layouts"
+size = 353
+status = "measured"
+at = "2026-10-20T15:31:19Z"
+actor = "lognd"
+rev = 1
