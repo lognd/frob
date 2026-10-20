@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-20T11:54:39Z"
+updated = "2026-10-20T11:54:40Z"
 idempotency_key = "m2-mirror2-status"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/status.rs"]
@@ -39,7 +39,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a create-uncertain ticket, when status runs, then it is listed with its create-start time"
-bound = false
+bound = true
 +++
 
 Implements mirror.md sections 3.2 (the stated sweep bound), 3.4 (gaps, contested) and 3.3 (uncertain creates, unmirrored).
