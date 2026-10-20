@@ -59,6 +59,8 @@ Materialized: yes.
 |---|---|---|---|---|
 | `agent_idle_hours` | `u32` | `4` | no | Hours a claim held by an agent (`FROB_AGENT` set at claim time) may sit idle; 0 means never evict. |
 | `count` | `CountKnob` | `"all"` | no | `all` counts every calendar day as idle time; `weekdays` skips Saturday and Sunday. |
+| `evict_agent` | `EvictKnob` | `"auto"` | no | `auto` lets `frob work --next` evict an idle agent claim when nothing else is claimable; `confirm` never does. |
+| `evict_rate` | `u32` | `5` | no | Most automatic evictions one clone performs per local calendar day. |
 | `idle_days` | `u32` | `3` | no | Calendar days a human claim may sit idle before it is evictable; 0 means never evict. |
 | `max_hold_days` | `u32` | `30` | no | Longest hold, in days, `frob claim hold` accepts. |
 | `paused_max_days` | `u32` | `14` | no | Longest stretch, in days, a blocked, review, train or CI pause stops the idle clock. |
