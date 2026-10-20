@@ -2,7 +2,8 @@
 id = "01M4052RC6C32957W1A9PYQAEE"
 title = "Change feed: the bot's issues updated since the cursor, one GraphQL query per 100"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
