@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T08:37:15Z"
-updated = "2026-10-20T10:16:15Z"
+updated = "2026-10-20T10:18:31Z"
 scope = ["crates/gob-plan/src/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "The Fx-hashed map used by executor caches round-trips keys"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Executor core results are unchanged by the domain, operand and index caches"
