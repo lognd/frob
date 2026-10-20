@@ -467,6 +467,14 @@ records `last_ok_at`. Still open: `work`/`land` foreground sync and the
 `E-SYNC-STALE` gate (`sync_policy::stale_gate`), per-row "may be taken",
 read-verb footers, and `--background`/`--quiet` on `frob refresh`.
 
+Implementation status (DT11, partial): `frob_worktree::activity`
+holds the classifier (hard: non-empty human commit, holder `evidence`
+event; soft: empty commit, holder comment/field/link/transition;
+none: bot, `Frob-Sync` and others' events), the
+`<common>/frob/claims-observed.toml` state with local first-seen times,
+and zero-clamped idle. Still open: feeding it from sync/refresh and
+`claim touch` (DT12 consumes `idle_secs`).
+
 ### 5.4 Hooks, so nobody has to remember
 
 - `frob init` installs git `post-checkout` and `post-merge` hooks that
