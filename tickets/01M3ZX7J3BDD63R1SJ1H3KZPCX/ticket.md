@@ -2,7 +2,8 @@
 id = "01M3ZX7J3BDD63R1SJ1H3KZPCX"
 title = "Benchmark B1: plan executor versus handwritten Rust on three std rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
