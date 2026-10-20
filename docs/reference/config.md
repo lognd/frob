@@ -308,9 +308,12 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `backoff_max_secs` | `u32` | `3600` | no | Ceiling in seconds of the exponential backoff after failed probes. |
+| `foreground_budget_ms` | `u32` | `3000` | no | Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache. |
 | `probe_timeout_ms` | `u32` | `2500` | no | Milliseconds before a hung `git ls-remote` is killed. |
 | `remote` | `String` | `"origin"` | no | The one authoritative remote; other remotes are never probed. |
+| `stale_error_secs` | `u32` | `86400` | no | Seconds of cache age past which mutating verbs refuse (`E-SYNC-STALE`) when the remote cannot be reached. |
 | `ttl_secs` | `u32` | `300` | no | Seconds a successful probe stays fresh before the next one is due. |
+| `warn_after_secs` | `u32` | `3600` | no | Seconds of cache age after which read verbs footnote that the ticket view is old. |
 
 ## `[tests]`
 
