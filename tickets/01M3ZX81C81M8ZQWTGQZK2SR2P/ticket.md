@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-20T04:28:04Z"
+updated = "2026-10-20T04:37:03Z"
 idempotency_key = "m2-sec-ledger-protect"
 labels = ["milestone:2", "area:security"]
-scope = ["crates/frob/src/doctor.rs", "crates/frob-obligations/src/tick_protect.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/Cargo.toml", "crates/frob/Cargo.toml", "crates/frob/src/mirror_recreate_cmd.rs", "Cargo.lock"]
+scope = ["crates/frob/src/doctor.rs", "crates/frob-obligations/src/tick_protect.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/Cargo.toml", "crates/frob/Cargo.toml", "crates/frob/src/mirror_recreate_cmd.rs", "Cargo.lock", "docs/design/navigation.md", "docs/reference/rules/*"]
 
 [[links]]
 kind = "blocked-by"
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given no token or an unreachable API, when doctor runs, then the result is Unresolved, not clean"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.11.
