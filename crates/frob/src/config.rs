@@ -52,6 +52,9 @@ pub struct FrobConfig {
     // frob:ticket 01M4D6NWQ3F11S4MB3KT5K4JHZ
     /// `[land]`, owned by `frob-land`.
     pub land: frob_land::LandConfig,
+    // frob:ticket 01M5BA1W8S9BW9Z47AV2ZKVEX0
+    /// `[mirror]`, owned by `gob-config`: tracker identity for `frob mirror recreate`.
+    pub mirror: gob_config::MirrorTable,
 }
 
 impl FrobConfig {
@@ -84,6 +87,8 @@ impl FrobConfig {
             release: doc.table::<frob_release::ReleaseConfig>()?.value,
             // frob:ticket 01M4D6NWQ3F11S4MB3KT5K4JHZ
             land: doc.table::<frob_land::LandConfig>()?.value,
+            // frob:ticket 01M5BA1W8S9BW9Z47AV2ZKVEX0
+            mirror: doc.table::<gob_config::MirrorTable>()?.value,
         };
         tracing::debug!(root = %root.display(), "frob config loaded");
         Ok(cfg)

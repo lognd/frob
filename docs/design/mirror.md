@@ -294,8 +294,9 @@ and in `frob mirror status`.
   The verb `frob mirror recreate <ticket> [--repo OWNER/NAME]` wires it
   to `BranchShardStore` (on the ledger ref, under `.mirror/map`) and
   `GithubAdapter` over a `curl` transport. It needs `GH_TOKEN` or
-  `GITHUB_TOKEN`, and the marker key in `FROB_MIRROR_KEY` (id from
-  `FROB_MIRROR_KID`, default `k1`); the repository defaults to `origin`.
+  `GITHUB_TOKEN`, and the marker key in `FROB_MIRROR_KEY`; the key id,
+  repository and bot login come from `[mirror] kid` (default `k1`),
+  `repo` (default `origin`) and `bot_ids` (default the token's login).
 - **Own writes.** A dedicated App identity (`[mirror] bot_ids`, by
   user id). Before each mutation the run journals (issue, field, value
   digest, run id); a history entry is "own" only if its actor is a bot
