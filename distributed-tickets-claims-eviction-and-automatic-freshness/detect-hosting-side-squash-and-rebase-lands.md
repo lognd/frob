@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
 updated = "2026-10-20T23:26:47Z"
 idempotency_key = "dt-DT22"
-scope = ["crates/frob-land/src/hostland.rs", "crates/frob-land/src/lib.rs"]
+scope = ["crates/frob-land/src/hostland.rs", "crates/frob-land/src/lib.rs", "crates/frob-land/tests/land.rs"]
 
 [[links]]
 kind = "blocked-by"
