@@ -2,7 +2,8 @@
 id = "01M5B88C36NR5AWDKQS3CPVHZS"
 title = "frob mirror recreate: switch CurlTransport to frob_mirror::github::http::NativeTransport and drop the curl config plumbing"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
