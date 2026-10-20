@@ -19,6 +19,7 @@ pub mod lock;
 mod lockfile;
 pub mod plan;
 mod ratchet;
+pub mod relaunch;
 pub mod train;
 pub mod train_check;
 pub mod train_close;

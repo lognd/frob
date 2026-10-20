@@ -1,0 +1,1 @@
+`frob land --relaunch ~X` carries a ticket landed locally on a diverged base onto the remote base: it merges `origin/<base>` into the kept branch (recreating it at the land commit if it was collected), never rebases and publishes nothing.

@@ -27,6 +27,7 @@ pub struct Land {
     opts: LandOptions,
     train: bool,
     enqueue_only: bool,
+    relaunch: bool,
 }
 
 /// The flags of `land`, declared once; the help text is the operator-facing contract.
@@ -57,6 +58,12 @@ struct LandArgs {
         help = "Implies --train: run the ticket-local gates, queue the ticket and return at once; the ticket leaves the WIP count while queued"
     )]
     enqueue_only: bool,
+    #[arg(
+        long,
+        conflicts_with_all = ["train", "enqueue_only", "push"],
+        help = "Merge the remote base into the kept branch of a ticket landed locally on a diverged base; never rebases, publishes nothing"
+    )]
+    relaunch: bool,
     #[arg(
         long,
         help = "Show who holds the land lock, at which stage and for how long; land nothing"
@@ -142,6 +149,7 @@ impl Command for Land {
         Ok(Self {
             train: a.train || a.enqueue_only,
             enqueue_only: a.enqueue_only,
+            relaunch: a.relaunch,
             opts: LandOptions {
                 handle: a.ticket,
                 dry_run: false,
@@ -167,7 +175,9 @@ impl Command for Land {
         if opts.status {
             return lock_status(ctx);
         }
-        let out = if self.train {
+        let out = if self.relaunch {
+            crate::relaunch::relaunch(&ctx.cwd, &opts, &ctx.clock)?
+        } else if self.train {
             let mut train = TrainOptions::new(opts);
             train.enqueue_only = self.enqueue_only;
             land_train(&ctx.cwd, &train, &ctx.clock)?

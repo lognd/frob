@@ -987,7 +987,12 @@ fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
 ///
 /// Configuration is read from the base's committed `frob.toml` before the merge
 /// starts, never from the worktree mid-merge (frob:ticket 01M43FX5KWVP277RX5666MMPM1).
-fn merge_base_in(wt: &Repo, wt_path: &Path, base: &str, handle: &str) -> Result<String, LandError> {
+pub(crate) fn merge_base_in(
+    wt: &Repo,
+    wt_path: &Path,
+    base: &str,
+    handle: &str,
+) -> Result<String, LandError> {
     let shared_files = lockfile::committed_regenerable(wt, base)?;
     match wt.merge_branch(wt_path, base)? {
         MergeOutcome::UpToDate => Ok("up-to-date".to_owned()),

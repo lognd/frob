@@ -2806,3 +2806,80 @@ fn train_drop_removes_one_entry_with_a_reason_and_refuses_an_unqueued_ticket() {
         .expect_err("not queued");
     assert_eq!(refusal(&again).code, "E-TRAIN-NOT-QUEUED");
 }
+
+/// Land a ticket with its branch kept, then make `origin/main` a commit that diverged from the land (a file the land lacks).
+fn landed_locally_with_a_diverged_origin(fx: &Fixture) -> Started {
+    git(&fx.root, &["branch", "side", "main"]);
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let mut opts = Fixture::opts(&s);
+    opts.keep_worktree = true;
+    land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land");
+    fx.repo()
+        .commit_paths(
+            "refs/heads/side",
+            &[(
+                RelPath::new("remote.txt").expect("path"),
+                Some(b"from origin\n".to_vec()),
+            )],
+            "origin moved",
+            &CommitOptions::default(),
+        )
+        .expect("side commit");
+    git(
+        &fx.root,
+        &["update-ref", "refs/remotes/origin/main", "refs/heads/side"],
+    );
+    s
+}
+
+// frob:ticket 01M5CW05WX0TMSBKDFTPEHB5R3
+// frob:tests crates/frob-land/src/relaunch.rs::relaunch
+#[test]
+fn relaunch_merges_the_remote_base_into_the_kept_branch_and_leaves_the_local_base() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = landed_locally_with_a_diverged_origin(&fx);
+    let main_before = fx.main_tip();
+    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+    let out =
+        frob_land::relaunch::relaunch(&fx.root, &Fixture::opts(&s), &clock).expect("relaunch");
+    assert_eq!(out.base_merge.as_deref(), Some("merged"));
+    assert_eq!(fx.main_tip(), main_before, "the local base is untouched");
+    let branch = out.branch.expect("branch");
+    let blob = fx.repo().read_blob_at(&branch, "remote.txt").expect("read");
+    assert_eq!(blob.as_deref(), Some(b"from origin\n".as_slice()));
+    let again = frob_land::relaunch::relaunch(&fx.root, &Fixture::opts(&s), &clock).expect("again");
+    assert_eq!(again.base_merge.as_deref(), Some("up-to-date"));
+}
+
+// frob:ticket 01M5CW05WX0TMSBKDFTPEHB5R3
+// frob:tests crates/frob-land/src/relaunch.rs::relaunch
+#[test]
+fn relaunch_refuses_an_unlanded_ticket_and_is_a_no_op_when_origin_has_the_land() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+    let open = fx.start("Open", &["docs/**"]);
+    let err = frob_land::relaunch::relaunch(&fx.root, &Fixture::opts(&open), &clock)
+        .expect_err("not landed");
+    assert_eq!(refusal(&err).code, "E-RELAUNCH-NOT-LANDED");
+
+    let s = landed_locally_with_a_diverged_origin(&fx);
+    git(
+        &fx.root,
+        &["update-ref", "refs/remotes/origin/main", "refs/heads/main"],
+    );
+    let out = frob_land::relaunch::relaunch(&fx.root, &Fixture::opts(&s), &clock).expect("noop");
+    assert!(out.already);
+}
