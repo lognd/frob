@@ -12,7 +12,7 @@ scope = ["docs/reference/config.md", "docs/schemas/config.json", "crates/frob-ev
 
 [[acceptance]]
 text = "A command-provider run of a tool with a declared report field is refused when it executed no test, and a tool without one is recorded as exit-code-only (UNMEASURED granular)."
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A passing evidence record with a zero executed count does not satisfy the close guard at land."
