@@ -8,7 +8,7 @@ points = 1
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:41Z"
-updated = "2026-10-20T14:44:28Z"
+updated = "2026-10-20T14:49:37Z"
 idempotency_key = "dt-DT03"
 scope = ["docs/design/tickets.md"]
 
