@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T08:37:34Z"
-updated = "2026-10-20T09:48:59Z"
-scope = ["crates/frob-check/src/**", "crates/frob-check/Cargo.toml"]
+updated = "2026-10-20T09:49:00Z"
+scope = ["crates/frob-check/src/**", "crates/frob-check/Cargo.toml", "Cargo.lock"]
 +++
 
 found while working ~X625YAT: --trust-from currently passes an empty live-pack list, so no pack is ever flagged from frob; enumerate repo packs and their tree digests. Also consider a dedicated rule id instead of PACK001, and verify ci.yml has origin/experimental (fetch-depth 0).
