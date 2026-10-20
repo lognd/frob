@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T08:37:15Z"
-updated = "2026-10-20T10:20:44Z"
-scope = ["crates/gob-plan/src/**"]
+updated = "2026-10-20T10:27:53Z"
+scope = ["crates/gob-plan/src/**", "crates/gob-plan/tests/exec_relations.rs", "docs/design/plugins.md"]
 
 [[acceptance]]
 text = "Reachability through the cached closure keeps may-edge and frontier verdicts"
