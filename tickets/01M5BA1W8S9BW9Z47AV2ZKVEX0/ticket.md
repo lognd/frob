@@ -4,9 +4,10 @@ title = "Mirror recreate: read [mirror] repo/kid/bot_ids from FrobConfig instead
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T00:05:50Z"
-updated = "2026-10-20T00:05:50Z"
+updated = "2026-10-20T00:25:28Z"
 scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/config.rs"]
 +++
 
