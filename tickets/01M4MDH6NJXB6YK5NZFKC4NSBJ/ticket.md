@@ -2,13 +2,13 @@
 id = "01M4MDH6NJXB6YK5NZFKC4NSBJ"
 title = "gob-symbols: tree-sitter-yaml F2 adapter with anchors and aliases as references"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-11T02:44:06Z"
-updated = "2026-10-20T13:51:44Z"
+updated = "2026-10-20T13:51:45Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
