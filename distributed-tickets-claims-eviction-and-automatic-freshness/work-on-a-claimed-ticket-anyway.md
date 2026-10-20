@@ -8,9 +8,9 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T14:38:43Z"
-updated = "2026-10-20T21:48:34Z"
+updated = "2026-10-20T21:49:44Z"
 idempotency_key = "dt-DT18"
-scope = ["crates/frob-worktree/src/anyway.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/anyway.rs", "crates/frob-land/src/land.rs", "docs/design/cli.md", "changelog.d/01M5CW05JQZKCQKV68ZEQ5WASD.added.md"]
+scope = ["crates/frob-worktree/src/anyway.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/anyway.rs", "crates/frob-land/src/land.rs", "docs/design/cli.md", "changelog.d/01M5CW05JQZKCQKV68ZEQ5WASD.added.md", "crates/frob-worktree/tests/claim.rs"]
 
 [[links]]
 kind = "blocked-by"
