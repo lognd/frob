@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX776JJSRQXW8Q0327K9QN"
 reporter = "lognd"
 created = "2026-10-14T21:04:10Z"
-updated = "2026-10-20T13:51:52Z"
+updated = "2026-10-20T13:57:19Z"
 scope = ["crates/frob/src/profile.rs"]
 
 [[links]]
