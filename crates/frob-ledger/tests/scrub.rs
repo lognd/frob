@@ -216,7 +216,7 @@ fn one_commit_scrubs_and_the_ledger_still_folds() {
         .expect("scrub event");
     assert_eq!(scrub.reason, SCRUB_REASON);
     assert_eq!(scrub.digests.len(), 1);
-    assert!(scrub.files.contains(&f.old_ev));
+    assert!(scrub.files.iter().any(|p| p.as_str() == f.old_ev));
 }
 
 /// A second run changes nothing and makes no commit.

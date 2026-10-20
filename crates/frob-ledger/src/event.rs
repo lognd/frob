@@ -6,6 +6,7 @@
 //! [`EventBody::Other`] and fold to no state change, so a ledger written by a
 //! later frob still folds here.
 
+use gob_git::RelPath;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -15,6 +16,44 @@ use crate::model::{
     Category, Class, CommentSubtype, ExceptionKind, Link, LinkKind, LinkOp, Outcome, Points,
     Priority, Stamp, TicketType, TriageAction,
 };
+
+/// Serde adapters that persist a [`RelPath`] as its validated string (`RelPath` itself carries no serde).
+pub(crate) mod rel_path {
+    use gob_git::RelPath;
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    /// Write `p` as its slash-separated string.
+    pub fn serialize<S: Serializer>(p: &RelPath, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(p.as_str())
+    }
+
+    /// Read a string and validate it as a [`RelPath`], refusing absolute or dot-segment paths.
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<RelPath, D::Error> {
+        RelPath::new(String::deserialize(d)?).map_err(serde::de::Error::custom)
+    }
+}
+
+/// Serde adapters for a list of [`RelPath`]s, each validated on read.
+pub(crate) mod rel_paths {
+    use gob_git::RelPath;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    /// Write `ps` as a list of strings.
+    pub fn serialize<S: Serializer>(ps: &[RelPath], s: S) -> Result<S::Ok, S::Error> {
+        ps.iter()
+            .map(RelPath::as_str)
+            .collect::<Vec<_>>()
+            .serialize(s)
+    }
+
+    /// Read a list of strings, validating each as a [`RelPath`].
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<RelPath>, D::Error> {
+        Vec::<String>::deserialize(d)?
+            .into_iter()
+            .map(|p| RelPath::new(p).map_err(serde::de::Error::custom))
+            .collect()
+    }
+}
 
 /// Revision of the event file format written by this crate (`rev` in every file).
 pub const EVENT_REV: u32 = 1;
@@ -195,7 +234,9 @@ pub struct LandExemptData {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct DigestChange {
     /// Repo-relative path of the event file whose `digest` changed.
-    pub file: String,
+    #[serde(with = "rel_path")]
+    #[schemars(with = "String")]
+    pub file: RelPath,
     /// The digest before the scrub.
     pub old: String,
     /// The digest over the scrubbed text.
@@ -208,7 +249,9 @@ pub struct ScrubData {
     /// Why the files were rewritten.
     pub reason: String,
     /// Repo-relative paths of the rewritten files.
-    pub files: Vec<String>,
+    #[serde(with = "rel_paths")]
+    #[schemars(with = "Vec<String>")]
+    pub files: Vec<RelPath>,
     /// Digests recomputed over scrubbed evidence text.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub digests: Vec<DigestChange>,
@@ -603,9 +646,9 @@ mod tests {
             }),
             EventBody::Scrub(ScrubData {
                 reason: "absolute home paths".into(),
-                files: vec!["tickets/X/events/E.toml".into()],
+                files: vec![RelPath::new("tickets/X/events/E.toml").expect("rel")],
                 digests: vec![DigestChange {
-                    file: "tickets/X/events/E.toml".into(),
+                    file: RelPath::new("tickets/X/events/E.toml").expect("rel"),
                     old: "a".into(),
                     new: "b".into(),
                 }],

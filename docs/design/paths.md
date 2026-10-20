@@ -45,6 +45,12 @@ Persisted model types hold `RelPath`, never `PathBuf` or a path in a
 local registry under `.git/`) is local data and says so in its type
 (`LocalPath`, not serialized into anything committed).
 
+Status (~YGK8FGN): the `scrub` event's `files` and `digests[].file` are
+`RelPath` (validated on read), and `crates/frob-ledger/tests/persisted_paths.rs`
+walks the serde-derived types of frob-ledger, gob-lock, gob-diagnostics and
+gob-config so a `PathBuf` or a plain-string path field cannot return. The
+findings JSON `file` fields stay display strings until ~0EWC4K9.
+
 Status (~ARHP82G): `gob-path` exists with `RelPath` (also validating
 components on every platform), `PathStyle` (Unix or Windows, read with
 `typed-path`), `RelPath::from_host_style` / `to_host_style` for style-explicit

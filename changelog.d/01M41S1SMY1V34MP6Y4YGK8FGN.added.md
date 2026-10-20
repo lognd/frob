@@ -1,0 +1,1 @@
+frob-ledger: the `scrub` event audit now holds validated repo-relative paths (`RelPath`) for `files` and `digests[].file`, and a test (`persisted_paths`) keeps `PathBuf` and plain-string paths out of the serde-derived types of frob-ledger, gob-lock, gob-diagnostics and gob-config.

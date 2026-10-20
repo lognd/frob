@@ -66,7 +66,7 @@ pub struct ScrubReport {
 /// Per-ticket bookkeeping while the scan runs.
 #[derive(Default)]
 struct Touched {
-    files: Vec<String>,
+    files: Vec<RelPath>,
     digests: Vec<DigestChange>,
     /// Rules that fired in this ticket's files (labels and hashes, never terms).
     rules: std::collections::BTreeSet<Hit>,
@@ -112,7 +112,8 @@ impl Ledger {
                 report.unresolved.push(path);
                 continue;
             };
-            let Some((new, digests)) = rewrite_file(&path, &old, tools, &rules) else {
+            let rel_path = RelPath::new(path.clone())?;
+            let Some((new, digests)) = rewrite_file(&rel_path, &old, tools, &rules) else {
                 tracing::warn!(
                     path,
                     "a redaction hit survives the rewrite; reported, not guessed"
@@ -124,14 +125,14 @@ impl Ledger {
             match ticket_of(&rel) {
                 Some(id) => {
                     let t = touched.entry(id).or_default();
-                    t.files.push(path.clone());
+                    t.files.push(rel_path.clone());
                     t.digests.extend(digests);
                     t.rules.extend(fired);
                     t.new_text.insert(rel.clone(), new.clone());
                 }
                 None => others.push(path.clone()),
             }
-            changes.push((RelPath::new(path.clone())?, Some(new.into_bytes())));
+            changes.push((rel_path, Some(new.into_bytes())));
             report.files.push(path);
         }
         if changes.is_empty() {
@@ -251,7 +252,7 @@ fn ticket_of(rel: &str) -> Option<TicketId> {
 
 /// The rewritten text of one file and the digests recomputed in it; `None` when a home path survives.
 fn rewrite_file(
-    path: &str,
+    path: &RelPath,
     old: &str,
     tools: &ScrubTools<'_>,
     rules: &RuleSet,
@@ -261,7 +262,7 @@ fn rewrite_file(
         return None;
     }
     let mut digests = Vec::new();
-    if path.contains("/events/")
+    if path.as_str().contains("/events/")
         && let Some(change) = recompute_digest(path, old, &mut new, tools)
     {
         digests.push(change);
@@ -271,7 +272,7 @@ fn rewrite_file(
 
 /// For an evidence event whose digest covered its text, edit `new` so the digest and size cover the scrubbed text.
 fn recompute_digest(
-    path: &str,
+    path: &RelPath,
     old: &str,
     new: &mut String,
     tools: &ScrubTools<'_>,
@@ -299,13 +300,13 @@ fn recompute_digest(
     let sized = !resize
         || check.get("size").and_then(toml::Value::as_integer) == i64::try_from(now.len()).ok();
     if check.get("digest")?.as_str()? != new_digest || !sized {
-        tracing::warn!(path, "digest edit did not verify; digest left as it was");
+        tracing::warn!(path = %path, "digest edit did not verify; digest left as it was");
         return None;
     }
     *new = edited;
-    tracing::info!(path, old = %old_digest, new = %new_digest, "evidence digest recomputed over scrubbed text");
+    tracing::info!(path = %path, old = %old_digest, new = %new_digest, "evidence digest recomputed over scrubbed text");
     Some(DigestChange {
-        file: path.to_owned(),
+        file: path.clone(),
         old: old_digest,
         new: new_digest,
     })
