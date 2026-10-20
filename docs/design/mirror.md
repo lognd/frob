@@ -531,7 +531,7 @@ fields) return only the authorized operations.
   whose author is a mirror bot id. Pushes with the App token do trigger
   workflows on GitHub; GITHUB_TOKEN pushes do not; the nudge's actor
   check covers both.
-- **TICK008 ledger-branch-workflow** (Error): a `.github/` tree on the
+- **TICK010 ledger-branch-workflow** (Error): a `.github/` tree on the
   ticket branch other than the generated nudge workflow (byte-compared).
   The nudge runs with GITHUB_TOKEN and the least permissions that let it
   send `repository_dispatch`; which permission that is, is UNVERIFIED
