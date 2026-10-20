@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T08:37:15Z"
-updated = "2026-10-20T10:19:57Z"
+updated = "2026-10-20T10:29:35Z"
 scope = [".github/workflows/**"]
 
 [[acceptance]]
