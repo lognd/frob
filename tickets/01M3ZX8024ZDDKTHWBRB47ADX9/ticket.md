@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:38Z"
-updated = "2026-10-20T03:51:19Z"
+updated = "2026-10-20T03:51:45Z"
 idempotency_key = "m2-sec-finding-handles"
 labels = ["milestone:2", "area:security"]
 scope = ["crates/gob-packs/src/finding_handle.rs", "crates/gob-packs/src/lib.rs"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a valid handle with an out-of-range byte range, when accepted, then it is dropped and reported"
-bound = false
+bound = true
 +++
 
 Implements security.md section 2.10 (handles, not names) (I5).
