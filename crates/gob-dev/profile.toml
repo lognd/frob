@@ -577,3 +577,45 @@ skip = "removes a queue entry, which mutates the repo and needs a queued ticket 
 
 [scenario."frob train status"]
 skip = "reports the state of a running train, which the repo fixture never has; the cost is a single state-file read"
+
+[scenario."frob agent status"]
+skip = "reads the real agent config under the home directory, so it is not repeatable on the repo fixture; covered by the agent sync tests in crates/frob"
+
+[scenario."frob agent sync"]
+skip = "writes agent settings under the home directory, so it is unsafe to profile against the repo fixture; covered by the agent sync tests in crates/frob"
+
+[scenario."frob agent uninstall"]
+skip = "removes agent settings under the home directory, so it is unsafe to profile against the repo fixture; covered by the agent sync tests in crates/frob"
+
+[scenario."frob explain"]
+skip = "needs a rule id argument and its cost is a single table lookup; covered by the explain tests in crates/frob"
+
+[scenario."frob mirror recreate"]
+skip = "recreates a remote mirror repository and needs credentials and network, which the repo fixture does not provide"
+
+[scenario."frob mirror render"]
+skip = "needs a configured [mirror] section and a remote, which the repo fixture does not provide"
+
+[scenario."frob stats"]
+skip = "needs a populated stats store that the repo fixture does not provide; the cost is a single store read"
+
+[scenario."frob ticket proposals decline"]
+skip = "mutates the proposal queue and needs a pending proposal id, which the repo fixture does not provide"
+
+[scenario."frob ticket proposals list"]
+skip = "reads the proposal queue, which is empty on the repo fixture, so the timing is not representative"
+
+[scenario."frob trust"]
+skip = "writes trust records under the home directory, so it is unsafe to profile against the repo fixture"
+
+[scenario."grimble config"]
+skip = "grimble is in preview and needs a project config the repo fixture does not provide"
+
+[scenario."grimble explain"]
+skip = "grimble is in preview and the verb is a single table lookup needing a rule id argument"
+
+[scenario."grimble shrink"]
+skip = "grimble is in preview and the verb rewrites files, so it is unsafe to profile against the repo fixture"
+
+[scenario."grimble vet"]
+skip = "grimble is in preview and needs a project the repo fixture does not provide"

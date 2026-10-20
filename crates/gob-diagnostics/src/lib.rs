@@ -11,6 +11,7 @@ mod escape;
 mod exit;
 mod record;
 mod refusal;
+mod remedy;
 mod required;
 mod source;
 mod teach;
@@ -26,6 +27,7 @@ pub use record::{
     is_plugin_unfinished,
 };
 pub use refusal::{Refusal, RefusalClass};
+pub use remedy::{explain_disclosure, fenced_pack_explain, host_help, plugin_url_line};
 pub use required::UnresolvedPolicy;
 pub use source::{MemorySources, SourceProvider};
 pub use teach::{Disclosure, SeenStore, TeachError, TeachMode};

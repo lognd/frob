@@ -1045,9 +1045,11 @@ fn stage_findings(
 mod tests {
 
     /// Trusts exactly the digests it was given.
+    #[cfg(unix)]
     #[derive(Debug)]
     struct Digests(Vec<String>);
 
+    #[cfg(unix)]
     impl ToolTrust for Digests {
         fn is_trusted(&self, pack: &ProcessPack) -> bool {
             self.0.contains(&pack.digest)
@@ -1066,6 +1068,7 @@ mod tests {
         std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o755)).expect("chmod");
     }
 
+    #[cfg(unix)]
     fn named_stage(command: &str) -> ToolStage {
         let mut stage = sh_stage("t", ToolParser::None, "true", "true");
         stage.command = command.to_owned();
