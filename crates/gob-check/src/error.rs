@@ -35,4 +35,7 @@ pub enum CheckError {
     /// A file changed between the check and `--fix`, so its fix offsets are void; the path.
     #[error("E-FIX-STALE: {0} changed since the check")]
     FixStale(String),
+    /// A check that was not asked to `--fix` changed files a fix would edit; the paths.
+    #[error("E-CHECK-READONLY: a read-only check modified {}", .0.join(", "))]
+    ReadOnlyViolated(Vec<String>),
 }

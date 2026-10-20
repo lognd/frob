@@ -240,6 +240,51 @@ pub(crate) fn raw_digests(
     out
 }
 
+/// Assert that a check run without `--fix` left every file a Deterministic fix would edit as analysed.
+///
+/// The read-only guard of the fix engine (~W91G8EK): measurement runs (done-report, close, land
+/// pre-checks) never ask for `--fix`, so any drift of a fix-bearing file from its analysed digest
+/// means something wrote during the run; it fails loudly naming the files.
+///
+/// # Errors
+///
+/// [`CheckError::ReadOnlyViolated`] listing the changed paths.
+pub(crate) fn assert_read_only(
+    root: &Path,
+    findings: &[Finding],
+    files: &FileInterner,
+    analysed: &HashMap<String, String>,
+) -> Result<(), CheckError> {
+    let source = ContentSource::locate(root);
+    let mut paths: BTreeSet<String> = BTreeSet::new();
+    for e in findings
+        .iter()
+        .filter_map(|f| f.fix.as_ref().filter(|x| x.kind == FixKind::Deterministic))
+        .flat_map(|f| &f.edits)
+    {
+        if let Some(p) = files.path(e.file) {
+            paths.insert(p.to_owned());
+        }
+    }
+    let changed: Vec<String> = paths
+        .into_iter()
+        .filter(|p| {
+            let Some(want) = analysed.get(p) else {
+                return false;
+            };
+            source
+                .with_reader(|r| r.read(p))
+                .map_or(true, |now| Digest::of(&now).to_string() != *want)
+        })
+        .collect();
+    if changed.is_empty() {
+        tracing::debug!("read-only check left the tree unchanged");
+        return Ok(());
+    }
+    tracing::error!(files = ?changed, "read-only check modified files");
+    Err(CheckError::ReadOnlyViolated(changed))
+}
+
 #[allow(
     clippy::disallowed_methods,
     reason = "--fix refuses unless the raw on-disk bytes are the analysed ones"
@@ -382,6 +427,24 @@ mod tests {
         fn read(&self, name: &str) -> String {
             std::fs::read_to_string(self.dir.path().join(name)).unwrap()
         }
+    }
+
+    // frob:tests crates/gob-check/src/fix.rs::assert_read_only
+    #[test]
+    fn read_only_guard_names_a_file_written_during_a_read_only_run() {
+        let mut fx = Fx::new(&[("a.txt", "hello world"), ("b.txt", "other")]);
+        let fa = Fx::finding(vec![fx.edit("a.txt", 0, 5, "howdy")]);
+        let fb = Fx::finding(vec![fx.edit("b.txt", 0, 5, "OTHER")]);
+        let both = [fa, fb];
+        assert_read_only(fx.dir.path(), &both, &fx.files, &fx.analysed).unwrap();
+        std::fs::write(fx.dir.path().join("b.txt"), "written").unwrap();
+        let err = assert_read_only(fx.dir.path(), &both, &fx.files, &fx.analysed).unwrap_err();
+        assert!(
+            matches!(&err, CheckError::ReadOnlyViolated(p) if p == &["b.txt".to_owned()]),
+            "{err}"
+        );
+        assert!(err.to_string().contains("E-CHECK-READONLY"));
+        assert!(err.to_string().contains("b.txt"));
     }
 
     // frob:tests crates/gob-check/src/fix.rs::apply

@@ -813,3 +813,14 @@ the ticket's latest `triage` event, so no frontmatter field records it.
 Roughly 35 verbs against v1's 65 parser nodes; every setter is `set`;
 `--json` and `--reason` are universal; mutating verbs are idempotent on
 repeat (same request, same result, exit 0).
+
+## Measurement runs are read-only (~W91G8EK)
+
+Every verb that runs `frob check` to measure (`close`, `evidence --check`, `land`
+pre-checks, `verify`) leaves `RunOptions::fix` false; only a top-level
+`frob check --fix` applies Deterministic fixes. As a backstop the pipeline
+re-digests every file a Deterministic fix would edit after a run without `--fix`
+and fails with `E-CHECK-READONLY` (an internal error) naming any file that no
+longer matches its analysed digest. `check_verb.rs` holds the positive control:
+a fixable `DSL003` tree stays `git status` clean under `frob check` and changes
+under `frob check --fix`.

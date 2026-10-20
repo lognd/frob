@@ -258,7 +258,9 @@ fn cli_error(err: CheckError) -> CliError {
             &err,
             "rerun `frob check`, then `frob check --fix`",
         ),
-        CheckError::Walk(_) | CheckError::FixIo(_) => CliError::internal(err),
+        CheckError::Walk(_) | CheckError::FixIo(_) | CheckError::ReadOnlyViolated(_) => {
+            CliError::internal(err)
+        }
     }
 }
 
