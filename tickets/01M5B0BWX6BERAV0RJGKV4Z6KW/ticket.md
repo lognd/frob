@@ -2,12 +2,12 @@
 id = "01M5B0BWX6BERAV0RJGKV4Z6KW"
 title = "Mirror config: add [mirror] bot_ids and feed it to TICK010 instead of an empty list"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T21:16:33Z"
-updated = "2026-10-20T00:58:37Z"
+updated = "2026-10-20T00:58:38Z"
 scope = ["crates/frob-check/src/product.rs", "crates/frob-config/**"]
 +++
 
