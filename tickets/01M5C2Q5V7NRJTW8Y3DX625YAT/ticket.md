@@ -4,9 +4,10 @@ title = "frob check accepts --trust-from REF and the CI check step passes it"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T07:16:54Z"
-updated = "2026-10-20T07:16:54Z"
+updated = "2026-10-20T08:15:48Z"
 scope = ["crates/frob/src/**", "crates/gob-check/src/**", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
