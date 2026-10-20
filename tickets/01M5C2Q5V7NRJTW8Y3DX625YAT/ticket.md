@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T07:16:54Z"
-updated = "2026-10-20T08:45:13Z"
+updated = "2026-10-20T08:52:06Z"
 scope = ["crates/frob/src/**", "crates/gob-check/src/**", "crates/gob-dev/src/ci.rs", "crates/frob-check/src/options.rs", "crates/frob-check/src/verb.rs", "crates/gob-check/tests/pipeline.rs", "docs/reference/tool-stages.md", "docs/reference/rules/TICK011.md"]
 
 [[acceptance]]
