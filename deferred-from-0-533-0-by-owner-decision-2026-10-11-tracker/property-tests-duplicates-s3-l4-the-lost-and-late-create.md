@@ -2,13 +2,13 @@
 id = "01M4052WS0WETQ6V4FZ9XENZPA"
 title = "Property tests: duplicates (S3, L4, the lost and late create cases)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:40Z"
-updated = "2026-10-03T05:51:40Z"
+updated = "2026-10-21T09:16:24Z"
 idempotency_key = "m2-mirror2-prop-dups"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/prop_dups.rs"]
