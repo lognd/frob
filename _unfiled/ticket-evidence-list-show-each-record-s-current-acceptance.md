@@ -2,12 +2,12 @@
 id = "01M4061MSKNEMGBJ7C8AWA71KG"
 title = "ticket evidence list: show each record's current acceptance criteria via Ledger::criteria_now"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T06:08:27Z"
-updated = "2026-10-21T03:15:22Z"
+updated = "2026-10-21T03:15:23Z"
 scope = ["crates/frob-evidence/**"]
 
 [[acceptance]]
