@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T13:46:02Z"
+digest = "7eef2ad0f5d9e9bec18b7c924eb5446c2f6ece32cc3cddbf720360827768f560"
+exit_code = 0
+head = "2417159a9a93e089a622bb33f6e16d4e8b0641ba"
+inline = '''
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cf22cb3f-f1c7-42fc-9fb9-8e4a2e8fd77c with nextest profile: default
+    Starting 1 test across 9 binaries (71 tests skipped)
+        PASS [   0.023s] gob-packs::sysdesign_pack sysdesign_slice_rules_have_fire_clean_and_not_applicable_examples
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 1 test run: 1 passed, 71 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs sysdesign_slice_rules_have"
+size = 644
+status = "measured"
+test_count = 1
+tests_digest = "926c504ca04f5fc4563b9418cf2cb8d5593ddbc147f01c911ea851af2a428481"
+at = "2026-10-21T13:46:02Z"
+actor = "lognd"
+rev = 1
