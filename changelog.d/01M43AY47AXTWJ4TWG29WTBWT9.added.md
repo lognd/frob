@@ -1,0 +1,1 @@
+Server-side WEBPERF202 to WEBPERF204 GRL rules (unbounded fetchall, unbounded ORM queryset, send_file without max_age) are written under packs/grimble-websec/rules/webperf-server, each with firing, clean and not-applicable examples and a Remedy.
