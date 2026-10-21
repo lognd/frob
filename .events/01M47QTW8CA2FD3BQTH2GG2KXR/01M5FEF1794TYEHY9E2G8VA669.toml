@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T14:39:53Z"
+digest = "95f0f0784b72550f5372e45fc9eb4a40d09a26c862504e69a4d1a4fb2c5f50c1"
+exit_code = 0
+head = "3e344926288a77bb0c59fe791b3f8d989bf05a52"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e6aa8860-26dd-402a-8c17-772ca9a9a8ee with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   0.093s] gob-directives::inline err_cases_report_errors
+        PASS [   0.093s] gob-directives::inline ok_cases_parse_cleanly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.094s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives --test inline"
+size = 588
+status = "measured"
+test_count = 2
+tests_digest = "29ac82bb2dd31c95daf495a447b9a3214b99915f59265bbebb86589299281f01"
+at = "2026-10-21T14:39:53Z"
+actor = "lognd"
+rev = 1
