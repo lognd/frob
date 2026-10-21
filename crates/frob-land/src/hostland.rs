@@ -73,7 +73,11 @@ fn find_patch_match(log: &str, target: u64) -> Option<String> {
 
 /// The commit on `base_ref` whose change equals the whole change of `ticket/<handle>`, when the branch still exists.
 // frob:ticket 01M5DT8FKY9HJW3R9Q4CZB283M
-fn patch_match(repo: &gob_git::Repo, handle: &str, base_ref: &str) -> Result<Option<String>, LandError> {
+fn patch_match(
+    repo: &gob_git::Repo,
+    handle: &str,
+    base_ref: &str,
+) -> Result<Option<String>, LandError> {
     let cwd = repo.work_dir().unwrap_or_else(|| repo.common_dir());
     let name = handle.trim_start_matches('~');
     let tip = [
@@ -92,7 +96,15 @@ fn patch_match(repo: &gob_git::Repo, handle: &str, base_ref: &str) -> Result<Opt
     let diff = git(
         repo,
         cwd,
-        &["diff", "-U0", "--no-color", "--no-ext-diff", "--no-renames", &mb, &tip],
+        &[
+            "diff",
+            "-U0",
+            "--no-color",
+            "--no-ext-diff",
+            "--no-renames",
+            &mb,
+            &tip,
+        ],
     )?;
     if !diff.ok() {
         return Ok(None);
