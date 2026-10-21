@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-evidence/**"]
+new = ["crates/frob-evidence/**", "crates/frob/src/milestone_evidence_cmd.rs", "changelog.d/01M4061MSKNEMGBJ7C8AWA71KG.changed.md"]
+at = "2026-10-21T03:15:50Z"
+actor = "lognd"
+rev = 1
