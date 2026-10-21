@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T21:39:35Z"
+digest = "53b0579629868cfbfc9835518b871615c64b152eb7ce862971501c74fd7c49b5"
+exit_code = 0
+head = "c5a6c36b28c504bb00b4c6715b3a63c274275808"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e3de4291-6027-41c4-bfbd-90d765c93b01 with nextest profile: default
+    Starting 3 tests across 4 binaries (26 tests skipped)
+        PASS [   0.005s] gob-config::config schema_defs_merge_once_and_allow_recursion
+        PASS [   0.005s] gob-config::config schema_ref_links_resolve_to_defs
+        PASS [   0.005s] gob-config::config schema_without_refs_has_no_defs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 26 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-config schema_ref_links_resolve_to_defs schema_defs_merge_once_and_allow_recursion schema_without_refs_has_no_defs"
+size = 707
+status = "measured"
+test_count = 3
+tests_digest = "73c19e2bd2c329cdfb8e445cb776344a47906df4f87a3995b31b73a7bd6d6111"
+at = "2026-10-21T21:39:35Z"
+actor = "lognd"
+rev = 1
