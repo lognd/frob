@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked by GRL SYSDESIGN family length and model example input (~AJJH4Q)"
+at = "2026-10-21T10:53:07Z"
+actor = "lognd"
+rev = 1

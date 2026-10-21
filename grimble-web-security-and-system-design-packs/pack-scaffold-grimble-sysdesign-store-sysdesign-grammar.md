@@ -2,13 +2,13 @@
 id = "01M43AYJ2RMDD8DGZ5Q060142M"
 title = "Pack scaffold: grimble-sysdesign (STORE, SYSDESIGN, GRAMMAR)"
 type = "story"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:53Z"
-updated = "2026-10-21T10:52:49Z"
+updated = "2026-10-21T10:53:07Z"
 idempotency_key = "crunk-plan-g_sd"
 labels = ["area:grimble"]
 scope = ["packs/grimble-sysdesign/**", "docs/grimble/packs/grimble-sysdesign.md", "crates/gob-packs/src/sysdesign.rs", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/sysdesign_pack.rs", "changelog.d/01M43AYJ2RMDD8DGZ5Q060142M.added.md"]
