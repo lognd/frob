@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T18:53:02Z"
+digest = "ede12d7dbf7e5b329b9fb97ff5261cd00caf603b213154d8cdd771b317f75e1f"
+exit_code = 0
+head = "ca7e4682d0cf7ecb154f579c5c060532206e6611"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0514cf3f-8f25-469b-93d0-39b62ac0cdef with nextest profile: default
+    Starting 1 test across 2 binaries (287 tests skipped)
+        PASS [   0.010s] gob-symbols::it csharp::typed_method_calls_resolve_as_before_with_the_pack_loaded
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 287 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols typed_method_calls_resolve_as_before"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "a37807ab9a46d68b31fc9c43bb2feb8dc7277315b84634898da569c61f8fb0ac"
+at = "2026-10-21T18:53:02Z"
+actor = "lognd"
+rev = 1

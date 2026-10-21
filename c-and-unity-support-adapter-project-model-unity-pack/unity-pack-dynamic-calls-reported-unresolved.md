@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a typed method call, when the graph is built, then it resolves as before"
-bound = false
+bound = true
 +++
 
 Third vocabulary of the unity pack: SendMessage, SendMessageUpwards, BroadcastMessage, Invoke("name"), InvokeRepeating, StartCoroutine("name"), CancelInvoke("name") and string-keyed lookups (GameObject.Find, FindWithTag, Resources.Load) are dynamic calls, recorded as Unresolved call edges per the compute policy and never resolved by guesswork; UnityEvent wiring lives in scene and prefab YAML and is reported Unresolved with its GUID reference when the asset is read (YAML contents beyond GUID references are out of scope, design section 3). A literal method name never turns into an edge. Docs: docs/design/packs.md and docs/design/dotnet-unity.md section 3.
