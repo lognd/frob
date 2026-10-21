@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T09:19:34Z"
+digest = "d83a4a865eff9516fb91d21aef4e0e9d340ef6d39d7e0317e61e713a86aedb31"
+exit_code = 0
+head = "ea47e3197feffe273d2ec4b85271f83390fe4083"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 17ab1bc7-8c40-4435-92d6-6cb9979baea9 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.040s] frob-mirror::prop_dups late_creates_leave_bounded_extras_that_the_next_run_closes_and_reads
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.041s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror --test prop_dups late_creates"
+size = 578
+status = "measured"
+test_count = 1
+tests_digest = "0dd601e3058c94e271654b441504659f10349515daefd866f58a7e7037136251"
+at = "2026-10-21T09:19:34Z"
+actor = "lognd"
+rev = 1
