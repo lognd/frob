@@ -2,7 +2,8 @@
 id = "01M5EBMB0J4FGK2CRAZHN5VXED"
 title = "mirror: run MirrorHost::close_duplicates per run from the driver, with a real-marker test"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
