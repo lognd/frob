@@ -2,7 +2,8 @@
 id = "01M4828JQJKETWWCRQGJCXJ4VH"
 title = "gob-symbols: CJS function-expression exports and block-scoped binders for TS/JS"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
