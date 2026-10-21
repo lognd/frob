@@ -52,7 +52,8 @@ fn the_catalog_lists_the_pack_rules_when_crunk_web_is_on() {
         .iter()
         .map(|r| r["rule"].as_str().expect("rule"))
         .collect();
-    assert_eq!(rules.len(), 8, "{on}");
+    let expected = crunk_check::packs::plans().expect("pack plans").len();
+    assert_eq!(rules.len(), expected, "{on}");
     assert!(
         rules.contains(&"A11Y101") && rules.contains(&"WEBPERF101"),
         "{rules:?}"
