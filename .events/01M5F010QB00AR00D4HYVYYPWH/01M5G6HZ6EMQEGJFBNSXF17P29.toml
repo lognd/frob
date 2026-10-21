@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["CI001 flags external uses refs that are not a full commit SHA, skipping local, allowlisted and digest-pinned ones", "CI006 flags checkout of the PR head under pull_request_target or workflow_run", "CI007 flags attacker-influenced expressions in run scripts, narrow set as Error and others Advisory, env passthrough clean"]
+new = ["CI001 flags external uses refs that are not a full commit SHA, skipping local, allowlisted and digest-pinned ones", "CI006 flags checkout of the PR head under pull_request_target or workflow_run", "CI007 flags attacker-influenced expressions in run scripts, narrow set as Error and others Advisory, env passthrough clean", "CI010 flags checkout without persist-credentials false when artifacts or third-party actions are used"]
+moved = [1, 2, 3]
+at = "2026-10-21T21:40:55Z"
+actor = "lognd"
+rev = 1
