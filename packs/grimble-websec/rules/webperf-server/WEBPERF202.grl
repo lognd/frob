@@ -1,0 +1,22 @@
+rule WEBPERF202 "unbounded-fetchall" {
+  lang python
+  severity warn
+
+  find c: call where c.text ~ /\.fetchall\(\)/
+  report c "fetchall() loads every matching row into memory in one response"
+
+  example fire python """
+    rows = cur.fetchall()  #~ warn
+  """
+  example clean python """
+    rows = cur.fetchmany(100)
+  """
+  example notapplicable markdown """
+    Prose has no queries.
+  """
+  explain """
+    A handler that reads a whole result set grows its memory and response time with the table, so one large table makes every request slow (WEBPERF, server side).
+    ## Remedy
+    Page the query with LIMIT and OFFSET (or a keyset), or read it with `fetchmany(n)` or a cursor iterator and stream the rows.
+  """
+}

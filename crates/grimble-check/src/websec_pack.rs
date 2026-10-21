@@ -22,7 +22,7 @@ pub const FILE: &str = "<builtin>/grimble-websec/pack.toml";
 const MANIFEST_TEXT: &str = include_str!("../../../packs/grimble-websec/pack.toml");
 
 /// Embedded GRL sources by pack-relative path, one rule per file.
-pub const RULES: [(&str, &str); 11] = [
+pub const RULES: [(&str, &str); 14] = [
     (
         "rules/SEC101.grl",
         include_str!("../../../packs/grimble-websec/rules/SEC101.grl"),
@@ -66,6 +66,18 @@ pub const RULES: [(&str, &str); 11] = [
     (
         "rules/WEBPERF201.grl",
         include_str!("../../../packs/grimble-websec/rules/WEBPERF201.grl"),
+    ),
+    (
+        "rules/webperf-server/WEBPERF202.grl",
+        include_str!("../../../packs/grimble-websec/rules/webperf-server/WEBPERF202.grl"),
+    ),
+    (
+        "rules/webperf-server/WEBPERF203.grl",
+        include_str!("../../../packs/grimble-websec/rules/webperf-server/WEBPERF203.grl"),
+    ),
+    (
+        "rules/webperf-server/WEBPERF204.grl",
+        include_str!("../../../packs/grimble-websec/rules/webperf-server/WEBPERF204.grl"),
     ),
 ];
 

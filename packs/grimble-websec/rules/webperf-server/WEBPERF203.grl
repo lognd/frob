@@ -1,0 +1,22 @@
+rule WEBPERF203 "orm-all-without-limit" {
+  lang python
+  severity warn
+
+  find c: call where c.text ~ /\.objects\.all\(\)$/
+  report c "objects.all() returns an unbounded queryset"
+
+  example fire python """
+    items = Item.objects.all()  #~ warn
+  """
+  example clean python """
+    items = Item.objects.filter(active=True)[:100]
+  """
+  example notapplicable markdown """
+    Prose has no querysets.
+  """
+  explain """
+    An unbounded queryset serialised into a response makes latency and memory grow with the table (WEBPERF, server side).
+    ## Remedy
+    Filter and slice the queryset, `Item.objects.filter(active=True)[:100]`, or paginate it with a Paginator.
+  """
+}
