@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json", "crates/gob-config/src/describe.rs"]
+new = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json", "crates/gob-config/src/describe.rs", "crates/gob-config/tests/config.rs"]
+at = "2026-10-21T21:35:47Z"
+actor = "lognd"
+rev = 1
