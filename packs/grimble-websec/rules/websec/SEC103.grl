@@ -1,0 +1,22 @@
+rule SEC103 "cors-allows-any-origin" {
+  lang python
+  severity error
+
+  find c: call where c.callee.name == "CORS" and c.text ~ /origins?\s*=\s*(\[\s*)?["']\*["']/
+  report c "CORS is configured to allow any origin"
+
+  example fire python """
+    CORS(app, origins="*")  #~ error
+  """
+  example clean python """
+    CORS(app, origins=["https://app.example.com"])
+  """
+  example notapplicable markdown """
+    Prose configures no CORS.
+  """
+  explain """
+    A wildcard origin lets every site read responses from the browser, and combined with credentials it hands session-bound data to any page the user visits (WEBSEC, registered in the SEC namespace). The check reads flask-cors style `CORS(...)` calls; other frameworks and languages need an adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    List the exact origins that need access, read from configuration that differs per environment.
+  """
+}

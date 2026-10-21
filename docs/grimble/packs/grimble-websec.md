@@ -9,6 +9,9 @@ code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 |---|---|
 | `packs/grimble-websec/pack.toml` | name, version, families, `provides.rules` |
 | `packs/grimble-websec/rules/SEC101.grl` | WEBSEC: TLS verification disabled |
+| `packs/grimble-websec/rules/websec/SEC102.grl` | WEBSEC: cookie set with Secure or HttpOnly off |
+| `packs/grimble-websec/rules/websec/SEC103.grl` | WEBSEC: CORS allows any origin |
+| `packs/grimble-websec/rules/websec/SEC104.grl` | WEBSEC: unsafe deserializer (pickle, marshal, yaml.load) |
 | `packs/grimble-websec/rules/SQL101.grl` | SQL: query built by interpolation |
 | `packs/grimble-websec/rules/COMPLY101.grl` | COMPLY (with PII): personal data in a log call |
 | `packs/grimble-websec/rules/ROUTE101.grl` | ROUTE: GET and a state-changing method on one route |
@@ -26,7 +29,7 @@ code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 Every rule has a firing, a clean and a not-applicable example and an `explain` with `## Remedy`;
 a rule without a firing and a clean example fails to compile (GRL011).
 
-PII101 to PII103 are the first PII slice (Python call shapes; consent-marker and retention-schedule rules need
+SEC102 to SEC104 are the first WEBSEC slice (Python call shapes; injection sinks, unsafe HTML and client-side secrets need the shared web engine and are follow-ups). PII101 to PII103 are the first PII slice (Python call shapes; consent-marker and retention-schedule rules need
 a data-flow adapter and are follow-ups). ROUTE102 to ROUTE104 are the first ROUTE slice and read Flask-style Python calls. Auth-on-route
 and handler-exposure rules need framework adapters (route tables, decorators); until an adapter
 exists, other languages and frameworks are NotApplicable (the markdown example) or Unresolved,
