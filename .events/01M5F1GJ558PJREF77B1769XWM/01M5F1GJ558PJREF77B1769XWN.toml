@@ -1,0 +1,12 @@
+kind = "create"
+title = "DOC001 flags undocumented C# namespaces"
+type = "bug"
+category = "todo"
+priority = "medium"
+parent = "01M44YQS4CNZM54P067GJVPDC0"
+scope = ["crates/frob-obligations/src/doc.rs"]
+acceptance = ["Given a C# file with documented types in an undocumented namespace, when DOC001 runs, then no namespace finding is raised"]
+body = "Found while working ~01ENJEW: DOC001 warns 'public namespace ... has no doc comment' for every C# namespace, which C# cannot document with XML doc comments. Decide: NotApplicable for namespace symbols."
+at = "2026-10-21T10:53:32Z"
+actor = "lognd"
+rev = 1
