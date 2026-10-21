@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T22:45:46Z"
+digest = "f024f6283f8dc582d62a8f44d0a8c10f333a1827ab60870b209f8aa98ac50be8"
+exit_code = 0
+head = "c2ca97673a1e0ec2889ef75a0e5b66057d182849"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 88bbbe87-a9d9-4c67-9b17-2115ec147cda with nextest profile: default
+    Starting 1 test across 28 binaries (289 tests skipped)
+        PASS [   0.004s] gob-plan::lower_roles a_roles_snippet_outside_the_lift_is_refused_by_name
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 289 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan a_roles_snippet_outside_the_lift"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "7ac5622e43cea02434bf691faa8b6f5b7bd06613db220d1458b2beb662fb1b1a"
+at = "2026-10-21T22:45:46Z"
+actor = "lognd"
+rev = 1
