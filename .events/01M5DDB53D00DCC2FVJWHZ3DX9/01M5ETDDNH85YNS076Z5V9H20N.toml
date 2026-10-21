@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T08:49:17Z"
+digest = "d1fcd7446e8b5e3670dcec8776823609cc54feee1a80096362c45614d77aa724"
+exit_code = 0
+head = "940fdad3bc2b0dd3af5b4e14d014a0cf39eac034"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ad62ef35-bfe1-456b-990e-5390069e2562 with nextest profile: default
+    Starting 1 test across 4 binaries (429 tests skipped)
+        PASS [   0.235s] frob-cli::it lease_heartbeat::claim_touch_records_a_renew_event_with_its_note
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.236s] 1 test run: 1 passed, 429 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli claim_touch_records"
+size = 627
+status = "measured"
+test_count = 1
+tests_digest = "ee74a7f02cdda5fc9e09a60a09167501d569e35503111175886c061704a90a8e"
+at = "2026-10-21T08:49:17Z"
+actor = "lognd"
+rev = 1
