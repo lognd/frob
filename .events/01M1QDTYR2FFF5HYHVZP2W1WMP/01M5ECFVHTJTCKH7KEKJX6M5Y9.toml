@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-land/src/land.rs"]
+new = ["crates/frob-land/src/land.rs", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md"]
+at = "2026-10-21T04:46:08Z"
+actor = "lognd"
+rev = 1

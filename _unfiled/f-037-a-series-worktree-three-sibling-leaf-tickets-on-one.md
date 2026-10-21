@@ -10,5 +10,5 @@ created = "2026-09-05T00:00:00Z"
 updated = "2026-10-21T04:46:08Z"
 aliases = ["T-3842"]
 labels = ["v1-cluster:C3", "triage:accepted"]
-scope = ["crates/frob-land/src/land.rs"]
+scope = ["crates/frob-land/src/land.rs", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md"]
 +++
