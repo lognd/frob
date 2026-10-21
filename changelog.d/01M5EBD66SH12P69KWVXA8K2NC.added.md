@@ -1,0 +1,1 @@
+- `frob train status` now lists queued tickets whose branch carries a base merge that dropped their own hunks (`dropped` field, summary note).
