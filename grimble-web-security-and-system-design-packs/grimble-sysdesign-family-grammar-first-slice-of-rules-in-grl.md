@@ -2,13 +2,13 @@
 id = "01M43AYY70EPEM1YMACXEZW79B"
 title = "grimble-sysdesign family GRAMMAR: first slice of rules in GRL"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:32:05Z"
-updated = "2026-10-04T11:32:05Z"
+updated = "2026-10-21T12:25:13Z"
 idempotency_key = "crunk-plan-g_GRAMMAR"
 labels = ["area:grimble"]
 scope = ["packs/grimble-sysdesign/rules/grammar/**", "packs/grimble-sysdesign/tests/grammar/**"]
