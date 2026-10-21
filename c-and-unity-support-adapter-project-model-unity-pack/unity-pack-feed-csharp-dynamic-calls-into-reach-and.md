@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "A disabled or gated-out pack leaves the unresolved report anonymous"
-bound = false
+bound = true
 +++
 
 found while working ~MVX4GEN: csharp_dynamic_calls (gob-symbols) has no non-test consumer; frob-tests reach.rs and frob-obligations unity.rs should call it with the pack EngineVocab to report the named reason.
