@@ -8,8 +8,8 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:01Z"
-updated = "2026-10-21T14:39:53Z"
-scope = ["crates/gob-dev/**", "crates/gob-plan/**", "crates/grimble-model/**", "crates/gob-directives/**", "crates/crunk-spec/**"]
+updated = "2026-10-21T14:45:14Z"
+scope = ["crates/gob-dev/**", "crates/gob-plan/**", "crates/grimble-model/**", "crates/gob-directives/**", "crates/crunk-spec/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "at least five test_ok and five test_err blocks per parser"
