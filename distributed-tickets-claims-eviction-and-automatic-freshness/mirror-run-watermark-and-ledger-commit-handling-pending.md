@@ -10,6 +10,10 @@ reporter = "lognd"
 created = "2026-10-21T04:03:03Z"
 updated = "2026-10-21T04:48:07Z"
 scope = ["crates/frob-mirror/src/run.rs", "changelog.d/01M5EA0YHJS87TYJ78FE70J6TS.added.md"]
+
+[[acceptance]]
+text = "A clean complete run advances the ledger watermark past the log head, counting only foreign commits as new; failed or rate-limited runs hold it"
+bound = false
 +++
 
 Driver loop landed in ~F6RCGW1 without watermark/commit handling.

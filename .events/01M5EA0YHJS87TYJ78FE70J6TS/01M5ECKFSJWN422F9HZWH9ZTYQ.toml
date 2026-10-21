@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A clean complete run advances the ledger watermark past the log head, counting only foreign commits as new; failed or rate-limited runs hold it"]
+moved = []
+at = "2026-10-21T04:48:07Z"
+actor = "lognd"
+rev = 1
