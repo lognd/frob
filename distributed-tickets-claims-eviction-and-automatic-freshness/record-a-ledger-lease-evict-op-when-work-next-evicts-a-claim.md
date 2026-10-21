@@ -8,8 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T00:21:23Z"
-updated = "2026-10-21T02:16:04Z"
-scope = ["crates/gob-time/src/shown.rs"]
+updated = "2026-10-21T02:16:05Z"
+scope = ["crates/gob-time/src/shown.rs", "crates/gob-time/tests/time.rs"]
 +++
 
 evict_one_idle_agent only transitions the ticket to todo with a note; add the lease evict ledger op (see 1N3HRWA). Also local UTC offset for evict_rate day count (currently UTC). Follow-up of 8DKB004.
