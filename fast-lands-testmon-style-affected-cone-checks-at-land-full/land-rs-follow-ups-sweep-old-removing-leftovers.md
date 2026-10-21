@@ -8,7 +8,7 @@ points = 2
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-10T01:13:36Z"
-updated = "2026-10-21T06:23:50Z"
+updated = "2026-10-21T06:24:06Z"
 scope = ["crates/frob-land/src/land.rs", "changelog.d/**"]
 
 [[links]]
