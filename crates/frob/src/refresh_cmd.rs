@@ -90,6 +90,10 @@ pub struct RefreshReport {
     pub conflicts: Vec<String>,
     /// Tickets recorded as landed by a hosting-side merge during this sync, as `<handle> at <commit>`.
     pub host_lands: Vec<String>,
+    /// Done tickets whose land commit origin's base lacks, as `<handle> at <commit>`; repair each with `frob land --relaunch`.
+    pub local_lands: Vec<String>,
+    /// `N local lands not on origin; M claims evicted; K conflicts` when any is non-zero.
+    pub divergence: Option<String>,
     /// Seconds since the last probe; `None` when never probed or local-only.
     pub age_secs: Option<i64>,
     /// How the cached view relates to the remote: `fresh`, `stale`, `degraded`, `unknown` or `local-only`.
@@ -336,6 +340,7 @@ fn sync(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) -> Result
         }
         Err(e) => tracing::warn!(error = %e, "host land detection failed"),
     }
+    report_divergence(ledger, plan, conflicts.len(), rep);
     tracing::info!(ledger = %rep.ledger, pushed = rep.pushed, base = %rep.base_sync, "refresh sync done");
     if conflicts.is_empty() {
         return Ok(());
@@ -353,6 +358,28 @@ fn sync(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) -> Result
     )
     .with_remedy("resolve the listed ledger paths on the remote or locally, then run frob refresh")
     .into())
+}
+
+/// Fill the row 52 divergence summary of `rep` from the ledger and the fetched base; a failed scan is a warning in the log only.
+// frob:ticket 01M5DRXH9KKWX3W0A99VESJVC8
+fn report_divergence(
+    ledger: &Ledger,
+    plan: &SyncPlan<'_>,
+    conflicts: usize,
+    rep: &mut RefreshReport,
+) {
+    match frob_land::divergence::diverged_lands(ledger, &tracking(plan.remote, plan.base)) {
+        Ok(mut d) => {
+            d.conflicts = conflicts;
+            rep.local_lands = d
+                .lands
+                .iter()
+                .map(|l| format!("{} at {}", l.handle, l.commit))
+                .collect();
+            rep.divergence = frob_land::divergence::summary(&d, plan.remote);
+        }
+        Err(e) => tracing::warn!(error = %e, "local land scan failed"),
+    }
 }
 
 /// Integrate the fetched ledger branch and publish the result, retrying on lost races.
@@ -492,6 +519,8 @@ fn report(state: &RefreshState, status: String, outcome: &str, changed: bool) ->
         base_sync: "none".to_owned(),
         conflicts: Vec::new(),
         host_lands: Vec::new(),
+        local_lands: Vec::new(),
+        divergence: None,
         age_secs: None,
         freshness: FreshState::Unknown,
         notices: Vec::new(),
@@ -515,6 +544,11 @@ fn with_freshness(
             .iter()
             .map(|l| format!("I-SYNC-HOST-LAND: {l} was merged on the host and is now done.")),
     );
+    if let Some(line) = &out.data.divergence {
+        out.warnings.push(format!(
+            "I-SYNC-DIVERGED: {line}; repair each land with `frob land --relaunch <ticket>`."
+        ));
+    }
     out.data.age_secs = fresh.age_secs;
     out.data.freshness = fresh.state;
     out.data.notices = fresh.notices;

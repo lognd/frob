@@ -11,6 +11,7 @@ pub mod base_ci;
 pub mod batch_size;
 pub mod bisect;
 pub mod candidate;
+pub mod divergence;
 pub mod error;
 pub mod events;
 mod git;

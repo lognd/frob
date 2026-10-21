@@ -2979,3 +2979,36 @@ fn a_hosting_side_squash_without_a_trailer_is_matched_by_patch_id() {
         Category::Done
     );
 }
+
+// frob:ticket 01M5DRXH9KKWX3W0A99VESJVC8
+// frob:tests crates/frob-land/src/divergence.rs::diverged_lands
+// frob:tests crates/frob-land/src/divergence.rs::summary
+#[test]
+fn diverged_lands_counts_local_lands_origin_lacks_and_clears_after_relaunch_is_pushed() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = landed_locally_with_a_diverged_origin(&fx);
+    let ledger = fx.ledger();
+    let mut d = frob_land::divergence::diverged_lands(&ledger, "refs/remotes/origin/main")
+        .expect("diverged");
+    assert_eq!(d.lands.len(), 1, "{d:?}");
+    assert_eq!(d.lands[0].id, s.id);
+    d.conflicts = 2;
+    assert_eq!(
+        frob_land::divergence::summary(&d, "origin").as_deref(),
+        Some("1 local lands not on origin; 0 claims evicted; 2 conflicts")
+    );
+    git(
+        &fx.root,
+        &["update-ref", "refs/remotes/origin/main", "refs/heads/main"],
+    );
+    let after =
+        frob_land::divergence::diverged_lands(&ledger, "refs/remotes/origin/main").expect("after");
+    assert!(after.lands.is_empty());
+    assert_eq!(frob_land::divergence::summary(&after, "origin"), None);
+    let gone =
+        frob_land::divergence::diverged_lands(&ledger, "refs/remotes/nope/main").expect("gone");
+    assert!(gone.lands.is_empty());
+}
