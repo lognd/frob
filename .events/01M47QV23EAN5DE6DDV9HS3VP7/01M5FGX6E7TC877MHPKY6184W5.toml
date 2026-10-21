@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T15:22:34Z"
+digest = "6ffb436ddd45f9361c6bd470333cd8d88c00ea7997b3e2055a0f68bdd940ffd4"
+exit_code = 0
+head = "781d629d452dd6c7e907c9508015f83fcd8a03a5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 14a3c0b5-c6fe-4d3a-af54-2b4eb72b120b with nextest profile: default
+    Starting 1 test across 11 binaries (204 tests skipped)
+        PASS [   0.121s] gob-dev ecosystem::run::tests::a_head_crash_is_reported_not_hidden
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.122s] 1 test run: 1 passed, 204 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev a_head_crash_is_reported_not_hidden"
+size = 560
+status = "measured"
+test_count = 1
+tests_digest = "a9937898ce8abad1e97d874b508d7e4d220451a1669c98d46e2437bdac7ed513"
+at = "2026-10-21T15:22:34Z"
+actor = "lognd"
+rev = 1
