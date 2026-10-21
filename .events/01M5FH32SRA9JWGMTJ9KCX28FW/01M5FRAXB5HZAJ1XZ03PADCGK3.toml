@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/tests/layering.rs"]
+new = ["crates/gob-dev/tests/layering.rs", "docs/design/boundaries.md"]
+at = "2026-10-21T17:32:23Z"
+actor = "lognd"
+rev = 1
