@@ -468,16 +468,7 @@ impl Doctor {
         warnings.extend(lands_warning(&lands, &cfg.sync.remote));
         // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
         warnings.extend(crate::agent_cmd::drift_warnings(&located.root, &cfg));
-        for row in &siblings {
-            if let Some(other) = row.other.as_ref().filter(|o| o.differs) {
-                warnings.push(format!(
-                    "{} on PATH ({}) differs from the one next to frob ({}); frob uses the one next to it",
-                    row.product,
-                    other.version.as_deref().unwrap_or("version unknown"),
-                    row.version.as_deref().unwrap_or("version unknown"),
-                ));
-            }
-        }
+        warnings.extend(sibling_warnings(&siblings));
         let payload = Payload::new(DoctorData {
             toolchain,
             git,
@@ -859,6 +850,22 @@ fn lands_info(
             skipped(e.to_string())
         }
     }
+}
+
+/// One warning per sibling product whose PATH copy differs from the one next to frob.
+fn sibling_warnings(siblings: &[SiblingRow]) -> Vec<String> {
+    siblings
+        .iter()
+        .filter_map(|row| {
+            let other = row.other.as_ref().filter(|o| o.differs)?;
+            Some(format!(
+                "{} on PATH ({}) differs from the one next to frob ({}); frob uses the one next to it",
+                row.product,
+                other.version.as_deref().unwrap_or("version unknown"),
+                row.version.as_deref().unwrap_or("version unknown"),
+            ))
+        })
+        .collect()
 }
 
 /// The doctor warning for local lands origin lacks, with the relaunch remedy; `None` when there are none.
