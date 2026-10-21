@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T04:31:07Z"
-updated = "2026-10-21T06:50:17Z"
+updated = "2026-10-21T07:11:18Z"
 scope = ["crates/frob-mirror/src/ledger_source.rs", "crates/frob-mirror/src/lib.rs", "crates/frob-mirror/Cargo.toml", "crates/frob-mirror/tests/ledger_source.rs", "changelog.d/01M5EBMAWCRQ2S1GGPYACC0466.added.md", "Cargo.lock"]
 
 [[acceptance]]
