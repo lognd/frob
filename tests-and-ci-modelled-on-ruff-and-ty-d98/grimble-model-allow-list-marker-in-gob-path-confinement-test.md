@@ -2,7 +2,8 @@
 id = "01M5FNMENEHRENY71N3FWFY8TS"
 title = "grimble-model allow-list marker in gob-path confinement test allow_list_matches_markers fails"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
