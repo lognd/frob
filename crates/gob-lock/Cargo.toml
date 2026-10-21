@@ -11,13 +11,13 @@ authors.workspace = true
 [dependencies]
 gob-caps = { version = "0.532.0", path = "../gob-caps" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
-gob-path = { version = "0.532.0", path = "../gob-path" }
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 toml = "1"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-path = { version = "0.532.0", path = "../gob-path" }
 tempfile = "3"
 
 [lints]
