@@ -2,13 +2,13 @@
 id = "01M4YDMAEVVMXZG161VGAT7S84"
 title = "Tests: inject env and PATH into Context so more frob CLI tests run in process; consolidate remaining crates; re-measure suite wall time (follow-up to ~E0E8M28)"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-14T23:58:12Z"
-updated = "2026-10-21T22:23:33Z"
+updated = "2026-10-21T22:23:43Z"
 scope = ["crates/*/tests/**", "crates/gob-cli/src/**"]
 
 [[acceptance]]

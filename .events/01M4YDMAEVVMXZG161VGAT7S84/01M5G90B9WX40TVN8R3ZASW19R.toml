@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "needs quasar wall-time measurement; pool unreachable"
+at = "2026-10-21T22:23:43Z"
+actor = "lognd"
+rev = 1
