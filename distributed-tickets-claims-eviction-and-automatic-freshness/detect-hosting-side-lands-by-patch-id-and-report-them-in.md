@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T23:27:32Z"
-updated = "2026-10-21T00:26:12Z"
+updated = "2026-10-21T00:29:15Z"
 scope = ["crates/frob-land/src/hostland.rs", "crates/frob-land/tests/land.rs", "crates/frob/src/refresh_cmd.rs"]
 +++
 
