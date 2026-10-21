@@ -2,7 +2,8 @@
 id = "01M5DRXHC16AATVXYDWY7BTP5S"
 title = "Relaunch: use the configured remote and offer check and push"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
