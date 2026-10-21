@@ -2,7 +2,8 @@
 id = "01M47RDBED35TFDEHQ1YTG1ZYC"
 title = "Surface BuildStats.malformed_projects as a check finding and Unresolved status"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
