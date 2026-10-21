@@ -8,8 +8,8 @@ points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T04:03:03Z"
-updated = "2026-10-21T04:17:34Z"
-scope = ["crates/frob-mirror/src/host.rs", "crates/frob-mirror/src/lib.rs", "crates/frob-mirror/src/outbox.rs"]
+updated = "2026-10-21T04:17:35Z"
+scope = ["crates/frob-mirror/src/host.rs", "crates/frob-mirror/src/lib.rs", "crates/frob-mirror/src/outbox.rs", "changelog.d/01M5EA0YFAACDY5BV70R2MH98S.feat.md"]
 +++
 
 run.rs defines the RunHost trait only; implement it against the real mirror modules.
