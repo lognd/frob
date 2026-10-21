@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["packs/grimble-websec/rules/sql/**", "packs/grimble-websec/tests/sql/**"]
+new = ["packs/grimble-websec/rules/sql/**", "packs/grimble-websec/tests/sql/**", "packs/grimble-websec/pack.toml"]
+at = "2026-10-21T13:39:55Z"
+actor = "lognd"
+rev = 1
