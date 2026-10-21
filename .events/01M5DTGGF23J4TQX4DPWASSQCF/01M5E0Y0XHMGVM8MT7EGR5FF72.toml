@@ -1,0 +1,39 @@
+kind = "evidence"
+captured_at = "2026-10-21T01:23:55Z"
+digest = "ed0dfb5e37552600d3c4fb4d195c23a91d9021772bbd81f203d2fa8415cdbdc1"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.78s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d9bce5b2-5ff2-4fb4-b9be-1f1cc556119d with nextest profile: default
+    Starting 15 tests across 4 binaries (404 tests skipped)
+        PASS [   0.016s] frob-cli::it board::old_done_tickets_leave_the_board_and_epics_are_left_off
+        PASS [   0.017s] frob-cli::it board::observe_reads_only_recorded_events_and_latest_wins
+        PASS [   0.017s] frob-cli::it board::entered_falls_back_to_creation
+        PASS [   0.018s] frob-cli::it board::counts_and_limits_come_from_the_shared_wip_count
+        PASS [   0.018s] frob-cli::it board::over_limit_header_is_red_only_with_color
+        PASS [   0.018s] frob-cli::it board::repeat_evicted_ticket_is_flagged_on_its_card
+        PASS [   0.020s] frob-cli::it board::brief_last_signal_is_inferred_with_its_age
+        PASS [   0.021s] frob-cli::it board::a_ticket_in_progress_for_three_days_reads_3d
+        PASS [   0.013s] frob-cli::it board::width_prefers_the_flag_then_terminal_columns_then_the_fallback
+        PASS [   0.148s] frob-cli::it board::brief_text_and_json_come_from_one_value_and_fit_80_columns
+        PASS [   0.140s] frob-cli::it board::text_board_at_a_fixed_width_and_clock
+        PASS [   0.489s] frob-cli::it board::json_shape_carries_the_lane_and_the_five_columns
+        PASS [   0.480s] frob-cli::it board::text_mode_prints_ascii_rows_at_the_requested_width
+        PASS [   0.564s] frob-cli::it board::brief_flag_prints_ascii_sections_and_json_carries_the_brief
+        PASS [   1.119s] frob-cli::it board::board_syncs_and_walks_events_once_however_many_tickets
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.120s] 15 tests run: 15 passed, 404 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli board"
+size = 1994
+status = "measured"
+test_count = 15
+tests_digest = "1a90187e66f7c6e29b27c8d633b1b4ef7d5f7cde47afcc73d84f2947309c9673"
+at = "2026-10-21T01:23:55Z"
+actor = "lognd"
+rev = 1
