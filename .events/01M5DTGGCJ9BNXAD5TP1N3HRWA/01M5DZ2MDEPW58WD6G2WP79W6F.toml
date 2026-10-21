@@ -1,0 +1,28 @@
+kind = "evidence"
+captured_at = "2026-10-21T00:51:42Z"
+digest = "74429be11a445505f3f9b39c91c8582464a1a7a6086504b2d074961922d4e591"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c22d12ca-faab-4684-82c6-71368bd0018b with nextest profile: default
+    Starting 1 test across 7 binaries (102 tests skipped)
+        PASS [   0.183s] frob-worktree::next an_idle_agent_claim_is_evicted_and_parked
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.184s] 1 test run: 1 passed, 102 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree an_idle_agent_claim_is_evicted_and_parked"
+size = 816
+status = "measured"
+test_count = 1
+tests_digest = "0565eb95c6acb369ed18da7396edde83df7f80f603019d599ed4a084b3aaca83"
+at = "2026-10-21T00:51:42Z"
+actor = "lognd"
+rev = 1
