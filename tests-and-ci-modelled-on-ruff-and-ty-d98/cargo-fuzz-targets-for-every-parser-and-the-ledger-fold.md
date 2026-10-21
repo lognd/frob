@@ -2,7 +2,8 @@
 id = "01M47QV3BRRZZSMJ5Q79N8G5S2"
 title = "cargo-fuzz targets for every parser and the ledger fold, built on every PR"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
