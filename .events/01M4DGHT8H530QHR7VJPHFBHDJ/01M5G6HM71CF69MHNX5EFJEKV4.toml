@@ -1,0 +1,96 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T21:39:36Z"
+digest = "9526ccc7a0f9163d80493ba1286581ba4a3609b0e06ff66d22d444d8be20aefc"
+exit_code = 0
+head = "c5a6c36b28c504bb00b4c6715b3a63c274275808"
+inline = '''
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling serde_derive v1.0.229
+   Compiling tracing-attributes v0.1.31
+   Compiling thiserror-impl v2.0.21
+   Compiling thiserror v2.0.21
+   Compiling tracing v0.1.44
+   Compiling zerocopy-derive v0.8.59
+   Compiling serde v1.0.229
+   Compiling serde_core v1.0.229
+   Compiling zerocopy v0.8.59
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling serde_json v1.0.151
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling darling_core v0.20.11
+   Compiling schemars_derive v1.2.2
+   Compiling ref-cast v1.0.27
+   Compiling schemars v1.2.2
+   Compiling darling_macro v0.20.11
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling ahash v0.8.12
+   Compiling darling v0.20.11
+   Compiling tree-sitter v0.27.0
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling hashbrown v0.14.5
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling hashlink v0.9.1
+   Compiling derive_more-impl v2.1.1
+   Compiling rusqlite v0.32.1
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling half v2.7.1
+   Compiling cobs v0.3.0
+   Compiling proc-macro-error-attr3 v3.1.1
+   Compiling ciborium-ll v0.2.2
+   Compiling proc-macro-error3 v3.1.1
+   Compiling postcard v1.1.3
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling rapidhash v4.5.1
+   Compiling derive_more v2.1.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling either-or-both v0.3.1
+   Compiling wait-timeout v0.2.1
+   Compiling unty-next v0.1.2
+   Compiling rusty-fork v0.3.1
+   Compiling bincode-next v3.1.1
+   Compiling gungraun-runner v0.20.0
+   Compiling rand_chacha v0.9.0
+   Compiling gungraun-macros v0.10.0
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gungraun-common v0.1.0
+   Compiling ciborium v0.2.2
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling rand v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling tinytemplate v1.2.1
+   Compiling proptest v1.11.0
+   Compiling criterion v0.5.1
+   Compiling gungraun v0.20.0
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 07s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4ca93b52-65eb-4d15-8c16-3b7819b361cf with nextest profile: default
+    Starting 1 test across 27 binaries (278 tests skipped)
+        PASS [   0.007s] gob-plan::catalog a_misspelt_config_column_is_not_a_member
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 278 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan a_misspelt_config_column_is_not_a_member"
+size = 3335
+status = "measured"
+test_count = 1
+tests_digest = "92da1cc3928966b19786b70b8d10316e816578f11e4283a64a1d737c0562b38b"
+at = "2026-10-21T21:39:36Z"
+actor = "lognd"
+rev = 1
