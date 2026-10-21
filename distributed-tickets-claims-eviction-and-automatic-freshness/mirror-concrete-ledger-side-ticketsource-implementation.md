@@ -13,7 +13,7 @@ scope = ["crates/frob-mirror/src/ledger_source.rs", "crates/frob-mirror/src/lib.
 
 [[acceptance]]
 text = "Given a ledger with mapped and unmapped tickets, when LedgerTickets is read and written as a TicketSource, then it lists, projects, reconciles and records proposals against the real ledger"
-bound = false
+bound = true
 +++
 
 only the seam trait exists in host.rs. found while working R2MH98S

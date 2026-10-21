@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T06:50:17Z"
+digest = "85e571ec50862fa9c88dfe2aa79cc343d6a23a5c971690ec2bd90699b532574d"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 627361a0-a994-4de0-b40d-090ad2bffe6d with nextest profile: default
+    Starting 1 test across 6 binaries (170 tests skipped)
+        PASS [   0.027s] frob-mirror::ledger_source ledger_source_reads_and_records
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.028s] 1 test run: 1 passed, 170 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror ledger_source"
+size = 671
+status = "measured"
+test_count = 1
+tests_digest = "38acba0b1eec152ee2429cc760a6112060be64420c457f4e3f2504d46099403e"
+at = "2026-10-21T06:50:17Z"
+actor = "lognd"
+rev = 1
