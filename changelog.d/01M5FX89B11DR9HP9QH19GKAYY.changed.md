@@ -1,0 +1,1 @@
+Unresolved-call reports from the coverage rule now name the engine reason (a literal or computed method name, or a string-keyed lookup) when the call is a dynamic call the enabled unity pack classifies.
