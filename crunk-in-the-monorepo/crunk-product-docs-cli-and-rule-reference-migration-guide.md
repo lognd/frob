@@ -39,7 +39,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the crunk binary, when the README verb table is read, then every registered crunk verb has a row"
-bound = false
+bound = true
 +++
 
 Per-product docs (monorepo.md 2): generated CLI and rule pages, the config guide, the token export guide, and a migration guide for users of the Python crunk (pip name unchanged, `crk` alias decision, flag differences, no more tinycss2/tree-sitter pin, cache location). Port docs/commands/*.md and docs/guides from the crunk repository.
