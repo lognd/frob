@@ -7,12 +7,12 @@ priority = "medium"
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-06T13:41:12Z"
+updated = "2026-10-21T20:48:36Z"
 scope = ["crates/*/tests/mdtest/**"]
 
 [[acceptance]]
 text = "every listed rule has an mdtest fire/clean pair or a fixture and no grimble entry remains in the allowlist"
-bound = false
+bound = true
 +++
 
 Umbrella for the grimble allowlist in crates/gob-mdtest/coverage-allowlist.toml (~BGB8V55). Each rule needs an mdtest fire/clean pair or a fixture, then its allowlist entry is deleted. Rules: MDL000 MDL001 MDL002 MDL003 MDL004 MDL005 MDL006 MDL007 MDL008 MDL009 MDL010 MDL011 MDL012 MDL013 MDL014 MDL015 MDL016 MDL017 MDL019 MDL020 MDL021 SYS001 SYS002 SYS003 SYS004 SYS005 SYS006 SYS007 SYS008 SYS009 SYS010 SYS011 
