@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-21T09:16:55Z"
+updated = "2026-10-21T09:17:09Z"
 idempotency_key = "m2-mirror2-closing-keyword"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/closing.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md", "changelog.d/01M4052TQSK1WXBD9280DDRNM5.added.md"]
@@ -23,6 +23,10 @@ bound = false
 
 [[acceptance]]
 text = "Given the ledger says done, when the issue is closed by a commit keyword, then nothing is reverted"
+bound = false
+
+[[acceptance]]
+text = "Given no closure in history, when reconciled, then nothing is planned"
 bound = false
 +++
 

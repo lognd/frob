@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given an issue closed by a commit's closing keyword while the ledger says open, when reconciled, then it is reopened and the closure is recorded as a proposal", "Given the ledger says done, when the issue is closed by a commit keyword, then nothing is reverted"]
+new = ["Given an issue closed by a commit's closing keyword while the ledger says open, when reconciled, then it is reopened and the closure is recorded as a proposal", "Given the ledger says done, when the issue is closed by a commit keyword, then nothing is reverted", "Given no closure in history, when reconciled, then nothing is planned"]
+moved = [1, 2]
+at = "2026-10-21T09:17:09Z"
+actor = "lognd"
+rev = 1
