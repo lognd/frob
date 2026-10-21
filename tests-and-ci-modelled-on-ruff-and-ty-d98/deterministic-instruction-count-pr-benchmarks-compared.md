@@ -8,12 +8,12 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:12Z"
-updated = "2026-10-21T13:29:56Z"
+updated = "2026-10-21T13:30:32Z"
 scope = ["crates/*/benches/**", "crates/gob-dev/**", ".github/workflows/**", "docs/design/build-test-ci.md", "Cargo.toml", "Cargo.lock", "crates/gob-plan/Cargo.toml", "changelog.d/01M47QVC49RXV29NCG3N9G1JSM.added.md"]
 
 [[acceptance]]
 text = "benchmarks run under the harness on Linux"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the PR comment lists per-benchmark instruction deltas"

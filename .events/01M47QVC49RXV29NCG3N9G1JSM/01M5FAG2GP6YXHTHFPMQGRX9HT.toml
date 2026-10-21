@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T13:30:32Z"
+digest = "a2b427c3a5822f153455984ceb7435f306e77da5f66c90a21b2659255a25baed"
+exit_code = 0
+head = "f5eb2f8293b14c3aaa99c906db91cdf5d7807550"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5d73ee2c-f42e-4d88-b340-c626887ec7ac with nextest profile: default
+    Starting 7 tests across 9 binaries (172 tests skipped)
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::bench_ic_parses
+        PASS [   0.012s] gob-dev bench_ic::tests::collect_walks_nested_summaries
+        PASS [   0.013s] gob-dev bench_ic::tests::compare_classifies_each_benchmark
+        PASS [   0.014s] gob-dev bench_ic::tests::harness_is_recorded_and_wired
+        PASS [   0.014s] gob-dev bench_ic::tests::parse_skips_summaries_without_callgrind
+        PASS [   0.014s] gob-dev bench_ic::tests::parse_reads_callgrind_ir_and_id
+        PASS [   0.014s] gob-dev bench_ic::tests::render_lists_per_benchmark_deltas
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 7 tests run: 7 passed, 172 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev bench_ic"
+size = 1039
+status = "measured"
+test_count = 7
+tests_digest = "8780772a11ea14bb379206d03249be2a915e4da36c82bd9e0c1b20a5a6b5647c"
+at = "2026-10-21T13:30:32Z"
+actor = "lognd"
+rev = 1
