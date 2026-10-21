@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T20:22:15Z"
+digest = "d239d32220d41e4c4cfc608db6e0867fd6943d6756d8c99e7c67ce65d39980ee"
+exit_code = 0
+head = "0f972c12e728d6390d25721d01c1a35eef4d2b0b"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID acc1047a-ad24-4c0d-b39f-5f9760f4c2a9 with nextest profile: default
+    Starting 1 test across 12 binaries (72 tests skipped)
+        PASS [   0.041s] grimble-check::rules_severity rules_severity_invalid_token_fails_the_run
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.042s] 1 test run: 1 passed, 72 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check rules_severity_invalid"
+size = 616
+status = "measured"
+test_count = 1
+tests_digest = "0ed385efd1ac17a28c6e8ba62d2db13573e9952c7ca095e9d47918bdb8fe2539"
+at = "2026-10-21T20:22:15Z"
+actor = "lognd"
+rev = 1

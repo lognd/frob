@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "An invalid severity token fails the run"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "grimble.toml raises TIME001 and TIME002 to error"
