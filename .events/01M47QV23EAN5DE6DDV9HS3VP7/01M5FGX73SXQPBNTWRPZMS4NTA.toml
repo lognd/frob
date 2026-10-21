@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T15:22:34Z"
+digest = "d3896f15138408177eca4298ec85717f66ce94dcb5e1f40a933f0c5518803d34"
+exit_code = 0
+head = "781d629d452dd6c7e907c9508015f83fcd8a03a5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eacfb60b-f4b1-4d74-8612-9060a72d6d64 with nextest profile: default
+    Starting 1 test across 11 binaries (204 tests skipped)
+        PASS [   0.007s] gob-dev ecosystem::tests::render_reports_a_head_crash_loudly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 204 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev render_reports_a_head_crash_loudly"
+size = 554
+status = "measured"
+test_count = 1
+tests_digest = "ee833b30b0328112d868e010fa0df45d48cec1d8a3b118c4ac48348f732ce86e"
+at = "2026-10-21T15:22:34Z"
+actor = "lognd"
+rev = 1
