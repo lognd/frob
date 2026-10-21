@@ -1128,6 +1128,45 @@ are atoms plus vocabularies plus detector items plus other items, so
 `ci-github` is 14 + 8 + 80 = 102 and `rust-ecosystem` is 7 + 29 + 7 = 43.)
 Total 40 atoms, 291 lock items.
 
+### 8.5 unity (opt-in, engine entry points)
+
+`packs/unity.toml`, version `0.1.0`, is a built-in pack outside the
+three of milestone 2. It is disabled by default and is enabled only by
+the root `frob.toml`, never by an adapter:
+
+```toml
+[[packs.enable]]
+name  = "unity"
+paths = ["Assets/**"]   # optional; omit for the whole repository
+```
+
+(`[packs] enabled = ["unity"]` works too.) Unlike the three packs above
+it holds no atoms or detectors: its `[[vocab]]` tables (`lang =
+"csharp"`) name the code the engine calls itself, so no caller exists in
+the repository. The manifest part (`[pack]`) is validated as any other
+(PACK005); the `[[vocab]]` tables are split off by
+`gob_packs::unity::UnityPack::parse` and loaded into a
+`gob_ir::engine::EngineVocab`. The file is read through `include_str!`
+in `gob-packs`; the `builtin_pack!` macro of 3.2 does not exist yet.
+
+| Class | Names |
+|---|---|
+| `entry.message` | `Awake` `Start` `Update` `FixedUpdate` `LateUpdate` `OnEnable` `OnDisable` `OnDestroy` `OnValidate` `Reset` `OnGUI` `OnApplicationQuit` |
+| `entry.message_prefix` | `OnDrawGizmos` `OnTrigger` `OnCollision` `OnMouse` |
+| `entry.base` | `MonoBehaviour` `ScriptableObject` |
+| `entry.method_attribute` | `RuntimeInitializeOnLoadMethod` `MenuItem` `ContextMenu` |
+| `entry.type_attribute` | `InitializeOnLoad` `CreateAssetMenu` |
+
+A message is a root on a type that derives from an `entry.base`,
+transitively through project-local base types, or that carries an
+`entry.type_attribute`. A method with an `entry.method_attribute` is a
+root. The static constructor of an `[InitializeOnLoad]` type is a root.
+`frob-tests` `reach::engine_roots` computes the set; COV001 seeds its
+reach with the roots and never reports them. With the pack disabled
+nothing changes. Dead-code rules do not read the vocabulary yet.
+
+Counts: 1 vocabulary pack, 0 atoms, 5 vocabulary classes, 23 names.
+
 ## 9. The PACK rule family
 
 Implementation note: PACK001 to PACK008 are declared (staged, no-op `check`) in `crates/grimble-capabilities/src/pack_rules`, with one mdtest page each. `pack_rules::evaluate` is the one pass: PACK001 over loaded packs only, PACK006 as an Unresolved (required when the pack is) for packs that could not be loaded, and PACK002 to PACK005, PACK007, PACK008 from per-pack issues. PACK009 stays retired.

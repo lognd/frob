@@ -1,0 +1,41 @@
+# The built-in `unity` pack: Unity engine vocabulary. Opt-in: it is enabled only by the root config
+# (`[[packs.enable]] name = "unity"` or `[packs] enabled = ["unity"]`), never by an adapter.
+# The first vocabulary names the engine entry points: code the engine calls, so no caller exists in
+# the repository. COV001 treats them as reached.
+[pack]
+name = "unity"
+version = "0.1.0"
+
+# MonoBehaviour and ScriptableObject messages, matched on a type that derives from an `entry.base`.
+[[vocab]]
+lang = "csharp"
+class = "entry.message"
+names = [
+  "Awake", "Start", "Update", "FixedUpdate", "LateUpdate", "OnEnable", "OnDisable",
+  "OnDestroy", "OnValidate", "Reset", "OnGUI", "OnApplicationQuit",
+]
+
+# Message families matched on a name prefix: OnDrawGizmos*, OnTrigger*, OnCollision*, OnMouse*.
+[[vocab]]
+lang = "csharp"
+class = "entry.message_prefix"
+names = ["OnDrawGizmos", "OnTrigger", "OnCollision", "OnMouse"]
+
+# Engine base types; derivation is followed transitively through project-local bases.
+[[vocab]]
+lang = "csharp"
+class = "entry.base"
+names = ["MonoBehaviour", "ScriptableObject"]
+
+# Attributes on a method that make the method an entry point.
+[[vocab]]
+lang = "csharp"
+class = "entry.method_attribute"
+names = ["RuntimeInitializeOnLoadMethod", "MenuItem", "ContextMenu"]
+
+# Attributes on a type: [InitializeOnLoad] roots its static constructor, [CreateAssetMenu] marks a
+# ScriptableObject type whose messages the engine calls.
+[[vocab]]
+lang = "csharp"
+class = "entry.type_attribute"
+names = ["InitializeOnLoad", "CreateAssetMenu"]

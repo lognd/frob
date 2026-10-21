@@ -1,0 +1,1 @@
+Opt-in built-in `unity` pack (`packs/unity.toml`): Unity engine entry points (MonoBehaviour and ScriptableObject messages, `[MenuItem]`, `[RuntimeInitializeOnLoadMethod]`, `[InitializeOnLoad]` and friends) are reach roots for COV001 when the root config enables the pack.

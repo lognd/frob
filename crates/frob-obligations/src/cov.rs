@@ -10,10 +10,11 @@ use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
 use std::path::Path;
 
 use frob_tests::catalog::{is_test_file, is_test_fn};
-use frob_tests::reach::{Sources, called_names};
+use frob_tests::reach::{Sources, called_names, engine_roots};
 use gob_directives::Binding;
 use gob_directives::DirectiveRecord;
 use gob_languages::Language;
+use gob_packs::unity::{self, UnityGate, UnityPack};
 use gob_rules::{Finding, Severity};
 use gob_symbols::{
     Admit, CallEdge, CrateDeps, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind,
@@ -284,6 +285,36 @@ fn declared(graph: &SymbolGraph, directives: &[DirectiveRecord]) -> HashSet<Symr
     out
 }
 
+// frob:ticket 01M44YQXS4BXE0X07FBYR0STJ5
+/// The engine entry points the root config's `unity` pack makes roots; empty when the pack is not enabled.
+fn unity_roots(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> BTreeSet<Symref> {
+    let Ok(config) = std::fs::read_to_string(root.join("frob.toml")) else {
+        return BTreeSet::new();
+    };
+    let gate = match UnityGate::parse("frob.toml", &config) {
+        Ok(g) if g.is_enabled() => g,
+        Ok(_) => return BTreeSet::new(),
+        Err(e) => {
+            tracing::warn!(error = %e, "frob.toml [packs] unreadable; unity pack treated as disabled");
+            return BTreeSet::new();
+        }
+    };
+    let pack = match UnityPack::builtin() {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::error!(error = %e, "built-in {} pack is invalid", unity::NAME);
+            return BTreeSet::new();
+        }
+    };
+    let mut roots = engine_roots(graph, sources, &pack.vocab);
+    roots.retain(|s| gate.is_active_for(s.path()));
+    tracing::info!(
+        roots = roots.len(),
+        "unity engine entry points are reach roots"
+    );
+    roots
+}
+
 /// COV001 over the repo: public functions and methods with no test reaching them.
 pub(crate) fn cov001(
     root: &Path,
@@ -300,8 +331,10 @@ pub(crate) fn cov001(
         })
         .map(|r| r.symref.clone())
         .collect();
-    let must = reach_of(&tests, &adjacency(graph, &mut sources, false));
-    let maybe = reach_of(&tests, &adjacency(graph, &mut sources, true));
+    let engine = unity_roots(root, graph, &mut sources);
+    let seeds: BTreeSet<Symref> = tests.union(&engine).cloned().collect();
+    let must = reach_of(&seeds, &adjacency(graph, &mut sources, false));
+    let maybe = reach_of(&seeds, &adjacency(graph, &mut sources, true));
     let mut by_name: HashMap<&str, Vec<&SymbolRecord>> = HashMap::new();
     for r in graph.records().filter(|r| is_callable(r)) {
         if let Some(n) = r.symref.name() {
@@ -337,6 +370,7 @@ pub(crate) fn cov001(
             || rec.implements.is_some()
             || is_test_file(rec.symref.path())
             || tests.contains(&rec.symref)
+            || engine.contains(&rec.symref)
             || reached.contains(&rec.symref)
             || covered.contains(&rec.symref)
         {

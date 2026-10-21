@@ -19,6 +19,7 @@ gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-directives = { version = "0.532.0", path = "../gob-directives" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
