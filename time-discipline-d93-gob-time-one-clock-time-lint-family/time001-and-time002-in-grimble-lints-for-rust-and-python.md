@@ -30,6 +30,10 @@ bound = false
 [[acceptance]]
 text = "TIME001 and TIME002 resolve import aliases and the tz keyword, so datetime.now(tz) and time.time() stay quiet and an aliased utcnow() fires"
 bound = false
+
+[[acceptance]]
+text = "A walk with TypeScript or C# files reports TIME001 and TIME002 Unresolved, and a walk with no Rust or Python file is not applicable"
+bound = false
 +++
 
 rules.md 3.2 (D93): TIME001 local-clock-read and TIME002 naive-aware-mix in grimble-lints for Rust and Python first (the two first-party adapters), as GRL rules in the standard pack where they need def-use, following how PATH001-003 were built (rules.md 3.1, ~21PHK3V). Callee vocabulary per language for current-time reads, local-zone constructors and naive/aware datetime construction; a language without those roles reports Unresolved, never clean. Fixtures that fire and stay quiet for each rule and language; explain pages; [time] knobs in grimble.toml if needed; this repository raises TIME001 and TIME002 to Error in its own config.
