@@ -2,13 +2,13 @@
 id = "01M47QV23EAN5DE6DDV9HS3VP7"
 title = "cargo dev ecosystem: base vs PR finding diff over a pinned real-project corpus"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:07Z"
-updated = "2026-10-06T13:41:11Z"
+updated = "2026-10-21T15:12:32Z"
 scope = ["crates/gob-dev/**", "ecosystem.toml", ".github/workflows/**"]
 
 [[acceptance]]
