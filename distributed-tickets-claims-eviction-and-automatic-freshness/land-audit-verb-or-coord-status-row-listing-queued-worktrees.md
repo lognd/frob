@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T04:27:12Z"
-updated = "2026-10-21T08:31:44Z"
+updated = "2026-10-21T08:33:58Z"
 scope = ["crates/frob-land/src/hunk_presence.rs", "crates/frob-land/src/train.rs", "crates/frob-land/tests/land.rs", "changelog.d/01M5EBD66SH12P69KWVXA8K2NC.added.md"]
 
 [[acceptance]]
