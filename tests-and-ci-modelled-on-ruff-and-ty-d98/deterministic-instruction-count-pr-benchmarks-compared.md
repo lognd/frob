@@ -2,7 +2,8 @@
 id = "01M47QVC49RXV29NCG3N9G1JSM"
 title = "Deterministic instruction-count PR benchmarks compared against the base"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
