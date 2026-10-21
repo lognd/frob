@@ -1,0 +1,22 @@
+rule SQL103 "sql-built-by-concatenation" {
+  lang python
+  severity error
+
+  find c: call where c.callee.name == "execute" and c.text ~ /execute\(\s*["'][^"']*["']\s*[%+]/
+  report c "SQL text is built by concatenation or percent formatting: parameters are not separated from the query"
+
+  example fire python """
+    cur.execute("SELECT * FROM users WHERE id = " + uid)  #~ error
+  """
+  example clean python """
+    cur.execute("SELECT * FROM users WHERE id = %s", (uid,))
+  """
+  example notapplicable markdown """
+    Prose has no queries.
+  """
+  explain """
+    Joining a literal query with `+` or formatting it with `%` before it reaches the driver lets input rewrite the query (injection). A tuple passed as the second argument is the safe form and does not match. Other languages and drivers need an adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    Keep the query a literal and pass values as the second argument: `execute("... WHERE id = %s", (uid,))`.
+  """
+}

@@ -1,0 +1,22 @@
+rule SQL104 "orm-raw-sql-interpolated" {
+  lang python
+  severity error
+
+  find c: call where c.callee.name ~ /^(raw|text)$/ and c.text ~ /(raw|text)\(\s*f["']/
+  report c "Raw ORM SQL is built with an f-string: parameters are not separated from the query"
+
+  example fire python """
+    User.objects.raw(f"SELECT * FROM users WHERE id = {uid}")  #~ error
+  """
+  example clean python """
+    User.objects.raw("SELECT * FROM users WHERE id = %s", [uid])
+  """
+  example notapplicable markdown """
+    Prose has no queries.
+  """
+  explain """
+    ORM escape hatches (`raw()` in Django, `text()` in SQLAlchemy) run the string as written, so an interpolated value is an injection sink even though the ORM is in use. Other languages and drivers need an adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    Pass bound parameters: `raw("... WHERE id = %s", [uid])` or `text("... WHERE id = :id").bindparams(id=uid)`.
+  """
+}

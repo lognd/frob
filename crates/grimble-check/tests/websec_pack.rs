@@ -34,6 +34,9 @@ fn catalog_has_one_rule_per_family_with_websec_under_sec() {
             ("WEBSEC", "SEC", "SEC103"),
             ("WEBSEC", "SEC", "SEC104"),
             ("SQL", "SQL", "SQL101"),
+            ("SQL", "SQL", "SQL102"),
+            ("SQL", "SQL", "SQL103"),
+            ("SQL", "SQL", "SQL104"),
             ("COMPLY", "COMPLY", "COMPLY101"),
             ("ROUTE", "ROUTE", "ROUTE101"),
             ("ROUTE", "ROUTE", "ROUTE102"),
@@ -205,6 +208,35 @@ fn websec_rules_are_not_applicable_outside_python() {
             .iter()
             .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
             .unwrap();
+        assert!(src.contains("example notapplicable markdown"), "{id}");
+    }
+}
+
+// frob:tests compile_rule
+#[test]
+fn sql_slice_rules_fire_on_their_example_and_teach_a_remedy() {
+    for id in ["SQL102", "SQL103", "SQL104"] {
+        let (file, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{id}: {:?} {:?}", t.diagnostics, t.examples);
+        assert!(src.contains("example fire python"), "{id}");
+        assert!(src.contains("## Remedy"), "{id}");
+    }
+}
+
+// frob:tests compile_rule
+#[test]
+fn sql_slice_clean_examples_pass_and_other_languages_are_not_applicable() {
+    // No adapter for other languages: the markdown example proves NotApplicable, never clean.
+    for id in ["SQL102", "SQL103", "SQL104"] {
+        let (_, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        assert!(src.contains("example clean python"), "{id}");
         assert!(src.contains("example notapplicable markdown"), "{id}");
     }
 }

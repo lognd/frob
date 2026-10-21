@@ -1,0 +1,22 @@
+rule SQL102 "sql-built-by-format" {
+  lang python
+  severity error
+
+  find c: call where c.callee.name == "execute" and c.text ~ /execute\(\s*["'][^"']*["']\s*\.format\(/
+  report c "SQL text is built with str.format: parameters are not separated from the query"
+
+  example fire python """
+    cur.execute("SELECT * FROM users WHERE id = {}".format(uid))  #~ error
+  """
+  example clean python """
+    cur.execute("SELECT * FROM users WHERE id = %s", (uid,))
+  """
+  example notapplicable markdown """
+    Prose has no queries.
+  """
+  explain """
+    Formatting values into SQL text with `.format()` lets input rewrite the query (injection), the same sink SQL101 flags for f-strings. Other languages and drivers need an adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    Pass the values as bound parameters: `execute("... WHERE id = %s", (uid,))`.
+  """
+}
