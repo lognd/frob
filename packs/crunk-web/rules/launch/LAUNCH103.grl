@@ -1,0 +1,22 @@
+rule LAUNCH103 "manifest-link-without-href" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "link" and e has attribute(name = "rel", value = "manifest") and not e has attribute(name = "href")
+  report e "web app manifest link has no href: the site is not installable"
+
+  example fire html """
+    <link rel="manifest">  <!--~ warn -->
+  """
+  example clean html """
+    <link rel="manifest" href="/site.webmanifest">
+  """
+  example notapplicable markdown """
+    A manifest is declared <link rel="manifest"> in prose.
+  """
+  explain """
+    A manifest link without `href` leaves the app name, icons and theme unset for installs.
+    ## Remedy
+    Add an `href` attribute pointing at the web app manifest.
+  """
+}

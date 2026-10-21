@@ -1,0 +1,22 @@
+rule LAUNCH104 "social-image-without-content" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "meta" and e has attribute(name = "property", value = "og:image") and not e has attribute(name = "content")
+  report e "og:image has no content: shared links render without a preview image"
+
+  example fire html """
+    <meta property="og:image">  <!--~ warn -->
+  """
+  example clean html """
+    <meta property="og:image" content="https://example.com/share.png">
+  """
+  example notapplicable markdown """
+    The tag <meta property="og:image"> is described in prose.
+  """
+  explain """
+    The Open Graph image is the picture chat and social apps show when the page is shared; without `content` it is empty.
+    ## Remedy
+    Add a `content` attribute holding the absolute URL of the share image.
+  """
+}
