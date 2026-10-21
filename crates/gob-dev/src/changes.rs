@@ -213,7 +213,7 @@ mod tests {
             .collect()
     }
 
-    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap::select_steps
+    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap.select_steps
     #[test]
     fn docs_only_diff_selects_only_fmt_gen_and_check() {
         let m = map();
@@ -222,7 +222,7 @@ mod tests {
         assert_eq!(m.select_steps(&plan, &all_steps()), ["fmt", "gen", "check"]);
     }
 
-    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap::plan
+    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap.plan
     #[test]
     fn rust_diff_selects_the_full_set() {
         let m = map();
@@ -240,7 +240,7 @@ mod tests {
         assert!(plan.full && !plan.docs_only);
     }
 
-    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap::plan
+    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap.plan
     #[test]
     fn crunk_diff_runs_the_crunk_job_not_the_workspace() {
         let plan = map().plan(&["crates/crunk-values/src/color.rs", "tickets/x/ticket.md"]);
@@ -255,7 +255,7 @@ mod tests {
         assert!(map().plan(&["docs/crunk/ci.md"]).crunk);
     }
 
-    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap::plan
+    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap.plan
     #[test]
     fn node_diff_selects_the_node_and_playwright_job() {
         let m = map();
@@ -264,7 +264,7 @@ mod tests {
         assert!(!m.plan(&["crates/crunk-values/src/lib.rs"]).node);
     }
 
-    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap::plan
+    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap.plan
     #[test]
     fn workflow_diff_sets_the_workflows_flag_and_runs_everything() {
         let m = map();
@@ -273,14 +273,14 @@ mod tests {
         assert!(!m.plan(&["crates/gob-fix/src/lib.rs"]).workflows);
     }
 
-    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap::parse
+    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap.parse
     #[test]
     fn unknown_class_names_are_rejected() {
         let bad = "docs_only_steps = []\n[[class]]\nname = \"mystery\"\nprefixes = []\n";
         assert!(matches!(ChangeMap::parse(bad), Err(ChangesError::Map(_))));
     }
 
-    // frob:tests crates/gob-dev/src/changes.rs::Plan::render
+    // frob:tests crates/gob-dev/src/changes.rs::Plan.render
     #[test]
     fn render_prints_key_value_lines() {
         let lines = Plan::everything().render();
@@ -289,7 +289,7 @@ mod tests {
         assert_eq!(lines[5], "docs_only=false");
     }
 
-    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap::plan
+    // frob:tests crates/gob-dev/src/changes.rs::ChangeMap.plan
     #[test]
     fn an_empty_diff_is_not_docs_only() {
         let plan = map().plan::<&str>(&[]);
