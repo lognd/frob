@@ -330,12 +330,24 @@ pub fn walk_paths(root: &Path, config: &WalkConfig) -> Result<PathWalkResult, Wa
 /// Returns [`WalkError::BadGlob`] when an exclude glob does not compile.
 /// Unreadable files are logged at warn and skipped.
 pub fn walk(root: &Path, config: &WalkConfig) -> Result<WalkResult, WalkError> {
+    walk_with(root, config, &ContentSource::locate(root))
+}
+
+// frob:ticket 01M4Q3A2SA49G06ZVAN753TYM2
+/// Like [`walk`], but reads content through the injected `source` instead of the installed backend.
+///
+/// # Errors
+/// Returns [`WalkError::BadGlob`] when an exclude glob does not compile.
+pub fn walk_with(
+    root: &Path,
+    config: &WalkConfig,
+    source: &ContentSource,
+) -> Result<WalkResult, WalkError> {
     // frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
     let (listing, mut out) = list(root, config)?;
     let pending: Vec<String> = listing.into_iter().map(|(path, _)| path).collect();
     // Digests are over the content as git would store it (clean filters applied),
     // so a CRLF checkout under core.autocrlf hashes like its LF twin.
-    let source = ContentSource::locate(root);
     out.files = pending
         .par_chunks(READ_CHUNK)
         .flat_map_iter(|chunk| {
@@ -381,6 +393,35 @@ mod tests {
 
     fn paths(r: &WalkResult) -> Vec<&str> {
         r.files.iter().map(|f| f.path.as_str()).collect()
+    }
+
+    #[derive(Debug)]
+    struct FakeLocator;
+
+    struct FakeReader;
+
+    impl FileReader for FakeReader {
+        fn read(&mut self, rel: &str) -> Result<Option<Vec<u8>>, BackendError> {
+            Ok(Some(format!("fake:{rel}").into_bytes()))
+        }
+    }
+
+    impl ContentLocator for FakeLocator {
+        fn with_reader(&self, f: &mut dyn FnMut(&mut dyn FileReader)) {
+            f(&mut FakeReader);
+        }
+    }
+
+    // frob:tests crates/gob-walk/src/lib.rs::walk_with
+    #[test]
+    fn a_fake_reader_drives_a_walk_without_any_git_backend() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        write(root, "a.rs", "on disk");
+        let source = ContentSource::with_locator(root, std::sync::Arc::new(FakeLocator));
+        let found = walk_with(root, &WalkConfig::default(), &source).unwrap();
+        assert_eq!(paths(&found), ["a.rs"]);
+        assert_eq!(found.files[0].digest, Digest::of(b"fake:a.rs"));
     }
 
     #[test]

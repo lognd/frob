@@ -62,3 +62,16 @@ fn outside_a_repository_bytes_are_read_raw() {
     let source = ContentSource::locate(dir.path());
     source.with_reader(|r| assert_eq!(r.read("a.txt").unwrap(), b"x\r\ny\r\n"));
 }
+
+// frob:tests crates/gob-walk/src/lib.rs::walk_with
+#[test]
+fn a_worktree_source_implementing_the_walk_traits_drives_an_injected_walk() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    autocrlf_repo(dir.path());
+    std::fs::write(dir.path().join("f.rs"), "a\r\nb\r\n").unwrap();
+    let locator = gob_git::WorktreeSource::locate(dir.path()).expect("inside a checkout");
+    let source = ContentSource::with_locator(dir.path(), std::sync::Arc::new(locator));
+    let found = gob_walk::walk_with(dir.path(), &WalkConfig::default(), &source).expect("walk");
+    let f = found.files.iter().find(|f| f.path == "f.rs").expect("f.rs");
+    assert_eq!(f.digest, Digest::of(b"a\nb\n"));
+}

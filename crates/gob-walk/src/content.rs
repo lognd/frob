@@ -63,6 +63,15 @@ impl ContentSource {
         }
     }
 
+    /// A source reading through an injected `locator` for `root`, bypassing the process-wide backend.
+    pub fn with_locator(root: &Path, locator: Arc<dyn ContentLocator>) -> Self {
+        tracing::debug!(root = %root.display(), "content source from injected locator");
+        Self {
+            root: root.to_path_buf(),
+            git: Some(locator),
+        }
+    }
+
     /// Runs `f` with a reader; a repository that cannot be opened degrades to raw reads with a warning.
     ///
     /// # Panics
