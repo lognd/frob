@@ -2,7 +2,8 @@
 id = "01M43AXRXEQED01AP4SQVSC54Z"
 title = "grimble-websec family COMPLY-PII: first slice of rules in GRL"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
