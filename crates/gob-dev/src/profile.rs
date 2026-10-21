@@ -209,7 +209,9 @@ pub fn run(opts: &Options, say: &mut dyn FnMut(&str)) -> Result<Report, ProfileE
     let file = ScenarioFile::builtin()?;
     let dir = if let Some(d) = &opts.bin_dir {
         // Absolute, because commands run with the fixture as their working directory.
-        gob_exec::canonical(d).map_err(|e| ProfileError::Io(format!("{}: {e}", d.display())))?
+        gob_exec::canonical(d).map_err(|e| {
+            ProfileError::Io(format!("{}: {e}", gob_path::Shown::with_home(d, None)))
+        })?
     } else {
         say("building frob, grimble and crunk with the profiling profile");
         build(&runner, &opts.root)?
@@ -283,7 +285,7 @@ pub fn run(opts: &Options, say: &mut dyn FnMut(&str)) -> Result<Report, ProfileE
 /// [`ProfileError::Report`] when the file is unreadable or not a report.
 pub fn read_report(path: &Path) -> Result<Report, ProfileError> {
     let fail = |reason: String| ProfileError::Report {
-        path: path.display().to_string(),
+        path: gob_path::Shown::with_home(path, None).to_string(),
         reason,
     };
     let text = std::fs::read_to_string(path).map_err(|e| fail(e.to_string()))?;
@@ -296,7 +298,7 @@ pub fn read_report(path: &Path) -> Result<Report, ProfileError> {
 /// [`ProfileError::Report`] when the file cannot be written.
 pub fn write_report(path: &Path, report: &Report) -> Result<(), ProfileError> {
     let fail = |reason: String| ProfileError::Report {
-        path: path.display().to_string(),
+        path: gob_path::Shown::with_home(path, None).to_string(),
         reason,
     };
     if let Some(dir) = path.parent() {
@@ -304,7 +306,7 @@ pub fn write_report(path: &Path, report: &Report) -> Result<(), ProfileError> {
     }
     let json = serde_json::to_string_pretty(report).map_err(|e| fail(e.to_string()))?;
     std::fs::write(path, format!("{json}\n")).map_err(|e| fail(e.to_string()))?;
-    tracing::info!(path = %path.display(), entries = report.entries.len(), "profile report written");
+    tracing::info!(path = ?path, entries = report.entries.len(), "profile report written");
     Ok(())
 }
 

@@ -38,7 +38,7 @@ impl Adapter for OpaqueAdapter {
     fn fold(&self, _tree: &ConcreteTree, input: &FileInput<'_>) -> Result<Folded, FoldError> {
         let ext = std::path::Path::new(input.path)
             .extension()
-            .and_then(|e| e.to_str())
+            .and_then(gob_path::exact_text)
             .unwrap_or("")
             .to_ascii_lowercase();
         opaque_file(input, &ext)

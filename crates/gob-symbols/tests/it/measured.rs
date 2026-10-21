@@ -37,14 +37,16 @@ fn files_under(dir: &Path, exts: &[&str]) -> Vec<(String, String)> {
                 stack.push(p);
             } else if p
                 .extension()
-                .and_then(|x| x.to_str())
+                .and_then(gob_path::exact_text)
                 .is_some_and(|x| exts.contains(&x))
             {
-                let rel = p
-                    .strip_prefix(env!("CARGO_MANIFEST_DIR"))
-                    .expect("under manifest dir")
-                    .to_string_lossy()
-                    .replace('\\', "/");
+                let rel = gob_path::Shown::with_home(
+                    p.strip_prefix(env!("CARGO_MANIFEST_DIR"))
+                        .expect("under manifest dir"),
+                    None,
+                )
+                .to_string()
+                .replace('\\', "/");
                 out.push((rel, std::fs::read_to_string(&p).expect("read")));
             }
         }

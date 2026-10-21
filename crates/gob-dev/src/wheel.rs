@@ -90,7 +90,7 @@ impl HostOs {
 #[derive(Debug, thiserror::Error)]
 pub enum WheelError {
     /// `products.toml` is unreadable or malformed.
-    #[error("{}: {reason}", path.display())]
+    #[error("{}: {reason}", gob_path::Shown::with_home(path, None))]
     Products {
         /// The file.
         path: PathBuf,
@@ -106,7 +106,7 @@ pub enum WheelError {
         known: String,
     },
     /// A path cannot be passed as an argument because it is not valid UTF-8.
-    #[error("path is not valid UTF-8: {}", .0.display())]
+    #[error("path is not valid UTF-8: {}", gob_path::Shown::with_home(&.0, None))]
     Path(PathBuf),
     /// A process could not be started, or ended abnormally.
     #[error("{0}")]
@@ -170,7 +170,7 @@ pub fn read_products(root: &Path) -> Result<Vec<Product>, WheelError> {
 /// # Errors
 /// [`WheelError::Path`] when the path is not valid UTF-8 (`gob-exec` argv are strings).
 pub fn path_arg(path: &Path) -> Result<String, WheelError> {
-    path.to_str()
+    gob_path::exact_text(&path)
         .map(str::to_owned)
         .ok_or_else(|| WheelError::Path(path.to_path_buf()))
 }
@@ -282,6 +282,11 @@ pub fn compatibility(opts: &BuildOptions) -> Option<String> {
     }
 }
 
+/// Lossy display text of a path for labels and messages.
+fn shown(path: &Path) -> String {
+    gob_path::Shown::with_home(path, None).to_string()
+}
+
 /// The ordered processes that build the wheels of the selected products.
 ///
 /// # Errors
@@ -312,7 +317,7 @@ pub fn plan(opts: &BuildOptions, products: &[Product]) -> Result<Vec<Planned>, W
     let compat = compatibility(opts);
     let mut steps = vec![
         Planned {
-            label: format!("maturin environment in {}", venv.display()),
+            label: format!("maturin environment in {}", shown(&venv)),
             clean: None,
             spec: tool(
                 "uv",
@@ -357,7 +362,7 @@ pub fn plan(opts: &BuildOptions, products: &[Product]) -> Result<Vec<Planned>, W
     for name in selected {
         let project = opts.target_dir.join("pypi").join(name);
         steps.push(Planned {
-            label: format!("{name}: rendering {}", project.display()),
+            label: format!("{name}: rendering {}", shown(&project)),
             clean: Some(project.clone()),
             spec: exe(
                 &python,
@@ -381,7 +386,7 @@ pub fn plan(opts: &BuildOptions, products: &[Product]) -> Result<Vec<Planned>, W
         }
         args.extend(["--target-dir".to_owned(), path_arg(&opts.target_dir)?]);
         steps.push(Planned {
-            label: format!("{name}: building the wheel into {}", opts.out.display()),
+            label: format!("{name}: building the wheel into {}", shown(&opts.out)),
             clean: None,
             spec: exe(&maturin, args, &project, BUILD_TIMEOUT),
         });
@@ -396,7 +401,7 @@ pub fn plan(opts: &BuildOptions, products: &[Product]) -> Result<Vec<Planned>, W
 pub fn wheels_of(dir: &Path, name: &str) -> Result<Vec<PathBuf>, WheelError> {
     let prefix = format!("{name}-");
     let entries = std::fs::read_dir(dir).map_err(|e| WheelError::Io {
-        what: format!("listing {}", dir.display()),
+        what: format!("listing {}", shown(dir)),
         reason: e.to_string(),
     })?;
     let mut found: Vec<PathBuf> = entries
@@ -404,12 +409,14 @@ pub fn wheels_of(dir: &Path, name: &str) -> Result<Vec<PathBuf>, WheelError> {
         .map(|e| e.path())
         .filter(|p| {
             p.is_file()
-                && p.file_name().and_then(|n| n.to_str()).is_some_and(|n| {
-                    n.starts_with(&prefix)
-                        && Path::new(n)
-                            .extension()
-                            .is_some_and(|x| x.eq_ignore_ascii_case("whl"))
-                })
+                && p.file_name()
+                    .and_then(gob_path::exact_text)
+                    .is_some_and(|n| {
+                        n.starts_with(&prefix)
+                            && Path::new(n)
+                                .extension()
+                                .is_some_and(|x| x.eq_ignore_ascii_case("whl"))
+                    })
         })
         .collect();
     found.sort();
@@ -425,7 +432,7 @@ pub fn build(opts: &BuildOptions) -> Result<(), WheelError> {
     let products = read_products(&opts.root)?;
     let steps = plan(opts, &products)?;
     std::fs::create_dir_all(&opts.out).map_err(|e| WheelError::Io {
-        what: format!("creating {}", opts.out.display()),
+        what: format!("creating {}", shown(&opts.out)),
         reason: e.to_string(),
     })?;
     for step in &steps {
@@ -433,9 +440,9 @@ pub fn build(opts: &BuildOptions) -> Result<(), WheelError> {
         if let Some(dir) = &step.clean
             && dir.exists()
         {
-            tracing::info!(dir = %dir.display(), "removing the stale rendered project");
+            tracing::info!(dir = ?dir, "removing the stale rendered project");
             std::fs::remove_dir_all(dir).map_err(|e| WheelError::Io {
-                what: format!("removing {}", dir.display()),
+                what: format!("removing {}", shown(dir)),
                 reason: e.to_string(),
             })?;
         }
@@ -451,11 +458,11 @@ pub fn build(opts: &BuildOptions) -> Result<(), WheelError> {
         if found.is_empty() {
             return Err(WheelError::Exec(format!(
                 "{name}: maturin produced no wheel in {}",
-                opts.out.display()
+                shown(&opts.out)
             )));
         }
         for wheel in found {
-            emit(&wheel.display().to_string());
+            emit(&gob_path::Shown::with_home(&wheel, None).to_string());
         }
     }
     Ok(())
@@ -476,7 +483,7 @@ pub fn build_from_env(
 ) -> Result<(), WheelError> {
     let absolute = |p: &Path| {
         std::path::absolute(p).map_err(|e| WheelError::Io {
-            what: format!("resolving {}", p.display()),
+            what: format!("resolving {}", shown(p)),
             reason: e.to_string(),
         })
     };

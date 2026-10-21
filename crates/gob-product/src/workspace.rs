@@ -22,7 +22,7 @@ pub fn locate_root(product: &str, cwd: &Path) -> PathBuf {
         .ancestors()
         .find(|d| d.join(&config).is_file() || d.join(".git").exists());
     let root = found.unwrap_or(cwd).to_path_buf();
-    tracing::debug!(root = %root.display(), "repository root located");
+    tracing::debug!(root = ?root, "repository root located");
     root
 }
 
@@ -40,14 +40,14 @@ pub fn require_config<P: Product>(verb: &str, ctx: &Context) -> Result<(), CliEr
     if P::has_config(&root) {
         return Ok(());
     }
-    tracing::info!(verb, root = %root.display(), "no config file; refusing");
+    tracing::info!(verb, root = ?root, "no config file; refusing");
     Err(Refusal::new(
         CODE_NO_CONFIG,
         RefusalClass::GuardNeedsAction,
         format!(
             "no {}.toml found at or above {}",
             P::NAME,
-            ctx.cwd.display()
+            gob_path::Shown::with_home(&ctx.cwd, None)
         ),
     )
     .with_remedy(format!(
@@ -66,7 +66,7 @@ pub fn require_config<P: Product>(verb: &str, ctx: &Context) -> Result<(), CliEr
 pub fn require_untracked_state(root: &Path) -> Result<(), CliError> {
     match gob_trust::check_state_untracked(root) {
         Ok(()) => {
-            tracing::debug!(root = %root.display(), "no tracked state files");
+            tracing::debug!(root = ?root, "no tracked state files");
             Ok(())
         }
         Err(GuardError::StateTracked { files }) => {

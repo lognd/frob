@@ -163,7 +163,7 @@ pub fn load_examples(crates_dir: &Path, id: &str) -> Vec<Example> {
     let mut crate_dirs: Vec<_> = match std::fs::read_dir(crates_dir) {
         Ok(rd) => rd.filter_map(Result::ok).map(|e| e.path()).collect(),
         Err(e) => {
-            tracing::warn!(dir = %crates_dir.display(), error = %e, "cannot list crates dir");
+            tracing::warn!(dir = ?crates_dir, error = %e, "cannot list crates dir");
             return Vec::new();
         }
     };
@@ -181,7 +181,7 @@ pub fn load_examples(crates_dir: &Path, id: &str) -> Vec<Example> {
         };
         match parse_suite(&text) {
             Ok(blocks) => {
-                tracing::debug!(path = %path.display(), blocks = blocks.len(), "corpus parsed");
+                tracing::debug!(path = ?path, blocks = blocks.len(), "corpus parsed");
                 examples.extend(
                     blocks
                         .iter()
@@ -190,7 +190,7 @@ pub fn load_examples(crates_dir: &Path, id: &str) -> Vec<Example> {
                 );
             }
             Err(e) => {
-                tracing::warn!(path = %path.display(), error = %e.message, "corpus unparsable");
+                tracing::warn!(path = ?path, error = %e.message, "corpus unparsable");
             }
         }
     }

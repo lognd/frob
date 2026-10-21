@@ -77,7 +77,7 @@ impl TrustStore {
     /// [`StoreError::Trust`] when the file exists but cannot be read.
     pub fn open(path: &Path, key: MachineKey) -> Result<Self, StoreError> {
         let (entries, inert) = file::load(path, &key)?;
-        tracing::debug!(path = %path.display(), entries = entries.len(), inert, "trust store opened");
+        tracing::debug!(path = ?path, entries = entries.len(), inert, "trust store opened");
         Ok(Self {
             path: path.to_owned(),
             key,

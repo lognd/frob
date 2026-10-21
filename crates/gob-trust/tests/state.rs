@@ -1,8 +1,4 @@
 //! Acceptance tests for the authenticated state store (~TX6YZZE).
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -20,7 +16,11 @@ fn entry_file(dir: &Path, kind: &str) -> PathBuf {
     fs::read_dir(dir.join("state").join(kind))
         .unwrap()
         .map(|e| e.unwrap().path())
-        .find(|p| !p.file_name().unwrap().to_string_lossy().starts_with('.'))
+        .find(|p| {
+            !gob_path::Shown::with_home(std::path::Path::new(p.file_name().unwrap()), None)
+                .to_string()
+                .starts_with('.')
+        })
         .unwrap()
 }
 

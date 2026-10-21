@@ -177,7 +177,7 @@ pub fn tool_env_dirs(
         let scripts = venv.join("Scripts");
         let is_env = is_file(&venv.join("pyvenv.cfg"));
         if is_env && own.iter().any(|n| is_file(&scripts.join(n))) && !dirs.contains(&scripts) {
-            tracing::debug!(env = %venv.display(), "tool environment of the running executable found");
+            tracing::debug!(env = ?venv, "tool environment of the running executable found");
             dirs.push(scripts);
         }
     }

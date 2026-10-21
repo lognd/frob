@@ -21,7 +21,7 @@ pub const OUT_DIR: &str = "packs/std/generated";
 #[derive(Debug, thiserror::Error)]
 pub enum StdRulesError {
     /// A source directory or file could not be read.
-    #[error("read {}: {source}", path.display())]
+    #[error("read {}: {source}", gob_path::Shown::with_home(path, None))]
     Io {
         /// The path.
         path: PathBuf,
@@ -70,7 +70,11 @@ pub fn generate(root: &Path) -> Result<Vec<GenFile>, StdRulesError> {
         let rel = format!(
             "{SOURCE_DIR}/{}",
             path.file_name()
-                .map_or_else(String::new, |n| n.to_string_lossy().into_owned())
+                .map_or_else(String::new, |n| gob_path::Shown::with_home(
+                    std::path::Path::new(&n),
+                    None
+                )
+                .to_string())
         );
         let text = std::fs::read_to_string(&path).map_err(|source| StdRulesError::Io {
             path: path.clone(),

@@ -41,14 +41,17 @@ fn expect_file(path: &Path, actual: &str) {
     if std::env::var_os("WEB_CORPUS_UPDATE").is_some() {
         std::fs::write(path, actual).expect("write expectation");
         // Also echoed so a remote run (goway) can be copied back by hand.
-        println!("@@@FILE {}\n{actual}@@@END", path.display());
+        println!(
+            "@@@FILE {}\n{actual}@@@END",
+            gob_path::Shown::with_home(path, None)
+        );
         return;
     }
     let want = std::fs::read_to_string(path).unwrap_or_default();
     assert!(
         want == actual,
         "{} differs; actual output follows\n-----\n{actual}\n-----",
-        path.display()
+        gob_path::Shown::with_home(path, None)
     );
 }
 
@@ -106,7 +109,7 @@ fn render_dir(lang_dir: &str) -> String {
     let mut names: Vec<String> = std::fs::read_dir(&dir)
         .expect("fixture dir")
         .flatten()
-        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .map(|e| gob_path::Shown::with_home(std::path::Path::new(&e.file_name()), None).to_string())
         .filter(|n| n != "expected.txt")
         .collect();
     names.sort();

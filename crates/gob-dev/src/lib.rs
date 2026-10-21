@@ -9,10 +9,6 @@
     clippy::format_push_string,
     reason = "page renderers build markdown with push_str(&format!(..)) for readability"
 )]
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 pub mod bench_ic;
 pub mod changes;
@@ -156,7 +152,10 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
 
 /// No enclosing directory holds a `Cargo.toml` with a `[workspace]` table.
 #[derive(Debug, thiserror::Error)]
-#[error("no Cargo.toml with a [workspace] table found at or above {}", start.display())]
+#[error(
+    "no Cargo.toml with a [workspace] table found at or above {}",
+    gob_path::Shown::with_home(start, None)
+)]
 pub struct RootError {
     /// Directory the upward search started from.
     pub start: PathBuf,
@@ -175,11 +174,11 @@ pub fn find_workspace_root(start: &Path) -> Result<PathBuf, RootError> {
             .parse::<toml::Table>()
             .is_ok_and(|t| t.contains_key("workspace"));
         if is_workspace {
-            tracing::debug!(root = %dir.display(), "workspace root found");
+            tracing::debug!(root = ?dir, "workspace root found");
             return Ok(dir.to_path_buf());
         }
     }
-    tracing::error!(start = %start.display(), "no workspace root found");
+    tracing::error!(start = ?start, "no workspace root found");
     Err(RootError {
         start: start.to_path_buf(),
     })

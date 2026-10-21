@@ -8,6 +8,8 @@
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 
+use gob_path::{Shown, exact_text};
+
 /// The shell (or parser) that will read the produced line.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Shell {
@@ -85,11 +87,11 @@ pub fn command_line(shell: Shell, argv: &[Arg]) -> String {
 }
 
 fn text_of(arg: &Arg) -> String {
-    if let Some(s) = arg.0.to_str() {
+    if let Some(s) = exact_text(&arg.0) {
         return s.to_owned();
     }
     tracing::warn!(arg = ?arg.0, "non-Unicode argument written lossily into a command line");
-    arg.0.to_string_lossy().into_owned()
+    Shown::with_home(Path::new(&arg.0), None).to_string()
 }
 
 fn join_with(words: &[String], f: impl Fn(&str) -> String) -> String {

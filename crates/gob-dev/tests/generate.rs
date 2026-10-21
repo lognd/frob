@@ -1,8 +1,4 @@
 //! Determinism, check-mode and orphan-page tests for the generator.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -22,11 +18,10 @@ fn tree(root: &Path) -> Vec<(String, String)> {
             if path.is_dir() {
                 stack.push(path);
             } else {
-                let rel = path
-                    .strip_prefix(root)
-                    .expect("under root")
-                    .to_string_lossy()
-                    .replace('\\', "/");
+                let rel =
+                    gob_path::Shown::with_home(path.strip_prefix(root).expect("under root"), None)
+                        .to_string()
+                        .replace('\\', "/");
                 out.push((rel, std::fs::read_to_string(&path).expect("read")));
             }
         }
@@ -115,11 +110,8 @@ fn committed_pages_have_no_orphans_on_disk() {
         .join("docs/reference/rules");
     let rules: BTreeSet<String> = rule_ids().iter().map(|id| format!("{id}.md")).collect();
     for entry in std::fs::read_dir(&dir).expect("rules dir exists once generated") {
-        let name = entry
-            .expect("entry")
-            .file_name()
-            .to_string_lossy()
-            .into_owned();
+        let name = gob_path::Shown::with_home(Path::new(&entry.expect("entry").file_name()), None)
+            .to_string();
         assert!(
             name == "README.md" || rules.contains(&name),
             "orphan page {name}"
@@ -148,7 +140,11 @@ fn one_required_reason_and_one_polarity() {
             {
                 for n in &needles {
                     if text.contains(n.as_str()) {
-                        hits.push(format!("{} in {}", n, path.display()));
+                        hits.push(format!(
+                            "{} in {}",
+                            n,
+                            gob_path::Shown::with_home(&path, None)
+                        ));
                     }
                 }
             }

@@ -613,7 +613,7 @@ impl NodeProjects {
                 .flatten()
                 .flatten()
                 .filter(|e| e.path().is_dir())
-                .filter_map(|e| e.file_name().into_string().ok())
+                .filter_map(|e| gob_path::exact_text(&e.file_name()).map(str::to_owned))
                 .filter(|n| n != "node_modules" && !n.starts_with('.'))
                 .collect();
             v.sort();

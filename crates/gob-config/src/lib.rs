@@ -23,10 +23,6 @@
 //! assert_eq!(Tickets::default().cas_retries, 5);
 //! assert_eq!(Tickets::describe().fields[0].default_toml, "5");
 //! ```
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 extern crate self as gob_config;
 

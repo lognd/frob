@@ -37,7 +37,11 @@ pub fn discover_rules(root: &Path, dir: &Path) -> std::io::Result<Vec<String>> {
                 }
             } else if path.extension().is_some_and(|e| e == "grl") {
                 let rel = path.strip_prefix(root).unwrap_or(&path);
-                out.push(rel.to_string_lossy().replace('\\', "/"));
+                out.push(
+                    gob_path::Shown::with_home(rel, None)
+                        .to_string()
+                        .replace('\\', "/"),
+                );
             }
         }
         Ok(())

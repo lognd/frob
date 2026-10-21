@@ -750,7 +750,10 @@ impl CargoRunner for CargoCli {
         let fail = |e: std::io::Error| PublishError::Cargo {
             krate: krate.name.clone(),
             version: "0.0.0".to_owned(),
-            reason: format!("placeholder in {}: {e}", dir.display()),
+            reason: format!(
+                "placeholder in {}: {e}",
+                gob_path::Shown::with_home(&dir, None)
+            ),
         };
         std::fs::create_dir_all(dir.join("src")).map_err(fail)?;
         std::fs::write(dir.join("Cargo.toml"), placeholder_manifest(krate)).map_err(fail)?;
@@ -765,7 +768,7 @@ impl CargoRunner for CargoCli {
             &[
                 "publish",
                 "--manifest-path",
-                &manifest.to_string_lossy(),
+                &gob_path::Shown::with_home(&manifest, None).to_string(),
                 "--allow-dirty",
             ],
         )

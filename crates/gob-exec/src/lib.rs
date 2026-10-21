@@ -9,10 +9,6 @@
 //! specific variables passes an [`EnvPolicy::Scrub`] allowlist to [`Runner::run_with_env`]; a
 //! secret-shaped name is never inherited, only added explicitly per spawn.
 //! Design: `git-io.md` section 3, `architecture.md` section 9.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod cmdline;
 mod counter;

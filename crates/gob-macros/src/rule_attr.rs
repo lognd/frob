@@ -250,7 +250,7 @@ fn check_page(item: &ItemStruct, id: &str, slug: &str, errs: &mut Errors) -> Opt
     let file = std::path::absolute(&file).unwrap_or(file);
     let stem = file
         .file_stem()
-        .and_then(|s| s.to_str())
+        .and_then(gob_path::exact_text)
         .unwrap_or_default()
         .to_owned();
     if stem != id.to_ascii_lowercase() {

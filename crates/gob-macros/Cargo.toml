@@ -13,6 +13,7 @@ proc-macro = true
 
 [dependencies]
 darling = "0.20"
+gob-path = { version = "0.532.0", path = "../gob-path" }
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["full"] }

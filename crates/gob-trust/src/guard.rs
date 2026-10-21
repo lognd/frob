@@ -57,7 +57,7 @@ pub fn check_state_untracked(root: &Path) -> Result<(), GuardError> {
     match out.status {
         Outcome::Exited(0) => {}
         Outcome::Exited(128) if out.stderr.contains("not a git repository") => {
-            tracing::debug!(root = %root.display(), "not a git repository; nothing tracked");
+            tracing::debug!(root = ?root, "not a git repository; nothing tracked");
             return Ok(());
         }
         other => {

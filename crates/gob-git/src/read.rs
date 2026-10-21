@@ -69,7 +69,7 @@ impl Repo {
             path: cwd.to_path_buf(),
             detail: e.to_string(),
         })?;
-        debug!(git_dir = %gix.git_dir().display(), "repository discovered");
+        debug!(git_dir = ?gix.git_dir(), "repository discovered");
         Ok(Self::from_gix(gix))
     }
 
@@ -79,7 +79,7 @@ impl Repo {
     /// [`GitError::Odb`] when git refuses to initialise the directory.
     pub fn init(path: impl AsRef<Path>) -> Result<Self, GitError> {
         let gix = gix::init(path.as_ref()).map_err(odb_err)?;
-        info!(path = %path.as_ref().display(), "repository initialised");
+        info!(path = ?path.as_ref(), "repository initialised");
         Ok(Self::from_gix(gix))
     }
 

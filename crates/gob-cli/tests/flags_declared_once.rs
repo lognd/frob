@@ -2,10 +2,6 @@
 //!
 //! Scans the verb sources of frob, grimble, crunk and the `frob-*` verb crates. The shared
 //! root in `gob-cli/src/cli.rs` (global flags) and the `gob-*` plumbing crates are out of scope.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::{Path, PathBuf};
 
@@ -53,7 +49,8 @@ fn verb_crates() -> Vec<PathBuf> {
         .expect("crates/ is readable")
         .flatten()
     {
-        let name = entry.file_name().to_string_lossy().into_owned();
+        let name =
+            gob_path::Shown::with_home(std::path::Path::new(&entry.file_name()), None).to_string();
         let covered =
             matches!(name.as_str(), "frob" | "grimble" | "crunk") || name.starts_with("frob-");
         if covered && entry.path().join("src").is_dir() {
@@ -79,7 +76,11 @@ fn no_verb_reads_a_flag_by_string_name() {
         for (n, line) in text.lines().enumerate() {
             let code = line.split("//").next().unwrap_or("");
             if let Some(p) = FORBIDDEN.iter().find(|p| code.contains(**p)) {
-                hits.push(format!("{}:{}: {p}", file.display(), n + 1));
+                hits.push(format!(
+                    "{}:{}: {p}",
+                    gob_path::Shown::with_home(file, None),
+                    n + 1
+                ));
             }
         }
     }

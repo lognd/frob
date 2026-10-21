@@ -45,10 +45,6 @@
 //!   format, serde-derived) under the adapter identity
 //!   `gob-symbols/v<EXTRACTOR_VERSION>/<grammar identity>`. Terms are not
 //!   cached until gob-ir is serializable; a miss re-folds from source.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod adapter;
 mod ambient;

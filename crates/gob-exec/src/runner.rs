@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use gob_path::exact_text;
 use tracing::{debug, info, warn};
 
 use crate::EnvPolicy;
@@ -205,7 +206,7 @@ impl Runner {
         let started = Instant::now();
         let mut child = cmd.spawn().map_err(ExecError::Spawn)?;
         record(&self.spawned);
-        debug!(exe = %exe.display(), args = ?spec.args, pid = child.id(), "spawned");
+        debug!(exe = ?exe, args = ?spec.args, pid = child.id(), "spawned");
 
         let exceeded = Arc::new(AtomicBool::new(false));
         let cap = self.output_cap;
@@ -414,10 +415,7 @@ fn descendants(root: i32) -> Vec<i32> {
     let mut parent_of = Vec::new();
     if let Ok(dir) = std::fs::read_dir("/proc") {
         for entry in dir.flatten() {
-            let Some(pid) = entry
-                .file_name()
-                .to_str()
-                .and_then(|n| n.parse::<i32>().ok())
+            let Some(pid) = exact_text(&entry.file_name()).and_then(|n| n.parse::<i32>().ok())
             else {
                 continue;
             };

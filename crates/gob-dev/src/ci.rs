@@ -624,8 +624,8 @@ fn path_with_uv_tools(root: &Path) -> Option<String> {
     let rest = std::env::var_os("PATH").unwrap_or_default();
     let joined =
         std::env::join_paths(std::iter::once(bin.clone()).chain(std::env::split_paths(&rest)));
-    tracing::info!(bin = %bin.display(), "uv tool bin dir put on PATH for the step");
-    joined.ok()?.into_string().ok()
+    tracing::info!(bin = ?bin, "uv tool bin dir put on PATH for the step");
+    gob_path::exact_text(&joined.ok()?).map(str::to_owned)
 }
 
 fn spec(root: &Path, step: &Step, timeout: Duration, capture: bool) -> Spec {
@@ -840,7 +840,7 @@ impl GowayRunner {
         }
         a.extend([
             "--report".to_owned(),
-            root.join(REPORT_PATH).display().to_string(),
+            gob_path::Shown::with_home(&root.join(REPORT_PATH), None).to_string(),
         ]);
         if let Some(h) = host {
             a.extend(["--host".to_owned(), h.to_owned()]);
@@ -883,7 +883,7 @@ impl GowayRunner {
                     .ok()
                     .and_then(|t| serde_json::from_str::<Remote>(&t).ok());
                 if remote.is_none() {
-                    tracing::warn!(report = %report.display(), "goway wrote no usable report");
+                    tracing::warn!(report = ?report, "goway wrote no usable report");
                 }
                 return Ok((out.status, out.stdout, remote));
             }
@@ -945,7 +945,7 @@ impl GowayRunner {
 /// The program name as the remote shell sees it.
 fn remote_program(program: &Program) -> String {
     match program {
-        Program::Hook { path } => path.display().to_string(),
+        Program::Hook { path } => gob_path::Shown::with_home(path, None).to_string(),
         other => other.label(),
     }
 }
@@ -1048,11 +1048,11 @@ const SLOWEST: usize = 5;
 fn report_nextest(root: &Path, say: &mut dyn FnMut(&str)) {
     let path = root.join(JUNIT_PATH);
     let Ok(junit) = std::fs::read_to_string(&path) else {
-        tracing::warn!(path = %path.display(), "no nextest junit report to summarise");
+        tracing::warn!(path = ?path, "no nextest junit report to summarise");
         return;
     };
     let Some((suite, slowest)) = junit_report(&junit) else {
-        tracing::warn!(path = %path.display(), "nextest junit report is unparsable");
+        tracing::warn!(path = ?path, "nextest junit report is unparsable");
         return;
     };
     say(&format!(
@@ -1539,7 +1539,7 @@ mod tests {
              printf '%s\\n' \"$a\" >> '{}'\n  prev=\"$a\"\ndone\n\
              printf '{{\"host\":\"fakehost\",\"os\":\"linux\",\"arch\":\"x86_64\",\
              \"exit_code\":{code},\"duration_secs\":1.5}}' > \"$rep\"\nexit {code}\n",
-            log.display()
+            gob_path::Shown::with_home(&log, None)
         );
         std::fs::write(&bin, script).unwrap();
         std::fs::set_permissions(&bin, std::fs::Permissions::from_mode(0o755)).unwrap();

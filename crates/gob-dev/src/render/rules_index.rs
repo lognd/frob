@@ -18,7 +18,7 @@ pub enum RulesIndexError {
     #[error(transparent)]
     Index(#[from] IndexError),
     /// A directory could not be listed.
-    #[error("read {}: {source}", path.display())]
+    #[error("read {}: {source}", gob_path::Shown::with_home(path, None))]
     Io {
         /// The directory.
         path: PathBuf,
@@ -26,7 +26,10 @@ pub enum RulesIndexError {
         source: std::io::Error,
     },
     /// A rule lives in a crate that does not own its family.
-    #[error("{rule}: family `{family}` is not in `[package.metadata.gob] families` of {}", manifest.display())]
+    #[error(
+        "{rule}: family `{family}` is not in `[package.metadata.gob] families` of {}",
+        gob_path::Shown::with_home(manifest, None)
+    )]
     ForeignFamily {
         /// The rule id.
         rule: String,
@@ -50,7 +53,7 @@ fn rule_crates(root: &Path, out: &mut Vec<PathBuf>) -> Result<(), RulesIndexErro
         let path = entry.map_err(io)?.path();
         let skip = path
             .file_name()
-            .and_then(|n| n.to_str())
+            .and_then(gob_path::exact_text)
             .is_none_or(|n| n == "target" || n.starts_with('.'));
         if path.is_dir() && !skip {
             rule_crates(&path, out)?;
@@ -114,9 +117,11 @@ pub fn generate(crates_dir: &Path) -> Result<Vec<GenFile>, RulesIndexError> {
             .join("src")
             .join("rules")
             .join("mod.rs");
-        tracing::debug!(crate_dir = %dir.display(), rules = rules.len(), "rules index generated");
+        tracing::debug!(crate_dir = ?dir, rules = rules.len(), "rules index generated");
         files.push(GenFile {
-            path: rel.to_string_lossy().replace('\\', "/"),
+            path: gob_path::Shown::with_home(&rel, None)
+                .to_string()
+                .replace('\\', "/"),
             content,
         });
     }

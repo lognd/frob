@@ -25,6 +25,7 @@ thiserror = "2"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-path = { version = "0.532.0", path = "../gob-path" }
 insta = "1"
 gob-mdtest = { path = "../gob-mdtest" }
 gob-walk = { path = "../gob-walk" }

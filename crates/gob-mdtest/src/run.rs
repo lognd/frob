@@ -113,7 +113,12 @@ impl Report {
         let mut s = String::new();
         for f in &self.files {
             let tag = if f.passed() { "ok  " } else { "FAIL" };
-            let _ = writeln!(s, "{tag} {} ({} cases)", f.path.display(), f.cases.len());
+            let _ = writeln!(
+                s,
+                "{tag} {} ({} cases)",
+                gob_path::Shown::with_home(&f.path, None),
+                f.cases.len()
+            );
             s.push_str(&f.render_failures());
         }
         s
@@ -571,9 +576,9 @@ fn render_diagnostics(block: &Block, findings: &[Finding]) -> String {
 ///
 /// The fence line is dropped so moving a block does not orphan its snapshot.
 fn snapshot_name(path: &Path, block: &Block) -> String {
-    let stem = path
-        .file_stem()
-        .map_or_else(String::new, |s| s.to_string_lossy().into_owned());
+    let stem = path.file_stem().map_or_else(String::new, |s| {
+        gob_path::Shown::with_home(Path::new(s), None).to_string()
+    });
     let base = block
         .name
         .rsplit_once(" (line ")

@@ -7,7 +7,10 @@ use std::path::PathBuf;
 #[derive(Debug, thiserror::Error)]
 pub enum GitError {
     /// No repository found at or above the given directory.
-    #[error("E-GIT-DISCOVER: no git repository at or above {}: {detail}", path.display())]
+    #[error(
+        "E-GIT-DISCOVER: no git repository at or above {}: {detail}",
+        gob_path::Shown::with_home(path, None)
+    )]
     Discover {
         /// Directory the search started from.
         path: PathBuf,

@@ -15,10 +15,6 @@
 //! the work tree or the git dir a checkout can write (security.md 2.2, I4), and every row
 //! carries a keyed-blake3 MAC under the machine key: a row with a missing or wrong MAC is
 //! deleted and read as a miss. Supersedes the in-tree placement of architecture.md D30/D38.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
@@ -178,7 +174,7 @@ fn exe_digest(path: &Path) -> std::io::Result<String> {
     let mut hasher = blake3::Hasher::new();
     hasher.update_reader(std::fs::File::open(path)?)?;
     let digest = hasher.finalize().to_hex().to_string();
-    tracing::debug!(path = %path.display(), elapsed_ms = started.elapsed().as_millis(), "hashed executable");
+    tracing::debug!(path = ?path, elapsed_ms = started.elapsed().as_millis(), "hashed executable");
     Ok(digest)
 }
 
@@ -296,7 +292,12 @@ pub fn shared_dir(root: &Path, state_dir: &str) -> Option<PathBuf> {
             return None;
         }
     };
-    let id = blake3::hash(identity.to_string_lossy().as_bytes()).to_hex();
+    let id = blake3::hash(
+        gob_path::Shown::with_home(&identity, None)
+            .to_string()
+            .as_bytes(),
+    )
+    .to_hex();
     Some(base.join("cache").join(&id.as_str()[..32]).join(name))
 }
 
@@ -320,7 +321,7 @@ pub enum Seeded {
 // frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
 // frob:ticket 01M3ZX7TWB2H5WHD27FH2DAC49
 pub fn seed_shared(primary: &Path, state_dir: &str) -> Seeded {
-    tracing::debug!(primary = %primary.display(), state_dir, "in-tree cache is never imported; not seeding");
+    tracing::debug!(primary = ?primary, state_dir, "in-tree cache is never imported; not seeding");
     Seeded::NothingToSeed
 }
 
@@ -330,10 +331,10 @@ impl Cache {
     /// Never falls back to `<root>/<state_dir>`: that directory is writable by the repository.
     pub fn open_shared(root: &Path, state_dir: &str) -> Self {
         if let Some(dir) = shared_dir(root, state_dir) {
-            tracing::debug!(dir = %dir.display(), "shared cache selected");
+            tracing::debug!(dir = ?dir, "shared cache selected");
             Self::open(&dir)
         } else {
-            tracing::warn!(root = %root.display(), "no per-user cache location; using null cache");
+            tracing::warn!(root = ?root, "no per-user cache location; using null cache");
             Self::null()
         }
     }
@@ -350,7 +351,7 @@ impl Cache {
             .and_then(|key| open_conn(dir, config).map(|conn| (conn, key)));
         match opened {
             Ok((conn, key)) => {
-                tracing::debug!(dir = %dir.display(), "cache opened");
+                tracing::debug!(dir = ?dir, "cache opened");
                 Self {
                     conn: Some(Mutex::new(conn)),
                     key: Some(key),
@@ -359,7 +360,7 @@ impl Cache {
                 }
             }
             Err(err) => {
-                tracing::warn!(dir = %dir.display(), %err, "cache unavailable; using null cache");
+                tracing::warn!(dir = ?dir, %err, "cache unavailable; using null cache");
                 Self::null()
             }
         }

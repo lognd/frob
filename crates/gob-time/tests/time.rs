@@ -1,8 +1,4 @@
 //! Behaviour of the one clock, one zone crate (docs/design/time.md, D93).
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::{Path, PathBuf};
 
@@ -177,7 +173,7 @@ fn clippy_confines_wall_clock_and_local_zone_reads_to_gob_time() {
             assert!(
                 !text.contains(needle),
                 "{} reads the wall clock or local zone ({needle}); take a gob_time::Clock",
-                file.display()
+                gob_path::Shown::with_home(&file, None)
             );
         }
     }

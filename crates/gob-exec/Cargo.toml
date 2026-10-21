@@ -12,6 +12,7 @@ authors.workspace = true
 blake3 = "1"
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-log = { version = "0.532.0", path = "../gob-log" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 thiserror = "2"
 tracing = "0.1"
 walkdir = "2"

@@ -225,7 +225,7 @@ pub fn adapter_for_entry(path: &str, hint: &LanguageHint) -> Option<&'static dyn
 pub fn adapter_for_path(path: &str) -> Option<&'static dyn Adapter> {
     let ext = Path::new(path)
         .extension()
-        .and_then(|e| e.to_str())
+        .and_then(gob_path::exact_text)
         .unwrap_or("")
         .to_ascii_lowercase();
     adapter_for(&LanguageHint::from_path(&format!("x.{ext}")))

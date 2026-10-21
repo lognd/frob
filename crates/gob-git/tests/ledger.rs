@@ -1,8 +1,4 @@
 //! Integration tests against temporary repositories built with gix only.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::Path;
 use std::sync::{Arc, Barrier};
@@ -430,7 +426,12 @@ fn spawn_fallbacks_worktree_merge_push() {
     g(remote.path(), &["init", "--bare", "-b", "main"]);
     g(
         dir.path(),
-        &["remote", "add", "origin", &remote.path().to_string_lossy()],
+        &[
+            "remote",
+            "add",
+            "origin",
+            &gob_path::Shown::with_home(remote.path(), None).to_string(),
+        ],
     );
     repo.push("origin", "main").unwrap();
     assert!(repo.runner().spawn_count().since(before) >= 3);
@@ -767,7 +768,12 @@ fn fixture_with_origin() -> (tempfile::TempDir, Repo, tempfile::TempDir) {
     git_in(origin.path(), &["init", "--bare", "-b", "main"]);
     git_in(
         dir.path(),
-        &["remote", "add", "origin", &origin.path().to_string_lossy()],
+        &[
+            "remote",
+            "add",
+            "origin",
+            &gob_path::Shown::with_home(origin.path(), None).to_string(),
+        ],
     );
     (dir, repo, origin)
 }

@@ -55,7 +55,11 @@ impl Language {
 
     /// Detects the language from the file extension (case-insensitive).
     pub fn detect(path: impl AsRef<Path>) -> Option<Language> {
-        let ext = path.as_ref().extension()?.to_str()?.to_ascii_lowercase();
+        let ext = path
+            .as_ref()
+            .extension()
+            .and_then(gob_path::exact_text)?
+            .to_ascii_lowercase();
         let found = match ext.as_str() {
             "rs" => Some(Language::Rust),
             "md" | "markdown" => Some(Language::Markdown),
@@ -72,7 +76,7 @@ impl Language {
             "grmb" => Some(Language::Grmb),
             _ => None,
         };
-        tracing::trace!(path = %path.as_ref().display(), ?found, "language detect");
+        tracing::trace!(path = ?path.as_ref(), ?found, "language detect");
         found
     }
 

@@ -93,7 +93,7 @@ pub struct Block {
 #[derive(Debug, thiserror::Error)]
 pub enum InlineError {
     /// A source file or directory could not be read.
-    #[error("read {}: {source}", path.display())]
+    #[error("read {}: {source}", gob_path::Shown::with_home(path, None))]
     Io {
         /// The path.
         path: PathBuf,
@@ -281,7 +281,10 @@ pub fn generate(root: &Path) -> Result<Vec<GenFile>, InlineError> {
                 if !rel_str.is_empty() {
                     rel_str.push(std::path::MAIN_SEPARATOR);
                 }
-                rel_str.push_str(&comp.as_os_str().to_string_lossy());
+                rel_str.push_str(
+                    &gob_path::Shown::with_home(std::path::Path::new(&comp.as_os_str()), None)
+                        .to_string(),
+                );
             }
             let rel = rel_str;
             let text = std::fs::read_to_string(&path).map_err(|source| InlineError::Io {

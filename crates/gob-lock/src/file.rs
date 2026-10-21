@@ -666,11 +666,11 @@ impl LockFile {
         match std::fs::read_to_string(path) {
             Ok(text) => {
                 let lock = Self::parse(&text, path)?;
-                tracing::debug!(path = %path.display(), entries = lock.entries.len(), "lock loaded");
+                tracing::debug!(path = ?path, entries = lock.entries.len(), "lock loaded");
                 Ok(lock)
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                tracing::debug!(path = %path.display(), "no lock file; empty lock");
+                tracing::debug!(path = ?path, "no lock file; empty lock");
                 Ok(Self::default())
             }
             Err(source) => Err(LockError::Io {
@@ -693,7 +693,7 @@ impl LockFile {
             path: path.to_path_buf(),
             source,
         })?;
-        tracing::info!(path = %path.display(), entries = self.entries.len(), "lock saved");
+        tracing::info!(path = ?path, entries = self.entries.len(), "lock saved");
         Ok(())
     }
 }

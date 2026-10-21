@@ -36,10 +36,7 @@ fn sources(name: &str) -> Vec<(String, String)> {
             if p.is_dir() {
                 stack.push(p);
             } else if p.extension().is_some_and(|x| x == "cs") {
-                let rel = p
-                    .strip_prefix(&root)
-                    .expect("under fixture")
-                    .to_str()
+                let rel = gob_path::exact_text(p.strip_prefix(&root).expect("under fixture"))
                     .expect("utf8 fixture path")
                     .to_owned();
                 out.push((rel, std::fs::read_to_string(&p).expect("read")));

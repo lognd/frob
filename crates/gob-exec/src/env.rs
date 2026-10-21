@@ -11,6 +11,7 @@
 
 use std::ffi::OsString;
 
+use gob_path::exact_text;
 use tracing::{debug, warn};
 
 /// Names a child needs to find programs and a home directory; add per-caller names on top.
@@ -94,7 +95,7 @@ impl EnvPolicy {
         let kept: Vec<(OsString, OsString)> = parent
             .into_iter()
             .filter(|(name, _)| {
-                let Some(name) = name.to_str() else {
+                let Some(name) = exact_text(name) else {
                     return false;
                 };
                 !is_secret_shaped(name) && allow.iter().any(|a| names_equal(a, name))
@@ -120,6 +121,8 @@ fn names_equal(a: &str, b: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gob_path::Shown;
+    use std::path::Path;
 
     fn parent() -> Vec<(OsString, OsString)> {
         [
@@ -138,7 +141,7 @@ mod tests {
     fn names(kept: Option<Vec<(OsString, OsString)>>) -> Vec<String> {
         kept.expect("scrubbed")
             .into_iter()
-            .map(|(n, _)| n.to_string_lossy().into_owned())
+            .map(|(n, _)| Shown::with_home(Path::new(&n), None).to_string())
             .collect()
     }
 

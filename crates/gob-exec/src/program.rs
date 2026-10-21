@@ -2,6 +2,8 @@
 
 use std::path::PathBuf;
 
+use gob_path::Shown;
+
 use crate::ExecError;
 
 /// A program frob may spawn; nothing outside this enum can be executed.
@@ -40,8 +42,8 @@ impl Program {
         match self {
             Self::Git => "git".to_owned(),
             Self::Cargo => "cargo".to_owned(),
-            Self::Hook { path } => format!("hook:{}", path.display()),
-            Self::Pack { path } => format!("pack:{}", path.display()),
+            Self::Hook { path } => format!("hook:{}", Shown::with_home(path, None)),
+            Self::Pack { path } => format!("pack:{}", Shown::with_home(path, None)),
             Self::Sibling { name } | Self::Tool { name } => name.clone(),
         }
     }

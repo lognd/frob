@@ -34,6 +34,7 @@ gob-exec = { path = "../gob-exec" }
 gob-git = { path = "../gob-git" }
 gob-directives = { path = "../gob-directives" }
 gob-log = { path = "../gob-log" }
+gob-path = { path = "../gob-path" }
 gob-plan = { path = "../gob-plan" }
 gob-mdtest = { path = "../gob-mdtest" }
 gob-rules = { path = "../gob-rules" }

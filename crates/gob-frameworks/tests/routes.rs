@@ -1,10 +1,6 @@
 //! Framework detection and route discovery over the monorepo fixture (D96, language-engines.md section 4).
 
 // frob:ticket 01M47QKVBB5G9N1QZP3AVXTRHX
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::{Path, PathBuf};
 
@@ -31,10 +27,8 @@ fn collect(root: &Path, dir: &Path, out: &mut Vec<FileEntry>) {
         if p.is_dir() {
             collect(root, &p, out);
         } else {
-            let rel = p
-                .strip_prefix(root)
-                .expect("under root")
-                .to_string_lossy()
+            let rel = gob_path::Shown::with_home(p.strip_prefix(root).expect("under root"), None)
+                .to_string()
                 .replace('\\', "/");
             let bytes = std::fs::read(&p).expect("read");
             out.push(FileEntry {

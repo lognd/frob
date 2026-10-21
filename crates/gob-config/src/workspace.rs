@@ -98,7 +98,7 @@ pub fn nested_config_dirs(root: &Path, file_name: &str) -> Result<Vec<PathBuf>, 
         .filter(|d| d.join(file_name).is_file())
         .collect::<Vec<_>>();
     for d in &dirs {
-        tracing::debug!(dir = %d.display(), "nested config accepted via workspace members");
+        tracing::debug!(dir = ?d, "nested config accepted via workspace members");
     }
     Ok(dirs)
 }

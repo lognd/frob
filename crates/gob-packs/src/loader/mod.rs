@@ -8,10 +8,6 @@
 //! the reason, never dropped silently. Nothing is registered unless every fallible step succeeds.
 
 // frob:ticket 01M3ZX7K7BN0CEADJFMCTGEA64
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod read;
 
@@ -151,10 +147,13 @@ pub fn load_pack(dir: &Path, opts: &LoadOptions<'_>) -> Result<LoadedPack, LoadE
 pub fn inspect_pack(dir: &Path, opts: &LoadOptions<'_>) -> Result<LoadedPack, LoadError> {
     let manifest = crate::manifest::load(&dir.join("pack.toml"))?;
     let name = manifest.pack.name.clone();
-    let dir_name = dir.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+    let dir_name = dir
+        .file_name()
+        .and_then(gob_path::exact_text)
+        .unwrap_or_default();
     if dir_name != name {
         return Err(PackError::malformed(
-            &dir.display().to_string(),
+            &gob_path::Shown::with_home(dir, None).to_string(),
             "pack.name",
             format!("`{name}` must match its directory name `{dir_name}`"),
         )

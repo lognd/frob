@@ -220,7 +220,7 @@ fn scan(dir: &Path, rel: &str, out: &mut Vec<String>) {
         return;
     };
     for entry in read.flatten() {
-        let Ok(name) = entry.file_name().into_string() else {
+        let Some(name) = gob_path::exact_text(&entry.file_name()).map(str::to_owned) else {
             continue;
         };
         let child = if rel.is_empty() {
@@ -463,7 +463,7 @@ impl UnityProjects {
             .into_iter()
             .flatten()
             .flatten()
-            .filter_map(|e| e.file_name().into_string().ok())
+            .filter_map(|e| gob_path::exact_text(&e.file_name()).map(str::to_owned))
             .any(|n| n.ends_with(".asmdef") || n.ends_with(".asmref"));
         let hit = here
             || match dir.rsplit_once('/') {

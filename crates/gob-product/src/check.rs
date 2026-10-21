@@ -149,7 +149,7 @@ impl<P: Product> Command for Check<P> {
             base: self.base.clone(),
             ticket_scope: self.ticket_scope.clone(),
         };
-        tracing::debug!(product = P::NAME, root = %root.display(), "check started");
+        tracing::debug!(product = P::NAME, root = ?root, "check started");
         P::check(ctx, &root, &opts, &self.matches)
     }
 }

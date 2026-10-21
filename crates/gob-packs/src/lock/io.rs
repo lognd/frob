@@ -1,8 +1,4 @@
 //! Reading and writing the lock file as TOML.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::Path;
 
@@ -18,7 +14,7 @@ const HEADER: &str = "# pack lock -- written by an explicit lock or update; do n
 /// # Errors
 /// PACK005 when the file is unreadable, oversized, not UTF-8 or not a valid lock.
 pub fn read(path: &Path) -> Result<Lock, PackError> {
-    let file = path.display().to_string();
+    let file = gob_path::Shown::with_home(path, None).to_string();
     let bad = |reason: String| {
         let e = PackError::malformed(&file, "<file>", reason);
         warn!(error = %e, "pack lock refused");
@@ -39,7 +35,7 @@ pub fn read(path: &Path) -> Result<Lock, PackError> {
 /// # Errors
 /// PACK005 when serialization or the write fails.
 pub fn write(path: &Path, lock: &Lock) -> Result<(), PackError> {
-    let file = path.display().to_string();
+    let file = gob_path::Shown::with_home(path, None).to_string();
     let body = toml::to_string(lock)
         .map_err(|e| PackError::malformed(&file, "<file>", format!("cannot serialize: {e}")))?;
     std::fs::write(path, format!("{HEADER}{body}"))

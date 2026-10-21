@@ -52,7 +52,7 @@ fn corpus_matches_expected_symrefs() {
             let expected = std::fs::read_to_string(src.with_extension("expected")).unwrap();
             let rel = format!(
                 "tests/corpus/{lang}/{}",
-                src.file_name().unwrap().to_str().unwrap()
+                gob_path::exact_text(src.file_name().unwrap()).unwrap()
             );
             let text = std::fs::read_to_string(&src).unwrap();
             let got: Vec<String> = extract(&rel, &text)

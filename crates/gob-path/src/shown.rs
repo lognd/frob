@@ -37,6 +37,22 @@ impl Shown {
     }
 }
 
+/// `p` as exact text, or `None` when it is not valid Unicode (never lossy, never `~`-collapsed).
+///
+/// For callers that must refuse a non-text path rather than render it; accepts `&Path`,
+/// `&OsStr` and anything else `AsRef<Path>`.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "gob-path is the one crate that converts paths to text"
+)]
+pub fn exact_text<P: AsRef<Path> + ?Sized>(p: &P) -> Option<&str> {
+    let text = p.as_ref().to_str();
+    if text.is_none() {
+        tracing::trace!(path = ?p.as_ref(), "path is not valid unicode");
+    }
+    text
+}
+
 impl std::fmt::Display for Shown {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)

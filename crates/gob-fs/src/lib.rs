@@ -8,10 +8,6 @@
 // frob:ticket 01M43JETBHW7FYNMR6SGVWFAEV
 
 // frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 mod gitdir;
 mod path;
 
@@ -108,16 +104,16 @@ fn write_with(
     })();
     let done = staged.and_then(|()| fs::rename(&tmp, path));
     if let Err(err) = &done {
-        tracing::warn!(path = %path.display(), %err, "atomic write failed; target untouched");
+        tracing::warn!(path = ?path, %err, "atomic write failed; target untouched");
         let _ = fs::remove_file(&tmp);
         return done;
     }
     // The rename is committed; a failed directory sync is reported but the content is in place.
     if let Err(err) = sync_parent(path) {
-        tracing::warn!(path = %path.display(), %err, "parent directory sync failed after rename");
+        tracing::warn!(path = ?path, %err, "parent directory sync failed after rename");
         return Err(err);
     }
-    tracing::debug!(path = %path.display(), bytes = bytes.len(), "atomic write committed");
+    tracing::debug!(path = ?path, bytes = bytes.len(), "atomic write committed");
     Ok(())
 }
 

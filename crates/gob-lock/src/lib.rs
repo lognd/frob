@@ -24,10 +24,6 @@
 //! let text = lock.to_toml().unwrap();
 //! assert_eq!(LockFile::from_toml(&text).unwrap(), lock);
 //! ```
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod diff;
 mod file;

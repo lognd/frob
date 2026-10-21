@@ -16,6 +16,7 @@ gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-caps = { version = "0.532.0", path = "../gob-caps", features = ["serde"] }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 inventory = "0.3"

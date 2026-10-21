@@ -1,9 +1,5 @@
 //! `diff_names(merge_base, WorkTree)` must agree with `git status` on symlinks and line endings.
 #![cfg(unix)]
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::Path;
 use std::process::Command;
@@ -55,7 +51,7 @@ fn fixture(autocrlf: bool) -> (tempfile::TempDir, std::path::PathBuf) {
     link(&dir, "513/L/hello_1.c", "../../280/L/hello_1.c");
     link(&dir, "513/D", "../280/L");
     let abs = dir.join("280/L/hello_1.c");
-    link(&dir, "abs_link.c", abs.to_str().unwrap());
+    link(&dir, "abs_link.c", gob_path::exact_text(&abs).unwrap());
     link(&dir, "dangling", "nowhere/at/all");
     git(&dir, &["add", "-A"]);
     git(&dir, &["commit", "-q", "-m", "base"]);

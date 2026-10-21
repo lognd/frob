@@ -80,8 +80,8 @@ fn peak_rss_kib(runner: &Runner, exe: &Path, args: &[String], cwd: &Path) -> Opt
         "-f".to_owned(),
         "%M".to_owned(),
         "-o".to_owned(),
-        out_file.to_string_lossy().into_owned(),
-        exe.to_string_lossy().into_owned(),
+        gob_path::Shown::with_home(&out_file, None).to_string(),
+        gob_path::Shown::with_home(exe, None).to_string(),
     ];
     full.extend(args.iter().cloned());
     let ran = run_once(
@@ -127,8 +127,9 @@ pub fn measure(
     if scenario.cold {
         let cache = cwd.join(".frob");
         if cache.exists() {
-            std::fs::remove_dir_all(&cache)
-                .map_err(|e| ProfileError::Io(format!("{}: {e}", cache.display())))?;
+            std::fs::remove_dir_all(&cache).map_err(|e| {
+                ProfileError::Io(format!("{}: {e}", gob_path::Shown::with_home(&cache, None)))
+            })?;
         }
         let run = run_once(runner, program(), args.clone(), cwd)?;
         note(&run);

@@ -45,7 +45,10 @@ fn render(entries: &[Entry]) -> String {
             "\n[[entry]]".to_owned(),
             format!("subject = \"{}\"", esc(e.subject())),
             format!("who = \"{}\"", esc(e.who())),
-            format!("root = \"{}\"", esc(&e.root().to_string_lossy())),
+            format!(
+                "root = \"{}\"",
+                esc(&gob_path::Shown::with_home(e.root(), None).to_string())
+            ),
             format!("root_commit = \"{}\"", esc(&e.identity().root_commit)),
             format!("remote_url = \"{}\"", esc(&e.identity().remote_url)),
             format!("granted_at = {}", e.granted_at()),

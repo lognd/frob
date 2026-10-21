@@ -151,7 +151,7 @@ fn page_it(id: &str, page: &str) -> bool {
         tracing::debug!(error = %e, "explain: cannot stage the page for the pager");
         return false;
     }
-    args.push(tmp.display().to_string());
+    args.push(gob_path::Shown::with_home(&tmp, None).to_string());
     let spec = Spec {
         program: Program::Tool { name },
         args,

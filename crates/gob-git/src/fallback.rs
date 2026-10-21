@@ -68,7 +68,7 @@ impl Repo {
         start_point: &str,
     ) -> Result<(), GitError> {
         let cwd = self.work_dir().unwrap_or_else(|| self.git_dir());
-        let p = path.to_string_lossy();
+        let p = gob_path::Shown::with_home(path, None).to_string();
         let exists = self
             .gix
             .try_find_reference(&format!("refs/heads/{branch}"))

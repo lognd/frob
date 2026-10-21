@@ -12,6 +12,7 @@ authors.workspace = true
 gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-trust = { version = "0.532.0", path = "../gob-trust" }
 schemars = "1"

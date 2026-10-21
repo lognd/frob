@@ -124,7 +124,7 @@ impl Adapter for HtmlAdapter {
 pub fn is_html_path(path: &str) -> bool {
     std::path::Path::new(path)
         .extension()
-        .and_then(|e| e.to_str())
+        .and_then(gob_path::exact_text)
         .is_some_and(|e| EXTENSIONS.iter().any(|x| e.eq_ignore_ascii_case(x)))
 }
 

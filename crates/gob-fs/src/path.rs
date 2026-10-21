@@ -10,6 +10,8 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
+use gob_path::exact_text;
+
 /// The path syntax a string is read in; the pure functions work for either on any host.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Style {
@@ -51,7 +53,7 @@ fn simplify(real: &Path) -> PathBuf {
     if !cfg!(windows) {
         return real.to_path_buf();
     }
-    let simple = real.to_str().and_then(simplify_verbatim);
+    let simple = exact_text(real).and_then(simplify_verbatim);
     simple.map_or_else(|| real.to_path_buf(), PathBuf::from)
 }
 
@@ -123,8 +125,7 @@ pub fn has_dot_component(text: &str) -> bool {
 
 /// [`has_dot_component`] for a host path; a path that is not text is refused (treated as having one).
 pub fn path_has_dot_component(path: &Path) -> bool {
-    let text = path.to_str();
-    text.is_none_or(has_dot_component)
+    exact_text(path).is_none_or(has_dot_component)
 }
 
 /// The prefix and normal components of an absolute `text` in `style`, or `None` when it is relative or unsafe.
@@ -218,8 +219,8 @@ pub fn strictly_inside(style: Style, root: &str, candidate: &str) -> bool {
 
 /// [`strictly_inside`] for host paths in the host style; a path that is not text is never inside.
 pub fn path_strictly_inside(root: &Path, candidate: &Path) -> bool {
-    let (r, c) = (root.to_str(), candidate.to_str());
-    r.zip(c)
+    exact_text(root)
+        .zip(exact_text(candidate))
         .is_some_and(|(r, c)| strictly_inside(Style::host(), r, c))
 }
 

@@ -1,7 +1,7 @@
 //! Where derived state lives, and when in-tree caches are ignored.
 
 use std::ffi::OsString;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::error::TrustError;
 
@@ -45,7 +45,7 @@ pub fn resolve_cache_dir(
 /// callers skip their in-tree caches, and they ask this one function.
 pub fn ci_active(env: impl Fn(&str) -> Option<OsString>) -> bool {
     env("CI").is_some_and(|v| {
-        let v = v.to_string_lossy();
+        let v = gob_path::Shown::with_home(Path::new(&v), None).to_string();
         let v = v.trim();
         !(v.is_empty() || v == "0" || v.eq_ignore_ascii_case("false"))
     })

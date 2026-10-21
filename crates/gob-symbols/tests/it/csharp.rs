@@ -32,11 +32,10 @@ fn files() -> Vec<FileSymbols> {
                 stack.push(p);
                 continue;
             }
-            let rel = p
-                .strip_prefix(repo_dir())
-                .expect("under repo")
-                .to_string_lossy()
-                .replace('\\', "/");
+            let rel =
+                gob_path::Shown::with_home(p.strip_prefix(repo_dir()).expect("under repo"), None)
+                    .to_string()
+                    .replace('\\', "/");
             let text = std::fs::read_to_string(&p).expect("read");
             out.push(extract_file(&entry(&rel, &text), &text));
         }

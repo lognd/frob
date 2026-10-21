@@ -11,10 +11,6 @@
 //! The [`selector`] module parses the grmb-spec 6 selector grammar and evaluates it over the walk
 //! ([`select_files`]); gob-ir evaluates the same selectors over units. [`owner`] resolves which
 //! entity owns an item by [`Specificity`] and the possible-worlds reading of binding.md 2.2.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::fmt;
 use std::path::Path;
@@ -107,7 +103,7 @@ impl LanguageHint {
     pub fn from_path(path: &str) -> Self {
         let ext = Path::new(path)
             .extension()
-            .and_then(|e| e.to_str())
+            .and_then(gob_path::exact_text)
             .unwrap_or("")
             .to_ascii_lowercase();
         match ext.as_str() {
@@ -177,12 +173,15 @@ enum Item {
     Big(Oversized),
 }
 
+/// `path` relative to `root` as `/`-separated text; the lossy display form when it cannot be a `RelPath`.
 fn rel_path(root: &Path, path: &Path) -> String {
-    let rel = path.strip_prefix(root).unwrap_or(path);
-    rel.components()
-        .map(|c| c.as_os_str().to_string_lossy())
-        .collect::<Vec<_>>()
-        .join("/")
+    gob_path::RelPath::from_host(root, path).map_or_else(
+        |_| {
+            let rel = path.strip_prefix(root).unwrap_or(path);
+            gob_path::Shown::with_home(rel, None).to_string()
+        },
+        |r| r.as_str().to_owned(),
+    )
 }
 
 /// Tool state directories no walk ever enters, whatever the config says.

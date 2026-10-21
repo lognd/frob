@@ -1,8 +1,4 @@
 //! `walk_paths` lists without reading; `walk` hashes through the installed git content backend.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::fs;
 use std::path::Path;
@@ -28,7 +24,9 @@ fn walk_paths_lists_without_reading_any_file() {
     text = format!(
         "{text}[filter \"spy\"]\n\tclean = touch {}; cat\n",
         // Forward slashes: git runs the filter through sh, which eats Windows backslashes.
-        marker.display().to_string().replace('\\', "/")
+        gob_path::Shown::with_home(&marker, None)
+            .to_string()
+            .replace('\\', "/")
     );
     fs::write(&config, text).unwrap();
     write(root, ".gitattributes", "*.css filter=spy\n");

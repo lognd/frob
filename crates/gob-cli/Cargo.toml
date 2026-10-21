@@ -15,6 +15,7 @@ gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-log = { version = "0.532.0", path = "../gob-log" }
 gob-macros = { version = "0.532.0", path = "../gob-macros" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-time = { version = "0.532.0", path = "../gob-time" }
 inventory = "0.3"

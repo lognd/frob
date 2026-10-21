@@ -8,10 +8,6 @@
 //! Only three operations spawn `git`, through `gob-exec`
 //! so the spawn counter sees them: `worktree add`, `merge`, `push`; see
 //! [`SpawnClass`]. Design: `git-io.md` sections 1 to 3, decision D23.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod backend;
 mod content;

@@ -195,7 +195,7 @@ fn build<T: ConfigTable>(
             provenance.insert(key.to_owned(), Provenance::Override);
         }
     }
-    tracing::debug!(table = %desc.table, file = %source.file.display(), file_present, "loading config table");
+    tracing::debug!(table = %desc.table, file = ?source.file, file_present, "loading config table");
     let value = toml::Value::Table(merged)
         .try_into::<T>()
         .map_err(|e| ConfigError::Invalid {
@@ -223,7 +223,7 @@ pub(crate) fn read_table(path: &Path) -> Result<(toml::Value, bool), ConfigError
             Ok((toml::Value::Table(table), true))
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            tracing::debug!(file = %path.display(), "config file absent; using defaults");
+            tracing::debug!(file = ?path, "config file absent; using defaults");
             Ok((toml::Value::Table(toml::Table::new()), false))
         }
         Err(source) => Err(ConfigError::Io {

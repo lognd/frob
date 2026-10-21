@@ -299,7 +299,9 @@ pub fn normalize_path(raw: &str) -> String {
         let part = match c {
             Component::CurDir | Component::RootDir | Component::Prefix(_) => continue,
             Component::ParentDir => "..".to_owned(),
-            Component::Normal(s) => s.to_string_lossy().into_owned(),
+            Component::Normal(s) => {
+                gob_path::Shown::with_home(std::path::Path::new(&s), None).to_string()
+            }
         };
         if !out.is_empty() {
             out.push(MAIN_SEPARATOR);

@@ -16,7 +16,7 @@ const MAX_DEPTH: usize = 16;
 /// Reads `root/rel` once as UTF-8 text, never past [`MAX_FILE_BYTES`].
 pub(crate) fn read_text(root: &Path, rel: &str, key: &str) -> Result<(String, String), PackError> {
     let path = root.join(rel);
-    let label = path.display().to_string();
+    let label = gob_path::Shown::with_home(&path, None).to_string();
     let io = |e: std::io::Error| PackError::malformed(&label, key, format!("cannot read: {e}"));
     let mut buf = Vec::new();
     std::fs::File::open(&path)
@@ -43,7 +43,8 @@ fn walk(dir: &Path, rel: &str, depth: usize, out: &mut Vec<String>) -> std::io::
     }
     for entry in std::fs::read_dir(dir)? {
         let entry = entry?;
-        let name = entry.file_name().to_string_lossy().into_owned();
+        let name =
+            gob_path::Shown::with_home(std::path::Path::new(&entry.file_name()), None).to_string();
         let child = if rel.is_empty() {
             name
         } else {
@@ -66,7 +67,7 @@ pub(crate) fn expand(
     patterns: &[String],
     key: &str,
 ) -> Result<Vec<String>, PackError> {
-    let label = root.display().to_string();
+    let label = gob_path::Shown::with_home(root, None).to_string();
     let mut files = Vec::new();
     walk(root, "", 0, &mut files)
         .map_err(|e| PackError::malformed(&label, key, format!("cannot list: {e}")))?;

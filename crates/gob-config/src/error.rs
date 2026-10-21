@@ -6,7 +6,7 @@ use std::path::PathBuf;
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
     /// The config file could not be read or written.
-    #[error("cannot access {}: {source}", path.display())]
+    #[error("cannot access {}: {source}", gob_path::Shown::with_home(path, None))]
     Io {
         /// File involved.
         path: PathBuf,
@@ -14,7 +14,7 @@ pub enum ConfigError {
         source: std::io::Error,
     },
     /// The config file is not valid TOML.
-    #[error("cannot parse {}: {message}", path.display())]
+    #[error("cannot parse {}: {message}", gob_path::Shown::with_home(path, None))]
     Parse {
         /// File involved.
         path: PathBuf,

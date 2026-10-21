@@ -53,7 +53,7 @@ impl<'r> WorktreeReader<'r> {
             r
         } else {
             let shared = self.shared.get_or_init(|| {
-                debug!(workdir = %self.workdir.display(), "opening the shared repository");
+                debug!(workdir = ?self.workdir, "opening the shared repository");
                 gix::open(self.workdir)
                     .map(gix::Repository::into_sync)
                     .map_err(|e| e.to_string())
@@ -136,14 +136,16 @@ impl WorktreeSource {
         let repo = Repo::discover(root).ok()?;
         let workdir = gob_exec::canonical(repo.work_dir()?).ok()?;
         let canon = gob_exec::canonical(root).ok()?;
-        let prefix = canon
-            .strip_prefix(&workdir)
-            .ok()?
-            .components()
-            .map(|c| c.as_os_str().to_string_lossy())
-            .collect::<Vec<_>>()
-            .join("/");
-        debug!(root = %root.display(), workdir = %workdir.display(), "git-normalized content source located");
+        let rel = canon.strip_prefix(&workdir).ok()?;
+        let prefix = if rel.as_os_str().is_empty() {
+            String::new()
+        } else {
+            gob_path::RelPath::from_host(&workdir, &canon).map_or_else(
+                |_| gob_path::Shown::with_home(rel, None).to_string(),
+                |r| r.as_str().to_owned(),
+            )
+        };
+        debug!(root = ?root, workdir = ?workdir, "git-normalized content source located");
         Some(Self {
             workdir,
             prefix,

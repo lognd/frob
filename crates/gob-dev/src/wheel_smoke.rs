@@ -207,7 +207,7 @@ fn one_wheel(opts: &SmokeOptions, name: &str) -> Result<PathBuf, WheelError> {
     if found.len() != 1 {
         return fail(format!(
             "expected exactly one {name} wheel in {}, found: {found:?}",
-            opts.dir.display()
+            gob_path::Shown::with_home(&opts.dir, None)
         ));
     }
     Ok(found.remove(0))
@@ -225,8 +225,12 @@ fn wheel_info(
         STEP_TIMEOUT,
     ));
     let text = run_ok("reading wheel metadata", &spec)?;
-    serde_json::from_str(text.trim())
-        .map_err(|e| WheelError::Smoke(format!("{}: unreadable wheel info: {e}", wheel.display())))
+    serde_json::from_str(text.trim()).map_err(|e| {
+        WheelError::Smoke(format!(
+            "{}: unreadable wheel info: {e}",
+            gob_path::Shown::with_home(wheel, None)
+        ))
+    })
 }
 
 /// Metadata checks of every wheel: name, platform tag, only its own binary, dependency pins.
@@ -240,20 +244,20 @@ fn check_metadata(
         let info = wheel_info(opts, reader_python, &wheel)?;
         emit(&format!(
             "smoke: wheel {} tag={}",
-            wheel.display(),
+            gob_path::Shown::with_home(&wheel, None),
             info.tag
         ));
         if info.name != product.name {
             return fail(format!(
                 "{}: metadata name is not {}",
-                wheel.display(),
+                gob_path::Shown::with_home(&wheel, None),
                 product.name
             ));
         }
         if opts.host == HostOs::Linux && !opts.compat_off && !info.tag.contains("manylinux_2_28") {
             return fail(format!(
                 "{}: linux tag is not manylinux_2_28 ({})",
-                wheel.display(),
+                gob_path::Shown::with_home(&wheel, None),
                 info.tag
             ));
         }
@@ -266,7 +270,7 @@ fn check_metadata(
         if scripts != [product.name.clone()] {
             return fail(format!(
                 "{} carries {scripts:?}, expected only {}",
-                wheel.display(),
+                gob_path::Shown::with_home(&wheel, None),
                 product.name
             ));
         }
@@ -375,15 +379,14 @@ fn scenario_tool_install(
     if let Some(found) = on_path(opts.host, &path, "grimble") {
         return fail(format!(
             "c: a grimble is already on PATH ({}); the scenario needs none",
-            found.display()
+            gob_path::Shown::with_home(&found, None)
         ));
     }
     std::fs::create_dir_all(&repo).map_err(|e| WheelError::Io {
-        what: format!("creating {}", repo.display()),
+        what: format!("creating {}", gob_path::Shown::with_home(&repo, None)),
         reason: e.to_string(),
     })?;
-    let path_env = path
-        .to_str()
+    let path_env = gob_path::exact_text(&path)
         .map(str::to_owned)
         .ok_or_else(|| WheelError::Path(PathBuf::from(&path)))?;
     let tool_dir_env = path_arg(&tool_dir)?;
@@ -462,7 +465,7 @@ pub fn smoke(opts: &SmokeOptions) -> Result<(), WheelError> {
 /// Any [`WheelError`] from [`smoke`], or [`WheelError::Io`] when `dir` cannot be made absolute.
 pub fn smoke_from_env(root: &Path, dir: &Path, want: Option<String>) -> Result<(), WheelError> {
     let dir = std::path::absolute(dir).map_err(|e| WheelError::Io {
-        what: format!("resolving {}", dir.display()),
+        what: format!("resolving {}", gob_path::Shown::with_home(dir, None)),
         reason: e.to_string(),
     })?;
     smoke(&SmokeOptions {
@@ -488,7 +491,7 @@ mod tests {
                 install_spec(&python, Path::new("wheels"), "grimble", Path::new(".")).unwrap();
             let args: Vec<&str> = spec.args.iter().map(String::as_str).collect();
             assert_eq!(&args[..4], ["pip", "install", "-q", "--python"]);
-            assert_eq!(args[4], python.to_str().unwrap());
+            assert_eq!(args[4], gob_path::exact_text(&python).unwrap());
             assert_eq!(
                 &args[5..],
                 ["--no-index", "--find-links", "wheels", "grimble"]

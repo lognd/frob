@@ -20,4 +20,5 @@ inventory = "0.3"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-path = { version = "0.532.0", path = "../gob-path" }
 tempfile = "3"

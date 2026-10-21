@@ -1,10 +1,6 @@
 //! Inventory: every temp-and-rename write goes through `gob_fs`; a new hand-rolled copy fails here.
 
 // frob:ticket 01M43JETBHW7FYNMR6SGVWFAEV
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -55,11 +51,9 @@ fn no_hand_rolled_temp_and_rename_outside_the_helper() {
         let mut files = Vec::new();
         rust_files(&src, &mut files);
         for file in files {
-            let rel = file
-                .strip_prefix(crates)
+            let rel = gob_path::RelPath::from_host(crates, &file)
                 .unwrap()
-                .to_string_lossy()
-                .replace('\\', "/");
+                .to_string();
             if ALLOWED.iter().any(|(a, _)| *a == rel) {
                 continue;
             }

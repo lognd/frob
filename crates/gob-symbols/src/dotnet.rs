@@ -668,7 +668,7 @@ impl DotnetProjects {
             .into_iter()
             .flatten()
             .flatten()
-            .filter_map(|e| e.file_name().into_string().ok())
+            .filter_map(|e| gob_path::exact_text(&e.file_name()).map(str::to_owned))
             .filter(|n| n.ends_with(".csproj"))
             .map(|n| {
                 if dir.is_empty() {

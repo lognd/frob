@@ -1,10 +1,6 @@
 //! Path-filtered CI (monorepo.md 4): `.github/scripts/plan-jobs.py` maps a diff to job sets and
 //! `ci.yml` gates the workspace job, the crunk job and the optional node job on its outputs.
 // frob:ticket 01M43ARWT173GKANZ322H41VF1
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::io::Write;
 use std::path::PathBuf;
@@ -163,7 +159,7 @@ fn the_crunk_job_lists_every_crunk_package() {
     listed.sort_unstable();
     let mut on_disk: Vec<String> = std::fs::read_dir(root().join("crates"))
         .unwrap()
-        .filter_map(|e| e.ok()?.file_name().into_string().ok())
+        .filter_map(|e| gob_path::exact_text(&e.ok()?.file_name()).map(str::to_owned))
         .filter(|n| n == "crunk" || n.starts_with("crunk-"))
         .collect();
     on_disk.sort_unstable();

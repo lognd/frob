@@ -85,8 +85,8 @@ pub fn create(runner: &Runner, kind: FixtureKind, source: &Path) -> Result<Fixtu
     match kind {
         FixtureKind::Repo => {
             let sha = git(runner, source, &["rev-parse", "HEAD"])?;
-            let dest = repo.to_string_lossy().into_owned();
-            let src = source.to_string_lossy().into_owned();
+            let dest = gob_path::Shown::with_home(&repo, None).to_string();
+            let src = gob_path::Shown::with_home(source, None).to_string();
             let parent = fixture.dir.path();
             git(
                 runner,
@@ -113,11 +113,12 @@ pub fn create(runner: &Runner, kind: FixtureKind, source: &Path) -> Result<Fixtu
                 &["checkout", "--quiet", "-B", "experimental", &sha],
             )?;
             identify(runner, &repo)?;
-            tracing::info!(fixture = %repo.display(), %sha, "repo fixture cloned");
+            tracing::info!(fixture = ?repo, %sha, "repo fixture cloned");
         }
         FixtureKind::Tmp => {
-            std::fs::create_dir(&repo)
-                .map_err(|e| ProfileError::Io(format!("{}: {e}", repo.display())))?;
+            std::fs::create_dir(&repo).map_err(|e| {
+                ProfileError::Io(format!("{}: {e}", gob_path::Shown::with_home(&repo, None)))
+            })?;
             git(runner, &repo, &["init", "--quiet", "-b", "experimental"])?;
             identify(runner, &repo)?;
             git(
@@ -125,7 +126,7 @@ pub fn create(runner: &Runner, kind: FixtureKind, source: &Path) -> Result<Fixtu
                 &repo,
                 &["commit", "--quiet", "--allow-empty", "-m", "init"],
             )?;
-            tracing::info!(fixture = %repo.display(), "tmp fixture created");
+            tracing::info!(fixture = ?repo, "tmp fixture created");
         }
     }
     Ok(fixture)

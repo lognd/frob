@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+gob-path = { version = "0.532.0", path = "../gob-path" }
 tracing = "0.1"
 
 [dev-dependencies]

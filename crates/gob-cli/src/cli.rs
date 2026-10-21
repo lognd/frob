@@ -95,7 +95,7 @@ impl Cli {
     {
         let exec = self.execute(args, None, true);
         if let Some(cwd) = &exec.serve_cwd {
-            tracing::info!(product = self.product, cwd = %cwd.display(), "serve: MCP over stdio");
+            tracing::info!(product = self.product, cwd = ?cwd, "serve: MCP over stdio");
             let stdin = std::io::stdin();
             let mut stdout = std::io::stdout();
             return match self.serve_mcp(stdin.lock(), &mut stdout, cwd) {
@@ -291,7 +291,7 @@ impl Cli {
         };
         let dotted = path.replace(' ', ".");
         if path == ServeCmd::VERB && !leaf.get_flag("schema") {
-            tracing::debug!(cwd = %ctx.cwd.display(), "serve requested");
+            tracing::debug!(cwd = ?ctx.cwd, "serve requested");
             return Execution::serving(ctx.cwd.clone());
         }
         if leaf.get_flag("schema") {
@@ -657,7 +657,7 @@ fn resolve_cwd(flag: Option<&PathBuf>, default_cwd: Option<&Path>) -> Result<Pat
     } else {
         Err(CliError::Usage(format!(
             "--cwd {} is not a directory",
-            cwd.display()
+            gob_path::Shown::with_home(&cwd, None)
         )))
     }
 }
@@ -665,7 +665,7 @@ fn resolve_cwd(flag: Option<&PathBuf>, default_cwd: Option<&Path>) -> Result<Pat
 /// Best-effort format choice from raw argv, for errors raised before parsing finishes.
 fn sniff_json(argv: &[OsString]) -> bool {
     let mut json = None;
-    let mut iter = argv.iter().filter_map(|a| a.to_str());
+    let mut iter = argv.iter().filter_map(gob_path::exact_text);
     while let Some(a) = iter.next() {
         match a {
             "--json" | "--format=json" => json = Some(true),

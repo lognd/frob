@@ -23,10 +23,6 @@
 //! To turn a code on: register its renderer in [`checker`], and flip its line in
 //! the `goldens!` table from `pending` to `enabled`. Any difference, even one
 //! byte, then fails with a line diff (see [`compare`]).
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::fmt::Write as _;
 use std::path::PathBuf;
@@ -71,7 +67,8 @@ fn cases_dir() -> PathBuf {
 fn load(code: &'static str) -> Case {
     let read = |ext: &str| {
         let p = cases_dir().join(format!("{code}.{ext}"));
-        std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("{}: {e}", p.display()))
+        std::fs::read_to_string(&p)
+            .unwrap_or_else(|e| panic!("{}: {e}", gob_path::Shown::with_home(&p, None)))
     };
     Case {
         code,
@@ -362,7 +359,11 @@ fn every_code_has_a_case_and_the_table_lists_them_all() {
     for code in CODES {
         for ext in ["grl", "expected"] {
             let p = cases_dir().join(format!("{code}.{ext}"));
-            assert!(p.is_file(), "missing {}", p.display());
+            assert!(
+                p.is_file(),
+                "missing {}",
+                gob_path::Shown::with_home(&p, None)
+            );
         }
     }
     let on_disk = std::fs::read_dir(cases_dir()).expect("cases dir").count();

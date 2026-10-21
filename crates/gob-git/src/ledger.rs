@@ -603,7 +603,7 @@ impl Repo {
                 continue;
             }
             let Ok(canon) = gob_exec::canonical(&w.path) else {
-                debug!(path = %w.path.display(), "worktree directory missing; skipped");
+                debug!(path = ?w.path, "worktree directory missing; skipped");
                 continue;
             };
             if Some(&canon) == me.as_ref() {
@@ -611,17 +611,17 @@ impl Repo {
             }
             match self.sync_one_other(full, &w.path, planned, old_tree, lock_wait) {
                 Ok((blocked, superseded)) if blocked.is_empty() && superseded.is_empty() => {
-                    info!(path = %w.path.display(), "checkout synced to new tip");
+                    info!(path = ?w.path, "checkout synced to new tip");
                 }
                 Ok((blocked, superseded)) => {
-                    warn!(path = %w.path.display(), ?blocked, ?superseded, "checkout left stale");
+                    warn!(path = ?w.path, ?blocked, ?superseded, "checkout left stale");
                     unsynced.push(UnsyncedCheckout {
                         path: w.path,
                         paths_with_local_edits: blocked,
                         paths_superseded: superseded,
                     });
                 }
-                Err(e) => warn!(path = %w.path.display(), error = %e, "checkout sync failed"),
+                Err(e) => warn!(path = ?w.path, error = %e, "checkout sync failed"),
             }
         }
         unsynced
@@ -774,17 +774,29 @@ fn write_index(index: &mut gix::index::File, lock: gix::lock::File) -> Result<()
 
 fn write_file(path: &Path, bytes: &[u8], exec: bool) -> Result<(), GitError> {
     if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir)
-            .map_err(|e| GitError::io(format!("mkdir {}", dir.display()), e))?;
+        std::fs::create_dir_all(dir).map_err(|e| {
+            GitError::io(
+                format!("mkdir {}", gob_path::Shown::with_home(dir, None)),
+                e,
+            )
+        })?;
     }
-    std::fs::write(path, bytes)
-        .map_err(|e| GitError::io(format!("writing {}", path.display()), e))?;
+    std::fs::write(path, bytes).map_err(|e| {
+        GitError::io(
+            format!("writing {}", gob_path::Shown::with_home(path, None)),
+            e,
+        )
+    })?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         let mode = if exec { 0o755 } else { 0o644 };
-        std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode))
-            .map_err(|e| GitError::io(format!("chmod {}", path.display()), e))?;
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode)).map_err(|e| {
+            GitError::io(
+                format!("chmod {}", gob_path::Shown::with_home(path, None)),
+                e,
+            )
+        })?;
     }
     #[cfg(not(unix))]
     let _ = exec;

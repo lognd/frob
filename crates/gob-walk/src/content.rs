@@ -56,7 +56,7 @@ impl ContentSource {
     /// The source for `root`: git-normalized when `root` is inside a git checkout, raw otherwise.
     pub fn locate(root: &Path) -> Self {
         let git = BACKEND.get().and_then(|b| b.locate(root));
-        tracing::debug!(root = %root.display(), git = git.is_some(), "content source located");
+        tracing::debug!(root = ?root, git = git.is_some(), "content source located");
         Self {
             root: root.to_path_buf(),
             git,
@@ -65,7 +65,7 @@ impl ContentSource {
 
     /// A source reading through an injected `locator` for `root`, bypassing the process-wide backend.
     pub fn with_locator(root: &Path, locator: Arc<dyn ContentLocator>) -> Self {
-        tracing::debug!(root = %root.display(), "content source from injected locator");
+        tracing::debug!(root = ?root, "content source from injected locator");
         Self {
             root: root.to_path_buf(),
             git: Some(locator),

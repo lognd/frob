@@ -57,6 +57,14 @@ components on every platform), `PathStyle` (Unix or Windows, read with
 bridges, and `Shown`. gob-git re-exports `RelPath` and `PathError`;
 `RelPath::new` now returns `PathError`, which converts into `GitError`.
 
+Status (~KHR84D9): the gob-* crates (all but gob-path) convert paths to text
+only through gob-path and are off the confinement allow list. Lossy display
+text is `Shown::with_home(path, None)`; strict text is
+`gob_path::exact_text(path) -> Option<&str>`, which returns the path verbatim
+or `None` for non-Unicode; tracing fields use the `?path` debug form. Only
+the crunk crates remain on `ALLOW`. This section's `Arg` type has not been
+added to gob-path; `command_line` callers still pass `OsString` arguments.
+
 ## 2. Command lines: arguments, never strings
 
 Processes take an argument vector of `OsString` through gob-exec

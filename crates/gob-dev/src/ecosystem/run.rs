@@ -148,7 +148,10 @@ pub fn run_tool(
         }
         Err(e) => {
             tracing::warn!(tool = tool.name(), error = %e, "could not spawn");
-            ToolRun::crashed(format!("could not start {}: {e}", exe.to_string_lossy()))
+            ToolRun::crashed(format!(
+                "could not start {}: {e}",
+                gob_path::Shown::with_home(&exe, None)
+            ))
         }
     }
 }
@@ -249,7 +252,7 @@ mod tests {
             projects: vec![Project {
                 name: "demo".into(),
                 language: Language::Rust,
-                repo: repo.to_string_lossy().into_owned(),
+                repo: gob_path::Shown::with_home(repo, None).to_string(),
                 sha: sha.to_owned(),
                 tools: Some(vec![Tool::Frob, Tool::Grimble]),
             }],
@@ -269,7 +272,7 @@ mod tests {
         let p = Project {
             name: "demo".into(),
             language: Language::Rust,
-            repo: repo.to_string_lossy().into_owned(),
+            repo: gob_path::Shown::with_home(&repo, None).to_string(),
             sha: sha.clone(),
             tools: None,
         };

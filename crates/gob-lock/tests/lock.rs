@@ -1,8 +1,4 @@
 //! Round trip, atomic save, missing file and diff behavior of `gob-lock`.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use gob_lock::{
     Current, CurrentFlow, CurrentSymbol, EntryKind, Facet, FacetSet, FlowEnd, FlowEntry, LockEntry,
@@ -363,7 +359,10 @@ fn a_v1_frob_lock_is_named_as_such_with_the_remedy() {
         let err = LockFile::load(&path).unwrap_err();
         assert!(matches!(err, LockError::LegacyV1 { .. }), "{text}: {err}");
         let msg = err.to_string();
-        assert!(msg.contains(&path.display().to_string()), "{msg}");
+        assert!(
+            msg.contains(&gob_path::Shown::with_home(&path, None).to_string()),
+            "{msg}"
+        );
         assert!(msg.contains("v1"), "{msg}");
         assert!(msg.contains("delete it and run `frob ack"), "{msg}");
     }

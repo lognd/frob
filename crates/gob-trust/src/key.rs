@@ -147,7 +147,7 @@ fn load(path: &Path) -> Result<Option<MachineKey>, TrustError> {
         path: path.to_owned(),
         why: "not exactly 32 bytes",
     })?;
-    tracing::debug!(path = %path.display(), "machine key loaded");
+    tracing::debug!(path = ?path, "machine key loaded");
     Ok(Some(MachineKey(arr)))
 }
 
@@ -156,7 +156,7 @@ fn check_mode(path: &Path, meta: &fs::Metadata) -> Result<(), TrustError> {
     use std::os::unix::fs::PermissionsExt;
     let mode = meta.permissions().mode() & 0o7777;
     if mode & 0o077 != 0 {
-        tracing::error!(path = %path.display(), mode, "machine key permissions too open");
+        tracing::error!(path = ?path, mode, "machine key permissions too open");
         return Err(TrustError::InsecurePermissions {
             path: path.to_owned(),
             mode,
@@ -188,17 +188,17 @@ fn create(path: &Path) -> Result<(), TrustError> {
     let written = write_private(&tmp, &bytes);
     let linked = written.and_then(|()| match fs::hard_link(&tmp, path) {
         Ok(()) => {
-            tracing::info!(path = %path.display(), "machine key created");
+            tracing::info!(path = ?path, "machine key created");
             Ok(())
         }
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-            tracing::debug!(path = %path.display(), "machine key created concurrently; using existing");
+            tracing::debug!(path = ?path, "machine key created concurrently; using existing");
             Ok(())
         }
         Err(e) => Err(io("publish", path)(e)),
     });
     if let Err(e) = fs::remove_file(&tmp) {
-        tracing::warn!(path = %tmp.display(), error = %e, "could not remove temp key file");
+        tracing::warn!(path = ?tmp, error = %e, "could not remove temp key file");
     }
     linked
 }

@@ -26,9 +26,9 @@ pub fn is_grmb_path(path: impl AsRef<Path>) -> bool {
     let found = path
         .as_ref()
         .extension()
-        .and_then(|e| e.to_str())
+        .and_then(gob_path::exact_text)
         .is_some_and(|e| e.eq_ignore_ascii_case(EXTENSION));
-    tracing::trace!(path = %path.as_ref().display(), found, "grmb detect");
+    tracing::trace!(path = ?path.as_ref(), found, "grmb detect");
     found
 }
 

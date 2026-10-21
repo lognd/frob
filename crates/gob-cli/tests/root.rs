@@ -1,8 +1,4 @@
 //! The root's contract with a dummy product: exit table, flags, rendering.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{
@@ -38,7 +34,7 @@ impl Command for EchoCmd {
     }
     fn run(&self, ctx: &Context) -> Outcome<Echo> {
         Ok(Payload::new(Echo {
-            cwd: ctx.cwd.display().to_string(),
+            cwd: gob_path::Shown::with_home(&ctx.cwd, None).to_string(),
             json: ctx.json,
             dry_run: ctx.dry_run,
             verbosity: ctx.verbosity,
@@ -155,7 +151,7 @@ fn quiet_text_prints_nothing_on_success() {
 #[test]
 fn cwd_flag_is_validated_and_applied() {
     let dir = std::env::temp_dir();
-    let (exit, out, _) = run(&["--cwd", dir.to_str().unwrap(), "echo"]);
+    let (exit, out, _) = run(&["--cwd", gob_path::exact_text(&dir).unwrap(), "echo"]);
     assert_eq!(exit, 0);
     // The envelope is JSON, so a Windows path arrives backslash-escaped; compare parsed paths.
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();

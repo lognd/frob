@@ -1,10 +1,6 @@
 //! `git_common_dir` and `canonical` live in gob-fs, below gob-exec and gob-cache.
 
 // frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use gob_fs::{canonical, git_common_dir};
 
@@ -20,7 +16,7 @@ fn a_linked_worktree_and_its_primary_share_one_common_dir_and_a_plain_dir_has_no
     std::fs::create_dir_all(&linked).unwrap();
     std::fs::write(
         linked.join(".git"),
-        format!("gitdir: {}\n", private.display()),
+        format!("gitdir: {}\n", gob_path::Shown::with_home(&private, None)),
     )
     .unwrap();
     let want = canonical(&primary.join(".git")).unwrap();

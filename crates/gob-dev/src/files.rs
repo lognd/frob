@@ -254,7 +254,8 @@ fn orphan_files(root: &Path, files: &[GenFile]) -> Vec<String> {
             continue;
         };
         for entry in entries.flatten() {
-            let name = entry.file_name().to_string_lossy().into_owned();
+            let name = gob_path::Shown::with_home(std::path::Path::new(&entry.file_name()), None)
+                .to_string();
             let rel = if dir.is_empty() {
                 name
             } else {
@@ -366,7 +367,8 @@ fn summary_problems(root: &Path) -> Vec<String> {
             continue;
         };
         for entry in entries.flatten() {
-            let name = entry.file_name().to_string_lossy().into_owned();
+            let name = gob_path::Shown::with_home(std::path::Path::new(&entry.file_name()), None)
+                .to_string();
             let child = format!("{rel}/{name}");
             if entry.path().is_dir() {
                 stack.push((entry.path(), child));

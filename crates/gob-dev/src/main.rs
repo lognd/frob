@@ -1,8 +1,4 @@
 //! `cargo dev`: developer task runner for the frob monorepo.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::PathBuf;
 use std::time::Duration;
@@ -600,7 +596,10 @@ fn profile_commands(
         emit(&format!("PROFILE: {line}"));
     }
     if breaches.is_empty() {
-        emit(&format!("report written to {}", path.display()));
+        emit(&format!(
+            "report written to {}",
+            gob_path::Shown::with_home(&path, None)
+        ));
         Ok(())
     } else {
         Err(Failed(format!(
@@ -619,7 +618,7 @@ fn append_summary(path: &std::path::Path, markdown: &str) {
         .open(path)
         .and_then(|mut f| writeln!(f, "{markdown}"));
     if let Err(e) = written {
-        tracing::warn!(path = %path.display(), error = %e, "step summary not written");
+        tracing::warn!(path = ?path, error = %e, "step summary not written");
     }
 }
 
@@ -740,7 +739,12 @@ fn import_tickets(
         emit(&format!("warning: {warning}"));
     }
     let write = |path: &std::path::Path, text: String| {
-        std::fs::write(path, text).map_err(|e| Failed(format!("error: {}: {e}", path.display())))
+        std::fs::write(path, text).map_err(|e| {
+            Failed(format!(
+                "error: {}: {e}",
+                gob_path::Shown::with_home(path, None)
+            ))
+        })
     };
     if let Some(path) = map_out {
         write(path, import_v1::render_id_map(&report.rows))?;

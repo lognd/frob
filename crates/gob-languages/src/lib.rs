@@ -40,10 +40,6 @@
 //!    (`grammar::language_fn`) and in `grammar::pin`, recording the crate name
 //!    and exact version (the pin test checks it against `Cargo.toml`).
 //! 5. Add a sample parse test and a query-capture test.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod comments;
 mod grammar;

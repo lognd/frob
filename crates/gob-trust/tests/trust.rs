@@ -1,11 +1,4 @@
 //! Acceptance and property tests for gob-trust.
-#![cfg_attr(
-    unix,
-    expect(
-        clippy::disallowed_methods,
-        reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-    )
-)]
 
 use gob_trust::{
     Canonical, CanonicalWriter, MachineKey, TrustError, mac, mac_record, resolve_key_path, verify,
@@ -128,7 +121,10 @@ mod files {
             match MachineKey::load_or_create_at(&path) {
                 Err(e @ TrustError::InsecurePermissions { .. }) => {
                     let msg = e.to_string();
-                    assert!(msg.contains(path.to_str().unwrap()) && msg.contains("chmod 600"));
+                    assert!(
+                        msg.contains(gob_path::exact_text(&path).unwrap())
+                            && msg.contains("chmod 600")
+                    );
                 }
                 other => panic!("mode {bad:o}: {other:?}"),
             }

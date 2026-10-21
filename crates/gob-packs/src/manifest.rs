@@ -1,8 +1,4 @@
 //! The typed `pack.toml` manifest, its loader and the cross-pack checks.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;
@@ -215,7 +211,7 @@ fn locate(file: &str, text: &str, e: &toml::de::Error) -> PackError {
 /// PACK005 when the file cannot be read, is not UTF-8, fails [`Manifest::parse`], or
 /// names a reserved built-in prefix (see [`check_reserved`](crate::check_reserved)).
 pub fn load(path: &Path) -> Result<Manifest, PackError> {
-    let file = path.display().to_string();
+    let file = gob_path::Shown::with_home(path, None).to_string();
     let io = |e: std::io::Error| PackError::malformed(&file, "<file>", format!("cannot read: {e}"));
     let mut buf = Vec::new();
     std::fs::File::open(path)

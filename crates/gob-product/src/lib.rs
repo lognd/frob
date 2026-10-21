@@ -7,10 +7,6 @@
 //! [`register_commands!`].
 
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod check;
 mod doctor;

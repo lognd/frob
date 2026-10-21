@@ -56,11 +56,13 @@ fn markdown_siblings() -> Vec<(String, String)> {
             if p.is_dir() {
                 stack.push(p);
             } else if p.extension().is_some_and(|x| x == "md") {
-                let rel = p
-                    .strip_prefix(env!("CARGO_MANIFEST_DIR"))
-                    .expect("under manifest dir")
-                    .to_string_lossy()
-                    .replace('\\', "/");
+                let rel = gob_path::Shown::with_home(
+                    p.strip_prefix(env!("CARGO_MANIFEST_DIR"))
+                        .expect("under manifest dir"),
+                    None,
+                )
+                .to_string()
+                .replace('\\', "/");
                 out.push((rel, std::fs::read_to_string(&p).expect("read")));
             }
         }
@@ -133,7 +135,10 @@ fn run_corpus(lang: &str, ext: &str, claims: &[&str]) {
     for op in claims {
         let src = dir(lang).join(format!("{op}.{ext}"));
         let text = std::fs::read_to_string(&src).unwrap_or_else(|_| {
-            panic!("missing corpus case for operator `{op}`: {}", src.display())
+            panic!(
+                "missing corpus case for operator `{op}`: {}",
+                gob_path::Shown::with_home(&src, None)
+            )
         });
         let rel = format!("tests/corpus/{lang}/ops/{op}.{ext}");
         let siblings = if lang == "markdown" {

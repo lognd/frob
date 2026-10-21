@@ -1,8 +1,4 @@
 //! The repository-shared cache: location from any checkout, and two processes writing at once (~TSK0M4Y).
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::path::Path;
 use std::process::Command;
@@ -31,7 +27,7 @@ fn fake_repo(dir: &Path) -> (std::path::PathBuf, std::path::PathBuf) {
     let private = primary.join(".git/worktrees/wt");
     std::fs::write(
         linked.join(".git"),
-        format!("gitdir: {}\n", private.display()),
+        format!("gitdir: {}\n", gob_path::Shown::with_home(&private, None)),
     )
     .unwrap();
     (primary, linked)
@@ -45,8 +41,16 @@ fn primary_and_linked_worktree_share_one_cache_dir() {
     let a = shared_dir(&primary, ".frob").unwrap();
     let b = shared_dir(&linked, ".frob").unwrap();
     assert_eq!(a, b);
-    assert!(!a.starts_with(tmp.path()), "{}", a.display());
-    assert!(a.ends_with("frob"), "{}", a.display());
+    assert!(
+        !a.starts_with(tmp.path()),
+        "{}",
+        gob_path::Shown::with_home(&a, None)
+    );
+    assert!(
+        a.ends_with("frob"),
+        "{}",
+        gob_path::Shown::with_home(&a, None)
+    );
     assert_eq!(
         git_common_dir(&linked).unwrap(),
         gob_fs::canonical(&primary.join(".git")).unwrap()
@@ -144,5 +148,9 @@ fn a_forged_in_tree_cache_is_never_read_or_imported() {
     }
     // The shared cache itself lives outside the work tree.
     let dir = shared_dir(&primary, ".frob").unwrap();
-    assert!(!dir.starts_with(tmp.path()), "{}", dir.display());
+    assert!(
+        !dir.starts_with(tmp.path()),
+        "{}",
+        gob_path::Shown::with_home(&dir, None)
+    );
 }

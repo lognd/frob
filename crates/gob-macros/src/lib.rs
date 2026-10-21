@@ -8,10 +8,6 @@
 
 // The darling derive output trips this pedantic lint; nothing we can edit.
 #![allow(clippy::needless_continue)]
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 mod command;
 mod config_table;

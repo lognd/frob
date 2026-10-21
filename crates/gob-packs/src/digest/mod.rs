@@ -6,10 +6,6 @@
 //! text alike), plus the digests of included packs. Symlinks, hardlinks,
 //! device files and paths escaping the root are refused as PACK005 and no
 //! digest is produced.
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::fmt::Write as _;
 use std::fs;
@@ -29,7 +25,7 @@ pub type Digest = [u8; 32];
 /// PACK005 [`PackError::Malformed`] for a symlink, hardlink, device file,
 /// non-UTF-8 or escaping path, or an unreadable entry; no digest is produced.
 pub fn tree_digest(root: &Path, included: &[Digest]) -> Result<Digest, PackError> {
-    let name = root.display().to_string();
+    let name = gob_path::Shown::with_home(root, None).to_string();
     let meta =
         fs::symlink_metadata(root).map_err(|e| bad(&name, &name, format!("unreadable: {e}")))?;
     if !meta.is_dir() {
@@ -85,7 +81,7 @@ fn walk(
     for entry in rd {
         let entry = entry.map_err(|e| bad(file, rel, format!("unreadable: {e}")))?;
         let os = entry.file_name();
-        let Some(n) = os.to_str() else {
+        let Some(n) = gob_path::exact_text(&os) else {
             return Err(bad(file, rel, "non-UTF-8 path component"));
         };
         if n.is_empty() || n == "." || n == ".." || n.contains(['/', '\\']) {

@@ -8,6 +8,7 @@
 
 use std::path::{Path, PathBuf};
 
+use gob_path::Shown;
 use tracing::debug;
 use walkdir::WalkDir;
 
@@ -62,7 +63,7 @@ pub fn scan(root: &Path, spawners: &[String]) -> Vec<Proc001Hit> {
         };
         let mut comps = rel
             .components()
-            .map(|c| c.as_os_str().to_string_lossy().into_owned());
+            .map(|c| Shown::with_home(Path::new(c.as_os_str()), None).to_string());
         let (Some(krate), Some(src)) = (comps.next(), comps.next()) else {
             continue;
         };
@@ -70,7 +71,7 @@ pub fn scan(root: &Path, spawners: &[String]) -> Vec<Proc001Hit> {
             continue;
         }
         let Ok(text) = std::fs::read_to_string(path) else {
-            debug!(path = %path.display(), "unreadable file skipped");
+            debug!(path = ?path, "unreadable file skipped");
             continue;
         };
         hits.extend(scan_text(path, &text));

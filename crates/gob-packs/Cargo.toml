@@ -16,6 +16,7 @@ globset = "0.4"
 toml = "1"
 tracing = "0.1"
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-plan = { version = "0.532.0", path = "../gob-plan" }
 gob-trust = { version = "0.532.0", path = "../gob-trust" }
 

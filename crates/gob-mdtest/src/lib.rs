@@ -27,10 +27,6 @@
 //! fn my_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> { vec![] }
 //! gob_mdtest::mdtest!(dir = "tests/mdtest", runner = my_runner);
 //! ```
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 pub mod coverage;
 pub mod matrix;

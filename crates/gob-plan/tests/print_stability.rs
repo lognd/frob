@@ -5,10 +5,6 @@
 //! must fail with a shrunk example.
 
 // frob:ticket 01M47YJF46HM8MA5PVWNH92W1H
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use std::fmt::Write as _;
 
@@ -143,7 +139,10 @@ fn fixtures() -> Vec<(String, String)> {
         .filter(|e| e.path().extension().is_some_and(|x| x == "grl"))
         .map(|e| {
             let text = std::fs::read_to_string(e.path()).expect("fixture reads");
-            (e.file_name().to_string_lossy().into_owned(), text)
+            (
+                gob_path::Shown::with_home(std::path::Path::new(&e.file_name()), None).to_string(),
+                text,
+            )
         })
         .collect();
     out.sort();

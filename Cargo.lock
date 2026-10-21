@@ -2439,6 +2439,7 @@ dependencies = [
  "blake3",
  "criterion",
  "gob-fs",
+ "gob-path",
  "gob-time",
  "gob-trust",
  "rusqlite",
@@ -2496,6 +2497,7 @@ dependencies = [
  "gob-exec",
  "gob-log",
  "gob-macros",
+ "gob-path",
  "gob-rules",
  "gob-time",
  "inventory",
@@ -2514,6 +2516,7 @@ dependencies = [
  "blake3",
  "gob-macros",
  "gob-mdtest",
+ "gob-path",
  "gob-rules",
  "insta",
  "inventory",
@@ -2549,6 +2552,7 @@ dependencies = [
  "gob-git",
  "gob-log",
  "gob-mdtest",
+ "gob-path",
  "gob-plan",
  "gob-rules",
  "gob-time",
@@ -2593,6 +2597,7 @@ dependencies = [
  "gob-languages",
  "gob-macros",
  "gob-mdtest",
+ "gob-path",
  "gob-rules",
  "gob-symbols",
  "gob-text",
@@ -2615,6 +2620,7 @@ dependencies = [
  "blake3",
  "gob-fs",
  "gob-log",
+ "gob-path",
  "nix",
  "proptest",
  "tempfile",
@@ -2641,6 +2647,7 @@ name = "gob-frameworks"
 version = "0.532.0"
 dependencies = [
  "gob-ir",
+ "gob-path",
  "gob-symbols",
  "gob-walk",
  "inventory",
@@ -2652,6 +2659,7 @@ dependencies = [
 name = "gob-fs"
 version = "0.532.0"
 dependencies = [
+ "gob-path",
  "proptest",
  "tempfile",
  "tracing",
@@ -2690,6 +2698,7 @@ dependencies = [
 name = "gob-languages"
 version = "0.532.0"
 dependencies = [
+ "gob-path",
  "gob-text",
  "thiserror",
  "tracing",
@@ -2712,6 +2721,7 @@ version = "0.532.0"
 dependencies = [
  "gob-caps",
  "gob-fs",
+ "gob-path",
  "serde",
  "tempfile",
  "thiserror",
@@ -2738,6 +2748,7 @@ dependencies = [
  "gob-cli",
  "gob-config",
  "gob-directives",
+ "gob-path",
  "gob-rules",
  "proc-macro2",
  "quote",
@@ -2769,6 +2780,7 @@ dependencies = [
  "blake3",
  "globset",
  "gob-ir",
+ "gob-path",
  "gob-plan",
  "gob-symbols",
  "gob-text",
@@ -2815,6 +2827,7 @@ dependencies = [
  "globset",
  "gob-caps",
  "gob-ir",
+ "gob-path",
  "gob-pattern",
  "gob-rules",
  "gob-symbols",
@@ -2839,6 +2852,7 @@ dependencies = [
  "gob-check",
  "gob-cli",
  "gob-config",
+ "gob-path",
  "gob-rules",
  "gob-trust",
  "schemars",
@@ -2876,6 +2890,7 @@ dependencies = [
  "gob-caps",
  "gob-ir",
  "gob-languages",
+ "gob-path",
  "gob-text",
  "gob-walk",
  "insta",
@@ -2912,6 +2927,7 @@ dependencies = [
 name = "gob-time"
 version = "0.532.0"
 dependencies = [
+ "gob-path",
  "jiff",
  "schemars",
  "serde",
@@ -2927,6 +2943,7 @@ dependencies = [
  "getrandom 0.3.4",
  "gob-exec",
  "gob-fs",
+ "gob-path",
  "proptest",
  "tempfile",
  "thiserror",
@@ -2940,6 +2957,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "criterion",
+ "gob-path",
  "ignore",
  "proptest",
  "rayon",

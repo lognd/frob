@@ -45,7 +45,7 @@ impl<P: Product> Command for Doctor<P> {
 
     fn run(&self, ctx: &Context) -> Outcome<P::Doctor> {
         let root = P::locate_root(&ctx.cwd);
-        tracing::debug!(product = P::NAME, root = %root.display(), "doctor started");
+        tracing::debug!(product = P::NAME, root = ?root, "doctor started");
         P::doctor(ctx, &root, &self.matches)
     }
 }

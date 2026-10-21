@@ -11,5 +11,5 @@ mod style;
 
 pub use error::PathError;
 pub use relpath::RelPath;
-pub use shown::Shown;
+pub use shown::{Shown, exact_text};
 pub use style::{PathStyle, validate_component};

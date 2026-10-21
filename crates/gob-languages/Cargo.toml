@@ -25,6 +25,7 @@ html = ["dep:tree-sitter-html"]
 yaml = ["dep:tree-sitter-yaml"]
 
 [dependencies]
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 thiserror = "2"
 tracing = "0.1"

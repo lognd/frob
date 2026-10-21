@@ -67,7 +67,7 @@ pub fn measure(deps: &Path) -> Result<Measured, TestSizeError> {
             total.bytes += meta.len();
         }
     }
-    tracing::debug!(dir = %deps.display(), count = total.count, bytes = total.bytes, "measured test executables");
+    tracing::debug!(dir = ?deps, count = total.count, bytes = total.bytes, "measured test executables");
     Ok(total)
 }
 

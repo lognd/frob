@@ -1,10 +1,6 @@
 //! Lowering a checked rule to a plan: shape, clause-order independence, and honest refusals.
 
 // frob:ticket 01M3ZX7EKNE5Q0NB0DKCH77AZX
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use gob_plan::grl::parse;
 use gob_plan::lower::{LowerError, lower_rule};
@@ -28,7 +24,7 @@ fn fixtures() -> Vec<(String, String)> {
         .filter(|e| e.path().extension().is_some_and(|x| x == "grl"))
         .map(|e| {
             (
-                e.file_name().to_string_lossy().into_owned(),
+                gob_path::Shown::with_home(std::path::Path::new(&e.file_name()), None).to_string(),
                 std::fs::read_to_string(e.path()).expect("fixture reads"),
             )
         })

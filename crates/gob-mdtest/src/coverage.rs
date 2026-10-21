@@ -217,7 +217,7 @@ impl Allowlist {
             path: path.to_owned(),
             message: e.to_string(),
         })?;
-        tracing::debug!(path = %path.display(), gaps = list.gap.len(), "coverage allowlist loaded");
+        tracing::debug!(path = ?path, gaps = list.gap.len(), "coverage allowlist loaded");
         Ok(list)
     }
 }
@@ -252,7 +252,7 @@ fn in_mdtest_dir(path: &Path) -> bool {
 
 /// The `(family, rule)` of a fixture file `.../resources/test/fixtures/FAMILY/RULE.ext` with a snapshot.
 fn fixture_key(path: &Path) -> Option<(String, String)> {
-    let ext = path.extension()?.to_str()?;
+    let ext = path.extension().and_then(gob_path::exact_text)?;
     if ext == "snap" {
         return None;
     }
@@ -268,8 +268,8 @@ fn fixture_key(path: &Path) -> Option<(String, String)> {
     if !path.with_extension("snap").is_file() {
         return None;
     }
-    let family = parts[n - 2].to_str()?.to_owned();
-    let rule = path.file_stem()?.to_str()?.to_owned();
+    let family = gob_path::exact_text(parts[n - 2])?.to_owned();
+    let rule = path.file_stem().and_then(gob_path::exact_text)?.to_owned();
     Some((family, rule))
 }
 
@@ -289,13 +289,13 @@ pub fn scan_blocks(root: &Path) -> Vec<crate::parse::Block> {
             continue;
         }
         let Ok(text) = std::fs::read_to_string(path) else {
-            tracing::warn!(path = %path.display(), "unreadable mdtest suite skipped");
+            tracing::warn!(path = ?path, "unreadable mdtest suite skipped");
             continue;
         };
         match parse_suite(&text) {
             Ok(blocks) => out.extend(blocks),
             Err(e) => {
-                tracing::warn!(path = %path.display(), error = %e, "unparsable mdtest suite skipped");
+                tracing::warn!(path = ?path, error = %e, "unparsable mdtest suite skipped");
             }
         }
     }
@@ -316,7 +316,7 @@ pub fn scan_corpus(root: &Path) -> Corpus {
         let path = entry.path();
         if path.extension().is_some_and(|x| x == "md") && in_mdtest_dir(path) {
             let Ok(text) = std::fs::read_to_string(path) else {
-                tracing::warn!(path = %path.display(), "unreadable mdtest suite skipped");
+                tracing::warn!(path = ?path, "unreadable mdtest suite skipped");
                 continue;
             };
             match parse_suite(&text) {
@@ -347,7 +347,7 @@ pub fn scan_corpus(root: &Path) -> Corpus {
                     }
                 }
                 Err(e) => {
-                    tracing::warn!(path = %path.display(), error = %e, "unparsable mdtest suite skipped");
+                    tracing::warn!(path = ?path, error = %e, "unparsable mdtest suite skipped");
                 }
             }
         } else if let Some(key) = fixture_key(path) {

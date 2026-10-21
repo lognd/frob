@@ -1,7 +1,7 @@
 //! Property tests for the host bridges in both path styles, run on any host.
 // frob:ticket 01M41S1KC8PQFTVDETMARHP82G
 
-use gob_path::{PathError, PathStyle, RelPath, Shown, validate_component};
+use gob_path::{PathError, PathStyle, RelPath, Shown, exact_text, validate_component};
 use proptest::prelude::*;
 use std::path::Path;
 
@@ -99,4 +99,23 @@ fn shown_scrubs_home() {
         Shown::with_home(Path::new("/home/ux/p"), Some(home)).as_str(),
         "/home/ux/p"
     );
+}
+
+// frob:tests exact_text
+#[test]
+fn exact_text_is_verbatim_or_none() {
+    assert_eq!(exact_text(Path::new("/a/b")), Some("/a/b"));
+    assert_eq!(exact_text(Path::new("")), Some(""));
+    assert_eq!(exact_text(Path::new("a/")), Some("a/"));
+    assert_eq!(exact_text(std::ffi::OsStr::new("name")), Some("name"));
+    assert_eq!(exact_text(Path::new("C:\\x\\y")), Some("C:\\x\\y"));
+}
+
+// frob:tests exact_text
+#[cfg(unix)]
+#[test]
+fn exact_text_refuses_non_unicode() {
+    use std::os::unix::ffi::OsStrExt;
+    let bad = std::ffi::OsStr::from_bytes(b"a/\xff");
+    assert_eq!(exact_text(bad), None);
 }

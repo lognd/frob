@@ -12,6 +12,7 @@ authors.workspace = true
 gob-caps = { version = "0.532.0", path = "../gob-caps" }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-pattern = { version = "0.532.0", path = "../gob-pattern" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
@@ -25,6 +26,7 @@ thiserror = "2"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-path = { version = "0.532.0", path = "../gob-path" }
 proptest = "1"
 insta = "1"
 criterion = { version = "0.5", default-features = false }

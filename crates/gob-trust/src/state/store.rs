@@ -99,14 +99,14 @@ impl StateStore {
             let real = gob_exec::canonical(&root).map_err(io("canonicalize", &root))?;
             let tree_real = gob_exec::canonical(tree).map_err(io("canonicalize", tree))?;
             if real.starts_with(&tree_real) {
-                tracing::error!(root = %real.display(), "state root inside work tree refused");
+                tracing::error!(root = ?real, "state root inside work tree refused");
                 return Err(StateError::InsideWorkTree {
                     root: real,
                     tree: tree_real,
                 });
             }
         }
-        tracing::debug!(root = %root.display(), "state store opened");
+        tracing::debug!(root = ?root, "state store opened");
         Ok(Self { root, key })
     }
 

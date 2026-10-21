@@ -30,10 +30,10 @@ pub fn check(
     root: &Path,
 ) -> Result<(), SharedTargetDir> {
     let shared = exe.starts_with(root.join("target")) && !exe.starts_with(root.join(ISOLATED_DIR));
-    tracing::debug!(windows, rebuilds, shared, exe = %exe.display(), "isolation check");
+    tracing::debug!(windows, rebuilds, shared, exe = ?exe, "isolation check");
     if windows && rebuilds && shared {
         return Err(SharedTargetDir {
-            exe: exe.display().to_string(),
+            exe: gob_path::Shown::with_home(exe, None).to_string(),
         });
     }
     Ok(())

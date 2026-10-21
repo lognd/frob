@@ -211,7 +211,7 @@ pub enum ImportError {
 
 fn io_err(path: &Path, e: &std::io::Error) -> ImportError {
     ImportError::Io {
-        path: path.display().to_string(),
+        path: gob_path::Shown::with_home(path, None).to_string(),
         message: e.to_string(),
     }
 }
@@ -472,7 +472,8 @@ fn read_v1(from: &Path) -> Result<Vec<V1Ticket>, ImportError> {
     let mut dirs: Vec<(u64, PathBuf)> = Vec::new();
     for entry in std::fs::read_dir(from).map_err(|e| io_err(from, &e))? {
         let entry = entry.map_err(|e| io_err(from, &e))?;
-        let name = entry.file_name().to_string_lossy().into_owned();
+        let name =
+            gob_path::Shown::with_home(std::path::Path::new(&entry.file_name()), None).to_string();
         match ticket_number(&name) {
             Ok(n) if entry.path().join("ticket.md").is_file() => dirs.push((n, entry.path())),
             _ => tracing::info!(%name, "skipped: not a v1 ticket directory"),
@@ -489,7 +490,11 @@ fn read_v1(from: &Path) -> Result<Vec<V1Ticket>, ImportError> {
         } else {
             None
         };
-        out.push(parse_v1(&md.display().to_string(), &text, report)?);
+        out.push(parse_v1(
+            &gob_path::Shown::with_home(&md, None).to_string(),
+            &text,
+            report,
+        )?);
     }
     tracing::info!(count = out.len(), "v1 tickets read");
     Ok(out)
@@ -893,7 +898,7 @@ pub fn load_tree(dir: &Path) -> Result<Vec<Rendered>, ImportError> {
 fn load_ticket(path: &Path) -> Result<Rendered, ImportError> {
     let name = path
         .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
+        .map(|n| gob_path::Shown::with_home(std::path::Path::new(&n), None).to_string())
         .unwrap_or_default();
     let id: TicketId = name
         .parse()
@@ -906,7 +911,7 @@ fn load_ticket(path: &Path) -> Result<Rendered, ImportError> {
         let ev_path = ev.map_err(|e| io_err(&events_dir, &e))?.path();
         let stem = ev_path
             .file_stem()
-            .map(|s| s.to_string_lossy().into_owned())
+            .map(|s| gob_path::Shown::with_home(std::path::Path::new(&s), None).to_string())
             .unwrap_or_default();
         let ev_id: EventId = stem
             .parse()
@@ -942,7 +947,7 @@ fn existing_keys(
         let path = entry.map_err(|e| io_err(to, &e))?.path();
         let name = path
             .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
+            .map(|n| gob_path::Shown::with_home(std::path::Path::new(&n), None).to_string())
             .unwrap_or_default();
         let Ok(id) = name.parse::<TicketId>() else {
             tracing::debug!(entry = %name, "merge: not a ticket directory, ignored");
@@ -1004,7 +1009,7 @@ fn write_tree(to: &Path, tickets: &[Rendered]) -> Result<(), ImportError> {
             std::fs::write(&path, text).map_err(|e| io_err(&path, &e))?;
         }
     }
-    tracing::info!(tickets = tickets.len(), to = %to.display(), "v2 tree written");
+    tracing::info!(tickets = tickets.len(), to = ?to, "v2 tree written");
     Ok(())
 }
 
@@ -1012,7 +1017,9 @@ fn target_is_free(to: &Path) -> Result<(), ImportError> {
     match std::fs::read_dir(to) {
         Ok(it) => {
             if it.count() > 0 {
-                return Err(ImportError::TargetNotEmpty(to.display().to_string()));
+                return Err(ImportError::TargetNotEmpty(
+                    gob_path::Shown::with_home(to, None).to_string(),
+                ));
             }
             Ok(())
         }

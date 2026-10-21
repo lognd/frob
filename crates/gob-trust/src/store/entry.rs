@@ -61,7 +61,7 @@ impl Canonical for Body<'_> {
             .u64(self.granted_at)
             .u64(self.expires_at)
             .u64(u64::from(self.network))
-            .str(&self.identity.root.to_string_lossy())
+            .str(&gob_path::Shown::with_home(&self.identity.root, None).to_string())
             .str(&self.identity.root_commit)
             .str(&self.identity.remote_url);
     }
@@ -89,11 +89,7 @@ impl Entry {
         single_line("who", who)?;
         single_line("root_commit", &identity.root_commit)?;
         single_line("remote_url", &identity.remote_url)?;
-        if identity
-            .root
-            .to_str()
-            .is_none_or(|s| s.chars().any(char::is_control))
-        {
+        if gob_path::exact_text(&identity.root).is_none_or(|s| s.chars().any(char::is_control)) {
             return Err(StoreError::BadField("root"));
         }
         let ttl = if network {

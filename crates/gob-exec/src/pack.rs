@@ -6,6 +6,7 @@
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
+use gob_path::Shown;
 use tracing::{debug, warn};
 
 use crate::ExecError;
@@ -63,7 +64,7 @@ pub fn digest_file(path: &Path) -> Option<String> {
 /// [`ExecError::InsideWorkTree`] when the match lives inside `root`.
 pub fn resolve_pack(name: &str, root: &Path, search: &OsStr) -> Result<ProcessPack, ExecError> {
     let name = bare_name(name)?;
-    let root = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
+    let root = gob_fs::canonical(root).unwrap_or_else(|_| root.to_path_buf());
     let found = std::env::split_paths(search)
         .filter(|d| !d.as_os_str().is_empty())
         // A relative entry is relative to the work tree the stage runs in.
@@ -73,20 +74,20 @@ pub fn resolve_pack(name: &str, root: &Path, search: &OsStr) -> Result<ProcessPa
         .ok_or_else(|| ExecError::NotFound {
             program: name.to_owned(),
         })?;
-    let path = std::fs::canonicalize(&found).map_err(|_| ExecError::NotFound {
+    let path = gob_fs::canonical(&found).map_err(|_| ExecError::NotFound {
         program: name.to_owned(),
     })?;
     if path.starts_with(&root) || found.starts_with(&root) {
-        warn!(program = name, path = %path.display(), "pack resolves inside the work tree; refused");
+        warn!(program = name, path = ?path, "pack resolves inside the work tree; refused");
         return Err(ExecError::InsideWorkTree {
             program: name.to_owned(),
-            path: path.display().to_string(),
+            path: Shown::with_home(&path, None).to_string(),
         });
     }
     let digest = digest_file(&path).ok_or_else(|| ExecError::NotFound {
         program: name.to_owned(),
     })?;
-    debug!(program = name, path = %path.display(), %digest, "process pack resolved");
+    debug!(program = name, path = ?path, %digest, "process pack resolved");
     Ok(ProcessPack {
         name: name.to_owned(),
         path,
@@ -148,7 +149,7 @@ mod tests {
         let out = tempfile::tempdir().expect("out");
         let p = tool(out.path(), "tool", "#!/bin/sh\n");
         let pack = resolve_pack("tool", root.path(), out.path().as_os_str()).expect("resolves");
-        assert_eq!(pack.path, std::fs::canonicalize(&p).expect("canon"));
+        assert_eq!(pack.path, gob_fs::canonical(&p).expect("canon"));
         assert!(pack.digest.starts_with("blake3:"));
         assert!(pack.verify().is_ok());
     }

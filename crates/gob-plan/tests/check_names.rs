@@ -1,8 +1,4 @@
 //! Behaviour of the name and type checks beyond the goldens (grl-spec.md sections 7.1 and 10).
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
 
 use gob_plan::check::{Code, Diagnostic, Tier, check_file, check_file_as};
 use gob_plan::grl::parse;
@@ -90,7 +86,11 @@ fn the_fixture_rules_of_the_spec_check_clean() {
                 .into_iter()
                 .filter(|d| !(d.code == Some(Code::Grl011) && d.message.contains("notapplicable")))
                 .collect();
-            assert!(found.is_empty(), "{}: {found:#?}", path.display());
+            assert!(
+                found.is_empty(),
+                "{}: {found:#?}",
+                gob_path::Shown::with_home(&path, None)
+            );
         }
     }
 }
