@@ -137,7 +137,12 @@ fn claim_touch_records_a_renew_event_with_its_note() {
     use frob_ledger::event::{EventBody, LeaseOp};
     let (dir, id, tid, _store) = leased();
     let out = frob(dir.path(), &["claim", "touch", &id, "--note", "thinking"]);
-    assert_eq!(out.status.code(), Some(0), "{}", String::from_utf8_lossy(&out.stdout));
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stdout)
+    );
     let repo = gob_git::Repo::discover(dir.path()).expect("discover");
     let ledger = frob_ledger::Ledger::open(
         repo,

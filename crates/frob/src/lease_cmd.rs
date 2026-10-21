@@ -321,7 +321,10 @@ impl Command for ClaimTouch {
         let lease = store.touch(id, &held.holder, self.note.as_deref())?;
         // The ledger event is what other clones observe as soft activity; the lease only serves this one.
         ledger
-            .append(id, frob_ledger::claim_hold::renew_event(self.note.as_deref()))
+            .append(
+                id,
+                frob_ledger::claim_hold::renew_event(self.note.as_deref()),
+            )
             .map_err(cli_err)?;
         tracing::info!(ticket = %id, %actor, "claim touch");
         Ok(Payload::new(ClaimData { ticket: id, lease }))
