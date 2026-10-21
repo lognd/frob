@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T20:37:01Z"
+digest = "361c78832b33f6e75abc1b44beab9926f196e80446e991d43f6e676151cfae83"
+exit_code = 0
+head = "da0e268ae1388e1151f835b8923216b1c3618150"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e895abef-ce35-4de4-9992-32354f5c6114 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.004s] gob-fix::harness fixable_rule_without_fixture_is_named_and_no_fixable_rules_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-fix --test harness fixable_rule_without_fixture"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "c91245c2195f243915e0544bb3b2bdb81fb3904881482f1d46382d759f0ddfef"
+at = "2026-10-21T20:37:01Z"
+actor = "lognd"
+rev = 1
