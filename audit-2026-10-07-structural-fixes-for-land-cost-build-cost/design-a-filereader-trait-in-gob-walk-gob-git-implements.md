@@ -8,7 +8,7 @@ points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-12T03:43:10Z"
-updated = "2026-10-21T13:54:36Z"
+updated = "2026-10-21T13:54:37Z"
 scope = ["crates/gob-walk/**", "crates/gob-git/**", "changelog.d/**"]
 
 [[links]]

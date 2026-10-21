@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T13:54:37Z"
+digest = "5c8af608bc8fe836eba6d3f8529a6d9f3b898a2a128ed219b4dedc7ec88d6bb1"
+exit_code = 0
+head = "363cdc027d8bb3d7378878ddcb05af16dfec8b6b"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling serde_core v1.0.229
+   Compiling serde v1.0.229
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling serde_json v1.0.151
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 66710d3b-5e76-4547-be84-1c8ef4c9eba6 with nextest profile: default
+    Starting 1 test across 7 binaries (38 tests skipped)
+        PASS [   0.013s] gob-git::walk_content a_worktree_source_implementing_the_walk_traits_drives_an_injected_walk
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 38 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-git a_worktree_source_implementing"
+size = 1091
+status = "measured"
+test_count = 1
+tests_digest = "9bef406f748c79fd83a00d7e13a182a0517debada6aae253552963198bc19ac7"
+at = "2026-10-21T13:54:37Z"
+actor = "lognd"
+rev = 1
