@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T03:51:07Z"
+digest = "020b039195368bc8743fdb8c76469bf3fb29bdca42ccc2d91467f7b45acb6f89"
+exit_code = 0
+inline = '''
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.91s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 57caf916-c6cf-4432-ae0b-63b91c411f24 with nextest profile: default
+    Starting 1 test across 4 binaries (163 tests skipped)
+        PASS [   0.006s] frob-mirror run::tests::five_classes_execute_in_priority_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 163 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror five_classes"
+size = 621
+status = "measured"
+test_count = 1
+tests_digest = "21731d82678b231afcfd5003ecc93b826670c9630048521703381a52ee2b4126"
+at = "2026-10-21T03:51:07Z"
+actor = "lognd"
+rev = 1

@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-21T03:48:47Z"
+updated = "2026-10-21T03:51:07Z"
 idempotency_key = "m2-mirror2-run"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/run.rs", "crates/frob-mirror/src/lib.rs", "changelog.d/01M4052W6Q1FAQK362YF6RCGW1.added.md"]
@@ -55,7 +55,7 @@ target = "01M4052W2RYSRASA1PE0PRJJ1V"
 
 [[acceptance]]
 text = "Given work in all five classes, when a run executes against the fake adapter, then calls follow the class priority"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a converged state, when a run executes, then no tracker mutation and no ledger commit happens"
