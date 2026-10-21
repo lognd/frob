@@ -58,7 +58,9 @@ impl Product for FrobProduct {
         matches: &ArgMatches,
     ) -> Outcome<frob_check::CheckData> {
         tracing::debug!("frob check through the product verb");
-        frob_check::Check::from_matches(matches)?.run(ctx)
+        let payload = frob_check::Check::from_matches(matches)?.run(ctx)?;
+        let rows = crate::check_view::check_rows(&payload.data, ctx.verbosity > 0);
+        Ok(payload.with_rendered(rows))
     }
 
     fn doctor(ctx: &Context, _root: &Path, matches: &ArgMatches) -> Outcome<DoctorData> {
