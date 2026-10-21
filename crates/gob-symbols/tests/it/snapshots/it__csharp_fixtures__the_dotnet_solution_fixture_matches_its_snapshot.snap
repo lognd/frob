@@ -1,0 +1,72 @@
+---
+source: crates/gob-symbols/tests/it/csharp_fixtures.rs
+expression: "render(\"solution\")"
+---
+== src/App/Platform.cs (Partial { holes: 1 })
+symbol Namespace src/App/Platform.cs::Acme
+symbol Namespace src/App/Platform.cs::Acme.App
+symbol Class src/App/Platform.cs::Acme.App.Platform
+symbol Method src/App/Platform.cs::Acme.App.Platform.Label
+import System
+call src/App/Platform.cs::Acme.App.Platform.Label -> ToString
+== src/App/Program.cs (Complete)
+symbol Namespace src/App/Program.cs::Acme
+symbol Namespace src/App/Program.cs::Acme.App
+symbol Class src/App/Program.cs::Acme.App.Program
+symbol Method src/App/Program.cs::Acme.App.Program.Main
+import System
+call src/App/Program.cs::Acme.App.Program.Main -> new.Widget
+call src/App/Program.cs::Acme.App.Program.Main -> WriteLine
+call src/App/Program.cs::Acme.App.Program.Main -> Describe
+call src/App/Program.cs::Acme.App.Program.Main -> WriteLine
+call src/App/Program.cs::Acme.App.Program.Main -> Label
+== src/App/Widget.Part1.cs (Complete)
+symbol Namespace src/App/Widget.Part1.cs::Acme
+symbol Namespace src/App/Widget.Part1.cs::Acme.App
+symbol Class src/App/Widget.Part1.cs::Acme.App.Widget
+symbol Property src/App/Widget.Part1.cs::Acme.App.Widget.Name
+symbol Method src/App/Widget.Part1.cs::Acme.App.Widget.Describe
+call src/App/Widget.Part1.cs::Acme.App.Widget.Describe -> Decorate
+== src/App/Widget.Part2.cs (Complete)
+symbol Namespace src/App/Widget.Part2.cs::Acme
+symbol Namespace src/App/Widget.Part2.cs::Acme.App
+symbol Class src/App/Widget.Part2.cs::Acme.App.Widget
+symbol Method src/App/Widget.Part2.cs::Acme.App.Widget.Decorate
+import Acme.Lib
+call src/App/Widget.Part2.cs::Acme.App.Widget.Decorate -> Shout
+== src/Lib/Strings.cs (Complete)
+symbol Namespace src/Lib/Strings.cs::Acme
+symbol Namespace src/Lib/Strings.cs::Acme.Lib
+symbol Class src/Lib/Strings.cs::Acme.Lib.StringExtensions
+symbol Method src/Lib/Strings.cs::Acme.Lib.StringExtensions.Shout
+call src/Lib/Strings.cs::Acme.Lib.StringExtensions.Shout -> ToUpperInvariant
+== tests/Acme.NUnitTests/WidgetTests.cs (Complete)
+symbol Namespace tests/Acme.NUnitTests/WidgetTests.cs::Acme
+symbol Namespace tests/Acme.NUnitTests/WidgetTests.cs::Acme.NUnitTests
+symbol Class tests/Acme.NUnitTests/WidgetTests.cs::Acme.NUnitTests.WidgetTests
+symbol Method tests/Acme.NUnitTests/WidgetTests.cs::Acme.NUnitTests.WidgetTests.Describe_ShoutsTheName
+symbol Method tests/Acme.NUnitTests/WidgetTests.cs::Acme.NUnitTests.WidgetTests.Name_RoundTrips
+import Acme.App
+import NUnit.Framework
+call tests/Acme.NUnitTests/WidgetTests.cs::Acme.NUnitTests.WidgetTests.Describe_ShoutsTheName -> new.Widget
+call tests/Acme.NUnitTests/WidgetTests.cs::Acme.NUnitTests.WidgetTests.Describe_ShoutsTheName -> AreEqual
+call tests/Acme.NUnitTests/WidgetTests.cs::Acme.NUnitTests.WidgetTests.Describe_ShoutsTheName -> Describe
+call tests/Acme.NUnitTests/WidgetTests.cs::Acme.NUnitTests.WidgetTests.Name_RoundTrips -> new.Widget
+call tests/Acme.NUnitTests/WidgetTests.cs::Acme.NUnitTests.WidgetTests.Name_RoundTrips -> AreEqual
+test Acme.NUnitTests.WidgetTests.Describe_ShoutsTheName NUnit play_mode=false
+test Acme.NUnitTests.WidgetTests.Name_RoundTrips NUnit play_mode=false
+== tests/Acme.XUnitTests/StringsTests.cs (Complete)
+symbol Namespace tests/Acme.XUnitTests/StringsTests.cs::Acme
+symbol Namespace tests/Acme.XUnitTests/StringsTests.cs::Acme.XUnitTests
+symbol Class tests/Acme.XUnitTests/StringsTests.cs::Acme.XUnitTests.StringsTests
+symbol Method tests/Acme.XUnitTests/StringsTests.cs::Acme.XUnitTests.StringsTests.Shout_AppendsBang
+symbol Method tests/Acme.XUnitTests/StringsTests.cs::Acme.XUnitTests.StringsTests.Shout_UpperCases
+import Acme.Lib
+import Xunit
+call tests/Acme.XUnitTests/StringsTests.cs::Acme.XUnitTests.StringsTests.Shout_AppendsBang -> Equal
+call tests/Acme.XUnitTests/StringsTests.cs::Acme.XUnitTests.StringsTests.Shout_AppendsBang -> Shout
+call tests/Acme.XUnitTests/StringsTests.cs::Acme.XUnitTests.StringsTests.Shout_UpperCases -> Equal
+call tests/Acme.XUnitTests/StringsTests.cs::Acme.XUnitTests.StringsTests.Shout_UpperCases -> ToUpperInvariant
+call tests/Acme.XUnitTests/StringsTests.cs::Acme.XUnitTests.StringsTests.Shout_UpperCases -> Shout
+test Acme.XUnitTests.StringsTests.Shout_AppendsBang XUnit play_mode=false
+test Acme.XUnitTests.StringsTests.Shout_UpperCases XUnit play_mode=false

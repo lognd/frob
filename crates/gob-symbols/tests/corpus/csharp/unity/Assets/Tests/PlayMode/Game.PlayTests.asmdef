@@ -1,0 +1,1 @@
+{ "name": "Game.PlayTests", "references": ["Game.Runtime", "UnityEngine.TestRunner"], "autoReferenced": false, "defineConstraints": ["UNITY_INCLUDE_TESTS"] }
