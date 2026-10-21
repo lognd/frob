@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["The CI002 corpus examples pass with the CI002 KNOWN_ENGINE_GAPS entries removed", "A key unit path is the slash path of enclosing key names and sequence indexes, and duplicate keys are each a member"]
+new = ["The CI002 corpus examples pass with the CI002 KNOWN_ENGINE_GAPS entries removed", "A key unit path is the slash path of enclosing key names and sequence indexes, and duplicate keys are each a member", "key(path = ...) lowers to an anchored regex where * stays in one segment and ** crosses segments"]
+moved = [1, 2]
+at = "2026-10-21T22:28:38Z"
+actor = "lognd"
+rev = 1

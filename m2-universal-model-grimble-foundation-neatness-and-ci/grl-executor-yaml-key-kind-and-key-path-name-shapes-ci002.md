@@ -19,6 +19,10 @@ bound = false
 [[acceptance]]
 text = "A key unit path is the slash path of enclosing key names and sequence indexes, and duplicate keys are each a member"
 bound = false
+
+[[acceptance]]
+text = "key(path = ...) lowers to an anchored regex where * stays in one segment and ** crosses segments"
+bound = false
 +++
 
 Found while working ~ACSP6CZ. CI002 fails with Exec(UnsupportedKind{kind: key}): the YAML adapter does not expose a key kind with path/name fields to the executor. Needed for CI002 examples; then delete KNOWN_ENGINE_GAPS entries.
