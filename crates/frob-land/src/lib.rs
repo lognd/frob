@@ -16,6 +16,7 @@ pub mod error;
 pub mod events;
 mod git;
 pub mod hostland;
+pub mod hunk_presence;
 pub mod land;
 pub mod lock;
 mod lockfile;

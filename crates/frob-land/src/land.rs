@@ -37,6 +37,7 @@ use crate::base_ci;
 use crate::error::{LandError, needs_action};
 use crate::events::{LandEvent, append_land};
 use crate::git::git;
+use crate::hunk_presence;
 use crate::lock::LandLock;
 use crate::lockfile;
 use crate::plan::{LandOptions, LandOutcome, PlanInputs, RetryPolicy, StageTiming, digest, steps};
@@ -171,8 +172,23 @@ fn merge_or_assume(
         if let Some(l) = lock {
             l.progress("merge");
         }
+        let pre = wt.head()?.oid;
         base_merge = Some(merge_base_in(wt, wt_path, base, handle)?);
         base_merged = true;
+        // frob:ticket 01M3AXSDBMG2ZAEHTQ6JHA8CYK
+        // A merge that resolved the ticket's own hunks away must refuse here, not as "evidence no longer resolves".
+        if let (Some(pre), Some(post)) = (pre, wt.head()?.oid)
+            && pre != post
+        {
+            hunk_presence::verify_after_merge(
+                wt,
+                wt_path,
+                &base_ref(base),
+                &pre.to_string(),
+                &post.to_string(),
+                handle,
+            )?;
+        }
     } else if base_merged {
         base_merge = Some("up-to-date".to_owned());
     } else if ledger_only_ahead(wt, fork, base_oid, &site.ledger.config().dir)? {
