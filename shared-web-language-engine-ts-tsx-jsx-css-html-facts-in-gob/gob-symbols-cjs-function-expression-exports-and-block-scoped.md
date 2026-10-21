@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "CJS last write of a name wins and module.exports reassignment detaches earlier writes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "let/const in a block shadow only inside that block; var hoists; for/catch/switch scopes bind"

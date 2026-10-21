@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T23:28:15Z"
+digest = "8f26f6223da084891e39b90088b1d1374884612fa55843bd862fe0bb8006ffb4"
+exit_code = 0
+head = "4d1938948fdbccd3981d4b9cc54298979233226d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8a0fda91-d463-4813-827f-64731b1fb6c2 with nextest profile: default
+    Starting 1 test across 2 binaries (294 tests skipped)
+        PASS [   0.006s] gob-symbols::it typescript::cjs_last_write_wins_and_reassignment_detaches
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 294 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols cjs_last_write_wins_and_reassignment_detaches"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "8386072ce514e7daa2f89cb46f7b019a641c17b3fa8c76efb4d90e317f975460"
+at = "2026-10-21T23:28:15Z"
+actor = "lognd"
+rev = 1
