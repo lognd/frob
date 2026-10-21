@@ -2,7 +2,8 @@
 id = "01M43AWWC0VEHZMNV948998PBE"
 title = "grimble-websec family WEBSEC: first slice of rules in GRL"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M43AWG308SDDDQTE35NR79CM"
