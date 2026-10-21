@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T15:57:45Z"
-updated = "2026-10-21T05:56:39Z"
+updated = "2026-10-21T06:04:40Z"
 scope = ["crates/frob-tests/**"]
 
 [[acceptance]]
 text = "frob test passes through the caller's CARGO_* profile env to cargo"
-bound = false
+bound = true
 +++
 
 found while coordinating: with per-command env set, frob test still grew target/debug/deps to 16G; only a user-level cargo config fixed it.
