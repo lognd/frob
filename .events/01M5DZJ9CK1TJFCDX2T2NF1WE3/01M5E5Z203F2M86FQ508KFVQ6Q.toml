@@ -1,0 +1,23 @@
+kind = "evidence"
+captured_at = "2026-10-21T02:52:06Z"
+digest = "af7719783b23a60a7e87172d6c71aa6f331f8d653202eb8350ae68ba4f026524"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2987d72c-cfba-4192-b3eb-01cd3cc5b62e with nextest profile: default
+    Starting 1 test across 19 binaries (246 tests skipped)
+        PASS [   0.004s] frob-ledger claim_window::tests::evict_human_defaults_to_auto_and_follows_the_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 246 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger evict_human"
+size = 577
+status = "measured"
+test_count = 1
+tests_digest = "3d424846b333c5e715ea4442aa110ddb9990e8cc974c769196e4a2527db06540"
+at = "2026-10-21T02:52:06Z"
+actor = "lognd"
+rev = 1
