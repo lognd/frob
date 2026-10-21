@@ -67,7 +67,7 @@ fn make(ledger: &Ledger, title: &str, ty: TicketType, parent: Option<TicketId>) 
     ledger.new_ticket(req).expect("create").ticket.front.id
 }
 
-// frob:tests frob_ledger::ops::Ledger::doable
+// frob:tests Ledger.doable
 #[test]
 fn another_holders_epic_claim_hides_its_leaves_but_not_the_holders() {
     let (_dir, ledger) = fixture();
@@ -106,7 +106,7 @@ fn another_holders_epic_claim_hides_its_leaves_but_not_the_holders() {
     assert_eq!(ids(&mine), both, "the holder still sees its own leaves");
 }
 
-// frob:tests frob_ledger::ops::Ledger::cover_map
+// frob:tests Ledger.cover_map
 #[test]
 fn cover_map_feeds_split_and_move_notices() {
     let (_dir, ledger) = fixture();

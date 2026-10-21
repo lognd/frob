@@ -579,6 +579,7 @@ fn claim_cover(ctx: &Context, ledger: &frob_ledger::Ledger) -> frob_ledger::clai
 
 /// The new parent a `parent` patch value names: `Some(None)` for unset, `Some(Some(id))` for a ticket, `None` when unparseable.
 // frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
+#[allow(clippy::option_option)] // outer: key absent; inner: parent cleared
 fn move_target(value: Option<&toml::Value>) -> Option<Option<frob_ledger::TicketId>> {
     match value {
         None => Some(None),
