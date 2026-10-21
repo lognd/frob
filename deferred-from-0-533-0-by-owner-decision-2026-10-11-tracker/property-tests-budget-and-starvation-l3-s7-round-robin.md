@@ -2,13 +2,13 @@
 id = "01M4052WNB3X3G61P84VR8VGH2"
 title = "Property tests: budget and starvation (L3, S7, round-robin)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:40Z"
-updated = "2026-10-03T05:51:40Z"
+updated = "2026-10-21T09:16:18Z"
 idempotency_key = "m2-mirror2-prop-budget"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/prop_budget.rs"]
