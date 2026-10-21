@@ -276,8 +276,10 @@ pub fn generate(root: &Path) -> Result<Vec<GenFile>, InlineError> {
             let rel = path
                 .strip_prefix(root)
                 .map_or_else(|_| path.clone(), Path::to_path_buf)
-                .to_string_lossy()
-                .replace('\\', "/");
+                .components()
+                .map(|c| c.as_os_str().to_string_lossy().into_owned())
+                .collect::<Vec<_>>()
+                .join("/");
             let text = std::fs::read_to_string(&path).map_err(|source| InlineError::Io {
                 path: path.clone(),
                 source,
