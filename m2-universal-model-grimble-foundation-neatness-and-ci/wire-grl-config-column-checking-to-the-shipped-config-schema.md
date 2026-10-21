@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T00:21:52Z"
-updated = "2026-10-21T22:08:23Z"
+updated = "2026-10-21T22:08:24Z"
 scope = ["crates/grimble/**", "crates/gob-plan/**", "changelog.d/**", "docs/design/cli.md", "docs/schemas/config.json", "changelog.d/01M4M5CRRV5A6P5WHHVHXP981B.added.md"]
 
 [[links]]
@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a malformed or empty config schema document, when the binary loads it, then config checking is turned off with a warning instead of failing"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the real docs/schemas/config.json, when gob-plan compiles with it, then ForbidImport columns are typed and a misspelt column is reported only when the schema is supplied"
