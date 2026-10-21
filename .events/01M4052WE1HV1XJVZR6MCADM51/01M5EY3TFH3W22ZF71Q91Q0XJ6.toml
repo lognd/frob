@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T09:54:08Z"
+digest = "cf84e0276bdc414a5470f2c4240ec347337c6fb069a370032bbafde5ec6911e0"
+exit_code = 0
+head = "000c394f34e332c860d4c2719bd527d41dc721ce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 110639b4-3b91-4aff-872f-b2df32a5c0e4 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.006s] frob-mirror::prop_safety a_declined_proposal_stays_closed_after_a_crash_before_the_cursor_commit
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror --test prop_safety a_declined_proposal"
+size = 583
+status = "measured"
+test_count = 1
+tests_digest = "09f0948320fba0af6870fc9efbf2d2ea96443e44f694db545c69e6e6e2e1b03b"
+at = "2026-10-21T09:54:08Z"
+actor = "lognd"
+rev = 1

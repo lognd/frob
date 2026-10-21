@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-21T09:54:07Z"
+updated = "2026-10-21T09:54:08Z"
 idempotency_key = "m2-mirror2-prop-safety"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/prop_safety.rs", "changelog.d/01M4052WE1HV1XJVZR6MCADM51.added.md"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a human edit recorded as a proposal, when the proposal is declined and the history is re-read after a crash before the cursor commit (F9), then it is never pending again (S8)."
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a cursor set after a publish or a late create (F2, F3), when a human edit lands before it, then the edit is recorded as a proposal (S2) and proposals never change the tracker (S4)."
