@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T12:31:50Z"
+digest = "3e30be18f6e2339ba1f3108660a7f9251b6b303dc291fd52490275eaee16f282"
+exit_code = 0
+head = "2d648dd4cd005c065c81131f5b72030dd6889ea4"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ebf30aaf-0308-4ca3-8715-527ad4a200f1 with nextest profile: default
+    Starting 1 test across 9 binaries (63 tests skipped)
+        PASS [   0.011s] gob-packs::sysdesign_pack grammar_rules_have_fire_clean_and_not_applicable_examples
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 63 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs grammar_rules_have_fire_clean"
+size = 691
+status = "measured"
+test_count = 1
+tests_digest = "5fc7979bd57f31e64f042a3952502fc1a17f7b91d51d5640b092ca11358392a9"
+at = "2026-10-21T12:31:50Z"
+actor = "lognd"
+rev = 1
