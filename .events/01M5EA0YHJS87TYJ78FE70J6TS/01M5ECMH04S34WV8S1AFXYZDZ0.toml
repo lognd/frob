@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T04:48:08Z"
+digest = "61cc62294784ab09e90c5229e4098b35f4ad846fe3eddddfd7a7d4f152962b7b"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 33.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 74098604-ee59-44ff-8b5d-43c57b11e552 with nextest profile: default
+    Starting 1 test across 5 binaries (168 tests skipped)
+        PASS [   0.004s] frob-mirror run::tests::clean_run_advances_watermark_and_skips_own_commits
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 168 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror run::tests::clean_run_advances"
+size = 688
+status = "measured"
+test_count = 1
+tests_digest = "103668b9b10da22a918154ed7700d93ac03397f29fe1d89ceddb29453f99189e"
+at = "2026-10-21T04:48:08Z"
+actor = "lognd"
+rev = 1
