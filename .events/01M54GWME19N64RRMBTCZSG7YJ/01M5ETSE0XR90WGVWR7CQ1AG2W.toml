@@ -1,0 +1,48 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T08:55:35Z"
+digest = "3b19658c4977a5688b02f539c03c2fd482330d271f8a95cd0c846078859636a8"
+exit_code = 100
+failed_tests = ["the_crunk_schema_types_org_and_layers"]
+head = "4f146933d4e040a5882d18156b7189721671a6db"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.58s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 142f8bdf-7f94-4eab-9261-3b0197ef8efa with nextest profile: default
+    Starting 1 test across 26 binaries (271 tests skipped)
+        FAIL [   0.008s] gob-plan::catalog the_crunk_schema_types_org_and_layers
+  output \u{2500}\u{2500}\u{2500}
+
+    running 1 test
+
+    thread 'the_crunk_schema_types_org_and_layers' (1526543) panicked at crates/gob-plan/tests/catalog.rs:106:5:
+    assertion `left == right` failed
+      left: Any
+     right: Str
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+    test the_crunk_schema_types_org_and_layers ... FAILED
+
+    failures:
+
+    failures:
+        the_crunk_schema_types_org_and_layers
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 0 passed, 1 failed, 271 skipped
+        FAIL [   0.008s] gob-plan::catalog the_crunk_schema_types_org_and_layers
+error: test run failed
+'''
+passed = false
+provider = "nextest"
+ref = "-p gob-plan the_crunk_schema_types_org_and_layers"
+size = 1276
+status = "measured"
+test_count = 1
+tests_digest = "9ae8b4ec15724940d8b309ed1d9a2bdcbaa6d238afd0ed4bfe133a6ed9e71d10"
+at = "2026-10-21T08:55:35Z"
+actor = "lognd"
+rev = 1
