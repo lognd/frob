@@ -8,8 +8,8 @@ points = 5
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:18Z"
-updated = "2026-10-21T17:53:00Z"
-scope = ["crates/grimble-lints/**", "crates/grimble-check/src/**", "crates/grimble/src/explain_cmd.rs", "docs/design/rules.md", "docs/reference/rules/**"]
+updated = "2026-10-21T17:53:01Z"
+scope = ["crates/grimble-lints/**", "crates/grimble-check/src/**", "crates/grimble/src/explain_cmd.rs", "docs/design/rules.md", "docs/reference/rules/**", "changelog.d/01M44R5W4WJEXFM000S8KVQQN5.added.md"]
 
 [[links]]
 kind = "blocked-by"
