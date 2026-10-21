@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T05:34:07Z"
+digest = "f8d05d55db9731bf6cccdf225e4f638e6437ffcd64fdbf16978cf12e8f52c8cb"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 13e5bfc5-d0ef-4c71-8ec3-872bf966bb92 with nextest profile: default
+    Starting 1 test across 12 binaries (101 tests skipped)
+        PASS [   0.017s] crunk-rules screen_files::tests::missing_states_lists_what_the_kind_still_needs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.019s] 1 test run: 1 passed, 101 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules state"
+size = 894
+status = "measured"
+test_count = 1
+tests_digest = "6e8a6a6715f314029befd75e0cb5994ee547955101d86c11ac370f3f1d58a85c"
+at = "2026-10-21T05:34:07Z"
+actor = "lognd"
+rev = 1

@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-08T04:53:39Z"
-updated = "2026-10-21T05:31:50Z"
+updated = "2026-10-21T05:34:07Z"
 scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json", "docs/reference/rules/**", "docs/design/crunk.md", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a screen spec, when checked, then STATE coverage and status hash rules apply and old [[screen]] tables still load"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md section 2.
