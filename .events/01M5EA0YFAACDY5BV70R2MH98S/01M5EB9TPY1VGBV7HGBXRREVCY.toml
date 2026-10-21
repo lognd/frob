@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-10-21T04:25:22Z"
+digest = "a1811b1ca2825f87d0b44d444ca8136f69156fa4ea22c7891f0a3a98c65da7b9"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ec44effe-bcd3-48e1-ac14-b2b3835d2f56 with nextest profile: default
+    Starting 3 tests across 1 binary
+        PASS [   0.005s] frob-mirror::host ledger_events_reach_the_tracker_once
+        PASS [   0.005s] frob-mirror::host close_duplicates_with_one_issue_closes_nothing
+        PASS [   0.005s] frob-mirror::host a_new_ticket_gets_one_issue_and_a_second_pass_creates_no_more
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror --test host"
+size = 720
+status = "measured"
+test_count = 3
+tests_digest = "690dd096502856dc876e2b7aaa0a8daa0699a3a8cffd433f67bdeb15279e3383"
+at = "2026-10-21T04:25:22Z"
+actor = "lognd"
+rev = 1
