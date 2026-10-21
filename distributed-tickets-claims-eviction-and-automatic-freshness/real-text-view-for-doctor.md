@@ -8,12 +8,12 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:37:37Z"
-updated = "2026-10-21T07:16:04Z"
+updated = "2026-10-21T07:21:44Z"
 scope = ["crates/frob/src/text_view.rs", "crates/frob/src/doctor.rs"]
 
 [[acceptance]]
 text = "frob doctor --text prints aligned sections (toolchain, git, cache, config, ledger, driver, siblings, gc, leases, lands, languages) instead of the generic key dump"
-bound = false
+bound = true
 +++
 
 Split from ~5JDQ45M: the remaining everyday verbs still fall back to the generic key dump under --text. Reuse crates/frob/src/text_view.rs table helper.

@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T07:21:44Z"
+digest = "ca4a37b27e7f8419c980146ab7a01101990479d7f7c713c7d48110eb199e395b"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 36ee6fb0-c183-4209-83e6-58528dd4e0fd with nextest profile: default
+    Starting 2 tests across 4 binaries (424 tests skipped)
+        PASS [   0.009s] frob-cli text_view::doctor_tests::bytes_read_in_binary_units
+        PASS [   0.009s] frob-cli text_view::doctor_tests::a_section_aligns_its_rows_under_the_title
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 2 tests run: 2 passed, 424 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli doctor_tests"
+size = 975
+status = "measured"
+test_count = 2
+tests_digest = "def09ea2ac89f38721568880777bf301d91d8fc0fb5cd264ea08866daaaea2fc"
+at = "2026-10-21T07:21:44Z"
+actor = "lognd"
+rev = 1
