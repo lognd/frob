@@ -465,14 +465,7 @@ impl Doctor {
                 c.message
             ));
         }
-        if !lands.lands.is_empty() {
-            warnings.push(format!(
-                "{} local lands not on {}: {}; remedy: `frob land --relaunch <ticket>` for each",
-                lands.lands.len(),
-                cfg.sync.remote,
-                lands.lands.join(", ")
-            ));
-        }
+        warnings.extend(lands_warning(&lands, &cfg.sync.remote));
         // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
         warnings.extend(crate::agent_cmd::drift_warnings(&located.root, &cfg));
         for row in &siblings {
@@ -866,6 +859,17 @@ fn lands_info(
             skipped(e.to_string())
         }
     }
+}
+
+/// The doctor warning for local lands origin lacks, with the relaunch remedy; `None` when there are none.
+fn lands_warning(lands: &LandsInfo, remote: &str) -> Option<String> {
+    (!lands.lands.is_empty()).then(|| {
+        format!(
+            "{} local lands not on {remote}: {}; remedy: `frob land --relaunch <ticket>` for each",
+            lands.lands.len(),
+            lands.lands.join(", ")
+        )
+    })
 }
 
 /// Group `report`'s actions by category.
