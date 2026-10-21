@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-worktree/src/verbs.rs", "crates/frob-land/src/verb.rs", "crates/frob-land/src/land_view.rs", "crates/frob-worktree/src/work_view.rs", "crates/frob-land/src/lib.rs", "crates/frob-worktree/src/lib.rs"]
+new = ["crates/frob-worktree/src/verbs.rs", "crates/frob-land/src/verb.rs", "crates/frob-land/src/land_view.rs", "crates/frob-worktree/src/work_view.rs", "crates/frob-land/src/lib.rs", "crates/frob-worktree/src/lib.rs", "changelog.d/01M5EFE44WSM03AW4771Y53GFT.changed.md"]
+at = "2026-10-21T08:27:39Z"
+actor = "lognd"
+rev = 1
