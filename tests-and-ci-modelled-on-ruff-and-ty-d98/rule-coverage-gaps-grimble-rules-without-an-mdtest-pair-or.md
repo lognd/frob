@@ -2,13 +2,13 @@
 id = "01M480C4GC6M96Y0BQ9QSK0WB1"
 title = "Rule coverage gaps: grimble rules without an mdtest pair or fixture"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-21T21:28:24Z"
+updated = "2026-10-21T21:28:25Z"
 scope = ["crates/*/tests/mdtest/**"]
 
 [[acceptance]]
