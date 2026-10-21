@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Update, Create and Reconcile rotate round robin across runs using cursors persisted in the mirror store", "With sweep_k above the budget capacity every sweep ticket is still visited across runs"]
+new = ["Update, Create and Reconcile rotate round robin across runs using cursors persisted in the mirror store", "With sweep_k above the budget capacity every sweep ticket is still visited across runs", "Stored cursors round trip; a missing record starts fresh, a corrupt one errors, a removed cursor ticket wraps, and an idle run writes no cursor record"]
+moved = [1, 2]
+at = "2026-10-21T09:47:47Z"
+actor = "lognd"
+rev = 1

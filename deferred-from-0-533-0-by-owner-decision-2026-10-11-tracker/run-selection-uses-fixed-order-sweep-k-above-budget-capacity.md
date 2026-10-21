@@ -18,6 +18,10 @@ bound = false
 [[acceptance]]
 text = "With sweep_k above the budget capacity every sweep ticket is still visited across runs"
 bound = false
+
+[[acceptance]]
+text = "Stored cursors round trip; a missing record starts fresh, a corrupt one errors, a removed cursor ticket wraps, and an idle run writes no cursor record"
+bound = false
 +++
 
 Found while working ~VR8VGH2. run_locked calls select(items, &Cursors::default(), ..) every run, so Update/Create/Reconcile use a fixed order and are never persisted round robin, and select re-sorts the sweep batch so with sweep_k greater than the budget capacity the lowest-sorted ticket is always served first and later ones starve.
