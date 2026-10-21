@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T09:48:52Z"
+digest = "1f8199829945acba223f3423a44f42dd13c96b3db3329fb6b53bcce53d85ed3f"
+exit_code = 0
+head = "000c394f34e332c860d4c2719bd527d41dc721ce"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0fcb2f0d-167e-4fd5-aef1-05180c4fe165 with nextest profile: default
+    Starting 11 tests across 8 binaries (179 tests skipped)
+        PASS [   0.008s] frob-mirror cursor::tests::edit_after_the_cursor_is_read_next_run
+        PASS [   0.008s] frob-mirror cursor::tests::first_read_cursor_survives_a_create
+        PASS [   0.008s] frob-mirror proposals::tests::edits_beyond_the_run_cap_stay_after_the_cursor_and_share_one_commit
+        PASS [   0.008s] frob-mirror cursor::tests::crash_before_commit_leaves_cursor_and_repeat_reads_the_same
+        PASS [   0.011s] frob-mirror::create the_cursor_taken_before_listing_is_the_one_stored
+        PASS [   0.011s] frob-mirror run::tests::cursor_past_removed_tickets_wraps_and_empty_run_writes_nothing
+        PASS [   0.011s] frob-mirror run::tests::cursors_round_trip_and_old_store_means_fresh
+        PASS [   0.011s] frob-mirror run::tests::feed_cursor_advances_only_after_a_clean_reconcile
+        PASS [   0.012s] frob-mirror cursor::tests::empty_read_keeps_stored_cursor
+        PASS [   0.013s] frob-mirror feed::tests::an_errors_array_stops_the_feed_and_yields_no_cursor
+        PASS [   0.014s] frob-mirror progress::tests::change_feed_cursor_is_written_without_ops_and_keeps_round_robin
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 11 tests run: 11 passed, 179 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror cursor"
+size = 1644
+status = "measured"
+test_count = 11
+tests_digest = "3cb51ec63911ea44abeee6fbae9702198314e00f65e2d90ed5ab9861ec695476"
+at = "2026-10-21T09:48:52Z"
+actor = "lognd"
+rev = 1
