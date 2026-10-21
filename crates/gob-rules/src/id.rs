@@ -5,10 +5,13 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
+/// The longest family prefix a rule id may carry (`SYSDESIGN101` has a 9-letter family).
+pub const MAX_FAMILY_LEN: usize = 12;
+
 /// Why a string is not a valid rule id.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error(
-    "invalid rule id `{0}`: expected a 2-8 character uppercase family (letters, digits after the first) then 3 digits (e.g. COV006, A11Y101)"
+    "invalid rule id `{0}`: expected a 2-12 character uppercase family (letters, digits after the first) then 3 digits (e.g. COV006, A11Y101)"
 )]
 pub struct ParseRuleIdError(pub String);
 
@@ -47,7 +50,7 @@ impl FromStr for RuleId {
         let bad = || ParseRuleIdError(s.to_owned());
         let split = s.len().checked_sub(3).ok_or_else(bad)?;
         let (fam, digits) = s.split_at_checked(split).ok_or_else(bad)?;
-        let ok = (2..=8).contains(&fam.len())
+        let ok = (2..=MAX_FAMILY_LEN).contains(&fam.len())
             && fam.bytes().next().is_some_and(|b| b.is_ascii_uppercase())
             && fam
                 .bytes()
@@ -90,5 +93,14 @@ mod tests {
         assert!("A11Y101".parse::<RuleId>().is_ok());
         assert!("1ABC101".parse::<RuleId>().is_err());
         assert!("cov006".parse::<RuleId>().is_err());
+    }
+
+    // frob:tests RuleId
+    #[test]
+    fn long_families_up_to_the_cap_are_accepted() {
+        let id = "SYSDESIGN101".parse::<RuleId>().unwrap();
+        assert_eq!(id.family(), "SYSDESIGN");
+        assert!("ABCDEFGHIJKL001".parse::<RuleId>().is_ok());
+        assert!("ABCDEFGHIJKLM001".parse::<RuleId>().is_err());
     }
 }

@@ -1,0 +1,1 @@
+gob: rule ids may carry a family of up to 12 characters (`SYSDESIGN101`), and `grimble rule test` now runs `model` example inputs, supplying `model.nodes` and `model.selectors` to rules that need the model.

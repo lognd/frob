@@ -125,7 +125,7 @@ fn inputs(example: &Example) -> Result<Inputs, RunError> {
                     InputKind::File { .. } => return Err(RunError::Unsupported("second file")),
                     InputKind::Expect(s) => expected.extend(expect_line(&s.value)),
                     InputKind::Config(b) => side.config = Some(b.value.clone()),
-                    InputKind::Model(_) => return Err(RunError::Unsupported("model")),
+                    InputKind::Model(b) => side.model = Some(b.value.clone()),
                     InputKind::Diff(v) => {
                         side.diff = Some(v.iter().map(|p| p.value.clone()).collect());
                     }

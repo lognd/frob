@@ -1,0 +1,23 @@
+rule SEC101 "tls-verification-disabled" {
+  lang python
+  severity error
+
+  find c: call where c.text ~ /verify\s*=\s*False/
+  report c "TLS certificate verification is switched off for this request"
+
+  example fire python """
+    resp = requests.get(url, verify=False)  #~ error
+  """
+  example clean python """
+    resp = requests.get(url, timeout=5)
+  """
+  example notapplicable markdown """
+    Prose has no calls.
+  """
+  explain """
+    Disabling certificate verification lets anyone on the path impersonate the server (WEBSEC,
+    registered in the SEC namespace).
+    ## Remedy
+    Keep verification on and trust the right CA bundle with `verify="/path/ca.pem"`.
+  """
+}

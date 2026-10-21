@@ -365,7 +365,7 @@ mod rule_id_tests {
 
     #[test]
     fn rule_id_accepts_digits_in_family() {
-        for ok in ["COLOR001", "A11Y101", "A123", "W3C042"] {
+        for ok in ["COLOR001", "A11Y101", "A123", "W3C042", "SYSDESIGN101"] {
             assert!(is_rule_id(ok), "{ok}");
         }
     }
