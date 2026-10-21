@@ -18,7 +18,8 @@ use std::collections::{HashMap, HashSet};
 use petgraph::graph::NodeIndex;
 
 use super::{GapReason, Outcome, SymbolGraph, base_segment};
-use crate::csharp::{EXTENSION_PREFIX, Q_BASE, Q_BASE_INIT, Q_NEW, Q_THIS_INIT};
+use crate::crates::CrateDeps;
+use crate::csharp::{EXTENSION_PREFIX, Q_BASE, Q_BASE_INIT, Q_NEW, Q_THIS_INIT, USE_NAMESPACE};
 use crate::model::{CallSite, FileSymbols, LocalBinding, Receiver, SymbolKind, UseKind};
 use crate::qualifier::CallQualifier;
 use crate::stdtypes;
@@ -120,7 +121,15 @@ struct Members {
 
 impl CsIndex {
     /// Indexes the C# files in `files` against the node table of `g`.
-    pub(super) fn build(g: &SymbolGraph, files: &[FileSymbols]) -> Self {
+    ///
+    /// With `deps`, each file also gets the project-wide namespaces its SDK imports
+    /// (`ImplicitUsings`, `<Using>` items) as file-level namespace imports.
+    // frob:ticket 01M47RDFJX56SCTFTZJRQ1SC2B
+    pub(super) fn build(
+        g: &SymbolGraph,
+        files: &[FileSymbols],
+        mut deps: Option<&mut CrateDeps>,
+    ) -> Self {
         let mut ix = Self::default();
         for f in files.iter().filter(|f| is_csharp(&f.path)) {
             if let Some(&n) = g.index.get(&crate::symref::Symref::file(&f.path)) {
@@ -149,6 +158,21 @@ impl CsIndex {
                 if raw.public {
                     ix.globals.push(u.clone());
                 }
+            }
+            let mut uses = uses;
+            if let Some(d) = deps.as_deref_mut() {
+                let implicit = d.implicit_usings_of(&f.path);
+                tracing::trace!(
+                    path = f.path,
+                    count = implicit.len(),
+                    "csharp implicit usings"
+                );
+                uses.extend(implicit.into_iter().map(|ns| CsUse {
+                    local: USE_NAMESPACE.to_owned(),
+                    target: ns,
+                    kind: UseKind::Namespace,
+                    container: Vec::new(),
+                }));
             }
             ix.uses.insert(f.path.clone(), uses);
             for (s, e) in f.symbols.iter().zip(&f.extras) {

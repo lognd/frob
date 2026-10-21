@@ -1273,7 +1273,7 @@ struct Decl<'t> {
 // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
 
 /// The local name a plain `using Ns;` binds: it brings every type of `Ns` into scope.
-const USE_NAMESPACE: &str = "*";
+pub(crate) const USE_NAMESPACE: &str = "*";
 /// The local name a `using static T;` binds: it brings every static member of `T` into scope.
 const USE_STATIC: &str = "*static";
 /// The call qualifier of an object creation (`new T(..)`), a call of `T`'s constructor.

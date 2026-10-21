@@ -1044,3 +1044,111 @@ fn use_binding_without_a_kind_deserializes_as_plain() {
     let back: gob_symbols::UseBinding = serde_json::from_value(v).expect("deserialize");
     assert_eq!(back.kind, UseKind::Plain);
 }
+
+/// Writes `files` under a fresh temp repo and builds the graph with the .NET project model on.
+fn project_graph(csproj: &str, srcs: &[(&str, &str)]) -> SymbolGraph {
+    let dir = tempfile::tempdir().expect("tempdir");
+    std::fs::write(dir.path().join("App.csproj"), csproj).expect("write csproj");
+    let files = srcs.iter().map(|(p, t)| extract(p, t)).collect();
+    let mut deps = gob_symbols::CrateDeps::new(dir.path());
+    SymbolGraph::from_files_with_deps(files, &mut deps)
+}
+
+const IMPLICIT_PROJECT: &str = "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><ImplicitUsings>enable</ImplicitUsings></PropertyGroup></Project>";
+const PLAIN_PROJECT: &str = "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>";
+const IMPLICIT_APP: &str = "namespace App
+{
+    public class Prog { public int Run() { return Tool.Go(); } }
+}
+";
+
+/// The statuses of the call edges leaving `App.Prog.Run` in `App.cs`.
+fn run_statuses(g: &SymbolGraph) -> Vec<Status> {
+    calls_from(g, "App.cs", "App.Prog.Run")
+        .iter()
+        .map(|e| e.status)
+        .collect()
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::CsIndex.build
+fn implicit_usings_resolve_a_repo_type_from_an_implicit_namespace() {
+    let tool = "namespace System.Threading { public static class Tool { public static int Go() { return 1; } } }\n";
+    let g = project_graph(
+        IMPLICIT_PROJECT,
+        &[("Tool.cs", tool), ("App.cs", IMPLICIT_APP)],
+    );
+    assert_eq!(run_statuses(&g), [Status::Must]);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::CsIndex.build
+fn without_implicit_usings_the_namespace_is_not_in_scope() {
+    let tool = "namespace System.Threading { public static class Tool { public static int Go() { return 1; } } }\n";
+    let g = project_graph(
+        PLAIN_PROJECT,
+        &[("Tool.cs", tool), ("App.cs", IMPLICIT_APP)],
+    );
+    assert_eq!(run_statuses(&g), [Status::Unknown]);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::CsIndex.build
+fn a_using_item_adds_and_a_remove_item_drops_an_implicit_namespace() {
+    let tool = "namespace Acme.Tools { public static class Tool { public static int Go() { return 1; } } }\n";
+    let add = "<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><Using Include=\"Acme.Tools\" /></ItemGroup></Project>";
+    let g = project_graph(add, &[("Tool.cs", tool), ("App.cs", IMPLICIT_APP)]);
+    assert_eq!(run_statuses(&g), [Status::Must]);
+    let sys = "namespace System.Threading { public static class Tool { public static int Go() { return 1; } } }\n";
+    let drop = "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><ImplicitUsings>enable</ImplicitUsings></PropertyGroup><ItemGroup><Using Remove=\"System.Threading\" /></ItemGroup></Project>";
+    let g = project_graph(drop, &[("Tool.cs", sys), ("App.cs", IMPLICIT_APP)]);
+    assert_eq!(run_statuses(&g), [Status::Unknown]);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::CsIndex.build
+fn an_enclosing_namespace_type_shadows_an_implicit_namespace_and_two_implicit_hits_are_ambiguous() {
+    let a = "namespace System.Threading { public static class Tool { public static int Go() { return 1; } } }\n";
+    let b = "namespace System.IO { public static class Tool { public static int Go() { return 2; } } }\n";
+    let own =
+        "namespace App { public static class Tool { public static int Go() { return 3; } } }\n";
+    let g = project_graph(
+        IMPLICIT_PROJECT,
+        &[
+            ("A.cs", a),
+            ("B.cs", b),
+            ("Own.cs", own),
+            ("App.cs", IMPLICIT_APP),
+        ],
+    );
+    let edges = calls_from(&g, "App.cs", "App.Prog.Run");
+    assert_eq!(edges.len(), 1, "{edges:?}");
+    assert_eq!(
+        edges[0].to.as_ref().expect("resolved").to_string(),
+        "Own.cs::App.Tool.Go"
+    );
+    let g = project_graph(
+        IMPLICIT_PROJECT,
+        &[("A.cs", a), ("B.cs", b), ("App.cs", IMPLICIT_APP)],
+    );
+    assert_eq!(run_statuses(&g), [Status::May, Status::May]);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::CsIndex.build
+fn implicit_system_makes_core_types_framework_clean() {
+    let src =
+        "namespace N { public class C { public void Run(string s) { Console.WriteLine(s); } } }\n";
+    let with = project_graph(IMPLICIT_PROJECT, &[("A.cs", src)]);
+    let without = project_graph(PLAIN_PROJECT, &[("A.cs", src)]);
+    assert!(
+        calls_from(&with, "A.cs", "N.C.Run")
+            .iter()
+            .all(|e| e.status != Status::Unknown)
+    );
+    assert!(
+        calls_from(&without, "A.cs", "N.C.Run")
+            .iter()
+            .all(|e| e.status == Status::Unknown)
+    );
+}
