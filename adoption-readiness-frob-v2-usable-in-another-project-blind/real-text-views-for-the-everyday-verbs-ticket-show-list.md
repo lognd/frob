@@ -2,7 +2,8 @@
 id = "01M4CTTXC1E5MQEDFMY5JDQ45M"
 title = "Real --text views for the everyday verbs (ticket show/list/doable, check, doctor, cycle show/list, work, land)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
