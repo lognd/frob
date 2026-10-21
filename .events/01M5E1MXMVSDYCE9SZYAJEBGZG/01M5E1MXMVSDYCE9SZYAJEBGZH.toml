@@ -1,0 +1,11 @@
+kind = "create"
+title = "claim hold / claim resume verbs over Workspace::hold_claim and resume_claim"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
+scope = ["crates/frob-worktree/src/verbs.rs"]
+body = "Follow-up of XG6E8X3: CLI verbs, regenerate docs."
+at = "2026-10-21T01:36:40Z"
+actor = "lognd"
+rev = 1
