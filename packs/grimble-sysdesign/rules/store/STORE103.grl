@@ -1,0 +1,22 @@
+rule STORE103 "select-star-query" {
+  lang python
+  severity advisory
+
+  find c: call where c.callee.name == "execute" and c.text ~ /execute\(\s*["'][Ss][Ee][Ll][Ee][Cc][Tt]\s+\*/
+  report c "SELECT * couples the code to the table layout: name the columns"
+
+  example fire python """
+    cur.execute("SELECT * FROM users")  #~ advisory
+  """
+  example clean python """
+    cur.execute("SELECT id, name FROM users")
+  """
+  example notapplicable markdown """
+    Prose runs no queries.
+  """
+  explain """
+    `SELECT *` returns every column, so adding a wide or sensitive column silently changes what the code reads and defeats covering indexes.
+    ## Remedy
+    List the columns the caller needs.
+  """
+}

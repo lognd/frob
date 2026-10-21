@@ -1,0 +1,22 @@
+rule STORE102 "redis-flush-command" {
+  lang python
+  severity advisory
+
+  find c: call where c.callee.name in ["flushall", "flushdb"]
+  report c "FLUSHALL/FLUSHDB drops every key in the store: delete the keys you own instead"
+
+  example fire python """
+    r.flushall()  #~ advisory
+  """
+  example clean python """
+    r.delete("session:1")
+  """
+  example notapplicable markdown """
+    Call r.flushall() in prose.
+  """
+  explain """
+    `FLUSHALL` and `FLUSHDB` erase every key in the server or database, including keys other services own, and cannot be undone.
+    ## Remedy
+    Delete only the keys the code owns (`delete`, or `unlink` for large values), or give tests a throwaway database and flush that.
+  """
+}

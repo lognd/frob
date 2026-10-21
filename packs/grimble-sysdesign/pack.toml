@@ -11,6 +11,6 @@ version = "0.1.0"
 families = ["GRAMMAR", "STORE", "SYSDESIGN"]
 
 [provides]
-rules = ["rules/*.grl", "rules/grammar/*.grl"]
+rules = ["rules/*.grl", "rules/grammar/*.grl", "rules/store/*.grl"]
 
 [effects]

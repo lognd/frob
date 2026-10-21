@@ -10,6 +10,10 @@ binary.
 |---|---|---|
 | `packs/grimble-sysdesign/pack.toml` | - | name, version, families, `provides.rules` |
 | `packs/grimble-sysdesign/rules/STORE101.grl` | code (python, typescript) | STORE: Redis `KEYS` call, use `SCAN` |
+| `packs/grimble-sysdesign/rules/store/STORE102.grl` | code (python) | STORE: Redis `FLUSHALL`/`FLUSHDB` (advisory) |
+| `packs/grimble-sysdesign/rules/store/STORE103.grl` | code (python) | STORE: `SELECT *` query (advisory) |
+| `packs/grimble-sysdesign/rules/store/STORE104.grl` | code (python) | STORE: `DELETE`/`UPDATE` without `WHERE` (advisory) |
+| `packs/grimble-sysdesign/rules/store/STORE105.grl` | code (python) | STORE: Mongo `$where` operator (advisory) |
 | `packs/grimble-sysdesign/rules/SYSDESIGN101.grl` | `.grmb` model (`lang -`, `model.selectors`) | SYSDESIGN: a node owning `**` |
 | `packs/grimble-sysdesign/rules/GRAMMAR101.grl` | `.grmb` model (`lang -`, `model.nodes`) | GRAMMAR: a node kind outside the core kinds |
 | `packs/grimble-sysdesign/rules/grammar/GRAMMAR102.grl` | `.grmb` model (`lang -`, `model.nodes`) | GRAMMAR: a node name that is not lower snake_case |
