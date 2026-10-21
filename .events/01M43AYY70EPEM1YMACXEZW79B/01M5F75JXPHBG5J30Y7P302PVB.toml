@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T12:32:23Z"
+digest = "9ed8689e8213572fe3aa732b52b9893fe93145e1e5fc9deec6a58c0edea702c9"
+exit_code = 0
+head = "2d648dd4cd005c065c81131f5b72030dd6889ea4"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6cab896b-8064-4ccf-90b2-50411b94ddaa with nextest profile: default
+    Starting 1 test across 9 binaries (63 tests skipped)
+        PASS [   0.008s] gob-packs::sysdesign_pack grammar_rules_have_fire_clean_and_not_applicable_examples
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 63 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs grammar_rules_have_fire_clean"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "5fc7979bd57f31e64f042a3952502fc1a17f7b91d51d5640b092ca11358392a9"
+at = "2026-10-21T12:32:23Z"
+actor = "lognd"
+rev = 1
