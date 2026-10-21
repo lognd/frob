@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-21T02:22:45Z"
+digest = "aaaa615b03151acd6214a7a846b3e8c1ec43064a5d5198153268b5be26a92954"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 330bc94a-7060-4f79-a80c-2a3a076452aa with nextest profile: default
+    Starting 2 tests across 4 binaries (94 tests skipped)
+        PASS [   0.004s] frob-pm board::tests::fit_and_wrap_keep_to_the_width
+        PASS [   0.004s] frob-pm board::tests::age_reads_in_the_coarsest_unit
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 2 tests run: 2 passed, 94 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm board"
+size = 623
+status = "measured"
+test_count = 2
+tests_digest = "3375dfb25b1180e183efff9d498a5bf105f2ab1affc16dc4e08bc68a8f144c8e"
+at = "2026-10-21T02:22:45Z"
+actor = "lognd"
+rev = 1
