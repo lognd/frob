@@ -23,6 +23,10 @@ the `crunk-check` crate with the rule set listed in [rules/README.md](rules/READ
 | `crunk preview` | yes | Prints the palette, spacing, font-size and radius scales, font stacks and layers as a terminal sheet. `--color always` adds truecolor swatches; `NO_COLOR` set suppresses every escape code. |
 | `crunk diff OTHER` | yes | Compares the generated tokens with those of the spec in directory (or file) `OTHER`: `+ NAME VALUE` added, `- NAME VALUE` removed, `~ NAME CURRENT -> OTHER` changed, or `no differences`. Always exit 0. |
 | `crunk init [--preset default\|mono] [--force]` | no | Scaffolds `crunk.toml` (the preset plus detected `[jsx]` and `[tailwind]` sections), the `[org] buckets` directories under `css_root`, a starter `base/reset.css` and the token files; the result passes `crunk check`. An existing `crunk.toml` is a usage error (exit 2) without `--force`. |
+| `crunk fix [--dry-run]` | yes | Applies the machine-applicable (Tier A) fixes of `crunk check` to stylesheets; `--dry-run` prints the diff and writes nothing. |
+| `crunk review` | yes | Lists the screen states that need a human review and what changed since the last ack. |
+| `crunk ack [SUBJECT]...` | yes | Records a human review of screen states (`screen/<id>/<state>` or a screen id) into `crunk.lock`; needs a terminal unless `--non-interactive`; `--dry-run` reports only. |
+| `crunk rule catalog` | yes | Lists the std pack rules that `[packs]` in `crunk.toml` switches on. |
 | `crunk schema` | no | Built-in: the JSON Schema of a verb's output. |
 
 Query output is the gob envelope: `data` holds `{kind, results}` (`query`), `{buckets, strays}` (`map`)
@@ -62,8 +66,8 @@ waiver applies, the severity at the release gate) are `crunk_rules::family::FAMI
 ## CI
 
 <!-- frob:ticket 01M43ARWT173GKANZ322H41VF1 -->
-Path-filtered jobs and the optional node job: [ci.md](ci.md). Switching a consumer from the Python
-crunk, with the reasoned divergence list: [hullbreach-migration.md](hullbreach-migration.md).
+Path-filtered jobs and the optional node job: [ci.md](ci.md). Moving from the Python crunk, verb by verb: [migration.md](migration.md). Switching a consumer from the Python
+crunk (CI step), with the reasoned divergence list: [hullbreach-migration.md](hullbreach-migration.md).
 
 ## Boundary
 

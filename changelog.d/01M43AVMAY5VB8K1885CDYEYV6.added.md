@@ -1,0 +1,1 @@
+crunk: the product docs gain a migration guide from the Python crunk (every Python verb mapped to its Rust equivalent or its removal, install, cache and dependency differences) and README rows for `fix`, `review`, `ack` and `rule catalog`.
