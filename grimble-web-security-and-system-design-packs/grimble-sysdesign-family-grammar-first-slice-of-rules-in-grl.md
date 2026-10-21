@@ -2,7 +2,8 @@
 id = "01M43AYY70EPEM1YMACXEZW79B"
 title = "grimble-sysdesign family GRAMMAR: first slice of rules in GRL"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
