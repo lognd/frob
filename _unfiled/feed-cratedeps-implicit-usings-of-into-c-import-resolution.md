@@ -2,7 +2,8 @@
 id = "01M47RDFJX56SCTFTZJRQ1SC2B"
 title = "Feed CrateDeps::implicit_usings_of into C# import resolution"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
