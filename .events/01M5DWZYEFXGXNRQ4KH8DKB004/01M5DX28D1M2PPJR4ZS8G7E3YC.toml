@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-worktree/src/verbs.rs"]
+at = "2026-10-21T00:16:34Z"
+actor = "lognd"
+rev = 1
