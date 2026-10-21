@@ -8,10 +8,10 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:27Z"
-updated = "2026-10-21T12:25:03Z"
+updated = "2026-10-21T12:25:40Z"
 idempotency_key = "crunk-plan-g_COMPLY-PII"
 labels = ["area:grimble"]
-scope = ["packs/grimble-websec/rules/comply-pii/**", "packs/grimble-websec/tests/comply-pii/**"]
+scope = ["packs/grimble-websec/rules/comply-pii/**", "packs/grimble-websec/tests/comply-pii/**", "packs/grimble-websec/pack.toml"]
 
 [[links]]
 kind = "blocked-by"
