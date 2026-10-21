@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a private [SerializeField] field never assigned in code, when effect and flow rules run with the pack enabled, then the field has an external writer and is not reported as never written", "Given a [NonSerialized] public field never assigned, when the rules run, then it is still reported", "Given the pack disabled, when the rules run, then a [SerializeField] field never assigned is reported"]
+new = ["Given a private [SerializeField] field never assigned in code, when effect and flow rules run with the pack enabled, then the field has an external writer and is not reported as never written", "Given a [NonSerialized] public field never assigned, when the rules run, then it is still reported", "Given the pack disabled, when the rules run, then a [SerializeField] field never assigned is reported", "Given a public field on a type deriving (transitively, partial parts merged) from MonoBehaviour or ScriptableObject, when the pack is enabled, then it has an external writer, while a public field of a plain class or of a nested type is still reported", "Given a [field: SerializeField] auto-property, when the pack is enabled, then it has an external writer, while a plain property is not a candidate", "Given a static, const or readonly member carrying [SerializeField], when the pack is enabled, then it is still reported", "Given a field assigned in code, or a file outside the pack paths, then assigned fields are never reported and out-of-path serialized fields are reported"]
+moved = [1, 2, 3]
+at = "2026-10-21T17:43:25Z"
+actor = "lognd"
+rev = 1

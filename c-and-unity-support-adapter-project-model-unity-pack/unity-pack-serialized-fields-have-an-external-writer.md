@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:01Z"
-updated = "2026-10-21T17:33:42Z"
+updated = "2026-10-21T17:43:25Z"
 idempotency_key = "d94-serial"
 scope = ["packs/unity.toml", "crates/gob-ir/**", "crates/frob-obligations/**", "docs/design/packs.md", "crates/frob-tests/src/reach.rs"]
 
@@ -26,6 +26,22 @@ bound = false
 
 [[acceptance]]
 text = "Given the pack disabled, when the rules run, then a [SerializeField] field never assigned is reported"
+bound = false
+
+[[acceptance]]
+text = "Given a public field on a type deriving (transitively, partial parts merged) from MonoBehaviour or ScriptableObject, when the pack is enabled, then it has an external writer, while a public field of a plain class or of a nested type is still reported"
+bound = false
+
+[[acceptance]]
+text = "Given a [field: SerializeField] auto-property, when the pack is enabled, then it has an external writer, while a plain property is not a candidate"
+bound = false
+
+[[acceptance]]
+text = "Given a static, const or readonly member carrying [SerializeField], when the pack is enabled, then it is still reported"
+bound = false
+
+[[acceptance]]
+text = "Given a field assigned in code, or a file outside the pack paths, then assigned fields are never reported and out-of-path serialized fields are reported"
 bound = false
 +++
 
