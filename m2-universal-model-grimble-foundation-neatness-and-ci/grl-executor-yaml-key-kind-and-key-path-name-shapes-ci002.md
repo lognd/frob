@@ -8,9 +8,9 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T08:48:17Z"
-updated = "2026-10-21T22:25:36Z"
+updated = "2026-10-21T22:25:37Z"
 labels = ["area:grl"]
-scope = ["crates/gob-plan/src/exec/core/kind.rs", "crates/gob-plan/src/exec/core/field.rs"]
+scope = ["crates/gob-plan/src/exec/core/kind.rs", "crates/gob-plan/src/exec/core/field.rs", "crates/gob-plan/src/lower/convert.rs"]
 +++
 
 Found while working ~ACSP6CZ. CI002 fails with Exec(UnsupportedKind{kind: key}): the YAML adapter does not expose a key kind with path/name fields to the executor. Needed for CI002 examples; then delete KNOWN_ENGINE_GAPS entries.
