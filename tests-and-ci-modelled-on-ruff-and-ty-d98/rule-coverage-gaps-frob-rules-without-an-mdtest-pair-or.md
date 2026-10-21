@@ -8,8 +8,8 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-21T20:48:51Z"
-scope = ["crates/*/tests/mdtest/**"]
+updated = "2026-10-21T20:49:28Z"
+scope = ["crates/*/tests/mdtest/**", "crates/gob-mdtest/coverage-allowlist.toml"]
 
 [[acceptance]]
 text = "every listed rule has an mdtest fire/clean pair or a fixture and no frob entry remains in the allowlist"
