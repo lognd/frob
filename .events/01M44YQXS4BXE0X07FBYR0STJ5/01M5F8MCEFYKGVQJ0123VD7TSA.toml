@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T12:57:47Z"
+digest = "6945a4e2c4a5684e6760747d0896b6f58aba7537a2ee130370c52c3a1cda6fdc"
+exit_code = 0
+head = "eedaab8580e1ce2a3d747e6e340bd00397bca544"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 632bb657-51f8-4cb2-95f2-a883020cf5e1 with nextest profile: default
+    Starting 3 tests across 9 binaries (64 tests skipped)
+        PASS [   0.015s] gob-packs unity::tests::gate_reads_both_enable_forms
+        PASS [   0.015s] gob-packs unity::tests::builtin_pack_raises_no_pack_finding
+        PASS [   0.015s] gob-packs unity::tests::bad_pack_raises_pack005
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 3 tests run: 3 passed, 64 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs unity::tests"
+size = 1351
+status = "measured"
+test_count = 3
+tests_digest = "6ca15021c1df8f2262bb877f4390d58219a69a0bc14982e5955bf225d935f9ba"
+at = "2026-10-21T12:57:47Z"
+actor = "lognd"
+rev = 1
