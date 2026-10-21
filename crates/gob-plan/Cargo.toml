@@ -30,6 +30,7 @@ proptest = "1"
 insta = "1"
 criterion = { version = "0.5", default-features = false }
 gungraun = "0.20.0"
+grimble-check = { version = "0.532.0", path = "../grimble-check" }
 
 [[bench]]
 name = "b1_plan_vs_handwritten"

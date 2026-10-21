@@ -23,6 +23,7 @@ mod eval;
 mod field;
 mod fxmap;
 mod kind;
+mod rowkind;
 mod verdict;
 
 use std::collections::HashMap;
@@ -39,7 +40,9 @@ pub use verdict::{Doubt, Verdict};
 use eval::Matcher;
 pub(crate) use kind::{KindTest, is_external_unit, may_hide_members};
 
-use crate::exec::relations::{Count, PEER_OF, Relations, SideRow};
+use crate::exec::relations::{
+    Count, MODEL_SELECTORS, OWNED_BY, PEER_OF, Relations, SideRow, row_kind_table,
+};
 use crate::plan::{Op, OpId, Operand, Plan, PlanParts, Polarity, StrId, VarId};
 
 /// Compiled regexes are refused above this size, in bytes (security.md 2.5).
@@ -120,6 +123,16 @@ pub struct Row {
 }
 
 impl Row {
+    /// The side-relation row bound to `var`, if any.
+    ///
+    /// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
+    pub fn side_row(&self, var: VarId) -> Option<SideRow> {
+        match self.vars.get(usize::from(var)).copied().flatten()? {
+            Val::Row(r) => Some(r),
+            Val::Node(_) => None,
+        }
+    }
+
     /// The node bound to `var`, if any.
     pub fn node(&self, var: VarId) -> Option<NodeId> {
         self.vars
@@ -173,6 +186,10 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
         match op {
             Op::Find { kind, .. } | Op::Quant { kind, .. } | Op::CountCmp { kind, .. } => {
                 let word = &p.strings[*kind as usize];
+                if let Some(table) = row_kind_table(word) {
+                    wire_row_kind(p, rels, &mut wired, (*kind, table))?;
+                    continue;
+                }
                 let test = KindTest::from_word(word).ok_or_else(|| ExecError::UnsupportedKind {
                     rule: p.rule.clone(),
                     kind: word.clone(),
@@ -220,6 +237,9 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
                 wired.side.insert(*table, t);
             }
             Op::Verb { verb: word, .. } if p.strings[*word as usize] == PEER_OF => {}
+            Op::Verb { verb: word, .. } if p.strings[*word as usize] == OWNED_BY => {
+                wire_owners(p, rels, &mut wired)?;
+            }
             Op::Verb { verb: word, .. } | Op::Reaches { via: word, .. } => {
                 let name = &p.strings[*word as usize];
                 let r = rels
@@ -251,6 +271,39 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
         }
     }
     Ok((kinds, matchers, wired))
+}
+
+/// Wires a model-backed kind word to the side table whose rows it ranges over.
+///
+/// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
+fn wire_row_kind<'r>(
+    p: &PlanParts,
+    rels: &'r Relations,
+    wired: &mut Wired<'r>,
+    (kind, table): (StrId, &str),
+) -> Result<(), ExecError> {
+    let t = rels
+        .side
+        .get(table)
+        .ok_or_else(|| missing(p, "side table", table))?;
+    wired.side.insert(kind, t);
+    wired.row_kinds.insert(kind);
+    Ok(())
+}
+
+/// Wires the per-node ownership globs `owned by` reads, once per plan.
+///
+/// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
+fn wire_owners(p: &PlanParts, rels: &Relations, wired: &mut Wired<'_>) -> Result<(), ExecError> {
+    if !wired.owners.is_empty() {
+        return Ok(());
+    }
+    let t = rels
+        .side
+        .get(MODEL_SELECTORS)
+        .ok_or_else(|| missing(p, "side table", MODEL_SELECTORS))?;
+    wired.owners = rowkind::owners(t).map_err(|(src, e)| bad_pattern(p, &src, &e))?;
+    Ok(())
 }
 
 fn bad_pattern(p: &PlanParts, src: &str, e: &dyn std::fmt::Display) -> ExecError {
@@ -484,20 +537,12 @@ fn enumerate(
         return;
     };
     let (var, kind) = match ev.plan.ops[binder as usize] {
+        Op::Find { var, kind } if ev.is_row_kind(kind) => {
+            return enumerate_rows(ev, s, depth, (var, kind), env, &acc, rows);
+        }
         Op::Find { var, kind } => (var, kind),
         Op::FindSide { var, table, .. } => {
-            for index in 0..ev.side_rows(table) {
-                if ev.exhausted() {
-                    break;
-                }
-                env[usize::from(var)] = Some(Val::Row(SideRow { table, index }));
-                let v = ready_verdict(ev, s, depth + 1, env, acc.clone());
-                if v.truth != Truth::No {
-                    enumerate(ev, s, depth + 1, env, v, rows);
-                }
-            }
-            env[usize::from(var)] = None;
-            return;
+            return enumerate_rows(ev, s, depth, (var, table), env, &acc, rows);
         }
         _ => unreachable!("binders are finds"),
     };
@@ -511,6 +556,29 @@ fn enumerate(
             v = v.and(Verdict::unknown(Doubt::Member { node: n }));
         }
         let v = ready_verdict(ev, s, depth + 1, env, v);
+        if v.truth != Truth::No {
+            enumerate(ev, s, depth + 1, env, v, rows);
+        }
+    }
+    env[usize::from(var)] = None;
+}
+
+/// Binds `var` to each row of the side table `table` in turn and enumerates the deeper binders.
+fn enumerate_rows(
+    ev: &Eval<'_>,
+    s: &Schedule,
+    depth: usize,
+    (var, table): (VarId, StrId),
+    env: &mut Env,
+    acc: &Verdict,
+    rows: &mut Vec<Row>,
+) {
+    for index in 0..ev.side_rows(table) {
+        if ev.exhausted() {
+            break;
+        }
+        env[usize::from(var)] = Some(Val::Row(SideRow { table, index }));
+        let v = ready_verdict(ev, s, depth + 1, env, acc.clone());
         if v.truth != Truth::No {
             enumerate(ev, s, depth + 1, env, v, rows);
         }

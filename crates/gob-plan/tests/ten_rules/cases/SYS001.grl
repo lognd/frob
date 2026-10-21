@@ -8,13 +8,13 @@ rule SYS001 "unowned" {
   report a "no node owns any part of {a.path}"
 
   example fire python {
-    model """node app owns "src/app/**";"""
+    model """node app { owns "src/app/**"; }"""
     file "scripts/legacy.py" """
       def f(): pass                  #~ warn
     """
   }
   example clean python {
-    model """node app owns "src/app/**";"""
+    model """node app { owns "src/app/**"; }"""
     file "src/app/a.py" """
       def f(): pass
     """

@@ -16,6 +16,17 @@ fn model_text_yields_node_rows() {
 
 // frob:tests crates/grimble-check/src/example_model.rs::read_example_model
 #[test]
+fn may_clauses_yield_grants() {
+    let rows = read_example_model(
+        r#"node a { owns "src/**"; may net.listen; may fs.write at "x/**"; excuses net.connect because="legacy"; }"#,
+    )
+    .expect("parses");
+    assert_eq!(rows[0].grants, ["net.listen"]);
+    assert_eq!(rows[0].excuses, ["net.connect"]);
+}
+
+// frob:tests crates/grimble-check/src/example_model.rs::read_example_model
+#[test]
 fn broken_model_text_is_refused() {
     assert!(read_example_model("node {{{").is_err());
 }

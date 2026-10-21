@@ -498,5 +498,8 @@ pub struct PlanParts {
     pub reports: Vec<Report>,
 }
 
-/// The kind word a lowered snippet binder ranges over: every node (no GRL kind word spells it).
-pub const ANY_NODES: &str = "node";
+/// The kind word a lowered snippet binder ranges over: every node (no GRL kind word spells it,
+/// so the GRL words `node` and `cell` stay free for the model's row kinds).
+///
+/// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
+pub const ANY_NODES: &str = "<any node>";

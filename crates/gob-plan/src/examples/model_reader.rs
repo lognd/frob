@@ -17,6 +17,11 @@ pub struct ModelNodeRow {
     pub path: String,
     /// The `owns` selectors of the node.
     pub selectors: Vec<String>,
+    /// The atoms the node grants everywhere with `may` (for example `net.listen`); a `may ... at`
+    /// grant covers only part of the node's code and is not listed.
+    pub grants: Vec<String>,
+    /// The atoms the node excuses with `excuses ATOM because="..."`.
+    pub excuses: Vec<String>,
 }
 
 /// Reads an example's `model` text into node rows; the error is a one-line refusal reason.

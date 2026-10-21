@@ -4,10 +4,12 @@
 // frob:ticket 01M4XJMM949EHC6X13TYJPYE5V
 use super::judge::{ExampleResult, judge};
 use super::markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};
-use super::side::{SideInputs, side_data};
+use super::side::{SideInputs, add_cells, side_data};
 use crate::catalog::lang_of;
+use crate::exec::outcome::{Finding, Outcomes};
 use crate::exec::outcome::{Kind, outcomes};
-use crate::exec::relations::Relations;
+use crate::exec::relations::{CELLS, Relations, SideTable, row_kind_table};
+use crate::exec::{Datum, Scalar};
 use crate::exec::{ExecError, Input};
 use crate::grl::ast::{
     Example, ExampleBody, ExpectKind, HeaderKind, InputKind, LangSet, Rule, Severity,
@@ -101,6 +103,24 @@ fn severity(rule: &Rule) -> Level {
         .unwrap_or(Level::Warn)
 }
 
+/// The source line of a finding whose subject is a row of the `cell` table: the line the cell's
+/// call sits on.
+///
+/// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
+fn cell_line(plan: &Plan, out: &Outcomes, f: &Finding, cells: Option<&SideTable>) -> Option<u32> {
+    let p = plan.parts();
+    let var = p.reports.get(f.report)?.subject;
+    let row = out.rows.get(f.row)?.side_row(var)?;
+    let word = p.strings.get(usize::try_from(row.table).ok()?)?;
+    if row_kind_table(word) != Some(CELLS) {
+        return None;
+    }
+    match cells?.cell(row.index, "line") {
+        Datum::Known(Scalar::Int(l)) => u32::try_from(l).ok(),
+        _ => None,
+    }
+}
+
 /// An example's file text, its file path, the sub-block expectations and the side inputs.
 type Inputs = (Option<String>, Option<String>, Vec<Expected>, SideInputs);
 
@@ -181,7 +201,15 @@ pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunE
             model: &model,
             source: Some(&source),
         };
-        let relations = edges(&plan, &model).with_side(side_data(&plan, &side)?);
+        let mut side_rows = side_data(&plan, &side)?;
+        add_cells(
+            &mut side_rows,
+            &plan,
+            &side,
+            (&model, &source, (file_path.as_deref(), model_lang)),
+        )?;
+        let cells = side_rows.get(CELLS).cloned();
+        let relations = edges(&plan, &model).with_side(side_rows);
         let out = outcomes(&plan, &input, &relations)?;
         let level = severity(rule);
         for f in &out.findings {
@@ -195,8 +223,9 @@ pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunE
                     };
                     lc.line
                 }
-                // A side-table row (a changed path, a config row) has no source line.
-                None => NO_LINE,
+                // A cell row carries the line of the call that observed it; any other side-table
+                // row (a changed path, a config row) has no source line.
+                None => cell_line(&plan, &out, f, cells.as_ref()).unwrap_or(NO_LINE),
             };
             let mark = match f.kind {
                 Kind::Fire => Mark::Finding(level),

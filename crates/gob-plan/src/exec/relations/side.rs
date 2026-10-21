@@ -120,6 +120,54 @@ fn render(cols: &[Column]) -> String {
     format!("({})", items.join(", "))
 }
 
+/// Checks every row of `table` against its columns' widths and types.
+fn check_rows(name: &str, table: &SideTable) -> Result<(), SideError> {
+    for (i, row) in table.rows.iter().enumerate() {
+        let bad = |why: String| SideError::BadRow {
+            name: name.to_owned(),
+            row: i,
+            why,
+        };
+        if row.len() != table.columns.len() {
+            return Err(bad(format!(
+                "{} values for {} columns",
+                row.len(),
+                table.columns.len()
+            )));
+        }
+        if let Some((c, _)) = table
+            .columns
+            .iter()
+            .zip(row)
+            .find(|(c, v)| !accepts(c.ty, v))
+        {
+            return Err(bad(format!("column `{}` expects {}", c.name, c.ty.name())));
+        }
+    }
+    Ok(())
+}
+
+/// The model's node table (`name`, `kind`, `path`), the rows of the `node` kind.
+pub(crate) const MODEL_NODES: &str = "model.nodes";
+
+/// The model's ownership selectors (`node`, `selector`), read by `owned by`.
+pub(crate) const MODEL_SELECTORS: &str = "model.selectors";
+
+/// The engine-computed table behind the `cell` kind: one row per (node, atom) the model's code uses.
+pub const CELLS: &str = "engine.cells";
+
+/// The side table whose rows a model-backed kind word (`node`, `cell`) ranges over, or `None`
+/// for a kind of the code term.
+///
+/// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
+pub(crate) fn row_kind_table(word: &str) -> Option<&'static str> {
+    match word {
+        "node" => Some(MODEL_NODES),
+        "cell" => Some(CELLS),
+        _ => None,
+    }
+}
+
 impl SideData {
     /// No tables.
     pub fn new() -> Self {
@@ -150,29 +198,28 @@ impl SideData {
                 });
             }
         }
-        for (i, row) in table.rows.iter().enumerate() {
-            let bad = |why: String| SideError::BadRow {
-                name: name.to_owned(),
-                row: i,
-                why,
-            };
-            if row.len() != table.columns.len() {
-                return Err(bad(format!(
-                    "{} values for {} columns",
-                    row.len(),
-                    table.columns.len()
-                )));
-            }
-            if let Some((c, _)) = table
-                .columns
-                .iter()
-                .zip(row)
-                .find(|(c, v)| !accepts(c.ty, v))
-            {
-                return Err(bad(format!("column `{}` expects {}", c.name, c.ty.name())));
-            }
-        }
+        check_rows(name, &table)?;
         tracing::debug!(name, rows = table.rows.len(), "side table supplied");
+        self.tables.insert(name.to_owned(), table);
+        Ok(())
+    }
+
+    /// Supplies `table` as the engine-computed relation `name` (one of [`CELLS`]); rows are
+    /// checked against the columns but the name is not a catalog side relation.
+    ///
+    /// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
+    ///
+    /// # Errors
+    /// [`SideError::UnknownRelation`] when `name` is not an engine relation, or
+    /// [`SideError::BadRow`] when a row does not fit its columns.
+    pub fn insert_engine(&mut self, name: &str, table: SideTable) -> Result<(), SideError> {
+        if name != CELLS {
+            return Err(SideError::UnknownRelation {
+                name: name.to_owned(),
+            });
+        }
+        check_rows(name, &table)?;
+        tracing::debug!(name, rows = table.rows.len(), "engine table supplied");
         self.tables.insert(name.to_owned(), table);
         Ok(())
     }

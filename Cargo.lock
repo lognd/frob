@@ -2836,6 +2836,7 @@ dependencies = [
  "gob-rules",
  "gob-symbols",
  "gob-text",
+ "grimble-check",
  "gungraun",
  "insta",
  "proptest",

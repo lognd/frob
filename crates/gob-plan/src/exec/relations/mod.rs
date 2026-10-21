@@ -21,10 +21,15 @@ use gob_ir::Relation;
 
 pub use count::{Count, Knobs};
 pub(crate) use edges::{Closure, reaches_in, verb};
-pub use side::{SideData, SideError, SideRow, SideTable};
+pub use side::{CELLS, SideData, SideError, SideRow, SideTable};
+pub(crate) use side::{MODEL_SELECTORS, row_kind_table};
 
 /// The relation word that is answered from the term itself (same parent unit).
 pub(crate) const PEER_OF: &str = "peer of";
+
+/// The relation word answered from the model's ownership selectors (a unit or artifact owned by a
+/// `node` row).
+pub(crate) const OWNED_BY: &str = "owned by";
 
 /// The default cap on condition evaluations per run; an overrun is Unknown with reason `budget`
 /// (grl-spec.md 7.0.8, plugins.md 6.5).

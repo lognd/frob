@@ -6,9 +6,12 @@
 // frob:ticket 01M4XJMM949EHC6X13TYJPYE5V
 use crate::catalog::{Column, FieldType};
 use crate::exec::Scalar;
-use crate::exec::relations::{SideData, SideTable};
+use crate::exec::relations::{CELLS, SideData, SideTable};
 use crate::plan::{Op, Plan};
+use gob_ir::Model;
+use gob_text::SourceText;
 
+use super::cells::cell_table;
 use super::model_reader::read_model;
 use super::runner::RunError;
 
@@ -246,6 +249,35 @@ pub(crate) fn side_data(plan: &Plan, inputs: &SideInputs) -> Result<SideData, Ru
     }
     tracing::debug!(tables = written.len(), "example side data built");
     Ok(side)
+}
+
+/// Whether `plan` ranges over the `cell` kind.
+fn uses_cells(plan: &Plan) -> bool {
+    plan.parts().strings.iter().any(|w| w == "cell")
+}
+
+/// Supplies `engine.cells` to `side` when `plan` uses the `cell` kind and the example has a
+/// `model`: the cells of the example's code (`path`, `lang`) under that model.
+///
+/// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
+///
+/// # Errors
+/// [`RunError::Model`] when the model text is refused or the table does not fit.
+pub(crate) fn add_cells(
+    side: &mut SideData,
+    plan: &Plan,
+    inputs: &SideInputs,
+    code: (&Model, &SourceText, (Option<&str>, &str)),
+) -> Result<(), RunError> {
+    let (Some(text), true) = (&inputs.model, uses_cells(plan)) else {
+        return Ok(());
+    };
+    let rows = read_model(text)
+        .map_err(|e| RunError::Model(format!("the example `model` does not parse: {e}")))?;
+    let (model, source, at) = code;
+    let table = cell_table(model, source, at, &rows);
+    side.insert_engine(CELLS, table)
+        .map_err(|e| RunError::Model(e.to_string()))
 }
 
 #[cfg(test)]

@@ -6,6 +6,7 @@
 //! diff. [`runner`] produces those findings: it lowers the rule, builds the example's model, runs
 //! the executor and hands the result to the judge.
 
+mod cells;
 #[cfg(test)]
 mod corpus_tests;
 pub mod judge;

@@ -5,7 +5,7 @@
 //! add an Unknown disjunct when the model has unread regions (review 2.2 item 7).
 
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 use std::rc::Rc;
 
@@ -17,8 +17,8 @@ use super::field::{Datum, Reader, Scalar, compare};
 use super::fxmap::FastMap;
 use super::kind::{KindTest, is_canonical_unit};
 use super::verdict::{Doubt, Verdict};
-use crate::exec::relations::{self, Count, Knobs, PEER_OF, SideRow, SideTable};
-use crate::plan::{Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
+use crate::exec::relations::{self, Count, Knobs, OWNED_BY, PEER_OF, SideRow, SideTable};
+use crate::plan::{Certainty, Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
 
 mod index;
 mod predicate;
@@ -84,6 +84,10 @@ pub(crate) struct Wired<'a> {
     pub(crate) edges: HashMap<StrId, &'a Relation>,
     /// Side tables by the string id of the relation name.
     pub(crate) side: HashMap<StrId, &'a SideTable>,
+    /// Kind words (by string id) that range over rows of the side table of the same id.
+    pub(crate) row_kinds: HashSet<StrId>,
+    /// The `owned by` globs per model node name, built from `model.selectors`.
+    pub(crate) owners: HashMap<String, globset::GlobSet>,
     /// The `[rules]` knob overrides.
     pub(crate) knobs: Knobs,
     /// The most condition evaluations before the run gives up.
@@ -186,6 +190,11 @@ impl<'a> Eval<'a> {
 
     fn string(&self, id: StrId) -> &'a str {
         &self.plan.strings[id as usize]
+    }
+
+    /// Whether `kind` ranges over rows of a model side table rather than nodes of the code term.
+    pub(crate) fn is_row_kind(&self, kind: StrId) -> bool {
+        self.wired.row_kinds.contains(&kind)
     }
 
     /// The members of kind `kind` in location order.
@@ -322,6 +331,9 @@ impl<'a> Eval<'a> {
         want: Truth,
         env: &mut Env,
     ) -> Option<NodeId> {
+        if self.wired.row_kinds.contains(&kind) {
+            return None;
+        }
         let mut found = None;
         for &(n, member) in self.domain(kind).iter() {
             env[usize::from(var)] = Some(Val::Node(n));
@@ -356,6 +368,23 @@ impl<'a> Eval<'a> {
             }
         }
         acc
+    }
+
+    /// Evaluates a verb edge between two bound variables (`owned by`, `peer of`, or a graph edge).
+    fn verb_op(
+        &self,
+        (subject, object, verb): (VarId, VarId, StrId),
+        certainty: Certainty,
+        env: &Env,
+    ) -> Verdict {
+        if self.string(verb) == OWNED_BY {
+            return self.owned_by(env, subject, object);
+        }
+        let (a, b) = (Self::node(env, subject), Self::node(env, object));
+        if self.string(verb) == PEER_OF {
+            return Verdict::certain(self.peer_of(a, b));
+        }
+        relations::verb(self.wired.edges[&verb], a, b, certainty)
     }
 
     fn eval_op(&self, id: OpId, env: &mut Env) -> Verdict {
@@ -429,13 +458,7 @@ impl<'a> Eval<'a> {
                 object,
                 verb,
                 certainty,
-            } => {
-                let (a, b) = (Self::node(env, *subject), Self::node(env, *object));
-                if self.string(*verb) == PEER_OF {
-                    return Verdict::certain(self.peer_of(a, b));
-                }
-                relations::verb(self.wired.edges[verb], a, b, *certainty)
-            }
+            } => self.verb_op((*subject, *object, *verb), *certainty, env),
             Op::Reaches {
                 from,
                 to,
@@ -536,6 +559,16 @@ impl<'a> Eval<'a> {
     /// neither is No; `hi` is unbounded when the model has unread regions.
     pub(crate) fn count(&self, var: VarId, kind: StrId, cond: OpId, env: &mut Env) -> Count {
         let (mut lo, mut hi) = (0u64, 0u64);
+        if self.wired.row_kinds.contains(&kind) {
+            for index in 0..self.side_rows(kind) {
+                env[usize::from(var)] = Some(Val::Row(SideRow { table: kind, index }));
+                let t = self.eval(cond, env).truth;
+                lo += u64::from(t == Truth::Yes);
+                hi += u64::from(t != Truth::No);
+            }
+            env[usize::from(var)] = None;
+            return Count { lo, hi: Some(hi) };
+        }
         for &(n, member) in self.domain(kind).iter() {
             env[usize::from(var)] = Some(Val::Node(n));
             let t = self.eval(cond, env).truth & member;
@@ -552,6 +585,17 @@ impl<'a> Eval<'a> {
     /// `some var: kind where cond`: the `or` over the domain, plus the hidden-member disjunct.
     fn some(&self, var: VarId, kind: StrId, cond: OpId, env: &mut Env) -> Verdict {
         let mut acc = Verdict::no();
+        if self.wired.row_kinds.contains(&kind) {
+            for index in 0..self.side_rows(kind) {
+                env[usize::from(var)] = Some(Val::Row(SideRow { table: kind, index }));
+                acc = acc.or(self.eval(cond, env));
+                if acc.truth == Truth::Yes {
+                    break;
+                }
+            }
+            env[usize::from(var)] = None;
+            return acc;
+        }
         let domain = self.domain(kind);
         let visit = self.candidates(var, cond, &domain, env);
         let count = visit.as_ref().map_or(domain.len(), Vec::len);
@@ -573,6 +617,32 @@ impl<'a> Eval<'a> {
             return Verdict::unknown(Doubt::Hidden);
         }
         acc
+    }
+
+    /// `u owned by n`: the file of `u` matches a selector `n` owns in the model; Unknown when the
+    /// path or the node's name is not readable.
+    ///
+    /// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
+    fn owned_by(&self, env: &Env, subject: VarId, object: VarId) -> Verdict {
+        let node = Self::node(env, subject);
+        let Some(Val::Row(row)) = env[usize::from(object)] else {
+            unreachable!("validated plans bind the owner of `owned by` as a model node row")
+        };
+        let name = self.wired.side[&row.table].cell(row.index, "name");
+        let (Datum::Known(Scalar::Str(path)), Datum::Known(Scalar::Str(name))) =
+            (self.rd.field(node, "path"), name)
+        else {
+            return Verdict::unknown(Doubt::Dynamic {
+                node: Some(node),
+                field: "path".to_owned(),
+            });
+        };
+        Verdict::certain(
+            self.wired
+                .owners
+                .get(&name)
+                .is_some_and(|g| g.is_match(&path)),
+        )
     }
 
     /// `sub inside sup`: `sup` is an ancestor (the parent when `direct`).

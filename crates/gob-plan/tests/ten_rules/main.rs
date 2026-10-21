@@ -23,12 +23,8 @@ const RULES: [(&str, &str); 10] = [
 ///
 /// A listed example must still fail: when the engine learns the feature the test fails
 /// and the entry is deleted, so the list can only shrink.
-const KNOWN_ENGINE_GAPS: [(&str, usize); 10] = [
-    ("DOC002", 1), // example runner lacks multi-file `file "..."` inputs
-    ("SYS001", 0), // ~WHEVEHY: runner lacks `model` inputs and owned_by relation
-    ("SYS001", 1),
-    ("CAP001", 0), // ~WHEVEHY: runner lacks `model` inputs and the cell relation
-    ("CAP001", 1),
+const KNOWN_ENGINE_GAPS: [(&str, usize); 6] = [
+    ("DOC002", 1),  // example runner lacks multi-file `file "..."` inputs
     ("NEAT031", 0), // ~R3AHZ1T: lowering rejects a field-path relation object
     ("NEAT031", 1),
     ("NEAT031", 2),
@@ -48,6 +44,7 @@ fn failures(name: &str) -> Vec<(usize, String)> {
         src,
     );
     assert!(parsed.is_ok(), "{name}: {:?}", parsed.errors);
+    gob_plan::examples::install_model_reader(grimble_check::example_model::read_example_model);
     let rule = &parsed.file.rules[0];
     assert!(!rule.examples.is_empty(), "{name} has no examples");
     rule.examples

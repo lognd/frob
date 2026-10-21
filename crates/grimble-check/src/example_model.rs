@@ -39,11 +39,29 @@ fn model_items(items: &[Item], ns: &str, rows: &mut Vec<ModelNodeRow>) {
                         _ => None,
                     })
                     .collect();
+                let grants = e
+                    .clauses
+                    .iter()
+                    .filter_map(|c| match &c.kind {
+                        ClauseKind::May(m) if m.at.is_none() => Some(m.atom.name.clone()),
+                        _ => None,
+                    })
+                    .collect();
+                let excuses = e
+                    .clauses
+                    .iter()
+                    .filter_map(|c| match &c.kind {
+                        ClauseKind::Excuses(x) => Some(x.atom.name.clone()),
+                        _ => None,
+                    })
+                    .collect();
                 rows.push(ModelNodeRow {
                     name: format!("{ns}{}", e.name.text),
                     kind: kind.to_owned(),
                     path: EXAMPLE_MODEL_PATH.to_owned(),
                     selectors,
+                    grants,
+                    excuses,
                 });
             }
             _ => {}
