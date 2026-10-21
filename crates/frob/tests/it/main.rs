@@ -40,6 +40,7 @@ mod shared_files;
 mod sibling_discovery;
 mod sync_policy;
 mod terminal_lease;
+mod text_views;
 mod ticket;
 mod ticket_branch;
 mod ticket_branch_refs;

@@ -69,7 +69,7 @@ pub struct EvidenceView {
 
 impl EvidenceView {
     /// The one-line markdown form: attestations lead with their label, tool records with provider and verdict.
-    fn line(&self) -> String {
+    pub(crate) fn line(&self) -> String {
         let at = if self.accepts.is_empty() {
             "no criterion".to_owned()
         } else {
@@ -214,17 +214,15 @@ impl Command for Show {
         } else {
             None
         };
-        let payload = Payload::new(ShowData {
+        let data = ShowData {
             view,
             fields,
             events,
             evidence,
             changelog_exempt,
-        });
-        Ok(match rendered {
-            Some(rows) => payload.with_rendered(rows),
-            None => payload,
-        })
+        };
+        let rows = rendered.unwrap_or_else(|| crate::text_view::show_rows(&data));
+        Ok(Payload::new(data).with_rendered(rows))
     }
 }
 
@@ -447,7 +445,8 @@ impl Command for List {
         if self.full {
             fill_full(&ledger, &mut data)?;
         }
-        Ok(Payload::new(data))
+        let rows = crate::text_view::list_rows(&data);
+        Ok(Payload::new(data).with_rendered(rows))
     }
 }
 
@@ -523,12 +522,14 @@ impl List {
         };
         let entries = ledger.inbox(&filter, at, self.all).map_err(cli_err)?;
         tracing::debug!(count = entries.len(), %at, "ticket list: triage inbox");
-        Ok(Payload::new(ListData {
+        let data = ListData {
             count: entries.len(),
             at: Some(at),
             tree: None,
             tickets: entries.into_iter().map(ListRow::from).collect(),
-        }))
+        };
+        let rows = crate::text_view::list_rows(&data);
+        Ok(Payload::new(data).with_rendered(rows))
     }
 }
 
@@ -596,7 +597,8 @@ impl Command for Doable {
             data.tickets.truncate(n);
             data.count = data.tickets.len();
         }
-        let payload = Payload::new(data);
+        let rows = crate::text_view::list_rows(&data);
+        let payload = Payload::new(data).with_rendered(rows);
         let payload = match warning {
             Some(w) => payload.with_warning(w),
             None => payload,

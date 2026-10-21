@@ -1,0 +1,9 @@
+---
+source: crates/frob/tests/it/text_views.rs
+expression: normalize(&show)
+---
+~HANDLE0  YYYY-MM-DD..YYYY-MM-DD  (active)
+
+goal       First cycle
+capacity   8
+committed  0

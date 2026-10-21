@@ -1750,6 +1750,51 @@ fn two_lands_back_to_back_from_one_primary_both_succeed_without_failure_warnings
     );
 }
 
+/// Land `s`, queueing on the land lock for up to two minutes instead of refusing.
+fn land_waiting(fx: &Fixture, s: &Started) -> Result<frob_land::LandOutcome, LandError> {
+    let opts = LandOptions {
+        wait_secs: 120,
+        ..Fixture::opts(s)
+    };
+    land(
+        &fx.root,
+        &opts,
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+}
+
+// frob:ticket 01M4M27EDCXBRN2HZJXHAZK0F1
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn racing_lands_of_one_ticket_and_a_late_one_all_exit_ok_with_no_error() {
+    if !git_available() {
+        return;
+    }
+    for round in 0..if cfg!(windows) { 2 } else { 8 } {
+        let fx = Fixture::new();
+        let a = fx.start("Add a", &["src/a/**"]);
+        Fixture::commit_in(&a.wt, "src/a/a.rs", "fn a() {}\n");
+        Fixture::evidence(&a, "src/a/a.rs");
+        let (x, y) = std::thread::scope(|scope| {
+            let lx = scope.spawn(|| land_waiting(&fx, &a));
+            let ly = scope.spawn(|| land_waiting(&fx, &a));
+            (lx.join().expect("land x"), ly.join().expect("land y"))
+        });
+        let outs: Vec<_> = [x, y]
+            .into_iter()
+            .map(|r| r.unwrap_or_else(|e| panic!("round {round}: a racing land failed: {e}")))
+            .collect();
+        assert_eq!(
+            outs.iter().filter(|o| o.closed && !o.already).count(),
+            1,
+            "round {round}: exactly one lander closes: {outs:?}"
+        );
+        assert!(!a.wt.exists(), "round {round}: worktree removed");
+        let late = land_now(&fx, &a).expect("a land after the worktree is gone");
+        assert!(late.already && !late.closed, "{late:?}");
+    }
+}
+
 /// Create, pack and delete scratch branches until `stop` is set: the multi-process ref churn a busy primary sees.
 fn churn_refs(root: &Path, stop: &std::sync::atomic::AtomicBool) {
     let run = |args: &[&str]| {

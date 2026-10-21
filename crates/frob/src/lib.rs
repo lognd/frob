@@ -33,6 +33,7 @@ pub mod rule_cmd;
 pub mod stats_cmd;
 mod sync_hook;
 pub mod teach_cmd;
+mod text_view;
 pub mod ticket;
 pub mod tour_cmd;
 pub mod trust_cmd;

@@ -1,0 +1,7 @@
+---
+source: crates/frob/tests/it/text_views.rs
+expression: normalize(&doable)
+---
+1 ticket
+~HANDLE0  high  todo  3  task  Write the renderer
+next: frob work ~HANDLE0
