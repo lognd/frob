@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T08:31:44Z"
+digest = "5c381893c398528d560625f1b51c9845ab067f90e0c69aa29b97e8ac84b42957"
+exit_code = 0
+head = "940fdad3bc2b0dd3af5b4e14d014a0cf39eac034"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 04f8e78c-306a-4292-be09-43dc356e05d8 with nextest profile: default
+    Starting 1 test across 3 binaries (147 tests skipped)
+        PASS [   0.490s] frob-land::land train_status_reports_queue_candidate_and_batch_size_as_an_envelope
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.491s] 1 test run: 1 passed, 147 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land train_status"
+size = 575
+status = "measured"
+test_count = 1
+tests_digest = "2b0d159f4c7dffffbc83fb5900c29ca29313cda7bd261f65dab42f2a48ed467b"
+at = "2026-10-21T08:31:44Z"
+actor = "lognd"
+rev = 1
