@@ -1,0 +1,11 @@
+kind = "create"
+title = "plumb enabled packs through ObligationInputs instead of cov001 re-reading frob.toml"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M44YQS4CNZM54P067GJVPDC0"
+body = "found while working ~YR0STJ5: cov.rs unity_roots reads frob.toml directly"
+at = "2026-10-21T12:58:06Z"
+actor = "lognd"
+rev = 1
