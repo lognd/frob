@@ -2,7 +2,8 @@
 id = "01M480C4GC6M96Y0BQ9QSK0WB1"
 title = "Rule coverage gaps: grimble rules without an mdtest pair or fixture"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
