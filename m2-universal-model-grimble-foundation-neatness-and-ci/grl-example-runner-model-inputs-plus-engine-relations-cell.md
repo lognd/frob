@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-21T08:48:17Z"
 updated = "2026-10-21T22:29:02Z"
 labels = ["area:grl"]
-scope = ["crates/gob-plan/src/examples/**", "crates/gob-plan/src/exec/relations/**", "crates/gob-plan/src/exec/outcome/**", "crates/gob-plan/src/plan/ir.rs", "crates/grimble-check/src/example_model.rs", "crates/grimble-check/tests/example_model.rs", "changelog.d/01M5ETB7SWJPH7EVK97WHEVEHY.added.md", "crates/gob-plan/src/exec/core/mod.rs"]
+scope = ["crates/gob-plan/src/examples/**", "crates/gob-plan/src/exec/relations/**", "crates/gob-plan/src/exec/outcome/**", "crates/gob-plan/src/plan/ir.rs", "crates/grimble-check/src/example_model.rs", "crates/grimble-check/tests/example_model.rs", "changelog.d/01M5ETB7SWJPH7EVK97WHEVEHY.added.md", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/exec/core/eval.rs"]
 +++
 
 Found while working ~ACSP6CZ. runner.rs returns Unsupported("model") for InputKind::Model, and the executor lacks the engine relations cell, owned_by (and unit-inside-artifact over a model). Needed to make SYS001 and CAP001 examples in crates/gob-plan/tests/ten_rules pass; then delete their KNOWN_ENGINE_GAPS entries.
