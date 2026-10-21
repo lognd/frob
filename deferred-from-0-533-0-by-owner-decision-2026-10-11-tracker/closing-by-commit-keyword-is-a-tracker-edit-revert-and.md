@@ -2,7 +2,8 @@
 id = "01M4052TQSK1WXBD9280DDRNM5"
 title = "Closing by commit keyword is a tracker edit: revert and propose"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
