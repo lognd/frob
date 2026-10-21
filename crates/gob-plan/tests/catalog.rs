@@ -90,3 +90,44 @@ fn a_misspelt_config_column_is_not_a_member() {
     let table = "  find f: config.invariant.forbid_imports\n  report f \"x\"";
     assert_eq!(codes(&s, table)[0].1, "unknown config key `invariant`");
 }
+
+fn crunk_schema() -> Value {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/schemas/crunk.json");
+    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+// frob:ticket 01M54GWME19N64RRMBTCZSG7YJ
+// frob:tests crates/gob-plan/src/catalog/config.rs::ConfigSchema.from_json
+// frob:tests crates/gob-plan/src/catalog/config.rs::ConfigSchema.node
+#[test]
+fn the_crunk_schema_types_org_and_layers() {
+    let s = ConfigSchema::from_json(&crunk_schema());
+    assert!(s.tables().contains(&"org") && s.tables().contains(&"layers"));
+    assert_eq!(
+        s.node("org.class_case").unwrap().ty,
+        catalog::FieldType::Str
+    );
+    assert_eq!(
+        s.node("org.component_prefix").unwrap().ty,
+        catalog::FieldType::Bool
+    );
+    assert_eq!(s.node("org.ignore").unwrap().ty, catalog::FieldType::Str);
+    let cols = |p: &str| -> Vec<String> {
+        s.node(p)
+            .and_then(|n| n.columns.clone())
+            .unwrap_or_default()
+            .into_iter()
+            .map(|c| format!("{}:{}", c.name, c.ty.name()))
+            .collect()
+    };
+    assert_eq!(cols("org.buckets"), ["value:string"]);
+    assert_eq!(cols("layers"), ["name:string", "value:int"]);
+    let ok = "  find b: config.org.buckets\n  report b \"x\" when b.value == \"a\"";
+    assert!(codes(&s, ok).is_empty());
+    let bad = "  find l: config.layers\n  report l \"x\" when l.z == 1";
+    assert_eq!(
+        codes(&s, bad),
+        [(Code::Grl001, "unknown column `z`".to_owned())]
+    );
+    assert!(s.node("org.bucket").is_none());
+}
