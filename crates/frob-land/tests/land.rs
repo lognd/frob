@@ -2862,6 +2862,41 @@ fn relaunch_merges_the_remote_base_into_the_kept_branch_and_leaves_the_local_bas
 }
 
 // frob:ticket 01M5CW05WX0TMSBKDFTPEHB5R3
+// frob:ticket 01M5DRXHC16AATVXYDWY7BTP5S
+// frob:tests crates/frob-land/src/relaunch.rs::relaunch
+#[test]
+fn relaunch_follows_the_configured_sync_remote_and_pushes_only_when_asked() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = landed_locally_with_a_diverged_origin(&fx);
+    let bare = fx.root.join("up.git");
+    git(&fx.root, &["init", "--bare", "-q", "up.git"]);
+    let bare_s = gob_path::Shown::of(&bare).to_string();
+    git(&fx.root, &["remote", "add", "up", &bare_s]);
+    git(&fx.root, &["push", "-q", "up", "side:main"]);
+    git(&fx.root, &["fetch", "-q", "up"]);
+    git(&fx.root, &["update-ref", "-d", "refs/remotes/origin/main"]);
+    let toml = fx.root.join("frob.toml");
+    let mut cfg = std::fs::read_to_string(&toml).unwrap_or_default();
+    cfg.push_str("\n[sync]\nremote = \"up\"\n");
+    std::fs::write(&toml, cfg).expect("write frob.toml");
+    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+
+    let plain = frob_land::relaunch::relaunch(&fx.root, &Fixture::opts(&s), &clock).expect("plain");
+    assert!(!plain.pushed);
+    assert!(
+        plain.warnings.iter().any(|w| w.contains("to up")),
+        "{:?}",
+        plain.warnings
+    );
+    let mut opts = Fixture::opts(&s);
+    opts.push = true;
+    let out = frob_land::relaunch::relaunch(&fx.root, &opts, &clock).expect("push");
+    assert!(out.pushed, "{:?}", out.warnings);
+}
+
 // frob:tests crates/frob-land/src/relaunch.rs::relaunch
 #[test]
 fn relaunch_refuses_an_unlanded_ticket_and_is_a_no_op_when_origin_has_the_land() {
