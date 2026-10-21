@@ -275,11 +275,15 @@ pub fn generate(root: &Path) -> Result<Vec<GenFile>, InlineError> {
         for path in rust_files(&root.join(&crate_dir).join(parser.source))? {
             let rel = path
                 .strip_prefix(root)
-                .map_or_else(|_| path.clone(), Path::to_path_buf)
-                .components()
-                .map(|c| c.as_os_str().to_string_lossy().into_owned())
-                .collect::<Vec<_>>()
-                .join("/");
+                .map_or_else(|_| path.clone(), Path::to_path_buf);
+            let mut rel_str = String::new();
+            for comp in rel.components() {
+                if !rel_str.is_empty() {
+                    rel_str.push(std::path::MAIN_SEPARATOR);
+                }
+                rel_str.push_str(&comp.as_os_str().to_string_lossy());
+            }
+            let rel = rel_str;
             let text = std::fs::read_to_string(&path).map_err(|source| InlineError::Io {
                 path: path.clone(),
                 source,
