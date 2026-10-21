@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:16Z"
-updated = "2026-10-21T11:54:52Z"
+updated = "2026-10-21T11:55:30Z"
 idempotency_key = "crunk-plan-parity"
 labels = ["area:crunk"]
 scope = ["crates/crunk/tests/parity.rs", "crates/crunk/tests/parity/**", "tests/crunk-parity/divergences.toml", "changelog.d/01M43AVKMT52QCG7DGNQ4J906S.added.md", "docs/design/monorepo.md"]
@@ -39,7 +39,7 @@ target = "01M43ATD7ZGTNCY5036AYEJR7P"
 
 [[acceptance]]
 text = "Given the corpus, when the harness runs, then every project passes or has a reasoned divergence"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a divergence entry that no longer differs, when the harness runs, then it fails and names the entry"
