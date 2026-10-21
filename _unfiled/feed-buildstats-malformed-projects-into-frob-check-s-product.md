@@ -2,12 +2,12 @@
 id = "01M5GCNBD6AT6HNQKF3MQTXQC5"
 title = "Feed BuildStats.malformed_projects into frob-check's Product::malformed_projects"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-21T23:27:37Z"
-updated = "2026-10-21T23:45:19Z"
+updated = "2026-10-21T23:45:20Z"
 scope = ["crates/frob-check/src"]
 
 [[acceptance]]
