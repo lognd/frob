@@ -325,6 +325,12 @@ pub trait Product: Sized + Sync {
         Vec::new()
     }
 
+    // frob:ticket 01M47RDBED35TFDEHQ1YTG1ZYC
+    /// Malformed `.csproj` and `.sln` project files, each an Unresolved `READ001`; empty by default.
+    fn malformed_projects(&self, _shared: &Self::Shared) -> Vec<gob_symbols::MalformedProject> {
+        Vec::new()
+    }
+
     /// True when the product's scanner reads comments and directives of `path` without an adapter.
     fn scans_text(&self, _path: &str) -> bool {
         false

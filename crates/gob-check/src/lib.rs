@@ -105,8 +105,9 @@ pub use rules::{
 };
 pub use status::{
     FidelityReport, HoleSite, LanguageFidelity, OtherCopy, SiblingRow, SkippedReport,
-    SubjectStatus, hole_caveat, is_binary, locate_hole, opaque_finding, subject_status,
-    subject_status_for, unreadable_finding, unresolved_finding, unresolved_finding_at,
+    SubjectStatus, hole_caveat, is_binary, locate_hole, malformed_project_finding, opaque_finding,
+    subject_status, subject_status_for, unreadable_finding, unresolved_finding,
+    unresolved_finding_at,
 };
 pub use tool_def::ToolDef;
 pub use tools::{ToolMemo, ToolTrust};

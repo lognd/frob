@@ -84,6 +84,7 @@ impl FileCheck<Toy> for BadCheck {
 struct Toy {
     subjects: usize,
     applicable: bool,
+    malformed: Vec<(String, String)>,
 }
 
 /// A fixed scope over `a.txt`.
@@ -156,6 +157,16 @@ impl Product for Toy {
     fn applicable(&self, _snap: &Snapshot<Self>, _meta: &RuleMeta) -> bool {
         self.applicable
     }
+
+    fn malformed_projects(&self, _shared: &()) -> Vec<gob_symbols::MalformedProject> {
+        self.malformed
+            .iter()
+            .map(|(path, reason)| gob_symbols::MalformedProject {
+                path: path.clone(),
+                reason: reason.clone(),
+            })
+            .collect()
+    }
 }
 
 fn tree() -> tempfile::TempDir {
@@ -181,6 +192,7 @@ fn a_foreign_product_gets_findings_caches_and_subject_counts() {
     let toy = Toy {
         subjects: 4,
         applicable: true,
+        malformed: Vec::new(),
     };
     let first = run(&toy, dir.path(), &quiet()).expect("first run");
     let rules: Vec<String> = first.findings.iter().map(|f| f.rule.to_string()).collect();
@@ -215,6 +227,7 @@ fn a_must_measure_rule_with_zero_subjects_is_a_required_unresolved() {
     let toy = Toy {
         subjects: 0,
         applicable: true,
+        malformed: Vec::new(),
     };
     let report = run(&toy, dir.path(), &quiet()).expect("run");
     let zero: Vec<&Finding> = report
@@ -244,6 +257,7 @@ fn zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out() {
     let na = Toy {
         subjects: 0,
         applicable: false,
+        malformed: Vec::new(),
     };
     let report = run(&na, dir.path(), &quiet()).expect("run");
     assert!(
@@ -256,6 +270,7 @@ fn zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out() {
     let applicable = Toy {
         subjects: 0,
         applicable: true,
+        malformed: Vec::new(),
     };
     let only = RunOptions {
         only: vec!["TOY001".to_owned()],
@@ -277,6 +292,7 @@ fn only_accepts_this_products_rules_and_rejects_the_others() {
     let toy = Toy {
         subjects: 1,
         applicable: true,
+        malformed: Vec::new(),
     };
     let ok = RunOptions {
         only: vec!["toy".to_owned()],
@@ -303,6 +319,7 @@ fn a_scoped_run_skips_full_only_groups_with_a_reason_and_a_full_run_keeps_them()
     let toy = Toy {
         subjects: 4,
         applicable: true,
+        malformed: Vec::new(),
     };
     let scoped = RunOptions {
         scope: Some("anything".to_owned()),
@@ -358,6 +375,7 @@ fn trust_from_reports_a_pack_absent_from_the_lock_at_the_ref_as_untrusted_in_cha
     let toy = Toy {
         subjects: 1,
         applicable: true,
+        malformed: Vec::new(),
     };
     let opts = RunOptions {
         trust_from: Some(spec(true)),
@@ -377,4 +395,39 @@ fn trust_from_reports_a_pack_absent_from_the_lock_at_the_ref_as_untrusted_in_cha
     };
     let clean = run(&toy, dir.path(), &none).expect("run");
     assert!(clean.findings.iter().all(|f| f.required.is_none()));
+}
+
+// frob:tests crates/gob-check/src/pipeline.rs::run
+#[test]
+fn malformed_projects_are_required_unresolved_read001_naming_each_file() {
+    let dir = tree();
+    let toy = Toy {
+        subjects: 1,
+        applicable: true,
+        malformed: vec![
+            ("src/B/B.csproj".to_owned(), "unclosed element".to_owned()),
+            ("App.sln".to_owned(), "bad header".to_owned()),
+            ("App.sln".to_owned(), "duplicate".to_owned()),
+        ],
+    };
+    let report = run(&toy, dir.path(), &quiet()).expect("run");
+    let read: Vec<&Finding> = report
+        .findings
+        .iter()
+        .filter(|f| f.rule.to_string() == "READ001")
+        .collect();
+    assert_eq!(read.len(), 2, "one per file, duplicates folded: {read:?}");
+    assert!(read[0].message.contains("App.sln") && read[0].message.contains("bad header"));
+    assert!(read[1].message.contains("B.csproj") && read[1].message.contains("unclosed element"));
+    assert!(read.iter().all(|f| f.severity == Severity::Unresolved));
+    assert!(
+        read.iter().all(|f| f.required.is_some()),
+        "required Unresolved"
+    );
+    assert_eq!(
+        report.fidelity.languages["project"]
+            .unresolved
+            .get("READ001"),
+        Some(&2)
+    );
 }

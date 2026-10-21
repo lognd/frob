@@ -23,7 +23,8 @@ use crate::report::{CheckReport, Counts, FixOutcome, Tally, Timing};
 use crate::required::{mark_annotations, zero_subjects};
 use crate::rules::{Perf001, Read001};
 use crate::status::{
-    FidelityReport, SubjectStatus, is_binary, opaque_finding_for, unreadable_finding,
+    FidelityReport, SubjectStatus, is_binary, malformed_project_finding, opaque_finding_for,
+    unreadable_finding,
 };
 use crate::telemetry;
 use crate::tool_key::tool_failure_key;
@@ -349,12 +350,44 @@ fn unreadable_findings<P: Product>(
     skipped.sort_by(|a, b| a.path.cmp(&b.path));
     skipped.dedup_by(|a, b| a.path == b.path);
     let emit = matches_only(only, "READ", "READ001");
-    skipped
+    let mut out: Vec<Finding> = skipped
         .iter()
         .map(|s| {
             tracing::warn!(path = %s.path, kind = s.kind.as_str(), detail = %s.detail, "READ001: file not read");
             fidelity.add_skipped(s.kind);
             unreadable_finding(&Read001::META, snap.core.index.ids.get(&s.path).copied(), s)
+        })
+        .filter(|_| emit)
+        .collect();
+    out.extend(malformed_project_findings(
+        product, snap, &skipped, emit, fidelity,
+    ));
+    out
+}
+
+// frob:ticket 01M47RDBED35TFDEHQ1YTG1ZYC
+/// One required Unresolved `READ001` per malformed project file, counted in `fidelity`.
+///
+/// A project file already reported as unreadable is not reported twice. A `.csproj`
+/// and a `.sln` are treated alike; several malformed files give one finding each,
+/// ordered by path.
+fn malformed_project_findings<P: Product>(
+    product: &P,
+    snap: &Snapshot<P>,
+    unreadable: &[gob_symbols::SkippedFile],
+    emit: bool,
+    fidelity: &mut FidelityReport,
+) -> Vec<Finding> {
+    let mut malformed = product.malformed_projects(&snap.shared);
+    malformed.sort_by(|a, b| a.path.cmp(&b.path));
+    malformed.dedup_by(|a, b| a.path == b.path);
+    malformed
+        .iter()
+        .filter(|m| !unreadable.iter().any(|s| s.path == m.path))
+        .map(|m| {
+            tracing::warn!(path = %m.path, reason = %m.reason, "READ001: malformed project file; project Unresolved");
+            fidelity.add_unresolved("project", Read001::META.id, 1);
+            malformed_project_finding(&Read001::META, snap.core.index.ids.get(&m.path).copied(), m)
         })
         .filter(|_| emit)
         .collect()
