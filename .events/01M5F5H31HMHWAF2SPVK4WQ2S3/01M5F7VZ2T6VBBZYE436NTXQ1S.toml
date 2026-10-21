@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["the rule_catalog test asserts the real crunk-web rule count and passes"]
+moved = []
+at = "2026-10-21T12:44:37Z"
+actor = "lognd"
+rev = 1
