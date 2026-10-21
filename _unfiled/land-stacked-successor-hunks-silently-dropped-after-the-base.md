@@ -10,7 +10,7 @@ created = "2026-09-25T00:00:00Z"
 updated = "2026-10-21T04:15:58Z"
 aliases = ["T-6516"]
 labels = ["v1-cluster:C1a", "triage:accepted"]
-scope = ["src/frob/tickets/_land.py", "src/frob/tickets/_land_verify.py", "src/frob/coord/_status.py", "tests/unit/tickets/test_land_hunk_presence.py", "docs/design/tickets.md", "crates/frob-land/src/hunk_presence.rs"]
+scope = ["src/frob/tickets/_land.py", "src/frob/tickets/_land_verify.py", "src/frob/coord/_status.py", "tests/unit/tickets/test_land_hunk_presence.py", "docs/design/tickets.md", "crates/frob-land/src/hunk_presence.rs", "crates/frob-land/src/land.rs"]
 +++
 
 Measured 2026-09-25 on the ledger-tiers stack (T-5748): after T-5749 (A1)
