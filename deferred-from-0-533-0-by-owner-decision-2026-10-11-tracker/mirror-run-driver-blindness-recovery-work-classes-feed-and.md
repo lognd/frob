@@ -2,7 +2,8 @@
 id = "01M4052W6Q1FAQK362YF6RCGW1"
 title = "Mirror run driver: blindness, recovery, work classes, feed and sweep assembled"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
