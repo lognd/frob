@@ -8,10 +8,10 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:32:05Z"
-updated = "2026-10-21T12:26:05Z"
+updated = "2026-10-21T12:26:06Z"
 idempotency_key = "crunk-plan-g_GRAMMAR"
 labels = ["area:grimble"]
-scope = ["packs/grimble-sysdesign/rules/grammar/**", "packs/grimble-sysdesign/tests/grammar/**", "packs/grimble-sysdesign/pack.toml", "crates/gob-packs/src/sysdesign.rs"]
+scope = ["packs/grimble-sysdesign/rules/grammar/**", "packs/grimble-sysdesign/tests/grammar/**", "packs/grimble-sysdesign/pack.toml", "crates/gob-packs/src/sysdesign.rs", "crates/gob-packs/tests/sysdesign_pack.rs"]
 
 [[links]]
 kind = "blocked-by"
