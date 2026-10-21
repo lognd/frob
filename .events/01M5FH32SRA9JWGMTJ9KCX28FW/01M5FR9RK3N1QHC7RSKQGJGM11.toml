@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the workspace, when the layering test runs, then every crate including grimble-ci has a layer and the test passes"]
+moved = []
+at = "2026-10-21T17:31:46Z"
+actor = "lognd"
+rev = 1
