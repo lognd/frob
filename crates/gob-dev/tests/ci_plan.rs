@@ -169,3 +169,31 @@ fn the_crunk_job_lists_every_crunk_package() {
     on_disk.sort_unstable();
     assert_eq!(listed, on_disk);
 }
+
+// frob:ticket 01M47QVD03PGCAZ301WHC5Q4MF
+// frob:tests crates/gob-dev/tests/ci_plan.rs::the_script_and_the_rust_mapping_agree_and_docs_only_runs_its_own_job
+#[test]
+fn the_script_and_the_rust_mapping_agree_and_docs_only_runs_its_own_job() {
+    let map = gob_dev::changes::ChangeMap::builtin().unwrap();
+    let doc = workflow();
+    for paths in [
+        vec!["notes/a.md", "tickets/x/ticket.md"],
+        vec!["crates/gob-fix/src/lib.rs"],
+        vec!["crates/crunk-values/src/lib.rs"],
+        vec!["crates/crunk-tailwind/node/h.mjs"],
+        vec![".github/workflows/ci.yml", "notes/a.md"],
+        vec!["docs/crunk/ci.md"],
+    ] {
+        let script = plan(&paths);
+        let mut rust = map.plan(&paths).render();
+        rust.sort();
+        let mut rendered: Vec<String> = script.iter().map(|(k, v)| format!("{k}={v}")).collect();
+        rendered.sort();
+        assert_eq!(rendered, rust, "{paths:?}");
+    }
+    // Only a docs-only diff runs the docs-only job; it never runs the workspace job.
+    let docs = plan(&["notes/a.md", "docs/design/x.md"]);
+    assert!(runs(&doc, "docs-only", &docs) && !runs(&doc, "rust", &docs));
+    let code = plan(&["crates/gob-fix/src/lib.rs"]);
+    assert!(!runs(&doc, "docs-only", &code) && runs(&doc, "rust", &code));
+}

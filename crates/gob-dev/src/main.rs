@@ -11,8 +11,8 @@ use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
 use gob_dev::{
-    Kind, Mode, apply, ci, generate, isolation, profile, publish, test_size, wheel, wheel_smoke,
-    workspace_root,
+    Kind, Mode, apply, changes, ci, generate, isolation, profile, publish, test_size, wheel,
+    wheel_smoke, workspace_root,
 };
 
 /// Command-line interface of the developer task runner.
@@ -73,6 +73,15 @@ enum Task {
         /// Run offloadable steps on a goway host: a bare name or path (default `goway`; also `CARGO_DEV_CI_REMOTE`).
         #[arg(long, value_name = "GOWAY", num_args = 0..=1, default_missing_value = "goway")]
         remote: Option<String>,
+        /// Run only the steps a diff against this base needs (a docs-only diff runs fmt, gen and check).
+        #[arg(long, value_name = "BASE")]
+        since: Option<String>,
+    },
+    /// Map a diff to the CI job sets (`key=value` lines): changed paths from `--base`, else stdin.
+    Changes {
+        /// Diff the head against this base (a git revision) instead of reading paths from stdin.
+        #[arg(long, value_name = "BASE")]
+        base: Option<String>,
     },
     /// Time every leaf command of frob, grimble and crunk against its budget in profile.toml.
     Profile {
@@ -271,7 +280,16 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             keep_going,
             list,
             remote,
-        } => ci_checks(&steps, keep_going, list, remote.as_deref()).map(|()| ok),
+            since,
+        } => ci_checks(
+            &steps,
+            keep_going,
+            list,
+            remote.as_deref(),
+            since.as_deref(),
+        )
+        .map(|()| ok),
+        Task::Changes { base } => changes_task(base.as_deref()).map(|()| ok),
         Task::Wheel {
             out,
             target,
@@ -365,14 +383,39 @@ fn ci_checks(
     keep_going: bool,
     list: bool,
     remote: Option<&str>,
+    since: Option<&str>,
 ) -> Result<(), Failed> {
     let fail = |e: &dyn std::fmt::Display| {
         tracing::error!(error = %e, "ci failed");
         Failed(format!("error: {e}"))
     };
     let root = workspace_root().map_err(|e| fail(&e))?;
-    let selected =
+    let mut selected =
         ci::select(ci::steps(&root).map_err(|e| fail(&e))?, names).map_err(|e| fail(&e))?;
+    if let Some(base) = since {
+        let map = changes::ChangeMap::builtin().map_err(|e| fail(&e))?;
+        let plan = changes::diff_paths(&root, base).map_or_else(
+            |e| {
+                tracing::warn!(error = %e, "diff unreadable; running every step");
+                changes::Plan::everything()
+            },
+            |paths| map.plan(&paths),
+        );
+        let keep = map.select_steps(
+            &plan,
+            &selected
+                .iter()
+                .map(|s| s.name.to_owned())
+                .collect::<Vec<_>>(),
+        );
+        selected.retain(|s| keep.iter().any(|k| k == s.name));
+        tracing::info!(
+            base,
+            kept = selected.len(),
+            docs_only = plan.docs_only,
+            "ci narrowed by diff"
+        );
+    }
     if list {
         for step in &selected {
             emit(step.name);
@@ -409,6 +452,30 @@ fn ci_checks(
     } else {
         Err(Failed("ci failed".to_owned()))
     }
+}
+
+// frob:ticket 01M47QVD03PGCAZ301WHC5Q4MF
+/// Print the job sets a diff needs as `key=value` lines (paths from `--base` or stdin).
+fn changes_task(base: Option<&str>) -> Result<(), Failed> {
+    let fail = |e: &dyn std::fmt::Display| {
+        tracing::error!(error = %e, "changes failed");
+        Failed(format!("error: {e}"))
+    };
+    let map = changes::ChangeMap::builtin().map_err(|e| fail(&e))?;
+    let paths = if let Some(base) = base {
+        let root = workspace_root().map_err(|e| fail(&e))?;
+        changes::diff_paths(&root, base).map_err(|e| fail(&e))?
+    } else {
+        std::io::read_to_string(std::io::stdin())
+            .map_err(|e| fail(&e))?
+            .lines()
+            .map(|l| l.trim().to_owned())
+            .collect()
+    };
+    for line in map.plan(&paths).render() {
+        emit(&line);
+    }
+    Ok(())
 }
 
 // frob:ticket 01M4CS7ZMEY096RVK91RWD03DW

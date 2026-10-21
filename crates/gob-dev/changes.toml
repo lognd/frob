@@ -1,0 +1,38 @@
+# Change detection data (build-test-ci.md section 6, ruff determine_changes).
+#
+# Read by `cargo dev changes` / `cargo dev ci --since` (crates/gob-dev/src/changes.rs, through
+# include_str!) and by `.github/scripts/plan-jobs.py` in the ci.yml `changes` job, so the
+# mapping from changed paths to job sets lives here once. A path matches a class when it starts
+# with one of the class prefixes. A class name must be one of: docs, crunk, node, workflows.
+# frob:ticket 01M47QVD03PGCAZ301WHC5Q4MF
+
+# The ci steps a docs-only diff still runs.
+docs_only_steps = ["fmt", "gen", "check"]
+
+# Paths no Rust job reads. docs/guides, docs/crunk, docs/reference and docs/schemas are read by
+# tests or by the generated-file check, so they are NOT docs.
+[[class]]
+name = "docs"
+prefixes = [
+  "tickets/",
+  "changelog.d/",
+  "notes/",
+  "docs/design/",
+  "docs/decisions/",
+  "docs/migration/",
+]
+
+# A crunk crate or docs/crunk: a crunk-only diff runs the crunk job instead of the workspace job.
+[[class]]
+name = "crunk"
+prefixes = ["crates/crunk/", "crates/crunk-", "docs/crunk/"]
+
+# The node Tailwind runtime and its tests; feeds only the optional node and playwright job.
+[[class]]
+name = "node"
+prefixes = ["crates/crunk-tailwind/node/", "crates/crunk-tailwind/tests/"]
+
+# Workflow definitions and local actions: zizmor and actionlint territory.
+[[class]]
+name = "workflows"
+prefixes = [".github/workflows/", ".github/actions/"]
