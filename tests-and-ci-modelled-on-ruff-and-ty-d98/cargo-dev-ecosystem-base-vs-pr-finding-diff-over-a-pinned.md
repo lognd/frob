@@ -2,7 +2,8 @@
 id = "01M47QV23EAN5DE6DDV9HS3VP7"
 title = "cargo dev ecosystem: base vs PR finding diff over a pinned real-project corpus"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
