@@ -2,7 +2,8 @@
 id = "01M4MHB12DMANR5NYDY39JD2QC"
 title = "crunk fix: preserve CRLF line endings when writing fixes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
