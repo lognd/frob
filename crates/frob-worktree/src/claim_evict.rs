@@ -116,13 +116,31 @@ impl Workspace<'_> {
     /// [`E_EVICT_ACTIVE`], [`E_EVICT_GONE`] and the `check_evictable` refusals;
     /// ledger, lease and git failures.
     // frob:ticket 01M5DTGG9XWMEBRA51PA6CYWAE
-    #[allow(clippy::too_many_lines)]
     pub fn evict_claim(
         &self,
         ticket: &str,
         reason: &str,
         yes: bool,
         policy: &EvictPolicy,
+    ) -> Result<EvictedClaim, WorktreeError> {
+        self.evict_claim_confirming(ticket, reason, policy, &mut |_| yes)
+    }
+
+    /// [`Self::evict_claim`] with a confirmation callback in place of `--yes`.
+    ///
+    /// `confirm` receives the one-line question when a human holder or a repeat eviction needs a
+    /// human to confirm; `true` proceeds, `false` refuses with [`E_EVICT_CONFIRM`].
+    ///
+    /// # Errors
+    /// Same as [`Self::evict_claim`].
+    // frob:ticket 01M5DZJ99WRFPNK6WS3KZWDC0G
+    #[allow(clippy::too_many_lines)]
+    pub fn evict_claim_confirming(
+        &self,
+        ticket: &str,
+        reason: &str,
+        policy: &EvictPolicy,
+        confirm: &mut dyn FnMut(&str) -> bool,
     ) -> Result<EvictedClaim, WorktreeError> {
         if reason.trim().is_empty() {
             return Err(WorktreeError::Usage(
@@ -191,7 +209,14 @@ impl Workspace<'_> {
         let flapped = flap_review(&ages) == FlapReview::NeedsHuman;
         let confirm_human =
             lease.holder_kind() == HolderKind::Human && !policy.windows.evict_human_auto();
-        if (flapped || confirm_human) && !yes {
+        let needs_confirm = flapped || confirm_human;
+        let confirmed = needs_confirm && {
+            let question = format!("Evict {holder}'s claim on {handle}?");
+            let ok = confirm(&question);
+            tracing::info!(%holder, flapped, confirm_human, ok, "claim evict confirmation asked");
+            ok
+        };
+        if needs_confirm && !confirmed {
             let why = if flapped {
                 format!(
                     "was already evicted in the last {} days; a repeat needs a human to confirm",

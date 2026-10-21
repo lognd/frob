@@ -1,0 +1,1 @@
+`frob claim evict` now asks for confirmation on a terminal when `[claims] evict_human = "confirm"` (or a repeat eviction) needs it; `--yes` still skips the prompt and a non-terminal run still refuses with E-CLAIM-CONFIRM.
