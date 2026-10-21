@@ -162,11 +162,15 @@ component): functions (declarations, and module-level `const f = () => ..`), cla
 accessors, `handle = () => ..` fields), interfaces, type aliases, enums, namespaces, and `const` or `static`
 for other module-level declarators. An anonymous `export default` function or class is the unit `default`.
 A declaration is public when exported (`export`, `export { a as b }`, `export default a`,
-`module.exports = ..`, `exports.x = a`); a class member is private for `private` and `#name`, crate-level
+`module.exports = ..`, `exports.x = a`); a function-valued CJS export (`exports.f = function () {}`,
+`module.exports.f = () => ..`, `module.exports = { f() {}, g: function () {} }`) is the public unit `f`, the last
+write of a name winning and a `module.exports = ..` replacing every earlier write; a class member is private for `private` and `#name`, crate-level
 for `protected`. A `/** */` comment before a declaration is its doc facet; decorators are attributes.
-Binders are function-level (every `let`, `const`, `var`, catch name and parameter of the function body):
-a block-scoped name that shadows an outer one hides it for the whole function, so such a call is Unknown,
-never a wrong target.
+Binders follow JavaScript scoping: `var` and parameters are function-level, while `let`, `const`, a `for`
+head, a `catch` parameter and a `switch` body bind in their own block. A block-scoped name that shadows an
+outer one hides it only inside that block, so such a call is Unknown (a local value) there and resolves
+normally outside it. Resolution is not position-ordered, so a use before its `let` (the temporal dead
+zone) still binds to the block binder.
 
 Imports and the module graph:
 

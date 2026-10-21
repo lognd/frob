@@ -12,7 +12,7 @@ use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, ScopeGraph, Sort, TermError
 use gob_languages::{Language, ParseLimits, ParseResult, UnresolvedReason, parse};
 use tree_sitter::Node;
 
-use super::binders::{is_module_binding, param_names, scope_binders};
+use super::binders::{block_scope_names, is_module_binding, param_names, scope_binders};
 use super::imports::{ImportMode, encode_edge, encode_use};
 use super::{ATTR_TEST_FRAMEWORK, ATTR_TEST_LINE, ATTR_TEST_ROLE, ATTR_TEST_TITLE};
 use crate::adapter::{FileInput, FoldError, Folded};
@@ -194,6 +194,10 @@ struct ExportScan {
     names: HashSet<String>,
     /// `(exported, local)` pairs: the name a file exports and the local name it stands for.
     aliases: Vec<(String, String)>,
+    /// Function-like nodes that are CJS exports (`exports.f = function () {}`, `module.exports = { f() {} }`), by node id, with the exported name.
+    cjs_fns: HashMap<usize, String>,
+    /// The module-level statements holding a node of `cjs_fns`.
+    cjs_stmts: HashSet<usize>,
 }
 
 /// A test-runner call recognised from its callee shape.
@@ -230,6 +234,8 @@ struct Fold<'a> {
     /// True while translating `export default`: an anonymous unit is named `default`.
     default_export: bool,
     pending_doc: Option<PendingDoc>,
+    /// The `JSDoc` of the CJS export statement being translated, for its first function unit.
+    cjs_doc: Option<PendingDoc>,
     leftover_doc: Option<PendingDoc>,
     /// Depth of enclosing conditional constructs and function bodies.
     cond_depth: usize,
@@ -365,9 +371,119 @@ fn is_decl_ident(parent: Node<'_>, child: Node<'_>) -> bool {
     }
 }
 
+/// The export name a CJS assignment target `exports.f`, `module.exports.f` or `exports["f"]` writes.
+///
+/// Returns the name and whether the target goes through `module.` (so it follows a `module.exports = ..`).
+fn cjs_target(lhs: Node<'_>, text: &str) -> Option<(String, bool)> {
+    let (obj, key) = match lhs.kind() {
+        "member_expression" => (
+            lhs.child_by_field_name("object")?,
+            text_of(text, lhs.child_by_field_name("property")?).to_owned(),
+        ),
+        "subscript_expression" => (
+            lhs.child_by_field_name("object")?,
+            string_value(text, lhs.child_by_field_name("index")?)?,
+        ),
+        _ => return None,
+    };
+    let ot: String = text_of(text, obj).split_whitespace().collect();
+    match ot.as_str() {
+        "exports" => Some((key, false)),
+        "module.exports" => Some((key, true)),
+        _ => None,
+    }
+}
+
+/// The static key of an object-literal member and the function-like node it defines, if any.
+///
+/// A computed key has no static name (`None`); a getter or setter has a key but defines no function.
+fn object_member<'t>(m: Node<'t>, text: &str) -> Option<(String, Option<Node<'t>>)> {
+    let key_of = |k: Node<'_>| match k.kind() {
+        "property_identifier" => Some(text_of(text, k).to_owned()),
+        "string" => string_value(text, k),
+        _ => None,
+    };
+    match m.kind() {
+        "pair" => {
+            let key = key_of(m.child_by_field_name("key")?)?;
+            let f = m
+                .child_by_field_name("value")
+                .filter(|v| FN_EXPR.contains(&v.kind()));
+            Some((key, f))
+        }
+        "method_definition" => {
+            let key = key_of(m.child_by_field_name("name")?)?;
+            let accessor = children(m)
+                .iter()
+                .any(|c| matches!(c.kind(), "get" | "set"));
+            Some((key, (!accessor).then_some(m)))
+        }
+        "shorthand_property_identifier" => Some((text_of(text, m).to_owned(), None)),
+        _ => None,
+    }
+}
+
+/// Finds the CJS exports that define a function: the last write of each name wins.
+///
+/// `exports.f = function () {}` and a function member of `module.exports = { .. }` each name a unit. A later
+/// write of the same name that is not a function (an alias, a value) cancels it, a `module.exports = ..`
+/// replaces every earlier write, and plain `exports.x = ..` after that write targets a detached object.
+fn scan_cjs_fns(root: Node<'_>, text: &str) -> (HashMap<usize, String>, HashSet<usize>) {
+    // name -> (function node id, statement id)
+    let mut live: HashMap<String, (usize, usize)> = HashMap::new();
+    let mut detached = false;
+    for stmt in children(root) {
+        if stmt.kind() != "expression_statement" {
+            continue;
+        }
+        let Some(assign) = children(stmt)
+            .into_iter()
+            .find(|c| c.kind() == "assignment_expression")
+        else {
+            continue;
+        };
+        let (Some(lhs), Some(rhs)) = (
+            assign.child_by_field_name("left"),
+            assign.child_by_field_name("right"),
+        ) else {
+            continue;
+        };
+        let lt: String = text_of(text, lhs).split_whitespace().collect();
+        if lt == "module.exports" {
+            live.clear();
+            detached = true;
+            if rhs.kind() == "object" {
+                for m in children(rhs) {
+                    match object_member(m, text) {
+                        Some((key, Some(f))) => {
+                            live.insert(key, (f.id(), stmt.id()));
+                        }
+                        Some((key, None)) => {
+                            live.remove(&key);
+                        }
+                        None => {}
+                    }
+                }
+            }
+        } else if let Some((name, via_module)) = cjs_target(lhs, text)
+            && (via_module || !detached)
+        {
+            if FN_EXPR.contains(&rhs.kind()) {
+                live.insert(name, (rhs.id(), stmt.id()));
+            } else {
+                live.remove(&name);
+            }
+        }
+    }
+    let stmts = live.values().map(|(_, s)| *s).collect();
+    let fns = live.into_iter().map(|(n, (f, _))| (f, n)).collect();
+    (fns, stmts)
+}
+
 /// The export aliases and exported local names of the program `root`, before folding.
 fn scan_exports(root: Node<'_>, text: &str) -> ExportScan {
     let mut scan = ExportScan::default();
+    (scan.cjs_fns, scan.cjs_stmts) = scan_cjs_fns(root, text);
     let alias = |scan: &mut ExportScan, exported: &str, local: &str| {
         scan.names.insert(local.to_owned());
         // Kept even when the names agree: `export { v }` may re-export an import of this file.
@@ -482,6 +598,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         direct: false,
         default_export: false,
         pending_doc: None,
+        cjs_doc: None,
         leftover_doc: None,
         cond_depth: 0,
         test_names: HashMap::new(),
@@ -659,7 +776,7 @@ impl<'a> Fold<'a> {
             let s = stmts[i];
             let documents_next = is_jsdoc(self.cx.text, s)
                 && stmts.get(i + 1).is_some_and(|nx| {
-                    DOCUMENTABLE.contains(&nx.kind())
+                    self.documentable(*nx)
                         && self.cx.text[s.end_byte()..nx.start_byte()]
                             .chars()
                             .all(char::is_whitespace)
@@ -687,6 +804,11 @@ impl<'a> Fold<'a> {
             i += 1;
         }
         Ok(out)
+    }
+
+    /// True when a `JSDoc` comment may document `n`: a declaration, or a CJS export statement defining a function.
+    fn documentable(&self, n: Node<'_>) -> bool {
+        DOCUMENTABLE.contains(&n.kind()) || self.exports.cjs_stmts.contains(&n.id())
     }
 
     /// The doc attribute for the declaration being translated, if a `JSDoc` comment precedes it.
@@ -778,7 +900,7 @@ impl<'a> Fold<'a> {
         let direct = std::mem::take(&mut self.direct);
         let incoming = self.pending_doc.take();
         if let Some(d) = incoming {
-            if DOCUMENTABLE.contains(&n.kind()) {
+            if self.documentable(n) {
                 self.pending_doc = Some(d);
             } else {
                 self.leftover_doc = Some(d);
@@ -837,6 +959,13 @@ impl<'a> Fold<'a> {
             {
                 self.field_member(n, depth)
             }
+            "expression_statement" if direct && self.exports.cjs_stmts.contains(&n.id()) => {
+                self.cjs_doc = self.pending_doc.take();
+                let out = self.generic(n, depth);
+                self.cjs_doc = None;
+                out
+            }
+            _ if self.exports.cjs_fns.contains_key(&n.id()) => self.cjs_unit(n, depth),
             k if FN_EXPR.contains(&k) || k == "method_definition" => self.anon_fn(n, depth),
             "class" if self.default_export => self.class_unit(n, depth),
             "jsx_element" | "jsx_self_closing_element" | "jsx_fragment" => self.jsx(n, depth),
@@ -849,6 +978,8 @@ impl<'a> Fold<'a> {
                     .op(Operator::adapter(LANG, n.kind(), Sort::Exp), n, &kids)
             }
             "string" => self.cx.lit("string", self.t(n), n),
+            "statement_block" | "for_statement" | "for_in_statement" | "catch_clause"
+            | "switch_body" => self.block_scope(n, depth),
             k if TYPE_KINDS.contains(&k) => self.with_expr(false, |s| s.generic(n, depth)),
             _ => self.generic(n, depth),
         }
@@ -861,6 +992,30 @@ impl<'a> Fold<'a> {
         let kids = self.gen_children(n, depth)?;
         self.cx
             .op(Operator::adapter(LANG, n.kind(), Sort::Exp), n, &kids)
+    }
+
+    /// A block-level scope (block, `for` head, `catch` clause, `switch` body): `generic` plus its `let`/`const` binders.
+    fn block_scope(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let names = block_scope_names(n, self.cx.text);
+        if names.is_empty() {
+            return self.generic(n, depth);
+        }
+        tracing::trace!(
+            path = self.path,
+            kind = n.kind(),
+            ?names,
+            "typescript block scope"
+        );
+        self.bound.push(names.iter().cloned().collect());
+        let kids = self.gen_children(n, depth);
+        self.bound.pop();
+        let refs: Vec<&str> = names.iter().map(String::as_str).collect();
+        let spec = NodeSpec::new(
+            Operator::adapter(LANG, n.kind(), Sort::Exp),
+            self.cx.node_loc(n),
+        )
+        .binders(&refs);
+        self.cx.add(spec, &kids?)
     }
 
     fn gen_children(&mut self, n: Node<'_>, depth: usize) -> R<Vec<NodeId>> {
@@ -2024,6 +2179,22 @@ impl<'a> Fold<'a> {
                 self.make_unit(ord, &head, doc, sig, vec![body?], &[])
             }
         }
+    }
+
+    /// A CJS-exported function (`exports.f = function () {}`, `module.exports = { f() {} }`) as the public unit `f`.
+    // frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+    fn cjs_unit(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let name = unit_name(self.exports.cjs_fns.get(&n.id()).map_or("", String::as_str));
+        self.pending_doc = self.cjs_doc.take();
+        let doc = self.take_doc()?;
+        let head = UnitHead {
+            kind: "function",
+            name,
+            vis: "public",
+            span: (n.start_byte(), n.end_byte()),
+            decorators: Vec::new(),
+        };
+        self.fn_unit(n, &head, doc, &[], depth)
     }
 
     /// An anonymous function: arrow, function expression or object-literal method.

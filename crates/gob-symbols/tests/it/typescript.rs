@@ -1004,3 +1004,127 @@ helper();
             .any(|s| s.symref.name() == Some("go") && is_typescript_test_fn(s))
     );
 }
+
+#[test]
+// frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_cjs_fns
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.cjs_unit
+fn cjs_function_expression_exports_are_public_units() {
+    let src = "/** Adds. */\nexports.add = function (a, b) { return a + b; };\nexports.arrow = () => 1;\nmodule.exports.viaModule = function () {};\nexports['quoted'] = function () {};\n";
+    let f = fold("lib/m.js", src);
+    let got: Vec<(String, SymbolKind, Visibility)> = f
+        .symbols
+        .iter()
+        .map(|s| (s.symref.to_string(), s.kind, s.visibility))
+        .collect();
+    for n in ["add", "arrow", "viaModule", "quoted"] {
+        let want = (
+            format!("lib/m.js::{n}"),
+            SymbolKind::Function,
+            Visibility::Public,
+        );
+        assert!(got.contains(&want), "{n}: {got:?}");
+    }
+    let doc = |n: &str| {
+        f.symbols
+            .iter()
+            .find(|s| s.symref.to_string() == format!("lib/m.js::{n}"))
+            .map(|s| s.digests.doc)
+    };
+    assert_ne!(doc("add"), doc("arrow"), "the JSDoc is the doc facet");
+}
+
+#[test]
+// frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_cjs_fns
+fn cjs_object_literal_exports_name_function_members() {
+    let src = "module.exports = { f() {}, g: function () {}, h: () => 1, get acc() { return 1; }, ['c' + 1]() {}, v: 3 };\n";
+    let f = fold("lib/o.js", src);
+    let got = names(&f);
+    for n in ["f", "g", "h"] {
+        assert!(got.contains(&format!("lib/o.js::{n}")), "{n}: {got:?}");
+    }
+    for n in ["acc", "v"] {
+        assert!(!got.contains(&format!("lib/o.js::{n}")), "{n}: {got:?}");
+    }
+    assert!(f.symbols.iter().all(|s| s.visibility == Visibility::Public));
+    let g = graph(&[
+        ("lib/o.js", src),
+        (
+            "lib/u.js",
+            "const { f } = require('./o');\nfunction use() { f(); }\n",
+        ),
+    ]);
+    assert_eq!(
+        call_status(&g, "lib/u.js::use", "lib/o.js::f"),
+        Some(Status::Must)
+    );
+}
+
+#[test]
+// frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_cjs_fns
+fn cjs_last_write_wins_and_reassignment_detaches() {
+    let dup = fold(
+        "lib/d.js",
+        "exports.f = function () {};\nexports.f = function () {};\n",
+    );
+    let count = names(&dup)
+        .iter()
+        .filter(|n| n.as_str() == "lib/d.js::f")
+        .count();
+    assert_eq!(count, 1, "{:?}", names(&dup));
+    let aliased = fold("lib/a.js", "exports.f = function () {};\nexports.f = 3;\n");
+    assert!(!names(&aliased).contains(&"lib/a.js::f".to_owned()));
+    let detached = fold(
+        "lib/r.js",
+        "exports.old = function () {};\nmodule.exports = { n() {} };\nexports.lost = function () {};\nmodule.exports.kept = function () {};\n",
+    );
+    let got = names(&detached);
+    assert!(got.contains(&"lib/r.js::n".to_owned()), "{got:?}");
+    assert!(got.contains(&"lib/r.js::kept".to_owned()), "{got:?}");
+    assert!(!got.contains(&"lib/r.js::old".to_owned()), "{got:?}");
+    assert!(!got.contains(&"lib/r.js::lost".to_owned()), "{got:?}");
+}
+
+#[test]
+// frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+// frob:tests crates/gob-symbols/src/typescript/binders.rs::block_scope_names
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.block_scope
+fn a_block_let_shadows_only_inside_its_block() {
+    let g = graph(&[(
+        "src/b.ts",
+        "function f() {}\nexport function inside() { { let f = () => 1; f(); } }\nexport function outside() { { let f = 1; } f(); }\nexport function tdz() { { f(); let f = () => 1; } }\n",
+    )]);
+    assert_eq!(call_status(&g, "src/b.ts::inside", "src/b.ts::f"), None);
+    assert!(
+        unknown_calls(&g, "src/b.ts::inside")
+            .contains(&("f".to_owned(), Some(GapReason::LocalValue)))
+    );
+    assert_eq!(
+        call_status(&g, "src/b.ts::outside", "src/b.ts::f"),
+        Some(Status::Must)
+    );
+    assert_eq!(call_status(&g, "src/b.ts::tdz", "src/b.ts::f"), None);
+}
+
+#[test]
+// frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+// frob:tests crates/gob-symbols/src/typescript/binders.rs::block_scope_names
+// frob:tests crates/gob-symbols/src/typescript/binders.rs::scope_binders
+fn loop_catch_switch_and_var_scopes() {
+    let g = graph(&[(
+        "src/s.ts",
+        "function f() {}\nexport function loop() { for (let f = 0; f < 1; f++) { f; } for (const f of []) { f(); } f(); }\nexport function handler() { try {} catch (f) { f(); } }\nexport function pick(x) { switch (x) { case 1: let f = () => 1; f(); } }\nexport function hoist() { { var f = () => 1; } f(); }\nexport function nest() { { let f = 1; { f(); } } { let f = 2; } }\n",
+    )]);
+    let must = |from: &str| call_status(&g, &format!("src/s.ts::{from}"), "src/s.ts::f");
+    assert_eq!(must("loop"), Some(Status::Must));
+    assert_eq!(must("handler"), None);
+    assert_eq!(must("pick"), None);
+    assert_eq!(must("hoist"), None);
+    assert_eq!(must("nest"), None);
+    assert!(
+        unknown_calls(&g, "src/s.ts::hoist")
+            .contains(&("f".to_owned(), Some(GapReason::LocalValue)))
+    );
+}

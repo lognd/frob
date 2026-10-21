@@ -1,0 +1,1 @@
+Function-valued CommonJS exports (`exports.f = function () {}`, `module.exports = { f() {} }`) now become public units in TypeScript and JavaScript symbol graphs, and `let`/`const` binders are block-scoped so a shadowing name hides an outer one only inside its block.
