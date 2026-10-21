@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T22:45:57Z"
+digest = "07339cff7e3575adc065885e8fa54a40150647f314c2af732e8510b137e18eb3"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1e8506de-ad84-46fd-891a-de52513770db with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.009s] gob-plan::examples_model an_unparsable_model_is_a_model_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test examples_model an_unparsable_model"
+size = 548
+status = "measured"
+test_count = 1
+tests_digest = "d6417b68df890fd1201df9ec682cacafc52a7d450e935b7cce0d618f978a4ce9"
+at = "2026-10-21T22:45:57Z"
+actor = "lognd"
+rev = 1
