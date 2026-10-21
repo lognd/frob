@@ -8,6 +8,6 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T23:31:55Z"
-updated = "2026-10-21T01:16:06Z"
-scope = ["crates/frob-pm/src/board.rs"]
+updated = "2026-10-21T01:16:07Z"
+scope = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs"]
 +++
