@@ -2,7 +2,8 @@
 id = "01M43AYJ2RMDD8DGZ5Q060142M"
 title = "Pack scaffold: grimble-sysdesign (STORE, SYSDESIGN, GRAMMAR)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
