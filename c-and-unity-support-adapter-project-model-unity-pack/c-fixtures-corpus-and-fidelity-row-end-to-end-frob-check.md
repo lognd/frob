@@ -2,7 +2,8 @@
 id = "01M44YQVN6PMK0D8NJ801ENJEW"
 title = "C# fixtures, corpus and fidelity row, end to end frob check"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
