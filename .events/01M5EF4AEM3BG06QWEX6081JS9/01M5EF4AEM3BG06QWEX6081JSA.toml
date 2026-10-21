@@ -1,0 +1,12 @@
+kind = "create"
+title = "crunk: stamp screen content_hash and include resolved token values"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
+scope = ["crates/crunk-cli/**"]
+acceptance = ["Given a screen file, when stamped, then STATE007 is clean until its content changes"]
+body = "found while working ~60E2DXH: a command to write content_hash into screen files, and fold resolved token values into the hash."
+at = "2026-10-21T05:32:16Z"
+actor = "lognd"
+rev = 1
