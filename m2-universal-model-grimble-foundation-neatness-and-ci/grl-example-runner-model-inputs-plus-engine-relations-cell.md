@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-21T08:48:17Z"
 updated = "2026-10-21T22:54:33Z"
 labels = ["area:grl"]
-scope = ["crates/gob-plan/src/examples/**", "crates/gob-plan/src/exec/relations/**", "crates/gob-plan/src/exec/outcome/**", "crates/gob-plan/src/plan/ir.rs", "crates/grimble-check/src/example_model.rs", "crates/grimble-check/tests/example_model.rs", "changelog.d/01M5ETB7SWJPH7EVK97WHEVEHY.added.md", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/exec/core/eval.rs", "crates/gob-plan/src/exec/core/rowkind.rs", "crates/gob-plan/src/examples/cells.rs", "crates/gob-plan/tests/examples_model.rs", "docs/design/grl-examples-model.md", "crates/gob-plan/Cargo.toml", "Cargo.lock", "crates/gob-plan/tests/ten_rules/cases/CAP001.grl"]
+scope = ["crates/gob-plan/src/examples/**", "crates/gob-plan/src/exec/relations/**", "crates/gob-plan/src/exec/outcome/**", "crates/gob-plan/src/plan/ir.rs", "crates/grimble-check/src/example_model.rs", "crates/grimble-check/tests/example_model.rs", "changelog.d/01M5ETB7SWJPH7EVK97WHEVEHY.added.md", "crates/gob-plan/src/exec/core/mod.rs", "crates/gob-plan/src/exec/core/eval.rs", "crates/gob-plan/src/exec/core/rowkind.rs", "crates/gob-plan/src/examples/cells.rs", "crates/gob-plan/tests/examples_model.rs", "docs/design/grl-examples-model.md", "crates/gob-plan/Cargo.toml", "Cargo.lock", "crates/gob-plan/tests/ten_rules/cases/CAP001.grl", "crates/gob-plan/tests/ten_rules/cases/SYS001.grl"]
 
 [[acceptance]]
 text = "A GRL example may carry a model input and a rule using node or owned by runs against its nodes and owns selectors"
