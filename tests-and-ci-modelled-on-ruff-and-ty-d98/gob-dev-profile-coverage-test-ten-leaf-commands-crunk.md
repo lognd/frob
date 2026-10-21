@@ -8,7 +8,8 @@ points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T16:45:11Z"
-updated = "2026-10-21T16:46:15Z"
+updated = "2026-10-21T16:53:05Z"
+scope = ["crates/gob-dev/profile.toml"]
 +++
 
 Found while landing KHR84D9; failing test on experimental. Fix or waive with reason.
