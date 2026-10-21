@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:16Z"
-updated = "2026-10-21T11:56:04Z"
+updated = "2026-10-21T11:58:28Z"
 idempotency_key = "crunk-plan-parity"
 labels = ["area:crunk"]
 scope = ["crates/crunk/tests/parity.rs", "crates/crunk/tests/parity/**", "tests/crunk-parity/divergences.toml", "changelog.d/01M43AVKMT52QCG7DGNQ4J906S.added.md", "docs/design/monorepo.md"]
@@ -47,7 +47,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the harness, when run in CI, then it is a required job for crates/crunk-* changes"
-bound = false
+bound = true
 +++
 
 Run the Rust crunk over every corpus project and diff against the Python expected files; every difference is either fixed or recorded in divergences.toml with a reason (for example the added did-you-mean, the gob.sibling/1 envelope, improved Unresolved states). The harness fails on an unlisted difference and on a listed one that no longer differs. This is the gate for retiring the Python crunk (docs/design/monorepo.md 5 step 3).

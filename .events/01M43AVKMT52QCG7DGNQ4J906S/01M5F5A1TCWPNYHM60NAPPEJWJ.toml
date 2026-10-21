@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T11:58:28Z"
+digest = "fb345e807ec52909d1538a34286a780f69f3b03c444fc1af3bbfc471ebdae5f5"
+exit_code = 0
+head = "dec6dafd4fb67367605f707b64bebc55a37320ac"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 926cf81c-d0dc-4aaa-9526-9069af69dcfd with nextest profile: default
+    Starting 1 test across 18 binaries (62 tests skipped)
+        PASS [   0.006s] crunk::parity an_unlisted_difference_fails_and_a_listed_one_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 62 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk an_unlisted_difference_fails_and_a_listed_one_passes"
+size = 1951
+status = "measured"
+test_count = 1
+tests_digest = "076b320829854a80a1ffefe703436bb5737154a7b304542b5eeadd3f5a84a34f"
+at = "2026-10-21T11:58:28Z"
+actor = "lognd"
+rev = 1
