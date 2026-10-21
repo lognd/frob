@@ -1,0 +1,1 @@
+frob: `claim evict ~X --reason TEXT [--yes]` ends an idle claim by hand, parking the holder's work, reporting the remaining daily `evict_rate`, and requiring `--yes` for a repeat eviction of the same holder within 14 days.

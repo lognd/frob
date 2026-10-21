@@ -550,6 +550,97 @@ impl Command for ClaimRestore {
     }
 }
 
+/// The flags of `claim evict`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct EvictArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        required = true,
+        help = "Why the claim is being evicted"
+    )]
+    reason: String,
+    #[arg(
+        long,
+        help = "Confirm a repeat eviction of the same holder inside the flap window"
+    )]
+    yes: bool,
+}
+
+/// Output of `claim evict`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct EvictData {
+    /// Full ULID.
+    pub id: TicketId,
+    /// Handle with `~`.
+    pub handle: String,
+    /// The previous holder.
+    pub holder: String,
+    /// The parked ref preserving the holder's work.
+    pub parked: String,
+    /// Idle seconds this clone measured.
+    pub idle_secs: u64,
+    /// Evictions this actor may still perform today.
+    pub rate_left: u32,
+    /// True when this repeated an eviction of the same holder inside the flap window.
+    pub flagged: bool,
+}
+
+/// Evict an idle claim: park the holder's work, free the ticket and report the remaining daily rate.
+// frob:ticket 01M5DTGG9XWMEBRA51PA6CYWAE
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "claim evict",
+    product = "frob",
+    idempotent = false,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ClaimEvict {
+    ticket: String,
+    reason: String,
+    yes: bool,
+}
+
+impl Command for ClaimEvict {
+    type Data = EvictData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<EvictArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<EvictArgs>(m)?;
+        Ok(Self {
+            ticket: a.ticket.ticket,
+            reason: a.reason,
+            yes: a.yes,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<EvictData> {
+        let opened = Opened::new(ctx)?;
+        let in_ci = std::env::var_os("CI").is_some_and(|v| !v.is_empty());
+        let policy = evict_policy(&opened.root, in_ci).ok_or_else(|| {
+            WorktreeError::Config("[claims] is unreadable; cannot judge idleness".to_owned())
+        })?;
+        let e = opened
+            .workspace()
+            .evict_claim(&self.ticket, &self.reason, self.yes, &policy)?;
+        Ok(Payload::new(EvictData {
+            id: e.id,
+            handle: e.handle,
+            holder: e.holder,
+            parked: e.parked,
+            idle_secs: e.idle_secs,
+            rate_left: e.rate_left,
+            flagged: e.flapped,
+        }))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::evict_policy;
