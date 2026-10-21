@@ -2,7 +2,8 @@
 id = "01M5FNMF22M7XZN56NPY6S4ERK"
 title = "gob-fs inventory test fails on hand-rolled rename in frob-ledger/src/refresh.rs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
