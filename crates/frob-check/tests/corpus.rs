@@ -372,6 +372,7 @@ fn tick_dir_runner(case: &Case) -> Vec<Finding> {
 /// `none` leaves the ledger as written; `rename <path>` commits the task file under `<path>` without a trailer;
 /// `edit <text>` commits a reindex-trailer commit that also appends `<text>` to the task; `stale-reindex` does the same with a trailer naming another frob version; `reindex` reparents the
 /// task through the ledger and writes the genuine reindex commit.
+#[allow(clippy::too_many_lines)] // a flat scenario dispatch table
 fn tick_branch_runner(case: &Case) -> Vec<Finding> {
     const BRANCH: &str = "frob-tickets";
     const TASK: &str = "_unfiled/parser-rewrite.md";

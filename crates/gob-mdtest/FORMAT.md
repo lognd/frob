@@ -146,6 +146,13 @@ Known gaps are listed in `crates/gob-mdtest/coverage-allowlist.toml`, one
 `clean`, `unresolved`, `vacuous`) and a `ticket` handle.
 The list may only shrink: an entry whose case now exists, whose rule is no
 longer registered, or without a `~XXXXXXX` handle fails the test.
+A rule that never emits an Unresolved finding keeps its `unresolved` entry until the
+product gives it one; such entries name the ticket that tracks the change.
+
+Runner hooks that make the unresolved cases reachable: the frob-pm corpus DSL lines
+`unreadable` (reopen the ledger over an unreadable index) and `bad_config` (corrupt
+`frob.toml`); the frob-check tool runner takes a first line `# parser: NAME` to bind an
+output parser to the stage, and the ticket-branch runner a `stale-reindex` scenario.
 
 ## Language matrix
 
