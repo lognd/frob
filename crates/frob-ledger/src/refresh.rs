@@ -153,7 +153,7 @@ impl RefreshState {
         }
     }
 
-    /// Write the cache atomically (temp file then rename).
+    /// Write the cache atomically via `gob_fs::write_atomic`.
     ///
     /// # Errors
     /// The I/O error when the directory or file cannot be written.
@@ -161,10 +161,8 @@ impl RefreshState {
         let path = state_path(common_dir);
         let dir = path.parent().unwrap_or(common_dir);
         fs::create_dir_all(dir)?;
-        let tmp = path.with_extension("toml.tmp");
         let text = toml::to_string(self).map_err(io::Error::other)?;
-        fs::write(&tmp, text)?;
-        fs::rename(&tmp, &path)?;
+        gob_fs::write_atomic(&path, text.as_bytes())?;
         debug!(path = %Shown::of(&path), class = ?self.class, "refresh state saved");
         Ok(())
     }
