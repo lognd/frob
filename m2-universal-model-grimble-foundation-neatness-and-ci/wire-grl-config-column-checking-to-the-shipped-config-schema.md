@@ -2,13 +2,13 @@
 id = "01M4M5CRRV5A6P5WHHVHXP981B"
 title = "Wire GRL config column checking to the shipped config schema"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T00:21:52Z"
-updated = "2026-10-21T21:34:38Z"
+updated = "2026-10-21T21:45:22Z"
 scope = ["crates/grimble/**", "crates/gob-plan/**", "changelog.d/**"]
 
 [[links]]
