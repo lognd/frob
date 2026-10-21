@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T11:54:04Z"
+digest = "c0fa261b0be82d177c1e9b4ca819940b85e619b2c04c8b05e9126114f5c04538"
+exit_code = 0
+head = "dec6dafd4fb67367605f707b64bebc55a37320ac"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3ab6fb73-5c2d-4838-ba71-00050da5dfb0 with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.005s] grimble-check::websec_pack route_rules_are_not_applicable_outside_python
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test websec_pack route_rules_are_not"
+size = 559
+status = "measured"
+test_count = 1
+tests_digest = "7d92fcd464edf0e418a8d9722cabb8715406c31241d73afafe5039d1b451e50f"
+at = "2026-10-21T11:54:04Z"
+actor = "lognd"
+rev = 1
