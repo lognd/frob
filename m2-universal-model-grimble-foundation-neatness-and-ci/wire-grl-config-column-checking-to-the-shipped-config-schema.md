@@ -4,11 +4,11 @@ title = "Wire GRL config column checking to the shipped config schema"
 type = "task"
 category = "todo"
 priority = "medium"
-points = 2
+points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T00:21:52Z"
-updated = "2026-10-11T00:21:57Z"
+updated = "2026-10-21T20:48:56Z"
 scope = ["crates/grimble/**", "crates/gob-plan/**", "changelog.d/**"]
 
 [[links]]
