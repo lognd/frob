@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:59Z"
-updated = "2026-10-21T11:03:45Z"
+updated = "2026-10-21T11:04:20Z"
 idempotency_key = "d94-fixture"
 scope = ["crates/gob-symbols/tests/**", "crates/frob-check/tests/**", "docs/reference/fidelity.md", "docs/design/code-model.md", "changelog.d/01M44YQVN6PMK0D8NJ801ENJEW.added.md"]
 
@@ -30,7 +30,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the fixture solution, when frob check runs end to end, then it exits with the expected findings and no panic"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given docs/reference/fidelity.md, when read, then a C# row exists and every cell is Implemented, NotApplicable with a reason, or Gap with a ticket"
