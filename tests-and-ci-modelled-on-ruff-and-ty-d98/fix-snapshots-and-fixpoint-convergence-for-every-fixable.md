@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:00Z"
-updated = "2026-10-21T20:37:03Z"
+updated = "2026-10-21T20:37:04Z"
 scope = ["crates/gob-fix/**", "crates/gob-mdtest/**"]
 
 [[links]]
@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "a self-test where a fix wraps code in a macro (fire becomes opaque) fails"
-bound = false
+bound = true
 +++
 
 build-test-ci.md section 6, ruff's test harness. On top of gob-fix (~29MKDDF): for each fixable rule's fixtures, apply fixes to a fixpoint (at most 10 rounds), snapshot the unified diff, and fail if a round introduces a parse error, the fixpoint is not reached, or a fixable finding remains.
