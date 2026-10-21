@@ -18,7 +18,7 @@
 //! lower too, as do defs (each a view over its parameters, every call by index; a def body
 //! calls only earlier defs), `count(x: SRC ...)` against an integer or an int knob (either side
 //! of the comparison; a knob limit honours a `[rules]` override), and operand paths of any
-//! length (`l.target.anchor` reads the dotted field). `a reaches b via VERB within N` lowers when `N` is an integer literal or int knob from 1 to 65535 (one verb; an unbounded or multi-verb `reaches` is refused). A glob read from a field of a bound variable (`i.file.path matches row.from`) lowers to `MatchGlobOperand`; an invalid glob is unknown, not a mismatch. A kind's string argument (`directive "todo"`) tests the node's `name`. a snippet binder and `x is` a snippet lower to a snippet match op (the rule's one `lang` stands in for a missing tag; `as KIND` binds nodes of KIND inside a match via `within`; `as roles` and fix templates are refused). `slug(s)` and `resolve(path, from)` lower to call operands over call-free arguments (a nested call or a wrong argument count is refused; a file node as an argument stands for its path). A `vocab(...)` knob lowers `v in knob.NAME` to `InVocab` (the node name against the union of the language's callee vocabularies for those classes; `needs vocab(NAME)` is checked against the knob and records nothing in the plan). Everything else (a count compared with
+//! length (`l.target.anchor` reads the dotted field). `a reaches b via VERB within N` lowers when `N` is an integer literal or int knob from 1 to 65535 (one verb; an unbounded or multi-verb `reaches` is refused). A glob read from a field of a bound variable (`i.file.path matches row.from`) lowers to `MatchGlobOperand`; an invalid glob is unknown, not a mismatch. A kind's string argument (`directive "todo"`) tests the node's `name`. a snippet binder and `x is` a snippet lower to a snippet match op (the rule's one `lang` stands in for a missing tag; `as KIND` binds nodes of KIND inside a match via `within`; `x is SNIPPET as roles` lowers when the snippet is a branch or loop whose body is empty or one call, to `x is branch` plus a directly-inside call; other roles shapes and fix templates are refused). A relation object may be a field path of a bound variable (`p peer of s.unit`), lowered to an any-node quantifier equating the field with the object. `slug(s)` and `resolve(path, from)` lower to call operands over call-free arguments (a nested call or a wrong argument count is refused; a file node as an argument stands for its path). A `vocab(...)` knob lowers `v in knob.NAME` to `InVocab` (the node name against the union of the language's callee vocabularies for those classes; `needs vocab(NAME)` is checked against the knob and records nothing in the plan). Everything else (a count compared with
 //! anything but an integer or knob, other `is` words, other side-relation operands) is a [`LowerError::Unsupported`] that names
 //! the construct. Notes and fixes are not part of the plan and are dropped.
 
@@ -26,6 +26,7 @@ mod convert;
 mod emit;
 mod error;
 mod prefilter;
+mod roles;
 mod source;
 
 pub use error::LowerError;

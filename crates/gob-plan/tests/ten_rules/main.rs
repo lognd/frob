@@ -29,7 +29,7 @@ const KNOWN_ENGINE_GAPS: [(&str, usize); 8] = [
     ("SYS001", 1),
     ("CAP001", 0), // ~WHEVEHY: runner lacks `model` inputs and the cell relation
     ("CAP001", 1),
-    ("NEAT031", 0), // ~R3AHZ1T: lowering rejects a field-path relation object
+    ("NEAT031", 0), // ~BZNRM2K: lowering refuses a count compared with knob * count
     ("NEAT031", 1),
     ("NEAT031", 2),
 ];

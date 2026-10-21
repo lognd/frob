@@ -796,6 +796,14 @@ universal operator is GRL007, naming the node. This is the bridge from
 find b: rust`if $C { $F($$$A) }` as roles     # a branch whose body is one call, in any language
 ```
 
+Lowering reads a roles snippet by shape only: the root word (`if`, `match`,
+`switch` for a branch; `for`, `while`, `loop` for a loop) and a body that is
+empty or exactly one call. `x is SNIPPET as roles` becomes `x is branch`, plus
+`some k: call where k directly inside x` for a call body. An `else`, several
+statements, a nested block or any other body is refused by name (the lowering
+stand-in for GRL007). A relation object may be a field path of a bound
+variable, as in `p peer of s.unit`.
+
 `lang -` rules read only side relations (SCOPE001); `lang [rust,
 python]` rules may use those adapters' words and snippets in those
 languages.
