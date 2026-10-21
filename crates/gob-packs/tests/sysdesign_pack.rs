@@ -20,7 +20,7 @@ fn disk(p: &Path) -> Option<Vec<u8>> {
 
 // frob:tests catalog
 #[test]
-fn catalog_has_one_rule_per_family() {
+fn catalog_has_one_row_per_rule() {
     let rows = pack::catalog().unwrap();
     let got: Vec<(&str, &str)> = rows
         .iter()
@@ -31,7 +31,10 @@ fn catalog_has_one_rule_per_family() {
         [
             ("STORE", "STORE101"),
             ("SYSDESIGN", "SYSDESIGN101"),
-            ("GRAMMAR", "GRAMMAR101")
+            ("GRAMMAR", "GRAMMAR101"),
+            ("GRAMMAR", "GRAMMAR102"),
+            ("GRAMMAR", "GRAMMAR103"),
+            ("GRAMMAR", "GRAMMAR104")
         ]
     );
     assert!(rows.iter().all(|r| r.pack == "grimble-sysdesign"));
@@ -82,5 +85,16 @@ fn every_rule_passes_its_examples() {
         assert!(t.passed(), "{file}: {:?} {:?}", t.diagnostics, t.examples);
         assert!(t.examples.len() >= 2, "{file}");
         assert!(src.contains("## Remedy"), "{file}");
+    }
+}
+
+// frob:tests compile_rule
+#[test]
+fn grammar_rules_have_fire_clean_and_not_applicable_examples() {
+    for (file, src) in pack::RULES.iter().filter(|(f, _)| f.contains("grammar/")) {
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{file}: {:?} {:?}", t.diagnostics, t.examples);
+        assert_eq!(t.examples.len(), 3, "{file}");
+        assert!(src.contains("example notapplicable"), "{file}");
     }
 }

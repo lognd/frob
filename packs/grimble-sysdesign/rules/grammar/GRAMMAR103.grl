@@ -1,0 +1,23 @@
+rule GRAMMAR103 "node-name-generic" {
+  lang -
+  severity warn
+  needs model
+
+  find n: model.nodes where n.name in ["node", "thing", "misc", "other", "stuff", "tmp"]
+  report n "node {n.name} has a placeholder name: name it for what it is"
+
+  example fire {
+    model """node misc { kind component; }"""
+  }
+  example clean {
+    model """node billing { kind component; }"""
+  }
+  example notapplicable markdown """
+    Prose declares no model nodes.
+  """
+  explain """
+    A placeholder name says nothing about the node's role, so every reader must open the node to learn what it is, and the name collides as soon as a second placeholder appears.
+    ## Remedy
+    Name the node for its responsibility, such as `billing` or `session_cache`.
+  """
+}

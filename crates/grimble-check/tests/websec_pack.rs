@@ -36,6 +36,9 @@ fn catalog_has_one_rule_per_family_with_websec_under_sec() {
             ("ROUTE", "ROUTE", "ROUTE102"),
             ("ROUTE", "ROUTE", "ROUTE103"),
             ("ROUTE", "ROUTE", "ROUTE104"),
+            ("PII", "PII", "PII101"),
+            ("PII", "PII", "PII102"),
+            ("PII", "PII", "PII103"),
             ("WEBPERF", "WEBPERF", "WEBPERF201")
         ]
     );
@@ -109,6 +112,33 @@ fn route_slice_rules_fire_on_their_example_and_teach_a_remedy() {
 fn route_rules_are_not_applicable_outside_python() {
     // No adapter for other languages: the markdown example proves NotApplicable, never clean.
     for id in ["ROUTE102", "ROUTE103", "ROUTE104"] {
+        let (_, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        assert!(src.contains("example notapplicable markdown"), "{id}");
+    }
+}
+
+// frob:tests compile_rule
+#[test]
+fn pii_slice_rules_fire_on_their_example_and_teach_a_remedy() {
+    for id in ["PII101", "PII102", "PII103"] {
+        let (file, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{id}: {:?} {:?}", t.diagnostics, t.examples);
+        assert!(src.contains("## Remedy"), "{id}");
+    }
+}
+
+// frob:tests compile_rule
+#[test]
+fn pii_rules_are_not_applicable_outside_python() {
+    // No adapter for other languages: the markdown example proves NotApplicable, never clean.
+    for id in ["PII101", "PII102", "PII103"] {
         let (_, src) = pack::RULES
             .iter()
             .find(|(f, _)| f.ends_with(&format!("{id}.grl")))

@@ -1,0 +1,23 @@
+rule GRAMMAR104 "node-name-repeats-kind" {
+  lang -
+  severity advisory
+  needs model
+
+  find n: model.nodes where n.name == n.kind
+  report n "node {n.name} is named after its own kind: say what it holds or does"
+
+  example fire {
+    model """node queue { kind queue; }"""
+  }
+  example clean {
+    model """node jobs { kind queue; }"""
+  }
+  example notapplicable markdown """
+    Prose declares no model nodes.
+  """
+  explain """
+    A node called `queue` of kind `queue` repeats what the kind already says and adds no information; a second queue forces an arbitrary suffix.
+    ## Remedy
+    Rename the node for the data or work it carries, such as `jobs` for a queue.
+  """
+}
