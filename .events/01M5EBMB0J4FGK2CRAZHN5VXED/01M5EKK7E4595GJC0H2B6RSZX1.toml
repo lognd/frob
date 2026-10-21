@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T06:50:17Z"
+digest = "6b0c00c9aca60220f7ac1b86c0768e536d92d6d2bcbefbba4ebfdb7c750b197f"
+exit_code = 0
+inline = '''
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cdbcb817-7d7a-4714-9f94-9c067dd64c5d with nextest profile: default
+    Starting 1 test across 5 binaries (171 tests skipped)
+        PASS [   0.004s] frob-mirror::host a_run_closes_the_duplicate_of_a_really_marked_ticket
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 171 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror a_run_closes_the_duplicate_of_a_really_marked_ticket"
+size = 629
+status = "measured"
+test_count = 1
+tests_digest = "12034ba537909a3283ebbdb2b34eb7a6d9a9fdfe0a380958bb7fcf467bd1cb23"
+at = "2026-10-21T06:50:17Z"
+actor = "lognd"
+rev = 1
