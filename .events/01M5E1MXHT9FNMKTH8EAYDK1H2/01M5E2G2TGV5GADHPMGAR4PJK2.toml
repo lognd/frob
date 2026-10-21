@@ -1,0 +1,28 @@
+kind = "evidence"
+captured_at = "2026-10-21T01:50:12Z"
+digest = "86b0daa0605c6cc1e6492719b853e2b0d0527b5d3851110279d6e5c752d0e235"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b36c286b-1f35-482d-ab03-25371156265e with nextest profile: default
+    Starting 4 tests across 9 binaries (105 tests skipped)
+        PASS [   0.006s] frob-worktree evict::tests::reclaim_restores_from_newest_unless_someone_holds_it
+        PASS [   0.006s] frob-worktree next::tests::reclaim_needs_the_evicted_holder_after_the_eviction
+        PASS [   0.052s] frob-worktree::claim_hold hold_resume_and_reclaim_round_trip
+        PASS [   0.188s] frob-worktree::claim_restore a_reclaimed_ticket_refuses_the_restore_as_taken
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.189s] 4 tests run: 4 passed, 105 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree reclaim"
+size = 992
+status = "measured"
+test_count = 4
+tests_digest = "3a05e3f590a23f1a28332c71967ab8df758d014697023c421657f7120b7d98bb"
+at = "2026-10-21T01:50:12Z"
+actor = "lognd"
+rev = 1
