@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-08T10:22:01Z"
 updated = "2026-10-21T21:35:47Z"
-scope = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json", "crates/gob-config/src/describe.rs", "crates/gob-config/tests/config.rs"]
+scope = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json", "crates/gob-config/src/describe.rs", "crates/gob-config/tests/config.rs", "crates/gob-config/tests/snapshots/config__schema_has_property_per_table.snap"]
 +++
 
 found while working ~CDMAECH. docs/schemas/config.json has $ref to #/$defs/ForbidImport (also FailOn, ToolStage, ExternalPack, Pull) but no $defs object, so the GRL catalog cannot type the columns of config.invariants.forbid_imports. The exporter (schemars subschemas) must carry the definitions into the document root. gob-plan reads $defs when present (ConfigSchema::from_json).
