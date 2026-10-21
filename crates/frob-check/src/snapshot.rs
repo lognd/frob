@@ -65,6 +65,9 @@ pub struct FrobShared {
     pub file_info: std::collections::BTreeMap<String, gob_symbols::FileInfo>,
     /// Walked files the graph build could not read, with reasons (`READ001`).
     pub unreadable: Vec<gob_symbols::SkippedFile>,
+    /// Project files (`.csproj`, `.sln`, ...) the graph build could not model (`READ001`).
+    // frob:ticket 01M5GCNBD6AT6HNQKF3MQTXQC5
+    pub malformed_projects: Vec<gob_symbols::MalformedProject>,
     /// Structural file roles: ledger files are data, never examined by the obligation rules.
     pub roles: Roles,
 }
@@ -504,6 +507,7 @@ pub(crate) fn collect(
         obligation_paths,
         has_ledger: ledger.is_some(),
         unreadable: built.unreadable,
+        malformed_projects: built.malformed_projects,
         roles,
         file_info: graph
             .files()
