@@ -2,7 +2,8 @@
 id = "01M5F5H31HMHWAF2SPVK4WQ2S3"
 title = "crunk rule_catalog test expects 8 crunk-web rules, catalog has 15"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
