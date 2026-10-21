@@ -1,0 +1,22 @@
+rule SEC104 "unsafe-deserialization" {
+  lang python
+  severity error
+
+  find c: call where c.text ~ /\b(pickle\.loads?|marshal\.loads?|yaml\.load)\(/ and not c.text ~ /SafeLoader/
+  report c "untrusted data may reach an unsafe deserializer"
+
+  example fire python """
+    data = pickle.loads(request.data)  #~ error
+  """
+  example clean python """
+    data = json.loads(request.data)
+  """
+  example notapplicable markdown """
+    Prose deserializes nothing.
+  """
+  explain """
+    pickle, marshal and the default YAML loader build arbitrary objects, so a crafted request body runs code in the server (WEBSEC, registered in the SEC namespace). Other languages need an adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    Parse request data with `json.loads` or `yaml.safe_load` and validate the shape with a schema.
+  """
+}

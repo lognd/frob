@@ -1,0 +1,22 @@
+rule SEC102 "cookie-without-protection-flags" {
+  lang python
+  severity error
+
+  find c: call where c.callee.name == "set_cookie" and c.text ~ /(secure|httponly)\s*=\s*False/
+  report c "the cookie is set with Secure or HttpOnly switched off"
+
+  example fire python """
+    resp.set_cookie("session", token, httponly=False)  #~ error
+  """
+  example clean python """
+    resp.set_cookie("session", token, secure=True, httponly=True, samesite="Lax")
+  """
+  example notapplicable markdown """
+    Prose sets no cookies.
+  """
+  explain """
+    A cookie without Secure travels over plain HTTP, and one without HttpOnly is readable by any script that runs in the page (WEBSEC, registered in the SEC namespace). The check reads Flask-style `set_cookie(...)` calls; other frameworks and languages need an adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    Pass `secure=True, httponly=True` and a `samesite` value for every session or credential cookie.
+  """
+}

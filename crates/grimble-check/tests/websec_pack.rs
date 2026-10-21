@@ -30,6 +30,9 @@ fn catalog_has_one_rule_per_family_with_websec_under_sec() {
         got,
         [
             ("WEBSEC", "SEC", "SEC101"),
+            ("WEBSEC", "SEC", "SEC102"),
+            ("WEBSEC", "SEC", "SEC103"),
+            ("WEBSEC", "SEC", "SEC104"),
             ("SQL", "SQL", "SQL101"),
             ("COMPLY", "COMPLY", "COMPLY101"),
             ("ROUTE", "ROUTE", "ROUTE101"),
@@ -170,6 +173,34 @@ fn webperf_server_rules_fire_on_their_example_and_teach_a_remedy() {
 fn webperf_server_rules_are_not_applicable_outside_python() {
     // No adapter for other languages: the markdown example proves NotApplicable, never clean.
     for id in ["WEBPERF202", "WEBPERF203", "WEBPERF204"] {
+        let (_, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        assert!(src.contains("example notapplicable markdown"), "{id}");
+    }
+}
+
+// frob:tests compile_rule
+#[test]
+fn websec_slice_rules_fire_on_their_example_and_teach_a_remedy() {
+    for id in ["SEC102", "SEC103", "SEC104"] {
+        let (file, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{id}: {:?} {:?}", t.diagnostics, t.examples);
+        assert!(src.contains("example fire python"), "{id}");
+        assert!(src.contains("## Remedy"), "{id}");
+    }
+}
+
+// frob:tests compile_rule
+#[test]
+fn websec_rules_are_not_applicable_outside_python() {
+    // No adapter for other languages: the markdown example proves NotApplicable, never clean.
+    for id in ["SEC102", "SEC103", "SEC104"] {
         let (_, src) = pack::RULES
             .iter()
             .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
