@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T06:03:44Z"
+digest = "0234158c459d241eeaa53bc1230b720018a44328b79e2d4bd50ad665ac2764b2"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 57.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID df10e68f-fbee-4e1c-848e-f0b790ec63e8 with nextest profile: default
+    Starting 1 test across 1 binary (72 tests skipped)
+        PASS [   1.412s] frob-land::land a_batch_lands_in_order_reports_every_outcome_and_continues_past_a_refusal
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.413s] 1 test run: 1 passed, 72 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land --test land a_batch_lands"
+size = 695
+status = "measured"
+test_count = 1
+tests_digest = "80717478d080ee1f33b8b5cd10c54cc46d04a6ec5328032aea18e642914e10bc"
+at = "2026-10-21T06:03:44Z"
+actor = "lognd"
+rev = 1

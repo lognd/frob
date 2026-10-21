@@ -8,12 +8,12 @@ points = 3
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T19:20:09Z"
-updated = "2026-10-21T05:56:35Z"
+updated = "2026-10-21T06:03:44Z"
 scope = ["crates/frob-land/src/verb.rs", "crates/frob-land/tests/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given three landable tickets and one that will be refused, when frob land ~A ~B ~X ~C runs, then A, B and C land in order with every guard and evidence rule unchanged, X's refusal is reported with its code, and the JSON envelope lists every ticket's outcome; nothing runs in the background (D25 holds)"
-bound = false
+bound = true
 +++
 
 Owner 2026-10-09: 'why are we hacking around it; what's with the land queue?' The coordinator was feeding single-ticket lands through a shell loop (scratchpad landq.sh). That loop is retired once this verb exists. Batched merge-queue checks are a later option only if lands stay slow after the fast-lands epic.
