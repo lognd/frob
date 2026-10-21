@@ -117,7 +117,7 @@ fn parse_number(issue: &IssueRef) -> Result<u64, CreateError> {
 /// # Errors
 /// `CreateError::Map` when the create-started record cannot be committed (nothing is sent), or
 /// when the result cannot be committed; `CreateError::BadIssueRef` for a non-numeric reference.
-pub fn create_issue<S: ShardStore, A: TrackerAdapter>(
+pub fn create_issue<S: ShardStore, A: TrackerAdapter + ?Sized>(
     store: &mut S,
     adapter: &mut A,
     mut shard: Shard,

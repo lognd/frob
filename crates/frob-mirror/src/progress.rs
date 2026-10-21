@@ -97,6 +97,17 @@ impl<'a, S: ShardStore> ProgressWriter<'a, S> {
         }
     }
 
+    /// The store the writer commits to, for reads while the run holds it.
+    #[must_use]
+    pub fn store(&self) -> &S {
+        self.store
+    }
+
+    /// The store the writer commits to, lent to the host for one item's writes.
+    pub fn store_mut(&mut self) -> &mut S {
+        self.store
+    }
+
     /// Records one completed operation for `shard`; commits when K have accumulated.
     ///
     /// # Errors

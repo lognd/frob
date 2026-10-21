@@ -6,7 +6,9 @@
 #[path = "support/fake_github.rs"]
 mod fake_github;
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::rc::Rc;
 use std::time::Duration;
 
 use fake_github::{BOT_ID, FakeGithub};
@@ -16,7 +18,7 @@ use frob_mirror::feed::{FeedPage, FeedSource};
 use frob_mirror::fields::{FieldOwnership, FieldsConfig};
 use frob_mirror::github::lookup::ListingSource;
 use frob_mirror::github::read::{BodyRevisions, HistorySource, TimelineEvent};
-use frob_mirror::host::{HostConfig, MirrorHost, Shared, Sources, TicketSource, TicketState};
+use frob_mirror::host::{HostConfig, MirrorHost, Sources, TicketSource, TicketState};
 use frob_mirror::keyring::{Keyring, MarkerFields};
 use frob_mirror::lock::{LedgerCommit, read_watermark};
 use frob_mirror::mapfile::{MapError, ShardStore, content_hash, read_shard};
@@ -141,11 +143,14 @@ impl TicketSource for Tickets {
     }
 }
 
-struct Sink(Shared<Vec<(u64, String, String)>>);
+/// Field writes the sink saw, shared between the sink and the test.
+type Calls = Rc<RefCell<Vec<(u64, String, String)>>>;
+
+struct Sink(Calls);
 
 impl FieldSink for Sink {
     fn set_field(&mut self, n: u64, f: &str, v: &str) -> Result<String, SinkError> {
-        self.0.with(|c| c.push((n, f.into(), v.into())));
+        self.0.borrow_mut().push((n, f.into(), v.into()));
         Ok(v.into())
     }
 }
@@ -184,17 +189,17 @@ fn run_cfg() -> RunConfig {
 }
 
 struct World {
-    store: Shared<Mem>,
-    gh: Shared<FakeGithub>,
-    calls: Shared<Vec<(u64, String, String)>>,
+    store: RefCell<Mem>,
+    gh: RefCell<FakeGithub>,
+    calls: Calls,
 }
 
 impl World {
     fn new() -> Self {
         Self {
-            store: Shared::new(Mem::default()),
-            gh: Shared::new(FakeGithub::new(1)),
-            calls: Shared::new(Vec::new()),
+            store: RefCell::new(Mem::default()),
+            gh: RefCell::new(FakeGithub::new(1)),
+            calls: Calls::default(),
         }
     }
 
@@ -233,20 +238,23 @@ impl World {
             ownership: &own,
         };
         let mut host = MirrorHost::new(
-            self.store.clone(),
-            self.gh.clone(),
             Tickets { events, commits },
             Sink(self.calls.clone()),
             src,
             host_cfg(),
         );
-        let (mut store, gh) = (self.store.clone(), self.gh.clone());
-        let out = run(&mut store, &gh, &mut host, &run_cfg()).unwrap();
+        let out = run(
+            &mut *self.store.borrow_mut(),
+            &mut *self.gh.borrow_mut(),
+            &mut host,
+            &run_cfg(),
+        )
+        .unwrap();
         assert!(matches!(out, RunOutcome::Ran(_)), "{out:?}");
     }
 
     fn issue_of(&self, ulid: &str) -> Option<u64> {
-        read_shard(&self.store, ulid)
+        read_shard(&*self.store.borrow(), ulid)
             .unwrap()
             .and_then(|s| s.issue_number)
     }
@@ -271,7 +279,7 @@ fn a_new_ticket_gets_one_issue_and_a_second_pass_creates_no_more() {
     let n = w.issue_of("U1").expect("issue number stored");
     w.pass(vec![]);
     assert_eq!(w.issue_of("U1"), Some(n));
-    assert_eq!(w.gh.with(|g| g.snapshot().issues.len()), 1);
+    assert_eq!(w.gh.borrow().snapshot().issues.len(), 1);
 }
 
 // frob:tests apply_op
@@ -283,12 +291,12 @@ fn ledger_events_reach_the_tracker_once() {
     let n = w.issue_of("U1").unwrap();
     w.pass(vec![ev("E1", "title", "new")]);
     assert_eq!(
-        w.calls.with(|c| c.clone()),
+        w.calls.borrow().clone(),
         vec![(n, "title".to_owned(), "new".to_owned())]
     );
     w.pass(vec![ev("E1", "title", "new")]);
     assert_eq!(
-        w.calls.with(|c| c.len()),
+        w.calls.borrow().len(),
         1,
         "a converged ticket is not written again"
     );
@@ -307,10 +315,10 @@ fn a_clean_pass_advances_the_watermark_to_the_ledger_head() {
             .collect::<Vec<_>>()
     };
     w.pass_with(vec![], log(&["c1", "c2"]));
-    let mark = read_watermark(&w.store).unwrap();
+    let mark = read_watermark(&*w.store.borrow()).unwrap();
     assert_eq!(mark.map(|m| m.commit), Some("c2".to_owned()));
     w.pass_with(vec![], log(&["c1", "c2", "c3"]));
-    let mark = read_watermark(&w.store).unwrap();
+    let mark = read_watermark(&*w.store.borrow()).unwrap();
     assert_eq!(mark.map(|m| m.commit), Some("c3".to_owned()));
 }
 
@@ -337,8 +345,6 @@ fn close_duplicates_with_one_issue_closes_nothing() {
         ownership: &own,
     };
     let host = MirrorHost::new(
-        w.store.clone(),
-        w.gh.clone(),
         Tickets {
             events: vec![],
             commits: vec![],
@@ -347,7 +353,7 @@ fn close_duplicates_with_one_issue_closes_nothing() {
         src,
         host_cfg(),
     );
-    let report = host.close_duplicates().unwrap();
+    let report = host.close_duplicates(&mut *w.gh.borrow_mut()).unwrap();
     assert!(report.closed.is_empty());
 }
 
@@ -386,9 +392,9 @@ fn a_run_closes_the_duplicate_of_a_really_marked_ticket() {
         nonce: "n1".into(),
     });
     let history = Marked(format!("body\n<!-- {} -->", format_marker(&marker)));
-    w.gh.with(FakeGithub::duplicate_next_write);
+    w.gh.borrow_mut().duplicate_next_write();
     w.pass_reading(vec![], vec![], &history);
-    let closed = |n: &str| w.gh.with(|g| g.read(&IssueRef(n.into())).unwrap().closed);
+    let closed = |n: &str| w.gh.borrow().read(&IssueRef(n.into())).unwrap().closed;
     assert!(!closed("1"), "the lowest number stays canonical");
     assert!(closed("2"), "the run closed the duplicate itself");
 }
