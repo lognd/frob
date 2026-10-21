@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-21T00:55:39Z"
+digest = "cb865cb9c2e4a3674dffca2bd574ca0cf83219b4cbf735b7dad49e7697766463"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4766e0dd-e99b-449c-aae4-639ddae5d5b4 with nextest profile: default
+    Starting 1 test across 19 binaries (244 tests skipped)
+        PASS [   0.006s] frob-ledger event::tests::lease_events_round_trip
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 244 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger lease_events_round_trip"
+size = 609
+status = "measured"
+test_count = 1
+tests_digest = "96ee0c320d18c7a81006b745d5bf0c18c94b52ab26d5342df13f603ef6773247"
+at = "2026-10-21T00:55:39Z"
+actor = "lognd"
+rev = 1
