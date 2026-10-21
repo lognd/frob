@@ -4,12 +4,17 @@ title = "GRL lowering: count compared with a knob-times-count ratio (NEAT031)"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T22:44:58Z"
-updated = "2026-10-21T22:44:58Z"
+updated = "2026-10-21T23:45:19Z"
 idempotency_key = "neat031-count-ratio"
 scope = ["crates/gob-plan/src/lower/convert.rs", "crates/gob-plan/tests/ten_rules/main.rs"]
+
+[[acceptance]]
+text = "a count compared against a scaled count lowers, and the NEAT031 lines leave KNOWN_ENGINE_GAPS or are narrowed to the remaining exec blockers"
+bound = false
 +++
 
 Found while working ~R3AHZ1T. NEAT031 lowers its relation object and roles snippet now, but its find clause 'count(...) >= knob.ratio * count(...)' is refused with Unsupported 'a count compared with this term'. Lower a count against a scaled count, then delete the NEAT031 lines from KNOWN_ENGINE_GAPS. Exec-level blockers may follow: no stmt KindTest, adapter-op branches (python if_statement) not matched by branch, directly inside is parent-only.
