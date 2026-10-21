@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T21:13:49Z"
+digest = "66cbc38984cd92f31f6819cffc3d5d795ae9109d3148b90a6c4bbebe95af6bde"
+head = "f35d1d16007590ba3b7f51b5dc83a3d00269e6eb"
+provider = "file"
+ref = "crates/gob-mdtest/coverage-allowlist.toml"
+size = 2442
+status = "measured"
+at = "2026-10-21T21:13:49Z"
+actor = "lognd"
+rev = 1
