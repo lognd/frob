@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a ledger with mapped and unmapped tickets, when LedgerTickets is read and written as a TicketSource, then it lists, projects, reconciles and records proposals against the real ledger"]
+moved = []
+at = "2026-10-21T06:50:17Z"
+actor = "lognd"
+rev = 1
