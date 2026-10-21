@@ -844,6 +844,27 @@ ty's format, insta snapshots, rule docs as tests). The rest:
 | Hygiene jobs: cargo-shear, cargo-deny, typos, MSRV | `deny` (cargo-deny advisories, licenses, bans), `shear` (unused deps), `typos`, `msrv` (build at `rust-version`) steps in `cargo dev ci`, each a tool pinned in frob.toml like zizmor |
 | Release through one workflow with wheels and binaries (cargo-dist plus maturin) | unchanged: the hand-written release.yml (D83) already does both |
 
+#### Fix harness (~G4WAFJT)
+
+`gob_fix::run_fixture` is the engine-agnostic fix harness. The caller passes
+an `observe` closure (parse and check the current files, return an
+`Observation`: per-file `ParseStatus`, opaque and hole counts, findings with
+class fire or unresolved, and the proposed fixes). Each round plans the fixes
+at the given tier, applies them in memory (multi-file fixtures, overlap
+losers retried next round) and re-observes, for at most `MAX_ROUNDS` (10)
+rounds. A fixture fails with a `Violation` when a round degrades a file's
+parse status (a new parse error), grows the opaque or hole count (so a fix
+that wraps code in a macro fails even when the finding vanishes), turns a
+finding that fired into an unresolved one (same fingerprint), applies an
+out-of-range edit, never reaches a fixpoint (oscillation), or leaves a
+fixable finding after the fixpoint. `Outcome::snapshot_text` is the round
+count plus the unified diff original to final, snapshotted with insta.
+`missing_fixtures` names fixable rules with no fixture; with no fixable rules
+it passes vacuously. Self-tests in `crates/gob-fix/tests/harness.rs` cover
+the oscillating, parse-breaking, macro-wrapping, hole-growing, no-op and
+overlapping cases. Per-rule snapshots for the real fixable rules are wired in
+the rule crates (follow-up tickets under the parent epic).
+
 Every row is a `cargo dev ci` step or a nextest test, so local runs, goway
 runs and GitHub Actions run the same thing (section 4).
 

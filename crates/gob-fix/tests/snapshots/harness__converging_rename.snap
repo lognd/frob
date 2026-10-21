@@ -1,0 +1,22 @@
+---
+source: crates/gob-fix/tests/harness.rs
+expression: out.snapshot_text()
+---
+rounds: 1
+--- a/a.toy
++++ b/a.toy
+@@ -1,4 +1,4 @@
+-call(old_api)
++call(new_api)
+ keep
+-old_api(1)
++new_api(1)
+ 
+--- a/b.toy
++++ b/b.toy
+@@ -1,5 +1,5 @@
+ x
+ y
+ z
+-old_api
++new_api

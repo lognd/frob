@@ -2638,6 +2638,7 @@ dependencies = [
  "blake3",
  "gob-fs",
  "gob-rules",
+ "insta",
  "tempfile",
  "thiserror",
  "tracing",

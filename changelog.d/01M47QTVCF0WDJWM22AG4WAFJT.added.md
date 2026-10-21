@@ -1,0 +1,1 @@
+Fix harness in gob-fix applies each fixable rule's fixes to a fixpoint (at most 10 rounds), snapshots the unified diff and fails on parse errors, oscillation, remaining fixable findings, opaque or hole growth, or a finding moving from fire to unresolved.

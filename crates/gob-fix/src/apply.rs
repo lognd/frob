@@ -127,6 +127,19 @@ fn render_hunk(old: &[u8], e: &Edit) -> String {
     )
 }
 
+/// Rewrite `old` with `edits`, which must be sorted by start, in range and non-overlapping.
+pub(crate) fn splice(old: &[u8], edits: &[&Edit]) -> Vec<u8> {
+    let mut new = Vec::with_capacity(old.len());
+    let mut at = 0;
+    for e in edits {
+        new.extend_from_slice(&old[at..e.start]);
+        new.extend_from_slice(e.replacement.as_bytes());
+        at = e.end;
+    }
+    new.extend_from_slice(&old[at..]);
+    new
+}
+
 fn resolve(root: &Path, rel: &str) -> PathBuf {
     root.join(rel)
 }
@@ -207,14 +220,7 @@ pub fn apply_validated(
         edits.sort_by_key(|e| (e.start, e.end));
         let old = &contents[path];
         let diff: String = edits.iter().map(|e| render_hunk(old, e)).collect();
-        let mut new = Vec::with_capacity(old.len());
-        let mut at = 0;
-        for e in &edits {
-            new.extend_from_slice(&old[at..e.start]);
-            new.extend_from_slice(e.replacement.as_bytes());
-            at = e.end;
-        }
-        new.extend_from_slice(&old[at..]);
+        let new = splice(old, &edits);
         if let Err(reason) = validate(path, &new) {
             tracing::warn!(path, %reason, "rewrite failed validation; rolled back");
             report.skipped.extend(
