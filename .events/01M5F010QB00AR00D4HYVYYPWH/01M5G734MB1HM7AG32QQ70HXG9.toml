@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T21:50:17Z"
+digest = "44e3da0b9124d954e588d6ba51f2a9b272c9579727963e16e70ac4a1e417cd46"
+exit_code = 0
+head = "a1976e94480af62c7ab62861fc9b7f1793ce25a4"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 21dd0cfa-004c-47ad-92a7-d13af9353d1d with nextest profile: default
+    Starting 1 test across 2 binaries (8 tests skipped)
+        PASS [   0.017s] grimble-ci::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-ci mdtest_corpus"
+size = 520
+status = "measured"
+test_count = 1
+tests_digest = "9ec64940864b7f20e4bb0f2dc7bcc0f16e3d600664005ed72db069deef3d1d51"
+at = "2026-10-21T21:50:17Z"
+actor = "lognd"
+rev = 1
