@@ -184,43 +184,79 @@ pub fn run<S: ShardStore, K: FieldSink>(
             report.deferred += 1;
             continue;
         };
-        let Some(number) = shard.issue_number else {
-            report.deferred += 1;
-            debug!(key = %op.key(), "outbox: no issue yet, deferred");
-            continue;
-        };
-        if shard.observed.get(&op.field) == Some(&op.value) {
-            report.skipped += 1;
-            trace!(key = %op.key(), "outbox: already at value, skipped");
-        } else {
-            match sink.set_field(number, &op.field, &op.value) {
-                Ok(normalized) => {
-                    report.applied += 1;
-                    shard.observed.insert(op.field.clone(), normalized);
-                }
-                Err(SinkError::RateLimited { reset }) => {
-                    info!(key = %op.key(), "outbox: rate limited, stopping");
-                    report.stop = Some(StopReason::RateLimited { reset });
-                    return Ok(report);
-                }
-                Err(e) => {
-                    warn!(key = %op.key(), error = %e, "outbox: failed, retry next run");
-                    report.failed += 1;
-                    held.insert(&op.ticket);
-                    continue;
-                }
+        match apply_op(op, shard, sink) {
+            OpOutcome::Deferred => report.deferred += 1,
+            OpOutcome::Applied => report.applied += 1,
+            OpOutcome::Skipped => report.skipped += 1,
+            OpOutcome::Failed => {
+                report.failed += 1;
+                held.insert(&op.ticket);
+                continue;
             }
-        }
-        if shard
-            .last_event
-            .as_deref()
-            .is_none_or(|l| op.event.as_str() > l)
-        {
-            shard.last_event = Some(op.event.clone());
+            OpOutcome::RateLimited { reset } => {
+                report.stop = Some(StopReason::RateLimited { reset });
+                return Ok(report);
+            }
         }
         writer.record(shard.clone())?;
     }
     Ok(report)
+}
+
+/// What applying one ledger op to its shard did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OpOutcome {
+    /// The ticket has no issue yet; nothing was sent and the shard is unchanged.
+    Deferred,
+    /// The sink wrote the field; the shard holds the normalized value and the new `last_event`.
+    Applied,
+    /// The shard already observed the value; no request was made, `last_event` advanced.
+    Skipped,
+    /// The sink failed; the shard is unchanged and the ticket's later ops should wait.
+    Failed,
+    /// The tracker throttled; the shard is unchanged and the run should stop.
+    RateLimited {
+        /// Unix time the window resets, when known.
+        reset: Option<u64>,
+    },
+}
+
+// frob:ticket 01M5EA0YFAACDY5BV70R2MH98S
+/// Applies one ledger op to `shard` through `sink`, updating observed value and `last_event`.
+///
+/// The caller records the shard afterwards for `Applied` and `Skipped`.
+pub fn apply_op<K: FieldSink>(op: &LedgerEvent, shard: &mut Shard, sink: &mut K) -> OpOutcome {
+    let Some(number) = shard.issue_number else {
+        debug!(key = %op.key(), "outbox: no issue yet, deferred");
+        return OpOutcome::Deferred;
+    };
+    let outcome = if shard.observed.get(&op.field) == Some(&op.value) {
+        trace!(key = %op.key(), "outbox: already at value, skipped");
+        OpOutcome::Skipped
+    } else {
+        match sink.set_field(number, &op.field, &op.value) {
+            Ok(normalized) => {
+                shard.observed.insert(op.field.clone(), normalized);
+                OpOutcome::Applied
+            }
+            Err(SinkError::RateLimited { reset }) => {
+                info!(key = %op.key(), "outbox: rate limited, stopping");
+                return OpOutcome::RateLimited { reset };
+            }
+            Err(e) => {
+                warn!(key = %op.key(), error = %e, "outbox: failed, retry next run");
+                return OpOutcome::Failed;
+            }
+        }
+    };
+    if shard
+        .last_event
+        .as_deref()
+        .is_none_or(|l| op.event.as_str() > l)
+    {
+        shard.last_event = Some(op.event.clone());
+    }
+    outcome
 }
 
 #[cfg(test)]

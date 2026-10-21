@@ -51,6 +51,12 @@ impl Committed {
 pub struct PendingCursor(Option<HistoryCursor>);
 
 impl PendingCursor {
+    /// A position that saw nothing: for a ticket with no issue yet, so no stored cursor either.
+    // frob:ticket 01M5EA0YFAACDY5BV70R2MH98S
+    pub fn empty() -> Self {
+        Self(None)
+    }
+
     /// The position read, if any history was seen.
     pub fn position(&self) -> Option<&HistoryCursor> {
         self.0.as_ref()

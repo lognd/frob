@@ -14,6 +14,7 @@ pub mod dups;
 pub mod feed;
 pub mod fields;
 pub mod github;
+pub mod host;
 pub mod identity;
 pub mod inventory;
 pub mod journal;
