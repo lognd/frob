@@ -2,7 +2,8 @@
 id = "01M4052WE1HV1XJVZR6MCADM51"
 title = "Property tests: safety S1 to S9 against the fake GitHub"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
