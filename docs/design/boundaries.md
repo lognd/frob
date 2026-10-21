@@ -368,21 +368,22 @@ fails the test. Every workspace crate must appear here exactly once.
 
 | Layer | Name | Crates |
 |---|---|---|
-| 0 | base | crunk-values, gob-caps, gob-fs, gob-log, gob-macros, gob-path, gob-text, gob-time |
-| 1 | io | gob-exec, gob-languages, gob-lock, gob-walk |
-| 2 | repo | gob-git, gob-trust |
-| 3 | model | gob-cache, gob-ir |
-| 4 | rules | gob-pattern, gob-rules, gob-symbols |
-| 5 | config | gob-config, gob-diagnostics, gob-fix, gob-frameworks, gob-plan |
-| 6 | pipeline | gob-check, gob-cli, gob-directives, gob-mdtest, gob-packs, gob-testsupport |
-| 7 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, gob-product, grimble-capabilities, grimble-lints, grimble-model, grimble-vet |
-| 8 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-mirror, frob-pm, grimble-bind |
-| 9 | product mid | crunk-query, crunk-rules, frob-metrics, frob-release, frob-worktree, grimble-arch |
-| 10 | product upper | crunk-check, frob-evidence, frob-gh, grimble-check |
-| 11 | product top | crunk-fix, frob-tests, grimble |
-| 12 | product apex | crunk |
-| 13 | obligations | frob-obligations |
-| 14 | check | frob-check |
-| 15 | land | frob-land |
-| 16 | binary | frob-cli |
-| 17 | tool | gob-dev |
+| 0 | foundation | gob-path |
+| 1 | base | crunk-values, gob-caps, gob-fs, gob-log, gob-macros, gob-text, gob-time |
+| 2 | io | gob-exec, gob-languages, gob-lock, gob-walk |
+| 3 | repo | gob-git, gob-trust |
+| 4 | model | gob-cache, gob-ir |
+| 5 | rules | gob-pattern, gob-rules, gob-symbols |
+| 6 | config | gob-config, gob-diagnostics, gob-fix, gob-frameworks, gob-plan |
+| 7 | pipeline | gob-check, gob-cli, gob-directives, gob-mdtest, gob-packs, gob-testsupport |
+| 8 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, gob-product, grimble-capabilities, grimble-lints, grimble-model, grimble-vet |
+| 9 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-mirror, frob-pm, grimble-bind |
+| 10 | product mid | crunk-query, crunk-rules, frob-metrics, frob-release, frob-worktree, grimble-arch |
+| 11 | product upper | crunk-check, frob-evidence, frob-gh, grimble-check, grimble-ci |
+| 12 | product top | crunk-fix, frob-tests, grimble |
+| 13 | product apex | crunk |
+| 14 | obligations | frob-obligations |
+| 15 | check | frob-check |
+| 16 | land | frob-land |
+| 17 | binary | frob-cli |
+| 18 | tool | gob-dev |

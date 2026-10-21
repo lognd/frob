@@ -13,6 +13,7 @@ use std::process::Command;
 const ALLOWED: &[(&str, &str, &str)] = &[
     ("gob-ir", "gob-rules", "~3CCNEW9"),
     ("frob-lease", "frob-release", "~NRMXHHR"),
+    ("gob-plan", "grimble-model", "~GN6RNW7"),
     ("gob-dev", "crunk-check", "~M8WETW7"),
     ("gob-dev", "crunk-spec", "~M8WETW7"),
     ("gob-dev", "frob-check", "~M8WETW7"),
