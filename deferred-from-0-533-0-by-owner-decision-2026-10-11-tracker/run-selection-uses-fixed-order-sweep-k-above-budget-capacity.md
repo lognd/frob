@@ -2,7 +2,8 @@
 id = "01M5EWJDDGZS0G0346T3A6WZ0W"
 title = "Run selection uses fixed order: sweep_k above budget capacity and non-sweep classes can starve (F8)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
