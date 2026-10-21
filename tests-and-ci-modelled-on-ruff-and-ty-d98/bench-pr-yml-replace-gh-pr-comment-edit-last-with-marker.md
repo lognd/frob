@@ -2,7 +2,8 @@
 id = "01M5FH32Q2A4W7RBGH4THMVENY"
 title = "bench-pr.yml: replace gh pr comment --edit-last with marker-based comment"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
