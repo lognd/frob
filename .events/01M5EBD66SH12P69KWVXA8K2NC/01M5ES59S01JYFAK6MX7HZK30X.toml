@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-land/src/hunk_presence.rs"]
+at = "2026-10-21T08:27:34Z"
+actor = "lognd"
+rev = 1
