@@ -2,13 +2,13 @@
 id = "01M4052WHPPDKMCBA9Y1BM06W5"
 title = "Property tests: convergence and no loss under finite edits and faults (L1, L2)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:40Z"
-updated = "2026-10-03T05:51:40Z"
+updated = "2026-10-21T09:45:22Z"
 idempotency_key = "m2-mirror2-prop-liveness"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/prop_liveness.rs"]
