@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T18:58:21Z"
-updated = "2026-10-21T20:22:04Z"
+updated = "2026-10-21T20:28:26Z"
 scope = ["crates/frob-tests/src/reach.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/tests/unity_dynamic.rs", "docs/design/dotnet-unity.md", "changelog.d/01M5FX89B11DR9HP9QH19GKAYY.changed.md"]
 
 [[acceptance]]
