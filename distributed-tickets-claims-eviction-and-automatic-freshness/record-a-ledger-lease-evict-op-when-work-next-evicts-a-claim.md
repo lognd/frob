@@ -2,7 +2,8 @@
 id = "01M5DXB29AMFPY3Y3BX8ST9CAT"
 title = "Record a ledger lease evict op when work --next evicts a claim"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
