@@ -8,7 +8,7 @@ points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T16:45:11Z"
-updated = "2026-10-21T16:54:48Z"
+updated = "2026-10-21T16:54:49Z"
 scope = ["crates/frob-ledger/src/refresh.rs", "crates/frob-ledger/Cargo.toml", "Cargo.lock", "changelog.d/01M5FNMF22M7XZN56NPY6S4ERK.fix.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Refresh state still round-trips through save and load unchanged"
-bound = false
+bound = true
 +++
 
 Found while landing KHR84D9; failing test on experimental. Fix or waive with reason.

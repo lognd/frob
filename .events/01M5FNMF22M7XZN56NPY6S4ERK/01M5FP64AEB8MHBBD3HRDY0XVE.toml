@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T16:54:49Z"
+digest = "3ed872d09b6f995de6959f96bcee4f17cdf1202d645173a8d4a7b17b38672d51"
+exit_code = 0
+head = "9d52a03d6bc5e934b72a602b2fc156d9cd311245"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d6a6b5c6-0954-4b43-b793-8abca278b865 with nextest profile: default
+    Starting 1 test across 19 binaries (247 tests skipped)
+        PASS [   0.006s] frob-ledger refresh::tests::state_round_trips_and_missing_is_unknown
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 247 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger state_round_trips"
+size = 562
+status = "measured"
+test_count = 1
+tests_digest = "a5b75d7c8ccae739b26e7e885a939e928c760bfcf29546d166ef82c71f330ac7"
+at = "2026-10-21T16:54:49Z"
+actor = "lognd"
+rev = 1
