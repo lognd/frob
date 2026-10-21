@@ -2,7 +2,8 @@
 id = "01M4M27EDCXBRN2HZJXHAZK0F1"
 title = "frob land prints E-LAND-GIT-REV (cannot resolve refs/heads/experimental) after a land that completed"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
