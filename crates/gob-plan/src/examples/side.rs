@@ -9,16 +9,11 @@ use crate::exec::Scalar;
 use crate::exec::relations::{SideData, SideTable};
 use crate::plan::{Op, Plan};
 
+use super::model_reader::read_model;
 use super::runner::RunError;
 
 /// The status column value of every example `diff` path.
 const EXAMPLE_STATUS: &str = "modified";
-/// The path an example `model` text is read as.
-const EXAMPLE_MODEL_PATH: &str = "example.grmb";
-/// The version header and module line an example `model` without one is read under.
-const MODEL_HEADER: &str = "grimble = \"2\";\nmodule example;";
-/// The kind of a model node that declares none.
-const DEFAULT_NODE_KIND: &str = "component";
 /// The ticket an example `lease` is held for.
 const EXAMPLE_TICKET: (&str, &str) = ("01EXAMPLE", "~EXAMPLE");
 
@@ -67,65 +62,19 @@ fn ty_of(v: &Scalar) -> FieldType {
     }
 }
 
-/// Pushes the node rows and selector rows of `items`, namespaces joined with `.`.
-fn model_items(
-    items: &[grimble_model::ast::Item],
-    ns: &str,
-    nodes: &mut Vec<Vec<Scalar>>,
-    selectors: &mut Vec<Vec<Scalar>>,
-) {
-    use grimble_model::ast::{ClauseKind, EntityKind, Item};
-    for item in items {
-        match item {
-            Item::Namespace(n) => {
-                let inner = format!("{ns}{}.", n.name.text);
-                model_items(&n.items, &inner, nodes, selectors);
-            }
-            Item::Entity(e) if e.kind == EntityKind::Node && !e.extension => {
-                let name = format!("{ns}{}", e.name.text);
-                let kind = e
-                    .clauses
-                    .iter()
-                    .find_map(|c| match &c.kind {
-                        ClauseKind::Kind(k) => Some(k.text.as_str()),
-                        _ => None,
-                    })
-                    .unwrap_or(DEFAULT_NODE_KIND);
-                nodes.push(vec![s(&name), s(kind), s(EXAMPLE_MODEL_PATH)]);
-                for c in &e.clauses {
-                    if let ClauseKind::Owns(sel) = &c.kind {
-                        selectors.push(vec![s(&name), s(&sel.text)]);
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-}
-
 /// The `model.nodes` and `model.selectors` tables of an example's grmb `model` text.
 ///
 /// # Errors
-/// [`RunError::Model`] when the text has a syntax error.
+/// [`RunError::Model`] when the installed reader refuses the text.
 fn model_tables(text: &str) -> Result<[(&'static str, SideTable); 2], RunError> {
-    // Examples write the model body; the version header is supplied unless the text has one.
-    let full = if text.trim_start().starts_with("grimble") {
-        text.to_owned()
-    } else {
-        format!("{MODEL_HEADER}\n{text}")
-    };
-    let file = grimble_model::parse_file(EXAMPLE_MODEL_PATH, full.as_bytes());
-    if file.holes > 0 || !file.diags.is_empty() {
-        let first = file
-            .diags
-            .first()
-            .map_or("syntax error", |d| d.message.as_str());
-        return Err(RunError::Model(format!(
-            "the example `model` does not parse: {first}"
-        )));
+    let rows = read_model(text)
+        .map_err(|e| RunError::Model(format!("the example `model` does not parse: {e}")))?;
+    let mut nodes = Vec::new();
+    let mut selectors = Vec::new();
+    for row in &rows {
+        nodes.push(vec![s(&row.name), s(&row.kind), s(&row.path)]);
+        selectors.extend(row.selectors.iter().map(|sel| vec![s(&row.name), s(sel)]));
     }
-    let (mut nodes, mut selectors) = (Vec::new(), Vec::new());
-    model_items(&file.items, "", &mut nodes, &mut selectors);
     tracing::debug!(
         nodes = nodes.len(),
         selectors = selectors.len(),
@@ -305,16 +254,8 @@ mod model_tests {
 
     // frob:tests model_tables
     #[test]
-    fn model_text_yields_node_and_selector_rows() {
-        let [(n, nodes), (s, sels)] =
-            model_tables(r#"node a : trusted { kind artifact; owns "src/**"; }"#).unwrap();
-        assert_eq!((n, s), ("model.nodes", "model.selectors"));
-        assert_eq!((nodes.len(), sels.len()), (1, 1));
-    }
-
-    // frob:tests model_tables
-    #[test]
-    fn broken_model_text_is_refused() {
-        assert!(model_tables("node {{{").is_err());
+    fn model_text_without_a_reader_is_refused() {
+        let err = model_tables("node a {}").unwrap_err();
+        assert!(err.to_string().contains("no model reader"));
     }
 }
