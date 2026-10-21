@@ -2,13 +2,13 @@
 id = "01M44YQTSWW9EH49541MY9A7AX"
 title = "DOC rules read C# XML doc comments"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:58Z"
-updated = "2026-10-05T02:36:58Z"
+updated = "2026-10-21T10:15:23Z"
 idempotency_key = "d94-xmldoc"
 scope = ["crates/frob-obligations/src/doc.rs", "crates/gob-symbols/src/csharp.rs", "docs/reference/rules/DOC001.md", "docs/reference/rules/DOC002.md", "crates/frob-check/tests/**"]
 
