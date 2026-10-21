@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-21T08:45:13Z"
+updated = "2026-10-21T08:48:48Z"
 idempotency_key = "m2-grl-ten-b"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/tests/ten_rules/**"]
@@ -35,6 +35,10 @@ bound = false
 
 [[acceptance]]
 text = "Given CI002 on a workflow that fails to parse, when run, then the result is Unresolved, not clean"
+bound = false
+
+[[acceptance]]
+text = "The four section 12 rules parse as GRL and every example is either passing or listed in KNOWN_ENGINE_GAPS with a filed follow-up"
 bound = false
 +++
 

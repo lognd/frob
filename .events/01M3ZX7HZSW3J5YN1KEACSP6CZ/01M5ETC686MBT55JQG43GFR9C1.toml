@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the four .grl files, when `rule test` runs, then every example passes including the unresolved and notapplicable ones", "Given CI002 on a workflow that fails to parse, when run, then the result is Unresolved, not clean"]
+new = ["Given the four .grl files, when `rule test` runs, then every example passes including the unresolved and notapplicable ones", "Given CI002 on a workflow that fails to parse, when run, then the result is Unresolved, not clean", "The four section 12 rules parse as GRL and every example is either passing or listed in KNOWN_ENGINE_GAPS with a filed follow-up"]
+moved = [1, 2]
+at = "2026-10-21T08:48:48Z"
+actor = "lognd"
+rev = 1
