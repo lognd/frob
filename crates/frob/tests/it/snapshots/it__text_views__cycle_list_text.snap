@@ -1,0 +1,6 @@
+---
+source: crates/frob/tests/it/text_views.rs
+expression: normalize(&list)
+---
+1 cycle
+~HANDLE0  YYYY-MM-DD..YYYY-MM-DD  active  0 tickets  cap 8  -  First cycle

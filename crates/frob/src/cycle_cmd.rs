@@ -652,12 +652,15 @@ impl Command for CycleShow {
                 )
             })?
         };
+        let cycle = CycleView::of(&c, store);
+        let rows = crate::text_view::cycle_rows(&cycle);
         Ok(Payload::new(CycleData {
-            cycle: CycleView::of(&c, store),
+            cycle,
             next: None,
             events: Vec::new(),
             commit: None,
-        }))
+        })
+        .with_rendered(rows))
     }
 }
 
@@ -686,10 +689,12 @@ impl Command for CycleList {
             .iter()
             .map(|c| CycleView::of(c, store))
             .collect();
-        Ok(Payload::new(CycleListData {
+        let data = CycleListData {
             count: views.len(),
             cycles: views,
-        }))
+        };
+        let rows = crate::text_view::cycle_list_rows(&data);
+        Ok(Payload::new(data).with_rendered(rows))
     }
 }
 

@@ -1,0 +1,16 @@
+---
+source: crates/frob/tests/it/text_views.rs
+expression: normalize(&text)
+---
+~HANDLE0  Ship the thing
+
+status     todo
+type       epic
+priority   medium
+class      standard
+reporter   Test
+created    YYYY-MM-DD
+updated    YYYY-MM-DD
+
+Children
+  ~HANDLE0  todo  3  Write the renderer

@@ -1,0 +1,7 @@
+---
+source: crates/frob/tests/it/text_views.rs
+expression: normalize(&list)
+---
+2 tickets
+~HANDLE0  medium  todo  -  epic  Ship the thing
+~HANDLE0  high    todo  3  task  Write the renderer

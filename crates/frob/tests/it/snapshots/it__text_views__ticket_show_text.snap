@@ -1,0 +1,26 @@
+---
+source: crates/frob/tests/it/text_views.rs
+expression: normalize(&text)
+---
+~HANDLE0  Write the renderer
+
+status     todo
+type       task
+priority   high
+class      standard
+points     3
+parent     ULID______________________
+reporter   Test
+created    YYYY-MM-DD
+updated    YYYY-MM-DD
+labels     ux
+scope      crates/**
+
+Description
+  Render rows, not a key tree.
+
+Acceptance
+  1. [ ] Output is a human view
+
+Events
+  YYYY-MM-DD  Test  create
