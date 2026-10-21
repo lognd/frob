@@ -268,6 +268,44 @@ fn json(out: &str) -> serde_json::Value {
 }
 
 #[test]
+fn evidence_list_shows_current_criteria_after_a_removal() {
+    // frob:tests Listed.new
+    let dir = repo("base");
+    let ledger = ledger(dir.path());
+    let (id, handle) = ticket(&ledger, TicketType::Task);
+    let cli = cli();
+    let run = |args: &[&str]| gob_cli::run_for_test(&cli, args, dir.path());
+    let (code, out, err) = run(&[
+        "--json",
+        "ticket",
+        "evidence",
+        "add",
+        &handle,
+        "--provider",
+        "command",
+        "--ref",
+        "git log -1 --format=%s",
+        "--accepts",
+        "1",
+        "--accepts",
+        "2",
+    ]);
+    assert_eq!(code, 0, "{out}{err}");
+    let patch = frob_ledger::ops::Patch {
+        remove_acceptance: vec![1],
+        ..Default::default()
+    };
+    ledger.update(id, &patch).expect("remove criterion 1");
+    drop(ledger);
+
+    let (code, out, _) = run(&["--json", "ticket", "evidence", "list", &handle]);
+    assert_eq!(code, 0, "{out}");
+    let rec = &json(&out)["data"]["records"][0];
+    assert_eq!(rec["current_accepts"], serde_json::json!([1]));
+    assert_eq!(rec["removed_accepts"], serde_json::json!([1]));
+}
+
+#[test]
 fn verbs_add_list_and_fetch_round_trip() {
     let dir = repo("base");
     let ledger = ledger(dir.path());
