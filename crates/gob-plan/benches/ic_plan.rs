@@ -17,9 +17,9 @@ use gungraun::{library_benchmark, library_benchmark_group, main};
 
 const LINES: usize = 400;
 
-// frob:waive DEAD001 reason="called by the gungraun main! macro, which the call graph cannot see"
+// frob:accept DEAD001 because="called by the gungraun main! macro, which the call graph cannot see"
 /// Builds the plan of rule `id` and a fixture file it runs over, outside the measured region.
-fn setup(id: &'static str) -> (Case, Prepared) {
+fn ic_plan_case(id: &'static str) -> (Case, Prepared) {
     let case = cases()
         .expect("rules compile")
         .into_iter()
@@ -33,16 +33,16 @@ fn setup(id: &'static str) -> (Case, Prepared) {
     (case, prepare(&file, lang).expect("fixture models"))
 }
 
-// frob:waive DEAD001 reason="called by the gungraun main! macro, which the call graph cannot see"
+// frob:accept DEAD001 because="called by the gungraun main! macro, which the call graph cannot see"
 #[library_benchmark]
-#[bench::todo001(args = ("TODO001"), setup = setup)]
-#[bench::cov001(args = ("COV001"), setup = setup)]
-#[bench::doc002(args = ("DOC002"), setup = setup)]
+#[bench::todo001(args = ("TODO001"), setup = ic_plan_case)]
+#[bench::cov001(args = ("COV001"), setup = ic_plan_case)]
+#[bench::doc002(args = ("DOC002"), setup = ic_plan_case)]
 fn plan_executor((case, prepared): (Case, Prepared)) -> usize {
     black_box(run_plan(&case, &prepared).expect("plan runs").len())
 }
 
-// frob:waive DEAD001 reason="called by the gungraun main! macro, which the call graph cannot see"
+// frob:accept DEAD001 because="called by the gungraun main! macro, which the call graph cannot see"
 #[library_benchmark]
 #[bench::rust(fixture::rust_file(0, LINES))]
 fn parse_rust(file: fixture::SourceFile) -> Prepared {
