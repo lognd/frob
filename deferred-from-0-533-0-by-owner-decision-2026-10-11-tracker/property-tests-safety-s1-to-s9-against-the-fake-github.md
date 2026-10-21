@@ -36,6 +36,10 @@ bound = false
 [[acceptance]]
 text = "Given a human edit recorded as a proposal, when the proposal is declined and the history is re-read after a crash before the cursor commit (F9), then it is never pending again (S8)."
 bound = false
+
+[[acceptance]]
+text = "Given a cursor set after a publish or a late create (F2, F3), when a human edit lands before it, then the edit is recorded as a proposal (S2) and proposals never change the tracker (S4)."
+bound = false
 +++
 
 Implements mirror.md section 3.7 (safety rows) and the model README section 5 (S1 to S9).
