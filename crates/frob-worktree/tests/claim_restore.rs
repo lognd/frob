@@ -139,7 +139,7 @@ fn code(err: &WorktreeError) -> &str {
 
 // frob:tests crates/frob-worktree/src/claim_restore.rs::restore_claim
 #[test]
-fn restore_puts_parked_work_back_and_notes_the_ticket() {
+fn restore_puts_parked_work_back_and_records_a_lease_event() {
     let Some(fx) = Fixture::new(None) else { return };
     let (ledger, leases) = (fx.ledger(), fx.leases());
     let cfg = WorktreeConfig::load(&fx.root).expect("config");
@@ -154,18 +154,19 @@ fn restore_puts_parked_work_back_and_notes_the_ticket() {
     let done = ws.restore_claim(&id, "owner is back").expect("restore");
     assert_eq!(done.parked, format!("parked/{handle}-1"));
     assert_eq!(fx.tip(&format!("ticket/{handle}")), Some(done.tip.clone()));
-    let notes: Vec<String> = ledger
+    let ops: Vec<_> = ledger
         .events(ledger.resolve(&id).expect("id"))
         .expect("events")
         .into_iter()
         .filter_map(|e| match e.body {
-            EventBody::Comment(c) => Some(c.body),
+            EventBody::Lease(l) => Some(l),
             _ => None,
         })
         .collect();
-    let body = notes.join("\n");
-    assert!(body.contains("claim restored from"), "{body}");
-    assert!(body.contains("owner is back"), "{body}");
+    assert_eq!(ops.len(), 1, "{ops:?}");
+    assert_eq!(ops[0].op, frob_ledger::event::LeaseOp::Restore);
+    assert_eq!(ops[0].tip.as_deref(), Some(done.tip.as_str()));
+    assert_eq!(ops[0].reason.as_deref(), Some("owner is back"));
     let again = ws
         .restore_claim(&id, "twice")
         .expect_err("already restored");

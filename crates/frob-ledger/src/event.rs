@@ -1,7 +1,7 @@
 //! Events: one append-only TOML file per state change, `events/<ulid>.toml`.
 //!
 //! Every kind of event the model knows is an [`EventBody`] variant. The kinds
-//! of the design table that no M1 verb produces (`evidence`, `lease`,
+//! of the design table that no M1 verb produces (`evidence`,
 //! `review`, `cycle`, `attempt`, `cost`) parse as
 //! [`EventBody::Other`] and fold to no state change, so a ledger written by a
 //! later frob still folds here.
@@ -288,6 +288,46 @@ pub struct LandData {
     pub pushed: bool,
 }
 
+/// Which lease operation a `lease` event records (`distributed-tickets.md` section 4).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum LeaseOp {
+    /// An idle claim was taken away and its work parked.
+    Evict,
+    /// Parked work was put back as the ticket branch.
+    Restore,
+}
+
+// frob:ticket 01M5DTGGCJ9BNXAD5TP1N3HRWA
+/// One lease operation that changed who holds a ticket; audit only, the fold ignores it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct LeaseData {
+    /// What happened.
+    pub op: LeaseOp,
+    /// The previous holder (`evict`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub holder: Option<String>,
+    /// The ref the work was observed at (`evict`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub observed: Option<String>,
+    /// The `parked/<handle>-<n>` branch involved.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parked: Option<String>,
+    /// The restored branch tip (`restore`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tip: Option<String>,
+    /// Seconds the claim had been idle (`evict`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub idle_secs: Option<u64>,
+    /// The inactivity window in force, in seconds (`evict`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_secs: Option<u64>,
+    /// Why, as given to the verb.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
 /// What a `proposal` or `proposal-superseded` event records: a tracker edit held for review (mirror.md 3.5).
 ///
 /// Stored by reference: only a digest of the value and a capped excerpt enter the ledger.
@@ -352,6 +392,8 @@ pub enum EventBody {
     LandExempt(LandExemptData),
     /// The ticket's branch was landed; audit only.
     Land(LandData),
+    /// A claim was evicted or restored; audit only.
+    Lease(LeaseData),
     /// A doctor repair scrubbed absolute home paths from the ticket's files; audit only.
     Scrub(ScrubData),
     // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
@@ -527,6 +569,7 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::ChangelogExempt(_) => "changelog-exempt",
         EventBody::LandExempt(_) => "land-exempt",
         EventBody::Land(_) => "land",
+        EventBody::Lease(_) => "lease",
         EventBody::Scrub(_) => "scrub",
         EventBody::Triage(_) => "triage",
         EventBody::Proposal(_) => "proposal",
@@ -682,6 +725,41 @@ mod tests {
         }
     }
 
+    // frob:ticket 01M5DTGGCJ9BNXAD5TP1N3HRWA
+    // frob:tests LeaseData
+    #[test]
+    fn lease_events_round_trip() {
+        let bodies = [
+            EventBody::Lease(LeaseData {
+                op: LeaseOp::Evict,
+                holder: Some("agent".into()),
+                observed: Some("abc".into()),
+                parked: Some("parked/x-1".into()),
+                tip: None,
+                idle_secs: Some(900),
+                window_secs: Some(600),
+                reason: Some("idle".into()),
+            }),
+            EventBody::Lease(LeaseData {
+                op: LeaseOp::Restore,
+                holder: None,
+                observed: None,
+                parked: Some("parked/x-1".into()),
+                tip: Some("abc".into()),
+                idle_secs: None,
+                window_secs: None,
+                reason: None,
+            }),
+        ];
+        for body in bodies {
+            let ev = Event::new(gob_time::Stamp::from_unix(1_800_000_000), "logan", body);
+            let text = ev.to_toml().expect("render");
+            assert!(text.starts_with("kind = \"lease\""), "{text}");
+            let back = Event::parse(ev.id, &text).expect("parse");
+            assert_eq!(back, ev, "{text}");
+        }
+    }
+
     // frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
     #[test]
     fn create_without_a_class_is_standard_and_standard_is_never_written() {
@@ -707,10 +785,10 @@ mod tests {
 
     #[test]
     fn unknown_kinds_parse_as_other() {
-        let text = "kind = \"lease\"\nat = \"2026-10-02T14:03:11Z\"\nactor = \"a\"\nrev = 1\nverdict = \"passed\"\n";
+        let text = "kind = \"future-kind\"\nat = \"2026-10-02T14:03:11Z\"\nactor = \"a\"\nrev = 1\nverdict = \"passed\"\n";
         let ev = Event::parse(EventId::mint(), text).expect("parse");
         assert_eq!(ev.body, EventBody::Other);
-        assert_eq!(ev.kind, "lease");
+        assert_eq!(ev.kind, "future-kind");
     }
 
     #[test]

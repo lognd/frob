@@ -3,12 +3,12 @@
 //! The decision is [`crate::evict::restore_plan`] and the push is
 //! [`crate::evict::restore`]; this module gathers their inputs (the live
 //! lease, the remote claim, the parked refs), maps every refusal to a coded
-//! [`WorktreeError`], and records the restore as a note on the ticket.
+//! [`WorktreeError`], and records the restore as a `lease` op `restore` event.
 
 // frob:ticket 01M5DN9Q57S88B7DQQH8BAXZ01
 
 use frob_ledger::TicketId;
-use frob_ledger::model::CommentSubtype;
+use frob_ledger::event::{EventBody, LeaseData, LeaseOp};
 use gob_diagnostics::{Refusal, RefusalClass};
 
 use crate::claim::{remote_claim, sync_settings};
@@ -24,9 +24,6 @@ pub const E_RESTORE_NOTHING: &str = "E-RESTORE-NOTHING";
 
 /// Refusal code when the remote cannot be reached; a restore needs it online.
 pub const E_RESTORE_OFFLINE: &str = "E-RESTORE-OFFLINE";
-
-/// Marker that starts the ticket note recording a restore.
-const NOTE_MARKER: &str = "claim restored";
 
 /// What a successful restore did.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -80,9 +77,18 @@ fn offline(handle: &str, why: &str) -> WorktreeError {
     )
 }
 
-/// The ticket note recording that `parked` was restored for `reason`.
-fn note_body(parked: &str, tip: &str, reason: &str) -> String {
-    format!("{NOTE_MARKER} from {parked} at {tip}: {reason}")
+/// The `lease` op `restore` event body: `parked` came back as the ticket branch at `tip`, for `reason`.
+fn restore_event(parked: &str, tip: &str, reason: &str) -> EventBody {
+    EventBody::Lease(LeaseData {
+        op: LeaseOp::Restore,
+        holder: None,
+        observed: None,
+        parked: Some(parked.to_owned()),
+        tip: Some(tip.to_owned()),
+        idle_secs: None,
+        window_secs: None,
+        reason: Some(reason.to_owned()),
+    })
 }
 
 impl Workspace<'_> {
@@ -107,9 +113,8 @@ impl Workspace<'_> {
             .map_err(|why| plan_refusal(why, &handle))?;
         match restore(repo, bare, &name)? {
             RestoreOutcome::Restored { tip } => {
-                self.ledger
-                    .comment(id, CommentSubtype::Note, &note_body(&name, &tip, reason))?;
-                tracing::info!(ticket = %id, parked = %name, "claim restored and noted");
+                self.ledger.append(id, restore_event(&name, &tip, reason))?;
+                tracing::info!(ticket = %id, parked = %name, "claim restored and recorded");
                 Ok(Restored {
                     id,
                     handle,
@@ -142,12 +147,15 @@ mod tests {
         assert!(code(RestoreRefusal::EmptyReason).starts_with("usage:"));
     }
 
-    // frob:tests crates/frob-worktree/src/claim_restore.rs::note_body
+    // frob:tests crates/frob-worktree/src/claim_restore.rs::restore_event
     #[test]
-    fn note_names_source_tip_and_reason() {
-        assert_eq!(
-            note_body("parked/X-1", "abc", "oops"),
-            "claim restored from parked/X-1 at abc: oops"
-        );
+    fn restore_event_names_source_tip_and_reason() {
+        let EventBody::Lease(d) = restore_event("parked/X-1", "abc", "oops") else {
+            panic!("not a lease event");
+        };
+        assert_eq!(d.op, LeaseOp::Restore);
+        assert_eq!(d.parked.as_deref(), Some("parked/X-1"));
+        assert_eq!(d.tip.as_deref(), Some("abc"));
+        assert_eq!(d.reason.as_deref(), Some("oops"));
     }
 }
