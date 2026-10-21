@@ -2,13 +2,13 @@
 id = "01M43AXZRK62S6DATKMBQGCFRG"
 title = "grimble-websec family ROUTE: first slice of rules in GRL"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:34Z"
-updated = "2026-10-04T11:31:34Z"
+updated = "2026-10-21T11:47:55Z"
 idempotency_key = "crunk-plan-g_ROUTE"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/rules/route/**", "packs/grimble-websec/tests/route/**"]
