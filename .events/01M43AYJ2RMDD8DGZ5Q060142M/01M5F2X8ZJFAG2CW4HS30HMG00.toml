@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/060142M; scope: packs/grimble-sysdesign/**, docs/grimble/packs/grimble-sysdesign.md, crates/gob-packs/src/sysdesign.rs, crates/gob-packs/src/lib.rs, crates/gob-packs/tests/sysdesign_pack.rs, changelog.d/01M43AYJ2RMDD8DGZ5Q060142M.added.md; ttl 7200s"
+at = "2026-10-21T11:17:56Z"
+actor = "lognd"
+rev = 1
