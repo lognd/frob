@@ -2,13 +2,13 @@
 id = "01M43AVJWX0T0XSYDX323BQFSY"
 title = "crunk-web family LAUNCH: first slice of rules in GRL"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:15Z"
-updated = "2026-10-04T11:30:15Z"
+updated = "2026-10-21T07:45:17Z"
 idempotency_key = "crunk-plan-web_LAUNCH"
 labels = ["area:crunk"]
 scope = ["packs/crunk-web/rules/launch/**", "packs/crunk-web/tests/launch/**"]
