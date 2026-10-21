@@ -1,0 +1,55 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T11:18:51Z"
+digest = "b1c5ffa73b15e7a4e4c39cd7a001d8e469629a68cad9851dd9c9d0999da88268"
+exit_code = 0
+head = "9e77216f876c7dfef21540e8107455b7dff7c193"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7c688a48-6f9a-4494-8de9-7258cafa9dcd with nextest profile: default
+    Starting 3 tests across 5 binaries (123 tests skipped)
+        PASS [   0.232s] frob-check::it csharp::the_unity_fixture_runs_end_to_end_and_the_unity_test_reaches_the_behaviour
+        PASS [   0.253s] frob-check::it csharp::the_dotnet_solution_runs_end_to_end_with_the_expected_cov001_findings
+        PASS [   0.262s] frob-check::it csharp::the_dotnet_solution_documented_types_pass_doc001_and_namespaces_do_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.263s] 3 tests run: 3 passed, 123 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check csharp"
+size = 2632
+status = "measured"
+test_count = 3
+tests_digest = "511c442c29e97f671015f831c5d51ddf62146776f3f9244a4fa76f5f29146d00"
+at = "2026-10-21T11:18:51Z"
+actor = "lognd"
+rev = 1
