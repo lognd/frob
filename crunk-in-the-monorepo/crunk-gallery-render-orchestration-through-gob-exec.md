@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a command renderer that hangs, when render runs, then it is killed at the timeout and the cell is marked failed"
-bound = false
+bound = true
 +++
 
 Port render, renderer, screenshot, web_steps and _playwright (about 1.5k LOC): playwright stays out of process through gob-exec (timeout, env allowlist, output caps; it executes project code, so the trust notice applies), PNGs hashed, the `command` renderer for external capture tools. Missing playwright is a typed error with the remedy. Tests needing playwright run in the optional CI job. v1 T-0225 (capture_attrs) and T-0264 are decided at import, not here.

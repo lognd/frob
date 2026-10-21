@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T08:00:21Z"
+digest = "353acc3aeb26983714752e59b25097d9b8d80f5551cefbecac05a039e10c2570"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4b682907-78f3-47db-9df7-8ed10275c9c8 with nextest profile: default
+    Starting 1 test across 3 binaries (11 tests skipped)
+        PASS [   0.329s] crunk-gallery::render hanging_command_is_killed_and_cell_fails
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.330s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery hanging_command_is_killed_and_cell_fails"
+size = 553
+status = "measured"
+test_count = 1
+tests_digest = "e4c566b12e40fb4f5b57ca99e7b6344d78244fcead05845128236f86a5167198"
+at = "2026-10-21T08:00:21Z"
+actor = "lognd"
+rev = 1
