@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T16:54:48Z"
+digest = "bf1ca1d85ad75f493aa3f070b7d328f46926b3ba96d87089d39fa7757a2f89bc"
+exit_code = 0
+head = "9d52a03d6bc5e934b72a602b2fc156d9cd311245"
+inline = '''
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 764bd5e0-cb95-4a24-a4cf-114857a49d59 with nextest profile: default
+    Starting 1 test across 3 binaries (11 tests skipped)
+        PASS [   0.292s] gob-fs::inventory no_hand_rolled_temp_and_rename_outside_the_helper
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.293s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-fs no_hand_rolled"
+size = 614
+status = "measured"
+test_count = 1
+tests_digest = "44dd1c6950cd94dd1d4c4447fba3a2c263134d4bb1980d3ed98cedaeacdde1cf"
+at = "2026-10-21T16:54:48Z"
+actor = "lognd"
+rev = 1
