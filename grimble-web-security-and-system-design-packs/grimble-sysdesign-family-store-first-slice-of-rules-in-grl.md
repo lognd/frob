@@ -8,7 +8,7 @@ points = 8
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:32:02Z"
-updated = "2026-10-21T13:16:15Z"
+updated = "2026-10-21T13:21:30Z"
 idempotency_key = "crunk-plan-g_STORE"
 labels = ["area:grimble"]
 scope = ["packs/grimble-sysdesign/rules/store/**", "packs/grimble-sysdesign/tests/store/**", "packs/grimble-sysdesign/pack.toml", "crates/gob-packs/src/sysdesign.rs", "crates/gob-packs/tests/sysdesign_pack.rs", "docs/grimble/packs/grimble-sysdesign.md", "changelog.d/01M43AYVHQWDNSE66CY4VVXDW5.added.md"]
@@ -19,7 +19,7 @@ target = "01M43AYJ2RMDD8DGZ5Q060142M"
 
 [[acceptance]]
 text = "Given a model or code violating the first rule, when `grimble check` runs, then the finding fires with teaching text"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the clean example, when `grimble rule test` runs, then it passes"

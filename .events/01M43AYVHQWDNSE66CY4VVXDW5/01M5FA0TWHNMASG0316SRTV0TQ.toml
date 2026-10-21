@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T13:21:30Z"
+digest = "b07484698fece9782c203f859e29dbc2066b8ef908e30a1cf81e545d7f7ab743"
+exit_code = 0
+head = "e2900679e9ee733d67d61779e59d9ee4f30db5de"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 42.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 567981a0-7572-45fd-9827-b9fa294d361d with nextest profile: default
+    Starting 1 test across 9 binaries (68 tests skipped)
+        PASS [   0.029s] gob-packs::sysdesign_pack store_rules_have_fire_clean_and_not_applicable_examples
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.030s] 1 test run: 1 passed, 68 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs store_rules_have_fire_clean"
+size = 689
+status = "measured"
+test_count = 1
+tests_digest = "7635efe358943f335725eae0df955f79272f1721c6fd4dea7e473fc7a386c1cc"
+at = "2026-10-21T13:21:30Z"
+actor = "lognd"
+rev = 1
