@@ -1,0 +1,10 @@
+kind = "create"
+title = "Feed BuildStats.malformed_projects into frob-check's Product::malformed_projects"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-check/src"]
+body = "found while working ~YTG1ZYC: gob-check now has Product::malformed_projects (default empty). frob-check must store built.malformed_projects in FrobShared (snapshot.rs) and return it from FrobProduct::malformed_projects (product.rs)."
+at = "2026-10-21T23:27:37Z"
+actor = "lognd"
+rev = 1
