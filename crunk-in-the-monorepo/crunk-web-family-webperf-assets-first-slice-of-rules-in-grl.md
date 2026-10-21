@@ -2,7 +2,8 @@
 id = "01M43AVK7C2CY8SQA204JWTCCP"
 title = "crunk-web family WEBPERF-assets: first slice of rules in GRL"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
