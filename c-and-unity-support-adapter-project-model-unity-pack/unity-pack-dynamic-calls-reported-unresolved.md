@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:02Z"
-updated = "2026-10-21T18:53:02Z"
+updated = "2026-10-21T18:59:47Z"
 idempotency_key = "d94-dynamic"
 scope = ["packs/unity.toml", "crates/gob-symbols/src/csharp.rs", "crates/gob-ir/**", "crates/gob-symbols/tests/**", "docs/design/packs.md", "docs/design/dotnet-unity.md", "crates/gob-symbols/src/lib.rs", "changelog.d/01M44YQYKX1PTSGQE3TMVX4GEN.added.md"]
 
