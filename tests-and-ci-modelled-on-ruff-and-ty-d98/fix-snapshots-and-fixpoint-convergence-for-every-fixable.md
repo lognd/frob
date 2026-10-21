@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "a fix that breaks parsing or oscillates fails the harness in a self-test"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "after each fix round parse status and opaque or hole counts never degrade, and no finding changes class from fire to unresolved"

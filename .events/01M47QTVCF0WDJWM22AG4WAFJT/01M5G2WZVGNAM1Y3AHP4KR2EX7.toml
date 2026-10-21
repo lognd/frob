@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T20:37:01Z"
+digest = "0fc89e173cf5a15cb25a9f62047172076634dc57c3d37363bd7e030d6594aefa"
+exit_code = 0
+head = "da0e268ae1388e1151f835b8923216b1c3618150"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 138a1943-779d-4668-bc90-d2435ac45945 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.005s] gob-fix::harness oscillating_fix_fails_to_reach_a_fixpoint
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-fix --test harness oscillating_fix_fails_to_reach_a_fixpoint"
+size = 547
+status = "measured"
+test_count = 1
+tests_digest = "70496b2ac15f4c5f737849dccef51a2d6df46694aa264d918b8055c737e1adf4"
+at = "2026-10-21T20:37:01Z"
+actor = "lognd"
+rev = 1
