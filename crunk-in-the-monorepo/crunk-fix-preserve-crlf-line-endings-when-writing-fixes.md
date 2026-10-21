@@ -18,6 +18,10 @@ target = "01M43ATCQVX9A1TJ6A4AE48FDX"
 [[acceptance]]
 text = "Given a CRLF file, when crunk fix writes it, then its line endings are preserved"
 bound = true
+
+[[acceptance]]
+text = "Given mixed endings, a BOM, a missing final newline or fix text containing newlines, when crunk fix writes, then each replacement takes the ending of its own line and untouched bytes are exact"
+bound = false
 +++
 
 Split from ~80A3EXX: no 'crunk fix' writer exists in this tree yet (crates/crunk*), so the CRLF policy cannot be implemented or tested until it does. Blocked on the fix verb.
