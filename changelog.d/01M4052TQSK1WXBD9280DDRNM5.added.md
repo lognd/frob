@@ -1,0 +1,1 @@
+frob-mirror: `closing::reconcile_closing` reopens an issue closed by a commit closing keyword while the ledger is open and records the closure as a proposal; a done ticket is left alone (mirror.md 3.6).
