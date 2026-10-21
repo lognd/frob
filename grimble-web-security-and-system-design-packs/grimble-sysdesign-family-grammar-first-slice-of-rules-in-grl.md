@@ -8,7 +8,7 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:32:05Z"
-updated = "2026-10-21T12:31:50Z"
+updated = "2026-10-21T12:32:22Z"
 idempotency_key = "crunk-plan-g_GRAMMAR"
 labels = ["area:grimble"]
 scope = ["packs/grimble-sysdesign/rules/grammar/**", "packs/grimble-sysdesign/tests/grammar/**", "packs/grimble-sysdesign/pack.toml", "crates/gob-packs/src/sysdesign.rs", "crates/gob-packs/tests/sysdesign_pack.rs", "docs/grimble/packs/grimble-sysdesign.md", "changelog.d/01M43AYY70EPEM1YMACXEZW79B.added.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the clean example, when `grimble rule test` runs, then it passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an input the rule cannot decide, when run, then it is Unresolved, never clean"
