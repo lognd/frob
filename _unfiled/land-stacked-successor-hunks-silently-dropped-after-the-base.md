@@ -14,7 +14,7 @@ scope = ["src/frob/tickets/_land.py", "src/frob/tickets/_land_verify.py", "src/f
 
 [[acceptance]]
 text = "Given a stacked successor whose base squash-lands, when the successor lands, then land refuses with E-LAND-HUNKS-DROPPED if any of its hunks were lost, and a normal merge passes"
-bound = false
+bound = true
 +++
 
 Measured 2026-09-25 on the ledger-tiers stack (T-5748): after T-5749 (A1)
