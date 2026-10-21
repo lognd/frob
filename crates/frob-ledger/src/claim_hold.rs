@@ -11,6 +11,7 @@ use gob_time::Day;
 use tracing::{debug, info, warn};
 
 use crate::claim_window::{ClaimObservation, ClaimWindows};
+use crate::event::{Event, EventBody, LeaseData, LeaseOp};
 
 /// Seconds in a day.
 const DAY: i64 = 86_400;
@@ -195,6 +196,98 @@ impl Pause {
     }
 }
 
+/// What a ticket's `lease` events say about its claim: the latest hold and the latest reclaim.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ClaimRecord {
+    /// The newest hold, with its early resume applied.
+    pub hold: Option<Hold>,
+    /// Epoch seconds of the newest `reclaim` event.
+    pub reclaimed_at: Option<i64>,
+}
+
+impl ClaimRecord {
+    /// True while a hold still stops the idle clock at `now`.
+    #[must_use]
+    pub fn held_at(&self, now: i64) -> bool {
+        self.hold.as_ref().is_some_and(|h| h.is_active(now))
+    }
+}
+
+/// Fold the `lease` events of one ticket (any order) into its [`ClaimRecord`].
+#[must_use]
+pub fn fold_claim_record(events: &[Event]) -> ClaimRecord {
+    let mut sorted: Vec<(i64, &LeaseData)> = events
+        .iter()
+        .filter_map(|e| match &e.body {
+            EventBody::Lease(l) => Some((e.at.unix(), l)),
+            _ => None,
+        })
+        .collect();
+    sorted.sort_by_key(|(at, _)| *at);
+    let mut rec = ClaimRecord::default();
+    for (at, l) in sorted {
+        match l.op {
+            LeaseOp::Hold => {
+                let window = i64::try_from(l.window_secs.unwrap_or(0)).unwrap_or(i64::MAX);
+                rec.hold = Some(Hold {
+                    started_at: at,
+                    until: at.saturating_add(window),
+                    reason: l.reason.clone().unwrap_or_default(),
+                    resumed_at: None,
+                });
+            }
+            LeaseOp::Resume => {
+                if let Some(h) = rec.hold.as_mut() {
+                    h.resume(at);
+                }
+            }
+            LeaseOp::Reclaim => rec.reclaimed_at = Some(at),
+            LeaseOp::Evict | LeaseOp::Restore => {}
+        }
+    }
+    debug!(held = rec.hold.is_some(), reclaimed_at = ?rec.reclaimed_at, "claim record folded");
+    rec
+}
+
+/// A blank `lease` body for `op`.
+fn lease_body(op: LeaseOp) -> LeaseData {
+    LeaseData {
+        op,
+        holder: None,
+        observed: None,
+        parked: None,
+        tip: None,
+        idle_secs: None,
+        window_secs: None,
+        reason: None,
+    }
+}
+
+/// The `lease` op `hold` event body for `hold`; its end is stored as seconds after the event time.
+#[must_use]
+pub fn hold_event(hold: &Hold) -> EventBody {
+    EventBody::Lease(LeaseData {
+        window_secs: Some(u64::try_from(hold.until - hold.started_at).unwrap_or(0)),
+        reason: Some(hold.reason.clone()),
+        ..lease_body(LeaseOp::Hold)
+    })
+}
+
+/// The `lease` op `resume` event body: the hold ended early.
+#[must_use]
+pub fn resume_event() -> EventBody {
+    EventBody::Lease(lease_body(LeaseOp::Resume))
+}
+
+/// The `lease` op `reclaim` event body: `holder` re-created the claim by pushing its branch.
+#[must_use]
+pub fn reclaim_event(holder: &str) -> EventBody {
+    EventBody::Lease(LeaseData {
+        holder: Some(holder.to_owned()),
+        ..lease_body(LeaseOp::Reclaim)
+    })
+}
+
 /// The observation the idle arithmetic should see once a hold and the pauses are taken into account.
 ///
 /// An active hold pins the clock at zero; a hold that ended (expiry or early resume) restarts it from the end
@@ -299,6 +392,32 @@ mod tests {
         let h = Hold::new(NOW, day(2), "on leave", 0, &w).unwrap();
         let n = h.notice("~X", 0);
         assert_eq!(n, format!("~X held until {} (on leave)", day(2)));
+    }
+
+    // frob:tests crates/frob-ledger/src/claim_hold.rs::fold_claim_record
+    // frob:tests crates/frob-ledger/src/claim_hold.rs::hold_event
+    // frob:tests crates/frob-ledger/src/claim_hold.rs::resume_event
+    // frob:tests crates/frob-ledger/src/claim_hold.rs::reclaim_event
+    // frob:tests crates/frob-ledger/src/claim_hold.rs::ClaimRecord.held_at
+    #[test]
+    fn lease_events_fold_to_a_claim_record() {
+        let w = ClaimWindows::default();
+        let h = Hold::new(NOW, day(5), "leave", 0, &w).unwrap();
+        let at = |t: i64, b: EventBody| Event::new(gob_time::Stamp::from_unix(t), "a", b);
+        let hold = at(NOW, hold_event(&h));
+        let resume = at(NOW + DAY, resume_event());
+        let reclaim = at(NOW + 2 * DAY, reclaim_event("ann"));
+        let active = fold_claim_record(&[reclaim.clone(), hold.clone()]);
+        assert_eq!(active.hold, Some(h.clone()));
+        assert_eq!(active.reclaimed_at, Some(NOW + 2 * DAY));
+        assert!(active.held_at(NOW + DAY));
+        let ended = fold_claim_record(&[resume, hold, reclaim]);
+        assert_eq!(
+            ended.hold.as_ref().and_then(|x| x.resumed_at),
+            Some(NOW + DAY)
+        );
+        assert!(!ended.held_at(NOW + DAY));
+        assert_eq!(fold_claim_record(&[]), ClaimRecord::default());
     }
 
     // frob:tests crates/frob-ledger/src/claim_hold.rs::effective_observation

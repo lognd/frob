@@ -1,0 +1,1 @@
+Claim holds and reclaims are now persisted as `lease` ops `hold`, `resume` and `reclaim`, with `Workspace::hold_claim`, `resume_claim`, `record_reclaim` and `claim_record` to write and read them (DT14).

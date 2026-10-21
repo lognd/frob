@@ -296,6 +296,12 @@ pub enum LeaseOp {
     Evict,
     /// Parked work was put back as the ticket branch.
     Restore,
+    /// The holder promised to be away; the idle clock stops until the stated end (`claim hold`).
+    Hold,
+    /// The holder ended a hold early (`claim resume`).
+    Resume,
+    /// The holder's own push re-created an evicted claim (flap guard input, DT19).
+    Reclaim,
 }
 
 // frob:ticket 01M5DTGGCJ9BNXAD5TP1N3HRWA
@@ -320,7 +326,7 @@ pub struct LeaseData {
     /// Seconds the claim had been idle (`evict`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub idle_secs: Option<u64>,
-    /// The inactivity window in force, in seconds (`evict`).
+    /// The inactivity window in force, in seconds (`evict`); for `hold`, seconds from the event time to its end.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub window_secs: Option<u64>,
     /// Why, as given to the verb.
