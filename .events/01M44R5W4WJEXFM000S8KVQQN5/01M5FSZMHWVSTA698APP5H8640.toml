@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T18:01:11Z"
+digest = "336db7bb2b373f1bf9e23f27ceeaf2e93c1dbc9ccc86a19f5e35d0cd8c645820"
+exit_code = 0
+head = "e28b4f15f32529cb6ac04ef7159d6ffbe783ab39"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d5038cce-dd7a-4c41-a819-d9a599b3a0d0 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.006s] grimble-lints::rules tz_kwarg_time_time_and_aliases_are_decided_correctly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test rules tz_kwarg_time_time_and_aliases_are_decided_correctly"
+size = 562
+status = "measured"
+test_count = 1
+tests_digest = "bca50fd78cf77222442518c23b5c438cbe464ca38cbc85fe3eb9e60fffd27ab1"
+at = "2026-10-21T18:01:11Z"
+actor = "lognd"
+rev = 1
