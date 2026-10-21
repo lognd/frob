@@ -7,10 +7,14 @@ priority = "medium"
 points = 5
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-21T04:18:55Z"
+updated = "2026-10-21T04:23:43Z"
 aliases = ["T-6516"]
 labels = ["v1-cluster:C1a", "triage:accepted"]
 scope = ["src/frob/tickets/_land.py", "src/frob/tickets/_land_verify.py", "src/frob/coord/_status.py", "tests/unit/tickets/test_land_hunk_presence.py", "docs/design/tickets.md", "crates/frob-land/src/hunk_presence.rs", "crates/frob-land/src/land.rs", "crates/frob-land/src/lib.rs"]
+
+[[acceptance]]
+text = "Given a stacked successor whose base squash-lands, when the successor lands, then land refuses with E-LAND-HUNKS-DROPPED if any of its hunks were lost, and a normal merge passes"
+bound = false
 +++
 
 Measured 2026-09-25 on the ledger-tiers stack (T-5748): after T-5749 (A1)
