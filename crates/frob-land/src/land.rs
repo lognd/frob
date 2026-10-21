@@ -573,6 +573,14 @@ impl Ready {
                 "the worktree and branch {} were kept until the base and the ledger are both pushed",
                 self.branch
             ));
+        } else if let Some(siblings) = shared_with(leases, self.id, &self.wt_path) {
+            // frob:ticket 01M1QDTYR2FFF5HYHVZP2W1WMP
+            tracing::info!(ticket = %self.id, ?siblings, "series worktree kept for its sibling tickets");
+            self.out.warnings.push(format!(
+                "the worktree and branch {} were kept: {} sibling ticket(s) still hold leases on it; the last land removes it",
+                self.branch,
+                siblings.len()
+            ));
         } else if !opts.keep_worktree && self.wt_path != self.primary {
             self.out.worktree_removed = remove_worktree(
                 &self.repo,
@@ -1631,6 +1639,36 @@ pub(crate) fn push_ledger(
     }
 }
 
+// frob:ticket 01M1QDTYR2FFF5HYHVZP2W1WMP
+/// The other tickets in `holders` leased on `wt_path` (a series worktree), or `None` when `id` is its last holder.
+fn sharing_tickets<'a>(
+    holders: impl IntoIterator<Item = (TicketId, &'a Path)>,
+    id: TicketId,
+    wt_path: &Path,
+) -> Option<Vec<TicketId>> {
+    let here = canon(wt_path);
+    let others: Vec<TicketId> = holders
+        .into_iter()
+        .filter(|(t, p)| *t != id && canon(p) == here)
+        .map(|(t, _)| t)
+        .collect();
+    (!others.is_empty()).then_some(others)
+}
+
+// frob:ticket 01M1QDTYR2FFF5HYHVZP2W1WMP
+/// The sibling tickets still holding a live lease on `id`'s worktree; a snapshot failure counts as none.
+fn shared_with(leases: &LeaseStore, id: TicketId, wt_path: &Path) -> Option<Vec<TicketId>> {
+    let live = leases
+        .live_snapshot()
+        .inspect_err(|e| tracing::warn!(error = %e, "lease snapshot failed; treating the worktree as unshared"))
+        .ok()?;
+    sharing_tickets(
+        live.iter().map(|l| (l.ticket, l.holder.worktree.as_path())),
+        id,
+        wt_path,
+    )
+}
+
 /// Release the lease after landing; a failure is a warning.
 fn release(leases: &LeaseStore, id: TicketId, actor: &str, warnings: &mut Vec<String>) {
     match leases.release(id, Some(actor)) {
@@ -1919,5 +1957,18 @@ mod tests {
             "a name prefix is not containment"
         );
         assert!(!is_inside(tmp.path(), &wt));
+    }
+
+    // frob:ticket 01M1QDTYR2FFF5HYHVZP2W1WMP
+    // frob:tests crates/frob-land/src/land.rs::sharing_tickets
+    #[test]
+    fn a_series_worktree_is_kept_until_its_last_holder_lands() {
+        let (a, b, c) = (TicketId::mint(), TicketId::mint(), TicketId::mint());
+        let series = Path::new("/wt/series");
+        let other = Path::new("/wt/other");
+        let holders = [(a, series), (b, series), (c, other)];
+        assert_eq!(sharing_tickets(holders, a, series), Some(vec![b]));
+        assert_eq!(sharing_tickets([(a, series), (c, other)], a, series), None);
+        assert_eq!(sharing_tickets([(a, series)], a, series), None);
     }
 }
