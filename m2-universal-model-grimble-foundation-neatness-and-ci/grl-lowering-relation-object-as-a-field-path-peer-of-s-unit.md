@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T08:48:17Z"
-updated = "2026-10-21T22:45:44Z"
+updated = "2026-10-21T22:45:45Z"
 labels = ["area:grl"]
 scope = ["crates/gob-plan/src/lower/roles.rs", "crates/gob-plan/src/lower/mod.rs", "crates/gob-plan/tests/lower.rs", "crates/gob-plan/tests/lower_roles.rs", "changelog.d/01M5ETB7Y10SZTEWWKBR3AHZ1T.added.md", "crates/gob-plan/src/lower/convert.rs", "crates/gob-plan/tests/ten_rules/main.rs", "docs/design/grl-spec.md"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "A roles snippet that is a branch or loop with an empty or one-call body lowers"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A roles snippet with another root, an else, or another body is refused by name"

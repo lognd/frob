@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T22:45:45Z"
+digest = "51477b124a94ea64b5fa83d325bdffdf3db7850ef86116908a17b8ae7fb24421"
+exit_code = 0
+head = "c2ca97673a1e0ec2889ef75a0e5b66057d182849"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c6e5370c-aefe-4d96-a66b-31f7beeceff6 with nextest profile: default
+    Starting 1 test across 28 binaries (289 tests skipped)
+        PASS [   0.004s] gob-plan::lower_roles a_roles_snippet_with_one_call_or_no_body_lowers
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 289 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan a_roles_snippet_with_one_call"
+size = 563
+status = "measured"
+test_count = 1
+tests_digest = "79d634a91ece96713f0d5117246348fe66f6bb1d9ee724faf87063b9cc933fe3"
+at = "2026-10-21T22:45:45Z"
+actor = "lognd"
+rev = 1
