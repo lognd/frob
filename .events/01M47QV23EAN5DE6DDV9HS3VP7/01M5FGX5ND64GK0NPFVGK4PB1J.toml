@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T15:22:33Z"
+digest = "3051d686a71cf1e4cb2ee0a4c8fbc9e55f12d4bf8151eedea91ad46d794086af"
+exit_code = 0
+head = "781d629d452dd6c7e907c9508015f83fcd8a03a5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f377df7b-82d4-4391-83e2-89e35556ab1e with nextest profile: default
+    Starting 1 test across 11 binaries (204 tests skipped)
+        PASS [   0.013s] gob-dev ecosystem::tests::corpus_pins_at_least_five_projects_across_languages
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 204 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev corpus_pins_at_least_five_projects_across_languages"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "3691c7c21d015ecf374f0ebe3b616cb1287bf87a07ff7eaf0a37d28d0efb41b4"
+at = "2026-10-21T15:22:33Z"
+actor = "lognd"
+rev = 1
