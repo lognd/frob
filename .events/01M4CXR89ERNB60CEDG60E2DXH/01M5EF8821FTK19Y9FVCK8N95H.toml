@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T05:34:22Z"
+digest = "0a92846d889d8f155764559f281af8ab8ba1a9a934780f7f017ce7437948999c"
+exit_code = 0
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4905ae48-3dc9-4d3a-b156-09bef4a19212 with nextest profile: default
+    Starting 6 tests across 5 binaries (59 tests skipped)
+        PASS [   0.005s] crunk-spec screen_file::tests::screen_file_parses_extended_fields
+        PASS [   0.005s] crunk-spec screen_file::tests::screen_file_rejects_bad_states
+        PASS [   0.005s] crunk-spec::spec screens_and_platforms_absent_default_empty
+        PASS [   0.005s] crunk-spec screen_file::tests::old_screen_tables_serialize_without_new_fields
+        PASS [   0.006s] crunk-spec::spec review_table_and_screen_review_fields_load_and_validate
+        PASS [   0.009s] crunk-spec::spec screens_resolve_tags_and_report_dangling_references
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 6 tests run: 6 passed, 59 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec screen"
+size = 1289
+status = "measured"
+test_count = 6
+tests_digest = "6d24366f80cfb394fc712e73eba931c10f73ebe966dac0224574483b8ae6aa75"
+at = "2026-10-21T05:34:22Z"
+actor = "lognd"
+rev = 1
