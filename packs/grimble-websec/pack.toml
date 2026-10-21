@@ -8,6 +8,6 @@ version = "0.1.0"
 families = ["COMPLY", "PII", "ROUTE", "SEC", "SQL", "WEBPERF"]
 
 [provides]
-rules = ["rules/*.grl", "rules/route/*.grl", "rules/comply-pii/*.grl"]
+rules = ["rules/*.grl", "rules/route/*.grl", "rules/comply-pii/*.grl", "rules/webperf-server/*.grl"]
 
 [effects]

@@ -39,7 +39,10 @@ fn catalog_has_one_rule_per_family_with_websec_under_sec() {
             ("PII", "PII", "PII101"),
             ("PII", "PII", "PII102"),
             ("PII", "PII", "PII103"),
-            ("WEBPERF", "WEBPERF", "WEBPERF201")
+            ("WEBPERF", "WEBPERF", "WEBPERF201"),
+            ("WEBPERF", "WEBPERF", "WEBPERF202"),
+            ("WEBPERF", "WEBPERF", "WEBPERF203"),
+            ("WEBPERF", "WEBPERF", "WEBPERF204")
         ]
     );
     assert!(rows.iter().all(|r| r.pack == "grimble-websec"));
@@ -139,6 +142,34 @@ fn pii_slice_rules_fire_on_their_example_and_teach_a_remedy() {
 fn pii_rules_are_not_applicable_outside_python() {
     // No adapter for other languages: the markdown example proves NotApplicable, never clean.
     for id in ["PII101", "PII102", "PII103"] {
+        let (_, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        assert!(src.contains("example notapplicable markdown"), "{id}");
+    }
+}
+
+// frob:tests grimble_check.websec_pack.compile_rule
+#[test]
+fn webperf_server_rules_fire_on_their_example_and_teach_a_remedy() {
+    for id in ["WEBPERF202", "WEBPERF203", "WEBPERF204"] {
+        let (file, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{id}: {:?} {:?}", t.diagnostics, t.examples);
+        assert!(src.contains("example fire python"), "{id}");
+        assert!(src.contains("## Remedy"), "{id}");
+    }
+}
+
+// frob:tests grimble_check.websec_pack.compile_rule
+#[test]
+fn webperf_server_rules_are_not_applicable_outside_python() {
+    // No adapter for other languages: the markdown example proves NotApplicable, never clean.
+    for id in ["WEBPERF202", "WEBPERF203", "WEBPERF204"] {
         let (_, src) = pack::RULES
             .iter()
             .find(|(f, _)| f.ends_with(&format!("{id}.grl")))

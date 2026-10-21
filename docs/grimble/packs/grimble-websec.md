@@ -19,6 +19,9 @@ code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 | `packs/grimble-websec/rules/comply-pii/PII102.grl` | PII: personal data in an exception or error message |
 | `packs/grimble-websec/rules/comply-pii/PII103.grl` | PII: personal data cached with no expiry |
 | `packs/grimble-websec/rules/WEBPERF201.grl` | WEBPERF (server): blocking sleep in an async handler |
+| `packs/grimble-websec/rules/webperf-server/WEBPERF202.grl` | WEBPERF (server): unbounded `fetchall()` |
+| `packs/grimble-websec/rules/webperf-server/WEBPERF203.grl` | WEBPERF (server): unbounded ORM `objects.all()` |
+| `packs/grimble-websec/rules/webperf-server/WEBPERF204.grl` | WEBPERF (server): `send_file()` without `max_age` |
 
 Every rule has a firing, a clean and a not-applicable example and an `explain` with `## Remedy`;
 a rule without a firing and a clean example fails to compile (GRL011).
@@ -33,7 +36,7 @@ never clean.
 
 WEBSEC is a family of the pack, but its rule ids live in the SEC namespace (`SEC1xx`), so
 `grimble rule catalog` shows family `WEBSEC` with namespace `SEC`. WEBPERF server rules use
-`WEBPERF2xx`, to stay clear of the markup rules `WEBPERF1xx` in crunk-web.
+`WEBPERF2xx` (WEBPERF202 to WEBPERF204 are the first slice and read Python calls; other languages are NotApplicable or Unresolved, never clean), to stay clear of the markup rules `WEBPERF1xx` in crunk-web.
 
 The capability atoms `db.query` and `net` are owned by core-effects; this pack declares no
 atoms and an empty `[effects]` table.
