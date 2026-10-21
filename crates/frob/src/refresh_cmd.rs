@@ -88,6 +88,8 @@ pub struct RefreshReport {
     pub base_sync: String,
     /// Paths the ledger union could not resolve.
     pub conflicts: Vec<String>,
+    /// Tickets recorded as landed by a hosting-side merge during this sync, as `<handle> at <commit>`.
+    pub host_lands: Vec<String>,
     /// Seconds since the last probe; `None` when never probed or local-only.
     pub age_secs: Option<i64>,
     /// How the cached view relates to the remote: `fresh`, `stale`, `degraded`, `unknown` or `local-only`.
@@ -325,7 +327,13 @@ fn sync(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) -> Result
         plan.base,
         &tracking(plan.remote, plan.base),
     ) {
-        Ok(lands) => tracing::info!(count = lands.len(), "host lands recorded"),
+        Ok(lands) => {
+            tracing::info!(count = lands.len(), "host lands recorded");
+            rep.host_lands = lands
+                .iter()
+                .map(|l| format!("{} at {}", l.handle, l.commit))
+                .collect();
+        }
         Err(e) => tracing::warn!(error = %e, "host land detection failed"),
     }
     tracing::info!(ledger = %rep.ledger, pushed = rep.pushed, base = %rep.base_sync, "refresh sync done");
@@ -483,6 +491,7 @@ fn report(state: &RefreshState, status: String, outcome: &str, changed: bool) ->
         pushed: false,
         base_sync: "none".to_owned(),
         conflicts: Vec::new(),
+        host_lands: Vec::new(),
         age_secs: None,
         freshness: FreshState::Unknown,
         notices: Vec::new(),
@@ -500,6 +509,12 @@ fn with_freshness(
 ) -> Payload<RefreshReport> {
     let fresh = assess(state, has_remote, signals, now, Thresholds::from_sync(sync));
     out.warnings.extend(fresh.messages());
+    out.warnings.extend(
+        out.data
+            .host_lands
+            .iter()
+            .map(|l| format!("I-SYNC-HOST-LAND: {l} was merged on the host and is now done.")),
+    );
     out.data.age_secs = fresh.age_secs;
     out.data.freshness = fresh.state;
     out.data.notices = fresh.notices;

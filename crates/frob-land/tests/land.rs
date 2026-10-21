@@ -2916,3 +2916,31 @@ fn a_hosting_side_squash_with_the_ticket_trailer_is_recorded_as_a_land_and_close
     let again = frob_land::hostland::record_host_lands(&ledger, "main", MAIN).expect("again");
     assert!(again.is_empty(), "a done ticket is not recorded twice");
 }
+
+// frob:ticket 01M5DT8FKY9HJW3R9Q4CZB283M
+// frob:tests record_host_lands
+#[test]
+fn a_hosting_side_squash_without_a_trailer_is_matched_by_patch_id() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("hosted by patch", &["src/**"]);
+    let ledger = fx.ledger();
+    Fixture::commit_in(&s.wt, "src/a.txt", "one\n");
+    let none = frob_land::hostland::record_host_lands(&ledger, "main", MAIN).expect("scan");
+    assert!(none.is_empty(), "branch not merged yet: {none:?}");
+    // The host squashes the same change onto main with no trailer.
+    std::fs::create_dir_all(fx.root.join("src")).expect("mkdir");
+    std::fs::write(fx.root.join("src/a.txt"), "one\n").expect("write");
+    git(&fx.root, &["add", "-A"]);
+    git(&fx.root, &["commit", "-q", "-m", "squash without trailer"]);
+    let tip = fx.main_tip();
+    let found = frob_land::hostland::record_host_lands(&ledger, "main", MAIN).expect("record");
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].commit, tip);
+    assert_eq!(
+        ledger.show(s.id).expect("show").summary.category,
+        Category::Done
+    );
+}
