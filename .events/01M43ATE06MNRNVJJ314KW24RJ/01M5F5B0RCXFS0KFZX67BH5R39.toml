@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T12:00:21Z"
+digest = "3c3e07c321f2ba80efd174dbaa4226f82f709a9abf7bdcfd6c7b6fb9b1271ca5"
+exit_code = 0
+head = "dec6dafd4fb67367605f707b64bebc55a37320ac"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.00s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9dc1a978-7ee9-4e11-9cfb-d49a7da02741 with nextest profile: default
+    Starting 1 test across 4 binaries (18 tests skipped)
+        PASS [   0.008s] crunk-gallery::triage the_crate_does_not_depend_on_tokio_directly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 18 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery the_crate_does_not_depend_on_tokio"
+size = 890
+status = "measured"
+test_count = 1
+tests_digest = "137dad602af3bcb30eb418b3af0959135e898d19bc909a40c20452a27541a15c"
+at = "2026-10-21T12:00:21Z"
+actor = "lognd"
+rev = 1
