@@ -2,13 +2,13 @@
 id = "01M3Z7157776CWEKRPG8886VJ4"
 title = "grimble-ci: CI001-015 and DK001-004"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:26Z"
-updated = "2026-10-02T21:06:26Z"
+updated = "2026-10-21T10:15:29Z"
 idempotency_key = "m2-ci"
 labels = ["milestone:2"]
 scope = ["crates/grimble-ci/**"]
