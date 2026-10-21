@@ -9,7 +9,7 @@ parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T04:31:07Z"
 updated = "2026-10-21T06:49:30Z"
-scope = ["crates/frob-mirror/src/ledger_source.rs"]
+scope = ["crates/frob-mirror/src/ledger_source.rs", "crates/frob-mirror/src/lib.rs"]
 +++
 
 only the seam trait exists in host.rs. found while working R2MH98S
