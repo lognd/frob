@@ -2,7 +2,8 @@
 id = "01M4DGHT8H530QHR7VJPHFBHDJ"
 title = "gob-config schema export drops the $defs entries its $ref links point at, so row columns (ForbidImport) are untyped"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
