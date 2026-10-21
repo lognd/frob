@@ -1,0 +1,1 @@
+Added the first slice of grimble-sysdesign GRAMMAR rules in GRL (GRAMMAR102 node-name-not-snake-case, GRAMMAR103 node-name-generic, GRAMMAR104 node-name-repeats-kind), each with firing, clean and not-applicable examples and a Remedy.

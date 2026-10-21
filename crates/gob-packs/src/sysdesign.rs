@@ -21,7 +21,7 @@ pub const FILE: &str = "<builtin>/grimble-sysdesign/pack.toml";
 const MANIFEST_TEXT: &str = include_str!("../../../packs/grimble-sysdesign/pack.toml");
 
 /// Embedded GRL sources by pack-relative path, one rule per file.
-pub const RULES: [(&str, &str); 3] = [
+pub const RULES: [(&str, &str); 6] = [
     (
         "rules/STORE101.grl",
         include_str!("../../../packs/grimble-sysdesign/rules/STORE101.grl"),
@@ -33,6 +33,18 @@ pub const RULES: [(&str, &str); 3] = [
     (
         "rules/GRAMMAR101.grl",
         include_str!("../../../packs/grimble-sysdesign/rules/GRAMMAR101.grl"),
+    ),
+    (
+        "rules/grammar/GRAMMAR102.grl",
+        include_str!("../../../packs/grimble-sysdesign/rules/grammar/GRAMMAR102.grl"),
+    ),
+    (
+        "rules/grammar/GRAMMAR103.grl",
+        include_str!("../../../packs/grimble-sysdesign/rules/grammar/GRAMMAR103.grl"),
+    ),
+    (
+        "rules/grammar/GRAMMAR104.grl",
+        include_str!("../../../packs/grimble-sysdesign/rules/grammar/GRAMMAR104.grl"),
     ),
 ];
 

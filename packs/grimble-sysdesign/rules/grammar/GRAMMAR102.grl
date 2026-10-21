@@ -1,0 +1,23 @@
+rule GRAMMAR102 "node-name-not-snake-case" {
+  lang -
+  severity warn
+  needs model
+
+  find n: model.nodes where not n.name ~ /^[a-z][a-z0-9_]*$/
+  report n "node {n.name} is not lower snake_case: rename it so references stay uniform"
+
+  example fire {
+    model """node UserDB { kind store; }"""
+  }
+  example clean {
+    model """node user_db { kind store; }"""
+  }
+  example notapplicable markdown """
+    Prose declares no model nodes.
+  """
+  explain """
+    A model whose node names mix cases and separators is hard to grep and invites two spellings of one node (`UserDB`, `user_db`); the vocabulary of a language is only as good as its naming rule.
+    ## Remedy
+    Rename the node to lower snake_case: a lowercase letter first, then lowercase letters, digits and underscores.
+  """
+}
