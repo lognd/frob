@@ -2993,6 +2993,8 @@ dependencies = [
  "gob-ir",
  "gob-languages",
  "gob-mdtest",
+ "gob-packs",
+ "gob-plan",
  "gob-rules",
  "gob-symbols",
  "gob-text",
@@ -3005,6 +3007,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror",
  "toml",
  "tracing",
 ]
