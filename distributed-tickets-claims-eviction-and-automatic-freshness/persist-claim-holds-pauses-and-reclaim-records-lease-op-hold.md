@@ -2,13 +2,13 @@
 id = "01M5E0F8MC9XT2PCCB9XG6E8X3"
 title = "Persist claim holds, pauses and reclaim records (lease op hold/resume/reclaim)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T01:16:06Z"
-updated = "2026-10-21T01:16:18Z"
+updated = "2026-10-21T01:16:20Z"
 idempotency_key = "dt14-persist-hold-store"
 +++
 
