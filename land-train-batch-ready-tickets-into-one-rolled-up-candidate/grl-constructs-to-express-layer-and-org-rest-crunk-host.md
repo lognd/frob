@@ -2,7 +2,8 @@
 id = "01M54GWME19N64RRMBTCZSG7YJ"
 title = "GRL constructs to express LAYER and ORG, rest: crunk host input, bucket attribute, glob membership, crunk.json side relations, gen rules non-std target"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
