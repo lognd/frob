@@ -1,0 +1,74 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T22:08:25Z"
+digest = "67127be975ab8849e171de78fa702a7506612e52fbf6b456baf07babafaf2a2e"
+exit_code = 0
+head = "32252ace223f5e4d4aff15d9f7bc1946e3a6aac6"
+inline = '''
+   Compiling hashbrown v0.17.1
+   Compiling serde_json v1.0.151
+   Compiling tracing v0.1.44
+   Compiling smallvec v1.16.2
+   Compiling darling_core v0.20.11
+   Compiling bstr v1.13.1
+   Compiling winnow v1.0.4
+   Compiling ahash v0.8.12
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling half v2.7.1
+   Compiling clap_builder v4.6.7
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling hashbrown v0.14.5
+   Compiling rand_chacha v0.9.0
+   Compiling ciborium-ll v0.2.2
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling proptest v1.11.0
+   Compiling globset v0.4.20
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling ciborium v0.2.2
+   Compiling indexmap v2.14.2
+   Compiling hashlink v0.9.1
+   Compiling schemars v1.2.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling ignore v0.4.33
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling rusqlite v0.32.1
+   Compiling tinytemplate v1.2.1
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling tree-sitter v0.27.0
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling petgraph v0.8.3
+   Compiling gungraun-macros v0.10.0
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling clap v4.6.7
+   Compiling criterion v0.5.1
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gungraun v0.20.0
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 36.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b97d087b-8218-4714-9712-a9754f3b1807 with nextest profile: default
+    Starting 1 test across 27 binaries (279 tests skipped)
+        PASS [   0.006s] gob-plan::catalog the_shipped_config_schema_types_forbid_import_columns
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 279 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan the_shipped_config_schema_types_forbid_import_columns"
+size = 2558
+status = "measured"
+test_count = 1
+tests_digest = "51981e07c1a78749a05109aeaf77233866fe917e5d4ec071a25c055d3d70605b"
+at = "2026-10-21T22:08:25Z"
+actor = "lognd"
+rev = 1
