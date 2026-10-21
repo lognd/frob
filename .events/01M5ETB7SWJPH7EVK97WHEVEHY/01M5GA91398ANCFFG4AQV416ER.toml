@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T22:45:54Z"
+digest = "8d83fc4a00e05b638276d3a052f16048d67ca7b4a4abd225346d84d2930c3a38"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID efe7bdf8-bd3f-42b1-b394-15df861239b9 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.009s] gob-plan::examples_model node_and_owned_by_follow_the_model_selectors
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test examples_model node_and_owned_by"
+size = 610
+status = "measured"
+test_count = 1
+tests_digest = "132bbafafc97d29a800304eb3eba7442f28170a10d41f6a73815ca9f02543817"
+at = "2026-10-21T22:45:54Z"
+actor = "lognd"
+rev = 1
