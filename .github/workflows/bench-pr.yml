@@ -1,0 +1,77 @@
+name: bench-pr
+
+# Deterministic instruction-count benchmarks (gungraun, Valgrind callgrind) at the PR base and
+# head, commented as per-benchmark deltas. Non-blocking; see docs/design/build-test-ci.md.
+# frob:ticket 01M47QVC49RXV29NCG3N9G1JSM
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  GUNGRAUN_RUNNER_VERSION: "0.20.0"
+
+jobs:
+  instruction-counts:
+    name: instruction counts (head vs base)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # frob:accept TOOL002 because="sccache has no maintained first-party action; pinned by commit sha"
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      # frob:accept TOOL002 because="a local composite action must be addressed with ./; actionlint rejects the $/ form zizmor suggests"
+      - uses: ./.github/actions/install-linker
+      - name: Install valgrind and the gungraun runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
+          cargo install gungraun-runner --version "$GUNGRAUN_RUNNER_VERSION" --locked
+      - name: Benchmark the head
+        run: |
+          cargo bench -p gob-plan --bench ic_plan -- --save-summary=json
+          mkdir -p "$RUNNER_TEMP/head"
+          cp -r target/gungraun "$RUNNER_TEMP/head/"
+          rm -rf target/gungraun
+      - name: Benchmark the base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git worktree add "$RUNNER_TEMP/base-src" "$BASE_SHA"
+          # The base may predate the bench; a missing bench shows up as "new" in the table.
+          mkdir -p "$RUNNER_TEMP/base"
+          if [ -f "$RUNNER_TEMP/base-src/crates/gob-plan/benches/ic_plan.rs" ]; then
+            (cd "$RUNNER_TEMP/base-src" \
+              && CARGO_TARGET_DIR="$GITHUB_WORKSPACE/target" \
+                 cargo bench -p gob-plan --bench ic_plan -- --save-summary=json)
+            cp -r target/gungraun "$RUNNER_TEMP/base/"
+          fi
+      - name: Compare and comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          cargo run -q -p gob-dev -- bench-ic \
+            --base "$RUNNER_TEMP/base" --head "$RUNNER_TEMP/head" > "$RUNNER_TEMP/comment.md"
+          cat "$RUNNER_TEMP/comment.md" >> "$GITHUB_STEP_SUMMARY"
+          gh pr comment "$PR" --edit-last --create-if-none --body-file "$RUNNER_TEMP/comment.md"

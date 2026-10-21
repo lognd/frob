@@ -14,6 +14,7 @@
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
 
+pub mod bench_ic;
 pub mod changes;
 pub mod ci;
 pub mod files;
