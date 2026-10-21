@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-21T18:01:12Z"
+digest = "45739339065d7f413f826054ce263646b21f50984f43144db049e5cc90ae06fa"
+exit_code = 0
+head = "e28b4f15f32529cb6ac04ef7159d6ffbe783ab39"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c0e005f5-44ba-420f-a460-042aaf9f7bf1 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.005s] grimble-lints::rules time_without_roles_is_unresolved_and_empty_walk_is_not_applicable
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test rules time_without_roles_is_unresolved_and_empty_walk_is_not_applicable"
+size = 575
+status = "measured"
+test_count = 1
+tests_digest = "7ab33c606936c30f530bb3ce80b76cc595296b34e2e9465de16021db35d7e94d"
+at = "2026-10-21T18:01:12Z"
+actor = "lognd"
+rev = 1

@@ -8,7 +8,7 @@ points = 5
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:18Z"
-updated = "2026-10-21T18:01:11Z"
+updated = "2026-10-21T18:01:12Z"
 scope = ["crates/grimble-lints/**", "crates/grimble-check/src/**", "crates/grimble/src/explain_cmd.rs", "docs/design/rules.md", "docs/reference/rules/**", "changelog.d/01M44R5W4WJEXFM000S8KVQQN5.added.md"]
 
 [[links]]
@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "A walk with TypeScript or C# files reports TIME001 and TIME002 Unresolved, and a walk with no Rust or Python file is not applicable"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The TIME rules are registered in the grimble check pipeline with a repo:time group, host and explain pages"
