@@ -1,0 +1,30 @@
+kind = "evidence"
+captured_at = "2026-10-21T00:51:34Z"
+digest = "5e776c9584e932114955263bcd5fc80af6b7b6c786a0951631d9c299752fa22c"
+exit_code = 0
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d774496d-0e85-422b-91bc-49f7da2f12c1 with nextest profile: default
+    Starting 3 tests across 7 binaries (100 tests skipped)
+        PASS [   0.005s] frob-worktree claim_restore::tests::refusals_carry_their_codes
+        PASS [   0.005s] frob-worktree claim_restore::tests::restore_event_names_source_tip_and_reason
+        PASS [   0.005s] frob-worktree evict::tests::reclaim_restores_from_newest_unless_someone_holds_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 100 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree claim_restore"
+size = 1092
+status = "measured"
+test_count = 3
+tests_digest = "d733da8445a02b861f5f523363f278aa0a2e7e1d1ab95eefcc9eee5064a53322"
+at = "2026-10-21T00:51:34Z"
+actor = "lognd"
+rev = 1
