@@ -2,7 +2,8 @@
 id = "01M4DYPHVAG574Z9ZJZ41PCRHB"
 title = "Wire check_file_with and compile_report to the config schema the binary ships"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
