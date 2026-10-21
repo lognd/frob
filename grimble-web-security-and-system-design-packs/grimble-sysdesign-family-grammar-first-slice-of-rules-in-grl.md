@@ -11,7 +11,7 @@ created = "2026-10-04T11:32:05Z"
 updated = "2026-10-21T12:26:05Z"
 idempotency_key = "crunk-plan-g_GRAMMAR"
 labels = ["area:grimble"]
-scope = ["packs/grimble-sysdesign/rules/grammar/**", "packs/grimble-sysdesign/tests/grammar/**", "packs/grimble-sysdesign/pack.toml"]
+scope = ["packs/grimble-sysdesign/rules/grammar/**", "packs/grimble-sysdesign/tests/grammar/**", "packs/grimble-sysdesign/pack.toml", "crates/gob-packs/src/sysdesign.rs"]
 
 [[links]]
 kind = "blocked-by"

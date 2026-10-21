@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["packs/grimble-sysdesign/rules/grammar/**", "packs/grimble-sysdesign/tests/grammar/**", "packs/grimble-sysdesign/pack.toml"]
+new = ["packs/grimble-sysdesign/rules/grammar/**", "packs/grimble-sysdesign/tests/grammar/**", "packs/grimble-sysdesign/pack.toml", "crates/gob-packs/src/sysdesign.rs"]
+at = "2026-10-21T12:26:05Z"
+actor = "lognd"
+rev = 1
