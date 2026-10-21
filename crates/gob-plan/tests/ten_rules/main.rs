@@ -25,7 +25,7 @@ const RULES: [(&str, &str); 10] = [
 /// and the entry is deleted, so the list can only shrink.
 const KNOWN_ENGINE_GAPS: [(&str, usize); 4] = [
     ("DOC002", 1),  // example runner lacks multi-file `file "..."` inputs
-    ("NEAT031", 0), // ~R3AHZ1T: lowering rejects a field-path relation object
+    ("NEAT031", 0), // ~BZNRM2K: lowering refuses a count compared with knob * count
     ("NEAT031", 1),
     ("NEAT031", 2),
 ];

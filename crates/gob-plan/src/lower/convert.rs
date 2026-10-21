@@ -508,18 +508,16 @@ fn field_cond(kind: &str, var: &str, field: &str, rhs: Opd) -> Cond {
     }
 }
 
-/// `x is` a snippet: a match op on a variable; the `as roles` form is refused.
+/// `x is` a snippet: a match op on a variable, or its roles lift for the `as roles` form.
 fn is_snippet_cond(
-    cx: &Cx,
+    cx: &mut Cx,
     subject: &Term,
     snippet: &crate::grl::Snippet,
     roles: bool,
     span: Span,
 ) -> Result<Cond, LowerError> {
-    if roles {
-        return unsupported("`is` a snippet as roles", span);
-    }
     match var_name(cx, subject)? {
+        Some(var) if roles => super::roles::roles_cond(&var, snippet, &mut cx.fresh, span),
         Some(var) => snippet_cond(cx, &var, snippet, false, span),
         None => unsupported("`is` a snippet on a non-variable", subject.span),
     }
@@ -1090,6 +1088,27 @@ fn with_object(
                     return Ok(build(w.text.clone()));
                 }
                 (w.text.clone(), Vec::new())
+            }
+            TermKind::Path(p) if p.segments.len() > 1 => {
+                // A field path (`s.unit`) is a node-valued field: bind the node it names.
+                let Opd::Field(v, f) = operand(cx, t)? else {
+                    return unsupported("this relation object", t.span);
+                };
+                let var = format!("_{}", cx.fresh);
+                cx.fresh += 1;
+                return Ok(Cond::Quant {
+                    quant: Quant::Some,
+                    var: var.clone(),
+                    kind: ANY_NODES.to_owned(),
+                    cond: Box::new(Cond::And(vec![
+                        Cond::Cmp {
+                            lhs: Opd::Field(v, f),
+                            op: CmpOp::Eq,
+                            rhs: Opd::Var(var.clone()),
+                        },
+                        build(var),
+                    ])),
+                });
             }
             _ => return unsupported("this relation object", t.span),
         },
