@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/**", "crates/frob-obligations/src/unity.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/**", "docs/reference/rules/UNITY001.md", "docs/reference/rules/UNITY002.md", "docs/reference/rules/UNITY003.md", "docs/reference/rules/README.md", "packs/unity.toml"]
+new = ["crates/gob-rules/**", "crates/frob-obligations/src/unity.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/**", "docs/reference/rules/UNITY001.md", "docs/reference/rules/UNITY002.md", "docs/reference/rules/UNITY003.md", "docs/reference/rules/README.md", "packs/unity.toml", "crates/frob-obligations/src/rules/**"]
+at = "2026-10-21T19:17:32Z"
+actor = "lognd"
+rev = 1
