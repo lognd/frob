@@ -2,7 +2,8 @@
 id = "01M4M5CRRV5A6P5WHHVHXP981B"
 title = "Wire GRL config column checking to the shipped config schema"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
