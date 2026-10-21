@@ -2,7 +2,8 @@
 id = "01M44YQXS4BXE0X07FBYR0STJ5"
 title = "unity vocabulary pack: skeleton, registration and engine entry points as reach roots"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
