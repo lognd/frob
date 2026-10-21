@@ -2,7 +2,8 @@
 id = "01M5E1MXMVSDYCE9SZYAJEBGZG"
 title = "claim hold / claim resume verbs over Workspace::hold_claim and resume_claim"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
