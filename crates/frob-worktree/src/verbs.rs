@@ -31,20 +31,25 @@ struct Opened {
     root: PathBuf,
 }
 
-/// Load the `[claims]` tables into the policy `work --next` evicts by; `None` when they cannot be loaded.
-// frob:ticket 01M5DWZYEFXGXNRQ4KH8DKB004
-fn evict_policy(root: &std::path::Path, in_ci: bool) -> Option<EvictPolicy> {
+/// Load the `[claims]` and `[claims.class]` tables into the window rules; `Err` carries why they cannot be read.
+// frob:ticket 01M5E1MXMVSDYCE9SZYAJEBGZG
+fn claim_windows(root: &std::path::Path) -> Result<ClaimWindows, String> {
     let tables = gob_config::ConfigDocument::read(root, "frob").and_then(|doc| {
         Ok((
             doc.table::<ClaimsTable>()?.value,
             doc.table::<ClaimsClassTable>()?.value,
         ))
     });
-    let windows = match tables {
+    match tables {
         Ok((claims, class)) => ClaimWindows::from_tables(&claims, &class),
         Err(e) => Err(e.to_string()),
-    };
-    match windows {
+    }
+}
+
+/// Load the `[claims]` tables into the policy `work --next` evicts by; `None` when they cannot be loaded.
+// frob:ticket 01M5DWZYEFXGXNRQ4KH8DKB004
+fn evict_policy(root: &std::path::Path, in_ci: bool) -> Option<EvictPolicy> {
+    match claim_windows(root) {
         Ok(windows) => {
             tracing::debug!(in_ci, "work --next: eviction policy loaded");
             Some(EvictPolicy {
@@ -641,9 +646,162 @@ impl Command for ClaimEvict {
     }
 }
 
+/// The flags of `claim hold`, declared once.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct HoldArgs {
+    #[command(flatten)]
+    ticket: TicketArg,
+    #[arg(
+        long,
+        value_name = "DATE",
+        required = true,
+        help = "Last day of the hold (YYYY-MM-DD, UTC)"
+    )]
+    until: String,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        required = true,
+        help = "Why the holder is away"
+    )]
+    reason: String,
+}
+
+/// Output of `claim hold`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct HoldData {
+    /// Full ULID.
+    pub id: TicketId,
+    /// Handle with `~`.
+    pub handle: String,
+    /// The last day of the hold.
+    pub until: String,
+    /// Epoch seconds at which the hold ends.
+    pub until_secs: i64,
+}
+
+/// Stop a claim's idle clock until a date, for a holder who is away.
+// frob:ticket 01M5E1MXMVSDYCE9SZYAJEBGZG
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "claim hold",
+    product = "frob",
+    idempotent = false,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ClaimHold {
+    ticket: String,
+    until: String,
+    reason: String,
+}
+
+impl Command for ClaimHold {
+    type Data = HoldData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<HoldArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<HoldArgs>(m)?;
+        Ok(Self {
+            ticket: a.ticket.ticket,
+            until: a.until,
+            reason: a.reason,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<HoldData> {
+        let until: gob_time::Day = self.until.parse().map_err(WorktreeError::Usage)?;
+        let opened = Opened::new(ctx)?;
+        let windows = claim_windows(&opened.root).map_err(WorktreeError::Config)?;
+        let now = opened.ledger.clock().now().unix();
+        // No local-zone source is available here; the hold ends at the end of a UTC day.
+        let hold =
+            opened
+                .workspace()
+                .hold_claim(&self.ticket, until, &self.reason, now, 0, &windows)?;
+        let id = opened
+            .ledger
+            .resolve(&self.ticket)
+            .map_err(WorktreeError::from)?;
+        let handle = opened
+            .ledger
+            .show(id)
+            .map_err(WorktreeError::from)?
+            .summary
+            .handle;
+        Ok(Payload::new(HoldData {
+            id,
+            handle,
+            until: until.to_string(),
+            until_secs: hold.until,
+        }))
+    }
+}
+
+/// Output of `claim resume`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ResumeData {
+    /// Full ULID.
+    pub id: TicketId,
+    /// Handle with `~`.
+    pub handle: String,
+    /// True when an active hold was ended; false when there was none.
+    pub resumed: bool,
+}
+
+/// End a claim hold early; a ticket with no active hold is left alone.
+// frob:ticket 01M5E1MXMVSDYCE9SZYAJEBGZG
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "claim resume",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ClaimResume {
+    ticket: String,
+}
+
+impl Command for ClaimResume {
+    type Data = ResumeData;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<TicketArg>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<TicketArg>(m)?;
+        Ok(Self { ticket: a.ticket })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<ResumeData> {
+        let opened = Opened::new(ctx)?;
+        let now = opened.ledger.clock().now().unix();
+        let resumed = opened.workspace().resume_claim(&self.ticket, now)?;
+        let id = opened
+            .ledger
+            .resolve(&self.ticket)
+            .map_err(WorktreeError::from)?;
+        let handle = opened
+            .ledger
+            .show(id)
+            .map_err(WorktreeError::from)?
+            .summary
+            .handle;
+        Ok(Payload::new(ResumeData {
+            id,
+            handle,
+            resumed,
+        }))
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::evict_policy;
+    use super::{claim_windows, evict_policy};
 
     // frob:tests evict_policy
     #[test]
@@ -669,5 +827,19 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("frob.toml"), "[claims]\nbogus = 1\n").unwrap();
         assert!(evict_policy(dir.path(), false).is_none());
+    }
+
+    // frob:tests claim_windows
+    #[test]
+    fn claim_windows_loads_defaults_and_rejects_a_bad_table() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("frob.toml"),
+            "[claims]\nmax_hold_days = 7\n",
+        )
+        .unwrap();
+        assert!(claim_windows(dir.path()).is_ok());
+        std::fs::write(dir.path().join("frob.toml"), "[claims]\nbogus = 1\n").unwrap();
+        assert!(claim_windows(dir.path()).is_err());
     }
 }
