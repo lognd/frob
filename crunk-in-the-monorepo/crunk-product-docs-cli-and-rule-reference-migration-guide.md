@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:17Z"
-updated = "2026-10-21T07:52:30Z"
+updated = "2026-10-21T07:52:34Z"
 idempotency_key = "crunk-plan-docs"
 labels = ["area:crunk"]
 scope = ["docs/crunk/**", "README.md", "crates/crunk/tests/docs.rs", "changelog.d/01M43AVMAY5VB8K1885CDYEYV6.added.md"]
@@ -27,7 +27,7 @@ target = "01M43ATCQVX9A1TJ6A4AE48FDX"
 
 [[acceptance]]
 text = "Given the docs, when `cargo dev gen --check` runs, then generated pages are current"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given each Python crunk verb, when the migration guide is read, then its Rust equivalent or its removal is stated"
