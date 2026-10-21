@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:40Z"
-updated = "2026-10-21T09:46:20Z"
+updated = "2026-10-21T09:47:46Z"
 idempotency_key = "m2-mirror2-prop-liveness"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/prop_liveness.rs", "changelog.d/01M4052WHPPDKMCBA9Y1BM06W5.added.md"]
@@ -23,7 +23,7 @@ target = "01M4052WAB3H52W92NYG3AS571"
 
 [[acceptance]]
 text = "Given finite random edits and faults, when runs repeat, then every repository-owned field eventually equals the ledger and stays so"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a human edit and no further ledger push, when only scheduled runs occur, then the edit is reverted and recorded (F1)"
