@@ -8,9 +8,9 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T19:41:49Z"
-updated = "2026-10-21T08:28:09Z"
+updated = "2026-10-21T08:28:10Z"
 labels = ["found-while-working"]
-scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs"]
+scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "crates/frob-worktree/src/activity.rs"]
 +++
 
 Verb to mark a claim active without a commit; consumes activity.rs observe_event.
