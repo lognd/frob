@@ -8,10 +8,10 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:38Z"
-updated = "2026-10-21T12:25:08Z"
+updated = "2026-10-21T12:25:51Z"
 idempotency_key = "crunk-plan-g_WEBPERF-server"
 labels = ["area:grimble"]
-scope = ["packs/grimble-websec/rules/webperf-server/**", "packs/grimble-websec/tests/webperf-server/**"]
+scope = ["packs/grimble-websec/rules/webperf-server/**", "packs/grimble-websec/tests/webperf-server/**", "changelog.d/01M43AY47AXTWJ4TWG29WTBWT9.added.md"]
 
 [[links]]
 kind = "blocked-by"
