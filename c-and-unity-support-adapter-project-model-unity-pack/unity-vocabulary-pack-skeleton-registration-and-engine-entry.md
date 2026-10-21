@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:01Z"
-updated = "2026-10-21T12:57:46Z"
+updated = "2026-10-21T12:57:47Z"
 idempotency_key = "d94-pack"
 scope = ["crates/gob-ir/**", "crates/gob-packs/**", "crates/frob-tests/src/reach.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/src/refs.rs", "packs/unity.toml", "docs/design/packs.md", "docs/reference/config.md", "crates/frob-tests/Cargo.toml", "crates/frob-obligations/Cargo.toml", "crates/frob-obligations/tests/unity.rs", "changelog.d/01M44YQXS4BXE0X07FBYR0STJ5.added.md", "Cargo.lock"]
 
@@ -38,7 +38,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a [MenuItem] static method in an editor assembly, when the pack is enabled, then it is a reach root"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the pack file, when frob check runs the pack validators, then no PACK finding is raised"
