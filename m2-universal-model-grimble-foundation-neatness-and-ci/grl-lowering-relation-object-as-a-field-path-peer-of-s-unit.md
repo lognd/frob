@@ -2,7 +2,8 @@
 id = "01M5ETB7Y10SZTEWWKBR3AHZ1T"
 title = "GRL lowering: relation object as a field path (peer of s.unit) and as roles snippets (NEAT031)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
