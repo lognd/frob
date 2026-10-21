@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T23:21:31Z"
+digest = "547b7923e8b74a30a7a2e805c875dba1773ef962e0fb8690f95f540740c4b65a"
+exit_code = 0
+head = "4d1938948fdbccd3981d4b9cc54298979233226d"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f3693103-f39f-49a6-8cac-9aacf4a53a91 with nextest profile: default
+    Starting 1 test across 2 binaries (294 tests skipped)
+        PASS [   0.007s] gob-symbols::it csharp::implicit_usings_resolve_a_repo_type_from_an_implicit_namespace
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 294 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols implicit_usings_resolve"
+size = 700
+status = "measured"
+test_count = 1
+tests_digest = "bf96795128ab4667b01802c7c0434b93c078b4f476e7abc4d67ab9a66cdd6769"
+at = "2026-10-21T23:21:31Z"
+actor = "lognd"
+rev = 1
