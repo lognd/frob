@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-06T04:44:06Z"
-updated = "2026-10-21T23:21:32Z"
-scope = ["crates/gob-check/src", "crates/gob-check/src/product.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/status.rs", "crates/gob-check/tests/pipeline.rs"]
+updated = "2026-10-21T23:21:45Z"
+scope = ["crates/gob-check/src", "crates/gob-check/src/product.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/status.rs", "crates/gob-check/tests/pipeline.rs", "changelog.d/01M47RDBED35TFDEHQ1YTG1ZYC.added.md"]
 
 [[acceptance]]
 text = "Given a malformed .csproj or .sln, when gob-check runs, then a finding names the file and the project is marked Unresolved"
