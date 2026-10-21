@@ -2,7 +2,8 @@
 id = "01M5E19XVSQ8D454Y9E6BJAWPM"
 title = "Share the claim-evict note marker between frob-pm board and frob-worktree"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
