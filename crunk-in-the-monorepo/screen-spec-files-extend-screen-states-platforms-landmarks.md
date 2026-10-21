@@ -2,7 +2,8 @@
 id = "01M4CXR89ERNB60CEDG60E2DXH"
 title = "Screen spec files extend [[screen]]: states, platforms, landmarks, copy keys, status and content hash; STATE001-006"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
