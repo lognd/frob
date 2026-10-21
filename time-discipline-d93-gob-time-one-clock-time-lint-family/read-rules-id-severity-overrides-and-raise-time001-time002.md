@@ -2,13 +2,13 @@
 id = "01M5FSSDC7EG5QA70CRABC8SMA"
 title = "Read [rules.<id>] severity overrides and raise TIME001/TIME002 to Error in grimble.toml"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-21T17:57:48Z"
-updated = "2026-10-21T20:15:20Z"
+updated = "2026-10-21T20:15:21Z"
 scope = ["crates/grimble-check/src/**", "grimble.toml", "docs/design/rules.md"]
 +++
 
