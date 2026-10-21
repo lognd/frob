@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T03:52:06Z"
+digest = "01c619e0a46f53c0ba993a6f0a07124841e3c9f7ea3fe0828b756d65be9ac233"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bef67f40-e975-4dd6-9ee1-7803ce1be86d with nextest profile: default
+    Starting 1 test across 4 binaries (163 tests skipped)
+        PASS [   0.005s] frob-mirror run::tests::blind_run_stops_with_mir001_and_does_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 163 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror blind_run"
+size = 616
+status = "measured"
+test_count = 1
+tests_digest = "5cd304dd73b9ab5eb50341e0bec407494d7a8d1537e8677918f34c4491007e29"
+at = "2026-10-21T03:52:06Z"
+actor = "lognd"
+rev = 1
