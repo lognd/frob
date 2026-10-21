@@ -46,6 +46,8 @@ jobs:
       full: ${{ steps.diff.outputs.full }}
       crunk: ${{ steps.diff.outputs.crunk }}
       node: ${{ steps.diff.outputs.node }}
+      workflows: ${{ steps.diff.outputs.workflows }}
+      docs_only: ${{ steps.diff.outputs.docs_only }}
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
@@ -62,15 +64,17 @@ jobs:
         id: diff
         shell: bash
         run: |
-          # The path-to-job-set mapping is .github/scripts/plan-jobs.py (tested by
-          # crates/gob-dev/tests/ci_plan.rs): prose-only, crunk-only, or the whole workspace.
+          # The path-to-job-set mapping is data (crates/gob-dev/changes.toml, also read by
+          # `cargo dev changes`) applied by .github/scripts/plan-jobs.py, which needs no compile
+          # (tested by crates/gob-dev/tests/ci_plan.rs): docs only, crunk-only, or the whole workspace.
           # frob:ticket 01M43ARWT173GKANZ322H41VF1
+          # frob:ticket 01M47QVD03PGCAZ301WHC5Q4MF
           if [ "$EVENT" = "pull_request" ]; then
             base="$PR_BASE"
           else
             base=$(gh run list --repo "$REPO" --workflow ci.yml --branch "$REF_NAME" --status success --limit 1 --json headSha --jq '.[0].headSha // empty' || true)
           fi
-          plan="rust=true"$'\n'"full=true"$'\n'"crunk=false"$'\n'"node=true"
+          plan="rust=true"$'\n'"full=true"$'\n'"crunk=false"$'\n'"node=true"$'\n'"workflows=true"$'\n'"docs_only=false"
           if [ -n "$base" ] && git cat-file -e "$base^{commit}" 2>/dev/null; then
             if files=$(git diff --name-only "$base" "$SHA"); then
               plan=$(printf '%s\n' "$files" | python3 .github/scripts/plan-jobs.py)
@@ -298,6 +302,47 @@ jobs:
       # One generator covers all three products (monorepo.md 4).
       - name: Generated files are current (GEN001)
         run: cargo dev gen all --check
+
+  # frob:ticket 01M47QVD03PGCAZ301WHC5Q4MF
+  # A docs-only diff (build-test-ci.md section 6) runs fmt, the generated-file check and frob
+  # check only, the steps `docs_only_steps` lists in crates/gob-dev/changes.toml.
+  docs-only:
+    name: docs-only (fmt, gen, check)
+    needs: changes
+    if: ${{ needs.changes.outputs.docs_only == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-docs-only
+      cancel-in-progress: true
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # frob:accept TOOL002 because="sccache has no maintained first-party action; pinned by commit sha"
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal --component rustfmt --component clippy
+          rustup default "$channel"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      # frob:accept TOOL002 because="a local composite action must be addressed with ./; actionlint rejects the $/ form zizmor suggests"
+      - uses: ./.github/actions/install-linker
+      - name: rustfmt
+        run: cargo dev ci --step fmt
+      - name: Generated files are current (GEN001)
+        run: cargo dev ci --step gen
+      - name: Make the ledger ref resolvable
+        run: bash .github/scripts/ensure-ledger-refs.sh
+      - name: frob check
+        run: cargo dev ci --step check
 
   # frob:ticket 01M43ARWT173GKANZ322H41VF1
   # Optional (never required for merge): the node Tailwind runtime tests with node mandatory, so a

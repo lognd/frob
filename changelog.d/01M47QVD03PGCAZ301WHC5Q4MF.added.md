@@ -1,0 +1,1 @@
+Change detection for CI: `crates/gob-dev/changes.toml` maps changed paths to job sets (rust, crunk, node, workflows, docs-only), shared by `plan-jobs.py` and `cargo dev changes` / `cargo dev ci --since`; a docs-only diff runs only fmt, gen and check.

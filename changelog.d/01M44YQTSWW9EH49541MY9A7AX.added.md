@@ -1,0 +1,1 @@
+DOC001 reads C# `///` XML doc comments (`<summary>`, `<param>`, `<returns>`, `<inheritdoc/>`) above a member as its documentation, so documented public C# members are accepted and bare ones are flagged at the member.

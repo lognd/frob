@@ -1,9 +1,10 @@
 ---
-source: crates/gob-symbols/tests/corpus.rs
+source: crates/gob-symbols/tests/it/corpus.rs
+assertion_line: 149
 expression: out
 ---
 == term ==
-(unit "file" "impl" @csharp (comment "// leading note") (unit "class" "impl" name="C" (group "sequence" (lit "name" "C") (lit "public" "public") (lit "class" "class")) (group "sequence" (comment "/// <summary>Does the thing.</summary>") (unit "method" "impl" name="Run" (group "sequence" (lit "name" "Run") (lit "public" "public") (lit "predefined_type" "void") (lit "(" "(") (lit ")" ")")) (group "sequence" (csharp.block (lit "{" "{") (comment "// inside the body") (lit "}" "}")))))))
+(unit "file" "impl" @csharp (comment "// leading note") (unit "class" "impl" name="C" (group "sequence" (lit "name" "C") (lit "public" "public") (lit "class" "class")) (group "sequence" (comment "/// <summary>Does the thing.</summary>") (unit "method" "impl" name="Run" (attr "doc" (lit "str" "<summary>Does the thing.</summary>")) (group "sequence" (lit "name" "Run") (lit "public" "public") (lit "predefined_type" "void") (lit "(" "(") (lit ")" ")")) (group "sequence" (csharp.block (lit "{" "{") (comment "// inside the body") (lit "}" "}")))))))
 == scope graph ==
 S0
 S1 lexical>S0:Must
