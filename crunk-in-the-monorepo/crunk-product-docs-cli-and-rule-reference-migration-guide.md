@@ -2,7 +2,8 @@
 id = "01M43AVMAY5VB8K1885CDYEYV6"
 title = "crunk product docs: CLI and rule reference, migration guide from Python crunk"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
