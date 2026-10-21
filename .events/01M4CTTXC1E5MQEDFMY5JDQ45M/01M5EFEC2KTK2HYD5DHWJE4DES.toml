@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T05:37:41Z"
+digest = "d139061b641172ef1a98898a4cd6ab04859ff09df43d35ede20e857a7806641f"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.90s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8d143c16-1219-43da-9b06-9851d5b4c34e with nextest profile: default
+    Starting 4 tests across 4 binaries (420 tests skipped)
+        PASS [   0.345s] frob-cli::it text_views::text_views_are_not_the_generic_key_dump
+        PASS [   0.473s] frob-cli::it text_views::ticket_list_and_doable_text_are_tables
+        PASS [   0.501s] frob-cli::it text_views::cycle_show_and_list_text_are_human_views
+        PASS [   0.512s] frob-cli::it text_views::ticket_show_text_is_a_human_view
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.514s] 4 tests run: 4 passed, 420 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli text_views"
+size = 878
+status = "measured"
+test_count = 4
+tests_digest = "8c55dea1f27d8facafee37719a56f0aa835db150135e1d9d3e6426def1517f92"
+at = "2026-10-21T05:37:41Z"
+actor = "lognd"
+rev = 1
