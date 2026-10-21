@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T09:20:27Z"
+digest = "932bbf04960b54755aab8ef6c66e2be44c4a0670530da50912e568929ed8019c"
+exit_code = 0
+head = "ea47e3197feffe273d2ec4b85271f83390fe4083"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0ba2a029-f69e-46fe-afde-8b93adcf15f7 with nextest profile: default
+    Starting 1 test across 6 binaries (177 tests skipped)
+        PASS [   0.005s] frob-mirror closing::tests::keyword_closure_with_done_ledger_reverts_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 177 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror keyword_closure_with_done_ledger"
+size = 624
+status = "measured"
+test_count = 1
+tests_digest = "21d8c9aaa2ceecf84401f6aa40249624f4f75d80bc72baf16917dd4a713356e6"
+at = "2026-10-21T09:20:27Z"
+actor = "lognd"
+rev = 1
