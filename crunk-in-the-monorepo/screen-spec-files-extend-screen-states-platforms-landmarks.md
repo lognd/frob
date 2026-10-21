@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-08T04:53:39Z"
-updated = "2026-10-21T05:17:13Z"
-scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json"]
+updated = "2026-10-21T05:30:51Z"
+scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**", "crates/crunk-rules/**", "docs/crunk/**", "docs/schemas/crunk.json", "docs/reference/rules/AFFECT001.md"]
 
 [[acceptance]]
 text = "Given a screen spec, when checked, then STATE coverage and status hash rules apply and old [[screen]] tables still load"
