@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T11:03:40Z"
+digest = "6ec8a11ec191b0cb09c9cfa082d3d56a2e6ea8381c1c9098fe93e45cfd314033"
+exit_code = 0
+head = "cae650f6c6db18b9a62f91161c1531231c08511e"
+inline = '''
+   Compiling libc v0.2.189
+   Compiling tracing-core v0.1.36
+   Compiling trybuild v1.0.121
+   Compiling tracing v0.1.44
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling getrandom v0.4.3
+   Compiling tempfile v3.27.0
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 38c23ef4-6976-4ae4-a33a-8b9f9b14b2fe with nextest profile: default
+    Starting 1 test across 6 binaries (46 tests skipped)
+        PASS [   0.004s] gob-rules id::tests::long_families_up_to_the_cap_are_accepted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 46 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules long_families"
+size = 795
+status = "measured"
+test_count = 1
+tests_digest = "9a95d923a892ff50522d656800ae5f7deab91bd8d09a07a5094635a92e32b5b8"
+at = "2026-10-21T11:03:40Z"
+actor = "lognd"
+rev = 1
