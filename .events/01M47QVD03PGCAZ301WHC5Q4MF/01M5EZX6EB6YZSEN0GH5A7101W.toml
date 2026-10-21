@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T10:25:28Z"
+digest = "e2377d13c82289408e3bd5d6bbfefcb0b8b2272db684e12e35d2f6735ecf6a2c"
+exit_code = 0
+head = "dd4645c737794d8a39230d3e1822b4ecb68dc4c6"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 70350e67-03a3-43a2-8cd2-4f7dddb2f259 with nextest profile: default
+    Starting 1 test across 9 binaries (171 tests skipped)
+        PASS [   0.007s] gob-dev changes::tests::rust_diff_selects_the_full_set
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 171 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev changes::tests::rust_diff_selects_the_full_set"
+size = 547
+status = "measured"
+test_count = 1
+tests_digest = "88bcc964bc25f015b0749607617b3d495b61d6ed7809784e014ea14e98fb79a6"
+at = "2026-10-21T10:25:28Z"
+actor = "lognd"
+rev = 1
