@@ -8,7 +8,7 @@ points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
 reporter = "lognd"
 created = "2026-10-03T20:59:45Z"
-updated = "2026-10-21T16:08:13Z"
+updated = "2026-10-21T16:21:38Z"
 scope = ["crates/gob-*/**", "Cargo.lock", "changelog.d/01M41S1MYKQEG5RRJNSKHR84D9.changed.md", "docs/design/paths.md"]
 
 [[links]]
