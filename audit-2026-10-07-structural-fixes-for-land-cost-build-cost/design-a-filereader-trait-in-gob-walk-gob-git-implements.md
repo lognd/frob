@@ -2,7 +2,8 @@
 id = "01M4Q3A2SA49G06ZVAN753TYM2"
 title = "Design A: FileReader trait in gob-walk (gob-git implements), callers take an injected reader"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
