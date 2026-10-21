@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T07:52:29Z"
+digest = "9ac1e070cff3b6dffaab1c7ddefebfe4fec8d599753d74558c3972a34eb1c2a4"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 45c2b6a3-8d8d-46f7-bc7f-6cb24b22a05f with nextest profile: default
+    Starting 2 tests across 1 binary (9 tests skipped)
+        PASS [   0.006s] crunk-check::crunk_web_pack launch_rules_carry_teaching_text_and_a_remedy
+        PASS [   0.010s] crunk-check::crunk_web_pack every_launch_rule_passes_its_examples
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 2 tests run: 2 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test crunk_web_pack launch"
+size = 757
+status = "measured"
+test_count = 2
+tests_digest = "87b2b79dbae8e2dc2b0b1f223d9054fb98d6b8debd4b28f8e5acec80c8348ef6"
+at = "2026-10-21T07:52:29Z"
+actor = "lognd"
+rev = 1
