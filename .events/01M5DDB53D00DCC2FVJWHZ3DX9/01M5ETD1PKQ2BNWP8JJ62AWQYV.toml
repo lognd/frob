@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T08:48:54Z"
+digest = "267e205d88459bb8f4b4f54657f21259c42af95c73afcafa335aca13e631ac29"
+exit_code = 0
+head = "940fdad3bc2b0dd3af5b4e14d014a0cf39eac034"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ea3b9301-bba2-40f8-a755-1f6efa3db73e with nextest profile: default
+    Starting 1 test across 9 binaries (113 tests skipped)
+        PASS [   0.005s] frob-worktree activity::tests::a_holder_renew_is_soft_once_and_others_count_for_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 113 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree a_holder_renew"
+size = 687
+status = "measured"
+test_count = 1
+tests_digest = "44faeab30ee19229ba99e6d804bf2720f8dcd40f82a5ea9dc5c011c7e681b141"
+at = "2026-10-21T08:48:54Z"
+actor = "lognd"
+rev = 1
