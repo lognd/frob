@@ -9,7 +9,7 @@ parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T04:31:06Z"
 updated = "2026-10-21T06:48:16Z"
-scope = ["crates/frob-mirror/src/host.rs", "crates/frob-mirror/src/progress.rs", "crates/frob-mirror/src/run.rs"]
+scope = ["crates/frob-mirror/src/host.rs", "crates/frob-mirror/src/progress.rs", "crates/frob-mirror/src/run.rs", "docs/design/mirror.md"]
 
 [[acceptance]]
 text = "The driver advances the index change_feed cursor to the feed cursor after a clean, completed run that reconciled every feed item, and holds it otherwise"
