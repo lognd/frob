@@ -147,3 +147,21 @@ class A {}
 ```text
 TODO tidy this
 ```
+
+### TODO001 bare work markers / Language matrix #17 (line 123) (notapplicable)
+
+```text
+TODO tidy this
+```
+
+### TODO001 bare work markers / Language matrix #18 (line 127) (fire)
+
+````markdown
+# Title
+
+```text
+TODO inside a fence is code, not a marker
+```
+
+<!-- TODO tidy this --> <!-- error: TODO001 -->
+````

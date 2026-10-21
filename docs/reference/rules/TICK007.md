@@ -36,3 +36,9 @@ edit smuggled line
 ```text
 reindex
 ```
+
+### TICK007 reindex commit that does not replay / A reindex whose trailer names another frob version is unresolved #3 (line 23) (unresolved)
+
+```text
+stale-reindex
+```

@@ -36,3 +36,10 @@ exit 3
 ```sh
 exit 0
 ```
+
+### TOOL001 tool stage failed / A stage whose output its parser cannot read is unresolved #3 (line 23) (unresolved)
+
+```sh
+# parser: zizmor-json-v1
+echo "not json"
+```

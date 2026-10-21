@@ -51,3 +51,15 @@ size_cap = 4096
 
 Fits.
 ```
+
+### READ001 unreadable file / A file over the size cap is never read, so it is unresolved #3 (line 32) (unresolved)
+
+```text
+=== frob.toml
+[check]
+size_cap = 64
+=== docs/big.md
+# Big
+
+This file is well over the sixty-four byte cap set above, so it is skipped.
+```
