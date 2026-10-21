@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T09:19:35Z"
+digest = "b9d3da6e33ec9dfaf3d7259bf69d128d157e00eb927d1ef28a01782c2ef5cd99"
+exit_code = 0
+head = "ea47e3197feffe273d2ec4b85271f83390fe4083"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fd1b5ff9-d4ac-4c76-8885-7ed54c94a0b4 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.033s] frob-mirror::prop_dups a_human_editing_the_marker_later_never_causes_a_second_issue
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.034s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror --test prop_dups a_human_editing"
+size = 570
+status = "measured"
+test_count = 1
+tests_digest = "a1d64e55830d4e24ffc2fcbc6ada58d185cb42805a86de59b1c4da1dab005d74"
+at = "2026-10-21T09:19:35Z"
+actor = "lognd"
+rev = 1

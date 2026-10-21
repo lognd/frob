@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:40Z"
-updated = "2026-10-21T09:19:34Z"
+updated = "2026-10-21T09:19:35Z"
 idempotency_key = "m2-mirror2-prop-dups"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/prop_dups.rs"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a human editing a marker in a later revision, when a run looks up the ticket, then no second issue is created (F4)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given lost or crashed creates with no late delivery, when runs repeat over many seeds, then never two issues exist for the ticket"
