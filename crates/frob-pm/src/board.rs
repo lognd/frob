@@ -37,7 +37,7 @@
 // frob:ticket 01M4069W45P08YPC4YH4XZVMNC
 // frob:ticket 01M48Q29NESQDWE88YC8HBYT4Z
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use frob_ledger::TicketId;
 use frob_ledger::event::{Event, EventBody};
@@ -52,6 +52,10 @@ use crate::eval::wip::{Wip, WipLimits};
 pub const DONE_DAYS: i64 = 7;
 /// Default cap on cards per column (`Input::show`); the rest are counted in [`Column::hidden`].
 pub const DEFAULT_SHOWN: usize = 8;
+/// Days within which a second eviction of the same holder marks a ticket as flapping (matches the claim flap guard).
+pub const FLAP_DAYS: i64 = 14;
+/// Start of the transition reason `claim evict` records; the holder follows, then a space.
+const EVICT_MARKER: &str = "claim evicted from ";
 /// Narrowest column the side-by-side layout accepts before stacking.
 const MIN_CELL: usize = 16;
 /// Gap between side-by-side columns.
@@ -122,6 +126,8 @@ pub struct Card {
     pub stale: bool,
     /// Due date, when set.
     pub due: Option<String>,
+    /// The same holder was evicted from this ticket twice inside [`FLAP_DAYS`] (flapping claim).
+    pub flapped: bool,
 }
 
 /// A column or the expedite lane: its cards, count and limit.
@@ -167,6 +173,8 @@ pub struct Input {
     pub holders: BTreeMap<TicketId, String>,
     /// Todo tickets in `doable` order; the todo column lists these first.
     pub doable_order: Vec<TicketId>,
+    /// Tickets whose claim is flapping (see [`flapping`]); their cards carry a `FLAPPING` mark.
+    pub flapped: BTreeSet<TicketId>,
     /// The injected clock.
     pub now: Stamp,
     /// Most cards listed per column (0 lists all); in-progress and the lane are never cut.
@@ -183,6 +191,35 @@ pub fn entered(events: &[Event], summary: &Summary) -> Stamp {
             _ => None,
         })
         .unwrap_or(summary.created)
+}
+
+/// True when `events` hold two evictions of one holder, both within [`FLAP_DAYS`] of `now`.
+// frob:ticket 01M5DTGGF23J4TQX4DPWASSQCF
+pub fn flapping(events: &[Event], now: Stamp) -> bool {
+    let mut seen: BTreeMap<&str, usize> = BTreeMap::new();
+    for e in events {
+        let EventBody::Transition(t) = &e.body else {
+            continue;
+        };
+        let Some(rest) = t
+            .reason
+            .as_deref()
+            .and_then(|r| r.strip_prefix(EVICT_MARKER))
+        else {
+            continue;
+        };
+        if now.unix() - e.at.unix() > FLAP_DAYS * 86_400 {
+            continue;
+        }
+        let holder = rest.split(' ').next().unwrap_or(rest);
+        let n = seen.entry(holder).or_default();
+        *n += 1;
+        if *n >= 2 {
+            tracing::debug!(holder, "flapping claim");
+            return true;
+        }
+    }
+    false
 }
 
 /// True when the board shows `s` at all and, for done tickets, `now` is inside the recent window.
@@ -215,6 +252,7 @@ fn card(s: &Summary, input: &Input, stale: bool) -> Card {
         age: format_age(age_secs),
         stale,
         due: s.due.map(|d| d.to_string()),
+        flapped: input.flapped.contains(&s.id),
     }
 }
 
@@ -422,6 +460,9 @@ fn marks(c: &Card) -> String {
     }
     if c.stale {
         parts.push("STALE".to_owned());
+    }
+    if c.flapped {
+        parts.push("FLAPPING".to_owned());
     }
     if let Some(d) = &c.due {
         parts.push(format!("due {}", &d[..d.len().min(10)]));

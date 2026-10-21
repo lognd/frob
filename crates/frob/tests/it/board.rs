@@ -146,6 +146,7 @@ fn fixture() -> Input {
         entered,
         holders,
         doable_order: Vec::new(),
+        flapped: std::collections::BTreeSet::new(),
         now: now(),
         show: board::DEFAULT_SHOWN,
     }
@@ -174,6 +175,51 @@ fn text_board_at_a_fixed_width_and_clock() {
     );
     assert!(narrow.iter().all(|l| l.len() <= 50), "stacked fits too");
     assert_snapshot!("board_text_50_stacked", narrow.join("\n"));
+}
+
+fn eviction(holder: &str, when: Stamp) -> Event {
+    let mut e = transition("todo", when);
+    if let EventBody::Transition(t) = &mut e.body {
+        t.reason = Some(format!("claim evicted from {holder} after 9s idle: x"));
+    }
+    e
+}
+
+#[test]
+fn repeat_evicted_ticket_is_flagged_on_its_card() {
+    // frob:tests crates/frob-pm/src/board.rs::flapping
+    // frob:tests crates/frob-pm/src/board.rs::marks
+    let twice = [eviction("a", at(10, 0)), eviction("a", at(2, 0))];
+    assert!(board::flapping(&twice, now()));
+    let two_holders = [eviction("a", at(10, 0)), eviction("b", at(2, 0))];
+    assert!(!board::flapping(&two_holders, now()));
+    let stale = [eviction("a", at(30, 0)), eviction("a", at(2, 0))];
+    assert!(!board::flapping(&stale, now()));
+
+    let mut input = fixture();
+    let flagged = input.tickets[0].id;
+    input.flapped.insert(flagged);
+    let b = board::build(&input);
+    let text = board::render(
+        &b,
+        &RenderOptions {
+            width: 100,
+            color: false,
+        },
+    )
+    .join("\n");
+    assert_eq!(text.matches("FLAPPING").count(), 1);
+    assert!(
+        !board::render(
+            &board::build(&fixture()),
+            &RenderOptions {
+                width: 100,
+                color: false
+            }
+        )
+        .join("\n")
+        .contains("FLAPPING")
+    );
 }
 
 #[test]
@@ -521,6 +567,7 @@ fn brief_fixture() -> (board::Board, board::BriefInput) {
         entered,
         holders,
         doable_order,
+        flapped: std::collections::BTreeSet::new(),
         now: now(),
         show: board::DEFAULT_SHOWN,
     };
