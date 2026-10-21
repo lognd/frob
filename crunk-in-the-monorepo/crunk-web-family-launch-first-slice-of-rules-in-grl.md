@@ -11,7 +11,7 @@ created = "2026-10-04T11:30:15Z"
 updated = "2026-10-21T07:46:43Z"
 idempotency_key = "crunk-plan-web_LAUNCH"
 labels = ["area:crunk"]
-scope = ["packs/crunk-web/rules/launch/**", "packs/crunk-web/tests/launch/**", "crates/crunk-check/src/packs.rs", "crates/crunk-check/tests/crunk_web_pack.rs", "packs/crunk-web/pack.toml"]
+scope = ["packs/crunk-web/rules/launch/**", "packs/crunk-web/tests/launch/**", "crates/crunk-check/src/packs.rs", "crates/crunk-check/tests/crunk_web_pack.rs", "packs/crunk-web/pack.toml", "changelog.d/01M43AVJWX0T0XSYDX323BQFSY.added.md"]
 
 [[links]]
 kind = "blocked-by"
