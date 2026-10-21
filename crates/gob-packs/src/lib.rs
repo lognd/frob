@@ -40,6 +40,7 @@ mod plan_cache;
 pub mod replaces;
 #[path = "std/mod.rs"]
 pub mod std_pack;
+pub mod sysdesign;
 pub mod tier1;
 mod validate;
 

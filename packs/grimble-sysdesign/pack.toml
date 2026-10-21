@@ -1,0 +1,16 @@
+# The grimble-sysdesign std pack manifest (D89, plugins.md section 4). It owns the STORE,
+# SYSDESIGN and GRAMMAR families. Reads, per rule (the scaffold decision of ~060142M):
+#   STORE101     reads CODE (call nodes in python and typescript)
+#   SYSDESIGN101 reads the .grmb MODEL (`lang -`, side relation model.nodes and model.selectors)
+#   GRAMMAR101   reads the .grmb MODEL (`lang -`, side relation model.nodes)
+# Rules over store and infrastructure code join STORE, rules over the declared design join
+# SYSDESIGN, and rules over the model vocabulary itself join GRAMMAR.
+[pack]
+name = "grimble-sysdesign"
+version = "0.1.0"
+families = ["GRAMMAR", "STORE", "SYSDESIGN"]
+
+[provides]
+rules = ["rules/*.grl"]
+
+[effects]

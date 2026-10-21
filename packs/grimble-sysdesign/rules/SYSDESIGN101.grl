@@ -1,0 +1,20 @@
+rule SYSDESIGN101 "node-owns-whole-tree" {
+  lang -
+  severity warn
+  needs model
+
+  find s: model.selectors where s.selector ~ /^"?\*\*"?$/
+  report s "node {s.node} owns the whole tree: scope it to the code it is accountable for"
+
+  example fire {
+    model """node db { kind store; owns "**"; }"""
+  }
+  example clean {
+    model """node db { kind store; owns "src/db/**"; }"""
+  }
+  explain """
+    A node that owns every file has no boundary, so design drift in any module is attributed to it and ownership review means nothing.
+    ## Remedy
+    Narrow the `owns` selector to the directories the node is accountable for.
+  """
+}

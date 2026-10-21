@@ -10,7 +10,7 @@ pub(crate) const MAX_VERSION: usize = 64;
 /// Most families one pack may own.
 pub(crate) const MAX_FAMILIES: usize = 64;
 /// Longest family prefix (letters only).
-pub(crate) const MAX_FAMILY: usize = 8;
+pub(crate) const MAX_FAMILY: usize = 12;
 /// Most entries in `needs`.
 pub(crate) const MAX_NEEDS: usize = 32;
 /// Longest version requirement in `needs`.

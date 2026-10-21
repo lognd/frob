@@ -2,6 +2,7 @@
 // frob:ticket 01M4CTE9W9QH6SBZSJ3E0E8M28
 mod autocrlf;
 mod check;
+mod csharp;
 mod equivalence;
 mod evaluation;
 mod fidelity;

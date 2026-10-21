@@ -14,7 +14,7 @@ sections 4.1, 4.2 and 4.6).
 | Opaque F0 (no adapter), text, comments scanned (TOML) | one Unresolved per rule naming the file count (no visibility, links or items), except NotApplicable where the matrix declares it (style) | examined |
 | YAML F1 (`.yml`, `.yaml`: block-mapping keys as nested units `path::outer.inner`), comments scanned | NotApplicable | examined |
 | Python F3 (`.py`, `.pyi`: modules, classes, functions, methods, imports, calls, decorators, docstrings), comments scanned | NotApplicable for DOC002 (markdown only); DOC001 and COV001 examined | examined |
-| C# F1 (`.cs`; `.csx` is not C#: namespaces, types, members, attributes, preprocessor conditions; imports and calls land next), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
+| C# F1 (`.cs`; `.csx` is not C#: namespaces, types, members, attributes, preprocessor conditions, usings, calls, XML doc comments, NUnit, xUnit, MSTest and UnityTest methods), comments scanned | DOC001 examined (XML doc comments; namespaces are flagged, see the C# capability row); NotApplicable for DOC002 (markdown only); COV001 examined | examined |
 | TypeScript and JavaScript F3 (`.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`: functions, classes, methods, interfaces, types, enums, namespaces, constants, ESM and CJS imports, exports, calls, JSX elements and attributes as terms, test runner calls), comments scanned | NotApplicable for DOC001 and DOC002 (Rust only for now); COV001 examined | examined |
 | CSS F2 (`.css`: style rules, at-rules, declarations and custom properties as `gob_ir::style` terms, `var()` uses linked to definitions at May; SCSS and Less not yet), comments scanned | NotApplicable | examined |
 | Opaque F0, text, not scanned (for example `.json`) | one Unresolved per rule naming the file count (D106: no adapter is a gap, never a silent pass) | one Unresolved per rule naming the file count |
@@ -22,6 +22,29 @@ sections 4.1, 4.2 and 4.6).
 | Parse failed | Unresolved | Unresolved |
 | Partial parse (holes) | examined, plus an Unresolved for symbol rules | examined |
 | Fidelity below the rule's minimum (COV001 and AFFECT001 need F2) | Unresolved | Unresolved |
+
+### C# capability row
+
+The C# adapter's cells, each `Implemented`, `NotApplicable(reason)` or `Gap(ticket)`. The
+conformance fixtures are `crates/gob-symbols/tests/corpus/csharp/solution` (two projects,
+a partial type, an extension method, NUnit and xUnit tests, `#if` branches) and
+`.../unity` (a MonoBehaviour with `Awake` and `Update`, `[SerializeField]`, a `[UnityTest]`,
+an asmdef pair), checked against snapshots in `crates/gob-symbols/tests/it/snapshots` and
+run through `frob check` in `crates/frob-check/tests/it/csharp.rs`.
+
+| Cell | Status |
+|---|---|
+| Symbols (namespaces, types, members, attributes) | Implemented |
+| Imports (`using`, `using static`, aliases) and calls | Implemented |
+| Test ids (NUnit, xUnit, MSTest, `[UnityTest]`) | Implemented |
+| .NET projects (`.sln`, `.csproj` packages and references) | Implemented |
+| Unity projects (asmdef, asmref, implicit assemblies) | Implemented |
+| XML doc comments (DOC001) | Implemented |
+| DOC002 (markdown links) | NotApplicable(markdown only) |
+| Preprocessor `#if/#elif/#else` branches | Gap(~TGMC3A2): the file folds Partial, so COV001 is Unresolved for it |
+| Partial types merged across files | Gap(~DKZXTCN): each part is its own unit |
+| DOC001 on namespaces | Gap(~1769XWM): C# cannot document a namespace |
+| `.sln`, `.csproj`, `.asmdef` as rule subjects | NotApplicable(project files feed the package model, not the symbol rules; reported as opaque by AFFECT001) |
 
 A `#` directive comment in a YAML file binds to the key on the next line (stacked
 comments share it; a blank line ends the block; a trailing comment binds to its

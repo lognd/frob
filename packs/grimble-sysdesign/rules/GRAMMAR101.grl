@@ -1,0 +1,20 @@
+rule GRAMMAR101 "unknown-node-kind" {
+  lang -
+  severity warn
+  needs model
+
+  find n: model.nodes where not n.kind in ["component", "store", "queue", "cache", "gateway", "external"]
+  report n "node {n.name} has kind {n.kind}, which is not a core kind: enable the pack that adds it"
+
+  example fire {
+    model """node w { kind widget; }"""
+  }
+  example clean {
+    model """node q { kind queue; }"""
+  }
+  explain """
+    The core node kinds are component, store, queue, cache, gateway and external; any other kind needs a pack that declares it.
+    ## Remedy
+    Use a core kind, or enable the pack that adds the kind.
+  """
+}
