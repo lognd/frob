@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-21T21:40:57Z"
+updated = "2026-10-21T21:40:58Z"
 scope = ["crates/grimble-ci/**", "docs/design/cicd.md", "changelog.d/01M5F010QB00AR00D4HYVYYPWH.added.md"]
 
 [[acceptance]]
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "CI010 flags checkout without persist-credentials false when artifacts or third-party actions are used"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The supply rules tolerate empty, non-mapping and unterminated input without panicking"
