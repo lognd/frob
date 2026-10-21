@@ -2,7 +2,8 @@
 id = "01M5F010QB00AR00D4HYVYYPWH"
 title = "grimble-ci: CI001/CI006 grimble fallbacks and CI007, CI010"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
