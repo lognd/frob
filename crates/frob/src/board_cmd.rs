@@ -65,6 +65,14 @@ fn recent_done(s: &Summary, now: Stamp) -> bool {
 /// The `--brief` signals of each in-progress ticket, by handle.
 type Signals = BTreeMap<String, Vec<Signal>>;
 
+/// Card entry times, `--brief` signals and repeat-evicted tickets from one bulk event read.
+type EventReads = (BTreeMap<TicketId, Stamp>, Signals, BTreeSet<TicketId>);
+
+/// True for a ticket whose claim can be evicted or re-evicted (todo or in progress).
+fn claimable(s: &Summary) -> bool {
+    matches!(s.category, Category::Todo | Category::InProgress)
+}
+
 /// Card entry times and `--brief` signals, from one bulk read of the events of the tickets that need them.
 // frob:ticket 01M4BH8WMBDTAT4R0ST9VT321D
 fn read_events(
@@ -72,20 +80,24 @@ fn read_events(
     tickets: &[Summary],
     brief: bool,
     now: Stamp,
-) -> Result<(BTreeMap<TicketId, Stamp>, Signals), CliError> {
+) -> Result<EventReads, CliError> {
     let in_progress = |s: &Summary| brief && s.category == Category::InProgress;
     let wanted: BTreeSet<TicketId> = tickets
         .iter()
-        .filter(|s| in_progress(s) || recent_done(s, now))
+        .filter(|s| in_progress(s) || recent_done(s, now) || claimable(s))
         .map(|s| s.id)
         .collect();
     let all_events = ledger.events_many(&wanted).map_err(cli_err)?;
     let mut entered = BTreeMap::new();
     let mut signals = Signals::new();
+    let mut flapped = BTreeSet::new();
     for s in tickets {
         let Some(events) = all_events.get(&s.id) else {
             continue;
         };
+        if claimable(s) && board::flapping(events, now) {
+            flapped.insert(s.id);
+        }
         if in_progress(s) {
             signals.insert(
                 s.handle.clone(),
@@ -96,7 +108,7 @@ fn read_events(
             entered.insert(s.id, board::entered(events, s));
         }
     }
-    Ok((entered, signals))
+    Ok((entered, signals, flapped))
 }
 
 /// Commit time of the newest commit on `branch` that the checked-out base lacks, or `None`.
@@ -342,7 +354,7 @@ impl Command for BoardVerb {
             .map(|s| s.id)
             .collect();
 
-        let (entered, signals) = read_events(&ledger, &tickets, self.brief, now)?;
+        let (entered, signals, flapped) = read_events(&ledger, &tickets, self.brief, now)?;
         let blocked_ids: Vec<(TicketId, String)> = tickets
             .iter()
             .filter(|s| s.blocked && s.category == Category::Todo)
@@ -355,6 +367,7 @@ impl Command for BoardVerb {
             entered,
             holders,
             doable_order,
+            flapped,
             now,
             show: self.cards,
         });
