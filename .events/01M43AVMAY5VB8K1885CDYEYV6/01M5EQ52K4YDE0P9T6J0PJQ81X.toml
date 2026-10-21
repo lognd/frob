@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T07:52:16Z"
+digest = "967e9fd40018087e3e0c6e2e22e4994d45ae3b0a801198544cff0f6b25e41d08"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1128e035-ae93-42bd-b714-89b891a196a9 with nextest profile: default
+    Starting 3 tests across 1 binary
+        PASS [   0.007s] crunk::docs the_migration_guide_states_a_rust_verb_or_removal_for_every_python_verb
+        PASS [   0.007s] crunk::docs the_crunk_pages_are_ascii_and_free_of_home_paths
+        PASS [   0.008s] crunk::docs every_crunk_verb_is_in_the_readme_verb_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test docs"
+size = 777
+status = "measured"
+test_count = 3
+tests_digest = "d75b8d371b2f1850b4cd61cce9415a33b9f583fbf2c3e7d8126a30dee53d8188"
+at = "2026-10-21T07:52:16Z"
+actor = "lognd"
+rev = 1
