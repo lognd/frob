@@ -2,7 +2,8 @@
 id = "01M5DT8FKY9HJW3R9Q4CZB283M"
 title = "Detect hosting-side lands by patch id and report them in refresh output"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
