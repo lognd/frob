@@ -1,0 +1,37 @@
+kind = "evidence"
+captured_at = "2026-10-21T00:18:53Z"
+digest = "9f20314fa48eb484e6d1f7eb15c7a285fa33ade3def60bafd0c0201404f8d24d"
+exit_code = 0
+inline = '''
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8c0a020a-9df1-4374-b96e-bc2424dbb1a1 with nextest profile: default
+    Starting 2 tests across 7 binaries (101 tests skipped)
+        PASS [   0.005s] frob-worktree verbs::tests::evict_policy_reads_claims_tables_and_carries_ci
+        PASS [   0.006s] frob-worktree verbs::tests::evict_policy_is_none_for_a_bad_claims_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 101 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree evict_policy"
+size = 1494
+status = "measured"
+test_count = 2
+tests_digest = "242b6a92c82286e1e0490bebf93a48024d622e2b4cf5647ae29b35e40b391fe8"
+at = "2026-10-21T00:18:53Z"
+actor = "lognd"
+rev = 1
