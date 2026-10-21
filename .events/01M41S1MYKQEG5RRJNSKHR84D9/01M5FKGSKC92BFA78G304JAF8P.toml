@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T16:08:13Z"
+digest = "8e20efb24a8c8a9444e5448720081c12fc77b2d1270c980b76ddcdd98df88508"
+exit_code = 0
+head = "69f5f3f04ee3f54729855396fc6f6e3b384348dd"
+inline = '''
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 92936661-cf96-4b12-9483-4a919d97afa1 with nextest profile: default
+    Starting 2 tests across 3 binaries (7 tests skipped)
+        PASS [   0.004s] gob-path::paths exact_text_is_verbatim_or_none
+        PASS [   0.004s] gob-path::paths exact_text_refuses_non_unicode
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 2 tests run: 2 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-path exact_text"
+size = 669
+status = "measured"
+test_count = 2
+tests_digest = "95de490a6460a07a3afd2a381dfb9dc9a3b4e84ccb8c85818f03c46993b51f52"
+at = "2026-10-21T16:08:13Z"
+actor = "lognd"
+rev = 1
