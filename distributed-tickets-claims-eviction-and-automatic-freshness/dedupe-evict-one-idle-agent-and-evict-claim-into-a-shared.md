@@ -2,7 +2,8 @@
 id = "01M5DZJ96SRX543SR1N51DGJH0"
 title = "Dedupe evict_one_idle_agent and evict_claim into a shared helper"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
