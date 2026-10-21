@@ -1,0 +1,11 @@
+kind = "create"
+title = "gob-symbols: export the C# attribute scan so frob-tests reach stops duplicating it"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M44YQS4CNZM54P067GJVPDC0"
+body = "found while working ~YR0STJ5: reach.rs copies leading_attribute_names/skip_trivia from gob-symbols csharp.rs"
+at = "2026-10-21T12:58:06Z"
+actor = "lognd"
+rev = 1
