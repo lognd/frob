@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T22:45:36Z"
+digest = "8e5a258a212e0ea27273ea46e21ed2c3bf20b67bdb48eda0dcb0c298328ac983"
+exit_code = 0
+head = "c2ca97673a1e0ec2889ef75a0e5b66057d182849"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b97e0163-63e9-4b88-94ec-e2820fe66317 with nextest profile: default
+    Starting 1 test across 28 binaries (289 tests skipped)
+        PASS [   0.004s] gob-plan::lower_roles a_field_path_relation_object_lowers
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 289 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan a_field_path_relation_object_lowers"
+size = 611
+status = "measured"
+test_count = 1
+tests_digest = "d15806666dbe386f40b511703d14510c11eb729f1c10f796c41b17907239e4ed"
+at = "2026-10-21T22:45:36Z"
+actor = "lognd"
+rev = 1
