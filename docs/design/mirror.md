@@ -535,6 +535,9 @@ and never changes the exit status. Accepting a proposal is a separate step.
   checkboxes are rendered. Closing keywords in code-branch commits that
   close a mirrored issue are treated as a tracker edit (reverted and
   proposed), never fought silently.
+  Implemented in `frob_mirror::closing`: `reconcile_closing` reopens the issue
+  (a `state` revert to open) and records the closure as a proposal while the
+  ledger is open; with the ledger done nothing is reverted.
 - Publication is irreversible (edit history is readable by anyone with
   read access): `[mirror] exclude` and redaction apply before the first
   publish; evidence is published as verdicts and links, never
