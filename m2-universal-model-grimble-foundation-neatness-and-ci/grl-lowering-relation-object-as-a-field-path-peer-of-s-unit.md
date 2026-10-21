@@ -15,6 +15,10 @@ scope = ["crates/gob-plan/src/lower/roles.rs", "crates/gob-plan/src/lower/mod.rs
 [[acceptance]]
 text = "A relation object written as a field path (p peer of s.unit) lowers"
 bound = false
+
+[[acceptance]]
+text = "An unbound first segment of a field-path object is an unknown var"
+bound = false
 +++
 
 Found while working ~ACSP6CZ. lower/convert.rs with_object rejects a path object with more than one segment ("this relation object", NEAT031 `peer of s.unit`); rust`...` as roles snippet matching is also unverified. Needed for NEAT031 examples; then delete KNOWN_ENGINE_GAPS entries.

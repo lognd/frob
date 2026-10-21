@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["A relation object written as a field path (p peer of s.unit) lowers"]
+new = ["A relation object written as a field path (p peer of s.unit) lowers", "An unbound first segment of a field-path object is an unknown var"]
+moved = [1]
+at = "2026-10-21T22:45:32Z"
+actor = "lognd"
+rev = 1
