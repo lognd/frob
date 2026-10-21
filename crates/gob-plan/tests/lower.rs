@@ -473,3 +473,21 @@ fn slug_and_resolve_calls_lower_and_other_calls_or_nesting_are_refused() {
         );
     }
 }
+
+// frob:ticket 01M5ETB80YYSQNEDP9PG86WKD4
+// frob:tests crates/gob-plan/src/lower/convert.rs::key_path_regex
+#[test]
+fn a_key_path_pattern_lowers_to_an_anchored_regex_where_star_stays_in_one_segment() {
+    let star = lower(&rule(&[
+        "find k: key(path = \"/jobs/*\")",
+        "report k \"x\"",
+    ]))
+    .expect("lowers");
+    assert!(format!("{star:?}").contains("^/jobs/[^/]*$"), "{star:?}");
+    let deep = lower(&rule(&[
+        "find k: key(path = \"/a.b/**\")",
+        "report k \"x\"",
+    ]))
+    .expect("lowers");
+    assert!(format!("{deep:?}").contains(r"^/a\\.b/.*$"), "{deep:?}");
+}

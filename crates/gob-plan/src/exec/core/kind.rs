@@ -30,6 +30,9 @@ const LOOP_KINDS: &[&str] = &["loop", "while", "for", "foreach", "do"];
 /// Kinds of `apply` that are an assignment.
 const ASSIGN_KINDS: &[&str] = &["assign", "assignment"];
 
+/// The unit kind a data-file adapter (YAML) gives a mapping key or a sequence item.
+pub(crate) const KEY_KIND: &str = "key";
+
 /// The node test behind one catalog kind word.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum KindTest {
@@ -86,6 +89,7 @@ impl KindTest {
             "type" => Self::UnitKind(TYPE_KINDS),
             "module" => Self::UnitKind(MODULE_KINDS),
             "field" => Self::UnitKind(&["field"]),
+            "key" => Self::UnitKind(&[KEY_KIND]),
             "param" => Self::UnitKind(&["param", "parameter"]),
             "test" => Self::Test,
             "call" => Self::Apply("call"),
@@ -199,6 +203,30 @@ pub(crate) fn directive_name(text: &str) -> Option<&str> {
 fn unit_kind_is(model: &Model, node: NodeId, want: &str) -> bool {
     matches!(model.term().node(node).op(),
         Operator::Universal(Universal::Unit { kind, .. }) if kind == want)
+}
+
+/// Whether `node` is a canonical `key` unit (a data-file mapping key or sequence item).
+// frob:ticket 01M5ETB80YYSQNEDP9PG86WKD4
+pub(crate) fn is_key(model: &Model, node: NodeId) -> bool {
+    unit_kind_is(model, node, KEY_KIND) && is_canonical_unit(model, node)
+}
+
+/// The key path of a `key` unit: "/" then the names of its enclosing keys and itself, joined by "/".
+// frob:ticket 01M5ETB80YYSQNEDP9PG86WKD4
+pub(crate) fn key_path(model: &Model, node: NodeId) -> String {
+    let term = model.term();
+    let mut names = Vec::new();
+    let mut cur = Some(node);
+    while let Some(id) = cur {
+        if is_key(model, id) {
+            names.push(term.node(id).name().unwrap_or_default().to_owned());
+        }
+        cur = term.node(id).parent();
+    }
+    names.reverse();
+    let path = format!("/{}", names.join("/"));
+    tracing::trace!(%path, "key path");
+    path
 }
 
 /// A unit that is not the `sig` facet child of another unit (one identity is one subject).

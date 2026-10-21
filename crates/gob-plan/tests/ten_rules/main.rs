@@ -23,13 +23,11 @@ const RULES: [(&str, &str); 10] = [
 ///
 /// A listed example must still fail: when the engine learns the feature the test fails
 /// and the entry is deleted, so the list can only shrink.
-const KNOWN_ENGINE_GAPS: [(&str, usize); 6] = [
+const KNOWN_ENGINE_GAPS: [(&str, usize); 4] = [
     ("DOC002", 1),  // example runner lacks multi-file `file "..."` inputs
     ("NEAT031", 0), // ~R3AHZ1T: lowering rejects a field-path relation object
     ("NEAT031", 1),
     ("NEAT031", 2),
-    ("CI002", 0), // ~G86WKD4: executor lacks the yaml `key` kind
-    ("CI002", 1),
 ];
 
 /// Run every example of one corpus rule and return (index, description) of each failure.

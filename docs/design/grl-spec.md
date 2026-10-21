@@ -351,7 +351,7 @@ the compiler and the engine read one source. `grimble rule catalog
 | `call(.callee, .args)` | fields | Q13, Q20 | `.callee` is the callee as written (`exit`, `sys.exit`, `std::process::exit`); `.callee.name` its last segment |
 | `link(.target, .text)` | fields | Q11 | `.target` is the destination as written; `.target.path`, `.target.anchor`, `.target.scheme`, `is relative`; `.text` is the visible text |
 | `function(.name, .params, .returns)` | fields | Q15 | `is public`, `is async` where the language has them |
-| `key(.path, .name, .value)` | fields | Q19 | `.path` is the slash path from the document root |
+| `key(.path, .name, .value)` | fields | Q19 | `.path` is the slash path from the document root: `/` then the enclosing key names and the key itself joined by `/` (`/jobs/build/steps/0`; sequence items are named by zero-based index). In `key(path = "...")` the string is a pattern: `*` matches within one segment, `**` crosses segments, the rest is literal. Only simple keys (ASCII alphanumerics, `_`, `-`) are keys; quoted, dotted and flow-collection keys and the contents of flow mappings are not, duplicate keys are each a member, an empty document has none |
 | `comment(.text)`, `literal(.value)`, `heading(.text, .level, .slug)` | fields | Q10, Q14, Q11 | |
 | `.unit` | field | Q05 | the nearest enclosing unit (not any ancestor) |
 | `is public`, `is exported` | field | Q07, Q33 | may be Unknown |

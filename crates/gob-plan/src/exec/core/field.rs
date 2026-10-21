@@ -13,7 +13,7 @@ use gob_ir::style;
 use gob_ir::{AttrValue, Model, NodeId, Operator, Truth, Universal};
 use gob_text::SourceText;
 
-use super::kind::directive_name;
+use super::kind::{directive_name, is_key, key_path};
 use crate::plan::CmpOp;
 
 /// A known scalar.
@@ -177,6 +177,7 @@ impl<'a> Reader<'a> {
             return self.dotted(node, head, rest);
         }
         match name {
+            "path" if is_key(self.model, node) => Datum::text(key_path(self.model, node)),
             "path" | "file" => Datum::text(self.model.term().locator()),
             "line" => self.line_of(node).map_or(Datum::Unknown, Datum::int),
             "kind" => self.kind(node),

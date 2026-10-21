@@ -471,6 +471,43 @@ fn kind_fields(
     Ok(out)
 }
 
+/// The anchored regex for a `key(path = "...")` pattern: `*` stays within one path segment, `**`
+/// crosses segments, anything else is literal.
+// frob:ticket 01M5ETB80YYSQNEDP9PG86WKD4
+fn key_path_regex(pattern: &str) -> String {
+    let mut out = String::from("^");
+    let mut chars = pattern.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '*' if chars.peek() == Some(&'*') => {
+                chars.next();
+                out.push_str(".*");
+            }
+            '*' => out.push_str("[^/]*"),
+            c => out.push_str(&regex::escape(c.encode_utf8(&mut [0; 4]))),
+        }
+    }
+    out.push('$');
+    out
+}
+
+/// The condition one `(f = v)` pair of a kind shape states: equality, except a `key` path pattern.
+// frob:ticket 01M5ETB80YYSQNEDP9PG86WKD4
+fn field_cond(kind: &str, var: &str, field: &str, rhs: Opd) -> Cond {
+    let subject = Opd::Field(var.to_owned(), field.to_owned());
+    match rhs {
+        Opd::Str(p) if kind == "key" && field == "path" => Cond::Regex {
+            subject,
+            pattern: key_path_regex(&p),
+        },
+        rhs => Cond::Cmp {
+            lhs: subject,
+            op: CmpOp::Eq,
+            rhs,
+        },
+    }
+}
+
 /// `x is` a snippet: a match op on a variable; the `as roles` form is refused.
 fn is_snippet_cond(
     cx: &Cx,
@@ -518,11 +555,7 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
         Source::Shape(s) => match &s.node {
             ShapeKind::Kind { kind, fields, arg } => {
                 for (f, rhs) in kind_fields(fields, arg.as_ref())? {
-                    attached.push(Cond::Cmp {
-                        lhs: Opd::Field(name.clone(), f),
-                        op: CmpOp::Eq,
-                        rhs,
-                    });
+                    attached.push(field_cond(&kind.text, &name, &f, rhs));
                 }
                 Src::Kind(kind.text.clone())
             }
@@ -1071,11 +1104,7 @@ fn with_object(
     cx.fresh += 1;
     let mut conds = vec![build(var.clone())];
     for (f, v) in fields {
-        conds.push(Cond::Cmp {
-            lhs: Opd::Field(var.clone(), f),
-            op: CmpOp::Eq,
-            rhs: v,
-        });
+        conds.push(field_cond(&kind, &var, &f, v));
     }
     Ok(Cond::Quant {
         quant: Quant::Some,

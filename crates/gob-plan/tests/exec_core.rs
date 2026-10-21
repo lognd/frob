@@ -312,3 +312,73 @@ fn executor_connectives_follow_the_kleene_tables() {
     let mut runner = proptest::test_runner::TestRunner::default();
     runner.run(&tree(), |t| check_tree(&t)).unwrap();
 }
+
+/// A key unit named `name` over `[start, end)` holding `kids`.
+fn key(d: &mut Doc, name: &str, start: u32, end: u32, kids: &[NodeId]) -> NodeId {
+    d.at_range(
+        |loc| NodeSpec::new(Operator::unit("key", "impl"), loc).named(name),
+        start,
+        end,
+        kids,
+    )
+}
+
+/// The `path` of every `key` the plan binds, in location order.
+// frob:ticket 01M5ETB80YYSQNEDP9PG86WKD4
+fn key_paths(model: &Model, want: Option<&str>) -> Vec<NodeId> {
+    let mut b = PlanBuilder::new("KEY001", Polarity::Pplus);
+    let k = b.find("key");
+    if let Some(path) = want {
+        let (lhs, rhs) = (b.field(k, "path"), b.str_lit(path));
+        let c = b.cmp(lhs, CmpOp::Eq, rhs);
+        b.clause(c);
+    }
+    b.report(None, k, "key");
+    rows(&b.build(), model)
+        .iter()
+        .filter_map(|r| r.node(k))
+        .collect()
+}
+
+// frob:ticket 01M5ETB80YYSQNEDP9PG86WKD4
+// frob:tests crates/gob-plan/src/exec/core/kind.rs::key_path
+#[test]
+fn a_key_path_joins_the_enclosing_key_names_and_sequence_indexes() {
+    let mut d = Doc::new("w.yml", "yaml");
+    let step = key(&mut d, "0", 30, 40, &[]);
+    let steps = key(&mut d, "steps", 20, 50, &[step]);
+    let build = key(&mut d, "build", 10, 60, &[steps]);
+    let jobs = key(&mut d, "jobs", 0, 70, &[build]);
+    let (model, _) = d.root(&[jobs]);
+
+    assert_eq!(key_paths(&model, None), vec![jobs, build, steps, step]);
+    assert_eq!(key_paths(&model, Some("/jobs")), vec![jobs]);
+    assert_eq!(key_paths(&model, Some("/jobs/build/steps/0")), vec![step]);
+    assert!(key_paths(&model, Some("/build")).is_empty());
+}
+
+// frob:ticket 01M5ETB80YYSQNEDP9PG86WKD4
+// frob:tests crates/gob-plan/src/exec/core/kind.rs::is_key
+#[test]
+fn duplicate_keys_are_each_a_member_and_an_empty_document_has_none() {
+    let mut d = Doc::new("w.yml", "yaml");
+    let (a, b) = (
+        key(&mut d, "name", 0, 5, &[]),
+        key(&mut d, "name", 10, 15, &[]),
+    );
+    let (model, _) = d.root(&[a, b]);
+    assert_eq!(key_paths(&model, Some("/name")), vec![a, b]);
+
+    let (empty, _) = Doc::new("e.yml", "yaml").root(&[]);
+    assert!(key_paths(&empty, None).is_empty());
+}
+
+// frob:ticket 01M5ETB80YYSQNEDP9PG86WKD4
+// frob:tests crates/gob-plan/src/exec/core/kind.rs::is_key
+#[test]
+fn a_function_is_not_a_key_and_keeps_the_file_path() {
+    let mut d = Doc::new("a.rs", "rust");
+    let f = func(&mut d, "f", "public", 0, 10, &[]);
+    let (model, _) = d.root(&[f]);
+    assert!(key_paths(&model, None).is_empty());
+}
