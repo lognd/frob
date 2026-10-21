@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T23:27:32Z"
+digest = "3ad15a5b1b52f2e070f2006b9fee898f22822b32a72631856dee31e810a2f247"
+exit_code = 0
+head = "4d1938948fdbccd3981d4b9cc54298979233226d"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1d68751d-217b-4c1c-908a-aa720ff79df3 with nextest profile: default
+    Starting 1 test across 2 binaries (294 tests skipped)
+        PASS [   0.005s] gob-symbols::it typescript::cjs_function_expression_exports_are_public_units
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 294 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols cjs_function_expression_exports_are_public_units"
+size = 725
+status = "measured"
+test_count = 1
+tests_digest = "c378b79c7aa5599968999cb82fc4fa1276d0c06aae2cc2b54c4006e1f0c849b7"
+at = "2026-10-21T23:27:32Z"
+actor = "lognd"
+rev = 1
