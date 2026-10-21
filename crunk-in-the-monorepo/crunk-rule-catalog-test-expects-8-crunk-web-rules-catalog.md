@@ -2,13 +2,13 @@
 id = "01M5F5H31HMHWAF2SPVK4WQ2S3"
 title = "crunk rule_catalog test expects 8 crunk-web rules, catalog has 15"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-21T12:03:43Z"
-updated = "2026-10-21T12:44:37Z"
+updated = "2026-10-21T12:44:39Z"
 
 [[acceptance]]
 text = "the rule_catalog test asserts the real crunk-web rule count and passes"
