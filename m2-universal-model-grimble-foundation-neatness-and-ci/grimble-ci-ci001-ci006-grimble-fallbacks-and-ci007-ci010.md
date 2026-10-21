@@ -18,6 +18,10 @@ bound = false
 [[acceptance]]
 text = "CI006 flags checkout of the PR head under pull_request_target or workflow_run"
 bound = false
+
+[[acceptance]]
+text = "CI007 flags attacker-influenced expressions in run scripts, narrow set as Error and others Advisory, env passthrough clean"
+bound = false
 +++
 
 Deferred from ~8886VJ4: native fallbacks for the zizmor-bound pinned-ref and prt-head-checkout rules, plus CI007 and CI010.
