@@ -4,9 +4,10 @@ title = "gob-config schema export drops the $defs entries its $ref links point a
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-08T10:22:01Z"
-updated = "2026-10-08T10:22:01Z"
+updated = "2026-10-21T21:34:55Z"
 scope = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json"]
 +++
 
