@@ -4,10 +4,11 @@ title = "Rule coverage gaps: frob rules without an mdtest pair or fixture"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-06T13:41:12Z"
+updated = "2026-10-21T20:48:50Z"
 scope = ["crates/*/tests/mdtest/**"]
 
 [[acceptance]]
