@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T18:01:10Z"
+digest = "aefb8d2cfa043a4fa29409a59e83343c652885850b76fbe5111fff0008235fa4"
+exit_code = 0
+head = "e28b4f15f32529cb6ac04ef7159d6ffbe783ab39"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4429b77a-85e3-4a47-b789-0d828a5194e5 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.005s] grimble-lints::rules naive_compared_with_aware_fires_time002
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test rules naive_compared_with_aware_fires_time002"
+size = 549
+status = "measured"
+test_count = 1
+tests_digest = "ba686ee90f99f7255dde60361b1f8b2a81d489762feac565508dbba700501436"
+at = "2026-10-21T18:01:10Z"
+actor = "lognd"
+rev = 1
