@@ -9,7 +9,7 @@ parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:18Z"
 updated = "2026-10-21T17:52:59Z"
-scope = ["crates/grimble-lints/**", "crates/grimble-check/src/**"]
+scope = ["crates/grimble-lints/**", "crates/grimble-check/src/**", "crates/grimble/src/explain_cmd.rs"]
 
 [[links]]
 kind = "blocked-by"
