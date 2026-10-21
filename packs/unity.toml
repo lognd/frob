@@ -54,3 +54,25 @@ names = ["SerializeField", "SerializeReference"]
 lang = "csharp"
 class = "serialized.skip_attribute"
 names = ["NonSerialized"]
+
+# Third vocabulary: dynamic calls. The engine resolves these by name at run time, so the repository holds
+# no edge to the method or object they reach. Each is recorded as an Unresolved call edge with its reason
+# and is never resolved by guesswork: a literal name never turns into an edge. A method-by-name call needs
+# a string literal first argument (or a computed one on this object); `Invoke()` with no arguments, or a
+# delegate's `Invoke(x)` on another receiver, is an ordinary call.
+[[vocab]]
+lang = "csharp"
+class = "dynamic.call"
+names = [
+  "SendMessage", "SendMessageUpwards", "BroadcastMessage", "Invoke", "InvokeRepeating",
+  "StartCoroutine", "StopCoroutine", "CancelInvoke", "IsInvoking",
+]
+
+# String-keyed lookups, written `Type.Method`, matched on the type written at the call.
+[[vocab]]
+lang = "csharp"
+class = "dynamic.lookup"
+names = [
+  "GameObject.Find", "GameObject.FindWithTag", "GameObject.FindGameObjectWithTag",
+  "GameObject.FindGameObjectsWithTag", "Resources.Load", "Resources.LoadAsync", "Resources.LoadAll",
+]

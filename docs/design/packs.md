@@ -1158,6 +1158,8 @@ in `gob-packs`; the `builtin_pack!` macro of 3.2 does not exist yet.
 | `entry.type_attribute` | `InitializeOnLoad` `CreateAssetMenu` |
 | `serialized.attribute` | `SerializeField` `SerializeReference` |
 | `serialized.skip_attribute` | `NonSerialized` |
+| `dynamic.call` | `SendMessage` `SendMessageUpwards` `BroadcastMessage` `Invoke` `InvokeRepeating` `StartCoroutine` `StopCoroutine` `CancelInvoke` `IsInvoking` |
+| `dynamic.lookup` | `GameObject.Find` `GameObject.FindWithTag` `GameObject.FindGameObjectWithTag` `GameObject.FindGameObjectsWithTag` `Resources.Load` `Resources.LoadAsync` `Resources.LoadAll` |
 
 A message is a root on a type that derives from an `entry.base`,
 transitively through project-local base types, or that carries an
@@ -1184,7 +1186,20 @@ is enabled and active for the file's path; with it disabled a
 `[SerializeField]` field that is never assigned is listed. No rule
 consumes the list yet.
 
-Counts: 1 vocabulary pack, 0 atoms, 7 vocabulary classes, 26 names.
+Dynamic calls are resolved by the engine by name at run time, so no edge
+to the method exists in the repository. They are already Unresolved call
+edges (nothing declares `Invoke`); `gob_symbols::csharp_dynamic_calls`
+names why. A `dynamic.call` name classifies a call whose first argument is
+a string literal (any receiver), or a computed one on `this` or an
+unqualified call; `Invoke()` with no argument and a delegate's `Invoke(x)`
+on another receiver are ordinary calls. A `dynamic.lookup` entry
+(`Type.Method`) classifies a call with any argument, matched on the type
+written at the call. A literal name never turns into an edge and nothing
+is resolved by guesswork. With the pack disabled the vocabulary is empty
+and nothing is classified. UnityEvent wiring in scene and prefab YAML is
+not read yet; only GUID references are in scope (dotnet-unity.md 3).
+
+Counts: 1 vocabulary pack, 0 atoms, 9 vocabulary classes, 42 names.
 
 ## 9. The PACK rule family
 

@@ -96,8 +96,8 @@ pub use adapter::{
 pub use ambient::{AMBIENT_CLASSES, is_ambient_name};
 pub use crates::CrateDeps;
 pub use csharp::{
-    CSharpAdapter, CsharpTest, CsharpTestFramework, csharp_test, is_csharp_path,
-    is_csharp_test_file, is_csharp_test_fn, is_csharp_test_text,
+    CSharpAdapter, CsharpDynamicCall, CsharpTest, CsharpTestFramework, csharp_dynamic_calls,
+    csharp_test, is_csharp_path, is_csharp_test_file, is_csharp_test_fn, is_csharp_test_text,
 };
 pub use css::{CssAdapter, is_css_path};
 pub use def_use::{PYTHON_SYNTAX, RUST_SYNTAX, TYPESCRIPT_SYNTAX, def_use_of, syntax_for};

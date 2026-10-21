@@ -1,0 +1,1 @@
+The `unity` pack now names dynamic calls (`SendMessage`, `Invoke("name")`, `StartCoroutine("name")`, `GameObject.Find`, `Resources.Load`): they stay Unresolved call edges with the reason named, and a literal method name never becomes an edge.

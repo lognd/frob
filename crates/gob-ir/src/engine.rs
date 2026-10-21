@@ -7,6 +7,7 @@
 
 // frob:ticket 01M44YQXS4BXE0X07FBYR0STJ5
 // frob:ticket 01M44YQY6KR3NCCNGKJ9QK3N9A
+// frob:ticket 01M44YQYKX1PTSGQE3TMVX4GEN
 
 use std::collections::BTreeSet;
 
@@ -24,6 +25,59 @@ pub const CLASS_TYPE_ATTRIBUTE: &str = "entry.type_attribute";
 pub const CLASS_SERIALIZE_ATTRIBUTE: &str = "serialized.attribute";
 /// Vocabulary class of attributes that exclude a field from serialization (`NonSerialized`).
 pub const CLASS_SKIP_ATTRIBUTE: &str = "serialized.skip_attribute";
+/// Vocabulary class of bare method names that call another method by name (`SendMessage`, `Invoke`).
+pub const CLASS_DYNAMIC_CALL: &str = "dynamic.call";
+/// Vocabulary class of `Type.Method` string-keyed lookups (`GameObject.Find`, `Resources.Load`).
+pub const CLASS_DYNAMIC_LOOKUP: &str = "dynamic.lookup";
+
+/// What the first argument of a call is, as far as the syntax shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NameArg {
+    /// A plain string literal.
+    Literal,
+    /// Any other expression (a variable, an interpolation, a concatenation).
+    Computed,
+    /// The call has no arguments.
+    Absent,
+}
+
+/// Which kind of dynamic call a call is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DynamicKind {
+    /// A method chosen by name at run time (`Invoke("Reload")`).
+    MethodByName,
+    /// An object or asset chosen by string key at run time (`GameObject.Find("Hero")`).
+    LookupByKey,
+}
+
+/// A call the engine resolves by name at run time: an Unresolved call edge, never a guessed one.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DynamicCall {
+    /// Method-by-name or string-keyed lookup.
+    pub kind: DynamicKind,
+    /// True when the name is spelled as a literal at the call site.
+    pub literal: bool,
+}
+
+impl DynamicCall {
+    /// The reason an edge for this call is Unresolved, named for the report.
+    pub fn reason(self) -> &'static str {
+        match (self.kind, self.literal) {
+            (DynamicKind::MethodByName, true) => {
+                "dynamic call: the engine resolves a literal method name at run time"
+            }
+            (DynamicKind::MethodByName, false) => {
+                "dynamic call: the engine resolves a computed method name at run time"
+            }
+            (DynamicKind::LookupByKey, true) => {
+                "dynamic lookup: the engine resolves a literal string key at run time"
+            }
+            (DynamicKind::LookupByKey, false) => {
+                "dynamic lookup: the engine resolves a computed string key at run time"
+            }
+        }
+    }
+}
 
 /// The engine entry points of one language, as declared by a pack.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -42,6 +96,10 @@ pub struct EngineVocab {
     pub serialize_attributes: BTreeSet<String>,
     /// Attributes that exclude a field from serialization; they win over every other signal.
     pub skip_attributes: BTreeSet<String>,
+    /// Bare method names that call another method by name (`SendMessage`, `Invoke`).
+    pub dynamic_calls: BTreeSet<String>,
+    /// `Type.Method` string-keyed lookups (`GameObject.Find`).
+    pub dynamic_lookups: BTreeSet<String>,
 }
 
 /// What a scan learned about one field declaration (or an auto-property with `[field: ...]` attributes).
@@ -78,6 +136,8 @@ impl EngineVocab {
             CLASS_TYPE_ATTRIBUTE => &mut self.type_attributes,
             CLASS_SERIALIZE_ATTRIBUTE => &mut self.serialize_attributes,
             CLASS_SKIP_ATTRIBUTE => &mut self.skip_attributes,
+            CLASS_DYNAMIC_CALL => &mut self.dynamic_calls,
+            CLASS_DYNAMIC_LOOKUP => &mut self.dynamic_lookups,
             _ => return false,
         };
         set.extend(names);
@@ -113,6 +173,42 @@ impl EngineVocab {
         external
     }
 
+    /// Classifies a call as dynamic, or `None` when it is an ordinary call (the empty vocabulary never classifies).
+    ///
+    /// `qualifier` is the type written before the method (`GameObject` in `GameObject.Find("x")`);
+    /// `own_receiver` is true for an unqualified call or one on `this`. A method-by-name call needs a
+    /// string literal first argument, or a computed one on an own receiver (a computed argument on another
+    /// receiver may be an ordinary delegate `Invoke`). A lookup is dynamic whenever it has an argument.
+    pub fn classify_call(
+        &self,
+        qualifier: Option<&str>,
+        callee: &str,
+        arg: NameArg,
+        own_receiver: bool,
+    ) -> Option<DynamicCall> {
+        let found = match arg {
+            NameArg::Absent => None,
+            _ if qualifier
+                .is_some_and(|q| self.dynamic_lookups.contains(&format!("{q}.{callee}"))) =>
+            {
+                Some(DynamicKind::LookupByKey)
+            }
+            NameArg::Literal if self.dynamic_calls.contains(callee) => {
+                Some(DynamicKind::MethodByName)
+            }
+            NameArg::Computed if own_receiver && self.dynamic_calls.contains(callee) => {
+                Some(DynamicKind::MethodByName)
+            }
+            _ => None,
+        };
+        let call = found.map(|kind| DynamicCall {
+            kind,
+            literal: arg == NameArg::Literal,
+        });
+        tracing::trace!(callee, ?arg, ?call, "dynamic call decision");
+        call
+    }
+
     /// True when the vocabulary names nothing.
     pub fn is_empty(&self) -> bool {
         *self == Self::default()
@@ -132,6 +228,58 @@ mod tests {
         assert!(!v.add_class("net", ["x".to_owned()]));
         assert!(v.is_message("Update") && v.is_message("OnTriggerEnter2D"));
         assert!(!v.is_message("Tick"));
+    }
+
+    fn dynamic_vocab() -> EngineVocab {
+        let mut v = EngineVocab::default();
+        assert!(v.add_class(CLASS_DYNAMIC_CALL, ["Invoke".to_owned()]));
+        assert!(v.add_class(CLASS_DYNAMIC_LOOKUP, ["GameObject.Find".to_owned()]));
+        v
+    }
+
+    // frob:tests EngineVocab.classify_call
+    #[test]
+    fn classify_call_separates_dynamic_from_ordinary_calls() {
+        let v = dynamic_vocab();
+        let lit = v.classify_call(None, "Invoke", NameArg::Literal, true);
+        assert_eq!(lit.map(|c| c.kind), Some(DynamicKind::MethodByName));
+        assert!(lit.is_some_and(|c| c.literal));
+        assert_eq!(
+            v.classify_call(None, "Reload", NameArg::Literal, true),
+            None
+        );
+        assert_eq!(v.classify_call(None, "Invoke", NameArg::Absent, true), None);
+        assert_eq!(
+            v.classify_call(Some("d"), "Invoke", NameArg::Computed, false),
+            None
+        );
+        let computed = v.classify_call(None, "Invoke", NameArg::Computed, true);
+        assert!(computed.is_some_and(|c| !c.literal));
+        let find = v.classify_call(Some("GameObject"), "Find", NameArg::Computed, false);
+        assert_eq!(find.map(|c| c.kind), Some(DynamicKind::LookupByKey));
+        assert_eq!(
+            v.classify_call(Some("list"), "Find", NameArg::Literal, false),
+            None
+        );
+        let empty = EngineVocab::default();
+        assert_eq!(
+            empty.classify_call(None, "Invoke", NameArg::Literal, true),
+            None
+        );
+    }
+
+    // frob:tests DynamicCall.reason
+    #[test]
+    fn every_dynamic_reason_is_named() {
+        for kind in [DynamicKind::MethodByName, DynamicKind::LookupByKey] {
+            for literal in [true, false] {
+                assert!(
+                    DynamicCall { kind, literal }
+                        .reason()
+                        .starts_with("dynamic ")
+                );
+            }
+        }
     }
 
     fn vocab() -> EngineVocab {

@@ -72,7 +72,11 @@ dead in player builds or the reverse.
   effect and flow rules see an external writer.
 - Dynamic dispatch: `SendMessage`, `Invoke("name")`, `UnityEvent`
   wiring in assets and string-keyed lookups are dynamic calls, reported
-  Unresolved per the compute policy, never resolved by guesswork.
+  Unresolved per the compute policy, never resolved by guesswork. The
+  pack's `dynamic.call` and `dynamic.lookup` vocabularies name them
+  (`gob_symbols::csharp_dynamic_calls`, packs.md 8.5); a literal method
+  name never becomes an edge. UnityEvent wiring in scene and prefab YAML is
+  not read yet (only GUID references are in scope).
 - Asset hygiene: every tracked file under `Assets/` and `Packages/` has
   its `.meta`, and no `.meta` is orphaned; a duplicate GUID is an error.
   This is a small UNITY rule family in the pack.
