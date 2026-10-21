@@ -1,0 +1,95 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T22:45:59Z"
+digest = "f577bfcae7b61f82cd59023ae52bd8f17867520641dea8f5b2a207aa37438351"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+   Compiling gix-path v0.12.6
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gix-packetline v0.22.2
+   Compiling gix-zlib v0.1.0
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-config-value v0.19.1
+   Compiling gix-url v0.38.0
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gix-glob v0.27.1
+   Compiling gix-transport v0.59.2
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-shallow v0.13.0
+   Compiling gix-refspec v0.45.1
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gix-pathspec v0.20.0
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-revwalk v0.35.0
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gix-ref v0.67.1
+   Compiling gix-traverse v0.61.0
+   Compiling gix-filter v0.34.0
+   Compiling gix-revision v0.49.1
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gix-index v0.55.0
+   Compiling gix-discover v0.55.0
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gix-config v0.60.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-protocol v0.65.1
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix-odb v0.84.0
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gix v0.87.1
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 49.98s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ebaee1ec-6d09-475d-9f9d-610f4ad1bf7b with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.005s] grimble-check::example_model may_clauses_yield_grants
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test example_model may_clauses_yield_grants"
+size = 3745
+status = "measured"
+test_count = 1
+tests_digest = "deed673d2f0aaa4a490d37fc86477d93e59fb76352bc2778717060510ebc4462"
+at = "2026-10-21T22:45:59Z"
+actor = "lognd"
+rev = 1
