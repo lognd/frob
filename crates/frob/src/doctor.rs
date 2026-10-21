@@ -483,6 +483,10 @@ impl Doctor {
             languages,
         })
         .with_findings(findings.into_iter().chain(protection).collect());
+        let payload = {
+            let rows = crate::text_view::doctor_rows(&payload.data);
+            payload.with_rendered(rows)
+        };
         Ok(warnings
             .into_iter()
             .fold(payload, gob_cli::Payload::with_warning))
