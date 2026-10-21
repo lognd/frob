@@ -44,6 +44,15 @@ pub(crate) enum Affected {
     Everything,
 }
 
+/// Whether a manifest is a cargo-fuzz package: it sits outside the workspace, so `cargo -p` cannot name it.
+fn is_standalone(doc: &toml::Table) -> bool {
+    doc.get("package")
+        .and_then(|p| p.get("metadata"))
+        .and_then(|m| m.get("cargo-fuzz"))
+        .and_then(toml::Value::as_bool)
+        .unwrap_or(false)
+}
+
 impl Workspace {
     /// Read the `[package]` name and dependency names of each manifest in `paths` (repo-relative `Cargo.toml` paths).
     pub(crate) fn load<'a>(core: &Core, paths: impl IntoIterator<Item = &'a String>) -> Self {
@@ -63,6 +72,10 @@ impl Workspace {
                 tracing::warn!(%path, "manifest does not parse; ignored");
                 continue;
             };
+            if is_standalone(&doc) {
+                tracing::debug!(%path, "standalone package (outside the workspace); ignored");
+                continue;
+            }
             let Some(name) = doc
                 .get("package")
                 .and_then(|p| p.get("name"))
@@ -265,6 +278,17 @@ mod tests {
 
     fn files(f: &[&str]) -> BTreeSet<String> {
         f.iter().map(|s| (*s).to_owned()).collect()
+    }
+
+    // frob:tests crates/gob-check/src/packages.rs::is_standalone
+    #[test]
+    fn a_cargo_fuzz_manifest_is_standalone() {
+        let fuzz: toml::Table = "[package]\nname = \"f\"\n[package.metadata]\ncargo-fuzz = true\n"
+            .parse()
+            .unwrap();
+        let plain: toml::Table = "[package]\nname = \"p\"\n".parse().unwrap();
+        assert!(is_standalone(&fuzz));
+        assert!(!is_standalone(&plain));
     }
 
     // frob:ticket 01M4HADVZ8JGBB406JJAJGEC9Q

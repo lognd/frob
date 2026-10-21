@@ -3,11 +3,6 @@
 //! The cases are written as `test_ok NAME` / `test_err NAME` comment blocks in the parser source
 //! and extracted by `cargo dev gen inline`; GEN001 keeps the extraction current.
 
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
-
 // frob:ticket 01M47QTW8CA2FD3BQTH2GG2KXR
 
 use std::path::{Path, PathBuf};
@@ -21,7 +16,7 @@ fn cases(outcome: &str) -> Vec<(String, String)> {
         .join("resources/inline")
         .join(outcome);
     let mut paths: Vec<PathBuf> = std::fs::read_dir(&dir)
-        .unwrap_or_else(|e| panic!("read {}: {e}", dir.to_string_lossy()))
+        .unwrap_or_else(|e| panic!("read {}: {e}", gob_path::Shown::of(&dir)))
         .map(|e| e.expect("dir entry").path())
         .collect();
     paths.sort();
@@ -30,7 +25,7 @@ fn cases(outcome: &str) -> Vec<(String, String)> {
         .map(|p| {
             let name = p
                 .file_stem()
-                .and_then(|s| s.to_str())
+                .and_then(gob_path::exact_text)
                 .expect("stem")
                 .to_owned();
             let text = std::fs::read_to_string(&p).expect("read case");
