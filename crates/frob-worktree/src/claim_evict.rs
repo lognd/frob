@@ -167,6 +167,7 @@ impl Workspace<'_> {
         let mut observed = ObservedClaims::load(&path);
         let now = self.ledger.clock().now().unix();
         let key = id.to_string();
+        let record = self.note_reclaim(id, &lease, now)?;
         let ctx = assess_claim(
             repo,
             &mut observed,
@@ -177,6 +178,7 @@ impl Workspace<'_> {
                 class: view.summary.class,
                 now,
                 policy,
+                record: &record,
             },
         )?;
         let today = ctx.evictions_today;

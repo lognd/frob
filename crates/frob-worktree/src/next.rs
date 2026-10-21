@@ -13,8 +13,9 @@ use std::collections::HashSet;
 
 use frob_ledger::TicketId;
 use frob_ledger::claim_agent::{ActivityTimes, observation_for};
+use frob_ledger::claim_hold::ClaimRecord;
 use frob_ledger::claim_window::{ClaimWindows, HolderKind};
-use frob_ledger::event::{EventBody, LeaseData, LeaseOp};
+use frob_ledger::event::{Event, EventBody, LeaseData, LeaseOp};
 use frob_ledger::guards::NoLeases;
 use frob_ledger::model::Category;
 use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
@@ -25,6 +26,7 @@ use crate::cycle_gate::NOT_IN_CYCLE_CODE;
 use crate::error::WorktreeError;
 use crate::evict::{
     EvictContext, EvictOutcome, EvictRequest, check_evictable, evict, evictions_today,
+    since_reclaim,
 };
 use crate::work::{Started, WorkOptions, Workspace};
 
@@ -78,6 +80,8 @@ pub(crate) struct Assessed<'a> {
     pub now: i64,
     /// The eviction policy.
     pub policy: &'a EvictPolicy,
+    /// The ticket's hold and reclaim record.
+    pub record: &'a ClaimRecord,
 }
 
 /// Record this clone's observation of a claim tip and build the [`EvictContext`] judging its idleness.
@@ -114,15 +118,58 @@ pub(crate) fn assess_claim(
         online: true,
         window_secs: status.window_secs.and_then(|w| u64::try_from(w).ok()),
         idle_secs: u64::try_from(status.idle_secs).unwrap_or(0),
-        held_or_paused: false,
+        held_or_paused: a.record.held_at(a.now),
         evictions_today: evictions_today(&observed.evictions, a.now, a.policy.utc_offset_secs),
         evict_rate: windows.evict_rate(),
-        since_reclaim_secs: None,
+        since_reclaim_secs: since_reclaim(a.record.reclaimed_at, a.now),
         in_ci: a.policy.in_ci,
     })
 }
 
+/// True when `holder` (claiming since `acquired`) is the holder re-creating a claim that was evicted from it and not yet recorded as reclaimed.
+fn is_unrecorded_reclaim(
+    events: &[Event],
+    record: &ClaimRecord,
+    holder: &str,
+    acquired: i64,
+) -> bool {
+    let last_evict = events
+        .iter()
+        .filter_map(|e| match &e.body {
+            EventBody::Lease(l) if l.op == LeaseOp::Evict => {
+                Some((e.at.unix(), l.holder.as_deref()))
+            }
+            _ => None,
+        })
+        .max_by_key(|(at, _)| *at);
+    last_evict.is_some_and(|(at, evicted)| {
+        evicted == Some(holder) && acquired >= at && record.reclaimed_at.is_none_or(|r| r < at)
+    })
+}
+
 impl Workspace<'_> {
+    /// The claim record of `id`, first recording a reclaim when the evicted holder has re-pushed its claim.
+    // frob:ticket 01M5E1MXHT9FNMKTH8EAYDK1H2
+    pub(crate) fn note_reclaim(
+        &self,
+        id: TicketId,
+        lease: &frob_lease::Lease,
+        now: i64,
+    ) -> Result<ClaimRecord, WorktreeError> {
+        let key = id.to_string();
+        let mut record = self.claim_record(&key)?;
+        if is_unrecorded_reclaim(
+            &self.ledger.events(id)?,
+            &record,
+            &lease.holder.actor,
+            lease.acquired_at.unix(),
+        ) {
+            self.record_reclaim(&key, &lease.holder.actor)?;
+            record.reclaimed_at = Some(now);
+        }
+        Ok(record)
+    }
+
     /// Claim the first doable ticket that `work` accepts, trying at most `max_attempts` candidates.
     ///
     /// The `doable` order is the shared comparator (class, priority, age).
@@ -279,6 +326,7 @@ impl Workspace<'_> {
                 tracing::warn!(%handle, "could not fetch the claim tip; skipping");
                 continue;
             }
+            let record = self.note_reclaim(lease.ticket, &lease, now)?;
             let ctx = assess_claim(
                 repo,
                 &mut observed,
@@ -289,6 +337,7 @@ impl Workspace<'_> {
                     class: view.summary.class,
                     now,
                     policy,
+                    record: &record,
                 },
             )?;
             if let Err(refusal) = check_evictable(&ctx) {
@@ -344,5 +393,50 @@ impl Workspace<'_> {
             tracing::warn!(error = %e, "could not save the observation file");
         }
         Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use frob_ledger::claim_hold::reclaim_event;
+    use gob_time::Stamp;
+
+    fn lease_ev(at: i64, body: EventBody) -> Event {
+        Event {
+            id: "01M5DYSEK61W37DS2C48FYT158".parse().unwrap(),
+            at: Stamp::from_unix(at),
+            rev: 1,
+            actor: "x".to_owned(),
+            kind: "lease".to_owned(),
+            body,
+        }
+    }
+
+    fn evict_body(holder: &str) -> EventBody {
+        EventBody::Lease(LeaseData {
+            op: LeaseOp::Evict,
+            holder: Some(holder.to_owned()),
+            observed: None,
+            parked: None,
+            tip: None,
+            idle_secs: None,
+            window_secs: None,
+            reason: None,
+        })
+    }
+
+    // frob:tests is_unrecorded_reclaim
+    #[test]
+    fn reclaim_needs_the_evicted_holder_after_the_eviction() {
+        let events = [lease_ev(100, evict_body("agent-a"))];
+        let none = ClaimRecord::default();
+        assert!(is_unrecorded_reclaim(&events, &none, "agent-a", 150));
+        assert!(!is_unrecorded_reclaim(&events, &none, "agent-b", 150));
+        assert!(!is_unrecorded_reclaim(&events, &none, "agent-a", 50));
+        assert!(!is_unrecorded_reclaim(&[], &none, "agent-a", 150));
+        let done = [events[0].clone(), lease_ev(120, reclaim_event("agent-a"))];
+        let rec = frob_ledger::claim_hold::fold_claim_record(&done);
+        assert!(!is_unrecorded_reclaim(&done, &rec, "agent-a", 150));
     }
 }
