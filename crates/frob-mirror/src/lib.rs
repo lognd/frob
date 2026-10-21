@@ -19,6 +19,7 @@ pub mod identity;
 pub mod inventory;
 pub mod journal;
 pub mod keyring;
+pub mod ledger_source;
 pub mod limits;
 pub mod lock;
 pub mod mapfile;
