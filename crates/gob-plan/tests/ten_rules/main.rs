@@ -1,4 +1,4 @@
-//! Acceptance corpus A: six grl-spec.md section 12 rules written in GRL, examples all pass.
+//! Acceptance corpus A and B: ten grl-spec.md section 12 rules written in GRL, examples all pass.
 
 // frob:ticket 01M3ZX7HW6V59EBYZ2A0HC06TD
 
@@ -6,21 +6,34 @@ use gob_plan::examples::run_example;
 use gob_plan::grl::parse;
 use gob_text::FileInterner;
 
-const RULES: [(&str, &str); 6] = [
+const RULES: [(&str, &str); 10] = [
     ("TODO001", include_str!("cases/TODO001.grl")),
     ("DOC002", include_str!("cases/DOC002.grl")),
     ("COV001", include_str!("cases/COV001.grl")),
     ("INV002", include_str!("cases/INV002.grl")),
     ("SCOPE001", include_str!("cases/SCOPE001.grl")),
     ("NEAT013", include_str!("cases/NEAT013.grl")),
+    ("SYS001", include_str!("cases/SYS001.grl")),
+    ("CAP001", include_str!("cases/CAP001.grl")),
+    ("NEAT031", include_str!("cases/NEAT031.grl")),
+    ("CI002", include_str!("cases/CI002.grl")),
 ];
 
 /// Examples the current engine cannot yet judge, as (rule, example index); each is a filed gap.
 ///
 /// A listed example must still fail: when the engine learns the feature the test fails
 /// and the entry is deleted, so the list can only shrink.
-const KNOWN_ENGINE_GAPS: [(&str, usize); 1] = [
+const KNOWN_ENGINE_GAPS: [(&str, usize); 10] = [
     ("DOC002", 1), // example runner lacks multi-file `file "..."` inputs
+    ("SYS001", 0), // ~WHEVEHY: runner lacks `model` inputs and owned_by relation
+    ("SYS001", 1),
+    ("CAP001", 0), // ~WHEVEHY: runner lacks `model` inputs and the cell relation
+    ("CAP001", 1),
+    ("NEAT031", 0), // ~R3AHZ1T: lowering rejects a field-path relation object
+    ("NEAT031", 1),
+    ("NEAT031", 2),
+    ("CI002", 0), // ~G86WKD4: executor lacks the yaml `key` kind
+    ("CI002", 1),
 ];
 
 /// Run every example of one corpus rule and return (index, description) of each failure.
@@ -76,3 +89,7 @@ corpus_test!(cov001_examples_pass, "COV001");
 corpus_test!(inv002_examples_pass, "INV002");
 corpus_test!(scope001_examples_pass, "SCOPE001");
 corpus_test!(neat013_examples_pass, "NEAT013");
+corpus_test!(sys001_examples_pass, "SYS001");
+corpus_test!(cap001_examples_pass, "CAP001");
+corpus_test!(neat031_examples_pass, "NEAT031");
+corpus_test!(ci002_examples_pass, "CI002");
