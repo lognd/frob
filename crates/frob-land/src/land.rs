@@ -869,18 +869,43 @@ pub(crate) fn resolve(
         return Ok(ledger.resolve(h)?);
     }
     let here = canon(cwd_root);
-    leases
+    let held: Vec<TicketId> = leases
         .live_snapshot()?
         .into_iter()
-        .find(|l| canon(&l.holder.worktree) == here)
+        .filter(|l| canon(&l.holder.worktree) == here)
         .map(|l| l.ticket)
-        .ok_or_else(|| {
-            needs_action(
-                "E-LAND-NOT-LEASED",
-                format!("no ticket is leased by {}", Shown::of(cwd_root)),
+        .collect();
+    sole_holder(&held, cwd_root)
+}
+
+/// The one ticket leased by the cwd worktree; none or several (a series worktree) refuse.
+// frob:ticket 01M5ED9XX1V96EW1F9J9ZK069N
+fn sole_holder(held: &[TicketId], cwd_root: &Path) -> Result<TicketId, LandError> {
+    match held {
+        [only] => Ok(*only),
+        [] => Err(needs_action(
+            "E-LAND-NOT-LEASED",
+            format!("no ticket is leased by {}", Shown::of(cwd_root)),
+            "frob land <ticket>",
+        )),
+        many => {
+            tracing::warn!(
+                count = many.len(),
+                "land: several tickets leased here, refusing to guess"
+            );
+            let ids: Vec<String> = many.iter().map(ToString::to_string).collect();
+            Err(needs_action(
+                "E-LAND-AMBIGUOUS",
+                format!(
+                    "{} tickets are leased by {} ({}); name the one to land",
+                    many.len(),
+                    Shown::of(cwd_root),
+                    ids.join(", ")
+                ),
                 "frob land <ticket>",
-            )
-        })
+            ))
+        }
+    }
 }
 
 /// The live lease of an in-progress ticket held by this actor.
@@ -2002,5 +2027,20 @@ mod tests {
         assert_eq!(sharing_tickets(holders, a, series), Some(vec![b]));
         assert_eq!(sharing_tickets([(a, series), (c, other)], a, series), None);
         assert_eq!(sharing_tickets([(a, series)], a, series), None);
+    }
+
+    // frob:ticket 01M5ED9XX1V96EW1F9J9ZK069N
+    // frob:tests crates/frob-land/src/land.rs::sole_holder
+    #[test]
+    fn land_with_no_handle_refuses_when_several_tickets_share_the_worktree() {
+        let (a, b) = (TicketId::mint(), TicketId::mint());
+        let here = Path::new("/wt/series");
+        assert_eq!(sole_holder(&[a], here).unwrap(), a);
+        let code = |r: Result<TicketId, LandError>| match r {
+            Err(LandError::Refused(r)) => r.code.to_string(),
+            other => panic!("expected a refusal, got {other:?}"),
+        };
+        assert_eq!(code(sole_holder(&[a, b], here)), "E-LAND-AMBIGUOUS");
+        assert_eq!(code(sole_holder(&[], here)), "E-LAND-NOT-LEASED");
     }
 }
