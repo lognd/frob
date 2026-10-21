@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-10-21T00:18:54Z"
+digest = "918c65daa892496045e55e9463fcefc6095db9451b8823541be2d8bdbc7dfcdb"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID da55a2f3-3a13-4f50-bbc0-bb8e89fd9c5b with nextest profile: default
+    Starting 3 tests across 3 binaries (135 tests skipped)
+        PASS [   0.006s] frob-land hostland::tests::the_newest_commit_wins_and_blank_trailers_are_skipped
+        PASS [   0.007s] frob-land hostland::tests::a_fingerprint_ignores_hunk_positions_and_whitespace
+        PASS [   0.007s] frob-land hostland::tests::the_newest_equal_patch_is_found
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 3 tests run: 3 passed, 135 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land hostland"
+size = 763
+status = "measured"
+test_count = 3
+tests_digest = "3d7f5fdd14fb008ab0f936d73bad1a45a1f19d757e929a6fe272c8c3aa8d112f"
+at = "2026-10-21T00:18:54Z"
+actor = "lognd"
+rev = 1
