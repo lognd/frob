@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T01:54:07Z"
-updated = "2026-10-21T02:20:12Z"
+updated = "2026-10-21T02:35:52Z"
 scope = ["crates/frob/src/doctor.rs", "docs/design/distributed-tickets.md", "changelog.d/01M5E2MWBXD6DQSNE9AX511AFF.changed.md"]
 +++
 
