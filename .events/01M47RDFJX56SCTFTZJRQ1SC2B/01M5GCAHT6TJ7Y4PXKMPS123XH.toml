@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T23:21:43Z"
+digest = "29b4bc9bf67ebe2de218050473538df1c4f522047301149a7c7984043fc52618"
+exit_code = 0
+head = "4d1938948fdbccd3981d4b9cc54298979233226d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f1b9a67f-dd53-487c-838c-245fb3355355 with nextest profile: default
+    Starting 1 test across 2 binaries (294 tests skipped)
+        PASS [   0.009s] gob-symbols::it csharp::an_enclosing_namespace_type_shadows_an_implicit_namespace_and_two_implicit_hits_are_ambiguous
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 294 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols an_enclosing_namespace_type"
+size = 610
+status = "measured"
+test_count = 1
+tests_digest = "91defea38736f41136142550aab51d6a640155108dcd781f24c94f74b55ebd69"
+at = "2026-10-21T23:21:43Z"
+actor = "lognd"
+rev = 1
