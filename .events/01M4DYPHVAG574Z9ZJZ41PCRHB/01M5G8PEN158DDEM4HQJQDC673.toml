@@ -1,0 +1,93 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T22:17:23Z"
+digest = "157ab6ac6f2f81153d54fe0337aedc3d258e1669eeb192fc4f656f2d6aedf395"
+exit_code = 0
+head = "577ed9a6d0ef806644daee684c3fb73de08f394a"
+inline = '''
+   Compiling ahash v0.8.12
+   Compiling serde_json v1.0.151
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling fluent-uri v0.4.1
+   Compiling email_address v0.2.9
+   Compiling hashbrown v0.14.5
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling dashmap v6.2.1
+   Compiling hashlink v0.9.1
+   Compiling schemars v1.2.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling jsonschema-value v0.58.5
+   Compiling referencing v0.58.5
+   Compiling rusqlite v0.32.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-shallow v0.13.0
+   Compiling jsonschema v0.58.5
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gix-filter v0.34.0
+   Compiling gix-traverse v0.61.0
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gix-index v0.55.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-discover v0.55.0
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gix-config v0.60.0
+   Compiling gix-worktree v0.56.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-protocol v0.65.1
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gix-status v0.34.1
+   Compiling gix-merge v0.20.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-submodule v0.34.0
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix v0.87.1
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 55.46s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f0f2785a-cdcb-474b-8f9d-47f3e8a0275f with nextest profile: default
+    Starting 1 test across 10 binaries (42 tests skipped)
+        PASS [   0.010s] grimble::verbs compile_names_a_misspelt_config_column
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 42 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble compile_names_a_misspelt_config_column"
+size = 3750
+status = "measured"
+test_count = 1
+tests_digest = "bbeeda83701086b6d375e0d196d4583d12e250034c455841c0df744c0c3ff882"
+at = "2026-10-21T22:17:23Z"
+actor = "lognd"
+rev = 1
