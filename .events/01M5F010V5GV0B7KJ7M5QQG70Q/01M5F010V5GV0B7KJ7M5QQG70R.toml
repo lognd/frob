@@ -1,0 +1,11 @@
+kind = "create"
+title = "grimble-ci: CI013-CI015 and CI016 (native, trust-from-protected-ref)"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+scope = ["crates/grimble-ci/**"]
+body = "Deferred from ~8886VJ4: the actionlint/zizmor-delegated rules CI013-CI015 and native CI016."
+at = "2026-10-21T10:27:34Z"
+actor = "lognd"
+rev = 1
