@@ -17,7 +17,7 @@ use grimble_lints::pass::{PathFile, PathReport};
 use grimble_model::{ModelFiles, check_model, file_table};
 
 use crate::bind_cache::{self, BindSummary};
-use crate::config::{GrimbleTable, PRODUCT};
+use crate::config::{GrimbleTable, PRODUCT, RuleOverrides};
 use crate::fidelity::language_tag;
 use crate::model_view::ModelView;
 use crate::report_cache;
@@ -47,6 +47,8 @@ pub struct GrimbleInputs {
     pub path: PathReport,
     /// The TIME001 and TIME002 verdicts (grimble-lints), cached like the PATH report.
     pub time: PathReport,
+    /// The `[rules.<id>]` severity overrides of `grimble.toml`.
+    pub overrides: RuleOverrides,
 }
 
 /// What a run leaves behind for the document builder: the model view and which exception parked which finding.
@@ -401,6 +403,10 @@ impl Product for Grimble {
                 .or_default() += 1;
         }
         let table = GrimbleTable::load(&cx.core.root)?;
+        let overrides = RuleOverrides::load(&cx.core.root, cx.core.text("grimble.toml"))?;
+        for id in overrides.unknown_ids(|id| registry().iter().any(|m| m.id == id)) {
+            tracing::warn!(rule = id, "[rules] names no grimble rule; ignored here");
+        }
         let model = read_models(&cx.core.root, &cx.core.entries, &table, &mut |p| {
             cx.core.bytes(p)
         });
@@ -457,6 +463,7 @@ impl Product for Grimble {
                 arch,
                 path,
                 time,
+                overrides,
             },
             findings: Vec::new(),
         })
@@ -566,6 +573,8 @@ impl Product for Grimble {
         let rows = snap.inputs.view.bound();
         let bounds: Vec<BoundException> = rows.iter().map(|(_, b)| (*b).clone()).collect();
         let ctx = ExceptionCtx { files };
+        let mut raw = raw;
+        snap.inputs.overrides.apply(&mut raw);
         let mut resolved = apply_exceptions(raw, &bounds, &ctx);
         // EXC016: an accept never parks an Unresolved finding.
         let (kept_back, parked): (Vec<_>, Vec<_>) =

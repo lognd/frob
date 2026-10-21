@@ -245,9 +245,17 @@ which names hold naive or aware values. Import aliases are resolved. A
 walk with TypeScript or C# files reports each rule Unresolved once per
 language (no clock roles); a walk with no Rust or Python file is not
 applicable. Both default to Warn. The repository scan over its own Rust
-and Python files finds no site, so the Error raise is safe to apply; it
-waits on the `[rules.<id>]` severity override being read from config
-(`RuleSettings` has no reader yet).
+and Python files finds no site, so the Error raise is applied in this
+repository's `grimble.toml` (`[rules.TIME001]` and `[rules.TIME002]`,
+`severity = "error"`).
+
+The grimble check reads `[rules.<id>] severity = "advisory" | "warn" |
+"error"` (`RuleOverrides` in `grimble-check`). The override beats the rule
+default and `[grimble] strict`. An unknown rule id is logged and ignored
+because `[rules]` is shared with other products; an invalid token fails
+the run. Unresolved findings are never re-graded, and `disabled` is not
+read by grimble. The table is hand-parsed, so it is not part of the
+generated `docs/reference/config.md`.
 
 Moved out of frob core (D88, refined by D89, owner decisions 2026-10-04),
 split by the products.md boundary (grimble models systems and code in any
