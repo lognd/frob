@@ -52,6 +52,49 @@ budget_ms = 500
 [scenario."frob lease release"]
 skip = "gives up the caller's lease on a ticket, which mutates lease state and needs a finished-but-unlanded ticket that the repo fixture does not provide; the cost is a single ledger write"
 
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."frob claim touch"]
+args = ["claim", "touch", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."frob claim hold"]
+args = ["claim", "hold", "{ticket}", "--until", "2099-01-01", "--reason", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."frob claim resume"]
+args = ["claim", "resume", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."frob claim evict"]
+args = ["claim", "evict", "{ticket}", "--reason", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."frob claim restore"]
+args = ["claim", "restore", "{ticket}", "--reason", "profile probe"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."frob lease rekind"]
+args = ["lease", "rekind", "{ticket}"]
+exit = [0, 2, 3]
+budget_ms = 500
+
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."frob refresh"]
+args = ["refresh", "--status"]
+readonly = true
+exit = [0, 2, 3]
+budget_ms = 500
+
 [scenario."frob board"]
 args = ["board"]
 readonly = true
@@ -498,6 +541,18 @@ args = ["fix", "--dry-run"]
 readonly = true
 exit = [0, 1, 3]
 budget_ms = 500
+
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."crunk gallery enumerate"]
+skip = "opt-in behind the gallery cargo feature, absent from the default build the profile times; covered by crates/crunk-gallery tests"
+
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."crunk gallery render"]
+skip = "opt-in behind the gallery cargo feature, absent from the default build the profile times; covered by crates/crunk-gallery tests"
+
+# frob:ticket 01M5FNMEZGVK7EJVKJ5C5VQ4J2
+[scenario."crunk gallery triage"]
+skip = "opt-in behind the gallery cargo feature, absent from the default build the profile times; covered by crates/crunk-gallery tests"
 
 [scenario."crunk gallery check"]
 skip = "opt-in behind the gallery cargo feature, absent from the default build the profile times; covered by crates/crunk-gallery tests"
