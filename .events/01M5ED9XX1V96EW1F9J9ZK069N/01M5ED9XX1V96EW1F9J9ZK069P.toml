@@ -1,0 +1,11 @@
+kind = "create"
+title = "land: resolve with no handle must refuse as ambiguous in a series worktree holding several leases"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
+body = "Follow-up from ~P2W1WMP."
+at = "2026-10-21T05:00:23Z"
+actor = "lognd"
+rev = 1
