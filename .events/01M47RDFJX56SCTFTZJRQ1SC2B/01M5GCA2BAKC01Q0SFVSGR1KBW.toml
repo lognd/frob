@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a project with ImplicitUsings, when a C# file uses a type from an implicit namespace, then the import resolves"]
+new = ["Given a project with ImplicitUsings, when a C# file uses a type from an implicit namespace, then the import resolves", "Given a project with Using Remove/Include items, when a C# file calls a type, then added namespaces resolve and removed ones do not"]
+moved = [1]
+at = "2026-10-21T23:21:28Z"
+actor = "lognd"
+rev = 1
