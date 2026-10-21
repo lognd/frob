@@ -2,7 +2,8 @@
 id = "01M47SE72KECMSYSGSVZDT6Q6X"
 title = "gob-symbols: add a kind field to UseBinding instead of encoding C# import kinds in strings"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
