@@ -27,6 +27,7 @@ pub(crate) mod pathtext;
 pub mod verbs;
 pub mod wip;
 pub mod work;
+mod work_view;
 
 pub use config::{WorktreeConfig, ledger_config};
 pub use error::WorktreeError;

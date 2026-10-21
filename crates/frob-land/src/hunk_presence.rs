@@ -12,12 +12,14 @@ use std::path::Path;
 
 use gob_git::Repo;
 use gob_path::Shown;
+use schemars::JsonSchema;
+use serde::Serialize;
 
 use crate::error::{LandError, needs_action};
 use crate::git::git;
 
 /// Lines of one file a merge dropped, with the ticket commit that added them.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct DroppedHunk {
     /// The ticket commit that added the lines.
     pub commit: String,
@@ -129,6 +131,52 @@ pub fn dropped_hunks(
     Ok(dropped)
 }
 
+// frob:ticket 01M5EBD66SH12P69KWVXA8K2NC
+/// Hunks that past base merges on the branch ending at `head` dropped (`frob train status` audit).
+///
+/// Each first-parent merge commit `M` of `base..head` is checked as a land-time merge would be:
+/// `M^1` is the premerge tip, `M^2` the base side, `M` the merged tree; results are concatenated
+/// oldest merge first.
+///
+/// # Errors
+/// Git failed to list the merges or show their commits.
+pub fn audit_merges(
+    repo: &Repo,
+    wt: &Path,
+    base: &str,
+    head: &str,
+) -> Result<Vec<DroppedHunk>, LandError> {
+    let range = format!("{base}..{head}");
+    let merges = git(
+        repo,
+        wt,
+        &[
+            "rev-list",
+            "--merges",
+            "--first-parent",
+            "--reverse",
+            &range,
+        ],
+    )?;
+    if !merges.ok() {
+        return Err(LandError::Config(format!(
+            "git rev-list {range}: {}",
+            merges.text
+        )));
+    }
+    let mut out = Vec::new();
+    for merge in merges.text.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        out.extend(dropped_hunks(
+            repo,
+            wt,
+            &format!("{merge}^2"),
+            &format!("{merge}^1"),
+            merge,
+        )?);
+    }
+    Ok(out)
+}
+
 /// Refuse (`E-LAND-HUNKS-DROPPED`) when the base merge at `merged` lost lines the ticket's commits added.
 pub(crate) fn verify_after_merge(
     repo: &Repo,
@@ -236,5 +284,31 @@ mod tests {
         let r = err.refusal().expect("refusal");
         assert_eq!(r.code, "E-LAND-HUNKS-DROPPED");
         assert!(r.message.contains("e2"), "{}", r.message);
+    }
+
+    // frob:ticket 01M5EBD66SH12P69KWVXA8K2NC
+    // frob:tests crates/frob-land/src/hunk_presence.rs::audit_merges
+    #[test]
+    fn audit_finds_a_past_merge_that_dropped_hunks_and_passes_a_clean_one() {
+        let (tmp, repo) = fixture();
+        let d = tmp.path();
+        run(&repo, d, &["merge", "-q", "--no-edit", "dev"]);
+        let clean = run(&repo, d, &["rev-parse", "HEAD"]);
+        assert!(
+            audit_merges(&repo, d, "dev", &clean)
+                .expect("audit")
+                .is_empty()
+        );
+        // A second, lossy merge: reset to before the clean merge and redo it dropping the lines.
+        run(&repo, d, &["reset", "-q", "--hard", "HEAD^1"]);
+        run(&repo, d, &["merge", "-q", "--no-edit", "-s", "ours", "dev"]);
+        run(&repo, d, &["checkout", "dev", "--", "m.txt"]);
+        run(&repo, d, &["commit", "-q", "--amend", "--no-edit"]);
+        let lossy = run(&repo, d, &["rev-parse", "HEAD"]);
+        let found = audit_merges(&repo, d, "dev", &lossy).expect("audit");
+        assert!(
+            found.iter().any(|h| h.lines.iter().any(|l| l == "e2")),
+            "{found:?}"
+        );
     }
 }

@@ -215,7 +215,11 @@ impl Command for Land {
                 n.message
             )
         }));
-        let mut p = Payload::new(LandReport::One(out)).with_already(already);
+        let report = LandReport::One(out);
+        let rows = crate::land_view::land_rows(&report);
+        let mut p = Payload::new(report)
+            .with_already(already)
+            .with_rendered(rows);
         for w in warnings {
             p = p.with_warning(w);
         }
@@ -362,7 +366,9 @@ pub fn land_batch(
             warnings: Vec::new(),
         });
     }
-    Ok(Payload::new(LandReport::Batch(report)))
+    let report = LandReport::Batch(report);
+    let rows = crate::land_view::land_rows(&report);
+    Ok(Payload::new(report).with_rendered(rows))
 }
 
 /// The `--status` result: the lock state in an otherwise empty outcome.

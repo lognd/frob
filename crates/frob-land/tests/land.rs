@@ -2678,8 +2678,11 @@ fn train_status_reports_queue_candidate_and_batch_size_as_an_envelope() {
     assert!(st.current.is_none());
     assert_eq!((st.batch.current, st.batch.max), (1, 8));
     assert!(st.enabled);
+    assert!(st.dropped.is_empty(), "clean queue has no dropped hunks");
     let json = serde_json::to_value(&st).expect("json");
-    for key in ["summary", "enabled", "queue", "batch", "live", "stale"] {
+    for key in [
+        "summary", "enabled", "queue", "batch", "live", "stale", "dropped",
+    ] {
         assert!(json.get(key).is_some(), "{key} in {json}");
     }
     let schema = schemars::schema_for!(frob_land::TrainStatusReport);

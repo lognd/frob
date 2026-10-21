@@ -173,6 +173,8 @@ fn start_payload(s: Started) -> Payload<StartData> {
         stolen_from: s.stolen_from,
     })
     .with_already(already);
+    let rows = crate::work_view::work_rows(&p.data, already);
+    p = p.with_rendered(rows);
     for w in warnings {
         p = p.with_warning(w);
     }

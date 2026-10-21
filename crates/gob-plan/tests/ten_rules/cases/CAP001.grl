@@ -1,0 +1,27 @@
+rule CAP001 "undeclared-capability" {
+  lang *
+  severity error
+  needs model
+
+  find c: cell where c.observed and not c.granted and not c.excused
+  report c "node {c.node.name} uses {c.atom} without a grant (deny by default)"
+  fix host add_grant(c.node, c.atom) [has-placeholders]
+
+  example fire rust {
+    model """node frob owns "src/**";"""
+    file "src/a.rs" """
+      fn serve() { std::net::TcpListener::bind("0.0.0.0:0"); }   //~ error
+    """
+  }
+  example clean rust {
+    model """node frob owns "src/**" { may net.listen because="the server"; }"""
+    file "src/a.rs" """
+      fn serve() { std::net::TcpListener::bind("0.0.0.0:0"); }
+    """
+  }
+  explain """
+    Capabilities are denied unless granted (D75).
+    ## Remedy
+    Add `may ATOM because="..."` to the node, or remove the use.
+  """
+}

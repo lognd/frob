@@ -30,14 +30,69 @@ pub struct ConfigSchema {
     nodes: BTreeMap<String, ConfigNode>,
 }
 
-fn scalar(schema: &Value) -> FieldType {
-    match schema.get("type").and_then(Value::as_str) {
-        Some("string") => FieldType::Str,
-        Some("integer") => FieldType::Int,
-        Some("number") => FieldType::Float,
-        Some("boolean") => FieldType::Bool,
+/// The scalar type a JSON-schema `type` names, looking through a nullable union
+/// (`["object", "null"]`) and an `anyOf`/`oneOf` that pairs one schema with `null`.
+fn scalar_of(name: &str) -> FieldType {
+    match name {
+        "string" => FieldType::Str,
+        "integer" => FieldType::Int,
+        "number" => FieldType::Float,
+        "boolean" => FieldType::Bool,
         _ => FieldType::Any,
     }
+}
+
+/// The one non-null type name a schema declares, when it declares exactly one.
+fn type_name(schema: &Value) -> Option<&str> {
+    let Some(ty) = schema.get("type") else {
+        return union_type(schema);
+    };
+    match ty {
+        Value::String(s) => Some(s),
+        Value::Array(xs) => {
+            let mut non_null = xs.iter().filter_map(Value::as_str).filter(|s| *s != "null");
+            let first = non_null.next()?;
+            non_null.next().is_none().then_some(first)
+        }
+        _ => None,
+    }
+}
+
+/// The single type every non-null `oneOf`/`anyOf` variant shares (a string enum such as
+/// `ClassCase` is a `oneOf` of string consts).
+fn union_type(schema: &Value) -> Option<&str> {
+    let variants = ["oneOf", "anyOf"]
+        .iter()
+        .find_map(|k| schema.get(*k)?.as_array())?;
+    let mut names = variants
+        .iter()
+        .filter(|v| v.get("type").and_then(Value::as_str) != Some("null"))
+        .map(type_name);
+    let first = names.next()??;
+    names.all(|n| n == Some(first)).then_some(first)
+}
+
+fn scalar(schema: &Value) -> FieldType {
+    type_name(schema).map_or(FieldType::Any, scalar_of)
+}
+
+/// The value type of a scalar array (`items`) or a string-keyed map (`additionalProperties`).
+fn value_type(prop: &Value) -> Option<(FieldType, bool)> {
+    match type_name(prop)? {
+        "array" => Some((scalar(prop.get("items")?), false)),
+        "object" => Some((scalar(prop.get("additionalProperties")?), true)),
+        _ => None,
+    }
+    .filter(|(ty, _)| *ty != FieldType::Any)
+}
+
+/// The schema a `$ref` points at (an enum such as `ClassCase`), else the schema itself.
+fn deref<'a>(root: &'a Value, schema: &'a Value) -> &'a Value {
+    schema
+        .get("$ref")
+        .and_then(Value::as_str)
+        .and_then(|r| root.pointer(r.strip_prefix('#')?))
+        .unwrap_or(schema)
 }
 
 /// The object schema a row is described by: an inline object or a `$defs` reference.
@@ -48,9 +103,28 @@ fn row_schema<'a>(root: &'a Value, items: &'a Value) -> Option<&'a Value> {
     }
 }
 
+/// Columns of a value-set relation: `value` for a scalar array, `name` and `value` for a map.
+fn value_columns(prop: &Value) -> Option<Vec<Column>> {
+    let (ty, keyed) = value_type(prop)?;
+    let mut cols = Vec::new();
+    if keyed {
+        cols.push(Column {
+            name: "name".to_owned(),
+            ty: FieldType::Str,
+        });
+    }
+    cols.push(Column {
+        name: "value".to_owned(),
+        ty,
+    });
+    Some(cols)
+}
+
 fn columns_of(root: &Value, prop: &Value) -> Option<Vec<Column>> {
-    let items = prop.get("items")?;
-    let row = row_schema(root, items)?;
+    if let Some(cols) = value_columns(prop) {
+        return Some(cols);
+    }
+    let row = row_schema(root, prop.get("items")?)?;
     let props = row.get("properties")?.as_object()?;
     Some(
         props
@@ -97,6 +171,7 @@ fn walk(root: &Value, node: &Value, prefix: &str, out: &mut BTreeMap<String, Con
         return;
     };
     for (key, prop) in props {
+        let prop = deref(root, prop);
         let path = if prefix.is_empty() {
             key.clone()
         } else {
@@ -110,7 +185,7 @@ fn walk(root: &Value, node: &Value, prefix: &str, out: &mut BTreeMap<String, Con
         out.insert(
             path.clone(),
             ConfigNode {
-                ty: scalar(prop),
+                ty: value_type(prop).map_or_else(|| scalar(prop), |(ty, _)| ty),
                 columns: columns_of(root, prop),
                 children,
             },

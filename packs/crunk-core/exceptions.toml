@@ -2,8 +2,8 @@
 # cannot express them yet. Each names the missing construct (feeds the owner decision on
 # value-domain predicates). Shared blockers, true for every rule below:
 #   host-input  the rules read CrunkHost (spec + stylesheet index), not a code-model node tree
-#   side-schema config.layers and config.org need a side-relation catalog typed from
-#               docs/schemas/crunk.json; the catalog only types config.<table> from config.json
+#   side-schema (typing resolved: ConfigSchema types config.layers and config.org from
+#               docs/schemas/crunk.json when passed that schema; wiring it into the pack remains)
 #   gen-target  cargo dev gen rules emits only the std pack against the gob host
 
 [[exception]]
