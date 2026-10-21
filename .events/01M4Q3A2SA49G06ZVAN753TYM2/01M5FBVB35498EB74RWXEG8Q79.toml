@@ -1,0 +1,53 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T13:52:15Z"
+digest = "1b87c7c2e0cb58025758292fe5bb6a647ba4f4c7da8ea1f8544bc845ee4d7dd5"
+exit_code = 0
+head = "363cdc027d8bb3d7378878ddcb05af16dfec8b6b"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling libc v0.2.189
+   Compiling regex-automata v0.4.18
+   Compiling zerocopy-derive v0.8.59
+   Compiling log v0.4.34
+   Compiling tracing-core v0.1.36
+   Compiling tracing v0.1.44
+   Compiling zerocopy v0.8.59
+   Compiling getrandom v0.3.4
+   Compiling getrandom v0.4.3
+   Compiling wait-timeout v0.2.1
+   Compiling is-terminal v0.4.17
+   Compiling tempfile v3.27.0
+   Compiling rand_core v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling rusty-fork v0.3.1
+   Compiling globset v0.4.20
+   Compiling regex v1.13.1
+   Compiling ignore v0.4.33
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling half v2.7.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling ciborium-ll v0.2.2
+   Compiling rand_chacha v0.9.0
+   Compiling ciborium v0.2.2
+   Compiling proptest v1.11.0
+   Compiling criterion v0.5.1
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3dd80532-f196-440c-98e4-2867beae1e6a with nextest profile: default
+    Starting 1 test across 2 binaries (47 tests skipped)
+        PASS [   0.624s] gob-walk::no_gix analysis_crates_have_no_gix_or_gob_git_in_their_normal_tree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.625s] 1 test run: 1 passed, 47 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-walk analysis_crates_have_no_gix"
+size = 1470
+status = "measured"
+test_count = 1
+tests_digest = "b86803ddd20a19aa8c755678530fa7b22b13fe68e8c2a4317005938709a260f1"
+at = "2026-10-21T13:52:15Z"
+actor = "lognd"
+rev = 1

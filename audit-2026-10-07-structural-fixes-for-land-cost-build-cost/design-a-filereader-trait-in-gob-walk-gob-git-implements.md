@@ -8,7 +8,7 @@ points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-12T03:43:10Z"
-updated = "2026-10-21T13:49:50Z"
+updated = "2026-10-21T13:52:15Z"
 scope = ["crates/gob-walk/**", "crates/gob-git/**", "changelog.d/**"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M4CTE0GYDX0XW64JRNF2ZMQG"
 
 [[acceptance]]
 text = "Given gob-walk, when built, then it defines a FileReader trait and has no gob-git dependency"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given gob-git, when built, then it implements FileReader and a fake reader in a gob-walk test drives a walk"
