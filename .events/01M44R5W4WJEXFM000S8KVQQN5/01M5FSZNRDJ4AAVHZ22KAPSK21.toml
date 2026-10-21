@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [6]
+captured_at = "2026-10-21T18:01:12Z"
+digest = "2013f2b88ea51a504ed00ca5c37dbbe4033bb5fcb98fcb43cf2e559470c77025"
+exit_code = 0
+head = "e28b4f15f32529cb6ac04ef7159d6ffbe783ab39"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e875d3b2-f034-4425-9a47-d539c5eed35a with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   0.084s] grimble-check::time_rules a_stored_naive_now_read_reports_time001_through_the_pipeline
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.085s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test time_rules a_stored_naive_now_read_reports_time001_through_the_pipeline"
+size = 555
+status = "measured"
+test_count = 1
+tests_digest = "73e308273869f271cd9d9aa2fa9df36610dceb931217dd9cfabe559aceb32fb2"
+at = "2026-10-21T18:01:12Z"
+actor = "lognd"
+rev = 1
