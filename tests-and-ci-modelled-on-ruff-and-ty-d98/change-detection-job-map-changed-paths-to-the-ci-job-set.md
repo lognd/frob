@@ -2,7 +2,8 @@
 id = "01M47QVD03PGCAZ301WHC5Q4MF"
 title = "Change detection job: map changed paths to the CI job set"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
