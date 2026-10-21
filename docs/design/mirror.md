@@ -233,6 +233,17 @@ and in `frob mirror status`.
   pending shards and then the index round-robin cursor every K
   operations, so a crash repeats at most K operations and never one
   already behind the cursor.
+- **Selection cursors (F8).** `frob_mirror::run` persists one resume point
+  per work class (the last completed item) under the `run-cursors` store
+  key (`load_cursors`, `save_cursors`) and every run selects with them, so
+  Update, Create and Reconcile rotate round robin across runs instead of
+  always serving the lowest-sorted ticket. The sweep keeps its own cursor
+  there and gives its batch ages in `next_batch` order, so with `sweep_k`
+  above what the budget covers the run serves a prefix and the next run
+  continues after the last one served. A missing record (an older store)
+  starts fresh and the sweep falls back to the index cursor; a cursor whose
+  ticket is gone resumes at the next larger key and wraps. The record is
+  rewritten only when a cursor moved, after the progress commit.
 - **Outbox** (work class 2). Implemented in `frob_mirror::outbox`: each
   ledger event is a `LedgerEvent` keyed by ticket ULID plus event ULID and
   sets one field to one value. `plan_ops` selects oldest first (incremental:

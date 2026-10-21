@@ -6,16 +6,125 @@
 
 // frob:ticket 01M4052W6Q1FAQK362YF6RCGW1
 
+use std::collections::BTreeMap;
+
+use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
 use crate::adapter::TrackerAdapter;
 use crate::blind::check_blind;
 use crate::budget::{self, BudgetConfig, RateLimit};
 use crate::lock::{self, Acquire, LedgerCommit};
-use crate::mapfile::{MapError, Shard, ShardStore};
+use crate::mapfile::{MapError, Shard, ShardStore, content_hash, decode, encode};
 use crate::plan::{Cursors, WorkClass, WorkItem, select};
 use crate::progress::{ProgressWriter, RunReport, StopReason};
 use crate::sweep::next_batch;
+
+/// Store key of the per-class round-robin cursors (F8).
+pub const CURSORS_KEY: &str = "run-cursors";
+
+/// Every work class, for walking the cursors.
+const CLASSES: [WorkClass; 5] = [
+    WorkClass::Recovery,
+    WorkClass::Update,
+    WorkClass::Create,
+    WorkClass::Reconcile,
+    WorkClass::Sweep,
+];
+
+/// The stable name a class is stored under.
+fn class_name(class: WorkClass) -> &'static str {
+    match class {
+        WorkClass::Recovery => "recovery",
+        WorkClass::Update => "update",
+        WorkClass::Create => "create",
+        WorkClass::Reconcile => "reconcile",
+        WorkClass::Sweep => "sweep",
+    }
+}
+
+/// One class's resume point as stored.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct StoredCursor {
+    age: u64,
+    ticket: String,
+}
+
+/// The stored record: last completed item per class name. Unknown names are ignored on read.
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct CursorRecord {
+    #[serde(default)]
+    classes: BTreeMap<String, StoredCursor>,
+}
+
+/// Reads the persisted cursors; a missing record (a store from before F8) is all-default.
+///
+/// # Errors
+/// `MapError::Corrupt` when the stored record does not decode.
+// frob:ticket 01M5EWJDDGZS0G0346T3A6WZ0W
+pub fn load_cursors<S: ShardStore>(store: &S) -> Result<Cursors, MapError> {
+    let Some(bytes) = store.get(CURSORS_KEY) else {
+        debug!("mirror run: no stored cursors, starting fresh");
+        return Ok(Cursors::default());
+    };
+    let record: CursorRecord = decode(CURSORS_KEY, &bytes)?;
+    let mut cursors = Cursors::default();
+    for class in CLASSES {
+        if let Some(c) = record.classes.get(class_name(class)) {
+            cursors.complete(&WorkItem {
+                class,
+                age: c.age,
+                ticket: c.ticket.clone(),
+            });
+        }
+    }
+    Ok(cursors)
+}
+
+/// Persists `cursors` by CAS so the next run resumes each class after its last completed item.
+///
+/// # Errors
+/// `MapError::Conflict` when another writer changed the record first.
+// frob:ticket 01M5EWJDDGZS0G0346T3A6WZ0W
+pub fn save_cursors<S: ShardStore>(store: &mut S, cursors: &Cursors) -> Result<(), MapError> {
+    let classes = CLASSES
+        .into_iter()
+        .filter_map(|c| {
+            cursors.get(c).map(|(age, t)| {
+                (
+                    class_name(c).to_string(),
+                    StoredCursor {
+                        age,
+                        ticket: t.to_string(),
+                    },
+                )
+            })
+        })
+        .collect();
+    let expected = store.get(CURSORS_KEY).map(|b| content_hash(&b));
+    store.put_if(
+        CURSORS_KEY,
+        expected.as_deref(),
+        encode(&CursorRecord { classes }),
+    )?;
+    debug!("mirror run: cursors saved");
+    Ok(())
+}
+
+/// `cursors` minus the sweep: the sweep batch arrives already rotated by `next_batch`.
+fn without_sweep(cursors: &Cursors) -> Cursors {
+    let mut out = Cursors::default();
+    for class in CLASSES.into_iter().filter(|c| *c != WorkClass::Sweep) {
+        if let Some((age, t)) = cursors.get(class) {
+            out.complete(&WorkItem {
+                class,
+                age,
+                ticket: t.to_string(),
+            });
+        }
+    }
+    out
+}
 
 /// Settings of one run.
 #[derive(Debug, Clone)]
@@ -163,23 +272,32 @@ fn run_locked<S: ShardStore, H: RunHost>(
         new_commits,
         "mirror run: foreign ledger commits since watermark"
     );
+    let stored = load_cursors(&*store)?;
     let mut writer = ProgressWriter::new(store, cfg.commit_every)?;
     let mut items = host.pending(writer.store());
     let universe = host.sweep_universe();
+    // The sweep resumes after its own last completed ticket; stores from before F8 fall back to
+    // the index cursor. Ages follow batch order so `select` keeps the order and a small budget
+    // serves a prefix of the batch, which the next run continues from.
+    let sweep_after = stored
+        .get(WorkClass::Sweep)
+        .map(|(_, t)| t.to_string())
+        .or_else(|| writer.resume_after().map(String::from));
     items.extend(
-        next_batch(&universe, writer.resume_after(), cfg.sweep_k)
+        next_batch(&universe, sweep_after.as_deref(), cfg.sweep_k)
             .into_iter()
-            .map(|ticket| WorkItem {
+            .zip(0u64..)
+            .map(|(ticket, age)| WorkItem {
                 class: WorkClass::Sweep,
-                age: 0,
+                age,
                 ticket,
             }),
     );
     let planned: Vec<WorkClass> = items.iter().map(|i| i.class).collect();
     let cost = cfg.budget.reads_per_ticket + 1;
-    let selected = select(items, &Cursors::default(), &plan, cost);
+    let selected = select(items, &without_sweep(&stored), &plan, cost);
     debug!(selected = selected.len(), "mirror run: work selected");
-    let (mut cursors, mut executed, mut failed) = (Cursors::default(), Vec::new(), Vec::new());
+    let (mut cursors, mut executed, mut failed) = (stored.clone(), Vec::new(), Vec::new());
     let mut stop = StopReason::Completed;
     for item in &selected {
         match host.execute(item, writer.store_mut(), &mut *adapter) {
@@ -216,6 +334,9 @@ fn run_locked<S: ShardStore, H: RunHost>(
         writer.set_change_feed(cursor);
     }
     let report = writer.finish(stop)?;
+    if cursors != stored {
+        save_cursors(store, &cursors)?;
+    }
     let watermark = advance_watermark(store, &log, prior.as_ref(), &stop, failed.is_empty())?;
     info!(
         executed = executed.len(),
@@ -366,6 +487,7 @@ mod tests {
         cursor: Option<String>,
         calls: Vec<(WorkClass, String)>,
         after: usize,
+        remaining: u64,
     }
 
     impl Host {
@@ -379,6 +501,7 @@ mod tests {
                 cursor: None,
                 calls: vec![],
                 after: 0,
+                remaining: 1000,
             }
         }
     }
@@ -386,7 +509,7 @@ mod tests {
     impl RunHost for Host {
         fn rate_limit(&self) -> RateLimit {
             RateLimit {
-                remaining: Some(1000),
+                remaining: Some(self.remaining),
                 reset: Some(5),
             }
         }
@@ -594,5 +717,91 @@ mod tests {
         let s = ran(run(&mut store, &mut Fake { visible: true }, &mut host, &cfg()).unwrap());
         assert_eq!(s.watermark, None);
         assert!(lock::read_watermark(&store).unwrap().is_none());
+    }
+
+    /// A host and config whose budget (all of `3 * n` calls) fits exactly `n` items of cost 3.
+    fn tight(host: &mut Host, n: u64, sweep_k: usize) -> RunConfig {
+        host.remaining = n * 3;
+        let mut c = cfg();
+        c.sweep_k = sweep_k;
+        c.budget.share_percent = 100;
+        c
+    }
+
+    fn served(host: &mut Host, store: &mut Mem, cfg: &RunConfig) -> Vec<String> {
+        let before = host.calls.len();
+        ran(run(store, &mut Fake { visible: true }, host, cfg).unwrap());
+        host.calls[before..]
+            .iter()
+            .map(|(_, t)| t.clone())
+            .collect()
+    }
+
+    // frob:tests run
+    // frob:tests load_cursors
+    // frob:tests save_cursors
+    #[test]
+    fn sweep_k_above_budget_capacity_visits_every_ticket() {
+        let mut host = Host::new(vec![], false);
+        host.universe = (0..7).map(|i| format!("S{i}")).collect();
+        let mut store = Mem::default();
+        let cfg = tight(&mut host, 3, 5);
+        let mut seen = std::collections::BTreeSet::new();
+        for _ in 0..3 {
+            seen.extend(served(&mut host, &mut store, &cfg));
+        }
+        assert_eq!(seen.len(), 7, "a sweep ticket starved: {seen:?}");
+    }
+
+    // frob:tests run
+    #[test]
+    fn update_class_rotates_across_runs_under_a_small_budget() {
+        let items = vec![
+            item(WorkClass::Update, "a"),
+            item(WorkClass::Update, "b"),
+            item(WorkClass::Update, "c"),
+        ];
+        let mut host = Host::new(items, false);
+        let mut store = Mem::default();
+        let cfg = tight(&mut host, 1, 0);
+        let order: Vec<String> = (0..4)
+            .flat_map(|_| served(&mut host, &mut store, &cfg))
+            .collect();
+        assert_eq!(order, ["a", "b", "c", "a"]);
+    }
+
+    // frob:tests load_cursors
+    // frob:tests save_cursors
+    #[test]
+    fn cursors_round_trip_and_old_store_means_fresh() {
+        let mut store = Mem::default();
+        assert_eq!(load_cursors(&store).unwrap(), Cursors::default());
+        let mut c = Cursors::default();
+        c.complete(&item(WorkClass::Create, "x"));
+        c.complete(&item(WorkClass::Sweep, "y"));
+        save_cursors(&mut store, &c).unwrap();
+        assert_eq!(load_cursors(&store).unwrap(), c);
+        store.data.insert(CURSORS_KEY.into(), b"{}".to_vec());
+        assert_eq!(load_cursors(&store).unwrap(), Cursors::default());
+        store.data.insert(CURSORS_KEY.into(), b"nope".to_vec());
+        assert!(matches!(
+            load_cursors(&store),
+            Err(MapError::Corrupt { .. })
+        ));
+    }
+
+    // frob:tests run
+    #[test]
+    fn cursor_past_removed_tickets_wraps_and_empty_run_writes_nothing() {
+        let mut store = Mem::default();
+        let mut host = Host::new(vec![item(WorkClass::Update, "z")], false);
+        served(&mut host, &mut store, &cfg());
+        // "z" is gone and the new work sorts before the stored cursor: it is still served.
+        host.items = vec![item(WorkClass::Update, "a")];
+        assert_eq!(served(&mut host, &mut store, &cfg()), ["a"]);
+        let puts = store.puts.len();
+        host.items.clear();
+        served(&mut host, &mut store, &cfg());
+        assert!(!store.puts[puts..].iter().any(|k| k == CURSORS_KEY));
     }
 }
