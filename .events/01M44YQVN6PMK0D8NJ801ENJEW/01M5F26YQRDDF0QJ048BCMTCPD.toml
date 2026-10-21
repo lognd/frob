@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T11:05:45Z"
+digest = "a440c85c486a1a42f432253daf6b983b6d690349447d3c3a10d540770e228636"
+head = "cae650f6c6db18b9a62f91161c1531231c08511e"
+provider = "file"
+ref = "docs/reference/fidelity.md"
+size = 21256
+status = "measured"
+at = "2026-10-21T11:05:45Z"
+actor = "lognd"
+rev = 1
