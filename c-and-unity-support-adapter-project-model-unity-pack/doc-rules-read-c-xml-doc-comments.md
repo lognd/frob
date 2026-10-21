@@ -2,7 +2,8 @@
 id = "01M44YQTSWW9EH49541MY9A7AX"
 title = "DOC rules read C# XML doc comments"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
