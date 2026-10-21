@@ -15,6 +15,9 @@ binary.
 | `packs/grimble-sysdesign/rules/store/STORE104.grl` | code (python) | STORE: `DELETE`/`UPDATE` without `WHERE` (advisory) |
 | `packs/grimble-sysdesign/rules/store/STORE105.grl` | code (python) | STORE: Mongo `$where` operator (advisory) |
 | `packs/grimble-sysdesign/rules/SYSDESIGN101.grl` | `.grmb` model (`lang -`, `model.selectors`) | SYSDESIGN: a node owning `**` |
+| `packs/grimble-sysdesign/rules/sysdesign/SYSDESIGN102.grl` | `.grmb` model (`lang -`, `model.selectors`) | SYSDESIGN: a node owning a `tests` tree (advisory) |
+| `packs/grimble-sysdesign/rules/sysdesign/SYSDESIGN103.grl` | `.grmb` model (`lang -`, `model.selectors`) | SYSDESIGN: a node owning a vendored or generated tree (advisory) |
+| `packs/grimble-sysdesign/rules/sysdesign/SYSDESIGN104.grl` | `.grmb` model (`lang -`, `model.selectors`) | SYSDESIGN: an `owns` selector not anchored to a directory (advisory); an expression selector is Unresolved |
 | `packs/grimble-sysdesign/rules/GRAMMAR101.grl` | `.grmb` model (`lang -`, `model.nodes`) | GRAMMAR: a node kind outside the core kinds |
 | `packs/grimble-sysdesign/rules/grammar/GRAMMAR102.grl` | `.grmb` model (`lang -`, `model.nodes`) | GRAMMAR: a node name that is not lower snake_case |
 | `packs/grimble-sysdesign/rules/grammar/GRAMMAR103.grl` | `.grmb` model (`lang -`, `model.nodes`) | GRAMMAR: a placeholder node name (`misc`, `tmp`) |
@@ -43,3 +46,9 @@ copy. `sysdesign::catalog()` yields the `grimble rule catalog` rows, one per fam
 - GRAMMAR102 to GRAMMAR104 are the first slice of the family: naming discipline over `model.nodes`.
   Rules over fields and edges of the model language wait on richer model relations; GRL cannot put
   side relations inside quantifiers.
+- SYSDESIGN102 to SYSDESIGN104 are the first SYSDESIGN slice and read `model.selectors` only. SYSDESIGN104
+  carries the Unresolved path: a selector written as an expression (`lang(python)`) is not a path,
+  so `unresolved when` reports it instead of calling it clean. The model parser already refuses
+  absolute `owns` paths, so no rule is needed for them. Rules over node kinds joined to selectors
+  (an external node that owns code, a store that owns nothing) wait on side relations inside
+  quantifiers.
