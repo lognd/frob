@@ -1,0 +1,61 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T11:03:44Z"
+digest = "f9e3993fbceb95f5db9be56c089888642cd60a6a29a8c9e53e3e2257189f9d21"
+exit_code = 0
+head = "cae650f6c6db18b9a62f91161c1531231c08511e"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling fnv v1.0.7
+   Compiling indexmap v2.14.2
+   Compiling getrandom v0.3.4
+   Compiling strsim v0.11.1
+   Compiling winnow v1.0.4
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling ppv-lite86 v0.2.21
+   Compiling wait-timeout v0.2.1
+   Compiling rusty-fork v0.3.1
+   Compiling darling_core v0.20.11
+   Compiling rand_core v0.9.5
+   Compiling rand v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling rand_chacha v0.9.0
+   Compiling serde_json v1.0.151
+   Compiling petgraph v0.8.3
+   Compiling proptest v1.11.0
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling tree-sitter v0.27.0
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.63s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b6fd9c0f-1c48-4f25-9c0d-2dba8afc387d with nextest profile: default
+    Starting 1 test across 26 binaries (278 tests skipped)
+        PASS [   0.006s] gob-plan examples::corpus_tests::sysdesign101_model_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 278 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan sysdesign101"
+size = 2135
+status = "measured"
+test_count = 1
+tests_digest = "adb4ae542ae1f152eed2d44e14dd924bd305cf4def84868a3a72b3fab88c887a"
+at = "2026-10-21T11:03:44Z"
+actor = "lognd"
+rev = 1
