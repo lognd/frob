@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T08:32:16Z"
+digest = "641ebaf3688a8761261899a90b6cd9398a445b03469b1ba61a77b39f9784449d"
+exit_code = 0
+head = "940fdad3bc2b0dd3af5b4e14d014a0cf39eac034"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bdcd6f52-1a86-4740-9ddc-b869d37aef62 with nextest profile: default
+    Starting 2 tests across 9 binaries (113 tests skipped)
+        PASS [   0.005s] frob-worktree work_view::tests::work_view_lists_conflicts_and_already
+        PASS [   0.005s] frob-worktree work_view::tests::work_view_names_worktree_branch_and_lease
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 2 tests run: 2 passed, 113 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree work_view"
+size = 1544
+status = "measured"
+test_count = 2
+tests_digest = "81262daf5634c77ea1726f8e355711ffa5cbd221327cdc7fb214c82480be0a4a"
+at = "2026-10-21T08:32:16Z"
+actor = "lognd"
+rev = 1

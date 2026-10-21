@@ -8,12 +8,12 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:37:37Z"
-updated = "2026-10-21T08:32:13Z"
+updated = "2026-10-21T08:32:16Z"
 scope = ["crates/frob-worktree/src/verbs.rs", "crates/frob-land/src/verb.rs", "crates/frob-land/src/land_view.rs", "crates/frob-worktree/src/work_view.rs", "crates/frob-land/src/lib.rs", "crates/frob-worktree/src/lib.rs", "changelog.d/01M5EFE44WSM03AW4771Y53GFT.changed.md"]
 
 [[acceptance]]
 text = "frob work --text prints a verdict, worktree, branch and lease rows"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob land --text prints a verdict with facts for one ticket and per-ticket lines for a batch"
