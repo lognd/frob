@@ -17,6 +17,10 @@ bound = false
 [[acceptance]]
 text = "Given a project with Using Remove/Include items, when a C# file calls a type, then added namespaces resolve and removed ones do not"
 bound = false
+
+[[acceptance]]
+text = "Given no ImplicitUsings, when a C# file uses a type from that namespace, then it stays unresolved"
+bound = false
 +++
 
 found while working ~ECEBCQ1: dotnet.rs exposes project-wide implicit usings (ImplicitUsings plus Using items, per SDK) via CrateDeps::implicit_usings_of(path). csharp.rs/qualifier.rs import resolution (after ~JEN2C8Q) should consume it so calls on implicit-using namespaces are not left Unresolved.
