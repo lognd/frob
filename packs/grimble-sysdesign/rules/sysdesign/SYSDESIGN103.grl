@@ -1,0 +1,23 @@
+rule SYSDESIGN103 "node-owns-vendored-tree" {
+  lang -
+  severity advisory
+  needs model
+
+  find s: model.selectors where s.selector ~ /(^|[\/"])(node_modules|vendor|third_party|target|dist|build)(\/|"|$)/
+  report s "node {s.node} owns a vendored or generated tree: own the code you write, not what you fetch or build"
+
+  example fire {
+    model """node ui { kind component; owns "vendor/ui/**"; }"""
+  }
+  example clean {
+    model """node ui { kind component; owns "src/ui/**"; }"""
+  }
+  example notapplicable markdown """
+    Prose declares no model nodes.
+  """
+  explain """
+    Vendored and generated directories change when a dependency or a build changes, so a node that owns them is blamed for drift nobody on the team wrote.
+    ## Remedy
+    Own the source directory that produces the output, or model the dependency as an `external` node.
+  """
+}

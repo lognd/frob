@@ -1,0 +1,23 @@
+rule SYSDESIGN102 "node-owns-test-tree" {
+  lang -
+  severity advisory
+  needs model
+
+  find s: model.selectors where s.selector ~ /(^|[\/"])tests?(\/|"|$)/
+  report s "node {s.node} owns a test tree: tests verify the design, they are not part of a node"
+
+  example fire {
+    model """node billing { kind component; owns "tests/billing/**"; }"""
+  }
+  example clean {
+    model """node billing { kind component; owns "src/billing/**"; }"""
+  }
+  example notapplicable markdown """
+    Prose declares no model nodes.
+  """
+  explain """
+    A node that owns a `tests` directory mixes the code under design with the code that checks it, so a test-only change reads as a design change of the node and its drift review fires on noise.
+    ## Remedy
+    Narrow the `owns` selector to the production directories, and bind tests to the node through coverage rather than ownership.
+  """
+}

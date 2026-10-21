@@ -13,6 +13,9 @@ code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 | `packs/grimble-websec/rules/websec/SEC103.grl` | WEBSEC: CORS allows any origin |
 | `packs/grimble-websec/rules/websec/SEC104.grl` | WEBSEC: unsafe deserializer (pickle, marshal, yaml.load) |
 | `packs/grimble-websec/rules/SQL101.grl` | SQL: query built by interpolation |
+| `packs/grimble-websec/rules/sql/SQL102.grl` | SQL: query built with `.format()` |
+| `packs/grimble-websec/rules/sql/SQL103.grl` | SQL: query built by `+` or `%` |
+| `packs/grimble-websec/rules/sql/SQL104.grl` | SQL: raw ORM SQL built by interpolation |
 | `packs/grimble-websec/rules/COMPLY101.grl` | COMPLY (with PII): personal data in a log call |
 | `packs/grimble-websec/rules/ROUTE101.grl` | ROUTE: GET and a state-changing method on one route |
 | `packs/grimble-websec/rules/route/ROUTE102.grl` | ROUTE: debug server exposed (`run(debug=True)`) |
@@ -29,7 +32,7 @@ code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 Every rule has a firing, a clean and a not-applicable example and an `explain` with `## Remedy`;
 a rule without a firing and a clean example fails to compile (GRL011).
 
-SEC102 to SEC104 are the first WEBSEC slice (Python call shapes; injection sinks, unsafe HTML and client-side secrets need the shared web engine and are follow-ups). PII101 to PII103 are the first PII slice (Python call shapes; consent-marker and retention-schedule rules need
+SQL102 to SQL104 are the first SQL slice (string-built queries and raw ORM calls in Python; the store-shape rules STORE103 and STORE104 stay in sysdesign; other languages are NotApplicable or Unresolved, never clean). SEC102 to SEC104 are the first WEBSEC slice (Python call shapes; injection sinks, unsafe HTML and client-side secrets need the shared web engine and are follow-ups). PII101 to PII103 are the first PII slice (Python call shapes; consent-marker and retention-schedule rules need
 a data-flow adapter and are follow-ups). ROUTE102 to ROUTE104 are the first ROUTE slice and read Flask-style Python calls. Auth-on-route
 and handler-exposure rules need framework adapters (route tables, decorators); until an adapter
 exists, other languages and frameworks are NotApplicable (the markdown example) or Unresolved,
