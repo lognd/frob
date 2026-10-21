@@ -34,7 +34,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a [field: SerializeField] auto-property, when the pack is enabled, then it has an external writer, while a plain property is not a candidate"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a static, const or readonly member carrying [SerializeField], when the pack is enabled, then it is still reported"
