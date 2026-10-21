@@ -1273,9 +1273,9 @@ struct Decl<'t> {
 // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
 
 /// The local name a plain `using Ns;` binds: it brings every type of `Ns` into scope.
-pub const USE_NAMESPACE: &str = "*";
+const USE_NAMESPACE: &str = "*";
 /// The local name a `using static T;` binds: it brings every static member of `T` into scope.
-pub const USE_STATIC: &str = "*static";
+const USE_STATIC: &str = "*static";
 /// The call qualifier of an object creation (`new T(..)`), a call of `T`'s constructor.
 pub const Q_NEW: &str = "new";
 /// The call qualifier of `base.M(..)`.
@@ -1286,6 +1286,92 @@ pub const Q_BASE_INIT: &str = "base-init";
 pub const Q_THIS_INIT: &str = "this-init";
 /// The modifier prefix marking an extension method; the rest is the first parameter's type.
 pub const EXTENSION_PREFIX: &str = "extension=";
+
+// frob:ticket 01M44YQYKX1PTSGQE3TMVX4GEN
+/// A call the engine resolves by name at run time, found in a C# file.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CsharpDynamicCall {
+    /// The method containing the call.
+    pub caller: Symref,
+    /// The spelled callee name (`Invoke`).
+    pub callee: String,
+    /// One-based source line of the call.
+    pub line: u32,
+    /// How the engine resolves it and whether the name is a literal.
+    pub call: gob_ir::engine::DynamicCall,
+}
+
+/// The calls in `file` that the pack's dynamic vocabulary names, in source order.
+///
+/// These calls already leave the graph as Unresolved edges (nothing in the repository declares
+/// `Invoke`); this names why. A literal method name never becomes an edge. The empty vocabulary (the
+/// pack disabled) classifies nothing.
+pub fn csharp_dynamic_calls(
+    file: &crate::model::FileSymbols,
+    vocab: &gob_ir::engine::EngineVocab,
+) -> Vec<CsharpDynamicCall> {
+    file.calls
+        .iter()
+        .filter(|c| c.qualifier.as_deref() != Some(Q_NEW))
+        .filter_map(|c| {
+            let own = c.qual_path.is_empty()
+                && matches!(c.receiver, None | Some(crate::model::Receiver::SelfValue));
+            let call = vocab.classify_call(
+                c.qual_path.last().map(String::as_str),
+                &c.callee,
+                first_arg_kind(&c.text, c.args),
+                own,
+            )?;
+            tracing::debug!(path = %file.path, line = c.line, callee = %c.callee, "csharp dynamic call");
+            Some(CsharpDynamicCall {
+                caller: c.caller.clone(),
+                callee: c.callee.clone(),
+                line: c.line,
+                call,
+            })
+        })
+        .collect()
+}
+
+/// What the first argument of the call written as `text` is: a lone string literal, another expression, or absent.
+fn first_arg_kind(text: &str, args: Option<usize>) -> gob_ir::engine::NameArg {
+    use gob_ir::engine::NameArg;
+    if args == Some(0) {
+        return NameArg::Absent;
+    }
+    let Some((_, rest)) = text.split_once('(') else {
+        return NameArg::Computed;
+    };
+    let rest = rest.trim_start();
+    let (verbatim, body) = match rest.strip_prefix("@\"") {
+        Some(b) => (true, b),
+        None => match rest.strip_prefix('"') {
+            Some(b) => (false, b),
+            None => return NameArg::Computed,
+        },
+    };
+    let mut chars = body.char_indices().peekable();
+    while let Some((i, ch)) = chars.next() {
+        match ch {
+            '\\' if !verbatim => {
+                chars.next();
+            }
+            '"' if verbatim && chars.peek().is_some_and(|(_, n)| *n == '"') => {
+                chars.next();
+            }
+            '"' => {
+                let after = body[i + 1..].trim_start();
+                return if after.is_empty() || after.starts_with([',', ')']) {
+                    NameArg::Literal
+                } else {
+                    NameArg::Computed
+                };
+            }
+            _ => {}
+        }
+    }
+    NameArg::Literal
+}
 
 /// One call or object creation found in a member body.
 #[derive(Debug, Clone)]
@@ -1308,6 +1394,7 @@ struct RawUse {
     target: String,
     rendered: String,
     global: bool,
+    kind: crate::UseKind,
     ns: Vec<String>,
 }
 
@@ -1341,21 +1428,30 @@ impl Fold<'_> {
         };
         let written = squash(self.t(*target));
         let target = strip_generics(written.strip_prefix("global::").unwrap_or(&written));
-        let (local, rendered) = match (alias, is_static) {
+        let (local, rendered, kind) = match (alias, is_static) {
             (Some(a), _) => {
                 let a = self.t(a).to_owned();
                 let r = format!("{a} = {target}");
-                (a, r)
+                (a, r, crate::UseKind::Alias)
             }
-            (None, true) => (USE_STATIC.to_owned(), format!("static {target}")),
-            (None, false) => (USE_NAMESPACE.to_owned(), target.clone()),
+            (None, true) => (
+                USE_STATIC.to_owned(),
+                format!("static {target}"),
+                crate::UseKind::Static,
+            ),
+            (None, false) => (
+                USE_NAMESPACE.to_owned(),
+                target.clone(),
+                crate::UseKind::Namespace,
+            ),
         };
-        tracing::trace!(path = self.path, %local, %target, global, "csharp using");
+        tracing::trace!(path = self.path, %local, %target, global, ?kind, "csharp using");
         self.raw_uses.push(RawUse {
             local,
             target,
             rendered,
             global,
+            kind,
             ns: self.ns.clone(),
         });
     }
@@ -1728,6 +1824,7 @@ fn file_sites(
             target: u.target,
             public: u.global,
             container: (!u.ns.is_empty()).then(|| Symref::symbol(&file.path, u.ns)),
+            kind: u.kind,
         });
     }
     for (node, ty) in fields {

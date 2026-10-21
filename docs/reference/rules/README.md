@@ -385,6 +385,13 @@
 | [TICK010](TICK010.md) | ledger-branch-workflow | error | manual | P+ | false | A `.github/` tree on the ticket branch is not exactly the generated nudge workflow. |
 | [TICK011](TICK011.md) | ledger-branch-unprotected | error | manual | P+ | false | The ledger branch allows a force push or deletion, or the hosting API could not say it does not. |
 
+## TIME
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TIME001](TIME001.md) | local-clock-read | warn | manual | P- | true | A current-time read in the local zone, or without a zone, whose value is stored or sent. |
+| [TIME002](TIME002.md) | naive-aware-mix | warn | manual | P- | true | A naive and a timezone-aware datetime compared or subtracted. |
+
 ## TODO
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -435,6 +442,14 @@
 | [TYPE001](TYPE001.md) | font-size-off-scale | error | manual | P+ | true | Font sizes must be steps of the type ramp. Each block is one source file in a project whose |
 | [TYPE002](TYPE002.md) | font-family-off-stack | error | manual | P+ | true | Font families must come from the declared stacks. Each block is one source file in a project whose |
 | [TYPE003](TYPE003.md) | font-weight-off-scale | warn | manual | P+ | true | Font weights must be declared weights. Each block is one source file in a project whose `crunk.toml` |
+
+## UNITY
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [UNITY001](UNITY001.md) | asset-missing-meta | warn | manual | P+ | false | A tracked file or folder under `Assets/` (or an embedded package under `Packages/`) has no tracked `.meta`. |
+| [UNITY002](UNITY002.md) | orphan-meta | warn | manual | P+ | false | A tracked `.meta` file whose asset is not tracked. |
+| [UNITY003](UNITY003.md) | duplicate-guid | error | manual | P+ | false | Two or more tracked `.meta` files carry the same `guid`. |
 
 ## VIS
 

@@ -91,10 +91,3 @@ fn section_12_rules_never_fail_with_a_lowering_error() {
         }
     }
 }
-
-/// A 9-letter family rule over `model.nodes` runs its `model` fire and clean examples.
-// frob:tests crates/gob-plan/src/examples/runner.rs::run_example
-#[test]
-fn sysdesign101_model_examples_pass() {
-    run_all("SYSDESIGN101.grl", include_str!("corpus/SYSDESIGN101.grl"));
-}

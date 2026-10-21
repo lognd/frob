@@ -10,10 +10,12 @@
 mod corpus_tests;
 pub mod judge;
 pub mod markers;
+mod model_reader;
 mod resolves;
 pub mod runner;
 mod side;
 
 pub use judge::{ExampleResult, GRL016, judge, judge_fixed};
 pub use markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};
+pub use model_reader::{ModelNodeRow, ModelReader, install_model_reader};
 pub use runner::{RunError, run_example};

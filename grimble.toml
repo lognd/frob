@@ -34,3 +34,11 @@ lock = "grimble.packs.lock"
 # Root `.grmb` files, one independent model each; only files reachable from them through
 # `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared).
 models = ["design/model.grmb"]
+
+[rules.TIME001]
+# This repository forbids local or naive clock reads whose value is stored or sent.
+severity = "error"
+
+[rules.TIME002]
+# This repository forbids mixing naive and aware datetimes.
+severity = "error"

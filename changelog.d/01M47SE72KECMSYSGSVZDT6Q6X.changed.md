@@ -1,0 +1,1 @@
+C# `using` directives now carry a typed `kind` (namespace, static, alias) on `UseBinding` instead of the resolver reading it back from sentinel `local` strings; the field defaults to plain when absent from older serialized data.

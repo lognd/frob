@@ -18,6 +18,10 @@
 //! `PATH003` verdicts for the product; the rules are declared in [`rules`] and staged like the
 //! architecture rules.
 //!
+//! [`time::scan`] finds `TIME001` local or zone-less clock reads whose value is stored or sent and
+//! `TIME002` naive/aware datetime mixes, for Rust and Python; a language without clock roles
+//! reports them unresolved.
+//!
 //! [`neat::scan`] finds `NEAT010` effect claims a unit's calls contradict (an `effects` capability
 //! answering [`gob_ir::Answer`] bounds) and `NEAT031` dispatchers that own condition logic, in Rust.
 //!
@@ -33,4 +37,7 @@ pub mod pass;
 pub mod path;
 pub mod res;
 pub mod rules;
+pub(crate) mod syntax;
+pub mod time;
+pub mod time_pass;
 pub mod typing;

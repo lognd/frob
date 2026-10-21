@@ -41,6 +41,7 @@ pub mod bind_cache;
 pub mod coh001;
 pub mod coh004;
 pub mod config;
+pub mod example_model;
 pub mod fidelity;
 mod host;
 pub mod model_view;

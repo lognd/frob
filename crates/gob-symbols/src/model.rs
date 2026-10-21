@@ -477,6 +477,22 @@ pub struct RefSite {
     pub kind: RefKind,
 }
 
+// frob:ticket 01M47SE72KECMSYSGSVZDT6Q6X
+/// What a [`UseBinding`] brings into scope; only C# `using` directives set anything but `Plain`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UseKind {
+    /// An ordinary named binding (every non-C# language, and files serialized before this field).
+    #[default]
+    Plain,
+    /// C# `using Ns;`: every type of the namespace.
+    Namespace,
+    /// C# `using static T;`: every static member of the type.
+    Static,
+    /// C# `using A = T;`: one alias for a type or namespace.
+    Alias,
+}
+
 /// A `use` binding, kept with its local name (aliases, globs, `pub use`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UseBinding {
@@ -490,6 +506,9 @@ pub struct UseBinding {
     pub public: bool,
     /// The innermost enclosing symbol, `None` at file level.
     pub container: Option<Symref>,
+    /// What the binding brings into scope; `Plain` unless a C# `using` set it.
+    #[serde(default)]
+    pub kind: UseKind,
 }
 
 impl UseBinding {

@@ -10,11 +10,10 @@ use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
 use std::path::Path;
 
 use frob_tests::catalog::{is_test_file, is_test_fn};
-use frob_tests::reach::{Sources, called_names, engine_roots};
+use frob_tests::reach::{Sources, called_names, dynamic_calls, engine_roots};
 use gob_directives::Binding;
 use gob_directives::DirectiveRecord;
 use gob_languages::Language;
-use gob_packs::unity::{self, UnityGate, UnityPack};
 use gob_rules::{Finding, Severity};
 use gob_symbols::{
     Admit, CallEdge, CrateDeps, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind,
@@ -120,7 +119,12 @@ struct Poison {
     site: String,
     /// What the call's qualifier says, for the message.
     how: String,
+    /// Why the engine, not the code, picks the callee, when the pack names the call as dynamic.
+    dynamic: Option<&'static str>,
 }
+
+/// Dynamic-call reasons keyed by (file, line, callee name).
+type DynamicReasons = HashMap<(String, u32, String), &'static str>;
 
 /// The `file:line: text` call site of `e`, the text in backticks.
 fn site_of(e: &StatusEdge) -> String {
@@ -141,6 +145,7 @@ fn poison_map(
     tests: &BTreeSet<Symref>,
     by_name: &HashMap<&str, Vec<&SymbolRecord>>,
     deps: &mut CrateDeps,
+    dynamic: &DynamicReasons,
 ) -> HashMap<Symref, Poison> {
     let mut poisoned: HashSet<Symref> = HashSet::new();
     for t in tests {
@@ -174,6 +179,11 @@ fn poison_map(
             || "no qualifier is known".to_owned(),
             gob_symbols::CallQualifier::describe,
         );
+        let reason = e.line.zip(e.name.as_ref()).and_then(|(line, name)| {
+            dynamic
+                .get(&(e.from.path().to_owned(), line, name.clone()))
+                .copied()
+        });
         for (rec, a) in admitted {
             let pinned = only_one && a == Admit::Pinned;
             let better = out.get(&rec.symref).is_none_or(|p| pinned && !p.pinned);
@@ -184,6 +194,7 @@ fn poison_map(
                         pinned,
                         site: site_of(e),
                         how: how.clone(),
+                        dynamic: reason,
                     },
                 );
             }
@@ -254,8 +265,9 @@ fn unresolved_reach(
     }
     poison.get(&rec.symref).map(|p| {
         let strength = if p.pinned { "names it" } else { "may name it" };
+        let named = p.dynamic.map_or_else(String::new, |r| format!("; {r}"));
         format!(
-            "a test reaches the unresolved call {} that {strength} ({})",
+            "a test reaches the unresolved call {} that {strength} ({}{named})",
             p.site, p.how
         )
     })
@@ -288,23 +300,8 @@ fn declared(graph: &SymbolGraph, directives: &[DirectiveRecord]) -> HashSet<Symr
 // frob:ticket 01M44YQXS4BXE0X07FBYR0STJ5
 /// The engine entry points the root config's `unity` pack makes roots; empty when the pack is not enabled.
 fn unity_roots(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> BTreeSet<Symref> {
-    let Ok(config) = std::fs::read_to_string(root.join("frob.toml")) else {
+    let Some((gate, pack)) = crate::unity::enabled_pack(root) else {
         return BTreeSet::new();
-    };
-    let gate = match UnityGate::parse("frob.toml", &config) {
-        Ok(g) if g.is_enabled() => g,
-        Ok(_) => return BTreeSet::new(),
-        Err(e) => {
-            tracing::warn!(error = %e, "frob.toml [packs] unreadable; unity pack treated as disabled");
-            return BTreeSet::new();
-        }
-    };
-    let pack = match UnityPack::builtin() {
-        Ok(p) => p,
-        Err(e) => {
-            tracing::error!(error = %e, "built-in {} pack is invalid", unity::NAME);
-            return BTreeSet::new();
-        }
     };
     let mut roots = engine_roots(graph, sources, &pack.vocab);
     roots.retain(|s| gate.is_active_for(s.path()));
@@ -313,6 +310,27 @@ fn unity_roots(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> BTree
         "unity engine entry points are reach roots"
     );
     roots
+}
+
+// frob:ticket 01M5FX89B11DR9HP9QH19GKAYY
+/// The reason of each dynamic call the root config's `unity` pack names; empty when the pack is not enabled.
+///
+/// Only calls in files the pack gate is active for count, so a path outside the gate keeps its
+/// anonymous unresolved reason.
+fn unity_dynamic(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> DynamicReasons {
+    let Some((gate, pack)) = crate::unity::enabled_pack(root) else {
+        return DynamicReasons::new();
+    };
+    let reasons: DynamicReasons = dynamic_calls(graph, sources, &pack.vocab)
+        .into_iter()
+        .filter(|(path, _)| gate.is_active_for(path))
+        .map(|(path, c)| ((path, c.line, c.callee), c.call.reason()))
+        .collect();
+    tracing::info!(
+        calls = reasons.len(),
+        "unity dynamic calls name their unresolved edges"
+    );
+    reasons
 }
 
 /// COV001 over the repo: public functions and methods with no test reaching them.
@@ -341,7 +359,8 @@ pub(crate) fn cov001(
             by_name.entry(n).or_default().push(r);
         }
     }
-    let poison = poison_map(graph, &tests, &by_name, &mut CrateDeps::new(root));
+    let dynamic = unity_dynamic(root, graph, &mut sources);
+    let poison = poison_map(graph, &tests, &by_name, &mut CrateDeps::new(root), &dynamic);
     let reached = must;
     let maybe_sites = may_sites(graph, &reached);
     let covered = declared(graph, directives);

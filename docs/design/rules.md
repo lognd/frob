@@ -237,6 +237,26 @@ rules in the standard pack; a language whose adapter lacks the
 clock-read roles reports Unresolved, never clean. This repository raises
 TIME001 and TIME002 to Error in its own config.
 
+Implemented (~8KVQQN5): TIME001 and TIME002 ship in `grimble-lints`
+(`time::scan`, the `time_pass` product pass) as syntactic per-scope
+detectors for Rust and Python, not GRL rules: a name-based def-use inside
+one function or module body decides whether a read is only displayed, and
+which names hold naive or aware values. Import aliases are resolved. A
+walk with TypeScript or C# files reports each rule Unresolved once per
+language (no clock roles); a walk with no Rust or Python file is not
+applicable. Both default to Warn. The repository scan over its own Rust
+and Python files finds no site, so the Error raise is applied in this
+repository's `grimble.toml` (`[rules.TIME001]` and `[rules.TIME002]`,
+`severity = "error"`).
+
+The grimble check reads `[rules.<id>] severity = "advisory" | "warn" |
+"error"` (`RuleOverrides` in `grimble-check`). The override beats the rule
+default and `[grimble] strict`. An unknown rule id is logged and ignored
+because `[rules]` is shared with other products; an invalid token fails
+the run. Unresolved findings are never re-graded, and `disabled` is not
+read by grimble. The table is hand-parsed, so it is not part of the
+generated `docs/reference/config.md`.
+
 Moved out of frob core (D88, refined by D89, owner decisions 2026-10-04),
 split by the products.md boundary (grimble models systems and code in any
 language; crunk models the rendered front end): to crunk as packs, A11Y,

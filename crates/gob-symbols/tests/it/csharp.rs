@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use gob_symbols::{
     Adapter, CSharpAdapter, EdgeKind, Fidelity, FileSymbols, ParseStatus, SymbolGraph, SymbolKind,
-    Symref, Visibility, adapter_for_path, extract_file,
+    Symref, UseKind, Visibility, adapter_for_path, extract_file,
 };
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
@@ -869,4 +869,178 @@ fn a_test_file_is_recognised_by_its_attributes_not_by_path_alone() {
     assert!(is_csharp_test_file("src/FooTests.cs"));
     assert!(!is_csharp_test_file("Assets/Scripts/Foo.cs"));
     assert!(!is_csharp_test_file("Assets/Tests/readme.md"));
+}
+
+// frob:ticket 01M44YQYKX1PTSGQE3TMVX4GEN
+const DYNAMIC_SRC: &str = "using UnityEngine;
+public class Door : MonoBehaviour
+{
+    void Start()
+    {
+        Invoke(\"Reload\", 1f);
+        SendMessage(\"Reload\");
+        BroadcastMessage(name);
+        StartCoroutine(\"Reload\" + suffix);
+        CancelInvoke();
+        Reload();
+        gameObject.SendMessageUpwards(\"Reload\", SendMessageOptions.DontRequireReceiver);
+        var go = GameObject.Find(\"Hero\");
+        list.Find(x => x.Ok);
+        del.Invoke(arg);
+        Resources.Load<Sprite>(\"ui/icon\");
+    }
+    void Reload() { }
+}
+";
+
+/// The pack's dynamic vocabulary, as `packs/unity.toml` declares it (the classes this ticket adds).
+fn dynamic_vocab() -> gob_ir::engine::EngineVocab {
+    use gob_ir::engine::{CLASS_DYNAMIC_CALL, CLASS_DYNAMIC_LOOKUP, EngineVocab};
+    let names = |ns: &[&str]| ns.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
+    let mut v = EngineVocab::default();
+    assert!(v.add_class(
+        CLASS_DYNAMIC_CALL,
+        names(&[
+            "SendMessage",
+            "SendMessageUpwards",
+            "BroadcastMessage",
+            "Invoke",
+            "InvokeRepeating",
+            "StartCoroutine",
+            "CancelInvoke"
+        ])
+    ));
+    assert!(v.add_class(
+        CLASS_DYNAMIC_LOOKUP,
+        names(&["GameObject.Find", "Resources.Load"])
+    ));
+    v
+}
+
+#[test]
+// frob:tests csharp_dynamic_calls
+fn a_literal_invoke_is_an_unresolved_edge_that_never_reaches_the_named_method() {
+    let g = graph_of(&[("Door.cs", DYNAMIC_SRC)]);
+    let edges = calls_from(&g, "Door.cs", "Door.Start");
+    let invoke = edges
+        .iter()
+        .find(|e| e.name.as_deref() == Some("Invoke") && e.line == Some(6))
+        .expect("Invoke edge");
+    assert_eq!((invoke.to.as_ref(), invoke.status), (None, Status::Unknown));
+    // Only the typed `Reload()` reaches Reload; the literal "Reload" strings add no edge.
+    let to_reload: Vec<_> = edges
+        .iter()
+        .filter(|e| {
+            e.to.as_ref()
+                .is_some_and(|t| t.to_string().ends_with("Door.Reload"))
+        })
+        .collect();
+    assert_eq!(to_reload.len(), 1, "{to_reload:?}");
+    assert_eq!(to_reload[0].line, Some(11));
+    let dynamic =
+        gob_symbols::csharp_dynamic_calls(&extract("Door.cs", DYNAMIC_SRC), &dynamic_vocab());
+    let first = dynamic
+        .iter()
+        .find(|d| d.line == 6)
+        .expect("Invoke classified");
+    assert!(first.call.literal);
+    assert_eq!(first.callee, "Invoke");
+}
+
+#[test]
+// frob:tests csharp_dynamic_calls
+fn send_message_with_a_string_name_is_unresolved_with_the_reason_named() {
+    let dynamic =
+        gob_symbols::csharp_dynamic_calls(&extract("Door.cs", DYNAMIC_SRC), &dynamic_vocab());
+    let at = |line: u32| dynamic.iter().find(|d| d.line == line);
+    let send = at(7).expect("SendMessage classified");
+    assert!(
+        send.call.reason().contains("literal method name"),
+        "{}",
+        send.call.reason()
+    );
+    assert!(
+        at(8).is_some_and(|d| !d.call.literal),
+        "computed name on this object"
+    );
+    assert!(
+        at(9).is_some_and(|d| !d.call.literal),
+        "concatenation is not a literal"
+    );
+    assert!(at(10).is_none(), "CancelInvoke() has no name");
+    assert!(
+        at(12).is_some_and(|d| d.call.literal),
+        "receiver does not matter for a literal"
+    );
+    assert!(at(13).is_some_and(|d| d.call.reason().contains("lookup")));
+    assert!(at(14).is_none(), "an unrelated Find is an ordinary call");
+    assert!(
+        at(15).is_none(),
+        "a delegate Invoke on another receiver is ordinary"
+    );
+    assert!(
+        at(16).is_some(),
+        "Resources.Load<T>(\"..\") is a string-keyed lookup"
+    );
+    // Each classified call is still an Unresolved edge in the graph.
+    let g = graph_of(&[("Door.cs", DYNAMIC_SRC)]);
+    let edges = calls_from(&g, "Door.cs", "Door.Start");
+    let send_edge = edges
+        .iter()
+        .find(|e| e.name.as_deref() == Some("SendMessage"))
+        .expect("edge");
+    assert_eq!(send_edge.status, Status::Unknown);
+    // Pack disabled: the empty vocabulary classifies nothing.
+    let none = gob_symbols::csharp_dynamic_calls(
+        &extract("Door.cs", DYNAMIC_SRC),
+        &gob_ir::engine::EngineVocab::default(),
+    );
+    assert!(none.is_empty());
+}
+
+#[test]
+// frob:tests csharp_dynamic_calls
+fn typed_method_calls_resolve_as_before_with_the_pack_loaded() {
+    let g = graph_of(&[("Door.cs", DYNAMIC_SRC)]);
+    let reload = calls_from(&g, "Door.cs", "Door.Start")
+        .into_iter()
+        .find(|e| e.line == Some(11))
+        .expect("Reload() edge");
+    assert_eq!(reload.status, Status::Must);
+    assert_eq!(
+        reload.to.as_ref().map(ToString::to_string).as_deref(),
+        Some("Door.cs::Door.Reload")
+    );
+    let dynamic =
+        gob_symbols::csharp_dynamic_calls(&extract("Door.cs", DYNAMIC_SRC), &dynamic_vocab());
+    assert!(
+        dynamic.iter().all(|d| d.line != 11),
+        "Reload() is not dynamic"
+    );
+}
+
+#[test]
+// frob:ticket 01M47SE72KECMSYSGSVZDT6Q6X
+// frob:tests crates/gob-symbols/src/csharp.rs::file_sites
+fn using_directives_carry_a_typed_kind() {
+    let f = extract(
+        "A.cs",
+        "using System;\nusing static System.Math;\nusing L = System.Collections.Generic.List<int>;\nclass C {}\n",
+    );
+    let kinds: Vec<UseKind> = f.uses.iter().map(|u| u.kind).collect();
+    assert_eq!(
+        kinds,
+        vec![UseKind::Namespace, UseKind::Static, UseKind::Alias]
+    );
+}
+
+#[test]
+// frob:ticket 01M47SE72KECMSYSGSVZDT6Q6X
+// frob:tests crates/gob-symbols/src/model.rs::UseKind
+fn use_binding_without_a_kind_deserializes_as_plain() {
+    let f = extract("A.cs", "using static System.Math;\n");
+    let mut v = serde_json::to_value(&f.uses[0]).expect("serialize");
+    v.as_object_mut().expect("object").remove("kind");
+    let back: gob_symbols::UseBinding = serde_json::from_value(v).expect("deserialize");
+    assert_eq!(back.kind, UseKind::Plain);
 }

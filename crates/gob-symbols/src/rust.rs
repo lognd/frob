@@ -571,6 +571,7 @@ fn fold_tree_inline(
             target: u.target,
             public: u.public,
             container: u.container.and_then(symref_of),
+            kind: crate::UseKind::Plain,
         });
     }
     for site in sites {

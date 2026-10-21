@@ -1,0 +1,1 @@
+Unity pack: serialized fields (`[SerializeField]`, public fields of `MonoBehaviour`/`ScriptableObject` types, `[field: SerializeField]` auto-properties) now have an external writer, so `frob_obligations::never_written_fields` does not list them when the pack is enabled; `[NonSerialized]`, static, const and readonly members still are.

@@ -531,6 +531,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
             target: u.target,
             public: u.public,
             container: u.container.and_then(symref_of),
+            kind: crate::UseKind::Plain,
         });
     }
     for (exported, local) in exports.aliases {
@@ -540,6 +541,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
             target: encode_use(ImportMode::Static, "", &local),
             public: true,
             container: None,
+            kind: crate::UseKind::Plain,
         });
     }
     for site in sites {

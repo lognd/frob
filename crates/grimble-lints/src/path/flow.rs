@@ -14,13 +14,9 @@ use tree_sitter::Node;
 
 use super::Kind;
 use super::literal::{decode, is_string_literal};
+use crate::syntax::{children, idents, text};
 
-/// The languages that have path-conversion roles.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum Lang {
-    Rust,
-    Python,
-}
+pub(super) use crate::syntax::Lang;
 
 /// A sink before it is bound to a range and test context.
 #[derive(Debug, Clone, Copy)]
@@ -88,15 +84,6 @@ const SHELL_WORDS: &[&str] = &[
     "node",
     "npm",
 ];
-
-fn text<'a>(n: Node<'_>, src: &'a str) -> &'a str {
-    &src[n.byte_range()]
-}
-
-fn children(n: Node<'_>) -> Vec<Node<'_>> {
-    let mut cur = n.walk();
-    n.children(&mut cur).collect()
-}
 
 fn is_function(lang: Lang, n: Node<'_>) -> bool {
     match lang {
@@ -457,15 +444,5 @@ impl<'t> Flow<'t, '_> {
         children(node)
             .into_iter()
             .any(|c| self.name_in_command(c, names))
-    }
-}
-
-/// Every identifier text in the subtree (token-tree identifiers included).
-fn idents(node: Node<'_>, src: &str, out: &mut Vec<String>) {
-    if node.kind() == "identifier" {
-        out.push(text(node, src).to_owned());
-    }
-    for c in children(node) {
-        idents(c, src, out);
     }
 }

@@ -15,6 +15,12 @@ pub mod exc007;
 pub mod inv001;
 /// Rule `INV002`.
 pub mod inv002;
+/// Rule `UNITY001`.
+pub mod unity001;
+/// Rule `UNITY002`.
+pub mod unity002;
+/// Rule `UNITY003`.
+pub mod unity003;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -26,6 +32,9 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <exc007::Exc007 as gob_rules::RuleDecl>::DEF,
     <inv001::Inv001 as gob_rules::RuleDecl>::DEF,
     <inv002::Inv002 as gob_rules::RuleDecl>::DEF,
+    <unity001::Unity001 as gob_rules::RuleDecl>::DEF,
+    <unity002::Unity002 as gob_rules::RuleDecl>::DEF,
+    <unity003::Unity003 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -49,6 +58,9 @@ where
     exc007::Exc007: gob_rules::RepoRule<P>,
     inv001::Inv001: gob_rules::RelayRule<P>,
     inv002::Inv002: gob_rules::RelayRule<P>,
+    unity001::Unity001: gob_rules::RelayRule<P>,
+    unity002::Unity002: gob_rules::RelayRule<P>,
+    unity003::Unity003: gob_rules::RelayRule<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::repo(cov003::Cov003));
@@ -58,6 +70,9 @@ where
     rules.push(gob_rules::BoundRule::repo(exc007::Exc007));
     rules.push(gob_rules::BoundRule::relay(inv001::Inv001));
     rules.push(gob_rules::BoundRule::relay(inv002::Inv002));
+    rules.push(gob_rules::BoundRule::relay(unity001::Unity001));
+    rules.push(gob_rules::BoundRule::relay(unity002::Unity002));
+    rules.push(gob_rules::BoundRule::relay(unity003::Unity003));
     rules
 }
 

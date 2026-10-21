@@ -1156,6 +1156,10 @@ in `gob-packs`; the `builtin_pack!` macro of 3.2 does not exist yet.
 | `entry.base` | `MonoBehaviour` `ScriptableObject` |
 | `entry.method_attribute` | `RuntimeInitializeOnLoadMethod` `MenuItem` `ContextMenu` |
 | `entry.type_attribute` | `InitializeOnLoad` `CreateAssetMenu` |
+| `serialized.attribute` | `SerializeField` `SerializeReference` |
+| `serialized.skip_attribute` | `NonSerialized` |
+| `dynamic.call` | `SendMessage` `SendMessageUpwards` `BroadcastMessage` `Invoke` `InvokeRepeating` `StartCoroutine` `StopCoroutine` `CancelInvoke` `IsInvoking` |
+| `dynamic.lookup` | `GameObject.Find` `GameObject.FindWithTag` `GameObject.FindGameObjectWithTag` `GameObject.FindGameObjectsWithTag` `Resources.Load` `Resources.LoadAsync` `Resources.LoadAll` |
 
 A message is a root on a type that derives from an `entry.base`,
 transitively through project-local base types, or that carries an
@@ -1163,9 +1167,39 @@ transitively through project-local base types, or that carries an
 root. The static constructor of an `[InitializeOnLoad]` type is a root.
 `frob-tests` `reach::engine_roots` computes the set; COV001 seeds its
 reach with the roots and never reports them. With the pack disabled
-nothing changes. Dead-code rules do not read the vocabulary yet.
+nothing changes.
 
-Counts: 1 vocabulary pack, 0 atoms, 5 vocabulary classes, 23 names.
+Serialized state has an external writer: the editor, a scene or a prefab
+fills it, so no assignment exists in code. A field has one when it is not
+`static`, `const` or `readonly`, carries no `serialized.skip_attribute`,
+and either carries a `serialized.attribute` (on any type) or is a
+`public` field of a type that derives from an `entry.base`
+(`reach::engine_derived_types`: transitive through project-local bases,
+partial parts merged by name, nested types do not inherit from their
+container). An auto-property counts only through a `[field: ...]`
+attribute. `frob_obligations::never_written_fields` lists the C# fields
+and `[field:]` auto-properties that no code assigns (a lexical,
+name-based scan of every `.cs` file: `=`, compound assignment, `++`/`--`,
+`ref`/`out`, initializers; a same-named local only hides a report) and
+that have no external writer. The exclusion applies only when the pack
+is enabled and active for the file's path; with it disabled a
+`[SerializeField]` field that is never assigned is listed. No rule
+consumes the list yet.
+
+Dynamic calls are resolved by the engine by name at run time, so no edge
+to the method exists in the repository. They are already Unresolved call
+edges (nothing declares `Invoke`); `gob_symbols::csharp_dynamic_calls`
+names why. A `dynamic.call` name classifies a call whose first argument is
+a string literal (any receiver), or a computed one on `this` or an
+unqualified call; `Invoke()` with no argument and a delegate's `Invoke(x)`
+on another receiver are ordinary calls. A `dynamic.lookup` entry
+(`Type.Method`) classifies a call with any argument, matched on the type
+written at the call. A literal name never turns into an edge and nothing
+is resolved by guesswork. With the pack disabled the vocabulary is empty
+and nothing is classified. UnityEvent wiring in scene and prefab YAML is
+not read yet; only GUID references are in scope (dotnet-unity.md 3).
+
+Counts: 1 vocabulary pack, 0 atoms, 9 vocabulary classes, 42 names.
 
 ## 9. The PACK rule family
 
