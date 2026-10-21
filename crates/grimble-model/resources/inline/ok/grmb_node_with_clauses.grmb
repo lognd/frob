@@ -1,0 +1,9 @@
+grimble = "2";
+module demo;
+
+/// A component.
+node app : trusted {
+  kind component;
+  clearance Internal;
+  owns "crates/app/**";
+}

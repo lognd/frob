@@ -1,0 +1,5 @@
+rule BAD003 "colon" {
+  lang rust
+  find f function
+  report f "x"
+}

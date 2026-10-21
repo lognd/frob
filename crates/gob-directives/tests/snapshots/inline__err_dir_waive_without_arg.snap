@@ -1,0 +1,70 @@
+---
+source: crates/gob-directives/tests/inline.rs
+expression: dump
+---
+ScanResult {
+    directives: [],
+    findings: [
+        Finding {
+            rule: RuleId(
+                "DSL001",
+            ),
+            severity: Error,
+            span: Some(
+                Span {
+                    file: FileId(
+                        0,
+                    ),
+                    range: TextRange {
+                        start: TextSize(
+                            8,
+                        ),
+                        end: TextSize(
+                            13,
+                        ),
+                    },
+                },
+            ),
+            message: "unknown directive `frob:waive`; known verbs: accept, defer, describes, doc, invariant, tests, ticket, todo",
+            fingerprint: Fingerprint(
+                [
+                    57,
+                    215,
+                    39,
+                    9,
+                    152,
+                    107,
+                    189,
+                    28,
+                    140,
+                    157,
+                    108,
+                    51,
+                    40,
+                    208,
+                    219,
+                    86,
+                    245,
+                    93,
+                    139,
+                    99,
+                    53,
+                    193,
+                    20,
+                    121,
+                    34,
+                    35,
+                    127,
+                    38,
+                    176,
+                    157,
+                    17,
+                    215,
+                ],
+            ),
+            fix: None,
+            required: None,
+            reason: None,
+        },
+    ],
+}

@@ -1,0 +1,41 @@
+---
+source: crates/grimble-model/tests/inline.rs
+expression: dump
+---
+ParsedFile {
+    path: "x.grmb",
+    text: "grimble = \"9\";\nmodule demo;\n",
+    raw: [],
+    size: 28,
+    status: Refused(
+        "unsupported-version",
+    ),
+    version: Some(
+        VersionHeader {
+            value: "9",
+            span: Span {
+                start: 0,
+                end: 14,
+            },
+        },
+    ),
+    module: None,
+    items: [],
+    comments: [],
+    attachments: Attachments {
+        file: [],
+        by_target: {},
+    },
+    diags: [
+        Diagnostic {
+            rule: "MDL007",
+            span: Span {
+                start: 0,
+                end: 14,
+            },
+            message: "language major `9` is not read by this binary (it reads `2`)",
+        },
+    ],
+    holes: 0,
+    lex_holes: [],
+}

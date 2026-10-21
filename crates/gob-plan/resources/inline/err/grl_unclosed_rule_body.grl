@@ -1,0 +1,4 @@
+rule BAD004 "open" {
+  lang rust
+  find d: `dbg!($$$ARGS)`
+  report d "x"

@@ -1,0 +1,2 @@
+// frob:bogus x
+pub fn a() {}

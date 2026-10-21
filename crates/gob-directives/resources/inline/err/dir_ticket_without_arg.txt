@@ -1,0 +1,2 @@
+// frob:ticket
+pub fn a() {}

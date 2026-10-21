@@ -1,0 +1,16 @@
+---
+source: crates/crunk-spec/tests/inline.rs
+expression: dump
+---
+Err(
+    Malformed {
+        path: "crunk.toml",
+        at: Some(
+            Location {
+                line: 5,
+                column: 1,
+            },
+        ),
+        message: "duplicate key",
+    },
+)

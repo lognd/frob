@@ -1,0 +1,208 @@
+---
+source: crates/gob-plan/tests/inline.rs
+expression: dump
+---
+Parsed {
+    file: File {
+        rules: [
+            Rule {
+                id: Word {
+                    text: "BAD002",
+                    span: Span {
+                        file: FileId(
+                            0,
+                        ),
+                        range: TextRange {
+                            start: TextSize(
+                                5,
+                            ),
+                            end: TextSize(
+                                11,
+                            ),
+                        },
+                    },
+                },
+                slug: StrLit {
+                    value: "find",
+                    span: Span {
+                        file: FileId(
+                            0,
+                        ),
+                        range: TextRange {
+                            start: TextSize(
+                                12,
+                            ),
+                            end: TextSize(
+                                18,
+                            ),
+                        },
+                    },
+                },
+                headers: [
+                    Spanned {
+                        node: Lang(
+                            One(
+                                Word {
+                                    text: "rust",
+                                    span: Span {
+                                        file: FileId(
+                                            0,
+                                        ),
+                                        range: TextRange {
+                                            start: TextSize(
+                                                28,
+                                            ),
+                                            end: TextSize(
+                                                32,
+                                            ),
+                                        },
+                                    },
+                                },
+                            ),
+                        ),
+                        span: Span {
+                            file: FileId(
+                                0,
+                            ),
+                            range: TextRange {
+                                start: TextSize(
+                                    23,
+                                ),
+                                end: TextSize(
+                                    32,
+                                ),
+                            },
+                        },
+                    },
+                ],
+                clauses: [
+                    Spanned {
+                        node: Report(
+                            Report {
+                                target: Word {
+                                    text: "f",
+                                    span: Span {
+                                        file: FileId(
+                                            0,
+                                        ),
+                                        range: TextRange {
+                                            start: TextSize(
+                                                60,
+                                            ),
+                                            end: TextSize(
+                                                61,
+                                            ),
+                                        },
+                                    },
+                                },
+                                message: Message {
+                                    parts: [
+                                        Text {
+                                            value: "x",
+                                            span: Span {
+                                                file: FileId(
+                                                    0,
+                                                ),
+                                                range: TextRange {
+                                                    start: TextSize(
+                                                        63,
+                                                    ),
+                                                    end: TextSize(
+                                                        64,
+                                                    ),
+                                                },
+                                            },
+                                        },
+                                    ],
+                                    span: Span {
+                                        file: FileId(
+                                            0,
+                                        ),
+                                        range: TextRange {
+                                            start: TextSize(
+                                                62,
+                                            ),
+                                            end: TextSize(
+                                                65,
+                                            ),
+                                        },
+                                    },
+                                },
+                                when: None,
+                            },
+                        ),
+                        span: Span {
+                            file: FileId(
+                                0,
+                            ),
+                            range: TextRange {
+                                start: TextSize(
+                                    53,
+                                ),
+                                end: TextSize(
+                                    65,
+                                ),
+                            },
+                        },
+                    },
+                ],
+                examples: [],
+                explain: None,
+                span: Span {
+                    file: FileId(
+                        0,
+                    ),
+                    range: TextRange {
+                        start: TextSize(
+                            0,
+                        ),
+                        end: TextSize(
+                            67,
+                        ),
+                    },
+                },
+            },
+        ],
+    },
+    errors: [
+        ParseError {
+            kind: Expected {
+                what: "a variable name after `find`",
+                found: "`:`",
+                hint: None,
+            },
+            span: Span {
+                file: FileId(
+                    0,
+                ),
+                range: TextRange {
+                    start: TextSize(
+                        40,
+                    ),
+                    end: TextSize(
+                        41,
+                    ),
+                },
+            },
+        },
+        ParseError {
+            kind: MissingExplain(
+                "BAD002",
+            ),
+            span: Span {
+                file: FileId(
+                    0,
+                ),
+                range: TextRange {
+                    start: TextSize(
+                        66,
+                    ),
+                    end: TextSize(
+                        67,
+                    ),
+                },
+            },
+        },
+    ],
+    warnings: [],
+}

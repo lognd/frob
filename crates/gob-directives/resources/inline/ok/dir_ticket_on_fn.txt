@@ -1,0 +1,2 @@
+// frob:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2
+pub fn a() {}

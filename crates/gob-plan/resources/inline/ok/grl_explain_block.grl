@@ -1,0 +1,13 @@
+rule EXP001 "explained" {
+  lang rust
+
+  find d: `dbg!($$$ARGS)`
+  report d "remove dbg!"
+
+  explain """
+    `dbg!` prints to stderr.
+
+    ## Remedy
+    Delete the call.
+  """
+}

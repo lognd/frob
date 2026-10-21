@@ -1,0 +1,19 @@
+rule ONE001 "one" {
+  lang rust
+  find d: `dbg!($$$ARGS)`
+  report d "one"
+
+  explain """
+    Explains the rule.
+  """
+}
+
+rule TWO001 "two" {
+  lang rust
+  find d: `todo!()`
+  report d "two"
+
+  explain """
+    Explains the rule.
+  """
+}

@@ -1,0 +1,313 @@
+---
+source: crates/grimble-model/tests/inline.rs
+expression: dump
+---
+ParsedFile {
+    path: "x.grmb",
+    text: "grimble = \"2\";\nmodule demo;\n\nnode app : trusted {\n  kind component;\n  may fs.read at \"crates/app/**\";\n  may exec at \"crates/app/tests/**\";\n}\n",
+    raw: [],
+    size: 141,
+    status: Parsed,
+    version: Some(
+        VersionHeader {
+            value: "2",
+            span: Span {
+                start: 0,
+                end: 14,
+            },
+        },
+    ),
+    module: Some(
+        ModuleDecl {
+            id: 1,
+            kind: Module,
+            name: Ident {
+                text: "demo",
+                span: Span {
+                    start: 22,
+                    end: 26,
+                },
+            },
+            span: Span {
+                start: 15,
+                end: 27,
+            },
+        },
+    ),
+    items: [
+        Entity(
+            Entity {
+                id: 5,
+                kind: Node,
+                extension: false,
+                name: Ident {
+                    text: "app",
+                    span: Span {
+                        start: 34,
+                        end: 37,
+                    },
+                },
+                target: RefPath {
+                    rooted: false,
+                    segments: [
+                        "app",
+                    ],
+                    span: Span {
+                        start: 34,
+                        end: 37,
+                    },
+                },
+                header: Node {
+                    trust: Some(
+                        Ident {
+                            text: "trusted",
+                            span: Span {
+                                start: 40,
+                                end: 47,
+                            },
+                        },
+                    ),
+                },
+                clauses: [
+                    Clause {
+                        id: 2,
+                        kind: Kind(
+                            Ident {
+                                text: "component",
+                                span: Span {
+                                    start: 57,
+                                    end: 66,
+                                },
+                            },
+                        ),
+                        span: Span {
+                            start: 52,
+                            end: 67,
+                        },
+                    },
+                    Clause {
+                        id: 3,
+                        kind: May(
+                            May {
+                                atom: Atom {
+                                    pack: None,
+                                    name: "fs.read",
+                                    span: Span {
+                                        start: 74,
+                                        end: 81,
+                                    },
+                                },
+                                args: [],
+                                at: Some(
+                                    Sel {
+                                        text: "\"crates/app/**\"",
+                                        span: Span {
+                                            start: 85,
+                                            end: 100,
+                                        },
+                                        parsed: Ok(
+                                            Selector {
+                                                root: Node {
+                                                    expr: Glob(
+                                                        Glob {
+                                                            path: "crates/app/**",
+                                                            qual: None,
+                                                            alts: [
+                                                                [
+                                                                    Pat(
+                                                                        [
+                                                                            Lit(
+                                                                                'c',
+                                                                            ),
+                                                                            Lit(
+                                                                                'r',
+                                                                            ),
+                                                                            Lit(
+                                                                                'a',
+                                                                            ),
+                                                                            Lit(
+                                                                                't',
+                                                                            ),
+                                                                            Lit(
+                                                                                'e',
+                                                                            ),
+                                                                            Lit(
+                                                                                's',
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                    Pat(
+                                                                        [
+                                                                            Lit(
+                                                                                'a',
+                                                                            ),
+                                                                            Lit(
+                                                                                'p',
+                                                                            ),
+                                                                            Lit(
+                                                                                'p',
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                    AnyDepth,
+                                                                ],
+                                                            ],
+                                                            qual_pat: [],
+                                                            spec: Specificity {
+                                                                level: 1,
+                                                                literal_segments: 2,
+                                                                neg_double_star: -1,
+                                                                neg_wild_segments: 0,
+                                                                literal_qual: 0,
+                                                                predicates: 0,
+                                                            },
+                                                            literal: false,
+                                                        },
+                                                    ),
+                                                    span: Span {
+                                                        start: 85,
+                                                        end: 100,
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        span: Span {
+                            start: 70,
+                            end: 101,
+                        },
+                    },
+                    Clause {
+                        id: 4,
+                        kind: May(
+                            May {
+                                atom: Atom {
+                                    pack: None,
+                                    name: "exec",
+                                    span: Span {
+                                        start: 108,
+                                        end: 112,
+                                    },
+                                },
+                                args: [],
+                                at: Some(
+                                    Sel {
+                                        text: "\"crates/app/tests/**\"",
+                                        span: Span {
+                                            start: 116,
+                                            end: 137,
+                                        },
+                                        parsed: Ok(
+                                            Selector {
+                                                root: Node {
+                                                    expr: Glob(
+                                                        Glob {
+                                                            path: "crates/app/tests/**",
+                                                            qual: None,
+                                                            alts: [
+                                                                [
+                                                                    Pat(
+                                                                        [
+                                                                            Lit(
+                                                                                'c',
+                                                                            ),
+                                                                            Lit(
+                                                                                'r',
+                                                                            ),
+                                                                            Lit(
+                                                                                'a',
+                                                                            ),
+                                                                            Lit(
+                                                                                't',
+                                                                            ),
+                                                                            Lit(
+                                                                                'e',
+                                                                            ),
+                                                                            Lit(
+                                                                                's',
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                    Pat(
+                                                                        [
+                                                                            Lit(
+                                                                                'a',
+                                                                            ),
+                                                                            Lit(
+                                                                                'p',
+                                                                            ),
+                                                                            Lit(
+                                                                                'p',
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                    Pat(
+                                                                        [
+                                                                            Lit(
+                                                                                't',
+                                                                            ),
+                                                                            Lit(
+                                                                                'e',
+                                                                            ),
+                                                                            Lit(
+                                                                                's',
+                                                                            ),
+                                                                            Lit(
+                                                                                't',
+                                                                            ),
+                                                                            Lit(
+                                                                                's',
+                                                                            ),
+                                                                        ],
+                                                                    ),
+                                                                    AnyDepth,
+                                                                ],
+                                                            ],
+                                                            qual_pat: [],
+                                                            spec: Specificity {
+                                                                level: 1,
+                                                                literal_segments: 3,
+                                                                neg_double_star: -1,
+                                                                neg_wild_segments: 0,
+                                                                literal_qual: 0,
+                                                                predicates: 0,
+                                                            },
+                                                            literal: false,
+                                                        },
+                                                    ),
+                                                    span: Span {
+                                                        start: 116,
+                                                        end: 137,
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        span: Span {
+                            start: 104,
+                            end: 138,
+                        },
+                    },
+                ],
+                span: Span {
+                    start: 29,
+                    end: 140,
+                },
+            },
+        ),
+    ],
+    comments: [],
+    attachments: Attachments {
+        file: [],
+        by_target: {},
+    },
+    diags: [],
+    holes: 0,
+    lex_holes: [],
+}

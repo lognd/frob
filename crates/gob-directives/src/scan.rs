@@ -18,6 +18,47 @@ use crate::meta::{DirectiveEntry, entries};
 use crate::rules::{Dsl001, Dsl002, Parse001};
 use crate::ulid::{is_full_ulid, is_v1_alias, looks_like_ticket_ref};
 
+// test_ok dir_ticket_on_fn
+// // frob\:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2
+// pub fn a() {}
+
+// test_ok dir_tests_on_test
+// // frob\:tests a
+// #[test]
+// fn t() {}
+
+// test_ok dir_no_directives
+// pub fn a() {}
+
+// test_ok dir_two_tickets
+// // frob\:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2
+// // frob\:ticket 01J9QKX3M8Z4T7N2V5B6C0D1E3
+// pub fn a() {}
+
+// test_ok dir_prose_mentions_nothing
+// // a plain comment
+// pub fn a() {}
+
+// test_err dir_unknown_verb
+// // frob\:bogus x
+// pub fn a() {}
+
+// test_err dir_ticket_without_arg
+// // frob\:ticket
+// pub fn a() {}
+
+// test_err dir_ticket_bad_ulid
+// // frob\:ticket not-a-ulid
+// pub fn a() {}
+
+// test_err dir_waive_without_arg
+// // frob\:waive
+// pub fn a() {}
+
+// test_err dir_unknown_verb_two
+// // frob\:nonsense
+// pub fn a() {}
+
 /// The verb whose binding is reoriented to its named target inside a test item.
 pub const REORIENT_VERB: &str = "tests";
 

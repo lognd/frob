@@ -1,0 +1,30 @@
+---
+source: crates/gob-plan/tests/inline.rs
+expression: dump
+---
+Parsed {
+    file: File {
+        rules: [],
+    },
+    errors: [
+        ParseError {
+            kind: Lexical(
+                UnterminatedString,
+            ),
+            span: Span {
+                file: FileId(
+                    0,
+                ),
+                range: TextRange {
+                    start: TextSize(
+                        12,
+                    ),
+                    end: TextSize(
+                        27,
+                    ),
+                },
+            },
+        },
+    ],
+    warnings: [],
+}

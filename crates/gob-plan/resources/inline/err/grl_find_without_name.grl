@@ -1,0 +1,5 @@
+rule BAD002 "find" {
+  lang rust
+  find : function
+  report f "x"
+}

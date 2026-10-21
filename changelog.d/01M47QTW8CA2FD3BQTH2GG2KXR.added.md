@@ -1,0 +1,1 @@
+Parser tests can now be written inline: `// test_ok NAME` and `// test_err NAME` comment blocks in the GRL, .grmb, directive and crunk.toml parser sources are extracted by `cargo dev gen inline` into `resources/inline/{ok,err}`, snapshot-tested for their tree and errors, and a stale extraction fails `cargo dev gen --check` (GEN001).

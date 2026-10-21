@@ -1,0 +1,39 @@
+---
+source: crates/grimble-model/tests/inline.rs
+expression: dump
+---
+ParsedFile {
+    path: "x.grmb",
+    text: "grimble = \"2\";\nmodule demo\nnode a : trusted {\n  kind component;\n}\n",
+    raw: [],
+    size: 66,
+    status: Parsed,
+    version: Some(
+        VersionHeader {
+            value: "2",
+            span: Span {
+                start: 0,
+                end: 14,
+            },
+        },
+    ),
+    module: None,
+    items: [],
+    comments: [],
+    attachments: Attachments {
+        file: [],
+        by_target: {},
+    },
+    diags: [
+        Diagnostic {
+            rule: "MDL000",
+            span: Span {
+                start: 27,
+                end: 31,
+            },
+            message: "unexpected `node`, expected `;`",
+        },
+    ],
+    holes: 1,
+    lex_holes: [],
+}

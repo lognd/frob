@@ -1,0 +1,18 @@
+---
+source: crates/crunk-spec/tests/inline.rs
+expression: dump
+---
+Err(
+    Invalid {
+        path: "crunk.toml",
+        at: Some(
+            Location {
+                line: 2,
+                column: 12,
+            },
+        ),
+        detail: "[project]: invalid type: integer `7`, expected a string",
+        key: None,
+        suggestion: None,
+    },
+)

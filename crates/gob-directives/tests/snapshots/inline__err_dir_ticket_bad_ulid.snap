@@ -1,0 +1,70 @@
+---
+source: crates/gob-directives/tests/inline.rs
+expression: dump
+---
+ScanResult {
+    directives: [],
+    findings: [
+        Finding {
+            rule: RuleId(
+                "PARSE001",
+            ),
+            severity: Error,
+            span: Some(
+                Span {
+                    file: FileId(
+                        0,
+                    ),
+                    range: TextRange {
+                        start: TextSize(
+                            15,
+                        ),
+                        end: TextSize(
+                            25,
+                        ),
+                    },
+                },
+            ),
+            message: "`frob:ticket`: `not-a-ulid` is not a ticket id",
+            fingerprint: Fingerprint(
+                [
+                    151,
+                    209,
+                    105,
+                    231,
+                    210,
+                    214,
+                    11,
+                    101,
+                    144,
+                    66,
+                    64,
+                    114,
+                    136,
+                    18,
+                    34,
+                    238,
+                    18,
+                    8,
+                    214,
+                    231,
+                    56,
+                    53,
+                    121,
+                    195,
+                    180,
+                    54,
+                    160,
+                    113,
+                    222,
+                    81,
+                    32,
+                    189,
+                ],
+            ),
+            fix: None,
+            required: None,
+            reason: None,
+        },
+    ],
+}

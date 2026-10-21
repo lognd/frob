@@ -1,0 +1,70 @@
+---
+source: crates/gob-directives/tests/inline.rs
+expression: dump
+---
+ScanResult {
+    directives: [],
+    findings: [
+        Finding {
+            rule: RuleId(
+                "PARSE001",
+            ),
+            severity: Error,
+            span: Some(
+                Span {
+                    file: FileId(
+                        0,
+                    ),
+                    range: TextRange {
+                        start: TextSize(
+                            3,
+                        ),
+                        end: TextSize(
+                            14,
+                        ),
+                    },
+                },
+            ),
+            message: "`frob:ticket`: missing required argument `id`",
+            fingerprint: Fingerprint(
+                [
+                    247,
+                    107,
+                    62,
+                    136,
+                    72,
+                    28,
+                    191,
+                    16,
+                    213,
+                    1,
+                    190,
+                    240,
+                    18,
+                    234,
+                    46,
+                    166,
+                    142,
+                    67,
+                    111,
+                    122,
+                    106,
+                    112,
+                    54,
+                    107,
+                    232,
+                    155,
+                    173,
+                    0,
+                    14,
+                    196,
+                    162,
+                    70,
+                ],
+            ),
+            fix: None,
+            required: None,
+            reason: None,
+        },
+    ],
+}

@@ -1,0 +1,18 @@
+---
+source: crates/crunk-spec/tests/inline.rs
+expression: dump
+---
+Err(
+    Invalid {
+        path: "crunk.toml",
+        at: Some(
+            Location {
+                line: 7,
+                column: 1,
+            },
+        ),
+        detail: "[palette].ink: unparseable color literal \"not-a-color\"",
+        key: None,
+        suggestion: None,
+    },
+)

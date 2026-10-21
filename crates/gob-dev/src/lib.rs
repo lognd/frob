@@ -48,6 +48,8 @@ pub enum Kind {
     Cli,
     /// JSON schemas.
     Schemas,
+    /// Parser test inputs extracted from `test_ok` and `test_err` source comments.
+    Inline,
     /// Rust modules compiled from the std GRL rules (`packs/std`).
     StdRules,
     /// Everything above.
@@ -89,6 +91,9 @@ pub enum GenError {
     /// The std GRL rules could not be compiled to Rust.
     #[error(transparent)]
     StdRules(#[from] render::std_rules::StdRulesError),
+    /// The inline parser tests could not be extracted.
+    #[error(transparent)]
+    Inline(#[from] render::inline::InlineError),
 }
 
 /// Build the files for `kind`, sorted by path; `crates_dir` locates mdtest corpora.
@@ -106,6 +111,11 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
     }
     if all || kind == Kind::RulesIndex {
         files.extend(render::rules_index::generate(crates_dir)?);
+    }
+    if all || kind == Kind::Inline {
+        // frob:ticket 01M47QTW8CA2FD3BQTH2GG2KXR
+        let root = crates_dir.parent().unwrap_or(crates_dir);
+        files.extend(render::inline::generate(root)?);
     }
     if all || kind == Kind::StdRules {
         // frob:ticket 01M3ZX7HN0YF3SYGVJRT5H07H5

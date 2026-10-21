@@ -1,0 +1,215 @@
+---
+source: crates/grimble-model/tests/inline.rs
+expression: dump
+---
+ParsedFile {
+    path: "x.grmb",
+    text: "grimble = \"2\";\nmodule demo;\n\nnode a : trusted {\n  kind component;\n}\n\nnode b : trusted {\n  kind component;\n  owns \"b/**\";\n}\n",
+    raw: [],
+    size: 123,
+    status: Parsed,
+    version: Some(
+        VersionHeader {
+            value: "2",
+            span: Span {
+                start: 0,
+                end: 14,
+            },
+        },
+    ),
+    module: Some(
+        ModuleDecl {
+            id: 1,
+            kind: Module,
+            name: Ident {
+                text: "demo",
+                span: Span {
+                    start: 22,
+                    end: 26,
+                },
+            },
+            span: Span {
+                start: 15,
+                end: 27,
+            },
+        },
+    ),
+    items: [
+        Entity(
+            Entity {
+                id: 3,
+                kind: Node,
+                extension: false,
+                name: Ident {
+                    text: "a",
+                    span: Span {
+                        start: 34,
+                        end: 35,
+                    },
+                },
+                target: RefPath {
+                    rooted: false,
+                    segments: [
+                        "a",
+                    ],
+                    span: Span {
+                        start: 34,
+                        end: 35,
+                    },
+                },
+                header: Node {
+                    trust: Some(
+                        Ident {
+                            text: "trusted",
+                            span: Span {
+                                start: 38,
+                                end: 45,
+                            },
+                        },
+                    ),
+                },
+                clauses: [
+                    Clause {
+                        id: 2,
+                        kind: Kind(
+                            Ident {
+                                text: "component",
+                                span: Span {
+                                    start: 55,
+                                    end: 64,
+                                },
+                            },
+                        ),
+                        span: Span {
+                            start: 50,
+                            end: 65,
+                        },
+                    },
+                ],
+                span: Span {
+                    start: 29,
+                    end: 67,
+                },
+            },
+        ),
+        Entity(
+            Entity {
+                id: 6,
+                kind: Node,
+                extension: false,
+                name: Ident {
+                    text: "b",
+                    span: Span {
+                        start: 74,
+                        end: 75,
+                    },
+                },
+                target: RefPath {
+                    rooted: false,
+                    segments: [
+                        "b",
+                    ],
+                    span: Span {
+                        start: 74,
+                        end: 75,
+                    },
+                },
+                header: Node {
+                    trust: Some(
+                        Ident {
+                            text: "trusted",
+                            span: Span {
+                                start: 78,
+                                end: 85,
+                            },
+                        },
+                    ),
+                },
+                clauses: [
+                    Clause {
+                        id: 4,
+                        kind: Kind(
+                            Ident {
+                                text: "component",
+                                span: Span {
+                                    start: 95,
+                                    end: 104,
+                                },
+                            },
+                        ),
+                        span: Span {
+                            start: 90,
+                            end: 105,
+                        },
+                    },
+                    Clause {
+                        id: 5,
+                        kind: Owns(
+                            Sel {
+                                text: "\"b/**\"",
+                                span: Span {
+                                    start: 113,
+                                    end: 119,
+                                },
+                                parsed: Ok(
+                                    Selector {
+                                        root: Node {
+                                            expr: Glob(
+                                                Glob {
+                                                    path: "b/**",
+                                                    qual: None,
+                                                    alts: [
+                                                        [
+                                                            Pat(
+                                                                [
+                                                                    Lit(
+                                                                        'b',
+                                                                    ),
+                                                                ],
+                                                            ),
+                                                            AnyDepth,
+                                                        ],
+                                                    ],
+                                                    qual_pat: [],
+                                                    spec: Specificity {
+                                                        level: 1,
+                                                        literal_segments: 1,
+                                                        neg_double_star: -1,
+                                                        neg_wild_segments: 0,
+                                                        literal_qual: 0,
+                                                        predicates: 0,
+                                                    },
+                                                    literal: false,
+                                                },
+                                            ),
+                                            span: Span {
+                                                start: 113,
+                                                end: 119,
+                                            },
+                                        },
+                                    },
+                                ),
+                            },
+                        ),
+                        span: Span {
+                            start: 108,
+                            end: 120,
+                        },
+                    },
+                ],
+                span: Span {
+                    start: 69,
+                    end: 122,
+                },
+            },
+        ),
+    ],
+    comments: [],
+    attachments: Attachments {
+        file: [],
+        by_target: {},
+    },
+    diags: [],
+    holes: 0,
+    lex_holes: [],
+}

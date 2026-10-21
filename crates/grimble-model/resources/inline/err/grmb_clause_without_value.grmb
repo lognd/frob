@@ -1,0 +1,5 @@
+grimble = "2";
+module demo;
+node a : trusted {
+  kind;
+}

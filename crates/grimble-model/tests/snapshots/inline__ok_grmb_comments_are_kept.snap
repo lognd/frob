@@ -1,0 +1,139 @@
+---
+source: crates/grimble-model/tests/inline.rs
+expression: dump
+---
+ParsedFile {
+    path: "x.grmb",
+    text: "grimble = \"2\";\n// a plain comment\nmodule demo;\n/// doc for the node\nnode a : trusted {\n  kind component; // trailing\n}\n",
+    raw: [],
+    size: 119,
+    status: Parsed,
+    version: Some(
+        VersionHeader {
+            value: "2",
+            span: Span {
+                start: 0,
+                end: 14,
+            },
+        },
+    ),
+    module: Some(
+        ModuleDecl {
+            id: 1,
+            kind: Module,
+            name: Ident {
+                text: "demo",
+                span: Span {
+                    start: 41,
+                    end: 45,
+                },
+            },
+            span: Span {
+                start: 34,
+                end: 46,
+            },
+        },
+    ),
+    items: [
+        Entity(
+            Entity {
+                id: 3,
+                kind: Node,
+                extension: false,
+                name: Ident {
+                    text: "a",
+                    span: Span {
+                        start: 73,
+                        end: 74,
+                    },
+                },
+                target: RefPath {
+                    rooted: false,
+                    segments: [
+                        "a",
+                    ],
+                    span: Span {
+                        start: 73,
+                        end: 74,
+                    },
+                },
+                header: Node {
+                    trust: Some(
+                        Ident {
+                            text: "trusted",
+                            span: Span {
+                                start: 77,
+                                end: 84,
+                            },
+                        },
+                    ),
+                },
+                clauses: [
+                    Clause {
+                        id: 2,
+                        kind: Kind(
+                            Ident {
+                                text: "component",
+                                span: Span {
+                                    start: 94,
+                                    end: 103,
+                                },
+                            },
+                        ),
+                        span: Span {
+                            start: 89,
+                            end: 104,
+                        },
+                    },
+                ],
+                span: Span {
+                    start: 68,
+                    end: 118,
+                },
+            },
+        ),
+    ],
+    comments: [
+        Comment {
+            kind: Line,
+            text: "// a plain comment",
+            span: Span {
+                start: 15,
+                end: 33,
+            },
+        },
+        Comment {
+            kind: Doc,
+            text: "/// doc for the node",
+            span: Span {
+                start: 47,
+                end: 67,
+            },
+        },
+        Comment {
+            kind: Line,
+            text: "// trailing",
+            span: Span {
+                start: 105,
+                end: 116,
+            },
+        },
+    ],
+    attachments: Attachments {
+        file: [],
+        by_target: {
+            1: [
+                0,
+            ],
+            2: [
+                2,
+            ],
+            3: [
+                1,
+            ],
+        },
+    },
+    diags: [],
+    holes: 0,
+    lex_holes: [],
+}

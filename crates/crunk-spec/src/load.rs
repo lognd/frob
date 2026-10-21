@@ -34,6 +34,240 @@ pub const OWN_TABLES: &[&str] = &[
     "decisions",
 ];
 
+// test_ok spec_required_sections
+// [project]
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+//
+// [palette]
+// ink = "#111111"
+// paper = "#ffffff"
+//
+// [scales]
+// spacing = [0, 8, 16]
+// font_sizes = [12, 16]
+// radii = [0, 8]
+//
+// [typography]
+// families = ["monospace"]
+// weights = [400, 700]
+//
+// [org]
+// buckets = ["base", "components"]
+// class_case = "kebab"
+
+// test_ok spec_with_layers
+// [project]
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+//
+// [palette]
+// ink = "#111111"
+// paper = "#ffffff"
+//
+// [scales]
+// spacing = [0, 8, 16]
+// font_sizes = [12, 16]
+// radii = [0, 8]
+//
+// [typography]
+// families = ["monospace"]
+// weights = [400, 700]
+//
+// [org]
+// buckets = ["base", "components"]
+// class_case = "kebab"
+//
+// [layers]
+// base = 0
+// toast = 300
+
+// test_ok spec_with_lint
+// [project]
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+//
+// [palette]
+// ink = "#111111"
+// paper = "#ffffff"
+//
+// [scales]
+// spacing = [0, 8, 16]
+// font_sizes = [12, 16]
+// radii = [0, 8]
+//
+// [typography]
+// families = ["monospace"]
+// weights = [400, 700]
+//
+// [org]
+// buckets = ["base", "components"]
+// class_case = "kebab"
+//
+// [lint]
+// fix_tolerance = 0.15
+// color_tolerance = 8.0
+
+// test_ok spec_palette_roles
+// [project]
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+//
+// [palette]
+// ink = "#111111"
+// paper = "#ffffff"
+//
+// [scales]
+// spacing = [0, 8, 16]
+// font_sizes = [12, 16]
+// radii = [0, 8]
+//
+// [typography]
+// families = ["monospace"]
+// weights = [400, 700]
+//
+// [org]
+// buckets = ["base", "components"]
+// class_case = "kebab"
+//
+// [palette.roles]
+// body = ["ink", "paper"]
+
+// test_ok spec_snake_class_case
+// [project]
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+//
+// [palette]
+// ink = "#111111"
+// paper = "#ffffff"
+//
+// [scales]
+// spacing = [0, 8, 16]
+// font_sizes = [12, 16]
+// radii = [0, 8]
+//
+// [typography]
+// families = ["monospace"]
+// weights = [400, 700]
+//
+// [org]
+// buckets = ["base", "components"]
+// class_case = "snake"
+
+// test_err spec_invalid_toml
+// [project
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+
+// test_err spec_missing_sections
+// [project]
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+
+// test_err spec_unknown_top_level_table
+// [project]
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+//
+// [palette]
+// ink = "#111111"
+// paper = "#ffffff"
+//
+// [scales]
+// spacing = [0, 8, 16]
+// font_sizes = [12, 16]
+// radii = [0, 8]
+//
+// [typography]
+// families = ["monospace"]
+// weights = [400, 700]
+//
+// [org]
+// buckets = ["base", "components"]
+// class_case = "kebab"
+//
+// [palete]
+// ink = "#111111"
+
+// test_err spec_wrong_type
+// [project]
+// css_root = 7
+// tokens_file = "tokens.css"
+// root_font_size = 16
+//
+// [palette]
+// ink = "#111111"
+// paper = "#ffffff"
+//
+// [scales]
+// spacing = [0, 8, 16]
+// font_sizes = [12, 16]
+// radii = [0, 8]
+//
+// [typography]
+// families = ["monospace"]
+// weights = [400, 700]
+//
+// [org]
+// buckets = ["base", "components"]
+// class_case = "kebab"
+
+// test_err spec_bad_color
+// [project]
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+//
+// [palette]
+// ink = "not-a-color"
+// paper = "#ffffff"
+//
+// [scales]
+// spacing = [0, 8, 16]
+// font_sizes = [12, 16]
+// radii = [0, 8]
+//
+// [typography]
+// families = ["monospace"]
+// weights = [400, 700]
+//
+// [org]
+// buckets = ["base", "components"]
+// class_case = "kebab"
+
+// test_err spec_duplicate_key
+// [project]
+// css_root = "styles"
+// tokens_file = "tokens.css"
+// root_font_size = 16
+// css_root = "other"
+//
+// [palette]
+// ink = "#111111"
+// paper = "#ffffff"
+//
+// [scales]
+// spacing = [0, 8, 16]
+// font_sizes = [12, 16]
+// radii = [0, 8]
+//
+// [typography]
+// families = ["monospace"]
+// weights = [400, 700]
+//
+// [org]
+// buckets = ["base", "components"]
+// class_case = "kebab"
+
 /// The sections a valid file must declare.
 const REQUIRED: &[&str] = &["project", "palette", "scales", "typography", "org"];
 

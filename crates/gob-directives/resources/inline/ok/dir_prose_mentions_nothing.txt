@@ -1,0 +1,2 @@
+// a plain comment
+pub fn a() {}

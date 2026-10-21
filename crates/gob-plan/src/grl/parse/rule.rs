@@ -11,6 +11,135 @@ use crate::grl::ast::{
 };
 use crate::grl::token::{Token, TokenKind};
 
+// test_ok grl_minimal_rule
+// rule MIN001 "minimal" {
+//   lang rust
+//
+//   find d: `dbg!($$$ARGS)`
+//   report d "remove dbg!"
+//
+//   explain """
+//     Explains the rule.
+//   """
+// }
+
+// test_ok grl_headers_and_severity
+// rule HDR001 "headers" {
+//   lang rust
+//   severity warn
+//   polarity P-
+//
+//   find d: `todo!()`
+//   report d "no todo"
+//
+//   explain """
+//     Explains the rule.
+//   """
+// }
+
+// test_ok grl_example_fire_and_clean
+// rule EXA001 "examples" {
+//   lang rust
+//
+//   find d: `dbg!($$$ARGS)`
+//   report d "remove dbg!"
+//
+//   example fire """
+//     fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+//   """
+//   example clean """
+//     fn f(x: u32) -> u32 { x }
+//   """
+//
+//   explain """
+//     Explains the rule.
+//   """
+// }
+
+// test_ok grl_explain_block
+// rule EXP001 "explained" {
+//   lang rust
+//
+//   find d: `dbg!($$$ARGS)`
+//   report d "remove dbg!"
+//
+//   explain """
+//     `dbg!` prints to stderr.
+//
+//     ## Remedy
+//     Delete the call.
+//   """
+// }
+
+// test_ok grl_two_rules_in_one_file
+// rule ONE001 "one" {
+//   lang rust
+//   find d: `dbg!($$$ARGS)`
+//   report d "one"
+//
+//   explain """
+//     Explains the rule.
+//   """
+// }
+//
+// rule TWO001 "two" {
+//   lang rust
+//   find d: `todo!()`
+//   report d "two"
+//
+//   explain """
+//     Explains the rule.
+//   """
+// }
+
+// test_ok grl_comments_between_items
+// # a line comment before the rule
+// rule CMT001 "comments" {
+//   lang rust # trailing comment
+//   find d: `dbg!($$$ARGS)`
+//   report d "remove dbg!"
+//
+//   explain """
+//     Explains the rule.
+//   """
+// }
+
+// test_err grl_missing_rule_name
+// rule {
+//   lang rust
+// }
+
+// test_err grl_unterminated_string
+// rule BAD001 "unterminated {
+//   lang rust
+// }
+
+// test_err grl_find_without_name
+// rule BAD002 "find" {
+//   lang rust
+//   find : function
+//   report f "x"
+// }
+
+// test_err grl_find_without_colon
+// rule BAD003 "colon" {
+//   lang rust
+//   find f function
+//   report f "x"
+// }
+
+// test_err grl_unclosed_rule_body
+// rule BAD004 "open" {
+//   lang rust
+//   find d: `dbg!($$$ARGS)`
+//   report d "x"
+
+// test_err grl_stray_text_between_rules
+// this is not a rule
+// rule OK001 "after" {
+//   lang rust
+// }
+
 /// Words that start a header.
 const HEADER_WORDS: &[&str] = &[
     "lang",

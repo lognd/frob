@@ -1,0 +1,17 @@
+rule EXA001 "examples" {
+  lang rust
+
+  find d: `dbg!($$$ARGS)`
+  report d "remove dbg!"
+
+  example fire """
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+  """
+  example clean """
+    fn f(x: u32) -> u32 { x }
+  """
+
+  explain """
+    Explains the rule.
+  """
+}

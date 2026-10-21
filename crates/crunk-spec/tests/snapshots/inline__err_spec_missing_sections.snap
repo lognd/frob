@@ -1,0 +1,13 @@
+---
+source: crates/crunk-spec/tests/inline.rs
+expression: dump
+---
+Err(
+    Invalid {
+        path: "crunk.toml",
+        at: None,
+        detail: "missing required section [palette]",
+        key: None,
+        suggestion: None,
+    },
+)

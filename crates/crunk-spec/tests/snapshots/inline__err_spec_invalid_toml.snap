@@ -1,0 +1,16 @@
+---
+source: crates/crunk-spec/tests/inline.rs
+expression: dump
+---
+Err(
+    Malformed {
+        path: "crunk.toml",
+        at: Some(
+            Location {
+                line: 1,
+                column: 9,
+            },
+        ),
+        message: "unclosed table, expected `]`",
+    },
+)

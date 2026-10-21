@@ -22,6 +22,89 @@ use crate::keywords::is_keyword;
 use crate::lex::{Comment, CommentKind, Punct, Tok, Token, lex};
 use crate::span::{Diagnostic, Span};
 
+// test_ok grmb_version_and_module
+// grimble = "2";
+// module demo;
+
+// test_ok grmb_node_with_clauses
+// grimble = "2";
+// module demo;
+//
+// /// A component.
+// node app : trusted {
+//   kind component;
+//   clearance Internal;
+//   owns "crates/app/**";
+// }
+
+// test_ok grmb_may_grants
+// grimble = "2";
+// module demo;
+//
+// node app : trusted {
+//   kind component;
+//   may fs.read at "crates/app/**";
+//   may exec at "crates/app/tests/**";
+// }
+
+// test_ok grmb_two_nodes
+// grimble = "2";
+// module demo;
+//
+// node a : trusted {
+//   kind component;
+// }
+//
+// node b : trusted {
+//   kind component;
+//   owns "b/**";
+// }
+
+// test_ok grmb_comments_are_kept
+// grimble = "2";
+// // a plain comment
+// module demo;
+// /// doc for the node
+// node a : trusted {
+//   kind component; // trailing
+// }
+
+// test_err grmb_missing_semicolon_after_module
+// grimble = "2";
+// module demo
+// node a : trusted {
+//   kind component;
+// }
+
+// test_err grmb_unclosed_node_block
+// grimble = "2";
+// module demo;
+// node a : trusted {
+//   kind component;
+
+// test_err grmb_unterminated_string
+// grimble = "2";
+// module demo;
+// node a : trusted {
+//   owns "crates/a/**;
+// }
+
+// test_err grmb_unsupported_major
+// grimble = "9";
+// module demo;
+
+// test_err grmb_unknown_top_level_item
+// grimble = "2";
+// module demo;
+// banana a;
+
+// test_err grmb_clause_without_value
+// grimble = "2";
+// module demo;
+// node a : trusted {
+//   kind;
+// }
+
 /// The deepest `namespace` nesting the parser accepts (a bound on recursion, not a language rule).
 pub const MAX_NESTING: usize = 32;
 

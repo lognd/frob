@@ -1,0 +1,7 @@
+grimble = "2";
+// a plain comment
+module demo;
+/// doc for the node
+node a : trusted {
+  kind component; // trailing
+}

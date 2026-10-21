@@ -1,0 +1,59 @@
+---
+source: crates/gob-directives/tests/inline.rs
+expression: dump
+---
+ScanResult {
+    directives: [
+        DirectiveRecord {
+            namespace: "frob",
+            verb: "tests",
+            args: ArgList {
+                positional: [
+                    Token {
+                        value: "a",
+                        range: TextRange {
+                            start: TextSize(
+                                14,
+                            ),
+                            end: TextSize(
+                                15,
+                            ),
+                        },
+                        quoted: false,
+                    },
+                ],
+                keyed: [],
+            },
+            span: Span {
+                file: FileId(
+                    0,
+                ),
+                range: TextRange {
+                    start: TextSize(
+                        3,
+                    ),
+                    end: TextSize(
+                        15,
+                    ),
+                },
+            },
+            bound: Symbol(
+                Symref {
+                    path: "a",
+                    target: File,
+                },
+            ),
+            source: Some(
+                Symref {
+                    path: "src/a.rs",
+                    target: Symbol(
+                        [
+                            "t",
+                        ],
+                    ),
+                },
+            ),
+        },
+    ],
+    findings: [],
+}

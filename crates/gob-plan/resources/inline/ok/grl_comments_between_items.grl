@@ -1,0 +1,10 @@
+# a line comment before the rule
+rule CMT001 "comments" {
+  lang rust # trailing comment
+  find d: `dbg!($$$ARGS)`
+  report d "remove dbg!"
+
+  explain """
+    Explains the rule.
+  """
+}

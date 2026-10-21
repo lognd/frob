@@ -119,14 +119,19 @@ pub fn apply(root: &Path, files: &[GenFile], mode: Mode) -> Result<Applied, File
                         DIFF_CAP_LINES,
                     ));
                 }
-                if let Some(text) = existing.as_deref()
+                // frob:ticket 01M47QTW8CA2FD3BQTH2GG2KXR
+                // Inline inputs are parser source text and cannot carry a marker.
+                let inline = crate::render::inline::is_inline_path(&file.path);
+                if !inline
+                    && let Some(text) = existing.as_deref()
                     && let Some(problem) = marker_problem(text)
                 {
                     applied.marker_problems += 1;
                     emit(&format!("GEN001: {}: {problem}", file.path));
                 }
                 // frob:ticket 01M4MAQ5JFANPHZ0SJ690R68TZ
-                if let Some(text) = existing.as_deref()
+                if !inline
+                    && let Some(text) = existing.as_deref()
                     && let Some(warning) = stale_version(text, crate::render::GENERATOR_VERSION)
                 {
                     emit(&format!("GEN001 (warning): {}: {warning}", file.path));
@@ -258,8 +263,12 @@ fn orphan_files(root: &Path, files: &[GenFile]) -> Vec<String> {
             if known.contains(rel.as_str()) || !entry.path().is_file() {
                 continue;
             }
-            if let Ok(text) = std::fs::read_to_string(entry.path())
-                && marker_command(&text).is_some()
+            // frob:ticket 01M47QTW8CA2FD3BQTH2GG2KXR
+            // An extracted inline input has no marker; any unknown file in its directory is stale.
+            let stale_inline = crate::render::inline::is_inline_path(&rel);
+            if stale_inline
+                || std::fs::read_to_string(entry.path())
+                    .is_ok_and(|text| marker_command(&text).is_some())
             {
                 orphans.push(rel);
             }

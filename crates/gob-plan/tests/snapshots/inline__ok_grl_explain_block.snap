@@ -1,0 +1,324 @@
+---
+source: crates/gob-plan/tests/inline.rs
+expression: dump
+---
+Parsed {
+    file: File {
+        rules: [
+            Rule {
+                id: Word {
+                    text: "EXP001",
+                    span: Span {
+                        file: FileId(
+                            0,
+                        ),
+                        range: TextRange {
+                            start: TextSize(
+                                5,
+                            ),
+                            end: TextSize(
+                                11,
+                            ),
+                        },
+                    },
+                },
+                slug: StrLit {
+                    value: "explained",
+                    span: Span {
+                        file: FileId(
+                            0,
+                        ),
+                        range: TextRange {
+                            start: TextSize(
+                                12,
+                            ),
+                            end: TextSize(
+                                23,
+                            ),
+                        },
+                    },
+                },
+                headers: [
+                    Spanned {
+                        node: Lang(
+                            One(
+                                Word {
+                                    text: "rust",
+                                    span: Span {
+                                        file: FileId(
+                                            0,
+                                        ),
+                                        range: TextRange {
+                                            start: TextSize(
+                                                33,
+                                            ),
+                                            end: TextSize(
+                                                37,
+                                            ),
+                                        },
+                                    },
+                                },
+                            ),
+                        ),
+                        span: Span {
+                            file: FileId(
+                                0,
+                            ),
+                            range: TextRange {
+                                start: TextSize(
+                                    28,
+                                ),
+                                end: TextSize(
+                                    37,
+                                ),
+                            },
+                        },
+                    },
+                ],
+                clauses: [
+                    Spanned {
+                        node: Find(
+                            Binding {
+                                name: Word {
+                                    text: "d",
+                                    span: Span {
+                                        file: FileId(
+                                            0,
+                                        ),
+                                        range: TextRange {
+                                            start: TextSize(
+                                                46,
+                                            ),
+                                            end: TextSize(
+                                                47,
+                                            ),
+                                        },
+                                    },
+                                },
+                                source: Shape(
+                                    Spanned {
+                                        node: Snippet {
+                                            snippet: Snippet {
+                                                lang: None,
+                                                ticks: 1,
+                                                text: "dbg!($$$ARGS)",
+                                                body: Span {
+                                                    file: FileId(
+                                                        0,
+                                                    ),
+                                                    range: TextRange {
+                                                        start: TextSize(
+                                                            50,
+                                                        ),
+                                                        end: TextSize(
+                                                            63,
+                                                        ),
+                                                    },
+                                                },
+                                                metavars: [
+                                                    MetaVar {
+                                                        kind: Seq,
+                                                        name: Some(
+                                                            "ARGS",
+                                                        ),
+                                                        span: Span {
+                                                            file: FileId(
+                                                                0,
+                                                            ),
+                                                            range: TextRange {
+                                                                start: TextSize(
+                                                                    55,
+                                                                ),
+                                                                end: TextSize(
+                                                                    62,
+                                                                ),
+                                                            },
+                                                        },
+                                                    },
+                                                ],
+                                                dollars: [],
+                                            },
+                                            cast: None,
+                                        },
+                                        span: Span {
+                                            file: FileId(
+                                                0,
+                                            ),
+                                            range: TextRange {
+                                                start: TextSize(
+                                                    49,
+                                                ),
+                                                end: TextSize(
+                                                    64,
+                                                ),
+                                            },
+                                        },
+                                    },
+                                ),
+                                rels: [],
+                                filter: None,
+                                span: Span {
+                                    file: FileId(
+                                        0,
+                                    ),
+                                    range: TextRange {
+                                        start: TextSize(
+                                            46,
+                                        ),
+                                        end: TextSize(
+                                            64,
+                                        ),
+                                    },
+                                },
+                            },
+                        ),
+                        span: Span {
+                            file: FileId(
+                                0,
+                            ),
+                            range: TextRange {
+                                start: TextSize(
+                                    41,
+                                ),
+                                end: TextSize(
+                                    64,
+                                ),
+                            },
+                        },
+                    },
+                    Spanned {
+                        node: Report(
+                            Report {
+                                target: Word {
+                                    text: "d",
+                                    span: Span {
+                                        file: FileId(
+                                            0,
+                                        ),
+                                        range: TextRange {
+                                            start: TextSize(
+                                                74,
+                                            ),
+                                            end: TextSize(
+                                                75,
+                                            ),
+                                        },
+                                    },
+                                },
+                                message: Message {
+                                    parts: [
+                                        Text {
+                                            value: "remove dbg!",
+                                            span: Span {
+                                                file: FileId(
+                                                    0,
+                                                ),
+                                                range: TextRange {
+                                                    start: TextSize(
+                                                        77,
+                                                    ),
+                                                    end: TextSize(
+                                                        88,
+                                                    ),
+                                                },
+                                            },
+                                        },
+                                    ],
+                                    span: Span {
+                                        file: FileId(
+                                            0,
+                                        ),
+                                        range: TextRange {
+                                            start: TextSize(
+                                                76,
+                                            ),
+                                            end: TextSize(
+                                                89,
+                                            ),
+                                        },
+                                    },
+                                },
+                                when: None,
+                            },
+                        ),
+                        span: Span {
+                            file: FileId(
+                                0,
+                            ),
+                            range: TextRange {
+                                start: TextSize(
+                                    67,
+                                ),
+                                end: TextSize(
+                                    89,
+                                ),
+                            },
+                        },
+                    },
+                ],
+                examples: [],
+                explain: Some(
+                    Explain {
+                        text: BlockLit {
+                            value: "`dbg!` prints to stderr.\n\n## Remedy\nDelete the call.",
+                            body: Span {
+                                file: FileId(
+                                    0,
+                                ),
+                                range: TextRange {
+                                    start: TextSize(
+                                        104,
+                                    ),
+                                    end: TextSize(
+                                        172,
+                                    ),
+                                },
+                            },
+                            span: Span {
+                                file: FileId(
+                                    0,
+                                ),
+                                range: TextRange {
+                                    start: TextSize(
+                                        101,
+                                    ),
+                                    end: TextSize(
+                                        175,
+                                    ),
+                                },
+                            },
+                        },
+                        span: Span {
+                            file: FileId(
+                                0,
+                            ),
+                            range: TextRange {
+                                start: TextSize(
+                                    93,
+                                ),
+                                end: TextSize(
+                                    175,
+                                ),
+                            },
+                        },
+                    },
+                ),
+                span: Span {
+                    file: FileId(
+                        0,
+                    ),
+                    range: TextRange {
+                        start: TextSize(
+                            0,
+                        ),
+                        end: TextSize(
+                            177,
+                        ),
+                    },
+                },
+            },
+        ],
+    },
+    errors: [],
+    warnings: [],
+}

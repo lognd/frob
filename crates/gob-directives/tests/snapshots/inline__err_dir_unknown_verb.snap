@@ -1,0 +1,70 @@
+---
+source: crates/gob-directives/tests/inline.rs
+expression: dump
+---
+ScanResult {
+    directives: [],
+    findings: [
+        Finding {
+            rule: RuleId(
+                "DSL001",
+            ),
+            severity: Error,
+            span: Some(
+                Span {
+                    file: FileId(
+                        0,
+                    ),
+                    range: TextRange {
+                        start: TextSize(
+                            8,
+                        ),
+                        end: TextSize(
+                            13,
+                        ),
+                    },
+                },
+            ),
+            message: "unknown directive `frob:bogus`; known verbs: accept, defer, describes, doc, invariant, tests, ticket, todo",
+            fingerprint: Fingerprint(
+                [
+                    249,
+                    184,
+                    95,
+                    216,
+                    77,
+                    32,
+                    124,
+                    130,
+                    253,
+                    36,
+                    46,
+                    47,
+                    26,
+                    125,
+                    24,
+                    162,
+                    31,
+                    251,
+                    104,
+                    122,
+                    8,
+                    72,
+                    162,
+                    175,
+                    78,
+                    242,
+                    102,
+                    70,
+                    65,
+                    71,
+                    242,
+                    250,
+                ],
+            ),
+            fix: None,
+            required: None,
+            reason: None,
+        },
+    ],
+}

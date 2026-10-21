@@ -1,0 +1,158 @@
+---
+source: crates/gob-plan/tests/inline.rs
+expression: dump
+---
+Parsed {
+    file: File {
+        rules: [
+            Rule {
+                id: Word {
+                    text: "OK001",
+                    span: Span {
+                        file: FileId(
+                            0,
+                        ),
+                        range: TextRange {
+                            start: TextSize(
+                                24,
+                            ),
+                            end: TextSize(
+                                29,
+                            ),
+                        },
+                    },
+                },
+                slug: StrLit {
+                    value: "after",
+                    span: Span {
+                        file: FileId(
+                            0,
+                        ),
+                        range: TextRange {
+                            start: TextSize(
+                                30,
+                            ),
+                            end: TextSize(
+                                37,
+                            ),
+                        },
+                    },
+                },
+                headers: [
+                    Spanned {
+                        node: Lang(
+                            One(
+                                Word {
+                                    text: "rust",
+                                    span: Span {
+                                        file: FileId(
+                                            0,
+                                        ),
+                                        range: TextRange {
+                                            start: TextSize(
+                                                47,
+                                            ),
+                                            end: TextSize(
+                                                51,
+                                            ),
+                                        },
+                                    },
+                                },
+                            ),
+                        ),
+                        span: Span {
+                            file: FileId(
+                                0,
+                            ),
+                            range: TextRange {
+                                start: TextSize(
+                                    42,
+                                ),
+                                end: TextSize(
+                                    51,
+                                ),
+                            },
+                        },
+                    },
+                ],
+                clauses: [],
+                examples: [],
+                explain: None,
+                span: Span {
+                    file: FileId(
+                        0,
+                    ),
+                    range: TextRange {
+                        start: TextSize(
+                            19,
+                        ),
+                        end: TextSize(
+                            53,
+                        ),
+                    },
+                },
+            },
+        ],
+    },
+    errors: [
+        ParseError {
+            kind: NotARule {
+                found: "`this`",
+            },
+            span: Span {
+                file: FileId(
+                    0,
+                ),
+                range: TextRange {
+                    start: TextSize(
+                        0,
+                    ),
+                    end: TextSize(
+                        4,
+                    ),
+                },
+            },
+        },
+        ParseError {
+            kind: Expected {
+                what: "a rule id such as `TODO001` after `rule`",
+                found: "`rule`",
+                hint: Some(
+                    "rule ids are capital letters then three digits",
+                ),
+            },
+            span: Span {
+                file: FileId(
+                    0,
+                ),
+                range: TextRange {
+                    start: TextSize(
+                        19,
+                    ),
+                    end: TextSize(
+                        23,
+                    ),
+                },
+            },
+        },
+        ParseError {
+            kind: MissingExplain(
+                "OK001",
+            ),
+            span: Span {
+                file: FileId(
+                    0,
+                ),
+                range: TextRange {
+                    start: TextSize(
+                        52,
+                    ),
+                    end: TextSize(
+                        53,
+                    ),
+                },
+            },
+        },
+    ],
+    warnings: [],
+}

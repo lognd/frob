@@ -1,0 +1,4 @@
+this is not a rule
+rule OK001 "after" {
+  lang rust
+}

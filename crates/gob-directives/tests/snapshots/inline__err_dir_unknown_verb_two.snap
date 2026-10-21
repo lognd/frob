@@ -1,0 +1,70 @@
+---
+source: crates/gob-directives/tests/inline.rs
+expression: dump
+---
+ScanResult {
+    directives: [],
+    findings: [
+        Finding {
+            rule: RuleId(
+                "DSL001",
+            ),
+            severity: Error,
+            span: Some(
+                Span {
+                    file: FileId(
+                        0,
+                    ),
+                    range: TextRange {
+                        start: TextSize(
+                            8,
+                        ),
+                        end: TextSize(
+                            16,
+                        ),
+                    },
+                },
+            ),
+            message: "unknown directive `frob:nonsense`; known verbs: accept, defer, describes, doc, invariant, tests, ticket, todo",
+            fingerprint: Fingerprint(
+                [
+                    212,
+                    8,
+                    29,
+                    35,
+                    93,
+                    243,
+                    184,
+                    179,
+                    132,
+                    48,
+                    41,
+                    186,
+                    240,
+                    140,
+                    111,
+                    134,
+                    239,
+                    91,
+                    95,
+                    241,
+                    191,
+                    94,
+                    242,
+                    62,
+                    18,
+                    56,
+                    174,
+                    108,
+                    50,
+                    101,
+                    165,
+                    8,
+                ],
+            ),
+            fix: None,
+            required: None,
+            reason: None,
+        },
+    ],
+}

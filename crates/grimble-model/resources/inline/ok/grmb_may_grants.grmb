@@ -1,0 +1,8 @@
+grimble = "2";
+module demo;
+
+node app : trusted {
+  kind component;
+  may fs.read at "crates/app/**";
+  may exec at "crates/app/tests/**";
+}

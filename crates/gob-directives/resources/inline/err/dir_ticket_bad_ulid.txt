@@ -1,0 +1,2 @@
+// frob:ticket not-a-ulid
+pub fn a() {}

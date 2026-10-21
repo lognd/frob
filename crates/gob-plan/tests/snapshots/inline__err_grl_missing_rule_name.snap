@@ -1,0 +1,52 @@
+---
+source: crates/gob-plan/tests/inline.rs
+expression: dump
+---
+Parsed {
+    file: File {
+        rules: [],
+    },
+    errors: [
+        ParseError {
+            kind: Expected {
+                what: "a rule id such as `TODO001` after `rule`",
+                found: "`{`",
+                hint: Some(
+                    "rule ids are capital letters then three digits",
+                ),
+            },
+            span: Span {
+                file: FileId(
+                    0,
+                ),
+                range: TextRange {
+                    start: TextSize(
+                        5,
+                    ),
+                    end: TextSize(
+                        6,
+                    ),
+                },
+            },
+        },
+        ParseError {
+            kind: MissingExplain(
+                "?",
+            ),
+            span: Span {
+                file: FileId(
+                    0,
+                ),
+                range: TextRange {
+                    start: TextSize(
+                        19,
+                    ),
+                    end: TextSize(
+                        20,
+                    ),
+                },
+            },
+        },
+    ],
+    warnings: [],
+}

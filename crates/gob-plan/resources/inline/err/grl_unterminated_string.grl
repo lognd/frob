@@ -1,0 +1,3 @@
+rule BAD001 "unterminated {
+  lang rust
+}

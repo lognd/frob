@@ -1,0 +1,10 @@
+rule MIN001 "minimal" {
+  lang rust
+
+  find d: `dbg!($$$ARGS)`
+  report d "remove dbg!"
+
+  explain """
+    Explains the rule.
+  """
+}

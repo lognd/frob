@@ -5,6 +5,7 @@ pub mod cli;
 pub mod config;
 pub mod directives;
 pub mod grl_catalog;
+pub mod inline;
 pub mod rules;
 pub mod rules_index;
 pub mod schemas;
@@ -20,6 +21,7 @@ pub fn source_of(kind: &str) -> &'static str {
         "directives" => "directive declarations",
         "config" => "config table declarations",
         "cli" => "command registry",
+        "inline" => "inline test comments in parser source",
         "std-rules" => "std GRL sources (packs/std/rules)",
         _ => "schema declarations",
     }

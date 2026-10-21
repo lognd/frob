@@ -1,0 +1,11 @@
+grimble = "2";
+module demo;
+
+node a : trusted {
+  kind component;
+}
+
+node b : trusted {
+  kind component;
+  owns "b/**";
+}

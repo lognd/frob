@@ -1,0 +1,12 @@
+rule HDR001 "headers" {
+  lang rust
+  severity warn
+  polarity P-
+
+  find d: `todo!()`
+  report d "no todo"
+
+  explain """
+    Explains the rule.
+  """
+}

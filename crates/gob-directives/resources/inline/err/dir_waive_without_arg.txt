@@ -1,0 +1,2 @@
+// frob:waive
+pub fn a() {}
