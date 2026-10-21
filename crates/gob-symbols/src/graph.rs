@@ -925,7 +925,7 @@ impl SymbolGraph {
             file_types: HashMap::new(),
             enums: HashSet::new(),
             py: PyIndex::build(self, files),
-            cs: CsIndex::build(self, files),
+            cs: CsIndex::build(self, files, deps.as_deref_mut()),
             ts: TsIndex::build(self, files, deps.as_deref_mut()),
         };
         for f in files.iter().filter(|f| is_rust(&f.path)) {
