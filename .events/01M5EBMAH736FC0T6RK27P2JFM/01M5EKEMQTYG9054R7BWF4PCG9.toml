@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The driver advances the index change_feed cursor to the feed cursor after a clean, completed run that reconciled every feed item, and holds it otherwise"]
+moved = []
+at = "2026-10-21T06:47:49Z"
+actor = "lognd"
+rev = 1
