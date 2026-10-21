@@ -25,6 +25,13 @@ impl Shown {
             offset: Some(seconds_east),
         }
     }
+
+    /// The machine's local-zone offset from UTC at `at`, in seconds east; for day-boundary arithmetic, never rendering.
+    #[must_use]
+    pub fn local_offset_secs(at: Stamp) -> i64 {
+        let tz = crate::wall::local_zone();
+        i64::from(tz.to_offset(at.timestamp()).seconds())
+    }
 }
 
 impl fmt::Display for Shown {

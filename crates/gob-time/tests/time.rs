@@ -104,6 +104,13 @@ fn local_display_renders_text_with_an_offset() {
     assert_eq!(text.len(), "2026-10-05 00:06:00 +00:00".len(), "{text}");
 }
 
+// frob:tests crates/gob-time/src/shown.rs::Shown.local_offset_secs
+#[test]
+fn local_offset_is_a_valid_whole_zone_offset() {
+    let secs = Shown::local_offset_secs(boundary());
+    assert!(secs.abs() <= 26 * 3600, "{secs}");
+}
+
 fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }

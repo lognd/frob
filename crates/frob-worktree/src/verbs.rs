@@ -46,16 +46,15 @@ fn claim_windows(root: &std::path::Path) -> Result<ClaimWindows, String> {
     }
 }
 
-/// Load the `[claims]` tables into the policy `work --next` evicts by; `None` when they cannot be loaded.
+/// Load the `[claims]` tables, with the local zone offset at `now`, into the policy `work --next` evicts by; `None` when they cannot be loaded.
 // frob:ticket 01M5DWZYEFXGXNRQ4KH8DKB004
-fn evict_policy(root: &std::path::Path, in_ci: bool) -> Option<EvictPolicy> {
+fn evict_policy(root: &std::path::Path, in_ci: bool, now: gob_time::Stamp) -> Option<EvictPolicy> {
     match claim_windows(root) {
         Ok(windows) => {
             tracing::debug!(in_ci, "work --next: eviction policy loaded");
             Some(EvictPolicy {
                 windows,
-                // No local-zone source is available here; the daily count uses UTC days.
-                utc_offset_secs: 0,
+                utc_offset_secs: gob_time::Shown::local_offset_secs(now),
                 in_ci,
             })
         }
@@ -365,7 +364,7 @@ impl Command for Work {
             // frob:ticket 01M5CW05BZQR83F5SJTQEH8MRN
             let notices = opened.collect_garbage();
             let in_ci = std::env::var_os("CI").is_some_and(|v| !v.is_empty());
-            let policy = evict_policy(&opened.root, in_ci);
+            let policy = evict_policy(&opened.root, in_ci, opened.ledger.clock().now());
             let started = opened.workspace().work_next_evicting(
                 &opened.gated(&self.opts),
                 crate::next::MAX_ATTEMPTS,
@@ -628,9 +627,10 @@ impl Command for ClaimEvict {
     fn run(&self, ctx: &Context) -> Outcome<EvictData> {
         let opened = Opened::new(ctx)?;
         let in_ci = std::env::var_os("CI").is_some_and(|v| !v.is_empty());
-        let policy = evict_policy(&opened.root, in_ci).ok_or_else(|| {
-            WorktreeError::Config("[claims] is unreadable; cannot judge idleness".to_owned())
-        })?;
+        let policy =
+            evict_policy(&opened.root, in_ci, opened.ledger.clock().now()).ok_or_else(|| {
+                WorktreeError::Config("[claims] is unreadable; cannot judge idleness".to_owned())
+            })?;
         let e = opened
             .workspace()
             .evict_claim(&self.ticket, &self.reason, self.yes, &policy)?;
@@ -812,11 +812,11 @@ mod tests {
             "[claims]\nevict_agent = \"confirm\"\n",
         )
         .unwrap();
-        let p = evict_policy(dir.path(), true).unwrap();
+        let p = evict_policy(dir.path(), true, gob_time::Stamp::from_unix(0)).unwrap();
         assert!(p.in_ci);
         assert!(!p.windows.evict_agent_auto());
         let d = tempfile::tempdir().unwrap();
-        let p = evict_policy(d.path(), false).unwrap();
+        let p = evict_policy(d.path(), false, gob_time::Stamp::from_unix(0)).unwrap();
         assert!(!p.in_ci);
         assert!(p.windows.evict_agent_auto());
     }
@@ -826,7 +826,7 @@ mod tests {
     fn evict_policy_is_none_for_a_bad_claims_table() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("frob.toml"), "[claims]\nbogus = 1\n").unwrap();
-        assert!(evict_policy(dir.path(), false).is_none());
+        assert!(evict_policy(dir.path(), false, gob_time::Stamp::from_unix(0)).is_none());
     }
 
     // frob:tests claim_windows
