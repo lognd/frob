@@ -2,13 +2,13 @@
 id = "01M47QVD03PGCAZ301WHC5Q4MF"
 title = "Change detection job: map changed paths to the CI job set"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:18Z"
-updated = "2026-10-06T04:34:18Z"
+updated = "2026-10-21T10:15:16Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml"]
 
 [[acceptance]]
