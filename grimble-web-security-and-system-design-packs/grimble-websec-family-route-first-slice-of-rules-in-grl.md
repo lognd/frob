@@ -11,7 +11,7 @@ created = "2026-10-04T11:31:34Z"
 updated = "2026-10-21T11:48:29Z"
 idempotency_key = "crunk-plan-g_ROUTE"
 labels = ["area:grimble"]
-scope = ["packs/grimble-websec/rules/route/**", "packs/grimble-websec/tests/route/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs", "docs/grimble/packs/grimble-websec.md"]
+scope = ["packs/grimble-websec/rules/route/**", "packs/grimble-websec/tests/route/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs", "docs/grimble/packs/grimble-websec.md", "changelog.d/01M43AXZRK62S6DATKMBQGCFRG.added.md"]
 
 [[links]]
 kind = "blocked-by"
