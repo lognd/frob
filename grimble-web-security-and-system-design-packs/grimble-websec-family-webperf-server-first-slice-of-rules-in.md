@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the clean example, when `grimble rule test` runs, then it passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a language without an adapter, when the family runs, then it is NotApplicable or Unresolved with the reason"
