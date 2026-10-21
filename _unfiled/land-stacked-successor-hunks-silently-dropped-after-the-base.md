@@ -2,7 +2,8 @@
 id = "01M3AXSDBMG2ZAEHTQ6JHA8CYK"
 title = "land: stacked successor hunks silently dropped after the base squash-lands; verify hunk presence post-merge"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "agent"
