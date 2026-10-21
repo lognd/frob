@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-land/src/hostland.rs"]
+at = "2026-10-21T00:26:10Z"
+actor = "lognd"
+rev = 1
