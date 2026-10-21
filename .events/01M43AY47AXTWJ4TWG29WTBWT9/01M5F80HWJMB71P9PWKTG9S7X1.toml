@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T12:47:07Z"
+digest = "54341ce04db33ca86f8f74193b8bc27772af1921132c76c19eb167a31e61a38d"
+exit_code = 0
+head = "c72a8d73cd18b3c9b8e6b21f50ae9280f00fad45"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d959b139-166a-42eb-94a8-5b8b99ab29e1 with nextest profile: default
+    Starting 1 test across 1 binary (11 tests skipped)
+        PASS [   0.016s] grimble-check::websec_pack webperf_server_rules_fire_on_their_example_and_teach_a_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test websec_pack webperf_server_rules_fire"
+size = 577
+status = "measured"
+test_count = 1
+tests_digest = "607e8a8af5df171256973ddb05659e5cc0b4a44ecf7f0b7fae012feebe481006"
+at = "2026-10-21T12:47:07Z"
+actor = "lognd"
+rev = 1
