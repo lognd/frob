@@ -7,8 +7,8 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-21T17:33:20Z"
-updated = "2026-10-21T18:16:36Z"
-scope = ["crates/gob-plan/src/examples/side.rs", "crates/gob-plan/src/examples/mod.rs", "crates/gob-plan/src/examples/model_reader.rs"]
+updated = "2026-10-21T18:16:37Z"
+scope = ["crates/gob-plan/src/examples/side.rs", "crates/gob-plan/src/examples/mod.rs", "crates/gob-plan/src/examples/model_reader.rs", "crates/gob-plan/Cargo.toml"]
 
 [[acceptance]]
 text = "Behaviour implemented and covered by a bound test or check"
