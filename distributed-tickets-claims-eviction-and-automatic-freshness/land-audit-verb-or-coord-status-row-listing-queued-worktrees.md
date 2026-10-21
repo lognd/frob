@@ -9,7 +9,7 @@ parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T04:27:12Z"
 updated = "2026-10-21T08:27:34Z"
-scope = ["crates/frob-land/src/hunk_presence.rs"]
+scope = ["crates/frob-land/src/hunk_presence.rs", "crates/frob-land/src/train.rs"]
 +++
 
 Follow-up from ~JHA8CYK.
