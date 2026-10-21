@@ -11,7 +11,7 @@ created = "2026-10-04T11:31:27Z"
 updated = "2026-10-21T12:25:41Z"
 idempotency_key = "crunk-plan-g_COMPLY-PII"
 labels = ["area:grimble"]
-scope = ["packs/grimble-websec/rules/comply-pii/**", "packs/grimble-websec/tests/comply-pii/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs"]
+scope = ["packs/grimble-websec/rules/comply-pii/**", "packs/grimble-websec/tests/comply-pii/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs", "docs/grimble/packs/grimble-websec.md"]
 
 [[links]]
 kind = "blocked-by"
