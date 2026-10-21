@@ -2,7 +2,8 @@
 id = "01M47QTVCF0WDJWM22AG4WAFJT"
 title = "Fix snapshots and fixpoint convergence for every fixable rule"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
