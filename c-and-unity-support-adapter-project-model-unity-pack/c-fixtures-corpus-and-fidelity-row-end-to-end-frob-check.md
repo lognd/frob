@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:59Z"
-updated = "2026-10-21T10:50:33Z"
+updated = "2026-10-21T11:03:45Z"
 idempotency_key = "d94-fixture"
 scope = ["crates/gob-symbols/tests/**", "crates/frob-check/tests/**", "docs/reference/fidelity.md", "docs/design/code-model.md", "changelog.d/01M44YQVN6PMK0D8NJ801ENJEW.added.md"]
 
@@ -26,7 +26,7 @@ target = "01M44YQV7C3FYXB3QH20R4E5N8"
 
 [[acceptance]]
 text = "Given the C# fixture corpus, when the gob-symbols conformance tests run, then symbols, imports, calls and test ids match the checked-in snapshots"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the fixture solution, when frob check runs end to end, then it exits with the expected findings and no panic"
