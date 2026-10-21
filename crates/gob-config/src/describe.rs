@@ -78,6 +78,15 @@ pub fn render_default<T: Serialize>(value: &T) -> String {
 }
 
 /// JSON Schema of `T` as a plain JSON value (used by the derive).
+///
+/// The generator's shared definitions ride along under a `$defs` key of the returned object so
+/// the `$ref` links in it stay resolvable; `schema` lifts them into the document root.
 pub fn schema_of<T: JsonSchema>() -> serde_json::Value {
-    SchemaGenerator::default().subschema_for::<T>().to_value()
+    let mut generator = SchemaGenerator::default();
+    let mut node = generator.subschema_for::<T>().to_value();
+    let defs = generator.take_definitions(true);
+    if let (serde_json::Value::Object(map), false) = (&mut node, defs.is_empty()) {
+        map.insert("$defs".to_owned(), serde_json::Value::Object(defs));
+    }
+    node
 }

@@ -55,7 +55,7 @@ This table is the one path table; every other file links here.
 |---|---|---|---|
 | CLI reference | `docs/reference/cli/<product>.md` (plus `docs/reference/cli/any.md` for the verbs shared by every product, such as `schema`) | clap derive doc comments | `cargo dev gen cli` |
 | man pages, completions (Milestone 2 or later (D36)) | `man/`, `completions/` | clap derive doc comments | `cargo dev gen cli` |
-| config reference and schema | `docs/reference/config.md`, `docs/schemas/config.json` | `ConfigTable` derive and schemars | `cargo dev gen config` |
+| config reference and schema | `docs/reference/config.md`, `docs/schemas/config.json` | `ConfigTable` derive and schemars (the `$defs` each field's `$ref` links need are merged into the document root; a name clash keeps the first definition and logs a warning) | `cargo dev gen config` |
 | rule pages | `docs/reference/rules/<ID>.md` (each embeds the rule's mdtest fire and clean examples; rows for severity, tier, scope, polarity and needs) | `Rule` derive doc comment (must contain a Remedy section or it does not compile) | `cargo dev gen rules` |
 | directives (shared by all products) | `docs/reference/directives.md`, `docs/schemas/directives.json` | the `Directive` derive | `cargo dev gen directives` |
 | crunk.toml reference and schema | `docs/crunk/config.md`, `docs/schemas/crunk.json` | the `crunk-spec` table types (serde and schemars; not registered in the frob config inventory) | `cargo dev gen config` and `cargo dev gen schemas` |

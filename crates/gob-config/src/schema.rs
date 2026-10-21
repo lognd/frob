@@ -4,11 +4,18 @@ use serde_json::{Map, Value, json};
 
 use crate::describe::{FieldDescription, TableDescription};
 
+/// Key under which schemars (draft 2020-12) stores shared definitions.
+const DEFS: &str = "$defs";
+
 /// A JSON Schema document with one property per table (nested by dotted path).
+///
+/// Every `$ref` a field carries resolves against the root `$defs` object, which merges the
+/// definitions each field's schema brought along.
 pub fn schema(tables: &[&TableDescription]) -> Value {
     let mut root = Map::new();
+    let mut defs = Map::new();
     for desc in tables {
-        let mut node = table_node(desc);
+        let mut node = table_node(desc, &mut defs);
         let segs: Vec<&str> = desc.table.split('.').collect();
         let (last, parents) = segs
             .split_last()
@@ -34,19 +41,74 @@ pub fn schema(tables: &[&TableDescription]) -> Value {
         }
         props.insert((*last).to_owned(), node);
     }
-    json!({
+    let mut doc = json!({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": root,
         "additionalProperties": false,
-    })
+    });
+    let dangling = dangling_refs(&doc, &defs);
+    if !dangling.is_empty() {
+        tracing::warn!(?dangling, "schema has $ref links with no $defs entry");
+    }
+    tracing::debug!(defs = defs.len(), "schema assembled");
+    if !defs.is_empty() {
+        doc[DEFS] = Value::Object(defs);
+    }
+    doc
 }
 
-fn table_node(desc: &TableDescription) -> Value {
+/// Every `#/$defs/NAME` target referenced under `node` (and inside `defs`) that `defs` lacks.
+fn dangling_refs(node: &Value, defs: &Map<String, Value>) -> Vec<String> {
+    let mut out = Vec::new();
+    collect_dangling(node, defs, &mut out);
+    for def in defs.values() {
+        collect_dangling(def, defs, &mut out);
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+fn collect_dangling(node: &Value, defs: &Map<String, Value>, out: &mut Vec<String>) {
+    match node {
+        Value::Object(map) => {
+            if let Some(name) = map
+                .get("$ref")
+                .and_then(Value::as_str)
+                .and_then(|r| r.strip_prefix("#/$defs/"))
+                && !defs.contains_key(name)
+            {
+                out.push(name.to_owned());
+            }
+            map.values().for_each(|v| collect_dangling(v, defs, out));
+        }
+        Value::Array(items) => items.iter().for_each(|v| collect_dangling(v, defs, out)),
+        _ => {}
+    }
+}
+
+/// Merge `incoming` definitions into `defs`; on a name clash with a different body the first
+/// one wins (and the clash is logged), since `$ref` links address definitions by name only.
+fn merge_defs(defs: &mut Map<String, Value>, incoming: Map<String, Value>) {
+    for (name, def) in incoming {
+        match defs.get(&name) {
+            Some(existing) if *existing != def => {
+                tracing::warn!(%name, "conflicting $defs entries share a name; keeping the first");
+            }
+            Some(_) => {}
+            None => {
+                defs.insert(name, def);
+            }
+        }
+    }
+}
+
+fn table_node(desc: &TableDescription, defs: &mut Map<String, Value>) -> Value {
     let props: Map<String, Value> = desc
         .fields
         .iter()
-        .map(|f| (f.key.clone(), field_node(f)))
+        .map(|f| (f.key.clone(), field_node(f, defs)))
         .collect();
     let mut node = json!({
         "type": "object",
@@ -59,9 +121,12 @@ fn table_node(desc: &TableDescription) -> Value {
     node
 }
 
-fn field_node(f: &FieldDescription) -> Value {
+fn field_node(f: &FieldDescription, defs: &mut Map<String, Value>) -> Value {
     let mut node = f.schema.clone();
     if let Value::Object(map) = &mut node {
+        if let Some(Value::Object(carried)) = map.remove(DEFS) {
+            merge_defs(defs, carried);
+        }
         if !f.doc.is_empty() {
             map.insert("description".to_owned(), Value::String(f.doc.clone()));
         }
