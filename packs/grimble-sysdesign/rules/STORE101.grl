@@ -1,0 +1,23 @@
+rule STORE101 "redis-keys-command" {
+  lang [python, typescript]
+  severity warn
+
+  find c: call where c.callee.name in ["keys"]
+  report c "KEYS walks the whole keyspace and blocks the server: use SCAN"
+
+  example fire python """
+    r.keys("session:*")  #~ warn
+  """
+  example clean python """
+    def purge(r):
+        return list(r.scan_iter("session:*"))
+  """
+  example notapplicable markdown """
+    Call r.keys("x") in prose.
+  """
+  explain """
+    Redis `KEYS pattern` is O(N) over every key and blocks the single-threaded server while it runs.
+    ## Remedy
+    Iterate with `SCAN` (`scan_iter` in redis-py), or keep an index set of the keys you need.
+  """
+}
