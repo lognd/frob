@@ -1,0 +1,22 @@
+rule LAUNCH102 "favicon-link-without-href" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "link" and e has attribute(name = "rel", value = "icon") and not e has attribute(name = "href")
+  report e "favicon link has no href: browsers show the generic tab icon"
+
+  example fire html """
+    <link rel="icon">  <!--~ warn -->
+  """
+  example clean html """
+    <link rel="icon" href="/favicon.ico">
+  """
+  example notapplicable markdown """
+    A favicon is declared <link rel="icon"> in prose.
+  """
+  explain """
+    A favicon link without `href` declares an icon the browser can never fetch.
+    ## Remedy
+    Add an `href` attribute pointing at the icon file.
+  """
+}
