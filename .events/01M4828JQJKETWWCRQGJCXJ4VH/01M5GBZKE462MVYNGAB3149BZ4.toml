@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given exports.f = function(){} or module.exports = { f() {} }, when symbols are built, then a unit exists for f", "Given a block-scoped let or const binder in TS or JS, when a reference is resolved, then it binds to the block binder"]
+moved = []
+at = "2026-10-21T23:15:45Z"
+actor = "lognd"
+rev = 1
