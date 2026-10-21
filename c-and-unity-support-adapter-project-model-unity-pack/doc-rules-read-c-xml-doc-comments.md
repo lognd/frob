@@ -18,7 +18,7 @@ target = "01M44YQSZ3YEXRDW9RKER9HRA2"
 
 [[acceptance]]
 text = "Given a public C# method with a /// <summary> block, when DOC001 runs, then it counts as documented"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a public C# method with no XML doc comment, when DOC001 runs, then it is flagged with the member's location"

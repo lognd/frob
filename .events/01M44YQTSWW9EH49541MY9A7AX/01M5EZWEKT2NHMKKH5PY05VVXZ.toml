@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T10:24:02Z"
+digest = "2ebde5a53acc1cfe4adc1027a41444368dcb192bd4d4523ae1fed85dba0dce2b"
+exit_code = 0
+head = "dd4645c737794d8a39230d3e1822b4ecb68dc4c6"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a59747b9-0990-4952-8b2f-4e4ede199dcb with nextest profile: default
+    Starting 1 test across 4 binaries (56 tests skipped)
+        PASS [   0.059s] frob-obligations::csharp doc001_accepts_xml_doc_and_inheritdoc_and_flags_bare_public_csharp_members
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.061s] 1 test run: 1 passed, 56 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations doc001_accepts_xml_doc"
+size = 1115
+status = "measured"
+test_count = 1
+tests_digest = "ed87ab57c1b915dbab92dc012a4e97aed373c54b9d252fe0eb00f789d08a4b32"
+at = "2026-10-21T10:24:02Z"
+actor = "lognd"
+rev = 1
