@@ -4,9 +4,10 @@ title = "ticket evidence list: show each record's current acceptance criteria vi
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-03T06:08:27Z"
-updated = "2026-10-03T06:09:25Z"
+updated = "2026-10-21T03:15:22Z"
 scope = ["crates/frob-evidence/**"]
 
 [[acceptance]]
