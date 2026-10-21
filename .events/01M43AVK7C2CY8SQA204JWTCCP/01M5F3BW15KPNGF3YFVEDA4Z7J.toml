@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T11:25:54Z"
+digest = "8e12791d5c31a4c9b2b13faf7fc804e2360d0c0f98a7473dc5ad5b85c6c0cc80"
+exit_code = 0
+head = "0d6e2595a30148be55fef9fa251221aebc3ed4ce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ee71afac-b0d6-4a87-841d-e9ca95e07d26 with nextest profile: default
+    Starting 1 test across 12 binaries (47 tests skipped)
+        PASS [   0.006s] crunk-check::crunk_web_pack webperf_assets_rules_are_not_applicable_without_an_adapter
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 47 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check webperf_assets_rules_are_not_applicable"
+size = 578
+status = "measured"
+test_count = 1
+tests_digest = "148348f025e7ff7961bc196117ab7fae78a2bf296567c70392856cce80f1a8d3"
+at = "2026-10-21T11:25:54Z"
+actor = "lognd"
+rev = 1

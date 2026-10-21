@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:15Z"
-updated = "2026-10-21T11:25:53Z"
+updated = "2026-10-21T11:25:54Z"
 idempotency_key = "crunk-plan-web_WEBPERF-assets"
 labels = ["area:crunk"]
 scope = ["packs/crunk-web/rules/webperf-assets/**", "packs/crunk-web/tests/webperf-assets/**", "packs/crunk-web/pack.toml", "crates/crunk-check/src/packs.rs", "crates/crunk-check/tests/crunk_web_pack.rs", "docs/crunk/packs/crunk-web.md", "changelog.d/01M43AVK7C2CY8SQA204JWTCCP.added.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a file type with no adapter, when the family runs, then the result is NotApplicable or Unresolved with the reason"
-bound = false
+bound = true
 +++
 
 Follow-up to the crunk-web scaffold: WEBPERF markup and asset rules only (image dimensions and formats, lazy loading, render-blocking scripts and styles, font loading); server-side WEBPERF belongs to grimble-websec. Take the requirement-bearing v1 tickets of the family (imported under area:crunk by ~TM4E1PN, catalog in notes/v1/gates-and-rules.md section 11) and write the first slice as GRL rules with examples; split this ticket per rule group at pickup if the slice exceeds 8 points. Adapter gaps (no HTML adapter) are reported as Unresolved, never clean.
