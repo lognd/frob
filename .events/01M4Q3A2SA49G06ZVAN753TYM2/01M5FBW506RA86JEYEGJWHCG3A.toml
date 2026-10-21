@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T13:54:36Z"
+digest = "86cd25a2d18de52b7578d765eac0799500e810ab9790d58137ce92bd400e2204"
+exit_code = 0
+head = "363cdc027d8bb3d7378878ddcb05af16dfec8b6b"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 17715290-b121-41fb-9c78-cef4e159f1f7 with nextest profile: default
+    Starting 1 test across 2 binaries (47 tests skipped)
+        PASS [   0.010s] gob-walk tests::a_fake_reader_drives_a_walk_without_any_git_backend
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 47 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-walk a_fake_reader_drives"
+size = 610
+status = "measured"
+test_count = 1
+tests_digest = "fbcf10e5fcf88129135e343e1ba7aaa1e893afd3eef3ac53423d2f795b5fb280"
+at = "2026-10-21T13:54:36Z"
+actor = "lognd"
+rev = 1
