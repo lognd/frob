@@ -11,7 +11,7 @@ created = "2026-10-04T11:31:53Z"
 updated = "2026-10-21T10:51:27Z"
 idempotency_key = "crunk-plan-g_sd"
 labels = ["area:grimble"]
-scope = ["packs/grimble-sysdesign/**", "docs/grimble/packs/grimble-sysdesign.md", "crates/gob-packs/src/sysdesign.rs"]
+scope = ["packs/grimble-sysdesign/**", "docs/grimble/packs/grimble-sysdesign.md", "crates/gob-packs/src/sysdesign.rs", "crates/gob-packs/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
