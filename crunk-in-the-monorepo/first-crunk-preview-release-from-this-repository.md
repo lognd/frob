@@ -2,13 +2,13 @@
 id = "01M43AVMZGQ4JYB8QYWAYA6294"
 title = "First crunk preview release from this repository"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:17Z"
-updated = "2026-10-04T20:51:28Z"
+updated = "2026-10-21T22:45:14Z"
 idempotency_key = "crunk-plan-release"
 labels = ["area:crunk"]
 scope = ["frob.toml", "changelog.d/**", "docs/crunk/release.md"]
