@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T22:45:58Z"
+digest = "b51dabb1199c076647e441e4eeca676158123748ac2eec9078d8fd67f366e796"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7e5bbb52-0a27-40c2-8adb-5645fcf35055 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.009s] gob-plan::examples_model an_unreadable_owns_glob_is_a_refusal_not_a_match
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test examples_model an_unreadable_owns_glob"
+size = 560
+status = "measured"
+test_count = 1
+tests_digest = "145036346f50b716c008c4d750ea78505c58564d1f65138996be3b1aee7c0618"
+at = "2026-10-21T22:45:58Z"
+actor = "lognd"
+rev = 1
