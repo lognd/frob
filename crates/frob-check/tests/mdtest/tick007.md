@@ -15,3 +15,11 @@ edit smuggled line
 ```text expect=clean
 reindex
 ```
+
+## A reindex whose trailer names another frob version is unresolved
+
+The replay is not run when the trailer's version is not the running one.
+
+```text expect=unresolved
+stale-reindex
+```

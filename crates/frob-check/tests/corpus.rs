@@ -370,7 +370,7 @@ fn tick_dir_runner(case: &Case) -> Vec<Finding> {
 /// `TICK007`-`TICK010`: an orphan-branch ledger with one task, then the block's first line as the scenario.
 ///
 /// `none` leaves the ledger as written; `rename <path>` commits the task file under `<path>` without a trailer;
-/// `edit <text>` commits a reindex-trailer commit that also appends `<text>` to the task; `reindex` reparents the
+/// `edit <text>` commits a reindex-trailer commit that also appends `<text>` to the task; `stale-reindex` does the same with a trailer naming another frob version; `reindex` reparents the
 /// task through the ledger and writes the genuine reindex commit.
 fn tick_branch_runner(case: &Case) -> Vec<Finding> {
     const BRANCH: &str = "frob-tickets";
@@ -446,6 +446,11 @@ fn tick_branch_runner(case: &Case) -> Vec<Finding> {
             env!("CARGO_PKG_VERSION")
         );
         commit_files(ledger.repo(), &tip, &[(TASK, Some(bytes))], &msg);
+    } else if script == "stale-reindex" {
+        let mut bytes = blob();
+        bytes.extend_from_slice(b"\nstale\n");
+        let msg = "tickets(reindex): after X\n\nFrob-Reindex: 0.0.0\n";
+        commit_files(ledger.repo(), &tip, &[(TASK, Some(bytes))], msg);
     } else if script == "bad-mirror" {
         write_file(
             root,
@@ -480,7 +485,14 @@ fn tool_runner(case: &Case) -> Vec<Finding> {
     let workflow = format!("name: ci\n{}", "# padding line for offsets\n".repeat(30));
     write_file(root, ".github/workflows/ci.yml", &workflow);
     let (script, parser) = if case.rule.as_str() == "TOOL001" {
-        (case.text.clone(), "none")
+        // A first line `# parser: <name>` binds that output parser; otherwise the stage has none.
+        let parser = case
+            .text
+            .lines()
+            .next()
+            .and_then(|l| l.strip_prefix("# parser: "))
+            .map_or("none", str::trim);
+        (case.text.clone(), parser)
     } else {
         write_file(root, "fixture.json", &case.text);
         ("cat fixture.json\n".to_owned(), "zizmor-json-v1")

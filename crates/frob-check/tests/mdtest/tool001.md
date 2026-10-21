@@ -14,3 +14,13 @@ exit 3
 ```sh expect=clean
 exit 0
 ```
+
+## A stage whose output its parser cannot read is unresolved
+
+A first line `# parser: zizmor-json-v1` binds that parser to the stage, so
+output that is not JSON cannot be read.
+
+```sh expect=unresolved
+# parser: zizmor-json-v1
+echo "not json"
+```
