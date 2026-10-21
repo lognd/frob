@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a [NonSerialized] public field never assigned, when the rules run, then it is still reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the pack disabled, when the rules run, then a [SerializeField] field never assigned is reported"
