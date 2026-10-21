@@ -1,0 +1,1 @@
+- Share the claim-observation and idle-judging steps of `work --next` eviction and `claim evict` in one helper; behaviour unchanged.

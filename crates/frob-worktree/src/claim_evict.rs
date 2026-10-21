@@ -10,19 +10,18 @@
 // frob:ticket 01M5DTGG9XWMEBRA51PA6CYWAE
 
 use frob_ledger::TicketId;
-use frob_ledger::claim_agent::{ActivityTimes, observation_for};
 use frob_ledger::event::{Event, EventBody};
 use frob_ledger::model::Category;
 use gob_diagnostics::{Refusal, RefusalClass};
 
-use crate::activity::{DEFAULT_BOT_IDENTITIES, ObservedClaims, commit_facts, observed_path};
+use crate::activity::{ObservedClaims, observed_path};
 use crate::claim::{remote_claim, sync_settings};
 use crate::error::WorktreeError;
 use crate::evict::{
-    EvictContext, EvictOutcome, EvictRefusal, EvictRequest, FlapReview, check_evictable, evict,
-    evictions_today, flap_review, rate_left,
+    EvictOutcome, EvictRefusal, EvictRequest, FlapReview, check_evictable, evict, flap_review,
+    rate_left,
 };
-use crate::next::EvictPolicy;
+use crate::next::{Assessed, EvictPolicy, assess_claim, fetch_claim_tip};
 use crate::work::Workspace;
 
 /// Refusal code when the ticket has no live in-progress claim to evict.
@@ -161,56 +160,26 @@ impl Workspace<'_> {
             Ok(None) => return Err(no_claim("no claim branch on the remote")),
             Err(why) => return Err(offline(&why)),
         };
-        let refspec = format!("+refs/heads/{branch}:refs/remotes/{remote}/{branch}");
-        if !matches!(
-            repo.fetch_refs(&remote, &[refspec], timeout)?,
-            gob_git::RemoteRun::Done
-        ) {
+        if !fetch_claim_tip(repo, &remote, &branch, timeout)? {
             return Err(offline("could not fetch the claim tip"));
         }
         let path = observed_path(repo);
         let mut observed = ObservedClaims::load(&path);
         let now = self.ledger.clock().now().unix();
         let key = id.to_string();
-        let bots: Vec<String> = DEFAULT_BOT_IDENTITIES
-            .iter()
-            .map(|s| (*s).to_owned())
-            .collect();
-        let since = observed.claims.get(&key).and_then(|c| c.tip.clone());
-        let commits = commit_facts(repo, &tip, since.as_deref()).map_err(WorktreeError::Config)?;
-        observed.observe_tip(&key, &tip, &commits, &bots, now);
-        let seen = observed.claims.get(&key);
-        let soft = [
-            seen.and_then(|c| c.soft.as_ref()).map(|s| s.first_seen),
-            lease.touched_at.map(gob_time::Stamp::unix),
-        ]
-        .into_iter()
-        .flatten()
-        .max();
-        let times = ActivityTimes {
-            claim_start: lease.acquired_at.unix(),
-            hard: seen.and_then(|c| c.hard.as_ref()).map(|s| s.first_seen),
-            soft,
-        };
-        let obs = observation_for(
-            &policy.windows,
-            &times,
-            lease.holder_kind(),
-            view.summary.class,
-            None,
-        );
-        let status = policy.windows.status(&obs, now, policy.utc_offset_secs);
-        let today = evictions_today(&observed.evictions, now, policy.utc_offset_secs);
-        let ctx = EvictContext {
-            online: true,
-            window_secs: status.window_secs.and_then(|w| u64::try_from(w).ok()),
-            idle_secs: u64::try_from(status.idle_secs).unwrap_or(0),
-            held_or_paused: false,
-            evictions_today: today,
-            evict_rate: policy.windows.evict_rate(),
-            since_reclaim_secs: None,
-            in_ci: policy.in_ci,
-        };
+        let ctx = assess_claim(
+            repo,
+            &mut observed,
+            &Assessed {
+                key: &key,
+                tip: &tip,
+                lease: &lease,
+                class: view.summary.class,
+                now,
+                policy,
+            },
+        )?;
+        let today = ctx.evictions_today;
         let holder = lease.holder.actor.clone();
         let checked = check_evictable(&ctx);
         // The observation is this clone's evidence; keep it even when the eviction is refused.

@@ -49,6 +49,79 @@ pub fn is_skippable(code: &str) -> bool {
     SKIPPABLE.contains(&code)
 }
 
+/// Fetch the claim branch tip into its remote-tracking ref; false when the fetch did not complete.
+// frob:ticket 01M5DZJ96SRX543SR1N51DGJH0
+pub(crate) fn fetch_claim_tip(
+    repo: &gob_git::Repo,
+    remote: &str,
+    branch: &str,
+    timeout: std::time::Duration,
+) -> Result<bool, WorktreeError> {
+    let refspec = format!("+refs/heads/{branch}:refs/remotes/{remote}/{branch}");
+    Ok(matches!(
+        repo.fetch_refs(remote, &[refspec], timeout)?,
+        gob_git::RemoteRun::Done
+    ))
+}
+
+/// One claim's inputs to [`assess_claim`].
+pub(crate) struct Assessed<'a> {
+    /// Observation-file key (the full ticket id).
+    pub key: &'a str,
+    /// The claim branch tip just fetched.
+    pub tip: &'a str,
+    /// The live lease on the ticket.
+    pub lease: &'a frob_lease::Lease,
+    /// The ticket's class, which picks the idle window.
+    pub class: frob_ledger::model::Class,
+    /// Current unix time.
+    pub now: i64,
+    /// The eviction policy.
+    pub policy: &'a EvictPolicy,
+}
+
+/// Record this clone's observation of a claim tip and build the [`EvictContext`] judging its idleness.
+// frob:ticket 01M5DZJ96SRX543SR1N51DGJH0
+pub(crate) fn assess_claim(
+    repo: &gob_git::Repo,
+    observed: &mut ObservedClaims,
+    a: &Assessed<'_>,
+) -> Result<EvictContext, WorktreeError> {
+    let bots: Vec<String> = DEFAULT_BOT_IDENTITIES
+        .iter()
+        .map(|s| (*s).to_owned())
+        .collect();
+    let since = observed.claims.get(a.key).and_then(|c| c.tip.clone());
+    let commits = commit_facts(repo, a.tip, since.as_deref()).map_err(WorktreeError::Config)?;
+    observed.observe_tip(a.key, a.tip, &commits, &bots, a.now);
+    let seen = observed.claims.get(a.key);
+    let soft = [
+        seen.and_then(|c| c.soft.as_ref()).map(|s| s.first_seen),
+        a.lease.touched_at.map(gob_time::Stamp::unix),
+    ]
+    .into_iter()
+    .flatten()
+    .max();
+    let times = ActivityTimes {
+        claim_start: a.lease.acquired_at.unix(),
+        hard: seen.and_then(|c| c.hard.as_ref()).map(|s| s.first_seen),
+        soft,
+    };
+    let windows = &a.policy.windows;
+    let obs = observation_for(windows, &times, a.lease.holder_kind(), a.class, None);
+    let status = windows.status(&obs, a.now, a.policy.utc_offset_secs);
+    Ok(EvictContext {
+        online: true,
+        window_secs: status.window_secs.and_then(|w| u64::try_from(w).ok()),
+        idle_secs: u64::try_from(status.idle_secs).unwrap_or(0),
+        held_or_paused: false,
+        evictions_today: evictions_today(&observed.evictions, a.now, a.policy.utc_offset_secs),
+        evict_rate: windows.evict_rate(),
+        since_reclaim_secs: None,
+        in_ci: a.policy.in_ci,
+    })
+}
+
 impl Workspace<'_> {
     /// Claim the first doable ticket that `work` accepts, trying at most `max_attempts` candidates.
     ///
@@ -179,10 +252,6 @@ impl Workspace<'_> {
         let path = observed_path(repo);
         let mut observed = ObservedClaims::load(&path);
         let now = self.ledger.clock().now().unix();
-        let bots: Vec<String> = DEFAULT_BOT_IDENTITIES
-            .iter()
-            .map(|s| (*s).to_owned())
-            .collect();
         let evictor = self.ledger.actor()?;
         for lease in self.leases.live_snapshot()? {
             if lease.queued || lease.holder_kind() != HolderKind::Agent {
@@ -206,50 +275,22 @@ impl Workspace<'_> {
                 }
             };
             let key = lease.ticket.to_string();
-            let tracking = format!("refs/remotes/{remote}/{branch}");
-            let refspec = format!("+refs/heads/{branch}:{tracking}");
-            if !matches!(
-                repo.fetch_refs(&remote, &[refspec], timeout)?,
-                gob_git::RemoteRun::Done
-            ) {
+            if !fetch_claim_tip(repo, &remote, &branch, timeout)? {
                 tracing::warn!(%handle, "could not fetch the claim tip; skipping");
                 continue;
             }
-            let since = observed.claims.get(&key).and_then(|c| c.tip.clone());
-            let commits =
-                commit_facts(repo, &tip, since.as_deref()).map_err(WorktreeError::Config)?;
-            observed.observe_tip(&key, &tip, &commits, &bots, now);
-            let seen = observed.claims.get(&key);
-            let soft = [
-                seen.and_then(|c| c.soft.as_ref()).map(|s| s.first_seen),
-                lease.touched_at.map(gob_time::Stamp::unix),
-            ]
-            .into_iter()
-            .flatten()
-            .max();
-            let times = ActivityTimes {
-                claim_start: lease.acquired_at.unix(),
-                hard: seen.and_then(|c| c.hard.as_ref()).map(|s| s.first_seen),
-                soft,
-            };
-            let obs = observation_for(
-                &policy.windows,
-                &times,
-                HolderKind::Agent,
-                view.summary.class,
-                None,
-            );
-            let status = policy.windows.status(&obs, now, policy.utc_offset_secs);
-            let ctx = EvictContext {
-                online: true,
-                window_secs: status.window_secs.and_then(|w| u64::try_from(w).ok()),
-                idle_secs: u64::try_from(status.idle_secs).unwrap_or(0),
-                held_or_paused: false,
-                evictions_today: evictions_today(&observed.evictions, now, policy.utc_offset_secs),
-                evict_rate: policy.windows.evict_rate(),
-                since_reclaim_secs: None,
-                in_ci: policy.in_ci,
-            };
+            let ctx = assess_claim(
+                repo,
+                &mut observed,
+                &Assessed {
+                    key: &key,
+                    tip: &tip,
+                    lease: &lease,
+                    class: view.summary.class,
+                    now,
+                    policy,
+                },
+            )?;
             if let Err(refusal) = check_evictable(&ctx) {
                 tracing::debug!(%handle, refusal = ?refusal, "claim not evictable");
                 continue;
