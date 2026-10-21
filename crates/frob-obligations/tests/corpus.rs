@@ -4,7 +4,7 @@ mod common;
 
 use frob_obligations::InvariantsConfig;
 use gob_mdtest::Case;
-use gob_rules::Finding;
+use gob_rules::RuleReport;
 
 /// Files every case tree gets, so links and imports have something to resolve to.
 const SIDE_FILES: &[(&str, &str)] = &[("exists.md", "# Present heading\n")];
@@ -25,8 +25,8 @@ fn unity_tree(root: &std::path::Path, case: &Case, text: &str) {
     }
 }
 
-/// Evaluate one corpus block in a fresh tree with the shared ledger; `{{OPEN}}` and `{{DONE}}` become live ticket ids, `{{PAST}}`, `{{TODAY}}` and `{{FUTURE}}` days relative to today.
-fn runner(case: &Case) -> Vec<Finding> {
+/// Evaluate one corpus block (as a rule report; binary files are not applicable) in a fresh tree with the shared ledger; `{{OPEN}}` and `{{DONE}}` become live ticket ids, `{{PAST}}`, `{{TODAY}}` and `{{FUTURE}}` days relative to today.
+fn runner(case: &Case) -> RuleReport {
     let dir = tempfile::tempdir().expect("tempdir");
     let fixture = common::shared_tickets();
     let today = gob_time::Clock::today(&gob_time::SystemClock::pin());
@@ -56,7 +56,19 @@ fn runner(case: &Case) -> Vec<Finding> {
         unity_tree(dir.path(), case, &text);
     }
     let config = InvariantsConfig::load(dir.path()).expect("config");
-    common::evaluate_tree(dir.path(), Some(&fixture.ledger), &config, None).findings
+    let findings = common::evaluate_tree(dir.path(), Some(&fixture.ledger), &config, None).findings;
+    if gob_check::is_binary(&case.file_name, text.as_bytes()) {
+        // A binary artifact holds no text: the per-file rules report NotApplicable, never a finding.
+        assert!(findings.is_empty(), "binary artifact produced findings");
+        return RuleReport::new(
+            case.rule.clone(),
+            1,
+            0,
+            Some("binary artifact holds no text".to_owned()),
+            findings,
+        );
+    }
+    RuleReport::new(case.rule.clone(), 1, 1, None, findings)
 }
 
 gob_mdtest::mdtest!(dir = "tests/mdtest", runner = runner);

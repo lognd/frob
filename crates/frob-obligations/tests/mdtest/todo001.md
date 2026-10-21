@@ -119,3 +119,17 @@ class A {}
 ```text expect=unresolved cell=text reason=fidelity file=notes.txt
 TODO tidy this
 ```
+
+```text expect=notapplicable cell=binary reason=binary file=logo.png
+TODO tidy this
+```
+
+````markdown expect=fire cell=island file=notes.md
+# Title
+
+```text
+TODO inside a fence is code, not a marker
+```
+
+<!-- TODO tidy this --> <!-- error: TODO001 -->
+````
