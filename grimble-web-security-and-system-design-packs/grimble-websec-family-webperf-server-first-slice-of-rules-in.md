@@ -2,7 +2,8 @@
 id = "01M43AY47AXTWJ4TWG29WTBWT9"
 title = "grimble-websec family WEBPERF-server: first slice of rules in GRL"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
