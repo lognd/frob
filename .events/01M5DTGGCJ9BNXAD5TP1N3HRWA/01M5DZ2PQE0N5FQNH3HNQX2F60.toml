@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-21T00:51:44Z"
+digest = "b65915f2c424a6ef3d2e1fadcfc11072ec211824f489819ed69bb54023f83db5"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.89s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 011ebe30-3152-477b-92c6-6ee6f277543e with nextest profile: default
+    Starting 1 test across 19 binaries (243 tests skipped)
+        PASS [   0.009s] frob-ledger event::tests::every_kind_round_trips
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 243 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger every_kind_round_trips"
+size = 596
+status = "measured"
+test_count = 1
+tests_digest = "ea56a005dde5c3b0f6ac9d3f9643231b7eda3bc542dc7743f10c7dcdfe047537"
+at = "2026-10-21T00:51:44Z"
+actor = "lognd"
+rev = 1
