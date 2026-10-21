@@ -8,8 +8,8 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-11T00:21:52Z"
-updated = "2026-10-21T22:00:46Z"
-scope = ["crates/grimble/**", "crates/gob-plan/**", "changelog.d/**", "docs/design/cli.md"]
+updated = "2026-10-21T22:00:47Z"
+scope = ["crates/grimble/**", "crates/gob-plan/**", "changelog.d/**", "docs/design/cli.md", "docs/schemas/config.json"]
 
 [[links]]
 kind = "blocked-by"
