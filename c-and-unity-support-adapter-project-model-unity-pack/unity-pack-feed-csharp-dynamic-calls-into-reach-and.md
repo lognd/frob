@@ -2,7 +2,8 @@
 id = "01M5FX89B11DR9HP9QH19GKAYY"
 title = "unity pack: feed csharp_dynamic_calls into reach and obligations"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
