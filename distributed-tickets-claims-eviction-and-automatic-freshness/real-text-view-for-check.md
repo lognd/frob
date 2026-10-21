@@ -2,7 +2,8 @@
 id = "01M5EFE42EH8JYYRC0JXSZR52F"
 title = "Real --text view for check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
