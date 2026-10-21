@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-land/src/divergence.rs", "crates/frob-land/src/lib.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob-land/tests/divergence.rs", "changelog.d/01M5DRXH9KKWX3W0A99VESJVC8.changed.md"]
+new = ["crates/frob-land/src/divergence.rs", "crates/frob-land/src/lib.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob-land/tests/divergence.rs", "changelog.d/01M5DRXH9KKWX3W0A99VESJVC8.changed.md", "crates/frob-land/tests/land.rs"]
+at = "2026-10-21T01:47:38Z"
+actor = "lognd"
+rev = 1
