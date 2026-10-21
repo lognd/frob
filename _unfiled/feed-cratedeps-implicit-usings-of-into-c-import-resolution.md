@@ -21,6 +21,10 @@ bound = false
 [[acceptance]]
 text = "Given no ImplicitUsings, when a C# file uses a type from that namespace, then it stays unresolved"
 bound = false
+
+[[acceptance]]
+text = "Given a type in an enclosing namespace and two implicit namespaces defining the same name, then the enclosing type wins and two implicit hits are ambiguous (May)"
+bound = false
 +++
 
 found while working ~ECEBCQ1: dotnet.rs exposes project-wide implicit usings (ImplicitUsings plus Using items, per SDK) via CrateDeps::implicit_usings_of(path). csharp.rs/qualifier.rs import resolution (after ~JEN2C8Q) should consume it so calls on implicit-using namespaces are not left Unresolved.
