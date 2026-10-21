@@ -2,13 +2,13 @@
 id = "01M4HNYRZA7ASMMR6388BJN9BQ"
 title = "land.rs follow-ups: sweep old *.removing leftovers synchronously at the start of land cleanup, and advance the base ref by CAS without touching the primary checkout's index unless the base is checked out there"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-10T01:13:36Z"
-updated = "2026-10-10T01:13:36Z"
+updated = "2026-10-21T06:21:09Z"
 scope = ["crates/frob-land/src/land.rs", "changelog.d/**"]
 
 [[links]]
