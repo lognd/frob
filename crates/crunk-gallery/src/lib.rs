@@ -3,7 +3,7 @@
 //! The gallery is the Python crunk's `enumerate -> render -> triage -> check` pipeline. This crate
 //! holds the parts that need no browser: the manifest (versions 1 to 3, each with a shipped JSON
 //! Schema under `docs/schemas/`), the cell enumeration over `[[platform]]` and `[[screen]]`, the
-//! rules GALLERY001 to GALLERY005 and the `check` report. Rendering goes through `gob-exec` ([`render`]); triage is separate work.
+//! rules GALLERY001 to GALLERY005 and the `check` report. Rendering goes through `gob-exec` ([`render`]); triage is a local contact sheet ([`triage`]).
 //!
 //! # Overview
 //!
@@ -19,6 +19,8 @@
 //!   platform's own command (`command`), with a timeout per cell.
 //! - [`report`]: [`report::check_report`] runs every rule and counts the result; the shape is
 //!   `docs/schemas/crunk-gallery-check-v1.json`.
+//! - [`triage`]: a blocking loopback HTTP contact sheet with keyboard verdicts, saved to the
+//!   manifest; no async runtime.
 
 // frob:ticket 01M43ATDG0RG5DP9PVFAKETJJH
 
@@ -28,3 +30,4 @@ pub mod render;
 pub mod report;
 pub mod rules;
 pub mod schema;
+pub mod triage;

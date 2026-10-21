@@ -133,6 +133,9 @@ impl Product for CrunkProduct {
             .register::<init::Init>()
             .register::<fix::Fix>()
             .register::<gallery::GalleryCheck>()
+            .register::<gallery::GalleryEnumerate>()
+            .register::<gallery::GalleryRender>()
+            .register::<gallery::GalleryTriage>()
     }
 }
 
