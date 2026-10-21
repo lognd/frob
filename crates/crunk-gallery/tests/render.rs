@@ -99,10 +99,7 @@ fn installed_playwright_writes_hashed_png() {
     let fake = dir.path().join("fake-node");
     std::fs::write(
         &fake,
-        format!(
-            "#!/bin/sh\nif [ \"$1\" = \"-e\" ]; then exit 0; fi\n{}\n",
-            PNG_PRINTF
-        ),
+        format!("#!/bin/sh\nif [ \"$1\" = \"-e\" ]; then exit 0; fi\n{PNG_PRINTF}\n"),
     )
     .expect("script");
     std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).expect("chmod");

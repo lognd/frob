@@ -80,6 +80,7 @@ pub fn enumerate(spec: &DesignSpec) -> Vec<Cell> {
 }
 
 /// The cells of `spec` that pass `filter`, in [`enumerate`] order.
+#[must_use]
 pub fn cells(spec: &DesignSpec, filter: &CellFilter) -> Vec<Cell> {
     let keep = |want: &Option<String>, have: &str| want.as_deref().is_none_or(|w| w == have);
     enumerate(spec)

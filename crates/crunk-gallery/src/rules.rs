@@ -114,6 +114,7 @@ pub fn check_cells(
 }
 
 /// A route reduced to its comparable path: no query or fragment, no trailing slash (but `/`).
+#[must_use]
 pub fn normalize_route(route: &str) -> String {
     let path = route.split(['?', '#']).next().unwrap_or("");
     let trimmed = path.trim_end_matches('/');
@@ -127,6 +128,7 @@ pub fn normalize_route(route: &str) -> String {
 /// GALLERY005: each of `routes` (as the router declares them) that no screen `entry` covers.
 ///
 /// The `*` catch-all never needs a screen.
+#[must_use]
 pub fn check_routes(spec: &DesignSpec, routes: &[String]) -> Vec<Finding> {
     let covered: Vec<String> = spec
         .screens

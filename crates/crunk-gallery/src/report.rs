@@ -27,6 +27,7 @@ pub struct CheckReport {
 
 impl CheckReport {
     /// True when no finding is an error.
+    #[must_use]
     pub fn passed(&self) -> bool {
         self.errors == 0
     }
