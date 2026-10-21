@@ -4,10 +4,11 @@ title = "GRL example runner: model inputs plus engine relations cell/owned_by (S
 type = "task"
 category = "todo"
 priority = "low"
+points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T08:48:17Z"
-updated = "2026-10-21T08:48:17Z"
+updated = "2026-10-21T22:24:05Z"
 labels = ["area:grl"]
 +++
 
