@@ -26,6 +26,10 @@ bound = false
 [[acceptance]]
 text = "CI010 flags checkout without persist-credentials false when artifacts or third-party actions are used"
 bound = false
+
+[[acceptance]]
+text = "The supply rules tolerate empty, non-mapping and unterminated input without panicking"
+bound = false
 +++
 
 Deferred from ~8886VJ4: native fallbacks for the zizmor-bound pinned-ref and prt-head-checkout rules, plus CI007 and CI010.
