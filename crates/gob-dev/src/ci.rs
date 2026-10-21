@@ -361,6 +361,14 @@ pub const CARGO_SHEAR: Prerequisite = Prerequisite::SystemTool {
     tool: "cargo-shear",
     install: "cargo install --locked cargo-shear --version 1.14.0",
 };
+/// Pinned `cargo-fuzz` version (the nightly fuzz job installs the same one).
+pub const CARGO_FUZZ_VERSION: &str = "0.12.0";
+
+/// `cargo-fuzz` on `PATH`, installed by `ci.yml` at [`CARGO_FUZZ_VERSION`].
+pub const CARGO_FUZZ: Prerequisite = Prerequisite::SystemTool {
+    tool: "cargo-fuzz",
+    install: "cargo install --locked cargo-fuzz --version 0.12.0",
+};
 /// `typos` on `PATH`, installed by `ci.yml` at [`TYPOS_VERSION`].
 pub const TYPOS: Prerequisite = Prerequisite::SystemTool {
     tool: "typos",
@@ -425,6 +433,34 @@ fn msrv(root: &Path) -> Result<Option<Step>, CiError> {
         linux_only: true,
         ..cargo("msrv", &[])
     }))
+}
+
+/// Seconds each fuzz target runs in the `fuzz-build` step unless `FROB_FUZZ_SECONDS` says otherwise.
+pub const FUZZ_DEFAULT_SECONDS: u32 = 60;
+
+/// The `fuzz-build` step: build every `fuzz/` target with nightly cargo-fuzz and run each for
+/// `FROB_FUZZ_SECONDS` (default [`FUZZ_DEFAULT_SECONDS`]). Every target runs even after a crash so
+/// the nightly job reports all of them; the step fails when any target did. Linux-only.
+/// frob:ticket 01M47QV3BRRZZSMJ5Q79N8G5S2
+fn fuzz_build() -> Step {
+    tracing::debug!(seconds = FUZZ_DEFAULT_SECONDS, "fuzz-build step");
+    let script = format!(
+        "rustup toolchain install nightly --profile minimal && \
+         cargo +nightly fuzz build && \
+         rc=0 && \
+         for t in $(cargo +nightly fuzz list); do \
+         cargo +nightly fuzz run \"$t\" -- -max_total_time=\"${{FROB_FUZZ_SECONDS:-{FUZZ_DEFAULT_SECONDS}}}\" || rc=1; \
+         done; exit $rc"
+    );
+    Step {
+        program: Program::Tool {
+            name: "sh".to_owned(),
+        },
+        args: vec!["-c".to_owned(), script],
+        needs: vec![CARGO_FUZZ],
+        linux_only: true,
+        ..cargo("fuzz-build", &[])
+    }
 }
 
 /// Every CI check in the order `ci.yml` runs it; zizmor and actionlint pins come from `frob.toml`.
@@ -533,6 +569,7 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
                 "--dry-run",
             ],
         )),
+        fuzz_build(),
     ];
     // msrv sits between the hygiene tools and doctor, where ci.yml lists it.
     if let Some(m) = msrv(root)? {
@@ -1435,6 +1472,37 @@ mod tests {
         }
         // rust-version is the pinned toolchain's series, so the msrv step is dropped.
         assert!(all.iter().all(|s| s.name != "msrv"));
+    }
+
+    // frob:ticket 01M47QV3BRRZZSMJ5Q79N8G5S2
+    // frob:tests crates/gob-dev/src/ci.rs::fuzz_build
+    #[test]
+    fn fuzz_build_step_builds_then_runs_each_target_for_sixty_seconds_by_default() {
+        let all = real();
+        let s = all.iter().find(|s| s.name == "fuzz-build").unwrap();
+        assert!(s.linux_only && s.needs == vec![CARGO_FUZZ]);
+        assert!(CARGO_FUZZ.install_command().ends_with(CARGO_FUZZ_VERSION));
+        let script = &s.args[1];
+        assert!(script.contains("cargo +nightly fuzz build"));
+        assert!(script.contains("cargo +nightly fuzz list"));
+        assert!(script.contains("${FROB_FUZZ_SECONDS:-60}"));
+        assert_eq!(all.last().unwrap().name, "fuzz-build");
+    }
+
+    // frob:ticket 01M47QV3BRRZZSMJ5Q79N8G5S2
+    #[test]
+    fn every_fuzz_target_the_ticket_names_has_a_source_and_a_bin_entry() {
+        let manifest = std::fs::read_to_string(repo_root().join("fuzz/Cargo.toml")).unwrap();
+        for target in ["grl", "grmb", "directives", "crunk_toml", "ledger"] {
+            assert!(
+                manifest.contains(&format!("name = \"{target}\"")),
+                "{target}"
+            );
+            let src = repo_root()
+                .join("fuzz/fuzz_targets")
+                .join(format!("{target}.rs"));
+            assert!(src.is_file(), "{target}");
+        }
     }
 
     // frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3

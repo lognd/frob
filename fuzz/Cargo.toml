@@ -1,0 +1,59 @@
+[package]
+name = "frob-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "cargo-fuzz targets for every parser and the ledger fold (never published)."
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+gob-plan = { path = "../crates/gob-plan" }
+gob-text = { path = "../crates/gob-text" }
+gob-languages = { path = "../crates/gob-languages" }
+gob-symbols = { path = "../crates/gob-symbols" }
+gob-walk = { path = "../crates/gob-walk" }
+gob-directives = { path = "../crates/gob-directives" }
+grimble-model = { path = "../crates/grimble-model" }
+crunk-spec = { path = "../crates/crunk-spec" }
+frob-ledger = { path = "../crates/frob-ledger" }
+
+# Not a member of the root workspace: fuzzing needs nightly and must never be published.
+[workspace]
+
+[[bin]]
+name = "grl"
+path = "fuzz_targets/grl.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "grmb"
+path = "fuzz_targets/grmb.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "directives"
+path = "fuzz_targets/directives.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "crunk_toml"
+path = "fuzz_targets/crunk_toml.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "ledger"
+path = "fuzz_targets/ledger.rs"
+test = false
+doc = false
+bench = false

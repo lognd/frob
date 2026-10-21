@@ -1,0 +1,1 @@
+Add `fuzz/` cargo-fuzz targets for the GRL, .grmb, directive, crunk.toml and ledger parsers (round trip where a printer exists), a `fuzz-build` step in `cargo dev ci` that builds and runs each for 60 s on every PR, and a SHA-pinned nightly fuzz workflow that uploads crashes and files an issue per crash.

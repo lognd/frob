@@ -1,6 +1,7 @@
 [workspace]
 # Glob membership: a new crates/<name>/Cargo.toml joins with no root edit.
 members = ["crates/*"]
+exclude = ["fuzz"]
 resolver = "3"
 
 [workspace.package]

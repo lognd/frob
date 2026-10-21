@@ -239,6 +239,12 @@ jobs:
       - name: "frob test selection (dry run, CI holds no lease)"
         if: runner.os == 'Linux'
         run: cargo dev ci --step test-dry-run
+      - name: Install cargo-fuzz (fuzz-build step)
+        if: runner.os == 'Linux'
+        run: cargo install --locked cargo-fuzz --version 0.12.0
+      - name: "fuzz targets (build, then 60 s each)"
+        if: runner.os == 'Linux'
+        run: cargo dev ci --step fuzz-build
 
   # frob:ticket 01M43ARWT173GKANZ322H41VF1
   # Crunk-only change (monorepo.md 4): the crunk crates' own fmt, clippy, tests and the generated
