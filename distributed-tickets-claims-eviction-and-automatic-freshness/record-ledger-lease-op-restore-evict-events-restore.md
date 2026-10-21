@@ -9,5 +9,5 @@ parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T23:31:55Z"
 updated = "2026-10-21T00:46:36Z"
-scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-worktree/src/claim_restore.rs", "crates/frob-worktree/src/next.rs", "crates/frob-worktree/tests/claim_restore.rs"]
+scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-worktree/src/claim_restore.rs", "crates/frob-worktree/src/next.rs", "crates/frob-worktree/tests/claim_restore.rs", "crates/frob-worktree/tests/next.rs"]
 +++
