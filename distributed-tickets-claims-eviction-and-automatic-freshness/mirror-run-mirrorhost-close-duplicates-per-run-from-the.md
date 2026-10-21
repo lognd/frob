@@ -9,7 +9,7 @@ parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T04:31:07Z"
 updated = "2026-10-21T07:01:47Z"
-scope = ["crates/frob-mirror/src/host.rs", "crates/frob-mirror/src/run.rs"]
+scope = ["crates/frob-mirror/src/host.rs", "crates/frob-mirror/src/run.rs", "crates/frob-mirror/tests/host.rs"]
 
 [[acceptance]]
 text = "The run driver closes duplicate issues once per completed run, proven with a real signed marker"
