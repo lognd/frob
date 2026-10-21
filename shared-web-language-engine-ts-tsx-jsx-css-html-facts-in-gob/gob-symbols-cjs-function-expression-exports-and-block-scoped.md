@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T07:36:16Z"
-updated = "2026-10-21T23:28:16Z"
+updated = "2026-10-21T23:28:17Z"
 scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md", "changelog.d/01M4828JQJKETWWCRQGJCXJ4VH.added.md"]
 
 [[acceptance]]
@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "let/const in a block shadow only inside that block; var hoists; for/catch/switch scopes bind"
-bound = false
+bound = true
 +++
 
 Found while working ~6KKJF80. Two honest gaps of the TS adapter, both reported Unknown today: (1) exports.f = function(){} and module.exports = { f() {} } create no unit (only identifier aliases do); (2) binders are function-level, so a block-scoped let that shadows an outer name hides it for the whole function. Add units for CJS function-expression exports and block-level scopes in the scope graph, with corpus tests.
