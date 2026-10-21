@@ -8,8 +8,8 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-21T21:50:19Z"
-scope = ["crates/grimble-ci/**", "docs/design/cicd.md", "changelog.d/01M5F010QB00AR00D4HYVYYPWH.added.md"]
+updated = "2026-10-21T21:57:45Z"
+scope = ["crates/grimble-ci/**", "docs/design/cicd.md", "changelog.d/01M5F010QB00AR00D4HYVYYPWH.added.md", "docs/reference/rules/*.md"]
 
 [[acceptance]]
 text = "CI001 flags external uses refs that are not a full commit SHA, skipping local, allowlisted and digest-pinned ones"
