@@ -2,7 +2,8 @@
 id = "01M5FSSDC7EG5QA70CRABC8SMA"
 title = "Read [rules.<id>] severity overrides and raise TIME001/TIME002 to Error in grimble.toml"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
