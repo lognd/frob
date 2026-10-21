@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T08:52:50Z"
+digest = "69bd2c3f92de4071c8525ef4d6f2acbb0670427b96c80ac0f13ac54bc2a8c489"
+exit_code = 0
+head = "667bde244097e9ba3c4c247b8eda8eb7d37e6abe"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.69s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 43255704-289a-4c54-a04f-63c7b5305c6f with nextest profile: default
+    Starting 1 test across 26 binaries (274 tests skipped)
+        PASS [   0.007s] gob-plan::ten_rules ci002_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 274 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan ci002_examples_pass"
+size = 1510
+status = "measured"
+test_count = 1
+tests_digest = "fb62efbceea60de6757aa657c58467035b60c45cfe64e68bfb599b3feba89f84"
+at = "2026-10-21T08:52:50Z"
+actor = "lognd"
+rev = 1
