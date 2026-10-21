@@ -8,7 +8,7 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:30:51Z"
-updated = "2026-10-21T10:57:10Z"
+updated = "2026-10-21T10:57:35Z"
 idempotency_key = "crunk-plan-g_sec"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/**", "docs/grimble/packs/grimble-websec.md", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/src/lib.rs", "crates/grimble-check/Cargo.toml", "Cargo.lock", "crates/grimble-check/tests/websec_pack.rs", "changelog.d/01M43AWPD2DYMS2CVTJRD56D5R.added.md"]
@@ -32,18 +32,6 @@ bound = true
 [[acceptance]]
 text = "Given a rule without examples, when the pack compiles, then it fails"
 bound = true
-
-[[acceptance]]
-text = "catalog lists WEBSEC (under SEC), SQL, COMPLY, ROUTE and WEBPERF with one rule each"
-bound = false
-
-[[acceptance]]
-text = "pack lock digest matches the pack tree"
-bound = false
-
-[[acceptance]]
-text = "a rule without examples fails to compile"
-bound = false
 +++
 
 Create the pack directory and manifest (packs.md tier-1 data file: families, languages, vocabularies, atoms), pack lock entry, one worked GRL rule per family with firing and clean example, std-pack registration in grimble. WEBSEC registers its ids inside the SEC family namespace (rules.md section 3); because no SEC or PII family ticket exists, this ticket also adds the SEC and PII family rows to the registry (metadata only) and records whether they live in the pack or in grimble-lints (design gap). Capability atoms for db.query and net come from the core-effects pack, not redefined here.

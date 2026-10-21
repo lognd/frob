@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the scaffold, when `grimble rule catalog` runs, then WEBSEC, SQL, COMPLY, ROUTE and WEBPERF show with one rule each and WEBSEC ids sit under SEC", "Given the pack lock, when verified, then the digest matches the pack tree and PACK001-008 are clean", "Given a rule without examples, when the pack compiles, then it fails", "catalog lists WEBSEC (under SEC), SQL, COMPLY, ROUTE and WEBPERF with one rule each", "pack lock digest matches the pack tree", "a rule without examples fails to compile"]
+new = ["Given the scaffold, when `grimble rule catalog` runs, then WEBSEC, SQL, COMPLY, ROUTE and WEBPERF show with one rule each and WEBSEC ids sit under SEC", "Given the pack lock, when verified, then the digest matches the pack tree and PACK001-008 are clean", "Given a rule without examples, when the pack compiles, then it fails"]
+moved = [1, 2, 3, 0, 0, 0]
+at = "2026-10-21T10:57:35Z"
+actor = "lognd"
+rev = 1
