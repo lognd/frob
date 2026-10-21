@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T03:53:14Z"
+digest = "9125f5f40cbcac7e70b12b3cba3b49e10affa8f7e7fd0822f0d320491f64aefd"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 79f8aaec-a478-4ff5-892b-4cc238896def with nextest profile: default
+    Starting 1 test across 4 binaries (163 tests skipped)
+        PASS [   0.005s] frob-mirror run::tests::one_unrenderable_ticket_does_not_stop_the_others
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 163 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror one_unrenderable"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "766115b96d9e3cc2787192216bb66cebb37a11beae16338e90717ac37b5a0e07"
+at = "2026-10-21T03:53:14Z"
+actor = "lognd"
+rev = 1
