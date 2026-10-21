@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T12:57:42Z"
+digest = "8baf00db83a7988d06533247de7b8ac56fe114c21186e943388026a3836705d6"
+exit_code = 0
+head = "eedaab8580e1ce2a3d747e6e340bd00397bca544"
+inline = '''
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.78s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f3e86552-20fd-4c0f-8a9b-bfaf67dee5ee with nextest profile: default
+    Starting 1 test across 5 binaries (59 tests skipped)
+        PASS [   0.103s] frob-obligations::unity unity_enabled_makes_update_a_root_and_not_unreached
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.104s] 1 test run: 1 passed, 59 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations unity_enabled"
+size = 706
+status = "measured"
+test_count = 1
+tests_digest = "3006ec1e221c17cfd0d86033a999cb2450f00ffd996091151ab845fff08c52b5"
+at = "2026-10-21T12:57:42Z"
+actor = "lognd"
+rev = 1

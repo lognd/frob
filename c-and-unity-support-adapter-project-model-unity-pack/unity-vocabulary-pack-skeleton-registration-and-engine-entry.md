@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:01Z"
-updated = "2026-10-21T12:48:31Z"
+updated = "2026-10-21T12:57:42Z"
 idempotency_key = "d94-pack"
 scope = ["crates/gob-ir/**", "crates/gob-packs/**", "crates/frob-tests/src/reach.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/src/refs.rs", "packs/unity.toml", "docs/design/packs.md", "docs/reference/config.md", "crates/frob-tests/Cargo.toml", "crates/frob-obligations/Cargo.toml", "crates/frob-obligations/tests/unity.rs", "changelog.d/01M44YQXS4BXE0X07FBYR0STJ5.added.md", "Cargo.lock"]
 
@@ -30,7 +30,7 @@ target = "01M44YQWGP5553K61QKC8HB0GQ"
 
 [[acceptance]]
 text = "Given the unity pack enabled and a MonoBehaviour subclass whose Update method has no caller, when reach is computed, then Update is a root and is not reported as unreached"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the same code with the unity pack disabled, when reach is computed, then Update is reported as unreached"
