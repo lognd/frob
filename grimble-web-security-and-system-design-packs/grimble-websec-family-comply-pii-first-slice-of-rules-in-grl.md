@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a language without an adapter, when the family runs, then it is NotApplicable or Unresolved with the reason"
-bound = false
+bound = true
 +++
 
 Follow-up to the grimble-websec scaffold: compliance families with PII (personal data flow to logs and third parties, retention, consent markers). Source: requirement-bearing v1 tickets of the family imported by ~TM4E1PN and the catalog in notes/v1/gates-and-rules.md section 11. Write the first slice in GRL with examples; split per rule group at pickup if above 8 points. Unsupported languages are Unresolved, never clean.
