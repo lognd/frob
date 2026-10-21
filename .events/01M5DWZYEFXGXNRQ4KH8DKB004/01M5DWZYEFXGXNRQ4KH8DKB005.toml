@@ -1,0 +1,11 @@
+kind = "create"
+title = "Wire work_next_evicting into frob work --next (load claims tables, EvictPolicy, export types); holds/pauses and flap guard inputs"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
+body = "Follow-up of GSJJYF3. work_next_evicting exists in frob-worktree next.rs but verbs.rs does not call it. Load claims tables via gob_config::load, build ClaimWindows::from_tables and EvictPolicy (UTC offset, in_ci from CI env). Also feed held_or_paused and since_reclaim_secs; agent kind only known from local leases (note). Record ledger lease evict op (see 1N3HRWA)."
+at = "2026-10-21T00:15:18Z"
+actor = "lognd"
+rev = 1
