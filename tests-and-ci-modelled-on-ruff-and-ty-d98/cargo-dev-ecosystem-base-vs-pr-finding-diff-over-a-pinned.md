@@ -9,7 +9,7 @@ parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:07Z"
 updated = "2026-10-21T15:15:45Z"
-scope = ["crates/gob-dev/**", "ecosystem.toml", ".github/workflows/**", "docs/design/build-test-ci.md"]
+scope = ["crates/gob-dev/**", "ecosystem.toml", ".github/workflows/**", "docs/design/build-test-ci.md", "changelog.d/01M47QV23EAN5DE6DDV9HS3VP7.added.md"]
 
 [[acceptance]]
 text = "the report lists per-rule deltas, crashes and timing for at least five pinned projects"
