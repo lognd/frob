@@ -2,7 +2,8 @@
 id = "01M4052WHPPDKMCBA9Y1BM06W5"
 title = "Property tests: convergence and no loss under finite edits and faults (L1, L2)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
