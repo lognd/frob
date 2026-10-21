@@ -8,7 +8,7 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:38Z"
-updated = "2026-10-21T12:47:07Z"
+updated = "2026-10-21T12:47:08Z"
 idempotency_key = "crunk-plan-g_WEBPERF-server"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/rules/webperf-server/**", "packs/grimble-websec/tests/webperf-server/**", "changelog.d/01M43AY47AXTWJ4TWG29WTBWT9.added.md", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs", "docs/grimble/packs/grimble-websec.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a language without an adapter, when the family runs, then it is NotApplicable or Unresolved with the reason"
-bound = false
+bound = true
 +++
 
 Follow-up to the grimble-websec scaffold: server-side WEBPERF (N+1 shapes, unbounded responses, missing caching headers); markup and asset WEBPERF is crunk-web. Source: requirement-bearing v1 tickets of the family imported by ~TM4E1PN and the catalog in notes/v1/gates-and-rules.md section 11. Write the first slice in GRL with examples; split per rule group at pickup if above 8 points. Unsupported languages are Unresolved, never clean.
