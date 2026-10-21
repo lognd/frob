@@ -2,7 +2,8 @@
 id = "01M44R5W4WJEXFM000S8KVQQN5"
 title = "TIME001 and TIME002 in grimble-lints for Rust and Python"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
