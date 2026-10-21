@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-06T04:44:11Z"
-updated = "2026-10-21T23:21:31Z"
+updated = "2026-10-21T23:21:42Z"
 scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/graph/csharp.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/tests/it/csharp.rs", "changelog.d/01M47RDFJX56SCTFTZJRQ1SC2B.added.md", "docs/design/code-model.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a project with Using Remove/Include items, when a C# file calls a type, then added namespaces resolve and removed ones do not"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given no ImplicitUsings, when a C# file uses a type from that namespace, then it stays unresolved"
