@@ -9,5 +9,5 @@ parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T23:31:55Z"
 updated = "2026-10-21T00:46:44Z"
-scope = ["crates/frob-worktree/src/claim_evict.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/src/lib.rs"]
+scope = ["crates/frob-worktree/src/claim_evict.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/tests/claim_evict.rs"]
 +++
