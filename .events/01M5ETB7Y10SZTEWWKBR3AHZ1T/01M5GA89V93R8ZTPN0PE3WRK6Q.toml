@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["A relation object written as a field path (p peer of s.unit) lowers", "An unbound first segment of a field-path object is an unknown var", "A roles snippet that is a branch or loop with an empty or one-call body lowers"]
+new = ["A relation object written as a field path (p peer of s.unit) lowers", "An unbound first segment of a field-path object is an unknown var", "A roles snippet that is a branch or loop with an empty or one-call body lowers", "A roles snippet with another root, an else, or another body is refused by name"]
+moved = [1, 2, 3]
+at = "2026-10-21T22:45:33Z"
+actor = "lognd"
+rev = 1

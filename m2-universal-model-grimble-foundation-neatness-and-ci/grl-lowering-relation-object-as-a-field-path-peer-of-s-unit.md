@@ -23,6 +23,10 @@ bound = false
 [[acceptance]]
 text = "A roles snippet that is a branch or loop with an empty or one-call body lowers"
 bound = false
+
+[[acceptance]]
+text = "A roles snippet with another root, an else, or another body is refused by name"
+bound = false
 +++
 
 Found while working ~ACSP6CZ. lower/convert.rs with_object rejects a path object with more than one segment ("this relation object", NEAT031 `peer of s.unit`); rust`...` as roles snippet matching is also unverified. Needed for NEAT031 examples; then delete KNOWN_ENGINE_GAPS entries.
