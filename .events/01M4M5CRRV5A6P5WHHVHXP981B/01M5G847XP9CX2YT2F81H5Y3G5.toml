@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a GRL rule with a misspelt config column (f.frm on config.invariants.forbid_imports), when compiled by the shipped binary, then GRL001 names the column"]
+new = ["Given a GRL rule with a misspelt config column (f.frm on config.invariants.forbid_imports), when compiled by the shipped binary, then GRL001 names the column", "Given a GRL rule using a real config column or a misspelt config table, when compiled by the shipped binary, then the real column passes and the table is reported as an unknown config key", "Given a malformed or empty config schema document, when the binary loads it, then config checking is turned off with a warning instead of failing", "Given the real docs/schemas/config.json, when gob-plan compiles with it, then ForbidImport columns are typed and a misspelt column is reported only when the schema is supplied"]
+moved = [1]
+at = "2026-10-21T22:08:22Z"
+actor = "lognd"
+rev = 1
