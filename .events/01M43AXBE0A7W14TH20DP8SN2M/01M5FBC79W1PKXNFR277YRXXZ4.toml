@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T13:45:42Z"
+digest = "20a296ddd95f07473e372e9d53f8eaab5733db42f16b5fbd5ba9e1303e2b48cc"
+exit_code = 0
+head = "9237fbf04b45cce2bddcc083994a131bce4b40ea"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e24b7914-2cee-43b0-b976-7fe837deed58 with nextest profile: default
+    Starting 1 test across 1 binary (15 tests skipped)
+        PASS [   0.005s] grimble-check::websec_pack sql_slice_clean_examples_pass_and_other_languages_are_not_applicable
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test websec_pack sql_slice_clean"
+size = 639
+status = "measured"
+test_count = 1
+tests_digest = "8766a5ad4ba9b8b1c13e2594d1c7a814e08853f901d278ab0cc4a05668e4f84f"
+at = "2026-10-21T13:45:42Z"
+actor = "lognd"
+rev = 1
