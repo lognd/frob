@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:37Z"
-updated = "2026-10-21T11:49:19Z"
+updated = "2026-10-21T12:00:05Z"
 idempotency_key = "crunk-plan-gal3"
 labels = ["area:crunk"]
 scope = ["crates/crunk-gallery/src/triage/**", "crates/crunk/src/gallery.rs", "crates/crunk-gallery/tests/triage*.rs", "crates/crunk-gallery/src/lib.rs", "crates/crunk/src/lib.rs", "crates/crunk/tests/gallery.rs", "crates/crunk-gallery/README.md", "docs/crunk/gallery.md", "docs/crunk/README.md", "changelog.d/01M43ATE06MNRNVJJ314KW24RJ.added.md", "crates/crunk-gallery/Cargo.toml", "Cargo.lock", "crates/crunk/Cargo.toml"]
@@ -19,7 +19,7 @@ target = "01M43ATDR7DWY5RZPB3QB3GE3K"
 
 [[acceptance]]
 text = "Given rendered cells, when `crunk gallery triage` runs, then a local contact sheet serves and verdicts are saved to the manifest"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an expired approval, when `gallery check --json` runs, then GALLERY003 is reported and validates against gallery-check.v1"
