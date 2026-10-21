@@ -8,10 +8,10 @@ points = 2
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-21T03:15:19Z"
+updated = "2026-10-21T03:15:57Z"
 idempotency_key = "m2-diag-fix-summary"
 labels = ["milestone:2", "area:diagnostics"]
-scope = ["crates/frob-check/src/summary.rs"]
+scope = ["crates/frob-check/src/summary.rs", "crates/frob-check/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
