@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T15:22:23Z"
+digest = "78562c4d4377aa40d1cf525cbf951345255a77f2009bbca572ad55131aed1b4a"
+exit_code = 0
+head = "781d629d452dd6c7e907c9508015f83fcd8a03a5"
+inline = '''
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 54ae27e9-99a7-406f-b92b-3eece513a4a5 with nextest profile: default
+    Starting 1 test across 11 binaries (204 tests skipped)
+        PASS [   0.026s] gob-dev ecosystem::tests::render_lists_per_rule_deltas_and_timing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.029s] 1 test run: 1 passed, 204 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev render_lists_per_rule_deltas_and_timing"
+size = 617
+status = "measured"
+test_count = 1
+tests_digest = "c198007abe52e9be1aa54af975dcc6a34f266d21eca22385e540db75a366d0bb"
+at = "2026-10-21T15:22:23Z"
+actor = "lognd"
+rev = 1

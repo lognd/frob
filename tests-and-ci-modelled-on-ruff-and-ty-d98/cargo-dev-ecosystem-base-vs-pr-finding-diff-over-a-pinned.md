@@ -8,12 +8,12 @@ points = 8
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:07Z"
-updated = "2026-10-21T15:15:45Z"
+updated = "2026-10-21T15:22:23Z"
 scope = ["crates/gob-dev/**", "ecosystem.toml", ".github/workflows/**", "docs/design/build-test-ci.md", "changelog.d/01M47QV23EAN5DE6DDV9HS3VP7.added.md"]
 
 [[acceptance]]
 text = "the report lists per-rule deltas, crashes and timing for at least five pinned projects"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a crash in the head binary is reported, not hidden"
