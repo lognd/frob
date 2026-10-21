@@ -8,7 +8,7 @@ points = 2
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-10T01:13:36Z"
-updated = "2026-10-21T06:24:06Z"
+updated = "2026-10-21T06:24:09Z"
 scope = ["crates/frob-land/src/land.rs", "changelog.d/**"]
 
 [[links]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given another writer holding the primary's index.lock, when land advances experimental (not checked out in the primary), then the ref moves by compare-and-swap without waiting on the index"
-bound = false
+bound = true
 +++
 
 Deferred from ~SVTM10F and ~W7NXA6R because ~D5ZJPVH held land.rs.
