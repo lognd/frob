@@ -12,7 +12,11 @@ use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 
 use gob_ir::engine::EngineVocab;
-use gob_symbols::{SymbolGraph, SymbolKind, SymbolRecord, Symref};
+use gob_symbols::{
+    CsharpDynamicCall, SymbolGraph, SymbolKind, SymbolRecord, Symref, csharp_dynamic_calls,
+    extract_file,
+};
+use gob_walk::{Digest, FileEntry, LanguageHint};
 
 /// Lazily read file text, shared by the attribute scan and the body scan.
 #[derive(Debug)]
@@ -437,6 +441,48 @@ pub fn engine_roots(
     }
     tracing::debug!(roots = roots.len(), "engine roots computed");
     roots
+}
+
+// frob:ticket 01M5FX89B11DR9HP9QH19GKAYY
+/// The dynamic calls the pack vocabulary names in the C# files of `graph`, with the file of each, sorted.
+///
+/// Each is already an Unresolved call edge in the graph; this names why, so a report can say "the
+/// engine resolves a literal method name at run time" instead of an anonymous unresolved call. A file
+/// that cannot be read yields nothing, and the empty vocabulary (pack disabled) classifies nothing.
+pub fn dynamic_calls(
+    graph: &SymbolGraph,
+    sources: &mut Sources,
+    vocab: &EngineVocab,
+) -> Vec<(String, CsharpDynamicCall)> {
+    if vocab.is_empty() {
+        return Vec::new();
+    }
+    let paths: BTreeSet<&str> = graph
+        .records()
+        .filter(|r| is_cs_record(r))
+        .map(|r| r.symref.path())
+        .collect();
+    let mut out = Vec::new();
+    for path in paths {
+        let Some(text) = sources.get(path) else {
+            tracing::debug!(path, "dynamic-call scan skipped an unreadable file");
+            continue;
+        };
+        let entry = FileEntry {
+            path: path.to_owned(),
+            size: text.len() as u64,
+            digest: Digest::of(text.as_bytes()),
+            language: LanguageHint::from_path(path),
+        };
+        let file = extract_file(&entry, text);
+        out.extend(
+            csharp_dynamic_calls(&file, vocab)
+                .into_iter()
+                .map(|c| (path.to_owned(), c)),
+        );
+    }
+    tracing::debug!(calls = out.len(), "dynamic calls classified");
+    out
 }
 
 #[cfg(test)]

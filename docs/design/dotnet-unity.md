@@ -75,7 +75,10 @@ dead in player builds or the reverse.
   Unresolved per the compute policy, never resolved by guesswork. The
   pack's `dynamic.call` and `dynamic.lookup` vocabularies name them
   (`gob_symbols::csharp_dynamic_calls`, packs.md 8.5); a literal method
-  name never becomes an edge. UnityEvent wiring in scene and prefab YAML is
+  name never becomes an edge. COV001 reads them through
+  `frob_tests::reach::dynamic_calls`: an unresolved report whose call the
+  pack classifies (inside the pack's gate) adds the named reason, for
+  example "the engine resolves a literal method name at run time". UnityEvent wiring in scene and prefab YAML is
   not read yet (only GUID references are in scope).
 - Asset hygiene: every tracked file under `Assets/` and `Packages/` has
   its `.meta`, and no `.meta` is orphaned; a duplicate GUID is an error.
