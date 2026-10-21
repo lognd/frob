@@ -2,13 +2,13 @@
 id = "01M4CTTXC1E5MQEDFMY5JDQ45M"
 title = "Real --text views for the everyday verbs (ticket show/list/doable, check, doctor, cycle show/list, work, land)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:40Z"
-updated = "2026-10-08T04:02:40Z"
+updated = "2026-10-21T05:26:11Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/gob-cli/**", "crates/frob-*/src/render*"]
 
 [[acceptance]]
