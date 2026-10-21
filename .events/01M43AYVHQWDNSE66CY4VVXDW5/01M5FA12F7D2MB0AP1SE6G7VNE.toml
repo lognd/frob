@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T13:22:21Z"
+digest = "3a77e5dc9c8aea69605951c192a03021467ed6274b4fa4cb7297687cd25887dc"
+exit_code = 0
+head = "e2900679e9ee733d67d61779e59d9ee4f30db5de"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 20535b8b-9452-4f5b-9ef1-d82be4c1005c with nextest profile: default
+    Starting 1 test across 9 binaries (68 tests skipped)
+        PASS [   0.052s] gob-packs::sysdesign_pack store_rules_have_fire_clean_and_not_applicable_examples
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.053s] 1 test run: 1 passed, 68 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs store_rules_have_fire_clean"
+size = 572
+status = "measured"
+test_count = 1
+tests_digest = "7635efe358943f335725eae0df955f79272f1721c6fd4dea7e473fc7a386c1cc"
+at = "2026-10-21T13:22:21Z"
+actor = "lognd"
+rev = 1
