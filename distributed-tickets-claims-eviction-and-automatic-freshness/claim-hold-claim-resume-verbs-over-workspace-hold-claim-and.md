@@ -8,8 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T01:36:40Z"
-updated = "2026-10-21T01:46:12Z"
-scope = ["crates/frob-worktree/src/verbs.rs"]
+updated = "2026-10-21T01:46:49Z"
+scope = ["crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/src/lib.rs"]
 +++
 
 Follow-up of XG6E8X3: CLI verbs, regenerate docs.
