@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk/tests/parity.rs", "crates/crunk/tests/parity/**", "tests/crunk-parity/divergences.toml", "changelog.d/01M43AVKMT52QCG7DGNQ4J906S.added.md"]
+new = ["crates/crunk/tests/parity.rs", "crates/crunk/tests/parity/**", "tests/crunk-parity/divergences.toml", "changelog.d/01M43AVKMT52QCG7DGNQ4J906S.added.md", "docs/design/monorepo.md"]
+at = "2026-10-21T11:54:52Z"
+actor = "lognd"
+rev = 1
