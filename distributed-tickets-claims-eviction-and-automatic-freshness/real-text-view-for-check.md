@@ -8,8 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:37:37Z"
-updated = "2026-10-21T07:32:02Z"
-scope = ["crates/frob/src/product.rs", "crates/frob/src/lib.rs", "crates/frob/src/check_view.rs"]
+updated = "2026-10-21T07:32:09Z"
+scope = ["crates/frob/src/product.rs", "crates/frob/src/lib.rs", "crates/frob/src/check_view.rs", "changelog.d/01M5EFE42EH8JYYRC0JXSZR52F.changed.md"]
 
 [[acceptance]]
 text = "frob check --text prints a verdict line, the findings, and Fix/Timing/Notes sections instead of the generic key dump; JSON output is unchanged"
