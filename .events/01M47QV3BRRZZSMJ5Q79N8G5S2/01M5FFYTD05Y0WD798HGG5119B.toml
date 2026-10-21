@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T15:05:58Z"
+digest = "a21cda4bd909dd0116384f4ff1fc7ef1cb15bf2fca5fb82f0bda5ac28d39ce39"
+exit_code = 0
+head = "716c2bbea67ede3495f0676e7e162210d8f7f59f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c53be02e-935b-42c7-a6ef-786a9a2922be with nextest profile: default
+    Starting 2 tests across 11 binaries (186 tests skipped)
+        PASS [   0.004s] gob-dev::fuzz_nightly the_nightly_fuzz_workflow_runs_the_fuzz_build_step_longer_and_is_documented
+        PASS [   0.008s] gob-dev ci::tests::fuzz_build_step_builds_then_runs_each_target_for_sixty_seconds_by_default
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 2 tests run: 2 passed, 186 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev fuzz_build_step"
+size = 711
+status = "measured"
+test_count = 2
+tests_digest = "44db150a1a01248051948de0b57a645c24e3e8abce5427ac49c4b5d1ef8921f3"
+at = "2026-10-21T15:05:58Z"
+actor = "lognd"
+rev = 1

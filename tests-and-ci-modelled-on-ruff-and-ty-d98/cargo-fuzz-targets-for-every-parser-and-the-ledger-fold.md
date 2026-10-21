@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:08Z"
-updated = "2026-10-21T15:05:53Z"
+updated = "2026-10-21T15:05:58Z"
 scope = ["fuzz/**", "crates/gob-dev/**", ".github/workflows/**", "Cargo.toml", "docs/design/build-test-ci.md", "changelog.d/01M47QV3BRRZZSMJ5Q79N8G5S2.added.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "the fuzz-build step builds and runs them briefly"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the nightly job is documented and pinned by SHA"
