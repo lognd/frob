@@ -8,7 +8,7 @@ points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:26Z"
-updated = "2026-10-21T10:25:42Z"
+updated = "2026-10-21T10:27:08Z"
 idempotency_key = "m2-ci"
 labels = ["milestone:2"]
 scope = ["crates/grimble-ci/**", "changelog.d/01M3Z7157776CWEKRPG8886VJ4.added.md", "docs/design/cicd.md"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a Dockerfile whose final stage never sets USER and a base image tagged latest, when grimble check runs, then DK001 and DK003 fire"
-bound = false
+bound = true
 +++
 
 cicd.md section 5: the owned policy and consistency rules over the Actions and Dockerfile adapters, with the bound-tool overlaps delegated to the zizmor and actionlint stages; CI012 joins CI with manifests through the F2 manifest adapter.
