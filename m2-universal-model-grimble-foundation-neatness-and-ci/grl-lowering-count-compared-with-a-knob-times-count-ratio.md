@@ -8,9 +8,9 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T22:44:58Z"
-updated = "2026-10-21T23:46:35Z"
+updated = "2026-10-21T23:46:36Z"
 idempotency_key = "neat031-count-ratio"
-scope = ["crates/gob-plan/src/lower/convert.rs", "crates/gob-plan/tests/ten_rules/main.rs", "crates/gob-plan/src/**"]
+scope = ["crates/gob-plan/src/lower/convert.rs", "crates/gob-plan/tests/ten_rules/main.rs", "crates/gob-plan/src/**", "crates/gob-plan/tests/**"]
 
 [[acceptance]]
 text = "a count compared against a scaled count lowers, and the NEAT031 lines leave KNOWN_ENGINE_GAPS or are narrowed to the remaining exec blockers"
