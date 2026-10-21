@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T13:22:14Z"
+digest = "7a3ab2b196133868cfee429063808bf51fba92a715b89eca1f6f8c2f56746aba"
+exit_code = 0
+head = "e2900679e9ee733d67d61779e59d9ee4f30db5de"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 86b185f3-fa7d-4470-9e75-0ac39e270561 with nextest profile: default
+    Starting 1 test across 9 binaries (68 tests skipped)
+        PASS [   0.035s] gob-packs::sysdesign_pack every_rule_passes_its_examples
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.036s] 1 test run: 1 passed, 68 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs every_rule_passes_its_examples"
+size = 601
+status = "measured"
+test_count = 1
+tests_digest = "d5e367996070fa2565e0015ac78f096ee16e6e8dab2584010607e489e2d251fb"
+at = "2026-10-21T13:22:14Z"
+actor = "lognd"
+rev = 1
