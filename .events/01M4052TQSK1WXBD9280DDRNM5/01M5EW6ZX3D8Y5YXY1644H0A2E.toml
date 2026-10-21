@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T09:20:54Z"
+digest = "196b1889e7b7df2fee60be89d264b716940c8915072f1a9a7981c4092a6e3639"
+exit_code = 0
+head = "ea47e3197feffe273d2ec4b85271f83390fe4083"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.73s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 43bb7037-f218-4b78-8cb4-b45c6fb7ee39 with nextest profile: default
+    Starting 1 test across 6 binaries (177 tests skipped)
+        PASS [   0.005s] frob-mirror closing::tests::no_closure_is_quiet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 177 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror no_closure_is_quiet"
+size = 594
+status = "measured"
+test_count = 1
+tests_digest = "d8d568b035fa4042400da57c0ec8a2b420adaa1c2874967298d86a65686ab0e3"
+at = "2026-10-21T09:20:54Z"
+actor = "lognd"
+rev = 1
