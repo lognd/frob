@@ -8,7 +8,7 @@ points = 8
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:30:58Z"
-updated = "2026-10-21T13:21:30Z"
+updated = "2026-10-21T13:22:09Z"
 idempotency_key = "crunk-plan-g_WEBSEC"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/rules/websec/**", "packs/grimble-websec/tests/websec/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs", "docs/grimble/packs/grimble-websec.md", "changelog.d/01M43AWWC0VEHZMNV948998PBE.added.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a language without an adapter, when the family runs, then it is NotApplicable or Unresolved with the reason"
-bound = false
+bound = true
 +++
 
 Follow-up to the grimble-websec scaffold: web security patterns (injection sinks, unsafe HTML, CSRF, CORS, cookies, secrets in client code) as SEC rules. Source: requirement-bearing v1 tickets of the family imported by ~TM4E1PN and the catalog in notes/v1/gates-and-rules.md section 11. Write the first slice in GRL with examples; split per rule group at pickup if above 8 points. Unsupported languages are Unresolved, never clean.
