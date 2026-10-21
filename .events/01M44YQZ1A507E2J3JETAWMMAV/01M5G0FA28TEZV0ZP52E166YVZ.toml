@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "26b224389be73f1e1da6671b1d1f065eeb544906"
+branch = "ticket/TAWMMAV"
+pushed = false
+at = "2026-10-21T19:53:52Z"
+actor = "lognd"
+rev = 1
