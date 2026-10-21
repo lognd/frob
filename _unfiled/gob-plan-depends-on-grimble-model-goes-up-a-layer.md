@@ -2,7 +2,8 @@
 id = "01M5FRCMBS9DHQ223JWGN6RNW7"
 title = "gob-plan depends on grimble-model (goes up a layer)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 reporter = "lognd"
