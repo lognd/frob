@@ -1,0 +1,22 @@
+rule ROUTE103 "trace-method-exposed" {
+  lang python
+  severity warn
+
+  find c: call where c.text ~ /add_url_rule\(.*"(TRACE|CONNECT)"/
+  report c "a route accepts TRACE or CONNECT, which application handlers should never serve"
+
+  example fire python """
+    app.add_url_rule("/echo", view_func=echo, methods=["GET", "TRACE"])  #~ warn
+  """
+  example clean python """
+    app.add_url_rule("/echo", view_func=echo, methods=["GET"])
+  """
+  example notapplicable markdown """
+    Prose has no routes.
+  """
+  explain """
+    TRACE echoes the request back, including credentials added by proxies, and CONNECT opens tunnels. Neither belongs on an application route.
+    ## Remedy
+    List only the methods the handler needs, for example `methods=["GET", "POST"]`.
+  """
+}

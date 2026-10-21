@@ -1,0 +1,1 @@
+Added grimble-websec ROUTE102 to ROUTE104 (debug server exposed, TRACE or CONNECT accepted, CSRF exemption) as the first ROUTE slice, each with firing, clean and not-applicable examples and a Remedy section.

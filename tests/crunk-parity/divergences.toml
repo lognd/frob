@@ -1,0 +1,57 @@
+# Reasoned differences between the Rust crunk and the Python golden corpus.
+# Each entry names the cases, the fields that differ (exit, stdout) and why.
+# An entry whose cases no longer differ fails the parity harness.
+
+[[divergence]]
+id = "check-contrast-flag-removed"
+cases = ["int04_default/check_--contrast", "init_default/check_--contrast", "gallery005_routes/check_--contrast", "screens_v1_1/check_--contrast"]
+fields = ["exit", "stdout"]
+reason = "The Python `check --contrast` flag was not ported; contrast findings (CONTRAST001) are part of plain `check`, so the Rust CLI rejects the flag with a usage error (exit 2)."
+
+[[divergence]]
+id = "check-report-flag-removed"
+cases = ["int04_default/check_--report", "init_default/check_--report", "gallery005_routes/check_--report", "screens_v1_1/check_--report"]
+fields = ["exit", "stdout"]
+reason = "The Python markdown `check --report` was replaced by the gob.sibling/1 envelope and `--text`; the flag is rejected with a usage error (exit 2)."
+
+[[divergence]]
+id = "check-json-rust-envelope"
+cases = ["int04_default/check_--json", "gallery005_routes/check_--json", "screens_v1_1/check_--json"]
+fields = ["stdout"]
+reason = "Rust check reports through the gob.sibling/1 envelope with a different finding set (rules added in Rust, and rules such as GALLERY001/GALLERY005 evaluated by a different verb), so the finding lists are not identical."
+
+[[divergence]]
+id = "explain-text-reformatted"
+cases = ["int04_default/explain_color-ink", "init_default/explain_color-ink", "gallery005_routes/explain_color-ink"]
+fields = ["stdout"]
+reason = "Rust explain text is a compact `--name = value` layout without the defined-in and utilities lines; the data is the same as in the JSON form."
+
+[[divergence]]
+id = "explain-json-no-kind"
+cases = ["int04_default/explain_color-ink_--json", "init_default/explain_color-ink_--json", "gallery005_routes/explain_color-ink_--json"]
+fields = ["stdout"]
+reason = "The Python payload carried a `kind` discriminator; the Rust envelope names the verb instead, so `data` has no `kind` key."
+
+[[divergence]]
+id = "fix-dry-run-wording"
+cases = ["int04_default/fix_--dry-run", "init_default/fix_--dry-run", "screens_v1_1/fix_--dry-run"]
+fields = ["stdout"]
+reason = "Rust words the empty plan `no fixes to apply` instead of `no fixable violations`."
+
+[[divergence]]
+id = "fix-dry-run-exit"
+cases = ["gallery005_routes/fix_--dry-run"]
+fields = ["exit", "stdout"]
+reason = "Python exited 1 and reported remaining unfixable errors; Rust treats an empty fix plan as success (exit 0) with `no fixes to apply`."
+
+[[divergence]]
+id = "violations-message-wording"
+cases = ["int04_default/query_violations_--json", "gallery005_routes/query_violations_--json", "screens_v1_1/query_violations_--json"]
+fields = ["stdout"]
+reason = "Rust finding messages carry a `css export:` prefix and double-quote role names where Python used single quotes."
+
+[[divergence]]
+id = "tokens-check-text-empty"
+cases = ["int04_default/tokens_--check", "gallery005_routes/tokens_--check", "screens_v1_1/tokens_--check"]
+fields = ["stdout"]
+reason = "Rust `tokens --check` reports the status in the envelope (`data.status`) and prints nothing in text mode; Python printed `tokens: <status>`."
