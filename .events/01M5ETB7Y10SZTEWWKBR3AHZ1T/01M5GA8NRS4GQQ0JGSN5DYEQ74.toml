@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T22:45:44Z"
+digest = "be1a4d9d627899aaf6558964238c27696f7b870fd78b7b523cec680facfbe2be"
+exit_code = 0
+head = "c2ca97673a1e0ec2889ef75a0e5b66057d182849"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID adf208a4-013d-4d0d-9d18-2d1abc6e1b4d with nextest profile: default
+    Starting 1 test across 28 binaries (289 tests skipped)
+        PASS [   0.004s] gob-plan::lower_roles a_field_path_object_on_an_unbound_variable_is_an_unknown_var
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 289 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan a_field_path_object_on_an_unbound"
+size = 576
+status = "measured"
+test_count = 1
+tests_digest = "a7f7884f790a10b29db746f5d2d3bf883c39168684992a9f5834c577bec7d355"
+at = "2026-10-21T22:45:44Z"
+actor = "lognd"
+rev = 1
