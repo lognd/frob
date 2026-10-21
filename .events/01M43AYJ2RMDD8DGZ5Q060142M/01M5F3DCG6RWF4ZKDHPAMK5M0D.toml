@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T11:26:44Z"
+digest = "93324727163325b57642db22b9e5f27a594fc7bfacde683fd764dab3b14c8076"
+exit_code = 0
+head = "0d6e2595a30148be55fef9fa251221aebc3ed4ce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f472ac1b-3d62-4322-9bf5-c4312f5551a5 with nextest profile: default
+    Starting 1 test across 9 binaries (62 tests skipped)
+        PASS [   0.009s] gob-packs::sysdesign_pack catalog_has_one_rule_per_family
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 62 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs catalog_has_one_rule_per_family"
+size = 548
+status = "measured"
+test_count = 1
+tests_digest = "397a924caf4464df32aa0932afb17b149f9876dc92502e83b6eb57416012ed9f"
+at = "2026-10-21T11:26:44Z"
+actor = "lognd"
+rev = 1
