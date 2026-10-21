@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T10:25:04Z"
+digest = "660ba967dfd195048157679380e4b5c8afc925a0329d5ae61cb5f53edd06f096"
+exit_code = 0
+head = "dd4645c737794d8a39230d3e1822b4ecb68dc4c6"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e638cf2e-0089-41b7-97f5-8db50e6f3c83 with nextest profile: default
+    Starting 1 test across 4 binaries (56 tests skipped)
+        PASS [   0.043s] frob-obligations::csharp doc001_accepts_xml_doc_and_inheritdoc_and_flags_bare_public_csharp_members
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.044s] 1 test run: 1 passed, 56 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations doc001_accepts_xml_doc"
+size = 645
+status = "measured"
+test_count = 1
+tests_digest = "ed87ab57c1b915dbab92dc012a4e97aed373c54b9d252fe0eb00f789d08a4b32"
+at = "2026-10-21T10:25:04Z"
+actor = "lognd"
+rev = 1
