@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The gob-path allow_list_matches_markers test passes: grimble-model no longer carries the confinement marker and ALLOW is unchanged"]
+moved = []
+at = "2026-10-21T16:52:53Z"
+actor = "lognd"
+rev = 1
