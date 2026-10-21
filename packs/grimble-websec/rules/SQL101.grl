@@ -1,0 +1,22 @@
+rule SQL101 "sql-built-by-interpolation" {
+  lang python
+  severity error
+
+  find c: call where c.callee.name == "execute" and c.text ~ /execute\(\s*f["']/
+  report c "SQL text is built with an f-string: parameters are not separated from the query"
+
+  example fire python """
+    cur.execute(f"SELECT * FROM users WHERE id = {uid}")  #~ error
+  """
+  example clean python """
+    cur.execute("SELECT * FROM users WHERE id = %s", (uid,))
+  """
+  example notapplicable markdown """
+    Prose has no queries.
+  """
+  explain """
+    Interpolating values into SQL text lets input rewrite the query (injection).
+    ## Remedy
+    Pass the values as bound parameters: `execute("... WHERE id = %s", (uid,))`.
+  """
+}

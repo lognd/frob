@@ -49,6 +49,7 @@ mod product;
 pub mod product_rules;
 pub mod report_cache;
 pub mod sibling;
+pub mod websec_pack;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};

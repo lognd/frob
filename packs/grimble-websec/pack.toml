@@ -1,0 +1,13 @@
+# The grimble-websec pack manifest (packs.md tier 1 data file). WEBSEC rule ids are registered
+# inside the SEC namespace (SEC1xx), so the pack claims SEC and PII family rows beside SQL,
+# COMPLY, ROUTE and WEBPERF (server side). The db.query and net capability atoms come from
+# core-effects and are not redefined here. See docs/grimble/packs/grimble-websec.md.
+[pack]
+name = "grimble-websec"
+version = "0.1.0"
+families = ["COMPLY", "PII", "ROUTE", "SEC", "SQL", "WEBPERF"]
+
+[provides]
+rules = ["rules/*.grl"]
+
+[effects]

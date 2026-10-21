@@ -1,0 +1,26 @@
+rule WEBPERF201 "blocking-sleep-in-async-handler" {
+  lang python
+  severity warn
+
+  find fn: function where fn.name ~ /handler/
+  find c: call where c in unit fn and c.text ~ /^time\.sleep\(/
+  report c "time.sleep blocks the event loop inside an async handler"
+
+  example fire python """
+    async def handler():
+        time.sleep(1)  #~ warn
+  """
+  example clean python """
+    async def handler():
+        await asyncio.sleep(1)
+  """
+  example notapplicable markdown """
+    Prose has no handlers.
+  """
+  explain """
+    A blocking sleep in an async handler stalls every other request on the same loop
+    (WEBPERF, server side; the crunk-web WEBPERF1xx rules cover markup).
+    ## Remedy
+    Use `await asyncio.sleep(...)`, or move blocking work to a thread executor.
+  """
+}
