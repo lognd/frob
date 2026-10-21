@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Behaviour implemented and covered by a bound test or check"]
+moved = []
+at = "2026-10-21T18:15:16Z"
+actor = "lognd"
+rev = 1
