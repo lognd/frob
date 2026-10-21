@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-21T21:40:55Z"
+updated = "2026-10-21T21:40:57Z"
 scope = ["crates/grimble-ci/**", "docs/design/cicd.md", "changelog.d/01M5F010QB00AR00D4HYVYYPWH.added.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "CI006 flags checkout of the PR head under pull_request_target or workflow_run"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "CI007 flags attacker-influenced expressions in run scripts, narrow set as Error and others Advisory, env passthrough clean"
