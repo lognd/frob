@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["packs/grimble-websec/rules/webperf-server/**", "packs/grimble-websec/tests/webperf-server/**", "changelog.d/01M43AY47AXTWJ4TWG29WTBWT9.added.md", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs"]
+new = ["packs/grimble-websec/rules/webperf-server/**", "packs/grimble-websec/tests/webperf-server/**", "changelog.d/01M43AY47AXTWJ4TWG29WTBWT9.added.md", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs"]
+at = "2026-10-21T12:44:37Z"
+actor = "lognd"
+rev = 1
