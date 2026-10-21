@@ -1,0 +1,28 @@
+rule SYSDESIGN104 "owns-selector-not-anchored" {
+  lang -
+  severity advisory
+  needs model
+
+  find s: model.selectors where not s.selector ~ /^"[A-Za-z0-9_.-]+\//
+  unresolved when s.selector ~ /\(/ because "the selector is an expression, not a path: the rule cannot tell whether it is anchored to a directory"
+  report s "node {s.node} owns a selector that is not anchored to a top-level directory: start it with the directory"
+
+  example fire {
+    model """node db { kind store; owns "**/*.sql"; }"""
+  }
+  example clean {
+    model """node db { kind store; owns "src/db/**"; }"""
+  }
+  example unresolved {
+    model """node db { kind store; owns lang(python); }"""
+    expect "line 0: unresolved"
+  }
+  example notapplicable markdown """
+    Prose declares no model nodes.
+  """
+  explain """
+    A selector such as `**/*.sql` matches files anywhere, so the node's boundary moves whenever a file with that shape appears in an unrelated module.
+    ## Remedy
+    Anchor the selector to the directory the node is accountable for, such as `src/db/**`.
+  """
+}

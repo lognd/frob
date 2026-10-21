@@ -1,0 +1,1 @@
+Add the SYSDESIGN102 to SYSDESIGN104 rules to grimble-sysdesign: a node owning a tests tree, a node owning a vendored or generated tree, and an owns selector not anchored to a directory (Unresolved for expression selectors), each advisory with fire, clean and not-applicable examples.
