@@ -1,0 +1,22 @@
+rule PII103 "personal-data-cached-without-expiry" {
+  lang python
+  severity warn
+
+  find c: call where c.callee.name == "set" and c.text ~ /\bcache\b.*\b(ssn|email|phone|date_of_birth|credit_card)\b.*timeout=None/
+  report c "personal data is cached with no expiry"
+
+  example fire python """
+    cache.set("profile", user.email, timeout=None)    #~ warn
+  """
+  example clean python """
+    cache.set("profile", user.public_id, timeout=300)
+  """
+  example notapplicable markdown """
+    Prose has no calls.
+  """
+  explain """
+    Personal data with no expiry outlives its purpose, which breaks retention limits and erasure requests.
+    ## Remedy
+    Give every cached personal value a finite timeout, or cache an opaque id and keep the value in the primary store.
+  """
+}
