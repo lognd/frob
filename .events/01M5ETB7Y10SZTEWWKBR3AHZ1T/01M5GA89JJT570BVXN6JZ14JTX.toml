@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A relation object written as a field path (p peer of s.unit) lowers"]
+moved = []
+at = "2026-10-21T22:45:32Z"
+actor = "lognd"
+rev = 1
