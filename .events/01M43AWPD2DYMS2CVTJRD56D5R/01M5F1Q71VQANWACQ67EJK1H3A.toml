@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T10:57:08Z"
+digest = "5d22eb581896e56e47a3a4d3253e24a46bb817d26162e3f91e90948565c26d56"
+exit_code = 0
+head = "cae650f6c6db18b9a62f91161c1531231c08511e"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f6aa6948-db68-41c7-9531-b502c33ca32e with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.007s] grimble-check::websec_pack catalog_has_one_rule_per_family_with_websec_under_sec
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test websec_pack catalog_has_one"
+size = 777
+status = "measured"
+test_count = 1
+tests_digest = "ecc5d3970be256bb456e4a253def4f2b638457c7618d1f26aafe2a7f2c6ac3bb"
+at = "2026-10-21T10:57:08Z"
+actor = "lognd"
+rev = 1
