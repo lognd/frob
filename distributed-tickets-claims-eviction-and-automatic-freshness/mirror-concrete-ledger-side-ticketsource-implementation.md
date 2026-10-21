@@ -2,7 +2,8 @@
 id = "01M5EBMAWCRQ2S1GGPYACC0466"
 title = "mirror: concrete ledger-side TicketSource implementation"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
