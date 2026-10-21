@@ -1,0 +1,23 @@
+kind = "evidence"
+captured_at = "2026-10-21T03:51:03Z"
+digest = "3a1a9c8d69941cc58e1dc7848a90cda7d9145c644cd1270d36121783979866ae"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9f8becd2-0ef9-470c-8266-68786e669979 with nextest profile: default
+    Starting 1 test across 9 binaries (112 tests skipped)
+        PASS [   0.004s] frob-worktree verbs::tests::is_yes_accepts_y_and_yes_in_any_case_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 112 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree is_yes"
+size = 562
+status = "measured"
+test_count = 1
+tests_digest = "7acaf87d6a817c4b52272ec5dd1cc0cfcd7f6dec3801c83d80d5c9179ad52b08"
+at = "2026-10-21T03:51:03Z"
+actor = "lognd"
+rev = 1
