@@ -2,7 +2,8 @@
 id = "01M5FH32SRA9JWGMTJ9KCX28FW"
 title = "gob-dev layering test: layer table missing grimble-ci"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
