@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["ConfigSchema types crunk.json org and layers as side relations (value rows, int layer values, enum class_case as string)"]
+moved = []
+at = "2026-10-21T08:53:27Z"
+actor = "lognd"
+rev = 1
