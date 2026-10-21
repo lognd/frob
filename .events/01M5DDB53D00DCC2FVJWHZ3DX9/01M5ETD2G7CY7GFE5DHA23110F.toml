@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T08:49:17Z"
+digest = "fc6ddb341600d161f25a214acbd0003effc2d383f0873cd65f3e97a0945f94dc"
+exit_code = 0
+head = "940fdad3bc2b0dd3af5b4e14d014a0cf39eac034"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2a3d2929-1285-47ca-9e7c-082ba2fa8496 with nextest profile: default
+    Starting 1 test across 19 binaries (247 tests skipped)
+        PASS [   0.005s] frob-ledger claim_hold::tests::renew_event_carries_the_note_and_is_not_a_hold
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 247 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger renew_event"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "bcc9080a5fbd77b6cd534a3f625496769b00fa758331d66e6fb9ce86445ae1e3"
+at = "2026-10-21T08:49:17Z"
+actor = "lognd"
+rev = 1

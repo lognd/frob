@@ -8,7 +8,7 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T19:41:49Z"
-updated = "2026-10-21T08:48:54Z"
+updated = "2026-10-21T08:49:17Z"
 labels = ["found-while-working"]
 scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "crates/frob-worktree/src/activity.rs", "crates/frob-worktree/src/next.rs", "crates/frob-worktree/src/claim_evict.rs", "crates/frob/src/lease_cmd.rs", "crates/frob-worktree/tests/claim_touch.rs", "changelog.d/01M5DDB53D00DCC2FVJWHZ3DX9.added.md", "docs/design/distributed-tickets.md", "crates/frob/tests/it/lease_heartbeat.rs"]
 
