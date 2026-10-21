@@ -2,12 +2,12 @@
 id = "01M5FRCMBS9DHQ223JWGN6RNW7"
 title = "gob-plan depends on grimble-model (goes up a layer)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-21T17:33:20Z"
-updated = "2026-10-21T18:15:23Z"
+updated = "2026-10-21T18:15:24Z"
 
 [[acceptance]]
 text = "Behaviour implemented and covered by a bound test or check"
