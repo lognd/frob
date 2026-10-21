@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T03:30:12Z"
+digest = "98fabfae3e583f08024b94f08291460740ae0ac1d2ab88959c8322a6d9af2a58"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0a257004-24a1-4b36-87c7-431a64bdcfc4 with nextest profile: default
+    Starting 1 test across 5 binaries (122 tests skipped)
+        PASS [   0.006s] frob-check summary::tests::no_fixes_print_nothing_and_no_safe_fix_omits_check_fix
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 122 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check no_fixes_print_nothing_and_no_safe_fix_omits_check_fix"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "694c78719dd9fc6611d5efb5cf17e68c8d2e6bee8f6559137f78580621316a04"
+at = "2026-10-21T03:30:12Z"
+actor = "lognd"
+rev = 1
