@@ -1,0 +1,24 @@
+[package]
+name = "grimble-ci"
+version.workspace = true
+description = "The CI and DK rule families: owned policy and consistency rules over GitHub Actions workflows and Dockerfiles."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+grimble-arch = { version = "0.532.0", path = "../grimble-arch" }
+serde_yaml_ng = "0.10"
+toml = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+gob-mdtest = { path = "../gob-mdtest" }
+gob-text = { version = "0.532.0", path = "../gob-text" }

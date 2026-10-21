@@ -3009,6 +3009,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "grimble-ci"
+version = "0.532.0"
+dependencies = [
+ "gob-mdtest",
+ "gob-rules",
+ "gob-symbols",
+ "gob-text",
+ "grimble-arch",
+ "serde_yaml_ng",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "grimble-lints"
 version = "0.532.0"
 dependencies = [

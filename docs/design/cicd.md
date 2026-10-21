@@ -187,3 +187,10 @@ with their JSON parsers in gob-check (`tool_parse.rs`) and id maps in frob-check
 3. CI015 needs the network to know the latest release; keep it offline-
    Unresolved and rely on Dependabot presence, or allow an opt-in online
    check?
+
+Implementation status (grimble-ci): the crate `grimble-ci` implements CI002, CI003, CI004, CI005,
+CI008, CI009, CI011, CI012 (toolchain pin, `rust-version` floor, Dependabot ecosystems, CODEOWNERS
+coverage of `.github`) and DK001 to DK004 as `#[rule]` declarations with mdtest pages. Like
+`grimble-arch` it is a library: `grimble_ci::analyze` is not yet wired into a product. Deferred:
+the grimble fallbacks of CI001 and CI006, CI007, CI010, CI013 to CI015 (bound to zizmor and
+actionlint), CI016 (native), and the frob-verbs-versus-workflow-commands part of CI012.
