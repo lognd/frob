@@ -94,6 +94,8 @@ const RENAME: Toy = Toy {
 };
 
 // frob:tests run_fixture
+// frob:tests crates/gob-fix/src/harness.rs::Outcome.snapshot_text
+// frob:tests crates/gob-fix/src/harness.rs::Outcome.passed
 #[test]
 fn converging_multi_file_fixture_snapshots_its_diff() {
     let f = fixture(
