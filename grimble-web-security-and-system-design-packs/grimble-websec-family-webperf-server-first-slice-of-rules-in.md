@@ -2,13 +2,13 @@
 id = "01M43AY47AXTWJ4TWG29WTBWT9"
 title = "grimble-websec family WEBPERF-server: first slice of rules in GRL"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:38Z"
-updated = "2026-10-04T11:31:38Z"
+updated = "2026-10-21T12:25:08Z"
 idempotency_key = "crunk-plan-g_WEBPERF-server"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/rules/webperf-server/**", "packs/grimble-websec/tests/webperf-server/**"]
