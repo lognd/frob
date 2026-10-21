@@ -1,0 +1,22 @@
+rule STORE104 "unfiltered-delete-or-update" {
+  lang python
+  severity advisory
+
+  find c: call where c.callee.name == "execute" and c.text ~ /execute\(\s*["'](DELETE FROM|delete from|UPDATE \w+ SET|update \w+ set)/ and not c.text ~ /(WHERE|where)/
+  report c "this DELETE or UPDATE has no WHERE clause and rewrites every row"
+
+  example fire python """
+    cur.execute("DELETE FROM sessions")  #~ advisory
+  """
+  example clean python """
+    cur.execute("DELETE FROM sessions WHERE expires < now()")
+  """
+  example notapplicable markdown """
+    Prose runs no statements.
+  """
+  explain """
+    A `DELETE` or `UPDATE` without `WHERE` touches every row of the table; a forgotten filter is the classic way to lose a table.
+    ## Remedy
+    Add the `WHERE` clause, or say `TRUNCATE` (or a documented maintenance script) when emptying the table is the intent.
+  """
+}

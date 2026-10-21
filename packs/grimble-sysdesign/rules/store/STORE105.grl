@@ -1,0 +1,22 @@
+rule STORE105 "mongo-where-operator" {
+  lang python
+  severity advisory
+
+  find c: call where c.callee.name in ["find", "find_one", "count_documents"] and c.text ~ /\$where/
+  report c "$where runs JavaScript per document and cannot use an index: use query operators"
+
+  example fire python """
+    db.users.find({"$where": "this.age > 30"})  #~ advisory
+  """
+  example clean python """
+    db.users.find({"age": {"$gt": 30}})
+  """
+  example notapplicable markdown """
+    Prose queries nothing.
+  """
+  explain """
+    `$where` evaluates a JavaScript expression against every document, skips indexes, and opens an injection path when the string is built from input.
+    ## Remedy
+    Express the filter with query operators such as `$gt` and `$in`, or use an aggregation `$expr`.
+  """
+}

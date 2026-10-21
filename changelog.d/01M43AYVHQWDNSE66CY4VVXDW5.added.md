@@ -1,0 +1,1 @@
+Add the STORE102 to STORE105 rules to grimble-sysdesign: Redis FLUSHALL/FLUSHDB, SELECT star queries, DELETE or UPDATE without WHERE, and the Mongo $where operator, each advisory with fire, clean and not-applicable examples.
