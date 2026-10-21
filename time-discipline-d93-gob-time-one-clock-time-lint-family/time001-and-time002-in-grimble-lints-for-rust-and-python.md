@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "TIME001 fires for a Rust Local::now() read stored in a value and stays quiet for Utc::now() and SystemTime::now()"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "TIME001 and TIME002 resolve import aliases and the tz keyword, so datetime.now(tz) and time.time() stay quiet and an aliased utcnow() fires"

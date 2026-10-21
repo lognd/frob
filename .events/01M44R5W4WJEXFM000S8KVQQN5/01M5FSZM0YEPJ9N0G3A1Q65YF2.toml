@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T18:01:10Z"
+digest = "975f41087069f8d2a7ce59b28586c9a668612613ccbf75a4f37be472222925fe"
+exit_code = 0
+head = "e28b4f15f32529cb6ac04ef7159d6ffbe783ab39"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6ada0024-f849-4131-8f06-a2ed170fa6fd with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.006s] grimble-lints::rules rust_local_fires_utc_and_system_time_do_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test rules rust_local_fires_utc_and_system_time_do_not"
+size = 553
+status = "measured"
+test_count = 1
+tests_digest = "70d84e398319892fa21a7175e6dec834a948b8d7562778d2dd68f2fde3882e0d"
+at = "2026-10-21T18:01:10Z"
+actor = "lognd"
+rev = 1
