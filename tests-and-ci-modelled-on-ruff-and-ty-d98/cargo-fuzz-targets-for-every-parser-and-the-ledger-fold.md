@@ -2,13 +2,13 @@
 id = "01M47QV3BRRZZSMJ5Q79N8G5S2"
 title = "cargo-fuzz targets for every parser and the ledger fold, built on every PR"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:08Z"
-updated = "2026-10-06T04:34:08Z"
+updated = "2026-10-21T14:59:31Z"
 scope = ["fuzz/**", "crates/gob-dev/**", ".github/workflows/**", "Cargo.toml"]
 
 [[acceptance]]
