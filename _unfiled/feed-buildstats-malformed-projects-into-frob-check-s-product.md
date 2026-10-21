@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-21T23:27:37Z"
-updated = "2026-10-21T23:49:37Z"
-scope = ["crates/frob-check/src", "crates/frob-check/src/*.rs"]
+updated = "2026-10-21T23:49:38Z"
+scope = ["crates/frob-check/src", "crates/frob-check/src/*.rs", "changelog.d/01M5GCNBD6AT6HNQKF3MQTXQC5.added.md"]
 
 [[acceptance]]
 text = "FrobProduct::malformed_projects returns the malformed project files recorded by the build"
