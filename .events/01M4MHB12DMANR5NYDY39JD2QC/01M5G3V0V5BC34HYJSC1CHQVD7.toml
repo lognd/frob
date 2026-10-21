@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T20:53:25Z"
+digest = "71baf92a5666c83c453a34517c8fdc7941d9ce52b3d77120ca4e254e16773545"
+exit_code = 0
+head = "931de5e2de336cf7638bd4f128723084d6394a40"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2d4f33bc-2d1c-40cd-a09d-e297db7841c6 with nextest profile: default
+    Starting 1 test across 2 binaries (11 tests skipped)
+        PASS [   0.004s] crunk-fix::fix mixed_endings_follow_the_edited_line_and_unterminated_last_line
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-fix mixed_endings"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "61a1f2cf12e3334c73b5690c01061bc368fd136c215eac45acee075a307da10a"
+at = "2026-10-21T20:53:25Z"
+actor = "lognd"
+rev = 1
