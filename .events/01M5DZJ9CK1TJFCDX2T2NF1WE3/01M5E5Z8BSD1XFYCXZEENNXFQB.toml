@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-21T02:52:07Z"
+digest = "811a9142970692d4b17a3c65c0fed2782a8fd6cd27047794b6505dd5108f1c74"
+exit_code = 0
+inline = '''
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ced01b58-e26a-4388-8dd2-e25c63d0aa6c with nextest profile: default
+    Starting 1 test across 9 binaries (110 tests skipped)
+        PASS [   0.242s] frob-worktree::claim_evict evict_human_confirm_needs_yes_for_a_human_holder_and_auto_does_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.244s] 1 test run: 1 passed, 110 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree evict_human_confirm"
+size = 656
+status = "measured"
+test_count = 1
+tests_digest = "96df1304c6df640ea9b0e35ab130cdeb7f75306b11e236c644a97c5ebbf80517"
+at = "2026-10-21T02:52:07Z"
+actor = "lognd"
+rev = 1
