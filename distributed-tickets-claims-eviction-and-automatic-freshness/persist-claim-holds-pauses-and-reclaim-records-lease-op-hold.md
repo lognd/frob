@@ -8,7 +8,7 @@ points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T01:16:06Z"
-updated = "2026-10-21T01:17:21Z"
+updated = "2026-10-21T01:29:29Z"
 idempotency_key = "dt14-persist-hold-store"
 scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/claim_hold.rs", "crates/frob-worktree/tests/claim_hold.rs", "changelog.d/01M5E0F8MC9XT2PCCB9XG6E8X3.added.md"]
 +++
