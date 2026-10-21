@@ -8,8 +8,8 @@ points = 1
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-21T21:28:35Z"
-scope = ["crates/*/tests/mdtest/**", "changelog.d/01M4YBK89X612WGJ1QEAVEK5C9.changed.md"]
+updated = "2026-10-21T21:31:16Z"
+scope = ["crates/*/tests/mdtest/**", "changelog.d/01M4YBK89X612WGJ1QEAVEK5C9.changed.md", "changelog.d/01M480C4GC6M96Y0BQ9QSK0WB1.changed.md"]
 
 [[acceptance]]
 text = "every listed rule has an mdtest fire/clean pair or a fixture and no grimble entry remains in the allowlist"
