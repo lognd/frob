@@ -34,11 +34,13 @@ pub use error::WorktreeError;
 pub use gc::GcConfig;
 pub use work::{Requeued, Started, WorkOptions, Workspace, normalize_mtimes, seed_caches};
 
-/// Register `work`, `start`, `requeue`, `claim restore` and `claim evict` on a product root.
+/// Register `work`, `start`, `requeue`, `claim restore`, `claim evict`, `claim hold` and `claim resume` on a product root.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<verbs::Work>()
         .register::<verbs::Start>()
         .register::<verbs::Requeue>()
         .register::<verbs::ClaimRestore>()
         .register::<verbs::ClaimEvict>()
+        .register::<verbs::ClaimHold>()
+        .register::<verbs::ClaimResume>()
 }

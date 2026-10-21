@@ -481,8 +481,8 @@ the pure rules: `Hold` (reason required, end date capped by
 (blocked, review, train and CI, credit capped by `[claims]
 paused_max_days`, `paused: blocked by ~Y (day 4 of 14)` notice) and
 `effective_observation`, which stops the idle clock for a hold and
-restarts it at expiry. Still open: the `claim hold|resume` verbs, the
-`lease` `hold`/`resume` events and detecting pauses from the ledger.
+restarts it at expiry. The `lease` ops `hold`/`resume`/`reclaim` and the `claim hold|resume` verbs
+are in. Still open: detecting pauses from the ledger.
 
 ### 5.4 Hooks, so nobody has to remember
 
