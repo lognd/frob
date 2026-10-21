@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T22:45:57Z"
+digest = "2ffd857833ed3c58863ebc70461bd2fb761ac6a948a9f917274491d7f2e92839"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0b7136eb-430c-45c4-95c2-1e8535236b37 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.011s] gob-plan::examples_model a_cell_rule_with_no_model_input_is_refused_not_silently_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test examples_model a_cell_rule_with_no_model"
+size = 573
+status = "measured"
+test_count = 1
+tests_digest = "22897e8b40b31a6390c522689c546153b62312e0c11566ad62938327c142811c"
+at = "2026-10-21T22:45:57Z"
+actor = "lognd"
+rev = 1
