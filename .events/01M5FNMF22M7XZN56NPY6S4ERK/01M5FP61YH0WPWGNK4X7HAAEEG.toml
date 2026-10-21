@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Refresh state save goes through gob_fs::write_atomic with no hand-rolled rename, so the gob-fs inventory test passes"]
+new = ["Refresh state save goes through gob_fs::write_atomic with no hand-rolled rename, so the gob-fs inventory test passes", "Refresh state still round-trips through save and load unchanged"]
+moved = [1]
+at = "2026-10-21T16:54:47Z"
+actor = "lognd"
+rev = 1

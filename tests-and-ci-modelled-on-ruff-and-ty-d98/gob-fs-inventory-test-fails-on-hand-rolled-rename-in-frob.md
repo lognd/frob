@@ -14,6 +14,10 @@ scope = ["crates/frob-ledger/src/refresh.rs", "crates/frob-ledger/Cargo.toml", "
 [[acceptance]]
 text = "Refresh state save goes through gob_fs::write_atomic with no hand-rolled rename, so the gob-fs inventory test passes"
 bound = false
+
+[[acceptance]]
+text = "Refresh state still round-trips through save and load unchanged"
+bound = false
 +++
 
 Found while landing KHR84D9; failing test on experimental. Fix or waive with reason.
