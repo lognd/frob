@@ -8,8 +8,8 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:18Z"
-updated = "2026-10-21T10:17:07Z"
-scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", ".github/scripts/plan-jobs.py"]
+updated = "2026-10-21T10:17:08Z"
+scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", ".github/scripts/plan-jobs.py", "docs/crunk/ci.md"]
 
 [[acceptance]]
 text = "a docs-only diff selects only fmt, gen and check"
