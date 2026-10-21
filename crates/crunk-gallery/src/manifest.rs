@@ -70,7 +70,6 @@ pub struct Manifest {
 
 impl Manifest {
     /// The entry covering `(screen, state, platform)`; an exact state wins over a v1 wildcard.
-    #[must_use]
     pub fn find(&self, screen: &str, state: &str, platform: &str) -> Option<&Entry> {
         let hit = |e: &&Entry| e.screen == screen && e.platform == platform;
         let mut rows = self.entries.iter().filter(hit);

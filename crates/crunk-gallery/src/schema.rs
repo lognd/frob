@@ -23,7 +23,6 @@ pub struct Located {
 }
 
 /// The manifest schema text of `version`, or `None` for an unknown version.
-#[must_use]
 pub fn manifest_schema(version: u64) -> Option<&'static str> {
     match version {
         1 => Some(MANIFEST_V1),
