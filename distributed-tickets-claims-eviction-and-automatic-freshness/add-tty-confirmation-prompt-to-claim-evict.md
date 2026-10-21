@@ -8,8 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T01:00:17Z"
-updated = "2026-10-21T03:45:56Z"
-scope = ["crates/frob-worktree/src/claim_evict.rs", "crates/frob-worktree/src/verbs.rs"]
+updated = "2026-10-21T03:45:57Z"
+scope = ["crates/frob-worktree/src/claim_evict.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/claim_evict.rs"]
 +++
 
 Only --yes exists today. (found while working ~A6CYWAE)
