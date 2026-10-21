@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T12:57:46Z"
+digest = "c2e0d9642dceac9144b81d7d95f81a967c70e5e64d5c64b1d1e1b572ece9b1ed"
+exit_code = 0
+head = "eedaab8580e1ce2a3d747e6e340bd00397bca544"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c3d07754-11ba-4228-8cb5-a020f3813f89 with nextest profile: default
+    Starting 1 test across 5 binaries (59 tests skipped)
+        PASS [   0.092s] frob-obligations::unity unity_disabled_reports_update_as_unreached
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.093s] 1 test run: 1 passed, 59 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations unity_disabled"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "9bdea0a089f4d624c55d16c54284b8e6725d80cfd4f9f9d0ace9c0c253cfbbe3"
+at = "2026-10-21T12:57:46Z"
+actor = "lognd"
+rev = 1
