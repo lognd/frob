@@ -272,6 +272,7 @@ fn schema_ref_links_resolve_to_defs() {
     }
 }
 
+// frob:tests crates/gob-config/src/describe.rs::schema_of
 #[test]
 fn schema_types_row_columns() {
     let doc = row_schema();

@@ -1,4 +1,5 @@
 //! JSON Schema export for all config tables.
+// frob:ticket 01M4DGHT8H530QHR7VJPHFBHDJ
 
 use serde_json::{Map, Value, json};
 
