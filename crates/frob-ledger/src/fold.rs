@@ -294,6 +294,7 @@ pub fn fold(id: TicketId, events: &[Event]) -> Result<Folded> {
             | EventBody::ChangelogExempt(_)
             | EventBody::LandExempt(_)
             | EventBody::Land(_)
+            | EventBody::Lease(_)
             | EventBody::Triage(_)
             // Proposals are read by `crate::proposal`, never folded into the ticket.
             | EventBody::Proposal(_)

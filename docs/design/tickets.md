@@ -139,7 +139,7 @@ any (provider, reference) pair's latest record for it passes.
 | `changelog-exempt` | ticket | reason | `ticket close` and `land` with `--no-changelog --reason` | audit, REL003, show, brief, release status (folds to no change, so old binaries read it as an uninterpreted kind) |
 | `land-exempt` | ticket | reason | `ticket close --outcome done --no-land --reason` | audit, doctor (folds to no change, so old binaries read it as an uninterpreted kind) |
 | `scrub` | ticket | reason, files rewritten, digests recomputed (file, old, new) | `ticket doctor --fix` (the `TICK004` and `TICK005` repair) | audit only; the fold ignores it, `updated` included |
-| `lease` | ticket | op (take, renew, release, steal), holder, scope | start, work, requeue, close | contention, wave |
+| `lease` | ticket | op (evict, restore; later take, renew, release, steal), holder, observed oid, parked ref, tip, idle, window, reason | `work --next` eviction, `claim restore` | audit only; the fold ignores it, `updated` included |
 | `review` | ticket or exception | subject, verdict, reviewer | review, `exceptions` review of an accept | EXC012, cycle report |
 | `exception` | ticket | kind (accept, defer, hotfix), rule, site | check --fix, land --hotfix | ticket page, close guard |
 | `cycle` | ticket | cycle id, op (assign, carried, over-commit), reason (required for over-commit) | cycle assign, cycle close | velocity, forecasts, cycle report |

@@ -280,6 +280,18 @@ fn an_idle_agent_claim_is_evicted_and_parked() {
     assert!(gone.is_none());
     let id = ledger.resolve(&format!("~{handle}")).expect("id");
     assert!(leases.live_lease(id).expect("lease").is_none());
+    let evicts: Vec<_> = ledger
+        .events(id)
+        .expect("events")
+        .into_iter()
+        .filter_map(|e| match e.body {
+            frob_ledger::event::EventBody::Lease(l) => Some(l),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(evicts.len(), 1, "{evicts:?}");
+    assert_eq!(evicts[0].op, frob_ledger::event::LeaseOp::Evict);
+    assert_eq!(evicts[0].parked.as_deref(), Some(done.parked.as_str()));
 }
 
 // frob:ticket 01M5DJW52ZBQRYN9ZSTGSJJYF3
