@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "CI007 flags attacker-influenced expressions in run scripts, narrow set as Error and others Advisory, env passthrough clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "CI010 flags checkout without persist-credentials false when artifacts or third-party actions are used"
