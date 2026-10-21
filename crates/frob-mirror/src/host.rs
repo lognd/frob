@@ -3,23 +3,19 @@
 //!
 //! The ledger side (what tickets exist, their projections and events, where proposals are
 //! committed) is the [`TicketSource`] seam; the tracker side is the adapter and the read sources.
-//! The driver owns the store and the adapter by reference while the host mutates both, so
-//! both are shared through [`Shared`], one clone for the driver and one for the host.
+//! The driver owns the store and the adapter and lends them to the host for each call, so the
+//! host holds neither.
 
 // frob:ticket 01M5EA0YFAACDY5BV70R2MH98S
 
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
-use std::rc::Rc;
 
 use frob_ledger::event::Event;
 use gob_time::Stamp;
 use tracing::{debug, info, warn};
 
-use crate::adapter::{
-    AdapterError, Capabilities, CreateOutcome, EventId, HistoryEntry, Inventory, IssueRef,
-    IssueState, IssueSummary, TrackerAdapter,
-};
+use crate::adapter::{AdapterError, EventId, IssueRef, IssueState, TrackerAdapter};
 use crate::budget::RateLimit;
 use crate::create::{CreateError, CreateStep, Recovery, RecoveryEnv, create_issue, recover};
 use crate::cursor::{Committed, PendingCursor, begin_read};
@@ -39,107 +35,13 @@ use crate::outbox::{
 };
 use crate::plan::{WorkClass, WorkItem};
 use crate::progress::read_index;
-use crate::projection::{IssueProjection, Outcome, RelationKind};
+use crate::projection::IssueProjection;
 use crate::proposals::{ProposalSink, record};
 use crate::reconcile::{IssueView, reconcile_issue};
 use crate::run::{ItemError, RunHost};
 
 /// Feed start used when the index holds no change-feed cursor yet.
 const EPOCH: &str = "1970-01-01T00:00:00Z";
-
-/// A value shared by the driver and the host: cheap to clone, borrowed only for one call.
-pub struct Shared<T>(Rc<RefCell<T>>);
-
-impl<T> Clone for Shared<T> {
-    /// Another handle to the same value.
-    fn clone(&self) -> Self {
-        Self(Rc::clone(&self.0))
-    }
-}
-
-impl<T> Shared<T> {
-    /// Wraps `value` for sharing.
-    pub fn new(value: T) -> Self {
-        Self(Rc::new(RefCell::new(value)))
-    }
-
-    /// Runs `f` with exclusive access to the shared value.
-    pub fn with<R>(&self, f: impl FnOnce(&mut T) -> R) -> R {
-        f(&mut self.0.borrow_mut())
-    }
-}
-
-impl<S: ShardStore> ShardStore for Shared<S> {
-    /// Reads through to the shared store.
-    fn get(&self, key: &str) -> Option<Vec<u8>> {
-        self.0.borrow().get(key)
-    }
-
-    /// Writes through to the shared store.
-    fn put_if(
-        &mut self,
-        key: &str,
-        expected: Option<&str>,
-        bytes: Vec<u8>,
-    ) -> Result<(), MapError> {
-        self.0.borrow_mut().put_if(key, expected, bytes)
-    }
-}
-
-impl<A: TrackerAdapter> TrackerAdapter for Shared<A> {
-    fn capabilities(&self) -> Capabilities {
-        self.0.borrow().capabilities()
-    }
-    fn create(&mut self, projection: &IssueProjection, nonce: &str) -> CreateOutcome {
-        self.0.borrow_mut().create(projection, nonce)
-    }
-    fn update(
-        &mut self,
-        issue: &IssueRef,
-        projection: &IssueProjection,
-    ) -> Result<(), AdapterError> {
-        self.0.borrow_mut().update(issue, projection)
-    }
-    fn close(&mut self, issue: &IssueRef, reason: Outcome) -> Result<(), AdapterError> {
-        self.0.borrow_mut().close(issue, reason)
-    }
-    fn list_by_creator(&self, creator_id: u64) -> Result<Vec<IssueSummary>, AdapterError> {
-        self.0.borrow().list_by_creator(creator_id)
-    }
-    fn read(&self, issue: &IssueRef) -> Result<IssueState, AdapterError> {
-        self.0.borrow().read(issue)
-    }
-    fn history_after(
-        &self,
-        issue: &IssueRef,
-        after: Option<&EventId>,
-    ) -> Result<Vec<HistoryEntry>, AdapterError> {
-        self.0.borrow().history_after(issue, after)
-    }
-    fn add_labels(&mut self, issue: &IssueRef, labels: &[String]) -> Result<(), AdapterError> {
-        self.0.borrow_mut().add_labels(issue, labels)
-    }
-    fn remove_labels(&mut self, issue: &IssueRef, labels: &[String]) -> Result<(), AdapterError> {
-        self.0.borrow_mut().remove_labels(issue, labels)
-    }
-    fn add_assignees(&mut self, issue: &IssueRef, who: &[String]) -> Result<(), AdapterError> {
-        self.0.borrow_mut().add_assignees(issue, who)
-    }
-    fn remove_assignees(&mut self, issue: &IssueRef, who: &[String]) -> Result<(), AdapterError> {
-        self.0.borrow_mut().remove_assignees(issue, who)
-    }
-    fn link(
-        &mut self,
-        issue: &IssueRef,
-        kind: RelationKind,
-        target: &IssueRef,
-    ) -> Result<(), AdapterError> {
-        self.0.borrow_mut().link(issue, kind, target)
-    }
-    fn inventory(&self) -> Result<Inventory, AdapterError> {
-        self.0.borrow().inventory()
-    }
-}
 
 /// What reconcile needs of one ticket from the ledger side.
 #[derive(Debug, Clone, Default)]
@@ -217,9 +119,7 @@ pub struct Sources<'a> {
 }
 
 /// The [`RunHost`] over the real mirror modules.
-pub struct MirrorHost<'a, S, A, T, K> {
-    store: Shared<S>,
-    adapter: Shared<A>,
+pub struct MirrorHost<'a, T, K> {
     tickets: T,
     sink: K,
     src: Sources<'a>,
@@ -261,25 +161,14 @@ impl<T: TicketSource> ProposalSink for LedgerSink<'_, T> {
     }
 }
 
-impl<'a, S, A, T, K> MirrorHost<'a, S, A, T, K>
+impl<'a, T, K> MirrorHost<'a, T, K>
 where
-    S: ShardStore,
-    A: TrackerAdapter,
     T: TicketSource,
     K: FieldSink,
 {
-    /// Builds a host over shared `store` and `adapter` handles (the driver gets the clones).
-    pub fn new(
-        store: Shared<S>,
-        adapter: Shared<A>,
-        tickets: T,
-        sink: K,
-        src: Sources<'a>,
-        cfg: HostConfig,
-    ) -> Self {
+    /// Builds a host; the store and adapter arrive with each call from the driver.
+    pub fn new(tickets: T, sink: K, src: Sources<'a>, cfg: HostConfig) -> Self {
         Self {
-            store,
-            adapter,
             tickets,
             sink,
             src,
@@ -295,25 +184,29 @@ where
         all
     }
 
-    fn shards(&self) -> BTreeMap<String, Shard> {
-        load_shards(&self.store, &self.universe()).unwrap_or_else(|e| {
+    fn shards<S: ShardStore>(&self, store: &S) -> BTreeMap<String, Shard> {
+        load_shards(store, &self.universe()).unwrap_or_else(|e| {
             warn!(error = %e, "host: shards unreadable, no work planned");
             BTreeMap::new()
         })
     }
 
-    fn load(&self, ulid: &str) -> Result<Shard, ItemError> {
-        read_shard(&self.store, ulid)
+    fn load<S: ShardStore>(store: &S, ulid: &str) -> Result<Shard, ItemError> {
+        read_shard(store, ulid)
             .map_err(|e| map_error(&e))
             .map(|s| s.unwrap_or_else(|| Shard::new(ulid)))
     }
 
-    fn reconcile_items(&self, shards: &BTreeMap<String, Shard>) -> Vec<WorkItem> {
+    fn reconcile_items<S: ShardStore>(
+        &self,
+        store: &S,
+        shards: &BTreeMap<String, Shard>,
+    ) -> Vec<WorkItem> {
         let by_issue: BTreeMap<String, &Shard> = shards
             .values()
             .filter_map(|s| s.issue_number.map(|n| (n.to_string(), s)))
             .collect();
-        let since = read_index(&self.store)
+        let since = read_index(store)
             .ok()
             .and_then(|i| i.change_feed)
             .unwrap_or_else(|| EPOCH.to_owned());
@@ -344,8 +237,12 @@ where
         items
     }
 
-    fn do_recover(&self, ulid: &str) -> Result<Option<Shard>, ItemError> {
-        let shard = self.load(ulid)?;
+    fn do_recover<S: ShardStore>(
+        &self,
+        store: &mut S,
+        ulid: &str,
+    ) -> Result<Option<Shard>, ItemError> {
+        let shard = Self::load(store, ulid)?;
         let env = RecoveryEnv {
             listing: self.src.listing,
             source: self.src.history,
@@ -354,14 +251,17 @@ where
             repo_node_id: &self.cfg.repo_node_id,
             now: self.cfg.now,
         };
-        let mut store = self.store.clone();
-        match recover(&mut store, &env, shard).map_err(|e| create_error(&e))? {
+        match recover(store, &env, shard).map_err(|e| create_error(&e))? {
             Recovery::Adopted(s) | Recovery::NotLanded(s) | Recovery::Nothing(s) => Ok(Some(s)),
         }
     }
 
-    fn do_update(&mut self, ulid: &str) -> Result<Option<Shard>, ItemError> {
-        let mut shard = self.load(ulid)?;
+    fn do_update<S: ShardStore>(
+        &mut self,
+        store: &mut S,
+        ulid: &str,
+    ) -> Result<Option<Shard>, ItemError> {
+        let mut shard = Self::load(store, ulid)?;
         let one = BTreeMap::from([(ulid.to_owned(), shard.clone())]);
         let ops: Vec<LedgerEvent> = plan_ops(
             &self.tickets.events(),
@@ -383,7 +283,7 @@ where
                 }
                 OpOutcome::RateLimited { reset } => {
                     if moved {
-                        self.persist(&shard)?;
+                        Self::persist(store, &shard)?;
                     }
                     return Err(ItemError::RateLimited { reset });
                 }
@@ -393,23 +293,26 @@ where
         Ok(moved.then_some(shard))
     }
 
-    fn persist(&self, shard: &Shard) -> Result<(), ItemError> {
-        let mut store = self.store.clone();
-        write_shard(&mut store, shard)
+    fn persist<S: ShardStore>(store: &mut S, shard: &Shard) -> Result<(), ItemError> {
+        write_shard(store, shard)
             .map(|_| ())
             .map_err(|e| map_error(&e))
     }
 
-    fn do_create(&self, ulid: &str) -> Result<Option<Shard>, ItemError> {
+    fn do_create<S: ShardStore>(
+        &self,
+        store: &mut S,
+        adapter: &mut dyn TrackerAdapter,
+        ulid: &str,
+    ) -> Result<Option<Shard>, ItemError> {
         let Some(projection) = self.tickets.projection(ulid) else {
             warn!(ulid, "host: ticket cannot be rendered, create skipped");
             return Ok(None);
         };
-        let shard = self.load(ulid)?;
-        let (mut store, mut adapter) = (self.store.clone(), self.adapter.clone());
+        let shard = Self::load(store, ulid)?;
         let step = create_issue(
-            &mut store,
-            &mut adapter,
+            store,
+            adapter,
             shard,
             &projection,
             &self.cfg.run_id,
@@ -419,7 +322,7 @@ where
         .map_err(|e| create_error(&e))?;
         match step {
             CreateStep::Created(made) => made
-                .store_cursor(&mut store, Committed::confirm())
+                .store_cursor(store, Committed::confirm())
                 .map(Some)
                 .map_err(|e| create_error(&e)),
             CreateStep::Uncertain(s) | CreateStep::Blocked(s) => Ok(Some(s)),
@@ -427,24 +330,28 @@ where
         }
     }
 
-    fn do_reconcile(&mut self, ulid: &str) -> Result<Option<Shard>, ItemError> {
-        let mut shard = self.load(ulid)?;
+    fn do_reconcile<S: ShardStore>(
+        &mut self,
+        store: &mut S,
+        adapter: &dyn TrackerAdapter,
+        ulid: &str,
+    ) -> Result<Option<Shard>, ItemError> {
+        let mut shard = Self::load(store, ulid)?;
         let (Some(number), Some(state)) = (shard.issue_number, self.tickets.state(ulid)) else {
             debug!(ulid, "host: no issue or no ledger state, reconcile skipped");
             return Ok(None);
         };
         let issue = IssueRef(number.to_string());
         let read = begin_read(self.src.history, &issue, &shard).map_err(|e| item_error(&e))?;
-        let tracker = self.adapter.read(&issue).map_err(|e| item_error(&e))?;
+        let tracker = adapter.read(&issue).map_err(|e| item_error(&e))?;
         let current = self.tickets.current(&tracker);
-        let mut journal = read_journal(&self.store, ulid).map_err(|e| map_error(&e))?;
+        let mut journal = read_journal(store, ulid).map_err(|e| map_error(&e))?;
         let recovered = journal
             .recover(|_, field| Ok(value_digest(current.get(field).map_or("", String::as_str))));
-        if recovered.confirmed + recovered.lost > 0 {
-            let mut store = self.store.clone();
-            if let Err(e) = write_journal(&mut store, ulid, &journal) {
-                warn!(ulid, error = %e, "host: journal recovery not stored");
-            }
+        if recovered.confirmed + recovered.lost > 0
+            && let Err(e) = write_journal(store, ulid, &journal)
+        {
+            warn!(ulid, error = %e, "host: journal recovery not stored");
         }
         let reconciled = reconcile_issue(&IssueView {
             issue: &issue,
@@ -511,12 +418,15 @@ where
     ///
     /// # Errors
     /// Returns the adapter's error when the bot's issues cannot be listed.
-    pub fn close_duplicates(&self) -> Result<DupReport, AdapterError> {
+    pub fn close_duplicates(
+        &self,
+        adapter: &mut dyn TrackerAdapter,
+    ) -> Result<DupReport, AdapterError> {
         let Some(&bot) = self.cfg.bot_ids.first() else {
             return Ok(DupReport::default());
         };
         let mut verdicts = Vec::new();
-        for s in self.adapter.list_by_creator(bot)? {
+        for s in adapter.list_by_creator(bot)? {
             match creation_revision(self.src.history, &s.issue, s.creator_id) {
                 Ok(c) => {
                     let v = evaluate(
@@ -532,8 +442,7 @@ where
             }
         }
         let plan = plan_duplicates(&claims_from_verdicts(verdicts));
-        let mut adapter = self.adapter.clone();
-        let report = close_duplicates(&mut adapter, &plan);
+        let report = close_duplicates(adapter, &plan);
         info!(
             closed = report.closed.len(),
             failed = report.failed.len(),
@@ -543,10 +452,8 @@ where
     }
 }
 
-impl<S, A, T, K> RunHost for MirrorHost<'_, S, A, T, K>
+impl<T, K> RunHost for MirrorHost<'_, T, K>
 where
-    S: ShardStore,
-    A: TrackerAdapter,
     T: TicketSource,
     K: FieldSink,
 {
@@ -566,8 +473,8 @@ where
     }
 
     /// Recovery, update, create and reconcile work; the driver adds the sweep.
-    fn pending(&self) -> Vec<WorkItem> {
-        let shards = self.shards();
+    fn pending<S: ShardStore>(&self, store: &S) -> Vec<WorkItem> {
+        let shards = self.shards(store);
         let item = |class, age: u64, ticket: &str| WorkItem {
             class,
             age,
@@ -607,7 +514,7 @@ where
                 items.push(item(WorkClass::Create, age, &ulid));
             }
         }
-        items.extend(self.reconcile_items(&shards));
+        items.extend(self.reconcile_items(store, &shards));
         debug!(items = items.len(), "host: pending work");
         items
     }
@@ -618,20 +525,25 @@ where
     }
 
     /// Runs one item against the tracker and returns the shard to record.
-    fn execute(&mut self, item: &WorkItem) -> Result<Option<Shard>, ItemError> {
+    fn execute<S: ShardStore>(
+        &mut self,
+        item: &WorkItem,
+        store: &mut S,
+        adapter: &mut dyn TrackerAdapter,
+    ) -> Result<Option<Shard>, ItemError> {
         let ulid = item.ticket.as_str();
         debug!(ulid, class = ?item.class, "host: executing");
         match item.class {
-            WorkClass::Recovery => self.do_recover(ulid),
-            WorkClass::Update => self.do_update(ulid),
-            WorkClass::Create => self.do_create(ulid),
-            WorkClass::Reconcile | WorkClass::Sweep => self.do_reconcile(ulid),
+            WorkClass::Recovery => self.do_recover(store, ulid),
+            WorkClass::Update => self.do_update(store, ulid),
+            WorkClass::Create => self.do_create(store, adapter, ulid),
+            WorkClass::Reconcile | WorkClass::Sweep => self.do_reconcile(store, adapter, ulid),
         }
     }
 
     /// Closes this run's duplicate issues; a listing failure is logged and retried next run.
-    fn after_items(&mut self) {
-        if let Err(e) = self.close_duplicates() {
+    fn after_items(&mut self, adapter: &mut dyn TrackerAdapter) {
+        if let Err(e) = self.close_duplicates(adapter) {
             warn!(error = %e, "host: duplicate check failed, retried next run");
         }
     }

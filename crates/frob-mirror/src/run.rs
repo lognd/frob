@@ -55,7 +55,7 @@ pub trait RunHost {
     /// The current rate-limit headers.
     fn rate_limit(&self) -> RateLimit;
     /// Pending recovery, update, create and reconcile (feed) items; the driver adds the sweep.
-    fn pending(&self) -> Vec<WorkItem>;
+    fn pending<S: ShardStore>(&self, store: &S) -> Vec<WorkItem>;
     /// Every mirrored ticket ULID, the sweep's universe.
     fn sweep_universe(&self) -> Vec<String>;
     /// The ledger commit log, oldest first, own commits flagged; empty when the host has none.
@@ -66,14 +66,20 @@ pub trait RunHost {
     fn feed_cursor(&self) -> Option<String> {
         None
     }
-    /// Does one item; `Ok(None)` means nothing changed, `Ok(Some)` returns the shard to commit.
+    /// Does one item against the driver's `store` and `adapter`; `Ok(None)` means nothing
+    /// changed, `Ok(Some)` returns the shard to commit.
     ///
     /// # Errors
     /// `ItemError::RateLimited` stops the run; `ItemError::Failed` skips this ticket only.
-    fn execute(&mut self, item: &WorkItem) -> Result<Option<Shard>, ItemError>;
+    fn execute<S: ShardStore>(
+        &mut self,
+        item: &WorkItem,
+        store: &mut S,
+        adapter: &mut dyn TrackerAdapter,
+    ) -> Result<Option<Shard>, ItemError>;
     /// Per-run housekeeping after the items ran and before the final commit (for example
     /// closing duplicate issues); a failure is the host's to log and never fails the run.
-    fn after_items(&mut self) {}
+    fn after_items(&mut self, _adapter: &mut dyn TrackerAdapter) {}
 }
 
 /// How a run ended.
@@ -114,7 +120,7 @@ pub struct RunSummary {
 /// `MapError` when the store fails (corrupt record or lost CAS race).
 pub fn run<S: ShardStore, H: RunHost>(
     store: &mut S,
-    adapter: &dyn TrackerAdapter,
+    adapter: &mut dyn TrackerAdapter,
     host: &mut H,
     cfg: &RunConfig,
 ) -> Result<RunOutcome, MapError> {
@@ -133,11 +139,11 @@ pub fn run<S: ShardStore, H: RunHost>(
 /// The run body, executed while the writer lock is held.
 fn run_locked<S: ShardStore, H: RunHost>(
     store: &mut S,
-    adapter: &dyn TrackerAdapter,
+    adapter: &mut dyn TrackerAdapter,
     host: &mut H,
     cfg: &RunConfig,
 ) -> Result<RunOutcome, MapError> {
-    if let Err(e) = check_blind(adapter, cfg.bot_id) {
+    if let Err(e) = check_blind(&*adapter, cfg.bot_id) {
         let mir001 = e.to_string();
         warn!(%mir001, "mirror run: blind, nothing else runs");
         return Ok(RunOutcome::Stopped { mir001 });
@@ -158,7 +164,7 @@ fn run_locked<S: ShardStore, H: RunHost>(
         "mirror run: foreign ledger commits since watermark"
     );
     let mut writer = ProgressWriter::new(store, cfg.commit_every)?;
-    let mut items = host.pending();
+    let mut items = host.pending(writer.store());
     let universe = host.sweep_universe();
     items.extend(
         next_batch(&universe, writer.resume_after(), cfg.sweep_k)
@@ -176,7 +182,7 @@ fn run_locked<S: ShardStore, H: RunHost>(
     let (mut cursors, mut executed, mut failed) = (Cursors::default(), Vec::new(), Vec::new());
     let mut stop = StopReason::Completed;
     for item in &selected {
-        match host.execute(item) {
+        match host.execute(item, writer.store_mut(), &mut *adapter) {
             Ok(shard) => {
                 if let Some(shard) = shard {
                     writer.record(shard)?;
@@ -196,7 +202,7 @@ fn run_locked<S: ShardStore, H: RunHost>(
         }
     }
     if matches!(stop, StopReason::Completed) {
-        host.after_items();
+        host.after_items(&mut *adapter);
     }
     // The feed cursor moves only when every reconcile item was done: otherwise the unprocessed
     // issues would fall behind it and never be seen again.
@@ -384,7 +390,7 @@ mod tests {
                 reset: Some(5),
             }
         }
-        fn pending(&self) -> Vec<WorkItem> {
+        fn pending<S: ShardStore>(&self, _store: &S) -> Vec<WorkItem> {
             self.items.clone()
         }
         fn sweep_universe(&self) -> Vec<String> {
@@ -396,14 +402,19 @@ mod tests {
         fn feed_cursor(&self) -> Option<String> {
             self.cursor.clone()
         }
-        fn execute(&mut self, item: &WorkItem) -> Result<Option<Shard>, ItemError> {
+        fn execute<S: ShardStore>(
+            &mut self,
+            item: &WorkItem,
+            _store: &mut S,
+            _adapter: &mut dyn TrackerAdapter,
+        ) -> Result<Option<Shard>, ItemError> {
             self.calls.push((item.class, item.ticket.clone()));
             if self.bad.as_deref() == Some(item.ticket.as_str()) {
                 return Err(ItemError::Failed("cannot render".into()));
             }
             Ok(self.changes.then(|| Shard::new(&item.ticket)))
         }
-        fn after_items(&mut self) {
+        fn after_items(&mut self, _adapter: &mut dyn TrackerAdapter) {
             self.after += 1;
         }
     }
@@ -444,7 +455,7 @@ mod tests {
         let mut host = Host::new(vec![item(WorkClass::Update, "u")], true);
         ran(run(
             &mut Mem::default(),
-            &Fake { visible: true },
+            &mut Fake { visible: true },
             &mut host,
             &cfg(),
         )
@@ -465,7 +476,7 @@ mod tests {
         let mut host = Host::new(items, true);
         host.universe = vec!["s".into()];
         let mut store = Mem::default();
-        let out = run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap();
+        let out = run(&mut store, &mut Fake { visible: true }, &mut host, &cfg()).unwrap();
         let s = ran(out);
         let classes: Vec<_> = s.executed.iter().map(|(c, _)| *c).collect();
         assert_eq!(classes, [Recovery, Update, Create, Reconcile, Sweep]);
@@ -479,7 +490,7 @@ mod tests {
         let mut host = Host::new(vec![item(WorkClass::Reconcile, "r")], false);
         host.cursor.clone_from(&cursor);
         let mut store = Mem::default();
-        run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap();
+        run(&mut store, &mut Fake { visible: true }, &mut host, &cfg()).unwrap();
         let index = crate::progress::read_index(&store).unwrap();
         assert_eq!(index.change_feed, cursor);
 
@@ -487,7 +498,7 @@ mod tests {
         held.cursor.clone_from(&cursor);
         held.bad = Some("r".into());
         let mut store = Mem::default();
-        run(&mut store, &Fake { visible: true }, &mut held, &cfg()).unwrap();
+        run(&mut store, &mut Fake { visible: true }, &mut held, &cfg()).unwrap();
         assert_eq!(
             crate::progress::read_index(&store).unwrap().change_feed,
             None
@@ -499,7 +510,7 @@ mod tests {
     fn converged_state_changes_nothing() {
         let mut host = Host::new(vec![item(WorkClass::Update, "u")], false);
         let mut store = Mem::default();
-        let s = ran(run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap());
+        let s = ran(run(&mut store, &mut Fake { visible: true }, &mut host, &cfg()).unwrap());
         assert_eq!(s.report.committed_ops, 0);
         assert!(!store.puts.iter().any(|k| k == "index" || k == "u"));
     }
@@ -509,7 +520,7 @@ mod tests {
     fn blind_run_stops_with_mir001_and_does_nothing() {
         let mut host = Host::new(vec![item(WorkClass::Update, "u")], true);
         let mut store = Mem::default();
-        let out = run(&mut store, &Fake { visible: false }, &mut host, &cfg()).unwrap();
+        let out = run(&mut store, &mut Fake { visible: false }, &mut host, &cfg()).unwrap();
         match out {
             RunOutcome::Stopped { mir001 } => assert!(mir001.contains("MIR001 token-blind")),
             other => panic!("expected stop, got {other:?}"),
@@ -529,7 +540,7 @@ mod tests {
         let mut host = Host::new(items, true);
         host.bad = Some("b".into());
         let mut store = Mem::default();
-        let s = ran(run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap());
+        let s = ran(run(&mut store, &mut Fake { visible: true }, &mut host, &cfg()).unwrap());
         assert_eq!(s.failed, [("b".to_string(), "cannot render".to_string())]);
         let done: Vec<_> = s.executed.iter().map(|(_, t)| t.as_str()).collect();
         assert_eq!(done, ["a", "c"]);
@@ -541,7 +552,7 @@ mod tests {
         let mut store = Mem::default();
         lock::acquire(&mut store, "other", 100, 3600).unwrap();
         let mut host = Host::new(vec![item(WorkClass::Update, "u")], true);
-        let out = run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap();
+        let out = run(&mut store, &mut Fake { visible: true }, &mut host, &cfg()).unwrap();
         assert_eq!(
             out,
             RunOutcome::Busy {
@@ -563,11 +574,11 @@ mod tests {
         lock::write_watermark(&mut store, "c1").unwrap();
         let mut host = Host::new(vec![], false);
         host.log = vec![commit("c1", false), commit("c2", true), commit("c3", false)];
-        let s = ran(run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap());
+        let s = ran(run(&mut store, &mut Fake { visible: true }, &mut host, &cfg()).unwrap());
         assert_eq!(s.new_commits, 1);
         assert_eq!(s.watermark.as_deref(), Some("c3"));
         assert_eq!(lock::read_watermark(&store).unwrap().unwrap().commit, "c3");
-        let again = ran(run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap());
+        let again = ran(run(&mut store, &mut Fake { visible: true }, &mut host, &cfg()).unwrap());
         assert_eq!(again.new_commits, 0);
         assert_eq!(again.watermark, None);
     }
@@ -580,7 +591,7 @@ mod tests {
         let mut host = Host::new(vec![item(WorkClass::Update, "b")], true);
         host.bad = Some("b".into());
         host.log = vec![commit("c1", false)];
-        let s = ran(run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap());
+        let s = ran(run(&mut store, &mut Fake { visible: true }, &mut host, &cfg()).unwrap());
         assert_eq!(s.watermark, None);
         assert!(lock::read_watermark(&store).unwrap().is_none());
     }
