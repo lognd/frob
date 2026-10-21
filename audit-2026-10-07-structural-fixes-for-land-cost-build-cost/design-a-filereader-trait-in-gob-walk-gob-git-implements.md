@@ -2,13 +2,13 @@
 id = "01M4Q3A2SA49G06ZVAN753TYM2"
 title = "Design A: FileReader trait in gob-walk (gob-git implements), callers take an injected reader"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-12T03:43:10Z"
-updated = "2026-10-12T03:43:10Z"
+updated = "2026-10-21T13:49:50Z"
 scope = ["crates/gob-walk/**", "crates/gob-git/**", "changelog.d/**"]
 
 [[links]]
