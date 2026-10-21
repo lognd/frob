@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs", "crates/frob/tests/it/board.rs"]
+new = ["crates/frob-pm/src/board.rs", "crates/frob/src/board_cmd.rs", "crates/frob/tests/it/board.rs", "changelog.d/01M5DTGGF23J4TQX4DPWASSQCF.added.md"]
+at = "2026-10-21T01:16:08Z"
+actor = "lognd"
+rev = 1
