@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T09:47:50Z"
+digest = "84a5166269341173a3d92c10a222ccdabe981474e4cbff479335b0da506484c9"
+exit_code = 0
+head = "000c394f34e332c860d4c2719bd527d41dc721ce"
+inline = '''
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e6b52553-0bc0-4be8-9cd9-21db79431dae with nextest profile: default
+    Starting 1 test across 8 binaries (189 tests skipped)
+        PASS [   0.006s] frob-mirror run::tests::update_class_rotates_across_runs_under_a_small_budget
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 189 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror update_class_rotates_across_runs"
+size = 636
+status = "measured"
+test_count = 1
+tests_digest = "c1d11c975e0922b8d8cf04e8144f5503453e91378433e9b46c29a68536499180"
+at = "2026-10-21T09:47:50Z"
+actor = "lognd"
+rev = 1
