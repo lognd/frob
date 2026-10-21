@@ -11,7 +11,7 @@ use tracing::{debug, info, warn};
 use crate::adapter::TrackerAdapter;
 use crate::blind::check_blind;
 use crate::budget::{self, BudgetConfig, RateLimit};
-use crate::lock::{self, Acquire};
+use crate::lock::{self, Acquire, LedgerCommit};
 use crate::mapfile::{MapError, Shard, ShardStore};
 use crate::plan::{Cursors, WorkClass, WorkItem, select};
 use crate::progress::{ProgressWriter, RunReport, StopReason};
@@ -58,6 +58,10 @@ pub trait RunHost {
     fn pending(&self) -> Vec<WorkItem>;
     /// Every mirrored ticket ULID, the sweep's universe.
     fn sweep_universe(&self) -> Vec<String>;
+    /// The ledger commit log, oldest first, own commits flagged; empty when the host has none.
+    fn ledger_commits(&self) -> Vec<LedgerCommit> {
+        Vec::new()
+    }
     /// Does one item; `Ok(None)` means nothing changed, `Ok(Some)` returns the shard to commit.
     ///
     /// # Errors
@@ -91,6 +95,10 @@ pub struct RunSummary {
     pub executed: Vec<(WorkClass, String)>,
     /// Tickets that failed, with the reason; they never stopped the others.
     pub failed: Vec<(String, String)>,
+    /// Foreign ledger commits seen after the watermark when the run began.
+    pub new_commits: usize,
+    /// The watermark after the run, when it was advanced.
+    pub watermark: Option<String>,
 }
 
 /// Runs one mirror pass: lock, blindness, budget, classes in priority, commit, release.
@@ -135,6 +143,13 @@ fn run_locked<S: ShardStore, H: RunHost>(
             return Ok(RunOutcome::Stopped { mir001 });
         }
     };
+    let log = host.ledger_commits();
+    let prior = lock::read_watermark(store)?;
+    let new_commits = lock::pending_commits(prior.as_ref(), &log).len();
+    debug!(
+        new_commits,
+        "mirror run: foreign ledger commits since watermark"
+    );
     let mut writer = ProgressWriter::new(store, cfg.commit_every)?;
     let mut items = host.pending();
     let universe = host.sweep_universe();
@@ -173,6 +188,7 @@ fn run_locked<S: ShardStore, H: RunHost>(
         }
     }
     let report = writer.finish(stop)?;
+    let watermark = advance_watermark(store, &log, prior.as_ref(), &stop, failed.is_empty())?;
     info!(
         executed = executed.len(),
         failed = failed.len(),
@@ -182,7 +198,33 @@ fn run_locked<S: ShardStore, H: RunHost>(
         report,
         executed,
         failed,
+        new_commits,
+        watermark,
     }))
+}
+
+/// Advances the watermark to the log head after a clean, complete run; otherwise leaves it so
+/// the unfinished commits are seen again. Returns the new watermark when it moved.
+fn advance_watermark<S: ShardStore>(
+    store: &mut S,
+    log: &[LedgerCommit],
+    prior: Option<&lock::Watermark>,
+    stop: &StopReason,
+    clean: bool,
+) -> Result<Option<String>, MapError> {
+    let Some(head) = log.last() else {
+        return Ok(None);
+    };
+    if !clean || !matches!(stop, StopReason::Completed) {
+        info!("mirror run: incomplete, watermark held");
+        return Ok(None);
+    }
+    if prior.is_some_and(|w| w.commit == head.id) {
+        return Ok(None);
+    }
+    lock::write_watermark(store, &head.id)?;
+    info!(commit = %head.id, "mirror run: watermark advanced");
+    Ok(Some(head.id.clone()))
 }
 
 #[cfg(test)]
@@ -292,6 +334,7 @@ mod tests {
         universe: Vec<String>,
         changes: bool,
         bad: Option<String>,
+        log: Vec<LedgerCommit>,
         calls: Vec<(WorkClass, String)>,
     }
 
@@ -302,6 +345,7 @@ mod tests {
                 universe: vec![],
                 changes,
                 bad: None,
+                log: vec![],
                 calls: vec![],
             }
         }
@@ -319,6 +363,9 @@ mod tests {
         }
         fn sweep_universe(&self) -> Vec<String> {
             self.universe.clone()
+        }
+        fn ledger_commits(&self) -> Vec<LedgerCommit> {
+            self.log.clone()
         }
         fn execute(&mut self, item: &WorkItem) -> Result<Option<Shard>, ItemError> {
             self.calls.push((item.class, item.ticket.clone()));
@@ -434,5 +481,39 @@ mod tests {
             }
         );
         assert!(host.calls.is_empty());
+    }
+
+    fn commit(id: &str, own: bool) -> LedgerCommit {
+        LedgerCommit { id: id.into(), own }
+    }
+
+    // frob:tests run
+    // frob:tests advance_watermark
+    #[test]
+    fn clean_run_advances_watermark_and_skips_own_commits() {
+        let mut store = Mem::default();
+        lock::write_watermark(&mut store, "c1").unwrap();
+        let mut host = Host::new(vec![], false);
+        host.log = vec![commit("c1", false), commit("c2", true), commit("c3", false)];
+        let s = ran(run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap());
+        assert_eq!(s.new_commits, 1);
+        assert_eq!(s.watermark.as_deref(), Some("c3"));
+        assert_eq!(lock::read_watermark(&store).unwrap().unwrap().commit, "c3");
+        let again = ran(run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap());
+        assert_eq!(again.new_commits, 0);
+        assert_eq!(again.watermark, None);
+    }
+
+    // frob:tests run
+    // frob:tests advance_watermark
+    #[test]
+    fn failed_ticket_holds_the_watermark() {
+        let mut store = Mem::default();
+        let mut host = Host::new(vec![item(WorkClass::Update, "b")], true);
+        host.bad = Some("b".into());
+        host.log = vec![commit("c1", false)];
+        let s = ran(run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap());
+        assert_eq!(s.watermark, None);
+        assert!(lock::read_watermark(&store).unwrap().is_none());
     }
 }
