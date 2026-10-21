@@ -2103,7 +2103,7 @@ mod tests {
         let here = Path::new("/wt/series");
         assert_eq!(sole_holder(&[a], here).unwrap(), a);
         let code = |r: Result<TicketId, LandError>| match r {
-            Err(LandError::Refused(r)) => r.code.to_string(),
+            Err(LandError::Refused(r)) => r.code.clone(),
             other => panic!("expected a refusal, got {other:?}"),
         };
         assert_eq!(code(sole_holder(&[a, b], here)), "E-LAND-AMBIGUOUS");
