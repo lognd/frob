@@ -11,7 +11,7 @@ created = "2026-10-04T11:30:15Z"
 updated = "2026-10-21T11:19:01Z"
 idempotency_key = "crunk-plan-web_WEBPERF-assets"
 labels = ["area:crunk"]
-scope = ["packs/crunk-web/rules/webperf-assets/**", "packs/crunk-web/tests/webperf-assets/**", "packs/crunk-web/pack.toml", "crates/crunk-check/src/packs.rs", "crates/crunk-check/tests/crunk_web_pack.rs"]
+scope = ["packs/crunk-web/rules/webperf-assets/**", "packs/crunk-web/tests/webperf-assets/**", "packs/crunk-web/pack.toml", "crates/crunk-check/src/packs.rs", "crates/crunk-check/tests/crunk_web_pack.rs", "docs/crunk/packs/crunk-web.md"]
 
 [[links]]
 kind = "blocked-by"
