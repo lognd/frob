@@ -459,6 +459,11 @@ impl Command for Check {
         data.notes.extend(crate::proposals_summary::summary_line(
             data.pending_proposals,
         ));
+        // frob:ticket 01M3ZX81ZPA8J5RXBEZ14SZNSZ
+        if !self.fix {
+            data.notes
+                .extend(crate::summary::fix_summary_for(&report.findings));
+        }
         if report.exit_code() == ExitCode::Negative {
             let c = data.counts;
             let summary = format!(

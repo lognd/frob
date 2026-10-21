@@ -46,6 +46,7 @@ pub mod proposals_summary;
 mod scope;
 mod sibling;
 mod snapshot;
+mod summary;
 mod typefacts;
 mod verb;
 
