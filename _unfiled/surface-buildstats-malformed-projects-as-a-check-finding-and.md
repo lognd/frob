@@ -12,7 +12,7 @@ scope = ["crates/gob-check/src", "crates/gob-check/src/product.rs", "crates/gob-
 
 [[acceptance]]
 text = "Given a malformed .csproj or .sln, when gob-check runs, then a finding names the file and the project is marked Unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given several malformed projects (.csproj and .sln, duplicates, or already unreadable), when gob-check runs, then each file gets exactly one required Unresolved READ001 finding carrying its reason"
