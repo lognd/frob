@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-21T09:27:09Z"
-updated = "2026-10-21T09:48:52Z"
+updated = "2026-10-21T09:52:02Z"
 scope = ["crates/frob-mirror/src/run.rs", "docs/design/mirror.md", "changelog.d/01M5EWJDDGZS0G0346T3A6WZ0W.fixed.md"]
 
 [[acceptance]]
