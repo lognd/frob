@@ -4,10 +4,11 @@ title = "Persist claim holds, pauses and reclaim records (lease op hold/resume/r
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T01:16:06Z"
-updated = "2026-10-21T01:16:06Z"
+updated = "2026-10-21T01:16:18Z"
 idempotency_key = "dt14-persist-hold-store"
 +++
 
