@@ -1,0 +1,41 @@
+kind = "evidence"
+captured_at = "2026-10-21T02:36:04Z"
+digest = "56c9ef09f1f3f5f9227ed15621919cc83cb54224b585868a5215887071b41b08"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling tracing-core v0.1.36
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling serde_json v1.0.151
+   Compiling serde_derive_internals v0.30.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive v1.0.229
+   Compiling ref-cast v1.0.27
+   Compiling schemars_derive v1.2.2
+   Compiling tracing-attributes v0.1.31
+   Compiling serde v1.0.229
+   Compiling tracing v0.1.44
+   Compiling schemars v1.2.2
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a4a69443-66d6-446e-a0a2-4af165f5d1ba with nextest profile: default
+    Starting 1 test across 2 binaries (10 tests skipped)
+        PASS [   0.007s] gob-time::time local_offset_is_a_valid_whole_zone_offset
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-time local_offset"
+size = 1238
+status = "measured"
+test_count = 1
+tests_digest = "7c507befddfd978f9185b73adab8759d912b12b533ba21f3436cb48455579344"
+at = "2026-10-21T02:36:04Z"
+actor = "lognd"
+rev = 1
