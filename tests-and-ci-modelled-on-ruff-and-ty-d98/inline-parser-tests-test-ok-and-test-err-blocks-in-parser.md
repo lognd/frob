@@ -8,12 +8,12 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:01Z"
-updated = "2026-10-21T14:10:50Z"
+updated = "2026-10-21T14:39:18Z"
 scope = ["crates/gob-dev/**", "crates/gob-plan/**", "crates/grimble-model/**", "crates/gob-directives/**", "crates/crunk-spec/**"]
 
 [[acceptance]]
 text = "at least five test_ok and five test_err blocks per parser"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a stale extraction fails cargo dev gen --check"

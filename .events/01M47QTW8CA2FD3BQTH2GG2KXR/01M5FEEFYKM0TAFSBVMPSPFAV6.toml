@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T14:39:18Z"
+digest = "ff55703db1866255904cb1037609b3b58c6d006acbd46725c1dc4222f9b17491"
+exit_code = 0
+head = "3e344926288a77bb0c59fe791b3f8d989bf05a52"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling getrandom v0.3.4
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.98s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1dd834ca-b007-4dfe-ab40-05034c58ed1e with nextest profile: default
+    Starting 1 test across 7 binaries (91 tests skipped)
+        PASS [   0.006s] gob-directives::scan markdown_inline_code_span_directive_is_text
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 91 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives inline"
+size = 1168
+status = "measured"
+test_count = 1
+tests_digest = "0b80673b79f1a1001ea8516b9deaaadeaa7ea102a3cc111a4929e2c116346b7d"
+at = "2026-10-21T14:39:18Z"
+actor = "lognd"
+rev = 1
