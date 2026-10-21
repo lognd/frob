@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T10:25:21Z"
+digest = "8e96f59246cc7583063eff2f1c806553f321908c0dcf2626b4cf92e4e6fd9770"
+exit_code = 0
+head = "dd4645c737794d8a39230d3e1822b4ecb68dc4c6"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 84dba1f4-d8bf-40ed-84cd-88bc202858d9 with nextest profile: default
+    Starting 2 tests across 4 binaries (55 tests skipped)
+        PASS [   0.008s] frob-obligations comments::tests::lines_cover_exactly_the_shared_corpus_spans
+        PASS [   2.609s] frob-obligations::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.609s] 2 tests run: 2 passed, 55 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations corpus"
+size = 792
+status = "measured"
+test_count = 2
+tests_digest = "770a8cfc9fbcc6b17d68ee8527309d546f9ff972e40a80a36c62d62b0e048883"
+at = "2026-10-21T10:25:21Z"
+actor = "lognd"
+rev = 1
