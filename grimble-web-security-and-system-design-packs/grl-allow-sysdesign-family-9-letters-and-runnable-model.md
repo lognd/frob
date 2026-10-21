@@ -2,7 +2,8 @@
 id = "01M5F1EZSNXY1H1S3CP8AJJH4Q"
 title = "GRL: allow SYSDESIGN family (9 letters) and runnable model example input"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
