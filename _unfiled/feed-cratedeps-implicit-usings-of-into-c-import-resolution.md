@@ -2,12 +2,12 @@
 id = "01M47RDFJX56SCTFTZJRQ1SC2B"
 title = "Feed CrateDeps::implicit_usings_of into C# import resolution"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-06T04:44:11Z"
-updated = "2026-10-21T23:15:45Z"
+updated = "2026-10-21T23:15:56Z"
 scope = ["crates/gob-symbols/src/csharp.rs"]
 
 [[acceptance]]
