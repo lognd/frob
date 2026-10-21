@@ -8,10 +8,10 @@ points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:26Z"
-updated = "2026-10-21T10:27:08Z"
+updated = "2026-10-21T10:32:15Z"
 idempotency_key = "m2-ci"
 labels = ["milestone:2"]
-scope = ["crates/grimble-ci/**", "changelog.d/01M3Z7157776CWEKRPG8886VJ4.added.md", "docs/design/cicd.md"]
+scope = ["crates/grimble-ci/**", "changelog.d/01M3Z7157776CWEKRPG8886VJ4.added.md", "docs/design/cicd.md", "docs/reference/rules/**"]
 
 [[links]]
 kind = "blocked-by"
