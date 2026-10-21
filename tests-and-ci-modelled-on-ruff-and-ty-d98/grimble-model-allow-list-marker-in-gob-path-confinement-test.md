@@ -13,7 +13,7 @@ scope = ["crates/grimble-model/tests/inline.rs", "changelog.d/01M5FNMENEHRENY71N
 
 [[acceptance]]
 text = "The gob-path allow_list_matches_markers test passes: grimble-model no longer carries the confinement marker and ALLOW is unchanged"
-bound = false
+bound = true
 +++
 
 Found while landing KHR84D9; failing test on experimental. Fix or waive with reason.

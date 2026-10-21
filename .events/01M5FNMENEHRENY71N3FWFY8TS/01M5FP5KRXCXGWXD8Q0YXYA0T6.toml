@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T16:52:53Z"
+digest = "46f70b5c957d4f9237fbd38f34c0ea2d0e3ca07af67500f4703c379ff4ab368e"
+exit_code = 0
+head = "9d52a03d6bc5e934b72a602b2fc156d9cd311245"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 54465800-86e4-4ee2-9e50-71f650439896 with nextest profile: default
+    Starting 1 test across 3 binaries (8 tests skipped)
+        PASS [   0.041s] gob-path::confinement allow_list_matches_markers
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.042s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-path allow_list_matches_markers"
+size = 652
+status = "measured"
+test_count = 1
+tests_digest = "61e05c12f9e9f4ba41dbbe6cd1702b91ef029a774a77b7a063e38439b7b99836"
+at = "2026-10-21T16:52:53Z"
+actor = "lognd"
+rev = 1
