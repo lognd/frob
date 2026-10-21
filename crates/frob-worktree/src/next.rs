@@ -13,7 +13,7 @@ use std::collections::HashSet;
 
 use frob_ledger::TicketId;
 use frob_ledger::claim_agent::{ActivityTimes, observation_for};
-use frob_ledger::claim_window::EVICT_NOTE_MARKER;
+use frob_ledger::claim_hold::ClaimRecord;
 use frob_ledger::claim_window::{ClaimWindows, EVICT_NOTE_MARKER, HolderKind};
 use frob_ledger::event::{Event, EventBody, LeaseData, LeaseOp};
 use frob_ledger::guards::NoLeases;
