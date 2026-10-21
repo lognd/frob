@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked by lease overlap with G86WKD4 on convert.rs and ten_rules/main.rs; retake after it lands"
+at = "2026-10-21T22:27:53Z"
+actor = "lognd"
+rev = 1
