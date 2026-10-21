@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:18Z"
-updated = "2026-10-21T10:25:29Z"
+updated = "2026-10-21T10:33:41Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", ".github/scripts/plan-jobs.py", "docs/crunk/ci.md", "docs/design/build-test-ci.md", "changelog.d/01M47QVD03PGCAZ301WHC5Q4MF.added.md", "crates/gob-dev/changes.toml"]
 
 [[acceptance]]
