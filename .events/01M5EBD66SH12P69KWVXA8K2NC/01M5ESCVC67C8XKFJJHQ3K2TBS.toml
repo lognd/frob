@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob train status lists queued tickets whose branch history has a base merge that dropped their own hunks"]
+moved = []
+at = "2026-10-21T08:31:41Z"
+actor = "lognd"
+rev = 1
