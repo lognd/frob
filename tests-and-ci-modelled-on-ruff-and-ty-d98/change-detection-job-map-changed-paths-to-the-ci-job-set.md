@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:18Z"
-updated = "2026-10-21T10:25:28Z"
+updated = "2026-10-21T10:25:29Z"
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", ".github/scripts/plan-jobs.py", "docs/crunk/ci.md", "docs/design/build-test-ci.md", "changelog.d/01M47QVD03PGCAZ301WHC5Q4MF.added.md", "crates/gob-dev/changes.toml"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "the mapping has a unit test per class"
-bound = false
+bound = true
 +++
 
 build-test-ci.md section 6, ruff determine_changes. A first changes step in cargo dev ci (and job in ci.yml) maps the diff to job sets: Rust, docs only, workflows, crunk node and playwright (~2H41VF1). A docs-only PR runs fmt, gen check and frob check only. The mapping is data in gob-dev with a test per class.

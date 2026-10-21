@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T10:25:29Z"
+digest = "c131dbe8dc2dd91a1cb59490c34e26f8a1b50228ca9f94bc77eacd9f8a09a51b"
+exit_code = 0
+head = "dd4645c737794d8a39230d3e1822b4ecb68dc4c6"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 22930e1f-9634-47ad-9ae5-92af12c1346a with nextest profile: default
+    Starting 8 tests across 9 binaries (164 tests skipped)
+        PASS [   0.010s] gob-dev changes::tests::rust_diff_selects_the_full_set
+        PASS [   0.010s] gob-dev changes::tests::docs_only_diff_selects_only_fmt_gen_and_check
+        PASS [   0.015s] gob-dev changes::tests::render_prints_key_value_lines
+        PASS [   0.015s] gob-dev changes::tests::an_empty_diff_is_not_docs_only
+        PASS [   0.015s] gob-dev changes::tests::workflow_diff_sets_the_workflows_flag_and_runs_everything
+        PASS [   0.015s] gob-dev changes::tests::crunk_diff_runs_the_crunk_job_not_the_workspace
+        PASS [   0.015s] gob-dev changes::tests::unknown_class_names_are_rejected
+        PASS [   0.016s] gob-dev changes::tests::node_diff_selects_the_node_and_playwright_job
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 8 tests run: 8 passed, 164 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev changes::tests"
+size = 1184
+status = "measured"
+test_count = 8
+tests_digest = "28b72261fd32a5f24f23a05f61b55d02c459a5ad2499107b105901728e68d1c9"
+at = "2026-10-21T10:25:29Z"
+actor = "lognd"
+rev = 1
