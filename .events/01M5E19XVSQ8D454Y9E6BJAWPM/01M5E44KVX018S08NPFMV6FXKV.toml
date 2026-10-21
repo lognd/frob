@@ -1,0 +1,74 @@
+kind = "evidence"
+captured_at = "2026-10-21T02:19:33Z"
+digest = "18536c1ad02e3602c025f4feaecf8b5d72be8fd1dae7ad5669c3a9761ca70ef0"
+exit_code = 101
+inline = """
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+error[E0252]: the name `EVICT_NOTE_MARKER` is defined multiple times
+  --> crates/frob-worktree/src/next.rs:17:47
+   |
+16 | use frob_ledger::claim_window::EVICT_NOTE_MARKER;
+   |     -------------------------------------------- previous import of the value `EVICT_NOTE_MARKER` here
+17 | use frob_ledger::claim_window::{ClaimWindows, EVICT_NOTE_MARKER, HolderKind};
+   |                                               ^^^^^^^^^^^^^^^^^--
+   |                                               |
+   |                                               `EVICT_NOTE_MARKER` reimported here
+   |                                               help: remove unnecessary import
+   |
+   = note: `EVICT_NOTE_MARKER` must be defined only once in the value namespace of this module
+
+error[E0425]: cannot find type `ClaimRecord` in this scope
+  --> crates/frob-worktree/src/next.rs:84:21
+   |
+84 |     pub record: &'a ClaimRecord,
+   |                     ^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find type `ClaimRecord` in this scope
+   --> crates/frob-worktree/src/next.rs:132:14
+    |
+132 |     record: &ClaimRecord,
+    |              ^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find type `ClaimRecord` in this scope
+   --> crates/frob-worktree/src/next.rs:158:17
+    |
+158 |     ) -> Result<ClaimRecord, WorktreeError> {
+    |                 ^^^^^^^^^^^ not found in this scope
+    |
+help: you might be missing a type parameter
+    |
+150 | impl<ClaimRecord> Workspace<'_> {
+    |     +++++++++++++
+
+warning: unused import: `EVICT_NOTE_MARKER`
+  --> crates/frob-worktree/src/next.rs:17:47
+   |
+17 | use frob_ledger::claim_window::{ClaimWindows, EVICT_NOTE_MARKER, HolderKind};
+   |                                               ^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+error[E0433]: cannot find type `ClaimRecord` in this scope
+   --> crates/frob-worktree/src/next.rs:433:20
+    |
+433 |         let none = ClaimRecord::default();
+    |                    ^^^^^^^^^^^ use of undeclared type `ClaimRecord`
+
+Some errors have detailed explanations: E0252, E0425.
+For more information about an error, try `rustc --explain E0252`.
+warning: `frob-worktree` (lib) generated 1 warning
+error: could not compile `frob-worktree` (lib) due to 4 previous errors; 1 warning emitted
+warning: build failed, waiting for other jobs to finish...
+Some errors have detailed explanations: E0252, E0425, E0433.
+warning: `frob-worktree` (lib test) generated 1 warning (1 duplicate)
+error: could not compile `frob-worktree` (lib test) due to 5 previous errors; 1 warning emitted
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package frob-worktree` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p frob-worktree claim_evict"
+size = 2893
+status = "measured"
+at = "2026-10-21T02:19:33Z"
+actor = "lognd"
+rev = 1
