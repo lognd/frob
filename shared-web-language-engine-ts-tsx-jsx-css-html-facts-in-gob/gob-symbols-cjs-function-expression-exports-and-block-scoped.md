@@ -2,13 +2,13 @@
 id = "01M4828JQJKETWWCRQGJCXJ4VH"
 title = "gob-symbols: CJS function-expression exports and block-scoped binders for TS/JS"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T07:36:16Z"
-updated = "2026-10-21T23:15:45Z"
+updated = "2026-10-21T23:16:02Z"
 scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/src/graph/typescript.rs"]
 
 [[acceptance]]
