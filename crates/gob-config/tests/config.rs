@@ -201,3 +201,131 @@ fn inventory_lists_derived_tables() {
 fn describe_carries_docs_and_defaults() {
     insta::assert_debug_snapshot!(Tickets::describe());
 }
+
+/// One row of a table-valued knob.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+struct Row {
+    /// Source module.
+    from: String,
+    /// Target module.
+    to: u32,
+}
+
+/// A self-referential definition.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
+struct Node {
+    /// Child nodes.
+    children: Vec<Node>,
+}
+
+/// Table with row-typed knobs.
+#[derive(Debug, ConfigTable)]
+#[config(table = "rows")]
+struct Rows {
+    /// Rows.
+    #[config(default = Vec::new())]
+    list: Vec<Row>,
+    /// A tree.
+    #[config(default = Vec::new())]
+    tree: Vec<Node>,
+}
+
+/// More row-typed knobs, sharing the `Row` definition with `Rows`.
+#[derive(Debug, ConfigTable)]
+#[config(table = "rows.more")]
+struct MoreRows {
+    /// Rows again.
+    #[config(default = Vec::new())]
+    list: Vec<Row>,
+}
+
+/// Every `#/$defs/NAME` link under `node`.
+fn refs_in(node: &serde_json::Value, out: &mut Vec<String>) {
+    match node {
+        serde_json::Value::Object(m) => {
+            if let Some(r) = m.get("$ref").and_then(|r| r.as_str()) {
+                out.push(r.to_owned());
+            }
+            m.values().for_each(|v| refs_in(v, out));
+        }
+        serde_json::Value::Array(a) => a.iter().for_each(|v| refs_in(v, out)),
+        _ => {}
+    }
+}
+
+fn row_schema() -> serde_json::Value {
+    let (r, m) = (Rows::describe(), MoreRows::describe());
+    let (dr, dm) = (Rows::default(), MoreRows::default());
+    assert!(dr.list.is_empty() && dr.tree.is_empty() && dm.list.is_empty());
+    schema(&[&r, &m])
+}
+
+#[test]
+fn schema_ref_links_resolve_to_defs() {
+    let doc = row_schema();
+    let mut refs = Vec::new();
+    refs_in(&doc, &mut refs);
+    assert!(refs.len() >= 3, "{refs:?}");
+    for r in refs {
+        let target = r.strip_prefix('#').and_then(|p| doc.pointer(p));
+        assert!(target.is_some(), "dangling {r}");
+    }
+}
+
+// frob:tests crates/gob-config/src/describe.rs::schema_of
+#[test]
+fn schema_types_row_columns() {
+    let doc = row_schema();
+    let props = &doc["$defs"]["Row"]["properties"];
+    assert_eq!(props["from"]["type"], "string");
+    assert_eq!(props["to"]["type"], "integer");
+    assert_eq!(
+        doc["properties"]["rows"]["properties"]["list"]["items"]["$ref"],
+        "#/$defs/Row"
+    );
+}
+
+#[test]
+fn schema_defs_merge_once_and_allow_recursion() {
+    let doc = row_schema();
+    let defs = doc["$defs"].as_object().unwrap();
+    assert_eq!(defs.len(), 2, "{:?}", defs.keys().collect::<Vec<_>>());
+    assert_eq!(
+        defs["Node"]["properties"]["children"]["items"]["$ref"],
+        "#/$defs/Node"
+    );
+    let field = &doc["properties"]["rows"]["properties"]["list"];
+    assert!(
+        field.get("$defs").is_none(),
+        "carried defs must be lifted: {field}"
+    );
+}
+
+#[test]
+fn schema_without_refs_has_no_defs() {
+    let (t, l) = descs();
+    assert!(schema(&[&t, &l]).get("$defs").is_none());
+}
+
+#[test]
+fn shipped_schema_types_forbid_import_columns() {
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../docs/schemas/config.json"
+    );
+    let doc: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let mut refs = Vec::new();
+    refs_in(&doc, &mut refs);
+    assert!(refs.iter().any(|r| r == "#/$defs/ForbidImport"));
+    for r in &refs {
+        assert!(
+            doc.pointer(r.strip_prefix('#').unwrap()).is_some(),
+            "dangling {r}"
+        );
+    }
+    let cols = doc["$defs"]["ForbidImport"]["properties"]
+        .as_object()
+        .unwrap();
+    assert!(!cols.is_empty());
+}
