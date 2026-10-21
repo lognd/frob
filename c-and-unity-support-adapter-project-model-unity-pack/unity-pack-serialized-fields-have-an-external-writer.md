@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:01Z"
-updated = "2026-10-21T17:43:28Z"
+updated = "2026-10-21T17:43:29Z"
 idempotency_key = "d94-serial"
 scope = ["packs/unity.toml", "crates/gob-ir/**", "crates/frob-obligations/**", "docs/design/packs.md", "crates/frob-tests/src/reach.rs"]
 
@@ -38,7 +38,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a static, const or readonly member carrying [SerializeField], when the pack is enabled, then it is still reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a field assigned in code, or a file outside the pack paths, then assigned fields are never reported and out-of-path serialized fields are reported"
