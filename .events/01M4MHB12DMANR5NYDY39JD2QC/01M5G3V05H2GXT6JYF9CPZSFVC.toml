@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T20:53:25Z"
+digest = "311e3bf366ef0d71cf781a5da8ecf18e5d91b4155a8316e59b5e7ce18d6c5ef0"
+exit_code = 0
+head = "931de5e2de336cf7638bd4f128723084d6394a40"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dfb4b583-53b3-4202-a9b6-29bdefe6ff9b with nextest profile: default
+    Starting 2 tests across 2 binaries (10 tests skipped)
+        PASS [   0.005s] crunk-fix::fix crlf_file_keeps_crlf_when_fix_text_has_newlines
+        PASS [   0.005s] crunk-fix::fix crlf_file_without_newline_in_fix_is_byte_exact_with_bom
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 2 tests run: 2 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-fix crlf_file"
+size = 651
+status = "measured"
+test_count = 2
+tests_digest = "39e5ab9c60796407118861a3157879bc20f2582f2f342136a22b548f2cc5be7a"
+at = "2026-10-21T20:53:25Z"
+actor = "lognd"
+rev = 1
