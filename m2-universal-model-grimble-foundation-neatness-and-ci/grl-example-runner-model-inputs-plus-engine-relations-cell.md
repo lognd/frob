@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "cell rows report observed, granted and excused atoms per owning node, with nested grants covering descendants and unowned files yielding none"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The SYS001 and CAP001 ten-rules examples pass"

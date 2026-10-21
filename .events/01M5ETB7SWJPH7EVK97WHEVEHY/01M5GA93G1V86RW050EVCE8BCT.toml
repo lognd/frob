@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T22:45:58Z"
+digest = "0e1f48b39b7918a463b2c7f437cb84932e0869a366171d93c46f2aa8ba368386"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dde4adda-f64f-4caf-8b8e-6c792a5bcb13 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.010s] gob-plan::examples_model cells_fire_for_ungranted_atoms_and_clear_when_granted_covered_excused_or_unowned
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test examples_model cells_fire"
+size = 592
+status = "measured"
+test_count = 1
+tests_digest = "e0b63071e67bebe33f295f174d829ae7f92adf75954bd2ebc81d7fe47ba81a7f"
+at = "2026-10-21T22:45:58Z"
+actor = "lognd"
+rev = 1
