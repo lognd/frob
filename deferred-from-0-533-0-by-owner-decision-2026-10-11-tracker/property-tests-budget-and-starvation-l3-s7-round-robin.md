@@ -2,7 +2,8 @@
 id = "01M4052WNB3X3G61P84VR8VGH2"
 title = "Property tests: budget and starvation (L3, S7, round-robin)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
