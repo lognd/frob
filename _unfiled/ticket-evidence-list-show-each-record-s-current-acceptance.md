@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-03T06:08:27Z"
-updated = "2026-10-21T03:19:32Z"
+updated = "2026-10-21T03:23:30Z"
 scope = ["crates/frob-evidence/**", "crates/frob/src/milestone_evidence_cmd.rs", "changelog.d/01M4061MSKNEMGBJ7C8AWA71KG.changed.md"]
 
 [[acceptance]]
