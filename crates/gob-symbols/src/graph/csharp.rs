@@ -18,10 +18,8 @@ use std::collections::{HashMap, HashSet};
 use petgraph::graph::NodeIndex;
 
 use super::{GapReason, Outcome, SymbolGraph, base_segment};
-use crate::csharp::{
-    EXTENSION_PREFIX, Q_BASE, Q_BASE_INIT, Q_NEW, Q_THIS_INIT, USE_NAMESPACE, USE_STATIC,
-};
-use crate::model::{CallSite, FileSymbols, LocalBinding, Receiver, SymbolKind};
+use crate::csharp::{EXTENSION_PREFIX, Q_BASE, Q_BASE_INIT, Q_NEW, Q_THIS_INIT};
+use crate::model::{CallSite, FileSymbols, LocalBinding, Receiver, SymbolKind, UseKind};
 use crate::qualifier::CallQualifier;
 use crate::stdtypes;
 use gob_ir::Status;
@@ -39,6 +37,7 @@ pub(super) fn is_csharp(path: &str) -> bool {
 struct CsUse {
     local: String,
     target: String,
+    kind: UseKind,
     /// The namespace segments the directive sits in; empty for file level and `global using`.
     container: Vec<String>,
 }
@@ -133,6 +132,7 @@ impl CsIndex {
                 .map(|u| CsUse {
                     local: u.local.clone(),
                     target: u.target.clone(),
+                    kind: u.kind,
                     container: u
                         .container
                         .as_ref()
@@ -374,7 +374,7 @@ impl SymbolGraph {
         let mut found: Vec<NodeIndex> = Vec::new();
         let mut external = false;
         for u in cs.scope_uses(file, segs) {
-            if u.local == USE_NAMESPACE {
+            if u.kind == UseKind::Namespace {
                 for owner in CsIndex::prefixes(&segs[..segs.len().min(u.container.len())])
                     .map(|p| {
                         if p.is_empty() {
@@ -387,7 +387,7 @@ impl SymbolGraph {
                 {
                     found.extend(cs.child(&owner, name, want, self));
                 }
-            } else if u.local == USE_STATIC {
+            } else if u.kind == UseKind::Static {
                 for t in self.cs_type_text(cs, file, segs, &u.target) {
                     found.extend(self.cs_members(cs, t, name, want).nodes);
                 }
@@ -443,7 +443,7 @@ impl SymbolGraph {
                 || CsIndex::prefixes(segs).any(|p| p == ns)
                 || cs
                     .scope_uses(file, segs)
-                    .any(|u| u.local == USE_NAMESPACE && u.target == ns)
+                    .any(|u| u.kind == UseKind::Namespace && u.target == ns)
         };
         let hits: Vec<&Ext> = cs
             .ext
@@ -826,7 +826,7 @@ impl SymbolGraph {
             let Some(&from) = cs.file_nodes.get(&f.path) else {
                 continue;
             };
-            for u in f.uses.iter().filter(|u| u.local != USE_NAMESPACE) {
+            for u in f.uses.iter().filter(|u| u.kind != UseKind::Namespace) {
                 for t in self.cs_type_text(cs, &f.path, &[], &u.target) {
                     links.insert((from, t));
                 }

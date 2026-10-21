@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use gob_symbols::{
     Adapter, CSharpAdapter, EdgeKind, Fidelity, FileSymbols, ParseStatus, SymbolGraph, SymbolKind,
-    Symref, Visibility, adapter_for_path, extract_file,
+    Symref, UseKind, Visibility, adapter_for_path, extract_file,
 };
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
@@ -1017,4 +1017,30 @@ fn typed_method_calls_resolve_as_before_with_the_pack_loaded() {
         dynamic.iter().all(|d| d.line != 11),
         "Reload() is not dynamic"
     );
+}
+
+#[test]
+// frob:ticket 01M47SE72KECMSYSGSVZDT6Q6X
+// frob:tests crates/gob-symbols/src/csharp.rs::file_sites
+fn using_directives_carry_a_typed_kind() {
+    let f = extract(
+        "A.cs",
+        "using System;\nusing static System.Math;\nusing L = System.Collections.Generic.List<int>;\nclass C {}\n",
+    );
+    let kinds: Vec<UseKind> = f.uses.iter().map(|u| u.kind).collect();
+    assert_eq!(
+        kinds,
+        vec![UseKind::Namespace, UseKind::Static, UseKind::Alias]
+    );
+}
+
+#[test]
+// frob:ticket 01M47SE72KECMSYSGSVZDT6Q6X
+// frob:tests crates/gob-symbols/src/model.rs::UseKind
+fn use_binding_without_a_kind_deserializes_as_plain() {
+    let f = extract("A.cs", "using static System.Math;\n");
+    let mut v = serde_json::to_value(&f.uses[0]).expect("serialize");
+    v.as_object_mut().expect("object").remove("kind");
+    let back: gob_symbols::UseBinding = serde_json::from_value(v).expect("deserialize");
+    assert_eq!(back.kind, UseKind::Plain);
 }

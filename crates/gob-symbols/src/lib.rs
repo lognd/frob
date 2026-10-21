@@ -120,7 +120,8 @@ pub use markdown::{MarkdownAdapter, slugify};
 pub use model::{
     AttributeFact, CallRef, CallSite, DeriveDecl, Digests, FacetDigest, FieldDecl, FileSymbols,
     ImportEdge, LocalBinding, MapKind, MethodSig, Receiver, RefKind, RefSite, RetType, SelfKind,
-    SymbolKind, SymbolRecord, UnitExtras, UnitFacts, UnitSpan, UseBinding, Visibility, collapse_ws,
+    SymbolKind, SymbolRecord, UnitExtras, UnitFacts, UnitSpan, UseBinding, UseKind, Visibility,
+    collapse_ws,
 };
 pub use nodejs::{
     JsResolution, NodeError, NodeProjects, Package, PathAlias, TsConfig, parse_package,

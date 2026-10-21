@@ -421,6 +421,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
             target: u.target,
             public: false,
             container: u.container.and_then(symref_of),
+            kind: crate::UseKind::Plain,
         });
     }
     for site in sites {

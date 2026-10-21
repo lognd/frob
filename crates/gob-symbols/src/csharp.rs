@@ -1273,9 +1273,9 @@ struct Decl<'t> {
 // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
 
 /// The local name a plain `using Ns;` binds: it brings every type of `Ns` into scope.
-pub const USE_NAMESPACE: &str = "*";
+const USE_NAMESPACE: &str = "*";
 /// The local name a `using static T;` binds: it brings every static member of `T` into scope.
-pub const USE_STATIC: &str = "*static";
+const USE_STATIC: &str = "*static";
 /// The call qualifier of an object creation (`new T(..)`), a call of `T`'s constructor.
 pub const Q_NEW: &str = "new";
 /// The call qualifier of `base.M(..)`.
@@ -1394,6 +1394,7 @@ struct RawUse {
     target: String,
     rendered: String,
     global: bool,
+    kind: crate::UseKind,
     ns: Vec<String>,
 }
 
@@ -1427,21 +1428,30 @@ impl Fold<'_> {
         };
         let written = squash(self.t(*target));
         let target = strip_generics(written.strip_prefix("global::").unwrap_or(&written));
-        let (local, rendered) = match (alias, is_static) {
+        let (local, rendered, kind) = match (alias, is_static) {
             (Some(a), _) => {
                 let a = self.t(a).to_owned();
                 let r = format!("{a} = {target}");
-                (a, r)
+                (a, r, crate::UseKind::Alias)
             }
-            (None, true) => (USE_STATIC.to_owned(), format!("static {target}")),
-            (None, false) => (USE_NAMESPACE.to_owned(), target.clone()),
+            (None, true) => (
+                USE_STATIC.to_owned(),
+                format!("static {target}"),
+                crate::UseKind::Static,
+            ),
+            (None, false) => (
+                USE_NAMESPACE.to_owned(),
+                target.clone(),
+                crate::UseKind::Namespace,
+            ),
         };
-        tracing::trace!(path = self.path, %local, %target, global, "csharp using");
+        tracing::trace!(path = self.path, %local, %target, global, ?kind, "csharp using");
         self.raw_uses.push(RawUse {
             local,
             target,
             rendered,
             global,
+            kind,
             ns: self.ns.clone(),
         });
     }
@@ -1814,6 +1824,7 @@ fn file_sites(
             target: u.target,
             public: u.global,
             container: (!u.ns.is_empty()).then(|| Symref::symbol(&file.path, u.ns)),
+            kind: u.kind,
         });
     }
     for (node, ty) in fields {
