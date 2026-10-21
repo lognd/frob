@@ -4,10 +4,15 @@ title = "Surface BuildStats.malformed_projects as a check finding and Unresolved
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-06T04:44:06Z"
-updated = "2026-10-06T04:44:06Z"
+updated = "2026-10-21T23:15:45Z"
 scope = ["crates/gob-check/src"]
+
+[[acceptance]]
+text = "Given a malformed .csproj or .sln, when gob-check runs, then a finding names the file and the project is marked Unresolved"
+bound = false
 +++
 
 found while working ~ECEBCQ1: gob-symbols now lists malformed .csproj and .sln files in BuildStats.malformed_projects (path, reason). gob-check must turn each into a finding naming the file and mark the project Unresolved, like READ001 for unreadable files.
