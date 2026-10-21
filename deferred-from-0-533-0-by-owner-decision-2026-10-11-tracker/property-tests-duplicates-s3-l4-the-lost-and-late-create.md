@@ -2,7 +2,8 @@
 id = "01M4052WS0WETQ6V4FZ9XENZPA"
 title = "Property tests: duplicates (S3, L4, the lost and late create cases)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
