@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-20T19:41:49Z"
 updated = "2026-10-21T08:28:11Z"
 labels = ["found-while-working"]
-scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "crates/frob-worktree/src/activity.rs", "crates/frob-worktree/src/next.rs", "crates/frob-worktree/src/claim_evict.rs"]
+scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "crates/frob-worktree/src/activity.rs", "crates/frob-worktree/src/next.rs", "crates/frob-worktree/src/claim_evict.rs", "crates/frob/src/lease_cmd.rs"]
 +++
 
 Verb to mark a claim active without a commit; consumes activity.rs observe_event.
