@@ -1,0 +1,29 @@
+kind = "evidence"
+captured_at = "2026-10-21T01:30:21Z"
+digest = "e3be5906afbc329dc44d5d77c02327a5895547ed0099eaf54017a971798143b3"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 475e7f75-e0b9-4022-a59a-4ddee6cc6553 with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   0.048s] frob-worktree::claim_hold hold_resume_and_reclaim_round_trip
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.048s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree --test claim_hold"
+size = 910
+status = "measured"
+test_count = 1
+tests_digest = "7101f5de1049d2696ec87bbdfad6860ee5d9119bc46920701a35d1c1e62a1694"
+at = "2026-10-21T01:30:21Z"
+actor = "lognd"
+rev = 1
