@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T07:36:16Z"
-updated = "2026-10-21T23:17:42Z"
+updated = "2026-10-21T23:27:28Z"
 scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md", "changelog.d/01M4828JQJKETWWCRQGJCXJ4VH.added.md"]
 
 [[acceptance]]
@@ -17,6 +17,18 @@ bound = false
 
 [[acceptance]]
 text = "Given a block-scoped let or const binder in TS or JS, when a reference is resolved, then it binds to the block binder"
+bound = false
+
+[[acceptance]]
+text = "Function-valued CJS exports (exports.f, module.exports.f, object-literal members) become public units"
+bound = false
+
+[[acceptance]]
+text = "CJS last write of a name wins and module.exports reassignment detaches earlier writes"
+bound = false
+
+[[acceptance]]
+text = "let/const in a block shadow only inside that block; var hoists; for/catch/switch scopes bind"
 bound = false
 +++
 
