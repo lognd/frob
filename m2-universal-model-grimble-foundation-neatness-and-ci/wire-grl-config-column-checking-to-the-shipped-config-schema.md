@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a GRL rule using a real config column or a misspelt config table, when compiled by the shipped binary, then the real column passes and the table is reported as an unknown config key"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a malformed or empty config schema document, when the binary loads it, then config checking is turned off with a warning instead of failing"

@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T22:08:23Z"
+digest = "56e151485d58aadbe6624df52dcac05e0f291c7a1536a2b07ac004f332a4d934"
+exit_code = 0
+head = "32252ace223f5e4d4aff15d9f7bc1946e3a6aac6"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 006890b3-8104-42bd-84ba-19574459d6e6 with nextest profile: default
+    Starting 1 test across 10 binaries (42 tests skipped)
+        PASS [   0.030s] grimble::verbs compile_accepts_a_real_config_column_and_flags_an_unknown_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.032s] 1 test run: 1 passed, 42 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble compile_accepts_a_real_config_column_and_flags_an_unknown_table"
+size = 570
+status = "measured"
+test_count = 1
+tests_digest = "cc930a1df55c8e85780dd800ae42f8cc21c610229f1ca1c75053475fbc132886"
+at = "2026-10-21T22:08:23Z"
+actor = "lognd"
+rev = 1
