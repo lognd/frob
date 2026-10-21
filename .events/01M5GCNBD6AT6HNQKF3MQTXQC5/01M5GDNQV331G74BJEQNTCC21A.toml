@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["FrobProduct::malformed_projects returns the malformed project files recorded by the build"]
+moved = []
+at = "2026-10-21T23:45:19Z"
+actor = "lognd"
+rev = 1
