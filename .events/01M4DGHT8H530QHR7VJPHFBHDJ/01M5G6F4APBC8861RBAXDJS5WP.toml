@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Every $ref in the exported config schema resolves to a $defs entry (nested and recursive definitions included, shared definitions merged once)", "ForbidImport columns are typed in docs/schemas/config.json", "gob-plan ConfigSchema::from_json reads the shipped $defs"]
+moved = []
+at = "2026-10-21T21:39:22Z"
+actor = "lognd"
+rev = 1
