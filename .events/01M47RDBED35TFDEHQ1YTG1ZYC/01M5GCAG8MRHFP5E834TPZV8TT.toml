@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T23:21:32Z"
+digest = "9a91cb855eb08649d6506fb71b7e8bd8ba36610bb56bcc53872bd4f1c10a0dc4"
+exit_code = 0
+head = "4d1938948fdbccd3981d4b9cc54298979233226d"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.00s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1086379d-c689-4468-929b-cd923f2f3e04 with nextest profile: default
+    Starting 1 test across 6 binaries (142 tests skipped)
+        PASS [   0.092s] gob-check::pipeline malformed_projects_are_required_unresolved_read001_naming_each_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.093s] 1 test run: 1 passed, 142 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check malformed_projects_are_required"
+size = 634
+status = "measured"
+test_count = 1
+tests_digest = "d30519345d7d11de95a8f61a38b5eb02bfc192cb7e7d847354b60e8a557d3801"
+at = "2026-10-21T23:21:32Z"
+actor = "lognd"
+rev = 1
