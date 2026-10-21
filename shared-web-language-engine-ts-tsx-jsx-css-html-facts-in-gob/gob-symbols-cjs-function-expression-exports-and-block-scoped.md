@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T07:36:16Z"
-updated = "2026-10-21T23:28:15Z"
+updated = "2026-10-21T23:28:16Z"
 scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md", "changelog.d/01M4828JQJKETWWCRQGJCXJ4VH.added.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a block-scoped let or const binder in TS or JS, when a reference is resolved, then it binds to the block binder"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Function-valued CJS exports (exports.f, module.exports.f, object-literal members) become public units"
