@@ -8,7 +8,7 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-17T08:50:37Z"
-updated = "2026-10-21T08:58:22Z"
+updated = "2026-10-21T09:05:35Z"
 scope = ["crates/gob-plan/src/catalog/config.rs", "crates/gob-plan/tests/catalog.rs", "packs/crunk-core/exceptions.toml", "changelog.d/01M54GWME19N64RRMBTCZSG7YJ.added.md", "docs/design/grl-spec.md"]
 
 [[acceptance]]
