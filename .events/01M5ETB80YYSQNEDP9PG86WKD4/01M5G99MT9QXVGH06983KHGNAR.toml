@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T22:28:47Z"
+digest = "3a965e495f0c4cca59940b9040b64a6b1961fd86b27c3aa9f5864661f54d2f82"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 75e26065-99f8-4b31-8415-a950b7e37397 with nextest profile: default
+    Starting 1 test across 1 binary (20 tests skipped)
+        PASS [   0.004s] gob-plan::lower a_key_path_pattern_lowers_to_an_anchored_regex_where_star_stays_in_one_segment
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 20 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test lower key_path"
+size = 643
+status = "measured"
+test_count = 1
+tests_digest = "eb2044fbc8ad2ed1dd5ce508d5de35c57df4ab8b9c71607f621db6876b17b6cf"
+at = "2026-10-21T22:28:47Z"
+actor = "lognd"
+rev = 1
