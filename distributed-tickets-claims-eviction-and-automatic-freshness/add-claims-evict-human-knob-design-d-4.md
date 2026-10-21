@@ -9,7 +9,7 @@ parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T01:00:17Z"
 updated = "2026-10-21T02:48:09Z"
-scope = ["crates/frob-ledger/src/claim_window.rs", "crates/frob-worktree/src/claim_evict.rs", "crates/frob-worktree/tests/claim_evict.rs"]
+scope = ["crates/frob-ledger/src/claim_window.rs", "crates/frob-worktree/src/claim_evict.rs", "crates/frob-worktree/tests/claim_evict.rs", "docs/schemas/config.json"]
 +++
 
 Knob is missing. (found while working ~A6CYWAE)
