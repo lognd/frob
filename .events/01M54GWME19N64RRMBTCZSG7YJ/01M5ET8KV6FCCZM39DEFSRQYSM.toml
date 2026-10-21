@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/gob-plan/src/catalog/config.rs", "crates/gob-plan/tests/catalog.rs", "packs/crunk-core/exceptions.toml", "changelog.d/01M54GWME19N64RRMBTCZSG7YJ.added.md"]
+at = "2026-10-21T08:46:51Z"
+actor = "lognd"
+rev = 1
