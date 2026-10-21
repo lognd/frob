@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["packs/unity.toml", "crates/gob-ir/**", "crates/frob-obligations/**", "docs/design/packs.md"]
+new = ["packs/unity.toml", "crates/gob-ir/**", "crates/frob-obligations/**", "docs/design/packs.md", "crates/frob-tests/src/reach.rs"]
+at = "2026-10-21T17:33:42Z"
+actor = "lognd"
+rev = 1
