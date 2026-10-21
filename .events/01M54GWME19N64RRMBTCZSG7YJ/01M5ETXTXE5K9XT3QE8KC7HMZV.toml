@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T08:58:22Z"
+digest = "33ad5ce091c9233e2340e118d0f970dcdede378d66863e6d74026cfe67e49f3f"
+exit_code = 0
+head = "4f146933d4e040a5882d18156b7189721671a6db"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 77400b35-f93a-46c5-b036-0c0d8cae31b4 with nextest profile: default
+    Starting 1 test across 26 binaries (271 tests skipped)
+        PASS [   0.010s] gob-plan::catalog the_crunk_schema_types_org_and_layers
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 271 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan the_crunk_schema_types_org_and_layers"
+size = 609
+status = "measured"
+test_count = 1
+tests_digest = "9ae8b4ec15724940d8b309ed1d9a2bdcbaa6d238afd0ed4bfe133a6ed9e71d10"
+at = "2026-10-21T08:58:22Z"
+actor = "lognd"
+rev = 1
