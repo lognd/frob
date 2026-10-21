@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-ir/**", "crates/gob-packs/**", "crates/frob-tests/src/reach.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/src/refs.rs", "packs/unity.toml", "docs/design/packs.md", "docs/reference/config.md"]
+new = ["crates/gob-ir/**", "crates/gob-packs/**", "crates/frob-tests/src/reach.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/src/refs.rs", "packs/unity.toml", "docs/design/packs.md", "docs/reference/config.md", "crates/frob-tests/Cargo.toml"]
+at = "2026-10-21T12:48:27Z"
+actor = "lognd"
+rev = 1
