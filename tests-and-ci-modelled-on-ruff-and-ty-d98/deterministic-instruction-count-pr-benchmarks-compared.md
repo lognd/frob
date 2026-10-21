@@ -8,8 +8,8 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:12Z"
-updated = "2026-10-21T13:15:28Z"
-scope = ["crates/*/benches/**", "crates/gob-dev/**", ".github/workflows/**", "docs/design/build-test-ci.md", "Cargo.toml", "Cargo.lock"]
+updated = "2026-10-21T13:16:34Z"
+scope = ["crates/*/benches/**", "crates/gob-dev/**", ".github/workflows/**", "docs/design/build-test-ci.md", "Cargo.toml", "Cargo.lock", "crates/gob-plan/Cargo.toml"]
 
 [[acceptance]]
 text = "benchmarks run under the harness on Linux"
