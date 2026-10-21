@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a malformed .csproj or .sln, when gob-check runs, then a finding names the file and the project is marked Unresolved"]
+new = ["Given a malformed .csproj or .sln, when gob-check runs, then a finding names the file and the project is marked Unresolved", "Given several malformed projects (.csproj and .sln, duplicates, or already unreadable), when gob-check runs, then each file gets exactly one required Unresolved READ001 finding carrying its reason"]
+moved = [1]
+at = "2026-10-21T23:21:10Z"
+actor = "lognd"
+rev = 1

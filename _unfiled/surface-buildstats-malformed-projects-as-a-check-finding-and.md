@@ -7,11 +7,15 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-06T04:44:06Z"
-updated = "2026-10-21T23:16:46Z"
+updated = "2026-10-21T23:21:10Z"
 scope = ["crates/gob-check/src", "crates/gob-check/src/product.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/status.rs", "crates/gob-check/tests/pipeline.rs"]
 
 [[acceptance]]
 text = "Given a malformed .csproj or .sln, when gob-check runs, then a finding names the file and the project is marked Unresolved"
+bound = false
+
+[[acceptance]]
+text = "Given several malformed projects (.csproj and .sln, duplicates, or already unreadable), when gob-check runs, then each file gets exactly one required Unresolved READ001 finding carrying its reason"
 bound = false
 +++
 
