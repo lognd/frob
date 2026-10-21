@@ -2,7 +2,8 @@
 id = "01M5ETB7SWJPH7EVK97WHEVEHY"
 title = "GRL example runner: model inputs plus engine relations cell/owned_by (SYS001, CAP001)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
