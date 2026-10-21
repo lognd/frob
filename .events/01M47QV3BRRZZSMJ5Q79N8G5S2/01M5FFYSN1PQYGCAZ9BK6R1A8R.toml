@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T15:05:53Z"
+digest = "ecdc1e12e2224ea430c2c5c6c3328add36e08dbb84203cd01bb214a19469f058"
+exit_code = 0
+head = "716c2bbea67ede3495f0676e7e162210d8f7f59f"
+inline = '''
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b7dcbea2-bb17-4e92-89c5-35d412cae971 with nextest profile: default
+    Starting 1 test across 11 binaries (187 tests skipped)
+        PASS [   0.024s] gob-dev ci::tests::every_fuzz_target_the_ticket_names_has_a_source_and_a_bin_entry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.027s] 1 test run: 1 passed, 187 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev every_fuzz_target"
+size = 634
+status = "measured"
+test_count = 1
+tests_digest = "640e4765fa7e12df2e7a2fb98e504ff8aebe1f5e6ff90835dc7a8ebb39422420"
+at = "2026-10-21T15:05:53Z"
+actor = "lognd"
+rev = 1
