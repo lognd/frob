@@ -2,7 +2,8 @@
 id = "01M44YQZ1A507E2J3JETAWMMAV"
 title = "UNITY rule family: .meta pairing and GUID uniqueness"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
