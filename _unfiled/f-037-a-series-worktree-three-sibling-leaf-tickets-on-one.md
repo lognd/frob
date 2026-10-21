@@ -2,12 +2,12 @@
 id = "01M1QDTYR2FFF5HYHVZP2W1WMP"
 title = "F-037: a series worktree (three sibling leaf tickets on one branch) cannot land -- blocks cluster dispatch"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-21T04:45:15Z"
+updated = "2026-10-21T04:45:19Z"
 aliases = ["T-3842"]
 labels = ["v1-cluster:C3", "triage:accepted"]
 +++
