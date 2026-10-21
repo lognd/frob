@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Update, Create and Reconcile rotate round robin across runs using cursors persisted in the mirror store"]
+moved = []
+at = "2026-10-21T09:47:47Z"
+actor = "lognd"
+rev = 1
