@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-21T03:19:27Z"
+updated = "2026-10-21T03:29:32Z"
 idempotency_key = "m2-diag-fix-summary"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/frob-check/src/summary.rs", "crates/frob-check/src/lib.rs", "crates/frob-check/src/verb.rs", "changelog.d/01M3ZX81ZPA8J5RXBEZ14SZNSZ.*"]
@@ -19,7 +19,7 @@ target = "01M3ZX81T4DCMKXZXNSR5QDX7H"
 
 [[acceptance]]
 text = "Given three fixes of which one is machine, when check runs on a TTY, then the summary ends with the documented line and no prompt appears"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a plain check, when it finishes, then the work tree is byte-identical to before"

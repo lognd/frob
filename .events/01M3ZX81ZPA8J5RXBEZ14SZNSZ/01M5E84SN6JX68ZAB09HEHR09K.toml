@@ -1,0 +1,56 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T03:29:32Z"
+digest = "0052bf40aa51f36a31aedf45fca24adde253798e08082b354f7269e0ace16a46"
+exit_code = 0
+inline = '''
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 39.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b02c9c54-e126-4929-9943-b4a093bbc441 with nextest profile: default
+    Starting 1 test across 5 binaries (122 tests skipped)
+        PASS [   0.006s] frob-check summary::tests::three_fixes_one_safe_ends_with_the_documented_line
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 122 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check three_fixes_one_safe_ends_with_the_documented_line"
+size = 2611
+status = "measured"
+test_count = 1
+tests_digest = "bc771c2f224de757e49e6e0f7018e8a801e252fadfe6deb073694c6e1c4353d6"
+at = "2026-10-21T03:29:32Z"
+actor = "lognd"
+rev = 1
