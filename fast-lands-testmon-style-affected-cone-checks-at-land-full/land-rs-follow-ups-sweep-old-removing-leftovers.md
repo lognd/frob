@@ -8,7 +8,7 @@ points = 2
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-10T01:13:36Z"
-updated = "2026-10-21T06:21:09Z"
+updated = "2026-10-21T06:23:50Z"
 scope = ["crates/frob-land/src/land.rs", "changelog.d/**"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M4GRV9YMN2VEPCTMMD5ZJPVH"
 
 [[acceptance]]
 text = "Given leftover *.removing dirs, when frob land runs, then they are deleted before its own cleanup"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given another writer holding the primary's index.lock, when land advances experimental (not checked out in the primary), then the ref moves by compare-and-swap without waiting on the index"

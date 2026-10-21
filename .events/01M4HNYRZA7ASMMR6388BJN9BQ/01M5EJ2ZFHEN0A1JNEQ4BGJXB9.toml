@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T06:23:50Z"
+digest = "6d14079f4b4fa5f75920875b001ed41ae62976f03e4de0e017228f8c76b54dc6"
+exit_code = 0
+inline = '''
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ba42ab9b-f773-4f8a-94a7-706f7384e971 with nextest profile: default
+    Starting 1 test across 3 binaries (145 tests skipped)
+        PASS [   0.079s] frob-land land::tests::advance_moves_an_unchecked_out_base_by_cas_despite_the_primary_index_lock
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.080s] 1 test run: 1 passed, 145 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land advance_moves"
+size = 651
+status = "measured"
+test_count = 1
+tests_digest = "875c7cb95e39c743758a833311e1c1ccceb8431322b1e62194fac8fa9fa65ff1"
+at = "2026-10-21T06:23:50Z"
+actor = "lognd"
+rev = 1
