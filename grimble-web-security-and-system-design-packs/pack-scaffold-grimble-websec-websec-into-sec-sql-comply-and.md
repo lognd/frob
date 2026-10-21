@@ -40,6 +40,10 @@ bound = false
 [[acceptance]]
 text = "pack lock digest matches the pack tree"
 bound = false
+
+[[acceptance]]
+text = "a rule without examples fails to compile"
+bound = false
 +++
 
 Create the pack directory and manifest (packs.md tier-1 data file: families, languages, vocabularies, atoms), pack lock entry, one worked GRL rule per family with firing and clean example, std-pack registration in grimble. WEBSEC registers its ids inside the SEC family namespace (rules.md section 3); because no SEC or PII family ticket exists, this ticket also adds the SEC and PII family rows to the registry (metadata only) and records whether they live in the pack or in grimble-lints (design gap). Capability atoms for db.query and net come from the core-effects pack, not redefined here.
