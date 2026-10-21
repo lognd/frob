@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/claim_hold.rs", "crates/frob-worktree/tests/claim_hold.rs"]
+new = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/claim_hold.rs", "crates/frob-worktree/tests/claim_hold.rs", "changelog.d/01M5E0F8MC9XT2PCCB9XG6E8X3.added.md"]
+at = "2026-10-21T01:17:21Z"
+actor = "lognd"
+rev = 1
