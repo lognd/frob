@@ -80,11 +80,43 @@ pub fn land(
         tracing::info!(ticket = %id, "ticket already done; land is a no-op");
         return Ok(already_done(&view, id, &handle, &base, opts));
     }
-    let ready = prepare(repo, &cwd_root, here, &leases, &view, &base, opts)?;
-    if opts.dry_run {
-        return ready.planned(opts);
+    // frob:ticket 01M4M27EDCXBRN2HZJXHAZK0F1
+    let probe = repo.clone();
+    let landed = prepare(repo, &cwd_root, here, &leases, &view, &base, opts).and_then(|ready| {
+        if opts.dry_run {
+            ready.planned(opts)
+        } else {
+            ready.publish(&leases, opts)
+        }
+    });
+    match landed {
+        Err(e) if !opts.dry_run => {
+            settled_by_a_racing_land(&probe, clock, id, &base, opts).ok_or(e)
+        }
+        other => other,
     }
-    ready.publish(&leases, opts)
+}
+
+/// The no-op outcome when a failed land lost a race: another lander closed `id` meanwhile, so the error is moot.
+///
+/// Losers queue on the land lock while the winner merges, closes and removes the shared
+/// worktree and branch; whatever they then fail to read (the vanished worktree, the moved
+/// ref) says nothing about the ticket, which is done. Re-reads the ledger from `repo`
+/// and returns `None` when the ticket is not done, so a real failure still surfaces.
+fn settled_by_a_racing_land(
+    repo: &Repo,
+    clock: &Arc<dyn Clock>,
+    id: TicketId,
+    base: &str,
+    opts: &LandOptions,
+) -> Option<LandOutcome> {
+    let site = Workspace::open_repo(repo.clone(), clock.clone()).ok()?;
+    let view = site.ledger.show(id).ok()?;
+    if view.summary.category != Category::Done {
+        return None;
+    }
+    tracing::info!(ticket = %id, "land failed but the ticket is done: a racing land won; reporting a no-op");
+    Some(already_done(&view, id, &view.summary.handle, base, opts))
 }
 
 /// Everything the preconditions established, ready to plan or publish.
