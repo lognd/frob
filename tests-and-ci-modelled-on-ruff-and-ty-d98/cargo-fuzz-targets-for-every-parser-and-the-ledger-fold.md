@@ -8,8 +8,8 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:08Z"
-updated = "2026-10-21T14:59:31Z"
-scope = ["fuzz/**", "crates/gob-dev/**", ".github/workflows/**", "Cargo.toml"]
+updated = "2026-10-21T15:01:32Z"
+scope = ["fuzz/**", "crates/gob-dev/**", ".github/workflows/**", "Cargo.toml", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "fuzz targets exist for the five inputs"
