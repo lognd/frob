@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:01Z"
-updated = "2026-10-21T17:43:25Z"
+updated = "2026-10-21T17:43:26Z"
 idempotency_key = "d94-serial"
 scope = ["packs/unity.toml", "crates/gob-ir/**", "crates/frob-obligations/**", "docs/design/packs.md", "crates/frob-tests/src/reach.rs"]
 
@@ -18,7 +18,7 @@ target = "01M44YQXS4BXE0X07FBYR0STJ5"
 
 [[acceptance]]
 text = "Given a private [SerializeField] field never assigned in code, when effect and flow rules run with the pack enabled, then the field has an external writer and is not reported as never written"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a [NonSerialized] public field never assigned, when the rules run, then it is still reported"
