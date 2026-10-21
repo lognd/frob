@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/src/model.rs", "crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/graph/csharp.rs", "crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/python.rs"]
+new = ["crates/gob-symbols/src/model.rs", "crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/graph/csharp.rs", "crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/fold.rs"]
+at = "2026-10-21T19:57:11Z"
+actor = "lognd"
+rev = 1
