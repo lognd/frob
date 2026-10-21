@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T11:18:43Z"
+digest = "59706d046c134e8a22b31b2aa187390569987c3142051d2f0ff28b0efa729cdf"
+exit_code = 0
+head = "9e77216f876c7dfef21540e8107455b7dff7c193"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ea3f249e-12b8-4aa7-af9d-68526909d502 with nextest profile: default
+    Starting 5 tests across 2 binaries (280 tests skipped)
+        PASS [   0.006s] gob-symbols::it csharp_fixtures::the_unity_fixture_has_an_asmdef_pair
+        PASS [   0.006s] gob-symbols::it csharp_fixtures::the_solution_fixture_has_two_projects_and_a_reference_edge
+        PASS [   0.013s] gob-symbols::it csharp_fixtures::the_fixture_tests_carry_nunit_xunit_and_unity_ids
+        PASS [   0.103s] gob-symbols::it csharp_fixtures::the_unity_fixture_matches_its_snapshot
+        PASS [   0.104s] gob-symbols::it csharp_fixtures::the_dotnet_solution_fixture_matches_its_snapshot
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.105s] 5 tests run: 5 passed, 280 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols csharp_fixtures"
+size = 1247
+status = "measured"
+test_count = 5
+tests_digest = "1288ab936b7887a8965985d75ebcfc90c9ef458731ccbe6ae4290a80c00c5ae1"
+at = "2026-10-21T11:18:43Z"
+actor = "lognd"
+rev = 1

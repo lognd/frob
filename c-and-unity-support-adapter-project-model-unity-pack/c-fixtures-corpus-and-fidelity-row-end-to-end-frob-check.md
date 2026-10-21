@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:59Z"
-updated = "2026-10-21T11:05:45Z"
+updated = "2026-10-21T11:18:43Z"
 idempotency_key = "d94-fixture"
 scope = ["crates/gob-symbols/tests/**", "crates/frob-check/tests/**", "docs/reference/fidelity.md", "docs/design/code-model.md", "changelog.d/01M44YQVN6PMK0D8NJ801ENJEW.added.md"]
 
