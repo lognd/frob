@@ -1,0 +1,1 @@
+mirror: property tests for the safety rows cover no tracker-owned write, cursor soundness across crashes, proposals that never change the tracker, map integrity against a pasted marker, no reopen of a closed proposal and an idempotent converged run.
