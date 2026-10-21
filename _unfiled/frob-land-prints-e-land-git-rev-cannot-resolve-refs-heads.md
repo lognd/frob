@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T23:26:32Z"
-updated = "2026-10-21T05:19:46Z"
-scope = ["crates/frob-land/src/**", "changelog.d/01M4M27EDCXBRN2HZJXHAZK0F1.fixed.md"]
+updated = "2026-10-21T05:19:53Z"
+scope = ["crates/frob-land/src/**", "changelog.d/01M4M27EDCXBRN2HZJXHAZK0F1.fixed.md", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "a successful land of a ticket exits 0 with no error line, covered by a test that lands twice concurrently and once after the worktree is removed"
