@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-08T10:22:01Z"
-updated = "2026-10-21T21:39:36Z"
+updated = "2026-10-21T21:50:09Z"
 scope = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json", "crates/gob-config/src/describe.rs", "crates/gob-config/tests/config.rs", "crates/gob-config/tests/snapshots/config__schema_has_property_per_table.snap", "changelog.d/01M4DGHT8H530QHR7VJPHFBHDJ.fixed.md", "docs/design/config.md", "docs/design/documentation.md"]
 
 [[acceptance]]
