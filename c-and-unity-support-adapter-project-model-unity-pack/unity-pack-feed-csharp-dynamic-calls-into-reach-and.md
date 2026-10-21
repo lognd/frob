@@ -9,7 +9,7 @@ parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T18:58:21Z"
 updated = "2026-10-21T20:16:26Z"
-scope = ["crates/frob-tests/src/reach.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/tests/unity_dynamic.rs"]
+scope = ["crates/frob-tests/src/reach.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/tests/unity_dynamic.rs", "docs/design/dotnet-unity.md"]
 +++
 
 found while working ~MVX4GEN: csharp_dynamic_calls (gob-symbols) has no non-test consumer; frob-tests reach.rs and frob-obligations unity.rs should call it with the pack EngineVocab to report the named reason.
