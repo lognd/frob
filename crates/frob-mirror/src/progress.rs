@@ -42,6 +42,7 @@ pub struct ProgressWriter<'a, S: ShardStore> {
     ops_since_commit: u64,
     committed_ops: u64,
     index: Index,
+    index_dirty: bool,
 }
 
 /// Reads the index shard; a missing index is a fresh one.
@@ -78,12 +79,22 @@ impl<'a, S: ShardStore> ProgressWriter<'a, S> {
             ops_since_commit: 0,
             committed_ops: 0,
             index,
+            index_dirty: false,
         })
     }
 
     /// The ULID the next run resumes after (the committed round-robin cursor).
     pub fn resume_after(&self) -> Option<&str> {
         self.index.round_robin.as_deref()
+    }
+
+    /// Advances the change-feed cursor; it is written with the next commit, even with no ops.
+    pub fn set_change_feed(&mut self, cursor: String) {
+        if self.index.change_feed.as_deref() != Some(cursor.as_str()) {
+            debug!(%cursor, "mirror progress: change-feed cursor advanced");
+            self.index.change_feed = Some(cursor);
+            self.index_dirty = true;
+        }
     }
 
     /// Records one completed operation for `shard`; commits when K have accumulated.
@@ -105,7 +116,7 @@ impl<'a, S: ShardStore> ProgressWriter<'a, S> {
     /// # Errors
     /// `MapError::Conflict` when a CAS write loses to another writer.
     pub fn commit(&mut self) -> Result<(), MapError> {
-        if self.ops_since_commit == 0 {
+        if self.ops_since_commit == 0 && !self.index_dirty {
             return Ok(());
         }
         for shard in self.pending.values() {
@@ -120,6 +131,7 @@ impl<'a, S: ShardStore> ProgressWriter<'a, S> {
         self.committed_ops += self.ops_since_commit;
         self.pending.clear();
         self.ops_since_commit = 0;
+        self.index_dirty = false;
         Ok(())
     }
 
@@ -195,6 +207,22 @@ mod tests {
             read_index(&store).unwrap().round_robin.as_deref(),
             Some("B")
         );
+    }
+
+    // frob:tests set_change_feed
+    // frob:tests finish
+    #[test]
+    fn change_feed_cursor_is_written_without_ops_and_keeps_round_robin() {
+        let mut store = Mem::default();
+        let mut w = ProgressWriter::new(&mut store, 10).unwrap();
+        w.record(Shard::new("A")).unwrap();
+        w.finish(StopReason::Completed).unwrap();
+        let mut w = ProgressWriter::new(&mut store, 10).unwrap();
+        w.set_change_feed("2026-10-05T00:00:00Z".into());
+        w.finish(StopReason::Completed).unwrap();
+        let index = read_index(&store).unwrap();
+        assert_eq!(index.change_feed.as_deref(), Some("2026-10-05T00:00:00Z"));
+        assert_eq!(index.round_robin.as_deref(), Some("A"));
     }
 
     // frob:tests record

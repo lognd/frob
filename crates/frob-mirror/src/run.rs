@@ -62,11 +62,18 @@ pub trait RunHost {
     fn ledger_commits(&self) -> Vec<LedgerCommit> {
         Vec::new()
     }
+    /// The change-feed cursor read this run (update time of the newest issue seen), if any.
+    fn feed_cursor(&self) -> Option<String> {
+        None
+    }
     /// Does one item; `Ok(None)` means nothing changed, `Ok(Some)` returns the shard to commit.
     ///
     /// # Errors
     /// `ItemError::RateLimited` stops the run; `ItemError::Failed` skips this ticket only.
     fn execute(&mut self, item: &WorkItem) -> Result<Option<Shard>, ItemError>;
+    /// Per-run housekeeping after the items ran and before the final commit (for example
+    /// closing duplicate issues); a failure is the host's to log and never fails the run.
+    fn after_items(&mut self) {}
 }
 
 /// How a run ended.
@@ -162,6 +169,7 @@ fn run_locked<S: ShardStore, H: RunHost>(
                 ticket,
             }),
     );
+    let planned: Vec<WorkClass> = items.iter().map(|i| i.class).collect();
     let cost = cfg.budget.reads_per_ticket + 1;
     let selected = select(items, &Cursors::default(), &plan, cost);
     debug!(selected = selected.len(), "mirror run: work selected");
@@ -186,6 +194,20 @@ fn run_locked<S: ShardStore, H: RunHost>(
                 failed.push((item.ticket.clone(), why));
             }
         }
+    }
+    if matches!(stop, StopReason::Completed) {
+        host.after_items();
+    }
+    // The feed cursor moves only when every reconcile item was done: otherwise the unprocessed
+    // issues would fall behind it and never be seen again.
+    let count = |classes: &mut dyn Iterator<Item = WorkClass>| {
+        classes.filter(|c| *c == WorkClass::Reconcile).count()
+    };
+    let all_reconciled =
+        count(&mut planned.iter().copied()) == count(&mut executed.iter().map(|(c, _)| *c));
+    let advance_feed = failed.is_empty() && matches!(stop, StopReason::Completed) && all_reconciled;
+    if let Some(cursor) = host.feed_cursor().filter(|_| advance_feed) {
+        writer.set_change_feed(cursor);
     }
     let report = writer.finish(stop)?;
     let watermark = advance_watermark(store, &log, prior.as_ref(), &stop, failed.is_empty())?;
@@ -335,7 +357,9 @@ mod tests {
         changes: bool,
         bad: Option<String>,
         log: Vec<LedgerCommit>,
+        cursor: Option<String>,
         calls: Vec<(WorkClass, String)>,
+        after: usize,
     }
 
     impl Host {
@@ -346,7 +370,9 @@ mod tests {
                 changes,
                 bad: None,
                 log: vec![],
+                cursor: None,
                 calls: vec![],
+                after: 0,
             }
         }
     }
@@ -367,12 +393,18 @@ mod tests {
         fn ledger_commits(&self) -> Vec<LedgerCommit> {
             self.log.clone()
         }
+        fn feed_cursor(&self) -> Option<String> {
+            self.cursor.clone()
+        }
         fn execute(&mut self, item: &WorkItem) -> Result<Option<Shard>, ItemError> {
             self.calls.push((item.class, item.ticket.clone()));
             if self.bad.as_deref() == Some(item.ticket.as_str()) {
                 return Err(ItemError::Failed("cannot render".into()));
             }
             Ok(self.changes.then(|| Shard::new(&item.ticket)))
+        }
+        fn after_items(&mut self) {
+            self.after += 1;
         }
     }
 
@@ -408,6 +440,20 @@ mod tests {
 
     // frob:tests run
     #[test]
+    fn after_items_runs_once_per_completed_run() {
+        let mut host = Host::new(vec![item(WorkClass::Update, "u")], true);
+        ran(run(
+            &mut Mem::default(),
+            &Fake { visible: true },
+            &mut host,
+            &cfg(),
+        )
+        .unwrap());
+        assert_eq!(host.after, 1);
+    }
+
+    // frob:tests run
+    #[test]
     fn five_classes_execute_in_priority_order() {
         use WorkClass::{Create, Reconcile, Recovery, Sweep, Update};
         let items = vec![
@@ -424,6 +470,28 @@ mod tests {
         let classes: Vec<_> = s.executed.iter().map(|(c, _)| *c).collect();
         assert_eq!(classes, [Recovery, Update, Create, Reconcile, Sweep]);
         assert_eq!(s.report.committed_ops, 5);
+    }
+
+    // frob:tests run
+    #[test]
+    fn feed_cursor_advances_only_after_a_clean_reconcile() {
+        let cursor = Some("2026-10-05T00:00:00Z".to_string());
+        let mut host = Host::new(vec![item(WorkClass::Reconcile, "r")], false);
+        host.cursor.clone_from(&cursor);
+        let mut store = Mem::default();
+        run(&mut store, &Fake { visible: true }, &mut host, &cfg()).unwrap();
+        let index = crate::progress::read_index(&store).unwrap();
+        assert_eq!(index.change_feed, cursor);
+
+        let mut held = Host::new(vec![item(WorkClass::Reconcile, "r")], false);
+        held.cursor.clone_from(&cursor);
+        held.bad = Some("r".into());
+        let mut store = Mem::default();
+        run(&mut store, &Fake { visible: true }, &mut held, &cfg()).unwrap();
+        assert_eq!(
+            crate::progress::read_index(&store).unwrap().change_feed,
+            None
+        );
     }
 
     // frob:tests run

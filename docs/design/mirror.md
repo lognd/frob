@@ -454,7 +454,9 @@ hash and the create-uncertain flag (nonce, start time); a small `index`
 shard holds the round-robin and change-feed cursors. Writes are
 compare-and-swap on the content hash. `resolve` checks the cache, then
 the tracker listing (lowest number wins), and only then allows a create;
-an uncertain create forces recovery first.
+an uncertain create forces recovery first. The driver advances the
+change-feed cursor only after a clean, completed run that reconciled
+every feed item, so an unprocessed issue is never skipped.
 
 ### 3.5 Proposals (MIR-AUD-07, 08, 12, 22; F9)
 

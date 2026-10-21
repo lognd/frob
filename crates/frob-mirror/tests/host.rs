@@ -10,16 +10,17 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::time::Duration;
 
 use fake_github::{BOT_ID, FakeGithub};
-use frob_mirror::adapter::{AdapterError, AdapterResult, IssueRef, IssueState};
+use frob_mirror::adapter::{AdapterError, AdapterResult, IssueRef, IssueState, TrackerAdapter};
 use frob_mirror::budget::{BudgetConfig, RateLimit};
 use frob_mirror::feed::{FeedPage, FeedSource};
 use frob_mirror::fields::{FieldOwnership, FieldsConfig};
 use frob_mirror::github::lookup::ListingSource;
 use frob_mirror::github::read::{BodyRevisions, HistorySource, TimelineEvent};
 use frob_mirror::host::{HostConfig, MirrorHost, Shared, Sources, TicketSource, TicketState};
-use frob_mirror::keyring::Keyring;
+use frob_mirror::keyring::{Keyring, MarkerFields};
 use frob_mirror::lock::{LedgerCommit, read_watermark};
 use frob_mirror::mapfile::{MapError, ShardStore, content_hash, read_shard};
+use frob_mirror::marker::format_marker;
 use frob_mirror::outbox::{FieldSink, LedgerEvent, Mode, SinkError};
 use frob_mirror::projection::{
     Category, Classification, Identity, IssueProjection, People, State, TicketFacts, project,
@@ -204,6 +205,16 @@ impl World {
 
     /// One mirror pass with the given ledger events and commit log.
     fn pass_with(&self, events: Vec<LedgerEvent>, commits: Vec<LedgerCommit>) {
+        self.pass_reading(events, commits, &Quiet);
+    }
+
+    /// One mirror pass whose creation-revision reads come from `history`.
+    fn pass_reading(
+        &self,
+        events: Vec<LedgerEvent>,
+        commits: Vec<LedgerCommit>,
+        history: &dyn HistorySource,
+    ) {
         let q = Quiet;
         let ring = Keyring::new("k1", MachineKey::from_bytes([1; 32]), vec![]).unwrap();
         let own = FieldOwnership::load(
@@ -217,7 +228,7 @@ impl World {
         let src = Sources {
             feed: &q,
             listing: &q,
-            history: &q,
+            history,
             ring: &ring,
             ownership: &own,
         };
@@ -338,4 +349,46 @@ fn close_duplicates_with_one_issue_closes_nothing() {
     );
     let report = host.close_duplicates().unwrap();
     assert!(report.closed.is_empty());
+}
+
+/// History whose every issue body carries a validly signed marker for ticket `U1`.
+struct Marked(String);
+
+impl HistorySource for Marked {
+    fn issue(&self, issue: &IssueRef) -> AdapterResult<IssueState> {
+        Ok(IssueState {
+            issue: issue.clone(),
+            title: "t".into(),
+            body: self.0.clone(),
+            labels: vec![],
+            assignees: vec![],
+            closed: false,
+        })
+    }
+    fn timeline(&self, _: &IssueRef) -> AdapterResult<Vec<TimelineEvent>> {
+        Ok(vec![])
+    }
+    fn body_revisions(&self, _: &IssueRef) -> AdapterResult<BodyRevisions> {
+        Ok(BodyRevisions::default())
+    }
+}
+
+// frob:tests MirrorHost.after_items
+// frob:tests MirrorHost.close_duplicates
+// frob:tests run
+#[test]
+fn a_run_closes_the_duplicate_of_a_really_marked_ticket() {
+    let w = World::new();
+    let ring = Keyring::new("k1", MachineKey::from_bytes([1; 32]), vec![]).unwrap();
+    let marker = ring.sign(MarkerFields {
+        repo_node_id: "R_1".into(),
+        ulid: "U1".into(),
+        nonce: "n1".into(),
+    });
+    let history = Marked(format!("body\n<!-- {} -->", format_marker(&marker)));
+    w.gh.with(FakeGithub::duplicate_next_write);
+    w.pass_reading(vec![], vec![], &history);
+    let closed = |n: &str| w.gh.with(|g| g.read(&IssueRef(n.into())).unwrap().closed);
+    assert!(!closed("1"), "the lowest number stays canonical");
+    assert!(closed("2"), "the run closed the duplicate itself");
 }

@@ -225,6 +225,7 @@ pub struct MirrorHost<'a, S, A, T, K> {
     src: Sources<'a>,
     cfg: HostConfig,
     seen: RefCell<BTreeMap<String, String>>,
+    feed_cursor: RefCell<Option<String>>,
 }
 
 fn item_error(e: &AdapterError) -> ItemError {
@@ -284,6 +285,7 @@ where
             src,
             cfg,
             seen: RefCell::new(BTreeMap::new()),
+            feed_cursor: RefCell::new(None),
         }
     }
 
@@ -322,6 +324,7 @@ where
                 return Vec::new();
             }
         };
+        self.feed_cursor.replace(feed.cursor.clone());
         let lookup = |i: &IssueRef| by_issue.get(&i.0).map(|s| (*s).clone());
         let mut items = Vec::new();
         for (age, f) in select_for_history(&feed, &lookup).into_iter().enumerate() {
@@ -503,7 +506,7 @@ where
 
     /// Closes the duplicate issues of this run's bot listing, keeping the lowest-numbered.
     ///
-    /// Call once per run after [`crate::run::run`]; a listing failure is returned and a
+    /// The run driver calls this once per run through `RunHost::after_items`; a listing failure is returned and a
     /// per-issue marker read failure leaves that issue unclaimed until the next run.
     ///
     /// # Errors
@@ -550,6 +553,11 @@ where
     /// The limit read at run start.
     fn rate_limit(&self) -> RateLimit {
         self.cfg.rate_limit
+    }
+
+    /// The newest update time the feed read saw, for the driver to persist as the cursor.
+    fn feed_cursor(&self) -> Option<String> {
+        self.feed_cursor.borrow().clone()
     }
 
     /// The ledger seam's commit log, so the run can advance its watermark.
@@ -618,6 +626,13 @@ where
             WorkClass::Update => self.do_update(ulid),
             WorkClass::Create => self.do_create(ulid),
             WorkClass::Reconcile | WorkClass::Sweep => self.do_reconcile(ulid),
+        }
+    }
+
+    /// Closes this run's duplicate issues; a listing failure is logged and retried next run.
+    fn after_items(&mut self) {
+        if let Err(e) = self.close_duplicates() {
+            warn!(error = %e, "host: duplicate check failed, retried next run");
         }
     }
 }
