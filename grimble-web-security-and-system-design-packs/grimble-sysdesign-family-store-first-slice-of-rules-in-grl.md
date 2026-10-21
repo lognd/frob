@@ -2,13 +2,13 @@
 id = "01M43AYVHQWDNSE66CY4VVXDW5"
 title = "grimble-sysdesign family STORE: first slice of rules in GRL"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:32:02Z"
-updated = "2026-10-04T11:32:02Z"
+updated = "2026-10-21T13:15:16Z"
 idempotency_key = "crunk-plan-g_STORE"
 labels = ["area:grimble"]
 scope = ["packs/grimble-sysdesign/rules/store/**", "packs/grimble-sysdesign/tests/store/**"]
