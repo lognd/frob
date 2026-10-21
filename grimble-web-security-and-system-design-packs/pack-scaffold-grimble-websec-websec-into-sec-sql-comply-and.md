@@ -2,7 +2,8 @@
 id = "01M43AWPD2DYMS2CVTJRD56D5R"
 title = "Pack scaffold: grimble-websec (WEBSEC into SEC, SQL, COMPLY and PII, ROUTE, WEBPERF server)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
