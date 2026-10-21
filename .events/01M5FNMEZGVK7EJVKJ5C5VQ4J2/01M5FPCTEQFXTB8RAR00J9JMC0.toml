@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T16:54:50Z"
+digest = "627d5e420ad9526311b774c1340b1f1fa2815dd308a307631184b050715ee948"
+exit_code = 0
+head = "9d52a03d6bc5e934b72a602b2fc156d9cd311245"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9f851008-64f6-47e4-b3b1-ea701e5d0b3b with nextest profile: default
+    Starting 1 test across 11 binaries (204 tests skipped)
+        PASS [   0.033s] gob-dev::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.034s] 1 test run: 1 passed, 204 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev every_leaf_command_has_a_scenario_or_a_skip_reason"
+size = 683
+status = "measured"
+test_count = 1
+tests_digest = "59d2af6bb7068fe222677a5063f60036dc54cff05a7a1fa4739af6a172414e15"
+at = "2026-10-21T16:54:50Z"
+actor = "lognd"
+rev = 1

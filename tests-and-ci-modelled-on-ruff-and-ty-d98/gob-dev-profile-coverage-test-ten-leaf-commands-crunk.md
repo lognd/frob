@@ -8,12 +8,12 @@ points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T16:45:11Z"
-updated = "2026-10-21T16:53:15Z"
+updated = "2026-10-21T16:54:50Z"
 scope = ["crates/gob-dev/profile.toml", "changelog.d/01M5FNMEZGVK7EJVKJ5C5VQ4J2.fixed.md"]
 
 [[acceptance]]
 text = "Every leaf command of frob, grimble and crunk has a profile scenario or a skip reason, including claim, lease rekind, refresh and gallery verbs"
-bound = false
+bound = true
 +++
 
 Found while landing KHR84D9; failing test on experimental. Fix or waive with reason.
