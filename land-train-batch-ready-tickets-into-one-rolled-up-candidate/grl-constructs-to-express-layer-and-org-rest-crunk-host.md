@@ -8,8 +8,8 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-17T08:50:37Z"
-updated = "2026-10-21T08:46:51Z"
-scope = ["crates/gob-plan/src/catalog/config.rs", "crates/gob-plan/tests/catalog.rs", "packs/crunk-core/exceptions.toml", "changelog.d/01M54GWME19N64RRMBTCZSG7YJ.added.md"]
+updated = "2026-10-21T08:52:57Z"
+scope = ["crates/gob-plan/src/catalog/config.rs", "crates/gob-plan/tests/catalog.rs", "packs/crunk-core/exceptions.toml", "changelog.d/01M54GWME19N64RRMBTCZSG7YJ.added.md", "docs/design/grl-spec.md"]
 +++
 
 Follow-up of ~Y8CNED9, which landed the css class_selector node kind (gob-symbols css, gob-ir style, gob-plan kind). Remaining blockers in packs/crunk-core/exceptions.toml: per-file bucket attribute, glob membership over config.org columns, config.layers/org side relations typed from docs/schemas/crunk.json, gen rules target for a non-std pack with a CrunkHost, BEM segment predicates.
