@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A GRL example may carry a model input and a rule using node or owned by runs against its nodes and owns selectors", "A rule using node, cell or owned by on an example without a model is refused, and an unparsable model or bad owns glob is an error", "cell rows report observed, granted and excused atoms per owning node, with nested grants covering descendants and unowned files yielding none", "The SYS001 and CAP001 ten-rules examples pass"]
+moved = []
+at = "2026-10-21T22:45:46Z"
+actor = "lognd"
+rev = 1
