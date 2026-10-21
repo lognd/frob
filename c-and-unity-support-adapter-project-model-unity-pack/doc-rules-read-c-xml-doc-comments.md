@@ -8,7 +8,7 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:36:58Z"
-updated = "2026-10-21T10:17:32Z"
+updated = "2026-10-21T10:24:02Z"
 idempotency_key = "d94-xmldoc"
 scope = ["crates/frob-obligations/src/doc.rs", "crates/gob-symbols/src/csharp.rs", "docs/reference/rules/DOC001.md", "docs/reference/rules/DOC002.md", "crates/frob-check/tests/**", "crates/frob-obligations/src/legacy.rs", "crates/frob-obligations/tests/mdtest/doc001.md", "changelog.d/01M44YQTSWW9EH49541MY9A7AX.added.md", "crates/frob-obligations/tests/csharp.rs"]
 
@@ -26,6 +26,10 @@ bound = false
 
 [[acceptance]]
 text = "Given a member with <inheritdoc/>, when DOC001 runs, then it is accepted"
+bound = false
+
+[[acceptance]]
+text = "C# explicit interface implementations are not flagged by DOC001"
 bound = false
 +++
 
