@@ -4,10 +4,11 @@ title = "TIME001 and TIME002 in grimble-lints for Rust and Python"
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:18Z"
-updated = "2026-10-05T00:42:31Z"
+updated = "2026-10-21T17:45:16Z"
 
 [[links]]
 kind = "blocked-by"
