@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-21T00:53:54Z"
+digest = "d97d0cc64bb81b624bf5a0fd634c3ce02d4fb17703129e2c8ec4b872471517de"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 81bd8e02-6047-4258-8cff-421102cf2152 with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   0.136s] frob-worktree::claim_evict a_fresh_claim_and_a_missing_reason_are_refused
+        PASS [   0.360s] frob-worktree::claim_evict an_idle_claim_is_evicted_with_the_rate_reported_and_a_repeat_needs_yes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.360s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree --test claim_evict"
+size = 667
+status = "measured"
+test_count = 2
+tests_digest = "b57c8476e30a16bbcaf7de2f9ef4b3785f6266e510ed5bee773b197cd0799aa6"
+at = "2026-10-21T00:53:54Z"
+actor = "lognd"
+rev = 1

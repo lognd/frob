@@ -8,6 +8,6 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T23:31:55Z"
-updated = "2026-10-21T00:46:45Z"
+updated = "2026-10-21T00:53:54Z"
 scope = ["crates/frob-worktree/src/claim_evict.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/tests/claim_evict.rs", "docs/reference/cli/frob.md", "changelog.d/01M5DTGG9XWMEBRA51PA6CYWAE.added.md"]
 +++
