@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "already implemented in 0f663b95f4 (--background, global --quiet, test background_returns_at_once_and_quiet_prints_nothing)"
+at = "2026-10-21T03:16:05Z"
+actor = "lognd"
+rev = 1
