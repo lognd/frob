@@ -1,0 +1,1 @@
+Added `cargo dev bench-ic` and a pull-request workflow that runs gungraun instruction-count benchmarks of the plan executor and the Rust parser at the base and the head, then comments the per-benchmark deltas.

@@ -11,8 +11,8 @@ use clap::{Parser, Subcommand};
 use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
 use gob_dev::{
-    Kind, Mode, apply, changes, ci, generate, isolation, profile, publish, test_size, wheel,
-    wheel_smoke, workspace_root,
+    Kind, Mode, apply, bench_ic, changes, ci, generate, isolation, profile, publish, test_size,
+    wheel, wheel_smoke, workspace_root,
 };
 
 /// Command-line interface of the developer task runner.
@@ -112,6 +112,21 @@ enum Task {
         /// Budget in gigabytes (decimal).
         #[arg(long, default_value_t = 3.0)]
         budget_gb: f64,
+    },
+    /// Compare gungraun instruction counts of a base and a head run; print the PR comment (~N9G1JSM).
+    BenchIc {
+        /// Directory of the base run's gungraun summaries (for example target/gungraun).
+        #[arg(long)]
+        base: PathBuf,
+        /// Directory of the head run's gungraun summaries.
+        #[arg(long)]
+        head: PathBuf,
+        /// Flag a benchmark whose instruction count grew more than this many percent.
+        #[arg(long, default_value_t = bench_ic::DEFAULT_THRESHOLD_PCT)]
+        threshold_pct: f64,
+        /// Exit 1 when any benchmark is flagged.
+        #[arg(long)]
+        fail_on_regression: bool,
     },
     /// Publish the workspace crates to crates.io in dependency order; resumable.
     Publish {
@@ -300,8 +315,36 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             wheel_task(|root| wheel_smoke::smoke_from_env(root, &dir, version)).map(|()| ok)
         }
         Task::TestSize { profile, budget_gb } => test_size_task(&profile, budget_gb),
+        Task::BenchIc {
+            base,
+            head,
+            threshold_pct,
+            fail_on_regression,
+        } => bench_ic_task(&base, &head, threshold_pct, fail_on_regression),
         Task::Gen { kind, check, root } => generate_files(kind, check, root).map(|()| ok),
     }
+}
+
+// frob:ticket 01M47QVC49RXV29NCG3N9G1JSM
+/// Print the base-versus-head instruction-count comment; with `fail_on_regression`, fail when flagged.
+fn bench_ic_task(
+    base: &std::path::Path,
+    head: &std::path::Path,
+    threshold_pct: f64,
+    fail_on_regression: bool,
+) -> Result<std::process::ExitCode, Failed> {
+    let fail = |e: &dyn std::fmt::Display| {
+        tracing::error!(error = %e, "bench-ic failed");
+        Failed(format!("error: {e}"))
+    };
+    let base = bench_ic::collect(base).map_err(|e| fail(&e))?;
+    let head = bench_ic::collect(head).map_err(|e| fail(&e))?;
+    let deltas = bench_ic::compare(&base, &head);
+    emit(&bench_ic::render(&deltas, threshold_pct));
+    if fail_on_regression && deltas.iter().any(|d| d.regressed(threshold_pct)) {
+        return Err(Failed("instruction-count regression".to_owned()));
+    }
+    Ok(std::process::ExitCode::SUCCESS)
 }
 
 // frob:ticket 01M4MGEZBQ9DD7BKKZ8ZM1HA1J
@@ -777,6 +820,14 @@ mod tests {
         let cli =
             Cli::try_parse_from(["gob-dev", "test-size", "--budget-gb", "2"]).expect("parses");
         assert!(matches!(cli.command, Task::TestSize { .. }));
+    }
+
+    // frob:tests crates/gob-dev/src/main.rs::Task
+    #[test]
+    fn bench_ic_parses() {
+        let cli = Cli::try_parse_from(["gob-dev", "bench-ic", "--base", "a", "--head", "b"])
+            .expect("parses");
+        assert!(matches!(cli.command, Task::BenchIc { .. }));
     }
 
     #[test]
