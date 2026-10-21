@@ -3057,3 +3057,59 @@ fn diverged_lands_counts_local_lands_origin_lacks_and_clears_after_relaunch_is_p
         frob_land::divergence::diverged_lands(&ledger, "refs/remotes/nope/main").expect("gone");
     assert!(gone.lands.is_empty());
 }
+
+// frob:ticket 01M4H1QJWECA2N5P2F28RET6B0
+// frob:tests crates/frob-land/src/verb.rs::land_batch
+#[test]
+fn a_batch_lands_in_order_reports_every_outcome_and_continues_past_a_refusal() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let a = fx.start("Add a", &["src/a.rs"]);
+    Fixture::commit_in(&a.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&a, "src/a.rs");
+    let b = fx.start("Add b", &["src/b.rs"]);
+    Fixture::commit_in(&b.wt, "src/b.rs", "fn b() {}\n");
+    Fixture::evidence(&b, "src/b.rs");
+    let x = fx.start_with("Add x", &["src/x.rs"], &["x answers"]);
+    Fixture::commit_in(&x.wt, "src/x.rs", "fn x() {}\n");
+    Fixture::evidence(&x, "src/x.rs");
+    let c = fx.start("Add c", &["src/c.rs"]);
+    Fixture::commit_in(&c.wt, "src/c.rs", "fn c() {}\n");
+    Fixture::evidence(&c, "src/c.rs");
+
+    let handles: Vec<String> = [&a, &b, &x, &c].iter().map(|s| s.handle.clone()).collect();
+    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+    let err = frob_land::verb::land_batch(&fx.root, &handles, &LandOptions::default(), &clock)
+        .expect_err("one ticket is refused, so the batch gate fails");
+    let CliError::Gate { data, .. } = err else {
+        panic!("expected a gate failure carrying the report");
+    };
+    assert_eq!(data["landed"], 3);
+    assert_eq!(data["refused"], 1);
+    let statuses: Vec<&str> = data["tickets"]
+        .as_array()
+        .expect("tickets")
+        .iter()
+        .map(|t| t["status"].as_str().expect("status"))
+        .collect();
+    assert_eq!(statuses, ["landed", "landed", "refused", "landed"]);
+    assert_eq!(data["tickets"][2]["code"], "E-DONE-CRITERIA-UNBOUND");
+    for (rel, text) in [
+        ("src/a.rs", "fn a() {}\n"),
+        ("src/b.rs", "fn b() {}\n"),
+        ("src/c.rs", "fn c() {}\n"),
+    ] {
+        let blob = fx.repo().read_blob_at("main", rel).expect("read");
+        assert_eq!(blob.as_deref(), Some(text.as_bytes()), "{rel} landed");
+    }
+    assert_eq!(
+        fx.repo().read_blob_at("main", "src/x.rs").expect("read"),
+        None
+    );
+    assert_eq!(
+        fx.ledger().show(x.id).expect("show").summary.category,
+        Category::InProgress
+    );
+}

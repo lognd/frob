@@ -31,7 +31,7 @@
 | `graph affects` | yes | no | 0 ok, 2 usage, 4 internal | List the transitive dependents of a symbol, grouped by file. |
 | `graph why` | yes | no | 0 ok, 2 usage, 4 internal | Explain the bindings and acks that make a finding fire for a symbol. |
 | `init` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Write frob.toml knobs, ignore .frob/, and install the ledger merge driver; safe to repeat. |
-| `land` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Land a leased ticket branch onto the base branch, close the ticket and clean up. |
+| `land` | yes | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Land one or more leased ticket branches onto the base branch, close the tickets and clean up. |
 | `lease list` | yes | no | 0 ok, 3 refused, 4 internal | List the live scope leases of this clone; `--contention` adds the files claimed by more than one. |
 | `lease rekind` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-claim the caller's lease as a human (or as `--agent LABEL`), switching its idle window. |
 | `lease release` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Give up the caller's lease on a finished-but-unlanded ticket; the ticket stays in-progress and `land` re-takes the lease. |

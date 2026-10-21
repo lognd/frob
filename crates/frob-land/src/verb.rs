@@ -3,6 +3,8 @@
 use frob_ledger::model::Outcome as TicketOutcome;
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
+use schemars::JsonSchema;
+use serde::Serialize;
 
 use crate::error::LandError;
 use crate::land::land;
@@ -14,17 +16,18 @@ use crate::train::{
 };
 use frob_ledger::TicketId;
 
-/// Land a leased ticket branch onto the base branch, close the ticket and clean up.
+/// Land one or more leased ticket branches onto the base branch, close the tickets and clean up.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "land",
     product = "frob",
     idempotent = true,
     dry_run,
-    exits(ok, refused, usage, internal)
+    exits(ok, negative, refused, usage, internal)
 )]
 pub struct Land {
     opts: LandOptions,
+    handles: Vec<String>,
     train: bool,
     enqueue_only: bool,
     relaunch: bool,
@@ -37,9 +40,10 @@ pub struct Land {
 struct LandArgs {
     #[arg(
         value_name = "TICKET",
-        help = "Full ULID, ~handle or alias; defaults to the ticket leased by this worktree"
+        num_args = 0..,
+        help = "Full ULID, ~handle or alias, one or more; several land in order, one foreground run, continuing past a refusal; defaults to the ticket leased by this worktree"
     )]
-    ticket: Option<String>,
+    ticket: Vec<String>,
     #[arg(long, help = "Push the base branch to origin after landing")]
     push: bool,
     #[arg(
@@ -102,7 +106,7 @@ struct LandArgs {
 }
 
 impl Command for Land {
-    type Data = LandOutcome;
+    type Data = LandReport;
 
     fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
         gob_cli::augment::<LandArgs>(cmd)
@@ -110,6 +114,11 @@ impl Command for Land {
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         let a = gob_cli::parse::<LandArgs>(m)?;
+        if a.ticket.len() > 1 && (a.train || a.enqueue_only || a.relaunch || a.status) {
+            return Err(CliError::Usage(
+                "several tickets cannot be combined with --train, --enqueue-only, --relaunch or --status".to_owned(),
+            ));
+        }
         let outcome = match a.outcome.clone() {
             Some(s) => s
                 .parse::<TicketOutcome>()
@@ -150,8 +159,9 @@ impl Command for Land {
             train: a.train || a.enqueue_only,
             enqueue_only: a.enqueue_only,
             relaunch: a.relaunch,
+            handles: a.ticket.clone(),
             opts: LandOptions {
-                handle: a.ticket,
+                handle: a.ticket.first().cloned(),
                 dry_run: false,
                 push: a.push,
                 wait_secs: a.wait.unwrap_or(0),
@@ -169,11 +179,14 @@ impl Command for Land {
         })
     }
 
-    fn run(&self, ctx: &Context) -> Outcome<LandOutcome> {
+    fn run(&self, ctx: &Context) -> Outcome<LandReport> {
         let mut opts = self.opts.clone();
         opts.dry_run = ctx.dry_run;
         if opts.status {
             return lock_status(ctx);
+        }
+        if self.handles.len() > 1 {
+            return land_batch(&ctx.cwd, &self.handles, &opts, &ctx.clock);
         }
         let out = if self.relaunch {
             crate::relaunch::relaunch(&ctx.cwd, &opts, &ctx.clock)?
@@ -202,7 +215,7 @@ impl Command for Land {
                 n.message
             )
         }));
-        let mut p = Payload::new(out).with_already(already);
+        let mut p = Payload::new(LandReport::One(out)).with_already(already);
         for w in warnings {
             p = p.with_warning(w);
         }
@@ -210,8 +223,150 @@ impl Command for Land {
     }
 }
 
+/// The result of `land`: one ticket's outcome, or every ticket's outcome of a batch.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+#[serde(untagged)]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "built once per run and serialized at once; boxing would change nothing"
+)]
+pub enum LandReport {
+    /// A single-ticket land (the original shape).
+    One(LandOutcome),
+    /// A several-ticket land, in the order given.
+    Batch(BatchReport),
+}
+
+/// Every ticket's outcome of a several-ticket land.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct BatchReport {
+    /// One entry per requested ticket, in order.
+    pub tickets: Vec<BatchEntry>,
+    /// How many tickets landed (or were already landed).
+    pub landed: usize,
+    /// How many tickets were refused or failed.
+    pub refused: usize,
+}
+
+/// One ticket's result inside a batch.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct BatchEntry {
+    /// The handle exactly as given.
+    pub ticket: String,
+    /// `landed`, `refused`, `failed` or `skipped`.
+    pub status: String,
+    /// The land outcome when the ticket landed.
+    pub outcome: Option<LandOutcome>,
+    /// The refusal code (or `E-INTERNAL`/`E-USAGE`) when it did not.
+    pub code: Option<String>,
+    /// The refusal message when it did not land.
+    pub message: Option<String>,
+    /// The exact fixing command, when the refusal names one.
+    pub remedy: Option<String>,
+}
+
+impl BatchEntry {
+    /// An entry for a ticket that did not land, from the error that stopped it.
+    fn failed(ticket: &str, status: &str, err: &CliError) -> Self {
+        let (code, message, remedy) = match err {
+            CliError::Refusal(r) => (r.code.clone(), r.message.clone(), r.remedy.clone()),
+            CliError::Usage(m) => ("E-USAGE".to_owned(), m.clone(), None),
+            other => ("E-INTERNAL".to_owned(), other.to_string(), None),
+        };
+        Self {
+            ticket: ticket.to_owned(),
+            status: status.to_owned(),
+            outcome: None,
+            code: Some(code),
+            message: Some(message),
+            remedy,
+        }
+    }
+}
+
+/// Land `handles` one after another in this process; a refusal is recorded and the next ticket
+/// still runs, an internal error stops the batch and marks the rest skipped. Foreground only.
+///
+/// # Errors
+/// A gate failure carrying the full report when any ticket did not land.
+pub fn land_batch(
+    cwd: &std::path::Path,
+    handles: &[String],
+    base: &LandOptions,
+    clock: &std::sync::Arc<dyn gob_time::Clock>,
+) -> Outcome<LandReport> {
+    let mut tickets = Vec::with_capacity(handles.len());
+    let mut stopped = false;
+    for h in handles {
+        if stopped {
+            tracing::warn!(ticket = %h, "land batch stopped by an internal error; ticket skipped");
+            tickets.push(BatchEntry {
+                ticket: h.clone(),
+                status: "skipped".to_owned(),
+                outcome: None,
+                code: None,
+                message: Some("an earlier ticket failed with an internal error".to_owned()),
+                remedy: None,
+            });
+            continue;
+        }
+        let mut opts = base.clone();
+        opts.handle = Some(h.clone());
+        match land(cwd, &opts, clock) {
+            Ok(out) => {
+                tracing::info!(ticket = %h, already = out.already, "land batch: ticket landed");
+                tickets.push(BatchEntry {
+                    ticket: h.clone(),
+                    status: "landed".to_owned(),
+                    outcome: Some(out),
+                    code: None,
+                    message: None,
+                    remedy: None,
+                });
+            }
+            Err(e) => {
+                let err: CliError = e.into();
+                let refused = matches!(err, CliError::Refusal(_) | CliError::Usage(_));
+                stopped = !refused;
+                tracing::warn!(ticket = %h, error = %err, refused, "land batch: ticket did not land");
+                tickets.push(BatchEntry::failed(
+                    h,
+                    if refused { "refused" } else { "failed" },
+                    &err,
+                ));
+            }
+        }
+    }
+    let landed = tickets.iter().filter(|t| t.status == "landed").count();
+    let report = BatchReport {
+        refused: tickets.len() - landed,
+        landed,
+        tickets,
+    };
+    if report.refused > 0 {
+        let message = format!(
+            "{} of {} tickets did not land: {}",
+            report.refused,
+            report.tickets.len(),
+            report
+                .tickets
+                .iter()
+                .filter(|t| t.status != "landed")
+                .map(|t| format!("{} {}", t.ticket, t.code.as_deref().unwrap_or("skipped")))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+        return Err(CliError::Gate {
+            message,
+            data: serde_json::to_value(LandReport::Batch(report)).map_err(CliError::internal)?,
+            warnings: Vec::new(),
+        });
+    }
+    Ok(Payload::new(LandReport::Batch(report)))
+}
+
 /// The `--status` result: the lock state in an otherwise empty outcome.
-fn lock_status(ctx: &Context) -> Outcome<LandOutcome> {
+fn lock_status(ctx: &Context) -> Outcome<LandReport> {
     let repo = gob_git::Repo::discover(&ctx.cwd).map_err(|e| LandError::Config(e.to_string()))?;
     let status = LandLock::status(repo.common_dir(), &*ctx.clock)?;
     tracing::info!(held = status.held, summary = %status.summary, "land lock status");
@@ -221,7 +376,7 @@ fn lock_status(ctx: &Context) -> Outcome<LandOutcome> {
         .map_err(|_| LandError::Config("nil id".to_owned()))?;
     let mut out = crate::land::blank_outcome(nil, "-", "-", &LandOptions::default());
     out.lock = Some(status.clone());
-    Ok(Payload::new(out).with_warning(status.summary))
+    Ok(Payload::new(LandReport::One(out)).with_warning(status.summary))
 }
 
 // frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6

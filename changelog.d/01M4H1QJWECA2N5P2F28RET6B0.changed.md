@@ -1,0 +1,1 @@
+Make `frob land` take several tickets in one foreground run (`frob land ~A ~B ~C`): they land in order, each checked against the base the previous one produced, every outcome is reported in the envelope (`tickets`, `landed`, `refused`) and a refusal does not stop the rest; exit 1 when any ticket did not land.
