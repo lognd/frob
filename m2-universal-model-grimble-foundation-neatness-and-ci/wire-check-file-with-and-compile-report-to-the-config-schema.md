@@ -2,13 +2,13 @@
 id = "01M4DYPHVAG574Z9ZJZ41PCRHB"
 title = "Wire check_file_with and compile_report to the config schema the binary ships"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-08T14:29:26Z"
-updated = "2026-10-11T00:22:00Z"
+updated = "2026-10-21T22:17:12Z"
 scope = ["changelog.d/**", "crates/gob-plan/**", "crates/grimble/**"]
 
 [[links]]
