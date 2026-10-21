@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "fixed directly on experimental"
+at = "2026-10-21T19:02:19Z"
+actor = "lognd"
+rev = 1
