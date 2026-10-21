@@ -18,6 +18,7 @@ use frob_mirror::github::lookup::ListingSource;
 use frob_mirror::github::read::{BodyRevisions, HistorySource, TimelineEvent};
 use frob_mirror::host::{HostConfig, MirrorHost, Shared, Sources, TicketSource, TicketState};
 use frob_mirror::keyring::Keyring;
+use frob_mirror::lock::{LedgerCommit, read_watermark};
 use frob_mirror::mapfile::{MapError, ShardStore, content_hash, read_shard};
 use frob_mirror::outbox::{FieldSink, LedgerEvent, Mode, SinkError};
 use frob_mirror::projection::{
@@ -105,6 +106,7 @@ impl HistorySource for Quiet {
 
 struct Tickets {
     events: Vec<LedgerEvent>,
+    commits: Vec<LedgerCommit>,
 }
 
 impl TicketSource for Tickets {
@@ -132,6 +134,9 @@ impl TicketSource for Tickets {
         _: Vec<frob_ledger::event::Event>,
     ) -> Result<(), String> {
         Ok(())
+    }
+    fn commits(&self) -> Vec<LedgerCommit> {
+        self.commits.clone()
     }
 }
 
@@ -194,6 +199,11 @@ impl World {
 
     /// One mirror pass with the given ledger events.
     fn pass(&self, events: Vec<LedgerEvent>) {
+        self.pass_with(events, vec![]);
+    }
+
+    /// One mirror pass with the given ledger events and commit log.
+    fn pass_with(&self, events: Vec<LedgerEvent>, commits: Vec<LedgerCommit>) {
         let q = Quiet;
         let ring = Keyring::new("k1", MachineKey::from_bytes([1; 32]), vec![]).unwrap();
         let own = FieldOwnership::load(
@@ -214,7 +224,7 @@ impl World {
         let mut host = MirrorHost::new(
             self.store.clone(),
             self.gh.clone(),
-            Tickets { events },
+            Tickets { events, commits },
             Sink(self.calls.clone()),
             src,
             host_cfg(),
@@ -273,6 +283,26 @@ fn ledger_events_reach_the_tracker_once() {
     );
 }
 
+// frob:tests MirrorHost.ledger_commits
+#[test]
+fn a_clean_pass_advances_the_watermark_to_the_ledger_head() {
+    let w = World::new();
+    let log = |ids: &[&str]| {
+        ids.iter()
+            .map(|id| LedgerCommit {
+                id: (*id).into(),
+                own: false,
+            })
+            .collect::<Vec<_>>()
+    };
+    w.pass_with(vec![], log(&["c1", "c2"]));
+    let mark = read_watermark(&w.store).unwrap();
+    assert_eq!(mark.map(|m| m.commit), Some("c2".to_owned()));
+    w.pass_with(vec![], log(&["c1", "c2", "c3"]));
+    let mark = read_watermark(&w.store).unwrap();
+    assert_eq!(mark.map(|m| m.commit), Some("c3".to_owned()));
+}
+
 // frob:tests MirrorHost.close_duplicates
 #[test]
 fn close_duplicates_with_one_issue_closes_nothing() {
@@ -298,7 +328,10 @@ fn close_duplicates_with_one_issue_closes_nothing() {
     let host = MirrorHost::new(
         w.store.clone(),
         w.gh.clone(),
-        Tickets { events: vec![] },
+        Tickets {
+            events: vec![],
+            commits: vec![],
+        },
         Sink(w.calls.clone()),
         src,
         host_cfg(),

@@ -30,6 +30,7 @@ use crate::github::lookup::ListingSource;
 use crate::github::read::{HistorySource, creation_revision};
 use crate::journal::{read_journal, value_digest, write_journal};
 use crate::keyring::Keyring;
+use crate::lock::LedgerCommit;
 use crate::mapfile::{MapError, Shard, ShardStore, read_shard, write_shard};
 use crate::marker::evaluate;
 use crate::normalize::ReadBack;
@@ -172,6 +173,8 @@ pub trait TicketSource {
     /// # Errors
     /// Returns a message when the commit fails; nothing is then considered recorded.
     fn commit_proposals(&mut self, ulid: &str, events: Vec<Event>) -> Result<(), String>;
+    /// The ledger commit log, oldest first, the mirror's own commits flagged.
+    fn commits(&self) -> Vec<LedgerCommit>;
 }
 
 /// Static settings of one host.
@@ -547,6 +550,11 @@ where
     /// The limit read at run start.
     fn rate_limit(&self) -> RateLimit {
         self.cfg.rate_limit
+    }
+
+    /// The ledger seam's commit log, so the run can advance its watermark.
+    fn ledger_commits(&self) -> Vec<LedgerCommit> {
+        self.tickets.commits()
     }
 
     /// Recovery, update, create and reconcile work; the driver adds the sweep.
