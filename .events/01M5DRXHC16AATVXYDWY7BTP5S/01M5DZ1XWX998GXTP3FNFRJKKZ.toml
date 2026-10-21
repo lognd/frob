@@ -1,0 +1,27 @@
+kind = "evidence"
+captured_at = "2026-10-21T00:51:05Z"
+digest = "9fc50ecba6dd97ec41cd2cea7487f8014b9a96124c646fd2c033fbc6c71f9660"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8449bcbb-c64a-4efb-b362-8fffa1db0ab1 with nextest profile: default
+    Starting 3 tests across 3 binaries (136 tests skipped)
+        PASS [   0.590s] frob-land::land relaunch_refuses_an_unlanded_ticket_and_is_a_no_op_when_origin_has_the_land
+        PASS [   0.641s] frob-land::land relaunch_merges_the_remote_base_into_the_kept_branch_and_leaves_the_local_base
+        PASS [   0.738s] frob-land::land relaunch_follows_the_configured_sync_remote_and_pushes_only_when_asked
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.739s] 3 tests run: 3 passed, 136 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land relaunch"
+size = 935
+status = "measured"
+test_count = 3
+tests_digest = "883320984c0dfc41f0940d49662fdab65287a89db27096e1e2e9afb4590a95e6"
+at = "2026-10-21T00:51:05Z"
+actor = "lognd"
+rev = 1
