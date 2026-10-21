@@ -195,10 +195,9 @@ fn run_locked<S: ShardStore, H: RunHost>(
             }
         }
     }
-<<<<<<< HEAD
     if matches!(stop, StopReason::Completed) {
         host.after_items();
-=======
+    }
     // The feed cursor moves only when every reconcile item was done: otherwise the unprocessed
     // issues would fall behind it and never be seen again.
     let count = |classes: &mut dyn Iterator<Item = WorkClass>| {
@@ -209,7 +208,6 @@ fn run_locked<S: ShardStore, H: RunHost>(
     let advance_feed = failed.is_empty() && matches!(stop, StopReason::Completed) && all_reconciled;
     if let Some(cursor) = host.feed_cursor().filter(|_| advance_feed) {
         writer.set_change_feed(cursor);
->>>>>>> experimental
     }
     let report = writer.finish(stop)?;
     let watermark = advance_watermark(store, &log, prior.as_ref(), &stop, failed.is_empty())?;
