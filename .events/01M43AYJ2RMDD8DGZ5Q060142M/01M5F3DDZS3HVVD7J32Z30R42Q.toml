@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T11:26:46Z"
+digest = "f89fd28bf10d5965996b8677bf1e6a10b7997312922ac5a59ee3d4d9e19a7268"
+exit_code = 0
+head = "0d6e2595a30148be55fef9fa251221aebc3ed4ce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 93ba907a-e1a8-44ce-ba93-6b7a90caadd8 with nextest profile: default
+    Starting 1 test across 9 binaries (62 tests skipped)
+        PASS [   0.006s] gob-packs::sysdesign_pack a_rule_without_examples_does_not_compile
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 62 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs a_rule_without_examples_does_not_compile"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "d0f8223d8ec25759f16125f5662e5dba984d5f4a34ad822565b34c069fdc64d8"
+at = "2026-10-21T11:26:46Z"
+actor = "lognd"
+rev = 1

@@ -8,7 +8,7 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:53Z"
-updated = "2026-10-21T11:26:45Z"
+updated = "2026-10-21T11:26:46Z"
 idempotency_key = "crunk-plan-g_sd"
 labels = ["area:grimble"]
 scope = ["packs/grimble-sysdesign/**", "docs/grimble/packs/grimble-sysdesign.md", "crates/gob-packs/src/sysdesign.rs", "crates/gob-packs/src/lib.rs", "crates/gob-packs/tests/sysdesign_pack.rs", "changelog.d/01M43AYJ2RMDD8DGZ5Q060142M.added.md", "crates/gob-packs/src/limits.rs"]
@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a rule without examples, when the pack compiles, then it fails"
-bound = false
+bound = true
 +++
 
 Pack directory, manifest, lock entry, one worked rule per family with examples, std-pack registration. These families lint stores, data and infrastructure design against the model; decide at pickup which rules read .grmb entities (grimble-model) and which read code (record in the manifest).
