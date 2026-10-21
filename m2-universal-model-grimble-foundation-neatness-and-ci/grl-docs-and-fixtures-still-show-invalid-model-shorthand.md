@@ -1,0 +1,13 @@
++++
+id = "01M5GAT99HX9VW1S0MEFKKYQ41"
+title = "GRL docs and fixtures still show invalid model shorthand (node app owns, may because=)"
+type = "docs"
+category = "todo"
+priority = "medium"
+parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
+reporter = "lognd"
+created = "2026-10-21T22:55:22Z"
+updated = "2026-10-21T22:55:22Z"
++++
+
+Found while working ~WHEVEHY. docs/design/grl-spec.md and crates/gob-plan/src/grl/parse/tests/fixtures/{CAP001,SYS001}.grl show 'node app owns ".."' and 'may ... because=', which grmb does not parse; use 'node app { owns ".."; }' and 'excuses ATOM because=".."'. CAP001.grl hint text mentions because. Also: examples/cells.rs names_callee duplicates grimble-bind; scoped (may ... at) grants are ignored.
