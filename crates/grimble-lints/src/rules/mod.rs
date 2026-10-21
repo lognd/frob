@@ -7,6 +7,10 @@ pub mod path001;
 pub mod path002;
 /// Rule `PATH003`.
 pub mod path003;
+/// Rule `TIME001`.
+pub mod time001;
+/// Rule `TIME002`.
+pub mod time002;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -14,6 +18,8 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <path001::Path001 as gob_rules::RuleDecl>::DEF,
     <path002::Path002 as gob_rules::RuleDecl>::DEF,
     <path003::Path003 as gob_rules::RuleDecl>::DEF,
+    <time001::Time001 as gob_rules::RuleDecl>::DEF,
+    <time002::Time002 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -33,11 +39,15 @@ where
     path001::Path001: gob_rules::Measured<P>,
     path002::Path002: gob_rules::Measured<P>,
     path003::Path003: gob_rules::Measured<P>,
+    time001::Time001: gob_rules::Measured<P>,
+    time002::Time002: gob_rules::Measured<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::measured(path001::Path001));
     rules.push(gob_rules::BoundRule::measured(path002::Path002));
     rules.push(gob_rules::BoundRule::measured(path003::Path003));
+    rules.push(gob_rules::BoundRule::measured(time001::Time001));
+    rules.push(gob_rules::BoundRule::measured(time002::Time002));
     rules
 }
 

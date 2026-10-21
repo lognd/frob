@@ -1,6 +1,7 @@
-//! The host trait the PATH `#[rule]` declarations evaluate against.
+//! The host traits the PATH and TIME `#[rule]` declarations evaluate against.
 
 // frob:ticket 01M59A2N1QCS2E5GPGD09V34R1
+// frob:ticket 01M44R5W4WJEXFM000S8KVQQN5
 
 /// What a PATH rule may ask of its product: how many files the scan examined.
 ///
@@ -9,4 +10,12 @@
 pub trait PathHost {
     /// Files the PATH pass examined for rule `id` on this run (0 when it examined none).
     fn path_subjects_of(&self, id: &str) -> usize;
+}
+
+/// What a TIME rule may ask of its product: how many files the scan examined.
+///
+/// The two rules are evaluated in one pass over the walk, like the PATH rules.
+pub trait TimeHost {
+    /// Files the TIME pass examined for rule `id` on this run (0 when it examined none).
+    fn time_subjects_of(&self, id: &str) -> usize;
 }

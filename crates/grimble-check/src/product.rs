@@ -45,6 +45,8 @@ pub struct GrimbleInputs {
     pub arch: ArchReport,
     /// The PATH001 to PATH003 verdicts (grimble-lints), recomputed each run.
     pub path: PathReport,
+    /// The TIME001 and TIME002 verdicts (grimble-lints), cached like the PATH report.
+    pub time: PathReport,
 }
 
 /// What a run leaves behind for the document builder: the model view and which exception parked which finding.
@@ -133,11 +135,27 @@ fn arch_metas() -> Vec<&'static RuleMeta> {
 
 /// The host-path portability rules (the PATH family `grimble-lints` declares).
 fn path_metas() -> Vec<&'static RuleMeta> {
+    lint_metas()
+        .into_iter()
+        .filter(|m| !m.id.starts_with("TIME"))
+        .collect()
+}
+
+/// Every rule `grimble-lints` declares (the PATH and TIME families).
+fn lint_metas() -> Vec<&'static RuleMeta> {
     static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
     legacy_metas(&CELL, grimble_lints::rules::METAS)
 }
 
-/// Every rule grimble reports: the global registry plus the declared MDL, SYS, architecture and path rules (for slugs and polarity).
+/// The clock-handling rules (the TIME family `grimble-lints` declares).
+fn time_metas() -> Vec<&'static RuleMeta> {
+    lint_metas()
+        .into_iter()
+        .filter(|m| m.id.starts_with("TIME"))
+        .collect()
+}
+
+/// Every rule grimble reports: the global registry plus the declared MDL, SYS, architecture, path and time rules (for slugs and polarity).
 pub(crate) fn registry() -> &'static Registry {
     static CELL: OnceLock<Registry> = OnceLock::new();
     CELL.get_or_init(|| {
@@ -146,7 +164,7 @@ pub(crate) fn registry() -> &'static Registry {
             .chain(model_metas())
             .chain(binding_metas())
             .chain(arch_metas())
-            .chain(path_metas());
+            .chain(lint_metas());
         Registry::from_metas(metas)
     })
 }
@@ -169,6 +187,7 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .cloned()
         .or_else(|| snap.inputs.arch.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.path.not_applicable.get(def.id).cloned())
+        .or_else(|| snap.inputs.time.not_applicable.get(def.id).cloned())
 }
 
 /// Run the PATH rules over every Rust, Python, TypeScript and C# file of the walk (uncached).
@@ -192,6 +211,29 @@ fn path_report(
         })
         .collect();
     grimble_lints::pass::analyze(&files, &grimble_lints::path::Options::default())
+}
+
+/// Run the TIME rules over every Rust and Python file of the walk (uncached).
+fn time_report(
+    entries: &[gob_walk::FileEntry],
+    read: &dyn Fn(&str) -> Option<String>,
+) -> PathReport {
+    let texts: Vec<(&str, gob_languages::Language, String)> = entries
+        .iter()
+        .filter_map(|e| {
+            let language = gob_languages::Language::detect(&e.path)?;
+            read(&e.path).map(|text| (e.path.as_str(), language, text))
+        })
+        .collect();
+    let files: Vec<PathFile<'_>> = texts
+        .iter()
+        .map(|(path, language, text)| PathFile {
+            path,
+            language: *language,
+            text,
+        })
+        .collect();
+    grimble_lints::time_pass::analyze(&files)
 }
 
 /// Run the architecture rules over the walk (graph built from the bound code, uncached).
@@ -243,7 +285,11 @@ fn remap(findings: Vec<Finding>, from: &FileInterner, to: &mut FileInterner) -> 
 }
 
 /// The architecture and PATH reports of the walk, from the cache when `digest` has them.
-fn reports(cx: &mut CollectCx<'_>, digest: &str, table: &GrimbleTable) -> (ArchReport, PathReport) {
+fn reports(
+    cx: &mut CollectCx<'_>,
+    digest: &str,
+    table: &GrimbleTable,
+) -> (ArchReport, PathReport, PathReport) {
     // The architecture and PATH reports are pure in the same digest plus `large_lines`, so a
     // hit skips reading and parsing every file (~SNJ3PH5).
     let started = std::time::Instant::now();
@@ -258,14 +304,22 @@ fn reports(cx: &mut CollectCx<'_>, digest: &str, table: &GrimbleTable) -> (ArchR
         .cache
         .get_artifact(&path_key)
         .and_then(|b| report_cache::decode_path(&b));
-    let (arch_cached, path_cached) = (arch_hit.is_some(), path_hit.is_some());
-    let (arch, path) = if let (Some(arch), Some(path)) = (arch_hit.clone(), path_hit.clone()) {
-        tracing::info!(digest = %digest, "architecture and path reports reused from cache");
-        (arch, path)
+    let time_key = report_cache::key("time", digest, &engine, table.large_lines);
+    let time_hit = cx
+        .cache
+        .get_artifact(&time_key)
+        .and_then(|b| report_cache::decode_path(&b));
+    let (arch_cached, path_cached, time_cached) =
+        (arch_hit.is_some(), path_hit.is_some(), time_hit.is_some());
+    let (arch, path, time) = if let (Some(arch), Some(path), Some(time)) =
+        (arch_hit.clone(), path_hit.clone(), time_hit.clone())
+    {
+        tracing::info!(digest = %digest, "architecture, path and time reports reused from cache");
+        (arch, path, time)
     } else {
         // One reader for both passes: `Core::text` opens the repository per call, which on
         // a 20k-file walk is the dominant cost of the run.
-        let (arch, arch_took, path, path_took) = cx.core.with_content(|reader| {
+        let (arch, arch_took, path, path_took, time) = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);
             let read = |p: &str| reader.borrow_mut().read_text(p).ok();
             let started = std::time::Instant::now();
@@ -274,7 +328,9 @@ fn reports(cx: &mut CollectCx<'_>, digest: &str, table: &GrimbleTable) -> (ArchR
             let arch_took = started.elapsed();
             let started = std::time::Instant::now();
             let path = path_hit.unwrap_or_else(|| path_report(&cx.core.entries, &read));
-            (arch, arch_took, path, started.elapsed())
+            let path_took = started.elapsed();
+            let time = time_hit.unwrap_or_else(|| time_report(&cx.core.entries, &read));
+            (arch, arch_took, path, path_took, time)
         });
         if !arch_cached {
             cx.cache
@@ -284,16 +340,48 @@ fn reports(cx: &mut CollectCx<'_>, digest: &str, table: &GrimbleTable) -> (ArchR
             cx.cache
                 .put_artifact(&path_key, &report_cache::encode_path(&path));
         }
+        if !time_cached {
+            cx.cache
+                .put_artifact(&time_key, &report_cache::encode_path(&time));
+        }
         tracing::info!(
             ?arch_took,
             ?path_took,
             "architecture and path reports computed"
         );
-        (arch, path)
+        (arch, path, time)
     };
     cx.timing.push("architecture", started.elapsed(), false);
     cx.timing.push("path", std::time::Duration::ZERO, false);
-    (arch, path)
+    cx.timing.push("time", std::time::Duration::ZERO, false);
+    (arch, path, time)
+}
+
+/// A repo group over the findings of one `grimble-lints` report (`pick` names it on the inputs).
+fn report_group(
+    id: &'static str,
+    metas: Vec<&'static RuleMeta>,
+    pick: fn(&GrimbleInputs) -> &PathReport,
+) -> RepoGroup<Grimble> {
+    RepoGroup::new(
+        id,
+        metas,
+        move |s: &Snapshot<Grimble>, files: &mut FileInterner| {
+            pick(&s.inputs)
+                .findings
+                .iter()
+                .cloned()
+                .filter_map(|f| f.into_finding(files))
+                .collect()
+        },
+    )
+    .counting(move |s| {
+        pick(&s.inputs)
+            .subjects
+            .iter()
+            .map(|(rule, n)| (*rule, *n))
+            .collect()
+    })
 }
 
 impl Product for Grimble {
@@ -342,7 +430,7 @@ impl Product for Grimble {
             summary
         };
         cx.timing.push("binding", started.elapsed(), true);
-        let (arch, path) = reports(cx, &digest, &table);
+        let (arch, path, time) = reports(cx, &digest, &table);
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
             trace.view = Some(Arc::clone(&view));
@@ -354,6 +442,7 @@ impl Product for Grimble {
                 .iter()
                 .chain(&arch.not_applicable)
                 .chain(&path.not_applicable)
+                .chain(&time.not_applicable)
                 .map(|(rule, why)| ((*rule).to_owned(), why.clone()))
                 .collect();
         }
@@ -367,6 +456,7 @@ impl Product for Grimble {
                 binding,
                 arch,
                 path,
+                time,
             },
             findings: Vec::new(),
         })
@@ -451,27 +541,8 @@ impl Product for Grimble {
                     .map(|(rule, n)| (*rule, *n))
                     .collect()
             }),
-            RepoGroup::new(
-                "repo:path",
-                path_metas(),
-                |s: &Snapshot<Self>, files: &mut FileInterner| {
-                    s.inputs
-                        .path
-                        .findings
-                        .iter()
-                        .cloned()
-                        .filter_map(|f| f.into_finding(files))
-                        .collect()
-                },
-            )
-            .counting(|s| {
-                s.inputs
-                    .path
-                    .subjects
-                    .iter()
-                    .map(|(rule, n)| (*rule, *n))
-                    .collect()
-            }),
+            report_group("repo:path", path_metas(), |i| &i.path),
+            report_group("repo:time", time_metas(), |i| &i.time),
         ]
     }
 
@@ -479,6 +550,7 @@ impl Product for Grimble {
         !snap.inputs.binding.not_applicable.contains_key(meta.id)
             && !snap.inputs.arch.not_applicable.contains_key(meta.id)
             && !snap.inputs.path.not_applicable.contains_key(meta.id)
+            && !snap.inputs.time.not_applicable.contains_key(meta.id)
     }
 
     fn repo_digest(&self, _snap: &Snapshot<Self>) -> Vec<u8> {

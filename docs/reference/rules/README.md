@@ -385,6 +385,13 @@
 | [TICK010](TICK010.md) | ledger-branch-workflow | error | manual | P+ | false | A `.github/` tree on the ticket branch is not exactly the generated nudge workflow. |
 | [TICK011](TICK011.md) | ledger-branch-unprotected | error | manual | P+ | false | The ledger branch allows a force push or deletion, or the hosting API could not say it does not. |
 
+## TIME
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TIME001](TIME001.md) | local-clock-read | warn | manual | P- | true | A current-time read in the local zone, or without a zone, whose value is stored or sent. |
+| [TIME002](TIME002.md) | naive-aware-mix | warn | manual | P- | true | A naive and a timezone-aware datetime compared or subtracted. |
+
 ## TODO
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

@@ -102,11 +102,7 @@ pub fn has_conversion_roles(language: Language) -> bool {
 }
 
 fn lang_of(language: Language) -> Option<Lang> {
-    match language {
-        Language::Rust => Some(Lang::Rust),
-        Language::Python => Some(Lang::Python),
-        _ => None,
-    }
+    Lang::of(language)
 }
 
 /// True when `language` has string literals `PATH001` can read.
