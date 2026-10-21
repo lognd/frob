@@ -74,4 +74,13 @@ jobs:
           cargo run -q -p gob-dev -- bench-ic \
             --base "$RUNNER_TEMP/base" --head "$RUNNER_TEMP/head" > "$RUNNER_TEMP/comment.md"
           cat "$RUNNER_TEMP/comment.md" >> "$GITHUB_STEP_SUMMARY"
-          gh pr comment "$PR" --edit-last --create-if-none --body-file "$RUNNER_TEMP/comment.md"
+          marker='<!-- gob-bench-ic -->'
+          { echo "$marker"; cat "$RUNNER_TEMP/comment.md"; } > "$RUNNER_TEMP/comment-marked.md"
+          id=$(gh api --paginate "repos/${{ github.repository }}/issues/$PR/comments" \
+            --jq "[.[] | select(.body | contains(\"$marker\"))] | first | .id // empty")
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$id" \
+              -F body=@"$RUNNER_TEMP/comment-marked.md"
+          else
+            gh pr comment "$PR" --body-file "$RUNNER_TEMP/comment-marked.md"
+          fi
