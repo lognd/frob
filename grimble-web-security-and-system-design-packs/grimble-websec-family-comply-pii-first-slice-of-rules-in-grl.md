@@ -8,7 +8,7 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:27Z"
-updated = "2026-10-21T12:25:42Z"
+updated = "2026-10-21T12:28:20Z"
 idempotency_key = "crunk-plan-g_COMPLY-PII"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/rules/comply-pii/**", "packs/grimble-websec/tests/comply-pii/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs", "docs/grimble/packs/grimble-websec.md", "changelog.d/01M43AXRXEQED01AP4SQVSC54Z.added.md"]
@@ -19,7 +19,7 @@ target = "01M43AWPD2DYMS2CVTJRD56D5R"
 
 [[acceptance]]
 text = "Given code violating the first rule, when `grimble check` runs, then the finding fires with teaching text"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the clean example, when `grimble rule test` runs, then it passes"

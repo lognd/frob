@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T12:28:20Z"
+digest = "31e0f647a17709cce33781d7210bf76c3313ebccd30dadf82f490d9634bc12fb"
+exit_code = 0
+head = "6ec647e30b0162b4b007b3f2e1643c0101af369c"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 111562d2-1e3a-4285-b725-4c0ae0c6d44d with nextest profile: default
+    Starting 3 tests across 9 binaries (53 tests skipped)
+        PASS [   0.018s] grimble-check::websec_pack pii_rules_are_not_applicable_outside_python
+        PASS [   0.018s] grimble-check::websec_pack manifest_registers_sec_and_pii_rows
+        PASS [   0.051s] grimble-check::websec_pack pii_slice_rules_fire_on_their_example_and_teach_a_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.052s] 3 tests run: 3 passed, 53 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check pii_"
+size = 830
+status = "measured"
+test_count = 3
+tests_digest = "fecbcc60163d0a4af71d2a84d16afc1f4671d37888bceae6a5105f39d35b02e1"
+at = "2026-10-21T12:28:20Z"
+actor = "lognd"
+rev = 1
