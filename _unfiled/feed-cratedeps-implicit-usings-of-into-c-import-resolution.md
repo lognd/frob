@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given no ImplicitUsings, when a C# file uses a type from that namespace, then it stays unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a type in an enclosing namespace and two implicit namespaces defining the same name, then the enclosing type wins and two implicit hits are ambiguous (May)"
