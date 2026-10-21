@@ -2,13 +2,13 @@
 id = "01M43AWWC0VEHZMNV948998PBE"
 title = "grimble-websec family WEBSEC: first slice of rules in GRL"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:30:58Z"
-updated = "2026-10-04T11:30:58Z"
+updated = "2026-10-21T13:15:22Z"
 idempotency_key = "crunk-plan-g_WEBSEC"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/rules/websec/**", "packs/grimble-websec/tests/websec/**"]
