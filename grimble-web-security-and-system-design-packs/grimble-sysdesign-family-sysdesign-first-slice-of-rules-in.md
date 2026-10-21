@@ -8,10 +8,10 @@ points = 8
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:32:03Z"
-updated = "2026-10-21T13:39:15Z"
+updated = "2026-10-21T13:40:02Z"
 idempotency_key = "crunk-plan-g_SYSDESIGN"
 labels = ["area:grimble"]
-scope = ["packs/grimble-sysdesign/rules/sysdesign/**", "packs/grimble-sysdesign/tests/sysdesign/**"]
+scope = ["packs/grimble-sysdesign/rules/sysdesign/**", "packs/grimble-sysdesign/tests/sysdesign/**", "crates/gob-packs/src/sysdesign.rs"]
 
 [[links]]
 kind = "blocked-by"
