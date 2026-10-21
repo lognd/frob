@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T09:48:00Z"
+digest = "505577828b2cf635c0c1fb0ccfd9af8db8b477b28949dc133035ba163b65c8e5"
+exit_code = 0
+head = "000c394f34e332c860d4c2719bd527d41dc721ce"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b71355a0-6acd-44a0-a763-b253a97e5f7d with nextest profile: default
+    Starting 1 test across 8 binaries (189 tests skipped)
+        PASS [   0.005s] frob-mirror run::tests::sweep_k_above_budget_capacity_visits_every_ticket
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 189 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror sweep_k_above_budget_capacity"
+size = 621
+status = "measured"
+test_count = 1
+tests_digest = "0457447cd9089e9c1198bda192b2b8bc4973798d1e84306556f49b93b83c9704"
+at = "2026-10-21T09:48:00Z"
+actor = "lognd"
+rev = 1
