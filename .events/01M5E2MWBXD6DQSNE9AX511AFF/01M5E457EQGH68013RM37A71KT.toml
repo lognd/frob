@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-21T02:20:12Z"
+digest = "51e4bfa579822a744fb37d9677a2a3dac176230d7bb5645add80eaa7065e1d80"
+exit_code = 0
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.70s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5234502f-5935-42c5-8bb2-10e0ac59d087 with nextest profile: default
+    Starting 1 test across 4 binaries (419 tests skipped)
+        PASS [   0.009s] frob-cli doctor::lands_tests::outside_a_work_tree_the_lands_section_is_skipped
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 419 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli lands_tests"
+size = 628
+status = "measured"
+test_count = 1
+tests_digest = "1e2e526eb7ff51c7abf440082370ce0416f62e725099d1c4d31772d7eaf92f4b"
+at = "2026-10-21T02:20:12Z"
+actor = "lognd"
+rev = 1
