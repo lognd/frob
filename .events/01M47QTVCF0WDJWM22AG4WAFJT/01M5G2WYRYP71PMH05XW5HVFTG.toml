@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T20:36:52Z"
+digest = "57881e1ad4610b035c0b9a8e7c8dc88668c708d515d4387cec874e0b9ecdcf17"
+exit_code = 0
+head = "da0e268ae1388e1151f835b8923216b1c3618150"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.77s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b772b529-9758-45cd-a850-8be6d82f6660 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.099s] gob-fix::harness converging_multi_file_fixture_snapshots_its_diff
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.100s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-fix --test harness converging_multi_file_fixture_snapshots_its_diff"
+size = 608
+status = "measured"
+test_count = 1
+tests_digest = "1d4c5357694938d79e4d0513db13cda80c3eba127ac1250c9de2f48249d69f3e"
+at = "2026-10-21T20:36:52Z"
+actor = "lognd"
+rev = 1

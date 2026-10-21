@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:00Z"
-updated = "2026-10-21T17:32:00Z"
+updated = "2026-10-21T20:36:52Z"
 scope = ["crates/gob-fix/**", "crates/gob-mdtest/**"]
 
 [[links]]
@@ -21,7 +21,7 @@ target = "01M48PBYN43QPHGAF7Y14C4ZGJ"
 
 [[acceptance]]
 text = "each fixable rule has a fix diff snapshot"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a fix that breaks parsing or oscillates fails the harness in a self-test"
