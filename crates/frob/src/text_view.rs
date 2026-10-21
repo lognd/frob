@@ -6,6 +6,7 @@ use std::fmt::Write as _;
 use frob_ledger::ops::LinkView;
 
 use crate::cycle_cmd::{CycleListData, CycleView};
+use crate::doctor::{DoctorData, GcInfo};
 use crate::ticket::read::{ListData, ListRow, ShowData};
 
 /// The `YYYY-MM-DD` head of a timestamp rendering.
@@ -314,4 +315,252 @@ pub fn cycle_list_rows(data: &CycleListData) -> Vec<String> {
     out.extend(table(&rows));
     tracing::debug!(rows = out.len(), "text_view: cycle list");
     out
+}
+
+// ---- frob doctor (~757EG2T) ----
+
+/// A byte count as a short human size (`1.5 MiB`).
+fn human_bytes(b: u64) -> String {
+    const UNITS: [&str; 4] = ["KiB", "MiB", "GiB", "TiB"];
+    if b < 1024 {
+        return format!("{b} B");
+    }
+    #[allow(clippy::cast_precision_loss)]
+    let mut v = b as f64 / 1024.0;
+    let mut unit = 0;
+    while v >= 1024.0 && unit + 1 < UNITS.len() {
+        v /= 1024.0;
+        unit += 1;
+    }
+    format!("{v:.1} {}", UNITS[unit])
+}
+
+/// A titled section: a blank line, the title, then indented `label  value` rows aligned together.
+fn section(out: &mut Vec<String>, title: &str, rows: &[Vec<String>]) {
+    out.push(String::new());
+    out.push(title.to_owned());
+    out.extend(table(rows).into_iter().map(|l| format!("  {l}")));
+}
+
+/// One `label`, `value` row, with a missing value shown as a dash.
+fn kv(label: &str, value: Option<&str>) -> Vec<String> {
+    vec![label.to_owned(), value.unwrap_or("-").to_owned()]
+}
+
+/// The rows of `frob doctor`: one aligned section per survey (toolchain, git, cache, ... languages).
+pub fn doctor_rows(d: &DoctorData) -> Vec<String> {
+    let mut out = vec!["frob doctor".to_owned()];
+    section(
+        &mut out,
+        "Toolchain",
+        &[
+            kv("rustc", d.toolchain.rustc.as_deref()),
+            kv("cargo", d.toolchain.cargo.as_deref()),
+        ],
+    );
+    let g = &d.git;
+    let mut git = vec![kv("discovered", Some(&g.discovered.to_string()))];
+    if g.discovered {
+        git.push(kv("root", g.root.as_deref()));
+        git.push(kv("branch", g.branch.as_deref()));
+        git.push(kv(
+            "head",
+            g.head.as_deref().map(|h| h.get(..12).unwrap_or(h)),
+        ));
+        git.push(kv(
+            "worktree",
+            Some(if g.linked_worktree { "linked" } else { "main" }),
+        ));
+    }
+    if let Some(e) = &g.error {
+        git.push(kv("error", Some(e)));
+    }
+    section(&mut out, "Git", &git);
+    let c = &d.cache;
+    section(
+        &mut out,
+        "Cache",
+        &[
+            kv("state", Some(&c.state)),
+            kv("dir", c.dir.as_deref()),
+            kv(
+                "rows",
+                Some(&format!(
+                    "{} artifacts, {} findings, {} repo-rule",
+                    c.artifacts, c.findings, c.repo_rule
+                )),
+            ),
+        ],
+    );
+    let cf = &d.config;
+    let mut config = vec![
+        kv("path", Some(&cf.path)),
+        kv("present", Some(&cf.present.to_string())),
+        kv("missing knobs", Some(&cf.missing_knobs.to_string())),
+    ];
+    if let Some(e) = &cf.error {
+        config.push(kv("error", Some(e)));
+    }
+    section(&mut out, "Config", &config);
+    let l = &d.ledger;
+    let mut ledger = vec![
+        kv("ref", Some(&l.r#ref)),
+        kv("reachable", Some(&l.reachable.to_string())),
+        kv("oid", l.oid.as_deref()),
+        kv("protection", Some(&l.protection)),
+    ];
+    if let Some(x) = &l.protection_detail {
+        ledger.push(kv("detail", Some(x)));
+    }
+    if let Some(e) = &l.error {
+        ledger.push(kv("error", Some(e)));
+    }
+    section(&mut out, "Ledger", &ledger);
+    let dr = &d.driver;
+    let mut driver = vec![
+        kv("state", Some(&dr.state)),
+        kv("command", dr.command.as_deref()),
+    ];
+    if let Some(x) = &dr.detail {
+        driver.push(kv("detail", Some(x)));
+    }
+    if let Some(x) = &dr.fix {
+        driver.push(kv("fix", Some(x)));
+    }
+    section(&mut out, "Merge driver", &driver);
+    let siblings: Vec<Vec<String>> = d
+        .siblings
+        .iter()
+        .flat_map(|s| {
+            let mut rows = vec![vec![
+                s.product.clone(),
+                s.location.clone(),
+                s.version.clone().unwrap_or_else(|| "-".to_owned()),
+                s.path.clone().unwrap_or_default(),
+            ]];
+            if let Some(o) = &s.other {
+                let note = if o.differs { "differs" } else { "same" };
+                rows.push(vec![
+                    String::new(),
+                    format!("other ({note})"),
+                    o.version.clone().unwrap_or_else(|| "-".to_owned()),
+                    o.path.clone(),
+                ]);
+            }
+            rows
+        })
+        .collect();
+    section(&mut out, "Siblings", &siblings);
+    gc_rows(&mut out, &d.gc);
+    let ls = &d.leases;
+    let mut leases = vec![
+        kv("state", Some(&ls.state)),
+        kv("corrupt", Some(&ls.corrupt.len().to_string())),
+    ];
+    if let Some(q) = &ls.quarantined {
+        leases.push(kv("quarantined", Some(&q.len().to_string())));
+    }
+    section(&mut out, "Leases", &leases);
+    let ln = &d.lands;
+    let mut lands = vec![
+        kv("state", Some(&ln.state)),
+        kv("unpushed lands", Some(&ln.lands.len().to_string())),
+        kv("evicted", Some(&ln.evicted.to_string())),
+    ];
+    lands.extend(ln.lands.iter().map(|x| kv("", Some(x))));
+    section(&mut out, "Lands", &lands);
+    if let Some(r) = &d.languages {
+        let mut rows: Vec<Vec<String>> = r
+            .adapters
+            .iter()
+            .map(|a| {
+                vec![
+                    a.language.clone(),
+                    a.fidelity.clone(),
+                    format!("{} files", a.files),
+                    a.adapter.clone(),
+                ]
+            })
+            .collect();
+        rows.extend(r.unadapted.iter().map(|u| {
+            vec![
+                u.extension.clone(),
+                u.fidelity.clone(),
+                format!("{} files", u.files),
+                u.unit.clone(),
+            ]
+        }));
+        section(&mut out, "Languages", &rows);
+    }
+    tracing::debug!(rows = out.len(), "text_view: doctor");
+    out
+}
+
+/// The garbage-collection section of `frob doctor`: last pass, usage, plan, kept and fixed.
+fn gc_rows(out: &mut Vec<String>, gc: &GcInfo) {
+    let mut rows = vec![
+        kv("state", Some(&gc.state)),
+        kv("passes", Some(&gc.passes.to_string())),
+        kv(
+            "reclaimed",
+            Some(&format!(
+                "{} last, {} total",
+                human_bytes(gc.last_reclaimed_bytes),
+                human_bytes(gc.total_reclaimed_bytes)
+            )),
+        ),
+    ];
+    rows.extend(gc.usage.iter().map(|u| {
+        kv(
+            &format!("usage {}", u.category),
+            Some(&human_bytes(u.bytes)),
+        )
+    }));
+    if !gc.would_reclaim.is_empty() {
+        rows.push(kv(
+            "would reclaim",
+            Some(&human_bytes(gc.would_reclaim_bytes)),
+        ));
+        rows.extend(gc.would_reclaim.iter().map(|c| {
+            kv(
+                &format!("  {}", c.category),
+                Some(&format!("{} items, {}", c.items, human_bytes(c.bytes))),
+            )
+        }));
+    }
+    rows.extend(
+        gc.kept
+            .iter()
+            .map(|k| kv(&format!("kept {}", k.target), Some(&k.reason))),
+    );
+    if let Some(f) = &gc.fixed {
+        rows.push(kv("fixed", Some(&human_bytes(f.reclaimed_bytes))));
+        rows.extend(f.warnings.iter().map(|w| kv("warning", Some(w))));
+    }
+    section(out, "Garbage collection", &rows);
+}
+
+#[cfg(test)]
+mod doctor_tests {
+    use super::*;
+
+    // frob:tests crates/frob/src/text_view.rs::human_bytes
+    #[test]
+    fn bytes_read_in_binary_units() {
+        assert_eq!(human_bytes(12), "12 B");
+        assert_eq!(human_bytes(1536), "1.5 KiB");
+        assert_eq!(human_bytes(3 * 1024 * 1024), "3.0 MiB");
+    }
+
+    // frob:tests crates/frob/src/text_view.rs::section
+    #[test]
+    fn a_section_aligns_its_rows_under_the_title() {
+        let mut out = Vec::new();
+        section(
+            &mut out,
+            "Git",
+            &[kv("root", Some("/r")), kv("branch", None)],
+        );
+        assert_eq!(out, ["", "Git", "  root    /r", "  branch  -"]);
+    }
 }
