@@ -1,0 +1,1 @@
+`frob land` now sweeps old `*.removing` worktree leftovers synchronously before its own cleanup, and a test pins that the base ref advances by compare-and-swap without touching the primary checkout's index when the base is not checked out there.

@@ -1736,17 +1736,19 @@ fn leave_worktree(wt_path: &Path, primary: &Path) {
 /// Suffix of a worktree directory renamed aside and waiting for its background deletion.
 const REMOVING_SUFFIX: &str = ".removing";
 
-/// Rename `wt_path` aside in one step and delete it (and any earlier leftovers) on a background thread.
+/// Sweep earlier `.removing` leftovers, then rename `wt_path` aside in one step and delete it on a background thread.
 ///
 /// Deleting a worktree with a large build directory took 4-9 s of the land
 /// (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W); a rename is instant, and the caller prunes the
 /// now-dangling registration. The process may exit before the deletion finishes: the next
-/// land sweeps the `.removing` leftover. Returns false when the rename failed (the caller
+/// land sweeps the `.removing` leftover synchronously. Returns false when the rename failed (the caller
 /// then removes the worktree through git).
 fn detach_worktree(wt_path: &Path) -> bool {
     let (Some(parent), Some(name)) = (wt_path.parent(), wt_path.file_name()) else {
         return false;
     };
+    // Earlier leftovers go first and synchronously, so they never outlive the land that finds them.
+    sweep_removing(parent);
     let mut aside_name = name.to_os_string();
     aside_name.push(REMOVING_SUFFIX);
     let aside = parent.join(aside_name);
@@ -1755,8 +1757,7 @@ fn detach_worktree(wt_path: &Path) -> bool {
         return false;
     }
     tracing::info!(aside = %Shown::of(&aside), "worktree renamed aside; deleting in the background");
-    let parent = parent.to_path_buf();
-    std::thread::spawn(move || sweep_removing(&parent));
+    std::thread::spawn(move || remove_aside(&aside));
     true
 }
 
@@ -1772,13 +1773,16 @@ fn sweep_removing(parent: &Path) {
         {
             continue;
         }
-        match std::fs::remove_dir_all(e.path()) {
-            Ok(()) => {
-                tracing::info!(dir = %Shown::of(&e.path()), "background worktree deletion done");
-            }
-            Err(err) => {
-                tracing::warn!(dir = %Shown::of(&e.path()), error = %err, "background worktree deletion failed");
-            }
+        remove_aside(&e.path());
+    }
+}
+
+/// Delete one renamed-aside worktree directory; a failure is logged.
+fn remove_aside(dir: &Path) {
+    match std::fs::remove_dir_all(dir) {
+        Ok(()) => tracing::info!(dir = %Shown::of(dir), "worktree leftover deletion done"),
+        Err(err) => {
+            tracing::warn!(dir = %Shown::of(dir), error = %err, "worktree leftover deletion failed");
         }
     }
 }
@@ -1967,9 +1971,71 @@ mod tests {
         std::fs::create_dir_all(&stale).expect("stale");
         assert!(detach_worktree(&wt));
         assert!(!wt.exists(), "the worktree path is free immediately");
+        assert!(
+            !stale.exists(),
+            "old leftovers are gone before detach returns"
+        );
         sweep_removing(tmp.path());
-        assert!(!stale.exists());
         assert!(!tmp.path().join(format!("wt{REMOVING_SUFFIX}")).exists());
+    }
+
+    // frob:ticket 01M4HNYRZA7ASMMR6388BJN9BQ
+    // frob:tests crates/frob-land/src/land.rs::Publish.advance
+    #[test]
+    fn advance_moves_an_unchecked_out_base_by_cas_despite_the_primary_index_lock() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path().join("repo");
+        std::fs::create_dir(&dir).expect("mkdir");
+        let repo = Repo::init(&dir).expect("init");
+        run_git(&repo, &dir, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+        run_git(&repo, &dir, &["config", "user.name", "T"]);
+        run_git(&repo, &dir, &["config", "user.email", "t@example.com"]);
+        run_git(
+            &repo,
+            &dir,
+            &["commit", "-q", "--allow-empty", "-m", "root"],
+        );
+        run_git(&repo, &dir, &["branch", "experimental"]);
+        run_git(&repo, &dir, &["branch", "ticket"]);
+        let wt_dir = tmp.path().join("wt");
+        run_git(
+            &repo,
+            &dir,
+            &[
+                "worktree",
+                "add",
+                "-q",
+                &Shown::of(&wt_dir).to_string(),
+                "ticket",
+            ],
+        );
+        run_git(&repo, &wt_dir, &["config", "user.name", "T"]);
+        run_git(
+            &repo,
+            &wt_dir,
+            &["commit", "-q", "--allow-empty", "-m", "work"],
+        );
+        let wt = Repo::discover(&wt_dir).expect("discover");
+        let tip = wt.rev_parse("ticket").expect("tip");
+        // Another writer holds the primary's index lock for the whole advance.
+        let lock = dir.join(".git").join("index.lock");
+        std::fs::write(&lock, "").expect("lock");
+
+        let publish = Publish {
+            repo: &repo,
+            wt: &wt,
+            primary: &dir,
+            base: "experimental",
+            branch: "ticket",
+            handle: "T",
+        };
+        let got = publish.advance(false, || Ok(())).expect("advance");
+        assert_eq!(got, tip);
+        assert_eq!(
+            repo.rev_parse(&base_ref("experimental")).expect("base"),
+            tip
+        );
+        assert!(lock.exists(), "the index lock was never touched");
     }
 
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
