@@ -8,10 +8,10 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:16Z"
-updated = "2026-10-21T11:47:17Z"
+updated = "2026-10-21T11:54:49Z"
 idempotency_key = "crunk-plan-parity"
 labels = ["area:crunk"]
-scope = ["crates/crunk/tests/parity.rs", "crates/crunk/tests/parity/**", "tests/crunk-parity/divergences.toml"]
+scope = ["crates/crunk/tests/parity.rs", "crates/crunk/tests/parity/**", "tests/crunk-parity/divergences.toml", "changelog.d/01M43AVKMT52QCG7DGNQ4J906S.added.md"]
 
 [[links]]
 kind = "blocked-by"
