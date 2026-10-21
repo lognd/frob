@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A [rules.<id>] severity override raises a finding to the configured severity", "An override can lower severity and unknown rule ids are ignored", "An invalid severity token fails the run", "grimble.toml raises TIME001 and TIME002 to error"]
+moved = []
+at = "2026-10-21T20:22:10Z"
+actor = "lognd"
+rev = 1
