@@ -2,7 +2,8 @@
 id = "01M47QTW8CA2FD3BQTH2GG2KXR"
 title = "Inline parser tests: test_ok and test_err blocks in parser source, extracted by cargo dev gen"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
