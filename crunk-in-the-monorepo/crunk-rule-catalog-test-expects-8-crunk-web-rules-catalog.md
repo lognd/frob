@@ -8,7 +8,8 @@ points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-21T12:03:43Z"
-updated = "2026-10-21T12:47:18Z"
+updated = "2026-10-21T12:50:23Z"
+scope = ["crates/crunk/tests/rule_catalog.rs"]
 
 [[acceptance]]
 text = "the rule_catalog test asserts the real crunk-web rule count and passes"
