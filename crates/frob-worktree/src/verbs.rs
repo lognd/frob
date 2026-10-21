@@ -1,6 +1,7 @@
 //! The CLI verbs: `work [--here]` and `requeue`; `start` stays as a hidden alias of `work --here`.
 
 use gob_path::Shown;
+use std::io::{BufRead, IsTerminal, Write};
 use std::path::PathBuf;
 
 use frob_lease::{Holder, Lease, LeaseStore};
@@ -631,9 +632,14 @@ impl Command for ClaimEvict {
             evict_policy(&opened.root, in_ci, opened.ledger.clock().now()).ok_or_else(|| {
                 WorktreeError::Config("[claims] is unreadable; cannot judge idleness".to_owned())
             })?;
-        let e = opened
-            .workspace()
-            .evict_claim(&self.ticket, &self.reason, self.yes, &policy)?;
+        let yes = self.yes;
+        let interactive = std::io::stdin().is_terminal() && std::io::stdout().is_terminal();
+        let e = opened.workspace().evict_claim_confirming(
+            &self.ticket,
+            &self.reason,
+            &policy,
+            &mut |question| yes || (interactive && prompt_yes(question)),
+        )?;
         Ok(Payload::new(EvictData {
             id: e.id,
             handle: e.handle,
@@ -644,6 +650,22 @@ impl Command for ClaimEvict {
             flagged: e.flapped,
         }))
     }
+}
+
+/// Ask `question` on the terminal and report whether the answer was yes.
+// frob:ticket 01M5DZJ99WRFPNK6WS3KZWDC0G
+fn prompt_yes(question: &str) -> bool {
+    let mut out = std::io::stdout().lock();
+    let _ = write!(out, "{question} [y/N] ");
+    let _ = out.flush();
+    let mut line = String::new();
+    std::io::stdin().lock().read_line(&mut line).is_ok() && is_yes(&line)
+}
+
+/// True for an affirmative answer line (`y`, `yes`, any case).
+// frob:ticket 01M5DZJ99WRFPNK6WS3KZWDC0G
+fn is_yes(line: &str) -> bool {
+    matches!(line.trim().to_ascii_lowercase().as_str(), "y" | "yes")
 }
 
 /// The flags of `claim hold`, declared once.
@@ -801,7 +823,17 @@ impl Command for ClaimResume {
 
 #[cfg(test)]
 mod tests {
-    use super::{claim_windows, evict_policy};
+    use super::{claim_windows, evict_policy, is_yes};
+
+    // frob:ticket 01M5DZJ99WRFPNK6WS3KZWDC0G
+    // frob:tests is_yes
+    #[test]
+    fn is_yes_accepts_y_and_yes_in_any_case_only() {
+        assert!(is_yes("y\n"));
+        assert!(is_yes(" YES "));
+        assert!(!is_yes(""));
+        assert!(!is_yes("no"));
+    }
 
     // frob:tests evict_policy
     #[test]

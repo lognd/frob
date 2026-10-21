@@ -290,3 +290,32 @@ fn evict_human_confirm_needs_yes_for_a_human_holder_and_auto_does_not() {
         .expect("auto evicts a human claim");
     assert!(!done.flapped);
 }
+
+// frob:ticket 01M5DZJ99WRFPNK6WS3KZWDC0G
+// frob:tests evict_claim_confirming
+#[test]
+fn evict_confirming_asks_and_a_no_refuses_while_a_yes_evicts() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let leases = fx.leases().with_agent(None);
+    let (_, handle) = new_ticket(&fx.ledger());
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    agent_claim(&fx, &leases, &handle);
+    let ledger = ledger_ahead(&fx, 4 * 24 * 3600);
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let t = format!("~{handle}");
+    let mut asked = Vec::new();
+    let no = ws
+        .evict_claim_confirming(&t, "away", &human_policy(true), &mut |q| {
+            asked.push(q.to_owned());
+            false
+        })
+        .unwrap_err();
+    assert_eq!(code(no), E_EVICT_CONFIRM);
+    assert_eq!(asked.len(), 1);
+    ws.evict_claim_confirming(&t, "away", &human_policy(true), &mut |_| true)
+        .expect("a yes evicts");
+}
