@@ -1,0 +1,11 @@
+kind = "create"
+title = "unity pack: feed csharp_dynamic_calls into reach and obligations"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M44YQS4CNZM54P067GJVPDC0"
+scope = ["crates/frob-tests/src/reach.rs"]
+body = "found while working ~MVX4GEN: csharp_dynamic_calls (gob-symbols) has no non-test consumer; frob-tests reach.rs and frob-obligations unity.rs should call it with the pack EngineVocab to report the named reason."
+at = "2026-10-21T18:58:21Z"
+actor = "lognd"
+rev = 1
