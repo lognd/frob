@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-05T02:36:58Z"
 updated = "2026-10-21T10:17:31Z"
 idempotency_key = "d94-xmldoc"
-scope = ["crates/frob-obligations/src/doc.rs", "crates/gob-symbols/src/csharp.rs", "docs/reference/rules/DOC001.md", "docs/reference/rules/DOC002.md", "crates/frob-check/tests/**", "crates/frob-obligations/src/legacy.rs"]
+scope = ["crates/frob-obligations/src/doc.rs", "crates/gob-symbols/src/csharp.rs", "docs/reference/rules/DOC001.md", "docs/reference/rules/DOC002.md", "crates/frob-check/tests/**", "crates/frob-obligations/src/legacy.rs", "crates/frob-obligations/tests/mdtest/doc001.md"]
 
 [[links]]
 kind = "blocked-by"

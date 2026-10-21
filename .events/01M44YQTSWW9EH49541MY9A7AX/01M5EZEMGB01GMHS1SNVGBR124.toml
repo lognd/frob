@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-obligations/src/doc.rs", "crates/gob-symbols/src/csharp.rs", "docs/reference/rules/DOC001.md", "docs/reference/rules/DOC002.md", "crates/frob-check/tests/**", "crates/frob-obligations/src/legacy.rs"]
+new = ["crates/frob-obligations/src/doc.rs", "crates/gob-symbols/src/csharp.rs", "docs/reference/rules/DOC001.md", "docs/reference/rules/DOC002.md", "crates/frob-check/tests/**", "crates/frob-obligations/src/legacy.rs", "crates/frob-obligations/tests/mdtest/doc001.md"]
+at = "2026-10-21T10:17:31Z"
+actor = "lognd"
+rev = 1
