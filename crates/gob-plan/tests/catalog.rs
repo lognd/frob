@@ -6,7 +6,7 @@ use gob_plan::catalog::{self, ConfigSchema};
 use gob_plan::check::{Code, check_file_with};
 use gob_plan::grl::parse;
 use gob_text::FileInterner;
-use serde_json::{Value, json};
+use serde_json::Value;
 
 fn real_schema() -> Value {
     let path = concat!(
@@ -14,15 +14,6 @@ fn real_schema() -> Value {
         "/../../docs/schemas/config.json"
     );
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
-}
-
-/// The generated schema with the `$defs` entry the exporter should carry for `ForbidImport`.
-fn schema_with_defs() -> Value {
-    let mut doc = real_schema();
-    doc["$defs"] = json!({"ForbidImport": {"type": "object", "properties": {
-        "from": {"type": "string"}, "to": {"type": "string"}, "reason": {"type": "string"}
-    }}});
-    doc
 }
 
 fn rule(body: &str) -> String {
@@ -76,10 +67,13 @@ fn the_real_config_schema_types_tables_and_keys() {
 }
 
 // frob:ticket 01M3ZX7DMYNTWB3AP04CDMAECH
+// frob:ticket 01M4M5CRRV5A6P5WHHVHXP981B
 // frob:tests crates/gob-plan/src/check/mod.rs::check_file_with
+// frob:tests crates/gob-plan/src/check/mod.rs::compile_diagnostics_with
+// frob:tests crates/gob-plan/src/check/mod.rs::compile_report_with
 #[test]
 fn a_misspelt_config_column_is_not_a_member() {
-    let s = ConfigSchema::from_json(&schema_with_defs());
+    let s = ConfigSchema::from_json(&real_schema());
     let ok = "  find f: config.invariants.forbid_imports\n  report f \"x\" when f.from == f.to";
     assert!(codes(&s, ok).is_empty());
     let bad = "  find f: config.invariants.forbid_imports\n  report f \"x\" when f.frm == f.to";
@@ -89,6 +83,30 @@ fn a_misspelt_config_column_is_not_a_member() {
     );
     let table = "  find f: config.invariant.forbid_imports\n  report f \"x\"";
     assert_eq!(codes(&s, table)[0].1, "unknown config key `invariant`");
+}
+
+// frob:ticket 01M4M5CRRV5A6P5WHHVHXP981B
+// frob:tests crates/gob-plan/src/check/mod.rs::compile_report_with
+#[test]
+fn the_shipped_config_schema_types_forbid_import_columns() {
+    let s = ConfigSchema::from_json(&real_schema());
+    let cols: Vec<String> = s
+        .node("invariants.forbid_imports")
+        .and_then(|n| n.columns.clone())
+        .unwrap_or_default()
+        .into_iter()
+        .map(|c| c.name)
+        .collect();
+    assert!(
+        cols.contains(&"from".to_owned()) && cols.contains(&"to".to_owned()),
+        "{cols:?}"
+    );
+    let src =
+        rule("  find f: config.invariants.forbid_imports\n  report f \"x\" when f.frm == f.to");
+    let with = gob_plan::check::compile_report_with("t.grl", &src, Some(&s));
+    assert!(with.contains("unknown column `frm`"), "{with}");
+    let without = gob_plan::check::compile_report_with("t.grl", &src, None);
+    assert!(!without.contains("unknown column"), "{without}");
 }
 
 fn crunk_schema() -> Value {

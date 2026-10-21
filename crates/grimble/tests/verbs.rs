@@ -353,6 +353,69 @@ fn compile_passes_a_valid_file_silently() {
     assert_eq!(env["data"]["files"][0]["report"], "");
 }
 
+// frob:ticket 01M4M5CRRV5A6P5WHHVHXP981B
+// frob:tests crates/grimble/src/compile_cmd.rs::Compile
+#[test]
+fn compile_names_a_misspelt_config_column() {
+    let dir = repo();
+    let rule = GRL_RULE
+        .replace("KIND", "test")
+        .replace("  example fire", "  find f: config.invariants.forbid_imports\n  report f \"x\" when f.frm == f.to\n\n  example fire");
+    write(dir.path(), "rules/cfg.grl", &rule);
+    let (code, env, err) = grimble(dir.path(), &["compile", "rules/cfg.grl", "--json"]);
+    assert_eq!(code, 1, "{env} {err}");
+    let report = env["data"]["files"][0]["report"].as_str().unwrap_or("");
+    assert!(
+        report.contains("GRL001") && report.contains("unknown column `frm`"),
+        "{report}"
+    );
+}
+
+// frob:ticket 01M4M5CRRV5A6P5WHHVHXP981B
+// frob:tests crates/grimble/src/compile_cmd.rs::Compile
+#[test]
+fn compile_accepts_a_real_config_column_and_flags_an_unknown_table() {
+    let dir = repo();
+    let body = |path: &str, col: &str| {
+        GRL_RULE.replace("KIND", "test").replace(
+            "  example fire",
+            &format!(
+                "  find f: config.{path}\n  report f \"x\" when f.{col} == f.to\n\n  example fire"
+            ),
+        )
+    };
+    write(
+        dir.path(),
+        "rules/ok.grl",
+        &body("invariants.forbid_imports", "from"),
+    );
+    let (code, env, err) = grimble(dir.path(), &["compile", "rules/ok.grl", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
+    write(
+        dir.path(),
+        "rules/tbl.grl",
+        &body("invariant.forbid_imports", "from"),
+    );
+    let (code, env, _) = grimble(dir.path(), &["compile", "rules/tbl.grl", "--json"]);
+    assert_eq!(code, 1);
+    let report = env["data"]["files"][0]["report"].as_str().unwrap_or("");
+    assert!(
+        report.contains("unknown config key `invariant`"),
+        "{report}"
+    );
+}
+
+// frob:ticket 01M4M5CRRV5A6P5WHHVHXP981B
+// frob:tests crates/grimble/src/compile_cmd.rs::schema_from_text
+#[test]
+fn a_malformed_or_empty_schema_turns_config_checking_off() {
+    use grimble::compile_cmd::schema_from_text;
+    assert!(schema_from_text("{not json").is_none());
+    assert!(schema_from_text("{}").is_none());
+    let shipped = std::fs::read_to_string(schemas_dir().join("config.json")).unwrap();
+    assert!(schema_from_text(&shipped).is_some());
+}
+
 // frob:tests crates/grimble/src/config_for.rs::run
 // frob:ticket 01M3ZX7K04VN51PGCXT9DCYMWB
 #[test]

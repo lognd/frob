@@ -265,9 +265,19 @@ pub fn check_file_as(
 // frob:ticket 01M4M5CQ9529KH526299QXXFVF
 /// Parse and check one rule file: syntax errors when it does not parse, else the checker's diagnostics.
 pub fn compile_diagnostics(path: &str, source: &str) -> Vec<Diagnostic> {
+    compile_diagnostics_with(path, source, None)
+}
+
+// frob:ticket 01M4M5CRRV5A6P5WHHVHXP981B
+/// Like `compile_diagnostics`, typing `config.<table>` paths and row columns from `config` when given.
+pub fn compile_diagnostics_with(
+    path: &str,
+    source: &str,
+    config: Option<&ConfigSchema>,
+) -> Vec<Diagnostic> {
     let parsed = grl::parse(FileInterner::new().intern(path), source);
     if parsed.is_ok() {
-        check_file(&parsed.file)
+        check_file_with(&parsed.file, config)
     } else {
         parsed.errors.iter().map(Diagnostic::syntax).collect()
     }
@@ -277,4 +287,14 @@ pub fn compile_diagnostics(path: &str, source: &str) -> Vec<Diagnostic> {
 /// Parse, check and render one rule file: the exact text the compiler prints for it.
 pub fn compile_report(path: &str, source: &str) -> String {
     render(path, source, &compile_diagnostics(path, source))
+}
+
+// frob:ticket 01M4M5CRRV5A6P5WHHVHXP981B
+/// Like `compile_report`, checking `config.<table>` paths and columns against `config` when given.
+pub fn compile_report_with(path: &str, source: &str, config: Option<&ConfigSchema>) -> String {
+    render(
+        path,
+        source,
+        &compile_diagnostics_with(path, source, config),
+    )
 }

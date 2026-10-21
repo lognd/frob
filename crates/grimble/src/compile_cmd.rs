@@ -1,13 +1,15 @@
 //! `compile [PATH...]`: parse and check GRL rule files with the `gob-plan` compiler.
 
 // frob:ticket 01M4M5CQ9529KH526299QXXFVF
+// frob:ticket 01M4M5CRRV5A6P5WHHVHXP981B
 
 use std::path::{Path, PathBuf};
 
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_path::{RelPath, Shown};
-use gob_plan::check::{Severity, compile_diagnostics, compile_report};
+use gob_plan::catalog::ConfigSchema;
+use gob_plan::check::{Severity, compile_diagnostics_with, compile_report_with};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -15,6 +17,27 @@ use crate::workspace::locate_root;
 
 /// Directories `compile` never descends into when it searches for `.grl` files.
 const SKIPPED_DIRS: [&str; 4] = [".git", "target", "node_modules", ".jj"];
+
+/// The config schema document the binary ships, embedded so `compile` needs no file on disk.
+const SHIPPED_CONFIG_SCHEMA: &str = include_str!("../../../docs/schemas/config.json");
+
+// frob:ticket 01M4M5CRRV5A6P5WHHVHXP981B
+/// Type the `config.*` relations from a schema document; `None` (checking off) when it is malformed or types nothing.
+pub fn schema_from_text(text: &str) -> Option<ConfigSchema> {
+    let doc = match serde_json::from_str(text) {
+        Ok(doc) => doc,
+        Err(e) => {
+            tracing::warn!(error = %e, "config schema is not valid JSON; config paths are unchecked");
+            return None;
+        }
+    };
+    let schema = ConfigSchema::from_json(&doc);
+    if schema.is_empty() {
+        tracing::warn!("config schema types nothing; config paths are unchecked");
+        return None;
+    }
+    Some(schema)
+}
 
 /// Check GRL rule files and print the compiler report; exits 1 when any file has an error.
 #[derive(Debug, Clone, Default, gob_cli::Command)]
@@ -106,11 +129,12 @@ impl Command for Compile {
         };
         paths.sort();
         paths.dedup();
+        let schema = schema_from_text(SHIPPED_CONFIG_SCHEMA);
         let mut files = Vec::new();
         for path in paths {
             let source = std::fs::read_to_string(base.join(&path))
                 .map_err(|e| CliError::Usage(format!("cannot read rule file {path}: {e}")))?;
-            let diagnostics = compile_diagnostics(&path, &source);
+            let diagnostics = compile_diagnostics_with(&path, &source, schema.as_ref());
             let errors = diagnostics
                 .iter()
                 .filter(|d| d.severity == Severity::Error)
@@ -118,7 +142,7 @@ impl Command for Compile {
             let report = if diagnostics.is_empty() {
                 String::new()
             } else {
-                compile_report(&path, &source)
+                compile_report_with(&path, &source, schema.as_ref())
             };
             tracing::debug!(%path, errors, "compiled GRL file");
             files.push(CompiledFile {

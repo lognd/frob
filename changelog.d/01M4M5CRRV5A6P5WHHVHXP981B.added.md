@@ -1,0 +1,1 @@
+grimble: `compile` now checks `config.*` relations in GRL rules against the config schema the binary ships, so a misspelt table, key or row column (for example `f.frm` on `config.invariants.forbid_imports`) is reported as GRL001; a malformed or empty schema turns config checking off with a warning.
