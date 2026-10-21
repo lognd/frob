@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T08:53:15Z"
+digest = "853eed7c2991914851190bd8668af4d205218061f451cbed95d380ac3b0d623e"
+exit_code = 0
+head = "667bde244097e9ba3c4c247b8eda8eb7d37e6abe"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3a57a8ab-a267-4f7c-9b7c-1329ab1c64f0 with nextest profile: default
+    Starting 5 tests across 26 binaries (270 tests skipped)
+        PASS [   0.008s] gob-plan::ten_rules cap001_examples_pass
+        PASS [   0.008s] gob-plan grl::parse::tests::ci002_verbatim_spec_text_parses_with_a_literal_brace_glob
+        PASS [   0.008s] gob-plan::ten_rules sys001_examples_pass
+        PASS [   0.008s] gob-plan::ten_rules neat031_examples_pass
+        PASS [   0.010s] gob-plan::ten_rules ci002_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 5 tests run: 5 passed, 270 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E test(/sys001|cap001|neat031|ci002/)"
+size = 845
+status = "measured"
+test_count = 5
+tests_digest = "51e86814b8d9de0ff94208a9565d51133c1929d48c2bf35371f43ec1767efa0b"
+at = "2026-10-21T08:53:15Z"
+actor = "lognd"
+rev = 1
