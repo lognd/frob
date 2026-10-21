@@ -2,7 +2,8 @@
 id = "01M4H1QJWECA2N5P2F28RET6B0"
 title = "frob land takes several tickets in one foreground invocation (land ~A ~B ~C): lands them in order, each checked against the base the previous one produced, reports every outcome and continues past a refusal"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
