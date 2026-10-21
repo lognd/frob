@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-21T01:48:28Z"
+digest = "1c20b920549a96f987b7e7691dfe543ea255b3efe001d08f55a32e2a745b942f"
+exit_code = 0
+inline = '''
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 42addbb8-fd37-4079-a4db-7d34a121d0fb with nextest profile: default
+    Starting 1 test across 9 binaries (108 tests skipped)
+        PASS [   0.006s] frob-worktree verbs::tests::claim_windows_loads_defaults_and_rejects_a_bad_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 108 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree claim_windows"
+size = 643
+status = "measured"
+test_count = 1
+tests_digest = "1b51fc7d19e724c8c98977a04a50f665c9644c084151283560b93a927f9e7ecb"
+at = "2026-10-21T01:48:28Z"
+actor = "lognd"
+rev = 1
