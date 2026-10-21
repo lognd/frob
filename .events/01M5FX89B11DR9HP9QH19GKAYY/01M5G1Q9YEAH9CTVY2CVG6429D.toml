@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-tests/src/reach.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/tests/unity_dynamic.rs", "docs/design/dotnet-unity.md"]
+new = ["crates/frob-tests/src/reach.rs", "crates/frob-obligations/src/cov.rs", "crates/frob-obligations/tests/unity_dynamic.rs", "docs/design/dotnet-unity.md", "changelog.d/01M5FX89B11DR9HP9QH19GKAYY.changed.md"]
+at = "2026-10-21T20:16:27Z"
+actor = "lognd"
+rev = 1
