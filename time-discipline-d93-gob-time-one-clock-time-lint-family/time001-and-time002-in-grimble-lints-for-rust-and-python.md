@@ -8,7 +8,7 @@ points = 5
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:18Z"
-updated = "2026-10-21T17:53:01Z"
+updated = "2026-10-21T17:57:48Z"
 scope = ["crates/grimble-lints/**", "crates/grimble-check/src/**", "crates/grimble/src/explain_cmd.rs", "docs/design/rules.md", "docs/reference/rules/**", "changelog.d/01M44R5W4WJEXFM000S8KVQQN5.added.md"]
 
 [[links]]
@@ -21,6 +21,10 @@ bound = false
 
 [[acceptance]]
 text = "Given a naive datetime compared with an aware one, when grimble checks it, then TIME002 fires"
+bound = false
+
+[[acceptance]]
+text = "TIME001 fires for a Rust Local::now() read stored in a value and stays quiet for Utc::now() and SystemTime::now()"
 bound = false
 +++
 
