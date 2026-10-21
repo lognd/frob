@@ -2,13 +2,13 @@
 id = "01M47QTVCF0WDJWM22AG4WAFJT"
 title = "Fix snapshots and fixpoint convergence for every fixable rule"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:00Z"
-updated = "2026-10-06T13:41:07Z"
+updated = "2026-10-21T17:32:00Z"
 scope = ["crates/gob-fix/**", "crates/gob-mdtest/**"]
 
 [[links]]
