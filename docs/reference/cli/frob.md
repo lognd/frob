@@ -12,6 +12,7 @@
 | `agent uninstall` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Remove only the files and registrations frob installed, leaving user additions alone. |
 | `board` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the scrumban board: columns by category with WIP limits, the expedite lane and card ages. |
 | `check` | no | no | 0 ok, 1 negative, 2 usage, 3 refused, 4 internal | Run the rules over the repository and report findings; exit 1 at or above `fail_on`. |
+| `claim evict` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Evict an idle claim: park the holder's work, free the ticket and report the remaining daily rate. |
 | `claim restore` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Put an evicted claim's parked work back as its `ticket/<handle>` branch; anyone may, until someone else claims. |
 | `claim touch` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Soft heartbeat for the caller's claim; an agent harness runs it from a hook while its session lives. |
 | `config show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print every config table merged (defaults, then frob.toml) with provenance. |
