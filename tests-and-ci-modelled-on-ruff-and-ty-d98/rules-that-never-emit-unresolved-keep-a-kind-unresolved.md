@@ -4,10 +4,10 @@ title = "Rules that never emit Unresolved keep a kind=unresolved allowlist entry
 type = "task"
 category = "todo"
 priority = "medium"
-parent = "01M480C43A6BCH54NX8C5DQ4WJ"
+parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T21:12:56Z"
-updated = "2026-10-21T21:12:56Z"
+updated = "2026-10-21T21:19:40Z"
 scope = ["crates/gob-mdtest/coverage-allowlist.toml"]
 +++
 
