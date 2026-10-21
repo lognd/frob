@@ -11,7 +11,7 @@ created = "2026-10-04T11:31:13Z"
 updated = "2026-10-21T13:39:57Z"
 idempotency_key = "crunk-plan-g_SQL"
 labels = ["area:grimble"]
-scope = ["packs/grimble-websec/rules/sql/**", "packs/grimble-websec/tests/sql/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs"]
+scope = ["packs/grimble-websec/rules/sql/**", "packs/grimble-websec/tests/sql/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs", "docs/grimble/packs/grimble-websec.md"]
 
 [[links]]
 kind = "blocked-by"
