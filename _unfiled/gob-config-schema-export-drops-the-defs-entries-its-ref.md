@@ -2,12 +2,12 @@
 id = "01M4DGHT8H530QHR7VJPHFBHDJ"
 title = "gob-config schema export drops the $defs entries its $ref links point at, so row columns (ForbidImport) are untyped"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-08T10:22:01Z"
-updated = "2026-10-21T21:34:55Z"
+updated = "2026-10-21T21:34:56Z"
 scope = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json"]
 +++
 
