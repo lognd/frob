@@ -2,13 +2,13 @@
 id = "01M3ZX81ZPA8J5RXBEZ14SZNSZ"
 title = "Fix summary line and never-prompt rule on plain check"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-03T03:34:40Z"
+updated = "2026-10-21T03:15:19Z"
 idempotency_key = "m2-diag-fix-summary"
 labels = ["milestone:2", "area:diagnostics"]
 scope = ["crates/frob-check/src/summary.rs"]
