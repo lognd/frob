@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T04:48:43Z"
+digest = "0e56e2547deb37541ac40a31f19d6f4b9cce2e1d276e27484fdfdd6d5726afce"
+exit_code = 0
+inline = '''
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.58s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a952e36a-b427-4e2c-a09c-f6cfa1842ccc with nextest profile: default
+    Starting 1 test across 3 binaries (142 tests skipped)
+        PASS [   0.005s] frob-land land::tests::a_series_worktree_is_kept_until_its_last_holder_lands
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 142 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land series_worktree"
+size = 631
+status = "measured"
+test_count = 1
+tests_digest = "37d614319ff11f072fb6eea610ef2b0d1c43e97f0707020a533aef87c7c50cac"
+at = "2026-10-21T04:48:43Z"
+actor = "lognd"
+rev = 1

@@ -14,5 +14,5 @@ scope = ["crates/frob-land/src/land.rs", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP
 
 [[acceptance]]
 text = "Landing one of several sibling tickets leased on a shared series worktree keeps the worktree and branch until the last sibling lands"
-bound = false
+bound = true
 +++
