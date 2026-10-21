@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "01712bae23e966445b18e44cb7faa802fc126f9b"
+branch = "ticket/THMVENY"
+pushed = false
+at = "2026-10-21T18:24:41Z"
+actor = "lognd"
+rev = 1

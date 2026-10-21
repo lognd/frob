@@ -8,7 +8,7 @@ points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T15:25:47Z"
-updated = "2026-10-21T18:20:32Z"
+updated = "2026-10-21T18:24:41Z"
 scope = [".github/workflows/bench-pr.yml"]
 
 [[acceptance]]
