@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T08:48:17Z"
-updated = "2026-10-21T22:28:47Z"
+updated = "2026-10-21T22:34:57Z"
 labels = ["area:grl"]
 scope = ["crates/gob-plan/src/exec/core/kind.rs", "crates/gob-plan/src/exec/core/field.rs", "crates/gob-plan/src/lower/convert.rs", "crates/gob-plan/tests/ten_rules/main.rs", "crates/gob-plan/tests/exec_core.rs", "docs/design/grl-spec.md", "changelog.d/01M5ETB80YYSQNEDP9PG86WKD4.added.md", "crates/gob-plan/tests/lower.rs"]
 
