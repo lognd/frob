@@ -2,13 +2,13 @@
 id = "01M44YQY6KR3NCCNGKJ9QK3N9A"
 title = "unity pack: serialized fields have an external writer"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:01Z"
-updated = "2026-10-05T02:37:01Z"
+updated = "2026-10-21T17:31:54Z"
 idempotency_key = "d94-serial"
 scope = ["packs/unity.toml", "crates/gob-ir/**", "crates/frob-obligations/**", "docs/design/packs.md"]
 
