@@ -8,7 +8,7 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:30:51Z"
-updated = "2026-10-21T10:57:08Z"
+updated = "2026-10-21T10:57:10Z"
 idempotency_key = "crunk-plan-g_sec"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/**", "docs/grimble/packs/grimble-websec.md", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/src/lib.rs", "crates/grimble-check/Cargo.toml", "Cargo.lock", "crates/grimble-check/tests/websec_pack.rs", "changelog.d/01M43AWPD2DYMS2CVTJRD56D5R.added.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the pack lock, when verified, then the digest matches the pack tree and PACK001-008 are clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a rule without examples, when the pack compiles, then it fails"

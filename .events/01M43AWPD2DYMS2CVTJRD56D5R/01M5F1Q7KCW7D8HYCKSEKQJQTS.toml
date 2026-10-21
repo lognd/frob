@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T10:57:10Z"
+digest = "013a4a327dee4f035816b4641fe14210c7b0808a02900e66fa71101989b2fb8f"
+exit_code = 0
+head = "cae650f6c6db18b9a62f91161c1531231c08511e"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 380e8cfd-47e9-48d3-96fc-5d02dde6417f with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.005s] grimble-check::websec_pack the_lock_digest_matches_the_pack_tree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test websec_pack the_lock_digest"
+size = 551
+status = "measured"
+test_count = 1
+tests_digest = "02f19176b30873cd9a7f61238e941c09409577cb5776e3390b781c9a6d9bab4e"
+at = "2026-10-21T10:57:10Z"
+actor = "lognd"
+rev = 1
