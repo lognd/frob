@@ -8,7 +8,7 @@ points = 2
 reporter = "lognd"
 created = "2026-10-21T17:33:20Z"
 updated = "2026-10-21T18:16:40Z"
-scope = ["crates/gob-plan/src/examples/side.rs", "crates/gob-plan/src/examples/mod.rs", "crates/gob-plan/src/examples/model_reader.rs", "crates/gob-plan/Cargo.toml", "crates/grimble-check/src/lib.rs", "crates/grimble-check/src/example_model.rs", "crates/grimble-check/tests/example_model.rs", "crates/grimble/src/main.rs", "crates/gob-dev/tests/layering.rs", "Cargo.lock"]
+scope = ["crates/gob-plan/src/examples/side.rs", "crates/gob-plan/src/examples/mod.rs", "crates/gob-plan/src/examples/model_reader.rs", "crates/gob-plan/Cargo.toml", "crates/grimble-check/src/lib.rs", "crates/grimble-check/src/example_model.rs", "crates/grimble-check/tests/example_model.rs", "crates/grimble/src/main.rs", "crates/gob-dev/tests/layering.rs", "Cargo.lock", "changelog.d/01M5FRCMBS9DHQ223JWGN6RNW7.changed.md"]
 
 [[acceptance]]
 text = "Behaviour implemented and covered by a bound test or check"
