@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T09:54:06Z"
+digest = "39442a78dea759f2b9bb8cac886993a4ed526cf494d5f0b4dc8e0b95aad19443"
+exit_code = 0
+head = "000c394f34e332c860d4c2719bd527d41dc721ce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4b152418-8971-491b-a377-7968ad6b6409 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.033s] frob-mirror::prop_safety a_pasted_marker_never_maps_ticket_b_to_ticket_as_issue
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.034s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror --test prop_safety a_pasted_marker"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "1e00921fe2a3d3d0c52766b2e2fcb774f72e38b53b7e1f2abdef15cf791682c4"
+at = "2026-10-21T09:54:06Z"
+actor = "lognd"
+rev = 1

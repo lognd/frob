@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-21T09:54:05Z"
+updated = "2026-10-21T09:54:06Z"
 idempotency_key = "m2-mirror2-prop-safety"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/prop_safety.rs", "changelog.d/01M4052WE1HV1XJVZR6MCADM51.added.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the D1 trace (a pasted marker), when replayed, then the map never points ticket B at ticket A's issue"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a converged state, when a run starts from a fresh map, then it makes no mutation and no ledger commit (S9)"
