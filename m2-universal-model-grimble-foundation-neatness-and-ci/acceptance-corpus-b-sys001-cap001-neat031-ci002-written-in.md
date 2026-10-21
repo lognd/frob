@@ -2,7 +2,8 @@
 id = "01M3ZX7HZSW3J5YN1KEACSP6CZ"
 title = "Acceptance corpus B: SYS001, CAP001, NEAT031, CI002 written in GRL"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
