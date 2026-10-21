@@ -1,0 +1,23 @@
+kind = "evidence"
+captured_at = "2026-10-21T01:51:29Z"
+digest = "b7be2f95a10c639e2b85f537b2298d29bc205c48423f8f0fc0703ac42d02a99f"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 08a6641c-048c-4e03-835f-bd9f16656722 with nextest profile: default
+    Starting 1 test across 3 binaries (139 tests skipped)
+        PASS [   0.486s] frob-land::land diverged_lands_counts_local_lands_origin_lacks_and_clears_after_relaunch_is_pushed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.487s] 1 test run: 1 passed, 139 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land diverged_lands"
+size = 591
+status = "measured"
+test_count = 1
+tests_digest = "23e604985e44fe2a65b78256dc3bc0c28e16bf769290e77e85d90b9673238163"
+at = "2026-10-21T01:51:29Z"
+actor = "lognd"
+rev = 1
