@@ -2,13 +2,13 @@
 id = "01M5ETB7Y10SZTEWWKBR3AHZ1T"
 title = "GRL lowering: relation object as a field path (peer of s.unit) and as roles snippets (NEAT031)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T08:48:17Z"
-updated = "2026-10-21T22:24:10Z"
+updated = "2026-10-21T22:24:12Z"
 labels = ["area:grl"]
 +++
 
