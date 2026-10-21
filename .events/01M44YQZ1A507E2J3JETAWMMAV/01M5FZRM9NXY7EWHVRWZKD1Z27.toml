@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T19:42:13Z"
+digest = "0c91c7fd840605a4ad5c3b15d6a04dc34060a69eb389c8e56617f417061dce02"
+exit_code = 0
+head = "90f4256cd0e12e34a5afc4c1e1b07a3cb17d5b47"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ae54673c-0dc2-47ac-abc9-3606edc46b17 with nextest profile: default
+    Starting 1 test across 7 binaries (78 tests skipped)
+        PASS [   0.059s] frob-obligations::unity_meta unity001_exempts_dot_tilde_cvs_and_tmp_names
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.060s] 1 test run: 1 passed, 78 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations unity001_exempts"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "3e7928b3d14450c306e727695690b0aa164debe241a651d9484fe110363af25c"
+at = "2026-10-21T19:42:13Z"
+actor = "lognd"
+rev = 1
