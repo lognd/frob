@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-21T02:22:45Z"
+digest = "899ebdd1d5f8aeb44d5dfd68bdb97c8dbcd150462a701ab30451ead3107637f5"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 73281032-df87-491a-a00c-631d7e3d823b with nextest profile: default
+    Starting 2 tests across 9 binaries (108 tests skipped)
+        PASS [   0.010s] frob-worktree claim_evict::tests::prior_ages_count_only_this_holders_evictions
+        PASS [   0.010s] frob-worktree claim_evict::tests::preconditions_keep_their_describe_codes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 2 tests run: 2 passed, 108 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree claim_evict"
+size = 672
+status = "measured"
+test_count = 2
+tests_digest = "afe9e5617fb13965a529ee9155865bb4eac225b48f9ff31ceccf70e3f5542fc4"
+at = "2026-10-21T02:22:45Z"
+actor = "lognd"
+rev = 1
