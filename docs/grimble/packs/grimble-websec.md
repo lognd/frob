@@ -12,10 +12,18 @@ code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 | `packs/grimble-websec/rules/SQL101.grl` | SQL: query built by interpolation |
 | `packs/grimble-websec/rules/COMPLY101.grl` | COMPLY (with PII): personal data in a log call |
 | `packs/grimble-websec/rules/ROUTE101.grl` | ROUTE: GET and a state-changing method on one route |
+| `packs/grimble-websec/rules/route/ROUTE102.grl` | ROUTE: debug server exposed (`run(debug=True)`) |
+| `packs/grimble-websec/rules/route/ROUTE103.grl` | ROUTE: TRACE or CONNECT accepted on a route |
+| `packs/grimble-websec/rules/route/ROUTE104.grl` | ROUTE: view exempted from CSRF protection |
 | `packs/grimble-websec/rules/WEBPERF201.grl` | WEBPERF (server): blocking sleep in an async handler |
 
 Every rule has a firing, a clean and a not-applicable example and an `explain` with `## Remedy`;
 a rule without a firing and a clean example fails to compile (GRL011).
+
+ROUTE102 to ROUTE104 are the first ROUTE slice and read Flask-style Python calls. Auth-on-route
+and handler-exposure rules need framework adapters (route tables, decorators); until an adapter
+exists, other languages and frameworks are NotApplicable (the markdown example) or Unresolved,
+never clean.
 
 ## Namespaces
 

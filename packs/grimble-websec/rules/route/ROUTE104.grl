@@ -1,0 +1,22 @@
+rule ROUTE104 "csrf-protection-exempted" {
+  lang python
+  severity warn
+
+  find c: call where c.text ~ /csrf(_protect)?\.exempt\(/
+  report c "a view is exempted from CSRF protection"
+
+  example fire python """
+    csrf.exempt(transfer_view)  #~ warn
+  """
+  example clean python """
+    csrf.init_app(app)
+  """
+  example notapplicable markdown """
+    Prose has no views.
+  """
+  explain """
+    A state-changing view that skips the CSRF check can be driven by any page the user visits while signed in.
+    ## Remedy
+    Remove the exemption and send the CSRF token with the request; for a token-authenticated API, authenticate with the header token instead of the cookie.
+  """
+}
