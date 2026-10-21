@@ -139,7 +139,9 @@ gob-ir                  U terms (universal-model.md): sorted ABTs, scope graph w
                         Kleene evaluator, answer lattice, atom registry; below
                         gob-symbols and linked by frob and grimble (D56);
                         Milestone 2 or later (D36)
-gob-symbols             the adapters that produce U terms for Rust and markdown
+gob-symbols             the adapters that produce U terms for Rust, markdown, Python,
+                        TypeScript, CSS and C# (conformance fixtures under
+                        tests/corpus/csharp: a .NET solution and a Unity project)
                         (milestone 1: walkers, container model, symbol addresses,
                         facet digests, publicness, test-shape, adapter capability
                         matrix, imports with confidence, call graph, public-API

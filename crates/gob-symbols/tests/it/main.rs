@@ -9,6 +9,7 @@ mod cicd;
 mod corpus;
 mod crosscrate;
 mod csharp;
+mod csharp_fixtures;
 mod css;
 mod def_use;
 mod dotnet;

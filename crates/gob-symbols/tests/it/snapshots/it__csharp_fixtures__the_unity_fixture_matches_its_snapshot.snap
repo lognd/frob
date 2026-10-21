@@ -1,0 +1,31 @@
+---
+source: crates/gob-symbols/tests/it/csharp_fixtures.rs
+expression: "render(\"unity\")"
+---
+== Assets/Scripts/Mover.cs (Complete)
+symbol Namespace Assets/Scripts/Mover.cs::Game
+symbol Namespace Assets/Scripts/Mover.cs::Game.Runtime
+symbol Class Assets/Scripts/Mover.cs::Game.Runtime.Mover
+symbol Field Assets/Scripts/Mover.cs::Game.Runtime.Mover.speed
+symbol Field Assets/Scripts/Mover.cs::Game.Runtime.Mover.start
+symbol Method Assets/Scripts/Mover.cs::Game.Runtime.Mover.Awake
+symbol Method Assets/Scripts/Mover.cs::Game.Runtime.Mover.Update
+symbol Method Assets/Scripts/Mover.cs::Game.Runtime.Mover.Travelled
+import UnityEngine
+call Assets/Scripts/Mover.cs::Game.Runtime.Mover.Update -> Translate
+call Assets/Scripts/Mover.cs::Game.Runtime.Mover.Travelled -> Distance
+== Assets/Tests/PlayMode/MoverTests.cs (Complete)
+symbol Namespace Assets/Tests/PlayMode/MoverTests.cs::Game
+symbol Namespace Assets/Tests/PlayMode/MoverTests.cs::Game.PlayTests
+symbol Class Assets/Tests/PlayMode/MoverTests.cs::Game.PlayTests.MoverTests
+symbol Method Assets/Tests/PlayMode/MoverTests.cs::Game.PlayTests.MoverTests.Mover_AdvancesOverFrames
+import System.Collections
+import Game.Runtime
+import NUnit.Framework
+import UnityEngine
+import UnityEngine.TestTools
+call Assets/Tests/PlayMode/MoverTests.cs::Game.PlayTests.MoverTests.Mover_AdvancesOverFrames -> new.GameObject
+call Assets/Tests/PlayMode/MoverTests.cs::Game.PlayTests.MoverTests.Mover_AdvancesOverFrames -> AddComponent
+call Assets/Tests/PlayMode/MoverTests.cs::Game.PlayTests.MoverTests.Mover_AdvancesOverFrames -> GreaterOrEqual
+call Assets/Tests/PlayMode/MoverTests.cs::Game.PlayTests.MoverTests.Mover_AdvancesOverFrames -> Travelled
+test Game.PlayTests.MoverTests.Mover_AdvancesOverFrames NUnit play_mode=true
