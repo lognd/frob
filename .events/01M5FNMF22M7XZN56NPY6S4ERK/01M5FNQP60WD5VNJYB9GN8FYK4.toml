@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/refresh.rs", "crates/frob-ledger/Cargo.toml", "Cargo.lock"]
+new = ["crates/frob-ledger/src/refresh.rs", "crates/frob-ledger/Cargo.toml", "Cargo.lock", "changelog.d/01M5FNMF22M7XZN56NPY6S4ERK.fix.md"]
+at = "2026-10-21T16:46:56Z"
+actor = "lognd"
+rev = 1
