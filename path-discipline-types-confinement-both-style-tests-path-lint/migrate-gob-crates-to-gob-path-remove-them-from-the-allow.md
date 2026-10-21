@@ -2,7 +2,8 @@
 id = "01M41S1MYKQEG5RRJNSKHR84D9"
 title = "Migrate gob-* crates to gob-path; remove them from the allow list"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M41S1JXXN380WPE29ATR5EP7"
