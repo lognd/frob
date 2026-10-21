@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T21:05:36Z"
-updated = "2026-10-20T23:52:00Z"
+updated = "2026-10-21T00:03:47Z"
 scope = ["crates/frob-ledger/src/claim_cover.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/src/guards.rs", "crates/frob-lease/src/guard.rs", "crates/frob/src/ticket/write.rs", "crates/frob/src/ticket/read.rs", "crates/frob-ledger/tests/claim_cover.rs", "crates/frob/tests/it/claim_cover.rs", "changelog.d/01M5DJ4K69T67D50C19B4NY6RM.added.md"]
 +++
 
