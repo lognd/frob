@@ -14,6 +14,10 @@ scope = ["crates/frob-mirror/src/run.rs", "docs/design/mirror.md", "changelog.d/
 [[acceptance]]
 text = "Update, Create and Reconcile rotate round robin across runs using cursors persisted in the mirror store"
 bound = false
+
+[[acceptance]]
+text = "With sweep_k above the budget capacity every sweep ticket is still visited across runs"
+bound = false
 +++
 
 Found while working ~VR8VGH2. run_locked calls select(items, &Cursors::default(), ..) every run, so Update/Create/Reconcile use a fixed order and are never persisted round robin, and select re-sorts the sweep batch so with sweep_k greater than the budget capacity the lowest-sorted ticket is always served first and later ones starve.
