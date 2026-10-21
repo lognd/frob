@@ -1,0 +1,1 @@
+frob land: after merging the base, refuse with E-LAND-HUNKS-DROPPED when the merge lost lines the ticket own commits added (a stacked successor whose base squash-landed), instead of the later "evidence no longer resolves" refusal.

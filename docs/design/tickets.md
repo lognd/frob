@@ -381,6 +381,12 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   before and refused with `E-LAND-CONFLICT` naming the conflicted paths,
   the remedy being to merge the base on the branch, resolve, commit, then
   land again
+  (a clean base merge is then checked for dropped hunks: every line the
+  ticket's own non-merge commits added, that the pre-merge tree held and the
+  base does not carry, must still be in the merged tree, else the land
+  refuses with `E-LAND-HUNKS-DROPPED` naming the commit and file and a
+  `cherry-pick -n` remedy; this catches a stacked successor whose base
+  squash-landed and whose adjacent hunks the merge resolved away)
   (every verb that opens the lease store passes the same config; the old
   `[tickets] registry_files` alias is gone). A ticket's own changelog
   fragment `changelog.d/<its ULID>.<type>.md` needs no lease: it is
