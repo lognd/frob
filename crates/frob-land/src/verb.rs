@@ -60,8 +60,8 @@ struct LandArgs {
     enqueue_only: bool,
     #[arg(
         long,
-        conflicts_with_all = ["train", "enqueue_only", "push"],
-        help = "Merge the remote base into the kept branch of a ticket landed locally on a diverged base; never rebases, publishes nothing"
+        conflicts_with_all = ["train", "enqueue_only"],
+        help = "Merge the remote base into the kept branch of a ticket landed locally on a diverged base; never rebases; with --push, checks the result and pushes it to the [sync] remote"
     )]
     relaunch: bool,
     #[arg(

@@ -1,0 +1,1 @@
+`frob land --relaunch` now reads the remote from `[sync] remote` (instead of always `origin`), and with `--push` runs the check on the merged result and pushes it to the base branch of that remote when clean.

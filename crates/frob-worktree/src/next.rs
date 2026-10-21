@@ -14,6 +14,7 @@ use std::collections::HashSet;
 use frob_ledger::TicketId;
 use frob_ledger::claim_agent::{ActivityTimes, observation_for};
 use frob_ledger::claim_window::{ClaimWindows, HolderKind};
+use frob_ledger::event::{EventBody, LeaseData, LeaseOp};
 use frob_ledger::guards::NoLeases;
 use frob_ledger::model::Category;
 use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
@@ -270,6 +271,19 @@ impl Workspace<'_> {
                         tracing::warn!(error = %e, "could not save the observation file");
                     }
                     self.leases.release(lease.ticket, None)?;
+                    self.ledger.append(
+                        lease.ticket,
+                        EventBody::Lease(LeaseData {
+                            op: LeaseOp::Evict,
+                            holder: Some(lease.holder.actor.clone()),
+                            observed: Some(req.observed.clone()),
+                            parked: Some(parked.clone()),
+                            tip: None,
+                            idle_secs: Some(ctx.idle_secs),
+                            window_secs: Some(req.window_secs),
+                            reason: Some(req.reason.clone()),
+                        }),
+                    )?;
                     let note = format!(
                         "claim evicted from {} after {}s idle; work parked at {parked} (frob work {handle} --from {parked})",
                         lease.holder.actor, ctx.idle_secs
