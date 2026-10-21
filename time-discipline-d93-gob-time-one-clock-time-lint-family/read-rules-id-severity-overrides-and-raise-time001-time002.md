@@ -8,12 +8,12 @@ points = 3
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-21T17:57:48Z"
-updated = "2026-10-21T20:22:10Z"
+updated = "2026-10-21T20:22:14Z"
 scope = ["crates/grimble-check/src/**", "grimble.toml", "docs/design/rules.md", "crates/grimble-check/tests/rules_severity.rs", "changelog.d/01M5FSSDC7EG5QA70CRABC8SMA.changed.md"]
 
 [[acceptance]]
 text = "A [rules.<id>] severity override raises a finding to the configured severity"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "An override can lower severity and unknown rule ids are ignored"
