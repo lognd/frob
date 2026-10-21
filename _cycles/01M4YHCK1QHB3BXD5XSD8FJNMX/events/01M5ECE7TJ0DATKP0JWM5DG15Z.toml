@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M5EA0YHJS87TYJ78FE70J6TS"
+committed = 1160
+text = "grind 533"
+capacity = 137
+at = "2026-10-21T04:45:15Z"
+actor = "lognd"
+rev = 1
