@@ -2,12 +2,12 @@
 id = "01M4M27EDCXBRN2HZJXHAZK0F1"
 title = "frob land prints E-LAND-GIT-REV (cannot resolve refs/heads/experimental) after a land that completed"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T23:26:32Z"
-updated = "2026-10-10T23:26:32Z"
+updated = "2026-10-21T05:15:14Z"
 scope = ["crates/frob-land/src/**"]
 
 [[acceptance]]
