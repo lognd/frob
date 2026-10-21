@@ -8,10 +8,10 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:15Z"
-updated = "2026-10-21T07:45:17Z"
+updated = "2026-10-21T07:46:42Z"
 idempotency_key = "crunk-plan-web_LAUNCH"
 labels = ["area:crunk"]
-scope = ["packs/crunk-web/rules/launch/**", "packs/crunk-web/tests/launch/**"]
+scope = ["packs/crunk-web/rules/launch/**", "packs/crunk-web/tests/launch/**", "crates/crunk-check/src/packs.rs"]
 
 [[links]]
 kind = "blocked-by"
