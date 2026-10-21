@@ -3,7 +3,7 @@
 //! The gallery is the Python crunk's `enumerate -> render -> triage -> check` pipeline. This crate
 //! holds the parts that need no browser: the manifest (versions 1 to 3, each with a shipped JSON
 //! Schema under `docs/schemas/`), the cell enumeration over `[[platform]]` and `[[screen]]`, the
-//! rules GALLERY001 to GALLERY005 and the `check` report. Rendering and triage are separate work.
+//! rules GALLERY001 to GALLERY005 and the `check` report. Rendering goes through `gob-exec` ([`render`]); triage is separate work.
 //!
 //! # Overview
 //!
@@ -15,6 +15,8 @@
 //! - [`rules`]: GALLERY001 to GALLERY004 over the cells and the manifest, GALLERY005 over the
 //!   routes a router declares. GALLERY has its own dispatch (its input is a manifest, not a
 //!   file), so these are plain functions rather than `#[rule]` declarations.
+//! - [`render`]: [`render::render`] turns cells into hashed PNGs via Playwright (`web`) or the
+//!   platform's own command (`command`), with a timeout per cell.
 //! - [`report`]: [`report::check_report`] runs every rule and counts the result; the shape is
 //!   `docs/schemas/crunk-gallery-check-v1.json`.
 
@@ -22,6 +24,7 @@
 
 pub mod cells;
 pub mod manifest;
+pub mod render;
 pub mod report;
 pub mod rules;
 pub mod schema;
