@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-21T22:46:49Z"
+digest = "fb3f3d1aa5f7cf1a6cf01a251b699550ca63f5061dbec92c0f73781a796553b2"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d673a21f-d78f-4f69-b6ad-f6efe35ad413 with nextest profile: default
+    Starting 10 tests across 1 binary
+        PASS [   0.009s] gob-plan::ten_rules sys001_examples_pass
+        PASS [   0.010s] gob-plan::ten_rules scope001_examples_pass
+        PASS [   0.011s] gob-plan::ten_rules doc002_examples_pass
+        PASS [   0.011s] gob-plan::ten_rules neat031_examples_pass
+        PASS [   0.011s] gob-plan::ten_rules ci002_examples_pass
+        PASS [   0.012s] gob-plan::ten_rules inv002_examples_pass
+        PASS [   0.011s] gob-plan::ten_rules neat013_examples_pass
+        PASS [   0.013s] gob-plan::ten_rules cap001_examples_pass
+        PASS [   0.013s] gob-plan::ten_rules cov001_examples_pass
+        PASS [   0.022s] gob-plan::ten_rules todo001_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 10 tests run: 10 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test ten_rules"
+size = 1166
+status = "measured"
+test_count = 10
+tests_digest = "94a23ddcd15749ab10f04b6b6e2fb563e5e24f9594976b0edd0d16121d0fc558"
+at = "2026-10-21T22:46:49Z"
+actor = "lognd"
+rev = 1
