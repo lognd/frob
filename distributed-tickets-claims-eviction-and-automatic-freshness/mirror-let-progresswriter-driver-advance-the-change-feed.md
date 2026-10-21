@@ -12,7 +12,7 @@ updated = "2026-10-21T06:47:49Z"
 
 [[acceptance]]
 text = "The driver advances the index change_feed cursor to the feed cursor after a clean, completed run that reconciled every feed item, and holds it otherwise"
-bound = false
+bound = true
 +++
 
 ProgressWriter rewrites the index so the host cannot set change_feed; re-read is idempotent via needs_history. found while working R2MH98S
