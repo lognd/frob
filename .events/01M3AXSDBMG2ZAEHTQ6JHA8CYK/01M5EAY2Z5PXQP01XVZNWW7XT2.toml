@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-10-21T04:18:55Z"
+digest = "a9abc423c69470f9db58c9d741daaf46f39a915d3dd17692ecfcd6fd690bd71d"
+exit_code = 0
+inline = '''
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 468315b5-c9dd-4fac-a014-f3c4f2dea759 with nextest profile: default
+    Starting 2 tests across 3 binaries (140 tests skipped)
+        PASS [   0.183s] frob-land hunk_presence::tests::a_merge_that_resolves_the_successor_away_is_refused_with_the_commit
+        PASS [   0.194s] frob-land hunk_presence::tests::a_stacked_successor_keeps_its_hunks_after_its_base_squash_lands
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.195s] 2 tests run: 2 passed, 140 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land hunk_presence"
+size = 777
+status = "measured"
+test_count = 2
+tests_digest = "18322244a844fb2b1e20ac215701a40c217978d5a5cd8bd32834d58d47e536a6"
+at = "2026-10-21T04:18:55Z"
+actor = "lognd"
+rev = 1
