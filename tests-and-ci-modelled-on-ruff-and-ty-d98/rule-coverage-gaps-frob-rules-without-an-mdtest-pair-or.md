@@ -2,7 +2,8 @@
 id = "01M480C43A6BCH54NX8C5DQ4WJ"
 title = "Rule coverage gaps: frob rules without an mdtest pair or fixture"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
