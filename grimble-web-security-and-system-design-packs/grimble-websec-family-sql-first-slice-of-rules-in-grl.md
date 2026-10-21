@@ -8,7 +8,7 @@ points = 8
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:13Z"
-updated = "2026-10-21T13:42:39Z"
+updated = "2026-10-21T13:44:37Z"
 idempotency_key = "crunk-plan-g_SQL"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/rules/sql/**", "packs/grimble-websec/tests/sql/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs", "docs/grimble/packs/grimble-websec.md", "changelog.d/01M43AXBE0A7W14TH20DP8SN2M.added.md"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the clean example, when `grimble rule test` runs, then it passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a language without an adapter, when the family runs, then it is NotApplicable or Unresolved with the reason"
