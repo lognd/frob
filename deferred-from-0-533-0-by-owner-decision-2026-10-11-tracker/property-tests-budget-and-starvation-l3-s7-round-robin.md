@@ -8,10 +8,10 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:40Z"
-updated = "2026-10-21T09:16:18Z"
+updated = "2026-10-21T09:19:49Z"
 idempotency_key = "m2-mirror2-prop-budget"
 labels = ["milestone:2", "area:mirror"]
-scope = ["crates/frob-mirror/tests/prop_budget.rs"]
+scope = ["crates/frob-mirror/tests/prop_budget.rs", "changelog.d/01M4052WNB3X3G61P84VR8VGH2.added.md"]
 
 [[links]]
 kind = "blocked-by"

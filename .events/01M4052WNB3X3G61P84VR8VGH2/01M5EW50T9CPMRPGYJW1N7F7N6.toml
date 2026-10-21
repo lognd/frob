@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-mirror/tests/prop_budget.rs"]
+new = ["crates/frob-mirror/tests/prop_budget.rs", "changelog.d/01M4052WNB3X3G61P84VR8VGH2.added.md"]
+at = "2026-10-21T09:19:49Z"
+actor = "lognd"
+rev = 1
