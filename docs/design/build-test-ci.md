@@ -837,7 +837,7 @@ ty's format, insta snapshots, rule docs as tests). The rest:
 | Inline parser tests: `test_ok`/`test_err` comments in parser source extracted to `resources/inline/{ok,err}` with AST and error snapshots (ruff_python_parser, from rust-analyzer) | Implemented (T-2GG2KXR). GRL, .grmb, directives and the crunk.toml spec parser use `// test_ok NAME` / `// test_err NAME` blocks (plain `//` comments; names are `[a-z0-9_]+`; at least five of each per parser). `cargo dev gen inline` (part of `gen all`) writes each block to `crates/<crate>/resources/inline/{ok,err}/NAME.<ext>`; a stale or orphaned extraction fails `cargo dev gen --check` (GEN001). Each crate's `tests/inline.rs` parses every file, asserts ok cases are clean and err cases report errors, and insta-snapshots the tree and errors. `frob\:` and `grimble\:` in a block extract as `frob:` and `grimble:` so directive fixtures are not live directives in the source |
 | Formatter idempotence and stability (ruff_python_formatter) | `grimble fmt` and the GRL printer: format(format(x)) = format(x) and parse(print(t)) = t over every fixture and a proptest generator |
 | Snapshot hygiene: no stale or unreviewed snapshots (`cargo insta test --unreferenced reject`) | the nextest step runs with `INSTA_UPDATE=no`; a `snapshots` step in `cargo dev ci` fails on unreferenced or pending `.snap.new` files |
-| Ecosystem check: run the base and PR binaries over pinned real projects and comment the finding diff (ruff ecosystem, ty ecosystem-analyzer) | `cargo dev ecosystem`: a pinned corpus (`ecosystem.toml`, repository and SHA per entry: Rust, Python, TS/React, C#/Unity, this repo) checked by both binaries; report = per-rule added/removed/changed findings, crashes, Unresolved deltas and timing; non-blocking PR comment; runs on goway helpers |
+| Ecosystem check: run the base and PR binaries over pinned real projects and comment the finding diff (ruff ecosystem, ty ecosystem-analyzer) | `cargo dev ecosystem`: a pinned corpus (`ecosystem.toml`, repository and SHA per entry: Rust, Python, TS/React, C#/Unity, this repo) checked by both binaries; report = per-rule added/removed/changed findings, crashes, Unresolved deltas and timing; non-blocking PR comment; runs on goway helpers. Implemented (~9HS3VP7): see "Ecosystem check" below |
 | Fuzzing in CI (ruff `fuzz/`, built on every PR) | `fuzz/` with cargo-fuzz targets for every parser (GRL, .grmb, directives, crunk.toml, ledger events) and the fold; PRs build the targets and run each 60 s; the nightly job (`.github/workflows/fuzz-nightly.yml`, every action pinned by SHA) runs the same `fuzz-build` step with `FROB_FUZZ_SECONDS=900`, uploads the reproducers and files one issue per crash. Implemented: `fuzz/` (targets `grl`, `grmb`, `directives`, `crunk_toml`, `ledger`), the `cargo dev ci --step fuzz-build` step (Linux, nightly toolchain, `cargo-fuzz` 0.12.0) |
 | Deterministic benchmarks on PRs (ruff on CodSpeed) | instruction-count benchmarks (gungraun, the maintained successor of iai-callgrind, Valgrind based, no external service) compared against the base and commented (implemented for the plan executor and the Rust parser: `crates/gob-plan/benches/ic_plan.rs`, `cargo dev bench-ic`; cold and warm check are still to add); criterion stays for the scheduled wall-clock bench |
 | Change detection: skip jobs a diff cannot affect (ruff `determine_changes`) | a first `changes` job maps paths to job sets (Rust, docs only, crunk node and playwright ~2H41VF1, workflows); a docs-only PR runs fmt, gen check and frob check only (implemented: `crates/gob-dev/changes.toml`, `cargo dev changes`) |
@@ -846,3 +846,38 @@ ty's format, insta snapshots, rule docs as tests). The rest:
 
 Every row is a `cargo dev ci` step or a nextest test, so local runs, goway
 runs and GitHub Actions run the same thing (section 4).
+
+### Ecosystem check (~9HS3VP7)
+
+`ecosystem.toml` pins six real projects by commit (frob, ripgrep, click,
+zod, shadcn-ui, UniTask: Rust, Python, TypeScript/React, C#/Unity); an entry
+may restrict `tools`, otherwise `frob check`, `grimble check` and `crunk
+check` all run. `cargo dev ecosystem --base-bin DIR --head-bin DIR` fetches
+each project shallowly at its commit into `target/ecosystem/<name>` (reused
+when already on that commit), cleans untracked and ignored files before every
+run so one binary's caches never reach the other, alternates which build runs
+first, and prints a markdown report. Run it on a helper with
+`goway run -- cargo dev ecosystem --base-bin ... --head-bin ...`.
+
+Matching: a finding is `(rule, file, message)`, never its line, so shifted
+code is not a change; duplicates count as a multiset and ordering is sorted,
+so output order is irrelevant. Same key with another severity is `changed`; the
+same rule and message in another file is `changed` (a rename). An empty base
+makes every head finding `added`. Per rule the report gives added, removed,
+changed and the Unresolved delta, plus base and head wall time per tool.
+
+Failure handling: a signal, a timeout, a missing binary, or an exit without a
+JSON envelope is a crash. A head crash is listed first and named in a
+`Head crashes` block, never folded into a count. A base that fails gives no
+diff (the head count is shown alone); both sides returning the same
+structured error (crunk without a `crunk.toml`) collapses to "not applicable";
+any other pair of failures is shown with both causes. A project that cannot be
+fetched is reported and the corpus continues.
+
+CI: `.github/workflows/ecosystem-pr.yml` builds both sides in release, runs the
+command, writes the job summary and creates or edits one comment found by its
+`<!-- frob-ecosystem -->` marker (it does not use `--edit-last`, which would
+overwrite another job's comment). The job and the comment step are
+`continue-on-error`, and the command exits 0 for findings and crashes, so the
+report never fails a PR; a fork's read-only token only loses the comment, the
+summary remains. Comments are truncated below GitHub's 65536 character limit.

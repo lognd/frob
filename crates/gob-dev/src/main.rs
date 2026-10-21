@@ -128,6 +128,24 @@ enum Task {
         #[arg(long)]
         fail_on_regression: bool,
     },
+    /// Diff the findings of a base and a head build over the pinned corpus; print the PR comment (~9HS3VP7).
+    Ecosystem {
+        /// The pinned corpus file.
+        #[arg(long, default_value = "ecosystem.toml")]
+        corpus: PathBuf,
+        /// Directory holding the base build's frob, grimble and crunk.
+        #[arg(long)]
+        base_bin: PathBuf,
+        /// Directory holding the head build's frob, grimble and crunk.
+        #[arg(long)]
+        head_bin: PathBuf,
+        /// Where the projects are checked out (default: target/ecosystem).
+        #[arg(long, default_value = "target/ecosystem")]
+        work: PathBuf,
+        /// Only check these projects (repeatable).
+        #[arg(long)]
+        only: Vec<String>,
+    },
     /// Publish the workspace crates to crates.io in dependency order; resumable.
     Publish {
         /// Print the order and publish nothing.
@@ -321,8 +339,35 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             threshold_pct,
             fail_on_regression,
         } => bench_ic_task(&base, &head, threshold_pct, fail_on_regression),
+        Task::Ecosystem {
+            corpus,
+            base_bin,
+            head_bin,
+            work,
+            only,
+        } => ecosystem_task(&corpus, base_bin, head_bin, work, only),
         Task::Gen { kind, check, root } => generate_files(kind, check, root).map(|()| ok),
     }
+}
+
+// frob:ticket 01M47QV23EAN5DE6DDV9HS3VP7
+/// Print the base-versus-head finding diff over the corpus; findings and crashes never fail the run.
+fn ecosystem_task(
+    corpus: &std::path::Path,
+    base_bin: PathBuf,
+    head_bin: PathBuf,
+    work: PathBuf,
+    only: Vec<String>,
+) -> Result<std::process::ExitCode, Failed> {
+    let corpus = gob_dev::ecosystem::Corpus::load(corpus).map_err(|e| {
+        tracing::error!(error = %e, "ecosystem corpus unusable");
+        Failed(format!("error: {e}"))
+    })?;
+    let mut opts = gob_dev::ecosystem::run::Options::new(corpus, base_bin, head_bin, work);
+    opts.only = only;
+    let report = gob_dev::ecosystem::run::run(&opts, &mut |line| tracing::info!("{line}"));
+    emit(&gob_dev::ecosystem::render(&report));
+    Ok(std::process::ExitCode::SUCCESS)
 }
 
 // frob:ticket 01M47QVC49RXV29NCG3N9G1JSM
@@ -828,6 +873,23 @@ mod tests {
         let cli = Cli::try_parse_from(["gob-dev", "bench-ic", "--base", "a", "--head", "b"])
             .expect("parses");
         assert!(matches!(cli.command, Task::BenchIc { .. }));
+    }
+
+    // frob:tests crates/gob-dev/src/main.rs::Task
+    #[test]
+    fn ecosystem_parses() {
+        let cli = Cli::try_parse_from([
+            "gob-dev",
+            "ecosystem",
+            "--base-bin",
+            "a",
+            "--head-bin",
+            "b",
+            "--only",
+            "click",
+        ])
+        .expect("parses");
+        assert!(matches!(cli.command, Task::Ecosystem { .. }));
     }
 
     #[test]

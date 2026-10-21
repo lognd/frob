@@ -1,0 +1,43 @@
+# Pinned corpus for `cargo dev ecosystem` (docs/design/build-test-ci.md section 6).
+#
+# Every entry is a real repository at an exact commit, so the base and head binaries always see
+# the same tree and a finding delta is the binary's doing, never the project's. Bump a `sha`
+# deliberately, in its own change. `tools` defaults to frob, grimble and crunk; crunk needs a
+# crunk.toml in the project and otherwise reports E-NO-CONFIG, which the report collapses.
+# frob:ticket 01M47QV23EAN5DE6DDV9HS3VP7
+
+[[project]]
+name = "frob"
+language = "rust"
+repo = "https://github.com/lognd/frob"
+sha = "781d629d452dd6c7e907c9508015f83fcd8a03a5"
+
+[[project]]
+name = "ripgrep"
+language = "rust"
+repo = "https://github.com/BurntSushi/ripgrep"
+sha = "4649aa9700619f94cf9c66876e9549d83420e16c"
+
+[[project]]
+name = "click"
+language = "python"
+repo = "https://github.com/pallets/click"
+sha = "874ca2bc1c30d93a4ac6e36a15ed685eafe89097"
+
+[[project]]
+name = "zod"
+language = "typescript"
+repo = "https://github.com/colinhacks/zod"
+sha = "ca42965df46b2f7e2747db29c40a26bcb32a51d5"
+
+[[project]]
+name = "shadcn-ui"
+language = "typescript"
+repo = "https://github.com/shadcn-ui/ui"
+sha = "ba1503c64472b82256d9de95e2e62c5901a38e8b"
+
+[[project]]
+name = "unitask"
+language = "csharp"
+repo = "https://github.com/Cysharp/UniTask"
+sha = "7c0f199fe0d3fc528024488ccd671e6c7b27745b"

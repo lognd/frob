@@ -1,0 +1,84 @@
+name: ecosystem-pr
+
+# Finding diff of the PR base and head builds over the pinned real-project corpus
+# (ecosystem.toml), commented per rule with crashes and timing. Non-blocking; see
+# docs/design/build-test-ci.md section 6.
+# frob:ticket 01M47QV23EAN5DE6DDV9HS3VP7
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  COMMENT_MARKER: "<!-- frob-ecosystem -->"
+
+jobs:
+  ecosystem:
+    name: ecosystem (head vs base)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    # The report is informational: nothing in this job may fail the pull request.
+    continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # frob:accept TOOL002 because="sccache has no maintained first-party action; pinned by commit sha"
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      # frob:accept TOOL002 because="a local composite action must be addressed with ./; actionlint rejects the $/ form zizmor suggests"
+      - uses: ./.github/actions/install-linker
+      - name: Build the head binaries
+        run: |
+          cargo build --release -p frob-cli -p grimble -p crunk
+          mkdir -p "$RUNNER_TEMP/head-bin"
+          for t in frob grimble crunk; do cp "target/release/$t" "$RUNNER_TEMP/head-bin/$t"; done
+      - name: Build the base binaries
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git worktree add "$RUNNER_TEMP/base-src" "$BASE_SHA"
+          (cd "$RUNNER_TEMP/base-src" \
+            && CARGO_TARGET_DIR="$RUNNER_TEMP/base-target" \
+               cargo build --release -p frob-cli -p grimble -p crunk)
+          mkdir -p "$RUNNER_TEMP/base-bin"
+          for t in frob grimble crunk; do cp "$RUNNER_TEMP/base-target/release/$t" "$RUNNER_TEMP/base-bin/$t"; done
+      - name: Diff the corpus findings
+        run: |
+          cargo run -q -p gob-dev -- ecosystem \
+            --base-bin "$RUNNER_TEMP/base-bin" --head-bin "$RUNNER_TEMP/head-bin" \
+            --work "$RUNNER_TEMP/ecosystem" > "$RUNNER_TEMP/comment.md"
+          cat "$RUNNER_TEMP/comment.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment on the pull request
+        # A fork's token is read-only; the job summary above still carries the report.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          # Edit our own comment (found by marker) so another job's comment is never clobbered.
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq "[.[] | select(.body | startswith(\"$COMMENT_MARKER\"))] | first | .id // empty")
+          if [ -n "$id" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$id" -F body=@"$RUNNER_TEMP/comment.md"
+          else
+            gh api --method POST "repos/$REPO/issues/$PR/comments" -F body=@"$RUNNER_TEMP/comment.md"
+          fi
