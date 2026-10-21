@@ -8,8 +8,8 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-21T20:58:49Z"
-scope = ["crates/*/tests/mdtest/**", "crates/gob-mdtest/coverage-allowlist.toml", "changelog.d/01M480C43A6BCH54NX8C5DQ4WJ.changed.md", "crates/gob-mdtest/FORMAT.md", "docs/design/testing.md", "crates/frob-pm/tests/corpus.rs"]
+updated = "2026-10-21T20:58:50Z"
+scope = ["crates/*/tests/mdtest/**", "crates/gob-mdtest/coverage-allowlist.toml", "changelog.d/01M480C43A6BCH54NX8C5DQ4WJ.changed.md", "crates/gob-mdtest/FORMAT.md", "docs/design/testing.md", "crates/frob-pm/tests/corpus.rs", "crates/gob-config/tests/cfg001_corpus.rs"]
 
 [[acceptance]]
 text = "every listed rule has an mdtest fire/clean pair or a fixture and no frob entry remains in the allowlist"
