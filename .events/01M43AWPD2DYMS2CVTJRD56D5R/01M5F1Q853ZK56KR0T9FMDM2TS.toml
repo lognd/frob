@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T10:57:10Z"
+digest = "347c7f236ab9dcc65a39728ed0ecf38b3aa74bf64d7ff11110280db155701bb1"
+exit_code = 0
+head = "cae650f6c6db18b9a62f91161c1531231c08511e"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID af2217ee-a9a8-49f6-ad25-b21e501aa63a with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.005s] grimble-check::websec_pack a_rule_without_examples_does_not_compile
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test websec_pack a_rule_without"
+size = 554
+status = "measured"
+test_count = 1
+tests_digest = "d0f8223d8ec25759f16125f5662e5dba984d5f4a34ad822565b34c069fdc64d8"
+at = "2026-10-21T10:57:10Z"
+actor = "lognd"
+rev = 1

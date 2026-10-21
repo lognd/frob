@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a rule without examples, when the pack compiles, then it fails"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "catalog lists WEBSEC (under SEC), SQL, COMPLY, ROUTE and WEBPERF with one rule each"
