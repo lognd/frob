@@ -249,7 +249,12 @@ fn unity_ignored_name(name: &str) -> bool {
 
 /// True when any slash-separated segment of `path` is a Unity-ignored name.
 fn unity_ignored(path: &str) -> bool {
-    path.split('/').any(unity_ignored_name)
+    for seg in path.split('/') {
+        if unity_ignored_name(seg) {
+            return true;
+        }
+    }
+    false
 }
 
 /// The asset roots `.meta` pairing covers: `Assets` and every embedded package under `Packages`.
@@ -335,7 +340,10 @@ pub(crate) fn scan_meta(
             tracing::info!(meta = m, "tracked .meta has no tracked asset");
             report.orphans.push(m.to_owned());
         }
-        let guid = read_meta(m).as_deref().and_then(parse_guid);
+        let guid = match read_meta(m) {
+            Some(text) => parse_guid(&text),
+            None => None,
+        };
         if let Some(g) = guid {
             by_guid.entry(g).or_default().push(m.to_owned());
         } else {
