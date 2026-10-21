@@ -33,6 +33,9 @@ fn catalog_has_one_rule_per_family_with_websec_under_sec() {
             ("SQL", "SQL", "SQL101"),
             ("COMPLY", "COMPLY", "COMPLY101"),
             ("ROUTE", "ROUTE", "ROUTE101"),
+            ("ROUTE", "ROUTE", "ROUTE102"),
+            ("ROUTE", "ROUTE", "ROUTE103"),
+            ("ROUTE", "ROUTE", "ROUTE104"),
             ("WEBPERF", "WEBPERF", "WEBPERF201")
         ]
     );
@@ -84,5 +87,32 @@ fn every_rule_passes_its_examples() {
         assert!(t.passed(), "{file}: {:?} {:?}", t.diagnostics, t.examples);
         assert_eq!(t.examples.len(), 3, "{file}");
         assert!(src.contains("## Remedy"), "{file}");
+    }
+}
+
+// frob:tests compile_rule
+#[test]
+fn route_slice_rules_fire_on_their_example_and_teach_a_remedy() {
+    for id in ["ROUTE102", "ROUTE103", "ROUTE104"] {
+        let (file, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{id}: {:?} {:?}", t.diagnostics, t.examples);
+        assert!(src.contains("## Remedy"), "{id}");
+    }
+}
+
+// frob:tests compile_rule
+#[test]
+fn route_rules_are_not_applicable_outside_python() {
+    // No adapter for other languages: the markdown example proves NotApplicable, never clean.
+    for id in ["ROUTE102", "ROUTE103", "ROUTE104"] {
+        let (_, src) = pack::RULES
+            .iter()
+            .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
+            .unwrap();
+        assert!(src.contains("example notapplicable markdown"), "{id}");
     }
 }

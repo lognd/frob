@@ -1,0 +1,22 @@
+rule ROUTE102 "debug-server-exposed" {
+  lang python
+  severity error
+
+  find c: call where c.callee.name == "run" and c.text ~ /\.run\(.*debug\s*=\s*True/
+  report c "the web server starts with debug=True: the interactive debugger is reachable over HTTP"
+
+  example fire python """
+    app.run(host="0.0.0.0", debug=True)  #~ error
+  """
+  example clean python """
+    app.run(host="127.0.0.1", debug=False)
+  """
+  example notapplicable markdown """
+    Prose starts no server.
+  """
+  explain """
+    Flask-style frameworks answer debug=True with a console that executes code for any client that can reach the port. The check reads Flask-style `run(...)` calls; other frameworks and languages need an adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    Drop `debug=True` and read the flag from configuration that is off in production.
+  """
+}
