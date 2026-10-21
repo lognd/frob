@@ -2,13 +2,13 @@
 id = "01M4052W6Q1FAQK362YF6RCGW1"
 title = "Mirror run driver: blindness, recovery, work classes, feed and sweep assembled"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-03T05:51:39Z"
+updated = "2026-10-21T03:45:17Z"
 idempotency_key = "m2-mirror2-run"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/run.rs"]
