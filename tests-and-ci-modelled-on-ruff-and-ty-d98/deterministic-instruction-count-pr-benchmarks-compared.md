@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:12Z"
-updated = "2026-10-21T13:16:34Z"
+updated = "2026-10-21T13:22:56Z"
 scope = ["crates/*/benches/**", "crates/gob-dev/**", ".github/workflows/**", "docs/design/build-test-ci.md", "Cargo.toml", "Cargo.lock", "crates/gob-plan/Cargo.toml", "changelog.d/01M47QVC49RXV29NCG3N9G1JSM.added.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = false
 
 [[acceptance]]
 text = "the PR comment lists per-benchmark instruction deltas"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the harness choice is recorded in build-test-ci.md"

@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T13:22:56Z"
+digest = "212a78af53772a7f69bb1b45ca3e3c232f67d0160e78efd1aca64ab0b9f43def"
+exit_code = 0
+head = "e2900679e9ee733d67d61779e59d9ee4f30db5de"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 42.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2ffcea9e-d609-4483-9406-dc250b85ee5c with nextest profile: default
+    Starting 6 tests across 9 binaries (172 tests skipped)
+        PASS [   0.008s] gob-dev::bin/gob-dev tests::bench_ic_parses
+        PASS [   0.015s] gob-dev bench_ic::tests::parse_reads_callgrind_ir_and_id
+        PASS [   0.015s] gob-dev bench_ic::tests::compare_classifies_each_benchmark
+        PASS [   0.015s] gob-dev bench_ic::tests::parse_skips_summaries_without_callgrind
+        PASS [   0.015s] gob-dev bench_ic::tests::render_lists_per_benchmark_deltas
+        PASS [   0.015s] gob-dev bench_ic::tests::collect_walks_nested_summaries
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 6 tests run: 6 passed, 172 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev bench_ic"
+size = 1072
+status = "measured"
+test_count = 6
+tests_digest = "938635d978b1f2f4e8e40344e7bec1ae5d45152a14d175b654fe63cfef654834"
+at = "2026-10-21T13:22:56Z"
+actor = "lognd"
+rev = 1
