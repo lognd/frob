@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T18:01:09Z"
+digest = "188978187a24bb6832c9dc2a39d4610441af7b6ae6b784f15fb184cde4fb166e"
+exit_code = 0
+head = "e28b4f15f32529cb6ac04ef7159d6ffbe783ab39"
+inline = '''
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 785e7491-cfec-4ff4-ae7e-d9ae72a73bc4 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.006s] grimble-lints::rules stored_naive_now_fires_and_displayed_one_stays_quiet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test rules stored_naive_now_fires_and_displayed_one_stays_quiet"
+size = 632
+status = "measured"
+test_count = 1
+tests_digest = "bcc03702f3563dd223396de43a28523362491a29b7a2200c48ecc5991d0b2947"
+at = "2026-10-21T18:01:09Z"
+actor = "lognd"
+rev = 1
