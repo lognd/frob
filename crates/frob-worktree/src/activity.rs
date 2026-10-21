@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+use frob_ledger::event::{Event, EventBody, LeaseOp};
 use gob_exec::{Outcome, Program, Spec};
 use gob_git::Repo;
 use serde::{Deserialize, Serialize};
@@ -152,6 +153,18 @@ pub fn classify_event(event_type: &str, by_holder: bool) -> Option<ActivityKind>
     }
 }
 
+/// The activity `event` counts as on a claim held by `holder`; only the holder's `lease` op `renew` (`claim touch`) counts, as soft.
+// frob:ticket 01M5DDB53D00DCC2FVJWHZ3DX9
+#[must_use]
+pub fn classify_claim_event(event: &Event, holder: &str) -> Option<ActivityKind> {
+    match &event.body {
+        EventBody::Lease(l) if l.op == LeaseOp::Renew && event.actor == holder => {
+            Some(ActivityKind::Soft)
+        }
+        _ => None,
+    }
+}
+
 impl ObservedClaims {
     /// Read the state at `path`; a missing or unreadable file is an empty state (a fresh clone).
     #[must_use]
@@ -194,6 +207,22 @@ impl ObservedClaims {
             first_seen: now,
         });
         true
+    }
+
+    /// Record `event` as activity on `claim` when the holder wrote it and it is new to this clone; returns the kind recorded.
+    ///
+    /// The key is the event id, so replaying the same ledger never moves the first-seen time.
+    // frob:ticket 01M5DDB53D00DCC2FVJWHZ3DX9
+    pub fn observe_event(
+        &mut self,
+        claim: &str,
+        event: &Event,
+        holder: &str,
+        now: i64,
+    ) -> Option<ActivityKind> {
+        let kind = classify_claim_event(event, holder)?;
+        self.observe(claim, kind, &event.id.to_string(), now)
+            .then_some(kind)
     }
 
     /// Seconds since this clone last observed activity on `claim`; `None` when it never has.
@@ -464,5 +493,47 @@ mod tests {
         assert!(observed_path(&repo).ends_with("frob/claims-observed.toml"));
         let since = commit_facts(&repo, "HEAD", Some("HEAD~2")).unwrap();
         assert_eq!(since.len(), 2);
+    }
+
+    fn lease_event(actor: &str, id: &str, op: LeaseOp) -> Event {
+        Event {
+            id: id.parse().unwrap(),
+            at: gob_time::Stamp::from_unix(1),
+            rev: 1,
+            actor: actor.to_owned(),
+            kind: "lease".to_owned(),
+            body: EventBody::Lease(frob_ledger::event::LeaseData {
+                op,
+                holder: None,
+                observed: None,
+                parked: None,
+                tip: None,
+                idle_secs: None,
+                window_secs: None,
+                reason: None,
+            }),
+        }
+    }
+
+    // frob:tests crates/frob-worktree/src/activity.rs::classify_claim_event
+    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims.observe_event
+    #[test]
+    fn a_holder_renew_is_soft_once_and_others_count_for_nothing() {
+        let renew = lease_event("ann", "01M5DYSEK61W37DS2C48FYT158", LeaseOp::Renew);
+        assert_eq!(
+            classify_claim_event(&renew, "ann"),
+            Some(ActivityKind::Soft)
+        );
+        assert_eq!(classify_claim_event(&renew, "bob"), None);
+        let evict = lease_event("ann", "01M5DYSEK61W37DS2C48FYT159", LeaseOp::Evict);
+        assert_eq!(classify_claim_event(&evict, "ann"), None);
+        let mut o = ObservedClaims::default();
+        assert_eq!(
+            o.observe_event("T", &renew, "ann", 100),
+            Some(ActivityKind::Soft)
+        );
+        assert_eq!(o.observe_event("T", &renew, "ann", 900), None);
+        assert_eq!(o.observe_event("T", &renew, "bob", 900), None);
+        assert_eq!(o.idle_secs("T", 160), Some(60));
     }
 }

@@ -129,3 +129,29 @@ fn check_ticket_renews_the_worktree_lease() {
 fn test_verb_renews_the_worktree_lease() {
     assert_renews(&["test", "--all"], false);
 }
+
+// frob:ticket 01M5DDB53D00DCC2FVJWHZ3DX9
+// frob:tests crates/frob/src/lease_cmd.rs::ClaimTouch
+#[test]
+fn claim_touch_records_a_renew_event_with_its_note() {
+    use frob_ledger::event::{EventBody, LeaseOp};
+    let (dir, id, tid, _store) = leased();
+    let out = frob(dir.path(), &["claim", "touch", &id, "--note", "thinking"]);
+    assert_eq!(out.status.code(), Some(0), "{}", String::from_utf8_lossy(&out.stdout));
+    let repo = gob_git::Repo::discover(dir.path()).expect("discover");
+    let ledger = frob_ledger::Ledger::open(
+        repo,
+        frob_ledger::LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
+    let renews: Vec<_> = ledger
+        .events(tid)
+        .expect("events")
+        .into_iter()
+        .filter_map(|e| match e.body {
+            EventBody::Lease(l) if l.op == LeaseOp::Renew => Some(l.reason),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(renews, vec![Some("thinking".to_owned())]);
+}

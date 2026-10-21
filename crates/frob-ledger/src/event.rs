@@ -302,6 +302,8 @@ pub enum LeaseOp {
     Resume,
     /// The holder's own push re-created an evicted claim (flap guard input, DT19).
     Reclaim,
+    /// The holder's explicit soft heartbeat (`claim touch`); the note rides in `reason`.
+    Renew,
 }
 
 // frob:ticket 01M5DTGGCJ9BNXAD5TP1N3HRWA

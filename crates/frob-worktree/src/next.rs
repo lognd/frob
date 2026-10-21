@@ -82,6 +82,8 @@ pub(crate) struct Assessed<'a> {
     pub policy: &'a EvictPolicy,
     /// The ticket's hold and reclaim record.
     pub record: &'a ClaimRecord,
+    /// The ticket's ledger events, whose holder-written soft activity counts.
+    pub events: &'a [Event],
 }
 
 /// Record this clone's observation of a claim tip and build the [`EvictContext`] judging its idleness.
@@ -98,6 +100,9 @@ pub(crate) fn assess_claim(
     let since = observed.claims.get(a.key).and_then(|c| c.tip.clone());
     let commits = commit_facts(repo, a.tip, since.as_deref()).map_err(WorktreeError::Config)?;
     observed.observe_tip(a.key, a.tip, &commits, &bots, a.now);
+    for event in a.events {
+        observed.observe_event(a.key, event, &a.lease.holder.actor, a.now);
+    }
     let seen = observed.claims.get(a.key);
     let soft = [
         seen.and_then(|c| c.soft.as_ref()).map(|s| s.first_seen),
@@ -338,6 +343,7 @@ impl Workspace<'_> {
                     now,
                     policy,
                     record: &record,
+                    events: &self.ledger.events(lease.ticket)?,
                 },
             )?;
             if let Err(refusal) = check_evictable(&ctx) {

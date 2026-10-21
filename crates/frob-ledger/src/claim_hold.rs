@@ -242,7 +242,7 @@ pub fn fold_claim_record(events: &[Event]) -> ClaimRecord {
                 }
             }
             LeaseOp::Reclaim => rec.reclaimed_at = Some(at),
-            LeaseOp::Evict | LeaseOp::Restore => {}
+            LeaseOp::Evict | LeaseOp::Restore | LeaseOp::Renew => {}
         }
     }
     debug!(held = rec.hold.is_some(), reclaimed_at = ?rec.reclaimed_at, "claim record folded");
@@ -285,6 +285,16 @@ pub fn reclaim_event(holder: &str) -> EventBody {
     EventBody::Lease(LeaseData {
         holder: Some(holder.to_owned()),
         ..lease_body(LeaseOp::Reclaim)
+    })
+}
+
+/// The `lease` op `renew` event body: the holder's explicit soft heartbeat (`claim touch`), with its `note`.
+// frob:ticket 01M5DDB53D00DCC2FVJWHZ3DX9
+#[must_use]
+pub fn renew_event(note: Option<&str>) -> EventBody {
+    EventBody::Lease(LeaseData {
+        reason: note.map(str::to_owned),
+        ..lease_body(LeaseOp::Renew)
     })
 }
 
@@ -519,5 +529,17 @@ mod tests {
         };
         let e = effective_observation(&obs(start), None, &[old], NOW, &w);
         assert_eq!(e.observed_at, NOW);
+    }
+
+    // frob:ticket 01M5DDB53D00DCC2FVJWHZ3DX9
+    // frob:tests renew_event
+    #[test]
+    fn renew_event_carries_the_note_and_is_not_a_hold() {
+        let EventBody::Lease(l) = renew_event(Some("thinking")) else {
+            panic!("not a lease event");
+        };
+        assert_eq!(l.op, LeaseOp::Renew);
+        assert_eq!(l.reason.as_deref(), Some("thinking"));
+        assert!(matches!(renew_event(None), EventBody::Lease(l) if l.reason.is_none()));
     }
 }

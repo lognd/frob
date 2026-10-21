@@ -195,6 +195,7 @@ impl Workspace<'_> {
                 now,
                 policy,
                 record: &record,
+                events: &self.ledger.events(id)?,
             },
         )?;
         let today = ctx.evictions_today;
