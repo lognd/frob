@@ -4,10 +4,11 @@ title = "Rule coverage gaps: grimble rules without an mdtest pair or fixture"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 1
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-21T20:48:36Z"
+updated = "2026-10-21T21:28:24Z"
 scope = ["crates/*/tests/mdtest/**"]
 
 [[acceptance]]
