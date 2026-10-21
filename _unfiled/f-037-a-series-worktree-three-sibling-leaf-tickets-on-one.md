@@ -7,8 +7,12 @@ priority = "medium"
 points = 5
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-21T04:46:08Z"
+updated = "2026-10-21T04:48:43Z"
 aliases = ["T-3842"]
 labels = ["v1-cluster:C3", "triage:accepted"]
 scope = ["crates/frob-land/src/land.rs", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md"]
+
+[[acceptance]]
+text = "Landing one of several sibling tickets leased on a shared series worktree keeps the worktree and branch until the last sibling lands"
+bound = false
 +++

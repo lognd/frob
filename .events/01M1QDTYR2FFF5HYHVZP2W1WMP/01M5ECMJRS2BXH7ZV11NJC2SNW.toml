@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Landing one of several sibling tickets leased on a shared series worktree keeps the worktree and branch until the last sibling lands"]
+moved = []
+at = "2026-10-21T04:48:43Z"
+actor = "lognd"
+rev = 1
