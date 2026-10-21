@@ -1,0 +1,11 @@
+kind = "create"
+title = "document enabling the unity pack in the generated config reference"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M44YQS4CNZM54P067GJVPDC0"
+body = "found while working ~YR0STJ5: docs/reference/config.md is generated from crates/grimble-check/src/config.rs doc comments (out of scope)"
+at = "2026-10-21T12:58:07Z"
+actor = "lognd"
+rev = 1
