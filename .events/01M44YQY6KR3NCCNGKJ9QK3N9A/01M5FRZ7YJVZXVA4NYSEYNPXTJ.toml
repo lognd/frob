@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [7]
+captured_at = "2026-10-21T17:43:29Z"
+digest = "533fcd2e730dd124395530625da5ace102fb71946460bba22d114578b2dd5e56"
+exit_code = 0
+head = "da0e268ae1388e1151f835b8923216b1c3618150"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a807bbe2-8513-4b56-be25-6893b4a963df with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.044s] frob-obligations::unity_fields assigned_fields_are_not_reported_even_when_disabled
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.044s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations --test unity_fields assigned_fields_are_not_reported_even_when_disabled"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "c55933288e25668ad48b6c93a3c9ec844f13ab1a141d8454b8e185157ef98089"
+at = "2026-10-21T17:43:29Z"
+actor = "lognd"
+rev = 1

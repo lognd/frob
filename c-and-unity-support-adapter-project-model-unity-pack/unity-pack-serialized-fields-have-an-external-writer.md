@@ -42,7 +42,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a field assigned in code, or a file outside the pack paths, then assigned fields are never reported and out-of-path serialized fields are reported"
-bound = false
+bound = true
 +++
 
 Second vocabulary of the unity pack: [SerializeField] fields and public instance fields of MonoBehaviour and ScriptableObject types (not [NonSerialized], not static, not properties without [field: SerializeField]) are written from outside the code (scenes, prefabs, the Inspector), so effect and flow rules see an external writer and a never-assigned warning does not fire. Sites: packs/unity.toml vocabulary rows, the effect and flow rule readers in crates/frob-obligations and crates/gob-ir eval. Reference shape: 79 [SerializeField] fields in the game repository. Docs: docs/design/packs.md vocabulary table.
