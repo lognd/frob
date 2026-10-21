@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-08T14:29:26Z"
-updated = "2026-10-21T22:18:19Z"
+updated = "2026-10-21T22:20:16Z"
 scope = ["changelog.d/**", "crates/gob-plan/**", "crates/grimble/**", "changelog.d/01M4DYPHVAG574Z9ZJZ41PCRHB.added.md"]
 
 [[links]]
