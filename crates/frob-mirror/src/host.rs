@@ -503,7 +503,7 @@ where
 
     /// Closes the duplicate issues of this run's bot listing, keeping the lowest-numbered.
     ///
-    /// Call once per run after [`crate::run::run`]; a listing failure is returned and a
+    /// The run driver calls this once per run through `RunHost::after_items`; a listing failure is returned and a
     /// per-issue marker read failure leaves that issue unclaimed until the next run.
     ///
     /// # Errors
@@ -618,6 +618,13 @@ where
             WorkClass::Update => self.do_update(ulid),
             WorkClass::Create => self.do_create(ulid),
             WorkClass::Reconcile | WorkClass::Sweep => self.do_reconcile(ulid),
+        }
+    }
+
+    /// Closes this run's duplicate issues; a listing failure is logged and retried next run.
+    fn after_items(&mut self) {
+        if let Err(e) = self.close_duplicates() {
+            warn!(error = %e, "host: duplicate check failed, retried next run");
         }
     }
 }

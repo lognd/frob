@@ -67,6 +67,9 @@ pub trait RunHost {
     /// # Errors
     /// `ItemError::RateLimited` stops the run; `ItemError::Failed` skips this ticket only.
     fn execute(&mut self, item: &WorkItem) -> Result<Option<Shard>, ItemError>;
+    /// Per-run housekeeping after the items ran and before the final commit (for example
+    /// closing duplicate issues); a failure is the host's to log and never fails the run.
+    fn after_items(&mut self) {}
 }
 
 /// How a run ended.
@@ -186,6 +189,9 @@ fn run_locked<S: ShardStore, H: RunHost>(
                 failed.push((item.ticket.clone(), why));
             }
         }
+    }
+    if matches!(stop, StopReason::Completed) {
+        host.after_items();
     }
     let report = writer.finish(stop)?;
     let watermark = advance_watermark(store, &log, prior.as_ref(), &stop, failed.is_empty())?;
@@ -336,6 +342,7 @@ mod tests {
         bad: Option<String>,
         log: Vec<LedgerCommit>,
         calls: Vec<(WorkClass, String)>,
+        after: usize,
     }
 
     impl Host {
@@ -347,6 +354,7 @@ mod tests {
                 bad: None,
                 log: vec![],
                 calls: vec![],
+                after: 0,
             }
         }
     }
@@ -373,6 +381,9 @@ mod tests {
                 return Err(ItemError::Failed("cannot render".into()));
             }
             Ok(self.changes.then(|| Shard::new(&item.ticket)))
+        }
+        fn after_items(&mut self) {
+            self.after += 1;
         }
     }
 
@@ -404,6 +415,20 @@ mod tests {
             RunOutcome::Ran(s) => s,
             other => panic!("expected a run, got {other:?}"),
         }
+    }
+
+    // frob:tests run
+    #[test]
+    fn after_items_runs_once_per_completed_run() {
+        let mut host = Host::new(vec![item(WorkClass::Update, "u")], true);
+        ran(run(
+            &mut Mem::default(),
+            &Fake { visible: true },
+            &mut host,
+            &cfg(),
+        )
+        .unwrap());
+        assert_eq!(host.after, 1);
     }
 
     // frob:tests run
