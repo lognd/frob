@@ -2,7 +2,8 @@
 id = "01M1QDTYR2FFF5HYHVZP2W1WMP"
 title = "F-037: a series worktree (three sibling leaf tickets on one branch) cannot land -- blocks cluster dispatch"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "human"
