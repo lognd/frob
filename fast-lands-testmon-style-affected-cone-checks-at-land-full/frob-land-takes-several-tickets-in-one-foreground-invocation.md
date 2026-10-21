@@ -8,8 +8,8 @@ points = 3
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T19:20:09Z"
-updated = "2026-10-21T06:03:44Z"
-scope = ["crates/frob-land/src/verb.rs", "crates/frob-land/tests/**", "changelog.d/**"]
+updated = "2026-10-21T06:19:17Z"
+scope = ["crates/frob-land/src/verb.rs", "crates/frob-land/tests/**", "changelog.d/**", "docs/reference/cli/frob.md"]
 
 [[acceptance]]
 text = "Given three landable tickets and one that will be refused, when frob land ~A ~B ~X ~C runs, then A, B and C land in order with every guard and evidence rule unchanged, X's refusal is reported with its code, and the JSON envelope lists every ticket's outcome; nothing runs in the background (D25 holds)"
