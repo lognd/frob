@@ -11,9 +11,9 @@ Err(
                 column: 2,
             },
         ),
-        detail: "unknown top-level key `palete`",
+        detail: "unknown top-level key `pallet_x`",
         key: Some(
-            "palete",
+            "pallet_x",
         ),
         suggestion: Some(
             "palette",

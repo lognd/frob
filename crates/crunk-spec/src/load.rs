@@ -195,7 +195,7 @@ pub const OWN_TABLES: &[&str] = &[
 // buckets = ["base", "components"]
 // class_case = "kebab"
 //
-// [palete]
+// [pallet_x]
 // ink = "#111111"
 
 // test_err spec_wrong_type

@@ -20,5 +20,5 @@ weights = [400, 700]
 buckets = ["base", "components"]
 class_case = "kebab"
 
-[palete]
+[pallet_x]
 ink = "#111111"
