@@ -2,7 +2,8 @@
 id = "01M4061MSKNEMGBJ7C8AWA71KG"
 title = "ticket evidence list: show each record's current acceptance criteria via Ledger::criteria_now"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
