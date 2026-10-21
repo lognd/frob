@@ -127,13 +127,42 @@ fn render_hunk(old: &[u8], e: &Edit) -> String {
     )
 }
 
+/// Whether the line holding offset `start` of `old` ends in CRLF.
+///
+/// The edit's own line decides (the first line ending at or after `start`); an edit on an
+/// unterminated last line falls back to the last ending before it, and a file with no line
+/// ending at all is LF. This keeps mixed-ending files consistent line by line.
+fn line_is_crlf(old: &[u8], start: usize) -> bool {
+    let start = start.min(old.len());
+    if let Some(i) = old[start..].iter().position(|&b| b == b'\n') {
+        let nl = start + i;
+        return nl > 0 && old[nl - 1] == b'\r';
+    }
+    match old[..start].iter().rposition(|&b| b == b'\n') {
+        Some(nl) => nl > 0 && old[nl - 1] == b'\r',
+        None => false,
+    }
+}
+
+/// The replacement text of `e` with its line endings matched to the line it lands on.
+fn replacement_for(old: &[u8], e: &Edit) -> String {
+    if !e.replacement.contains('\n') || !line_is_crlf(old, e.start) {
+        return e.replacement.clone();
+    }
+    // Normalise first so a replacement that already carries CRLF is not doubled.
+    e.replacement.replace("\r\n", "\n").replace('\n', "\r\n")
+}
+
 /// Rewrite `old` with `edits`, which must be sorted by start, in range and non-overlapping.
+///
+/// Newlines inside a replacement take the line ending of the line they land on, so a CRLF
+/// file stays CRLF; bytes outside the edited spans (BOM, trailing newline) are untouched.
 pub(crate) fn splice(old: &[u8], edits: &[&Edit]) -> Vec<u8> {
     let mut new = Vec::with_capacity(old.len());
     let mut at = 0;
     for e in edits {
         new.extend_from_slice(&old[at..e.start]);
-        new.extend_from_slice(e.replacement.as_bytes());
+        new.extend_from_slice(replacement_for(old, e).as_bytes());
         at = e.end;
     }
     new.extend_from_slice(&old[at..]);
