@@ -232,6 +232,17 @@ pub struct LeaseInfo {
     pub quarantined: Option<Vec<String>>,
 }
 
+/// Local lands not on origin: the row 52 count `frob refresh` prints, as a doctor section.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct LandsInfo {
+    /// `ok`, or `skipped: <why>` when there is no work tree, remote base ref or readable ledger.
+    pub state: String,
+    /// Done tickets whose land commit origin's base lacks, as `<handle> at <commit>`.
+    pub lands: Vec<String>,
+    /// Tickets whose latest lease event is an eviction.
+    pub evicted: usize,
+}
+
 /// Output of `doctor`.
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct DoctorData {
@@ -253,6 +264,8 @@ pub struct DoctorData {
     pub gc: GcInfo,
     /// Lease files: corrupt ones and their quarantine.
     pub leases: LeaseInfo,
+    /// Local lands origin's base lacks (distributed-tickets.md row 52).
+    pub lands: LandsInfo,
     /// Language adapters; present only with `--languages`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub languages: Option<LanguagesReport>,
@@ -427,6 +440,7 @@ impl Doctor {
             .collect();
         let gc = gc_info(&located, &cfg, self.fix, self.gc_plan, &ctx.clock);
         let leases = lease_info(&located, &cfg, self.fix, &ctx.clock);
+        let lands = lands_info(&located, &cfg, &ctx.clock);
         let languages = self
             .languages
             .then(|| languages_report(&located.root, &cfg));
@@ -451,6 +465,14 @@ impl Doctor {
                 c.message
             ));
         }
+        if !lands.lands.is_empty() {
+            warnings.push(format!(
+                "{} local lands not on {}: {}; remedy: `frob land --relaunch <ticket>` for each",
+                lands.lands.len(),
+                cfg.sync.remote,
+                lands.lands.join(", ")
+            ));
+        }
         // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
         warnings.extend(crate::agent_cmd::drift_warnings(&located.root, &cfg));
         for row in &siblings {
@@ -473,6 +495,7 @@ impl Doctor {
             siblings,
             gc,
             leases,
+            lands,
             languages,
         })
         .with_findings(findings.into_iter().chain(protection).collect());
@@ -799,6 +822,52 @@ fn lease_info(
     }
 }
 
+/// The local-lands section from `frob_land::divergence`; report only, because the repair (`frob land --relaunch`) merges the remote base into a branch and `--fix` never rewrites history.
+// frob:ticket 01M5E2MWBXD6DQSNE9AX511AFF
+fn lands_info(
+    located: &Located,
+    cfg: &FrobConfig,
+    clock: &std::sync::Arc<dyn gob_time::Clock>,
+) -> LandsInfo {
+    let skipped = |why: String| LandsInfo {
+        state: format!("skipped: {why}"),
+        lands: Vec::new(),
+        evicted: 0,
+    };
+    let Some(repo) = located.repo.as_ref().filter(|r| r.work_dir().is_some()) else {
+        return skipped("not a git work tree".to_owned());
+    };
+    let base = cfg
+        .tickets
+        .r#ref
+        .strip_prefix("refs/heads/")
+        .unwrap_or(&cfg.tickets.r#ref);
+    let remote_base = format!("refs/remotes/{}/{base}", cfg.sync.remote);
+    let ledger = frob_ledger::Ledger::open(repo.clone(), cfg.ledger(), clock.clone());
+    match frob_land::divergence::diverged_lands(&ledger, &remote_base) {
+        Ok(d) => {
+            tracing::info!(
+                lands = d.lands.len(),
+                evicted = d.evicted,
+                "lands doctor section"
+            );
+            LandsInfo {
+                state: "ok".to_owned(),
+                lands: d
+                    .lands
+                    .iter()
+                    .map(|l| format!("{} at {}", l.handle, l.commit))
+                    .collect(),
+                evicted: d.evicted,
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "local land scan failed");
+            skipped(e.to_string())
+        }
+    }
+}
+
 /// Group `report`'s actions by category.
 fn by_category(report: &Report) -> Vec<GcCategory> {
     let mut map: BTreeMap<&str, (usize, u64)> = BTreeMap::new();
@@ -952,5 +1021,24 @@ mod protection_tests {
         let mut i = info();
         assert!(protection_check(&mut i, &FrobConfig::default(), REMOTE, &probe).is_none());
         assert_eq!(i.protection, "skipped");
+    }
+}
+
+#[cfg(test)]
+mod lands_tests {
+    use super::*;
+
+    // frob:tests lands_info
+    #[test]
+    fn outside_a_work_tree_the_lands_section_is_skipped() {
+        let dir = tempfile::tempdir().unwrap();
+        let located = Located {
+            repo: None,
+            root: dir.path().to_path_buf(),
+        };
+        let clock: std::sync::Arc<dyn gob_time::Clock> = std::sync::Arc::new(gob_time::SystemClock);
+        let info = lands_info(&located, &FrobConfig::default(), &clock);
+        assert!(info.state.starts_with("skipped"));
+        assert!(info.lands.is_empty());
     }
 }
