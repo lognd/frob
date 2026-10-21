@@ -2,7 +2,8 @@
 id = "01M4HNYRZA7ASMMR6388BJN9BQ"
 title = "land.rs follow-ups: sweep old *.removing leftovers synchronously at the start of land cleanup, and advance the base ref by CAS without touching the primary checkout's index unless the base is checked out there"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
