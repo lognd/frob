@@ -82,12 +82,8 @@ fn the_crunk_pages_are_ascii_and_free_of_home_paths() {
                 stack.push(path);
             } else if path.extension().is_some_and(|e| e == "md") {
                 let text = std::fs::read_to_string(&path).expect("read page");
-                assert!(text.is_ascii(), "{} is not ASCII", path.display());
-                assert!(
-                    !text.contains("/home/"),
-                    "{} has a home path",
-                    path.display()
-                );
+                assert!(text.is_ascii(), "{path:?} is not ASCII");
+                assert!(!text.contains("/home/"), "{path:?} has a home path");
             }
         }
     }
