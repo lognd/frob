@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-21T21:13:39Z"
+digest = "3b4d26c7874d77ee157e13e11540ec9ee07154f2abf10777171ca780c3ad6c8b"
+exit_code = 0
+head = "f35d1d16007590ba3b7f51b5dc83a3d00269e6eb"
+inline = '''
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.42s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d2b6e780-f6c8-46e5-babd-1ec1f16729d0 with nextest profile: default
+    Starting 2 tests across 5 binaries (124 tests skipped)
+        PASS [   0.025s] frob-check::rule_coverage every_frob_rule_has_a_corpus
+        PASS [   4.515s] frob-check::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   4.516s] 2 tests run: 2 passed, 124 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check corpus"
+size = 671
+status = "measured"
+test_count = 2
+tests_digest = "2f024c00a860344673e86f8369bbdee8cf4b91aeab6353e02a20639f07c6f0d1"
+at = "2026-10-21T21:13:39Z"
+actor = "lognd"
+rev = 1

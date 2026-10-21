@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-21T21:13:32Z"
+updated = "2026-10-21T21:13:39Z"
 scope = ["crates/*/tests/mdtest/**", "crates/gob-mdtest/coverage-allowlist.toml", "changelog.d/01M480C43A6BCH54NX8C5DQ4WJ.changed.md", "crates/gob-mdtest/FORMAT.md", "docs/design/testing.md", "crates/frob-pm/tests/corpus.rs", "crates/gob-config/tests/cfg001_corpus.rs", "crates/frob-check/tests/corpus.rs", "crates/frob-obligations/tests/corpus.rs", "crates/gob-directives/tests/*.rs"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "READ001, SIB001, TOOL001 and TICK007 each have an unresolved mdtest case"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The allowlist shrank and every remaining frob entry is tracked by a ticket"
