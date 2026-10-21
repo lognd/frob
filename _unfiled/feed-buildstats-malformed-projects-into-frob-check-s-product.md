@@ -2,7 +2,8 @@
 id = "01M5GCNBD6AT6HNQKF3MQTXQC5"
 title = "Feed BuildStats.malformed_projects into frob-check's Product::malformed_projects"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
