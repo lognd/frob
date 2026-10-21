@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T08:31:42Z"
+digest = "1a36942f6be0ff8719d3669b3343cdc71ead752c9cdaebbf87127ceb56b57fbe"
+exit_code = 0
+head = "940fdad3bc2b0dd3af5b4e14d014a0cf39eac034"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.37s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ebdda1c0-2424-4783-af0b-5bdf065e21d0 with nextest profile: default
+    Starting 1 test across 3 binaries (147 tests skipped)
+        PASS [   0.257s] frob-land hunk_presence::tests::audit_finds_a_past_merge_that_dropped_hunks_and_passes_a_clean_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.257s] 1 test run: 1 passed, 147 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land audit_finds"
+size = 645
+status = "measured"
+test_count = 1
+tests_digest = "2e8bb25f177ba8b0ff826b554239878e2608a177f73991a4b89bb5c984fa07fc"
+at = "2026-10-21T08:31:42Z"
+actor = "lognd"
+rev = 1
