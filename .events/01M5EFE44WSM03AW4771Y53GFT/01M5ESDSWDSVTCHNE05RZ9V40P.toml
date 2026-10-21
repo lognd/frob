@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["frob work --text prints a verdict, worktree, branch and lease rows"]
+new = ["frob work --text prints a verdict, worktree, branch and lease rows", "frob land --text prints a verdict with facts for one ticket and per-ticket lines for a batch"]
+moved = [1]
+at = "2026-10-21T08:32:13Z"
+actor = "lognd"
+rev = 1

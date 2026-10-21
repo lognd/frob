@@ -14,6 +14,10 @@ scope = ["crates/frob-worktree/src/verbs.rs", "crates/frob-land/src/verb.rs", "c
 [[acceptance]]
 text = "frob work --text prints a verdict, worktree, branch and lease rows"
 bound = false
+
+[[acceptance]]
+text = "frob land --text prints a verdict with facts for one ticket and per-ticket lines for a batch"
+bound = false
 +++
 
 Split from ~5JDQ45M: the remaining everyday verbs still fall back to the generic key dump under --text. Reuse crates/frob/src/text_view.rs table helper.
