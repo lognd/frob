@@ -2,13 +2,13 @@
 id = "01M5FH32SRA9JWGMTJ9KCX28FW"
 title = "gob-dev layering test: layer table missing grimble-ci"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T15:25:47Z"
-updated = "2026-10-21T17:31:46Z"
+updated = "2026-10-21T17:31:47Z"
 scope = ["crates/gob-dev/tests/layering.rs"]
 
 [[acceptance]]
