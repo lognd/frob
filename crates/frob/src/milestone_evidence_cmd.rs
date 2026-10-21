@@ -399,17 +399,19 @@ impl Command for EvidenceList {
             .enumerate()
         {
             let record = events::record_from_data(&ev.id.to_string(), &d).map_err(ev_err)?;
-            records.push(Listed {
-                index: i + 1,
-                effective_status: record.effective_status(&ws.store),
-                label: record.attestation_label(),
-                stored: StoredEvidence {
+            let now: Vec<Option<usize>> = record.accepts.iter().map(|n| Some(*n)).collect();
+            let status = record.effective_status(&ws.store);
+            records.push(Listed::new(
+                i + 1,
+                status,
+                StoredEvidence {
                     event: ev.id.to_string(),
                     at: ev.at.to_string(),
                     actor: ev.actor,
                     record,
                 },
-            });
+                &now,
+            ));
         }
         Ok(Payload::new(ListData {
             count: records.len(),

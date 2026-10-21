@@ -112,9 +112,42 @@ pub struct Listed {
     pub effective_status: Status,
     /// `[attested by X: "statement"]` (escaped) when the record is an attestation, so it never reads as a measurement.
     pub label: Option<String>,
+    /// The criteria the record is offered for, renumbered to the ticket's acceptance list now.
+    pub current_accepts: Vec<usize>,
+    /// The recorded criterion positions whose criteria were since removed.
+    pub removed_accepts: Vec<usize>,
     /// The event and record.
     #[serde(flatten)]
     pub stored: StoredEvidence,
+}
+
+impl Listed {
+    /// Row `index` for `stored` with criteria mapped through `now` (`None` = removed since recorded).
+    // frob:ticket 01M4061MSKNEMGBJ7C8AWA71KG
+    pub fn new(
+        index: usize,
+        effective_status: Status,
+        stored: StoredEvidence,
+        now: &[Option<usize>],
+    ) -> Self {
+        let current_accepts = now.iter().flatten().copied().collect();
+        let removed_accepts = stored
+            .record
+            .accepts
+            .iter()
+            .zip(now)
+            .filter(|(_, n)| n.is_none())
+            .map(|(a, _)| *a)
+            .collect();
+        Self {
+            index,
+            effective_status,
+            label: stored.record.attestation_label(),
+            current_accepts,
+            removed_accepts,
+            stored,
+        }
+    }
 }
 
 /// Output of `ticket evidence list`.
@@ -136,17 +169,24 @@ impl EvidenceList {
     fn run(&self, ctx: &Context) -> Result<Payload<ListData>, CliError> {
         let ws = Workspace::open(&ctx.cwd, ctx.clock.clone()).map_err(EvidenceError::into_cli)?;
         let id = resolve(&ws, &self.ticket)?;
-        let records: Vec<Listed> = events::list(&ws.ledger, id)
+        let mut records = Vec::new();
+        for (i, stored) in events::list(&ws.ledger, id)
             .map_err(cli)?
             .into_iter()
             .enumerate()
-            .map(|(i, stored)| Listed {
-                index: i + 1,
-                effective_status: stored.record.effective_status(&ws.store),
-                label: stored.record.attestation_label(),
-                stored,
-            })
-            .collect();
+        {
+            let event: frob_ledger::EventId = stored
+                .event
+                .parse()
+                .map_err(|e: frob_ledger::id::ParseIdError| CliError::internal(e))?;
+            let now = ws
+                .ledger
+                .criteria_now(id, event, &stored.record.accepts)
+                .map_err(|e| cli(EvidenceError::from(e)))?;
+            let status = stored.record.effective_status(&ws.store);
+            tracing::debug!(ticket = %id, evidence = %stored.event, ?now, "evidence criteria mapped");
+            records.push(Listed::new(i + 1, status, stored, &now));
+        }
         Ok(Payload::new(ListData {
             count: records.len(),
             records,
