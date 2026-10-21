@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["CI001 flags external uses refs that are not a full commit SHA, skipping local, allowlisted and digest-pinned ones"]
+new = ["CI001 flags external uses refs that are not a full commit SHA, skipping local, allowlisted and digest-pinned ones", "CI006 flags checkout of the PR head under pull_request_target or workflow_run"]
+moved = [1]
+at = "2026-10-21T21:40:55Z"
+actor = "lognd"
+rev = 1

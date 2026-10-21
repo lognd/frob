@@ -14,6 +14,10 @@ scope = ["crates/grimble-ci/**", "docs/design/cicd.md", "changelog.d/01M5F010QB0
 [[acceptance]]
 text = "CI001 flags external uses refs that are not a full commit SHA, skipping local, allowlisted and digest-pinned ones"
 bound = false
+
+[[acceptance]]
+text = "CI006 flags checkout of the PR head under pull_request_target or workflow_run"
+bound = false
 +++
 
 Deferred from ~8886VJ4: native fallbacks for the zizmor-bound pinned-ref and prt-head-checkout rules, plus CI007 and CI010.
