@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T21:39:35Z"
+digest = "16ac44c4dbb46da051b7a6040341baed32efba9650df08f78da48ec269ca64a8"
+exit_code = 0
+head = "c5a6c36b28c504bb00b4c6715b3a63c274275808"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 47e35409-4dbf-4d72-981f-f8130df60917 with nextest profile: default
+    Starting 2 tests across 4 binaries (27 tests skipped)
+        PASS [   0.004s] gob-config::config schema_types_row_columns
+        PASS [   0.006s] gob-config::config shipped_schema_types_forbid_import_columns
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 27 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-config schema_types_row_columns shipped_schema_types_forbid_import_columns"
+size = 623
+status = "measured"
+test_count = 2
+tests_digest = "ec88220eab826a256675c672b65c35575331cd0fd5ea1dd94f7793c598abe5ac"
+at = "2026-10-21T21:39:35Z"
+actor = "lognd"
+rev = 1

@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "ForbidImport columns are typed in docs/schemas/config.json"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "gob-plan ConfigSchema::from_json reads the shipped $defs"
