@@ -2,7 +2,8 @@
 id = "01M43ATDR7DWY5RZPB3QB3GE3K"
 title = "crunk-gallery: render orchestration through gob-exec (playwright and command renderers)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
