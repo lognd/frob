@@ -2,13 +2,13 @@
 id = "01M5ETB80YYSQNEDP9PG86WKD4"
 title = "GRL executor: YAML key kind and key(path=, name=) shapes (CI002)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T08:48:17Z"
-updated = "2026-10-21T22:24:17Z"
+updated = "2026-10-21T22:24:18Z"
 labels = ["area:grl"]
 +++
 
