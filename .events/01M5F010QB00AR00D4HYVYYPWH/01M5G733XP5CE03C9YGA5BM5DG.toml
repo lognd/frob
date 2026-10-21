@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T21:49:04Z"
+digest = "3997eb4d61b8995d0da06932065f2ccc0f74dcfc9fee75949d8b918813074a76"
+exit_code = 0
+head = "a1976e94480af62c7ab62861fc9b7f1793ce25a4"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bab3b028-15c1-421e-a24f-483740292e80 with nextest profile: default
+    Starting 1 test across 2 binaries (8 tests skipped)
+        PASS [   0.018s] grimble-ci::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.019s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-ci mdtest_corpus"
+size = 1645
+status = "measured"
+test_count = 1
+tests_digest = "9ec64940864b7f20e4bb0f2dc7bcc0f16e3d600664005ed72db069deef3d1d51"
+at = "2026-10-21T21:49:04Z"
+actor = "lognd"
+rev = 1
