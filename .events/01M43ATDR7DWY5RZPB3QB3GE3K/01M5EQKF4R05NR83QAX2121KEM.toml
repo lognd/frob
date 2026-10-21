@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T08:00:21Z"
+digest = "51bcca25c088c76f9e3e8c4777dce42b521f36f87665053d5ace0f1e80da3e22"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 82984988-7b24-480e-a69f-3e320ab0e852 with nextest profile: default
+    Starting 1 test across 3 binaries (11 tests skipped)
+        PASS [   0.005s] crunk-gallery::render missing_playwright_names_install_command_and_exits_2
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery missing_playwright_names_install_command_and_exits_2"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "8ca718f626e68e6dae14cc5a6fd19f211683d10d5a77d0aba75271f8a8699fea"
+at = "2026-10-21T08:00:21Z"
+actor = "lognd"
+rev = 1
