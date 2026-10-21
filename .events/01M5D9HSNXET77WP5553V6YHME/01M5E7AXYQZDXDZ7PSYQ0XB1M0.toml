@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "already implemented in 0f663b95f4"
+at = "2026-10-21T03:16:04Z"
+actor = "lognd"
+rev = 1
