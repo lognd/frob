@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:01Z"
-updated = "2026-10-21T14:39:18Z"
+updated = "2026-10-21T14:39:39Z"
 scope = ["crates/gob-dev/**", "crates/gob-plan/**", "crates/grimble-model/**", "crates/gob-directives/**", "crates/crunk-spec/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "a stale extraction fails cargo dev gen --check"
-bound = false
+bound = true
 +++
 
 build-test-ci.md section 6, ruff_python_parser and rust-analyzer. Parsers of GRL (gob-plan), .grmb (grimble-model), directives (gob-directives) and crunk.toml (crunk-spec) carry comment blocks marked test_ok NAME or test_err NAME; cargo dev gen extracts them to resources/inline/ok and err; a test snapshots the tree and errors of each; GEN001 keeps extraction current.

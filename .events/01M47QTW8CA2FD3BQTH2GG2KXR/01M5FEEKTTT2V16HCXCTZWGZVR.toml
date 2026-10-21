@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T14:39:39Z"
+digest = "4e28d2c4bc7d36eabdd258c85c7ce2d84df0793c5af5ab2f6f7c2959da341f1c"
+exit_code = 0
+head = "3e344926288a77bb0c59fe791b3f8d989bf05a52"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 37121567-be7d-4603-aa21-54c9f069f6e9 with nextest profile: default
+    Starting 5 tests across 1 binary
+        PASS [   0.005s] gob-dev::inline doc_comments_are_not_blocks
+        PASS [   0.005s] gob-dev::inline extract_rejects_bad_empty_and_duplicate_blocks
+        PASS [   0.005s] gob-dev::inline extract_reads_names_outcomes_and_bodies
+        PASS [   0.006s] gob-dev::inline removed_block_leaves_a_reported_orphan
+        PASS [   0.007s] gob-dev::inline stale_extraction_fails_check
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 5 tests run: 5 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test inline"
+size = 833
+status = "measured"
+test_count = 5
+tests_digest = "1f8ca7a69d09f7863b9cba0daf9c8a1f77727935e591a915d50f9171adb26368"
+at = "2026-10-21T14:39:39Z"
+actor = "lognd"
+rev = 1
