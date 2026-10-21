@@ -2,13 +2,13 @@
 id = "01M43AWPD2DYMS2CVTJRD56D5R"
 title = "Pack scaffold: grimble-websec (WEBSEC into SEC, SQL, COMPLY and PII, ROUTE, WEBPERF server)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:30:51Z"
-updated = "2026-10-04T11:30:51Z"
+updated = "2026-10-21T10:49:34Z"
 idempotency_key = "crunk-plan-g_sec"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/**", "docs/grimble/packs/grimble-websec.md"]
