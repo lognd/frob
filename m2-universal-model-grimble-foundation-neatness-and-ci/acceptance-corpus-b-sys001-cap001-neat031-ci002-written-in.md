@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-03T03:34:24Z"
-updated = "2026-10-21T08:48:48Z"
+updated = "2026-10-21T08:48:52Z"
 idempotency_key = "m2-grl-ten-b"
 labels = ["milestone:2", "area:grl", "kind:test"]
 scope = ["crates/gob-plan/tests/ten_rules/**"]
@@ -31,7 +31,7 @@ target = "01M3ZX7HW6V59EBYZ2A0HC06TD"
 
 [[acceptance]]
 text = "Given the four .grl files, when `rule test` runs, then every example passes including the unresolved and notapplicable ones"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given CI002 on a workflow that fails to parse, when run, then the result is Unresolved, not clean"
