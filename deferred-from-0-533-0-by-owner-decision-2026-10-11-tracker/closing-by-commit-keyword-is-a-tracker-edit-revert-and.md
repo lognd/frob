@@ -2,13 +2,13 @@
 id = "01M4052TQSK1WXBD9280DDRNM5"
 title = "Closing by commit keyword is a tracker edit: revert and propose"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-03T05:51:38Z"
+updated = "2026-10-21T09:16:12Z"
 idempotency_key = "m2-mirror2-closing-keyword"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/src/closing.rs"]
