@@ -4,10 +4,11 @@ title = "Detect hosting-side lands by patch id and report them in refresh output
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T23:27:32Z"
-updated = "2026-10-20T23:27:32Z"
+updated = "2026-10-21T00:15:22Z"
 +++
 
 Follow-up of DT22: match squash/rebase merges that lack a Frob-Ticket trailer by patch id, and surface recorded host lands in the refresh report/notices (currently logged only).
