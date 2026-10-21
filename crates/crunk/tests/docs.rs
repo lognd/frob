@@ -65,7 +65,10 @@ fn the_migration_guide_states_a_rust_verb_or_removal_for_every_python_verb() {
             .lines()
             .find(|l| l.starts_with("| `") && l.contains(python))
             .unwrap_or_else(|| panic!("migration.md has no row for `{python}`"));
-        assert!(row.matches('|').count() >= 4, "row is not a full table row: {row}");
+        assert!(
+            row.matches('|').count() >= 4,
+            "row is not a full table row: {row}"
+        );
     }
 }
 
@@ -80,7 +83,11 @@ fn the_crunk_pages_are_ascii_and_free_of_home_paths() {
             } else if path.extension().is_some_and(|e| e == "md") {
                 let text = std::fs::read_to_string(&path).expect("read page");
                 assert!(text.is_ascii(), "{} is not ASCII", path.display());
-                assert!(!text.contains("/home/"), "{} has a home path", path.display());
+                assert!(
+                    !text.contains("/home/"),
+                    "{} has a home path",
+                    path.display()
+                );
             }
         }
     }
