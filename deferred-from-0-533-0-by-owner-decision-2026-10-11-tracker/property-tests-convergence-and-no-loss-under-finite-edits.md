@@ -8,7 +8,7 @@ points = 5
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:40Z"
-updated = "2026-10-21T09:47:47Z"
+updated = "2026-10-21T09:47:48Z"
 idempotency_key = "m2-mirror2-prop-liveness"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/prop_liveness.rs", "changelog.d/01M4052WHPPDKMCBA9Y1BM06W5.added.md"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a budget of one ticket reads plus one write and a lost or crashed create, when runs repeat, then the ticket still converges and every edit is recorded"
-bound = false
+bound = true
 +++
 
 Implements mirror.md section 3.7 (convergence rows) and the model README section 5 (L1, L2).
