@@ -150,7 +150,7 @@ fn pii_rules_are_not_applicable_outside_python() {
     }
 }
 
-// frob:tests grimble_check.websec_pack.compile_rule
+// frob:tests compile_rule
 #[test]
 fn webperf_server_rules_fire_on_their_example_and_teach_a_remedy() {
     for id in ["WEBPERF202", "WEBPERF203", "WEBPERF204"] {
@@ -165,7 +165,7 @@ fn webperf_server_rules_fire_on_their_example_and_teach_a_remedy() {
     }
 }
 
-// frob:tests grimble_check.websec_pack.compile_rule
+// frob:tests compile_rule
 #[test]
 fn webperf_server_rules_are_not_applicable_outside_python() {
     // No adapter for other languages: the markdown example proves NotApplicable, never clean.
