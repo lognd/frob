@@ -9,7 +9,7 @@ parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T07:36:16Z"
 updated = "2026-10-21T23:17:41Z"
-scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/tests/it/typescript.rs"]
+scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md"]
 
 [[acceptance]]
 text = "Given exports.f = function(){} or module.exports = { f() {} }, when symbols are built, then a unit exists for f"
