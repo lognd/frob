@@ -40,6 +40,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use frob_ledger::TicketId;
+use frob_ledger::claim_window::EVICT_NOTE_MARKER;
 use frob_ledger::event::{Event, EventBody};
 use frob_ledger::index::Summary;
 use frob_ledger::model::{Category, Class, Stamp, TicketType};
@@ -54,8 +55,6 @@ pub const DONE_DAYS: i64 = 7;
 pub const DEFAULT_SHOWN: usize = 8;
 /// Days within which a second eviction of the same holder marks a ticket as flapping (matches the claim flap guard).
 pub const FLAP_DAYS: i64 = 14;
-/// Start of the transition reason `claim evict` records; the holder follows, then a space.
-const EVICT_MARKER: &str = "claim evicted from ";
 /// Narrowest column the side-by-side layout accepts before stacking.
 const MIN_CELL: usize = 16;
 /// Gap between side-by-side columns.
@@ -204,7 +203,7 @@ pub fn flapping(events: &[Event], now: Stamp) -> bool {
         let Some(rest) = t
             .reason
             .as_deref()
-            .and_then(|r| r.strip_prefix(EVICT_MARKER))
+            .and_then(|r| r.strip_prefix(EVICT_NOTE_MARKER))
         else {
             continue;
         };
