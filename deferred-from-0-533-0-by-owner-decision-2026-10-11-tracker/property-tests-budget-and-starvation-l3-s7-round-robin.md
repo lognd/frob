@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:40Z"
-updated = "2026-10-21T09:23:38Z"
+updated = "2026-10-21T09:24:28Z"
 idempotency_key = "m2-mirror2-prop-budget"
 labels = ["milestone:2", "area:mirror"]
 scope = ["crates/frob-mirror/tests/prop_budget.rs", "changelog.d/01M4052WNB3X3G61P84VR8VGH2.added.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a budget below one ticket's reads plus one write, when a run starts, then MIR001 budget-too-small is reported and nothing is written"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given any scenario, when a run executes, then tracker mutations stay within the budget and the C and M caps"
