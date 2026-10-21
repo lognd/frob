@@ -206,6 +206,31 @@ pub fn unreadable_finding(meta: &RuleMeta, file: Option<FileId>, skipped: &Skipp
     })
 }
 
+// frob:ticket 01M47RDBED35TFDEHQ1YTG1ZYC
+/// The required Unresolved `READ001` finding for one malformed project file.
+///
+/// The `.csproj` or `.sln` was read but could not be modelled, so its project
+/// is Unresolved: the finding names the file and carries the parser's reason.
+pub fn malformed_project_finding(
+    meta: &RuleMeta,
+    file: Option<FileId>,
+    project: &gob_symbols::MalformedProject,
+) -> Finding {
+    unresolved_finding(
+        meta,
+        file,
+        &project.path,
+        &format!(
+            "malformed project file ({}); its project is Unresolved",
+            project.reason
+        ),
+    )
+    .with_reason(UnresolvedReason::ParseFailed)
+    .with_required(RequiredReason::ZeroSubjects {
+        rule: meta.id.to_owned(),
+    })
+}
+
 /// One Unresolved finding of `meta` for all opaque text files `files` (spanless, one per rule).
 pub fn opaque_finding(meta: &RuleMeta, files: &[&str]) -> Finding {
     opaque_finding_for(meta.id, files)

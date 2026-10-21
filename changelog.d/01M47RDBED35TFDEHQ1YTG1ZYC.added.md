@@ -1,0 +1,1 @@
+Malformed .csproj and .sln files now raise a required Unresolved READ001 finding naming the file and the parse reason, and the project is marked Unresolved. The Product trait gains `malformed_projects` (default empty); the frob product still needs to feed it.
