@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-06T04:44:11Z"
-updated = "2026-10-21T23:21:44Z"
+updated = "2026-10-21T23:28:03Z"
 scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/graph/csharp.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/tests/it/csharp.rs", "changelog.d/01M47RDFJX56SCTFTZJRQ1SC2B.added.md", "docs/design/code-model.md"]
 
 [[acceptance]]
