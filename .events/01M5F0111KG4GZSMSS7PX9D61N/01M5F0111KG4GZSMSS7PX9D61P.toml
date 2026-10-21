@@ -1,0 +1,11 @@
+kind = "create"
+title = "grimble-ci: wire analyze into a product; extract shared verdict type from grimble-arch"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+scope = ["crates/grimble-ci/**"]
+body = "CiFinding aliases grimble_arch::ArchFinding; extract a shared type and wire grimble-ci (and grimble-arch) into grimble check. Also generate docs/reference/rules pages (gob-dev gen rules) once wired."
+at = "2026-10-21T10:27:34Z"
+actor = "lognd"
+rev = 1
