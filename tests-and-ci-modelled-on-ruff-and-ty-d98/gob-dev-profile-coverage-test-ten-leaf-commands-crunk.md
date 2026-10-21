@@ -2,7 +2,8 @@
 id = "01M5FNMEZGVK7EJVKJ5C5VQ4J2"
 title = "gob-dev profile_coverage test: ten leaf commands (crunk gallery *, frob claim *, frob lease rekind, frob refresh) have no scenario"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
