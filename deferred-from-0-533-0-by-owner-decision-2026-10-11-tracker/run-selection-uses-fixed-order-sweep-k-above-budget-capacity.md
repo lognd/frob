@@ -4,10 +4,11 @@ title = "Run selection uses fixed order: sweep_k above budget capacity and non-s
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-21T09:27:09Z"
-updated = "2026-10-21T09:27:09Z"
+updated = "2026-10-21T09:45:14Z"
 scope = ["crates/frob-mirror/src/run.rs"]
 +++
 
