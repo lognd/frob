@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given finite random edits and faults, when runs repeat, then every repository-owned field eventually equals the ledger and stays so", "Given a human edit and no further ledger push, when only scheduled runs occur, then the edit is reverted and recorded (F1)", "Given every human edit within retained history, when the runs finish, then each is in a proposal or superseded by a later one"]
+new = ["Given finite random edits and faults, when runs repeat, then every repository-owned field eventually equals the ledger and stays so", "Given a human edit and no further ledger push, when only scheduled runs occur, then the edit is reverted and recorded (F1)", "Given every human edit within retained history, when the runs finish, then each is in a proposal or superseded by a later one", "Given a budget of one ticket reads plus one write and a lost or crashed create, when runs repeat, then the ticket still converges and every edit is recorded"]
+moved = [1, 2, 3]
+at = "2026-10-21T09:46:20Z"
+actor = "lognd"
+rev = 1
