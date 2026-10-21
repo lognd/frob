@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T13:54:11Z"
+digest = "94543f02409dce47981572f92eee52ea8530feb78b0c71e33ea6ec2802f529ea"
+exit_code = 0
+head = "363cdc027d8bb3d7378878ddcb05af16dfec8b6b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.70s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 737ce2aa-1903-4e9a-b653-1ef7843b6a0b with nextest profile: default
+    Starting 1 test across 2 binaries (47 tests skipped)
+        PASS [   0.011s] gob-walk tests::a_fake_reader_drives_a_walk_without_any_git_backend
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 47 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-walk a_fake_reader_drives"
+size = 613
+status = "measured"
+test_count = 1
+tests_digest = "fbcf10e5fcf88129135e343e1ba7aaa1e893afd3eef3ac53423d2f795b5fb280"
+at = "2026-10-21T13:54:11Z"
+actor = "lognd"
+rev = 1

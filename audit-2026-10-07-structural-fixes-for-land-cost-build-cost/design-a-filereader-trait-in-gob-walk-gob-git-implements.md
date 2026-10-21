@@ -8,7 +8,7 @@ points = 8
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-12T03:43:10Z"
-updated = "2026-10-21T13:52:15Z"
+updated = "2026-10-21T13:54:11Z"
 scope = ["crates/gob-walk/**", "crates/gob-git/**", "changelog.d/**"]
 
 [[links]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given gob-git, when built, then it implements FileReader and a fake reader in a gob-walk test drives a walk"
-bound = false
+bound = true
 +++
 
 Decision (design A, injected reader; registry rejected for hidden global state). Stage 1: trait in gob-walk, gob-git impl, gob-lock->gob-ir and gob-cache->gob-exec edges dropped (~NF2ZMQG). Stage 2: convert callers crate by crate (~5A9VYZQ: ~30 fs::read sites, 5 crates, frob-obligations). The gix-free cargo metadata test lands once callers are converted. Replace the full-suite criteria with scoped crate nextest runs (full suite needs ~12 GB). Design only: not implemented.
