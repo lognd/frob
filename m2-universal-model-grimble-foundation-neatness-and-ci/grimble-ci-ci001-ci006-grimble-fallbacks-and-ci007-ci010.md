@@ -8,8 +8,8 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-21T21:36:03Z"
-scope = ["crates/grimble-ci/**", "docs/design/cicd.md"]
+updated = "2026-10-21T21:36:04Z"
+scope = ["crates/grimble-ci/**", "docs/design/cicd.md", "changelog.d/01M5F010QB00AR00D4HYVYYPWH.added.md"]
 +++
 
 Deferred from ~8886VJ4: native fallbacks for the zizmor-bound pinned-ref and prt-head-checkout rules, plus CI007 and CI010.
