@@ -2,13 +2,13 @@
 id = "01M5GA77VTC3VDYVZ2HBZNRM2K"
 title = "GRL lowering: count compared with a knob-times-count ratio (NEAT031)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T22:44:58Z"
-updated = "2026-10-21T23:45:19Z"
+updated = "2026-10-21T23:45:27Z"
 idempotency_key = "neat031-count-ratio"
 scope = ["crates/gob-plan/src/lower/convert.rs", "crates/gob-plan/tests/ten_rules/main.rs"]
 
