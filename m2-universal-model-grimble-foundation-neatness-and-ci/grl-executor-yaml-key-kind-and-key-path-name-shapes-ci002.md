@@ -2,7 +2,8 @@
 id = "01M5ETB80YYSQNEDP9PG86WKD4"
 title = "GRL executor: YAML key kind and key(path=, name=) shapes (CI002)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
