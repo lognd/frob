@@ -2,7 +2,7 @@
     clippy::disallowed_methods,
     reason = "a test reads the pack tree on disk, not a walked snapshot"
 )]
-//! The crunk-web pack: four families, three A11Y and three SEO rules, GRL011 without examples, lock digest.
+//! The crunk-web pack: four families, three A11Y, SEO and LAUNCH rules, GRL011 without examples, lock digest.
 
 // frob:ticket 01M43AVHX91K72WYKYFX5W2SPP
 
@@ -33,6 +33,9 @@ fn catalog_lists_the_pack_rules_when_on() {
             ("A11Y", "A11Y102"),
             ("A11Y", "A11Y103"),
             ("LAUNCH", "LAUNCH101"),
+            ("LAUNCH", "LAUNCH102"),
+            ("LAUNCH", "LAUNCH103"),
+            ("LAUNCH", "LAUNCH104"),
             ("SEO", "SEO101"),
             ("SEO", "SEO102"),
             ("SEO", "SEO103"),
@@ -122,6 +125,32 @@ fn every_seo_rule_passes_its_examples() {
 #[test]
 fn seo_rules_carry_teaching_text_and_a_remedy() {
     for (file, src) in packs::RULES.iter().filter(|(f, _)| f.contains("SEO")) {
+        assert!(src.contains("## Remedy"), "{file}");
+        assert!(src.contains("example fire"), "{file}");
+        assert!(src.contains("example notapplicable"), "{file}");
+        assert!(packs::compile_rule(file, src).is_ok(), "{file}");
+    }
+}
+
+// frob:ticket 01M43AVJWX0T0XSYDX323BQFSY
+// frob:tests compile_rule
+#[test]
+fn every_launch_rule_passes_its_examples() {
+    let mut ran = 0;
+    for (file, src) in packs::RULES.iter().filter(|(f, _)| f.contains("LAUNCH")) {
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{file}: {:?} {:?}", t.diagnostics, t.examples);
+        assert_eq!(t.examples.len(), 3, "{file}");
+        ran += 1;
+    }
+    assert_eq!(ran, 4);
+}
+
+// frob:ticket 01M43AVJWX0T0XSYDX323BQFSY
+// frob:tests compile_rule
+#[test]
+fn launch_rules_carry_teaching_text_and_a_remedy() {
+    for (file, src) in packs::RULES.iter().filter(|(f, _)| f.contains("LAUNCH")) {
         assert!(src.contains("## Remedy"), "{file}");
         assert!(src.contains("example fire"), "{file}");
         assert!(src.contains("example notapplicable"), "{file}");
