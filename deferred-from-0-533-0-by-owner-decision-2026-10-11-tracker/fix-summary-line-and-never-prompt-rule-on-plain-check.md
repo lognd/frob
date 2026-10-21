@@ -2,7 +2,8 @@
 id = "01M3ZX81ZPA8J5RXBEZ14SZNSZ"
 title = "Fix summary line and never-prompt rule on plain check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
