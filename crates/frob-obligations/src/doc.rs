@@ -8,7 +8,8 @@ use frob_tests::catalog::is_test_file;
 use gob_languages::{Language, ParseLimits, ParseResult, markdown_link_destinations, parse};
 use gob_rules::Finding;
 use gob_symbols::{
-    FacetDigest, SymbolGraph, SymbolKind, Target, extract_file, is_python_path, slugify,
+    FacetDigest, SymbolGraph, SymbolKind, Target, extract_file, is_csharp_path, is_python_path,
+    slugify,
 };
 use gob_text::{FileId, Span};
 use gob_walk::{Digest, FileEntry, LanguageHint};
@@ -40,10 +41,14 @@ fn is_dunder(name: &str) -> bool {
 }
 
 // frob:ticket 01M43CVMKVBZ2WDZHJ3TCKEFKF
-/// DOC001 over one Rust or Python file: public items of `graph` whose doc facet is empty.
+/// DOC001 over one Rust, Python or C# file: public items of `graph` whose doc facet is empty.
+///
+/// C# `///` XML doc comments (summary, param, returns, `<inheritdoc/>`) fill the doc facet.
 pub(crate) fn doc001(graph: &SymbolGraph, file: FileId, path: &str, text: &str) -> Vec<Finding> {
     let python = is_python_path(path);
-    if !(python || Language::detect(path) == Some(Language::Rust)) || is_test_file(path) {
+    let supported =
+        python || is_csharp_path(path) || Language::detect(path) == Some(Language::Rust);
+    if !supported || is_test_file(path) {
         return Vec::new();
     }
     let empty = FacetDigest::of(b"");

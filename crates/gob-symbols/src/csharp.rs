@@ -352,6 +352,28 @@ struct Fold<'a> {
     raw_uses: Vec<RawUse>,
     /// The declared type text of each field or property unit.
     raw_fields: Vec<(NodeId, String)>,
+    /// The XML doc comment text above each declaration node, keyed by tree-sitter node id.
+    docs: HashMap<usize, (String, usize)>,
+}
+
+/// The text of a `///` or `/** */` doc comment, markers stripped; `None` for a plain comment.
+fn doc_comment_text(raw: &str) -> Option<String> {
+    let raw = raw.trim();
+    if let Some(rest) = raw.strip_prefix("///") {
+        if rest.starts_with('/') {
+            return None;
+        }
+        return Some(rest.trim().to_owned());
+    }
+    let inner = raw.strip_prefix("/**")?.strip_suffix("*/")?;
+    if inner.starts_with('*') {
+        return None;
+    }
+    let lines: Vec<&str> = inner
+        .lines()
+        .map(|l| l.trim().trim_start_matches('*').trim())
+        .collect();
+    Some(lines.join("\n").trim().to_owned())
 }
 
 fn is_comment(n: Node<'_>) -> bool {
@@ -454,6 +476,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         raw_calls: Vec::new(),
         raw_uses: Vec::new(),
         raw_fields: Vec::new(),
+        docs: HashMap::new(),
     };
     let nodes = children(root);
     let kids = f.members(&nodes, root.end_byte(), 1)?;
@@ -654,6 +677,7 @@ impl<'a> Fold<'a> {
                 out.push(self.hole(n)?);
                 continue;
             }
+            self.note_doc(&nodes[..i], n);
             match n.kind() {
                 "file_scoped_namespace_declaration" => {
                     let saved = self.ns.len();
@@ -701,6 +725,48 @@ impl<'a> Fold<'a> {
             }
         }
         Ok(out)
+    }
+
+    /// Records the `///` doc comment block directly above declaration `n` (the comments at the end of `before`).
+    fn note_doc(&mut self, before: &[Node<'_>], n: Node<'_>) {
+        let mut lines: Vec<String> = Vec::new();
+        let mut first = n.start_byte();
+        for c in before.iter().rev().filter(|c| c.is_named()) {
+            if !is_comment(*c) {
+                break;
+            }
+            let Some(t) = doc_comment_text(self.t(*c)) else {
+                break;
+            };
+            lines.push(t);
+            first = c.start_byte();
+        }
+        lines.reverse();
+        let text = lines.join("\n");
+        if text.trim().is_empty() {
+            return;
+        }
+        tracing::trace!(
+            path = self.path,
+            at = n.start_byte(),
+            "csharp doc comment attached"
+        );
+        self.docs.insert(n.id(), (text, first));
+    }
+
+    /// The `doc` attr node for declaration `n`, when XML doc comments sit above it.
+    fn doc_node(&mut self, n: Node<'_>) -> R<Option<NodeId>> {
+        let Some((text, first)) = self.docs.get(&n.id()).cloned() else {
+            return Ok(None);
+        };
+        let loc = self.cx.loc(first, n.start_byte());
+        let payload = self
+            .cx
+            .add(NodeSpec::new(Operator::lit("str", &text), loc.clone()), &[])?;
+        Ok(Some(self.cx.add(
+            NodeSpec::new(Operator::attr("doc"), loc),
+            &[payload],
+        )?))
     }
 
     /// [`Self::members`] inside a container of kind `c`.
@@ -860,7 +926,8 @@ impl<'a> Fold<'a> {
         d: Decl<'_>,
         body: Vec<NodeId>,
     ) -> R<NodeId> {
-        let (attr_ids, attributes) = self.attributes(&parts.attrs)?;
+        let (mut attr_ids, attributes) = self.attributes(&parts.attrs)?;
+        attr_ids.splice(0..0, self.doc_node(n)?);
         let (mut sig, _) = self.attributes(&parts.attrs)?;
         sig.push(self.cx.lit("name", &d.name, d.name_node)?);
         for s in parts.sig.iter().filter(|s| s.id() != d.name_node.id()) {

@@ -47,3 +47,32 @@ fn an_untested_public_csharp_method_is_a_cov001_finding_and_a_tested_one_is_not(
     assert!(cov.iter().any(|m| m.contains("Ship.Drift")), "{cov:?}");
     assert!(!cov.iter().any(|m| m.contains("Ship.Thrust")), "{cov:?}");
 }
+
+// frob:ticket 01M44YQTSWW9EH49541MY9A7AX
+const DOCS: &str = "/// <summary>A ship.</summary>\npublic class Ship\n{\n    /// <summary>Doubles.</summary>\n    /// <param name=\"n\">Input.</param>\n    [Obsolete]\n    public int Thrust(int n) { return n * 2; }\n\n    /// <inheritdoc/>\n    public int Inherited(int n) { return n; }\n\n    public int Drift(int n) { return n; }\n\n    /// Not xml but still a doc line.\n    public int Plain() { return 1; }\n\n    // ordinary comment\n    public int Ordinary() { return 1; }\n}\n";
+
+#[test]
+fn doc001_accepts_xml_doc_and_inheritdoc_and_flags_bare_public_csharp_members() {
+    // frob:tests crates/frob-obligations/src/doc.rs::doc001
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(dir.path(), &[("src/Ship.cs", DOCS)]);
+    let cfg = InvariantsConfig::load(tempfile::tempdir().expect("tempdir").path()).expect("cfg");
+    let ev = common::evaluate_tree(dir.path(), None, &cfg, None);
+    let docs: Vec<String> = ev
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "DOC001")
+        .map(|f| f.message.clone())
+        .collect();
+    let named = |n: &str| docs.iter().any(|m| m.contains(n));
+    assert!(named("Ship.Drift") && named("Ship.Ordinary"), "{docs:?}");
+    assert!(
+        !named("Ship.Thrust") && !named("Ship.Inherited"),
+        "{docs:?}"
+    );
+    assert!(
+        !docs.iter().any(|m| m.ends_with("`src/Ship.cs::Ship`")),
+        "{docs:?}"
+    );
+    assert_eq!(docs.len(), 2, "{docs:?}");
+}
