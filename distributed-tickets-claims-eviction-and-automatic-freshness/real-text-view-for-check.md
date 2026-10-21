@@ -8,8 +8,12 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:37:37Z"
-updated = "2026-10-21T07:17:49Z"
+updated = "2026-10-21T07:32:02Z"
 scope = ["crates/frob/src/product.rs", "crates/frob/src/lib.rs", "crates/frob/src/check_view.rs"]
+
+[[acceptance]]
+text = "frob check --text prints a verdict line, the findings, and Fix/Timing/Notes sections instead of the generic key dump; JSON output is unchanged"
+bound = false
 +++
 
 Split from ~5JDQ45M: the remaining everyday verbs still fall back to the generic key dump under --text. Reuse crates/frob/src/text_view.rs table helper.
