@@ -8,7 +8,7 @@ points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:26Z"
-updated = "2026-10-21T10:18:01Z"
+updated = "2026-10-21T10:25:42Z"
 idempotency_key = "m2-ci"
 labels = ["milestone:2"]
 scope = ["crates/grimble-ci/**", "changelog.d/01M3Z7157776CWEKRPG8886VJ4.added.md", "docs/design/cicd.md"]
@@ -27,6 +27,10 @@ target = "01M3Z71542Y6NZG3G8A83EFRF2"
 
 [[acceptance]]
 text = "Given a workflow without top-level permissions and a job without timeout-minutes, when grimble check runs, then CI002 and CI005 fire with the measured remedy"
+bound = false
+
+[[acceptance]]
+text = "Given a Dockerfile whose final stage never sets USER and a base image tagged latest, when grimble check runs, then DK001 and DK003 fire"
 bound = false
 +++
 
