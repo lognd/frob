@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-mirror/src/host.rs"]
+at = "2026-10-21T06:48:15Z"
+actor = "lognd"
+rev = 1
