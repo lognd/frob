@@ -8,8 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T04:31:06Z"
-updated = "2026-10-21T07:16:16Z"
-scope = ["crates/frob-mirror/src/host.rs"]
+updated = "2026-10-21T07:16:17Z"
+scope = ["crates/frob-mirror/src/host.rs", "crates/frob-mirror/src/run.rs"]
 +++
 
 removes the Shared Rc RefCell aliasing workaround in host.rs; run() takes &mut store and &dyn TrackerAdapter while create_issue/recover/close_duplicates must mutate. found while working R2MH98S
