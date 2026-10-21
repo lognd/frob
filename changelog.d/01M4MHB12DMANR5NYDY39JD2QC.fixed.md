@@ -1,0 +1,1 @@
+A crunk fix replacement containing newlines now takes the CRLF or LF ending of the line it lands on, so fixing a CRLF file no longer introduces bare LF lines; BOMs and a missing final newline are left as they were.
