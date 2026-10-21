@@ -1,0 +1,11 @@
+kind = "create"
+title = "grimble-ci: CI012 frob verbs versus workflow commands"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
+scope = ["crates/grimble-ci/**"]
+body = "Deferred from ~8886VJ4: compare frob verbs with the commands workflows run."
+at = "2026-10-21T10:27:34Z"
+actor = "lognd"
+rev = 1
