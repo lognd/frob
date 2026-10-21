@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:17Z"
-updated = "2026-10-21T07:52:16Z"
+updated = "2026-10-21T07:52:30Z"
 idempotency_key = "crunk-plan-docs"
 labels = ["area:crunk"]
 scope = ["docs/crunk/**", "README.md", "crates/crunk/tests/docs.rs", "changelog.d/01M43AVMAY5VB8K1885CDYEYV6.added.md"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the docs, when scanned, then there are no absolute home paths and only ASCII"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the crunk binary, when the README verb table is read, then every registered crunk verb has a row"
