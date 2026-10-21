@@ -1,0 +1,12 @@
+kind = "create"
+title = "GRL: allow SYSDESIGN family (9 letters) and runnable model example input"
+type = "bug"
+category = "todo"
+priority = "medium"
+parent = "01M43AWG308SDDDQTE35NR79CM"
+labels = ["grimble-packs"]
+scope = ["crates/gob-rules/src/id.rs", "crates/gob-plan/**"]
+acceptance = ["RuleId accepts SYSDESIGN101 (family up to 9+ letters) and plan validation agrees", "grimble rule test runs example inputs of kind model so lang - rules over model.nodes have fire/clean examples"]
+at = "2026-10-21T10:52:40Z"
+actor = "lognd"
+rev = 1
