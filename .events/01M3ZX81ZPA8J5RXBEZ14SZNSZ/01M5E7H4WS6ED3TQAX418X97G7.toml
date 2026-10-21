@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-10-21T03:19:27Z"
+digest = "d587fab54748bf5b81b63acd479557d036ace002f1e002dd2511fbd9079f4e05"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0f3ea33e-0fb4-4015-90ef-1d7e0ed7b63a with nextest profile: default
+    Starting 4 tests across 5 binaries (119 tests skipped)
+        PASS [   0.011s] frob-check summary::tests::three_fixes_one_safe_ends_with_the_documented_line
+        PASS [   0.012s] frob-check summary::tests::no_fixes_print_nothing_and_no_safe_fix_omits_check_fix
+        PASS [   0.012s] frob-check proposals_summary::tests::no_pending_proposals_print_nothing_and_some_print_the_count
+        PASS [   0.012s] frob-check summary::tests::no_findings_give_no_line
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 4 tests run: 4 passed, 119 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check summary::tests"
+size = 878
+status = "measured"
+test_count = 4
+tests_digest = "ca5795784277414276886fc0cffe9dfa920547fb353f8fdfc470d147e9232e85"
+at = "2026-10-21T03:19:27Z"
+actor = "lognd"
+rev = 1
