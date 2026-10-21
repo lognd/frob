@@ -348,6 +348,7 @@ fn kv(label: &str, value: Option<&str>) -> Vec<String> {
 }
 
 /// The rows of `frob doctor`: one aligned section per survey (toolchain, git, cache, ... languages).
+#[allow(clippy::too_many_lines)] // one flat list of sections; splitting would only scatter it
 pub fn doctor_rows(d: &DoctorData) -> Vec<String> {
     let mut out = vec!["frob doctor".to_owned()];
     section(
