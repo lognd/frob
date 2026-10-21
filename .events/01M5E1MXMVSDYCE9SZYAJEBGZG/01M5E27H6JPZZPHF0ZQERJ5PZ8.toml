@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/src/lib.rs", "docs/reference/cli/frob.md"]
+new = ["crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/src/lib.rs", "docs/reference/cli/frob.md", "docs/design/distributed-tickets.md"]
+at = "2026-10-21T01:46:50Z"
+actor = "lognd"
+rev = 1
