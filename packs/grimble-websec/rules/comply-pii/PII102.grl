@@ -1,0 +1,22 @@
+rule PII102 "personal-data-in-exception-message" {
+  lang python
+  severity warn
+
+  find c: call where c.text ~ /^(\w+(Error|Exception)|abort)\(.*\b(ssn|email|phone|date_of_birth|credit_card)\b/
+  report c "an exception or error response carries personal data"
+
+  example fire python """
+    raise ValueError(f"bad email {user.email}")  #~ warn
+  """
+  example clean python """
+    raise ValueError(f"bad user id {user.id}")
+  """
+  example notapplicable markdown """
+    Prose has no calls.
+  """
+  explain """
+    Exception messages reach logs, error trackers and API responses, so personal data in them is copied well past the request.
+    ## Remedy
+    Name the field or the opaque id in the message, never the value.
+  """
+}

@@ -15,12 +15,16 @@ code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 | `packs/grimble-websec/rules/route/ROUTE102.grl` | ROUTE: debug server exposed (`run(debug=True)`) |
 | `packs/grimble-websec/rules/route/ROUTE103.grl` | ROUTE: TRACE or CONNECT accepted on a route |
 | `packs/grimble-websec/rules/route/ROUTE104.grl` | ROUTE: view exempted from CSRF protection |
+| `packs/grimble-websec/rules/comply-pii/PII101.grl` | PII: personal data sent to a third-party service |
+| `packs/grimble-websec/rules/comply-pii/PII102.grl` | PII: personal data in an exception or error message |
+| `packs/grimble-websec/rules/comply-pii/PII103.grl` | PII: personal data cached with no expiry |
 | `packs/grimble-websec/rules/WEBPERF201.grl` | WEBPERF (server): blocking sleep in an async handler |
 
 Every rule has a firing, a clean and a not-applicable example and an `explain` with `## Remedy`;
 a rule without a firing and a clean example fails to compile (GRL011).
 
-ROUTE102 to ROUTE104 are the first ROUTE slice and read Flask-style Python calls. Auth-on-route
+PII101 to PII103 are the first PII slice (Python call shapes; consent-marker and retention-schedule rules need
+a data-flow adapter and are follow-ups). ROUTE102 to ROUTE104 are the first ROUTE slice and read Flask-style Python calls. Auth-on-route
 and handler-exposure rules need framework adapters (route tables, decorators); until an adapter
 exists, other languages and frameworks are NotApplicable (the markdown example) or Unresolved,
 never clean.
@@ -43,8 +47,7 @@ embedded copy.
 ## Design gaps recorded
 
 - SEC and PII family rows: the only machine-readable family registry for grimble is a pack
-  manifest's `families` list, so SEC and PII are registered there (metadata only, no PII rule
-  yet). boundaries.md assigns SEC and PII to a `grimble-security` data pack and rules.md lists
+  manifest's `families` list, so SEC and PII are registered there (PII101 to PII103 are the first PII rules). boundaries.md assigns SEC and PII to a `grimble-security` data pack and rules.md lists
   them under code+deps; that crate does not exist. Whether the rows belong in this pack or in
   grimble-lints is an owner decision; moving them is a manifest edit.
 - WEBPERF is also a crunk-web family; enabling both packs in one loader raises PACK004.
