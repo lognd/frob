@@ -8,8 +8,8 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T07:36:16Z"
-updated = "2026-10-21T23:17:41Z"
-scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md"]
+updated = "2026-10-21T23:17:42Z"
+scope = ["crates/gob-symbols/src/typescript/**", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md", "changelog.d/01M4828JQJKETWWCRQGJCXJ4VH.added.md"]
 
 [[acceptance]]
 text = "Given exports.f = function(){} or module.exports = { f() {} }, when symbols are built, then a unit exists for f"
