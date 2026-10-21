@@ -39,7 +39,11 @@ fn catalog_lists_the_pack_rules_when_on() {
             ("SEO", "SEO101"),
             ("SEO", "SEO102"),
             ("SEO", "SEO103"),
-            ("WEBPERF", "WEBPERF101")
+            ("WEBPERF", "WEBPERF101"),
+            ("WEBPERF", "WEBPERF102"),
+            ("WEBPERF", "WEBPERF103"),
+            ("WEBPERF", "WEBPERF104"),
+            ("WEBPERF", "WEBPERF105")
         ]
     );
     assert!(rows.iter().all(|r| r.pack == "crunk-web"));
@@ -155,5 +159,39 @@ fn launch_rules_carry_teaching_text_and_a_remedy() {
         assert!(src.contains("example fire"), "{file}");
         assert!(src.contains("example notapplicable"), "{file}");
         assert!(packs::compile_rule(file, src).is_ok(), "{file}");
+    }
+}
+
+// frob:ticket 01M43AVK7C2CY8SQA204JWTCCP
+// frob:tests compile_rule
+#[test]
+fn webperf_assets_clean_and_firing_examples_pass() {
+    let mut ran = 0;
+    for (file, src) in packs::RULES.iter().filter(|(f, _)| f.contains("WEBPERF")) {
+        let t = gob_plan::verbs::test::test_file(file, src);
+        assert!(t.passed(), "{file}: {:?} {:?}", t.diagnostics, t.examples);
+        assert_eq!(t.examples.len(), 3, "{file}");
+        ran += 1;
+    }
+    assert_eq!(ran, 5);
+}
+
+// frob:ticket 01M43AVK7C2CY8SQA204JWTCCP
+// frob:tests compile_rule
+#[test]
+fn webperf_assets_rules_carry_teaching_text_and_a_remedy() {
+    for (file, src) in packs::RULES.iter().filter(|(f, _)| f.contains("WEBPERF")) {
+        assert!(src.contains("## Remedy"), "{file}");
+        assert!(src.contains("example fire"), "{file}");
+        assert!(packs::compile_rule(file, src).is_ok(), "{file}");
+    }
+}
+
+// frob:ticket 01M43AVK7C2CY8SQA204JWTCCP
+// frob:tests compile_rule
+#[test]
+fn webperf_assets_rules_are_not_applicable_without_an_adapter() {
+    for (file, src) in packs::RULES.iter().filter(|(f, _)| f.contains("WEBPERF")) {
+        assert!(src.contains("example notapplicable markdown"), "{file}");
     }
 }

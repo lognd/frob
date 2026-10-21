@@ -1,0 +1,1 @@
+Four crunk-web WEBPERF asset rules (WEBPERF102-105): image height, image lazy loading, render-blocking external scripts and font preload without crossorigin, each with firing, clean and not-applicable examples.

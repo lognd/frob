@@ -1,0 +1,22 @@
+rule WEBPERF103 "img-without-loading" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "img" and not e has attribute(name = "loading")
+  report e "image has no loading attribute: offscreen images are fetched eagerly"
+
+  example fire html """
+    <img src="gallery.png" alt="Gallery" width="640" height="360">  <!--~ warn -->
+  """
+  example clean html """
+    <img src="gallery.png" alt="Gallery" width="640" height="360" loading="lazy">
+  """
+  example notapplicable markdown """
+    Prose has no images with a loading hint.
+  """
+  explain """
+    Without a `loading` hint the browser fetches every image up front, including those far below the fold, which competes with the content the visitor sees first.
+    ## Remedy
+    Add `loading="lazy"` to below-the-fold images; keep `loading="eager"` (with `fetchpriority="high"`) on the hero image.
+  """
+}

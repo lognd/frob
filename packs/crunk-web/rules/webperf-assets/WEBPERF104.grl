@@ -1,0 +1,22 @@
+rule WEBPERF104 "render-blocking-script" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "script" and e has attribute(name = "src") and not e has attribute(name = "async") and not e has attribute(name = "defer") and not e has attribute(name = "type", value = "module")
+  report e "script blocks rendering: it has neither async nor defer"
+
+  example fire html """
+    <script src="app.js"></script>  <!--~ warn -->
+  """
+  example clean html """
+    <script src="app.js" defer></script>
+  """
+  example notapplicable markdown """
+    A script tag is written <script src="app.js"> in prose.
+  """
+  explain """
+    A classic external script without `async` or `defer` stops HTML parsing while it downloads and runs, delaying first paint.
+    ## Remedy
+    Add `defer` (ordered, after parsing) or `async` (independent), or load it as `type="module"`.
+  """
+}

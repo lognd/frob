@@ -1,0 +1,22 @@
+rule WEBPERF102 "img-without-height" {
+  lang [typescript, html]
+  severity warn
+
+  find e: element where e.tag == "img" and not e has attribute(name = "height")
+  report e "image has no height: the layout shifts when it loads"
+
+  example fire html """
+    <img src="hero.png" alt="Hero" width="640">  <!--~ warn -->
+  """
+  example clean html """
+    <img src="hero.png" alt="Hero" width="640" height="360">
+  """
+  example notapplicable markdown """
+    Prose has no images with dimensions.
+  """
+  explain """
+    An image without a reserved height moves the content below it when it loads (cumulative layout shift).
+    ## Remedy
+    Set `height` next to `width`, or reserve the box with CSS aspect-ratio.
+  """
+}
