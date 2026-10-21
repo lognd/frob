@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["packs/unity.toml", "crates/gob-symbols/src/csharp.rs", "crates/gob-ir/**", "crates/gob-symbols/tests/**", "docs/design/packs.md", "docs/design/dotnet-unity.md"]
+new = ["packs/unity.toml", "crates/gob-symbols/src/csharp.rs", "crates/gob-ir/**", "crates/gob-symbols/tests/**", "docs/design/packs.md", "docs/design/dotnet-unity.md", "crates/gob-symbols/src/lib.rs"]
+at = "2026-10-21T18:47:00Z"
+actor = "lognd"
+rev = 1
