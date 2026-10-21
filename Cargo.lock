@@ -2770,6 +2770,7 @@ dependencies = [
  "gob-rules",
  "gob-symbols",
  "gob-text",
+ "grimble-model",
  "insta",
  "proptest",
  "regex",

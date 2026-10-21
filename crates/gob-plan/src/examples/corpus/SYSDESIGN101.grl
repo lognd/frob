@@ -1,0 +1,22 @@
+rule SYSDESIGN101 "node-kind-unset" {
+  lang -
+  severity warn  scope repo
+  needs model
+
+  find n: model.nodes
+  where n.kind == "artifact"
+  report n "node {n.name} is a build artifact, not a component"
+  fix manual "declare the node with `kind component;`"
+
+  example fire {
+    model """node app : trusted { kind artifact; }"""
+  }
+  example clean {
+    model """node app : trusted { kind component; owns "src/**"; }"""
+  }
+  explain """
+    Design nodes should be components.
+    ## Remedy
+    Declare `kind component;`.
+  """
+}

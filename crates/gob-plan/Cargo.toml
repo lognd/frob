@@ -15,6 +15,7 @@ gob-pattern = { version = "0.532.0", path = "../gob-pattern" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
+grimble-model = { version = "0.532.0", path = "../grimble-model" }
 globset = "0.4"
 regex = "1"
 schemars = "1"

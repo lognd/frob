@@ -854,6 +854,11 @@ Unresolved `budget` (plugins.md 6.5).
 - Inputs other than one source file are sub-blocks: `file "path"
   """..."""` (several allowed), `config """toml"""`, `model
   """grmb"""`, `diff ["path", ...]`, `lease ["glob", ...]`.
+  The runner reads a `model` input as a grmb file (the `grimble` version
+  header and `module` line are supplied when the text has none) and
+  supplies `model.nodes` (name, kind, path; kind defaults to
+  `component`, namespaces join names with `.`) and `model.selectors`
+  (one row per `owns`) to rules that `needs model`.
 - `known-gap` examples document a known miss; they must not fire, and
   they turn into failures when they start firing (so a fix is noticed).
 - `example ... fixed """..."""` asserts the output of the rule's fix.

@@ -123,7 +123,8 @@ time (test generated per rule).
 ## 3. Rule families carried into v2
 
 Family names stay so that exceptions converted from consumer-repo
-waivers port. Ids are `FAMILYNNN` in every product, with an optional
+waivers port. Ids are `FAMILYNNN` in every product (a family is 2 to 12 uppercase
+letters or digits, the first a letter, so `SYSDESIGN101` is valid), with an optional
 slug alias (`SYS003` and `SYS-UNDECLARED-FLOW`); ids inside a family are
 renumbered only where v1 ids were duplicates or collapsed, and the v1 to
 v2 id map is many-to-one where a family collapsed (SYS's 51 ids become a
