@@ -2,13 +2,13 @@
 id = "01M5FH32Q2A4W7RBGH4THMVENY"
 title = "bench-pr.yml: replace gh pr comment --edit-last with marker-based comment"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T15:25:47Z"
-updated = "2026-10-21T18:15:16Z"
+updated = "2026-10-21T18:15:17Z"
 scope = [".github/workflows/bench-pr.yml"]
 
 [[acceptance]]
