@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given every human edit within retained history, when the runs finish, then each is in a proposal or superseded by a later one"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a budget of one ticket reads plus one write and a lost or crashed create, when runs repeat, then the ticket still converges and every edit is recorded"
