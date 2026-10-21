@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json", "crates/gob-config/src/describe.rs", "crates/gob-config/tests/config.rs", "crates/gob-config/tests/snapshots/config__schema_has_property_per_table.snap", "changelog.d/01M4DGHT8H530QHR7VJPHFBHDJ.fixed.md", "docs/design/config.md"]
+new = ["crates/gob-config/src/schema.rs", "docs/schemas/config.json", "crates/gob-config/src/describe.rs", "crates/gob-config/tests/config.rs", "crates/gob-config/tests/snapshots/config__schema_has_property_per_table.snap", "changelog.d/01M4DGHT8H530QHR7VJPHFBHDJ.fixed.md", "docs/design/config.md", "docs/design/documentation.md"]
+at = "2026-10-21T21:35:54Z"
+actor = "lognd"
+rev = 1
