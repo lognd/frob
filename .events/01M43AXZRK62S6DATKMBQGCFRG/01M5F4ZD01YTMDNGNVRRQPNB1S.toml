@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T11:51:46Z"
+digest = "625f8cae21371796c77b402bda7306cc944b32ee55e3d9cc560849f27c3e25bf"
+exit_code = 0
+head = "dec6dafd4fb67367605f707b64bebc55a37320ac"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.66s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fdf07014-b998-4ac6-b3c3-7eef9be9fdb9 with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.016s] grimble-check::websec_pack route_slice_rules_fire_on_their_example_and_teach_a_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test websec_pack route_slice"
+size = 642
+status = "measured"
+test_count = 1
+tests_digest = "9bfde07d432f7c2b1d1c41fe2b79f91fa919912f80f31e3bef55f078cba47c93"
+at = "2026-10-21T11:51:46Z"
+actor = "lognd"
+rev = 1

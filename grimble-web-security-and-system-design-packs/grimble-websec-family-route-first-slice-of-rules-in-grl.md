@@ -8,7 +8,7 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:31:34Z"
-updated = "2026-10-21T11:48:29Z"
+updated = "2026-10-21T11:51:46Z"
 idempotency_key = "crunk-plan-g_ROUTE"
 labels = ["area:grimble"]
 scope = ["packs/grimble-websec/rules/route/**", "packs/grimble-websec/tests/route/**", "packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/tests/websec_pack.rs", "docs/grimble/packs/grimble-websec.md", "changelog.d/01M43AXZRK62S6DATKMBQGCFRG.added.md"]
@@ -19,7 +19,7 @@ target = "01M43AWPD2DYMS2CVTJRD56D5R"
 
 [[acceptance]]
 text = "Given code violating the first rule, when `grimble check` runs, then the finding fires with teaching text"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the clean example, when `grimble rule test` runs, then it passes"
