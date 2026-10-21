@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "BLOCKER: family SYSDESIGN is 9 letters; RuleId (gob-rules id.rs) caps family at 8, so SYSDESIGN101 fails plan validation. Also the rule runner rejects the model example input, so lang - rules over model.nodes cannot have fire/clean examples. SUGGESTION: lift the family cap and support model examples first (filed 01M43AWG308SDDDQTE35NR79CM child 01M5F1EZSNXY1H1S3CP8AJJH4Q). Draft pack files remain uncommitted in packs/grimble-sysdesign/."
+at = "2026-10-21T10:52:49Z"
+actor = "lognd"
+rev = 1
