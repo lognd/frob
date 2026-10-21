@@ -1,0 +1,1 @@
+grimble-ci now has native lexical fallbacks for the pinned-ref (CI001), pull_request_target head checkout (CI006), event interpolation in run scripts (CI007) and checkout credential persistence (CI010) rules, with `allow_tag_pins_for` and `contexts` config.

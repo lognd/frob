@@ -72,12 +72,16 @@ fn extras(words: &str) -> Vec<(&'static str, String)> {
 /// Run one example and keep the findings of the page's rule.
 fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-ci/src/lib.rs::analyze
+    // frob:tests crates/grimble-ci/src/rules/ci001.rs::Ci001
     // frob:tests crates/grimble-ci/src/rules/ci002.rs::Ci002
     // frob:tests crates/grimble-ci/src/rules/ci003.rs::Ci003
     // frob:tests crates/grimble-ci/src/rules/ci004.rs::Ci004
     // frob:tests crates/grimble-ci/src/rules/ci005.rs::Ci005
+    // frob:tests crates/grimble-ci/src/rules/ci006.rs::Ci006
+    // frob:tests crates/grimble-ci/src/rules/ci007.rs::Ci007
     // frob:tests crates/grimble-ci/src/rules/ci008.rs::Ci008
     // frob:tests crates/grimble-ci/src/rules/ci009.rs::Ci009
+    // frob:tests crates/grimble-ci/src/rules/ci010.rs::Ci010
     // frob:tests crates/grimble-ci/src/rules/ci011.rs::Ci011
     // frob:tests crates/grimble-ci/src/rules/ci012.rs::Ci012
     // frob:tests crates/grimble-ci/src/rules/dk001.rs::Dk001
@@ -90,6 +94,18 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
         require_digest: has("require-digest"),
         ..CiConfig::default()
     };
+    config.allow_tag_pins_for.extend(
+        words
+            .split_whitespace()
+            .filter_map(|x| x.strip_prefix("allow-tag-pins="))
+            .map(str::to_owned),
+    );
+    config.contexts.extend(
+        words
+            .split_whitespace()
+            .filter_map(|x| x.strip_prefix("context="))
+            .map(str::to_owned),
+    );
     if let Some(host) = words
         .split_whitespace()
         .find_map(|x| x.strip_prefix("allow="))
@@ -140,7 +156,7 @@ fn no_files_makes_every_rule_not_applicable() {
     // frob:tests crates/grimble-ci/src/lib.rs::analyze
     let report = run(&[("README.md", "hi")], &CiConfig::default());
     assert!(report.findings.is_empty());
-    assert_eq!(report.not_applicable.len(), 12);
+    assert_eq!(report.not_applicable.len(), 16);
 }
 
 #[test]
@@ -153,6 +169,65 @@ fn unparsable_workflow_is_unresolved() {
     let f: &CiFinding = report.findings.first().expect("a verdict");
     assert_eq!(f.severity, Severity::Unresolved);
     assert!(matches!(f.reason, Some(UnresolvedReason::ParseFailed)));
+}
+
+/// Rule ids of every finding in a one-file run.
+fn ids(body: &str, cfg: &CiConfig) -> Vec<String> {
+    run(&[(".github/workflows/ci.yml", body)], cfg)
+        .findings
+        .iter()
+        .map(|f| f.rule.to_owned())
+        .collect()
+}
+
+#[test]
+fn supply_rules_survive_odd_yaml() {
+    // frob:tests crates/grimble-ci/src/supply.rs::check
+    let cfg = CiConfig::default();
+    for body in [
+        "",
+        "on: push\n",
+        "on: push\njobs:\n",
+        "on: push\njobs:\n  a:\n    steps: 3\n",
+        "on: push\njobs:\n  a:\n    steps:\n      - 7\n      - run: 5\n      - uses: ''\n",
+        "on: push\njobs:\n  a:\n    steps:\n      - run: echo ${{ github.event.issue.title\n",
+    ] {
+        let found = ids(body, &cfg);
+        assert!(!found.iter().any(|r| r == "CI001"), "{body:?}");
+    }
+}
+
+#[test]
+fn pinned_ref_honours_case_digest_and_allowlist() {
+    // frob:tests crates/grimble-ci/src/supply.rs::check
+    let sha = "A".repeat(40);
+    let pinned = format!("on: push\njobs:\n  a:\n    steps:\n      - uses: x/y@{sha}\n");
+    assert!(
+        !ids(&pinned, &CiConfig::default())
+            .iter()
+            .any(|r| r == "CI001")
+    );
+    let digest = "on: push\njobs:\n  a:\n    steps:\n      - uses: docker://alpine@sha256:abc\n";
+    assert!(
+        !ids(digest, &CiConfig::default())
+            .iter()
+            .any(|r| r == "CI001")
+    );
+    let tag = "on: push\njobs:\n  a:\n    steps:\n      - uses: acme/y@v1\n";
+    assert!(ids(tag, &CiConfig::default()).iter().any(|r| r == "CI001"));
+    let cfg = CiConfig {
+        allow_tag_pins_for: vec!["acme".to_owned()],
+        ..CiConfig::default()
+    };
+    assert!(!ids(tag, &cfg).iter().any(|r| r == "CI001"));
+}
+
+#[test]
+fn unterminated_expression_does_not_panic_ci007() {
+    // frob:tests crates/grimble-ci/src/supply.rs::check
+    let body =
+        "on: push\njobs:\n  a:\n    steps:\n      - run: echo ${{ github.event.issue.title\n";
+    let _ = ids(body, &CiConfig::default());
 }
 
 /// A host with fixed subject counts.
@@ -169,7 +244,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-ci/src/rules/mod.rs::bind
     // frob:tests crates/grimble-ci/src/host.rs::CiHost.ci_subjects_of
     // frob:tests crates/grimble-arch/src/finding.rs::ArchFinding.into_finding
-    assert_eq!(grimble_ci::rules::bind::<Fixed>().len(), 12);
+    assert_eq!(grimble_ci::rules::bind::<Fixed>().len(), 16);
     assert_eq!(grimble_ci::host::CiHost::ci_subjects_of(&Fixed, "CI002"), 5);
     let report = run(&[(".github/workflows/ci.yml", BARE)], &CiConfig::default());
     let mut files = FileInterner::new();

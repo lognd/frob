@@ -7,12 +7,16 @@
 //!
 //! | Rule | Polarity | Fires |
 //! |---|---|---|
+//! | `CI001` | P+ | an external `uses:` not pinned to a 40-hex SHA (unless its owner allows tag pins) |
 //! | `CI002` | P- | no top-level `permissions` and a job without its own |
 //! | `CI003` | P+ | top-level `permissions` grant write |
 //! | `CI004` | P- | push or pull request workflow with no `concurrency` |
 //! | `CI005` | P- | a job with no `timeout-minutes`, or one above `max_timeout` |
+//! | `CI006` | P+ | `pull_request_target` or `workflow_run` checks out the pull request head |
+//! | `CI007` | P+ | an attacker-influenced expression spliced into a `run:` script |
 //! | `CI008` | P+ | a registry publish on a trigger not limited to release tags |
 //! | `CI009` | P+ | a long-lived token publish where trusted publishing exists |
+//! | `CI010` | P+ | `actions/checkout` without `persist-credentials: false` where it matters |
 //! | `CI011` | P- | `pull_request_target` without explicit read-only `permissions` |
 //! | `CI012` | P0 | toolchain, MSRV, Dependabot or CODEOWNERS disagree with the manifests |
 //! | `DK001` | P- | the final stage runs as root |
@@ -26,10 +30,13 @@
 //!
 //! - `CI012` reads a YAML float matrix entry (`1.70`) as `1.7`; quote versions in matrices.
 //! - `CI012` does not yet compare frob verbs with the commands a workflow runs.
-//! - `CI001`, `CI006`, `CI007`, `CI010`, `CI013` to `CI015` belong to the bound zizmor and
-//!   actionlint stages; their grimble fallbacks are not implemented here.
+//! - `CI001`, `CI006`, `CI007` and `CI010` are lexical fallbacks of the bound zizmor rules; they
+//!   read the workflow text only (no `uses:` resolution, no shell parsing), so `CI007` and `CI010`
+//!   are Advisory where the match is a guess. `CI013` to `CI015` belong to the bound zizmor and
+//!   actionlint stages and have no fallback here.
 
 // frob:ticket 01M3Z7157776CWEKRPG8886VJ4
+// frob:ticket 01M5F010QB00AR00D4HYVYYPWH
 
 mod ci;
 mod consistency;
@@ -38,6 +45,7 @@ mod docker;
 mod finding;
 pub mod host;
 pub mod rules;
+mod supply;
 mod workflow;
 
 use std::collections::BTreeMap;
@@ -45,13 +53,17 @@ use std::collections::BTreeMap;
 pub use finding::CiFinding;
 
 /// The workflow rules that judge each parsed workflow (CI012 is joined separately).
-const WORKFLOW_RULES: [&str; 8] = [
+const WORKFLOW_RULES: [&str; 12] = [
+    supply::CI001,
     ci::CI002,
     ci::CI003,
     ci::CI004,
     ci::CI005,
+    supply::CI006,
+    supply::CI007,
     ci::CI008,
     ci::CI009,
+    supply::CI010,
     ci::CI011,
     consistency::CI012,
 ];
@@ -64,6 +76,10 @@ const DOCKER_RULES: [&str; 4] = [dk::DK001, dk::DK002, dk::DK003, dk::DK004];
 pub struct CiConfig {
     /// A `timeout-minutes` above this fires `CI005` (default 60).
     pub max_timeout: u32,
+    /// Action owners whose `uses:` may be pinned by tag instead of a commit SHA (`CI001`).
+    pub allow_tag_pins_for: Vec<String>,
+    /// Extra context paths (dotted, `*` matches one segment) `CI007` treats as attacker-controlled.
+    pub contexts: Vec<String>,
     /// An external `FROM` without `@sha256:` fires `DK002` (default off; the rule is opt-in).
     pub require_digest: bool,
     /// URL hosts whose downloads may be piped into a shell (`DK004`).
@@ -75,6 +91,8 @@ impl Default for CiConfig {
     fn default() -> Self {
         Self {
             max_timeout: 60,
+            allow_tag_pins_for: Vec::new(),
+            contexts: Vec::new(),
             require_digest: false,
             allow_pipe_hosts: Vec::new(),
         }
@@ -149,6 +167,7 @@ fn workflow_pass(input: &CiInput<'_>, files: &[(&str, String)], report: &mut CiR
                 report
                     .findings
                     .extend(ci::check(&wf, input.config, &mut subjects));
+                supply::check(&wf, input.config, &mut report.findings);
                 parsed.push(wf);
             }
             Err(why) => {
