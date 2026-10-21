@@ -1,0 +1,11 @@
+kind = "create"
+title = "Persist claim holds, pauses and reclaim records (lease op hold/resume/reclaim)"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
+idempotency_key = "dt14-persist-hold-store"
+body = "Prereq of 41AWFVY: claim_hold.rs has pure Hold/Pause types but nothing persists them, and no reclaim timestamp is recorded, so work --next and claim evict cannot compute held_or_paused or since_reclaim_secs. Needs a readable store (lease ops hold/resume/reclaim) reachable from frob-worktree, then wiring in next.rs and claim_evict.rs."
+at = "2026-10-21T01:16:06Z"
+actor = "lognd"
+rev = 1
