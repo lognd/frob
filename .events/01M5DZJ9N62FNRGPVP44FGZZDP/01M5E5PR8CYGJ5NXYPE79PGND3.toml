@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "LeaseOp::Evict already records eviction (~1N3HRWA)"
+at = "2026-10-21T02:47:34Z"
+actor = "lognd"
+rev = 1
