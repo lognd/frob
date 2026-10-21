@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["packs/grimble-sysdesign/rules/sysdesign/**", "packs/grimble-sysdesign/tests/sysdesign/**", "crates/gob-packs/src/sysdesign.rs", "crates/gob-packs/tests/sysdesign_pack.rs"]
+new = ["packs/grimble-sysdesign/rules/sysdesign/**", "packs/grimble-sysdesign/tests/sysdesign/**", "crates/gob-packs/src/sysdesign.rs", "crates/gob-packs/tests/sysdesign_pack.rs", "docs/grimble/packs/grimble-sysdesign.md"]
+at = "2026-10-21T13:40:04Z"
+actor = "lognd"
+rev = 1
