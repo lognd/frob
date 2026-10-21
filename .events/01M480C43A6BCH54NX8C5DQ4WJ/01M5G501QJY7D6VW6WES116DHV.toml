@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T21:13:32Z"
+digest = "ea706381e58a1739b0d0e496c4ca1f9aeb651bcc05d330f48b7c7acac579a96b"
+exit_code = 0
+head = "f35d1d16007590ba3b7f51b5dc83a3d00269e6eb"
+inline = '''
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.64s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a5abc92e-9f13-4529-8ba4-f63e7a7fb112 with nextest profile: default
+    Starting 2 tests across 8 binaries (79 tests skipped)
+        PASS [   0.007s] frob-obligations comments::tests::lines_cover_exactly_the_shared_corpus_spans
+        PASS [   3.768s] frob-obligations::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.769s] 2 tests run: 2 passed, 79 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations corpus"
+size = 710
+status = "measured"
+test_count = 2
+tests_digest = "770a8cfc9fbcc6b17d68ee8527309d546f9ff972e40a80a36c62d62b0e048883"
+at = "2026-10-21T21:13:32Z"
+actor = "lognd"
+rev = 1
