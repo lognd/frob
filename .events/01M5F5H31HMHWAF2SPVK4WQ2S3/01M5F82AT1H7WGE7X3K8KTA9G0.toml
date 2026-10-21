@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T12:47:18Z"
+digest = "a7be1d482fef4b11d9952ef8e662ced4c4fa9bd747a90fd77be658dde10c84b7"
+exit_code = 0
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 47.05s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3c1f1d4e-b8cc-4176-aea5-185560f0cff2 with nextest profile: default
+    Starting 1 test across 18 binaries (63 tests skipped)
+        PASS [   0.024s] crunk::rule_catalog the_catalog_lists_the_pack_rules_when_crunk_web_is_on
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.025s] 1 test run: 1 passed, 63 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk the_catalog_lists_the_pack_rules_when_crunk_web_is_on"
+size = 620
+status = "measured"
+test_count = 1
+tests_digest = "acd0ec82e52a0bcbd6a69e702a6a6d50f0ab02eeb5340fbb33681186af2ae0fc"
+at = "2026-10-21T12:47:18Z"
+actor = "lognd"
+rev = 1
