@@ -167,7 +167,7 @@ impl EngineVocab {
         } else if named(&self.serialize_attributes) {
             true
         } else {
-            f.is_public && !f.is_property && f.owner_is_engine
+            !self.is_empty() && f.is_public && !f.is_property && f.owner_is_engine
         };
         tracing::trace!(external, ?f, "field external-writer decision");
         external
