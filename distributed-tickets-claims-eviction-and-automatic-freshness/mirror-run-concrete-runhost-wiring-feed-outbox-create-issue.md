@@ -2,7 +2,8 @@
 id = "01M5EA0YFAACDY5BV70R2MH98S"
 title = "mirror run: concrete RunHost wiring feed, outbox, create_issue, recover, reconcile, close_duplicates"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
