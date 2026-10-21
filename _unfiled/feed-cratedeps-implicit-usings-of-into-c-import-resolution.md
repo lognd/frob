@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-06T04:44:11Z"
 updated = "2026-10-21T23:16:47Z"
-scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/graph/csharp.rs"]
+scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/graph/csharp.rs", "crates/gob-symbols/src/graph.rs"]
 
 [[acceptance]]
 text = "Given a project with ImplicitUsings, when a C# file uses a type from an implicit namespace, then the import resolves"
