@@ -105,7 +105,12 @@ lands.
    `gob-*` from the first commit (no rename step).
 3. crunk v2 crates are built against `gob-*`; crunk v1 (Python) stays
    released from its own repo until crunk v2 passes crunk's existing
-   system tests (1158 tests; the markdown corpora port first).
+   system tests (1158 tests; the markdown corpora port first). The
+   parity harness (`crates/crunk/tests/parity.rs`) runs the Rust crunk
+   over the frozen corpus in `tests/crunk-parity/`; every difference is
+   listed with a reason in `tests/crunk-parity/divergences.toml`, and
+   the harness fails on an unlisted difference or a stale entry. It runs
+   in the CI `crunk` job (`cargo test -p crunk`).
 4. crunk repo archived; its ticket history imported with `frob migrate
    tickets --from ../crunk --component crunk`, with aliases namespaced by
    source repo (`crunk:T-0042`) so they cannot collide with frob's own
