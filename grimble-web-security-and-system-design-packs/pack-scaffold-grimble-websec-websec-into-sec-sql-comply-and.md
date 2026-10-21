@@ -8,10 +8,10 @@ points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-04T11:30:51Z"
-updated = "2026-10-21T10:53:12Z"
+updated = "2026-10-21T10:53:13Z"
 idempotency_key = "crunk-plan-g_sec"
 labels = ["area:grimble"]
-scope = ["packs/grimble-websec/**", "docs/grimble/packs/grimble-websec.md", "crates/grimble-check/src/websec_pack.rs"]
+scope = ["packs/grimble-websec/**", "docs/grimble/packs/grimble-websec.md", "crates/grimble-check/src/websec_pack.rs", "crates/grimble-check/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
