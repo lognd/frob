@@ -18,6 +18,7 @@ mod git;
 pub mod hostland;
 pub mod hunk_presence;
 pub mod land;
+mod land_view;
 pub mod lock;
 mod lockfile;
 pub mod plan;
