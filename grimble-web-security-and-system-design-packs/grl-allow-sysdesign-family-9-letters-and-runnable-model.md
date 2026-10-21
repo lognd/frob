@@ -2,13 +2,13 @@
 id = "01M5F1EZSNXY1H1S3CP8AJJH4Q"
 title = "GRL: allow SYSDESIGN family (9 letters) and runnable model example input"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-21T10:52:40Z"
-updated = "2026-10-21T10:53:13Z"
+updated = "2026-10-21T10:53:15Z"
 labels = ["grimble-packs"]
 scope = ["crates/gob-rules/src/id.rs", "crates/gob-plan/**"]
 
