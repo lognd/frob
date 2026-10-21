@@ -8,7 +8,7 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:01Z"
-updated = "2026-10-21T17:43:26Z"
+updated = "2026-10-21T17:43:27Z"
 idempotency_key = "d94-serial"
 scope = ["packs/unity.toml", "crates/gob-ir/**", "crates/frob-obligations/**", "docs/design/packs.md", "crates/frob-tests/src/reach.rs"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the pack disabled, when the rules run, then a [SerializeField] field never assigned is reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a public field on a type deriving (transitively, partial parts merged) from MonoBehaviour or ScriptableObject, when the pack is enabled, then it has an external writer, while a public field of a plain class or of a nested type is still reported"
