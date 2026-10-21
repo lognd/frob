@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-worktree/src/claim_evict.rs"]
+new = ["crates/frob-worktree/src/claim_evict.rs", "crates/frob-worktree/src/verbs.rs"]
+at = "2026-10-21T00:46:43Z"
+actor = "lognd"
+rev = 1
