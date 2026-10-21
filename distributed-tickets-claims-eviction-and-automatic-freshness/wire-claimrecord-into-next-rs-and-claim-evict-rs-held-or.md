@@ -2,7 +2,8 @@
 id = "01M5E1MXHT9FNMKTH8EAYDK1H2"
 title = "Wire ClaimRecord into next.rs and claim_evict.rs (held_or_paused, since_reclaim_secs)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
