@@ -8,7 +8,7 @@ points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T15:25:47Z"
-updated = "2026-10-21T17:34:33Z"
+updated = "2026-10-21T17:39:24Z"
 scope = ["crates/gob-dev/tests/layering.rs", "docs/design/boundaries.md", "changelog.d/01M5FH32SRA9JWGMTJ9KCX28FW.fixed.md"]
 
 [[acceptance]]
