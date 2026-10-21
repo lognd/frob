@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:29:37Z"
-updated = "2026-10-21T07:47:11Z"
+updated = "2026-10-21T08:00:20Z"
 idempotency_key = "crunk-plan-gal2"
 labels = ["area:crunk"]
 scope = ["crates/crunk-gallery/src/render/**", "crates/crunk-gallery/node/**", "crates/crunk-gallery/tests/render*.rs", "crates/crunk-gallery/src/render/mod.rs", "crates/crunk-gallery/src/render/command.rs", "crates/crunk-gallery/src/render/playwright.rs", "crates/crunk-gallery/node/render.mjs", "crates/crunk-gallery/tests/render.rs", "crates/crunk-gallery/src/lib.rs", "crates/crunk-gallery/Cargo.toml", "Cargo.lock", "changelog.d/01M43ATDR7DWY5RZPB3QB3GE3K.added.md", "crates/crunk-gallery/README.md"]
@@ -23,7 +23,7 @@ target = "01M43ATDG0RG5DP9PVFAKETJJH"
 
 [[acceptance]]
 text = "Given playwright installed, when `crunk gallery render` runs on the fixture, then hashed PNGs are written to the artifacts dir"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given playwright missing, when render runs, then the error names the install command and exits 2"
