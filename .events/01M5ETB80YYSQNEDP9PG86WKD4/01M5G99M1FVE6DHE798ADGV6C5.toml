@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-21T22:28:46Z"
+digest = "5c33376adeb1e5fc97aa01a87bbe00787e5d38aaee16520433877f528791223d"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d6362d74-2f46-4b62-affe-dcb5b3723441 with nextest profile: default
+    Starting 3 tests across 1 binary (5 tests skipped)
+        PASS [   0.005s] gob-plan::exec_core duplicate_keys_are_each_a_member_and_an_empty_document_has_none
+        PASS [   0.005s] gob-plan::exec_core a_function_is_not_a_key_and_keeps_the_file_path
+        PASS [   0.005s] gob-plan::exec_core a_key_path_joins_the_enclosing_key_names_and_sequence_indexes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test exec_core key"
+size = 832
+status = "measured"
+test_count = 3
+tests_digest = "2d321fcba5a726f2ab04202e5f3112b5d511fe8eccf24d14efc25b13f8c3e88b"
+at = "2026-10-21T22:28:46Z"
+actor = "lognd"
+rev = 1
