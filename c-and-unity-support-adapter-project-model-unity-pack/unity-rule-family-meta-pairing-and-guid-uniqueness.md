@@ -8,9 +8,9 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:02Z"
-updated = "2026-10-21T19:17:32Z"
+updated = "2026-10-21T19:17:33Z"
 idempotency_key = "d94-meta"
-scope = ["crates/gob-rules/**", "crates/frob-obligations/src/unity.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/**", "docs/reference/rules/UNITY001.md", "docs/reference/rules/UNITY002.md", "docs/reference/rules/UNITY003.md", "docs/reference/rules/README.md", "packs/unity.toml", "crates/frob-obligations/src/rules/**"]
+scope = ["crates/gob-rules/**", "crates/frob-obligations/src/unity.rs", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/rules.rs", "crates/frob-obligations/tests/**", "docs/reference/rules/UNITY001.md", "docs/reference/rules/UNITY002.md", "docs/reference/rules/UNITY003.md", "docs/reference/rules/README.md", "packs/unity.toml", "crates/frob-obligations/src/rules/**", "crates/frob-obligations/Cargo.toml"]
 
 [[links]]
 kind = "blocked-by"
