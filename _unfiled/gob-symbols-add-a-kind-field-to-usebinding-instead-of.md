@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-06T05:02:03Z"
 updated = "2026-10-21T19:57:11Z"
-scope = ["crates/gob-symbols/src/model.rs", "crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/graph/csharp.rs", "crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/fold.rs"]
+scope = ["crates/gob-symbols/src/model.rs", "crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/graph/csharp.rs", "crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/lib.rs"]
 
 [[acceptance]]
 text = "Given a C# using static directive, when imports are listed, then the binding carries a typed static kind"
