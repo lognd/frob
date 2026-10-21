@@ -8,10 +8,10 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:17Z"
-updated = "2026-10-21T07:45:21Z"
+updated = "2026-10-21T07:47:07Z"
 idempotency_key = "crunk-plan-docs"
 labels = ["area:crunk"]
-scope = ["docs/crunk/**", "README.md"]
+scope = ["docs/crunk/**", "README.md", "crates/crunk/tests/docs.rs"]
 
 [[links]]
 kind = "blocked-by"
