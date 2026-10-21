@@ -2,7 +2,8 @@
 id = "01M5ED173QYA7JQPTCNKZJGSQD"
 title = "mirror: MirrorHost must override RunHost::ledger_commits so the watermark advances"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
