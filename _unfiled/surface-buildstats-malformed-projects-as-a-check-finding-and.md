@@ -2,12 +2,12 @@
 id = "01M47RDBED35TFDEHQ1YTG1ZYC"
 title = "Surface BuildStats.malformed_projects as a check finding and Unresolved status"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-06T04:44:06Z"
-updated = "2026-10-21T23:15:45Z"
+updated = "2026-10-21T23:15:47Z"
 scope = ["crates/gob-check/src"]
 
 [[acceptance]]
