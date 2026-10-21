@@ -4,10 +4,11 @@ title = "unity pack: feed csharp_dynamic_calls into reach and obligations"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T18:58:21Z"
-updated = "2026-10-21T18:58:21Z"
+updated = "2026-10-21T20:15:13Z"
 scope = ["crates/frob-tests/src/reach.rs"]
 +++
 
