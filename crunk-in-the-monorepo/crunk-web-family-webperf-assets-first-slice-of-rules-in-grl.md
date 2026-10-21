@@ -8,10 +8,10 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:15Z"
-updated = "2026-10-21T11:18:19Z"
+updated = "2026-10-21T11:18:58Z"
 idempotency_key = "crunk-plan-web_WEBPERF-assets"
 labels = ["area:crunk"]
-scope = ["packs/crunk-web/rules/webperf-assets/**", "packs/crunk-web/tests/webperf-assets/**"]
+scope = ["packs/crunk-web/rules/webperf-assets/**", "packs/crunk-web/tests/webperf-assets/**", "packs/crunk-web/pack.toml"]
 
 [[links]]
 kind = "blocked-by"
