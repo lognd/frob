@@ -584,7 +584,7 @@ section 7 with the reason.
 | 49 | Default branch renamed on the host | probe finds no `<base>` | `E-SYNC-NO-BASE: origin has no experimental; origin HEAD is main` | update `[tickets] ref` | DT05 |
 | 50 | Linked worktrees | one sync state and one probe per clone (common dir) | nothing | none | DT05 |
 | 51 | Submodules with their own frob ledgers | each repository syncs independently | nothing | none | not handled (7) |
-| 52 | Offline for weeks, then reconnect with local lands | base diverged from origin | one summary: `N local lands not on origin; M claims evicted; K conflicts` | `frob land --relaunch ~X` merges `origin/<base>` into the kept branch (recreated at the land commit if collected), moving only that branch; frob never rebases and publishes nothing (shipped); the summary and doctor/refresh repair are follow-ups | DT21 |
+| 52 | Offline for weeks, then reconnect with local lands | base diverged from origin | one summary: `N local lands not on origin; M claims evicted; K conflicts` | `frob land --relaunch ~X` merges `origin/<base>` into the kept branch (recreated at the land commit if collected), moving only that branch; frob never rebases and publishes nothing (shipped); `refresh` prints the summary and `frob doctor` lists each local land with that remedy (report only: the repair merges, so doctor never runs it; `--fix` rewrites no history) | DT21 |
 
 ### 6.5 Data
 

@@ -10,6 +10,7 @@
 // frob:ticket 01M5DTGG9XWMEBRA51PA6CYWAE
 
 use frob_ledger::TicketId;
+use frob_ledger::claim_window::EVICT_NOTE_MARKER;
 use frob_ledger::event::{Event, EventBody};
 use frob_ledger::model::Category;
 use gob_diagnostics::{Refusal, RefusalClass};
@@ -35,9 +36,6 @@ pub const E_EVICT_ACTIVE: &str = "E-CLAIM-ACTIVE";
 
 /// Refusal code when another evictor got there first.
 pub const E_EVICT_GONE: &str = "E-EVICT-GONE";
-
-/// Marker that starts the transition reason recording an eviction.
-const NOTE_MARKER: &str = "claim evicted from ";
 
 /// What a successful eviction did.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -87,14 +85,14 @@ fn offline_refusal(handle: &str, why: &str) -> WorktreeError {
 /// The transition reason recording that `holder`'s claim was evicted.
 fn note_body(holder: &str, idle_secs: u64, parked: &str, handle: &str, reason: &str) -> String {
     format!(
-        "{NOTE_MARKER}{holder} after {idle_secs}s idle: {reason}; work parked at {parked} (frob work {handle} --from {parked})"
+        "{EVICT_NOTE_MARKER}{holder} after {idle_secs}s idle: {reason}; work parked at {parked} (frob work {handle} --from {parked})"
     )
 }
 
 /// Ages in seconds at `now` of the earlier evictions of `holder` recorded in `events`.
 #[must_use]
 pub fn prior_eviction_ages(events: &[Event], holder: &str, now: i64) -> Vec<u64> {
-    let prefix = format!("{NOTE_MARKER}{holder} ");
+    let prefix = format!("{EVICT_NOTE_MARKER}{holder} ");
     events
         .iter()
         .filter_map(|e| match &e.body {

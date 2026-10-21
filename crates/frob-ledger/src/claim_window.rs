@@ -12,6 +12,9 @@ use tracing::{debug, warn};
 
 use crate::model::Class;
 
+/// Start of the transition reason a claim eviction records; the holder follows, then a space.
+pub const EVICT_NOTE_MARKER: &str = "claim evicted from ";
+
 /// Seconds in an hour.
 const HOUR: i64 = 3600;
 

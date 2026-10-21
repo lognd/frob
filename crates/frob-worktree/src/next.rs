@@ -14,7 +14,7 @@ use std::collections::HashSet;
 use frob_ledger::TicketId;
 use frob_ledger::claim_agent::{ActivityTimes, observation_for};
 use frob_ledger::claim_hold::ClaimRecord;
-use frob_ledger::claim_window::{ClaimWindows, HolderKind};
+use frob_ledger::claim_window::{ClaimWindows, EVICT_NOTE_MARKER, HolderKind};
 use frob_ledger::event::{Event, EventBody, LeaseData, LeaseOp};
 use frob_ledger::guards::NoLeases;
 use frob_ledger::model::Category;
@@ -375,7 +375,7 @@ impl Workspace<'_> {
                         }),
                     )?;
                     let note = format!(
-                        "claim evicted from {} after {}s idle; work parked at {parked} (frob work {handle} --from {parked})",
+                        "{EVICT_NOTE_MARKER}{} after {}s idle; work parked at {parked} (frob work {handle} --from {parked})",
                         lease.holder.actor, ctx.idle_secs
                     );
                     self.ledger
