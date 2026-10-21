@@ -7,7 +7,8 @@ priority = "medium"
 points = 5
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-21T04:45:19Z"
+updated = "2026-10-21T04:46:08Z"
 aliases = ["T-3842"]
 labels = ["v1-cluster:C3", "triage:accepted"]
+scope = ["crates/frob-land/src/land.rs"]
 +++
