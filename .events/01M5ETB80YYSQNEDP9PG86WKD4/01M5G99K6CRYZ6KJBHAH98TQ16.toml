@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T22:28:45Z"
+digest = "db657eeaf58d7e7be4e622eb8b631b8bbd75a13e7ead6c703ade0c8edbf78cec"
+exit_code = 0
+head = "79494f6e9b724933ffd282f765d7b50b71c5a13b"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e5b739b7-b8ba-48c8-825b-8edf4e950e1d with nextest profile: default
+    Starting 1 test across 1 binary (9 tests skipped)
+        PASS [   0.011s] gob-plan::ten_rules ci002_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test ten_rules ci002_examples_pass"
+size = 586
+status = "measured"
+test_count = 1
+tests_digest = "fb62efbceea60de6757aa657c58467035b60c45cfe64e68bfb599b3feba89f84"
+at = "2026-10-21T22:28:45Z"
+actor = "lognd"
+rev = 1
