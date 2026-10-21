@@ -294,13 +294,17 @@ pub fn evaluate_legacy_repo(
     out
 }
 
-/// Every repo-level rule (`COV001`, `TODO002`, `INV001`, `INV002`); new files are interned into `files`.
+/// Every repo-level rule (`COV001`, `TODO002`, `INV001`, `INV002`, `UNITY001`-`UNITY003`); new files are interned into `files`.
 ///
 /// Findings are raw: exceptions are applied by [`apply_exceptions`].
 pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
     let mut out = evaluate_legacy_repo(inputs, files);
     out.extend(inv::inv001(inputs.graph, inputs.directives, files));
     out.extend(inv::inv002(inputs.root, inputs.graph, inputs.config, files));
+    // frob:ticket 01M44YQZ1A507E2J3JETAWMMAV
+    out.extend(unity::unity001(inputs.root, files));
+    out.extend(unity::unity002(inputs.root, files));
+    out.extend(unity::unity003(inputs.root, files));
     // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
     // Every exception counts, expired ones included: this result is cached by file digests, which
     // do not change when the day does, and an expired defer already raises EXC014.

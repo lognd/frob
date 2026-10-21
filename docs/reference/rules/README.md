@@ -443,6 +443,14 @@
 | [TYPE002](TYPE002.md) | font-family-off-stack | error | manual | P+ | true | Font families must come from the declared stacks. Each block is one source file in a project whose |
 | [TYPE003](TYPE003.md) | font-weight-off-scale | warn | manual | P+ | true | Font weights must be declared weights. Each block is one source file in a project whose `crunk.toml` |
 
+## UNITY
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [UNITY001](UNITY001.md) | asset-missing-meta | warn | manual | P+ | false | A tracked file or folder under `Assets/` (or an embedded package under `Packages/`) has no tracked `.meta`. |
+| [UNITY002](UNITY002.md) | orphan-meta | warn | manual | P+ | false | A tracked `.meta` file whose asset is not tracked. |
+| [UNITY003](UNITY003.md) | duplicate-guid | error | manual | P+ | false | Two or more tracked `.meta` files carry the same `guid`. |
+
 ## VIS
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

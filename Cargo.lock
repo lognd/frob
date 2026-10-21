@@ -1356,6 +1356,7 @@ dependencies = [
  "gob-check",
  "gob-config",
  "gob-directives",
+ "gob-fs",
  "gob-git",
  "gob-ir",
  "gob-languages",

@@ -13,6 +13,18 @@ const SIDE_FILES: &[(&str, &str)] = &[("exists.md", "# Present heading\n")];
 /// The tool stage `EXC017` blocks run against: three tool ids bound to frob rules.
 const TOOL_STAGE: &str = "\n[[check.tool]]\nname = \"lint\"\ncommand = \"lint\"\nargs = []\nid_map = { \"clippy::unwrap_used\" = \"COV001\", \"unpinned-uses\" = \"CI001\" }\n";
 
+// frob:ticket 01M44YQZ1A507E2J3JETAWMMAV
+/// Enable the opt-in `unity` pack for a `UNITY` block; the `Assets/A.cs.meta` block also gets a duplicate-guid twin.
+fn unity_tree(root: &std::path::Path, case: &Case, text: &str) {
+    common::write_tree(
+        root,
+        &[("frob.toml", "[[packs.enable]]\nname = \"unity\"\n")],
+    );
+    if case.file_name == "Assets/A.cs.meta" {
+        common::write_tree(root, &[("Assets/Dup.cs.meta", text)]);
+    }
+}
+
 /// Evaluate one corpus block in a fresh tree with the shared ledger; `{{OPEN}}` and `{{DONE}}` become live ticket ids, `{{PAST}}`, `{{TODAY}}` and `{{FUTURE}}` days relative to today.
 fn runner(case: &Case) -> Vec<Finding> {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -39,6 +51,9 @@ fn runner(case: &Case) -> Vec<Finding> {
             dir.path(),
             &[("frob.toml", &format!("[invariants]\n{cfg}\n{tools}"))],
         );
+    }
+    if case.rule.as_str().starts_with("UNITY") {
+        unity_tree(dir.path(), case, &text);
     }
     let config = InvariantsConfig::load(dir.path()).expect("config");
     common::evaluate_tree(dir.path(), Some(&fixture.ledger), &config, None).findings

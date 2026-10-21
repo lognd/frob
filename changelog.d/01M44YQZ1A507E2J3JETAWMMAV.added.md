@@ -1,0 +1,1 @@
+The opt-in `unity` pack gains UNITY001 (a tracked asset or folder with no `.meta`), UNITY002 (a tracked `.meta` whose asset is not tracked) and UNITY003 (a guid shared by several `.meta` files, an error naming each).
