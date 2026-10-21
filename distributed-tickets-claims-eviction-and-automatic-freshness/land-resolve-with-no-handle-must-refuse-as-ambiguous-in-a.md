@@ -2,7 +2,8 @@
 id = "01M5ED9XX1V96EW1F9J9ZK069N"
 title = "land: resolve with no handle must refuse as ambiguous in a series worktree holding several leases"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
