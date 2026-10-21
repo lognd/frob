@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T09:54:05Z"
+digest = "0d29b75d443dfad64af001d29fdf6471bcab6471d22a040eb5b51ad41322278e"
+exit_code = 0
+head = "000c394f34e332c860d4c2719bd527d41dc721ce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 914b0c8d-2d3c-457c-bcc1-9fabf201b705 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.146s] frob-mirror::prop_safety random_edits_crashes_and_failures_keep_s1_s2_s4_s5_s8
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.146s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-mirror --test prop_safety random_edits_crashes"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "886ad8b00bafd513856d4949ed07d72b8dfb7a165f56c10e79bb5ce5f54f04a7"
+at = "2026-10-21T09:54:05Z"
+actor = "lognd"
+rev = 1
