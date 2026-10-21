@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["claim touch writes a lease renew ledger event that the holder's soft activity observation consumes"]
+moved = []
+at = "2026-10-21T08:48:48Z"
+actor = "lognd"
+rev = 1
