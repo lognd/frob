@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T10:25:21Z"
+digest = "ca76605dde11bf4e831f379601bd23b0bcc009174af735d79e94c0c0ac4d5966"
+exit_code = 0
+head = "dd4645c737794d8a39230d3e1822b4ecb68dc4c6"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eb628bb5-278d-4f3f-8594-204647ef11a6 with nextest profile: default
+    Starting 1 test across 9 binaries (171 tests skipped)
+        PASS [   0.007s] gob-dev changes::tests::docs_only_diff_selects_only_fmt_gen_and_check
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 171 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev changes::tests::docs_only_diff_selects_only_fmt_gen_and_check"
+size = 724
+status = "measured"
+test_count = 1
+tests_digest = "0420179380f266728e280ea59092acf1ab0d1fa6a98bbafc0364a842457bc1fa"
+at = "2026-10-21T10:25:21Z"
+actor = "lognd"
+rev = 1
