@@ -13,7 +13,7 @@ scope = ["crates/frob-mirror/src/host.rs", "crates/frob-mirror/tests/host.rs"]
 
 [[acceptance]]
 text = "A clean mirror pass over a ledger with commits advances the watermark to the log head"
-bound = false
+bound = true
 +++
 
 Follow-up from ~E70J6TS; host.rs does not override the default empty ledger_commits.
