@@ -32,6 +32,7 @@ use crate::batch_size::{self, Outcome as SizeOutcome};
 use crate::bisect::{self, CheckFault, Plan, Runner, Verdict};
 use crate::candidate::{CandidateMember, Skipped, build_candidate, scopes_overlap};
 use crate::error::{LandError, needs_action};
+use crate::hunk_presence::{self, DroppedHunk};
 use crate::land::{
     Begun, Preconditions, already_done, base_ref, begin, blank_outcome, finish_member, land,
     preconditions, primary_root, push_base, push_ledger,
@@ -199,6 +200,20 @@ pub struct TrainStatusReport {
     pub live: bool,
     /// True when a run exists whose driver is gone.
     pub stale: bool,
+    /// Queued tickets whose branch carries a base merge that dropped their own hunks.
+    pub dropped: Vec<QueueDropped>,
+}
+
+// frob:ticket 01M5EBD66SH12P69KWVXA8K2NC
+/// One queued ticket whose branch history lost its own lines in a base merge.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct QueueDropped {
+    /// The ticket.
+    pub id: TicketId,
+    /// The worktree holding the branch.
+    pub worktree: String,
+    /// The lost hunks, oldest merge first.
+    pub hunks: Vec<DroppedHunk>,
 }
 
 /// The repository facts every train operation needs, resolved from any checkout.
@@ -929,20 +944,56 @@ pub fn train_status(root: &Path, clock: &Arc<dyn Clock>) -> Result<TrainStatusRe
     let status = site.store.status()?;
     let queue = site.store.queue()?;
     let batch = site.store.batch()?;
+    // frob:ticket 01M5EBD66SH12P69KWVXA8K2NC
+    let dropped = audit_queue(&site, &queue);
     tracing::info!(
         queued = queue.len(),
         batch = batch.current,
+        dropped = dropped.len(),
         "train status read"
     );
+    let summary = if dropped.is_empty() {
+        status.summary
+    } else {
+        format!(
+            "{}; {} queued ticket(s) lost hunks in a base merge",
+            status.summary,
+            dropped.len()
+        )
+    };
     Ok(TrainStatusReport {
-        summary: status.summary,
+        summary,
         enabled: site.cfg.train,
         queue,
         current: status.run,
         batch,
         live: status.live,
         stale: status.stale,
+        dropped,
     })
+}
+
+/// Audit each queued entry's frozen head for base merges that dropped its hunks; failures only warn.
+fn audit_queue(site: &Site, queue: &[QueueEntry]) -> Vec<QueueDropped> {
+    let base = crate::land::base_ref(&site.base);
+    queue
+        .iter()
+        .filter_map(|e| {
+            let wt = Path::new(&e.worktree);
+            match hunk_presence::audit_merges(&site.repo, wt, &base, &e.head_oid) {
+                Ok(h) if h.is_empty() => None,
+                Ok(hunks) => Some(QueueDropped {
+                    id: e.id,
+                    worktree: e.worktree.clone(),
+                    hunks,
+                }),
+                Err(err) => {
+                    tracing::warn!(ticket = %e.id, error = %err, "hunk audit failed; skipped");
+                    None
+                }
+            }
+        })
+        .collect()
 }
 
 /// What `frob train drop` did.
