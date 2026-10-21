@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-mirror/src/run.rs", "changelog.d/01M5EA0YHJS87TYJ78FE70J6TS.added.md"]
+at = "2026-10-21T04:48:07Z"
+actor = "lognd"
+rev = 1
