@@ -8,5 +8,6 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T23:31:55Z"
-updated = "2026-10-21T00:45:23Z"
+updated = "2026-10-21T00:46:42Z"
+scope = ["crates/frob-worktree/src/claim_evict.rs"]
 +++
