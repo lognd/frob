@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T23:48:54Z"
+digest = "d851aadfd2a736e5309efa3a4eaada51e84c79f2ba8542dc11be7f404eb76add"
+exit_code = 0
+head = "c58922e68a39bf3a455de95e2e8c3f29395365b0"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 18199d3e-a20c-443c-88be-30ace75b8fb1 with nextest profile: default
+    Starting 1 test across 5 binaries (126 tests skipped)
+        PASS [   0.006s] frob-check product::malformed_projects_tests::frob_product_returns_shared_malformed_projects
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 126 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check frob_product_returns_shared_malformed_projects"
+size = 703
+status = "measured"
+test_count = 1
+tests_digest = "3dabd2600c70f406b95ef9955aa38e09afd1613b5c97714afded1f1d7066daa1"
+at = "2026-10-21T23:48:54Z"
+actor = "lognd"
+rev = 1
