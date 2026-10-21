@@ -2,7 +2,8 @@
 id = "01M3Z7157776CWEKRPG8886VJ4"
 title = "grimble-ci: CI001-015 and DK001-004"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
