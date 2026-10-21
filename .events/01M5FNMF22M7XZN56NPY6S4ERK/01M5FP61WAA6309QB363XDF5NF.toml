@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Refresh state save goes through gob_fs::write_atomic with no hand-rolled rename, so the gob-fs inventory test passes"]
+moved = []
+at = "2026-10-21T16:54:47Z"
+actor = "lognd"
+rev = 1
