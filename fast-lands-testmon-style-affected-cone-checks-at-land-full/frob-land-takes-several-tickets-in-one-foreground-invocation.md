@@ -2,13 +2,13 @@
 id = "01M4H1QJWECA2N5P2F28RET6B0"
 title = "frob land takes several tickets in one foreground invocation (land ~A ~B ~C): lands them in order, each checked against the base the previous one produced, reports every outcome and continues past a refusal"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4GRTA9XBJCM2RY98HWZXYC7"
 reporter = "lognd"
 created = "2026-10-09T19:20:09Z"
-updated = "2026-10-09T19:20:09Z"
+updated = "2026-10-21T05:56:35Z"
 scope = ["crates/frob-land/src/verb.rs", "crates/frob-land/tests/**", "changelog.d/**"]
 
 [[acceptance]]
