@@ -170,7 +170,17 @@ fn skip_trivia(b: &[u8], mut i: usize) -> usize {
 /// The attribute names of the lists starting at byte `start` of `text`, and the offset after them.
 ///
 /// Namespace qualifiers and the `Attribute` suffix are dropped (`[Foo.BarAttribute(1)]` is `Bar`).
-fn leading_attributes(text: &str, start: usize) -> (Vec<String>, usize) {
+/// A target (`[field: X]`) is dropped too; [`leading_attribute_specs`] keeps it.
+pub fn leading_attributes(text: &str, start: usize) -> (Vec<String>, usize) {
+    let (specs, end) = leading_attribute_specs(text, start);
+    (specs.into_iter().map(|(_, name)| name).collect(), end)
+}
+
+// frob:ticket 01M44YQY6KR3NCCNGKJ9QK3N9A
+/// The `(target, name)` pairs of the attribute lists starting at byte `start` of `text`, and the offset after them.
+///
+/// The target is the `field` of `[field: SerializeField]`, `None` when the list names none.
+pub fn leading_attribute_specs(text: &str, start: usize) -> (Vec<(Option<String>, String)>, usize) {
     let b = text.as_bytes();
     let mut out = Vec::new();
     let mut i = skip_trivia(b, start);
@@ -203,19 +213,24 @@ fn leading_attributes(text: &str, start: usize) -> (Vec<String>, usize) {
             }
             j += 1;
         }
-        for item in items {
+        // A target (`field:`) is written once, on the first item, and covers the whole list.
+        let mut target: Option<String> = None;
+        for (n, item) in items.into_iter().enumerate() {
             let mut item = item.trim();
-            if let Some((target, rest)) = item.split_once(':')
+            if let Some((t, rest)) = item.split_once(':')
                 && !rest.starts_with(':')
-                && target.trim().chars().all(char::is_alphanumeric)
+                && t.trim().chars().all(char::is_alphanumeric)
             {
+                if n == 0 {
+                    target = Some(t.trim().to_owned());
+                }
                 item = rest.trim();
             }
             let head = item.split('(').next().unwrap_or_default().trim();
             let last = head.rsplit('.').next().unwrap_or_default();
             let last = last.strip_suffix("Attribute").unwrap_or(last);
             if !last.is_empty() {
-                out.push(last.to_owned());
+                out.push((target.clone(), last.to_owned()));
             }
         }
         i = skip_trivia(b, (j + 1).min(b.len()));
@@ -307,27 +322,18 @@ fn derives_from_engine(
         .any(|b| derives_from_engine(b, local, vocab, seen))
 }
 
-/// The C# methods the engine calls itself: messages on engine-derived types and attribute entry points.
+/// The C# type records of `graph` with their header facts, and the project-local base names by type name.
 ///
-/// A message (`Update`, `OnTriggerEnter`) is a root on a type that derives, through project-local
-/// bases, from an engine base, or that carries a type attribute such as `CreateAssetMenu`. A method with
-/// a method attribute (`MenuItem`) is a root. The static constructor of a type with a type attribute
-/// (`InitializeOnLoad`) is a root.
-pub fn engine_roots(
+/// The name map merges every part of a `partial` type, so a base declared on one part counts for all.
+fn local_types(
     graph: &SymbolGraph,
     sources: &mut Sources,
-    vocab: &EngineVocab,
-) -> BTreeSet<Symref> {
-    let is_cs = |r: &SymbolRecord| {
-        Path::new(r.symref.path())
-            .extension()
-            .is_some_and(|ext| ext.eq_ignore_ascii_case("cs"))
-    };
+) -> (HashMap<Symref, TypeInfo>, HashMap<String, Vec<String>>) {
     let mut infos: HashMap<Symref, TypeInfo> = HashMap::new();
     let mut local: HashMap<String, Vec<String>> = HashMap::new();
     for r in graph
         .records()
-        .filter(|r| is_cs(r) && matches!(r.kind, SymbolKind::Class | SymbolKind::Struct))
+        .filter(|r| is_cs_record(r) && matches!(r.kind, SymbolKind::Class | SymbolKind::Struct))
     {
         let Some(info) = type_info(r, sources) else {
             continue;
@@ -340,10 +346,59 @@ pub fn engine_roots(
         }
         infos.insert(r.symref.clone(), info);
     }
+    (infos, local)
+}
+
+/// True for a record in a `.cs` file.
+fn is_cs_record(r: &SymbolRecord) -> bool {
+    Path::new(r.symref.path())
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("cs"))
+}
+
+// frob:ticket 01M44YQY6KR3NCCNGKJ9QK3N9A
+/// The C# types deriving from an engine base through project-local bases, partial parts included.
+///
+/// Nested types do not inherit from their container: only a type's own header counts.
+pub fn engine_derived_types(
+    graph: &SymbolGraph,
+    sources: &mut Sources,
+    vocab: &EngineVocab,
+) -> BTreeSet<Symref> {
+    let (infos, local) = local_types(graph, sources);
+    let derived: BTreeSet<Symref> = infos
+        .keys()
+        .filter(|s| {
+            s.name().is_some_and(|n| {
+                local
+                    .get(n)
+                    .into_iter()
+                    .flatten()
+                    .any(|b| derives_from_engine(b, &local, vocab, &mut HashSet::new()))
+            })
+        })
+        .cloned()
+        .collect();
+    tracing::debug!(types = derived.len(), "engine-derived types computed");
+    derived
+}
+
+/// The C# methods the engine calls itself: messages on engine-derived types and attribute entry points.
+///
+/// A message (`Update`, `OnTriggerEnter`) is a root on a type that derives, through project-local
+/// bases, from an engine base, or that carries a type attribute such as `CreateAssetMenu`. A method with
+/// a method attribute (`MenuItem`) is a root. The static constructor of a type with a type attribute
+/// (`InitializeOnLoad`) is a root.
+pub fn engine_roots(
+    graph: &SymbolGraph,
+    sources: &mut Sources,
+    vocab: &EngineVocab,
+) -> BTreeSet<Symref> {
+    let (infos, local) = local_types(graph, sources);
     let mut roots = BTreeSet::new();
     for r in graph
         .records()
-        .filter(|r| is_cs(r) && r.kind == SymbolKind::Method)
+        .filter(|r| is_cs_record(r) && r.kind == SymbolKind::Method)
     {
         let Some(name) = r.symref.name() else {
             continue;
@@ -395,6 +450,27 @@ mod tests {
         assert!(names.contains("double") && names.contains("triple"));
         assert!(!names.contains("assert_eq") && !names.contains("println"));
         assert!(!names.contains("go"), "{names:?}");
+    }
+
+    // frob:tests leading_attribute_specs
+    // frob:tests leading_attributes
+    #[test]
+    fn attribute_targets_are_kept_by_the_spec_scan_only() {
+        let text = "[field: SerializeField, Foo]\n[NonSerialized] public int X { get; set; }";
+        let (specs, end) = leading_attribute_specs(text, 0);
+        assert_eq!(
+            specs,
+            [
+                (Some("field".to_owned()), "SerializeField".to_owned()),
+                (Some("field".to_owned()), "Foo".to_owned()),
+                (None, "NonSerialized".to_owned()),
+            ]
+        );
+        assert_eq!(
+            leading_attributes(text, 0).0,
+            ["SerializeField", "Foo", "NonSerialized"]
+        );
+        assert!(text[end..].starts_with("public"));
     }
 
     // frob:tests engine_roots

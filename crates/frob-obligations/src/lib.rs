@@ -80,6 +80,7 @@ mod tick_paths;
 pub mod tick_protect;
 mod tickets;
 mod todo;
+mod unity;
 mod util;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -112,6 +113,7 @@ pub use rules::inv001::Inv001;
 pub use rules::inv002::Inv002;
 pub use sibling::{SiblingException, sibling_exception_findings};
 pub use tick_paths::{tick006_ledger_file, tick006_reads_ledger};
+pub use unity::never_written_fields;
 
 use tickets::Tickets;
 

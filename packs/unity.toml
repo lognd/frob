@@ -39,3 +39,18 @@ names = ["RuntimeInitializeOnLoadMethod", "MenuItem", "ContextMenu"]
 lang = "csharp"
 class = "entry.type_attribute"
 names = ["InitializeOnLoad", "CreateAssetMenu"]
+
+# Second vocabulary: editor-written state. A serialized field is written from outside the code (scenes,
+# prefabs, the Inspector), so a never-assigned report does not fire for it. `entry.base` above also names
+# the types whose public instance fields are serialized; static, const and readonly members never are.
+# `[field: SerializeField]` on an auto-property serializes its backing field.
+[[vocab]]
+lang = "csharp"
+class = "serialized.attribute"
+names = ["SerializeField", "SerializeReference"]
+
+# Attributes that exclude a field from serialization; they win over a serialize attribute.
+[[vocab]]
+lang = "csharp"
+class = "serialized.skip_attribute"
+names = ["NonSerialized"]

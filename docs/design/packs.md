@@ -1156,6 +1156,8 @@ in `gob-packs`; the `builtin_pack!` macro of 3.2 does not exist yet.
 | `entry.base` | `MonoBehaviour` `ScriptableObject` |
 | `entry.method_attribute` | `RuntimeInitializeOnLoadMethod` `MenuItem` `ContextMenu` |
 | `entry.type_attribute` | `InitializeOnLoad` `CreateAssetMenu` |
+| `serialized.attribute` | `SerializeField` `SerializeReference` |
+| `serialized.skip_attribute` | `NonSerialized` |
 
 A message is a root on a type that derives from an `entry.base`,
 transitively through project-local base types, or that carries an
@@ -1163,9 +1165,26 @@ transitively through project-local base types, or that carries an
 root. The static constructor of an `[InitializeOnLoad]` type is a root.
 `frob-tests` `reach::engine_roots` computes the set; COV001 seeds its
 reach with the roots and never reports them. With the pack disabled
-nothing changes. Dead-code rules do not read the vocabulary yet.
+nothing changes.
 
-Counts: 1 vocabulary pack, 0 atoms, 5 vocabulary classes, 23 names.
+Serialized state has an external writer: the editor, a scene or a prefab
+fills it, so no assignment exists in code. A field has one when it is not
+`static`, `const` or `readonly`, carries no `serialized.skip_attribute`,
+and either carries a `serialized.attribute` (on any type) or is a
+`public` field of a type that derives from an `entry.base`
+(`reach::engine_derived_types`: transitive through project-local bases,
+partial parts merged by name, nested types do not inherit from their
+container). An auto-property counts only through a `[field: ...]`
+attribute. `frob_obligations::never_written_fields` lists the C# fields
+and `[field:]` auto-properties that no code assigns (a lexical,
+name-based scan of every `.cs` file: `=`, compound assignment, `++`/`--`,
+`ref`/`out`, initializers; a same-named local only hides a report) and
+that have no external writer. The exclusion applies only when the pack
+is enabled and active for the file's path; with it disabled a
+`[SerializeField]` field that is never assigned is listed. No rule
+consumes the list yet.
+
+Counts: 1 vocabulary pack, 0 atoms, 7 vocabulary classes, 26 names.
 
 ## 9. The PACK rule family
 

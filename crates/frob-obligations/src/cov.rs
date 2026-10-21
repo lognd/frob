@@ -14,7 +14,6 @@ use frob_tests::reach::{Sources, called_names, engine_roots};
 use gob_directives::Binding;
 use gob_directives::DirectiveRecord;
 use gob_languages::Language;
-use gob_packs::unity::{self, UnityGate, UnityPack};
 use gob_rules::{Finding, Severity};
 use gob_symbols::{
     Admit, CallEdge, CrateDeps, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind,
@@ -288,23 +287,8 @@ fn declared(graph: &SymbolGraph, directives: &[DirectiveRecord]) -> HashSet<Symr
 // frob:ticket 01M44YQXS4BXE0X07FBYR0STJ5
 /// The engine entry points the root config's `unity` pack makes roots; empty when the pack is not enabled.
 fn unity_roots(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> BTreeSet<Symref> {
-    let Ok(config) = std::fs::read_to_string(root.join("frob.toml")) else {
+    let Some((gate, pack)) = crate::unity::enabled_pack(root) else {
         return BTreeSet::new();
-    };
-    let gate = match UnityGate::parse("frob.toml", &config) {
-        Ok(g) if g.is_enabled() => g,
-        Ok(_) => return BTreeSet::new(),
-        Err(e) => {
-            tracing::warn!(error = %e, "frob.toml [packs] unreadable; unity pack treated as disabled");
-            return BTreeSet::new();
-        }
-    };
-    let pack = match UnityPack::builtin() {
-        Ok(p) => p,
-        Err(e) => {
-            tracing::error!(error = %e, "built-in {} pack is invalid", unity::NAME);
-            return BTreeSet::new();
-        }
     };
     let mut roots = engine_roots(graph, sources, &pack.vocab);
     roots.retain(|s| gate.is_active_for(s.path()));
