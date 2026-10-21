@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T10:25:42Z"
+digest = "7c63e44606dbedfe4cad08169a6443421a8a24c67f649685f384fcbdd97846db"
+exit_code = 0
+head = "dd4645c737794d8a39230d3e1822b4ecb68dc4c6"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dd6dd5af-5023-4afd-a24e-6fa87c1dc1ec with nextest profile: default
+    Starting 1 test across 2 binaries (5 tests skipped)
+        PASS [   0.006s] grimble-ci::rules missing_permissions_and_timeout_fire_with_the_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-ci missing_permissions_and_timeout"
+size = 614
+status = "measured"
+test_count = 1
+tests_digest = "a0918807db36861e9822ae447b1028a0b79fbc60ee141c7bb1be649056f75aab"
+at = "2026-10-21T10:25:42Z"
+actor = "lognd"
+rev = 1

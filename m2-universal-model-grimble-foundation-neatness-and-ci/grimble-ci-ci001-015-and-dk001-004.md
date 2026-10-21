@@ -27,7 +27,7 @@ target = "01M3Z71542Y6NZG3G8A83EFRF2"
 
 [[acceptance]]
 text = "Given a workflow without top-level permissions and a job without timeout-minutes, when grimble check runs, then CI002 and CI005 fire with the measured remedy"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a Dockerfile whose final stage never sets USER and a base image tagged latest, when grimble check runs, then DK001 and DK003 fire"
