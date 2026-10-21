@@ -8,7 +8,7 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-11T03:50:38Z"
-updated = "2026-10-21T20:53:26Z"
+updated = "2026-10-21T20:57:14Z"
 scope = ["changelog.d/**", "crates/gob-fix/src/apply.rs", "crates/crunk-fix/tests/fix.rs"]
 
 [[links]]
