@@ -2,7 +2,8 @@
 id = "01M44YQY6KR3NCCNGKJ9QK3N9A"
 title = "unity pack: serialized fields have an external writer"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
