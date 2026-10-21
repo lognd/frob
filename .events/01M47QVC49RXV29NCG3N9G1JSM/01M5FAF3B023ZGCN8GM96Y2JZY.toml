@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-21T13:29:56Z"
+digest = "47b93e2f6ee67eb8126e49f94a1875e9990f59905d66df48f6abccbdb73a3cf9"
+exit_code = 101
+head = "f5eb2f8293b14c3aaa99c906db91cdf5d7807550"
+inline = """
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+error[E0432]: unresolved import `gob_dev::bench_ic`
+  --> crates/gob-dev/src/main.rs:14:24
+   |
+14 |     Kind, Mode, apply, bench_ic, changes, ci, generate, isolation, profile, publish, test_size,
+   |                        ^^^^^^^^ no `bench_ic` in the root
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `gob-dev` (bin "gob-dev" test) due to 1 previous error
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package gob-dev` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p gob-dev harness_is_recorded_and_wired"
+size = 657
+status = "measured"
+at = "2026-10-21T13:29:56Z"
+actor = "lognd"
+rev = 1
