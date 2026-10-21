@@ -2,7 +2,8 @@
 id = "01M5EA0YHJS87TYJ78FE70J6TS"
 title = "mirror run: watermark and ledger-commit handling (pending_commits, write_watermark)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
