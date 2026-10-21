@@ -19,7 +19,7 @@ target = "01M43AVHX91K72WYKYFX5W2SPP"
 
 [[acceptance]]
 text = "Given a TSX file violating the first rule of the family, when `crunk check` runs, then the finding fires with its teaching text and fix suggestion if any"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the clean example, when `crunk rule test` runs, then it passes"
