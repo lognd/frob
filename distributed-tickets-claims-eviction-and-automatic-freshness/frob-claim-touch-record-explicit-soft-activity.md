@@ -2,7 +2,8 @@
 id = "01M5DDB53D00DCC2FVJWHZ3DX9"
 title = "frob claim touch: record explicit soft activity"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
