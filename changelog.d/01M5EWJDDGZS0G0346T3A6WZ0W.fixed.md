@@ -1,0 +1,1 @@
+The mirror run now persists a round-robin cursor for every work class and resumes the sweep from its own cursor in batch order, so a sweep_k above the budget capacity or a small budget no longer starves later tickets.
