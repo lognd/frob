@@ -80,6 +80,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-10-20T16:08:24.151642497Z"
 
 [[symbol]]
+identity = ".github/workflows/ecosystem-pr.yml::jobs.ecosystem.steps.1"
+symref = ".github/workflows/ecosystem-pr.yml::jobs.ecosystem.steps.1"
+sig = "0772e90eb6a2b554af3ad327751dc636f68e64e77350d2cb4b2171b860b7c69d"
+body = "2ab38d73bb303a61b8a795e31f5be17218acc7fe5e7dcc024f42323972d029d3"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+contract = "742f6e9b5d1ab25b4a2257a8bc7224404403563c980ccf3944f1ea11f1dfc112"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-21T15:25:35.277307845Z"
+
+[[symbol]]
 identity = ".github/workflows/release.yml::jobs.artifacts.uses"
 symref = ".github/workflows/release.yml::jobs.artifacts.uses"
 sig = "066731533155c2b9fa7cf9202e5d711cb899e470c3ab81d4bdfa5aa78fe37f28"
