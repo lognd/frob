@@ -8,8 +8,8 @@ points = 8
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:07Z"
-updated = "2026-10-21T15:12:32Z"
-scope = ["crates/gob-dev/**", "ecosystem.toml", ".github/workflows/**"]
+updated = "2026-10-21T15:15:45Z"
+scope = ["crates/gob-dev/**", "ecosystem.toml", ".github/workflows/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "the report lists per-rule deltas, crashes and timing for at least five pinned projects"
