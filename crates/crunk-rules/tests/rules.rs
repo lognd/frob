@@ -13,11 +13,12 @@ use crunk_rules::rules::{
     org001::Org001, org002::Org002, org003::Org003, org004::Org004, org005::Org005,
     radius001::Radius001, resp001::Resp001, size001::Size001, slop001::Slop001, slop003::Slop003,
     slop004::Slop004, slop010::Slop010, slop011::Slop011, slop014::Slop014, slop022::Slop022,
-    slop040::Slop040, slop060::Slop060, space001::Space001, token002::Token002, token003::Token003,
-    token004::Token004, token005::Token005, token006::Token006, token007::Token007,
-    token008::Token008, token009::Token009, tokens001::Tokens001, tw001::Tw001, tw002::Tw002,
-    tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002, type003::Type003,
-    waive001::Waive001,
+    slop040::Slop040, slop060::Slop060, space001::Space001, state001::State001, state002::State002,
+    state003::State003, state006::State006, state007::State007, token002::Token002,
+    token003::Token003, token004::Token004, token005::Token005, token006::Token006,
+    token007::Token007, token008::Token008, token009::Token009, tokens001::Tokens001, tw001::Tw001,
+    tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002,
+    type003::Type003, waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -50,6 +51,11 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/layout003.rs::Layout003
     // frob:tests crates/crunk-rules/src/rules/layout004.rs::Layout004
     // frob:tests crates/crunk-rules/src/rules/layout005.rs::Layout005
+    // frob:tests crates/crunk-rules/src/rules/state001.rs::State001
+    // frob:tests crates/crunk-rules/src/rules/state002.rs::State002
+    // frob:tests crates/crunk-rules/src/rules/state003.rs::State003
+    // frob:tests crates/crunk-rules/src/rules/state006.rs::State006
+    // frob:tests crates/crunk-rules/src/rules/state007.rs::State007
     // frob:tests crates/crunk-rules/src/rules/org001.rs::Org001
     // frob:tests crates/crunk-rules/src/rules/org002.rs::Org002
     // frob:tests crates/crunk-rules/src/rules/org003.rs::Org003
@@ -113,6 +119,11 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "LAYOUT003" => support::run::<Layout003>(&host),
         "LAYOUT004" => support::run::<Layout004>(&host),
         "LAYOUT005" => support::run::<Layout005>(&host),
+        "STATE001" => support::run::<State001>(&host),
+        "STATE002" => support::run::<State002>(&host),
+        "STATE003" => support::run::<State003>(&host),
+        "STATE006" => support::run::<State006>(&host),
+        "STATE007" => support::run::<State007>(&host),
         "RESP001" => support::run::<Resp001>(&host),
         "ORG001" => support::run::<Org001>(&host),
         "ORG002" => support::run::<Org002>(&host),
@@ -200,6 +211,11 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "SLOP040",
             "SLOP060",
             "SPACE001",
+            "STATE001",
+            "STATE002",
+            "STATE003",
+            "STATE006",
+            "STATE007",
             "TOKEN002",
             "TOKEN003",
             "TOKEN004",
@@ -363,7 +379,7 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 53);
+    assert_eq!(ids.len(), 58);
     assert!(ids.contains(&"SPACE001"));
 }
 
@@ -392,4 +408,21 @@ fn scene_host_accessors_report_inputs_and_subjects() {
     let (left, top, right, bottom) = rect(node);
     assert!(right >= left && bottom >= top);
     assert!(!file.is_content(node));
+}
+
+// frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+// frob:tests crates/crunk-rules/src/host.rs::CrunkHost.screens
+// frob:tests crates/crunk-rules/src/host.rs::missing_screen_inputs
+// frob:tests crates/crunk-rules/src/host.rs::screen_subjects
+#[test]
+fn screen_host_accessors_report_inputs_and_subjects() {
+    use crunk_rules::CrunkHost as _;
+    use crunk_rules::host::{missing_screen_inputs, screen_subjects};
+
+    let without = support::project("css/a.css", "a { color: red; }", None);
+    let reason = missing_screen_inputs(&without).expect("no screen files");
+    assert!(reason.contains("screen.toml"));
+    assert_eq!(screen_subjects(&without), 0);
+    let facts = without.screens().expect("screens loaded");
+    assert!(facts.files.is_empty());
 }

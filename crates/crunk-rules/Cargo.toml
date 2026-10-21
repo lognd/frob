@@ -18,6 +18,7 @@ crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-lock = { version = "0.532.0", path = "../gob-lock" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 indexmap = "2"
+serde_json = "1"
 tracing = "0.1"
 
 [dev-dependencies]

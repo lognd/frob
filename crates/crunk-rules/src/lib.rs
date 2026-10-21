@@ -21,6 +21,7 @@
 //!   `docs/crunk/rules/`.
 //! - [`lint`]: `[lint]` of `crunk.toml` applied to a declared rule or to a finding.
 //! - [`waiver`]: the `crunk:waive` comment: scan, bind to the covered region, turn into exceptions.
+//! - [`screen_files`]: the authored `design/screens/*.screen.toml` files the STATE rules read.
 //! - [`review`]: the pure human review judgment HUMAN001 and HUMAN002 read.
 //! - [`scene_files`]: the solved `design/scenes/*.scene.json` files LAYOUT001-005 and RESP001 read.
 //! - [`host`]: [`host::CrunkHost`], the host trait crunk's rules evaluate against.
@@ -44,6 +45,7 @@ pub mod review;
 pub mod rules;
 pub mod scales;
 pub mod scene_files;
+pub mod screen_files;
 pub mod sheets;
 pub mod slop;
 pub mod tailwind;

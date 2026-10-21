@@ -8,6 +8,7 @@ use crunk_spec::DesignSpec;
 
 use crate::review::ReviewFacts;
 use crate::scene_files::SceneFacts;
+use crate::screen_files::ScreenFacts;
 use crate::tailwind::TailwindFacts;
 use crate::token_files::TokenFacts;
 
@@ -43,6 +44,12 @@ pub trait CrunkHost {
     // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
     /// The authored `design/scenes/*.scene.json` files, solved (the LAYOUT and RESP rules' input).
     fn scenes(&self) -> Option<&SceneFacts> {
+        None
+    }
+
+    // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+    /// The authored `design/screens/*.screen.toml` files (the STATE rules' input).
+    fn screens(&self) -> Option<&ScreenFacts> {
         None
     }
 
@@ -105,4 +112,22 @@ pub fn missing_scene_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
 /// How many solved scene files `host` carries (the LAYOUT and RESP rules' subject count).
 pub fn scene_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
     host.scenes().map_or(0, |facts| facts.files.len())
+}
+
+// frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+/// Why a STATE rule cannot run on `host`, if it cannot: no valid spec, or no screen files.
+pub fn missing_screen_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
+    if host.spec().is_none() {
+        return Some("no valid crunk.toml".to_owned());
+    }
+    match host.screens() {
+        Some(facts) if !facts.files.is_empty() => None,
+        _ => Some("no design/screens/*.screen.toml files".to_owned()),
+    }
+}
+
+// frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+/// How many screen files `host` carries (the STATE rules' subject count).
+pub fn screen_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
+    host.screens().map_or(0, |facts| facts.files.len())
 }

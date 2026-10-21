@@ -481,6 +481,60 @@ pub struct ScreenConfig {
     /// review digest covers; absent means only the spec and every token.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sources: Option<Vec<String>>,
+    // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+    /// Which STATE coverage families apply (interactive, data bound, form, game); absent means none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub kinds: Vec<ScreenKind>,
+    // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+    /// Landmark roles the rendered screen is expected to expose.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub landmarks: Vec<String>,
+    // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+    /// Headings the rendered screen is expected to show.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub headings: Vec<String>,
+    // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+    /// Copy keys the screen's text comes from.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub copy_keys: Vec<String>,
+    // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+    /// Lifecycle status; `ready` and `completed` screens must carry a matching `content_hash`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<ScreenStatus>,
+    // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+    /// Hash of the screen's content when its status was last set (STATE007).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_hash: Option<String>,
+}
+
+// frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+/// What a screen is, which decides the states it must declare (STATE001, 002, 003, 006).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ScreenKind {
+    /// Has interactive components: default, hover, focus-visible, active, disabled.
+    Interactive,
+    /// Shows fetched data: loading, empty, error, partial.
+    DataBound,
+    /// Hosts a form: error, success, validation.
+    Form,
+    /// A game screen: menu-default, pause, disconnect, low-hull, death.
+    Game,
+}
+
+// frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+/// Lifecycle status of a screen spec.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ScreenStatus {
+    /// Being written.
+    Draft,
+    /// Ready for review; the content hash is locked.
+    Ready,
+    /// Edited after being ready or completed.
+    Changed,
+    /// Built and accepted; the content hash is locked.
+    Completed,
 }
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4

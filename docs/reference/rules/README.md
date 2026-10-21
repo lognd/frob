@@ -336,6 +336,16 @@
 |---|---|---|---|---|---|---|
 | [SPACE001](SPACE001.md) | spacing-off-scale | error | manual | P+ | true | Margins, paddings, gaps and insets must be steps of the spacing scale. Each block below is one source |
 
+## STATE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [STATE001](STATE001.md) | interactive-states-missing | warn | manual | P+ | true | A screen declared `interactive` declares default, hover, focus-visible, active and disabled states. Each block is one screen file under `design/screens/` of a default-preset project. |
+| [STATE002](STATE002.md) | data-states-missing | warn | manual | P+ | true | A screen declared `data_bound` declares loading, empty, error and partial states. Each block is one screen file under `design/screens/` of a default-preset project. |
+| [STATE003](STATE003.md) | form-states-missing | warn | manual | P+ | true | A screen declared `form` declares error, success and validation states. Each block is one screen file under `design/screens/` of a default-preset project. |
+| [STATE006](STATE006.md) | game-states-missing | warn | manual | P+ | true | A screen declared `game` declares menu-default, pause, disconnect, low-hull and death states. Each block is one screen file under `design/screens/` of a default-preset project. |
+| [STATE007](STATE007.md) | screen-hash-stale | error | manual | P+ | true | A screen locked as `ready` or `completed` records the hash of its content. Each block is one screen file under `design/screens/` of a default-preset project. |
+
 ## SYS
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

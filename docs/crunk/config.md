@@ -275,12 +275,18 @@ One `[[screen]]` entry: a route, page or activity with named states.
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
 | `applies_to` | array of string | no | `-` | Platform ids and `tag:<name>` entries the screen applies to; absent means every platform. |
+| `content_hash` | string | no | `-` | Hash of the screen's content when its status was last set (STATE007). |
+| `copy_keys` | array of string | no | `-` | Copy keys the screen's text comes from. |
 | `entry` | string | yes | `-` | Entry route, page or activity. |
+| `headings` | array of string | no | `-` | Headings the rendered screen is expected to show. |
 | `id` | string | yes | `-` | Screen id, unique across `[[screen]]`. |
+| `kinds` | array of `interactive` or `data_bound` or `form` or `game` | no | `-` | Which STATE coverage families apply (interactive, data bound, form, game); absent means none. |
+| `landmarks` | array of string | no | `-` | Landmark roles the rendered screen is expected to expose. |
 | `provenance` | `human` or `agent` | no | `-` | Who authored a screen. |
 | `review` | `human` or `skip` | no | `-` | Whether a screen needs a recorded human review. |
 | `sources` | array of string | no | `-` | Source files or directories (relative to the project root) whose bytes and token uses the review digest covers; absent means only the spec and every token. |
 | `states` | array of table | yes | `-` | Named states, at least one. |
+| `status` | `draft` or `ready` or `changed` or `completed` | no | `-` | Lifecycle status of a screen spec. |
 
 ## `[[screen.states]]`
 

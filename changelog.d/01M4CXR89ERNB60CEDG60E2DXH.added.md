@@ -1,0 +1,1 @@
+crunk: screen spec files (design/screens/*.screen.toml) extend [[screen]] with kinds, landmarks, headings, copy keys, status and a content hash; new rules STATE001-003 and STATE006 check required states per screen kind and STATE007 flags a ready or completed screen whose content hash is missing or stale.

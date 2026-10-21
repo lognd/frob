@@ -630,6 +630,7 @@ dependencies = [
  "gob-rules",
  "gob-text",
  "indexmap",
+ "serde_json",
  "tempfile",
  "tracing",
 ]

@@ -103,6 +103,17 @@ properties, the Tailwind theme, USS custom properties, a C# token class
 use it) and Figma-variables JSON. One token source serves the web
 platform and the Unity game.
 
+Screen spec files (`design/screens/*.screen.toml`) extend the `[[screen]]`
+table with `kinds` (interactive, data_bound, form, game), `landmarks`,
+`headings`, `copy_keys`, a `status` (draft, ready, changed, completed)
+and a `content_hash`. Old `[[screen]]` tables still load unchanged. The
+STATE rules read them: STATE001 (interactive), STATE002 (data_bound),
+STATE003 (form) and STATE006 (game) require the states each kind needs;
+STATE007 fires when a ready or completed screen's `content_hash` is
+missing or no longer matches the screen's content. STATE004 (render
+coverage per platform), STATE005 (state diff threshold) and STATE001
+over component files need render output and are follow-ups.
+
 ## 3. Scenes and the layout engine (D111, D113)
 
 The scene format is a restricted HTML and CSS dialect: elements carry

@@ -650,13 +650,48 @@
             "null"
           ]
         },
+        "content_hash": {
+          "description": "Hash of the screen's content when its status was last set (STATE007).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "copy_keys": {
+          "description": "Copy keys the screen's text comes from.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "entry": {
           "description": "Entry route, page or activity.",
           "type": "string"
         },
+        "headings": {
+          "description": "Headings the rendered screen is expected to show.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "id": {
           "description": "Screen id, unique across `[[screen]]`.",
           "type": "string"
+        },
+        "kinds": {
+          "description": "Which STATE coverage families apply (interactive, data bound, form, game); absent means none.",
+          "items": {
+            "$ref": "#/$defs/ScreenKind"
+          },
+          "type": "array"
+        },
+        "landmarks": {
+          "description": "Landmark roles the rendered screen is expected to expose.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "provenance": {
           "anyOf": [
@@ -696,6 +731,17 @@
             "$ref": "#/$defs/ScreenState"
           },
           "type": "array"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScreenStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Lifecycle status; `ready` and `completed` screens must carry a matching `content_hash`."
         }
       },
       "required": [
@@ -704,6 +750,31 @@
         "states"
       ],
       "type": "object"
+    },
+    "ScreenKind": {
+      "description": "What a screen is, which decides the states it must declare (STATE001, 002, 003, 006).",
+      "oneOf": [
+        {
+          "const": "interactive",
+          "description": "Has interactive components: default, hover, focus-visible, active, disabled.",
+          "type": "string"
+        },
+        {
+          "const": "data_bound",
+          "description": "Shows fetched data: loading, empty, error, partial.",
+          "type": "string"
+        },
+        {
+          "const": "form",
+          "description": "Hosts a form: error, success, validation.",
+          "type": "string"
+        },
+        {
+          "const": "game",
+          "description": "A game screen: menu-default, pause, disconnect, low-hull, death.",
+          "type": "string"
+        }
+      ]
     },
     "ScreenState": {
       "additionalProperties": false,
@@ -806,6 +877,31 @@
         "id"
       ],
       "type": "object"
+    },
+    "ScreenStatus": {
+      "description": "Lifecycle status of a screen spec.",
+      "oneOf": [
+        {
+          "const": "draft",
+          "description": "Being written.",
+          "type": "string"
+        },
+        {
+          "const": "ready",
+          "description": "Ready for review; the content hash is locked.",
+          "type": "string"
+        },
+        {
+          "const": "changed",
+          "description": "Edited after being ready or completed.",
+          "type": "string"
+        },
+        {
+          "const": "completed",
+          "description": "Built and accepted; the content hash is locked.",
+          "type": "string"
+        }
+      ]
     },
     "TailwindConfig": {
       "additionalProperties": false,

@@ -1,0 +1,49 @@
+<!-- mdtest: rule=STATE003 -->
+# STATE003 form-states-missing
+
+A screen declared `form` declares error, success and validation states. Each block is one screen file under `design/screens/` of a default-preset project.
+
+## What it does
+
+Fires for each screen file whose `kinds` lists `form` and whose `[[states]]` omit any of error, success and validation. Screens that do not list the kind, and projects with no screen files, are not judged.
+
+## Why it matters
+
+A form with no designed error, success or validation state leaves users unsure whether their input worked.
+
+## Remedy
+
+Add the missing states to the screen file, drop the kind if it does not apply, or waive the rule with a reason.
+
+## Examples
+
+### A missing state fires
+
+```toml expect=fire file=design/screens/home.screen.toml
+id = "home"
+entry = "/"
+kinds = ["form"]
+
+[[states]]
+id = "error"
+
+[[states]]
+id = "success"
+```
+
+### Every state declared is clean
+
+```toml expect=clean file=design/screens/home.screen.toml
+id = "home"
+entry = "/"
+kinds = ["form"]
+
+[[states]]
+id = "error"
+
+[[states]]
+id = "success"
+
+[[states]]
+id = "validation"
+```

@@ -71,6 +71,16 @@ pub mod slop040;
 pub mod slop060;
 /// Rule `SPACE001`.
 pub mod space001;
+/// Rule `STATE001`.
+pub mod state001;
+/// Rule `STATE002`.
+pub mod state002;
+/// Rule `STATE003`.
+pub mod state003;
+/// Rule `STATE006`.
+pub mod state006;
+/// Rule `STATE007`.
+pub mod state007;
 /// Rule `TOKEN002`.
 pub mod token002;
 /// Rule `TOKEN003`.
@@ -146,6 +156,11 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <slop040::Slop040 as gob_rules::RuleDecl>::DEF,
     <slop060::Slop060 as gob_rules::RuleDecl>::DEF,
     <space001::Space001 as gob_rules::RuleDecl>::DEF,
+    <state001::State001 as gob_rules::RuleDecl>::DEF,
+    <state002::State002 as gob_rules::RuleDecl>::DEF,
+    <state003::State003 as gob_rules::RuleDecl>::DEF,
+    <state006::State006 as gob_rules::RuleDecl>::DEF,
+    <state007::State007 as gob_rules::RuleDecl>::DEF,
     <token002::Token002 as gob_rules::RuleDecl>::DEF,
     <token003::Token003 as gob_rules::RuleDecl>::DEF,
     <token004::Token004 as gob_rules::RuleDecl>::DEF,
@@ -215,6 +230,11 @@ where
     slop040::Slop040: gob_rules::RepoRule<P>,
     slop060::Slop060: gob_rules::RepoRule<P>,
     space001::Space001: gob_rules::Measured<P>,
+    state001::State001: gob_rules::Measured<P>,
+    state002::State002: gob_rules::Measured<P>,
+    state003::State003: gob_rules::Measured<P>,
+    state006::State006: gob_rules::Measured<P>,
+    state007::State007: gob_rules::Measured<P>,
     token002::Token002: gob_rules::Measured<P>,
     token003::Token003: gob_rules::Measured<P>,
     token004::Token004: gob_rules::Measured<P>,
@@ -270,6 +290,11 @@ where
     rules.push(gob_rules::BoundRule::repo(slop040::Slop040));
     rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
     rules.push(gob_rules::BoundRule::measured(space001::Space001));
+    rules.push(gob_rules::BoundRule::measured(state001::State001));
+    rules.push(gob_rules::BoundRule::measured(state002::State002));
+    rules.push(gob_rules::BoundRule::measured(state003::State003));
+    rules.push(gob_rules::BoundRule::measured(state006::State006));
+    rules.push(gob_rules::BoundRule::measured(state007::State007));
     rules.push(gob_rules::BoundRule::measured(token002::Token002));
     rules.push(gob_rules::BoundRule::measured(token003::Token003));
     rules.push(gob_rules::BoundRule::measured(token004::Token004));

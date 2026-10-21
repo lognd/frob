@@ -1,0 +1,52 @@
+<!-- mdtest: rule=STATE007 -->
+# STATE007 screen-hash-stale
+
+A screen locked as `ready` or `completed` records the hash of its content. Each block is one screen file under `design/screens/` of a default-preset project.
+
+## What it does
+
+Fires for each screen file whose `status` is `ready` or `completed` and whose `content_hash` is absent or differs from the hash of its current content (blake3 over the screen with `status` and `content_hash` left out). A `draft` or `changed` screen, and a project with no screen files, are not judged.
+
+## Why it matters
+
+The hash is how a reviewed or built screen is told apart from one edited afterwards; without it a locked status can silently describe content nobody reviewed.
+
+## Remedy
+
+Set `status = "changed"` while editing, or record the screen's current hash and keep the status.
+
+## Examples
+
+### A locked screen with no hash fires
+
+```toml expect=fire file=design/screens/home.screen.toml
+id = "home"
+entry = "/"
+status = "ready"
+
+[[states]]
+id = "default"
+```
+
+### A locked screen with a stale hash fires
+
+```toml expect=fire file=design/screens/home.screen.toml
+id = "home"
+entry = "/"
+status = "completed"
+content_hash = "0000"
+
+[[states]]
+id = "default"
+```
+
+### A draft screen is clean
+
+```toml expect=clean file=design/screens/home.screen.toml
+id = "home"
+entry = "/"
+status = "draft"
+
+[[states]]
+id = "default"
+```
