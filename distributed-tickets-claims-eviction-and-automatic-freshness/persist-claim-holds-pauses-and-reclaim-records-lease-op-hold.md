@@ -2,7 +2,8 @@
 id = "01M5E0F8MC9XT2PCCB9XG6E8X3"
 title = "Persist claim holds, pauses and reclaim records (lease op hold/resume/reclaim)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
