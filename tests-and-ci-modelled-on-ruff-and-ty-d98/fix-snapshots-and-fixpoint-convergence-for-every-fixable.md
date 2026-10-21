@@ -9,7 +9,7 @@ parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:00Z"
 updated = "2026-10-21T20:46:34Z"
-scope = ["crates/gob-fix/**", "crates/gob-mdtest/**", "docs/design/build-test-ci.md"]
+scope = ["crates/gob-fix/**", "crates/gob-mdtest/**", "docs/design/build-test-ci.md", "changelog.d/01M47QTVCF0WDJWM22AG4WAFJT.added.md"]
 
 [[links]]
 kind = "blocked-by"
