@@ -120,6 +120,23 @@ fn evict_policy(auto: bool) -> frob_worktree::next::EvictPolicy {
     }
 }
 
+/// A policy with `[claims] evict_human` set to `confirm` or `auto`.
+fn human_policy(confirm: bool) -> frob_worktree::next::EvictPolicy {
+    let mut p = evict_policy(true);
+    let claims = frob_ledger::claim_window::ClaimsTable {
+        evict_human: if confirm {
+            frob_ledger::claim_window::EvictKnob::Confirm
+        } else {
+            frob_ledger::claim_window::EvictKnob::Auto
+        },
+        ..frob_ledger::claim_window::ClaimsTable::default()
+    };
+    let class = frob_ledger::claim_window::ClaimsClassTable::default();
+    p.windows =
+        frob_ledger::claim_window::ClaimWindows::from_tables(&claims, &class).expect("windows");
+    p
+}
+
 /// Claim `handle` as an agent and seed this clone's observation so idle time counts from now.
 fn agent_claim(fx: &Fixture, leases: &LeaseStore, handle: &str) {
     let ledger = fx.ledger();
@@ -246,4 +263,30 @@ fn a_fresh_claim_and_a_missing_reason_are_refused() {
     assert_eq!(code(fresh), "E-CLAIM-NOT-IDLE");
     let blank = ws.evict_claim(&t, "  ", false, &policy).unwrap_err();
     assert!(matches!(blank, WorktreeError::Usage(_)));
+}
+
+// frob:ticket 01M5DZJ9CK1TJFCDX2T2NF1WE3
+// frob:tests evict_claim
+#[test]
+fn evict_human_confirm_needs_yes_for_a_human_holder_and_auto_does_not() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let leases = fx.leases().with_agent(None);
+    let (_, handle) = new_ticket(&fx.ledger());
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    agent_claim(&fx, &leases, &handle);
+    let ledger = ledger_ahead(&fx, 4 * 24 * 3600);
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let t = format!("~{handle}");
+    let refused = ws
+        .evict_claim(&t, "away", false, &human_policy(true))
+        .unwrap_err();
+    assert_eq!(code(refused), E_EVICT_CONFIRM);
+    let done = ws
+        .evict_claim(&t, "away", false, &human_policy(false))
+        .expect("auto evicts a human claim");
+    assert!(!done.flapped);
 }

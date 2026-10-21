@@ -171,6 +171,11 @@
           "default": "auto",
           "description": "`auto` lets `frob work --next` evict an idle agent claim when nothing else is claimable; `confirm` never does."
         },
+        "evict_human": {
+          "$ref": "#/$defs/EvictKnob",
+          "default": "auto",
+          "description": "`auto` lets an idle human claim be evicted without a confirmation (design D-4); `confirm` makes `frob claim evict` need `--yes` for a human holder."
+        },
         "evict_rate": {
           "default": 5,
           "description": "Most automatic evictions one clone performs per local calendar day.",

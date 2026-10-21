@@ -70,6 +70,9 @@ pub struct ClaimsTable {
     /// `auto` lets `frob work --next` evict an idle agent claim when nothing else is claimable; `confirm` never does.
     #[config(default = EvictKnob::Auto)]
     pub evict_agent: EvictKnob,
+    /// `auto` lets an idle human claim be evicted without a confirmation (design D-4); `confirm` makes `frob claim evict` need `--yes` for a human holder.
+    #[config(default = EvictKnob::Auto)]
+    pub evict_human: EvictKnob,
     /// Most automatic evictions one clone performs per local calendar day.
     #[config(default = 5)]
     pub evict_rate: u32,
@@ -109,6 +112,7 @@ pub struct ClaimWindows {
     max_hold_days: u32,
     paused_max_days: u32,
     evict_agent: EvictKnob,
+    evict_human: EvictKnob,
     evict_rate: u32,
 }
 
@@ -125,6 +129,7 @@ impl Default for ClaimWindows {
             max_hold_days: 30,
             paused_max_days: 14,
             evict_agent: EvictKnob::Auto,
+            evict_human: EvictKnob::Auto,
             evict_rate: 5,
         }
     }
@@ -159,6 +164,7 @@ impl ClaimWindows {
             max_hold_days: claims.max_hold_days,
             paused_max_days: claims.paused_max_days,
             evict_agent: claims.evict_agent,
+            evict_human: claims.evict_human,
             evict_rate: claims.evict_rate,
         })
     }
@@ -168,6 +174,13 @@ impl ClaimWindows {
     #[must_use]
     pub fn evict_agent_auto(&self) -> bool {
         self.evict_agent == EvictKnob::Auto
+    }
+
+    /// True when `[claims] evict_human = "auto"`: an idle human claim may be evicted without `--yes`.
+    // frob:ticket 01M5DZJ9CK1TJFCDX2T2NF1WE3
+    #[must_use]
+    pub fn evict_human_auto(&self) -> bool {
+        self.evict_human == EvictKnob::Auto
     }
 
     /// Automatic evictions one clone may perform per day (`[claims] evict_rate`).
@@ -547,6 +560,24 @@ mod tests {
         let w = ClaimWindows::from_tables(&c, &k).expect("confirm");
         assert!(!w.evict_agent_auto());
         assert_eq!(w.evict_rate(), 2);
+    }
+
+    // frob:ticket 01M5DZJ9CK1TJFCDX2T2NF1WE3
+    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.evict_human_auto
+    #[test]
+    fn evict_human_defaults_to_auto_and_follows_the_table() {
+        let k = ClaimsClassTable::default();
+        let d = ClaimWindows::from_tables(&ClaimsTable::default(), &k).expect("defaults");
+        assert!(d.evict_human_auto());
+        let c = ClaimsTable {
+            evict_human: EvictKnob::Confirm,
+            ..ClaimsTable::default()
+        };
+        assert!(
+            !ClaimWindows::from_tables(&c, &k)
+                .expect("confirm")
+                .evict_human_auto()
+        );
     }
 
     // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.idle_secs

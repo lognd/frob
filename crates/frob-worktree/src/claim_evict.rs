@@ -10,7 +10,7 @@
 // frob:ticket 01M5DTGG9XWMEBRA51PA6CYWAE
 
 use frob_ledger::TicketId;
-use frob_ledger::claim_window::EVICT_NOTE_MARKER;
+use frob_ledger::claim_window::{EVICT_NOTE_MARKER, HolderKind};
 use frob_ledger::event::{Event, EventBody};
 use frob_ledger::model::Category;
 use gob_diagnostics::{Refusal, RefusalClass};
@@ -189,15 +189,23 @@ impl Workspace<'_> {
         checked.map_err(|why| precondition_refusal(why, &handle))?;
         let ages = prior_eviction_ages(&self.ledger.events(id)?, &holder, now);
         let flapped = flap_review(&ages) == FlapReview::NeedsHuman;
-        if flapped && !yes {
+        let confirm_human =
+            lease.holder_kind() == HolderKind::Human && !policy.windows.evict_human_auto();
+        if (flapped || confirm_human) && !yes {
+            let why = if flapped {
+                format!(
+                    "was already evicted in the last {} days; a repeat needs a human to confirm",
+                    crate::evict::FLAP_REPEAT_DAYS
+                )
+            } else {
+                "is held by a human and `[claims] evict_human = \"confirm\"`".to_owned()
+            };
+            tracing::info!(%holder, flapped, confirm_human, "claim evict needs confirmation");
             return Err(WorktreeError::Refused(
                 Refusal::new(
                     E_EVICT_CONFIRM,
                     RefusalClass::GuardNeedsAction,
-                    format!(
-                        "{holder}'s claim on {handle} was already evicted in the last {} days; a repeat needs a human to confirm",
-                        crate::evict::FLAP_REPEAT_DAYS
-                    ),
+                    format!("{holder}'s claim on {handle} {why}"),
                 )
                 .with_remedy(format!(
                     "rerun `frob claim evict {handle} --reason <why> --yes` to confirm"
