@@ -8,11 +8,23 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T07:03:15Z"
-updated = "2026-10-21T20:58:52Z"
+updated = "2026-10-21T21:13:28Z"
 scope = ["crates/*/tests/mdtest/**", "crates/gob-mdtest/coverage-allowlist.toml", "changelog.d/01M480C43A6BCH54NX8C5DQ4WJ.changed.md", "crates/gob-mdtest/FORMAT.md", "docs/design/testing.md", "crates/frob-pm/tests/corpus.rs", "crates/gob-config/tests/cfg001_corpus.rs", "crates/frob-check/tests/corpus.rs", "crates/frob-obligations/tests/corpus.rs", "crates/gob-directives/tests/*.rs"]
 
 [[acceptance]]
-text = "every listed rule has an mdtest fire/clean pair or a fixture and no frob entry remains in the allowlist"
+text = "Every frob-pm Unresolved rule (PM003-PM012, PM031, PM032) has an unresolved mdtest case"
+bound = false
+
+[[acceptance]]
+text = "The frob-obligations language matrix cells for TODO001, COV001 (binary), REF001, TICK006, DOC001 and DOC002 are filled"
+bound = false
+
+[[acceptance]]
+text = "READ001, SIB001, TOOL001 and TICK007 each have an unresolved mdtest case"
+bound = false
+
+[[acceptance]]
+text = "The allowlist shrank and every remaining frob entry is tracked by a ticket"
 bound = false
 +++
 

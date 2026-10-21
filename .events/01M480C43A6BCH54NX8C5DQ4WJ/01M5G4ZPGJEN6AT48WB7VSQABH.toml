@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["every listed rule has an mdtest fire/clean pair or a fixture and no frob entry remains in the allowlist"]
+new = ["Every frob-pm Unresolved rule (PM003-PM012, PM031, PM032) has an unresolved mdtest case", "The frob-obligations language matrix cells for TODO001, COV001 (binary), REF001, TICK006, DOC001 and DOC002 are filled", "READ001, SIB001, TOOL001 and TICK007 each have an unresolved mdtest case", "The allowlist shrank and every remaining frob entry is tracked by a ticket"]
+moved = [0]
+at = "2026-10-21T21:13:28Z"
+actor = "lognd"
+rev = 1
