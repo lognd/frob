@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/*/benches/**", "crates/gob-dev/**", ".github/workflows/**", "docs/design/build-test-ci.md", "Cargo.toml", "Cargo.lock", "crates/gob-plan/Cargo.toml"]
+new = ["crates/*/benches/**", "crates/gob-dev/**", ".github/workflows/**", "docs/design/build-test-ci.md", "Cargo.toml", "Cargo.lock", "crates/gob-plan/Cargo.toml", "changelog.d/01M47QVC49RXV29NCG3N9G1JSM.added.md"]
+at = "2026-10-21T13:16:34Z"
+actor = "lognd"
+rev = 1
