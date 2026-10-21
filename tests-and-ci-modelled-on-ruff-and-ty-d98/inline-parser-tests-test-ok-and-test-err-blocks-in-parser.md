@@ -2,13 +2,13 @@
 id = "01M47QTW8CA2FD3BQTH2GG2KXR"
 title = "Inline parser tests: test_ok and test_err blocks in parser source, extracted by cargo dev gen"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T04:34:01Z"
-updated = "2026-10-06T04:34:01Z"
+updated = "2026-10-21T14:10:50Z"
 scope = ["crates/gob-dev/**", "crates/gob-plan/**", "crates/grimble-model/**", "crates/gob-directives/**", "crates/crunk-spec/**"]
 
 [[acceptance]]
