@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the corpus mdtest, when it runs, then every case in doc002.md passes"]
+moved = []
+at = "2026-10-22T15:45:15Z"
+actor = "lognd"
+rev = 1
