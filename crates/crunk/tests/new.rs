@@ -181,3 +181,40 @@ fn dry_run_writes_nothing() {
     assert_eq!(exit, 0, "{out} {err}");
     assert_eq!(tree(dir.path()), before);
 }
+
+// frob:ticket 01M5JHRGCES4BCHCNBCB7WWZ9F
+// frob:tests crates/crunk/src/new.rs::New.run
+#[test]
+fn new_flow_output_passes_the_flow_validator() {
+    let dir = project();
+    let (exit, out, err) = crunk(dir.path(), &["new", "flow", "signup"]);
+    assert_eq!(exit, 0, "{out} {err}");
+    let text = std::fs::read_to_string(design(dir.path(), "flows", "signup.flow.toml")).unwrap();
+    let flow = crunk_spec::parse_flow_file(&text).expect("skeleton validates");
+    assert_eq!(flow.name, "signup");
+}
+
+// frob:ticket 01M5JHRGCES4BCHCNBCB7WWZ9F
+// frob:tests crates/crunk/src/new.rs::New.run
+#[test]
+fn from_a_flow_with_a_dangling_edge_is_refused_with_code_and_location() {
+    let dir = project();
+    let src = dir.path().join("bad.flow.toml");
+    std::fs::write(
+        &src,
+        "name = \"old\"\nnodes = [\"a:x\"]\n[[edges]]\nfrom = \"a:x\"\nto = \"b:y\"\ntrigger = \"click\"\n",
+    )
+    .unwrap();
+    let before = tree(dir.path());
+    let (exit, out, err) = crunk(
+        dir.path(),
+        &["new", "flow", "fresh", "--from", "bad.flow.toml"],
+    );
+    assert_ne!(exit, 0, "{out} {err}");
+    let all = format!("{out}{err}");
+    assert!(
+        all.contains("E-FLOW-DANGLING") && all.contains("edges[0].to"),
+        "{all}"
+    );
+    assert_eq!(tree(dir.path()), before);
+}

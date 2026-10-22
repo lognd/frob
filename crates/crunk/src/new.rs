@@ -241,8 +241,7 @@ fn skeleton(kind: &str, name: &str) -> String {
     }
 }
 
-/// Check `text` against the schema of `kind`; flows have no schema yet, so they only have to be
-/// TOML.
+/// Check `text` against the schema of `kind`; a flow error leads with its code and location.
 fn validate(kind: &str, text: &str) -> Result<(), String> {
     match kind {
         "screen" => crunk_spec::parse_screen_file(text)
@@ -254,10 +253,9 @@ fn validate(kind: &str, text: &str) -> Result<(), String> {
         "token" => crunk_tokens::dialect::parse(text, "new")
             .map(drop)
             .map_err(|e| e.to_string()),
-        _ => text
-            .parse::<toml_edit::DocumentMut>()
+        _ => crunk_spec::parse_flow_file(text)
             .map(drop)
-            .map_err(|e| e.to_string()),
+            .map_err(|e| format!("{} at {}: {e}", e.code(), e.location())),
     }
 }
 
