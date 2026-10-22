@@ -1,0 +1,12 @@
+kind = "create"
+title = "Fix scrub test lease fixture missing op"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["crates/frob-ledger/tests/scrub.rs"]
+acceptance = ["frob-ledger scrub tests pass with a lease event carrying op"]
+body = "The hand-written lease event in fixture() lacks the now-required op field, so 3 scrub tests fail with missing field 'op'."
+at = "2026-10-22T03:55:44Z"
+actor = "lognd"
+rev = 1
