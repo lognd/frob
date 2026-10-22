@@ -2,12 +2,12 @@
 id = "01M5HYRXMB54SZ7KN3W6EQFB65"
 title = "Orphan ticket branch .gitattributes gets no tickets eol=lf pin under core.autocrlf"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T14:03:23Z"
-updated = "2026-10-22T16:45:17Z"
+updated = "2026-10-22T16:45:19Z"
 scope = ["crates/frob-ledger/**", "changelog.d/**"]
 
 [[acceptance]]
