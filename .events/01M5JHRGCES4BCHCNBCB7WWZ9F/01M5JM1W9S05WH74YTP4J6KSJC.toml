@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a valid flow file, when validated by crunk-spec, then it passes", "Given a flow file with a missing or unknown key or a dangling step reference, when validated, then a coded error names the location", "Given crunk new flow, when it writes a flow file, then the output passes the validator"]
+moved = []
+at = "2026-10-22T20:15:17Z"
+actor = "lognd"
+rev = 1
