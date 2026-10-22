@@ -1,0 +1,46 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T20:23:03Z"
+digest = "54aa0f8cb643d9be1db7e6c7a2e2a245b3a05a24c0d4d78c9e7609dc53961635"
+exit_code = 100
+failed_tests = ["remedies::remedies_name_only_existing_commands_and_flags"]
+head = "0b2465c3a7f36fb77b262b0399afec8ce3312e51"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f390e890-24de-447c-a2d9-8deaf67c3415 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        FAIL [   0.412s] frob-cli::siblings remedies::remedies_name_only_existing_commands_and_flags
+  output \u{2500}\u{2500}\u{2500}
+
+    running 1 test
+
+    thread 'remedies::remedies_name_only_existing_commands_and_flags' (3528040) panicked at crates/frob/tests/siblings/remedies.rs:192:5:
+    remedies naming unknown commands or flags:
+    ~/projects/frob-wt/YX6GQNR/crates/frob/../frob-worktree/src/claim_restore.rs:54: frob work has no flag --from (in `work {handle} --from <parked branch>`)
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+    test remedies::remedies_name_only_existing_commands_and_flags ... FAILED
+
+    failures:
+
+    failures:
+        remedies::remedies_name_only_existing_commands_and_flags
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.40s
+
+
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.413s] 1 test run: 0 passed, 1 failed, 5 skipped
+        FAIL [   0.412s] frob-cli::siblings remedies::remedies_name_only_existing_commands_and_flags
+error: test run failed
+'''
+passed = false
+provider = "nextest"
+ref = "-p frob-cli --test siblings remedies_name_only_existing_commands_and_flags"
+size = 1453
+status = "measured"
+test_count = 1
+tests_digest = "e89175ba77d1ed2865570941c1948ffd16bbf1eab4a0231fa0bfa00ff380c5a9"
+at = "2026-10-22T20:23:03Z"
+actor = "lognd"
+rev = 1
