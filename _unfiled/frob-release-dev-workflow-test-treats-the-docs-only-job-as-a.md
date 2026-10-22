@@ -2,12 +2,12 @@
 id = "01M5GVVBYCPX09T4N4E0HV9K7N"
 title = "frob-release dev_workflow test treats the docs-only job as a test job the dev channel must await"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:53:03Z"
-updated = "2026-10-22T03:53:03Z"
+updated = "2026-10-22T03:53:06Z"
 scope = ["crates/frob-release/tests/it/dev_workflow.rs"]
 
 [[acceptance]]
