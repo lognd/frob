@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:49Z"
-updated = "2026-10-22T08:02:15Z"
-scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-layout/**", "crates/crunk-rules/**", "crates/crunk-scene/**", "docs/crunk/rules/**", "docs/design/crunk.md", "docs/reference/rules/**"]
+updated = "2026-10-22T08:02:16Z"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-layout/**", "crates/crunk-rules/**", "crates/crunk-scene/**", "docs/crunk/rules/**", "docs/design/crunk.md", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a menu scene with an unreachable button, when checked, then the GX focus rule fires naming it"
