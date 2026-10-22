@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T00:25:33Z"
+digest = "8decfbee36c74df82104e413d19a3fc73e9a4439c692c05689df2c3a7c767026"
+exit_code = 0
+head = "ca180955a9243d54c835c735457127ba8be3f438"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 39472655-17f6-4da1-9267-9c31a1949718 with nextest profile: default
+    Starting 1 test across 2 binaries (310 tests skipped)
+        PASS [   0.008s] gob-symbols::it typescript_consteval::let_var_and_parameters_are_not_constant
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 310 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols let_var_and_parameters_are_not_constant"
+size = 570
+status = "measured"
+test_count = 1
+tests_digest = "42742294679afa9a5ff33d1dd9b99c5211ad6f4a1195bc7d8ff6d6dcbc9d5de3"
+at = "2026-10-22T00:25:33Z"
+actor = "lognd"
+rev = 1

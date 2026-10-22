@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "let/var/parameters stay Unknown and a local const cycle is reported as Cycle"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "ns.NAME of an import * as ns evaluates (through re-exports); a shadowed ns, default import or missing member stays Unknown"
