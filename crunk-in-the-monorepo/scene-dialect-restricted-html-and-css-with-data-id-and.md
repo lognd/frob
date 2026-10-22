@@ -2,7 +2,8 @@
 id = "01M4CXRDTCFVJ4VPZKAJ22BXS0"
 title = "Scene dialect: restricted HTML and CSS with data-id and component tags; SCENE001 for unsupported properties"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
