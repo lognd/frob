@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T00:51:12Z"
+digest = "2f8d7514ec3f805d5dbbc5f0342bd7dec07ae123b81498d691710d2d71138a0a"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 34a0f2b8-1c57-4693-9820-6d68f4d79145 with nextest profile: default
+    Starting 1 test across 5 binaries (33 tests skipped)
+        PASS [   0.137s] gob-config::cfg001_fix partial_file_gains_missing_knobs_and_keeps_comments
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.138s] 1 test run: 1 passed, 33 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-config partial_file_gains"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "e62bcf59827a6e7368cad667969cec34e39d0626aa07b0b30cd0281583373f1b"
+at = "2026-10-22T00:51:12Z"
+actor = "lognd"
+rev = 1
