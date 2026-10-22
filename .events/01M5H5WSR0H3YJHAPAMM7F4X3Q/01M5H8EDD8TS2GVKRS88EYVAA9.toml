@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T07:33:01Z"
+digest = "86d7f07dc99a4ef3b55231a8ace8e4c5fdebd8d252c6d3e5f6c039230def08d9"
+exit_code = 0
+head = "6acfee7afeb97173e5998b3712d96ba8bf1963b4"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e6e6dadf-fb60-430c-807e-79e81ab984b9 with nextest profile: default
+    Starting 2 tests across 1 binary (368 tests skipped)
+        PASS [   0.331s] frob-cli::it ticket_scrub::placeholders_follow_the_repair_rules
+        PASS [   0.745s] frob-cli::it ticket_scrub::doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.746s] 2 tests run: 2 passed, 368 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test it ticket_scrub"
+size = 724
+status = "measured"
+test_count = 2
+tests_digest = "4f9a140071c04c800a86255d92142f26cce6d98bfe9f7ff5adcdb808a770cc62"
+at = "2026-10-22T07:33:01Z"
+actor = "lognd"
+rev = 1
