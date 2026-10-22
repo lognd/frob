@@ -368,16 +368,6 @@
           "const": "formatter-list",
           "description": "Formatter check-mode output (rustfmt, ruff format, prettier, dotnet format, gofmt): one `FMT001` per unformatted file.",
           "type": "string"
-        },
-        {
-          "const": "semver-checks-text",
-          "description": "`cargo semver-checks` text report (stderr): one `VERSION001` per broken public item; a crate whose header reports a breaking bump yields none.",
-          "type": "string"
-        },
-        {
-          "const": "griffe-text",
-          "description": "`griffe check` one-line breakages (`path:LINE: object: message`): one `VERSION001` each.",
-          "type": "string"
         }
       ]
     },
