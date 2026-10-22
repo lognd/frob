@@ -529,6 +529,7 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
         | ToolParser::EslintJson
+        | ToolParser::FormatterList
         | ToolParser::RoslynSarif => &[0, 1],
         // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
         // tsc exits 1 on diagnostics with emit skipped and 2 on diagnostics with emit generated.
@@ -641,7 +642,14 @@ fn execute(
             &output.stderr,
         ));
     }
-    if output.status != Outcome::Exited(0) && output.stdout.trim().is_empty() {
+    // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
+    // Formatters split their report across both streams (ruff and prettier warn on stderr), so read both.
+    let text = if stage.parser == ToolParser::FormatterList {
+        format!("{}\n{}", output.stdout, output.stderr)
+    } else {
+        output.stdout.clone()
+    };
+    if output.status != Outcome::Exited(0) && text.trim().is_empty() {
         return StageResult::Failed(failure(
             stage,
             &stage.args,
@@ -650,7 +658,7 @@ fn execute(
             &output.stderr,
         ));
     }
-    match parse(stage.parser, &output.stdout) {
+    match parse(stage.parser, &text) {
         Ok(raws) => {
             tracing::info!(stage = %stage.name, findings = raws.len(), "tool output parsed");
             StageResult::Done(raws)
@@ -661,6 +669,45 @@ fn execute(
             &format!("printed output its parser cannot read ({err})"),
             &status_text(&output),
             &output.stderr,
+        )),
+    }
+}
+
+// frob:ticket 01M4D94J5J2TZEXTB8GH36992B
+/// Run `stage`'s fix command `args` under the same trust gate as its check; `Err` is the reason it did not complete.
+pub(crate) fn run_fix(
+    root: &Path,
+    stage: &ToolStage,
+    trust: Option<&dyn ToolTrust>,
+    args: &[String],
+) -> Result<(), String> {
+    let pack = vet(root, stage, trust).map_err(|result| match result {
+        StageResult::Missing(m)
+        | StageResult::Untrusted(m)
+        | StageResult::Failed(m)
+        | StageResult::Problem(m)
+        | StageResult::Lag(m) => m,
+        StageResult::Done(_) => String::new(),
+    })?;
+    let runner = Runner::new(Limits::default()).allow_tools([stage.command.clone()]);
+    match launch(&runner, root, stage, pack.as_ref(), args.to_vec()) {
+        Ok(o) if o.status == Outcome::Exited(0) => {
+            tracing::info!(stage = %stage.name, "fix command finished");
+            Ok(())
+        }
+        Ok(o) => Err(failure(
+            stage,
+            args,
+            "fix command failed",
+            &status_text(&o),
+            &o.stderr,
+        )),
+        Err(err) => Err(failure(
+            stage,
+            args,
+            &format!("fix command could not run ({err})"),
+            "not run",
+            "",
         )),
     }
 }
@@ -1389,6 +1436,26 @@ mod tests {
                 &["could not run", "failed to spawn"],
             );
         }
+    }
+
+    // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
+    #[test]
+    fn formatter_check_output_yields_one_fmt001_per_file() {
+        if !gob_exec::require_sh("formatter_check_output_yields_one_fmt001_per_file") {
+            return;
+        }
+        let script = "echo 'Diff in src/lib.rs:3:'; echo 'Diff in src/lib.rs:9:'; \
+            echo 'Would reformat: app/main.py'; echo 'Would reformat: app/main.py'; \
+            echo '[warn] web/index.ts' >&2; echo '[warn] Code style issues found in the above file.' >&2; \
+            echo 'Game/Player.cs(4,1): error WHITESPACE: Fix whitespace formatting.'; exit 1";
+        let stage = sh_stage("fmt", ToolParser::FormatterList, script, VERSION_OK);
+        let found = run_one(&stage);
+        assert!(
+            found.iter().all(|f| f.rule.as_str() == "FMT001"),
+            "{found:?}"
+        );
+        assert_eq!(found.len(), 4, "{found:?}");
     }
 
     // frob:tests crates/gob-check/src/tools.rs::start_tools

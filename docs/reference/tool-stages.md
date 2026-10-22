@@ -10,12 +10,12 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | Key | Default | Meaning |
 |---|---|---|
 | `name` | required | Stage name; prefixes every message (`zizmor/unpinned-uses: ...`). |
-| `def` | unset | Name of a std-pack tool definition (`zizmor`, `actionlint`, `ruff`); see Tool definitions. |
+| `def` | unset | Name of a std-pack tool definition (`zizmor`, `actionlint`, `ruff`, `rustfmt`, `ruff-format`, `prettier`, `dotnet-format`); see Tool definitions. |
 | `command` | required (unset with `def`) | Program on `PATH` (no separators); the allowlist is the set of stage commands. |
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `tsc-text`, `eslint-json`, `roslyn-sarif` or `typos-json`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `tsc-text`, `eslint-json`, `roslyn-sarif`, `typos-json` or `formatter-list`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -87,6 +87,7 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | ruff-json | `PLR2004` | off (dropped) | none |
 | ruff-json | any other code | `LINT001` | Advisory |
 | typos-json | any typo | `SPELL001` | Advisory |
+| formatter-list | every file the formatter would rewrite (one per file) | `FMT001` | Warn |
 
 The cargo-json severity is the rustc level: `error` is Error, `warning` is Warn. Summary lines (`aborting due to`, `warnings emitted`) are not findings; build artifacts and other non-diagnostic lines are skipped. A diagnostic repeated for each cargo target is reported once per site.
 
@@ -128,3 +129,7 @@ version_args = ["zizmor@1.30.1", "--version"]
 min_version = "1.30.0"
 max_version = "1.30.99"
 ```
+
+## Formatter stages
+
+`parser = "formatter-list"` reads the check mode of a formatter and reports one `FMT001` per unformatted file. It reads stdout and stderr together (prettier writes its list to stderr) and recognises the `Diff in <path>:N:` lines of rustfmt, `Would reformat: <path>` of ruff format, `[warn] <path>` of prettier, `<path>(l,c): error ...` of dotnet format and a bare path. Exit 0 and 1 are normal. The std definitions `rustfmt`, `ruff-format`, `prettier` and `dotnet-format` carry `[fix] unattended = true`, so `frob check --fix` is a tier A fix: it runs the formatter's write command over the flagged files and re-checks. Only files inside the run's scope (`--ticket` scope globs) are passed to the formatter; a flagged file outside the scope is left alone and reported as skipped with its `frob lease widen` hint, and a file a formatter touches anyway (a rustfmt child module) is restored byte for byte. A formatter that is missing, untrusted or exits non-zero fails the fix with `E-CHECK-FIX-IO`.

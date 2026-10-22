@@ -145,6 +145,10 @@ pub enum ToolParser {
     // frob:ticket 01M4D94X9ESER47HCP4DTW2X7C
     #[serde(rename = "roslyn-sarif")]
     RoslynSarif,
+    /// Formatter check-mode output (rustfmt, ruff format, prettier, dotnet format, gofmt): one `FMT001` per unformatted file.
+    // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
+    #[serde(rename = "formatter-list")]
+    FormatterList,
 }
 
 /// The earliest check level that runs a tool stage (`tier` of `[[check.tool]]`).

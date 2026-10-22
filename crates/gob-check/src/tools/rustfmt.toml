@@ -1,0 +1,17 @@
+# rustfmt via cargo: Rust formatter in check mode (FMT001, fix tier A).
+name = "rustfmt"
+command = "cargo"
+pinned_version = "1.8.0"
+parser = "formatter-list"
+version_args = ["fmt", "--version"]
+args = ["fmt", "--all", "--", "--check"]
+inputs = ["**/*.rs"]
+config_files = ["rustfmt.toml", ".rustfmt.toml"]
+
+[fix]
+args = ["fmt", "--all", "--"]
+unattended = true
+
+[exit]
+success = [0]
+findings = [1]
