@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T00:25:32Z"
+digest = "c36220df8a63c7ff9123919102cec77b6a8b760b1c6987b99d8956efd5e0ef0d"
+exit_code = 0
+head = "ca180955a9243d54c835c735457127ba8be3f438"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fb1b50f4-bc40-413f-b6c8-0b1ab88be383 with nextest profile: default
+    Starting 2 tests across 2 binaries (309 tests skipped)
+        PASS [   0.008s] gob-symbols::it typescript_consteval::a_local_const_shadows_a_module_const
+        PASS [   0.008s] gob-symbols::it typescript_consteval::a_local_const_shadows_an_import
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 2 tests run: 2 passed, 309 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols a_local_const_shadows"
+size = 664
+status = "measured"
+test_count = 2
+tests_digest = "43fe51a544a8c363df62db88d7f41ca726888dcb94f2bfad0d6650c9bc30a8d0"
+at = "2026-10-22T00:25:32Z"
+actor = "lognd"
+rev = 1
