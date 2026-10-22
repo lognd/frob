@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:44Z"
-updated = "2026-10-22T02:50:36Z"
+updated = "2026-10-22T02:50:39Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/frob-worktree/**", "docs/guides/**"]
 
 [[acceptance]]
@@ -37,7 +37,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a worktree dir that escapes the repo, when frob work runs, then no ignore line is added"
-bound = false
+bound = true
 +++
 
 notes/review/adoption-trial-2026-10-07.md agent ergonomics: no generator for agent config; default worktree root ../repo-wt is outside the repository, which a sandboxed agent may not write. After ~MQ1NM4Q lands, the MCP entry points at frob serve.

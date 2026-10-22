@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [7]
+captured_at = "2026-10-22T02:50:39Z"
+digest = "94995332b6ee14dbc96cba16dc1648c9990246ba7f0cd2fd682f3db31856f63e"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7a34f028-8c65-4e18-9463-b37d2922c5c5 with nextest profile: default
+    Starting 1 test across 1 binary (31 tests skipped)
+        PASS [   0.170s] frob-worktree::work a_worktree_dir_that_escapes_the_repository_adds_no_ignore_line
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.171s] 1 test run: 1 passed, 31 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree --test work a_worktree_dir_that_escapes"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "2785ce32752469adcfe1b980288ced99305e1bd90b2cf7a4084da4fce507e0c5"
+at = "2026-10-22T02:50:39Z"
+actor = "lognd"
+rev = 1
