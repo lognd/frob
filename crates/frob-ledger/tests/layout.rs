@@ -334,3 +334,33 @@ fn a_mirrored_ticket_reports_its_issue_number_and_an_unmirrored_one_none() {
     assert_eq!(ledger.mirror_issue(mirrored).expect("read"), Some(17));
     assert_eq!(ledger.mirror_issue(plain).expect("read"), None);
 }
+
+// frob:ticket 01M5HYRXMB54SZ7KN3W6EQFB65
+// frob:tests crates/frob-ledger/src/branch.rs::init_branch
+#[test]
+fn an_orphan_branch_made_under_autocrlf_pins_ledger_text_to_lf_and_a_second_init_changes_nothing() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let repo = Repo::init(dir.path()).expect("init");
+    let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
+    std::fs::write(
+        repo.git_dir().join("config"),
+        format!("{cfg}[core]\n\tautocrlf = true\n[user]\n\tname = T\n\temail = t@example.com\n"),
+    )
+    .expect("config write");
+    drop(repo);
+    let repo = Repo::discover(dir.path()).expect("discover");
+    let first = init_branch(&repo, BRANCH, 5).expect("first init");
+    assert!(matches!(first, frob_ledger::branch::BranchInit::Created(_)));
+    let tip = repo.rev_parse(BRANCH).expect("tip");
+    let attrs = repo
+        .read_blob_at(BRANCH, ".gitattributes")
+        .expect("read")
+        .expect("present");
+    let text = String::from_utf8(attrs).expect("utf8");
+    assert!(text.lines().any(|l| l == "*.md text eol=lf"), "{text}");
+    assert!(text.lines().any(|l| l == "*.toml text eol=lf"), "{text}");
+    assert!(text.contains("merge=frob-ledger"), "{text}");
+    let second = init_branch(&repo, BRANCH, 5).expect("second init");
+    assert!(matches!(second, frob_ledger::branch::BranchInit::Already(t) if t == tip));
+    assert_eq!(repo.rev_parse(BRANCH).expect("tip again"), tip);
+}
