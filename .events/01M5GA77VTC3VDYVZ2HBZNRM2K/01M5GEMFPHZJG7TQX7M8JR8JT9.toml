@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T00:02:06Z"
+digest = "602b2de02aab6f18563e18c7c33eca73bb69f6ebfc6fc237a50e4cb46ebd01a0"
+exit_code = 0
+head = "c58922e68a39bf3a455de95e2e8c3f29395365b0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e709db34-d34a-4f2b-80c0-6bfdb9a5426a with nextest profile: default
+    Starting 2 tests across 1 binary (100 tests skipped)
+        PASS [   0.005s] gob-plan plan::tests::a_count_pair_is_range_and_scale_checked
+        PASS [   0.005s] gob-plan plan::tests::a_count_pair_round_trips_with_its_scales
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 2 tests run: 2 passed, 100 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --lib count_pair"
+size = 642
+status = "measured"
+test_count = 2
+tests_digest = "f10255d9577d41be33789cd661dd3fe4962a04127aa74392d1fc7cf6d6e4255c"
+at = "2026-10-22T00:02:06Z"
+actor = "lognd"
+rev = 1
