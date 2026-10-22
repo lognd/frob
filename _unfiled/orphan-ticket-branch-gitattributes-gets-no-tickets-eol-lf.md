@@ -2,7 +2,8 @@
 id = "01M5HYRXMB54SZ7KN3W6EQFB65"
 title = "Orphan ticket branch .gitattributes gets no tickets eol=lf pin under core.autocrlf"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 reporter = "lognd"
