@@ -18,6 +18,10 @@ bound = false
 [[acceptance]]
 text = "gob-dev gen languages writes the page exactly as gob_symbols::languages_page renders it"
 bound = false
+
+[[acceptance]]
+text = "gen --check reports drift or a missing languages page without writing"
+bound = false
 +++
 
 ~4M1BX5H added gob_symbols::languages_page and a test that keeps docs/reference/languages.md equal to it; gob-dev was leased by another ticket then. Add a Languages kind to cargo dev gen so the page is written and checked there, and let the Gap cells name a ticket (code-model.md section 3).
