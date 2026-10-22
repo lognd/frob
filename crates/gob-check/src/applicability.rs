@@ -277,9 +277,13 @@ const SYMBOLS: Applies = Applies::Universal {
     min_fidelity: Fidelity::F1,
 };
 
-/// Rules over documents' markup (links), not symbols.
-const MARKUP: Applies = Applies::Universal {
-    needs: &[Capability::Markup],
+// frob:ticket 01M5J45YZ60A5R1DWZG2ZQDW75
+/// Rules over markdown links: markdown only (grl-spec `lang markdown`), with no capability need
+/// because the markdown adapter lowers no markup elements (its `markup` cell is not applicable)
+/// and links are the language's own content, not a symbol or markup capability.
+const MARKDOWN_LINKS: Applies = Applies::Languages {
+    langs: &[Lang::Markdown],
+    needs: &[],
     min_fidelity: Fidelity::F1,
 };
 
@@ -299,7 +303,7 @@ pub fn temporary_applies(meta: &RuleMeta) -> Applies {
         "TODO001" | "REF001" | "TICK006" | "TEST001" | "INV001" | "DRIFT001" | "DRIFT002"
         | "DRIFT003" | "DRIFT004" => TEXT,
         "DOC001" | "INV002" => SYMBOLS,
-        "DOC002" => MARKUP,
+        "DOC002" => MARKDOWN_LINKS,
         "COV001" | "AFFECT001" => REACH,
         _ => Applies::Project,
     }
@@ -335,6 +339,21 @@ mod tests {
         assert_eq!(class(&REACH, "island"), "unresolved");
         assert_eq!(class(&REACH, "rust"), "examine");
         assert!(derive_cell(&TEXT, "cobol").is_none());
+    }
+
+    // frob:ticket 01M5J45YZ60A5R1DWZG2ZQDW75
+    // frob:tests crates/gob-check/src/applicability.rs::derive_cell
+    #[test]
+    fn markdown_link_rules_examine_markdown_only() {
+        let class = |c: &str| match derive_cell(&MARKDOWN_LINKS, c).expect("known cell") {
+            SubjectStatus::Examine => "examine",
+            SubjectStatus::Unresolved(_) => "unresolved",
+            SubjectStatus::NotApplicable(_) => "notapplicable",
+        };
+        assert_eq!(class("markdown"), "examine");
+        assert_eq!(class("rust"), "notapplicable");
+        assert_eq!(class("text"), "notapplicable");
+        assert_eq!(class("binary"), "notapplicable");
     }
 
     // frob:tests crates/gob-check/src/applicability.rs::resolve
@@ -391,12 +410,16 @@ mod tests {
             SubjectStatus::Unresolved(_)
         ));
         // A declared not-applicable cell (TOML has no markup) stays NotApplicable.
+        let markup = Applies::Universal {
+            needs: &[Capability::Markup],
+            min_fidelity: Fidelity::F1,
+        };
         assert!(matches!(
-            resolve(&MARKUP, &toml),
+            resolve(&markup, &toml),
             SubjectStatus::NotApplicable(_)
         ));
         assert!(matches!(
-            resolve(&MARKUP, &binary),
+            resolve(&markup, &binary),
             SubjectStatus::NotApplicable(_)
         ));
     }
@@ -467,6 +490,6 @@ mod tests {
         assert!(REACH.symbol_subjects());
         assert!(SYMBOLS.symbol_subjects());
         assert!(!TEXT.symbol_subjects());
-        assert!(!MARKUP.symbol_subjects());
+        assert!(!MARKDOWN_LINKS.symbol_subjects());
     }
 }
