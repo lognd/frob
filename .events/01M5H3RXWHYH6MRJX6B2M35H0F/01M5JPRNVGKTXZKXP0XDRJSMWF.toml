@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T21:02:40Z"
+digest = "b6f902037c9e852e6d922f5b5a12a250e0c2fb2bfadda459add6a4c52acd42d2"
+exit_code = 0
+head = "40fe41e9c6f16409e630db6db4c865db26ea6307"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 190b5c29-5ef0-4891-b8f7-c35d66d927c8 with nextest profile: default
+    Starting 1 test across 1 binary (11 tests skipped)
+        PASS [   0.018s] crunk::rename derived_tokens_are_refused_with_a_specific_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test rename derived_tokens_are_refused"
+size = 552
+status = "measured"
+test_count = 1
+tests_digest = "abe4b058be02b1ace6a9a8bd7577dde8378842b5ed6f7c5f846b6e0cf248638f"
+at = "2026-10-22T21:02:40Z"
+actor = "lognd"
+rev = 1

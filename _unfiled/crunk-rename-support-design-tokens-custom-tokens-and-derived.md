@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:11:32Z"
-updated = "2026-10-22T21:02:31Z"
+updated = "2026-10-22T21:02:40Z"
 scope = ["crates/crunk/src/rename.rs", "crates/crunk/tests/rename.rs"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a derived scale or font token, when crunk rename runs, then it is renamed or refused with a specific coded reason"
-bound = false
+bound = true
 +++
 
 Found while working ~PAN1YXT: rename covers [palette] colors and [layers] only; Custom tokens and derived scale/font tokens refuse with E-RENAME-KIND.
