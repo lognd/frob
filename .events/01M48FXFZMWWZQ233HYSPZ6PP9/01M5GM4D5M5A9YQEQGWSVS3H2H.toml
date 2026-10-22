@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T01:38:10Z"
+digest = "cac34fc532853e7156c771a7c480e9ec1873607d360fdcbd5809bc8384fe1937"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aa681f48-a0dd-4145-9fb0-3fcead140cfc with nextest profile: default
+    Starting 1 test across 11 binaries (208 tests skipped)
+        PASS [   0.020s] gob-dev::generate languages_kind_writes_the_page_and_check_detects_drift
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 1 test run: 1 passed, 208 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev languages_kind_writes_the_page_and_check_detects_drift"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "4f039be506d652923b854442526d6e41a809a2fe3c2c1c4fcc8c51e225f9e9e7"
+at = "2026-10-22T01:38:10Z"
+actor = "lognd"
+rev = 1
