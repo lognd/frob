@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T04:35:09Z"
+digest = "d1a8200071ca868fe7f475d0ad1b05f6029069b60e2562949441a6d22853cacc"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 53.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a9662ed0-cd41-4428-baef-4622b9622f9c with nextest profile: default
+    Starting 1 test across 7 binaries (75 tests skipped)
+        PASS [   0.005s] gob-mdtest::sections mixed_languages_keep_their_own_fidelity_and_languages_select_cells
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 75 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest mixed_languages_keep"
+size = 633
+status = "measured"
+test_count = 1
+tests_digest = "55fc1c8566ffa86450d410fa2c753ea2fa432cc02e8576412ea6359510271444"
+at = "2026-10-22T04:35:09Z"
+actor = "lognd"
+rev = 1

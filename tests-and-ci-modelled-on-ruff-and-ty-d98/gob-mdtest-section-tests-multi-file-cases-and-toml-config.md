@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-22T04:35:07Z"
+updated = "2026-10-22T04:35:09Z"
 scope = ["crates/gob-mdtest/**", "crates/frob-obligations/tests/**", "docs/reference/rules/DOC002.md", "changelog.d/01M48PC09SX0KFAM4B3V88AAXW.added.md"]
 
 [[links]]
@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "a case may mix languages (one block per file with its own fidelity), the assertion applies to the union, and a [mdtest] languages list selects matrix cells"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "existing mdtest corpora still pass after the heading-tree rewrite"
