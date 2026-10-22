@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T02:50:36Z"
+digest = "d5b85aa86bb12bd0860855f01c1625a9f89424f41b04417cbdc5b2fbb69062bd"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f9edae8e-fd28-4a55-a270-3f5a1d705370 with nextest profile: default
+    Starting 1 test across 11 binaries (50 tests skipped)
+        PASS [   0.005s] frob-tests run::tests::the_cause_covers_every_failing_run_and_caps_huge_output
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 50 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests the_cause_covers"
+size = 674
+status = "measured"
+test_count = 1
+tests_digest = "fa88f6f9d6480f15c7999b03e1ae08ef1712de482c67c58c3a30c1153dd613e1"
+at = "2026-10-22T02:50:36Z"
+actor = "lognd"
+rev = 1
