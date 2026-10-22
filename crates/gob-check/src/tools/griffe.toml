@@ -1,5 +1,6 @@
 # griffe check: public Python API breakage against a baseline (VERSION001).
-# Name the package and baseline in the stage `args` (`<package> --against <ref>`).
+# Name the package and baseline in the stage `args` (`<package> --against <ref>`); the baseline also
+# supplies the old version, so a major bump (or a minor bump below 1.0) in the manifest permits the breakage.
 name = "griffe"
 command = "uvx"
 pinned_version = "1.7.3"
