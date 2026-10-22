@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T13:17:36Z"
+digest = "fa5a90012ef1193ace40667a0b0b80b7b1f20d88de7b6b0162675779663dde94"
+exit_code = 0
+head = "b5a9c279b4e2006d1f262d6ecc43615f827658f2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b6227a46-6b28-408e-bda6-5a45419e3f3b with nextest profile: default
+    Starting 1 test across 1 binary (133 tests skipped)
+        PASS [   0.028s] gob-check fmt_fix::tests::formatter_fix_rewrites_only_in_scope_files
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.029s] 1 test run: 1 passed, 133 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --lib formatter_fix_rewrites_only_in_scope_files"
+size = 559
+status = "measured"
+test_count = 1
+tests_digest = "67fbb9873e07791cfaec0d86911094a11a6ae5c2d39148d237c0061d0aac0e78"
+at = "2026-10-22T13:17:36Z"
+actor = "lognd"
+rev = 1

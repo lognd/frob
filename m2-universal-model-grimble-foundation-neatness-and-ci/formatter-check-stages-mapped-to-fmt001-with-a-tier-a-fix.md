@@ -8,7 +8,7 @@ points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:12:36Z"
-updated = "2026-10-22T13:17:32Z"
+updated = "2026-10-22T13:17:36Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given frob check --fix --ticket, when it runs, then only files inside the ticket scope are rewritten"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md row K27 (4.2 N07): notes/research/mining-report-2026-10-08.md C12 2.7 percent, 67 percent marked nit; notes/research/creators-systems-2026-10-08.md ADV017, ADV026 (automate formatting, do not discuss it). Check docs/migration/rule-ids.md: v1 FMT001/FMT002 were folded into PARSE.
