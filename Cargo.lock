@@ -653,6 +653,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "crunk-scene"
+version = "0.532.0"
+dependencies = [
+ "gob-ir",
+ "gob-symbols",
+ "gob-walk",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "crunk-spec"
 version = "0.532.0"
 dependencies = [
