@@ -2,13 +2,13 @@
 id = "01M4CXSSGYVE2QQ7ACW7T5Y51S"
 title = "COH003 mixed abstraction levels from callee layer spread"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:29Z"
-updated = "2026-10-08T04:54:29Z"
+updated = "2026-10-22T10:15:21Z"
 scope = ["changelog.d/**", "crates/grimble-check/**"]
 
 [[acceptance]]
