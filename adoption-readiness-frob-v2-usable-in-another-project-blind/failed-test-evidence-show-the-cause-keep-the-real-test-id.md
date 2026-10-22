@@ -2,7 +2,8 @@
 id = "01M4CTTYH76JQASEJJQC02YD0F"
 title = "Failed test evidence: show the cause, keep the real test id, and do not commit a ledger event per failed attempt"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
