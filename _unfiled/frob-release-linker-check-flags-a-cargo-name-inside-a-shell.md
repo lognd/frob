@@ -2,12 +2,12 @@
 id = "01M5GVVC0TQ7P19386NP6ZWMEM"
 title = "frob-release linker check flags a cargo name inside a shell comment"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:53:03Z"
-updated = "2026-10-22T03:53:03Z"
+updated = "2026-10-22T03:53:12Z"
 scope = ["crates/frob-release/tests/it/release_workflow.rs"]
 
 [[acceptance]]
