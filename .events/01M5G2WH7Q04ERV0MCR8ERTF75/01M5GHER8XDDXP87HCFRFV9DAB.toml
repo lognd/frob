@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T00:51:23Z"
+digest = "dda1a2b9e7247c25c4cd1960e9bdbf5e75df56ab0b6dfbb47c18fb8a976874e5"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f95ee8ca-46bf-4160-9cd5-9f6cfb386dca with nextest profile: default
+    Starting 1 test across 9 binaries (84 tests skipped)
+        PASS [   0.006s] frob-obligations::fix_harness every_deterministic_rule_of_this_crate_has_a_fix_fixture
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations every_deterministic_rule_of_this_crate_has_a_fix_fixture"
+size = 629
+status = "measured"
+test_count = 1
+tests_digest = "194824f692b7d3926dbec279479383eb444373ec38afdc9885d599a219f380ea"
+at = "2026-10-22T00:51:23Z"
+actor = "lognd"
+rev = 1
