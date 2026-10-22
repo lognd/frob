@@ -2,7 +2,8 @@
 id = "01M4D6NHS19AGZS6NV6B077GY9"
 title = "gob-symbols: persist the linked call graph and cache degraded files"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
