@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T00:55:58Z"
+digest = "1ed3b6569727b4db73d72b5f04bcaaf9e61d8f18c8900f924b33a8fd36aa6f83"
+exit_code = 0
+head = "f6e297417898a5f2886fe220c6ca2ab84de2816f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5b225483-b04d-4142-9539-6303b3c7d824 with nextest profile: default
+    Starting 1 test across 8 binaries (99 tests skipped)
+        PASS [   0.134s] gob-directives::fix dsl002_v1_keys_fix_to_a_fixpoint
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.135s] 1 test run: 1 passed, 99 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives dsl002_v1_keys"
+size = 543
+status = "measured"
+test_count = 1
+tests_digest = "4ab9bfe0d6f636848680f5bc57a6903221ac010823b8540a192fa14aa2b398d2"
+at = "2026-10-22T00:55:58Z"
+actor = "lognd"
+rev = 1
