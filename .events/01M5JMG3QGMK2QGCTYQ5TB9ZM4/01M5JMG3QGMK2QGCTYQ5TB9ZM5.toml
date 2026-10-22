@@ -1,0 +1,10 @@
+kind = "create"
+title = "claim_restore remedy names nonexistent flag frob work --from"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-worktree/src/claim_restore.rs"]
+body = "Found while working YX6GQNR: remedies::remedies_name_only_existing_commands_and_flags still fails at claim_restore.rs:54 ('frob work {handle} --from <parked branch>'; frob work has no --from). Reword to a real remedy."
+at = "2026-10-22T20:23:03Z"
+actor = "lognd"
+rev = 1
