@@ -170,7 +170,10 @@ const API_MISSING: &str = "API report file is missing";
 /// report and a reviewer decides the version bump. Diagnostics (`ae-*`) and noise are ignored.
 // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
 pub(crate) fn parse_api_extractor(text: &str) -> Vec<RawFinding> {
-    let out: Vec<RawFinding> = text.lines().filter_map(api_report_line).collect();
+    let mut out = Vec::new();
+    for line in text.lines() {
+        out.extend(api_report_line(line));
+    }
     tracing::debug!(count = out.len(), "api-extractor findings parsed");
     out
 }

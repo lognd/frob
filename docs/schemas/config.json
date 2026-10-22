@@ -393,11 +393,6 @@
           "const": "griffe-text",
           "description": "`griffe check` one-line breakages (`path:LINE: object: message`): one `VERSION001` each.",
           "type": "string"
-        },
-        {
-          "const": "api-extractor-text",
-          "description": "`api-extractor run` report-drift output: one `VERSION001` when the committed API report no longer matches the build.",
-          "type": "string"
         }
       ]
     },
