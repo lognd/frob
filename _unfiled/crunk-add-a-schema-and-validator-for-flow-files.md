@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T19:35:13Z"
-updated = "2026-10-22T20:23:16Z"
+updated = "2026-10-22T20:23:17Z"
 scope = ["crates/crunk-spec/**", "crates/crunk/src/new.rs", "crates/crunk/tests/new.rs", "docs/crunk/README.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a flow file with a missing or unknown key or a dangling step reference, when validated, then a coded error names the location"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given crunk new flow, when it writes a flow file, then the output passes the validator"
