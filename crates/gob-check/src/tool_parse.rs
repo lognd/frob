@@ -229,7 +229,7 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
     match parser {
         ToolParser::None => Ok(Vec::new()),
         ToolParser::FormatterList => Ok(crate::fmt_parse::parse_formatter_list(stdout)),
-        // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+        // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
         ToolParser::SemverChecksText => Ok(crate::semver_parse::parse_semver_checks(stdout)),
         ToolParser::GriffeText => Ok(crate::semver_parse::parse_griffe(stdout)),
         // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
@@ -376,7 +376,7 @@ fn roslyn_target(rule: &str) -> Option<&'static str> {
         return Some("CONC001");
     }
     // Unused usings, members, parameters and locals; the USP suppressors keep engine-called messages out of IDE0051.
-    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
     // PublicApiAnalyzers: a public symbol missing from or removed from PublicAPI.Shipped.txt.
     if matches!(rule, "RS0016" | "RS0017") {
         return Some("VERSION001");
@@ -574,7 +574,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
         ToolParser::TyposJson => BTreeMap::from([("typo", "SPELL001")]),
         // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
         ToolParser::FormatterList => BTreeMap::from([(crate::fmt_parse::FMT_TOOL_ID, "FMT001")]),
-        // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+        // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
         ToolParser::SemverChecksText | ToolParser::GriffeText | ToolParser::ApiExtractorText => {
             BTreeMap::from([(crate::semver_parse::SEMVER_TOOL_ID, "VERSION001")])
         }
@@ -649,7 +649,7 @@ fn ruff_target(code: &str) -> RuffRule {
 /// Default severity of a rule this module can produce.
 fn default_severity(rule: &str) -> Severity {
     match rule {
-        // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+        // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
         // VERSION001: a removed public item under an unchanged major version breaks consumers.
         "CI006" | "CI007" | "VERSION001" => Severity::Error,
         // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C

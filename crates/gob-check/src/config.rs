@@ -150,11 +150,11 @@ pub enum ToolParser {
     #[serde(rename = "formatter-list")]
     FormatterList,
     /// `cargo semver-checks` text report (stderr): one `VERSION001` per broken public item; a crate whose header reports a breaking bump yields none.
-    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
     #[serde(rename = "semver-checks-text")]
     SemverChecksText,
     /// `griffe check` one-line breakages (`path:LINE: object: message`): one `VERSION001` each.
-    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
     #[serde(rename = "griffe-text")]
     GriffeText,
     /// `api-extractor run` report-drift output: one `VERSION001` when the committed API report no longer matches the build.
