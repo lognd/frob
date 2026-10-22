@@ -8,7 +8,7 @@ points = 3
 parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
 reporter = "lognd"
 created = "2026-10-06T13:39:49Z"
-updated = "2026-10-22T02:20:02Z"
+updated = "2026-10-22T02:20:03Z"
 scope = ["crates/gob-cli/**", "crates/gob-dev/**", "docs/design/cli.md"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "the justification column exists for every row"
-bound = false
+bound = true
 +++
 
 D104 enforcement: a test walks the gob-cli verb registry of frob, grimble and crunk and fails when a verb (hidden aliases excluded) has no row in docs/design/cli.md section 4 naming its justification (effect, policy or object), or when a row names a verb that is not registered, so the implementation and the design cannot drift again (board was top-level in code while the design had removed board-as-separate).
