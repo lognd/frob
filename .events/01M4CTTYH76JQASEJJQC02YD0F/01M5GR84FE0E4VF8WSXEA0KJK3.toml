@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T02:48:33Z"
+digest = "3861874e19ae5940a2f694b8edbdb8e59bc5c709e59f4a21beb2f165fd1600d5"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c4ab6877-dc6f-4955-87a2-458891662b3a with nextest profile: default
+    Starting 1 test across 11 binaries (50 tests skipped)
+        PASS [   0.008s] frob-tests run::tests::the_cause_covers_every_failing_run_and_caps_huge_output
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 50 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests the_cause_covers"
+size = 689
+status = "measured"
+test_count = 1
+tests_digest = "fa88f6f9d6480f15c7999b03e1ae08ef1712de482c67c58c3a30c1153dd613e1"
+at = "2026-10-22T02:48:33Z"
+actor = "lognd"
+rev = 1
