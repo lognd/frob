@@ -2,7 +2,8 @@
 id = "01M4CXV36WX1C2T64J454ECDV7"
 title = "Applicability resolver reads the matrix for parsed files; GRL needs become capabilities, side relations move to reads"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
