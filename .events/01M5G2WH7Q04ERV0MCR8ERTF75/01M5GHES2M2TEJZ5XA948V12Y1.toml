@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T00:51:24Z"
+digest = "d25484d3056648de64a89a1d07e29c3c9361424e8413699e982c27956a004bcd"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 935f6d65-247d-4818-b487-36172894684a with nextest profile: default
+    Starting 1 test across 9 binaries (84 tests skipped)
+        PASS [   0.081s] frob-obligations::fix_harness tick006_fix_is_idempotent_when_rerun_on_its_own_output
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.082s] 1 test run: 1 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations tick006_fix_is_idempotent"
+size = 627
+status = "measured"
+test_count = 1
+tests_digest = "d663437de7c74e65bb1a07b2bbcd6d90886be1f7c41acb96a8446b857b81fdd7"
+at = "2026-10-22T00:51:24Z"
+actor = "lognd"
+rev = 1
