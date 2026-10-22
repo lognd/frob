@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [6]
+captured_at = "2026-10-22T02:50:36Z"
+digest = "0e7dcbbd1c0eaf0d35fdc3bbcb07cc67077cf8f6db6396e0206905802becb740"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.03s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 06b621f8-c8c2-4eba-b2ae-412f4fabe616 with nextest profile: default
+    Starting 1 test across 1 binary (31 tests skipped)
+        PASS [   0.138s] frob-worktree::work a_worktree_dir_the_gitignore_already_names_gets_no_second_line
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.138s] 1 test run: 1 passed, 31 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree --test work a_worktree_dir_the_gitignore_already_names"
+size = 797
+status = "measured"
+test_count = 1
+tests_digest = "73cc02a3e2c0f7b674140d1114de7401db9a34a6e4d59f669000f62affc2192a"
+at = "2026-10-22T02:50:36Z"
+actor = "lognd"
+rev = 1

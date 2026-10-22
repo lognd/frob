@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:44Z"
-updated = "2026-10-22T02:50:11Z"
+updated = "2026-10-22T02:50:36Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/frob-worktree/**", "docs/guides/**"]
 
 [[acceptance]]
@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a worktree dir inside the repo, when frob work creates a worktree, then git ignores it with exactly one line and an existing .gitignore entry is not duplicated"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a worktree dir that escapes the repo, when frob work runs, then no ignore line is added"
