@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "A profile of reindex identifies the dominant cost and the fix is recorded in the ticket"
-bound = false
+bound = true
 +++
 
 Found while working ~M7F4X3Q: profile command-budgets test; reindex cost scales with ledger size, no cheap fix identified, needs profiling.
