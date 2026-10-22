@@ -14,7 +14,7 @@ scope = ["crates/gob-plan/src/lower/convert.rs", "crates/gob-plan/tests/ten_rule
 
 [[acceptance]]
 text = "a count compared against a scaled count lowers, and the NEAT031 lines leave KNOWN_ENGINE_GAPS or are narrowed to the remaining exec blockers"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Scaled-count semantics: Count.compare_scaled is sound over negative, zero and fractional scales and open counts"
