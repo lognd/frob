@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T02:48:39Z"
+digest = "5574c14db004180d4028cb74596b1571b8348391feea156d99bcd5791e3eed75"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 845c4b81-a480-4075-80d7-e2326b242ebf with nextest profile: default
+    Starting 1 test across 1 binary (66 tests skipped)
+        PASS [   0.009s] frob-cli agent::project::tests::running_twice_changes_nothing_and_duplicates_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 66 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --lib agent::project::tests::running_twice"
+size = 684
+status = "measured"
+test_count = 1
+tests_digest = "309b88ad0b534311eabcdb1d3fba99b36f00da687847604c0607b3d409809ccc"
+at = "2026-10-22T02:48:39Z"
+actor = "lognd"
+rev = 1

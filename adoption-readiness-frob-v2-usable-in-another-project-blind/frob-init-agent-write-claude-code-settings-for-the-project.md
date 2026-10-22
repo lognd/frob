@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:44Z"
-updated = "2026-10-22T02:48:33Z"
+updated = "2026-10-22T02:48:39Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/frob-worktree/**", "docs/guides/**"]
 
 [[acceptance]]
@@ -25,7 +25,7 @@ bound = false
 
 [[acceptance]]
 text = "Given settings already configured, when frob init --agent runs again, then the file is byte-identical and no entry is duplicated"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given malformed or wrongly shaped settings.json, when frob init --agent runs, then it is refused and the file is left untouched"
