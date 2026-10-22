@@ -16,6 +16,7 @@
 
 pub mod diff;
 pub mod doctor;
+pub mod dtcg;
 pub mod explain;
 pub mod fix;
 pub mod gallery;
@@ -136,6 +137,8 @@ impl Product for CrunkProduct {
             .register::<gallery::GalleryEnumerate>()
             .register::<gallery::GalleryRender>()
             .register::<gallery::GalleryTriage>()
+            .register::<dtcg::ImportDtcg>()
+            .register::<dtcg::ExportDtcg>()
     }
 }
 
