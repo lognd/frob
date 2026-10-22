@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:34Z"
-updated = "2026-10-22T10:48:23Z"
+updated = "2026-10-22T11:00:58Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/gob-check/**", "crates/frob-check/src/typefacts.rs", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
 text = "Given a strict-clean TS file, when resolved, then method dispatch on concrete types is Must and any-typed sites are dynamic"
-bound = false
+bound = true
 +++
 
 docs/design/cohesion.md 2.2.

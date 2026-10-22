@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T11:00:58Z"
+digest = "ca853fde57272f52aca149fe1d164c7dc18c4d45de59ec6732ab982491afd40e"
+exit_code = 0
+head = "1a0d70c15eeb83756207646204e7299a89508ee6"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d81fa91e-11d3-46a3-a1a7-b92b98121be5 with nextest profile: default
+    Starting 1 test across 1 binary (248 tests skipped)
+        PASS [   0.011s] gob-symbols::it typescript_types::strict_clean_concrete_dispatch_is_must_and_any_sites_are_dynamic
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 248 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols --test it typescript_types"
+size = 710
+status = "measured"
+test_count = 1
+tests_digest = "b6084c823c41213a37ed53ac5ff5a9b42b4b1d96f01a0fcc1092a8c2cdedecc7"
+at = "2026-10-22T11:00:58Z"
+actor = "lognd"
+rev = 1
