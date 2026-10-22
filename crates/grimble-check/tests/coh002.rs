@@ -31,6 +31,7 @@ fn verdict(path: &str, lang: &str, text: &str, role: UnitRole) -> Coh002 {
 macro_rules! lang_tests {
     ($fire:ident, $clean:ident, $unres:ident, $shell:ident, $lang:literal, $ext:literal) => {
         // frob:tests crates/grimble-check/src/coh002.rs::judge
+        // frob:tests crates/grimble-check/src/coh002.rs::coh002
         #[test]
         fn $fire() {
             let text = include_str!(concat!("fixtures/coh002/fire.", $ext));
@@ -54,6 +55,7 @@ macro_rules! lang_tests {
         }
 
         // frob:tests crates/grimble-check/src/coh002.rs::judge
+        // frob:tests crates/grimble-check/src/coh002.rs::coh002
         #[test]
         fn $clean() {
             let text = include_str!(concat!("fixtures/coh002/clean.", $ext));
@@ -62,6 +64,7 @@ macro_rules! lang_tests {
         }
 
         // frob:tests crates/grimble-check/src/coh002.rs::judge
+        // frob:tests crates/grimble-check/src/coh002.rs::coh002
         #[test]
         fn $unres() {
             let text = include_str!(concat!("fixtures/coh002/unresolved.", $ext));
@@ -75,6 +78,7 @@ macro_rules! lang_tests {
         }
 
         // frob:tests crates/grimble-check/src/coh002.rs::judge
+        // frob:tests crates/grimble-check/src/coh002.rs::coh002
         #[test]
         fn $shell() {
             let text = include_str!(concat!("fixtures/coh002/fire.", $ext));
