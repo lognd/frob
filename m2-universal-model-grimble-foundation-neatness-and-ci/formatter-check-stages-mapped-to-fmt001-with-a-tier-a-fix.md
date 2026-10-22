@@ -2,7 +2,8 @@
 id = "01M4D94J5J2TZEXTB8GH36992B"
 title = "Formatter check stages mapped to FMT001 with a tier A fix that runs the formatter within the ticket scope"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
