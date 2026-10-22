@@ -270,13 +270,11 @@ pub fn chunk_targets(targets: &[TestTarget], budget: usize) -> Vec<Vec<TestTarge
 // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
 /// Why a failed report failed: for every failing runner, its exit code and the last lines of its output (empty when everything passed).
 pub fn failure_cause(report: &RunReport) -> String {
-    report
-        .runs
-        .iter()
-        .filter(|r| !r.capture.passed)
-        .map(run_cause)
-        .collect::<Vec<_>>()
-        .join("\n")
+    let mut causes: Vec<String> = Vec::new();
+    for run in report.runs.iter().filter(|r| !r.capture.passed) {
+        causes.push(run_cause(run));
+    }
+    causes.join("\n")
 }
 
 // frob:ticket 01M4CTTYH76JQASEJJQC02YD0F
