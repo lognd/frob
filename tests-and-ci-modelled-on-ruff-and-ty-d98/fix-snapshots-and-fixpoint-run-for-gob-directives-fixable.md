@@ -14,7 +14,7 @@ scope = ["crates/gob-directives/**", "changelog.d/01M5G2WH43B41KTYYK40WS3RZW.add
 
 [[acceptance]]
 text = "each Deterministic directive rule has a fix fixture, a diff snapshot, and passes the fixpoint harness"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a gob_fix::run_fixture fixture per fixable rule with an insta snapshot and missing_fixtures coverage over the registry"
