@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T15:37:53Z"
-updated = "2026-10-22T16:11:46Z"
-scope = ["crates/frob-obligations/**", "docs/reference/rules/DOC002.md", "crates/gob-check/src/applicability.rs"]
+updated = "2026-10-22T16:11:47Z"
+scope = ["crates/frob-obligations/**", "docs/reference/rules/DOC002.md", "crates/gob-check/src/applicability.rs", "changelog.d/01M5J45YZ60A5R1DWZG2ZQDW75.fixed.md"]
 
 [[acceptance]]
 text = "Given the corpus mdtest, when it runs, then every case in doc002.md passes"
