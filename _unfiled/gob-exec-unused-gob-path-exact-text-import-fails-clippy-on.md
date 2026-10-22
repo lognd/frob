@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:32:47Z"
-updated = "2026-10-22T03:39:56Z"
+updated = "2026-10-22T04:01:08Z"
 scope = ["crates/gob-exec/src/runner.rs"]
 
 [[acceptance]]
