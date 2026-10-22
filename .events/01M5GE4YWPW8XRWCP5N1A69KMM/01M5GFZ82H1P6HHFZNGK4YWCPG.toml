@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T00:25:27Z"
+digest = "ca18dcff54119661bd0465381d25de3deb092504b5a4ad8cbb1ca7971b5832ce"
+exit_code = 0
+head = "ca180955a9243d54c835c735457127ba8be3f438"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 38d16915-81e1-4023-96fa-aed5e55ba836 with nextest profile: default
+    Starting 1 test across 31 binaries (313 tests skipped)
+        PASS [   0.006s] gob-plan::stmt_kinds adapter_if_and_for_are_branch_and_loop
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 313 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan adapter_if_and_for_are_branch_and_loop"
+size = 553
+status = "measured"
+test_count = 1
+tests_digest = "f07426cc3b2ac94d9bc0a937e5b6f5a75a3f17196eb7777a79519477f2a11c6b"
+at = "2026-10-22T00:25:27Z"
+actor = "lognd"
+rev = 1
