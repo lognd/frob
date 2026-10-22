@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T07:28:16Z"
-updated = "2026-10-22T18:08:38Z"
+updated = "2026-10-22T18:08:45Z"
 scope = ["crates/frob-ledger/src/reindex.rs"]
 
 [[acceptance]]

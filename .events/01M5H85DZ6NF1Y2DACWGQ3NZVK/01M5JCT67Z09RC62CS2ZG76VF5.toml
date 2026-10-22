@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Profile (release, 20284-blob ledger): dominant cost was the tour generator, 1.24s of 1.9s, because tour::render parsed every ticket and all ~15k event TOMLs twice (resolve then render_with). Fix: parse tickets once, parse only evidence and land events for picking, and fully parse one ticket for the life stop; also dropped the full-tree clone for GenInput. Generation 1.9s to 0.35s. Remaining warm cost: blob reads in reindex_plan about 0.37s plus tree walk. Budget in profile.toml untouched."
+at = "2026-10-22T18:08:45Z"
+actor = "lognd"
+rev = 1
