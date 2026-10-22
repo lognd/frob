@@ -2,7 +2,8 @@
 id = "01M4CXR96GDDX460SZZVAAWD0R"
 title = "Content keys and CONTENT/I18N T0 rules: literal copy in scenes, length budgets, glossary"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
