@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:58:34Z"
-updated = "2026-10-22T23:45:28Z"
-scope = ["crates/grimble-lints/**", "changelog.d/**"]
+updated = "2026-10-22T23:47:03Z"
+scope = ["crates/grimble-lints/**", "changelog.d/**", "crates/grimble/**"]
 
 [[acceptance]]
 text = "Given a useEffect starting an interval without cleanup in a scanned file, when grimble check runs, then PAIR001 is reported through the registered rule"
