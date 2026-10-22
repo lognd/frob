@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T09:53:19Z"
+digest = "6feef20429b90d75331f851d75c8c14f656844d8140b05ed8141d036c08d7753"
+exit_code = 0
+head = "18ffdbbca946883558540938261dca5ae4acb2e9"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 322ffa1f-2a65-47b4-8c0a-4a49719a3ab6 with nextest profile: default
+    Starting 3 tests across 1 binary (9 tests skipped)
+        PASS [   0.008s] grimble-check::coh002 fire_py
+        PASS [   0.008s] grimble-check::coh002 fire_ts
+        PASS [   0.008s] grimble-check::coh002 fire_rs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 3 tests run: 3 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test coh002 fire_"
+size = 683
+status = "measured"
+test_count = 3
+tests_digest = "3467dbc930317c27f0d924c7ed6f36682986bd39adc88091b32591fc5f348c94"
+at = "2026-10-22T09:53:19Z"
+actor = "lognd"
+rev = 1
