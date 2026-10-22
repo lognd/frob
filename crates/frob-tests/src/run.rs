@@ -268,13 +268,20 @@ pub fn chunk_targets(targets: &[TestTarget], budget: usize) -> Vec<Vec<TestTarge
 }
 
 // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
-/// Why a failed report failed: the exit code and the last lines of the first failing runner's stderr (empty when everything passed).
+/// Why a failed report failed: for every failing runner, its exit code and the last lines of its output (empty when everything passed).
 pub fn failure_cause(report: &RunReport) -> String {
+    let mut causes: Vec<String> = Vec::new();
+    for run in report.runs.iter().filter(|r| !r.capture.passed) {
+        causes.push(run_cause(run));
+    }
+    causes.join("\n")
+}
+
+// frob:ticket 01M4CTTYH76JQASEJJQC02YD0F
+/// One failing run's exit code and the tail of its transcript, capped in lines and characters.
+fn run_cause(run: &FrameworkRun) -> String {
     const TAIL_LINES: usize = 15;
     const TAIL_CHARS: usize = 1500;
-    let Some(run) = report.runs.iter().find(|r| !r.capture.passed) else {
-        return String::new();
-    };
     let exit = run.capture.exit_code.map_or_else(
         || "no exit code (signal or timeout)".to_owned(),
         |c| format!("exit code {c}"),
@@ -294,7 +301,7 @@ pub fn failure_cause(report: &RunReport) -> String {
         format!(" in {}", run.member)
     };
     format!(
-        "{:?} runner{place} failed with {exit}; stderr tail:\n{}",
+        "{:?} runner{place} failed with {exit}; output tail:\n{}",
         run.framework,
         tail.trim_end()
     )
@@ -815,5 +822,39 @@ mod tests {
         assert_eq!((c.skipped, c.xfailed, c.xpassed), (3, 1, 0));
         assert_eq!(report.executed(), ["a", "a"]);
         assert!(RunReport::default().non_passing().is_zero());
+    }
+
+    // frob:ticket 01M4CTTYH76JQASEJJQC02YD0F
+    #[test]
+    fn the_cause_covers_every_failing_run_and_caps_huge_output() {
+        // frob:tests crates/frob-tests/src/run.rs::failure_cause
+        let run = |framework, passed, transcript: String| FrameworkRun {
+            framework,
+            args: Vec::new(),
+            member: String::new(),
+            capture: Capture {
+                exit_code: Some(if passed { 0 } else { 101 }),
+                passed,
+                measured: true,
+                tests: Vec::new(),
+                failed_tests: Vec::new(),
+                non_passing: frob_evidence::NonPassing::default(),
+                transcript,
+            },
+        };
+        let huge = "x".repeat(100_000) + "\nthread 'a' panicked at src/lib.rs:1:1:\nboom";
+        let report = RunReport {
+            runs: vec![
+                run(Framework::Nextest, false, huge),
+                run(Framework::Pytest, true, "all fine".to_owned()),
+                run(Framework::Pytest, false, "E   assert 1 == 2".to_owned()),
+            ],
+        };
+        let cause = failure_cause(&report);
+        assert!(cause.contains("panicked at src/lib.rs:1:1"), "{cause}");
+        assert!(cause.contains("assert 1 == 2"), "{cause}");
+        assert!(!cause.contains("all fine"), "{cause}");
+        assert!(cause.len() < 4000, "{}", cause.len());
+        assert_eq!(failure_cause(&RunReport::default()), "");
     }
 }

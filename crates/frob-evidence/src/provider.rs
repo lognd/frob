@@ -477,6 +477,15 @@ fn node_id(tag: &str, prefix: &str) -> String {
     };
     let file = portable_file(&file);
     let module = file.strip_suffix(".py").unwrap_or(&file).replace('/', ".");
+    // frob:ticket 01M4CTTYH76JQASEJJQC02YD0F
+    // A module that failed to collect is a testcase named by its dotted module path, not a test: its real node id is the file.
+    if class.is_empty() && name == module {
+        return if prefix.is_empty() {
+            file
+        } else {
+            format!("{prefix}/{file}")
+        };
+    }
     let file = if prefix.is_empty() {
         file
     } else {
@@ -2448,6 +2457,25 @@ mod tests {
         assert_eq!(parsed.tests, ["t/m.py::a"]);
         assert_eq!(parsed.non_passing.xpassed, ["t/m.py::p"]);
         assert_eq!(parsed.non_passing.count(), 3);
+    }
+
+    #[test]
+    // frob:ticket 01M4CTTYH76JQASEJJQC02YD0F
+    fn a_module_that_failed_to_collect_keeps_its_file_as_the_node_id() {
+        // frob:tests crates/frob-evidence/src/provider.rs::parse_junit_under
+        let xml = concat!(
+            "<testsuite>",
+            "<testcase classname=\"\" name=\"tests.test_mul\" file=\"tests/test_mul.py\"><error message=\"collection failure\">ModuleNotFoundError</error></testcase>",
+            "<testcase classname=\"tests.test_ok\" name=\"test_a\" file=\"tests/test_ok.py\" />",
+            "</testsuite>",
+        );
+        let parsed = parse_junit_under(xml, "py");
+        assert_eq!(parsed.failed, ["py/tests/test_mul.py"]);
+        assert_eq!(
+            parsed.tests,
+            ["py/tests/test_mul.py", "py/tests/test_ok.py::test_a"]
+        );
+        assert_eq!(parse_junit(xml).failed, ["tests/test_mul.py"]);
     }
 
     #[test]

@@ -1,0 +1,1 @@
+A failing `frob test` run now shows the output tail of every failing runner, names a module that failed to collect by its file instead of a mangled id, and no longer commits one evidence event per failed attempt (pass `--record-failures` to keep them).
