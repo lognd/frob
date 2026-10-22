@@ -2,7 +2,8 @@
 id = "01M5H3RXZHDEDM508R6K4DBBVJ"
 title = "crunk extract-token: non-color literals (lengths, durations)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
