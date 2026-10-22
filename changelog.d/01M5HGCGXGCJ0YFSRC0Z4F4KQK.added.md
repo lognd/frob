@@ -1,0 +1,1 @@
+The incompleteness metric: a corpus of cases with an oracle column (the true answer) is tallied into a false-Unknown rate per language and capability, and a rise in that rate or any false Must fails the gate.

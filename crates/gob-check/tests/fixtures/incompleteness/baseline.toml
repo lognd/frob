@@ -1,0 +1,42 @@
+# Accepted false-Unknown counts per language and capability. The rate may fall, never rise.
+[[cell]]
+language = "csharp"
+capability = "apply_targets"
+decidable = 2
+false_unknown = 1
+
+[[cell]]
+language = "python"
+capability = "imports"
+decidable = 2
+false_unknown = 0
+
+[[cell]]
+language = "python"
+capability = "resolve_ref"
+decidable = 3
+false_unknown = 2
+
+[[cell]]
+language = "rust"
+capability = "resolve_ref"
+decidable = 4
+false_unknown = 1
+
+[[cell]]
+language = "rust"
+capability = "visibility"
+decidable = 2
+false_unknown = 0
+
+[[cell]]
+language = "typescript"
+capability = "imports"
+decidable = 1
+false_unknown = 0
+
+[[cell]]
+language = "typescript"
+capability = "resolve_ref"
+decidable = 2
+false_unknown = 1

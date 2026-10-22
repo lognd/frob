@@ -59,6 +59,7 @@ mod filecheck;
 mod fix;
 pub mod fix_validate;
 pub mod gate001;
+pub mod incompleteness;
 mod options;
 mod packages;
 mod pipeline;

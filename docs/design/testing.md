@@ -125,3 +125,27 @@ claim (universal-model.md 4.5, Theorem 3: never an Error or Warn whose
 premise is false). The ecosystem check (build-test-ci.md 6) reports files
 and subjects examined per rule and language, and a drop in subjects
 examined is a regression even when the finding count falls.
+
+## 8. Incompleteness: the oracle column (cohesion.md 2.3)
+
+Honesty keeps frob from a false answer, not from answering Unknown too often,
+so a corpus case also carries the true answer, known by construction. A case
+(`gob_check::incompleteness`) names a language, a capability, the `oracle`
+answer (`yes`, `no`, or `unknown` when genuinely undecidable) and the
+`observed` answer. Per language and capability the harness reports the
+false-Unknown rate: cases answered Unknown while the oracle is decided, over
+all cases whose oracle is decided (undecidable oracles are not counted).
+
+The gate compares that rate with a committed baseline
+(`crates/gob-check/tests/fixtures/incompleteness/baseline.toml`):
+
+- a rate above the baseline's fails like a regression; a lower rate passes and
+  the baseline is then refreshed with `Report::to_baseline_toml`;
+- a cell with no baseline is held to zero; a baselined cell that no longer has
+  a decidable case fails as unmeasured (the same rule as a drop in subjects
+  examined, section 7);
+- a false Must (a decided answer that differs from the oracle, or a decided
+  answer to an undecidable question) fails always and is never baselined.
+
+The committed corpus records observed answers; wiring live adapter output into
+the `observed` column is separate work.
