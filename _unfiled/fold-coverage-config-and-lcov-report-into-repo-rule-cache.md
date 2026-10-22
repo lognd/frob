@@ -2,7 +2,8 @@
 id = "01M5HT58K22KJXAE1MWHY3T79D"
 title = "Fold coverage config and lcov report into repo-rule cache key"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
