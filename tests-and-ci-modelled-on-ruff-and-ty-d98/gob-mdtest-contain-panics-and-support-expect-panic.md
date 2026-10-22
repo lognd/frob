@@ -2,13 +2,13 @@
 id = "01M48PC1C64V7SN640NSASXGW5"
 title = "gob-mdtest: contain panics and support expect-panic"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-22T02:51:14Z"
+updated = "2026-10-22T02:51:15Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
