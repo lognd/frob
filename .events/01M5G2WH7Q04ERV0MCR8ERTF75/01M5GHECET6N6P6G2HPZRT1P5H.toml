@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["the tick_paths fix has a fixture, a diff snapshot, and passes the fixpoint harness", "a gob_fix::run_fixture fixture per fixable rule with an insta snapshot and missing_fixtures coverage over the registry", "rerunning the tick_paths fix on its own output is a no-op (zero rounds, identical files)"]
+new = ["the tick_paths fix has a fixture, a diff snapshot, and passes the fixpoint harness", "a gob_fix::run_fixture fixture per fixable rule with an insta snapshot and missing_fixtures coverage over the registry", "rerunning the tick_paths fix on its own output is a no-op (zero rounds, identical files)", "clean and generated text yields no fix rounds and an unchanged tree"]
+moved = [1, 2, 3]
+at = "2026-10-22T00:51:12Z"
+actor = "lognd"
+rev = 1
