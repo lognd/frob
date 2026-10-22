@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T13:17:08Z"
-updated = "2026-10-22T17:00:01Z"
+updated = "2026-10-22T17:07:51Z"
 scope = ["crates/crunk-check/**", "crates/gob-mdtest/coverage-allowlist.toml", "docs/reference/rules/GX014.md"]
 
 [[acceptance]]
