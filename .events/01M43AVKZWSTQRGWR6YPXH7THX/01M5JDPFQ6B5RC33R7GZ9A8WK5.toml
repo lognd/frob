@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T18:24:11Z"
+digest = "9ac6159aa8390981a8b32a689e641bcb0c5df4ccac1947618497509bce4620dd"
+exit_code = 0
+head = "2a27d60d25d5ebd290839c6c0adb08079b1f361f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dae11ecc-06a3-4c98-9bf3-24add9accb25 with nextest profile: default
+    Starting 4 tests across 1 binary (134 tests skipped)
+        PASS [   0.011s] crunk::e2e e2e_01_init_reinit_with_force_exits_0
+        PASS [   0.013s] crunk::e2e e2e_01_init_reinit_without_force_exits_2
+        PASS [   0.102s] crunk::e2e e2e_01_init_init_mono_preset_then_check_clean
+        PASS [   0.107s] crunk::e2e e2e_01_init_init_default_preset_then_check_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.107s] 4 tests run: 4 passed, 134 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test e2e e2e_01_init"
+size = 785
+status = "measured"
+test_count = 4
+tests_digest = "4dce04a5c579919aca94c9c55779ad858cd9a4c64cdcd20f4e518dca9d410196"
+at = "2026-10-22T18:24:11Z"
+actor = "lognd"
+rev = 1

@@ -8,7 +8,7 @@ points = 8
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:16Z"
-updated = "2026-10-22T18:24:10Z"
+updated = "2026-10-22T18:24:11Z"
 idempotency_key = "crunk-plan-e2e"
 labels = ["area:crunk"]
 scope = ["crates/crunk/tests/e2e/**", "crates/crunk/tests/int/**"]
@@ -35,7 +35,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the Rust suite, when run, then it passes on Linux, macOS and Windows runners"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a mapped test, when its Rust counterpart is removed, then the audit script fails"
