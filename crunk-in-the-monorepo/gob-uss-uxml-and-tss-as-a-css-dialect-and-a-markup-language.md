@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T04:54:15Z"
-updated = "2026-10-22T13:03:16Z"
+updated = "2026-10-22T13:11:38Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/gob-languages/**"]
 
 [[acceptance]]
 text = "Given USS with custom properties and -unity- properties, when parsed, then declarations, var() references and selectors are facts with spans"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md section 7; language-engines.md D96.
