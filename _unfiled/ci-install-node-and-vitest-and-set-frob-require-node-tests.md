@@ -2,7 +2,8 @@
 id = "01M4A48FTHZAZXNRMTZ20D00X3"
 title = "CI: install node and vitest and set FROB_REQUIRE_NODE_TESTS so the TypeScript runner tests never skip"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
