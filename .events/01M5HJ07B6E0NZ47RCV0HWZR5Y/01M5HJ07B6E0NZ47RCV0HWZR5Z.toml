@@ -1,0 +1,10 @@
+kind = "create"
+title = "COH002: detect Rust match-arm decisions"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**", "docs/**"]
+body = "match arms fold as a Group of pattern binds under an expression_statement, so match decisions are not detected."
+at = "2026-10-22T10:20:11Z"
+actor = "lognd"
+rev = 1
