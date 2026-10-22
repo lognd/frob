@@ -1,0 +1,10 @@
+kind = "create"
+title = "COH003: fill layers from the grimble model or module depth"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**", "docs/**"]
+body = "Nothing fills Coh003Options.layers; read layers from the model or module depth. Also update docs/design/cohesion.md section 1.2 with the layer source."
+at = "2026-10-22T10:27:39Z"
+actor = "lognd"
+rev = 1
