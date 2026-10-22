@@ -1,0 +1,18 @@
+---
+source: crates/frob-obligations/tests/fix_harness.rs
+expression: out.snapshot_text()
+---
+rounds: 1
+--- a/docs/note.md
++++ b/docs/note.md
+@@ -1,3 +1,3 @@
+-see tickets/01M3ZX86MA30ABW915Z943BQYB/ticket.md and tickets/01M5G2WH7Q04ERV0MCR8ERTF75/ticket.md
+-again tickets/01M3ZX86MA30ABW915Z943BQYB/ticket.md.
++see 01M3ZX86MA30ABW915Z943BQYB and 01M5G2WH7Q04ERV0MCR8ERTF75
++again 01M3ZX86MA30ABW915Z943BQYB.
+ 
+--- a/docs/other.md
++++ b/docs/other.md
+@@ -1,2 +1,2 @@
+-[x](tickets/01M5G2WH7Q04ERV0MCR8ERTF75/ticket.md)
++[x](01M5G2WH7Q04ERV0MCR8ERTF75)
