@@ -1,0 +1,10 @@
+kind = "create"
+title = "Add TS/JS/C# test vocabulary to testq (WADV010)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-lints/src/testq/**"]
+body = "Found while working ~DJ4K8YD. testq covers Rust and Python only; other languages report Unresolved."
+at = "2026-10-22T10:31:46Z"
+actor = "lognd"
+rev = 1
