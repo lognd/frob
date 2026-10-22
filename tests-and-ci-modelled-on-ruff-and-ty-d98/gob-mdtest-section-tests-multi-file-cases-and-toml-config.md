@@ -2,7 +2,8 @@
 id = "01M48PC09SX0KFAM4B3V88AAXW"
 title = "gob-mdtest: section tests, multi-file cases and toml config blocks with inheritance"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
