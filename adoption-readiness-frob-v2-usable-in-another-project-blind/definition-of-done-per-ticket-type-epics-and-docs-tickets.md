@@ -2,13 +2,13 @@
 id = "01M4CTTZGDBKBNQ0CTEYYJGRFJ"
 title = "Definition of done per ticket type: epics and docs tickets are not asked for a changelog fragment or measured evidence by default"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:42Z"
-updated = "2026-10-08T04:02:42Z"
+updated = "2026-10-22T01:15:21Z"
 scope = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-release/**"]
 
 [[acceptance]]
