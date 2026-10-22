@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T02:55:44Z"
+digest = "56c249d6462d44a9b3c4ea02fe24874a0059ac44db310b095b2ee52546d8d8e6"
+exit_code = 0
+head = "680e526f40f11e1b9e9920e9ef8fb448ccd17cce"
+inline = '''
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.90s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 370f30d8-84f7-4451-9b7c-ac2c44366e7e with nextest profile: default
+    Starting 1 test across 1 binary (12 tests skipped)
+        PASS [   0.005s] gob-mdtest::panics panic_fails_that_case_with_its_line_and_the_rest_still_run
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 12 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest --test panics panic_fails_that_case"
+size = 630
+status = "measured"
+test_count = 1
+tests_digest = "dc403ab91f8305a75c432866e6053ac24987e9910dc2091dad56495b60987e83"
+at = "2026-10-22T02:55:44Z"
+actor = "lognd"
+rev = 1

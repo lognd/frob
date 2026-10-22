@@ -8,12 +8,12 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-22T02:55:41Z"
+updated = "2026-10-22T02:55:44Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
 text = "a panicking rule is reported as a failed case, not an aborted run"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "expect-panic passes on a matching panic and fails when there is none"
