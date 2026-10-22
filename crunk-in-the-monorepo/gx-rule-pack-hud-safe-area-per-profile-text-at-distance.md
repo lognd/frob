@@ -2,13 +2,13 @@
 id = "01M4CXSEFJEZDQFGESPKDEW049"
 title = "GX rule pack: HUD safe area per profile, text at distance, glyph and remap coverage, colour-blind modes, subtitles, hold alternatives"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T04:54:18Z"
-updated = "2026-10-08T04:54:18Z"
+updated = "2026-10-22T18:45:23Z"
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**"]
 
 [[acceptance]]
