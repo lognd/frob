@@ -2,12 +2,12 @@
 id = "01M5JHRGF0BKG6ZGNXBZR3F5DB"
 title = "crunk parity tests fail on CRAFT010 advisory for init_default"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T19:35:13Z"
-updated = "2026-10-22T19:45:17Z"
+updated = "2026-10-22T19:45:18Z"
 scope = ["crates/crunk/tests/**"]
 
 [[acceptance]]
