@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given Rigidbody.AddForce in Update, when checked, then UNITY302 fires; given the same call in FixedUpdate, then clean"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md rows U06, U07 (4.2 N19); notes/research/creators-games-2026-10-08.md GADV004, GADV005 (4-4.5 voices; remapping is a basic-tier accessibility guideline), GADV002 fixed timestep (5.5 voices); UNT0004 covers only fixedDeltaTime in Update.

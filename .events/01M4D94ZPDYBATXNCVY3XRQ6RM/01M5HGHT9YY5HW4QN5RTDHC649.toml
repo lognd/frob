@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T09:54:19Z"
+digest = "b1cf0e1a7f208c66304850c9c23680ce94b12212fe406c668959d2961b4a7281"
+exit_code = 0
+head = "18ffdbbca946883558540938261dca5ae4acb2e9"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c14a98ce-a26e-422b-9bfb-46307944673b with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.005s] grimble-lints::unity_physics add_force_in_update_fires_and_in_fixed_update_is_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test unity_physics add_force_in_update_fires_and_in_fixed_update_is_clean"
+size = 729
+status = "measured"
+test_count = 1
+tests_digest = "3be3d3487e3424f0d0a773f7e1290ba91dd16cd2b651152b60e2e523ac345e15"
+at = "2026-10-22T09:54:19Z"
+actor = "lognd"
+rev = 1
