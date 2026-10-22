@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T16:50:38Z"
+digest = "65d3802278f5dd3875726bc81895a769d4f47bbfac51943b1608ef0409c69fc1"
+exit_code = 0
+head = "a103f449753b22e8a0ab5c788564f9db727b4c65"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0f3a992e-fa7d-482a-9eee-948a0a63103c with nextest profile: default
+    Starting 1 test across 1 binary (146 tests skipped)
+        PASS [   0.033s] gob-check tools::tests::api_extractor_report_drift_is_a_version001_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.034s] 1 test run: 1 passed, 146 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --lib api_extractor_report_drift_is_a_version001_error"
+size = 618
+status = "measured"
+test_count = 1
+tests_digest = "7c43c4e5e3247a56fd597a60dc6e2107070c2346e3999a8f3574cd759cb9507c"
+at = "2026-10-22T16:50:38Z"
+actor = "lognd"
+rev = 1
