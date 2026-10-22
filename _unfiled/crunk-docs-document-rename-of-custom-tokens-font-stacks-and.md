@@ -2,12 +2,12 @@
 id = "01M5JPS273RDZWDMYJBGCKT9DV"
 title = "crunk docs: document rename of custom tokens, font stacks and E-RENAME-DERIVED"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T21:02:54Z"
-updated = "2026-10-22T21:45:14Z"
+updated = "2026-10-22T21:45:15Z"
 scope = ["docs/crunk/README.md"]
 
 [[acceptance]]
