@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a change to the coverage thresholds config or the lcov report, when the product digest is computed, then the digest differs", "Given an unchanged config and report, when the digest is computed twice, then it is identical"]
+moved = []
+at = "2026-10-22T14:15:25Z"
+actor = "lognd"
+rev = 1
