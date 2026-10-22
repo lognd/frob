@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T22:25:21Z"
+digest = "c9101d84ddd320f5c4c3da742c9c9027a5a5a8433faca12cc5eef66be37e8eff"
+exit_code = 0
+head = "79a96081221a7422c35e1e0a60090fd2bd736a06"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ffc7938c-5fa9-476d-a4ce-fc7cba389ab7 with nextest profile: default
+    Starting 4 tests across 1 binary (8 tests skipped)
+        PASS [   0.015s] crunk-rules::scene_rules scene003_fires_on_an_unknown_tag_and_names_it
+        PASS [   0.017s] crunk-rules::scene_rules scene004_is_clean_for_media_only
+        PASS [   0.017s] crunk-rules::scene_rules scene003_is_clean_for_known_tags_components_and_svg_content
+        PASS [   0.017s] crunk-rules::scene_rules scene004_fires_on_at_rules_other_than_media_even_nested
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 4 tests run: 4 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test scene_rules scene003 scene004"
+size = 858
+status = "measured"
+test_count = 4
+tests_digest = "8fada12bf3bbf54b9164103a374d7ede951994b930a85868d9b7af446e54d2d3"
+at = "2026-10-22T22:25:21Z"
+actor = "lognd"
+rev = 1
