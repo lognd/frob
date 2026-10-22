@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T07:36:34Z"
-updated = "2026-10-22T17:45:28Z"
-scope = ["crates/crunk/**"]
+updated = "2026-10-22T17:57:40Z"
+scope = ["crates/crunk/**", "docs/crunk/**"]
 
 [[acceptance]]
 text = "Given a crunk TOML file with comments and custom formatting, when crunk edit changes one key, then every comment and untouched line is byte-identical"
