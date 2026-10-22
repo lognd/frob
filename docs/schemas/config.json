@@ -363,6 +363,11 @@
           "const": "roslyn-sarif",
           "description": "`dotnet build` Roslyn SARIF (CS, CA, IDE, VSTHRD and Microsoft.Unity.Analyzers ids): the SARIF reader with `UNT*` mapped to `UNITY101`, unused-code ids to `DEAD001` and `VSTHRD*` to `CONC001`.",
           "type": "string"
+        },
+        {
+          "const": "formatter-list",
+          "description": "Formatter check-mode output (rustfmt, ruff format, prettier, dotnet format, gofmt): one `FMT001` per unformatted file.",
+          "type": "string"
         }
       ]
     },
