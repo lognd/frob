@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T07:36:34Z"
-updated = "2026-10-22T19:29:56Z"
+updated = "2026-10-22T19:29:57Z"
 scope = ["crates/crunk/**", "docs/crunk/README.md", "docs/reference/cli/crunk.md"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an invalid NAME or a --from source that does not exist, when crunk new runs, then it fails with a clear error and writes nothing"
-bound = false
+bound = true
 +++
 
 Cut from AFVVZ8Y (only crunk edit shipped). See docs/design/crunk.md section 5.
