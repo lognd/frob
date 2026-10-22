@@ -2,7 +2,8 @@
 id = "01M4D957J2HZ655A1H8DJ4K8YD"
 title = "TESTQ001-TESTQ003: test without assertion, sleep or wall clock or unseeded rng in a test, control flow in a test body"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
