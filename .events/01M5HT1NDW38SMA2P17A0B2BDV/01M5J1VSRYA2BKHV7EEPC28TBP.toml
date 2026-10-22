@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T14:52:57Z"
+digest = "2c31457fef1377713df854b82f0a201b377f139683ad4f44e951ff1e2fcc80ee"
+exit_code = 0
+head = "f54774c0ad1250ab3850c33ece8f590ac05a4ded"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 504c8dd3-11b3-4e42-b898-0ec0d63c6148 with nextest profile: default
+    Starting 1 test across 1 binary (257 tests skipped)
+        PASS [   0.009s] gob-symbols::it typescript::calls_resolve_by_scope_import_and_receiver
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 257 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols --test it calls_resolve_by_scope_import_and_receiver"
+size = 870
+status = "measured"
+test_count = 1
+tests_digest = "7fd2c05cbe9adf61d7a85f57ff68fac821726e6a4084c0731751e06ec03f36d8"
+at = "2026-10-22T14:52:57Z"
+actor = "lognd"
+rev = 1

@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T12:40:47Z"
-updated = "2026-10-22T14:50:38Z"
+updated = "2026-10-22T14:52:57Z"
 scope = ["crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "Given the typescript calls_resolve_by_scope_import_and_receiver test, when run, then it passes with the root cause fixed"
-bound = false
+bound = true
 +++
 
 Found while working B077GY9: fails identically with and without that change (tests/it/typescript.rs:419 expects Some(May), got None).
