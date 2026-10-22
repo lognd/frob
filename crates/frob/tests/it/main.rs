@@ -22,6 +22,7 @@ mod first_run;
 mod fragment;
 mod gc;
 mod init_adopt;
+mod init_eol_pin;
 mod land_config;
 mod lease_heartbeat;
 mod lease_widen;

@@ -112,7 +112,14 @@ did the following:
 - `.gitignore`: adds `.frob/` (the local cache).
 - `.gitattributes`: adds merge rules for `tickets/**/ticket.md`,
   `tickets/_milestones/*/milestone.md` and `tickets/_cycles/*/cycle.md`, all
-  `merge=frob-ledger`.
+  `merge=frob-ledger`. When `core.autocrlf` is `true` it also adds
+  `tickets/** text eol=lf`, so a Windows checkout does not rewrite ledger files
+  to CRLF; the init report lists it as `eol_pin`. `input`, `false` and unset
+  add nothing, and a repeated run does not add it twice.
+- `[evidence] attesters`: set to the git `user.email` of the repository owner
+  (the identity configured where `frob init` ran). Only that identity may
+  attest a criterion until you edit the list; with no `user.email` the list is
+  empty and nobody may attest.
 - local git config: sets `merge.frob-ledger.driver` to a `frob merge-driver`
   command with the absolute path of the frob that ran `init`, and
   `merge.frob-ledger.name`. `--driver-command TEXT` writes a command of your

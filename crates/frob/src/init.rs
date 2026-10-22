@@ -136,6 +136,8 @@ pub struct InitData {
     pub driver: DriverInfo,
     /// The `.gitattributes` lines (tickets, milestones, cycles).
     pub gitattributes: Step,
+    /// The `tickets/** text eol=lf` pin, present when `core.autocrlf=true`; its target is the attribute line.
+    pub eol_pin: Option<Step>,
     /// The local ticket branch created from origin or fresh (orphan mode only); absent otherwise.
     pub ticket_branch: Option<Step>,
     /// The `post-checkout` and `post-merge` freshness hooks (installed, or removed by `--remove-hooks`).
@@ -350,38 +352,81 @@ fn ensure_gitignore(root: &Path, dry_run: bool) -> Result<Step, CliError> {
     })
 }
 
+// frob:ticket 01M4FD43P9VMJC9BE0KGEKVBBH
+/// Attribute words pinning ledger files to LF checkouts, whatever `core.autocrlf` says.
+const EOL_ATTRS: &str = "text eol=lf";
+/// Glob suffix selecting everything under the ledger directory.
+const ALL_BELOW: &str = "**";
+/// The git config key whose `true` value rewrites checkouts to CRLF.
+const AUTOCRLF_KEY: &str = "core.autocrlf";
+
+/// The `.gitattributes` line pinning every file under `tickets_dir` to LF endings.
+fn eol_line(tickets_dir: &str) -> String {
+    let glob = Path::new(tickets_dir).join(ALL_BELOW);
+    format!("{} {EOL_ATTRS}", Shown::of(&glob))
+}
+
+/// True when git is configured to check files out with CRLF endings (`core.autocrlf=true`).
+///
+/// `input` and `false` never produce CRLF in the working tree, so they need no pin.
+fn autocrlf_enabled(root: &Path) -> Result<bool, CliError> {
+    let runner = Runner::new(Limits { jobs: 1 });
+    let (code, value) = git(&runner, root, &["config", "--get", AUTOCRLF_KEY])?;
+    let enabled = code == 0 && value.eq_ignore_ascii_case("true");
+    tracing::info!(value, enabled, "core.autocrlf probed");
+    Ok(enabled)
+}
+
+/// Append `line` to `text` unless a line with the same words is present; true when appended.
+fn add_line_once(text: &mut String, line: &str, path: &Path) -> bool {
+    let present = text
+        .lines()
+        .any(|l| l.split_whitespace().eq(line.split_whitespace()));
+    if !present {
+        if !text.is_empty() && !text.ends_with('\n') {
+            text.push('\n');
+        }
+        text.push_str(line);
+        text.push('\n');
+        tracing::info!(path = %Shown::of(path), line, "attribute line added");
+    }
+    !present
+}
+
 /// Ensure the attribute lines of `layout` (tickets, milestones, cycles) are in `.gitattributes`.
+///
+/// With `pin_eol` the `tickets/** text eol=lf` line is added too, and the second step reports it.
 fn ensure_gitattributes(
     root: &Path,
     layout: Layout,
     tickets_dir: &str,
+    pin_eol: bool,
     dry_run: bool,
-) -> Result<Step, CliError> {
+) -> Result<(Step, Option<Step>), CliError> {
     let path = root.join(".gitattributes");
     let mut text = read_or_empty(&path)?;
     let mut changed = false;
     for line in layout::attribute_patterns(layout, tickets_dir, DRIVER_ATTR) {
-        let present = text
-            .lines()
-            .any(|l| l.split_whitespace().eq(line.split_whitespace()));
-        if !present {
-            changed = true;
-            if !text.is_empty() && !text.ends_with('\n') {
-                text.push('\n');
-            }
-            text.push_str(&line);
-            text.push('\n');
-            tracing::info!(path = %Shown::of(&path), line, "attribute line added");
-        }
+        changed |= add_line_once(&mut text, &line, &path);
     }
+    let eol = pin_eol.then(|| {
+        let line = eol_line(tickets_dir);
+        let added = add_line_once(&mut text, &line, &path);
+        Step {
+            target: line,
+            changed: added,
+        }
+    });
+    changed |= eol.as_ref().is_some_and(|s| s.changed);
     if changed && !dry_run {
         std::fs::write(&path, text)
             .map_err(|e| CliError::internal(format!("cannot write {}: {e}", Shown::of(&path))))?;
     }
-    Ok(Step {
+    let step = Step {
         target: Shown::of(&path).to_string(),
         changed,
-    })
+    };
+    Ok((step, eol))
 }
 
 fn read_or_empty(path: &Path) -> Result<String, CliError> {
@@ -818,16 +863,18 @@ impl Command for Init {
             self.fix_driver,
         )?;
         // The ticket branch carries its own `.gitattributes`; the code branch holds no ledger files.
-        let gitattributes = if cfg.tickets.ref_mode == RefModeKnob::Orphan {
+        let (gitattributes, eol_pin) = if cfg.tickets.ref_mode == RefModeKnob::Orphan {
             tracing::info!(
                 "ledger lives on the ticket branch; no ledger attributes on the code branch"
             );
-            Step {
+            let step = Step {
                 target: Shown::of(&root.join(".gitattributes")).to_string(),
                 changed: false,
-            }
+            };
+            (step, None)
         } else {
-            ensure_gitattributes(root, Layout::Dir, &cfg.tickets.dir, ctx.dry_run)?
+            let pin_eol = autocrlf_enabled(root)?;
+            ensure_gitattributes(root, Layout::Dir, &cfg.tickets.dir, pin_eol, ctx.dry_run)?
         };
         let ticket_branch = ensure_ticket_branch(repo, &cfg, ctx.dry_run)?.map(|branch| Step {
             target: format!("refs/heads/{branch}"),
@@ -872,6 +919,7 @@ impl Command for Init {
             merge_driver,
             driver,
             gitattributes,
+            eol_pin,
             ticket_branch,
             freshness_hooks: freshness,
             agent_settings,
