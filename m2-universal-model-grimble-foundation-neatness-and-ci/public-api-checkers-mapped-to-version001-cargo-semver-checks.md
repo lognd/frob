@@ -8,7 +8,7 @@ points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:12:41Z"
-updated = "2026-10-22T13:58:23Z"
+updated = "2026-10-22T13:58:58Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob-obligations/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a major version bump, when checked, then no finding"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md row K32 (4.2 N08): notes/research/mining-report-2026-10-08.md C35 breaking API, 67 percent blocking; notes/research/creators-systems-2026-10-08.md ADV012 (Hyrum's law), ADV023 public surface.
