@@ -35,6 +35,10 @@ bound = false
 [[acceptance]]
 text = "clean input is a no-op"
 bound = false
+
+[[acceptance]]
+text = "a finding without a mechanical fix is left unchanged"
+bound = false
 +++
 
 Follow-up of ~G4WAFJT: wire the gob-fix harness (gob_fix::run_fixture) for these fixable rules: a fixture per rule, an observe closure over the real check pipeline, an insta snapshot of Outcome::snapshot_text, and missing_fixtures over the registry's Deterministic rules.
