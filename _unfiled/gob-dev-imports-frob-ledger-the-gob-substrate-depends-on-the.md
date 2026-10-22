@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-06T13:10:29Z"
-updated = "2026-10-22T05:16:46Z"
-scope = ["crates/gob-dev/**", "design/model.grmb", "crates/frob-ledger/Cargo.toml"]
+updated = "2026-10-22T05:16:47Z"
+scope = ["crates/gob-dev/**", "design/model.grmb", "crates/frob-ledger/Cargo.toml", "crates/frob-ledger/benches"]
 
 [[acceptance]]
 text = "gob-dev no longer imports frob-ledger or any frob crate (cargo tree -p gob-dev shows none) and SYS013 reports no gob->frob edge from crates/gob-dev"
