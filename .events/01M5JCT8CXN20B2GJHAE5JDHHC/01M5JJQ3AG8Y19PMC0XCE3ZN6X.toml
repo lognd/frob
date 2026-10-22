@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T19:51:25Z"
+digest = "406db8cdf0fb60b79790890f05826eef0a430f829c6b5122dd12b728faac88f3"
+exit_code = 100
+failed_tests = ["batched_read_is_not_slower_than_per_blob_reads"]
+head = "6c41adaec66c443c5c14ef55f263d2a11c6dc050"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 27.51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 447cc73a-0ef2-48cc-9d5d-7daedea09d0a with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        FAIL [   2.197s] gob-git::read_blobs batched_read_is_not_slower_than_per_blob_reads
+  output \u{2500}\u{2500}\u{2500}
+
+    running 1 test
+    read_blobs timing for 4000 blobs: per-blob 1.0735ms, batched 48.189206ms
+
+    thread 'batched_read_is_not_slower_than_per_blob_reads' (3448041) panicked at crates/gob-git/tests/read_blobs.rs:112:5:
+    batched 48.189206ms vs per-blob 1.0735ms
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+    test batched_read_is_not_slower_than_per_blob_reads ... FAILED
+
+    failures:
+
+    failures:
+        batched_read_is_not_slower_than_per_blob_reads
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 2 filtered out; finished in 2.19s
+
+
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.198s] 1 test run: 0 passed, 1 failed, 2 skipped
+        FAIL [   2.197s] gob-git::read_blobs batched_read_is_not_slower_than_per_blob_reads
+error: test run failed
+'''
+passed = false
+provider = "nextest"
+ref = "-p gob-git --test read_blobs batched_read_is_not_slower_than_per_blob_reads"
+size = 1373
+status = "measured"
+test_count = 1
+tests_digest = "f4da40d7e665ff00c16c951d9322ec13d2f84e0bb565fae9a67b393017fa921c"
+at = "2026-10-22T19:51:25Z"
+actor = "lognd"
+rev = 1
