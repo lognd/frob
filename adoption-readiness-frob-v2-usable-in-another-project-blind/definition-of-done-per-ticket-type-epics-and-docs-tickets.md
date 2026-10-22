@@ -8,8 +8,8 @@ points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:42Z"
-updated = "2026-10-22T01:16:49Z"
-scope = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-release/**", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src", "crates/frob-evidence/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches"]
+updated = "2026-10-22T01:16:50Z"
+scope = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-release/**", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src", "crates/frob-evidence/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml"]
 
 [[acceptance]]
 text = "Given an epic whose children are done, when it closes, then no changelog fragment or command evidence is required by default"
