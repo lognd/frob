@@ -2,7 +2,8 @@
 id = "01M4FGYK3ZMG2PFK5FF7N3TMXS"
 title = "grmb-spec: a claim form for threat and data assumptions without a flow proposition"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
