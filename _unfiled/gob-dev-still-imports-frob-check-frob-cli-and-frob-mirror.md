@@ -2,7 +2,8 @@
 id = "01M5H16QQT8R5N9162DMQE4F44"
 title = "gob-dev still imports frob-check, frob-cli and frob-mirror (remaining SYS013 layering inversion after ~M8WETW7)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
