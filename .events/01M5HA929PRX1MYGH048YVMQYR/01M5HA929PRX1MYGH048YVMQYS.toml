@@ -1,0 +1,10 @@
+kind = "create"
+title = "GX focus: directional neighbours from solved geometry and T3 Unity verification"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-layout/**"]
+body = "found while working Q2ZC9QM: depends on the layout solver; document order is used today."
+at = "2026-10-22T08:05:12Z"
+actor = "lognd"
+rev = 1
