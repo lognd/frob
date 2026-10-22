@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T12:33:34Z"
+digest = "81aeb2de202a85f06783f321faa8a6251833451f2cd0551a8b4f2c051b05f751"
+exit_code = 0
+head = "6bf485c0452ef13e2c5f1f7d95073260dd596d4b"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.89s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7c69465b-3f7c-4388-8628-f305ea87b57d with nextest profile: default
+    Starting 1 test across 1 binary (252 tests skipped)
+        PASS [   0.014s] gob-symbols::it link_cache::warm_build_keeps_degraded_files_cached_and_reuses_the_link_results
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 252 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols --test it link_cache::warm_build_keeps_degraded"
+size = 705
+status = "measured"
+test_count = 1
+tests_digest = "cffae025ac3b657c6df12c100d68db31ce43d6b6053d8b8e868b44f07bd73aad"
+at = "2026-10-22T12:33:34Z"
+actor = "lognd"
+rev = 1
