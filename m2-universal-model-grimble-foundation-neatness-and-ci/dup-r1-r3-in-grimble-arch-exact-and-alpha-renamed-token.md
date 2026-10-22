@@ -2,13 +2,13 @@
 id = "01M4D958QKMX7VHFJMRMAWDT22"
 title = "DUP R1-R3 in grimble-arch: exact and alpha-renamed token clones above min_tokens with three or more occurrences (Advisory)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:12:59Z"
-updated = "2026-10-08T08:12:59Z"
+updated = "2026-10-22T10:45:15Z"
 scope = ["changelog.d/**", "crates/grimble-arch/**"]
 
 [[acceptance]]
