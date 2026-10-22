@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T11:58:51Z"
-updated = "2026-10-22T14:50:32Z"
+updated = "2026-10-22T14:52:35Z"
 scope = ["docs/design/grl-spec.md", "docs/grimble/**"]
 
 [[acceptance]]
 text = "Given grl-spec sections 4-6 and the grimble sysdesign pack page, when read, then needs names capabilities and diff, lease, config and model appear under reads"
-bound = false
+bound = true
 +++
 
 found while working ~54ECDV7: needs now names language capabilities and side relations (diff, lease, config, model) moved to a reads header; grl-spec sections 4-6 and docs/grimble/packs/grimble-sysdesign.md still show needs diff/model.
