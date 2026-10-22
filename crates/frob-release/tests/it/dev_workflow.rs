@@ -35,8 +35,9 @@ const CI: &str = ".github/workflows/ci.yml";
 /// The dev jobs of ci.yml: the shared-workflow call and the publisher.
 const DEV_JOBS: [&str; 2] = ["dev-artifacts", "dev-publish"];
 /// Path-scoped jobs: skipped on most diffs (and a skipped need skips its dependants), so the
-/// dev channel waits for `rust` alone. A crunk-only push does not refresh the channel.
-const SCOPED_JOBS: [&str; 2] = ["crunk", "crunk-node"];
+/// dev channel waits for `rust` alone. A crunk-only push does not refresh the channel, and a
+/// docs-only push (which skips `rust` too) leaves the channel alone as well.
+const SCOPED_JOBS: [&str; 3] = ["crunk", "crunk-node", "docs-only"];
 
 /// The gate every dev job carries: a push event, this repository, a configured dev branch.
 fn assert_dev_gate(job: &Value, name: &str) {
