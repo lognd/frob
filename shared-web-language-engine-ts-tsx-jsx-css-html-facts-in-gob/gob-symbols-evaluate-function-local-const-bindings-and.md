@@ -8,8 +8,8 @@ points = 3
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T10:20:10Z"
-updated = "2026-10-22T00:20:11Z"
-scope = ["crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/src/typescript/**", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md", "changelog.d/01M48BMS05GVBRPP3B8NMTWA1V.added.md", "crates/gob-ir/src/const_value.rs", "crates/gob-symbols/src/graph/typescript.rs"]
+updated = "2026-10-22T00:21:07Z"
+scope = ["crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/src/typescript/**", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md", "changelog.d/01M48BMS05GVBRPP3B8NMTWA1V.added.md", "crates/gob-ir/src/const_value.rs", "crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/tests/it/typescript_consteval.rs"]
 
 [[acceptance]]
 text = "function-local const bindings and namespace-import members evaluate in TS const_value"
