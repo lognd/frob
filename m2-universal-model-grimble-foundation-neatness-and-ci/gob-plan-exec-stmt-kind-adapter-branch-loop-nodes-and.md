@@ -2,13 +2,13 @@
 id = "01M5GE4YWPW8XRWCP5N1A69KMM"
 title = "gob-plan exec: stmt kind, adapter branch/loop nodes, and directly-inside through body groups (NEAT031 examples 0 and 1)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T23:53:37Z"
-updated = "2026-10-22T00:15:13Z"
+updated = "2026-10-22T00:15:27Z"
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/tests/ten_rules/**"]
 
 [[acceptance]]
