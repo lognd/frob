@@ -84,8 +84,8 @@ fn examples_and_remedy_are_required_and_universal_rules_need_a_third() {
 fn a_side_relation_needs_its_root_declared() {
     let body = "  find d: `dbg!($$$ARGS)`\n  where d.file.path in diff.changed\n  report d \"m\"";
     assert_eq!(ok_rule("lang rust", body), [Code::Grl014]);
-    assert!(ok_rule("lang rust\n  needs diff", body).is_empty());
-    assert_eq!(ok_rule("lang rust\n  needs lease", body), [Code::Grl014]);
+    assert!(ok_rule("lang rust\n  reads diff", body).is_empty());
+    assert_eq!(ok_rule("lang rust\n  reads lease", body), [Code::Grl014]);
     let config = "  find r: config.invariants.forbid_imports\n  report r \"m\"";
     assert!(ok_rule("lang rust", config).is_empty());
 }

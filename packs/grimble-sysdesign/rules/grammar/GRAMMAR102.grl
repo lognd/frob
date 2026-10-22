@@ -1,7 +1,7 @@
 rule GRAMMAR102 "node-name-not-snake-case" {
   lang -
   severity warn
-  needs model
+  reads model
 
   find n: model.nodes where not n.name ~ /^[a-z][a-z0-9_]*$/
   report n "node {n.name} is not lower snake_case: rename it so references stay uniform"

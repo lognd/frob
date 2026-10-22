@@ -29,6 +29,7 @@ mod prefilter;
 mod roles;
 mod source;
 
+pub use convert::needed_capabilities;
 pub use error::LowerError;
 pub use prefilter::prefilter_kinds;
 pub use source::{SourceError, lower_source};

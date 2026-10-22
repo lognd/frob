@@ -6,8 +6,8 @@ use std::collections::BTreeSet;
 use super::LowerError;
 use super::convert::{Cond, CountSideC, DefItem, FindItem, LangNames, Lim, Lowered, Opd, Src};
 use crate::plan::{
-    Certainty, CountSide, Def, Langs, Leaf, Limit, Need, NeedSet, Op, OpId, Operand, Plan,
-    PlanParts, Polarity, Provenance, Report, StrId, Unresolved, VarId, cost_class,
+    Certainty, CountSide, Def, Langs, Leaf, Limit, Op, OpId, Operand, Plan, PlanParts, Polarity,
+    Provenance, Read, ReadSet, Report, StrId, Unresolved, VarId, cost_class,
 };
 
 /// The sort key of a condition: its structure, so equal clauses sort alike in any source order.
@@ -505,13 +505,13 @@ pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerErr
     let langs = langs_of(&mut b, &l.langs);
     // frob:ticket 01M3ZX7EQ5NARR4Z2SAY4H23AQ
     let kinds = super::prefilter_kinds(&b.ops, &clauses);
-    let needs: Vec<Need> = l.needs.clone();
+    let needs: Vec<Read> = l.needs.clone();
     let parts = PlanParts {
         rule: l.id.clone(),
         provenance,
         polarity: l.polarity,
         langs,
-        needs: NeedSet::of(&needs),
+        reads: ReadSet::of(&needs),
         prefilter: kinds,
         // frob:ticket 01M3ZX7EQ5NARR4Z2SAY4H23AQ
         cost: cost_class(&b.ops, l.repo_scope),

@@ -1,7 +1,7 @@
 rule GRAMMAR103 "node-name-generic" {
   lang -
   severity warn
-  needs model
+  reads model
 
   find n: model.nodes where n.name in ["node", "thing", "misc", "other", "stuff", "tmp"]
   report n "node {n.name} has a placeholder name: name it for what it is"

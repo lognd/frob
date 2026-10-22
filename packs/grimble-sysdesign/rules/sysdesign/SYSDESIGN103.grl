@@ -1,7 +1,7 @@
 rule SYSDESIGN103 "node-owns-vendored-tree" {
   lang -
   severity advisory
-  needs model
+  reads model
 
   find s: model.selectors where s.selector ~ /(^|[\/"])(node_modules|vendor|third_party|target|dist|build)(\/|"|$)/
   report s "node {s.node} owns a vendored or generated tree: own the code you write, not what you fetch or build"

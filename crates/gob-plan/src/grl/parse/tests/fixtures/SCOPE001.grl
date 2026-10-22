@@ -1,7 +1,7 @@
 rule SCOPE001 "path-outside-lease" {
   lang -
   severity error  scope repo
-  needs diff, lease, config
+  reads diff, lease, config
 
   find p: diff.changed
   where not p matches lease.globs and not p matches config.lease.shared_files

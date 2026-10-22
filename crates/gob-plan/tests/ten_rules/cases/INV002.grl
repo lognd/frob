@@ -1,7 +1,7 @@
 rule INV002 "forbidden-import" {
   lang *
   severity error  scope repo
-  needs config
+  reads config
 
   find row: config.invariants.forbid_imports              # columns from, to, reason (typed)
   find i: import where i.file.path matches row.from and i.target under row.to

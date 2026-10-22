@@ -6,8 +6,8 @@
 
 use super::error::PlanError;
 use super::ir::{
-    Certainty, CmpOp, CostClass, CountSide, Def, Langs, Leaf, Limit, Need, NeedSet, Op, Operand,
-    PlanParts, Polarity, Position, Provenance, Quant, Report, Scale, Unresolved,
+    Certainty, CmpOp, CostClass, CountSide, Def, Langs, Leaf, Limit, Op, Operand, PlanParts,
+    Polarity, Position, Provenance, Quant, Read, ReadSet, Report, Scale, Unresolved,
 };
 use super::limits::{MAX_BYTES, MAX_DEFS, MAX_LIST, MAX_OPS, MAX_PARAMS, MAX_STR_LEN, MAX_STRINGS};
 
@@ -38,7 +38,7 @@ pub fn encode(p: &PlanParts) -> Vec<u8> {
             put_u32s(&mut w, l);
         }
     }
-    w.push(p.needs.0);
+    w.push(p.reads.0);
     put_u32s(&mut w, &p.prefilter);
     match p.cost {
         CostClass::PerFile => w.push(0),
@@ -129,7 +129,7 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
         2 => Langs::Only(r.u32s("langs", MAX_LIST)?),
         tag => return Err(PlanError::BadTag { what: "langs", tag }),
     };
-    let needs = NeedSet(r.u8("needs")?);
+    let reads = ReadSet(r.u8("reads")?);
     let prefilter = r.u32s("prefilter", MAX_LIST)?;
     let cost = match r.u8("cost class")? {
         0 => CostClass::PerFile,
@@ -198,7 +198,7 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
         provenance,
         polarity,
         langs,
-        needs,
+        reads,
         prefilter,
         cost,
         vars,
@@ -656,12 +656,12 @@ impl Reader<'_> {
         }
     }
 
-    fn need(&mut self) -> Result<Need, PlanError> {
+    fn need(&mut self) -> Result<Read, PlanError> {
         match self.u8("need")? {
-            0 => Ok(Need::Config),
-            1 => Ok(Need::Diff),
-            2 => Ok(Need::Lease),
-            3 => Ok(Need::Model),
+            0 => Ok(Read::Config),
+            1 => Ok(Read::Diff),
+            2 => Ok(Read::Lease),
+            3 => Ok(Read::Model),
             tag => Err(PlanError::BadTag { what: "need", tag }),
         }
     }

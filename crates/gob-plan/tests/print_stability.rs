@@ -187,7 +187,7 @@ rule KIT001 "kitchen-sink" {
   severity advisory
   scope repo
   must_measure
-  needs diff, lease
+  reads diff, lease
   rollup directory
   knob depth: int = 12 "max depth"
   knob names: list<list<string>> = [["a"], ["b", "c"]] "names"
@@ -907,6 +907,8 @@ fn header() -> BoxedStrategy<Header> {
         Just(sn(HeaderKind::MustMeasure)),
         proptest::collection::vec(pick(&["diff", "lease", "config"]), 1..3)
             .prop_map(|v| sn(HeaderKind::Needs(v))),
+        proptest::collection::vec(pick(&["diff", "lease", "config"]), 1..3)
+            .prop_map(|v| sn(HeaderKind::Reads(v))),
         select(vec![Rollup::File, Rollup::Directory, Rollup::Unit])
             .prop_map(|r| sn(HeaderKind::Rollup(r))),
         (
