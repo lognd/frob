@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T08:55:43Z"
+digest = "be0a254532be6ed51699e8ff8948138c1f28688b094c53b2b50150d28a530451"
+exit_code = 0
+head = "b3a76ccf17d929d787af952eba813b883e378378"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 084016ef-9ec1-405a-bfb9-735868997d30 with nextest profile: default
+    Starting 2 tests across 1 binary (7 tests skipped)
+        PASS [   0.005s] frob-evidence::dotnet allowed_runner_flags_are_passed_and_other_options_are_refused
+        PASS [   0.325s] frob-evidence::dotnet a_no_build_reference_is_recorded_and_the_flags_reach_dotnet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.326s] 2 tests run: 2 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --test dotnet allowed_runner_flags a_no_build_reference"
+size = 804
+status = "measured"
+test_count = 2
+tests_digest = "80bf1d689be435a987e5fa797cc303cc346293dc45e4291e22ca97556a4fe0cb"
+at = "2026-10-22T08:55:43Z"
+actor = "lognd"
+rev = 1
