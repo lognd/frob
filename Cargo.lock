@@ -2517,6 +2517,7 @@ name = "gob-config"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "gob-fix",
  "gob-macros",
  "gob-mdtest",
  "gob-path",
