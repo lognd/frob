@@ -8,9 +8,9 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T20:36:47Z"
-updated = "2026-10-22T00:47:46Z"
+updated = "2026-10-22T00:49:23Z"
 idempotency_key = "g4w-directives"
-scope = ["crates/gob-directives/**"]
+scope = ["crates/gob-directives/**", "changelog.d/01M5G2WH43B41KTYYK40WS3RZW.added.md"]
 
 [[acceptance]]
 text = "each Deterministic directive rule has a fix fixture, a diff snapshot, and passes the fixpoint harness"
