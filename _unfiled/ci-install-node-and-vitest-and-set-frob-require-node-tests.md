@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-07T02:49:39Z"
-updated = "2026-10-22T02:27:15Z"
-scope = ["crates/gob-dev/**"]
+updated = "2026-10-22T02:28:10Z"
+scope = ["crates/gob-dev/**", ".github/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "ci.yml and cargo dev ci install node and set FROB_REQUIRE_NODE_TESTS=1, mirroring REQUIRE_PYTHON_TESTS_ENV"
