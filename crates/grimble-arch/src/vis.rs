@@ -29,6 +29,11 @@ fn is_rust(path: &str) -> bool {
         .is_some_and(|e| e.eq_ignore_ascii_case("rs"))
 }
 
+/// True when the walk holds at least one Rust unit, the only language `VIS001` measures.
+pub(crate) fn has_rust(graph: &SymbolGraph) -> bool {
+    graph.records().any(|r| is_rust(r.symref.path()))
+}
+
 /// Findings for `pub` Rust free functions that only their own package uses, and the candidates examined.
 pub(crate) fn check(
     graph: &SymbolGraph,

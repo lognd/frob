@@ -155,7 +155,7 @@ fn dirty() -> (Repo, String, PathBuf) {
     let path = format!("tickets/{id}/events/{}", ev.file_name());
     std::fs::write(repo.path().join(&path), ev.to_toml().expect("toml")).expect("write event");
     let lease = format!(
-        "kind = \"lease\"\nat = \"{}\"\nactor = \"a\"\nrev = 1\nreason = \"lease: ann in /home/ann/projects/{name}-wt/T2 and C:\\\\Users\\\\bo\\\\p\\\\{name}-wt\\\\T3; scope: x\"\n",
+        "kind = \"lease\"\nat = \"{}\"\nactor = \"a\"\nrev = 1\nop = \"renew\"\nreason = \"lease: ann in /home/ann/projects/{name}-wt/T2 and C:\\\\Users\\\\bo\\\\p\\\\{name}-wt\\\\T3; scope: x\"\n",
         gob_time::Clock::now(&gob_time::SystemClock)
     );
     let lease_ev = Event::parse(frob_ledger::EventId::mint(), &lease).expect("lease");

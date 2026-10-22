@@ -1,0 +1,1 @@
+The explain table now lists the UNITY001-003 pages, VIS001 reports not applicable on repositories without Rust source, `frob work --schema` no longer fails on the missing ticket argument, and stale CLI and conformance test expectations are updated.
