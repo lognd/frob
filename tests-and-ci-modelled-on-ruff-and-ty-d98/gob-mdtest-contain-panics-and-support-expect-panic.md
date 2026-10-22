@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-22T02:55:47Z"
+updated = "2026-10-22T02:55:48Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "a non-string panic payload is reported with a placeholder"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "directive binds to the next case only and CRLF does not shift line attribution"

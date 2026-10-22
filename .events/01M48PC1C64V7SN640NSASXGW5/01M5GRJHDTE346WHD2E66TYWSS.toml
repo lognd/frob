@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-22T02:55:48Z"
+digest = "1e9c1547cd9f4c7702c992a2c6a27fafee81ff87a1448d8c720a2a1998c87762"
+exit_code = 0
+head = "680e526f40f11e1b9e9920e9ef8fb448ccd17cce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e003808d-97e7-40b1-bba2-419c93d22d94 with nextest profile: default
+    Starting 1 test across 1 binary (12 tests skipped)
+        PASS [   0.004s] gob-mdtest::panics non_string_payload_is_reported_with_a_placeholder
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 12 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest --test panics non_string_payload"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "e0dbd18f1724cc710b81ade851ff1ae3852f8fc97d5f31f970b7a2bc19c551dc"
+at = "2026-10-22T02:55:48Z"
+actor = "lognd"
+rev = 1
