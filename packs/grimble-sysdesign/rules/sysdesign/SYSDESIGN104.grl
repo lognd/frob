@@ -1,7 +1,7 @@
 rule SYSDESIGN104 "owns-selector-not-anchored" {
   lang -
   severity advisory
-  needs model
+  reads model
 
   find s: model.selectors where not s.selector ~ /^"[A-Za-z0-9_.-]+\//
   unresolved when s.selector ~ /\(/ because "the selector is an expression, not a path: the rule cannot tell whether it is anchored to a directory"

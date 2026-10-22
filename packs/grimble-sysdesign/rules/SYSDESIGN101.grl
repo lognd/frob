@@ -1,7 +1,7 @@
 rule SYSDESIGN101 "node-owns-whole-tree" {
   lang -
   severity warn
-  needs model
+  reads model
 
   find s: model.selectors where s.selector ~ /^"?\*\*"?$/
   report s "node {s.node} owns the whole tree: scope it to the code it is accountable for"

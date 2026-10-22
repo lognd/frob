@@ -116,6 +116,7 @@ fn header(h: &Header) -> String {
         ),
         HeaderKind::MustMeasure => "must_measure".to_owned(),
         HeaderKind::Needs(names) => format!("needs {}", words(names)),
+        HeaderKind::Reads(names) => format!("reads {}", words(names)),
         HeaderKind::Rollup(r) => format!(
             "rollup {}",
             match r {

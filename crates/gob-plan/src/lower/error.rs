@@ -32,8 +32,8 @@ pub enum LowerError {
         /// The second binding.
         span: Span,
     },
-    /// A header names a side relation that does not exist.
-    #[error("unknown side relation `{name}`")]
+    /// A `needs` word names no capability, or a `reads` word no side relation.
+    #[error("unknown capability or side relation `{name}`")]
     UnknownNeed {
         /// The word.
         name: String,

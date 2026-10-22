@@ -11,7 +11,7 @@ use gob_plan::catalog::{Column, FieldType};
 use gob_plan::exec::relations::{Count, Knobs, Relations, SideData, SideError, SideTable};
 use gob_plan::exec::{Doubt, ExecError, Input, Scalar, count, run, run_with};
 use gob_plan::plan::{
-    Certainty, CmpOp, Leaf, Limit, Need, NeedSet, Op, Operand, Plan, Polarity, Quant,
+    Certainty, CmpOp, Leaf, Limit, Op, Operand, Plan, Polarity, Quant, Read, ReadSet,
 };
 use support::{Doc, PlanBuilder};
 
@@ -139,12 +139,12 @@ fn a_relation_the_plan_names_but_the_caller_lacks_is_refused() {
 
 fn side_plan() -> (gob_plan::plan::Plan, u16) {
     let mut b = PlanBuilder::new("SIDE001", Polarity::Pplus);
-    b.needs(NeedSet::of(&[Need::Diff, Need::Lease]));
+    b.reads(ReadSet::of(&[Read::Diff, Read::Lease]));
     let p = b.var();
     let table = b.s("diff.changed");
     let id = b.op(Op::FindSide {
         var: p,
-        need: Need::Diff,
+        need: Read::Diff,
         table,
     });
     b.clause(id);
@@ -360,12 +360,12 @@ fn a_def_is_a_view_computed_once_per_distinct_arguments() {
 fn a_glob_set_op_matches_any_glob_in_a_side_column() {
     let (m, _) = model(&["a"]);
     let mut b = PlanBuilder::new("SIDE002", Polarity::Pplus);
-    b.needs(NeedSet::of(&[Need::Diff, Need::Lease]));
+    b.reads(ReadSet::of(&[Read::Diff, Read::Lease]));
     let p = b.var();
     let dt = b.s("diff.changed");
     let id = b.op(Op::FindSide {
         var: p,
-        need: Need::Diff,
+        need: Read::Diff,
         table: dt,
     });
     b.clause(id);
@@ -374,7 +374,7 @@ fn a_glob_set_op_matches_any_glob_in_a_side_column() {
     let col = b.s("glob");
     let g = b.op(Op::MatchGlobSet {
         subject: path,
-        need: Need::Lease,
+        need: Read::Lease,
         table: lt,
         column: col,
     });
@@ -415,11 +415,11 @@ fn a_glob_set_op_matches_any_glob_in_a_side_column() {
 fn a_glob_operand_op_matches_a_path_against_a_row_glob_and_an_invalid_glob_is_unknown() {
     let (m, _) = model(&["a"]);
     let mut b = PlanBuilder::new("SIDE003", Polarity::Pplus);
-    b.needs(NeedSet::of(&[Need::Diff, Need::Lease]));
+    b.reads(ReadSet::of(&[Read::Diff, Read::Lease]));
     let (p, g) = (b.var(), b.var());
     let dt = b.s("diff.changed");
     let lt = b.s("lease.globs");
-    for (var, need, table) in [(p, Need::Diff, dt), (g, Need::Lease, lt)] {
+    for (var, need, table) in [(p, Read::Diff, dt), (g, Read::Lease, lt)] {
         let id = b.op(Op::FindSide { var, need, table });
         b.clause(id);
     }

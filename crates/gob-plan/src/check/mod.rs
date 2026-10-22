@@ -19,7 +19,7 @@
 //! | GRL011 | a missing `fire`, `clean` or (universal rules) `notapplicable` example |
 //! | GRL012 | an `explain` text without a `## Remedy` section |
 //! | GRL013 | (warning) a `find` variable never used |
-//! | GRL014 | a side relation read but not listed in `needs` |
+//! | GRL014 | a side relation read but not listed in `reads` |
 //! | GRL015 | a fix without applicability, a plugin fix outside the finding's span, or a plugin `fix host` |
 //! | GRL017 | `certainly` or `possibly` in a negative position |
 //! | GRL018 | a word no language of the rule's `lang` answers |
@@ -77,7 +77,7 @@ pub enum Code {
     Grl012,
     /// Variable bound and never used (warning).
     Grl013,
-    /// Side relation used but not in `needs`.
+    /// Side relation used but not in `reads`.
     Grl014,
     /// Fix without applicability, plugin fix outside its span, or plugin host fix.
     Grl015,

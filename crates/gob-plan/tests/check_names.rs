@@ -338,7 +338,7 @@ fn a_word_no_language_answers_is_grl018_but_universal_rules_are_not_checked() {
 
 #[test]
 fn side_relations_are_checked() {
-    let h = "lang -\n  needs diff, lease";
+    let h = "lang -\n  reads diff, lease";
     assert!(
         codes(
             h,

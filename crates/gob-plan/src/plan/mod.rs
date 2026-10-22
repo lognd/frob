@@ -1,7 +1,7 @@
 //! The plan format: one typed IR for every declarative rule (plugins.md section 3).
 //!
 //! Std rules are compiled to the same form that disk packs are, and one executor
-//! runs both. A [`Plan`] carries pack provenance, polarity, needs, the prefilter
+//! runs both. A [`Plan`] carries pack provenance, polarity, reads, the prefilter
 //! kind set and the cost class. Bytes from disk are untrusted (security.md 2.2):
 //! [`Plan::load`] decodes and fully validates them and returns a [`PlanError`]
 //! naming the reason on any defect; it never panics and never yields an invalid
@@ -30,8 +30,8 @@ mod tests;
 pub use cost::cost_class;
 pub use error::PlanError;
 pub use ir::{
-    ANY_NODES, Certainty, CmpOp, CostClass, CountSide, Def, Langs, Leaf, Limit, Need, NeedSet, Op,
-    OpId, Operand, PlanParts, Polarity, Position, Provenance, Quant, Report, Scale, StrId,
+    ANY_NODES, Certainty, CmpOp, CostClass, CountSide, Def, Langs, Leaf, Limit, Op, OpId, Operand,
+    PlanParts, Polarity, Position, Provenance, Quant, Read, ReadSet, Report, Scale, StrId,
     Unresolved, VarId,
 };
 pub use limits::{
@@ -114,8 +114,8 @@ impl Plan {
     }
 
     /// The declared side relations.
-    pub fn needs(&self) -> NeedSet {
-        self.0.needs
+    pub fn reads(&self) -> ReadSet {
+        self.0.reads
     }
 
     /// The cost class.

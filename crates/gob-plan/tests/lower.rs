@@ -496,7 +496,7 @@ fn a_kind_string_argument_tests_the_name_as_binder_and_as_relation_object() {
 #[test]
 fn a_glob_matched_against_a_side_row_field_lowers_to_an_operand_glob_op() {
     let src = rule(&[
-        "needs config",
+        "reads config",
         "find row: config.invariants.forbid_imports",
         "find i: import where i.file.path matches row.from and i.target under row.to",
         "report i \"{i.file.path} imports {i.target}: {row.reason}\"",
