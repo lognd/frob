@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T03:58:53Z"
-updated = "2026-10-22T04:14:33Z"
+updated = "2026-10-22T04:17:22Z"
 scope = ["crates/frob/src/init.rs", "docs/design/architecture.md", "docs/reference/rules/TICK005.md", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/rules/tick005.md", "changelog.d/01M42H140A7Y1AMEQJ0YVTYZDE.*"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the TICK005 rule page and frob doctor, when a user reads them, then they show the privacy.toml format ([[rule]] with pattern, replace, regex, case_sensitive) and both file locations"
-bound = false
+bound = true
 +++
 
 follow-up from ~2GXRW72: call frob_ledger::redact::RuleSet::mention_local_files(repo.common_dir()) in init (as doctor does), then drop the 'frob init to follow' note in architecture.md section 6
