@@ -127,6 +127,12 @@
 | [DSL002](DSL002.md) | abbreviated-ticket-id | error | deterministic | P+ | false | A directive carries an abbreviated ticket id instead of a full 26-char ULID. |
 | [DSL003](DSL003.md) | deprecated-directive-spelling | warn | deterministic | P+ | false | A directive uses a deprecated `frob:` claim spelling that D120 moved or dropped. |
 
+## DUP
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [DUP001](DUP001.md) | arch-duplicate-code | advisory | manual | Pn | true | A block of code copied three or more times. |
+
 ## EXC
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
