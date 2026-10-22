@@ -2,7 +2,8 @@
 id = "01M5H5WSR0H3YJHAPAMM7F4X3Q"
 title = "Fix known failing tests: explain_cmd table VIS001, cli text_format, wiring sibling_verbs_print_schemas, web_conformance SYS013, reindex budget"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
