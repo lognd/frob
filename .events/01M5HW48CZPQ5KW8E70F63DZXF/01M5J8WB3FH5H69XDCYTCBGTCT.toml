@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T17:00:00Z"
+digest = "882161f291c2e6fb56b90bd25167ed5e27109ebcf30c949754d39daba7c57325"
+exit_code = 0
+head = "a103f449753b22e8a0ab5c788564f9db727b4c65"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 713c3aa6-bc14-4f0d-938b-9b03f378f71d with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.186s] crunk-check::gx014 computed_color_methods_are_unresolved_and_clear_stays_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.187s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test gx014 computed_color_methods_are_unresolved_and_clear_stays_clean"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "be1faecd95e1cfacf83793891527024fc2f312c835097ec66e6c225a27f65654"
+at = "2026-10-22T17:00:00Z"
+actor = "lognd"
+rev = 1
