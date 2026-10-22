@@ -408,7 +408,7 @@ impl Query {
     clippy::disallowed_methods,
     reason = "a finding's line is read from the current source of the file it points into"
 )]
-fn line_of(root: &std::path::Path, path: &str, offset: u32) -> u32 {
+pub(crate) fn line_of(root: &std::path::Path, path: &str, offset: u32) -> u32 {
     let Ok(bytes) = std::fs::read(root.join(path)) else {
         return 0;
     };

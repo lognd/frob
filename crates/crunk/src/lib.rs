@@ -31,6 +31,7 @@ pub mod rename;
 pub mod review;
 pub mod rewrite;
 pub mod rule;
+pub mod slop_report;
 pub mod tokens;
 
 use std::path::Path;
@@ -54,7 +55,7 @@ gob_cli::inventory::submit! {
     gob_cli::SchemaExtension::new(crunk_spec::schema::schema)
 }
 
-/// The crunk-only `check --gate` flag.
+/// The crunk-only `check --gate` and `check --report` flags.
 #[derive(Debug, Clone, gob_cli::clap::Args)]
 #[command(about = None, long_about = None)]
 struct GateArgs {
@@ -65,6 +66,14 @@ struct GateArgs {
         help = "Judge for this gate; release raises stale human reviews to errors"
     )]
     gate: Option<String>,
+    // frob:ticket 01M4CXTBPEVSYD93X6S90ZRDZ9
+    #[arg(
+        long,
+        value_name = "REPORT",
+        value_parser = ["slop"],
+        help = "Add a named report to the document; slop lists every signal with its evidence and tier"
+    )]
+    report: Option<String>,
 }
 
 impl Product for CrunkProduct {
@@ -88,10 +97,20 @@ impl Product for CrunkProduct {
         opts: &CheckOptions,
         matches: &ArgMatches,
     ) -> Outcome<Value> {
+        // frob:ticket 01M4CXTBPEVSYD93X6S90ZRDZ9
+        let slop = gob_cli::parse::<GateArgs>(matches)
+            .ok()
+            .and_then(|a| a.report)
+            .is_some_and(|r| r == "slop");
+        let only = if slop {
+            vec![slop_report::FAMILY.to_owned()]
+        } else {
+            opts.only.clone()
+        };
         let run = crunk_check::run(
             root,
             &crunk_check::CheckOptions {
-                only: opts.only.clone(),
+                only,
                 fail_on: opts.fail_on,
                 base: opts.base.clone(),
                 ticket_scope: opts.ticket_scope.clone(),
@@ -107,7 +126,12 @@ impl Product for CrunkProduct {
             },
         )
         .map(|run| {
-            let document = crunk_check::sibling_document(&run);
+            let mut document = crunk_check::sibling_document(&run);
+            if slop {
+                let entries =
+                    crunk_rules::registry::entries(crunk_check::product_rules::RULE_INDEXES);
+                document["slop_report"] = slop_report::build(&run, &entries);
+            }
             ProductRun {
                 report: run.report,
                 document,
