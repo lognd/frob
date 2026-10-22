@@ -2,13 +2,13 @@
 id = "01M4CTV0F8HWA7DPXYYDBE4TDJ"
 title = "frob.toml unknown keys: one policy for init, doctor and check; work --here gets a base to diff against"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:43Z"
-updated = "2026-10-08T04:02:43Z"
+updated = "2026-10-22T01:15:27Z"
 scope = ["changelog.d/**", "crates/gob-config/**", "crates/frob-worktree/**", "crates/frob/**"]
 
 [[acceptance]]
