@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T21:46:18Z"
+digest = "4c5ba0b6bccbcb53887108c3bac0c314885b4444e531435a79a5e1ee47aa7d5c"
+exit_code = 0
+head = "e902975faf78ff9c510eb19408024599eb5746ca"
+inline = """
+missing []
+"""
+passed = true
+provider = "command"
+ref = """python3 -I -c "import sys; r=[l for l in open('docs/crunk/README.md', encoding='utf-8') if 'crunk rename ID NEW' in l]; s=r[0] if len(r)==1 else ''; need=['design/tokens','--brand-ink','[typography.stacks]','--font-family-code','var(','CRLF','E-RENAME-DERIVED','-rgb','--space-N','--font-size-N']; miss=[t for t in need if t not in s]; print('missing', miss); sys.exit(1 if miss else 0)""""
+size = 11
+status = "measured"
+at = "2026-10-22T21:46:18Z"
+actor = "lognd"
+rev = 1
