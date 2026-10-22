@@ -52,14 +52,14 @@ ink = "#101820"
 
 ## Examples
 
-### TOKEN002 token-file-invalid / Examples #1 (line 22) (fire)
+### TOKEN002 token-file-invalid / Examples / A malformed colour fires #1 (line 22) (fire)
 
 ```toml
 [color]
 ink = "#12"
 ```
 
-### TOKEN002 token-file-invalid / Examples #2 (line 29) (clean)
+### TOKEN002 token-file-invalid / Examples / A valid file is clean #2 (line 29) (clean)
 
 ```toml
 [color]

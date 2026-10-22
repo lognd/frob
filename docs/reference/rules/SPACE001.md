@@ -107,7 +107,7 @@ export const Card = () => <div style={{ padding: 13 }} />;
 
 ## Examples
 
-### SPACE001 spacing-off-scale / Examples #1 (line 30) (fire)
+### SPACE001 spacing-off-scale / Examples / A margin between two steps fires #1 (line 30) (fire)
 
 ```css
 .card {
@@ -115,7 +115,7 @@ export const Card = () => <div style={{ padding: 13 }} />;
 }
 ```
 
-### SPACE001 spacing-off-scale / Examples #2 (line 38) (fire)
+### SPACE001 spacing-off-scale / Examples / One bad length in a shorthand fires #2 (line 38) (fire)
 
 ```css
 .card {
@@ -123,7 +123,7 @@ export const Card = () => <div style={{ padding: 13 }} />;
 }
 ```
 
-### SPACE001 spacing-off-scale / Examples #3 (line 46) (fire)
+### SPACE001 spacing-off-scale / Examples / A rem length is converted before it is compared #3 (line 46) (fire)
 
 ```css
 .card {
@@ -131,13 +131,13 @@ export const Card = () => <div style={{ padding: 13 }} />;
 }
 ```
 
-### SPACE001 spacing-off-scale / Examples #4 (line 54) (fire)
+### SPACE001 spacing-off-scale / Examples / A style prop in TSX fires #4 (line 54) (fire)
 
 ```tsx
 export const Card = () => <div style={{ padding: 13 }} />;
 ```
 
-### SPACE001 spacing-off-scale / Examples #5 (line 60) (clean)
+### SPACE001 spacing-off-scale / Examples / Lengths on the scale are clean #5 (line 60) (clean)
 
 ```css
 .card {
@@ -148,7 +148,7 @@ export const Card = () => <div style={{ padding: 13 }} />;
 }
 ```
 
-### SPACE001 spacing-off-scale / Examples #6 (line 71) (clean)
+### SPACE001 spacing-off-scale / Examples / Percentages, auto, calc and other units are exempt #6 (line 71) (clean)
 
 ```css
 .card {
@@ -159,7 +159,7 @@ export const Card = () => <div style={{ padding: 13 }} />;
 }
 ```
 
-### SPACE001 spacing-off-scale / Examples #7 (line 82) (clean)
+### SPACE001 spacing-off-scale / Examples / Properties outside the spacing family are not judged #7 (line 82) (clean)
 
 ```css
 .card {

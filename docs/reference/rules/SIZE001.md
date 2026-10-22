@@ -86,7 +86,7 @@ Use the nearest `var(--size-*)` (or `var(--space-*)`) step, or add the size to `
 
 ## Examples
 
-### SIZE001 size-off-scale / Examples #1 (line 28) (fire)
+### SIZE001 size-off-scale / Examples / A width off the scale fires #1 (line 28) (fire)
 
 ```css
 .thumb {
@@ -94,7 +94,7 @@ Use the nearest `var(--size-*)` (or `var(--space-*)`) step, or add the size to `
 }
 ```
 
-### SIZE001 size-off-scale / Examples #2 (line 36) (fire)
+### SIZE001 size-off-scale / Examples / A height off the scale fires #2 (line 36) (fire)
 
 ```css
 .thumb {
@@ -102,7 +102,7 @@ Use the nearest `var(--size-*)` (or `var(--space-*)`) step, or add the size to `
 }
 ```
 
-### SIZE001 size-off-scale / Examples #3 (line 44) (clean)
+### SIZE001 size-off-scale / Examples / A size on the scale is clean #3 (line 44) (clean)
 
 ```css
 .thumb {
@@ -111,7 +111,7 @@ Use the nearest `var(--size-*)` (or `var(--space-*)`) step, or add the size to `
 }
 ```
 
-### SIZE001 size-off-scale / Examples #4 (line 53) (clean)
+### SIZE001 size-off-scale / Examples / max-width is exempt #4 (line 53) (clean)
 
 ```css
 .prose {
@@ -119,7 +119,7 @@ Use the nearest `var(--size-*)` (or `var(--space-*)`) step, or add the size to `
 }
 ```
 
-### SIZE001 size-off-scale / Examples #5 (line 61) (clean)
+### SIZE001 size-off-scale / Examples / Percentages and viewport units are exempt #5 (line 61) (clean)
 
 ```css
 .hero {

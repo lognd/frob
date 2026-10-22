@@ -89,7 +89,7 @@ export the token from `crunk.toml`. For an Unresolved result, index the missing 
 
 ## Examples
 
-### COLOR002 undefined-token-reference / Examples #1 (line 30) (fire)
+### COLOR002 undefined-token-reference / Examples / A token-shaped reference nothing defines fires #1 (line 30) (fire)
 
 ```css
 .btn {
@@ -97,7 +97,7 @@ export the token from `crunk.toml`. For an Unresolved result, index the missing 
 }
 ```
 
-### COLOR002 undefined-token-reference / Examples #2 (line 38) (clean)
+### COLOR002 undefined-token-reference / Examples / A reference to an exported token is clean #2 (line 38) (clean)
 
 ```css
 .btn {
@@ -105,7 +105,7 @@ export the token from `crunk.toml`. For an Unresolved result, index the missing 
 }
 ```
 
-### COLOR002 undefined-token-reference / Examples #3 (line 46) (clean)
+### COLOR002 undefined-token-reference / Examples / A reference to a property a sheet defines is clean #3 (line 46) (clean)
 
 ```css
 :root {
@@ -116,7 +116,7 @@ export the token from `crunk.toml`. For an Unresolved result, index the missing 
 }
 ```
 
-### COLOR002 undefined-token-reference / Examples #4 (line 57) (clean)
+### COLOR002 undefined-token-reference / Examples / A reference outside the token namespaces is not judged #4 (line 57) (clean)
 
 ```css
 .btn {
@@ -124,7 +124,7 @@ export the token from `crunk.toml`. For an Unresolved result, index the missing 
 }
 ```
 
-### COLOR002 undefined-token-reference / Examples #5 (line 65) (unresolved)
+### COLOR002 undefined-token-reference / Examples / An unindexed generated sheet leaves the answer Unresolved #5 (line 65) (unresolved)
 
 Config: `no-tokens`
 

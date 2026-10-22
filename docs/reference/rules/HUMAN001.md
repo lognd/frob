@@ -89,7 +89,7 @@ terminal) to record the new digest, and commit `crunk.lock`.
 
 ## Examples
 
-### HUMAN001 human-review-stale / Examples #1 (line 33) (fire)
+### HUMAN001 human-review-stale / Examples / A reviewed screen with no recorded review fires #1 (line 33) (fire)
 
 Config: `review-missing`
 
@@ -99,7 +99,7 @@ Config: `review-missing`
 }
 ```
 
-### HUMAN001 human-review-stale / Examples #2 (line 41) (fire)
+### HUMAN001 human-review-stale / Examples / A review recorded before a token changed fires #2 (line 41) (fire)
 
 Config: `review-stale`
 
@@ -109,7 +109,7 @@ Config: `review-stale`
 }
 ```
 
-### HUMAN001 human-review-stale / Examples #3 (line 49) (clean)
+### HUMAN001 human-review-stale / Examples / A current approved review is clean #3 (line 49) (clean)
 
 Config: `review-current`
 
@@ -119,7 +119,7 @@ Config: `review-current`
 }
 ```
 
-### HUMAN001 human-review-stale / Examples #4 (line 57) (fire)
+### HUMAN001 human-review-stale / Examples / A review by someone off the allow-list fires #4 (line 57) (fire)
 
 Config: `review-unlisted`
 
@@ -129,7 +129,7 @@ Config: `review-unlisted`
 }
 ```
 
-### HUMAN001 human-review-stale / Examples #5 (line 65) (fire)
+### HUMAN001 human-review-stale / Examples / An ack in an unsigned commit fires when signatures are required #5 (line 65) (fire)
 
 Config: `review-unsigned`
 

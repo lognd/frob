@@ -54,7 +54,7 @@ fn fixture(root: &std::path::Path) -> std::path::PathBuf {
 
 ## Examples
 
-### PATH001 absolute-host-path / Examples #1 (line 22) (fire)
+### PATH001 absolute-host-path / Examples / Fires case 1 #1 (line 22) (fire)
 
 ```rust
 fn fixture() -> &'static str {
@@ -62,7 +62,7 @@ fn fixture() -> &'static str {
 }
 ```
 
-### PATH001 absolute-host-path / Examples #2 (line 30) (clean)
+### PATH001 absolute-host-path / Examples / Clean case 2 #2 (line 30) (clean)
 
 ```rust
 fn fixture(root: &std::path::Path) -> std::path::PathBuf {

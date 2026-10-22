@@ -68,7 +68,7 @@ Choose an accent on purpose, or declare `accent` under `[decisions]` with the re
 
 ## Examples
 
-### SLOP001 default-palette-accent / Examples #1 (line 20) (fire)
+### SLOP001 default-palette-accent / Examples / A literal Tailwind indigo fires #1 (line 20) (fire)
 
 ```css
 .cta {
@@ -76,7 +76,7 @@ Choose an accent on purpose, or declare `accent` under `[decisions]` with the re
 }
 ```
 
-### SLOP001 default-palette-accent / Examples #2 (line 28) (fire)
+### SLOP001 default-palette-accent / Examples / A default-indigo palette accent fires #2 (line 28) (fire)
 
 Config: `palette-indigo`
 
@@ -86,7 +86,7 @@ Config: `palette-indigo`
 }
 ```
 
-### SLOP001 default-palette-accent / Examples #3 (line 36) (clean)
+### SLOP001 default-palette-accent / Examples / A chosen accent is clean #3 (line 36) (clean)
 
 ```css
 .cta {
@@ -94,7 +94,7 @@ Config: `palette-indigo`
 }
 ```
 
-### SLOP001 default-palette-accent / Examples #4 (line 44) (clean)
+### SLOP001 default-palette-accent / Examples / A declared accent decision is clean #4 (line 44) (clean)
 
 Config: `decide-accent`
 

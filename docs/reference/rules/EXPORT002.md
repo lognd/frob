@@ -57,7 +57,7 @@ Run `crunk tokens` to regenerate every export from the spec.
 
 ## Examples
 
-### EXPORT002 export-parity / Examples #1 (line 25) (fire)
+### EXPORT002 export-parity / Examples / A hand-edited CSS value fires #1 (line 25) (fire)
 
 Config: `tokens-divergent`
 
@@ -67,7 +67,7 @@ Config: `tokens-divergent`
 }
 ```
 
-### EXPORT002 export-parity / Examples #2 (line 33) (clean)
+### EXPORT002 export-parity / Examples / Freshly generated exports are clean #2 (line 33) (clean)
 
 Config: `tokens-current`
 

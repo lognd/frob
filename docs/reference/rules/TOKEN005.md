@@ -63,14 +63,14 @@ ink-blue = "#101820"
 
 ## Examples
 
-### TOKEN005 token-naming / Examples #1 (line 22) (fire)
+### TOKEN005 token-naming / Examples / A camelCase segment fires #1 (line 22) (fire)
 
 ```toml
 [color]
 inkBlue = "#101820"
 ```
 
-### TOKEN005 token-naming / Examples #2 (line 29) (fire)
+### TOKEN005 token-naming / Examples / A component aliasing a primitive fires #2 (line 29) (fire)
 
 ```toml
 [color]
@@ -81,7 +81,7 @@ tier = "component"
 value = "{color.ink}"
 ```
 
-### TOKEN005 token-naming / Examples #3 (line 40) (clean)
+### TOKEN005 token-naming / Examples / Kebab-case paths are clean #3 (line 40) (clean)
 
 ```toml
 [color]

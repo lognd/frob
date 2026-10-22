@@ -59,7 +59,7 @@ Fix what the note asks for (any change to the screen's inputs makes the review s
 
 ## Examples
 
-### HUMAN002 human-review-rejected / Examples #1 (line 27) (fire)
+### HUMAN002 human-review-rejected / Examples / A current rejection fires #1 (line 27) (fire)
 
 Config: `review-rejected`
 
@@ -69,7 +69,7 @@ Config: `review-rejected`
 }
 ```
 
-### HUMAN002 human-review-rejected / Examples #2 (line 35) (clean)
+### HUMAN002 human-review-rejected / Examples / A current approval is clean #2 (line 35) (clean)
 
 Config: `review-current`
 

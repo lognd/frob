@@ -100,7 +100,7 @@ claim c {
 
 ## Examples
 
-### CLAIM001 claim-refuted / Examples #1 (line 22) (fire)
+### CLAIM001 claim-refuted / Examples / Fires case 1 #1 (line 22) (fire)
 
 ```grmb
 grimble = "2";
@@ -117,7 +117,7 @@ claim c {
 }
 ```
 
-### CLAIM001 claim-refuted / Examples #2 (line 39) (fire)
+### CLAIM001 claim-refuted / Examples / Fires case 2 #2 (line 39) (fire)
 
 ```grmb
 grimble = "2";
@@ -131,7 +131,7 @@ claim c {
 }
 ```
 
-### CLAIM001 claim-refuted / Examples #3 (line 53) (clean)
+### CLAIM001 claim-refuted / Examples / Clean case 3 #3 (line 53) (clean)
 
 ```grmb
 grimble = "2";
@@ -148,7 +148,7 @@ claim c {
 }
 ```
 
-### CLAIM001 claim-refuted / Examples #4 (line 70) (clean)
+### CLAIM001 claim-refuted / Examples / Clean case 4 #4 (line 70) (clean)
 
 ```grmb
 grimble = "2";

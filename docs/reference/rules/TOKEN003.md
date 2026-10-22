@@ -62,7 +62,7 @@ body = "{color.ink}"
 
 ## Examples
 
-### TOKEN003 token-alias-broken / Examples #1 (line 22) (fire)
+### TOKEN003 token-alias-broken / Examples / An alias to a missing token fires #1 (line 22) (fire)
 
 ```toml
 [color]
@@ -70,7 +70,7 @@ ink = "#101820"
 body = "{color.missing}"
 ```
 
-### TOKEN003 token-alias-broken / Examples #2 (line 30) (fire)
+### TOKEN003 token-alias-broken / Examples / A cycle fires #2 (line 30) (fire)
 
 ```toml
 [color]
@@ -78,7 +78,7 @@ a = "{color.b}"
 b = "{color.a}"
 ```
 
-### TOKEN003 token-alias-broken / Examples #3 (line 38) (clean)
+### TOKEN003 token-alias-broken / Examples / A resolving alias is clean #3 (line 38) (clean)
 
 ```toml
 [color]

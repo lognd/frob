@@ -86,7 +86,7 @@ Keep one gradient where it carries meaning, or declare `gradients` under `[decis
 
 ## Examples
 
-### SLOP003 gradient-abuse / Examples #1 (line 20) (fire)
+### SLOP003 gradient-abuse / Examples / Four gradient backgrounds fire #1 (line 20) (fire)
 
 ```css
 .a0 {
@@ -103,7 +103,7 @@ Keep one gradient where it carries meaning, or declare `gradients` under `[decis
 }
 ```
 
-### SLOP003 gradient-abuse / Examples #2 (line 37) (fire)
+### SLOP003 gradient-abuse / Examples / Gradient text fires #2 (line 37) (fire)
 
 ```css
 .t {
@@ -111,7 +111,7 @@ Keep one gradient where it carries meaning, or declare `gradients` under `[decis
 }
 ```
 
-### SLOP003 gradient-abuse / Examples #3 (line 45) (clean)
+### SLOP003 gradient-abuse / Examples / One gradient is clean #3 (line 45) (clean)
 
 ```css
 .hero {
@@ -119,7 +119,7 @@ Keep one gradient where it carries meaning, or declare `gradients` under `[decis
 }
 ```
 
-### SLOP003 gradient-abuse / Examples #4 (line 53) (clean)
+### SLOP003 gradient-abuse / Examples / A declared gradients decision is clean #4 (line 53) (clean)
 
 Config: `decide-gradients`
 

@@ -99,7 +99,7 @@ Pad the content in by the safe-area inset, or waive the rule with a reason.
 
 ## Examples
 
-### LAYOUT004 content-outside-safe-area / Examples #1 (line 22) (fire)
+### LAYOUT004 content-outside-safe-area / Examples / Text at the very edge of a scene with a 20 px safe area fires #1 (line 22) (fire)
 
 ```json
 {
@@ -129,7 +129,7 @@ Pad the content in by the safe-area inset, or waive the rule with a reason.
 }
 ```
 
-### LAYOUT004 content-outside-safe-area / Examples #2 (line 52) (clean)
+### LAYOUT004 content-outside-safe-area / Examples / The same text padded inside the safe area is clean #2 (line 52) (clean)
 
 ```json
 {

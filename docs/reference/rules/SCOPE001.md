@@ -62,13 +62,13 @@ pub fn placeholder() {}
 //! Inside.
 ```
 
-### SCOPE001 path-outside-lease / Examples #1 (line 22) (fire)
+### SCOPE001 path-outside-lease / Examples / A violating case fires #1 (line 22) (fire)
 
 ```rust
 pub fn placeholder() {}
 ```
 
-### SCOPE001 path-outside-lease / Examples #2 (line 28) (clean)
+### SCOPE001 path-outside-lease / Examples / A conforming case is clean #2 (line 28) (clean)
 
 ```rust
 pub fn placeholder() {}

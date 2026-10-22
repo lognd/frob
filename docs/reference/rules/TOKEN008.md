@@ -54,7 +54,7 @@ paper = "#f5f5f0"
 
 ## Examples
 
-### TOKEN008 token-near-duplicate / Examples #1 (line 22) (fire)
+### TOKEN008 token-near-duplicate / Examples / Two almost equal colours fire #1 (line 22) (fire)
 
 ```toml
 [color]
@@ -62,7 +62,7 @@ ink = "#101820"
 inkish = "#111820"
 ```
 
-### TOKEN008 token-near-duplicate / Examples #2 (line 30) (clean)
+### TOKEN008 token-near-duplicate / Examples / Two distinct colours are clean #2 (line 30) (clean)
 
 ```toml
 [color]

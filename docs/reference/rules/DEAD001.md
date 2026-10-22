@@ -71,7 +71,7 @@ def run(x):
 
 ## Examples
 
-### DEAD001 arch-dead-unit / Examples #1 (line 22) (fire)
+### DEAD001 arch-dead-unit / Examples / Fires case 1 #1 (line 22) (fire)
 
 ```rust
 pub fn api() {}
@@ -79,7 +79,7 @@ pub fn api() {}
 fn unused() {}
 ```
 
-### DEAD001 arch-dead-unit / Examples #2 (line 30) (clean)
+### DEAD001 arch-dead-unit / Examples / Clean case 2 #2 (line 30) (clean)
 
 ```rust
 pub fn api() {
@@ -89,7 +89,7 @@ pub fn api() {
 fn used() {}
 ```
 
-### DEAD001 arch-dead-unit / Examples #3 (line 40) (unresolved)
+### DEAD001 arch-dead-unit / Examples / Unresolved case 3 #3 (line 40) (unresolved)
 
 ```python
 class A:

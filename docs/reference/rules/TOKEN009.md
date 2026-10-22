@@ -53,7 +53,7 @@ value = "#101820"
 
 ## Examples
 
-### TOKEN009 token-deprecated-used / Examples #1 (line 22) (fire)
+### TOKEN009 token-deprecated-used / Examples / A stylesheet reading a deprecated token fires #1 (line 22) (fire)
 
 Config: `uses-ink`
 
@@ -63,7 +63,7 @@ value = "#101820"
 deprecated = "use color.text"
 ```
 
-### TOKEN009 token-deprecated-used / Examples #2 (line 30) (clean)
+### TOKEN009 token-deprecated-used / Examples / A token not deprecated is clean #2 (line 30) (clean)
 
 Config: `uses-ink`
 

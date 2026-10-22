@@ -96,7 +96,7 @@ Add a `design/scenes/*.scene.json` whose viewport is the breakpoint's width, or 
 
 ## Examples
 
-### RESP001 breakpoint-without-scene / Examples #1 (line 22) (fire)
+### RESP001 breakpoint-without-scene / Examples / Only the `sm` breakpoint has a scene, so `md` and `lg` fire #1 (line 22) (fire)
 
 Config: `breakpoints`
 
@@ -127,7 +127,7 @@ Config: `breakpoints`
 }
 ```
 
-### RESP001 breakpoint-without-scene / Examples #2 (line 51) (clean)
+### RESP001 breakpoint-without-scene / Examples / A scene at every declared breakpoint is clean #2 (line 51) (clean)
 
 Config: `breakpoints-scenes`
 

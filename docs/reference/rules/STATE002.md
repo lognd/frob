@@ -75,7 +75,7 @@ id = "partial"
 
 ## Examples
 
-### STATE002 data-states-missing / Examples #1 (line 22) (fire)
+### STATE002 data-states-missing / Examples / A missing state fires #1 (line 22) (fire)
 
 ```toml
 id = "home"
@@ -92,7 +92,7 @@ id = "empty"
 id = "error"
 ```
 
-### STATE002 data-states-missing / Examples #2 (line 39) (clean)
+### STATE002 data-states-missing / Examples / Every state declared is clean #2 (line 39) (clean)
 
 ```toml
 id = "home"

@@ -78,13 +78,13 @@ Talk to the platform team.
 Talk to the hush-term team.
 ```
 
-### TICK005 private-term / Examples #1 (line 32) (fire)
+### TICK005 private-term / Examples / A violating case fires #1 (line 32) (fire)
 
 ```rust
 pub fn placeholder() {}
 ```
 
-### TICK005 private-term / Examples #2 (line 38) (clean)
+### TICK005 private-term / Examples / A conforming case is clean #2 (line 38) (clean)
 
 ```rust
 pub fn placeholder() {}

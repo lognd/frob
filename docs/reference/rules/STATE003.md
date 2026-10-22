@@ -69,7 +69,7 @@ id = "validation"
 
 ## Examples
 
-### STATE003 form-states-missing / Examples #1 (line 22) (fire)
+### STATE003 form-states-missing / Examples / A missing state fires #1 (line 22) (fire)
 
 ```toml
 id = "home"
@@ -83,7 +83,7 @@ id = "error"
 id = "success"
 ```
 
-### STATE003 form-states-missing / Examples #2 (line 36) (clean)
+### STATE003 form-states-missing / Examples / Every state declared is clean #2 (line 36) (clean)
 
 ```toml
 id = "home"

@@ -67,7 +67,7 @@ export function allowed(p: string): boolean {
 
 ## Examples
 
-### PATH002 string-path-separator / Examples #1 (line 22) (fire)
+### PATH002 string-path-separator / Examples / Fires case 1 #1 (line 22) (fire)
 
 ```rust
 use std::path::Path;
@@ -78,7 +78,7 @@ fn allowed(p: &Path) -> bool {
 }
 ```
 
-### PATH002 string-path-separator / Examples #2 (line 33) (clean)
+### PATH002 string-path-separator / Examples / Clean case 2 #2 (line 33) (clean)
 
 ```rust
 use std::path::Path;
@@ -88,7 +88,7 @@ fn allowed(p: &Path) -> bool {
 }
 ```
 
-### PATH002 string-path-separator / Examples #3 (line 43) (unresolved)
+### PATH002 string-path-separator / Examples / Unresolved case 3 #3 (line 43) (unresolved)
 
 ```typescript
 export function allowed(p: string): boolean {
