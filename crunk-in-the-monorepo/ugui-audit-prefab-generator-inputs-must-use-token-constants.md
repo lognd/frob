@@ -2,7 +2,8 @@
 id = "01M4CXSD8DEYB69E5J7Q1ABGXK"
 title = "uGUI audit: prefab generator inputs must use token constants; read-only prefab YAML literal audit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
