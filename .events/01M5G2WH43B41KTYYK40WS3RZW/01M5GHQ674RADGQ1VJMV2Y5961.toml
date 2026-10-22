@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T00:55:59Z"
+digest = "42712708af01e9af94754c7b44e384e153d883ef9a3a390474900f301c6a38f8"
+exit_code = 0
+head = "f6e297417898a5f2886fe220c6ca2ab84de2816f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ea223041-51b6-40cd-824f-113cd7ef1570 with nextest profile: default
+    Starting 1 test across 8 binaries (99 tests skipped)
+        PASS [   0.113s] gob-directives::fix dsl003_deprecated_spellings_fix_to_a_fixpoint
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.114s] 1 test run: 1 passed, 99 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives dsl003_deprecated"
+size = 556
+status = "measured"
+test_count = 1
+tests_digest = "edeabb05da2bd0f559a2457fee8d7a8b79a6902f61d6acc24470a1d1257ee2c5"
+at = "2026-10-22T00:55:59Z"
+actor = "lognd"
+rev = 1
