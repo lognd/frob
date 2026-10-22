@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-22T00:51:24Z"
+digest = "ff34c9d46a5b41cc31a31280c1c496cd5997259d565b0b87bfe6fe172ca5d93d"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3e75fca2-aca3-4b62-a2e6-15cc915b8bf9 with nextest profile: default
+    Starting 1 test across 5 binaries (33 tests skipped)
+        PASS [   0.005s] gob-config::cfg001_fix complete_file_is_a_no_op
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 33 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-config complete_file_is_a_no_op"
+size = 590
+status = "measured"
+test_count = 1
+tests_digest = "0160124eb5577cf578d150819a06cf30475f1b0a2304c0ff0b1c821a6cac20eb"
+at = "2026-10-22T00:51:24Z"
+actor = "lognd"
+rev = 1
