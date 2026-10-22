@@ -8,12 +8,12 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:12:59Z"
-updated = "2026-10-22T10:45:15Z"
+updated = "2026-10-22T10:57:03Z"
 scope = ["changelog.d/**", "crates/grimble-arch/**"]
 
 [[acceptance]]
 text = "Given three copies of a 60-token block across two languages, when grimble check runs, then one DUP finding lists all sites"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given two copies, when checked at the default min_occurrences, then no finding"
