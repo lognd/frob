@@ -2,7 +2,8 @@
 id = "01M4D94ZPDYBATXNCVY3XRQ6RM"
 title = "UNITY3xx input and physics rules: legacy Input or KeyCode reads in an Input System project; Rigidbody forces or moves in Update"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
