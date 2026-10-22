@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T02:50:47Z"
+digest = "6e4b90959106ef4c95fcb3f0eb61211393a4e7f310df2112f811c57e5e465653"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ab5ea060-af38-4aac-933d-fa9ddc20e0f8 with nextest profile: default
+    Starting 1 test across 1 binary (368 tests skipped)
+        PASS [   0.185s] frob-cli::it init_adopt::init_agent_writes_project_settings_idempotently
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.186s] 1 test run: 1 passed, 368 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test it init_agent_writes"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "bb5858d877afde6f8f2b0259cca3bb584a6d4cf5faabc6a4fee53f24820f81a3"
+at = "2026-10-22T02:50:47Z"
+actor = "lognd"
+rev = 1
