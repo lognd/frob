@@ -14,6 +14,10 @@
 //! listener, observer or subscription without a returned cleanup that undoes it, from a table of
 //! effect-started pairs ([`effect::PAIRS`]).
 //!
+//! [`unity::scan`] is the Unity vocabulary of `PAIR001`: a C# event subscription, `RegisterCallback`,
+//! `UnityEvent` listener, input action `Enable` or Addressables load made in `Awake`, `Start` or
+//! `OnEnable` that no `OnDisable` or `OnDestroy` undoes, from a table of pairs ([`unity::PAIRS`]).
+//!
 //! [`path::scan`] finds `PATH001` absolute host path literals and, for Rust and Python, `PATH002`
 //! path-to-string separator handling and `PATH003` paths in command-line strings; a language
 //! without path-conversion roles reports them unresolved.
@@ -46,3 +50,4 @@ pub(crate) mod syntax;
 pub mod time;
 pub mod time_pass;
 pub mod typing;
+pub mod unity;
