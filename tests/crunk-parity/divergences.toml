@@ -55,3 +55,9 @@ id = "tokens-check-text-empty"
 cases = ["int04_default/tokens_--check", "gallery005_routes/tokens_--check", "screens_v1_1/tokens_--check"]
 fields = ["stdout"]
 reason = "Rust `tokens --check` reports the status in the envelope (`data.status`) and prints nothing in text mode; Python printed `tokens: <status>`."
+
+[[divergence]]
+id = "violations-craft010-motion-policy"
+cases = ["init_default/query_violations_--json"]
+fields = ["stdout"]
+reason = "CRAFT010 (motion-policy presence) was added in Rust after the Python capture. The init_default scaffold declares no transition or animation, so Rust reports one extra advisory row (`no motion policy`) that the golden never had. `check` parity filters CRAFT010 as a Rust-only rule; `query violations` compares whole stdout, so the extra row is listed here."

@@ -79,6 +79,7 @@ fn is_check(argv: &[String]) -> bool {
 }
 
 /// Rules the Rust crunk added after the Python capture; absent from every golden by design.
+// frob:ticket 01M5JHRGF0BKG6ZGNXBZR3F5DB
 const RUST_ONLY_RULES: &[&str] = &[
     "EXPORT001",
     "EXPORT002",
@@ -90,6 +91,7 @@ const RUST_ONLY_RULES: &[&str] = &[
     "TOKEN007",
     "TOKEN008",
     "TOKEN009",
+    "CRAFT010",
 ];
 
 /// The comparable core of a check report: sorted `rule severity path` triples of the findings.
