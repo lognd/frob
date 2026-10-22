@@ -14,7 +14,7 @@ scope = ["crates/frob-obligations/**", "changelog.d/01M5G2WH7Q04ERV0MCR8ERTF75.a
 
 [[acceptance]]
 text = "the tick_paths fix has a fixture, a diff snapshot, and passes the fixpoint harness"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a gob_fix::run_fixture fixture per fixable rule with an insta snapshot and missing_fixtures coverage over the registry"

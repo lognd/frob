@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T00:51:12Z"
+digest = "65df4d211ff88c178b80c9c3db15f52bb2728cc7cccc0d50c191013e88871182"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.62s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9ac18e22-0446-4702-ac3b-bb47d3980482 with nextest profile: default
+    Starting 1 test across 9 binaries (84 tests skipped)
+        PASS [   0.172s] frob-obligations::fix_harness tick006_fix_rewrites_old_ticket_paths_to_a_fixpoint_with_a_diff_snapshot
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.172s] 1 test run: 1 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations tick006_fix_rewrites_old_ticket_paths_to_a_fixpoint"
+size = 724
+status = "measured"
+test_count = 1
+tests_digest = "dd9b1c0e92ea4b425dd7d057da2661eef12e5f1a2df80b234937a1edae8a1400"
+at = "2026-10-22T00:51:12Z"
+actor = "lognd"
+rev = 1
