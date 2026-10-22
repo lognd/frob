@@ -2,7 +2,8 @@
 id = "01M4CXTBPEVSYD93X6S90ZRDZ9"
 title = "Slop report: per-signal evidence vector with tiers not run, never a single opaque score"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
