@@ -13,7 +13,7 @@
 | `edit` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Apply an id-addressed JSON Patch to a screen, component or content file. |
 | `explain` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Explain a token (value, group, where defined, every use site and utilities) or a rule id with a tell list (each tell's date and source). |
 | `export dtcg` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the stored DTCG document, or write it to `--out`. |
-| `extract-token` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Promote a hex colour literal to a palette token and rewrite its uses. |
+| `extract-token` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Promote a hex colour or px/rem length literal to a token and rewrite its uses. |
 | `fix` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Apply (or with `--dry-run` only show) the machine-applicable fixes. |
 | `gallery check` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Check the gallery manifest against the spec's cells (needs the `gallery` feature). |
 | `gallery enumerate` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the cells the spec enumerates. |
