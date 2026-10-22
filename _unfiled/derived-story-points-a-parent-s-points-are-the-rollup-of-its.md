@@ -2,7 +2,8 @@
 id = "01M4FDAKV07ZFX861ZHJKMRAQ6"
 title = "Derived story points: a parent's points are the rollup of its pointed children; cycle assign accepts it; capacity counts leaves only; [pm] point_scale knob"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
