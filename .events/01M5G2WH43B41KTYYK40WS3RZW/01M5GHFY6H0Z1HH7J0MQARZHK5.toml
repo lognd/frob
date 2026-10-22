@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T00:52:01Z"
+digest = "b785df766504eec8e791869f6d4502651b7463dd9fee0cc08b2a1b20cec1765a"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 143da622-9cbe-4b8c-b834-718fd50ad512 with nextest profile: default
+    Starting 5 tests across 8 binaries (95 tests skipped)
+        PASS [   0.008s] gob-directives::scan dsl002_names_the_remedy_and_has_no_fix
+        PASS [   0.008s] gob-directives::scan dsl001_suggests_close_verb_and_points_at_it
+        PASS [   0.010s] gob-directives::scan dsl001_suggests_the_surviving_verbs
+        PASS [   0.166s] gob-directives::fix dsl003_deprecated_spellings_fix_to_a_fixpoint
+        PASS [   0.181s] gob-directives::fix dsl002_v1_keys_fix_to_a_fixpoint
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.182s] 5 tests run: 5 passed, 95 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives dsl00"
+size = 1049
+status = "measured"
+test_count = 5
+tests_digest = "9dbacbe93d75d3f6d9284727bcb704ddc95371d16603b539b0ce16c05ecb9ae8"
+at = "2026-10-22T00:52:01Z"
+actor = "lognd"
+rev = 1
