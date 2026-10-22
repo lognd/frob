@@ -2,12 +2,12 @@
 id = "01M5GW08PF9XDMEQNN8KJE2ZQF"
 title = "Fix scrub test lease fixture missing op"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:55:44Z"
-updated = "2026-10-22T03:55:44Z"
+updated = "2026-10-22T03:55:47Z"
 scope = ["crates/frob-ledger/tests/scrub.rs"]
 
 [[acceptance]]
