@@ -1,0 +1,1 @@
+The Unity vocabulary for the PAIR001 pairing check now flags an event subscription, RegisterCallback, listener, input action Enable or Addressables load made in Awake, Start or OnEnable that no OnDisable or OnDestroy undoes, and reports lambda subscriptions as unresolved.
