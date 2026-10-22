@@ -2,7 +2,8 @@
 id = "01M5HYTAQEYA72YHZWGHPACR52"
 title = "Version-bump awareness for griffe VERSION001 findings"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
