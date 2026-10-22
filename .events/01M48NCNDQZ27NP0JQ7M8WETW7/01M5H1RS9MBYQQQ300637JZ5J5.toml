@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T05:36:22Z"
+digest = "84b636d54ee0df4295e32a04c5da9dc1c6075b327152d5d31e629dfc6016d947"
+exit_code = 0
+head = "593e7abdde6828a35b8b564b71e7aad24b798fea"
+inline = '''
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.69s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2567f1bb-8899-4e30-bea8-762b1705b5c8 with nextest profile: default
+    Starting 5 tests across 1 binary
+        PASS [   0.005s] gob-dev::layering an_edge_up_a_layer_fails_naming_both_crates_and_layers
+        PASS [   0.005s] gob-dev::layering an_edge_across_products_fails_even_when_it_points_down
+        PASS [   0.006s] gob-dev::layering a_crate_missing_from_the_table_fails
+        PASS [   0.006s] gob-dev::layering a_listed_violation_passes_until_it_is_fixed_then_the_stale_row_fails
+        PASS [   0.048s] gob-dev::layering workspace_layering_holds_and_every_crate_has_a_layer
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.048s] 5 tests run: 5 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test layering"
+size = 1227
+status = "measured"
+test_count = 5
+tests_digest = "c22658a0c7eafc468cc7779a6722af6a71058a10a2849901e80388325dcda92d"
+at = "2026-10-22T05:36:22Z"
+actor = "lognd"
+rev = 1

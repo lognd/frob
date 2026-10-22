@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-06T13:10:29Z"
-updated = "2026-10-22T05:17:30Z"
+updated = "2026-10-22T05:36:22Z"
 scope = ["crates/gob-dev/**", "design/model.grmb", "crates/frob-ledger/Cargo.toml", "crates/frob-ledger/benches", "crates/frob-ledger/src", "crates/frob-ledger/templates", "crates/frob-ledger/tests", "Cargo.lock", "changelog.d/01M48NCNDQZ27NP0JQ7M8WETW7.changed.md", "crates/frob-evidence/**"]
 
 [[acceptance]]
 text = "gob-dev no longer imports frob-ledger or any frob crate (cargo tree -p gob-dev shows none) and SYS013 reports no gob->frob edge from crates/gob-dev"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the gob -> frob flow in design/model.grmb citing this ticket is removed and the import_v1 behaviour tests still pass"
