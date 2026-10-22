@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given an epic whose children are done, when it closes, then no changelog fragment or command evidence is required by default"]
+new = ["Given an epic whose children are done, when it closes, then no changelog fragment or command evidence is required by default", "Given a docs ticket, when it closes, then no changelog fragment is required by default but an invalid fragment it carries is still refused", "Given a task, bug or custom ticket with no fragment, when it closes, then the changelog fragment is still required", "Given [pm] changelog_exempt_types is empty or lists other types, when a ticket closes, then the exemption follows the setting", "Given an exempt ticket type, when check --ticket runs REL003, then a missing fragment is not reported", "Given the config, when changelog_exempt_types is unset or names an unknown type, then it defaults to epic and docs or is rejected at load"]
+moved = [1]
+at = "2026-10-22T01:38:05Z"
+actor = "lognd"
+rev = 1
