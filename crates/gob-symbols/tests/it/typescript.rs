@@ -376,6 +376,7 @@ fn barrels_and_aliases_are_followed_to_the_declaring_unit() {
 
 #[test]
 // frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.resolve_typescript
+// frob:ticket 01M5HT1NDW38SMA2P17A0B2BDV
 fn calls_resolve_by_scope_import_and_receiver() {
     let g = graph(&[
         (
@@ -386,7 +387,7 @@ import { Thing } from './thing';
 export class Box {
   open() { this.close(); run(); util.go(); Thing.create(); new Thing(); }
   close() {}
-  other(cb: () => void, x: any) { cb(); x.close(); x.nothing(); (cb())(); fetch('u'); }
+  other(cb: () => void, x, y: any) { cb(); x.close(); x.nothing(); y.close(); (cb())(); fetch('u'); }
 }
 export function local() { const f = () => 1; f(); helper(); }
 function helper() {}
@@ -415,7 +416,8 @@ function helper() {}
         Some(Status::Must)
     );
     let other = "src/k.ts::Box.other";
-    // A method call on an unknown value names every method so called.
+    // A method call on an unannotated value names every method so called; an `any`-annotated
+    // receiver is dynamic and names none (checked below).
     assert_eq!(
         call_status(&g, other, "src/k.ts::Box.close"),
         Some(Status::May)
@@ -432,6 +434,10 @@ function helper() {}
     assert!(
         unknown.contains(&("nothing".to_owned(), Some(GapReason::Unbound))),
         "{unknown:?}"
+    );
+    assert!(
+        unknown.contains(&("close".to_owned(), Some(GapReason::Dynamic))),
+        "any receiver is dynamic: {unknown:?}"
     );
     assert!(
         unknown.contains(&("<dynamic>".to_owned(), Some(GapReason::Dynamic))),
