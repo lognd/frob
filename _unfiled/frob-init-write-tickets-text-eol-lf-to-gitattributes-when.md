@@ -2,12 +2,12 @@
 id = "01M4FD43P9VMJC9BE0KGEKVBBH"
 title = "frob init: write tickets/** text eol=lf to .gitattributes when core.autocrlf is set; note [evidence] attesters origin in the upgrade guide"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T04:00:45Z"
-updated = "2026-10-09T04:00:45Z"
+updated = "2026-10-22T13:48:54Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob/**", "docs/guides/upgrade-from-v1.md", "changelog.d/**"]
 
