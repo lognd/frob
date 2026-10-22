@@ -1,0 +1,18 @@
+---
+source: crates/gob-config/tests/cfg001_fix.rs
+expression: out.snapshot_text()
+---
+rounds: 1
+--- a/frob.toml
++++ b/frob.toml
+@@ -1,4 +1,10 @@
+ # my settings
+ [tickets]
+ cas_retries = 9 # tuned
++# Where tickets live: `trunk` or `branch`.
++ref = \"trunk\"
+ 
++[tickets.lease]
++# Minutes before a lease expires.
++ttl_minutes = 120
++

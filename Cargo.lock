@@ -2519,6 +2519,7 @@ name = "gob-config"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "gob-fix",
  "gob-macros",
  "gob-mdtest",
  "gob-path",
@@ -2599,6 +2600,7 @@ name = "gob-directives"
 version = "0.532.0"
 dependencies = [
  "gob-config",
+ "gob-fix",
  "gob-languages",
  "gob-macros",
  "gob-mdtest",
