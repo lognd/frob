@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T18:08:47Z"
-updated = "2026-10-22T19:51:25Z"
+updated = "2026-10-22T20:04:24Z"
 scope = ["crates/gob-git/src/read.rs", "crates/gob-git/tests/read_blobs.rs", "crates/frob-ledger/src/ops.rs"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a measured benchmark or timing test, when run, then blob-read time is lower than the per-blob baseline, with numbers reported"
-bound = false
+bound = true
 +++
 
 found while working ~GQ3NZVK: reading 20k blobs one by one in Ledger::reindex_plan costs ~370ms of the remaining ~750ms warm reindex. Consider a batched or parallel blob read, or skipping unchanged blobs.
