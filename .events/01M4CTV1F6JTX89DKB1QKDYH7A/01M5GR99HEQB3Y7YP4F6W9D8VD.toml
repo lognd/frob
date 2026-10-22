@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T02:50:44Z"
+digest = "e2b9374201305b372420cac4fe8bb51f62c0a9da94943c906dc50af152dd7018"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a0ab2c42-bf11-4794-8e7c-1398271c0a0e with nextest profile: default
+    Starting 1 test across 1 binary (66 tests skipped)
+        PASS [   0.015s] frob-cli agent::project::tests::an_existing_file_keeps_unrelated_keys_other_servers_and_allow_entries
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 1 test run: 1 passed, 66 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --lib agent::project::tests::an_existing_file_keeps"
+size = 590
+status = "measured"
+test_count = 1
+tests_digest = "c843b87f3a63956af788556c9dbb1b564c54954d45aa302e1ea908063f00fd09"
+at = "2026-10-22T02:50:44Z"
+actor = "lognd"
+rev = 1

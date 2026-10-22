@@ -21,7 +21,7 @@ bound = false
 
 [[acceptance]]
 text = "Given an existing settings.json with unrelated keys and an allow list, when frob init --agent runs, then those are preserved and the frob server and read allowlist are merged"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given settings already configured, when frob init --agent runs again, then the file is byte-identical and no entry is duplicated"
