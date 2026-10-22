@@ -2,7 +2,8 @@
 id = "01M5G2WH7Q04ERV0MCR8ERTF75"
 title = "Fix snapshots and fixpoint run for frob-obligations tick_paths fix"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
