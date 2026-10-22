@@ -2,7 +2,8 @@
 id = "01M5JMG3QGMK2QGCTYQ5TB9ZM4"
 title = "claim_restore remedy names nonexistent flag frob work --from"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
