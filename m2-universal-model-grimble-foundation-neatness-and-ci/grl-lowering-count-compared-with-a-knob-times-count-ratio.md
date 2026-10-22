@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T22:44:58Z"
-updated = "2026-10-22T00:02:04Z"
+updated = "2026-10-22T00:02:05Z"
 idempotency_key = "neat031-count-ratio"
 scope = ["crates/gob-plan/src/lower/convert.rs", "crates/gob-plan/tests/ten_rules/main.rs", "crates/gob-plan/src/**", "crates/gob-plan/tests/**", "docs/**", "changelog.d/01M5GA77VTC3VDYVZ2HBZNRM2K.*"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "Lowering: count(..) vs scale*count(..) (either side, int/decimal literal or knob, nested counts) lowers to CountPair; non-count scaled forms and over-wide decimals are refused"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Plan format: CountPair round-trips through the codec and validate rejects bad scale, var, kind and cond"
