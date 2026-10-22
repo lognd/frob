@@ -8,9 +8,9 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T20:36:47Z"
-updated = "2026-10-22T00:47:40Z"
+updated = "2026-10-22T00:48:59Z"
 idempotency_key = "g4w-cfg001"
-scope = ["crates/gob-config/**"]
+scope = ["crates/gob-config/**", "changelog.d/01M5G2WH1J8G8WR3PGF5N3TAQD.added.md"]
 
 [[acceptance]]
 text = "CFG001 has a fix fixture, a diff snapshot, and passes the fixpoint harness"

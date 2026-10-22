@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-config/**"]
+new = ["crates/gob-config/**", "changelog.d/01M5G2WH1J8G8WR3PGF5N3TAQD.added.md"]
+at = "2026-10-22T00:48:59Z"
+actor = "lognd"
+rev = 1
