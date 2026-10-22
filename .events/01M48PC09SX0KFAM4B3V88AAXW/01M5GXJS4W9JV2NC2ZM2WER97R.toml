@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T04:23:18Z"
+digest = "779565740dc9d14a81fd1deb0d4169f128bf8c650ffc75c411a2cc5777f6a7a8"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 93c2dbd1-1a09-4a13-b742-6670d53bba12 with nextest profile: default
+    Starting 1 test across 7 binaries (75 tests skipped)
+        PASS [   0.005s] gob-mdtest::sections mixed_languages_keep_their_own_fidelity_and_languages_select_cells
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 75 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest mixed_languages_keep"
+size = 578
+status = "measured"
+test_count = 1
+tests_digest = "55fc1c8566ffa86450d410fa2c753ea2fa432cc02e8576412ea6359510271444"
+at = "2026-10-22T04:23:18Z"
+actor = "lognd"
+rev = 1
