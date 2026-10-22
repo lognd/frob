@@ -2,7 +2,8 @@
 id = "01M5HYTAKXCZB6B2MAEM8X2G5Y"
 title = "Bind api-extractor (TypeScript) to VERSION001"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
