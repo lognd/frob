@@ -25,6 +25,7 @@ tracing = "0.1"
 
 [dev-dependencies]
 insta = { version = "1", features = ["json"] }
+gob-fix = { path = "../gob-fix" }
 gob-mdtest = { path = "../gob-mdtest" }
 tempfile = "3"
 
