@@ -44,7 +44,7 @@ fn doctor_piped_is_json_envelope_even_with_cfg001() {
     assert_eq!(v["ok"], true);
     assert_eq!(v["verb"], "doctor");
     let findings = v["findings"].as_array().expect("findings");
-    assert_eq!(findings.len(), 38, "one CFG001 per materialized knob");
+    assert_eq!(findings.len(), 39, "one CFG001 per materialized knob");
     assert!(findings.iter().all(|f| f["rule"] == "CFG001"));
     assert_json_snapshot!("doctor_fresh_repo", v, {
         ".data.toolchain.rustc" => "[version]",
@@ -329,6 +329,7 @@ fn config_sync_adds_missing_knobs_once() {
             "pm.ready_min",
             "pm.ready_requires",
             "pm.done_requires",
+            "pm.changelog_exempt_types",
             "pm.cycle_days",
             "pm.min_history",
             "pm.capacity_k",

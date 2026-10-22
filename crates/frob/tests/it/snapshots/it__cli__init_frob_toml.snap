@@ -51,6 +51,8 @@ ready_min = 4
 ready_requires = ["story_or_objective_qualified", "criteria", "points", "scope", "parent"]
 # Definition of done: predicates checked on close and land; the default lists the three evaluable ones (`criteria_evidenced`, `no_open_children`, `changelog_fragment`); `docs_touched_or_excepted` and `objective_target_met` exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice.
 done_requires = ["criteria_evidenced", "no_open_children", "changelog_fragment"]
+# Ticket types the `changelog_fragment` requirement (close guard and REL003) does not ask for a fragment: an epic is closed by its children and a docs change rarely has a user-visible effect, so both default to exempt; list `[]` to require a fragment for every type, and a ticket of an exempt type that carries a fragment still has it validated.
+changelog_exempt_types = ["epic", "docs"]
 # Days per cycle when a cycle is created without an explicit end; one week is the usual scrumban review cadence.
 cycle_days = 7
 # Completed cycles needed before capacity and forecasts are enforced; below it they report Unresolved, so a fresh repository never needs an over-commit.
