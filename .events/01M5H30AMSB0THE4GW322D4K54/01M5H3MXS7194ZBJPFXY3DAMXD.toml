@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T06:09:20Z"
+digest = "48af297e19ae5475797c62a1d45323a558b31bdc49760fda43c51ab4fdaa422e"
+exit_code = 0
+head = "bef71aecf552b2a284198af5d29bc16efa1ca3a6"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 45321bd1-48d9-4fea-8b96-5dd773db0a4e with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.019s] crunk-rules::scene_rules scene001_fires_naming_an_unsupported_property
+        PASS [   0.020s] crunk-rules::scene_rules scene001_is_quiet_with_no_scenes
+        PASS [   0.020s] crunk-rules::scene_rules scene001_is_inapplicable_without_scene_documents
+        PASS [   0.021s] crunk-rules::scene_rules scene001_allows_custom_properties
+        PASS [   0.027s] crunk-rules::scene_rules scene_doc_facts_load_label_and_fingerprint_change_with_the_text
+        PASS [   0.027s] crunk-rules::scene_rules scene001_reports_each_offender_with_its_element_and_line_in_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.028s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test scene_rules"
+size = 1037
+status = "measured"
+test_count = 6
+tests_digest = "40ee085bf8e6c8cd91734e612a055c527ac588d848adc14f9ca8738f399b45b8"
+at = "2026-10-22T06:09:20Z"
+actor = "lognd"
+rev = 1
