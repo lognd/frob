@@ -2,12 +2,12 @@
 id = "01M5HW48CZPQ5KW8E70F63DZXF"
 title = "GX014: unresolved case for non-literal Color arguments in prefab generators"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T13:17:08Z"
-updated = "2026-10-22T16:45:17Z"
+updated = "2026-10-22T16:45:47Z"
 scope = ["crates/crunk-check/**"]
 
 [[acceptance]]
