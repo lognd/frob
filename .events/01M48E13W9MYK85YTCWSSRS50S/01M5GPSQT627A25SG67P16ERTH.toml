@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T02:24:46Z"
+digest = "6904012d048ff8645a4afa0380972ae02f1430a42a8ecaa2041834c7cb457292"
+exit_code = 0
+head = "4ef48a82ab5fb8ecbfa91fb4868397aa5a273f3f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aea3adb9-7bda-44f8-8e2e-b63b029377ee with nextest profile: default
+    Starting 1 test across 2 binaries (315 tests skipped)
+        PASS [   0.006s] gob-symbols::it html::a_call_in_a_script_element_appears_in_the_call_graph
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 315 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols a_call_in_a_script_element"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "11ea3822c27ee75dca25facaad38484d7d673a3c4918e4d20951de6c8f3ec052"
+at = "2026-10-22T02:24:46Z"
+actor = "lognd"
+rev = 1

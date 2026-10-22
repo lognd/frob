@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:01:54Z"
-updated = "2026-10-22T02:24:44Z"
+updated = "2026-10-22T02:24:46Z"
 scope = ["crates/gob-symbols/**", "crates/gob-caps/src/matrix.rs", "docs/reference/languages.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "a function call inside an HTML script element appears in the call graph"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Several script islands in one file merge into the call graph with distinct caller symbols"
