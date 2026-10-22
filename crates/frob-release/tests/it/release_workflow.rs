@@ -1046,7 +1046,8 @@ const LINKING_CARGO: [&str; 9] = [
 /// The repository config links Linux with clang and mold, which a stock runner lacks, so such a
 /// job needs the `LINKER_ACTION` step before its first host compile; a job-level
 /// `CARGO_TARGET_*_LINKER` override (the `crates` job's stock linker) is the other accepted setup.
-/// A step that only runs `docker run` compiles inside the container and is exempt.
+/// A step that only runs `docker run` compiles inside the container and is exempt, and a cargo
+/// command named only in a full-line shell comment compiles nothing.
 fn unlinked_rust_jobs(wf: &Value) -> Vec<String> {
     let mut bad = Vec::new();
     for (name, job) in jobs(wf) {
@@ -1065,7 +1066,13 @@ fn unlinked_rust_jobs(wf: &Value) -> Vec<String> {
             if step["uses"].as_str() == Some(LINKER_ACTION) {
                 linker = true;
             }
-            let run = step["run"].as_str().unwrap_or_default();
+            let run = step["run"]
+                .as_str()
+                .unwrap_or_default()
+                .lines()
+                .filter(|l| !l.trim_start().starts_with('#'))
+                .collect::<Vec<_>>()
+                .join("\n");
             let compiles =
                 LINKING_CARGO.iter().any(|c| run.contains(c)) && !run.contains("docker run");
             if linux_capable && compiles && !linker && !overridden {
@@ -1116,4 +1123,7 @@ fn the_linker_check_rejects_a_linux_job_that_compiles_without_it() {
     let mac =
         "jobs:\n  j:\n    runs-on: macos-latest\n    steps:\n      - run: cargo dev wheel x\n";
     assert!(unlinked_rust_jobs(&serde_yaml_ng::from_str(mac).unwrap()).is_empty());
+    // A cargo command named only in a shell comment compiles nothing.
+    let commented = "jobs:\n  j:\n    runs-on: ubuntu-latest\n    steps:\n      - run: |\n          # also read by `cargo dev changes`\n          python3 plan.py\n";
+    assert!(unlinked_rust_jobs(&serde_yaml_ng::from_str(commented).unwrap()).is_empty());
 }
