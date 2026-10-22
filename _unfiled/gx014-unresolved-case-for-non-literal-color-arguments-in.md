@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T13:17:08Z"
-updated = "2026-10-22T17:00:00Z"
+updated = "2026-10-22T17:00:01Z"
 scope = ["crates/crunk-check/**", "crates/gob-mdtest/coverage-allowlist.toml", "docs/reference/rules/GX014.md"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a prefab generator passing named all-literal arguments to new Color, when GX014 runs, then the literal fires rather than going Unresolved"
-bound = false
+bound = true
 +++
 
 found while working ~Q1ABGXK: GX014 has fire and clean corpus cases but no unresolved case (P+). Decide what an undecidable Color argument reports, then drop the coverage-allowlist gap.
