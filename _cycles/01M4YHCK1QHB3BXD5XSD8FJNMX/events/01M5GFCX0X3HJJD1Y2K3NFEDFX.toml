@@ -1,0 +1,6 @@
+kind = "cycle"
+op = "retro"
+text = "Landed GRL lowering, C# implicit usings, malformed-project READ001, TS CJS exports; carrying the rest toward 0.533.0."
+at = "2026-10-22T00:15:25Z"
+actor = "lognd"
+rev = 1
