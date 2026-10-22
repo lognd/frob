@@ -19,6 +19,7 @@
 //!   platform's own command (`command`), with a timeout per cell.
 //! - [`report`]: [`report::check_report`] runs every rule and counts the result; the shape is
 //!   `docs/schemas/crunk-gallery-check-v1.json`.
+//! - [`visual`]: VIS001, the perceptual diff of a build against its design over RGBA buffers.
 //! - [`triage`]: a blocking loopback HTTP contact sheet with keyboard verdicts, saved to the
 //!   manifest; no async runtime.
 
@@ -31,3 +32,4 @@ pub mod report;
 pub mod rules;
 pub mod schema;
 pub mod triage;
+pub mod visual;

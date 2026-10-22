@@ -1,0 +1,1 @@
+The Crunk gallery gains VIS001, a perceptual diff of a rendered build against its design scene with per-pixel and overall thresholds, a diff image buffer, and defined behaviour for size mismatch, empty images, alpha and bad thresholds.
