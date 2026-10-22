@@ -34,6 +34,12 @@ fn failed_names(failed: &[String]) -> String {
     }
 }
 
+// frob:ticket 01M4CTTYH76JQASEJJQC02YD0F
+/// Whether `run` becomes an evidence event: a pass always, a failure only under `--record-failures`.
+fn recordable(run: &crate::run::FrameworkRun, record_failures: bool) -> bool {
+    run.capture.passed || record_failures
+}
+
 /// Output of `frob test`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct TestData {
@@ -85,6 +91,7 @@ pub struct TestData {
 pub struct TestVerb {
     base: Option<String>,
     all: bool,
+    record_failures: bool,
 }
 
 /// The payload of `data` carrying `warnings`.
@@ -103,6 +110,7 @@ fn with_warnings(data: TestData, warnings: Vec<String>) -> Payload<TestData> {
 fn record_runs(
     ws: &Workspace,
     report: &RunReport,
+    record_failures: bool,
     warnings: &mut Vec<String>,
 ) -> Result<Vec<EvidenceAdded>, CliError> {
     let repo = ws.ledger.repo();
@@ -115,6 +123,14 @@ fn record_runs(
                     .show(id)
                     .map_or_else(|_| reference.clone(), |v| v.summary.handle);
                 for one in &report.runs {
+                    // frob:ticket 01M4CTTYH76JQASEJJQC02YD0F
+                    if !recordable(one, record_failures) {
+                        tracing::info!(
+                            framework = ?one.framework,
+                            "failing run not recorded (no ledger commit); pass --record-failures to keep it"
+                        );
+                        continue;
+                    }
                     // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
                     let record = build_record(
                         &ws.store,
@@ -163,6 +179,11 @@ struct TestArgs {
         help = "Run every test of the workspace instead of the touched set"
     )]
     all: bool,
+    #[arg(
+        long,
+        help = "Also record failing runs as evidence (each is one ledger commit; by default only passing runs are recorded)"
+    )]
+    record_failures: bool,
 }
 
 impl Command for TestVerb {
@@ -173,13 +194,21 @@ impl Command for TestVerb {
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let TestArgs { base, all } = gob_cli::parse::<TestArgs>(m)?;
+        let TestArgs {
+            base,
+            all,
+            record_failures,
+        } = gob_cli::parse::<TestArgs>(m)?;
         if base.is_none() && !all {
             return Err(CliError::Usage(
                 "test needs --base <ref> (or --all)".to_owned(),
             ));
         }
-        Ok(Self { base, all })
+        Ok(Self {
+            base,
+            all,
+            record_failures,
+        })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<TestData> {
@@ -265,7 +294,7 @@ impl Command for TestVerb {
         data.executed = report.executed();
         data.failed = report.failed();
         data.non_passing = report.non_passing();
-        let recorded = record_runs(&ws, &report, &mut warnings)?;
+        let recorded = record_runs(&ws, &report, self.record_failures, &mut warnings)?;
         data.evidence = recorded.first().cloned();
         data.evidence_all = recorded;
         if report.passed() {
@@ -280,10 +309,14 @@ impl Command for TestVerb {
                 data.executed.len(),
                 report.exit_code(),
                 failed_names(&data.failed),
-                data.evidence.as_ref().map_or(String::new(), |e| format!(
-                    "; evidence {} recorded on {}",
-                    e.event, e.ticket
-                ))
+                data.evidence.as_ref().map_or_else(
+                    || "; not recorded as evidence (pass --record-failures to keep failing runs)"
+                        .to_owned(),
+                    |e| format!(
+                        "; evidence {} recorded on {} (see `frob ticket evidence list {}`)",
+                        e.event, e.ticket, e.ticket
+                    )
+                )
             )))
         }
     }
@@ -316,5 +349,39 @@ fn claim_base(ws: &Workspace, base: &str, ctx: &Context) -> String {
             tracing::debug!(%err, "no lease base lookup; using the given base");
             base.to_owned()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::run::FrameworkRun;
+    use frob_evidence::NonPassing;
+    use frob_evidence::provider::Capture;
+
+    fn run(passed: bool) -> FrameworkRun {
+        FrameworkRun {
+            framework: Framework::Nextest,
+            args: Vec::new(),
+            member: String::new(),
+            capture: Capture {
+                exit_code: Some(i32::from(!passed)),
+                passed,
+                measured: true,
+                tests: Vec::new(),
+                failed_tests: Vec::new(),
+                non_passing: NonPassing::default(),
+                transcript: String::new(),
+            },
+        }
+    }
+
+    // frob:ticket 01M4CTTYH76JQASEJJQC02YD0F
+    #[test]
+    fn a_failing_run_is_recorded_only_when_asked() {
+        // frob:tests crates/frob-tests/src/verb.rs::recordable
+        assert!(recordable(&run(true), false));
+        assert!(!recordable(&run(false), false));
+        assert!(recordable(&run(false), true));
     }
 }
