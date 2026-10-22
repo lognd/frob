@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/crunk-rules/**"]
+at = "2026-10-22T06:04:29Z"
+actor = "lognd"
+rev = 1

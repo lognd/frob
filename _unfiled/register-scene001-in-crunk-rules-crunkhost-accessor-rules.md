@@ -7,7 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T05:58:06Z"
-updated = "2026-10-22T06:03:26Z"
+updated = "2026-10-22T06:04:29Z"
+scope = ["crates/crunk-rules/**"]
 
 [[acceptance]]
 text = "Given a scene using an unsupported CSS property, when crunk check runs, then SCENE001 fires from the rule host naming it"
