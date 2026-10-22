@@ -1,0 +1,10 @@
+kind = "create"
+title = "Validate component anatomy against solved scene subtrees"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-rules/**"]
+body = "Cut from ~D6TTN3F: anatomy nodes are checked only against the spec list, not a scene subtree."
+at = "2026-10-22T05:26:00Z"
+actor = "lognd"
+rev = 1
