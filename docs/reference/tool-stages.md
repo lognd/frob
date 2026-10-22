@@ -10,12 +10,12 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | Key | Default | Meaning |
 |---|---|---|
 | `name` | required | Stage name; prefixes every message (`zizmor/unpinned-uses: ...`). |
-| `def` | unset | Name of a std-pack tool definition (`zizmor`, `actionlint`, `ruff`, `rustfmt`, `ruff-format`, `prettier`, `dotnet-format`, `cargo-semver-checks`, `griffe`); see Tool definitions. |
+| `def` | unset | Name of a std-pack tool definition (`zizmor`, `actionlint`, `ruff`, `rustfmt`, `ruff-format`, `prettier`, `dotnet-format`, `cargo-semver-checks`, `griffe`, `api-extractor`); see Tool definitions. |
 | `command` | required (unset with `def`) | Program on `PATH` (no separators); the allowlist is the set of stage commands. |
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `tsc-text`, `eslint-json`, `roslyn-sarif`, `typos-json`, `formatter-list`, `semver-checks-text` or `griffe-text`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `tsc-text`, `eslint-json`, `roslyn-sarif`, `typos-json`, `formatter-list`, `semver-checks-text`, `griffe-text` or `api-extractor-text`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -91,6 +91,7 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | formatter-list | every file the formatter would rewrite (one per file) | `FMT001` | Warn |
 | semver-checks-text | every public item cargo-semver-checks reports as broken | `VERSION001` | Error |
 | griffe-text | every breakage `griffe check` reports | `VERSION001` | Error |
+| api-extractor-text | an API report that differs from (or is missing beside) the committed one | `VERSION001` | Error |
 
 The cargo-json severity is the rustc level: `error` is Error, `warning` is Warn. Summary lines (`aborting due to`, `warnings emitted`) are not findings; build artifacts and other non-diagnostic lines are skipped. A diagnostic repeated for each cargo target is reported once per site.
 
@@ -139,4 +140,6 @@ max_version = "1.30.99"
 
 `parser = "semver-checks-text"` reads the text report of `cargo semver-checks` (stdout and stderr together) and reports one `VERSION001` Error per item under a `Failed in:` list, named in the message with its lint and located at the file and line the tool gives (`Cargo.toml` when it gives none). A crate whose `Checking` header reports a breaking change (a major bump, or a minor bump below 1.0) yields no finding, so a bumped version is accepted. The std definition `cargo-semver-checks` compares against the registry baseline; pass `--baseline-rev <ref>` in the stage `args` to compare against a git ref. Exit 0 and 1 are normal.
 
-`parser = "griffe-text"` reads `griffe check` one-line breakages (`path:LINE: object: message`) as `VERSION001` Errors. griffe does not report version bumps, so a major bump is not recognised: scope the stage to releases that keep the major version, or accept the finding. Name the package and baseline in the stage `args`. api-extractor is not bound yet.
+`parser = "griffe-text"` reads `griffe check` one-line breakages (`path:LINE: object: message`) as `VERSION001` Errors. griffe does not report version bumps, so a major bump is not recognised: scope the stage to releases that keep the major version, or accept the finding. Name the package and baseline in the stage `args`.
+
+`parser = "api-extractor-text"` reads `api-extractor run` output (stdout and stderr together). In CI mode (no `--local`) api-extractor fails when the API report it builds differs from the committed one, naming both files in `Please copy the file "<built>" to "<committed>"`; the stage reports one `VERSION001` Error on the committed report. api-extractor cannot tell an additive change from a breaking one and reads no version, so every drift is a finding until the report is updated and the version bumped. A missing committed report is reported the same way. Its `ae-*` diagnostics are ignored, a clean or empty run yields nothing, and a missing `npx` is an unresolved `TOOL001`. Exit 0 and 1 are normal.

@@ -171,7 +171,7 @@ impl ToolDef {
 }
 
 /// The embedded std tool definitions as `(name, toml text)`; kept here, below `gob-packs` in the layering.
-const TOOL_DEFS: [(&str, &str); 9] = [
+const TOOL_DEFS: [(&str, &str); 10] = [
     ("zizmor", include_str!("tools/zizmor.toml")),
     ("actionlint", include_str!("tools/actionlint.toml")),
     ("ruff", include_str!("tools/ruff.toml")),
@@ -184,6 +184,7 @@ const TOOL_DEFS: [(&str, &str); 9] = [
         include_str!("tools/cargo-semver-checks.toml"),
     ),
     ("griffe", include_str!("tools/griffe.toml")),
+    ("api-extractor", include_str!("tools/api-extractor.toml")),
 ];
 
 /// The std pack's tool definitions, parsed once; a malformed embedded record is a build defect.
@@ -229,12 +230,13 @@ mod tests {
             "dotnet-format",
             "cargo-semver-checks",
             "griffe",
+            "api-extractor",
         ] {
             let def = lookup(name).expect("embedded");
             assert!(!def.pinned_version.is_empty());
             assert!(!def.normal_exits().is_empty());
         }
-        assert_eq!(names().len(), 9);
+        assert_eq!(names().len(), 10);
     }
 
     // frob:tests crates/gob-check/src/tool_def.rs::ToolDef.default_args

@@ -1,4 +1,4 @@
-//! Readers for public-API compatibility checkers: cargo-semver-checks and griffe become `VERSION001`.
+//! Readers for public-API compatibility checkers: cargo-semver-checks, griffe and api-extractor become `VERSION001`.
 
 // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
 
@@ -156,6 +156,54 @@ fn split_after_line_number(line: &str) -> Option<(&str, (u32, &str))> {
     None
 }
 
+/// Marker api-extractor prints, in CI mode, when the built API report differs from the committed one.
+const API_CHANGED: &str = "changed the public API signature";
+
+/// Marker api-extractor prints when no committed API report exists yet.
+const API_MISSING: &str = "API report file is missing";
+
+/// Parse `api-extractor run` output into one finding per drifted API report.
+///
+/// api-extractor compares the report it builds with the committed one and, outside `--local`
+/// mode, errors with `Please copy the file "<built>" to "<committed>"`. That drift is the API
+/// diff; it cannot tell additive from breaking, so each drift is one finding on the committed
+/// report and a reviewer decides the version bump. Diagnostics (`ae-*`) and noise are ignored.
+// frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+pub(crate) fn parse_api_extractor(text: &str) -> Vec<RawFinding> {
+    let mut out = Vec::new();
+    for line in text.lines() {
+        out.extend(api_report_line(line));
+    }
+    tracing::debug!(count = out.len(), "api-extractor findings parsed");
+    out
+}
+
+/// One api-extractor report-drift line, if it is one.
+fn api_report_line(line: &str) -> Option<RawFinding> {
+    let line = line.trim();
+    let drifted = line.contains(API_CHANGED);
+    if !(drifted || line.contains(API_MISSING)) {
+        return None;
+    }
+    let committed = quoted_after_to(line).unwrap_or(NO_API_REPORT);
+    let message = if drifted {
+        "public API report differs from the committed report; review the diff and bump the version"
+    } else {
+        "public API report is missing; commit one so later changes can be compared"
+    };
+    Some(raw(committed, RawRange::None, message.to_owned()))
+}
+
+/// Where a drift finding lands when the line names no committed report.
+const NO_API_REPORT: &str = "api-extractor.json";
+
+/// The quoted path after the last ` to ` of an api-extractor `copy the file "A" to "B"` message.
+fn quoted_after_to(line: &str) -> Option<&str> {
+    let (_, tail) = line.rsplit_once("\" to \"")?;
+    let (path, _) = tail.split_once('"')?;
+    (!path.is_empty()).then_some(path)
+}
+
 /// A raw finding carrying the shared tool id.
 fn raw(path: &str, range: RawRange, message: String) -> RawFinding {
     RawFinding {
@@ -228,5 +276,41 @@ mod tests {
         assert_eq!(found[0].path, "pkg/mod.py");
         assert_eq!(found[0].message, "pkg.mod.func(a): Parameter was removed");
         assert!(parse_griffe("").is_empty());
+    }
+
+    const API_DRIFT: &str = "Console: API Extractor 7.52.8\nError: You have changed the public API signature for this project. Please copy the file \"temp/foo.api.md\" to \"etc/foo.api.md\", or perform a local build (which does this automatically).\n";
+
+    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    // frob:tests crates/gob-check/src/semver_parse.rs::parse_api_extractor
+    #[test]
+    fn api_extractor_drift_lands_on_the_committed_report() {
+        let found = parse_api_extractor(API_DRIFT);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].path, "etc/foo.api.md");
+        assert!(found[0].message.contains("bump the version"));
+    }
+
+    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    // frob:tests crates/gob-check/src/semver_parse.rs::parse_api_extractor
+    #[test]
+    fn api_extractor_clean_empty_and_malformed_output_yield_nothing() {
+        assert!(parse_api_extractor("").is_empty());
+        let clean = "Console: API Extractor completed successfully\nWarning: dist/a.d.ts:1:1 - (ae-missing-release-tag) x\n";
+        assert!(parse_api_extractor(clean).is_empty());
+    }
+
+    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    // frob:tests crates/gob-check/src/semver_parse.rs::parse_api_extractor
+    #[test]
+    fn api_extractor_drift_without_a_named_report_falls_back_to_the_config() {
+        let found = parse_api_extractor(
+            "Error: You have changed the public API signature for this project.\n",
+        );
+        assert_eq!(found[0].path, "api-extractor.json");
+        let missing = parse_api_extractor(
+            "Error: The API report file is missing. Please copy the file \"temp/x.api.md\" to \"etc/x.api.md\"",
+        );
+        assert_eq!(missing[0].path, "etc/x.api.md");
+        assert!(missing[0].message.contains("missing"));
     }
 }

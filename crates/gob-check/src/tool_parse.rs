@@ -232,6 +232,8 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
         ToolParser::SemverChecksText => Ok(crate::semver_parse::parse_semver_checks(stdout)),
         ToolParser::GriffeText => Ok(crate::semver_parse::parse_griffe(stdout)),
+        // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+        ToolParser::ApiExtractorText => Ok(crate::semver_parse::parse_api_extractor(stdout)),
         ToolParser::ZizmorJsonV1 => parse_zizmor(stdout),
         ToolParser::ActionlintJson => parse_actionlint(stdout),
         ToolParser::Sarif | ToolParser::RoslynSarif => crate::sarif::parse_sarif(stdout),
@@ -573,7 +575,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
         // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
         ToolParser::FormatterList => BTreeMap::from([(crate::fmt_parse::FMT_TOOL_ID, "FMT001")]),
         // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
-        ToolParser::SemverChecksText | ToolParser::GriffeText => {
+        ToolParser::SemverChecksText | ToolParser::GriffeText | ToolParser::ApiExtractorText => {
             BTreeMap::from([(crate::semver_parse::SEMVER_TOOL_ID, "VERSION001")])
         }
     }
@@ -584,7 +586,9 @@ fn fallback(parser: ToolParser) -> &'static str {
     match parser {
         ToolParser::ActionlintJson => "CI014",
         ToolParser::FormatterList => "FMT001",
-        ToolParser::SemverChecksText | ToolParser::GriffeText => "VERSION001",
+        ToolParser::SemverChecksText | ToolParser::GriffeText | ToolParser::ApiExtractorText => {
+            "VERSION001"
+        }
         ToolParser::CargoJson
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
@@ -830,6 +834,7 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
         | ToolParser::FormatterList
         | ToolParser::SemverChecksText
         | ToolParser::GriffeText
+        | ToolParser::ApiExtractorText
         | ToolParser::TyposJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
         ToolParser::Sarif | ToolParser::CargoJson | ToolParser::None => None,
