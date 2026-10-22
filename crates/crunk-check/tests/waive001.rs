@@ -44,7 +44,12 @@ fn ids(run: &CrunkRun) -> Vec<String> {
         .findings
         .iter()
         .map(|f| f.rule.to_string())
-        .filter(|id| !matches!(id.as_str(), "ORG001" | "TOKENS001" | "EXPORT001"))
+        .filter(|id| {
+            !matches!(
+                id.as_str(),
+                "ORG001" | "TOKENS001" | "EXPORT001" | "CRAFT010"
+            )
+        })
         .collect()
 }
 

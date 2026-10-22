@@ -170,6 +170,12 @@ pub const FAMILIES: &[FamilyMeta] = &[
         true,
     ),
     fam(
+        "CRAFT",
+        "presence rules paired with SLOP rules: a deleted policy is reported",
+        &[T0],
+        true,
+    ),
+    fam(
         "MOTION",
         "durations and easings from tokens, reduced-motion twin",
         &[T0, T2],

@@ -26,6 +26,7 @@ Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this pa
 | CONTENT002 | content-over-budget | CONTENT | warn | warn | no | T0, T1 | Fires for each key in `design/content/*.toml` whose `text` has more characters than its `max_chars`. |
 | CONTENT003 | content-key-undefined | CONTENT | error | error | no | T0, T1 | Fires for each `data-copy` or `data-copy-<attribute>` reference in a scene document whose key no file in `design/content/*.toml` defines. |
 | CONTRAST001 | role-contrast-below-floor | CONTRAST | error | error | no | T0, T2 | Measures the WCAG 2.2 contrast ratio of each declared role pair (foreground over background) in every declared mode and flags a pair below its own floor: 4.5 by default, lower for a role that declares the large-text or icon exception. |
+| CRAFT010 | motion-policy | CRAFT | advisory | advisory | no | T0 | Flags, once, a project whose stylesheets declare no `transition`, `animation` or `@keyframes` at all (the motion policy was deleted), and, once, a project that has motion but no `prefers-reduced-motion` media query. |
 | EXPORT001 | export-drift | EXPORT | error | error | no | T0, T2 | Renders every export the spec configures (CSS, Tailwind, JSON, USS, C#, DTCG) and compares it with the file on disk. |
 | EXPORT002 | export-parity | EXPORT | error | error | no | T0, T2 | Reads the CSS and JSON exports from disk and renders the USS and C# exports, then compares every token across the targets after reducing values to a number or a colour (so `16px` and `16f` agree). |
 | GX001 | game-coverage-undeclared | GX | error | error | no | T0, T1 | For a project with a `[game]` table, requires `coverage` to name every key: `volume_channels` (separate music, effects and speech volume), `haptics_toggle` (haptics can be turned off), `time_limits` (adjustable or removable, up to 10x), `subtitle_format` (at most 2 lines, 38 to 40 characters per line), `text_in_images` (no essential text baked into images) and `glyph_icons` (Unicode glyph icons carry a text alternative). |
@@ -106,6 +107,7 @@ Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this pa
 | COMP | T0, T1 | yes | same | component variants, props bound to tokens, code mapping |
 | STATE | T0, T1 | yes | same | required component states present |
 | A11Y | T0, T1, T3 | yes | same | names, roles, landmarks, heading and focus order, keyboard map |
+| CRAFT | T0 | yes | same | presence rules paired with SLOP rules: a deleted policy is reported |
 | MOTION | T0, T2 | yes | same | durations and easings from tokens, reduced-motion twin |
 | CONTENT | T0, T1 | yes | same | literal copy in scenes, length budgets |
 | I18N | T0, T1 | yes | same | pseudo-locale expansion, right-to-left mirroring |

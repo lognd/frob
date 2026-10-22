@@ -91,6 +91,12 @@
 | [COV001](COV001.md) | untested-public-function | warn | manual | P- | true | A public function or method has no test that reaches it. |
 | [COV003](COV003.md) | tests-names-missing-test | error | manual | P- | false | Alias of TEST001; never emitted by this crate. |
 
+## CRAFT
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CRAFT010](CRAFT010.md) | motion-policy | advisory | manual | P+ | false | Flags, once, a project whose stylesheets declare no `transition`, `animation` or `@keyframes` at all (the motion policy was deleted), and, once, a project that has motion but no `prefers-reduced-motion` media query. Advisory. |
+
 ## CYCLE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -126,6 +132,12 @@
 | [DSL001](DSL001.md) | unknown-directive-verb | error | manual | P+ | false | A directive names a verb its namespace does not declare. |
 | [DSL002](DSL002.md) | abbreviated-ticket-id | error | deterministic | P+ | false | A directive carries an abbreviated ticket id instead of a full 26-char ULID. |
 | [DSL003](DSL003.md) | deprecated-directive-spelling | warn | deterministic | P+ | false | A directive uses a deprecated `frob:` claim spelling that D120 moved or dropped. |
+
+## DUP
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [DUP001](DUP001.md) | arch-duplicate-code | advisory | manual | Pn | true | A block of code copied three or more times. |
 
 ## EXC
 
