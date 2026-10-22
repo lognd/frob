@@ -2,12 +2,12 @@
 
 use std::path::Path;
 
-use frob_ledger::model::{Category, Outcome, TicketType};
-use frob_ledger::{doc, event::Event};
-use gob_dev::import_v1::{
+use frob_evidence::import_v1::{
     ImportError, ImportOptions, load_tree, render_id_map, render_report_md, render_selection,
     render_table, run, verify,
 };
+use frob_ledger::model::{Category, Outcome, TicketType};
+use frob_ledger::{doc, event::Event};
 
 const HEAD: &str = "origin: agent\ncreated: '2026-10-02'\npriority: high\nmilestone: 2.0.0\nworktree: /x\nbranch: t\n";
 
@@ -69,7 +69,7 @@ fn opts(root: &Path, dry_run: bool) -> ImportOptions {
     }
 }
 
-// frob:tests crates/gob-dev/src/import_v1.rs::run
+// frob:tests crates/frob-evidence/src/import_v1.rs::run
 #[test]
 fn imports_maps_and_verifies() {
     let tmp = tempfile::tempdir().expect("tmp");
@@ -131,27 +131,27 @@ fn refuses_a_non_empty_target() {
     assert!(matches!(err, ImportError::TargetNotEmpty(_)));
 }
 
-fn dry_report() -> gob_dev::import_v1::ImportReport {
+fn dry_report() -> frob_evidence::import_v1::ImportReport {
     let tmp = tempfile::tempdir().expect("tmp");
     std::fs::create_dir(tmp.path().join("v1")).expect("v1");
     fixture(&tmp.path().join("v1"));
     run(&opts(tmp.path(), true)).expect("dry run")
 }
 
-// frob:tests crates/gob-dev/src/import_v1.rs::render_table
+// frob:tests crates/frob-evidence/src/import_v1.rs::render_table
 #[test]
 fn renders_the_summary_table() {
     let table = render_table(&dry_report().rows);
     assert_eq!(table.len(), 4, "header plus three rows");
 }
 
-// frob:tests crates/gob-dev/src/import_v1.rs::render_id_map
+// frob:tests crates/frob-evidence/src/import_v1.rs::render_id_map
 #[test]
 fn renders_the_id_map() {
     assert!(render_id_map(&dry_report().rows).starts_with("T-0001\t"));
 }
 
-// frob:tests crates/gob-dev/src/import_v1.rs::render_report_md
+// frob:tests crates/frob-evidence/src/import_v1.rs::render_report_md
 #[test]
 fn renders_the_migration_report() {
     let md = render_report_md(&dry_report());
@@ -217,10 +217,10 @@ fn selecting(root: &Path, dry_run: bool) -> ImportOptions {
     }
 }
 
-// frob:tests crates/gob-dev/src/import_v1/select.rs::Selection.decide
-// frob:tests crates/gob-dev/src/import_v1/select.rs::Disposition.name
-// frob:tests crates/gob-dev/src/import_v1/select.rs::Disposition.imports
-// frob:tests crates/gob-dev/src/import_v1/select.rs::Selection.stale
+// frob:tests crates/frob-evidence/src/import_v1/select.rs::Selection.decide
+// frob:tests crates/frob-evidence/src/import_v1/select.rs::Disposition.name
+// frob:tests crates/frob-evidence/src/import_v1/select.rs::Disposition.imports
+// frob:tests crates/frob-evidence/src/import_v1/select.rs::Selection.stale
 #[test]
 fn selection_imports_requirement_bearing_open_tickets_only() {
     let tmp = tempfile::tempdir().expect("tmp");
@@ -258,7 +258,7 @@ fn selection_imports_requirement_bearing_open_tickets_only() {
     );
 }
 
-// frob:tests crates/gob-dev/src/import_v1.rs::run
+// frob:tests crates/frob-evidence/src/import_v1.rs::run
 #[test]
 fn an_unmapped_open_ticket_stops_the_run() {
     let tmp = tempfile::tempdir().expect("tmp");
@@ -275,7 +275,7 @@ fn an_unmapped_open_ticket_stops_the_run() {
     assert!(err.to_string().contains("T-0099"), "{err}");
 }
 
-// frob:tests crates/gob-dev/src/import_v1/sanitize.rs::Sanitizer.text
+// frob:tests crates/frob-evidence/src/import_v1/sanitize.rs::Sanitizer.text
 #[test]
 fn home_paths_and_private_terms_are_redacted() {
     let tmp = tempfile::tempdir().expect("tmp");
@@ -326,7 +326,7 @@ fn dir_count(dir: &Path) -> usize {
 }
 
 // frob:ticket 01M43BEAR3MSMEANKENBQ1KDT7
-// frob:tests crates/gob-dev/src/import_v1.rs::run
+// frob:tests crates/frob-evidence/src/import_v1.rs::run
 #[test]
 fn merge_adds_only_new_ticket_directories() {
     let tmp = tempfile::tempdir().expect("tmp");
@@ -358,7 +358,7 @@ fn merge_adds_only_new_ticket_directories() {
 }
 
 // frob:ticket 01M43BEAR3MSMEANKENBQ1KDT7
-// frob:tests crates/gob-dev/src/import_v1.rs::run
+// frob:tests crates/frob-evidence/src/import_v1.rs::run
 #[test]
 fn merge_refuses_id_and_alias_collisions_without_writing() {
     let tmp = tempfile::tempdir().expect("tmp");
@@ -398,7 +398,7 @@ fn merge_refuses_id_and_alias_collisions_without_writing() {
 }
 
 // frob:ticket 01M43BEAR3MSMEANKENBQ1KDT7
-// frob:tests crates/gob-dev/src/import_v1.rs::run
+// frob:tests crates/frob-evidence/src/import_v1.rs::run
 #[test]
 fn open_category_triage_places_open_tickets_in_triage() {
     let tmp = tempfile::tempdir().expect("tmp");
@@ -428,7 +428,7 @@ fn open_category_triage_places_open_tickets_in_triage() {
 }
 
 // frob:ticket 01M4FCZT2N5WN3VPVJ8KB92Z06
-// frob:tests crates/gob-dev/src/import_v1.rs::run
+// frob:tests crates/frob-evidence/src/import_v1.rs::run
 #[test]
 fn crlf_tickets_import_and_a_sprint_becomes_a_label() {
     let tmp = tempfile::tempdir().expect("tmp");

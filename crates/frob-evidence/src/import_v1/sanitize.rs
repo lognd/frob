@@ -8,7 +8,7 @@
 // frob:ticket 01M43A53W5X4PBCXWCTTM4E1PN
 use std::path::Path;
 
-use frob_evidence::scrub::{OTHER_HOME, PathScrub};
+use crate::scrub::{OTHER_HOME, PathScrub};
 use frob_ledger::privacy::{find_home_path, find_home_root};
 use frob_ledger::redact::RuleSet;
 

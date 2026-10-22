@@ -24,8 +24,6 @@ crunk-check = { path = "../crunk-check" }
 crunk-spec = { path = "../crunk-spec" }
 frob-check = { path = "../frob-check" }
 frob-cli = { path = "../frob" }
-frob-evidence = { path = "../frob-evidence" }
-frob-ledger = { path = "../frob-ledger" }
 frob-mirror = { path = "../frob-mirror" }
 gob-cli = { path = "../gob-cli" }
 gob-config = { path = "../gob-config" }
@@ -43,13 +41,11 @@ grimble-check = { path = "../grimble-check" }
 jiff = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml_ng = "0.10"
 similar = "2"
 tempfile = "3"
 thiserror = "2"
 toml = "1"
 tracing = "0.1"
-ulid = "1"
 
 [dev-dependencies]
 # Only tests/profile_coverage.rs reads the product command trees (Cli::verb_flags); linking the
@@ -57,6 +53,7 @@ ulid = "1"
 crunk = { path = "../crunk" }
 grimble = { path = "../grimble" }
 gob-testsupport = { path = "../gob-testsupport" }
+serde_yaml_ng = "0.10"
 
 [lints]
 workspace = true

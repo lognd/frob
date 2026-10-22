@@ -15,7 +15,6 @@ pub mod changes;
 pub mod ci;
 pub mod ecosystem;
 pub mod files;
-pub mod import_v1;
 pub mod isolation;
 pub mod out;
 pub mod products;

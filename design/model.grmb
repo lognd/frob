@@ -82,7 +82,7 @@ flow gob_to_grimble : gob -> grimble {
   consumer "crates/grimble-bind/src/ack.rs";
 }
 
-/// Substrate data flows to frob, which calls it; the reverse edges from gob-dev into frob-ledger are the layering inversion of ~M8WETW7, covered by this flow until it is removed.
+/// Substrate data flows to frob, which calls it.
 flow gob_to_frob : gob -> frob {
   label Internal;
   producer "crates/gob-lock/src/plan.rs";
