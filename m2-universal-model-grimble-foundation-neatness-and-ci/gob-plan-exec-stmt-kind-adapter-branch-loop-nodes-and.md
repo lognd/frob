@@ -8,11 +8,27 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T23:53:37Z"
-updated = "2026-10-22T00:16:25Z"
+updated = "2026-10-22T00:25:22Z"
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/tests/ten_rules/**", "crates/gob-plan/src/**", "crates/gob-plan/tests/**", "docs/reference/rules/*.md", "docs/schemas/config.json", "changelog.d/01M5GE4YWPW8XRWCP5N1A69KMM*"]
 
 [[acceptance]]
 text = "NEAT031 examples 0 and 1 pass and leave KNOWN_ENGINE_GAPS"
+bound = false
+
+[[acceptance]]
+text = "stmt matches adapter statements"
+bound = false
+
+[[acceptance]]
+text = "adapter if/for nodes are branch and loop"
+bound = false
+
+[[acceptance]]
+text = "directly inside passes through body groups only"
+bound = false
+
+[[acceptance]]
+text = "a call statement is a call and is counted once"
 bound = false
 +++
 

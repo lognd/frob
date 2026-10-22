@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["NEAT031 examples 0 and 1 pass and leave KNOWN_ENGINE_GAPS"]
+new = ["NEAT031 examples 0 and 1 pass and leave KNOWN_ENGINE_GAPS", "stmt matches adapter statements", "adapter if/for nodes are branch and loop", "directly inside passes through body groups only", "a call statement is a call and is counted once"]
+moved = [1]
+at = "2026-10-22T00:25:22Z"
+actor = "lognd"
+rev = 1
