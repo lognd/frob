@@ -1,0 +1,11 @@
+kind = "create"
+title = "CRAFT001-005,007,009,011,012 presence rules (focus-visible, states, moment, fonts, press feedback, elevation, copy keys, optical alignment, intent coverage)"
+type = "task"
+category = "todo"
+priority = "medium"
+parent = "01M4CXT3N608HMB1A77VTT4YXX"
+scope = ["crates/crunk-rules/**", "docs/reference/rules/**"]
+body = "found while working ~DTBY8Q0; cut from its scope"
+at = "2026-10-22T10:57:08Z"
+actor = "lognd"
+rev = 1
