@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T02:35:30Z"
+digest = "85081eeb9b58489bfb17d73ed42dd3142d03dc6809730b56756756c5570a99a9"
+exit_code = 0
+head = "01526950779fbebe2e68e7041371ec39c6a21e47"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d94695fc-d6c2-48c6-9e95-aa32b177d825 with nextest profile: default
+    Starting 1 test across 12 binaries (215 tests skipped)
+        PASS [   0.005s] gob-dev::ci_parity ci_yml_installs_node_for_the_nextest_job
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 215 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev ci_yml_installs_node_for_the_nextest_job"
+size = 553
+status = "measured"
+test_count = 1
+tests_digest = "8ec006bc36690045f88f306355acd8fc2f7ab6be8244d933fa19f640c514098e"
+at = "2026-10-22T02:35:30Z"
+actor = "lognd"
+rev = 1

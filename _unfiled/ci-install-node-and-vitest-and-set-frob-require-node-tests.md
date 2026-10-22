@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-07T02:49:39Z"
-updated = "2026-10-22T02:35:29Z"
+updated = "2026-10-22T02:35:30Z"
 scope = ["crates/gob-dev/**", ".github/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
