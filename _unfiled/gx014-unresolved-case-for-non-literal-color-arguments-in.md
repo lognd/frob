@@ -2,7 +2,8 @@
 id = "01M5HW48CZPQ5KW8E70F63DZXF"
 title = "GX014: unresolved case for non-literal Color arguments in prefab generators"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
