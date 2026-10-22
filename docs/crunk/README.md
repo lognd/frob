@@ -17,6 +17,8 @@ the `crunk-check` crate with the rule set listed in [rules/README.md](rules/READ
 | `crunk doctor` | no | Reports the crunk version, the repository root and the state of `crunk.toml`. |
 | `crunk tokens` | yes | Writes, previews (`--target` css, json or tailwind) or drift-checks (`--check`) the generated token files. |
 | `crunk query KIND [ARG]` | yes | Read-only questions: `find NAME` (exact, then prefix, then substring, with use counts), `component NAME` (BEM structure; unknown is exit 2), `dupes [--threshold 0.6]` (sheet pairs repeating declarations), `unused` (tokens nothing references), `uses TOKEN` (`var()` sites), `color HEX` (every palette color by redmean distance), `violations [--rule ID] [--path GLOB]` (check findings, always exit 0). `--no-cache` is accepted and a no-op: queries always ingest fresh. |
+| `crunk import dtcg INPUT [--store PATH]` | no | Validates a W3C DTCG token file (names, a resolvable `$type` per token, value shapes, `{a.b}` references without cycles) and stores it losslessly (default `design/tokens.dtcg.json`); `--dry-run` validates only. A bad file is a refusal (`E-DTCG`). |
+| `crunk export dtcg [--store PATH] [--out PATH]` | no | Prints the stored DTCG document, or writes it to `--out`; import then export equals the input up to key order. |
 | `crunk map` | yes | The style inventory bucketed by `[org] buckets` order, plus strays. |
 | `crunk explain NAME` | yes | Value, group, definition file, `var()` sites and utilities of one token; an unknown name exits 2 and lists close matches. |
 | `crunk gallery enumerate` | yes | Opt-in (`gallery` feature): lists the spec's `(screen, state, platform)` cells; `--screen`, `--state`, `--platform` narrow it. |
