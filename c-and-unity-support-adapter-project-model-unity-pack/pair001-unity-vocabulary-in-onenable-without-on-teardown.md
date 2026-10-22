@@ -2,13 +2,13 @@
 id = "01M4D955ZSR7MHM6TXXD49JJ4V"
 title = "PAIR001 Unity vocabulary: += in OnEnable without -= on teardown, RegisterCallback, action Enable/Disable, Addressables Load/Release"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:51Z"
-updated = "2026-10-08T08:12:51Z"
+updated = "2026-10-22T09:15:23Z"
 scope = ["changelog.d/**", "crates/gob-ir/**"]
 
 [[acceptance]]
