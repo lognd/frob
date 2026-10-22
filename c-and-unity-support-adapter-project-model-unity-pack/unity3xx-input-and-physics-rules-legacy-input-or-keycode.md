@@ -8,12 +8,12 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:50Z"
-updated = "2026-10-22T09:46:28Z"
+updated = "2026-10-22T09:54:19Z"
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
 
 [[acceptance]]
 text = "Given activeInputHandler set to the Input System and Input.GetKey(KeyCode.Space) in code, when checked, then UNITY301 fires"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given Rigidbody.AddForce in Update, when checked, then UNITY302 fires; given the same call in FixedUpdate, then clean"

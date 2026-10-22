@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T09:54:19Z"
+digest = "45b36bd41e9e24493da89554a5e345851c59a618f42b0f48cb251106b9ea8b8b"
+exit_code = 0
+head = "18ffdbbca946883558540938261dca5ae4acb2e9"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 88f4e06f-6068-4e43-b1b2-76961d30796a with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.004s] grimble-lints::unity_input input_system_handler_flags_legacy_get_key
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test unity_input input_system_handler_flags_legacy_get_key"
+size = 711
+status = "measured"
+test_count = 1
+tests_digest = "2374d8281e0c0832e91f34a67b7109a5209988a05b7da51d17b8e55600fab72c"
+at = "2026-10-22T09:54:19Z"
+actor = "lognd"
+rev = 1
