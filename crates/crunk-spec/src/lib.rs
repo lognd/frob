@@ -53,6 +53,7 @@
 
 pub mod catalog;
 pub mod component_file;
+pub mod content_file;
 mod dynamic;
 mod error;
 mod load;
@@ -67,6 +68,7 @@ mod validate;
 
 pub use catalog::{CATALOG, CONTRAST_AA_FLOOR, CatalogRow, Severity};
 pub use component_file::{ComponentFileError, parse_component_file};
+pub use content_file::{ContentFile, ContentFileError, ContentKey, parse_content_file};
 pub use dynamic::Dyn;
 pub use error::{Location, SpecError, SpecErrorKind};
 pub use load::{OWN_TABLES, load_spec, load_spec_file, parse_spec};

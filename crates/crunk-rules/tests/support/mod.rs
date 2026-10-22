@@ -20,6 +20,7 @@ use std::path::Path;
 use crunk_ingest::{ProjectStyles, ingest_tree};
 use crunk_rules::CrunkHost;
 use crunk_rules::component_files::ComponentFacts;
+use crunk_rules::content_files::ContentFacts;
 use crunk_rules::review::{AckSignature, ReviewFacts, Subject, judge};
 use crunk_rules::scene_docs::SceneDocFacts;
 use crunk_rules::scene_files::SceneFacts;
@@ -44,6 +45,8 @@ pub struct Project {
     pub scenes: Option<SceneFacts>,
     // frob:ticket 01M5H30AMSB0THE4GW322D4K54
     pub scene_docs: Option<SceneDocFacts>,
+    // frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
+    pub content: Option<ContentFacts>,
     pub screens: Option<ScreenFacts>,
     pub components: Option<ComponentFacts>,
     _dir: tempfile::TempDir,
@@ -70,6 +73,9 @@ impl CrunkHost for Project {
     }
     fn scene_docs(&self) -> Option<&SceneDocFacts> {
         self.scene_docs.as_ref()
+    }
+    fn content(&self) -> Option<&ContentFacts> {
+        self.content.as_ref()
     }
     fn screens(&self) -> Option<&ScreenFacts> {
         self.screens.as_ref()
@@ -303,11 +309,14 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
             );
         }
     }
+    write_content(dir.path(), config);
     let styles = ingest_tree(&spec, &Cache::null()).expect("ingest").styles;
     let tokens = Some(TokenFacts::load(&spec));
     let scenes = Some(SceneFacts::load(&spec));
     // frob:ticket 01M5H30AMSB0THE4GW322D4K54
     let scene_docs = Some(SceneDocFacts::load(&spec));
+    // frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
+    let content = Some(ContentFacts::load(&spec));
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     let screens = Some(ScreenFacts::load(&spec));
     // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
@@ -322,6 +331,7 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
         tokens,
         scenes,
         scene_docs,
+        content,
         screens,
         components,
         _dir: dir,
@@ -427,4 +437,15 @@ fn review_facts(spec: &DesignSpec, config: &str) -> Option<ReviewFacts> {
         )],
         unreadable: None,
     })
+}
+
+/// Write the `content-en` config's copy file (one key, `home.hero`) under `root`.
+fn write_content(root: &Path, config: Option<&str>) {
+    if config == Some("content-en") {
+        write(
+            root,
+            "design/content/en.toml",
+            "locale = \"en\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Welcome back\"\nmax_chars = 20\n",
+        );
+    }
 }

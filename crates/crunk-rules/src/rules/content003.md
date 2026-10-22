@@ -1,0 +1,30 @@
+<!-- mdtest: rule=CONTENT003 -->
+# CONTENT003 content-key-undefined
+
+Every copy key a scene references is defined.
+
+## What it does
+
+Fires for each `data-copy` or `data-copy-<attribute>` reference in a scene document whose key no file in `design/content/*.toml` defines. It also fires when the project has no content files at all.
+
+## Why it matters
+
+An undefined key renders as nothing or as its raw id in the product.
+
+## Remedy
+
+Define the key in a content file, or fix the typo in the reference.
+
+## Examples
+
+### An undefined key fires
+
+```html expect=fire file=design/scenes/home.scene.html
+<h1 data-id="hero" data-copy="home.hero"></h1>
+```
+
+### A scene without references is clean
+
+```html expect=clean file=design/scenes/home.scene.html
+<div data-id="hero"></div>
+```

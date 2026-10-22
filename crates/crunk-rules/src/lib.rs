@@ -36,6 +36,7 @@
 pub mod breakpoints;
 pub mod color;
 pub mod component_files;
+pub mod content_files;
 pub mod contrast;
 pub mod family;
 pub mod host;

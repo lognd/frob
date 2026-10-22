@@ -7,6 +7,7 @@ use crunk_ingest::ProjectStyles;
 use crunk_spec::DesignSpec;
 
 use crate::component_files::ComponentFacts;
+use crate::content_files::ContentFacts;
 use crate::review::ReviewFacts;
 use crate::scene_docs::SceneDocFacts;
 use crate::scene_files::SceneFacts;
@@ -52,6 +53,12 @@ pub trait CrunkHost {
     // frob:ticket 01M5H30AMSB0THE4GW322D4K54
     /// The authored `design/scenes/*.scene.html` files, parsed (the SCENE rules' input).
     fn scene_docs(&self) -> Option<&SceneDocFacts> {
+        None
+    }
+
+    // frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
+    /// The authored `design/content/*.toml` copy files (the CONTENT rules' input).
+    fn content(&self) -> Option<&ContentFacts> {
         None
     }
 
@@ -144,6 +151,24 @@ pub fn missing_scene_doc_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<Strin
 /// How many parsed scene files `host` carries (the SCENE rules' subject count).
 pub fn scene_doc_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
     host.scene_docs().map_or(0, |facts| facts.files.len())
+}
+
+// frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
+/// Why a CONTENT rule that reads the content files cannot run on `host`, if it cannot.
+pub fn missing_content_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
+    if host.spec().is_none() {
+        return Some("no valid crunk.toml".to_owned());
+    }
+    match host.content() {
+        Some(facts) if !facts.files.is_empty() => None,
+        _ => Some("no design/content/*.toml files".to_owned()),
+    }
+}
+
+// frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
+/// How many parsed content files `host` carries (a content-file rule's subject count).
+pub fn content_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
+    host.content().map_or(0, |facts| facts.files.len())
 }
 
 // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH

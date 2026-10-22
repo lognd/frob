@@ -1,0 +1,1 @@
+The crunk check now flags literal copy in scene documents and suggests a content key (CONTENT001), reads `design/content/*.toml` copy keys with length budgets (CONTENT002), and flags `data-copy` references to undefined keys (CONTENT003).

@@ -52,6 +52,10 @@ pub struct SceneElement {
     pub attributes: Vec<(String, String)>,
     /// Index into [`SceneDoc::elements`] of the parent element; `None` for a top-level element.
     pub parent: Option<usize>,
+    // frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
+    /// The element's own text runs (direct text children, whitespace-collapsed and non-empty); a
+    /// `<style>` or `<script>` body is not copy and is left out.
+    pub text: Vec<String>,
     /// Byte offset of the start tag.
     pub offset: usize,
     /// 1-based line of the start tag.
@@ -175,11 +179,13 @@ pub fn parse_scene_html(text: &str) -> Result<SceneDoc, SceneError> {
                     attributes.push((name.to_owned(), value));
                 }
             }
+            let text = own_text(&tag, &el.children);
             SceneElement {
                 tag,
                 kind,
                 data_id,
                 attributes,
+                text,
                 parent: parents.get(&el.node).copied(),
                 offset,
                 line: lines.line_of(offset),
@@ -284,4 +290,20 @@ fn sort_source_order(elements: &mut Vec<SceneElement>) {
         el.parent = el.parent.map(|p| new_index[p]);
     }
     *elements = sorted;
+}
+
+// frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
+/// The trimmed, non-empty direct text runs of an element; none for a `style` or `script` body.
+fn own_text(tag: &str, children: &[markup::Child]) -> Vec<String> {
+    if matches!(tag.to_ascii_lowercase().as_str(), "style" | "script") {
+        return Vec::new();
+    }
+    children
+        .iter()
+        .filter_map(|child| match child {
+            markup::Child::Text(t) => Some(t.trim().to_owned()),
+            _ => None,
+        })
+        .filter(|t| !t.is_empty())
+        .collect()
 }

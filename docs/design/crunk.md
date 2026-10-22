@@ -132,6 +132,18 @@ binds) read them. Rendering every variant, validating anatomy against a
 solved scene, responsive-section rules and code-path existence are
 follow-ups.
 
+Content keys (CONTENT family, T0). Copy lives in `design/content/*.toml`: a
+file has an optional `locale` and `[[key]]` tables with `id`, `text` and an
+optional `max_chars` budget. A scene references a key with `data-copy="id"` on
+an element (its text is then a stand-in render) or `data-copy-<attribute>="id"`
+for `alt`, `aria-label`, `title` and `placeholder`. CONTENT001 flags literal
+copy in a scene (text or those attributes with at least one letter; numbers
+and punctuation pass) and suggests a key named from the scene and element.
+CONTENT002 flags key text over its `max_chars` (counted in characters).
+CONTENT003 flags a reference to a key no content file defines. Glossary and
+tone rules, the I18N tier (pseudo-locale expansion, RTL) and per-locale
+completeness are follow-up work.
+
 ## 3. Scenes and the layout engine (D111, D113)
 
 SCENE001 reads `design/scenes/*.scene.html` and flags each CSS property outside

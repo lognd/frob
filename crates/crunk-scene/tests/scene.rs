@@ -145,3 +145,33 @@ fn style_block_and_inline_both_checked() {
         ["float", "clear"]
     );
 }
+
+// frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
+// frob:tests parse_scene_html
+#[test]
+fn element_text_keeps_own_runs_and_skips_style_bodies() {
+    let doc = parse_scene_html(
+        "<style>.a { color: red }</style><div data-id=\"a\">  Hello\n   world <b>bold</b></div><p data-id=\"e\">   </p>",
+    )
+    .expect("parses");
+    let a = doc
+        .elements
+        .iter()
+        .find(|e| e.data_id.as_deref() == Some("a"))
+        .expect("a");
+    assert_eq!(a.text, ["Hello world"]);
+    let b = doc.elements.iter().find(|e| e.tag == "b").expect("b");
+    assert_eq!(b.text, ["bold"]);
+    let e = doc
+        .elements
+        .iter()
+        .find(|e| e.data_id.as_deref() == Some("e"))
+        .expect("e");
+    assert!(e.text.is_empty());
+    let style = doc
+        .elements
+        .iter()
+        .find(|e| e.tag == "style")
+        .expect("style");
+    assert!(style.text.is_empty());
+}
