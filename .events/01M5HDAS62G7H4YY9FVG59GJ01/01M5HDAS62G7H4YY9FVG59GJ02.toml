@@ -1,0 +1,12 @@
+kind = "create"
+title = "Wire grimble-lints effect::scan into the registered PAIR001 rule for React effects"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/grimble-lints/**", "changelog.d/**"]
+acceptance = ["Given a useEffect starting an interval without cleanup in a scanned file, when grimble check runs, then PAIR001 is reported through the registered rule"]
+body = "Follow-up from ~7ASNXV3: effect::scan exists but is not yet called by the rule."
+at = "2026-10-22T08:58:34Z"
+actor = "lognd"
+rev = 1
