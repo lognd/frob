@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk: compile an imported DTCG document into a TokenSet"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-tokens/**"]
+body = "found while working ~62C50FH"
+at = "2026-10-22T04:32:09Z"
+actor = "lognd"
+rev = 1
