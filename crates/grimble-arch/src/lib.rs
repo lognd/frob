@@ -1,8 +1,8 @@
-//! The architecture rules CYCLE001, LARGE001, DEAD001 and VIS001 over the symbol graph (design:
+//! The architecture rules CYCLE001, LARGE001, DEAD001, VIS001 and DUP001 over the symbol graph (design:
 //! `rules.md` repo-scope family, ticket G10).
 //!
 //! [`analyze`] reads one [`gob_symbols::SymbolGraph`] and returns every verdict as an
-//! [`ArchFinding`]; the product converts them to its own findings. The four rules never run one
+//! [`ArchFinding`]; the product converts them to its own findings. The five rules never run one
 //! by one: they are declared with `#[rule]` ([`rules`]) and staged, like the SYS rules.
 //!
 //! | Rule | Polarity | Fires | Unresolved |
@@ -11,6 +11,7 @@
 //! | `LARGE001` | Pn | a function, method or type longer than `large_lines` | never (a size is exact) |
 //! | `DEAD001` | P- | a private function or method no edge reaches | only May edges reach it, or an Unknown edge spells its name |
 //! | `VIS001` | P- | a `pub` Rust free function outside the public API that no other package reaches | only a May edge reaches it from outside, or an Unknown edge from another package spells its name |
+//! | `DUP001` | Pn | a block of 50 or more tokens copied 3 or more times (exact, renamed or same shape) | never (a token match is exact) |
 //!
 //! # Known limits
 //!
@@ -20,12 +21,17 @@
 //!   name (`getattr(x, name)()`) is not matched to any unit.
 //! - `VIS001` judges `pub` free functions in Rust files only (a type used in a type position has
 //!   no edge), and the public API is the graph's `pub` chain plus `pub use` re-exports.
+//! - `DUP001` compares 128-bit window hashes without verifying the tokens, so a collision could
+//!   report a false clone (astronomically unlikely); it lexes Rust, Python, TypeScript and C#
+//!   files outside tests, ignores comments and imports, and its thresholds are constants.
 //! - The pass reads one graph; nothing is cached between runs.
 
 // frob:ticket 01M3Z7141TW2H3HXJRK1QBHP7T
 
 mod cycle;
 mod dead;
+mod dup;
+mod dup_lex;
 mod finding;
 pub mod host;
 mod large;
@@ -48,6 +54,9 @@ pub const DEAD: &str = "DEAD001";
 /// Rule id of the visibility wider than its uses rule.
 pub const VIS: &str = "VIS001";
 
+/// Rule id of the duplicated code rule.
+pub const DUP: &str = "DUP001";
+
 /// Everything the architecture pass reads.
 pub struct ArchInput<'a> {
     /// The symbol graph of the walk.
@@ -56,22 +65,22 @@ pub struct ArchInput<'a> {
     pub crates: &'a BTreeMap<String, String>,
     /// A unit longer than this many lines fires `LARGE001`; 0 turns the rule off.
     pub large_lines: usize,
-    /// The text of a repo-relative file, `None` when unreadable (only called when `LARGE001` is on).
+    /// The text of a repo-relative file, `None` when unreadable (only called when `LARGE001` or `DUP001` is on).
     pub read: &'a dyn Fn(&str) -> Option<String>,
 }
 
 /// What the architecture pass found and examined.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ArchReport {
-    /// Findings of the four rules, sorted by file, rule and anchor.
+    /// Findings of the five rules, sorted by file, rule and anchor.
     pub findings: Vec<ArchFinding>,
-    /// Subjects examined per rule (nodes, sized units, private functions, `pub` functions); a rule that is off has none.
+    /// Subjects examined per rule (nodes, sized units, private functions, `pub` functions, lexed files); a rule that is off has none.
     pub subjects: BTreeMap<&'static str, usize>,
     /// Rules whose whole scope is absent here (rule id to the reason), so zero subjects is not a gap.
     pub not_applicable: BTreeMap<&'static str, String>,
 }
 
-/// Run `CYCLE001`, `LARGE001`, `DEAD001` and `VIS001` over `input`.
+/// Run `CYCLE001`, `LARGE001`, `DEAD001`, `VIS001` and `DUP001` over `input`.
 pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     let mut report = ArchReport::default();
     let (findings, nodes) = cycle::check(input.graph, input.crates);
@@ -79,7 +88,7 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     report.findings.extend(findings);
     if nodes == 0 {
         tracing::debug!("no source units in the walk; architecture rules do not apply");
-        for id in [CYCLE, LARGE, DEAD, VIS] {
+        for id in [CYCLE, LARGE, DEAD, VIS, DUP] {
             report
                 .not_applicable
                 .insert(id, "no source files in the walk".to_owned());
@@ -103,6 +112,9 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
             .not_applicable
             .insert(VIS, "no Rust source files in the walk".to_owned());
     }
+    report.findings.extend(findings);
+    let (findings, lexed) = dup::check(input.graph, input.read);
+    report.subjects.insert(DUP, lexed);
     report.findings.extend(findings);
     report
         .findings
