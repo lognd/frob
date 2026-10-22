@@ -108,6 +108,8 @@ pub struct Init {
     ledger_ref: Option<String>,
     /// Remove the freshness git hooks instead of installing them.
     remove_hooks: bool,
+    /// Also write the project's `.claude/settings.json` (frob MCP server, read-verb allowlist).
+    agent: bool,
 }
 
 /// One file-or-config step of init.
@@ -138,6 +140,8 @@ pub struct InitData {
     pub ticket_branch: Option<Step>,
     /// The `post-checkout` and `post-merge` freshness hooks (installed, or removed by `--remove-hooks`).
     pub freshness_hooks: Step,
+    /// The project `.claude/settings.json` (only with `--agent`).
+    pub agent_settings: Option<Step>,
 }
 
 /// The merge driver command init settled on and the reason, in the output.
@@ -756,6 +760,11 @@ struct InitArgs {
         help = "Remove the freshness git hooks init installs instead of installing them"
     )]
     remove_hooks: bool,
+    #[arg(
+        long = "agent",
+        help = "Also write .claude/settings.json: the frob MCP server and an allowlist for read verbs"
+    )]
+    agent: bool,
 }
 
 impl Command for Init {
@@ -772,6 +781,7 @@ impl Command for Init {
             fix_driver: a.fix_driver,
             ledger_ref: a.ledger_ref,
             remove_hooks: a.remove_hooks,
+            agent: a.agent,
         })
     }
 
@@ -832,6 +842,16 @@ impl Command for Init {
             target: Shown::of(&hooks_dir).to_string(),
             changed: !hook_paths.is_empty(),
         };
+        let agent_settings = if self.agent {
+            let changed = crate::agent::project::configure(root, ctx.dry_run)
+                .map_err(|e| crate::agent_cmd::agent_refusal(&e))?;
+            Some(Step {
+                target: Shown::of(&root.join(crate::agent::project::PROJECT_SETTINGS)).to_string(),
+                changed,
+            })
+        } else {
+            None
+        };
         let already = config.added.is_empty()
             && !freshness.changed
             && ticket_branch.is_none()
@@ -840,7 +860,8 @@ impl Command for Init {
             && !dotnet_stage
             && !gitignore.changed
             && !merge_driver.changed
-            && !gitattributes.changed;
+            && !gitattributes.changed
+            && !agent_settings.as_ref().is_some_and(|s| s.changed);
         tracing::info!(already, dry_run = ctx.dry_run, "init finished");
         let payload = Payload::new(InitData {
             root: Shown::of(root).to_string(),
@@ -851,6 +872,7 @@ impl Command for Init {
             gitattributes,
             ticket_branch,
             freshness_hooks: freshness,
+            agent_settings,
         })
         .with_already(already);
         Ok(match driver_warning {

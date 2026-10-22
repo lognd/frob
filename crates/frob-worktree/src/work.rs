@@ -588,6 +588,14 @@ impl Workspace<'_> {
             let aged = normalize_mtimes(repo, path);
             // frob:ticket 01M4S28S5N358QCYR9A4XM1NC0
             share_build_dir(repo.common_dir(), path);
+            // frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
+            let primary = self.primary_root();
+            ignore_inside_repo(
+                &primary,
+                &worktree_parent(&primary, self.config),
+                path,
+                repo.common_dir(),
+            );
             // frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
             seed_caches(&self.primary_root());
             tracing::info!(ticket = %id, handle, path = %Shown::of(path), branch, base = %base, aged, "worktree created");
@@ -941,22 +949,85 @@ pub fn share_build_dir(common: &Path, checkout: &Path) {
 /// Make git ignore a `/target` entry of any kind: the `target/` pattern of a `.gitignore` matches
 /// directories only, so the shared-build symlink would show as an untracked file (and as a SCOPE001 target).
 fn exclude_target(common: &Path) {
+    exclude_line(common, "/target");
+}
+
+/// Append `line` to `<common>/info/exclude` unless an identical line is already there; true when it was added.
+fn exclude_line(common: &Path, line: &str) -> bool {
     let path = common.join("info").join("exclude");
     let text = std::fs::read_to_string(&path).unwrap_or_default();
-    if text.lines().any(|l| l.trim() == "/target") {
-        return;
+    if text.lines().any(|l| l.trim() == line) {
+        return false;
     }
     let mut next = text;
     if !next.is_empty() && !next.ends_with('\n') {
         next.push('\n');
     }
-    next.push_str("/target\n");
+    next.push_str(line);
+    next.push('\n');
     let result =
         std::fs::create_dir_all(common.join("info")).and_then(|()| std::fs::write(&path, next));
     match result {
         Ok(()) => {
-            tracing::info!(path = %Shown::of(&path), "excluded /target for the shared build link");
+            tracing::info!(path = %Shown::of(&path), line, "added a git exclude");
+            true
         }
-        Err(e) => tracing::warn!(path = %Shown::of(&path), error = %e, "could not exclude /target"),
+        Err(e) => {
+            tracing::warn!(path = %Shown::of(&path), line, error = %e, "could not add a git exclude");
+            false
+        }
     }
+}
+
+// frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
+/// The anchored `.gitignore` line that hides `target` inside the checkout `primary`, or `None` when it lies outside it (or is the checkout itself).
+pub fn ignore_line(primary: &Path, target: &Path) -> Option<String> {
+    let rel = target.strip_prefix(primary).ok()?;
+    let mut text = String::new();
+    for c in rel.components() {
+        if !text.is_empty() {
+            text.push('/');
+        }
+        text.push_str(&crate::pathtext::name_text(c.as_os_str()));
+    }
+    if text.is_empty() {
+        return None;
+    }
+    let mut line = String::from("/");
+    for ch in text.chars() {
+        if matches!(ch, '*' | '?' | '[' | '\\' | ' ' | '#' | '!') {
+            line.push('\\');
+        }
+        line.push(ch);
+    }
+    line.push('/');
+    Some(line)
+}
+
+// frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
+/// Make git ignore the worktree directory when `[worktree] dir` puts it inside the checkout; true when a line was added.
+///
+/// The ignored entry is the configured parent when `path` lives under it, else `path` itself; a
+/// location outside `primary` (the default `../{repo}-wt`, or a `dir` that escapes) is left alone,
+/// and a line already in `.gitignore` or `info/exclude` is never repeated.
+pub fn ignore_inside_repo(primary: &Path, parent: &Path, path: &Path, common: &Path) -> bool {
+    let target = if path.starts_with(parent) {
+        parent
+    } else {
+        path
+    };
+    let Some(line) = ignore_line(primary, target) else {
+        tracing::debug!(path = %Shown::of(path), "worktree lies outside the checkout; nothing to ignore");
+        return false;
+    };
+    let tracked = std::fs::read_to_string(primary.join(".gitignore")).unwrap_or_default();
+    let bare = line.trim_end_matches('/');
+    if tracked
+        .lines()
+        .any(|l| matches!(l.trim(), t if t == line || t == bare))
+    {
+        tracing::debug!(line, ".gitignore already ignores the worktree directory");
+        return false;
+    }
+    exclude_line(common, &line)
 }

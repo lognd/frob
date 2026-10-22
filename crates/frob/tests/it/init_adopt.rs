@@ -303,3 +303,38 @@ fn init_ledger_ref_flag_overrides_and_is_validated() {
     assert_eq!(out.status.code(), Some(0), "{}", json(&out));
     assert!(config_text(dir.path()).contains("ref = \"refs/heads/feature\""));
 }
+
+// frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
+/// `frob init --agent` writes the project Claude settings, reports them, and a second run changes nothing.
+// frob:tests crates/frob/src/init.rs::Init.run
+#[test]
+fn init_agent_writes_project_settings_idempotently() {
+    let dir = repo("main", true);
+    let first = frob(dir.path(), &["init", "--agent"]);
+    assert_eq!(first.status.code(), Some(0), "{}", json(&first));
+    let settings = dir.path().join(".claude/settings.json");
+    let v: Value =
+        serde_json::from_slice(&std::fs::read(&settings).expect("settings")).expect("json");
+    assert_eq!(v["mcpServers"]["frob"]["args"][1], "--mcp");
+    assert!(json(&first).to_string().contains("agent_settings"));
+    let bytes = std::fs::read(&settings).expect("settings");
+    let second = frob(dir.path(), &["init", "--agent"]);
+    assert_eq!(second.status.code(), Some(0), "{}", json(&second));
+    assert_eq!(std::fs::read(&settings).expect("settings"), bytes);
+}
+
+// frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
+/// Without `--agent`, init leaves `.claude` alone; malformed settings under `--agent` are refused untouched.
+// frob:tests crates/frob/src/init.rs::Init.run
+#[test]
+fn init_agent_is_opt_in_and_refuses_malformed_settings() {
+    let dir = repo("main", true);
+    assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
+    assert!(!dir.path().join(".claude").exists());
+    std::fs::create_dir_all(dir.path().join(".claude")).expect("mkdir");
+    let settings = dir.path().join(".claude/settings.json");
+    std::fs::write(&settings, "{ nope").expect("write");
+    let out = frob(dir.path(), &["init", "--agent"]);
+    assert_ne!(out.status.code(), Some(0));
+    assert_eq!(std::fs::read_to_string(&settings).expect("read"), "{ nope");
+}

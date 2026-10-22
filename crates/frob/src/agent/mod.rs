@@ -10,6 +10,7 @@
 
 pub mod claude;
 pub mod engine;
+pub mod project;
 
 use std::path::{Component, Path, PathBuf};
 

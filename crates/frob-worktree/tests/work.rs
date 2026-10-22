@@ -1522,3 +1522,130 @@ fn work_in_a_fresh_clone_adopts_the_ticket_branch_from_origin() {
     );
     assert_eq!(base, origin_tip, "the local branch descends from origin's");
 }
+
+/// `git check-ignore -q <path>` in `dir`: true when git ignores it.
+fn git_ignores(dir: &Path, path: &Path) -> bool {
+    let spec = Spec {
+        program: Program::Git,
+        args: vec![
+            "check-ignore".to_owned(),
+            "-q".to_owned(),
+            gob_path::Shown::with_home(path, None).to_string(),
+        ],
+        cwd: Some(dir.to_path_buf()),
+        env: Vec::new(),
+        timeout: Duration::from_secs(10),
+        capture: true,
+    };
+    Runner::new(Limits { jobs: 1 })
+        .run(&spec)
+        .expect("git")
+        .status
+        == Outcome::Exited(0)
+}
+
+fn exclude_text(fx: &Fixture) -> String {
+    std::fs::read_to_string(fx.root.join(".git/info/exclude")).unwrap_or_default()
+}
+
+/// Work two tickets with `[worktree] dir = <dir>` and return their paths.
+fn work_two(fx: &Fixture, dir: &str) -> Vec<PathBuf> {
+    std::fs::write(
+        fx.root.join("frob.toml"),
+        format!("[worktree]\ndir = \"{dir}\"\n"),
+    )
+    .expect("toml");
+    let ledger = fx.ledger(Some("alice"));
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    ["a", "b"]
+        .iter()
+        .map(|n| {
+            let id = Fixture::ticket(&ledger, n, TicketType::Task, &[&format!("{n}/**")]);
+            ws.work(&id.to_string(), &WorkOptions::default())
+                .expect("work")
+                .path
+        })
+        .collect()
+}
+
+// frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
+// frob:tests crates/frob-worktree/src/work.rs::ignore_inside_repo
+#[test]
+fn a_worktree_dir_inside_the_repository_is_created_there_and_git_ignored_once() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let paths = work_two(&fx, ".worktrees");
+    for p in &paths {
+        assert_eq!(p.parent(), Some(fx.root.join(".worktrees").as_path()));
+        assert!(p.join("README.md").exists());
+        assert!(git_ignores(&fx.root, p), "{p:?} not ignored");
+    }
+    let n = exclude_text(&fx)
+        .lines()
+        .filter(|l| *l == "/.worktrees/")
+        .count();
+    assert_eq!(n, 1, "{}", exclude_text(&fx));
+}
+
+// frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
+// frob:tests crates/frob-worktree/src/work.rs::ignore_inside_repo
+#[test]
+fn a_worktree_dir_the_gitignore_already_names_gets_no_second_line() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    std::fs::write(fx.root.join(".gitignore"), "/.worktrees\n").expect("gitignore");
+    let paths = work_two(&fx, ".worktrees");
+    assert!(git_ignores(&fx.root, &paths[0]));
+    assert!(
+        !exclude_text(&fx).contains(".worktrees"),
+        "{}",
+        exclude_text(&fx)
+    );
+}
+
+// frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
+// frob:tests crates/frob-worktree/src/work.rs::ignore_inside_repo
+#[test]
+fn a_worktree_dir_that_escapes_the_repository_adds_no_ignore_line() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    work_two(&fx, "../escaped/{repo}");
+    assert!(
+        !exclude_text(&fx).contains("escaped"),
+        "{}",
+        exclude_text(&fx)
+    );
+    assert!(!exclude_text(&fx).contains(".."), "{}", exclude_text(&fx));
+}
+
+// frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
+// frob:tests crates/frob-worktree/src/work.rs::ignore_line
+#[test]
+fn ignore_lines_are_anchored_directory_patterns_and_escape_special_characters() {
+    let primary = Path::new("/r/repo");
+    assert_eq!(
+        frob_worktree::work::ignore_line(primary, Path::new("/r/repo/.wt")).as_deref(),
+        Some("/.wt/")
+    );
+    assert_eq!(
+        frob_worktree::work::ignore_line(primary, Path::new("/r/repo/a/b c")).as_deref(),
+        Some("/a/b\\ c/")
+    );
+    assert_eq!(frob_worktree::work::ignore_line(primary, primary), None);
+    assert_eq!(
+        frob_worktree::work::ignore_line(primary, Path::new("/r/repo-wt/x")),
+        None
+    );
+}

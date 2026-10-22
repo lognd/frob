@@ -60,6 +60,22 @@ and ledger health at any time.
 
 The base branch (`main` here) is detected; `frob check` compares against it.
 
+### Optional: Claude Code project settings
+
+```sh
+frob init --agent
+```
+
+writes `.claude/settings.json`: the frob MCP server (`frob serve --mcp`, under
+`mcpServers.frob`) and a `permissions.allow` list for the read-only verbs
+(`ticket show|list|doable`, `lease list`, `board`, `check`, `stats`, `doctor`,
+`explain`, `config show`, `agent status`). It only merges: unrelated keys, other
+servers and your own `mcpServers.frob` entry are kept, entries are never
+duplicated, and a second run changes nothing. A file that is not valid JSON (or
+has the wrong shape) is refused and left untouched. `--dry-run` writes nothing.
+No vet hook is generated; see [claude-hooks.md](claude-hooks.md) for the hook scripts.
+
+
 ## 3. Plan: a cycle and a ticket
 
 A cycle is a time box with a capacity in story points. Create one that contains
@@ -89,7 +105,11 @@ frob work ~Q5FEE2P
 `work` creates a branch `ticket/Q5FEE2P` and a worktree, by default in a
 sibling directory `../<repo>-wt/Q5FEE2P` (set `[worktree] dir` in `frob.toml`
 to move it; a sandboxed editor that may only write inside the project cannot
-use the default). The JSON output names the path. Move there; the ticket is now
+use the default). A `dir` inside the repository (for example `dir = ".wt"`;
+relative paths resolve against the primary checkout and `{repo}` is
+substituted) works too: `work` adds an anchored line for it to the repository's
+`.git/info/exclude` unless `.gitignore` already names it, so git never offers the
+worktrees as untracked files. A `dir` outside the repository adds no line. The JSON output names the path. Move there; the ticket is now
 in-progress and its scope is leased:
 
 ```sh

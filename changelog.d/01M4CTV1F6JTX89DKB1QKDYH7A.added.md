@@ -1,0 +1,1 @@
+`frob init --agent` writes `.claude/settings.json` with the frob MCP server and an allowlist for read-only verbs (merge-only, idempotent), and `frob work` git-ignores a `[worktree] dir` that lives inside the repository.

@@ -103,7 +103,7 @@ fn is_marked_for(entry: &Value, name: &str) -> bool {
 }
 
 /// Parse `settings.json`; absent or empty is `{}`.
-fn load_settings(path: &Path) -> Result<Value, AgentError> {
+pub(super) fn load_settings(path: &Path) -> Result<Value, AgentError> {
     let Some(bytes) = read_opt(path)? else {
         return Ok(json!({}));
     };
@@ -125,7 +125,11 @@ fn load_settings(path: &Path) -> Result<Value, AgentError> {
 }
 
 /// Write settings (pretty, trailing newline) atomically with a backup; false when bytes are unchanged.
-fn write_settings(path: &Path, settings: &Value, dry_run: bool) -> Result<bool, AgentError> {
+pub(super) fn write_settings(
+    path: &Path,
+    settings: &Value,
+    dry_run: bool,
+) -> Result<bool, AgentError> {
     let mut text = serde_json::to_string_pretty(settings).map_err(|source| AgentError::Json {
         path: path.to_path_buf(),
         source,

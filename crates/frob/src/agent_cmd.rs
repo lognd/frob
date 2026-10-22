@@ -49,7 +49,7 @@ struct SyncArgs {
     allow_stale: bool,
 }
 
-fn agent_refusal(e: &AgentError) -> CliError {
+pub(crate) fn agent_refusal(e: &AgentError) -> CliError {
     tracing::error!(error = %e, "agent operation failed");
     if matches!(e, AgentError::UnknownAgent(_)) {
         return CliError::Usage(e.to_string());
