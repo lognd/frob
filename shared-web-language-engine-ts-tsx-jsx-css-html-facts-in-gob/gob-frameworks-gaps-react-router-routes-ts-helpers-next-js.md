@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:09:41Z"
-updated = "2026-10-22T00:30:30Z"
+updated = "2026-10-22T00:30:33Z"
 scope = ["crates/gob-frameworks/**", "changelog.d/01M48EFBCF70PK5KGS0PDZD40N.added.md"]
 
 [[acceptance]]
@@ -25,7 +25,7 @@ bound = false
 
 [[acceptance]]
 text = "react-router routes.ts helpers, re-exported Next.js route methods and page default export through a binding are resolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a framework-mode routes.ts using route(), index(), layout() and prefix() produces the expected routes"
