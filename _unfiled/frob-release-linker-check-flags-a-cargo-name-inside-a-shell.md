@@ -2,7 +2,8 @@
 id = "01M5GVVC0TQ7P19386NP6ZWMEM"
 title = "frob-release linker check flags a cargo name inside a shell comment"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
