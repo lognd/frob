@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:44Z"
-updated = "2026-10-22T02:48:39Z"
+updated = "2026-10-22T02:50:11Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/frob-worktree/**", "docs/guides/**"]
 
 [[acceptance]]
@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "Given malformed or wrongly shaped settings.json, when frob init --agent runs, then it is refused and the file is left untouched"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a worktree dir inside the repo, when frob work creates a worktree, then git ignores it with exactly one line and an existing .gitignore entry is not duplicated"

@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-22T02:50:11Z"
+digest = "f05d8e0514afa976ec9a8b82b2c3b3456f00531c09873438e9f8505b4e637852"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.60s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 83d41363-ac24-4565-89db-4cfbccfb81c3 with nextest profile: default
+    Starting 2 tests across 1 binary (65 tests skipped)
+        PASS [   0.009s] frob-cli agent::project::tests::malformed_json_is_an_error_and_the_file_is_untouched
+        PASS [   0.010s] frob-cli agent::project::tests::a_wrongly_shaped_file_is_a_shape_error_and_untouched
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 2 tests run: 2 passed, 65 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --lib agent::project::tests::malformed agent::project::tests::a_wrongly"
+size = 740
+status = "measured"
+test_count = 2
+tests_digest = "775150c148ded15c6abce19cd607d9ccba82afae9a13ac6c0398eeeb9a28168a"
+at = "2026-10-22T02:50:11Z"
+actor = "lognd"
+rev = 1
