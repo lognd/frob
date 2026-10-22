@@ -2,7 +2,8 @@
 id = "01M5JCT8CXN20B2GJHAE5JDHHC"
 title = "gob-git: read_blob per blob dominates ticket reindex on large ledgers"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
