@@ -2,7 +2,8 @@
 id = "01M5J45YZ60A5R1DWZG2ZQDW75"
 title = "frob-obligations corpus mdtest: doc002.md fails 7 of 19 DOC002 cases on experimental"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
