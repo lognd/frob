@@ -3,6 +3,7 @@
 //! A plain check never writes and never prompts (diagnostics.md section 4); when fixes
 //! exist it only says how to apply them.
 // frob:ticket 01M3ZX81ZPA8J5RXBEZ14SZNSZ
+// frob:ticket 01M5H85830JZJMYGV53YX6GQNR
 
 use gob_rules::{Applicability, Finding};
 
@@ -14,9 +15,9 @@ pub fn fix_summary_line(fixes: usize, safe: usize) -> Option<String> {
     }
     let noun = if fixes == 1 { "fix" } else { "fixes" };
     let how = if safe == 0 {
-        "run frob fix --interactive to review them".to_owned()
+        "run frob check --json to list each with its exact edit".to_owned()
     } else {
-        "run frob check --fix, or frob fix --interactive to review the rest".to_owned()
+        "run frob check --fix, or frob check --json to review the rest".to_owned()
     };
     Some(format!("{fixes} {noun} available ({safe} safe): {how}"))
 }
@@ -52,7 +53,7 @@ mod tests {
         assert_eq!(
             fix_summary_line(3, 1).as_deref(),
             Some(
-                "3 fixes available (1 safe): run frob check --fix, or frob fix --interactive to review the rest"
+                "3 fixes available (1 safe): run frob check --fix, or frob check --json to review the rest"
             )
         );
     }
@@ -64,6 +65,15 @@ mod tests {
         let line = fix_summary_line(1, 0).expect("a line");
         assert!(line.starts_with("1 fix available (0 safe)"), "{line}");
         assert!(!line.contains("check --fix"), "{line}");
+    }
+
+    // frob:tests fix_summary_line
+    #[test]
+    fn summary_line_names_no_nonexistent_verb() {
+        for (fixes, safe) in [(1, 0), (3, 1), (2, 2)] {
+            let line = fix_summary_line(fixes, safe).expect("a line");
+            assert!(!line.contains("frob fix"), "{line}");
+        }
     }
 
     // frob:tests fix_summary_for
