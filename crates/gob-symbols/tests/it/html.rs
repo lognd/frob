@@ -229,7 +229,7 @@ fn the_capability_matrix_has_an_html_row() {
         .iter()
         .find(|r| r.language == "html")
         .expect("html row");
-    assert_eq!(row.extensions, ["html", "htm"]);
+    assert_eq!(row.extensions, ["html", "htm", "uxml"]);
     assert!(
         row.identity.contains("tree-sitter-html@0.23.2"),
         "{}",

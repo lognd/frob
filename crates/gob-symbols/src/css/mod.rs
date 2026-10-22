@@ -19,6 +19,10 @@
 //! - A `var(--x)` is a `ref` named `--x`. The scope graph declares every custom property of the file at
 //!   status May in one cascade scope and resolves each `var()` there: the cascade decides at runtime which
 //!   definition applies (D100), several definitions give a May set, none gives Unknown (no definition edge).
+//! - Unity UI Toolkit (D116): `.uss` and `.tss` files are folded by this adapter unchanged (TSS is USS with
+//!   `@import`, an ordinary at-rule), so every token and declaration rule applies. A declaration of a USS-only
+//!   `-unity-` property carries `style.unity = true`; `--x` and `var(--x, fallback)` behave as in CSS (the
+//!   fallback's own `var()` references are references too).
 //! - Syntax errors are `hole(parse-error)` (or `hole(missing)`); the file is a partial parse and other files
 //!   are unaffected. A tree with no tree at all is the F0 failed-file fold.
 //! - `crunk:waive` comments are bound by the directive scanner (gob-directives), not here.
@@ -26,6 +30,7 @@
 //!   resolution, selector parsing (a selector is its text).
 
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
+// frob:ticket 01M4CXSBNCE06J78BM0P23V9XV
 
 pub(crate) mod tokens;
 
@@ -45,7 +50,20 @@ use crate::view::{self, Naming};
 use tokens::{Token, tokens};
 
 /// File extensions (lowercase, no dot) the adapter claims.
-pub(crate) const EXTENSIONS: &[&str] = &["css"];
+pub(crate) const EXTENSIONS: &[&str] = &["css", "uss", "tss"];
+
+/// Prefix of the USS-only properties (`-unity-font`, `-unity-text-align`, ...) known to the dialect.
+const UNITY_PREFIX: &str = "-unity-";
+
+/// Attribute set to `true` on a declaration of a USS-only (`-unity-`) property.
+pub(crate) const ATTR_UNITY: &str = "style.unity";
+
+/// True when `property` is a USS-only property (the `-unity-` vendor prefix, any case).
+pub(crate) fn is_unity_property(property: &str) -> bool {
+    property
+        .get(..UNITY_PREFIX.len())
+        .is_some_and(|p| p.eq_ignore_ascii_case(UNITY_PREFIX))
+}
 
 type R<T> = Result<T, TermError>;
 
@@ -93,7 +111,7 @@ impl Adapter for CssAdapter {
     }
 }
 
-/// True when `path` is a CSS file (`.css`, any case).
+/// True when `path` is a stylesheet this adapter folds (`.css`, or Unity `.uss` and `.tss`, any case).
 pub fn is_css_path(path: &str) -> bool {
     std::path::Path::new(path)
         .extension()
@@ -424,6 +442,7 @@ impl Css<'_> {
                 .named(&property)
                 .attr(style::RAW, raw)
                 .attr(style::IMPORTANT, important)
+                .attr(ATTR_UNITY, is_unity_property(&property))
         };
         self.cx.add(spec, &kids)
     }
