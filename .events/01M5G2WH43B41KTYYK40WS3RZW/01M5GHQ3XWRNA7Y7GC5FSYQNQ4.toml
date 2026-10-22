@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T00:55:56Z"
+digest = "3332b18a5bd47490c3f44a7073c3e2784b858ad00f9f234c7237fff38ce7e046"
+exit_code = 0
+head = "f6e297417898a5f2886fe220c6ca2ab84de2816f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.53s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 958462c7-a7d6-4201-9882-4ec0486855d7 with nextest profile: default
+    Starting 1 test across 8 binaries (99 tests skipped)
+        PASS [   0.007s] gob-directives::fix every_deterministic_rule_has_a_fixture
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 99 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives every_deterministic_rule"
+size = 549
+status = "measured"
+test_count = 1
+tests_digest = "1227f2cebca314bb4db70fe393c9b55e7c9919376d682c91c7a4587ac9aa0bd8"
+at = "2026-10-22T00:55:56Z"
+actor = "lognd"
+rev = 1
