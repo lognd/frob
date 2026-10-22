@@ -2,13 +2,13 @@
 id = "01M4D957J2HZ655A1H8DJ4K8YD"
 title = "TESTQ001-TESTQ003: test without assertion, sleep or wall clock or unseeded rng in a test, control flow in a test body"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:12:58Z"
-updated = "2026-10-08T08:12:58Z"
+updated = "2026-10-22T10:15:28Z"
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
 
 [[acceptance]]
