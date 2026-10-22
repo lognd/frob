@@ -1,0 +1,10 @@
+kind = "create"
+title = "profile.toml lacks scenarios for crunk edit/export dtcg/extract-token/import dtcg/new/rename"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-dev/profile.toml"]
+body = "found while working ~MQE4F44; pre-existing from in-flight crunk tickets"
+at = "2026-10-22T22:32:22Z"
+actor = "lognd"
+rev = 1
