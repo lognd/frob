@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T20:36:47Z"
-updated = "2026-10-22T00:51:12Z"
+updated = "2026-10-22T00:51:20Z"
 idempotency_key = "g4w-cfg001"
 scope = ["crates/gob-config/**", "changelog.d/01M5G2WH1J8G8WR3PGF5N3TAQD.added.md"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "a gob_fix::run_fixture fixture per fixable rule with an insta snapshot and missing_fixtures coverage over the registry"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "CFG001 partial file gains missing knobs, keeps comments, one-round fixpoint snapshot"

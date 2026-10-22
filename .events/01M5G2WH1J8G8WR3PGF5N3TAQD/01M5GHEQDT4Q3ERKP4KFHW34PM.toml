@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T00:51:20Z"
+digest = "d367a7844e51817dd3f494cf267789960281afc28c749ea3790525bd90eddf57"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0bc36785-cf82-4a90-835b-a6e36122f7a5 with nextest profile: default
+    Starting 1 test across 5 binaries (33 tests skipped)
+        PASS [   0.099s] gob-config::cfg001_fix empty_file_fires_every_knob_and_converges_in_one_round
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.099s] 1 test run: 1 passed, 33 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-config empty_file_fires"
+size = 622
+status = "measured"
+test_count = 1
+tests_digest = "2add28592b11409f545eca7f77c3cc55c8c11a86577f6d91071a342db3d54344"
+at = "2026-10-22T00:51:20Z"
+actor = "lognd"
+rev = 1
