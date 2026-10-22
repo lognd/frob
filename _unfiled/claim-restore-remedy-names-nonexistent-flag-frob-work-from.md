@@ -2,12 +2,12 @@
 id = "01M5JMG3QGMK2QGCTYQ5TB9ZM4"
 title = "claim_restore remedy names nonexistent flag frob work --from"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T20:23:03Z"
-updated = "2026-10-22T20:45:18Z"
+updated = "2026-10-22T20:45:23Z"
 scope = ["crates/frob-worktree/src/claim_restore.rs"]
 
 [[acceptance]]
