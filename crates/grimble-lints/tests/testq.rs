@@ -1,0 +1,221 @@
+//! TESTQ001 to TESTQ003: test without assertion, nondeterminism in a test, control flow in a test.
+
+// frob:ticket 01M4D957J2HZ655A1H8DJ4K8YD
+
+use std::path::Path;
+
+use gob_languages::Language;
+use grimble_lints::res::Certainty;
+use grimble_lints::testq::{Kind, Report, has_test_roles, is_test_file, scan};
+
+fn report(lang: Language, src: &str) -> Report {
+    scan(lang, src).expect("fixture parses")
+}
+
+fn of(lang: Language, src: &str, kind: Kind) -> Vec<(String, Certainty)> {
+    report(lang, src)
+        .sites
+        .into_iter()
+        .filter(|s| s.kind == kind)
+        .map(|s| (s.detail, s.certainty))
+        .collect()
+}
+
+fn rust(src: &str, kind: Kind) -> Vec<(String, Certainty)> {
+    of(Language::Rust, src, kind)
+}
+
+fn py(src: &str, kind: Kind) -> Vec<(String, Certainty)> {
+    of(Language::Python, src, kind)
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn rust_test_without_assertion_fires() {
+    let src = "#[test]\nfn smoke() {\n    let x = compute();\n    drop(x);\n}\n";
+    assert_eq!(
+        rust(src, Kind::NoAssertion),
+        [("smoke".to_owned(), Certainty::Certain)]
+    );
+    let asserting = "#[test]\nfn ok() {\n    assert_eq!(compute(), 1);\n}\n";
+    assert!(rust(asserting, Kind::NoAssertion).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn python_test_without_assertion_fires() {
+    let src = "def test_smoke():\n    x = compute()\n    print(x)\n";
+    assert_eq!(
+        py(src, Kind::NoAssertion),
+        [("test_smoke".to_owned(), Certainty::Certain)]
+    );
+    let asserting = "def test_ok():\n    assert compute() == 1\n";
+    assert!(py(asserting, Kind::NoAssertion).is_empty());
+    let raising = "def test_r():\n    with pytest.raises(ValueError):\n        compute()\n";
+    assert!(py(raising, Kind::NoAssertion).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn same_file_helper_that_asserts_makes_the_test_clean() {
+    let src = "fn check(v: i32) { assert_eq!(v, 1); }\n\
+               fn outer(v: i32) { check(v); }\n\
+               #[test]\nfn t() { outer(compute()); }\n";
+    assert!(rust(src, Kind::NoAssertion).is_empty());
+    let silent = "fn finish(v: i32) { drop(v); }\n#[test]\nfn t() { finish(compute()); }\n";
+    assert_eq!(rust(silent, Kind::NoAssertion).len(), 1);
+    let methods = "class TestA:\n    def helper(self):\n        assert 1\n    def test_a(self):\n        self.helper()\n";
+    assert!(py(methods, Kind::NoAssertion).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn helper_with_unseen_body_is_unresolved_not_a_hit() {
+    let imported = "use crate::support::verify_ok;\n#[test]\nfn t() { run(); verify_ok(); }\n";
+    // The name alone reads as a check, so this one is clean.
+    assert!(rust(imported, Kind::NoAssertion).is_empty());
+    let opaque = "use crate::support::finish;\n#[test]\nfn t() { run(); finish(); }\n";
+    assert_eq!(
+        rust(opaque, Kind::NoAssertion),
+        [("t".to_owned(), Certainty::Unknown)]
+    );
+    let module = "mod harness;\n#[test]\nfn t() { harness::drive(); }\n";
+    assert_eq!(
+        rust(module, Kind::NoAssertion),
+        [("t".to_owned(), Certainty::Unknown)]
+    );
+    let relative = "from .base import finish\ndef test_t():\n    finish()\n";
+    assert_eq!(
+        py(relative, Kind::NoAssertion),
+        [("test_t".to_owned(), Certainty::Unknown)]
+    );
+    let mixin = "class TestA(Mixin):\n    def test_a(self):\n        self.run_all()\n";
+    assert_eq!(
+        py(mixin, Kind::NoAssertion),
+        [("test_a".to_owned(), Certainty::Unknown)]
+    );
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn exempt_tests_are_not_flagged() {
+    let panics = "#[test]\n#[should_panic]\nfn t() { boom(); }\n";
+    assert!(rust(panics, Kind::NoAssertion).is_empty());
+    let result = "#[test]\nfn t() -> Result<(), E> { run()?; Ok(()) }\n";
+    assert!(rust(result, Kind::NoAssertion).is_empty());
+    let ignored = "#[test]\n#[ignore]\nfn t() { std::thread::sleep(D); }\n";
+    assert!(report(Language::Rust, ignored).sites.is_empty());
+    let not_a_test = "fn t() { run(); }\n#[cfg(test)]\nmod m { fn h() { run(); } }\n";
+    assert!(report(Language::Rust, not_a_test).sites.is_empty());
+    let skipped = "@pytest.mark.skip(reason='x')\ndef test_t():\n    time.sleep(1)\n";
+    assert!(report(Language::Python, skipped).sites.is_empty());
+    let skipping = "def test_t():\n    pytest.skip('later')\n";
+    assert!(py(skipping, Kind::NoAssertion).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn async_and_attribute_variants_are_tests() {
+    let src = "#[tokio::test]\nasync fn t() { run().await; }\n";
+    assert_eq!(rust(src, Kind::NoAssertion).len(), 1);
+    let q = "class TestA(unittest.TestCase):\n    async def test_a(self):\n        await run()\n";
+    assert_eq!(py(q, Kind::NoAssertion).len(), 1);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn sleep_in_a_test_body_fires() {
+    let src = "#[test]\nfn t() {\n    std::thread::sleep(D);\n    assert!(done());\n}\n";
+    let hits = rust(src, Kind::Nondeterminism);
+    assert_eq!(hits.len(), 1);
+    assert!(hits[0].0.ends_with("thread::sleep"));
+    let imported = "use std::thread::sleep;\n#[test]\nfn t() { sleep(D); assert!(done()); }\n";
+    assert_eq!(rust(imported, Kind::Nondeterminism).len(), 1);
+    let aliased = "use std::thread;\n#[test]\nfn t() { thread::sleep(D); assert!(done()); }\n";
+    assert_eq!(rust(aliased, Kind::Nondeterminism).len(), 1);
+    let p = "import time\ndef test_t():\n    time.sleep(1)\n    assert done()\n";
+    assert_eq!(py(p, Kind::Nondeterminism).len(), 1);
+    let from = "from time import sleep as nap\ndef test_t():\n    nap(1)\n    assert done()\n";
+    assert_eq!(py(from, Kind::Nondeterminism).len(), 1);
+    let asy = "import asyncio\nasync def test_t():\n    await asyncio.sleep(2)\n    assert 1\n";
+    assert_eq!(py(asy, Kind::Nondeterminism).len(), 1);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn pinned_sources_are_exempt() {
+    let paused = "#[tokio::test(start_paused = true)]\nasync fn t() { tokio::time::sleep(D).await; assert!(1); }\n";
+    assert!(rust(paused, Kind::Nondeterminism).is_empty());
+    let zero = "import time\ndef test_t():\n    time.sleep(0)\n    assert 1\n";
+    assert!(py(zero, Kind::Nondeterminism).is_empty());
+    let frozen = "@freeze_time('2020-01-01')\ndef test_t():\n    datetime.now()\n    assert 1\n";
+    assert!(py(frozen, Kind::Nondeterminism).is_empty());
+    let seeded =
+        "import random\ndef test_t():\n    random.seed(1)\n    random.random()\n    assert 1\n";
+    assert!(py(seeded, Kind::Nondeterminism).is_empty());
+    let modseed =
+        "import random\nrandom.seed(1)\ndef test_t():\n    random.random()\n    assert 1\n";
+    assert!(py(modseed, Kind::Nondeterminism).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn wall_clock_and_unseeded_rng_fire() {
+    let rs = "use std::time::Instant;\n#[test]\nfn t() { let s = Instant::now(); let r = rand::thread_rng(); assert!(1); }\n";
+    assert_eq!(rust(rs, Kind::Nondeterminism).len(), 2);
+    let pt = "import time, random\nfrom datetime import datetime\ndef test_t():\n    time.time()\n    datetime.now()\n    random.random()\n    random.Random()\n    assert 1\n";
+    assert_eq!(py(pt, Kind::Nondeterminism).len(), 4);
+    let seeded_ctor = "import random\ndef test_t():\n    random.Random(7)\n    assert 1\n";
+    assert!(py(seeded_ctor, Kind::Nondeterminism).is_empty());
+    let outside = "fn prod() { std::thread::sleep(D); }\n#[test]\nfn t() { assert!(1); }\n";
+    assert!(rust(outside, Kind::Nondeterminism).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+// frob:tests crates/grimble-lints/src/testq.rs::Kind.default_enabled
+#[test]
+fn control_flow_reports_the_outermost_construct_and_is_off_by_default() {
+    let src = "#[test]\nfn t() {\n    for i in 0..3 {\n        if i > 1 { assert!(i); }\n    }\n    match x { _ => {} }\n}\n";
+    let flow = rust(src, Kind::ControlFlow);
+    assert_eq!(
+        flow.iter().map(|(d, _)| d.as_str()).collect::<Vec<_>>(),
+        ["for_expression", "match_expression"]
+    );
+    let p = "def test_t():\n    if a:\n        assert 1\n    while b:\n        pass\n    def inner():\n        if c: pass\n";
+    assert_eq!(py(p, Kind::ControlFlow).len(), 2);
+    assert!(!Kind::ControlFlow.default_enabled());
+    assert!(Kind::NoAssertion.default_enabled());
+    assert!(Kind::Nondeterminism.default_enabled());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+// frob:tests crates/grimble-lints/src/testq.rs::has_test_roles
+#[test]
+fn language_without_roles_is_unresolved_not_clean() {
+    assert!(has_test_roles(Language::Rust));
+    assert!(!has_test_roles(Language::TypeScript));
+    let r = report(Language::TypeScript, "test('a', () => {});");
+    assert!(r.sites.is_empty());
+    assert_eq!(
+        r.unresolved,
+        [Kind::NoAssertion, Kind::Nondeterminism, Kind::ControlFlow]
+    );
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::Kind.rule_id
+#[test]
+fn rule_ids_follow_kinds() {
+    assert_eq!(Kind::NoAssertion.rule_id(), "TESTQ001");
+    assert_eq!(Kind::Nondeterminism.rule_id(), "TESTQ002");
+    assert_eq!(Kind::ControlFlow.rule_id(), "TESTQ003");
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::is_test_file
+#[test]
+fn python_test_files_are_recognised_by_name_and_directory() {
+    assert!(is_test_file(Path::new("pkg").join("test_a.py").as_path()));
+    assert!(is_test_file(Path::new("a_test.py")));
+    assert!(is_test_file(Path::new("conftest.py")));
+    assert!(is_test_file(Path::new("tests").join("x.py").as_path()));
+    assert!(!is_test_file(Path::new("pkg").join("main.py").as_path()));
+}

@@ -37,6 +37,10 @@
 //! `TIME002` naive/aware datetime mixes, for Rust and Python; a language without clock roles
 //! reports them unresolved.
 //!
+//! [`testq::scan`] finds `TESTQ001` tests with no assertion (a helper out of sight makes it
+//! Unknown), `TESTQ002` sleeps, wall-clock reads and unseeded random sources in a test body, and
+//! `TESTQ003` control flow in a test body (off by default), for Rust and Python.
+//!
 //! [`neat::scan`] finds `NEAT010` effect claims a unit's calls contradict (an `effects` capability
 //! answering [`gob_ir::Answer`] bounds) and `NEAT031` dispatchers that own condition logic, in Rust.
 //!
@@ -54,6 +58,7 @@ pub mod path;
 pub mod res;
 pub mod rules;
 pub(crate) mod syntax;
+pub mod testq;
 pub mod time;
 pub mod time_pass;
 pub mod typing;
