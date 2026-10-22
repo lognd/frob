@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["CFG001 has a fix fixture, a diff snapshot, and passes the fixpoint harness", "a gob_fix::run_fixture fixture per fixable rule with an insta snapshot and missing_fixtures coverage over the registry", "CFG001 partial file gains missing knobs, keeps comments, one-round fixpoint snapshot", "CFG001 empty file fixes in one round with diff snapshot", "CFG001 complete file is a no-op (zero rounds)", "CFG001 fixed output is idempotent (second run zero rounds)"]
+new = ["CFG001 has a fix fixture, a diff snapshot, and passes the fixpoint harness", "a gob_fix::run_fixture fixture per fixable rule with an insta snapshot and missing_fixtures coverage over the registry", "CFG001 partial file gains missing knobs, keeps comments, one-round fixpoint snapshot", "CFG001 empty file fixes in one round with diff snapshot", "CFG001 complete file is a no-op (zero rounds)", "CFG001 fixed output is idempotent (second run zero rounds)", "every Deterministic gob_config registry rule has a fix fixture (missing_fixtures)"]
+moved = [1, 2, 3, 4, 5, 6]
+at = "2026-10-22T00:51:06Z"
+actor = "lognd"
+rev = 1
