@@ -211,7 +211,7 @@ struct Release {
     conditional: bool,
 }
 
-fn named_children(n: Node<'_>) -> Vec<Node<'_>> {
+pub(crate) fn named_children(n: Node<'_>) -> Vec<Node<'_>> {
     let mut cur = n.walk();
     n.named_children(&mut cur)
         .filter(|c| c.kind() != "comment")
@@ -254,7 +254,7 @@ fn unity_arg_expr(arg: Node<'_>) -> Node<'_> {
     }
 }
 
-fn arguments_of(call: Node<'_>) -> Vec<Node<'_>> {
+pub(crate) fn arguments_of(call: Node<'_>) -> Vec<Node<'_>> {
     call.child_by_field_name("arguments")
         .map(|a| {
             named_children(a)
@@ -266,18 +266,18 @@ fn arguments_of(call: Node<'_>) -> Vec<Node<'_>> {
 }
 
 /// The last dotted segment of a target (`GameManager.OnWin` gives `OnWin`).
-fn last_segment(s: &str) -> &str {
+pub(crate) fn last_segment(s: &str) -> &str {
     s.rsplit('.').next().unwrap_or(s).trim()
 }
 
 /// A member call split into receiver, method name and type arguments.
-struct MemberCall {
-    receiver: String,
-    name: String,
-    generics: Option<String>,
+pub(crate) struct MemberCall {
+    pub(crate) receiver: String,
+    pub(crate) name: String,
+    pub(crate) generics: Option<String>,
 }
 
-fn member_call(call: Node<'_>, src: &str) -> Option<MemberCall> {
+pub(crate) fn member_call(call: Node<'_>, src: &str) -> Option<MemberCall> {
     let f = call.child_by_field_name("function")?;
     if f.kind() != "member_access_expression" {
         return None;
@@ -382,7 +382,7 @@ fn is_subscription(target: &str, handler: Node<'_>, facts: &ClassFacts, src: &st
 }
 
 /// The declared type text of the variable, field, property or parameter `name` in `class`.
-fn declared_type(class: Node<'_>, name: &str, src: &str) -> Option<String> {
+pub(crate) fn declared_type(class: Node<'_>, name: &str, src: &str) -> Option<String> {
     let mut stack = vec![class];
     while let Some(n) = stack.pop() {
         let named = |field: &str| {
