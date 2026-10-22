@@ -182,6 +182,7 @@
 | [GX003](GX003.md) | focus-trap | error | manual | P+ | true | The pad can always leave a control it has moved onto. |
 | [GX004](GX004.md) | focus-default | error | manual | P+ | true | A scene selects exactly one control when it opens. |
 | [GX005](GX005.md) | focus-nav-invalid | error | manual | P+ | true | Focus attributes name things that exist. |
+| [GX014](GX014.md) | ugui-literal-not-token | error | manual | P+ | false | A uGUI prefab generator holds a colour or font-size literal instead of a generated token. |
 
 ## HUMAN
 
