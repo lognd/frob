@@ -2,7 +2,8 @@
 id = "01M5JVWWGJDCSW73HSSZMB7Z32"
 title = "boundaries.md layer table lacks crunk-layout and crunk-scene (layering test fails)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
