@@ -22,7 +22,6 @@
 // frob:ticket 01M4CXRZAE5N45BP0RJPT56WSN
 
 use std::path::Path;
-use std::time::Duration;
 
 use crunk_spec::model::RendererParams;
 use crunk_spec::{DesignSpec, Severity};
@@ -186,7 +185,10 @@ pub fn parse_axe(json: &str, cell: &Cell) -> Result<Vec<AxeFinding>, A11yError> 
             v.nodes.iter().map(Some).collect()
         };
         for node in nodes {
-            let selector = node.and_then(node_selector);
+            let selector = match node {
+                Some(n) => node_selector(n),
+                None => None,
+            };
             let message = match &selector {
                 Some(sel) => format!("{} (axe `{}`) at `{sel}`", help, v.id),
                 None => format!("{} (axe `{}`)", help, v.id),
@@ -237,12 +239,6 @@ impl PlaywrightAxe {
     pub fn new(opts: RenderOptions) -> Self {
         let runner = Runner::new(Limits { jobs: 1 }).output_cap(opts.output_cap);
         Self { opts, runner }
-    }
-
-    /// The wall-clock limit of one scan.
-    #[must_use]
-    pub fn timeout(&self) -> Duration {
-        self.opts.timeout
     }
 
     /// Write the script and request, run it, and return the results file's text.
