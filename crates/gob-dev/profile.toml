@@ -557,6 +557,24 @@ skip = "opt-in behind the gallery cargo feature, absent from the default build t
 [scenario."crunk gallery check"]
 skip = "opt-in behind the gallery cargo feature, absent from the default build the profile times; covered by crates/crunk-gallery tests"
 
+[scenario."crunk edit"]
+skip = "rewrites the project's stylesheet and token sources in place and needs a target and value argument, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/edit.rs"
+
+[scenario."crunk export dtcg"]
+skip = "needs a design-token source and an output path to write the exported file, which the repo fixture does not provide; covered by crates/crunk/tests/dtcg.rs"
+
+[scenario."crunk import dtcg"]
+skip = "reads a DTCG token file the repo fixture does not provide and rewrites crunk token sources in place; covered by crates/crunk/tests/dtcg.rs"
+
+[scenario."crunk extract-token"]
+skip = "rewrites a literal into a token across sources and needs a literal argument, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/extract.rs"
+
+[scenario."crunk new"]
+skip = "scaffolds a new component into the working directory and needs a name argument, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/new.rs"
+
+[scenario."crunk rename"]
+skip = "renames a token or class across all sources in place and needs old and new names, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/rename.rs"
+
 [scenario."frob serve"]
 skip = "a long-running stdio MCP server that blocks on stdin; there is no run to time (per-tool costs are the underlying read verbs)"
 
