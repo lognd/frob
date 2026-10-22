@@ -162,7 +162,7 @@ predicates noted below and `outside`, recognized only after an include
 path, 3.2):
 
 ```
-accept age allocates alias as assumed at attr blocked_by bound boundary
+accept age allocates alias as assumed at attests attr blocked_by bound boundary
 claim clearance condition consumer contract declassify decides defer
 digest endorse evidence excuse extend fanout flow for growth hotfix include
 kind label latency level may module namespace node noflow of on owns pack part
@@ -174,7 +174,7 @@ version versioning vmodel when
 `lang`, `kind` and `attr` are valid heads of a selector predicate
 (`lang(rust)`); in clause position `kind` and `attr` are the clause
 keywords. The parser decides by position (a clause starts a statement; a
-predicate occurs inside a selector). `noflow` and `reach` are claim
+predicate occurs inside a selector). `noflow`, `reach` and `attests` are claim
 verbs, reserved as well. Metric names after `bound` are `age`, `rate`,
 `latency`, `size` and `utilization`.
 
@@ -455,12 +455,59 @@ claim no_frob_to_grimble {
 | Field | Clause | Type | Required | Meaning |
 |---|---|---|---|---|
 | name | `claim NAME` | name | yes | |
-| what | `noflow A -> B;` or `reach A -> B;` or `bound METRIC TARGET <= Q;` | exactly one | yes | the proposition. `noflow` and `reach` take node refs; `bound` takes a metric (`age`, `rate`, `latency`, `size`, `utilization`), a node or flow ref and a quantity of the metric's dimension. `independent` and `readers(x) == S` of v1 had no surface and stay out |
+| what | `noflow A -> B;` or `reach A -> B;` or `bound METRIC TARGET <= Q;` or `attests "STATEMENT" [on NODE];` | exactly one | yes | the proposition. `noflow` and `reach` take node refs; `bound` takes a metric (`age`, `rate`, `latency`, `size`, `utilization`), a node or flow ref and a quantity of the metric's dimension. `attests` is the assumption form with no flow proposition (below). `independent` and `readers(x) == S` of v1 had no surface and stay out |
 | proof | `proof LEVEL;` | `L1`..`L5` | no, default from `[grimble] default_proof` | the required rung. The rung ladder is an ordered label to the kernel; its meaning is G03 |
 | assumed | `assumed owner=IDENT review=DATE because="...";` | attrs, all three required | no | the claim is an assumption: named, owned, expiring (v1 `assume`); overdue is REFUTED, as in v1 |
 | evidence | `evidence tests SELECTOR;` or `evidence ref "SYMREF";` | list | no | what discharges the claim above L1: test units (bound also from the test side by `frob:tests`, 8.3) or a document anchor |
 
 Verdicts: a `noflow` with a declared flow path, or a `reach` with none, is REFUTED (CLAIM001, naming the path); a claim the model cannot decide, such as every `bound` today, is Unresolved with the reason (CLAIM003). A claim with `proof` above L1 and neither `evidence` nor `assumed` is likewise Unresolved (CLAIM003). A claim is never silently ok.
+
+<!-- frob:ticket 01M4FGYK3ZMG2PFK5FF7N3TMXS -->
+The `attests` proposition. Many v1 assumptions
+state no flow at all: a weakness the team accepts (`weakness:CWE-78:vet`),
+a data handling duty (`pii:email:retention`). `what` is mandatory (MDL008),
+and encoding such an assumption as a `noflow` would be a false proposition
+that the kernel REFUTES. `attests "STATEMENT" [on NODE];` is the proposition
+that says only "an owner states this holds". Its fields:
+
+| Part | Type | Required | Meaning |
+|---|---|---|---|
+| `STATEMENT` | non-empty string | yes | the assumption in words; empty is MDL008 |
+| `on NODE` | node ref | no | the node the statement is about; an unresolved or non-node ref is MDL006. Without it the claim is about the whole model |
+| `assumed owner= review= because=` | the clause above | yes, for `attests` | an `attests` without `assumed` is MDL008, because an attestation with no owner or expiry is not an assumption anyone holds. For `noflow`, `reach` and `bound` `assumed` stays optional |
+
+Verdict: the model cannot decide an `attests`, so with no `evidence` it is
+Unresolved with the reason "attested by OWNER, no evidence" (CLAIM003),
+whatever its `proof`. It is never PROVED by the owner's say-so alone and
+never REFUTED by the flow graph (it has no path to test). With `evidence`
+it reports the evidence count, and the verdict is whatever the kernel
+(G03) assigns an evidenced `assumed` claim at the declared `proof` rung.
+A `review` date in the past is REFUTED, exactly as for any `assumed` claim.
+`attests` does not alter MDL008 itself: MDL008 still means a required field
+is missing, and `attests` only adds a proposition form that satisfies `what`
+and a requirement on `assumed`. `grimble fmt` prints the form unchanged
+(9.3), and an `extend` may not set `attests` (a scalar, MDL008).
+
+Target spelling of two ported v1 assumptions (14.1 item 8), each with an
+identifier name and the v1 string id as `attr id`:
+
+```
+claim cwe_78_vet {
+  attr id = "weakness:CWE-78:vet";
+  attests "shell arguments are vetted before exec" on shell;
+  assumed owner=logan review=2026-10-15 because="inputs come from argv only";
+  evidence ref "docs/threat/cwe-78.md";
+}
+
+claim pii_email_retention {
+  attr id = "pii:email:retention";
+  attests "email addresses are purged within 30 days";
+  assumed owner=logan review=2027-01-15 because="retention job owned by ops";
+}
+```
+
+The first has evidence; the second reads Unresolved until evidence is
+added.
 
 Kernel findings: a flow whose `label` exceeds the destination clearance with no `declassify` boundary is FLOW001; a flow into a higher-trust node with no `endorse` boundary is FLOW002; a flow from a `foreign` node with no `rate` is FLOW003. Each names the flow.
 
@@ -1033,6 +1080,7 @@ child by this placement alone):
 | `noflow A -> B` `reach A -> B` | `apply(kind=noflow\|reach)(ref(A); ref(B))` in the claim body | exp | |
 | `bound M T <= Q` | `apply(kind=bound)(lit(ident, M); ref(T); lit(quantity, Q))` | exp | |
 | `proof L` | `attr(name=proof)(unit; lit(ident, L))` | decl | |
+| `attests "S" [on N]` | `apply(kind=attests)(lit(string, S); ref(N)?)` in the claim body | exp | |
 | `assumed owner=.. review=.. because=..` | `attr(name=assumed)(unit; group(unordered)(attr(owner), attr(review), attr(because)))` | decl | |
 | `evidence tests SEL` / `evidence ref "S"` | `attr(name=evidence)(unit; apply(kind=select) or ref(S))` | decl | `ref(S)` has a Must edge to the markdown or code unit when it exists |
 | vmodel `kind`, `level` | `attr(name=kind)`, `attr(name=level)` with `lit(ident)` | decl | alias levels print canonical |
@@ -1259,7 +1307,7 @@ test the U adapter hold the expected U term and scope graph per construct
 | `entity/node.grmb` | every node clause and its U term; missing `trust` is MDL008 |
 | `entity/flow.grmb` | flow fields, producer in another language, cyclic flows accepted |
 | `entity/contract.grmb` | shape and versioning, shared contract |
-| `entity/claim.grmb` | the three claim forms, `assumed`, both evidence spellings give one relation |
+| `entity/claim.grmb` | the four claim forms (`attests` without `assumed` is MDL008, empty statement is MDL008, `on` a non-node is MDL006), `assumed`, both evidence spellings give one relation |
 | `entity/vmodel.grmb` | levels and aliases, link kinds, MDL014 cases |
 | `entity/boundary.grmb` | endorse and declassify, lattice mismatch is MDL009 |
 | `entity/template.grmb` | the excuse grammar, selection over lang, kind and attr, missing `for` or `because` is MDL008, unknown atom is MDL016, `check --json` lists and counts each excuse |
@@ -1453,7 +1501,8 @@ sections:
    ill-formed and why section 13 here is a complete one.
 8. `assert noflow ...` and `assume "weakness:CWE-78:vet" ... owner ... review ...`:
    both become `claim` entities (`what`, `proof`, `assumed owner= review=
-   because=`). Claim ids are identifiers; a string id from a pack is the
+   because=`). An assumption that states no flow is `attests "..."`, not a
+   false `noflow` (4.4). Claim ids are identifiers; a string id from a pack is the
    `attr id`. The `assume ... owner logan review 2026-10-15` spelling
    becomes `assumed owner=logan review=2026-10-15 because="..."` with a
    mandatory reason.

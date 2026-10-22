@@ -105,6 +105,9 @@ boundary endorse/declassify, SCC longest-path age, summed demand and
 capacity utilisation, V-model closure (paired levels, five structural
 rules, milestone known gaps), claim verdicts PROVED / REFUTED(witness) /
 UNPROVABLE with auto-generated assumes, assume ownership and expiry.
+An assumption that states no flow (a CWE weakness, a PII duty) is an
+`attests "..."` claim: owner and review date mandatory, Unresolved until
+evidence, REFUTED once overdue, never a false `noflow` (grmb-spec 4.4).
 Everything else is a join between the model and the code graph.
 
 ## 4. Binding (the point of the exercise)
