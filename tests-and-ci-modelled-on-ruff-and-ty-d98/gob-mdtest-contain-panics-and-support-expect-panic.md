@@ -4,10 +4,11 @@ title = "gob-mdtest: contain panics and support expect-panic"
 type = "story"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-06T13:41:09Z"
+updated = "2026-10-22T02:51:14Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
