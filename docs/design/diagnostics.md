@@ -119,16 +119,15 @@ wrong is reviewed by a person, not by a flag.
 - **Machine fixes with `--fix`** are applied without asking, because they
   are proven safe and reversible with version control. The run prints a
   summary and the exact files changed.
-- **Interactive review on a terminal**: `frob fix --interactive` (and
-  `grimble fix --interactive`) walks through `maybe-incorrect` fixes one
-  at a time with a diff and `[y]es / [n]o / [e]dit / [s]kip rule / [q]uit`.
-  Only when stdin and stdout are a TTY; otherwise it refuses with exit 2
-  and tells the caller to use the JSON fix list instead.
+- **Review without applying**: `frob check --json` lists every fix with
+  its applicability and exact edits, so `maybe-incorrect` fixes can be
+  read (or applied by an agent) before anything is written. An
+  interactive `fix` verb is not shipped.
 - **Never prompt unasked.** A check run on a terminal does not stop to
   ask questions: prompts inside non-interactive verbs break scripts,
   hooks, CI and agents, and are the first thing users disable. Instead
   the summary ends with one line: `3 fixes available (1 safe): run frob
-  check --fix, or frob fix --interactive to review the rest`.
+  check --fix, or frob check --json to review the rest`.
 - **Agents** read `fixes` from the JSON envelope (each with its
   applicability and the exact text edits) and apply them through their
   own tools, so the agent path never depends on a TTY.
