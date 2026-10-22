@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-22T00:25:28Z"
+digest = "2d747e1649754083cba754fb25cd6de97d73341ebb5e042e8ff658164235caf8"
+exit_code = 0
+head = "ca180955a9243d54c835c735457127ba8be3f438"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7801c70f-2b74-4849-bdf8-c26b6eca6816 with nextest profile: default
+    Starting 1 test across 31 binaries (313 tests skipped)
+        PASS [   0.007s] gob-plan::stmt_kinds a_call_statement_is_a_call_and_is_counted_once
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 313 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan a_call_statement_is_a_call_and_is_counted_once"
+size = 771
+status = "measured"
+test_count = 1
+tests_digest = "c19af946b29b22df54894d899846594abca111700db6b710db4838552d46d779"
+at = "2026-10-22T00:25:28Z"
+actor = "lognd"
+rev = 1
