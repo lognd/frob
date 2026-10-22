@@ -1,0 +1,1 @@
+crunk: `crunk rename ID NEW` renames a palette or layer token and rewrites every reference across CSS, JSX and spec files, and `crunk extract-token LITERAL` promotes a hex colour to a palette token and rewrites its uses; both write all-or-nothing and support `--dry-run`.
