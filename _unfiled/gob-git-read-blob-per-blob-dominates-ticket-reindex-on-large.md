@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T18:08:47Z"
-updated = "2026-10-22T19:49:56Z"
+updated = "2026-10-22T19:50:01Z"
 scope = ["crates/gob-git/src/read.rs", "crates/gob-git/tests/read_blobs.rs", "crates/frob-ledger/src/ops.rs"]
 
 [[acceptance]]
 text = "Given a large ledger, when reindex_plan reads blobs, then it uses a batched read (cat-file --batch or equivalent) and results are identical to per-blob reads"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a measured benchmark or timing test, when run, then blob-read time is lower than the per-blob baseline, with numbers reported"
