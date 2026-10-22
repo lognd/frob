@@ -2,7 +2,8 @@
 id = "01M5GRYE3TSB9Q1MWWZA2BMME2"
 title = "Wire gob-mdtest check_garbage against real adapters"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
