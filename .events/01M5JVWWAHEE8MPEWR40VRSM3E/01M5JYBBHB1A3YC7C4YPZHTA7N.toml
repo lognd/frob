@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["gob-dev profile_coverage test passes: every crunk leaf command has a scenario or skip reason"]
+moved = []
+at = "2026-10-22T23:15:13Z"
+actor = "lognd"
+rev = 1
