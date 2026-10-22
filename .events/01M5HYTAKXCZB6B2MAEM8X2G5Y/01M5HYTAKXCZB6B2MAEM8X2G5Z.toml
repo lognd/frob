@@ -1,0 +1,10 @@
+kind = "create"
+title = "Bind api-extractor (TypeScript) to VERSION001"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-check/**", "changelog.d/**"]
+body = "found while working BVDP7MK"
+at = "2026-10-22T14:04:09Z"
+actor = "lognd"
+rev = 1
