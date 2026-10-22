@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T01:38:17Z"
+digest = "adda6b08effa50b4debc6791b61d423fa0dc009756c2dd42b5c820ea25b263f7"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2a662e6d-b3f4-4278-bccf-ecef0df3616a with nextest profile: default
+    Starting 1 test across 6 binaries (98 tests skipped)
+        PASS [   0.175s] frob-evidence done::tests::other_types_still_need_a_fragment_and_unknown_defaults_stay_strict
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.176s] 1 test run: 1 passed, 98 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence other_types_still_need_a_fragment_and_unknown_defaults_stay_strict"
+size = 584
+status = "measured"
+test_count = 1
+tests_digest = "54f6ec0454407520387c33c4c5bf925b599fe87bd91e1d0361c7dd6b635d3564"
+at = "2026-10-22T01:38:17Z"
+actor = "lognd"
+rev = 1
