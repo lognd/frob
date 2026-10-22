@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T09:58:42Z"
+digest = "9f326466e0d476bb2de395876ed6f0fd7235a7faab6abe1c9b4ad6af799e2055"
+exit_code = 0
+head = "570ded8d23c5aa5c500474715a7ff108673f8464"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.42s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 939d436f-b9c2-40a4-a757-eba6b35c83b7 with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   0.005s] gob-check::oracle_gate corpus_false_unknown_rate_is_reported_and_a_rise_or_false_must_fails
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --test oracle_gate corpus_false_unknown_rate_is_reported_and_a_rise_or_false_must_fails"
+size = 560
+status = "measured"
+test_count = 1
+tests_digest = "1fa8b3a80efd27e6f7c9e699050810d7f94c86fb19baa9394427d92daf337c13"
+at = "2026-10-22T09:58:42Z"
+actor = "lognd"
+rev = 1
