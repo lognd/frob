@@ -2,7 +2,8 @@
 id = "01M4FG41QM8F4BG9CTMJSMN4BH"
 title = "DSL002: --fix rewrites v1 ticket aliases (T-####) to the ticket's ULID through the imported aliases, and flags frob:todo as well as frob:ticket"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
