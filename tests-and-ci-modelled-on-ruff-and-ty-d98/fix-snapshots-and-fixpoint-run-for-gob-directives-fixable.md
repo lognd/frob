@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T20:36:47Z"
-updated = "2026-10-22T00:51:19Z"
+updated = "2026-10-22T00:51:20Z"
 idempotency_key = "g4w-directives"
 scope = ["crates/gob-directives/**", "changelog.d/01M5G2WH43B41KTYYK40WS3RZW.added.md"]
 
@@ -26,6 +26,10 @@ bound = false
 
 [[acceptance]]
 text = "DSL003 deprecated spellings fix to a fixpoint with a diff snapshot"
+bound = false
+
+[[acceptance]]
+text = "fixed output is idempotent and leaves no findings"
 bound = false
 +++
 
