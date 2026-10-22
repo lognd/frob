@@ -23,6 +23,7 @@
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 // frob:ticket 01M47QKTN549397AFFSC3DEAQX
 // frob:ticket 01M43ARXVD5PXP6ZBVFC2F4ZMQ
+// frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -38,6 +39,7 @@ use crate::model::{
 };
 use crate::nodejs::JsResolution;
 use crate::symref::Symref;
+use crate::types::AnnotationWeight;
 use crate::typescript::imports::{ImportMode, decode_edge, decode_use};
 use gob_ir::Status;
 
@@ -577,6 +579,67 @@ impl SymbolGraph {
         Some(Found { nodes, status })
     }
 
+    /// `x.m()` where parameter `x` is annotated `ty`: an `any` receiver is dynamic, else the method of the annotated class, weighed by the type facts.
+    ///
+    /// Exact (Must) only where `tsc --strict` vouches for the file and one method answers, claimed
+    /// (May) otherwise; `None` (fall back to every method of that name) when annotations are hints
+    /// only or the annotated class does not declare the method here (inherited, an interface, external).
+    // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
+    fn ts_typed_method(
+        &self,
+        ts: &TsIndex,
+        node: NodeIndex,
+        call: &CallSite,
+        ty: &str,
+    ) -> Option<Outcome> {
+        let weight = self.type_facts.weight(call.caller.path(), call.line);
+        if weight == AnnotationWeight::Hint {
+            return None;
+        }
+        if ty == "any" {
+            tracing::debug!(callee = %call.callee, "any-typed receiver is dynamic");
+            return Some(Outcome::Gap(GapReason::Dynamic));
+        }
+        let mut segs = ty.split('.').map(str::to_owned);
+        let head = segs.next()?;
+        let rest: Vec<String> = segs.collect();
+        let lexical = self.ts_lexical(ts, node, &head);
+        let mut classes = if lexical.is_empty() {
+            let from = call.caller.path();
+            Self::ts_uses(ts, &call.caller, &head)
+                .into_iter()
+                .filter_map(|u| self.ts_path(ts, from, u, &rest))
+                .flat_map(|f| f.nodes)
+                .collect()
+        } else {
+            let mut cur = lexical;
+            for seg in &rest {
+                cur = cur
+                    .iter()
+                    .flat_map(|&n| ts.kids_of(n, seg).iter().copied())
+                    .collect();
+            }
+            cur
+        };
+        classes.retain(|&n| self.graph[n].kind == SymbolKind::Class);
+        let mut methods: Vec<NodeIndex> = classes
+            .iter()
+            .flat_map(|&c| ts.kids_of(c, &call.callee).iter().copied())
+            .collect();
+        methods.sort();
+        methods.dedup();
+        if methods.is_empty() {
+            return None;
+        }
+        let status = if weight == AnnotationWeight::Exact && methods.len() == 1 {
+            Status::Must
+        } else {
+            Status::May
+        };
+        tracing::debug!(callee = %call.callee, ty, ?weight, ?status, "annotated receiver resolved");
+        Some(Outcome::Hit(methods, status))
+    }
+
     /// Every TypeScript method named `name` as May candidates, or an external gap when none exists.
     fn ts_unknown_receiver(ts: &TsIndex, name: &str) -> Outcome {
         match ts.methods.get(name) {
@@ -635,6 +698,11 @@ impl SymbolGraph {
                 if !own.is_empty() {
                     return Outcome::Hit(own.to_vec(), Status::Must);
                 }
+            }
+            if let Some(Receiver::Typed(ty)) = &call.receiver
+                && let Some(out) = self.ts_typed_method(ts, node, call, ty)
+            {
+                return out;
             }
             return Self::ts_unknown_receiver(ts, &call.callee);
         }

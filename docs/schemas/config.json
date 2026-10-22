@@ -313,6 +313,11 @@
           "type": "string"
         },
         {
+          "const": "tsc-text",
+          "description": "`tsc --noEmit --strict --pretty false`: `path(line,col): error TSnnnn: message` lines; findings are `LINT001` and mark a file as not type-clean.",
+          "type": "string"
+        },
+        {
           "const": "typos-json",
           "description": "`typos --format json`: one JSON object per line, each typo with its line, byte offset and corrections; findings are `SPELL001` (Advisory) and the repository's `typos.toml` allowlist is honoured by typos itself.",
           "type": "string"

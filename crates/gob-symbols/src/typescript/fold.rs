@@ -223,6 +223,8 @@ struct Fold<'a> {
     units: Vec<(usize, Ctx)>,
     /// Binder names of the enclosing scopes (file, functions), innermost last.
     bound: Vec<HashSet<String>>,
+    /// Declared class types of parameters, parallel to `bound` (`any` for an any-typed one).
+    annotated: Vec<HashMap<String, String>>,
     sites: Vec<Site>,
     uses: Vec<PendingUse>,
     edges: Vec<String>,
@@ -590,6 +592,7 @@ fn new_fold<'a>(cx: Cx<'a>, path: &'a str, exports: ExportScan) -> Fold<'a> {
         ord_nodes: vec![None],
         units: Vec::new(),
         bound: Vec::new(),
+        annotated: Vec::new(),
         sites: Vec::new(),
         uses: Vec::new(),
         edges: Vec::new(),
@@ -612,7 +615,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let stmts: Vec<Node<'_>> = children(root);
     let skip = unit_declarators(&stmts, text);
     let names = scope_binders(Vec::new(), &stmts, text, &skip);
-    f.bound.push(names.iter().cloned().collect());
+    f.push_scope(names.iter().cloned().collect(), HashMap::new());
     let kids = f.seq(&stmts, 1, true)?;
     let refs: Vec<&str> = names.iter().map(String::as_str).collect();
     let spec = file_root_spec(&f.cx, input.size as usize).binders(&refs);
@@ -769,7 +772,7 @@ pub(crate) fn fold_island(
     let stmts: Vec<Node<'_>> = children(root);
     let skip = unit_declarators(&stmts, text);
     let names = scope_binders(Vec::new(), &stmts, text, &skip);
-    f.bound.push(names.iter().cloned().collect());
+    f.push_scope(names.iter().cloned().collect(), HashMap::new());
     let kids = f.seq(&stmts, 1, true)?;
     let Fold {
         cx,
@@ -868,6 +871,78 @@ impl<'a> Fold<'a> {
     /// The ordinal of the unit calls are attributed to (0, the file, outside any unit).
     fn caller(&self) -> usize {
         self.units.last().map_or(0, |u| u.0)
+    }
+
+    /// Enters a lexical scope binding `names`, of which `annotations` carry a declared class type.
+    fn push_scope(&mut self, names: HashSet<String>, annotations: HashMap<String, String>) {
+        self.bound.push(names);
+        self.annotated.push(annotations);
+    }
+
+    /// Leaves the innermost lexical scope.
+    fn pop_scope(&mut self) {
+        self.bound.pop();
+        self.annotated.pop();
+    }
+
+    /// The declared class type of `name` when its innermost binding is an annotated parameter (`any` included).
+    // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
+    fn annotation_of(&self, name: &str) -> Option<&str> {
+        let i = self.bound.iter().rposition(|s| s.contains(name))?;
+        self.annotated[i].get(name).map(String::as_str)
+    }
+
+    /// The simple-identifier parameters of `f` annotated with a plain or dotted class name or `any`; a name the body redeclares (`var`, `function`) is left out.
+    // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
+    fn param_annotations(&self, f: Node<'_>, binders: &[String]) -> HashMap<String, String> {
+        let mut out = HashMap::new();
+        let Some(params) = f.child_by_field_name("parameters") else {
+            return out;
+        };
+        let redeclared: HashSet<String> = {
+            let stmts = f
+                .child_by_field_name("body")
+                .filter(|b| b.kind() == "statement_block")
+                .map(Self::block_stmts)
+                .unwrap_or_default();
+            scope_binders(Vec::new(), &stmts, self.cx.text, &HashSet::new())
+                .into_iter()
+                .collect()
+        };
+        let mut seen: HashSet<String> = HashSet::new();
+        for p in children(params) {
+            if !matches!(p.kind(), "required_parameter" | "optional_parameter") {
+                continue;
+            }
+            let (Some(pat), Some(ann)) = (
+                p.child_by_field_name("pattern"),
+                p.child_by_field_name("type"),
+            ) else {
+                continue;
+            };
+            if pat.kind() != "identifier" {
+                continue;
+            }
+            let name = self.t(pat).to_owned();
+            if !seen.insert(name.clone()) || redeclared.contains(&name) || !binders.contains(&name)
+            {
+                continue;
+            }
+            let Some(ty) = children(ann).into_iter().find(tree_sitter::Node::is_named) else {
+                continue;
+            };
+            let text: String = self.t(ty).split_whitespace().collect();
+            let simple = match ty.kind() {
+                "type_identifier" | "nested_type_identifier" => true,
+                "predefined_type" => text == "any",
+                _ => false,
+            };
+            if simple {
+                tracing::trace!(path = self.path, param = %name, ty = %text, "typescript annotated parameter");
+                out.insert(name, text);
+            }
+        }
+        out
     }
 
     fn is_bound(&self, name: &str) -> bool {
@@ -1127,9 +1202,9 @@ impl<'a> Fold<'a> {
             ?names,
             "typescript block scope"
         );
-        self.bound.push(names.iter().cloned().collect());
+        self.push_scope(names.iter().cloned().collect(), HashMap::new());
         let kids = self.gen_children(n, depth);
-        self.bound.pop();
+        self.pop_scope();
         let refs: Vec<&str> = names.iter().map(String::as_str).collect();
         let spec = NodeSpec::new(
             Operator::adapter(LANG, n.kind(), Sort::Exp),
@@ -1252,7 +1327,13 @@ impl<'a> Fold<'a> {
             }
             (Root::Ident(head), [.., leaf]) => {
                 if self.is_bound(&head) {
-                    return method_on(leaf.clone(), Receiver::Expr);
+                    let typed = (names.len() == 1)
+                        .then(|| self.annotation_of(&head))
+                        .flatten();
+                    return match typed {
+                        Some(ty) => method_on(leaf.clone(), Receiver::Typed(ty.to_owned())),
+                        None => method_on(leaf.clone(), Receiver::Expr),
+                    };
                 }
                 let mut path = vec![head];
                 path.extend(names[..names.len() - 1].iter().cloned());
@@ -1376,7 +1457,7 @@ impl<'a> Fold<'a> {
         };
         kids.push(head);
         if target.method
-            && target.receiver == Some(Receiver::Expr)
+            && matches!(target.receiver, Some(Receiver::Expr | Receiver::Typed(_)))
             && let Some(obj) = f.child_by_field_name("object")
         {
             kids.push(self.tr(obj, depth + 1)?);
@@ -1957,9 +2038,10 @@ impl<'a> Fold<'a> {
         let binders = self.fn_binders(f);
         let ord = self.alloc();
         self.units.push((ord, Ctx::Function));
-        self.bound.push(binders.iter().cloned().collect());
+        let annotations = self.param_annotations(f, &binders);
+        self.push_scope(binders.iter().cloned().collect(), annotations);
         let body = self.fn_body_group(f, depth);
-        self.bound.pop();
+        self.pop_scope();
         self.units.pop();
         self.make_unit(ord, head, doc, sig, vec![body?], &binders)
     }
@@ -2173,9 +2255,9 @@ impl<'a> Fold<'a> {
         for &o in &ords {
             self.units.push((o, Ctx::Namespace));
         }
-        self.bound.push(binders.iter().cloned().collect());
+        self.push_scope(binders.iter().cloned().collect(), HashMap::new());
         let kids = self.seq(&stmts, depth + 1, true);
-        self.bound.pop();
+        self.pop_scope();
         for _ in &ords {
             self.units.pop();
         }
@@ -2355,11 +2437,12 @@ impl<'a> Fold<'a> {
         let sig = self
             .cx
             .op(Operator::group(GroupOrder::Sequence), n, &sig_toks)?;
-        self.bound.push(names.iter().cloned().collect());
+        let annotations = self.param_annotations(n, &names);
+        self.push_scope(names.iter().cloned().collect(), annotations);
         self.cond_depth += 1;
         let body = self.fn_body_group(n, depth);
         self.cond_depth -= 1;
-        self.bound.pop();
+        self.pop_scope();
         let refs: Vec<&str> = names.iter().map(String::as_str).collect();
         let spec = NodeSpec::new(Operator::anon("function"), self.cx.node_loc(n)).binders(&refs);
         self.cx.add(spec, &[sig, body?])

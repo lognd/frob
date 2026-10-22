@@ -113,4 +113,4 @@ pub use status::{
 };
 pub use tool_def::ToolDef;
 pub use tools::{ToolMemo, ToolTrust};
-pub use type_parse::type_facts_from_output;
+pub use type_parse::{is_strict_checker, type_facts_from_output};

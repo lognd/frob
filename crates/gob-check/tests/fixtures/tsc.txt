@@ -1,0 +1,5 @@
+src/bad.ts(4,7): error TS2322: Type 'string' is not assignable to type 'number'.
+src/bad.ts(9,1): error TS2741: Property 'name' is missing in type '{}' but required in type 'User'.
+  The property is declared here and is
+    required in type 'User'.
+Found 2 errors in the same file, starting at: src/bad.ts:4

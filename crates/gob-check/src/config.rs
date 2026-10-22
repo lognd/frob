@@ -129,6 +129,10 @@ pub enum ToolParser {
     // frob:ticket 01M4CXSWZ95SVDADAB97TYG963
     #[serde(rename = "pyright-json")]
     PyrightJson,
+    /// `tsc --noEmit --strict --pretty false`: `path(line,col): error TSnnnn: message` lines; findings are `LINT001` and mark a file as not type-clean.
+    // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
+    #[serde(rename = "tsc-text")]
+    TscText,
     /// `typos --format json`: one JSON object per line, each typo with its line, byte offset and corrections; findings are `SPELL001` (Advisory) and the repository's `typos.toml` allowlist is honoured by typos itself.
     // frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
     #[serde(rename = "typos-json")]

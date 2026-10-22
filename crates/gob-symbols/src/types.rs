@@ -57,6 +57,17 @@ pub struct TypeFacts {
     clean: BTreeSet<String>,
     /// One-based lines holding an ignore comment, by file.
     ignored: BTreeMap<String, BTreeSet<u32>>,
+    /// Files carrying `@ts-nocheck`, which the checker skipped.
+    nocheck: BTreeSet<String>,
+}
+
+/// The text of the `//` or `/* */` comment on `line` (empty when there is none).
+fn ts_comment(line: &str) -> &str {
+    let at = [line.find("//"), line.find("/*"), line.find("* ")]
+        .into_iter()
+        .flatten()
+        .min();
+    at.map_or("", |i| &line[i..])
 }
 
 impl TypeFacts {
@@ -87,6 +98,46 @@ impl TypeFacts {
                 let n = u32::try_from(i + 1).unwrap_or(u32::MAX);
                 self.ignored.entry(path.to_owned()).or_default().insert(n);
             }
+        }
+    }
+
+    /// Records the TypeScript escape hatches of `text` for `path`: a `@ts-ignore` or `@ts-expect-error` comment demotes its own and the next line, `@ts-nocheck` makes the whole file never clean, and an `as any` / `as unknown` / `<any>` cast demotes its line.
+    // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
+    pub fn scan_ts_ignores(&mut self, path: &str, text: &str) {
+        for (i, line) in text.lines().enumerate() {
+            let n = u32::try_from(i + 1).unwrap_or(u32::MAX);
+            let comment = ts_comment(line);
+            if comment.contains("@ts-nocheck") {
+                tracing::debug!(path, line = n, "ts-nocheck: file is never clean");
+                self.clean.remove(path);
+                self.nocheck.insert(path.to_owned());
+            }
+            let ignore = ["@ts-ignore", "@ts-expect-error"]
+                .iter()
+                .any(|m| comment.contains(m));
+            let cast = ["as any", "as unknown", "<any>", "<unknown>"]
+                .iter()
+                .any(|m| line.contains(m));
+            if ignore || cast {
+                let lines = self.ignored.entry(path.to_owned()).or_default();
+                lines.insert(n);
+                if ignore {
+                    lines.insert(n.saturating_add(1));
+                }
+            }
+        }
+    }
+
+    /// Folds `other` (another checker's facts) in: a file is clean only when every checker that covered it agrees, and ignore lines union.
+    // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
+    pub fn merge(&mut self, other: TypeFacts) {
+        self.clean.extend(other.clean);
+        self.nocheck.extend(other.nocheck);
+        for (path, lines) in other.ignored {
+            self.ignored.entry(path).or_default().extend(lines);
+        }
+        for path in &self.nocheck {
+            self.clean.remove(path);
         }
     }
 
@@ -131,6 +182,39 @@ mod tests {
         assert_eq!(f.weight("a.py", 1), AnnotationWeight::Claimed);
         f.trust = TypesTrust::None;
         assert_eq!(f.weight("a.py", 1), AnnotationWeight::Hint);
+    }
+
+    // frob:tests crates/gob-symbols/src/types.rs::TypeFacts.scan_ts_ignores
+    #[test]
+    fn ts_ignores_casts_and_nocheck_demote() {
+        let mut f = TypeFacts::new(TypesTrust::Checked);
+        f.mark_clean("a.ts");
+        f.mark_clean("b.ts");
+        f.scan_ts_ignores(
+            "a.ts",
+            "const a = 1;\n// @ts-ignore\nx.run();\nconst y = (z as any).run();\nw.run();\n",
+        );
+        f.scan_ts_ignores("b.ts", "// @ts-nocheck\nx.run();\n");
+        assert_eq!(f.weight("a.ts", 1), AnnotationWeight::Exact);
+        assert_eq!(f.weight("a.ts", 3), AnnotationWeight::Claimed);
+        assert_eq!(f.weight("a.ts", 4), AnnotationWeight::Claimed);
+        assert_eq!(f.weight("a.ts", 5), AnnotationWeight::Exact);
+        assert_eq!(f.weight("b.ts", 2), AnnotationWeight::Claimed);
+    }
+
+    // frob:tests crates/gob-symbols/src/types.rs::TypeFacts.merge
+    #[test]
+    fn merge_unions_clean_and_ignores_and_keeps_nocheck_dirty() {
+        let mut a = TypeFacts::new(TypesTrust::Checked);
+        a.mark_clean("a.py");
+        let mut b = TypeFacts::new(TypesTrust::Checked);
+        b.mark_clean("a.ts");
+        b.mark_clean("c.ts");
+        b.scan_ts_ignores("c.ts", "// @ts-nocheck\n");
+        a.merge(b);
+        assert_eq!(a.weight("a.py", 1), AnnotationWeight::Exact);
+        assert_eq!(a.weight("a.ts", 1), AnnotationWeight::Exact);
+        assert_eq!(a.weight("c.ts", 1), AnnotationWeight::Claimed);
     }
 
     // frob:tests crates/gob-symbols/src/types.rs::TypesTrust.parse
