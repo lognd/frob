@@ -8,7 +8,7 @@ points = 8
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:16Z"
-updated = "2026-10-22T18:24:11Z"
+updated = "2026-10-22T18:24:12Z"
 idempotency_key = "crunk-plan-e2e"
 labels = ["area:crunk"]
 scope = ["crates/crunk/tests/e2e/**", "crates/crunk/tests/int/**"]
@@ -39,7 +39,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a mapped test, when its Rust counterpart is removed, then the audit script fails"
-bound = false
+bound = true
 +++
 
 monorepo.md 5 step 3 ('1158 tests'): capability tickets port their own unit tests; this ticket ports what remains of tests/system (58 e2e files through the real CLI, including the wheel build covered by the registration ticket's smoke) and tests/integration (12 INT) using gob-testsupport's fixture-tree builder and insta snapshots; owner-visible count table maps every Python test to a Rust test or a reasoned drop.

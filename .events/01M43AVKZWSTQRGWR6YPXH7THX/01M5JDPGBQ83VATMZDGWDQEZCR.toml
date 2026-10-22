@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T18:24:12Z"
+digest = "cde38839a5a878eb095cf867420b06b1588c5e876597521befeb1f5dd60263b4"
+exit_code = 0
+head = "2a27d60d25d5ebd290839c6c0adb08079b1f361f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 012eb75f-4c40-440f-bbf9-b474b2aa0f9d with nextest profile: default
+    Starting 1 test across 1 binary (137 tests skipped)
+        PASS [   0.037s] crunk::e2e audit_fails_when_a_counterpart_is_removed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.037s] 1 test run: 1 passed, 137 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test e2e audit_fails_when_a_counterpart_is_removed"
+size = 543
+status = "measured"
+test_count = 1
+tests_digest = "a791fc524be9646810502ea4bdf1dd9887a76eb2446d234280d2dddc99c6a7a7"
+at = "2026-10-22T18:24:12Z"
+actor = "lognd"
+rev = 1
