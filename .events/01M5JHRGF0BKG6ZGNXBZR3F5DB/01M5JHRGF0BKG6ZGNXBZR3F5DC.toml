@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk parity tests fail on CRAFT010 advisory for init_default"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk/tests/**"]
+body = "found while working 76STB57: pre-existing failures in parity and violations_match_python_for_every_project"
+at = "2026-10-22T19:35:13Z"
+actor = "lognd"
+rev = 1
