@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T18:08:47Z"
-updated = "2026-10-22T20:04:24Z"
+updated = "2026-10-22T20:04:51Z"
 scope = ["crates/gob-git/src/read.rs", "crates/gob-git/tests/read_blobs.rs", "crates/frob-ledger/src/ops.rs"]
 
 [[acceptance]]
