@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-22T01:38:19Z"
+digest = "6547eba39718eea10381eb8933ff8d7e4833e3b848263256a2d44089707e3dbe"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d9d5ac5c-2dae-4e51-93ce-4a0be9cfe391 with nextest profile: default
+    Starting 1 test across 2 binaries (147 tests skipped)
+        PASS [   0.009s] frob-release::it rel003::type_exempt_follows_the_pm_changelog_exempt_types_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 147 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release type_exempt_follows_the_pm_changelog_exempt_types_table"
+size = 573
+status = "measured"
+test_count = 1
+tests_digest = "7355939eeef2322ab7e7540e2cee1107cf4ad72a2d3411db094466bfeaaf3c81"
+at = "2026-10-22T01:38:19Z"
+actor = "lognd"
+rev = 1
