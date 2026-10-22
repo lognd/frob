@@ -4,9 +4,10 @@ title = "frob init mentions the private-term privacy.toml locations"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-04T03:58:53Z"
-updated = "2026-10-04T04:12:00Z"
+updated = "2026-10-22T03:58:44Z"
 scope = ["crates/frob/src/init.rs", "docs/design/architecture.md", "docs/reference/rules/TICK005.md", "crates/frob-ledger/src/rules.rs"]
 
 [[acceptance]]
