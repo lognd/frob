@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T17:20:40Z"
+digest = "b08d5ee2344cb5cc0f49f519fb6b49a4ff788088c8c5e5575e13253807db60d1"
+exit_code = 0
+head = "cefc8fcabd432383dfad757cdc6405f29ded69c5"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 07s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0e70cbc0-2223-4d8b-b84b-771bb7fd29ef with nextest profile: default
+    Starting 1 test across 1 binary (9 tests skipped)
+        PASS [   0.220s] crunk-check::gx014 prefab_color_and_font_size_literals_are_audited
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.220s] 1 test run: 1 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test gx014 prefab_color_and_font_size_literals_are_audited"
+size = 674
+status = "measured"
+test_count = 1
+tests_digest = "d9e136155c5b78ec78241888e0a1c0ff8cb27d3824050fea3a0b7a2de2a8fdfd"
+at = "2026-10-22T17:20:40Z"
+actor = "lognd"
+rev = 1
