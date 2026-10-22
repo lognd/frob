@@ -2,7 +2,8 @@
 id = "01M5GTP8KYGJ3571YJYS13SCB1"
 title = "gob-exec: unused gob_path::exact_text import fails clippy on Windows"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
