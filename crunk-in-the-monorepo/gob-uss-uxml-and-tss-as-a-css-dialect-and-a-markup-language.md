@@ -2,7 +2,8 @@
 id = "01M4CXSBNCE06J78BM0P23V9XV"
 title = "gob: USS, UXML and TSS as a CSS dialect and a markup language (style and markup capabilities)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
