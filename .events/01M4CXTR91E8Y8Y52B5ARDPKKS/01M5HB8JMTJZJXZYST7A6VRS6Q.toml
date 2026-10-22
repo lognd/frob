@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T08:20:07Z"
+digest = "ba3bdfa9df9f7fb081d59e260c619813b7d961c0e242d2ce452f98967fc9d36f"
+exit_code = 0
+head = "e165d7dbe94819c15f69a8b7802bcbbc00c3df84"
+inline = '''
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID acbe9fdd-d146-4cb6-a07c-cad0298dfe2c with nextest profile: default
+    Starting 1 test across 1 binary (17 tests skipped)
+        PASS [   0.016s] gob-dev::generate cli_reference_has_a_stable_page_per_product
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 1 test run: 1 passed, 17 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test generate cli_reference_has_a_stable_page_per_product"
+size = 608
+status = "measured"
+test_count = 1
+tests_digest = "3224fa23a6e0e8c545113ab19f588f3f9577dc2c70c51d6dd8fb6182017745af"
+at = "2026-10-22T08:20:07Z"
+actor = "lognd"
+rev = 1
