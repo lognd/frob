@@ -8,8 +8,8 @@ points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:12:41Z"
-updated = "2026-10-22T14:00:10Z"
-scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob-obligations/**", "docs/reference/**"]
+updated = "2026-10-22T14:00:11Z"
+scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob-obligations/**", "docs/reference/**", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Given a removed public function and an unchanged version, when frob check --base runs the semver stage, then VERSION001 is an Error naming the item"
