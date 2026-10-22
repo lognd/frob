@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T04:17:08Z"
+digest = "d0cd5448cc1be6503b69d76d24ad0410fcc345a5d246a94e208f9168de3a54f2"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ddfd25ce-046e-40ae-a3ad-2e91cf057b30 with nextest profile: default
+    Starting 1 test across 19 binaries (65 tests skipped)
+        PASS [   0.011s] crunk::dtcg import_then_export_equals_the_input_up_to_key_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 65 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk import_then_export_equals_the_input_up_to_key_order"
+size = 664
+status = "measured"
+test_count = 1
+tests_digest = "1bd62e76f4c66dcb7e6e6ab1f69ab8556e0172a85a051a03da4dd248a4f70861"
+at = "2026-10-22T04:17:08Z"
+actor = "lognd"
+rev = 1
