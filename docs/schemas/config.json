@@ -209,6 +209,61 @@
         }
       ]
     },
+    "TicketType": {
+      "description": "What kind of work a ticket tracks (a milestone is never a type).",
+      "oneOf": [
+        {
+          "const": "epic",
+          "description": "A large body of work with children.",
+          "type": "string"
+        },
+        {
+          "const": "story",
+          "description": "A user-visible capability.",
+          "type": "string"
+        },
+        {
+          "const": "task",
+          "description": "A unit of engineering work.",
+          "type": "string"
+        },
+        {
+          "const": "bug",
+          "description": "A defect.",
+          "type": "string"
+        },
+        {
+          "const": "security",
+          "description": "A security issue.",
+          "type": "string"
+        },
+        {
+          "const": "docs",
+          "description": "Documentation work.",
+          "type": "string"
+        },
+        {
+          "const": "invariant",
+          "description": "A property that must keep holding.",
+          "type": "string"
+        },
+        {
+          "const": "incident",
+          "description": "An operational incident.",
+          "type": "string"
+        },
+        {
+          "const": "chore",
+          "description": "Maintenance with no user-visible effect.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "A repo-declared type.",
+          "type": "string"
+        }
+      ]
+    },
     "ToolParser": {
       "description": "How a tool stage's stdout becomes findings (`parser` of `[[check.tool]]`).",
       "oneOf": [
@@ -1172,6 +1227,17 @@
           "description": "Safety factor k in `capacity = rolling_mean - k * stddev` for cycle commitment; 0.5 trades a little throughput for commitments that are usually met.",
           "format": "double",
           "type": "number"
+        },
+        "changelog_exempt_types": {
+          "default": [
+            "epic",
+            "docs"
+          ],
+          "description": "Ticket types the `changelog_fragment` requirement (close guard and REL003) does not ask for a fragment: an epic is closed by its children and a docs change rarely has a user-visible effect, so both default to exempt; list `[]` to require a fragment for every type, and a ticket of an exempt type that carries a fragment still has it validated.",
+          "items": {
+            "$ref": "#/$defs/TicketType"
+          },
+          "type": "array"
         },
         "classes": {
           "additionalProperties": false,

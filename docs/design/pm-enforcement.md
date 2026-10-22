@@ -127,6 +127,9 @@ require = ["story_or_objective_qualified", "criteria", "points", "scope", "paren
 require = ["criteria_evidenced", "objective_target_met", "docs_touched_or_excepted", "no_open_children", "changelog_fragment"]   # changelog_fragment evaluates REL003
 ```
 
+`changelog_fragment` skips the ticket types in `[pm] changelog_exempt_types`
+(default `epic` and `docs`; `[]` opts every type in).
+
 Predicates are named Rust functions registered like rules; a repo
 cannot add arbitrary code but can choose the set. `doable` only lists
 tickets that satisfy `[pm.ready]`, so agents never pick an ill-formed

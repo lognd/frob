@@ -96,3 +96,32 @@ fn fragment_required_follows_the_pm_done_requires_table() {
         .expect("write frob.toml");
     assert!(!frob_release::rel003::fragment_required(dir.path()));
 }
+
+// frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ
+// frob:tests crates/frob-release/src/rel003.rs::type_exempt
+#[test]
+fn type_exempt_follows_the_pm_changelog_exempt_types_table() {
+    use frob_ledger::model::TicketType;
+    let dir = tempfile::tempdir().expect("tempdir");
+    assert!(frob_release::rel003::type_exempt(
+        dir.path(),
+        TicketType::Epic
+    ));
+    assert!(frob_release::rel003::type_exempt(
+        dir.path(),
+        TicketType::Docs
+    ));
+    assert!(!frob_release::rel003::type_exempt(
+        dir.path(),
+        TicketType::Task
+    ));
+    std::fs::write(
+        dir.path().join("frob.toml"),
+        "[pm]\nchangelog_exempt_types = []\n",
+    )
+    .expect("write frob.toml");
+    assert!(!frob_release::rel003::type_exempt(
+        dir.path(),
+        TicketType::Docs
+    ));
+}

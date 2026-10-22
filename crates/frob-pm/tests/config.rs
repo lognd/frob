@@ -114,3 +114,18 @@ fn repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy() {
     let fallback = PmConfig::load_repo_wide(dir.path(), "refs/heads/nope").expect("fallback");
     assert_eq!(fallback.wip.in_progress, 10);
 }
+
+// frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ
+// frob:tests crates/frob-pm/src/config.rs::PmTable.changelog_exempt
+#[test]
+fn changelog_exempt_types_default_to_epic_and_docs_and_reject_unknown_names() {
+    use frob_ledger::model::TicketType;
+    let cfg = load("").expect("defaults");
+    assert!(cfg.pm.changelog_exempt(TicketType::Epic));
+    assert!(cfg.pm.changelog_exempt(TicketType::Docs));
+    assert!(!cfg.pm.changelog_exempt(TicketType::Task));
+    let none = load("[pm]\nchangelog_exempt_types = []\n").expect("empty list");
+    assert!(!none.pm.changelog_exempt(TicketType::Docs));
+    let err = load("[pm]\nchangelog_exempt_types = [\"doc\"]\n").expect_err("unknown type");
+    assert!(err.to_string().contains("doc"), "{err}");
+}

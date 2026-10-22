@@ -116,3 +116,16 @@ pub fn fragment_required(root: &Path) -> bool {
         }
     }
 }
+
+// frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ
+/// Whether tickets of type `ty` are exempt from needing a fragment (`[pm] changelog_exempt_types`); an unreadable `[pm]` table exempts nothing, logged.
+#[must_use]
+pub fn type_exempt(root: &Path, ty: frob_ledger::model::TicketType) -> bool {
+    match frob_pm::PmConfig::load(root) {
+        Ok(pm) => pm.pm.changelog_exempt(ty),
+        Err(err) => {
+            tracing::warn!(%err, "REL003: [pm] unreadable; assuming no ticket type is exempt");
+            false
+        }
+    }
+}
