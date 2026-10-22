@@ -4,10 +4,15 @@ title = "boundaries.md layer table lacks crunk-layout and crunk-scene (layering 
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-10-22T22:32:22Z"
-updated = "2026-10-22T22:32:22Z"
+updated = "2026-10-22T23:15:13Z"
 scope = ["docs/design/boundaries.md"]
+
+[[acceptance]]
+text = "gob-dev layering test workspace_layering_holds_and_every_crate_has_a_layer passes"
+bound = false
 +++
 
 found while working ~MQE4F44; pre-existing from in-flight crunk tickets
