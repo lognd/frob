@@ -2,12 +2,12 @@
 id = "01M4A48FTHZAZXNRMTZ20D00X3"
 title = "CI: install node and vitest and set FROB_REQUIRE_NODE_TESTS so the TypeScript runner tests never skip"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-07T02:49:39Z"
-updated = "2026-10-22T02:27:14Z"
+updated = "2026-10-22T02:27:15Z"
 scope = ["crates/gob-dev/**"]
 
 [[acceptance]]
