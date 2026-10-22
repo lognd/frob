@@ -206,7 +206,7 @@ pub(crate) struct Resolved<'a> {
 }
 
 /// Look the cell up in the spec.
-fn resolve<'a>(spec: &'a DesignSpec, cell: &Cell) -> Result<Resolved<'a>, RenderError> {
+pub(crate) fn resolve<'a>(spec: &'a DesignSpec, cell: &Cell) -> Result<Resolved<'a>, RenderError> {
     let bad = |what: &str, id: &str| RenderError::BadCell(format!("unknown {what} `{id}`"));
     let screen = spec
         .screens

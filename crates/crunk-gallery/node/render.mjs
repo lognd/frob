@@ -1,9 +1,9 @@
 // Renders one gallery cell with Playwright. Run by crunk-gallery through gob-exec:
 //   node render.mjs <request.json>
 // The request is the cell's resolved web platform plus the state's script; the PNG goes to
-// `request.output`. Playwright is resolved from the project (cwd), never bundled here.
+// `request.output`, or, when `request.axe_output` is set, axe-core's violations go there as JSON. Playwright is resolved from the project (cwd), never bundled here.
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const request = JSON.parse(readFileSync(process.argv[2], "utf8"));
@@ -74,7 +74,14 @@ try {
   if (request.expect_url && !page.url().includes(request.expect_url)) {
     throw new Error(`expected url ${request.expect_url}, ended on ${page.url()}`);
   }
-  await page.screenshot({ path: request.output, fullPage: true });
+  if (request.output) await page.screenshot({ path: request.output, fullPage: true });
+  if (request.axe_output) {
+    // T3: run axe-core (resolved from the project, never bundled here) against the settled page.
+    const axeSource = readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
+    await page.evaluate(axeSource);
+    const results = await page.evaluate(() => axe.run(document));
+    writeFileSync(request.axe_output, JSON.stringify({ violations: results.violations }));
+  }
 } finally {
   await browser.close();
 }

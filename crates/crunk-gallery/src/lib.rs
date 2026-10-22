@@ -20,11 +20,13 @@
 //! - [`report`]: [`report::check_report`] runs every rule and counts the result; the shape is
 //!   `docs/schemas/crunk-gallery-check-v1.json`.
 //! - [`visual`]: VIS001, the perceptual diff of a build against its design over RGBA buffers.
+//! - [`a11y`]: the T3 axe-core check; findings carry the axe rule id and the offending node.
 //! - [`triage`]: a blocking loopback HTTP contact sheet with keyboard verdicts, saved to the
 //!   manifest; no async runtime.
 
 // frob:ticket 01M43ATDG0RG5DP9PVFAKETJJH
 
+pub mod a11y;
 pub mod cells;
 pub mod manifest;
 pub mod render;
