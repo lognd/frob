@@ -10,6 +10,10 @@
 //! `Map.set`, `setTimeout`, `addEventListener`, ...) in TypeScript and JavaScript from a table of
 //! acquire/release pairs ([`res::PAIRS`]); a new pair is a data change.
 //!
+//! [`effect::scan`] is the React vocabulary of `PAIR001`: a `useEffect` that starts a fetch, timer,
+//! listener, observer or subscription without a returned cleanup that undoes it, from a table of
+//! effect-started pairs ([`effect::PAIRS`]).
+//!
 //! [`path::scan`] finds `PATH001` absolute host path literals and, for Rust and Python, `PATH002`
 //! path-to-string separator handling and `PATH003` paths in command-line strings; a language
 //! without path-conversion roles reports them unresolved.
@@ -30,6 +34,7 @@
 
 // frob:ticket 01M4D956T20WN96P7A3K4B9CKF
 
+pub mod effect;
 pub mod err;
 pub mod host;
 pub mod neat;
