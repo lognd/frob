@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T11:58:12Z"
+digest = "25e9c8df8a76868682e9e776f6e9b7eb38fc50ed727f699fe1dcfd8392ce9d31"
+exit_code = 0
+head = "1e7f0832628bd824b16d58dd8758de7d2c96670d"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1393780d-d646-4bab-b4ce-811ae81062fb with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.005s] gob-plan::needs_capabilities a_rule_needing_a_capability_the_language_lacks_is_not_applicable_statically
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test needs_capabilities a_rule_needing_a_capability_the_language_lacks_is_not_applicable_statically"
+size = 646
+status = "measured"
+test_count = 1
+tests_digest = "cb2bc4d3581066d6e0e10641271126db17bcd6091748986f186007086967ec07"
+at = "2026-10-22T11:58:12Z"
+actor = "lognd"
+rev = 1
