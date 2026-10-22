@@ -9,7 +9,7 @@ parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T23:53:37Z"
 updated = "2026-10-22T00:16:24Z"
-scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/tests/ten_rules/**", "crates/gob-plan/src/**", "crates/gob-plan/tests/**"]
+scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/tests/ten_rules/**", "crates/gob-plan/src/**", "crates/gob-plan/tests/**", "docs/reference/rules/*.md"]
 
 [[acceptance]]
 text = "NEAT031 examples 0 and 1 pass and leave KNOWN_ENGINE_GAPS"
