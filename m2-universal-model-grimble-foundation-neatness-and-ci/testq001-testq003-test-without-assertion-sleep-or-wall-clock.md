@@ -8,12 +8,12 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:12:58Z"
-updated = "2026-10-22T10:15:28Z"
+updated = "2026-10-22T10:27:30Z"
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
 
 [[acceptance]]
 text = "Given a test item with no assertion-vocabulary call and no helper that may assert, when checked, then TESTQ001 fires; given a helper whose body is Unknown, then Unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given time.sleep or thread::sleep in a test body, when checked, then TESTQ002 fires"
