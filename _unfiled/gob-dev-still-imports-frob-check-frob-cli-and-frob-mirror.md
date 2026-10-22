@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:39Z"
 updated = "2026-10-22T22:16:37Z"
-scope = ["crates/gob-dev/**", "crates/frob-docgen/**", "Cargo.toml"]
+scope = ["crates/gob-dev/**", "crates/frob-docgen/**", "Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
 text = "gob-dev has no frob-* dependency in cargo tree"
