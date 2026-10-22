@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A .prefab file is detected as a language and its YAML Color and fontSize literals are audited read-only by the uGUI rules", "A prefab with a non-literal or malformed color yields Unresolved, not a false finding"]
+moved = []
+at = "2026-10-22T17:16:34Z"
+actor = "lognd"
+rev = 1
