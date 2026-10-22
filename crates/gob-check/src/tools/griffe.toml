@@ -1,0 +1,14 @@
+# griffe check: public Python API breakage against a baseline (VERSION001).
+# Name the package and baseline in the stage `args` (`<package> --against <ref>`).
+name = "griffe"
+command = "uvx"
+pinned_version = "1.7.3"
+parser = "griffe-text"
+version_args = ["griffe@{version}", "--version"]
+args = ["griffe@{version}", "check", "--verbose"]
+inputs = ["**/*.py", "**/*.pyi"]
+config_files = ["pyproject.toml"]
+
+[exit]
+success = [0]
+findings = [1]

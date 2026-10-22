@@ -530,6 +530,8 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
         | ToolParser::PyrightJson
         | ToolParser::EslintJson
         | ToolParser::FormatterList
+        | ToolParser::SemverChecksText
+        | ToolParser::GriffeText
         | ToolParser::RoslynSarif => &[0, 1],
         // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
         // tsc exits 1 on diagnostics with emit skipped and 2 on diagnostics with emit generated.
@@ -644,7 +646,13 @@ fn execute(
     }
     // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
     // Formatters split their report across both streams (ruff and prettier warn on stderr), so read both.
-    let text = if stage.parser == ToolParser::FormatterList {
+    // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
+    // cargo-semver-checks and griffe report on stderr, so they read both streams too.
+    let both = matches!(
+        stage.parser,
+        ToolParser::FormatterList | ToolParser::SemverChecksText | ToolParser::GriffeText
+    );
+    let text = if both {
         format!("{}\n{}", output.stdout, output.stderr)
     } else {
         output.stdout.clone()
@@ -1456,6 +1464,40 @@ mod tests {
             "{found:?}"
         );
         assert_eq!(found.len(), 4, "{found:?}");
+    }
+
+    /// Script printing a cargo-semver-checks report for one removed function; `$1` is the change kind.
+    const SEMVER_REPORT: &str = "echo '     Checking foo v1.2.0 -> v1.2.1 (CHANGE)' >&2; \
+        echo '--- failure function_missing: pub fn removed or renamed ---' >&2; \
+        echo 'Failed in:' >&2; \
+        echo '  function foo::bar, previously in file src/lib.rs:12' >&2; exit 1";
+
+    // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
+    #[test]
+    fn removed_public_function_without_a_version_bump_is_a_version001_error() {
+        if !gob_exec::require_sh("removed_public_function_without_a_version_bump") {
+            return;
+        }
+        let script = SEMVER_REPORT.replace("CHANGE", "no change");
+        let stage = sh_stage("semver", ToolParser::SemverChecksText, &script, VERSION_OK);
+        let found = run_one(&stage);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].rule.as_str(), "VERSION001");
+        assert_eq!(found[0].severity, Severity::Error);
+        assert!(found[0].message.contains("foo::bar"), "{found:?}");
+    }
+
+    // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
+    #[test]
+    fn a_major_version_bump_yields_no_version001_finding() {
+        if !gob_exec::require_sh("a_major_version_bump_yields_no_version001_finding") {
+            return;
+        }
+        let script = SEMVER_REPORT.replace("v1.2.1 (CHANGE)", "v2.0.0 (breaking change)");
+        let stage = sh_stage("semver", ToolParser::SemverChecksText, &script, VERSION_OK);
+        assert!(run_one(&stage).is_empty());
     }
 
     // frob:tests crates/gob-check/src/tools.rs::start_tools

@@ -1,0 +1,1 @@
+Public API breakage from cargo-semver-checks, griffe and the Roslyn PublicApiAnalyzers (RS0016, RS0017) now maps to VERSION001 as an Error, and a breaking version bump clears the cargo-semver-checks finding.
