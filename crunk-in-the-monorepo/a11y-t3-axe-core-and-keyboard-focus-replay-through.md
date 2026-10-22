@@ -2,7 +2,8 @@
 id = "01M4CXRZAE5N45BP0RJPT56WSN"
 title = "A11Y T3: axe-core and keyboard focus replay through Playwright"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
