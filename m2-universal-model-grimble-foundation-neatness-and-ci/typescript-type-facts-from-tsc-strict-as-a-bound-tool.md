@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:34Z"
-updated = "2026-10-22T11:06:03Z"
+updated = "2026-10-22T11:27:28Z"
 scope = ["changelog.d/**", "crates/gob-symbols/**", "crates/gob-check/**", "crates/frob-check/src/typefacts.rs", "docs/reference/tool-stages.md", "docs/schemas/config.json"]
 
 [[acceptance]]
