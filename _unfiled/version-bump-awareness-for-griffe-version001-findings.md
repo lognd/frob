@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T14:04:09Z"
-updated = "2026-10-22T17:42:16Z"
+updated = "2026-10-22T17:42:18Z"
 scope = ["crates/gob-check/**", "changelog.d/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a griffe-reported breaking change with no version bump, then VERSION001 is an error"
-bound = false
+bound = true
 +++
 
 found while working BVDP7MK

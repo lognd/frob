@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T17:42:18Z"
+digest = "000a109db31e73360b127ef8e24f60ec475de8ca1585751fa355503e794b0159"
+exit_code = 0
+head = "18de2f92c4f0bf364063c5910faa4ac249cddec2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4e9cb7c9-772d-460f-af45-c029aebdfed0 with nextest profile: default
+    Starting 1 test across 1 binary (150 tests skipped)
+        PASS [   0.005s] gob-check version_bump::tests::missing_or_small_bump_keeps_breakage_an_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 150 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --lib version_bump::tests::missing_or_small_bump_keeps_breakage_an_error"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "28775decef5b3c11a89442ea1bc54c2b000a086c7e25a63a37904ac524fc82f2"
+at = "2026-10-22T17:42:18Z"
+actor = "lognd"
+rev = 1
