@@ -1,0 +1,1 @@
+Existing orphan ticket branches, including ones adopted from origin, get the LF pin added to their .gitattributes the next time frob initialises the branch; user lines are kept and a second run changes nothing.

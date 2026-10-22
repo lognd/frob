@@ -174,3 +174,99 @@ fn origin_without_the_branch_still_gets_a_fresh_orphan() {
         BranchInit::Created(_)
     ));
 }
+
+/// Commit `.gitattributes` text onto the ticket branch, standing in for a branch made before the pin.
+fn set_attrs(repo: &Repo, text: &str) {
+    repo.commit_paths(
+        "refs/heads/frob-tickets",
+        &[(
+            RelPath::new(".gitattributes").expect("path"),
+            Some(text.as_bytes().to_vec()),
+        )],
+        "tickets: legacy attrs",
+        &CommitOptions::default(),
+    )
+    .expect("legacy attrs");
+}
+
+/// The `.gitattributes` text on the ticket branch.
+fn attrs(repo: &Repo) -> String {
+    let blob = repo
+        .read_blob_at("refs/heads/frob-tickets", ".gitattributes")
+        .expect("read")
+        .expect("present");
+    String::from_utf8(blob).expect("utf8")
+}
+
+// frob:ticket 01M5J931Y2JCF9J0XFVRP71BER
+// frob:tests crates/frob-ledger/src/branch.rs::init_branch
+#[test]
+fn backfills_the_pin_once_and_keeps_user_lines() {
+    let repo = fresh();
+    init_branch(&repo, "frob-tickets", 5).expect("create");
+    set_attrs(&repo, "*/*.md merge=frob\ncustom.bin -text");
+    let BranchInit::Already(tip) = init_branch(&repo, "frob-tickets", 5).expect("backfill") else {
+        panic!("expected Already");
+    };
+    assert_eq!(repo.rev_parse("refs/heads/frob-tickets").expect("tip"), tip);
+    let text = attrs(&repo);
+    assert_eq!(
+        text,
+        "*/*.md merge=frob\ncustom.bin -text\n*.md text eol=lf\n*.toml text eol=lf\n"
+    );
+    assert_eq!(
+        init_branch(&repo, "frob-tickets", 5).expect("again"),
+        BranchInit::Already(tip),
+        "second run must not commit"
+    );
+    assert_eq!(attrs(&repo), text);
+}
+
+// frob:ticket 01M5J931Y2JCF9J0XFVRP71BER
+// frob:tests crates/frob-ledger/src/branch.rs::init_branch
+#[test]
+fn partial_pin_adds_only_the_missing_glob_and_respects_user_eol() {
+    let repo = fresh();
+    init_branch(&repo, "frob-tickets", 5).expect("create");
+    set_attrs(&repo, "*.md text eol=crlf\n");
+    init_branch(&repo, "frob-tickets", 5).expect("backfill");
+    assert_eq!(attrs(&repo), "*.md text eol=crlf\n*.toml text eol=lf\n");
+}
+
+// frob:ticket 01M5J931Y2JCF9J0XFVRP71BER
+// frob:tests crates/frob-ledger/src/branch.rs::init_branch
+#[test]
+fn missing_attributes_file_gets_the_pin() {
+    let repo = fresh();
+    init_branch(&repo, "frob-tickets", 5).expect("create");
+    repo.commit_paths(
+        "refs/heads/frob-tickets",
+        &[(RelPath::new(".gitattributes").expect("path"), None)],
+        "tickets: drop attrs",
+        &CommitOptions::default(),
+    )
+    .expect("delete");
+    init_branch(&repo, "frob-tickets", 5).expect("backfill");
+    assert_eq!(attrs(&repo), "*.md text eol=lf\n*.toml text eol=lf\n");
+}
+
+// frob:ticket 01M5J931Y2JCF9J0XFVRP71BER
+// frob:tests crates/frob-ledger/src/branch.rs::init_branch
+#[test]
+fn a_locked_branch_is_left_as_is_without_failing() {
+    let repo = fresh();
+    // A ref that cannot be advanced (locked) keeps its tip and still reports Already.
+    init_branch(&repo, "frob-tickets", 5).expect("create");
+    set_attrs(&repo, "*.md text\n");
+    let lock = repo.git_dir().join("refs/heads/frob-tickets.lock");
+    std::fs::write(&lock, "").expect("lock");
+    let before = repo.rev_parse("refs/heads/frob-tickets").expect("tip");
+    assert_eq!(
+        init_branch(&repo, "frob-tickets", 1).expect("tolerated"),
+        BranchInit::Already(before)
+    );
+    assert_eq!(
+        repo.rev_parse("refs/heads/frob-tickets").expect("tip"),
+        before
+    );
+}
