@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [7]
+captured_at = "2026-10-22T00:51:25Z"
+digest = "08f93b9581e56ca43dbe21f95d9c8b490893c0d8974a36e513ef1a736a67d732"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 54387edd-4aec-43c7-a4e0-42e53c9eff45 with nextest profile: default
+    Starting 1 test across 5 binaries (33 tests skipped)
+        PASS [   0.004s] gob-config::cfg001_fix every_deterministic_config_rule_has_a_fixture
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 33 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-config every_deterministic_config_rule"
+size = 663
+status = "measured"
+test_count = 1
+tests_digest = "294412581c22ecb01dc7ea454559aaded858da303059fa973d0b8cf8b78a62e5"
+at = "2026-10-22T00:51:25Z"
+actor = "lognd"
+rev = 1
