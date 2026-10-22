@@ -316,7 +316,7 @@ Net: additions are gob-serve, gob-ir (the universal model, below
 gob-symbols), gob-lock, gob-check, gob-pattern, grimble-serve and
 grimble-ci; gob-db (salsa) is a milestone-2 crate. No new products.
 Three binaries, 24 substrate crates (gob-dev included), 17 frob crates (frob-docgen, the generator binary that links frob for gob-dev, included),
-12 grimble crates, 10 crunk crates. Each crate builds and tests alone.
+12 grimble crates, 13 crunk crates. Each crate builds and tests alone.
 
 ## 5. Naming
 
@@ -374,8 +374,8 @@ fails the test. Every workspace crate must appear here exactly once.
 | 3 | repo | gob-git, gob-trust |
 | 4 | model | gob-cache, gob-ir |
 | 5 | rules | gob-pattern, gob-rules, gob-symbols |
-| 6 | config | gob-config, gob-diagnostics, gob-fix, gob-frameworks, gob-plan |
-| 7 | pipeline | gob-check, gob-cli, gob-directives, gob-mdtest, gob-packs, gob-testsupport |
+| 6 | config | crunk-scene, gob-config, gob-diagnostics, gob-fix, gob-frameworks, gob-plan |
+| 7 | pipeline | crunk-layout, gob-check, gob-cli, gob-directives, gob-mdtest, gob-packs, gob-testsupport |
 | 8 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, gob-product, grimble-capabilities, grimble-lints, grimble-model, grimble-vet |
 | 9 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-mirror, frob-pm, grimble-bind |
 | 10 | product mid | crunk-query, crunk-rules, frob-metrics, frob-release, frob-worktree, grimble-arch |
