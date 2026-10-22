@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk: support DTCG $ref JSON-pointer references"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-tokens/**"]
+body = "found while working ~62C50FH"
+at = "2026-10-22T04:32:10Z"
+actor = "lognd"
+rev = 1
