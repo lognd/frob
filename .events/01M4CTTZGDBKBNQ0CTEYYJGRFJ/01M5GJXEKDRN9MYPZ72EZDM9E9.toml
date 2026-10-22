@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-release/**", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src", "crates/frob-evidence/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src", "crates/frob-check/tests", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/reference/config.md", "docs/schemas/config.json", "docs/reference/rules/REL003.md"]
+new = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-release/**", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src", "crates/frob-evidence/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src", "crates/frob-check/tests", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/reference/config.md", "docs/schemas/config.json", "docs/reference/rules/REL003.md", "docs/guides/quickstart.md"]
+at = "2026-10-22T01:16:54Z"
+actor = "lognd"
+rev = 1
