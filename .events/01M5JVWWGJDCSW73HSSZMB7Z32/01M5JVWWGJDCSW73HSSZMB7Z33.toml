@@ -1,0 +1,10 @@
+kind = "create"
+title = "boundaries.md layer table lacks crunk-layout and crunk-scene (layering test fails)"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["docs/design/boundaries.md"]
+body = "found while working ~MQE4F44; pre-existing from in-flight crunk tickets"
+at = "2026-10-22T22:32:22Z"
+actor = "lognd"
+rev = 1
