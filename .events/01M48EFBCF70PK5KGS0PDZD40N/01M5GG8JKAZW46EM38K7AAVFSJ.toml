@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T00:30:30Z"
+digest = "b782434a2422de8e9b4f8dbcff59bd8624739c0f6bd359a1cb91b7dbfa2e7457"
+exit_code = 0
+head = "ca180955a9243d54c835c735457127ba8be3f438"
+inline = '''
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 61086823-714b-4970-ae6c-d625e5851f14 with nextest profile: default
+    Starting 1 test across 2 binaries (17 tests skipped)
+        PASS [   0.022s] gob-frameworks::routes a_routes_ts_config_produces_the_expected_routes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 17 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-frameworks a_routes_ts_config_produces_the_expected_routes"
+size = 633
+status = "measured"
+test_count = 1
+tests_digest = "a3781a69b9196a949823905e299d37b73fc25d53c455042edd8db8bbf48f239a"
+at = "2026-10-22T00:30:30Z"
+actor = "lognd"
+rev = 1
