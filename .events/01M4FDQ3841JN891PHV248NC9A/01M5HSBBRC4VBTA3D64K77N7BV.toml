@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T12:28:16Z"
+digest = "8e1347a7d11ce312f5d0910f2d1900ff82909e66ceb540a56d3cba60eace4ac2"
+exit_code = 0
+head = "6bf485c0452ef13e2c5f1f7d95073260dd596d4b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9a9bb065-681d-4c77-8343-cd890cea3b00 with nextest profile: default
+    Starting 1 test across 1 binary (95 tests skipped)
+        PASS [   0.391s] frob-check::it check::a_stacked_branch_diffs_against_the_lease_start_commit
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.403s] 1 test run: 1 passed, 95 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check --test it a_stacked_branch_diffs_against_the_lease_start_commit"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "82e9eda095d2680f5c72e16974d844407181daff9d3592ff98b785230c478131"
+at = "2026-10-22T12:28:16Z"
+actor = "lognd"
+rev = 1
