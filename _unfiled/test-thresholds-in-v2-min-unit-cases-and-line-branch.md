@@ -2,7 +2,8 @@
 id = "01M4FD1NX760N78Z1T60MQ76H2"
 title = "Test thresholds in v2: min unit cases and line/branch coverage percent per scope (v1 [testing]) as config-driven COV rules"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
