@@ -23,6 +23,10 @@ bound = false
 [[acceptance]]
 text = "CFG001 partial file gains missing knobs, keeps comments, one-round fixpoint snapshot"
 bound = false
+
+[[acceptance]]
+text = "CFG001 empty file fixes in one round with diff snapshot"
+bound = false
 +++
 
 Follow-up of ~G4WAFJT: wire the gob-fix harness (gob_fix::run_fixture) for these fixable rules: a fixture per rule, an observe closure over the real check pipeline, an insta snapshot of Outcome::snapshot_text, and missing_fixtures over the registry's Deterministic rules.
