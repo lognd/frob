@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T22:32:10Z"
+digest = "329c8f32f9b8b8c4e3fafaa41eb2fe8b8c6e2a40756cf99d6fa5586f184fcb47"
+exit_code = 0
+head = "34a070f1ae87e450ef8770f6aca57922e172efce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3025ea7a-fd10-47cb-b5ac-aed57edeb77c with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.007s] gob-dev::layering docs_name_the_import_example_not_a_gob_dev_importer
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test layering -E test(docs_name_the_import_example_not_a_gob_dev_importer)"
+size = 556
+status = "measured"
+test_count = 1
+tests_digest = "c292bd2a2c0d0ee819fee826bd82170162da15baf4f5b0635aa74bf7262adefa"
+at = "2026-10-22T22:32:10Z"
+actor = "lognd"
+rev = 1
