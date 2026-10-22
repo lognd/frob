@@ -236,7 +236,7 @@ fn text_format_goes_to_stdout_and_errors_to_stderr() {
     );
     assert_eq!(code(&out), 0);
     let text = String::from_utf8_lossy(&out.stdout);
-    assert!(text.starts_with("doctor: ok\n"), "{text}");
+    assert!(text.starts_with("frob doctor\n"), "{text}");
     assert!(!text.contains('\u{1b}'), "no ANSI with --color never");
     assert!(text.contains("CFG001"));
 

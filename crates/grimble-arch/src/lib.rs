@@ -97,6 +97,12 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     report.findings.extend(findings);
     let (findings, candidates) = vis::check(input.graph, input.crates);
     report.subjects.insert(VIS, candidates);
+    if !vis::has_rust(input.graph) {
+        tracing::debug!("no Rust units in the walk; VIS001 does not apply");
+        report
+            .not_applicable
+            .insert(VIS, "no Rust source files in the walk".to_owned());
+    }
     report.findings.extend(findings);
     report
         .findings

@@ -81,6 +81,9 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "TOOL002",
     "TICK007",
     "PM011",
+    "UNITY001",
+    "UNITY002",
+    "UNITY003",
 ];
 
 /// Print the full page of one rule offline; an unknown id exits 2 with the closest ids.

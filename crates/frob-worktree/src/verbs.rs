@@ -224,7 +224,6 @@ fn flag_reasons(
 struct WorkArgs {
     #[arg(
         value_name = "TICKET",
-        required_unless_present = "next",
         conflicts_with = "next",
         help = "Full ULID, ~handle or alias of the ticket"
     )]
@@ -341,6 +340,12 @@ impl Command for Work {
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         let a = gob_cli::parse::<WorkArgs>(m)?;
+        // Checked here, not by clap, so `--schema` can relax it with the other positionals.
+        if a.ticket.is_none() && !a.next {
+            return Err(CliError::Usage(
+                "missing required arguments: <TICKET> (or --next)".to_owned(),
+            ));
+        }
         let (steal, unplanned, anyway) = flag_reasons(a.steal, a.unplanned, a.anyway, a.reason)?;
         let anyway = anyway.map(|reason| Anyway {
             reason,

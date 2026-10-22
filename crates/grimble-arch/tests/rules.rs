@@ -180,6 +180,36 @@ fn empty_repository_makes_the_rules_not_applicable() {
     assert_eq!(ids, ["CYCLE001", "DEAD001", "LARGE001", "VIS001"]);
 }
 
+/// A repository with only TypeScript units makes `VIS001` (Rust-only) not applicable, and nothing else.
+// frob:tests crates/grimble-arch/src/lib.rs::analyze
+#[test]
+fn a_repository_without_rust_makes_only_vis001_not_applicable() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "src/a.ts",
+        "import { b } from \"./b\";\nexport function a(): number { return b(); }\n",
+    );
+    write(
+        dir.path(),
+        "src/b.ts",
+        "export function b(): number { return 1; }\n",
+    );
+    let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).expect("walk");
+    let code = Code::build(dir.path(), &walked.files);
+    let graph = grimble_bind::edges::build_graph(dir.path(), &code);
+    let crates = BTreeMap::new();
+    let read = |_: &str| None;
+    let report = analyze(&ArchInput {
+        graph: &graph,
+        crates: &crates,
+        large_lines: 100,
+        read: &read,
+    });
+    let ids: Vec<_> = report.not_applicable.keys().copied().collect();
+    assert_eq!(ids, ["VIS001"]);
+}
+
 /// The findings of `rule` over the repository at `root`.
 fn of_rule(root: &Path, rule: &str) -> Vec<ArchFinding> {
     run(root, 0)
