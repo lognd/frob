@@ -24,6 +24,7 @@ pub mod fix;
 pub mod gallery;
 pub mod init;
 pub mod map;
+pub mod new;
 pub mod patch;
 pub mod preview;
 pub mod query;
@@ -170,6 +171,7 @@ impl Product for CrunkProduct {
             .register::<dtcg::ExportDtcg>()
             .register::<rename::Rename>()
             .register::<edit::Edit>()
+            .register::<new::New>()
             .register::<extract::ExtractToken>()
     }
 }

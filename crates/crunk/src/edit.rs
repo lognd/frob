@@ -307,14 +307,19 @@ fn surgery(before: &str, patched: &Node) -> Result<String, String> {
     let mut doc: toml_edit::DocumentMut = before.parse().map_err(|e| format!("{e}"))?;
     sync_table(doc.as_table_mut(), map, false)?;
     let text = doc.to_string();
-    // New lines are written with `\n`; keep a file that was all CRLF all CRLF.
+    Ok(match_line_endings(before, &text))
+}
+
+/// `text` with CRLF line endings when `before` was all CRLF: new lines are written with `\n`, and a
+/// file that was all CRLF stays all CRLF.
+pub(crate) fn match_line_endings(before: &str, text: &str) -> String {
     let crlf =
         before.contains("\r\n") && before.matches('\n').count() == before.matches("\r\n").count();
-    Ok(if crlf {
+    if crlf {
         text.replace("\r\n", "\n").replace('\n', "\r\n")
     } else {
-        text
-    })
+        text.to_owned()
+    }
 }
 
 /// A parsed item as a [`Node`]; `None` for a datetime, which the tree cannot hold.

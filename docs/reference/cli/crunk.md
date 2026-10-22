@@ -22,6 +22,7 @@
 | `import dtcg` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Validate a DTCG file and store it as the project's token interchange document. |
 | `init` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold a crunk project in the working directory. |
 | `map` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Inventory every stylesheet and JSX style module by org bucket. |
+| `new` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold a component, screen, flow or token file under `design`. |
 | `preview` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the design spec as a terminal sheet. |
 | `query` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Ask a question of the project: find, component, dupes, unused, uses, color or violations. |
 | `rename` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Rename a token (`--color-ink`) and rewrite every reference in CSS, TSX and spec files. |
