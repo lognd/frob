@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["SCENE002 flags a duplicate or missing data-id in a scene, with a failing and a passing test", "SCENE003 flags unknown tags and SCENE004 flags unsupported at-rules, each with a failing and a passing test"]
+moved = []
+at = "2026-10-22T22:15:21Z"
+actor = "lognd"
+rev = 1
