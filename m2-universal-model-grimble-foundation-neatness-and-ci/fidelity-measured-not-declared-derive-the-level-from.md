@@ -2,7 +2,8 @@
 id = "01M4CXV46WX4E0WSVYJPYM7TRG"
 title = "Fidelity measured, not declared: derive the level from capability cells and measure it with oracle corpora"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
