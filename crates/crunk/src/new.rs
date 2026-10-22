@@ -241,7 +241,7 @@ fn skeleton(kind: &str, name: &str) -> String {
     }
 }
 
-/// Check `text` against the schema of `kind`; a flow error leads with its code and location.
+/// Check `text` against the schema of `kind`; a flow error leads with its code and the key path of the problem.
 fn validate(kind: &str, text: &str) -> Result<(), String> {
     match kind {
         "screen" => crunk_spec::parse_screen_file(text)
