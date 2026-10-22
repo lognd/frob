@@ -134,6 +134,9 @@ follow-ups.
 
 ## 3. Scenes and the layout engine (D111, D113)
 
+SCENE001 reads `design/scenes/*.scene.html` and flags each CSS property outside
+the supported dialect, naming the property, the element and the line.
+
 The scene format is a restricted HTML and CSS dialect: elements carry
 a stable `data-id`, component instances are tags (`<Button
 variant="primary">`), styles reference tokens only (`var(--space-4)`),

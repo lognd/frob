@@ -637,6 +637,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "crunk-ingest",
+ "crunk-scene",
  "crunk-spec",
  "crunk-tailwind",
  "crunk-tokens",

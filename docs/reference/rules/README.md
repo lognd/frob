@@ -312,6 +312,12 @@
 |---|---|---|---|---|---|---|
 | [RESP001](RESP001.md) | breakpoint-without-scene | error | manual | P+ | true | Every declared breakpoint is solved by some scene. Each block is one scene file under `design/scenes/` of a project whose `crunk.toml` declares `[breakpoints]` (`sm` 640, `md` 768, `lg` 1024); the case's `config` selects whether scenes for the other breakpoints exist. |
 
+## SCENE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [SCENE001](SCENE001.md) | scene-property-unsupported | error | manual | P+ | true | A scene is styled only with the CSS subset the scene renderer and layout solver implement. |
+
 ## SCOPE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

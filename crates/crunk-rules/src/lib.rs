@@ -46,6 +46,7 @@ pub mod registry;
 pub mod review;
 pub mod rules;
 pub mod scales;
+pub mod scene_docs;
 pub mod scene_files;
 pub mod screen_files;
 pub mod sheets;

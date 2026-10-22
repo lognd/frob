@@ -11,6 +11,7 @@ authors.workspace = true
 [dependencies]
 blake3 = "1"
 crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
+crunk-scene = { version = "0.532.0", path = "../crunk-scene" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
 crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind" }
 crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }

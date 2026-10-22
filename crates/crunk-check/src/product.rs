@@ -42,6 +42,9 @@ pub struct CrunkInputs {
     // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
     /// The authored `design/scenes/*.scene.json` files, parsed and solved (T1).
     pub scenes: Option<crunk_rules::scene_files::SceneFacts>,
+    // frob:ticket 01M5H30AMSB0THE4GW322D4K54
+    /// The authored `design/scenes/*.scene.html` files, parsed (the SCENE rules' input).
+    pub scene_docs: Option<crunk_rules::scene_docs::SceneDocFacts>,
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     /// The authored `design/screens/*.screen.toml` files, parsed (the STATE rules' input).
     pub screens: Option<crunk_rules::screen_files::ScreenFacts>,
@@ -81,6 +84,10 @@ impl CrunkHost for CrunkInputs {
     fn screens(&self) -> Option<&crunk_rules::screen_files::ScreenFacts> {
         self.screens.as_ref()
     }
+    fn scene_docs(&self) -> Option<&crunk_rules::scene_docs::SceneDocFacts> {
+        self.scene_docs.as_ref()
+    }
+
     fn components(&self) -> Option<&crunk_rules::component_files::ComponentFacts> {
         self.components.as_ref()
     }
@@ -177,6 +184,10 @@ impl Product for Crunk {
         let scenes = spec
             .as_ref()
             .map(crunk_rules::scene_files::SceneFacts::load);
+        // frob:ticket 01M5H30AMSB0THE4GW322D4K54
+        let scene_docs = spec
+            .as_ref()
+            .map(crunk_rules::scene_docs::SceneDocFacts::load);
         // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
         let screens = spec
             .as_ref()
@@ -194,6 +205,7 @@ impl Product for Crunk {
                 reviews,
                 tokens,
                 scenes,
+                scene_docs,
                 screens,
                 components,
             },
@@ -214,7 +226,7 @@ impl Product for Crunk {
     }
 
     fn repo_digest(&self, snap: &Snapshot<Self>) -> Vec<u8> {
-        let mut digest = format!("crunk/rules/6/ingest/{INGEST_VERSION}").into_bytes();
+        let mut digest = format!("crunk/rules/7/ingest/{INGEST_VERSION}").into_bytes();
         if let Some(spec) = &snap.inputs.spec {
             digest.extend(serde_json::to_vec(spec).unwrap_or_default());
         }
@@ -231,6 +243,10 @@ impl Product for Crunk {
         }
         if let Some(facts) = &snap.inputs.scenes {
             // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+            digest.extend(facts.fingerprint().into_bytes());
+        }
+        if let Some(facts) = &snap.inputs.scene_docs {
+            // frob:ticket 01M5H30AMSB0THE4GW322D4K54
             digest.extend(facts.fingerprint().into_bytes());
         }
         if let Some(facts) = &snap.inputs.screens {

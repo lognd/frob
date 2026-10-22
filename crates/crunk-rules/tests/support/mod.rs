@@ -21,6 +21,7 @@ use crunk_ingest::{ProjectStyles, ingest_tree};
 use crunk_rules::CrunkHost;
 use crunk_rules::component_files::ComponentFacts;
 use crunk_rules::review::{AckSignature, ReviewFacts, Subject, judge};
+use crunk_rules::scene_docs::SceneDocFacts;
 use crunk_rules::scene_files::SceneFacts;
 use crunk_rules::screen_files::ScreenFacts;
 use crunk_rules::tailwind::TailwindFacts;
@@ -41,6 +42,8 @@ pub struct Project {
     pub reviews: Option<ReviewFacts>,
     pub tokens: Option<TokenFacts>,
     pub scenes: Option<SceneFacts>,
+    // frob:ticket 01M5H30AMSB0THE4GW322D4K54
+    pub scene_docs: Option<SceneDocFacts>,
     pub screens: Option<ScreenFacts>,
     pub components: Option<ComponentFacts>,
     _dir: tempfile::TempDir,
@@ -64,6 +67,9 @@ impl CrunkHost for Project {
     }
     fn scenes(&self) -> Option<&SceneFacts> {
         self.scenes.as_ref()
+    }
+    fn scene_docs(&self) -> Option<&SceneDocFacts> {
+        self.scene_docs.as_ref()
     }
     fn screens(&self) -> Option<&ScreenFacts> {
         self.screens.as_ref()
@@ -300,6 +306,8 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
     let styles = ingest_tree(&spec, &Cache::null()).expect("ingest").styles;
     let tokens = Some(TokenFacts::load(&spec));
     let scenes = Some(SceneFacts::load(&spec));
+    // frob:ticket 01M5H30AMSB0THE4GW322D4K54
+    let scene_docs = Some(SceneDocFacts::load(&spec));
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     let screens = Some(ScreenFacts::load(&spec));
     // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
@@ -313,6 +321,7 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
         reviews,
         tokens,
         scenes,
+        scene_docs,
         screens,
         components,
         _dir: dir,

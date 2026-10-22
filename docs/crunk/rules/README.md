@@ -41,6 +41,7 @@ Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this pa
 | ORG005 | ungoverned-stylesheet | ORG | error | error | no | T0 | Flags a `.css` file under the project root but outside `css_root` that no `[org] ignore` glob covers. |
 | RADIUS001 | radius-off-scale | RADIUS | warn | warn | no | T0 | Flags a px or rem `border-radius` (or a corner longhand) that is not a step of `[scales] radii`, naming the bracketing steps and the nearest one. |
 | RESP001 | breakpoint-without-scene | RESP | error | error | no | T1 | Fires once for each `[breakpoints]` width that no scene file is solved at (a scene whose viewport width equals the breakpoint). |
+| SCENE001 | scene-property-unsupported | SCENE | error | error | no | T0 | Fires for each declaration in a scene document (a `<style>` body or an inline `style` attribute) whose property is outside the scene dialect. |
 | SIZE001 | size-off-scale | SIZE | warn | warn | no | T0 | Flags a px or rem `width`, `height`, `min-width`, `min-height` or `max-height` that is not a step of `[scales] sizes` (of `spacing` when no sizes are declared), naming the bracketing steps and the nearest one. |
 | SLOP001 | default-palette-accent | SLOP | advisory | advisory | no | T0 | Flags a palette entry or a colour literal within two deltaE_OK points of a Tailwind indigo, violet or purple 400-700 stop. |
 | SLOP003 | gradient-abuse | SLOP | advisory | advisory | no | T0 | Flags the fourth gradient background in a project, and any gradient text (`background-clip: text`). |

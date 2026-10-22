@@ -8,6 +8,7 @@ use crunk_spec::DesignSpec;
 
 use crate::component_files::ComponentFacts;
 use crate::review::ReviewFacts;
+use crate::scene_docs::SceneDocFacts;
 use crate::scene_files::SceneFacts;
 use crate::screen_files::ScreenFacts;
 use crate::tailwind::TailwindFacts;
@@ -45,6 +46,12 @@ pub trait CrunkHost {
     // frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
     /// The authored `design/scenes/*.scene.json` files, solved (the LAYOUT and RESP rules' input).
     fn scenes(&self) -> Option<&SceneFacts> {
+        None
+    }
+
+    // frob:ticket 01M5H30AMSB0THE4GW322D4K54
+    /// The authored `design/scenes/*.scene.html` files, parsed (the SCENE rules' input).
+    fn scene_docs(&self) -> Option<&SceneDocFacts> {
         None
     }
 
@@ -119,6 +126,24 @@ pub fn missing_scene_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
 /// How many solved scene files `host` carries (the LAYOUT and RESP rules' subject count).
 pub fn scene_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
     host.scenes().map_or(0, |facts| facts.files.len())
+}
+
+// frob:ticket 01M5H30AMSB0THE4GW322D4K54
+/// Why a SCENE rule cannot run on `host`, if it cannot: no valid spec, or no scene files.
+pub fn missing_scene_doc_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
+    if host.spec().is_none() {
+        return Some("no valid crunk.toml".to_owned());
+    }
+    match host.scene_docs() {
+        Some(facts) if !facts.files.is_empty() => None,
+        _ => Some("no design/scenes/*.scene.html files".to_owned()),
+    }
+}
+
+// frob:ticket 01M5H30AMSB0THE4GW322D4K54
+/// How many parsed scene files `host` carries (the SCENE rules' subject count).
+pub fn scene_doc_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
+    host.scene_docs().map_or(0, |facts| facts.files.len())
 }
 
 // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
