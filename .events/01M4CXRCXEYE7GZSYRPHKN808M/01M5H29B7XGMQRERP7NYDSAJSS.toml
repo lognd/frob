@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "spike needs Chromium and new deps; not suitable for unattended run"
+at = "2026-10-22T05:45:33Z"
+actor = "lognd"
+rev = 1

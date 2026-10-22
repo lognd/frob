@@ -2,13 +2,13 @@
 id = "01M4CXRCXEYE7GZSYRPHKN808M"
 title = "Spike: text shaping for the solver, cosmic-text against parley over bundled fonts (width agreement with Chromium, speed, determinism)"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:43Z"
-updated = "2026-10-22T05:45:22Z"
+updated = "2026-10-22T05:45:33Z"
 scope = ["changelog.d/**", "crates/crunk-layout/**", "notes/research/**"]
 
 [[acceptance]]
