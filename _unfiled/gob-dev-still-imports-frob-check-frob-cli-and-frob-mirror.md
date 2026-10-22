@@ -2,12 +2,12 @@
 id = "01M5H16QQT8R5N9162DMQE4F44"
 title = "gob-dev still imports frob-check, frob-cli and frob-mirror (remaining SYS013 layering inversion after ~M8WETW7)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:39Z"
-updated = "2026-10-22T05:26:39Z"
+updated = "2026-10-22T22:15:29Z"
 scope = ["crates/gob-dev/**"]
 
 [[acceptance]]
