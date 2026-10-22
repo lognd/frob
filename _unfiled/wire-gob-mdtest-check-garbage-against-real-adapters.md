@@ -2,12 +2,12 @@
 id = "01M5GRYE3TSB9Q1MWWZA2BMME2"
 title = "Wire gob-mdtest check_garbage against real adapters"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T03:02:18Z"
-updated = "2026-10-22T03:17:14Z"
+updated = "2026-10-22T03:17:15Z"
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
