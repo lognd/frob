@@ -1,0 +1,10 @@
+kind = "create"
+title = "GX focus: grid-axis groups and modal trap exemption"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-layout/**,crates/crunk-rules/src/rules/gx003.rs"]
+body = "found while working Q2ZC9QM: modal dialogs legitimately trap focus; grid groups need 2D neighbours."
+at = "2026-10-22T08:05:12Z"
+actor = "lognd"
+rev = 1
