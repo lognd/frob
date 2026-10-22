@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "gob-dev gen languages writes the page exactly as gob_symbols::languages_page renders it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "gen --check reports drift or a missing languages page without writing"
