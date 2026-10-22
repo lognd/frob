@@ -34,6 +34,10 @@ bound = false
 [[acceptance]]
 text = "Given a worktree dir inside the repo, when frob work creates a worktree, then git ignores it with exactly one line and an existing .gitignore entry is not duplicated"
 bound = false
+
+[[acceptance]]
+text = "Given a worktree dir that escapes the repo, when frob work runs, then no ignore line is added"
+bound = false
 +++
 
 notes/review/adoption-trial-2026-10-07.md agent ergonomics: no generator for agent config; default worktree root ../repo-wt is outside the repository, which a sandboxed agent may not write. After ~MQ1NM4Q lands, the MCP entry points at frob serve.
