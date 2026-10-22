@@ -38,6 +38,7 @@ crunk-tokens = { version = "0.532.0", path = "../crunk-tokens" }
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 # frob:ticket 01M4RN89XGXSXMSF2HV2FPSG41

@@ -167,7 +167,8 @@ fn store_path(root: &Path, cwd: &Path, store: Option<&Path>) -> PathBuf {
     store.map_or_else(|| root.join(DEFAULT_STORE), |p| absolute(cwd, p))
 }
 
-fn relative(root: &Path, path: &Path) -> String {
+/// A path relative to the project root when inside it, as text.
+pub(crate) fn relative(root: &Path, path: &Path) -> String {
     path.strip_prefix(root)
         .unwrap_or(path)
         .to_string_lossy()
