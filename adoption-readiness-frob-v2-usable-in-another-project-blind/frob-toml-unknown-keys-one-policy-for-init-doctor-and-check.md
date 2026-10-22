@@ -8,8 +8,8 @@ points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:43Z"
-updated = "2026-10-22T01:45:54Z"
-scope = ["changelog.d/**", "crates/gob-config/**", "crates/frob-worktree/**", "crates/frob/**", "crates/frob-lease/**", "crates/frob-tests/**", "docs/design/cli.md"]
+updated = "2026-10-22T01:57:03Z"
+scope = ["changelog.d/**", "crates/gob-config/**", "crates/frob-worktree/**", "crates/frob/**", "crates/frob-lease/**", "crates/frob-tests/**", "docs/design/cli.md", "crates/frob-check/**"]
 
 [[acceptance]]
 text = "Given an unknown key, when init, doctor and check run, then all three report it the same way"
