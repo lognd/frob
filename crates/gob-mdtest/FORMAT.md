@@ -4,8 +4,40 @@ A markdown file is a suite. Fenced code blocks are test cases.
 
 ## Naming
 
-`#` and `##` headings name the cases beneath them. A block is reported as
-`Heading / Subheading #N (line L)` where `L` is the fence line in the file.
+Headings of levels 1-6 form a tree; a block is reported as
+`Heading / Subheading #N (line L)` where the path joins the titles of its
+enclosing sections and `L` is the fence line in the file. A level skip
+(`#` then `###`) is allowed and just nests one level deeper.
+
+A section is a test or a group, never both: a section holding case blocks
+(`expect=`) may not have a descendant that also holds case blocks, and the
+file fails to parse with "section `X` holds cases and is also a group".
+Several `expect=` blocks directly under one heading stay separate cases.
+Empty sections are ignored.
+
+### Multi-file cases
+
+Under a section holding exactly one case block, further fences with
+`file=NAME` (and optionally `fidelity=` / `parse=`) become extra files of
+that case, in any language; each file keeps its own markers. A fence without
+`file=` and without `expect=` in the same language as the case block is
+appended to (or, if it comes first, prepended to) the case text. A `file=`
+block with no case block, under a section with several case blocks, or with a
+repeated name is a parse error. `Case.files` lists every file (index 0 is the
+case block); a runner writes them all and calls `Case::attribute` so finding
+spans point at the right file.
+
+### Section config
+
+A fenced `toml` block without `expect=` or `file=` configures its section and
+all descendants: tables merge from root to leaf, the child overriding the
+parent, and the case's own `config=` wins last. The merged table (minus the
+`[mdtest]` table) is passed to the runner as `Case.config`. Invalid toml is a
+parse error at the fence line.
+
+`[mdtest] languages = ["rust", "python"]` selects the matrix cells a case in
+that section runs against (see Language matrix); other `[mdtest]` keys or
+unknown languages are parse errors.
 
 ## Suite header
 

@@ -6,6 +6,8 @@
 //!
 //! - info string: `lang rule=ID expect=fire|clean|unresolved|notapplicable [reason=R]
 //!   [subjects=N|subjects>=N] [config="toml"] [file=name]`
+//! - headings form a tree: a section is a test or a group, never both; `file=` blocks add files to
+//!   a case, `toml` blocks configure a section and its descendants (child overrides parent)
 //! - suite default rule: `<!-- mdtest: rule=ID -->`
 //! - markers `// error: [COL] ID "substring"` (also `warn`, `advisory`,
 //!   `unresolved[REASON]`; column, rule and message optional; a bare `error:`
@@ -42,11 +44,12 @@ pub mod garbage;
 pub mod matrix;
 mod parse;
 mod run;
+mod section;
 
-pub use parse::{Block, Expect, Marker, ParseError, Subjects, parse_suite};
+pub use parse::{Block, BlockFile, Expect, Marker, ParseError, Subjects, parse_suite};
 pub use run::{
-    Case, CaseOutput, CaseReport, CaseResult, FileReport, Missing, MissingControl, Report, Runner,
-    run_dir, run_file,
+    Case, CaseFile, CaseOutput, CaseReport, CaseResult, FileReport, Missing, MissingControl,
+    Report, Runner, run_dir, run_file,
 };
 
 /// Crate manifest directory: the run-time `CARGO_MANIFEST_DIR` cargo sets, else `compile_time`.

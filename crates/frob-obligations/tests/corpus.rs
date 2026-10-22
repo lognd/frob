@@ -6,9 +6,6 @@ use frob_obligations::InvariantsConfig;
 use gob_mdtest::Case;
 use gob_rules::RuleReport;
 
-/// Files every case tree gets, so links and imports have something to resolve to.
-const SIDE_FILES: &[(&str, &str)] = &[("exists.md", "# Present heading\n")];
-
 // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
 /// The tool stage `EXC017` blocks run against: three tool ids bound to frob rules.
 const TOOL_STAGE: &str = "\n[[check.tool]]\nname = \"lint\"\ncommand = \"lint\"\nargs = []\nid_map = { \"clippy::unwrap_used\" = \"COV001\", \"unpinned-uses\" = \"CI001\" }\n";
@@ -38,7 +35,14 @@ fn runner(case: &Case) -> RuleReport {
         .replace("{{PAST}}", &day(-1))
         .replace("{{TODAY}}", &day(0))
         .replace("{{FUTURE}}", &day(1));
-    common::write_tree(dir.path(), SIDE_FILES);
+    // frob:ticket 01M48PC09SX0KFAM4B3V88AAXW
+    // Extra `file=` blocks of the case become sibling files of the primary one.
+    for extra in case.files.iter().skip(1) {
+        common::write_tree(
+            dir.path(),
+            &[(extra.file_name.as_str(), extra.text.as_str())],
+        );
+    }
     common::write_tree(dir.path(), &[(case.file_name.as_str(), text.as_str())]);
     let tools = if case.rule.as_str() == "EXC017" {
         TOOL_STAGE
@@ -56,7 +60,9 @@ fn runner(case: &Case) -> RuleReport {
         unity_tree(dir.path(), case, &text);
     }
     let config = InvariantsConfig::load(dir.path()).expect("config");
-    let findings = common::evaluate_tree(dir.path(), Some(&fixture.ledger), &config, None).findings;
+    let mut eval = common::evaluate_tree(dir.path(), Some(&fixture.ledger), &config, None);
+    case.attribute(&mut eval.findings, |id| eval.files.path(id));
+    let findings = eval.findings;
     if gob_check::is_binary(&case.file_name, text.as_bytes()) {
         // A binary artifact holds no text: the per-file rules report NotApplicable, never a finding.
         assert!(findings.is_empty(), "binary artifact produced findings");

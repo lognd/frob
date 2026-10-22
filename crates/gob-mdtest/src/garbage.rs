@@ -126,6 +126,13 @@ fn probe_cell<R: CaseOutput, F: Fn(&Case) -> R>(
         rule: rule.clone(),
         rules: Vec::new(),
         config: None,
+        files: vec![crate::run::CaseFile {
+            language: probe.language.to_owned(),
+            file_name: probe.file_name.to_owned(),
+            text: probe.text.to_owned(),
+            fidelity: None,
+            parse: None,
+        }],
     };
     let result = runner
         .evaluate(&case)

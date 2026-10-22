@@ -168,25 +168,24 @@ pub fn analyze_matrix(
     let mut filled: BTreeSet<(&str, &str)> = BTreeSet::new();
     let mut groups: BTreeMap<(&str, &str), Vec<(&Block, &str)>> = BTreeMap::new();
     for b in blocks {
-        let Some(cell) = b.cell.as_deref() else {
-            continue;
-        };
         let rule = b.rule.as_str();
         if !universal.contains(rule) {
             continue;
         }
-        filled.insert((rule, cell));
-        match derive(rule, cell) {
-            Some(d) if !d.admits(b.expect) => report.contradictions.push(format!(
-                "{rule} cell={cell} expects {} but the capability matrix derives {d} ({})",
-                b.expect, b.name
-            )),
-            Some(Derived::Examine) => {
-                if let Some(p) = b.parity.as_deref() {
-                    groups.entry((rule, p)).or_default().push((b, cell));
+        for cell in b.matrix_cells() {
+            filled.insert((rule, cell));
+            match derive(rule, cell) {
+                Some(d) if !d.admits(b.expect) => report.contradictions.push(format!(
+                    "{rule} cell={cell} expects {} but the capability matrix derives {d} ({})",
+                    b.expect, b.name
+                )),
+                Some(Derived::Examine) => {
+                    if let Some(p) = b.parity.as_deref() {
+                        groups.entry((rule, p)).or_default().push((b, cell));
+                    }
                 }
+                _ => {}
             }
-            _ => {}
         }
     }
     for ((rule, name), members) in &groups {

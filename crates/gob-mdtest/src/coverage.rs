@@ -325,7 +325,7 @@ pub fn scan_corpus(root: &Path) -> Corpus {
                         let id = b.rule.as_str().to_owned();
                         match b.expect {
                             Expect::Fire => {
-                                if b.cell.as_deref() == Some(OPAQUE_CELL) {
+                                if b.matrix_cells().contains(&OPAQUE_CELL) {
                                     corpus.opaque_fire.insert(id.clone());
                                 }
                                 corpus.fire.entry(id).or_default().insert(path.to_owned());

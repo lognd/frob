@@ -25,8 +25,52 @@ pub struct Case {
     pub rule: RuleId,
     /// Extra rules the case selects (`rules=`); findings of these must be marked.
     pub rules: Vec<RuleId>,
-    /// Inline TOML config, if any.
+    /// Effective TOML config (inherited section config merged with inline `config=`), if any.
     pub config: Option<String>,
+    /// Every file of the case: index 0 is the case block itself, then its `file=` blocks in
+    /// document order. A finding belongs to `files[i]` when its span's `FileId::index()` is `i`;
+    /// a spanless finding or an out-of-range index belongs to file 0.
+    pub files: Vec<CaseFile>,
+}
+
+// frob:ticket 01M48PC09SX0KFAM4B3V88AAXW
+impl Case {
+    /// Re-point every finding's span at the position of its file in [`Case::files`].
+    ///
+    /// `path_of` names the file a runner-side `FileId` refers to; a path that matches no
+    /// `files[i].file_name` is left to the harness, which attributes it to file 0.
+    pub fn attribute<'a>(
+        &self,
+        findings: &mut [Finding],
+        path_of: impl Fn(gob_text::FileId) -> Option<&'a str>,
+    ) {
+        let mut ids = gob_text::FileInterner::new();
+        for f in &self.files {
+            ids.intern(&f.file_name);
+        }
+        for f in findings {
+            if let Some(span) = f.span.as_mut()
+                && let Some(p) = path_of(span.file)
+            {
+                span.file = ids.intern(p);
+            }
+        }
+    }
+}
+
+/// One file of a multi-file [`Case`].
+#[derive(Debug, Clone)]
+pub struct CaseFile {
+    /// Fence language of the file.
+    pub language: String,
+    /// Virtual file name.
+    pub file_name: String,
+    /// File text; finding offsets are relative to it.
+    pub text: String,
+    /// `fidelity=` of the file, if given.
+    pub fidelity: Option<String>,
+    /// `parse=` of the file, if given.
+    pub parse: Option<String>,
 }
 
 /// Which positive control is absent.
@@ -188,7 +232,9 @@ impl<R: CaseOutput, F: Fn(&Case) -> R> Runner<F> {
 /// What one finding looks like in block-relative terms (line 0 when spanless).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct Actual {
-    /// 1-based block line.
+    /// Position in the case's files the finding belongs to.
+    file: usize,
+    /// 1-based line within that file.
     line: u32,
     /// Rule of the finding.
     rule: RuleId,
@@ -235,7 +281,8 @@ impl Actual {
 
     /// True when this finding satisfies every constraint the marker states.
     fn satisfies(&self, m: &Marker) -> bool {
-        self.line == m.line
+        self.file == m.file
+            && self.line == m.line
             && self.rule == m.rule
             && self.severity == m.severity
             && m.col.is_none_or(|c| c == self.col)
@@ -247,14 +294,25 @@ impl Actual {
     }
 }
 
-/// Convert findings to block-relative, sorted [`Actual`]s.
-fn actuals(text: &str, findings: &[Finding]) -> Vec<Actual> {
-    let idx = LineIndex::new(text).ok();
+/// Convert findings to file-relative, sorted [`Actual`]s.
+fn actuals(block: &Block, findings: &[Finding]) -> Vec<Actual> {
+    let texts: Vec<&str> = std::iter::once(block.text.as_str())
+        .chain(block.files.iter().map(|f| f.text.as_str()))
+        .collect();
+    let idx: Vec<Option<LineIndex>> = texts.iter().map(|t| LineIndex::new(t).ok()).collect();
     let mut out: Vec<Actual> = findings
         .iter()
         .map(|f| {
-            let lc = f.span.and_then(|s| idx.as_ref()?.line_col(s.range.start()));
+            let file = f
+                .span
+                .map(|s| s.file.index() as usize)
+                .filter(|i| *i < texts.len())
+                .unwrap_or(0);
+            let lc = f
+                .span
+                .and_then(|s| idx[file].as_ref()?.line_col(s.range.start()));
             Actual {
+                file,
                 line: lc.map_or(0, |lc| lc.line),
                 rule: f.rule.clone(),
                 severity: f.severity,
@@ -434,7 +492,7 @@ fn check(block: &Block, res: &CaseResult) -> Result<(), String> {
         })
         .cloned()
         .collect();
-    let actual = actuals(&block.text, &mine);
+    let actual = actuals(block, &mine);
     let unexpected = || diff(&[], &[], &actual.iter().collect::<Vec<_>>());
     if let (Some(why), false) = (&res.not_applicable, block.expect == Expect::NotApplicable) {
         return Err(format!(
@@ -718,6 +776,21 @@ pub fn run_file<R: CaseOutput, F: Fn(&Case) -> R>(path: &Path, runner: &Runner<F
             rule: b.rule.clone(),
             rules: b.rules.clone(),
             config: b.config.clone(),
+            files: std::iter::once(CaseFile {
+                language: b.language.clone(),
+                file_name: b.file_name.clone(),
+                text: b.text.clone(),
+                fidelity: b.fidelity.clone(),
+                parse: b.parse.clone(),
+            })
+            .chain(b.files.iter().map(|f| CaseFile {
+                language: f.language.clone(),
+                file_name: f.file_name.clone(),
+                text: f.text.clone(),
+                fidelity: f.fidelity.clone(),
+                parse: f.parse.clone(),
+            }))
+            .collect(),
         };
         let outcome = run_case(path, b, &case, runner);
         tracing::debug!(case = %b.name, ok = outcome.is_ok(), "mdtest case");

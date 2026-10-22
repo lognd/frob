@@ -4,6 +4,8 @@ use std::collections::BTreeMap;
 
 use gob_rules::{RuleId, Severity};
 
+use crate::section::Tree;
+
 /// The outcome class a block expects (testing.md section 1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Expect {
@@ -60,7 +62,9 @@ impl std::fmt::Display for Expect {
 /// A finding asserted by an inline marker comment.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Marker {
-    /// 1-based line within the block.
+    /// Position in the case's files of the file the marker sits in (0 = the case block).
+    pub file: usize,
+    /// 1-based line within that file.
     pub line: u32,
     /// Rule named by the marker.
     pub rule: RuleId,
@@ -76,11 +80,32 @@ pub struct Marker {
     pub required: bool,
 }
 
-/// One parsed fenced block, before it is handed to the runner.
+/// An extra file of a case: a fence with `file=` and no `expect=` in the case's section.
+#[derive(Debug, Clone)]
+pub struct BlockFile {
+    /// Virtual file name (`file=`).
+    pub file_name: String,
+    /// Fence language (first info token).
+    pub language: String,
+    /// File body text.
+    pub text: String,
+    /// `fidelity=F0..F4` for this file's language.
+    pub fidelity: Option<String>,
+    /// `parse=ok|partial|failed` for this file.
+    pub parse: Option<String>,
+}
+
+/// One parsed case, before it is handed to the runner.
 #[derive(Debug, Clone)]
 pub struct Block {
     /// Heading path plus ordinal, for reports.
     pub name: String,
+    /// Heading path of the section the case lives in (titles joined by ` / `).
+    pub section: String,
+    /// Extra files of the case, in document order (the block itself is not listed).
+    pub files: Vec<BlockFile>,
+    /// `[mdtest] languages` from the section config: extra matrix cells the case fills.
+    pub languages: Vec<String>,
     /// 1-based line of the opening fence in the markdown file.
     pub fence_line: usize,
     /// Block language (first info token).
@@ -111,9 +136,9 @@ pub struct Block {
     pub fixed: bool,
     /// `rules=A,B`: extra rules the case selects beyond the block rule and marker rules.
     pub rules: Vec<RuleId>,
-    /// Optional inline TOML config.
+    /// Effective TOML config: inherited section config merged with any inline `config=`.
     pub config: Option<String>,
-    /// Inline marker expectations.
+    /// Marker expectations of every file of the case.
     pub markers: Vec<Marker>,
     /// True when the `snapshot-diagnostics` suite header was in force.
     pub snapshot: bool,
@@ -266,6 +291,7 @@ fn parse_tail(tail: &str, default_rule: &RuleId, hit: Hit) -> Result<Marker, Str
         None => None,
     };
     Ok(Marker {
+        file: 0,
         line: 0,
         rule,
         severity: hit.severity,
@@ -325,17 +351,63 @@ fn markers(text: &str, line_err: usize, default_rule: &RuleId) -> Result<Vec<Mar
     Ok(out)
 }
 
+impl Block {
+    /// Every matrix cell the case fills: `cell=` plus the section's `[mdtest] languages`.
+    #[must_use]
+    pub fn matrix_cells(&self) -> Vec<&str> {
+        let mut out: Vec<&str> = self.cell.as_deref().into_iter().collect();
+        for l in &self.languages {
+            if !out.contains(&l.as_str()) {
+                out.push(l.as_str());
+            }
+        }
+        out
+    }
+}
+
+/// A fence without `expect=` that is part of a case: an extra file or a same-language continuation.
+struct Extra {
+    /// Section the fence sits in.
+    section: usize,
+    /// 1-based fence line.
+    line: usize,
+    /// Fence language.
+    language: String,
+    /// `file=` name; `None` for a continuation that merges into the case block.
+    file: Option<String>,
+    /// `fidelity=` value.
+    fidelity: Option<String>,
+    /// `parse=` value.
+    parse: Option<String>,
+    /// Fence body.
+    body: String,
+}
+
+/// Option keys an extra file may carry.
+const EXTRA_KEYS: [&str; 3] = ["file", "fidelity", "parse"];
+
+// frob:ticket 01M48PC09SX0KFAM4B3V88AAXW
 /// Parse a markdown suite into blocks.
+///
+/// Headings of any level form a tree; a section is a test (it holds case blocks) or a group
+/// (only its descendants do), never both. A fence with `expect=` is a case block. A fence with
+/// `file=` and no `expect=` is an extra file of the single case in its section; a same-language
+/// fence with neither merges into that case's text in document order. A `toml` fence with no
+/// `expect=` configures its section and descendants, a child overriding its parent.
 ///
 /// # Errors
 ///
 /// Returns [`ParseError`] for a malformed info string, missing `rule` or
-/// `expect`, an unterminated fence, or markers inside a clean or notapplicable block.
+/// `expect`, an unterminated fence, markers inside a clean or notapplicable block, a section
+/// that is both test and group, a duplicate `file=` name, an extra file without exactly one
+/// case in its section, or invalid toml config.
 #[allow(clippy::too_many_lines)] // one linear pass over the fences; splitting hides the state machine
 pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
-    let mut blocks = Vec::new();
-    let mut h1 = String::new();
-    let mut h2 = String::new();
+    let mut blocks: Vec<Block> = Vec::new();
+    let mut sections: Vec<usize> = Vec::new();
+    let mut inline: Vec<Option<String>> = Vec::new();
+    let mut extras: Vec<Extra> = Vec::new();
+    let mut tree = Tree::new();
     let mut default_rule: Option<RuleId> = None;
     let mut snapshot = false;
     let mut pending_panic: Option<(usize, String)> = None;
@@ -344,15 +416,17 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
         let t = line.trim_start();
         let fence = ["```", "~~~"].into_iter().find(|f| t.starts_with(f));
         let Some(fence) = fence else {
-            parse_outside(
-                line,
-                &mut h1,
-                &mut h2,
-                &mut default_rule,
-                &mut snapshot,
-                &mut pending_panic,
-                i + 1,
-            )?;
+            if let Some((level, title)) = heading(line) {
+                tree.open(level, title);
+            } else {
+                parse_outside(
+                    line,
+                    &mut default_rule,
+                    &mut snapshot,
+                    &mut pending_panic,
+                    i + 1,
+                )?;
+            }
             continue;
         };
         let ticks = t.chars().take_while(|c| fence.starts_with(*c)).count();
@@ -372,13 +446,38 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             .skip(1)
             .filter_map(|t| t.split_once('='))
             .collect();
-        // Blocks without `expect` are plain documentation, not cases.
-        let Some(expect) = opts.get("expect") else {
-            continue;
-        };
         let err = |m: String| ParseError {
             line: fence_line,
             message: m,
+        };
+        let section = tree.current();
+        // Blocks without `expect` are config, extra files or plain documentation, not cases.
+        let Some(expect) = opts.get("expect") else {
+            if language == "toml" && !opts.contains_key("file") {
+                let table: toml::Table = body
+                    .parse()
+                    .map_err(|e| err(format!("toml config fence is not valid toml: {e}")))?;
+                tree.add_toml(section, fence_line, table)?;
+            } else {
+                if let Some(bad) = opts
+                    .keys()
+                    .find(|k| opts.contains_key("file") && !EXTRA_KEYS.contains(k))
+                {
+                    return Err(err(format!(
+                        "extra file blocks accept only file=, fidelity= and parse=, got `{bad}=`"
+                    )));
+                }
+                extras.push(Extra {
+                    section,
+                    line: fence_line,
+                    language,
+                    file: opts.get("file").map(|f| (*f).to_owned()),
+                    fidelity: opts.get("fidelity").map(|t| (*t).to_owned()),
+                    parse: opts.get("parse").map(|t| (*t).to_owned()),
+                    body,
+                });
+            }
+            continue;
         };
         let expect = match *expect {
             "fire" => Expect::Fire,
@@ -399,18 +498,26 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
                 .clone()
                 .ok_or_else(|| err("no rule=ID and no suite default".into()))?,
         };
-        let marks = markers(&body, fence_line, &rule)?;
-        if matches!(expect, Expect::Clean | Expect::NotApplicable) && !marks.is_empty() {
-            return Err(err(format!("expect={expect} block must not carry markers")));
-        }
         let file_name = opts.get("file").map_or_else(
             || format!("case.{}", extension(&language)),
             |f| (*f).to_owned(),
         );
-        let name = format!("{h1} / {h2} #{} (line {fence_line})", blocks.len() + 1);
+        let name = format!(
+            "{} #{} (line {fence_line})",
+            tree.path(section),
+            blocks.len() + 1
+        );
+        tree.add_head(section, fence_line);
+        sections.push(section);
+        inline.push(opts.get("config").map(|c| (*c).to_owned()));
         blocks.push(Block {
             name,
+            section: tree.path(section),
+            files: Vec::new(),
+            languages: Vec::new(),
             fence_line,
+            fidelity: opts.get("fidelity").map(|t| (*t).to_owned()),
+            parse: opts.get("parse").map(|t| (*t).to_owned()),
             language,
             file_name,
             text: body,
@@ -418,15 +525,13 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             expect,
             reason,
             subjects,
-            fidelity: opts.get("fidelity").map(|t| (*t).to_owned()),
-            parse: opts.get("parse").map(|t| (*t).to_owned()),
             cell: cell_of(&opts).map_err(&err)?,
             parity: opts.get("parity").map(|t| (*t).to_owned()),
             known_gap,
             fixed,
             rules: selected_rules(opts.get("rules").copied()).map_err(&err)?,
-            config: opts.get("config").map(|c| (*c).to_owned()),
-            markers: marks,
+            config: None,
+            markers: Vec::new(),
             snapshot,
             expect_panic: pending_panic.take().map(|(_, sub)| sub),
         });
@@ -437,7 +542,99 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             message: "expect-panic directive is not followed by a case block".into(),
         });
     }
+    tree.check_groups()?;
+    attach_extras(&mut blocks, &sections, extras)?;
+    for (b, (section, raw)) in blocks.iter_mut().zip(sections.iter().zip(&inline)) {
+        let err = |message: String| ParseError {
+            line: b.fence_line,
+            message,
+        };
+        let settings = tree.settings(*section, raw.as_deref()).map_err(&err)?;
+        b.config = settings.config;
+        b.languages = settings.languages;
+        finish_markers(b)?;
+    }
+    tracing::debug!(cases = blocks.len(), "suite parsed");
     Ok(blocks)
+}
+
+/// A markdown heading line: its level (1..=6) and title.
+fn heading(line: &str) -> Option<(usize, &str)> {
+    let hashes = line.chars().take_while(|c| *c == '#').count();
+    if !(1..=6).contains(&hashes) {
+        return None;
+    }
+    line[hashes..].strip_prefix(' ').map(|t| (hashes, t.trim()))
+}
+
+/// Hand each section's extra files and continuations to its single case block.
+fn attach_extras(
+    blocks: &mut [Block],
+    sections: &[usize],
+    extras: Vec<Extra>,
+) -> Result<(), ParseError> {
+    for ex in extras {
+        let heads: Vec<usize> = (0..blocks.len())
+            .filter(|&i| sections[i] == ex.section)
+            .collect();
+        let err = |m: String| ParseError {
+            line: ex.line,
+            message: m,
+        };
+        let [head] = heads[..] else {
+            if ex.file.is_none() {
+                continue; // documentation fence
+            }
+            return Err(err(if heads.is_empty() {
+                "file= block has no case block (expect=) in its section".into()
+            } else {
+                "file= block is ambiguous: its section holds several case blocks".into()
+            }));
+        };
+        let b = &mut blocks[head];
+        let Some(file_name) = ex.file else {
+            if ex.language == b.language {
+                if ex.line < b.fence_line {
+                    b.text.insert_str(0, &ex.body);
+                } else {
+                    b.text.push_str(&ex.body);
+                }
+            }
+            continue;
+        };
+        if file_name == b.file_name || b.files.iter().any(|f| f.file_name == file_name) {
+            return Err(err(format!(
+                "duplicate file= name `{file_name}` in one case"
+            )));
+        }
+        b.files.push(BlockFile {
+            file_name,
+            language: ex.language,
+            text: ex.body,
+            fidelity: ex.fidelity,
+            parse: ex.parse,
+        });
+    }
+    Ok(())
+}
+
+/// Parse the markers of every file of `b` and apply the clean/notapplicable restriction.
+fn finish_markers(b: &mut Block) -> Result<(), ParseError> {
+    let mut marks = markers(&b.text, b.fence_line, &b.rule)?;
+    for (n, f) in b.files.iter().enumerate() {
+        for mut m in markers(&f.text, b.fence_line, &b.rule)? {
+            m.file = n + 1;
+            marks.push(m);
+        }
+    }
+    if matches!(b.expect, Expect::Clean | Expect::NotApplicable) && !marks.is_empty() {
+        return Err(ParseError {
+            line: b.fence_line,
+            message: format!("expect={} block must not carry markers", b.expect),
+        });
+    }
+    b.markers = marks;
+    Ok(())
 }
 
 /// The `cell=` key, checked against the closed matrix cell list.
@@ -543,11 +740,9 @@ fn expect_panic_of(line: &str) -> Option<&str> {
     rest.strip_prefix(':').map(str::trim)
 }
 
-/// Handle a non-fence line: headings, the suite header comment and the expect-panic directive.
+/// Handle a non-fence, non-heading line: the suite header comment and the expect-panic directive.
 fn parse_outside(
     line: &str,
-    h1: &mut String,
-    h2: &mut String,
     default_rule: &mut Option<RuleId>,
     snapshot: &mut bool,
     pending_panic: &mut Option<(usize, String)>,
@@ -564,11 +759,6 @@ fn parse_outside(
         }
         tracing::debug!(line = n, substring = sub, "expect-panic directive");
         *pending_panic = Some((n, sub.to_owned()));
-    } else if let Some(h) = line.strip_prefix("## ") {
-        h.trim().clone_into(h2);
-    } else if let Some(h) = line.strip_prefix("# ") {
-        h.trim().clone_into(h1);
-        h2.clear();
     } else if line.trim() == "<!-- snapshot-diagnostics -->" {
         tracing::debug!(line = n, "snapshot-diagnostics header");
         *snapshot = true;
