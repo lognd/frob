@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a scene using an unsupported CSS property, when crunk check runs, then SCENE001 fires from the rule host naming it"]
+moved = []
+at = "2026-10-22T06:03:25Z"
+actor = "lognd"
+rev = 1
