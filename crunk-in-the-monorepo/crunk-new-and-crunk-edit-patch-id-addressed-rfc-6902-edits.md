@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-08T04:53:41Z"
-updated = "2026-10-22T07:15:14Z"
-scope = ["changelog.d/**", "crates/crunk/**", "crates/crunk-spec/**"]
+updated = "2026-10-22T07:26:23Z"
+scope = ["changelog.d/**", "crates/crunk/**", "crates/crunk-spec/**", "docs/crunk/README.md"]
 
 [[acceptance]]
 text = "Given an edit patch, when applied, then the file changes atomically, an invalid patch is refused with the schema error, and the output lists findings for the touched ids only"
