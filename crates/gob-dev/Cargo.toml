@@ -20,6 +20,7 @@ path = "src/main.rs"
 [dependencies]
 gob-time = { version = "0.532.0", path = "../gob-time" }
 clap = { version = "4", features = ["derive"] }
+crunk = { path = "../crunk" }
 crunk-check = { path = "../crunk-check" }
 crunk-spec = { path = "../crunk-spec" }
 frob-check = { path = "../frob-check" }
@@ -37,6 +38,7 @@ gob-plan = { path = "../gob-plan" }
 gob-mdtest = { path = "../gob-mdtest" }
 gob-rules = { path = "../gob-rules" }
 gob-symbols = { path = "../gob-symbols" }
+grimble = { path = "../grimble" }
 grimble-check = { path = "../grimble-check" }
 jiff = "0.2"
 serde = { version = "1", features = ["derive"] }
@@ -48,10 +50,6 @@ toml = "1"
 tracing = "0.1"
 
 [dev-dependencies]
-# Only tests/profile_coverage.rs reads the product command trees (Cli::verb_flags); linking the
-# product crates into the tool itself would add their verbs to the generated CLI reference.
-crunk = { path = "../crunk" }
-grimble = { path = "../grimble" }
 gob-testsupport = { path = "../gob-testsupport" }
 serde_yaml_ng = "0.10"
 

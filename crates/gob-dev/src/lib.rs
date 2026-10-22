@@ -64,6 +64,14 @@ pub fn link_inventories() {
     let verbs = frob_cli::cli();
     tracing::debug!(product = frob_cli::PRODUCT, "frob cli linked");
     drop(verbs);
+    // frob:ticket 01M4CXTR91E8Y8Y52B5ARDPKKS
+    // Linked so their commands reach the inventory and the CLI reference gets a page per product.
+    drop((grimble::cli(), crunk::cli()));
+    tracing::debug!(
+        grimble = grimble::PRODUCT,
+        crunk = crunk::PRODUCT,
+        "grimble and crunk clis linked"
+    );
     tracing::debug!(
         tables = crunk_spec::OWN_TABLES.len(),
         "crunk spec linked (anchor only; its artifacts come from the registry)"
