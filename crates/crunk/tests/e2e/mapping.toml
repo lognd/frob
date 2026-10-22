@@ -1,0 +1,870 @@
+# Mapping from every captured Python test to its Rust counterpart.
+# node    : the pytest node id (e2e) or the test file (INT; the bodies are not in this repo)
+# ids     : the E2E-NN / INT-NN ids the index lists it under
+# rust    : the Rust test fn that replaces it (searched in tests/e2e/main.rs and tests/int/main.rs)
+# dropped : instead of `rust`, the reason the test has no Rust counterpart
+# The audit test fails on any unmapped node, any `rust` fn that no longer exists, and any empty reason.
+
+[[row]]
+node = "tests/system/test_e2e_01_init.py::test_init_default_preset_then_check_clean"
+ids = ["E2E-01"]
+scenario = "e2e_01_init/init_default_preset_then_check_clean"
+rust = "e2e_01_init_init_default_preset_then_check_clean"
+
+[[row]]
+node = "tests/system/test_e2e_01_init.py::test_init_mono_preset_then_check_clean"
+ids = ["E2E-01"]
+scenario = "e2e_01_init/init_mono_preset_then_check_clean"
+rust = "e2e_01_init_init_mono_preset_then_check_clean"
+
+[[row]]
+node = "tests/system/test_e2e_01_init.py::test_reinit_without_force_exits_2"
+ids = ["E2E-01"]
+scenario = "e2e_01_init/reinit_without_force_exits_2"
+rust = "e2e_01_init_reinit_without_force_exits_2"
+
+[[row]]
+node = "tests/system/test_e2e_01_init.py::test_reinit_with_force_exits_0"
+ids = ["E2E-01"]
+scenario = "e2e_01_init/reinit_with_force_exits_0"
+rust = "e2e_01_init_reinit_with_force_exits_0"
+
+[[row]]
+node = "tests/system/test_e2e_02_color.py::test_near_accent_color_flagged_and_fixed"
+ids = ["E2E-02"]
+scenario = "e2e_02_color/near_accent_color_flagged_and_fixed"
+rust = "e2e_02_color_near_accent_color_flagged_and_fixed"
+
+[[row]]
+node = "tests/system/test_e2e_03_spacing.py::test_space001_warns_by_default_then_errors_when_releveled"
+ids = ["E2E-03"]
+scenario = "e2e_03_spacing/space001_warns_by_default_then_errors_when_releveled"
+rust = "e2e_03_spacing_space001_warns_by_default_then_errors_when_releveled"
+
+[[row]]
+node = "tests/system/test_e2e_03_spacing.py::test_fix_snaps_near_value_leaves_far_value"
+ids = ["E2E-03"]
+scenario = "e2e_03_spacing/fix_snaps_near_value_leaves_far_value"
+rust = "e2e_03_spacing_fix_snaps_near_value_leaves_far_value"
+
+[[row]]
+node = "tests/system/test_e2e_04_org.py::test_stray_file_is_org001"
+ids = ["E2E-04"]
+scenario = "e2e_04_org/stray_file_is_org001"
+rust = "e2e_04_org_stray_file_is_org001"
+
+[[row]]
+node = "tests/system/test_e2e_04_org.py::test_bad_case_and_missing_prefix_are_org002_and_org003"
+ids = ["E2E-04"]
+scenario = "e2e_04_org/bad_case_and_missing_prefix_are_org002_and_org003"
+rust = "e2e_04_org_bad_case_and_missing_prefix_are_org002_and_org003"
+
+[[row]]
+node = "tests/system/test_e2e_05_tokens.py::test_edit_accent_drifts_then_regenerates_tokens"
+ids = ["E2E-05"]
+scenario = "e2e_05_tokens/edit_accent_drifts_then_regenerates_tokens"
+rust = "e2e_05_tokens_edit_accent_drifts_then_regenerates_tokens"
+
+[[row]]
+node = "tests/system/test_e2e_06_waiver.py::test_waiver_with_reason_silences_and_counts_waived"
+ids = ["E2E-06"]
+scenario = "e2e_06_waiver/waiver_with_reason_silences_and_counts_waived"
+rust = "e2e_06_waiver_waiver_with_reason_silences_and_counts_waived"
+
+[[row]]
+node = "tests/system/test_e2e_06_waiver.py::test_waiver_without_reason_is_waive001"
+ids = ["E2E-06"]
+scenario = "e2e_06_waiver/waiver_without_reason_is_waive001"
+rust = "e2e_06_waiver_waiver_without_reason_is_waive001"
+
+[[row]]
+node = "tests/system/test_e2e_07_json_exit_codes.py::test_json_clean_tree_exits_0_and_parses"
+ids = ["E2E-07"]
+scenario = "e2e_07_json_exit_codes/json_clean_tree_exits_0_and_parses"
+rust = "e2e_07_json_exit_codes_json_clean_tree_exits_0_and_parses"
+
+[[row]]
+node = "tests/system/test_e2e_07_json_exit_codes.py::test_json_violating_tree_exits_1_with_rule_path_line"
+ids = ["E2E-07"]
+scenario = "e2e_07_json_exit_codes/json_violating_tree_exits_1_with_rule_path_line"
+rust = "e2e_07_json_exit_codes_json_violating_tree_exits_1_with_rule_path_line"
+
+[[row]]
+node = "tests/system/test_e2e_07_json_exit_codes.py::test_corrupt_crunk_toml_exits_2"
+ids = ["E2E-07"]
+scenario = "e2e_07_json_exit_codes/corrupt_crunk_toml_exits_2"
+rust = "e2e_07_json_exit_codes_corrupt_crunk_toml_exits_2"
+
+[[row]]
+node = "tests/system/test_e2e_08_contrast.py::test_low_contrast_role_pair_is_contrast001_with_ratio"
+ids = ["E2E-08"]
+scenario = "e2e_08_contrast/low_contrast_role_pair_is_contrast001_with_ratio"
+rust = "e2e_08_contrast_low_contrast_role_pair_is_contrast001_with_ratio"
+
+[[row]]
+node = "tests/system/test_e2e_09_map.py::test_map_text_lists_component_and_flags_stray"
+ids = ["E2E-09"]
+scenario = "e2e_09_map/map_text_lists_component_and_flags_stray"
+rust = "e2e_09_map_map_text_lists_component_and_flags_stray"
+
+[[row]]
+node = "tests/system/test_e2e_09_map.py::test_map_json_round_trips_pinned_shape"
+ids = ["E2E-09"]
+scenario = "e2e_09_map/map_json_round_trips_pinned_shape"
+rust = "e2e_09_map_map_json_round_trips_pinned_shape"
+
+[[row]]
+node = "tests/system/test_e2e_10_alpha.py::test_exact_rgb_translucent_literal_passes_untouched"
+ids = ["E2E-10"]
+scenario = "e2e_10_alpha/exact_rgb_translucent_literal_passes_untouched"
+rust = "e2e_10_alpha_exact_rgb_translucent_literal_passes_untouched"
+
+[[row]]
+node = "tests/system/test_e2e_10_alpha.py::test_near_translucent_literal_fixes_to_color_mix_preserving_alpha"
+ids = ["E2E-10"]
+scenario = "e2e_10_alpha/near_translucent_literal_fixes_to_color_mix_preserving_alpha"
+rust = "e2e_10_alpha_near_translucent_literal_fixes_to_color_mix_preserving_alpha"
+
+[[row]]
+node = "tests/system/test_e2e_10_alpha.py::test_far_translucent_literal_reported_not_fixed"
+ids = ["E2E-10"]
+scenario = "e2e_10_alpha/far_translucent_literal_reported_not_fixed"
+rust = "e2e_10_alpha_far_translucent_literal_reported_not_fixed"
+
+[[row]]
+node = "tests/system/test_e2e_11_stacks.py::test_declared_stacks_pass_check_and_export_tokens"
+ids = ["E2E-11"]
+scenario = "e2e_11_stacks/declared_stacks_pass_check_and_export_tokens"
+rust = "e2e_11_stacks_declared_stacks_pass_check_and_export_tokens"
+
+[[row]]
+node = "tests/system/test_e2e_12_ungoverned.py::test_outside_css_flagged_as_org005"
+ids = ["E2E-12"]
+scenario = "e2e_12_ungoverned/outside_css_flagged_as_org005"
+rust = "e2e_12_ungoverned_outside_css_flagged_as_org005"
+
+[[row]]
+node = "tests/system/test_e2e_12_ungoverned.py::test_org_ignore_glob_silences_exactly_it"
+ids = ["E2E-12"]
+scenario = "e2e_12_ungoverned/org_ignore_glob_silences_exactly_it"
+rust = "e2e_12_ungoverned_org_ignore_glob_silences_exactly_it"
+
+[[row]]
+node = "tests/system/test_e2e_12_ungoverned.py::test_map_still_shows_only_governed_files"
+ids = ["E2E-12"]
+scenario = "e2e_12_ungoverned/map_still_shows_only_governed_files"
+rust = "e2e_12_ungoverned_map_still_shows_only_governed_files"
+
+[[row]]
+node = "tests/system/test_e2e_13_prefixes.py::test_empty_color_prefix_exported_accepted_and_fixed"
+ids = ["E2E-13"]
+scenario = "e2e_13_prefixes/empty_color_prefix_exported_accepted_and_fixed"
+rust = "e2e_13_prefixes_empty_color_prefix_exported_accepted_and_fixed"
+
+[[row]]
+node = "tests/system/test_e2e_14_entry.py::test_entry_file_no_org001_and_layer_color_located"
+ids = ["E2E-14"]
+scenario = "e2e_14_entry/entry_file_no_org001_and_layer_color_located"
+rust = "e2e_14_entry_entry_file_no_org001_and_layer_color_located"
+
+[[row]]
+node = "tests/system/test_e2e_14_entry.py::test_map_shows_entry_group"
+ids = ["E2E-14"]
+scenario = "e2e_14_entry/map_shows_entry_group"
+rust = "e2e_14_entry_map_shows_entry_group"
+
+[[row]]
+node = "tests/system/test_e2e_15_output.py::test_check_paths_are_root_relative_terminal_and_json"
+ids = ["E2E-15"]
+scenario = "e2e_15_output/check_paths_are_root_relative_terminal_and_json"
+rust = "e2e_15_output_check_paths_are_root_relative_terminal_and_json"
+
+[[row]]
+node = "tests/system/test_e2e_15_output.py::test_fix_output_path_is_root_relative"
+ids = ["E2E-15"]
+scenario = "e2e_15_output/fix_output_path_is_root_relative"
+rust = "e2e_15_output_fix_output_path_is_root_relative"
+
+[[row]]
+node = "tests/system/test_e2e_15_output.py::test_map_output_paths_are_root_relative"
+ids = ["E2E-15"]
+scenario = "e2e_15_output/map_output_paths_are_root_relative"
+rust = "e2e_15_output_map_output_paths_are_root_relative"
+
+[[row]]
+node = "tests/system/test_e2e_15_output.py::test_check_contrast_clean_exits_0"
+ids = ["E2E-15"]
+scenario = "e2e_15_output/check_contrast_clean_exits_0"
+rust = "e2e_15_output_check_contrast_clean_exits_0"
+
+[[row]]
+node = "tests/system/test_e2e_15_output.py::test_check_contrast_failing_pair_exits_1"
+ids = ["E2E-15"]
+scenario = "e2e_15_output/check_contrast_failing_pair_exits_1"
+rust = "e2e_15_output_check_contrast_failing_pair_exits_1"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_find_text_and_json"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/find_text_and_json"
+rust = "e2e_16_query_find_text_and_json"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_component_card"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/component_card"
+rust = "e2e_16_query_component_card"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_component_unknown_name_exits_2"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/component_unknown_name_exits_2"
+rust = "e2e_16_query_component_unknown_name_exits_2"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_dupes_finds_planted_pair"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/dupes_finds_planted_pair"
+rust = "e2e_16_query_dupes_finds_planted_pair"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_unused_finds_planted_token"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/unused_finds_planted_token"
+rust = "e2e_16_query_unused_finds_planted_token"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_uses_leading_dashes_optional"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/uses_leading_dashes_optional"
+rust = "e2e_16_query_uses_leading_dashes_optional"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_color_nearest_palette_entries"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/color_nearest_palette_entries"
+rust = "e2e_16_query_color_nearest_palette_entries"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_color_unparseable_value_exits_2"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/color_unparseable_value_exits_2"
+rust = "e2e_16_query_color_unparseable_value_exits_2"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_violations_filtered_by_rule"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/violations_filtered_by_rule"
+rust = "e2e_16_query_violations_filtered_by_rule"
+
+[[row]]
+node = "tests/system/test_e2e_16_query.py::test_query_with_no_subcommand_exits_2"
+ids = ["E2E-16"]
+scenario = "e2e_16_query/query_with_no_subcommand_exits_2"
+rust = "e2e_16_query_query_with_no_subcommand_exits_2"
+
+[[row]]
+node = "tests/system/test_e2e_17_cache.py::test_warm_run_byte_identical_to_cold"
+ids = ["E2E-17"]
+scenario = "e2e_17_cache/warm_run_byte_identical_to_cold"
+rust = "e2e_17_cache_warm_run_byte_identical_to_cold"
+
+[[row]]
+node = "tests/system/test_e2e_17_cache.py::test_stylesheet_edit_invalidates_cache"
+ids = ["E2E-17"]
+scenario = "e2e_17_cache/stylesheet_edit_invalidates_cache"
+rust = "e2e_17_cache_stylesheet_edit_invalidates_cache"
+
+[[row]]
+node = "tests/system/test_e2e_17_cache.py::test_crunk_toml_edit_invalidates_cache"
+ids = ["E2E-17"]
+scenario = "e2e_17_cache/crunk_toml_edit_invalidates_cache"
+rust = "e2e_17_cache_crunk_toml_edit_invalidates_cache"
+
+[[row]]
+node = "tests/system/test_e2e_17_cache.py::test_no_cache_bypasses_reads_but_still_refreshes"
+ids = ["E2E-17"]
+scenario = "e2e_17_cache/no_cache_bypasses_reads_but_still_refreshes"
+rust = "e2e_17_cache_no_cache_bypasses_reads_but_still_refreshes"
+
+[[row]]
+node = "tests/system/test_e2e_18_19_schema.py::test_missing_section_names_offender_exit_2_no_verbose"
+ids = ["E2E-18", "E2E-19"]
+scenario = "e2e_18_19_schema/missing_section_names_offender_exit_2_no_verbose"
+rust = "e2e_18_19_schema_missing_section_names_offender_exit_2_no_verbose"
+
+[[row]]
+node = "tests/system/test_e2e_18_19_schema.py::test_bad_class_case_names_offender_exit_2_no_verbose"
+ids = ["E2E-18", "E2E-19"]
+scenario = "e2e_18_19_schema/bad_class_case_names_offender_exit_2_no_verbose"
+rust = "e2e_18_19_schema_bad_class_case_names_offender_exit_2_no_verbose"
+
+[[row]]
+node = "tests/system/test_e2e_18_19_schema.py::test_minimal_spec_loads_with_documented_defaults"
+ids = ["E2E-18", "E2E-19"]
+scenario = "e2e_18_19_schema/minimal_spec_loads_with_documented_defaults"
+rust = "e2e_18_19_schema_minimal_spec_loads_with_documented_defaults"
+
+[[row]]
+node = "tests/system/test_e2e_20_21_ux.py::test_tokens_format_css_previews_without_writing"
+ids = ["E2E-20", "E2E-21"]
+scenario = "e2e_20_21_ux/tokens_format_css_previews_without_writing"
+rust = "e2e_20_21_ux_tokens_format_css_previews_without_writing"
+
+[[row]]
+node = "tests/system/test_e2e_20_21_ux.py::test_fix_dry_run_names_unfixable_remainder"
+ids = ["E2E-20", "E2E-21"]
+scenario = "e2e_20_21_ux/fix_dry_run_names_unfixable_remainder"
+rust = "e2e_20_21_ux_fix_dry_run_names_unfixable_remainder"
+
+[[row]]
+node = "tests/system/test_e2e_20_21_ux.py::test_fix_with_applied_fixes_still_names_unfixable_remainder"
+ids = ["E2E-20", "E2E-21"]
+scenario = "e2e_20_21_ux/fix_with_applied_fixes_still_names_unfixable_remainder"
+rust = "e2e_20_21_ux_fix_with_applied_fixes_still_names_unfixable_remainder"
+
+[[row]]
+node = "tests/system/test_e2e_22_floors.py::test_floor_role_passes_plain_role_fails_terminal"
+ids = ["E2E-22"]
+scenario = "e2e_22_floors/floor_role_passes_plain_role_fails_terminal"
+rust = "e2e_22_floors_floor_role_passes_plain_role_fails_terminal"
+
+[[row]]
+node = "tests/system/test_e2e_22_floors.py::test_floor_role_json_field_parses"
+ids = ["E2E-22"]
+scenario = "e2e_22_floors/floor_role_json_field_parses"
+rust = "e2e_22_floors_floor_role_json_field_parses"
+
+[[row]]
+node = "tests/system/test_e2e_23_header.py::test_configured_header_verbatim_and_family_quoted"
+ids = ["E2E-23"]
+scenario = "e2e_23_header/configured_header_verbatim_and_family_quoted"
+rust = "e2e_23_header_configured_header_verbatim_and_family_quoted"
+
+[[row]]
+node = "tests/system/test_e2e_24_25_jsx.py::test_e2e_24_jsx_style_props_judged_never_fixable"
+ids = ["E2E-24", "E2E-25"]
+scenario = "e2e_24_25_jsx/e2e_24_jsx_style_props_judged_never_fixable"
+rust = "e2e_24_25_jsx_e2e_24_jsx_style_props_judged_never_fixable"
+
+[[row]]
+node = "tests/system/test_e2e_24_25_jsx.py::test_e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping"
+ids = ["E2E-24", "E2E-25"]
+scenario = "e2e_24_25_jsx/e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping"
+rust = "e2e_24_25_jsx_e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping"
+
+[[row]]
+node = "tests/system/test_e2e_26_tsx_inventory.py::test_query_component_cards_a_jsx_component"
+ids = ["E2E-26"]
+scenario = "e2e_26_tsx_inventory/query_component_cards_a_jsx_component"
+rust = "e2e_26_tsx_inventory_query_component_cards_a_jsx_component"
+
+[[row]]
+node = "tests/system/test_e2e_26_tsx_inventory.py::test_query_find_ranks_the_jsx_component"
+ids = ["E2E-26"]
+scenario = "e2e_26_tsx_inventory/query_find_ranks_the_jsx_component"
+rust = "e2e_26_tsx_inventory_query_find_ranks_the_jsx_component"
+
+[[row]]
+node = "tests/system/test_e2e_26_tsx_inventory.py::test_map_shows_jsx_group_terminal_and_json"
+ids = ["E2E-26"]
+scenario = "e2e_26_tsx_inventory/map_shows_jsx_group_terminal_and_json"
+rust = "e2e_26_tsx_inventory_map_shows_jsx_group_terminal_and_json"
+
+[[row]]
+node = "tests/system/test_e2e_26_tsx_inventory.py::test_cache_key_changes_when_jsx_source_or_tailwind_config_changes"
+ids = ["E2E-26"]
+scenario = "e2e_26_tsx_inventory/cache_key_changes_when_jsx_source_or_tailwind_config_changes"
+rust = "e2e_26_tsx_inventory_cache_key_changes_when_jsx_source_or_tailwind_config_changes"
+
+[[row]]
+node = "tests/system/test_e2e_27_theme.py::test_bare_tokens_writes_tailwind_file_deterministically"
+ids = ["E2E-27"]
+scenario = "e2e_27_theme/bare_tokens_writes_tailwind_file_deterministically"
+rust = "e2e_27_theme_bare_tokens_writes_tailwind_file_deterministically"
+
+[[row]]
+node = "tests/system/test_e2e_27_theme.py::test_palette_edit_changes_tailwind_file"
+ids = ["E2E-27"]
+scenario = "e2e_27_theme/palette_edit_changes_tailwind_file"
+rust = "e2e_27_theme_palette_edit_changes_tailwind_file"
+
+[[row]]
+node = "tests/system/test_e2e_27_theme.py::test_hand_edited_tailwind_file_raises_tokens001_naming_it"
+ids = ["E2E-27"]
+scenario = "e2e_27_theme/hand_edited_tailwind_file_raises_tokens001_naming_it"
+rust = "e2e_27_theme_hand_edited_tailwind_file_raises_tokens001_naming_it"
+
+[[row]]
+node = "tests/system/test_e2e_27_theme.py::test_format_tailwind_previews_without_writing"
+ids = ["E2E-27"]
+scenario = "e2e_27_theme/format_tailwind_previews_without_writing"
+rust = "e2e_27_theme_format_tailwind_previews_without_writing"
+
+[[row]]
+node = "tests/system/test_e2e_27_theme.py::test_hand_edited_json_file_raises_tokens001_naming_it"
+ids = ["E2E-27"]
+scenario = "e2e_27_theme/hand_edited_json_file_raises_tokens001_naming_it"
+rust = "e2e_27_theme_hand_edited_json_file_raises_tokens001_naming_it"
+
+[[row]]
+node = "tests/system/test_e2e_28_report.py::test_report_json_v2_schema_clean_tree"
+ids = ["E2E-28"]
+scenario = "e2e_28_report/report_json_v2_schema_clean_tree"
+rust = "e2e_28_report_report_json_v2_schema_clean_tree"
+
+[[row]]
+node = "tests/system/test_e2e_28_report.py::test_report_markdown_and_json_agree_on_violating_tree"
+ids = ["E2E-28"]
+scenario = "e2e_28_report/report_markdown_and_json_agree_on_violating_tree"
+rust = "e2e_28_report_report_markdown_and_json_agree_on_violating_tree"
+
+[[row]]
+node = "tests/system/test_e2e_28_report.py::test_report_deterministic_on_unchanged_tree"
+ids = ["E2E-28"]
+scenario = "e2e_28_report/report_deterministic_on_unchanged_tree"
+rust = "e2e_28_report_report_deterministic_on_unchanged_tree"
+
+[[row]]
+node = "tests/system/test_e2e_28_report.py::test_report_and_contrast_mutually_exclusive"
+ids = ["E2E-28"]
+scenario = "e2e_28_report/report_and_contrast_mutually_exclusive"
+rust = "e2e_28_report_report_and_contrast_mutually_exclusive"
+
+[[row]]
+node = "tests/system/test_e2e_29_utility_first.py::test_utility_first_tree_checks_clean"
+ids = ["E2E-29"]
+scenario = "e2e_29_utility_first/utility_first_tree_checks_clean"
+rust = "e2e_29_utility_first_utility_first_tree_checks_clean"
+
+[[row]]
+node = "tests/system/test_e2e_29_utility_first.py::test_utility_first_tree_planted_drift_still_fires"
+ids = ["E2E-29"]
+scenario = "e2e_29_utility_first/utility_first_tree_planted_drift_still_fires"
+rust = "e2e_29_utility_first_utility_first_tree_planted_drift_still_fires"
+
+[[row]]
+node = "tests/system/test_e2e_29_utility_first.py::test_same_tree_under_buckets_model_shows_org001"
+ids = ["E2E-29"]
+scenario = "e2e_29_utility_first/same_tree_under_buckets_model_shows_org001"
+rust = "e2e_29_utility_first_same_tree_under_buckets_model_shows_org001"
+
+[[row]]
+node = "tests/system/test_e2e_30_suggested.py::test_check_json_carries_suggested_tokens"
+ids = ["E2E-30"]
+scenario = "e2e_30_suggested/check_json_carries_suggested_tokens"
+rust = "e2e_30_suggested_check_json_carries_suggested_tokens"
+
+[[row]]
+node = "tests/system/test_e2e_30_suggested.py::test_report_json_carries_suggested_tokens"
+ids = ["E2E-30"]
+scenario = "e2e_30_suggested/report_json_carries_suggested_tokens"
+rust = "e2e_30_suggested_report_json_carries_suggested_tokens"
+
+[[row]]
+node = "tests/system/test_e2e_31_preview_diff.py::test_e2e_31_preview_every_entry_and_step_deterministic"
+ids = ["E2E-31"]
+scenario = "e2e_31_preview_diff/e2e_31_preview_every_entry_and_step_deterministic"
+rust = "e2e_31_preview_diff_e2e_31_preview_every_entry_and_step_deterministic"
+
+[[row]]
+node = "tests/system/test_e2e_31_preview_diff.py::test_e2e_31_diff_shows_exactly_the_edited_delta"
+ids = ["E2E-31"]
+scenario = "e2e_31_preview_diff/e2e_31_diff_shows_exactly_the_edited_delta"
+rust = "e2e_31_preview_diff_e2e_31_diff_shows_exactly_the_edited_delta"
+
+[[row]]
+node = "tests/system/test_e2e_32_explain.py::test_e2e_32_explain_prints_value_group_defined_in_and_sites"
+ids = ["E2E-32"]
+scenario = "e2e_32_explain/e2e_32_explain_prints_value_group_defined_in_and_sites"
+rust = "e2e_32_explain_e2e_32_explain_prints_value_group_defined_in_and_sites"
+
+[[row]]
+node = "tests/system/test_e2e_33_orphan.py::test_e2e_33_scaffold_states_path_base_rule"
+ids = ["E2E-33"]
+scenario = "e2e_33_orphan/e2e_33_scaffold_states_path_base_rule"
+rust = "e2e_33_orphan_e2e_33_scaffold_states_path_base_rule"
+
+[[row]]
+node = "tests/system/test_e2e_33_orphan.py::test_e2e_33_orphan_warning_on_write"
+ids = ["E2E-33"]
+scenario = "e2e_33_orphan/e2e_33_orphan_warning_on_write"
+rust = "e2e_33_orphan_e2e_33_orphan_warning_on_write"
+
+[[row]]
+node = "tests/system/test_e2e_33_orphan.py::test_e2e_33_orphan_warning_on_check"
+ids = ["E2E-33"]
+scenario = "e2e_33_orphan/e2e_33_orphan_warning_on_check"
+rust = "e2e_33_orphan_e2e_33_orphan_warning_on_check"
+
+[[row]]
+node = "tests/system/test_e2e_33_orphan.py::test_e2e_33_no_warning_without_stale_copy"
+ids = ["E2E-33"]
+scenario = "e2e_33_orphan/e2e_33_no_warning_without_stale_copy"
+rust = "e2e_33_orphan_e2e_33_no_warning_without_stale_copy"
+
+[[row]]
+node = "tests/system/test_e2e_34_explain_jsx.py::test_e2e_34_explain_lists_jsx_utility_only_site"
+ids = ["E2E-34"]
+scenario = "e2e_34_explain_jsx/e2e_34_explain_lists_jsx_utility_only_site"
+rust = "e2e_34_explain_jsx_e2e_34_explain_lists_jsx_utility_only_site"
+
+[[row]]
+node = "tests/system/test_e2e_35_color_flag.py::test_preview_color_flag_carries_ansi_when_piped"
+ids = ["E2E-35"]
+scenario = "e2e_35_color_flag/preview_color_flag_carries_ansi_when_piped"
+rust = "e2e_35_color_flag_preview_color_flag_carries_ansi_when_piped"
+
+[[row]]
+node = "tests/system/test_e2e_35_color_flag.py::test_preview_unflagged_piped_run_stays_plain"
+ids = ["E2E-35"]
+scenario = "e2e_35_color_flag/preview_unflagged_piped_run_stays_plain"
+rust = "e2e_35_color_flag_preview_unflagged_piped_run_stays_plain"
+
+[[row]]
+node = "tests/system/test_e2e_35_color_flag.py::test_preview_no_color_env_wins_over_color_flag"
+ids = ["E2E-35"]
+scenario = "e2e_35_color_flag/preview_no_color_env_wins_over_color_flag"
+rust = "e2e_35_color_flag_preview_no_color_env_wins_over_color_flag"
+
+[[row]]
+node = "tests/system/test_e2e_36_keyspace.py::test_e2e_36_collision_warning_on_write"
+ids = ["E2E-36"]
+scenario = "e2e_36_keyspace/e2e_36_collision_warning_on_write"
+rust = "e2e_36_keyspace_e2e_36_collision_warning_on_write"
+
+[[row]]
+node = "tests/system/test_e2e_36_keyspace.py::test_e2e_36_collision_warning_on_check"
+ids = ["E2E-36"]
+scenario = "e2e_36_keyspace/e2e_36_collision_warning_on_check"
+rust = "e2e_36_keyspace_e2e_36_collision_warning_on_check"
+
+[[row]]
+node = "tests/system/test_e2e_36_keyspace.py::test_e2e_36_namespace_keys_emits_prefixed_keys_and_no_warning"
+ids = ["E2E-36"]
+scenario = "e2e_36_keyspace/e2e_36_namespace_keys_emits_prefixed_keys_and_no_warning"
+rust = "e2e_36_keyspace_e2e_36_namespace_keys_emits_prefixed_keys_and_no_warning"
+
+[[row]]
+node = "tests/system/test_e2e_36_keyspace.py::test_e2e_36_no_warning_without_tailwind_file"
+ids = ["E2E-36"]
+scenario = "e2e_36_keyspace/e2e_36_no_warning_without_tailwind_file"
+rust = "e2e_36_keyspace_e2e_36_no_warning_without_tailwind_file"
+
+[[row]]
+node = "tests/system/test_e2e_37_alpha_channels.py::test_e2e_37_non_alpha_theme_mapping_fires_tw003"
+ids = ["E2E-37"]
+scenario = "e2e_37_alpha_channels/e2e_37_non_alpha_theme_mapping_fires_tw003"
+rust = "e2e_37_alpha_channels_e2e_37_non_alpha_theme_mapping_fires_tw003"
+
+[[row]]
+node = "tests/system/test_e2e_37_alpha_channels.py::test_e2e_37_alpha_capable_theme_mapping_is_silent"
+ids = ["E2E-37"]
+scenario = "e2e_37_alpha_channels/e2e_37_alpha_capable_theme_mapping_is_silent"
+rust = "e2e_37_alpha_channels_e2e_37_alpha_capable_theme_mapping_is_silent"
+
+[[row]]
+node = "tests/system/test_e2e_37_alpha_channels.py::test_e2e_37_alpha_channels_emits_rgb_triplets_and_alpha_capable_theme"
+ids = ["E2E-37"]
+scenario = "e2e_37_alpha_channels/e2e_37_alpha_channels_emits_rgb_triplets_and_alpha_capable_theme"
+rust = "e2e_37_alpha_channels_e2e_37_alpha_channels_emits_rgb_triplets_and_alpha_capable_theme"
+
+[[row]]
+node = "tests/system/test_e2e_38_ts_constants.py::test_ts_class_constant_e2e"
+ids = ["E2E-38"]
+scenario = "e2e_38_ts_constants/ts_class_constant_e2e"
+rust = "e2e_38_ts_constants_ts_class_constant_e2e"
+
+[[row]]
+node = "tests/system/test_e2e_39_report_unused.py::test_report_json_unused_tokens_matches_query_unused"
+ids = ["E2E-39"]
+scenario = "e2e_39_report_unused/report_json_unused_tokens_matches_query_unused"
+rust = "e2e_39_report_unused_report_json_unused_tokens_matches_query_unused"
+
+[[row]]
+node = "tests/system/test_e2e_39_report_unused.py::test_report_markdown_unused_section"
+ids = ["E2E-39"]
+scenario = "e2e_39_report_unused/report_markdown_unused_section"
+rust = "e2e_39_report_unused_report_markdown_unused_section"
+
+[[row]]
+node = "tests/system/test_e2e_40_channel_triplets.py::test_channel_triplet_and_exact_rgba_both_yield_color001"
+ids = ["E2E-40"]
+scenario = "e2e_40_channel_triplets/channel_triplet_and_exact_rgba_both_yield_color001"
+rust = "e2e_40_channel_triplets_channel_triplet_and_exact_rgba_both_yield_color001"
+
+[[row]]
+node = "tests/system/test_e2e_40_channel_triplets.py::test_glass_panel_definition_sites_both_yield_org004"
+ids = ["E2E-40"]
+scenario = "e2e_40_channel_triplets/glass_panel_definition_sites_both_yield_org004"
+rust = "e2e_40_channel_triplets_glass_panel_definition_sites_both_yield_org004"
+
+[[row]]
+node = "tests/system/test_e2e_41_sizes.py::test_e2e_41_size001_warns_and_fix_snaps_in_css_only"
+ids = ["E2E-41"]
+scenario = "e2e_41_sizes/e2e_41_size001_warns_and_fix_snaps_in_css_only"
+rust = "e2e_41_sizes_e2e_41_size001_warns_and_fix_snaps_in_css_only"
+
+[[row]]
+node = "tests/system/test_e2e_41_sizes.py::test_e2e_41_max_width_exempt"
+ids = ["E2E-41"]
+scenario = "e2e_41_sizes/e2e_41_max_width_exempt"
+rust = "e2e_41_sizes_e2e_41_max_width_exempt"
+
+[[row]]
+node = "tests/system/test_e2e_41_sizes.py::test_e2e_41_spacing_fallback_when_sizes_undeclared"
+ids = ["E2E-41"]
+scenario = "e2e_41_sizes/e2e_41_spacing_fallback_when_sizes_undeclared"
+rust = "e2e_41_sizes_e2e_41_spacing_fallback_when_sizes_undeclared"
+
+[[row]]
+node = "tests/system/test_e2e_42_43_44_viewport.py::test_e2e_42_bp001_media_query_viewport"
+ids = ["E2E-42", "E2E-43", "E2E-44"]
+scenario = "e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport"
+rust = "e2e_42_43_44_viewport_e2e_42_bp001_media_query_viewport"
+
+[[row]]
+node = "tests/system/test_e2e_42_43_44_viewport.py::test_e2e_42_bp_family_silent_with_no_breakpoints"
+ids = ["E2E-42", "E2E-43", "E2E-44"]
+scenario = "e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints"
+rust = "e2e_42_43_44_viewport_e2e_42_bp_family_silent_with_no_breakpoints"
+
+[[row]]
+node = "tests/system/test_e2e_42_43_44_viewport.py::test_e2e_43_bp002_responsive_variant_missing_base"
+ids = ["E2E-42", "E2E-43", "E2E-44"]
+scenario = "e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base"
+rust = "e2e_42_43_44_viewport_e2e_43_bp002_responsive_variant_missing_base"
+
+[[row]]
+node = "tests/system/test_e2e_42_43_44_viewport.py::test_e2e_44_bp003_overflow_width_via_tailwind_default"
+ids = ["E2E-42", "E2E-43", "E2E-44"]
+scenario = "e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default"
+rust = "e2e_42_43_44_viewport_e2e_44_bp003_overflow_width_via_tailwind_default"
+
+[[row]]
+node = "tests/system/test_e2e_45_selfmap.py::test_e2e_45_selfmap_explain_and_unused"
+ids = ["E2E-45"]
+scenario = "e2e_45_selfmap/e2e_45_selfmap_explain_and_unused"
+rust = "e2e_45_selfmap_e2e_45_selfmap_explain_and_unused"
+
+[[row]]
+node = "tests/system/test_e2e_45_selfmap.py::test_e2e_45_selfmap_both_knobs_explain_and_unused"
+ids = ["E2E-45"]
+scenario = "e2e_45_selfmap/e2e_45_selfmap_both_knobs_explain_and_unused"
+rust = "e2e_45_selfmap_e2e_45_selfmap_both_knobs_explain_and_unused"
+
+[[row]]
+node = "tests/system/test_e2e_46_explain_hardened.py::test_e2e_46_explain_rgb_companion_answers_channel_form"
+ids = ["E2E-46"]
+scenario = "e2e_46_explain_hardened/e2e_46_explain_rgb_companion_answers_channel_form"
+rust = "e2e_46_explain_hardened_e2e_46_explain_rgb_companion_answers_channel_form"
+
+[[row]]
+node = "tests/system/test_e2e_46_explain_hardened.py::test_e2e_46_explain_nonsense_exits_2_clean"
+ids = ["E2E-46"]
+scenario = "e2e_46_explain_hardened/e2e_46_explain_nonsense_exits_2_clean"
+rust = "e2e_46_explain_hardened_e2e_46_explain_nonsense_exits_2_clean"
+
+[[row]]
+node = "tests/system/test_e2e_47_optional_dims.py::test_e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks"
+ids = ["E2E-47"]
+scenario = "e2e_47_optional_dims/e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks"
+rust = "e2e_47_optional_dims_e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks"
+
+[[row]]
+node = "tests/system/test_e2e_47_optional_dims.py::test_e2e_47_radius001_and_layer001_stay_silent"
+ids = ["E2E-47"]
+scenario = "e2e_47_optional_dims/e2e_47_radius001_and_layer001_stay_silent"
+rust = "e2e_47_optional_dims_e2e_47_radius001_and_layer001_stay_silent"
+
+[[row]]
+node = "tests/system/test_e2e_47_optional_dims.py::test_e2e_47_tokens_emit_no_radius_or_layer_tokens"
+ids = ["E2E-47"]
+scenario = "e2e_47_optional_dims/e2e_47_tokens_emit_no_radius_or_layer_tokens"
+rust = "e2e_47_optional_dims_e2e_47_tokens_emit_no_radius_or_layer_tokens"
+
+[[row]]
+node = "tests/system/test_e2e_48_semantic_drift.py::test_formatter_rewrap_of_json_artifacts_passes_check"
+ids = ["E2E-48"]
+scenario = "e2e_48_semantic_drift/formatter_rewrap_of_json_artifacts_passes_check"
+rust = "e2e_48_semantic_drift_formatter_rewrap_of_json_artifacts_passes_check"
+
+[[row]]
+node = "tests/system/test_e2e_48_semantic_drift.py::test_value_edit_in_json_artifact_still_fails_check"
+ids = ["E2E-48"]
+scenario = "e2e_48_semantic_drift/value_edit_in_json_artifact_still_fails_check"
+rust = "e2e_48_semantic_drift_value_edit_in_json_artifact_still_fails_check"
+
+[[row]]
+node = "tests/system/test_e2e_48_semantic_drift.py::test_tokens_css_byte_edit_still_fails_check"
+ids = ["E2E-48"]
+scenario = "e2e_48_semantic_drift/tokens_css_byte_edit_still_fails_check"
+rust = "e2e_48_semantic_drift_tokens_css_byte_edit_still_fails_check"
+
+[[row]]
+node = "tests/system/test_e2e_49_50_exclusivity.py::test_e2e_49_tw004_default_color_denylist"
+ids = ["E2E-49", "E2E-50"]
+scenario = "e2e_49_50_exclusivity/e2e_49_tw004_default_color_denylist"
+rust = "e2e_49_50_exclusivity_e2e_49_tw004_default_color_denylist"
+
+[[row]]
+node = "tests/system/test_e2e_49_50_exclusivity.py::test_e2e_50_tw005_default_scale_key_bypass"
+ids = ["E2E-49", "E2E-50"]
+scenario = "e2e_49_50_exclusivity/e2e_50_tw005_default_scale_key_bypass"
+rust = "e2e_49_50_exclusivity_e2e_50_tw005_default_scale_key_bypass"
+
+[[row]]
+node = "tests/system/test_e2e_51_sizes.py::test_e2e_51_size_prefixes_bypass_default_scale"
+ids = ["E2E-51"]
+scenario = "e2e_51_sizes/e2e_51_size_prefixes_bypass_default_scale"
+rust = "e2e_51_sizes_e2e_51_size_prefixes_bypass_default_scale"
+
+[[row]]
+node = "tests/system/test_e2e_51_sizes.py::test_e2e_51_size_export_and_theme_and_suggested_token"
+ids = ["E2E-51"]
+scenario = "e2e_51_sizes/e2e_51_size_export_and_theme_and_suggested_token"
+rust = "e2e_51_sizes_e2e_51_size_export_and_theme_and_suggested_token"
+
+[[row]]
+node = "tests/system/test_e2e_52_config.py::test_e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml"
+ids = ["E2E-52"]
+scenario = "e2e_52_config/e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml"
+rust = "e2e_52_config_e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml"
+
+[[row]]
+node = "tests/system/test_e2e_53_borrower.py::test_e2e_53_absent_css_root_borrower_still_runs_jsx"
+ids = ["E2E-53"]
+scenario = "e2e_53_borrower/e2e_53_absent_css_root_borrower_still_runs_jsx"
+rust = "e2e_53_borrower_e2e_53_absent_css_root_borrower_still_runs_jsx"
+
+[[row]]
+node = "tests/system/test_e2e_54_pathmode.py::test_e2e_54_path_scoped_run_matches_repo_wide_findings"
+ids = ["E2E-54"]
+scenario = "e2e_54_pathmode/e2e_54_path_scoped_run_matches_repo_wide_findings"
+rust = "e2e_54_pathmode_e2e_54_path_scoped_run_matches_repo_wide_findings"
+
+[[row]]
+node = "tests/system/test_e2e_55_cache_home.py::test_second_run_hits_and_project_tree_gains_no_entries"
+ids = ["E2E-55"]
+scenario = "e2e_55_cache_home/second_run_hits_and_project_tree_gains_no_entries"
+rust = "e2e_55_cache_home_second_run_hits_and_project_tree_gains_no_entries"
+
+[[row]]
+node = "tests/system/test_e2e_55_cache_home.py::test_without_override_resolves_under_xdg_fallback"
+ids = ["E2E-55"]
+scenario = "e2e_55_cache_home/without_override_resolves_under_xdg_fallback"
+rust = "e2e_55_cache_home_without_override_resolves_under_xdg_fallback"
+
+[[row]]
+node = "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_56_outside_root_path_exits_2"
+ids = ["E2E-56", "E2E-57", "E2E-58"]
+scenario = "e2e_56_57_58_honesty/e2e_56_outside_root_path_exits_2"
+rust = "e2e_56_57_58_honesty_e2e_56_outside_root_path_exits_2"
+
+[[row]]
+node = "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_56_missing_spec_exits_2"
+ids = ["E2E-56", "E2E-57", "E2E-58"]
+scenario = "e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2"
+rust = "e2e_56_57_58_honesty_e2e_56_missing_spec_exits_2"
+
+[[row]]
+node = "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_57_cache_ls_and_prune"
+ids = ["E2E-56", "E2E-57", "E2E-58"]
+scenario = "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune"
+rust = "e2e_56_57_58_honesty_e2e_57_cache_ls_and_prune"
+
+[[row]]
+node = "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_57_cache_prune_all"
+ids = ["E2E-56", "E2E-57", "E2E-58"]
+scenario = "e2e_56_57_58_honesty/e2e_57_cache_prune_all"
+rust = "e2e_56_57_58_honesty_e2e_57_cache_prune_all"
+
+[[row]]
+node = "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_58_explain_unknown_no_near_candidates"
+ids = ["E2E-56", "E2E-57", "E2E-58"]
+scenario = "e2e_56_57_58_honesty/e2e_58_explain_unknown_no_near_candidates"
+rust = "e2e_56_57_58_honesty_e2e_58_explain_unknown_no_near_candidates"
+
+[[row]]
+node = "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_58_explain_unknown_near_miss_still_shows_closest"
+ids = ["E2E-56", "E2E-57", "E2E-58"]
+scenario = "e2e_56_57_58_honesty/e2e_58_explain_unknown_near_miss_still_shows_closest"
+rust = "e2e_56_57_58_honesty_e2e_58_explain_unknown_near_miss_still_shows_closest"
+
+[[row]]
+node = "tests/system/test_e2e_56_57_58_honesty.py::test_e2e_58_map_all_empty_prints_note"
+ids = ["E2E-56", "E2E-57", "E2E-58"]
+scenario = "e2e_56_57_58_honesty/e2e_58_map_all_empty_prints_note"
+rust = "e2e_56_57_58_honesty_e2e_58_map_all_empty_prints_note"
+
+[[row]]
+node = "tests/system/test_e2e_59_root_locator.py::test_borrowed_root_defaults_wrong_and_root_flag_fixes_it"
+ids = ["E2E-59"]
+scenario = "e2e_59_root_locator/borrowed_root_defaults_wrong_and_root_flag_fixes_it"
+rust = "e2e_59_root_locator_borrowed_root_defaults_wrong_and_root_flag_fixes_it"
+
+[[row]]
+node = "tests/system/test_e2e_59_root_locator.py::test_plain_in_project_run_prints_no_locator"
+ids = ["E2E-59"]
+scenario = "e2e_59_root_locator/plain_in_project_run_prints_no_locator"
+rust = "e2e_59_root_locator_plain_in_project_run_prints_no_locator"
+
+[[row]]
+node = "tests/integration/test_int_01_spec_toml.py"
+ids = ["INT-01"]
+rust = "int_01_spec_toml"
+
+[[row]]
+node = "tests/integration/test_int_02_ingest_fs.py"
+ids = ["INT-02"]
+rust = "int_02_ingest_fs"
+
+[[row]]
+node = "tests/integration/test_int_03_rules_full_catalog.py"
+ids = ["INT-03"]
+rust = "int_03_rules_full_catalog"
+
+[[row]]
+node = "tests/integration/test_int_04_tokens_spec.py"
+ids = ["INT-04"]
+rust = "int_04_tokens_spec"
+
+[[row]]
+node = "tests/integration/test_int_05_fixes_pipeline.py"
+ids = ["INT-05"]
+rust = "int_05_fixes_pipeline"
+
+[[row]]
+node = "tests/integration/test_int_06_report.py"
+ids = ["INT-06"]
+rust = "int_06_report"
+
+[[row]]
+node = "tests/integration/test_int_07_shell_wiring.py"
+ids = ["INT-07"]
+rust = "int_07_shell_wiring"
+
+[[row]]
+node = "tests/integration/test_int_08_scaffold.py"
+ids = ["INT-08"]
+rust = "int_08_scaffold"
+
+[[row]]
+node = "tests/integration/test_int_09_cache.py"
+ids = ["INT-09"]
+dropped = "The Rust crunk keeps no result cache (the cache verbs are dropped, see the cache-verb-removed divergence), so there is nothing for a cache integration test to exercise."
+
+[[row]]
+node = "tests/integration/test_int_10_query.py"
+ids = ["INT-10"]
+rust = "int_10_query"
+
+[[row]]
+node = "tests/integration/test_int_11_jsx.py"
+ids = ["INT-11"]
+rust = "int_11_jsx"
+
+[[row]]
+node = "tests/integration/test_int_12_report.py"
+ids = ["INT-12"]
+rust = "int_12_report"

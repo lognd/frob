@@ -1,0 +1,156 @@
+# Reasoned differences between the Rust crunk and the replayed Python e2e goldens.
+# Each entry names the steps (<group>/<scenario>#<step>), the field that differs and why.
+# A listed step that no longer differs fails its scenario test, so the list cannot go stale.
+
+[[divergence]]
+id = "near-palette-colour-not-rewritten"
+field = "exit"
+steps = [
+  "e2e_02_color/near_accent_color_flagged_and_fixed#04",
+  "e2e_10_alpha/near_translucent_literal_fixes_to_color_mix_preserving_alpha#04",
+  "e2e_13_prefixes/empty_color_prefix_exported_accepted_and_fixed#06",
+]
+reason = "After `fix`, the Rust `check` still reports a COLOR001 error where the Python run came back clean. In the traced case (e2e_02) Rust `fix` reports no fixable violations, because Rust measures COLOR001 distance on a different scale (0.15 against 1.68 in Python), so the near-palette literal is never rewritten."
+
+[[divergence]]
+id = "config-error-exit-code"
+field = "exit"
+steps = [
+  "e2e_07_json_exit_codes/corrupt_crunk_toml_exits_2#02",
+  "e2e_18_19_schema/bad_class_case_names_offender_exit_2_no_verbose#02",
+  "e2e_18_19_schema/missing_section_names_offender_exit_2_no_verbose#02",
+  "e2e_56_57_58_honesty/e2e_56_missing_spec_exits_2#01",
+]
+reason = "An unloadable or incomplete crunk.toml is reported by Rust as an E-CONFIG envelope with exit 3 (the gob convention for a config error), where the Python crunk exited 2."
+
+[[divergence]]
+id = "unfixable-remainder-exit"
+field = "exit"
+steps = [
+  "e2e_10_alpha/far_translucent_literal_reported_not_fixed#03",
+  "e2e_20_21_ux/fix_dry_run_names_unfixable_remainder#02",
+  "e2e_20_21_ux/fix_with_applied_fixes_still_names_unfixable_remainder#02",
+  "e2e_24_25_jsx/e2e_24_jsx_style_props_judged_never_fixable#03",
+]
+reason = "Python `fix` exits 1 when an unfixable error remains after the fixes; Rust `fix` exits 0 and names the remainder in its output (no fixable violations; N unfixable error(s) remain)."
+
+[[divergence]]
+id = "check-contrast-flag-removed"
+field = "exit"
+steps = [
+  "e2e_15_output/check_contrast_clean_exits_0#02",
+  "e2e_15_output/check_contrast_failing_pair_exits_1#02",
+  "e2e_15_output/check_contrast_failing_pair_exits_1#03",
+  "e2e_22_floors/floor_role_json_field_parses#02",
+  "e2e_22_floors/floor_role_passes_plain_role_fails_terminal#02",
+]
+reason = "The Python `check --contrast` flag was not ported; contrast findings are part of plain `check`, so the flag is rejected with a usage error (exit 2)."
+
+[[divergence]]
+id = "check-no-cache-flag-removed"
+field = "exit"
+steps = [
+  "e2e_17_cache/no_cache_bypasses_reads_but_still_refreshes#02",
+  "e2e_17_cache/no_cache_bypasses_reads_but_still_refreshes#03",
+]
+reason = "The Python `check --no-cache` flag has no Rust counterpart because there is no result cache; the flag is rejected with a usage error (exit 2)."
+
+[[divergence]]
+id = "must-measure-zero-subjects"
+field = "exit"
+steps = [
+  "e2e_18_19_schema/minimal_spec_loads_with_documented_defaults#02",
+  "e2e_47_optional_dims/e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks#02",
+]
+reason = "On a minimal spec Rust marks must_measure rules that examined zero subjects as unresolved, which fails the gate (exit 1); the Python check exited 0."
+
+[[divergence]]
+id = "check-report-flag-removed"
+field = "exit"
+steps = [
+  "e2e_24_25_jsx/e2e_24_jsx_style_props_judged_never_fixable#02",
+  "e2e_24_25_jsx/e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping#02",
+  "e2e_28_report/report_deterministic_on_unchanged_tree#02",
+  "e2e_28_report/report_deterministic_on_unchanged_tree#03",
+  "e2e_28_report/report_json_v2_schema_clean_tree#02",
+  "e2e_28_report/report_markdown_and_json_agree_on_violating_tree#03",
+  "e2e_28_report/report_markdown_and_json_agree_on_violating_tree#04",
+  "e2e_29_utility_first/same_tree_under_buckets_model_shows_org001#02",
+  "e2e_29_utility_first/utility_first_tree_planted_drift_still_fires#02",
+  "e2e_30_suggested/report_json_carries_suggested_tokens#02",
+  "e2e_37_alpha_channels/e2e_37_alpha_capable_theme_mapping_is_silent#02",
+  "e2e_37_alpha_channels/e2e_37_non_alpha_theme_mapping_fires_tw003#02",
+  "e2e_38_ts_constants/ts_class_constant_e2e#02",
+  "e2e_39_report_unused/report_json_unused_tokens_matches_query_unused#03",
+  "e2e_39_report_unused/report_markdown_unused_section#02",
+  "e2e_39_report_unused/report_markdown_unused_section#04",
+  "e2e_40_channel_triplets/channel_triplet_and_exact_rgba_both_yield_color001#02",
+  "e2e_40_channel_triplets/glass_panel_definition_sites_both_yield_org004#02",
+  "e2e_41_sizes/e2e_41_max_width_exempt#02",
+  "e2e_41_sizes/e2e_41_size001_warns_and_fix_snaps_in_css_only#02",
+  "e2e_41_sizes/e2e_41_spacing_fallback_when_sizes_undeclared#02",
+  "e2e_42_43_44_viewport/e2e_42_bp001_media_query_viewport#02",
+  "e2e_42_43_44_viewport/e2e_42_bp_family_silent_with_no_breakpoints#02",
+  "e2e_42_43_44_viewport/e2e_43_bp002_responsive_variant_missing_base#02",
+  "e2e_42_43_44_viewport/e2e_44_bp003_overflow_width_via_tailwind_default#02",
+  "e2e_45_selfmap/e2e_45_selfmap_both_knobs_explain_and_unused#05",
+  "e2e_45_selfmap/e2e_45_selfmap_explain_and_unused#05",
+  "e2e_47_optional_dims/e2e_47_radius001_and_layer001_stay_silent#02",
+  "e2e_49_50_exclusivity/e2e_49_tw004_default_color_denylist#02",
+  "e2e_49_50_exclusivity/e2e_50_tw005_default_scale_key_bypass#02",
+  "e2e_51_sizes/e2e_51_size_export_and_theme_and_suggested_token#04",
+  "e2e_51_sizes/e2e_51_size_prefixes_bypass_default_scale#02",
+]
+reason = "The Python `check --report` (markdown or JSON report) was replaced by the gob.sibling/1 envelope and `--text`; the flag is rejected with a usage error (exit 2)."
+
+[[divergence]]
+id = "preview-color-flag-removed"
+field = "exit"
+steps = [
+  "e2e_35_color_flag/preview_color_flag_carries_ansi_when_piped#02",
+  "e2e_35_color_flag/preview_no_color_env_wins_over_color_flag#02",
+]
+reason = "The Python `preview --color` flag was not ported; the Rust preview rejects it with a usage error (exit 2)."
+
+[[divergence]]
+id = "check-config-flag-removed"
+field = "exit"
+steps = [
+  "e2e_52_config/e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml#02",
+  "e2e_53_borrower/e2e_53_absent_css_root_borrower_still_runs_jsx#02",
+  "e2e_59_root_locator/borrowed_root_defaults_wrong_and_root_flag_fixes_it#03",
+  "e2e_59_root_locator/borrowed_root_defaults_wrong_and_root_flag_fixes_it#04",
+]
+reason = "The Python `check --config <path>` flag was not ported; the Rust crunk finds crunk.toml by walking up from the working directory, so the flag is rejected with a usage error (exit 2)."
+
+[[divergence]]
+id = "config-walk-up-discovery"
+field = "exit"
+steps = [
+  "e2e_52_config/e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml#03",
+]
+reason = "Rust discovers crunk.toml by walking up from the working directory and so judges a sibling directory with the parent spec (exit 1); Python looked only in the working directory and exited 2."
+
+[[divergence]]
+id = "check-path-argument-removed"
+field = "exit"
+steps = [
+  "e2e_54_pathmode/e2e_54_path_scoped_run_matches_repo_wide_findings#03",
+  "e2e_54_pathmode/e2e_54_path_scoped_run_matches_repo_wide_findings#04",
+]
+reason = "The Python `check <path>` positional scope was not ported; the Rust check takes no path argument and rejects it with a usage error (exit 2)."
+
+[[divergence]]
+id = "cache-verb-removed"
+field = "exit"
+steps = [
+  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#03",
+  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#04",
+  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#05",
+  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#06",
+  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#07",
+  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#09",
+  "e2e_56_57_58_honesty/e2e_57_cache_prune_all#03",
+  "e2e_56_57_58_honesty/e2e_57_cache_prune_all#04",
+]
+reason = "The Python `cache ls` and `cache prune` verbs were not ported (the Rust crunk keeps no result cache); the verb is rejected with a usage error (exit 2)."
