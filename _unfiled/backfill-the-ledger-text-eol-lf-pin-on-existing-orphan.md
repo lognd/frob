@@ -7,12 +7,12 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T17:03:41Z"
-updated = "2026-10-22T17:16:24Z"
+updated = "2026-10-22T17:18:36Z"
 scope = ["crates/frob-ledger/**"]
 
 [[acceptance]]
 text = "Given an existing orphan ticket branch without the eol pin, when frob doctor or init runs, then the pin is added once and a second run changes nothing"
-bound = false
+bound = true
 +++
 
 ~6EQFB65 pins md and toml to LF only when init_branch creates the branch. Branches created earlier or adopted from origin lack it.

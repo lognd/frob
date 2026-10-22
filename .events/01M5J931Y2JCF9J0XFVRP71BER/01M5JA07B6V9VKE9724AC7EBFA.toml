@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T17:18:36Z"
+digest = "cee8c6187080859efa7af4f10b8b2a2e1dec4474d748369a8805e2afc63f9a26"
+exit_code = 0
+head = "cefc8fcabd432383dfad757cdc6405f29ded69c5"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 59.75s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fa2a3c8c-6bd8-4fe6-ae12-a7aa42c5b1a3 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.010s] frob-ledger::branch backfills_the_pin_once_and_keeps_user_lines
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger --test branch backfills_the_pin_once"
+size = 671
+status = "measured"
+test_count = 1
+tests_digest = "887e864ebd09803c65526f36ad6056353ed32df95a51bc84bc3cd453efdc35f0"
+at = "2026-10-22T17:18:36Z"
+actor = "lognd"
+rev = 1
