@@ -2,13 +2,14 @@
 
 // frob:ticket 01M59A2N1QCS2E5GPGD09V34R1
 // frob:ticket 01M44R5W4WJEXFM000S8KVQQN5
+// frob:ticket 01M5HDAS62G7H4YY9FVG59GJ01
 
 use gob_languages::Language;
 use gob_rules::{Finding, Severity, UnresolvedReason};
 use gob_text::FileInterner;
 use grimble_lints::pass::{PathFile, PathFinding, analyze};
 use grimble_lints::path::Options;
-use grimble_lints::time_pass;
+use grimble_lints::{pair_pass, time_pass};
 
 /// Analyze one file and return its findings.
 fn run(path: &str, text: &str) -> Vec<PathFinding> {
@@ -19,6 +20,7 @@ fn run(path: &str, text: &str) -> Vec<PathFinding> {
         text,
     };
     let mut found = time_pass::analyze(std::slice::from_ref(&file)).findings;
+    found.extend(pair_pass::analyze(std::slice::from_ref(&file)).findings);
     found.extend(
         analyze(
             &[PathFile {
@@ -40,6 +42,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-lints/src/rules/path003.rs::Path003
     // frob:tests crates/grimble-lints/src/rules/time001.rs::Time001
     // frob:tests crates/grimble-lints/src/rules/time002.rs::Time002
+    // frob:tests crates/grimble-lints/src/rules/pair001.rs::Pair001
     let mut files = FileInterner::new();
     run(&case.file_name, &case.text)
         .into_iter()
@@ -114,6 +117,12 @@ impl grimble_lints::host::TimeHost for Fixed {
     }
 }
 
+impl grimble_lints::host::PairHost for Fixed {
+    fn pair_subjects_of(&self, id: &str) -> usize {
+        id.len() + 2
+    }
+}
+
 impl grimble_lints::host::PathHost for Fixed {
     fn path_subjects_of(&self, id: &str) -> usize {
         id.len()
@@ -125,7 +134,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-lints/src/rules/mod.rs::bind
     // frob:tests crates/grimble-lints/src/host.rs::PathHost.path_subjects_of
     // frob:tests crates/grimble-lints/src/pass.rs::PathFinding.into_finding
-    assert_eq!(grimble_lints::rules::bind::<Fixed>().len(), 5);
+    assert_eq!(grimble_lints::rules::bind::<Fixed>().len(), 6);
     assert_eq!(
         grimble_lints::host::PathHost::path_subjects_of(&Fixed, "PATH003"),
         7

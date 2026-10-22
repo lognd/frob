@@ -14,6 +14,9 @@
 //! listener, observer or subscription without a returned cleanup that undoes it, from a table of
 //! effect-started pairs ([`effect::PAIRS`]).
 //!
+//! [`pair_pass::analyze`] runs [`effect::scan`] over the walked files and returns the `PAIR001`
+//! verdicts for the product; the rule is declared in [`rules`] and staged like the TIME rules.
+//!
 //! [`unity::scan`] is the Unity vocabulary of `PAIR001`: a C# event subscription, `RegisterCallback`,
 //! `UnityEvent` listener, input action `Enable` or Addressables load made in `Awake`, `Start` or
 //! `OnEnable` that no `OnDisable` or `OnDestroy` undoes, from a table of pairs ([`unity::PAIRS`]).
@@ -57,6 +60,7 @@ pub mod effect;
 pub mod err;
 pub mod host;
 pub mod neat;
+pub mod pair_pass;
 pub mod pass;
 pub mod path;
 pub mod res;
