@@ -7,12 +7,12 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T22:32:22Z"
-updated = "2026-10-22T23:15:21Z"
+updated = "2026-10-22T23:17:13Z"
 scope = [".github/workflows/**"]
 
 [[acceptance]]
 text = "gob-dev ci_plan test the_crunk_job_lists_every_crunk_package passes"
-bound = false
+bound = true
 +++
 
 found while working ~MQE4F44; pre-existing from in-flight crunk tickets
