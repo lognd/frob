@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-22T05:15:50Z"
+updated = "2026-10-22T05:16:12Z"
 scope = ["crates/gob-mdtest/**", "crates/frob-obligations/tests/**", "docs/reference/rules/DOC002.md", "changelog.d/01M48PC09SX0KFAM4B3V88AAXW.added.md", "docs/reference/rules/**"]
 
 [[links]]
