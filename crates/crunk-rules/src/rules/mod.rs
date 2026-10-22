@@ -85,6 +85,12 @@ pub mod radius001;
 pub mod resp001;
 /// Rule `SCENE001`.
 pub mod scene001;
+/// Rule `SCENE002`.
+pub mod scene002;
+/// Rule `SCENE003`.
+pub mod scene003;
+/// Rule `SCENE004`.
+pub mod scene004;
 /// Rule `SIZE001`.
 pub mod size001;
 /// Rule `SLOP001`.
@@ -199,6 +205,9 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <radius001::Radius001 as gob_rules::RuleDecl>::DEF,
     <resp001::Resp001 as gob_rules::RuleDecl>::DEF,
     <scene001::Scene001 as gob_rules::RuleDecl>::DEF,
+    <scene002::Scene002 as gob_rules::RuleDecl>::DEF,
+    <scene003::Scene003 as gob_rules::RuleDecl>::DEF,
+    <scene004::Scene004 as gob_rules::RuleDecl>::DEF,
     <size001::Size001 as gob_rules::RuleDecl>::DEF,
     <slop001::Slop001 as gob_rules::RuleDecl>::DEF,
     <slop003::Slop003 as gob_rules::RuleDecl>::DEF,
@@ -291,6 +300,9 @@ where
     radius001::Radius001: gob_rules::Measured<P>,
     resp001::Resp001: gob_rules::Measured<P>,
     scene001::Scene001: gob_rules::Measured<P>,
+    scene002::Scene002: gob_rules::Measured<P>,
+    scene003::Scene003: gob_rules::Measured<P>,
+    scene004::Scene004: gob_rules::Measured<P>,
     size001::Size001: gob_rules::Measured<P>,
     slop001::Slop001: gob_rules::RepoRule<P>,
     slop003::Slop003: gob_rules::RepoRule<P>,
@@ -369,6 +381,9 @@ where
     rules.push(gob_rules::BoundRule::measured(radius001::Radius001));
     rules.push(gob_rules::BoundRule::measured(resp001::Resp001));
     rules.push(gob_rules::BoundRule::measured(scene001::Scene001));
+    rules.push(gob_rules::BoundRule::measured(scene002::Scene002));
+    rules.push(gob_rules::BoundRule::measured(scene003::Scene003));
+    rules.push(gob_rules::BoundRule::measured(scene004::Scene004));
     rules.push(gob_rules::BoundRule::measured(size001::Size001));
     rules.push(gob_rules::BoundRule::repo(slop001::Slop001));
     rules.push(gob_rules::BoundRule::repo(slop003::Slop003));

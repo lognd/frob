@@ -350,6 +350,9 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [SCENE001](SCENE001.md) | scene-property-unsupported | error | manual | P+ | true | A scene is styled only with the CSS subset the scene renderer and layout solver implement. |
+| [SCENE002](SCENE002.md) | scene-data-id-invalid | error | manual | P+ | true | Every element of a scene carries a stable, unique `data-id`. |
+| [SCENE003](SCENE003.md) | scene-tag-unknown | error | manual | P+ | true | A scene uses only the HTML tags of the scene dialect, plus capitalised component tags. |
+| [SCENE004](SCENE004.md) | scene-at-rule-unsupported | error | manual | P+ | true | A scene stylesheet uses only `@media`. |
 
 ## SCOPE
 

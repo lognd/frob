@@ -169,8 +169,10 @@ component and lowercase tags are HTML or unknown; `data-id`; parent) and
 every CSS declaration from `<style>` bodies and inline `style`
 attributes. `unsupported_properties` yields SCENE001 findings: custom
 properties (`--x`) pass, vendor prefixes and unlisted shorthands are
-flagged. Duplicate `data-id`, unknown tags and at-rules are exposed on
-the parsed scene for later rules. Rule page: `crates/crunk-scene/src/scene001.md`.
+flagged. SCENE002 flags a missing, blank or repeated `data-id`, SCENE003 an
+unknown lowercase tag and SCENE004 any at-rule other than `@media`
+(`data_id_problems`, `unknown_tags`, `unsupported_at_rules`); `svg` content
+and the html, head, body, style and script tags are exempt from the first two. Rule page: `crates/crunk-scene/src/scene001.md`.
 
 Layout (D113): two engines with a parity test.
 

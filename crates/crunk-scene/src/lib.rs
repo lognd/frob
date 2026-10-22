@@ -9,9 +9,15 @@
 mod dialect;
 mod doc;
 mod scene001;
+mod structure;
 
 pub use dialect::{KNOWN_TAGS, SUPPORTED_PROPERTIES, is_supported_property};
 pub use doc::{
-    ElementKind, SceneDecl, SceneDoc, SceneElement, SceneError, parse_scene_bytes, parse_scene_html,
+    ElementKind, SceneAtRule, SceneDecl, SceneDoc, SceneElement, SceneError, parse_scene_bytes,
+    parse_scene_html,
 };
 pub use scene001::{Scene001, unsupported_properties};
+pub use structure::{
+    DataIdProblem, SUPPORTED_AT_RULES, Scene002, Scene003, Scene004, data_id_problems,
+    unknown_tags, unsupported_at_rules,
+};
