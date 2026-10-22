@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/**", "design/model.grmb", "crates/frob-ledger/Cargo.toml", "crates/frob-ledger/benches", "crates/frob-ledger/src", "crates/frob-ledger/templates"]
+new = ["crates/gob-dev/**", "design/model.grmb", "crates/frob-ledger/Cargo.toml", "crates/frob-ledger/benches", "crates/frob-ledger/src", "crates/frob-ledger/templates", "crates/frob-ledger/tests"]
+at = "2026-10-22T05:16:48Z"
+actor = "lognd"
+rev = 1
