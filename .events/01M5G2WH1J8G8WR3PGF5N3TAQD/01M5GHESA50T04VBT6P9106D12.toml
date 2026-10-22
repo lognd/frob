@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [6]
+captured_at = "2026-10-22T00:51:25Z"
+digest = "05be8c74f14839f47683a20b18ed5098ba0910f28e724eae68b0f7edd31f45f3"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e7f6ce43-07e5-4159-8e93-9a31b857ce82 with nextest profile: default
+    Starting 1 test across 5 binaries (33 tests skipped)
+        PASS [   0.005s] gob-config::cfg001_fix fixed_output_is_a_fixpoint
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 33 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-config fixed_output_is_a_fixpoint"
+size = 540
+status = "measured"
+test_count = 1
+tests_digest = "64076a13f51386b6b64ca0864f2e8680917b7f369a611439ed941ae9770a342a"
+at = "2026-10-22T00:51:25Z"
+actor = "lognd"
+rev = 1
