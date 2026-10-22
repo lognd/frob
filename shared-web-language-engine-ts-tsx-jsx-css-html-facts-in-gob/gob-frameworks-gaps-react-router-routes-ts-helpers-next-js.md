@@ -8,8 +8,8 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:09:41Z"
-updated = "2026-10-22T00:15:56Z"
-scope = ["crates/gob-frameworks/**"]
+updated = "2026-10-22T00:17:55Z"
+scope = ["crates/gob-frameworks/**", "changelog.d/01M48EFBCF70PK5KGS0PDZD40N.added.md"]
 
 [[acceptance]]
 text = "a framework-mode routes.ts fixture produces the expected routes"
