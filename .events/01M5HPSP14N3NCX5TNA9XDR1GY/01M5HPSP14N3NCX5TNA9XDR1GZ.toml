@@ -1,0 +1,12 @@
+kind = "create"
+title = "Wire unity_hot (UNITY201/202) into grimble-check rules and docs"
+type = "task"
+category = "todo"
+priority = "low"
+points = 3
+parent = "01M44YQS4CNZM54P067GJVPDC0"
+scope = ["crates/grimble-check/**", "crates/grimble-lints/**", "docs/**"]
+acceptance = ["Given GetComponent in Update, when grimble check runs, then UNITY201 is reported through a registered rule with a docs page"]
+at = "2026-10-22T11:44:00Z"
+actor = "lognd"
+rev = 1
