@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a panicking rule is reported as a failed case, not an aborted run", "expect-panic passes on a matching panic and fails when there is none", "each adapter has a garbage-input case asserting Unresolved or NotApplicable and no panic", "expect-panic with an empty substring accepts any panic but still requires one", "a non-string panic payload is reported with a placeholder", "directive binds to the next case only and CRLF does not shift line attribution", "panics on parallel threads do not leak between threads"]
+new = ["a panicking rule is reported as a failed case, not an aborted run", "expect-panic passes on a matching panic and fails when there is none", "each adapter has a garbage-input case asserting Unresolved or NotApplicable and no panic", "expect-panic with an empty substring accepts any panic but still requires one", "a non-string panic payload is reported with a placeholder", "directive binds to the next case only and CRLF does not shift line attribution", "panics on parallel threads do not leak between threads", "check_garbage reports panics, errors and silence per cell and passes Unresolved or NotApplicable"]
+moved = [1, 2, 3, 4, 5, 6, 7]
+at = "2026-10-22T02:55:41Z"
+actor = "lognd"
+rev = 1
