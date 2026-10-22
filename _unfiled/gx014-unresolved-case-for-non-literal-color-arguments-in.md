@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T13:17:08Z"
-updated = "2026-10-22T16:47:41Z"
-scope = ["crates/crunk-check/**", "crates/gob-mdtest/coverage-allowlist.toml"]
+updated = "2026-10-22T16:56:39Z"
+scope = ["crates/crunk-check/**", "crates/gob-mdtest/coverage-allowlist.toml", "docs/reference/rules/GX014.md"]
 
 [[acceptance]]
 text = "Given a prefab generator building a Color or Color32 from arguments that are not all numeric literals (variable, field, method call or ternary), when GX014 runs, then the case is Unresolved, not clean and not fired"
