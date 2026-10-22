@@ -7,11 +7,19 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T13:17:08Z"
-updated = "2026-10-22T16:45:47Z"
+updated = "2026-10-22T16:47:11Z"
 scope = ["crates/crunk-check/**"]
 
 [[acceptance]]
-text = "Given a prefab generator passing a non-literal Color argument, when GX014 runs, then the case is Unresolved and not clean or fired"
+text = "Given a prefab generator building a Color or Color32 from arguments that are not all numeric literals (variable, field, method call or ternary), when GX014 runs, then the case is Unresolved, not clean and not fired"
+bound = false
+
+[[acceptance]]
+text = "Given a prefab generator calling a Color method (Color.Lerp, Color.HSVToRGB) whose result cannot be judged, when GX014 runs, then the case is Unresolved, while Color.clear stays clean"
+bound = false
+
+[[acceptance]]
+text = "Given a prefab generator passing named all-literal arguments to new Color, when GX014 runs, then the literal fires rather than going Unresolved"
 bound = false
 +++
 
