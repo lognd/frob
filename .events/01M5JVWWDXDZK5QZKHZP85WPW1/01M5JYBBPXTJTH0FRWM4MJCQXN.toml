@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["gob-dev ci_plan test the_crunk_job_lists_every_crunk_package passes"]
+moved = []
+at = "2026-10-22T23:15:13Z"
+actor = "lognd"
+rev = 1
