@@ -262,77 +262,101 @@ Removed verbs keep a hidden alias for one minor release, then go.
 One table is the source of truth: every verb, the product that ships
 it, the crate that owns the handler, whether a repeat of the same
 request is safe, the exit codes it can return (table in section 2), and
-the milestone that builds it (D36). Verbs marked 2 are designed here and
+the milestone that builds it (D36), and the justification (`effect:`, `policy:` or `object:` and the reason, D104). The test `crates/gob-dev/tests/verb_admission.rs` fails when a registered verb has no row, when a row has no justification, or when a milestone 1 row names a verb that is not registered. Verbs marked 2 are designed here and
 described in their own files, and are Milestone 2 or later (D36).
 
-| Verb | Product | Crate | Idempotent | Exit codes | M |
-|---|---|---|---|---|---|
-| `init` | frob | frob (bin) | yes, adds only missing knobs; a missing `[tickets] ref` is written as `refs/heads/<default branch>` and a missing `[check] base` is that default branch: the remote HEAD of `origin` when present, else a local `main`, else the checked-out branch (an unborn branch counts, a detached HEAD is refused with `E-DETACHED-HEAD`); `--ledger-ref refs/heads/<branch>` overrides the ref; `config sync` detects both the same way; an existing value is never changed; the merge driver is written as bare `frob` only when `frob` on PATH (resolved without a shell) is the running executable (same canonical path, else same version), otherwise as the running executable's absolute path, and the output says why; `--driver-command TEXT` overrides; an existing driver that resolves to the running frob is left alone, one that resolves to a different frob is reported and rewritten only with `--fix-driver` | 0 2 3 4 | 1 |
-| `doctor` | frob | frob (bin) | yes; reports a ledger merge driver that resolves to a different frob than the running one (or to nothing) with the exact fix command (`<running frob> init --fix-driver`); reports each sibling binary (`siblings`: location `beside-frob`, `path` or `absent`, its version, and a second copy with a different version, D87); reports each corrupt lease file (`leases.corrupt`: path and parse error) as a warning with its remedy; `--fix` installs the merge driver and moves corrupt lease files aside as `<name>.toml.corrupt` (`leases.quarantined`), never deleting them | 0 2 4 | 1 |
-| `doctor --languages` | frob | frob (bin) | yes, read-only; prints per-language fidelity level, capability precision and the rules that are NotApplicable once per language (universal-model.md 3.3, 4.2) | 0 2 4 | 2 |
-| `init --ci` (open question, cicd.md section 7) | frob | frob (bin) | yes, adds only missing files | 0 2 4 | 2 |
-| `audit --online` (open question, cicd.md section 7: the online action-currency and advisory check) | frob | frob-check | yes, read-only | 0 2 3 4 | 2 |
-| `config show --effective` | frob | gob-config | yes, read-only | 0 2 4 | 1 |
-| `config sync` | frob | gob-config | yes | 0 2 4 | 2 |
-| `schema` | frob | gob-cli | yes, read-only | 0 2 4 | 1 |
-| `stats [--section velocity\|capacity\|cost\|activity\|flow] [--live]` (one metrics verb, frob-metrics; absorbs `cycle velocity`) | frob | frob-pm | yes, read-only | 0 2 4 | 2 |
-| `clean` | frob | gob-cache | yes | 0 2 4 | 2 |
-| `migrate tickets\|directives\|config\|exceptions` | frob | frob-ledger | yes, skips what is imported | 0 2 3 4 | 2 |
-| `exceptions list` | frob | frob-obligations | yes, read-only | 0 2 4 | 1 |
-| `exceptions audit\|convert\|prune\|budget` | frob | frob-obligations | yes | 0 2 3 4 | 2 |
-| `narrative move` | frob | frob-obligations | yes | 0 2 3 4 | 2 |
-| `rule test` (also `grimble rule test`) | frob, grimble | gob-rules | yes, read-only | 0 1 2 4 | 2 |
-| `batch` | frob | frob-ledger | yes, all or nothing | 0 2 3 4 | 2 |
-| `ticket new` | frob | frob-ledger | only with `--idempotency-key` or an identical request | 0 2 3 4 | 1 |
-| `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C] [--full]` (`--full` adds every row's aliases and events in one pass) | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
-| `ticket doable` (policy: lease-aware dispatch order) | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
-| `ticket update\|link\|unlink\|comment\|body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 |
-| `ticket attach\|component` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
-| `ticket triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes; a repeat of the same decision is `already`, one ledger commit per call (tickets.md section 11.1) | 0 2 3 4 | 1 |
-| `ticket triage` list view is `ticket list --category triage` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 |
-| `ticket evidence`, `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 1 |
-| `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 |
-| `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `work --here` only for the same holder; others get 3 | 0 2 3 4 | 1 |
-| `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
-| `ticket closeout --reason TEXT` | frob | frob-ledger | yes; closes done after the fact under the same evidence, changelog and merge guards, takes no lease, and the close reason is prefixed `retroactive closeout: ` so the ticket counts in no cycle's delivery | 0 2 3 4 | 1 |
-| `ticket review` | frob | frob-ledger | yes | 0 2 3 4 | 2 |
-| `ticket reconcile\|doctor` | frob | frob-ledger | yes | 0 2 3 4 | 1 |
-| `merge-driver` (hidden, git invokes it) | frob | frob-ledger | yes, pure union and re-fold | git contract: 0 merged, 1 conflict | 1 |
-| `cycle new\|assign\|plan\|close`; `forecast <milestone\|epic\|ticket\|release>` (the one forecast) | frob | frob-pm | yes | 0 2 3 4 | 2 |
-| `board [--brief] [--live]` | frob | frob-pm | yes, read-only | 0 2 4 | 1 |
-| `lease list [--contention]` | frob | frob-lease | yes, read-only | 0 2 4 | 1 |
-| `work <ticket>\|--next` | frob | frob-worktree | only for the same holder; others get 3 | 0 2 3 4 | 1 |
-| `worktree sweep\|remove` | frob | frob-worktree | yes | 0 2 3 4 | 2 |
-| `land <ticket> [--train] [--wait <secs>] [--dry-run]` | frob | frob-land | yes, a landed ticket returns `already` | 0 2 3 4 | 1 |
-| `train status` | frob | frob-land | yes, read only | 0 3 | 1 |
-| `train run [--wait <secs>]` | frob | frob-land | yes, one round of the land train | 0 3 | 1 |
-| `train drain [--wait <secs>]` | frob | frob-land | yes, rounds until the queue is empty | 0 3 | 1 |
-| `train drop <ticket> --reason <text>` | frob | frob-land | no, a second drop refuses `E-TRAIN-NOT-QUEUED` | 0 2 3 4 | 1 |
-| `check [--ticket] [--fix] [--fail-on]` | frob | frob-check | yes | 0 1 2 3 4 | 1 |
-| `fix` | frob | frob-check | yes | 0 2 3 4 | 1 |
-| `ack` | frob | frob-ack | yes | 0 2 3 4 | 1 |
-| `test [--base]` | frob | frob-tests | yes | 0 1 2 4 | 1 |
-| `coverage` | frob | frob-tests | yes | 0 2 4 | 2 |
-| `graph why\|affects` | frob | frob-ack | yes, read-only | 0 2 4 | 1 |
-| `graph query\|outline\|map\|xref` (one graph noun; `explore` folds into it) | frob | frob-explore | yes, read-only | 0 2 4 | 2 |
-| `release new\|stamp\|sync\|publish\|status\|changelog` (status prints the `forecast` line) | frob | frob-release | yes | 0 2 3 4 | 2 |
-| `serve [--mcp\|--http]` (no `tui` verb: `board --live` and `stats --live` exec the sibling `frob-live` binary, D105) | frob | frob-serve | not applicable | 0 2 4 | 2 |
-| `hook <event>` | frob | frob-hook | yes | 0 3 4 | 2 |
-| `fleet status\|route` | frob | frob-fleet | yes, read-only | 0 2 4 | 2 |
-| `git -- ...` | frob | gob-exec | explicit passthrough | 0 2 4 | 2 |
-| `frob2 compare --against frob` | frob | frob (bin) | yes, transitional (migration.md) | 0 2 4 | 2 |
-| `grimble check\|status\|graph\|shrink\|init\|packs` | grimble | grimble-check | yes | 0 1 2 3 4 | 2 |
-| `grimble doctor [--languages]` | grimble | grimble-check | yes, read-only | 0 2 4 | 2 |
-| `grimble fmt` | grimble | grimble-model (the alpha-normal printer) | yes | 0 2 4 | 2 |
-| `grimble compile [PATH...]` | grimble | gob-plan (the GRL checker) | yes, read-only; types `config.*` relations and row columns from the embedded docs/schemas/config.json (GRL001 on a misspelt key or column), unchecked with a warning if that schema is malformed or empty | 0 1 2 4 | 2 |
-| `grimble config --for FILE` | grimble | gob-packs (path-scoped activation) over gob-rules | yes, read-only | 0 2 3 4 | 2 |
-| `grimble config diff --base REF [--head REF]` | grimble | gob-trust (policy snapshot) with gob-check (GATE001 weakening classifier) | yes, read-only; lists every changed policy setting and the weakenings GATE001 would report; `--head` defaults to the working copy | 0 2 4 | 2 |
-| `grimble exceptions list` | grimble | grimble-check over gob-rules | yes, read-only | 0 2 4 | 2 |
-| `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 |
-| `grimble vet [--hook]` | grimble | grimble-vet | yes; implemented (vet.md); `--hook` not yet | 0 1 2 4 | 2 |
-| `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 |
-| `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 |
-| crunk verbs (notes/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 |
+| Verb | Product | Crate | Idempotent | Exit codes | M | Justification |
+|---|---|---|---|---|---|---|
+| `init` | frob | frob (bin) | yes, adds only missing knobs; a missing `[tickets] ref` is written as `refs/heads/<default branch>` and a missing `[check] base` is that default branch: the remote HEAD of `origin` when present, else a local `main`, else the checked-out branch (an unborn branch counts, a detached HEAD is refused with `E-DETACHED-HEAD`); `--ledger-ref refs/heads/<branch>` overrides the ref; `config sync` detects both the same way; an existing value is never changed; the merge driver is written as bare `frob` only when `frob` on PATH (resolved without a shell) is the running executable (same canonical path, else same version), otherwise as the running executable's absolute path, and the output says why; `--driver-command TEXT` overrides; an existing driver that resolves to the running frob is left alone, one that resolves to a different frob is reported and rewritten only with `--fix-driver` | 0 2 3 4 | 1 | effect: writes frob.toml knobs and the ledger merge driver |
+| `doctor` | frob | frob (bin) | yes; reports a ledger merge driver that resolves to a different frob than the running one (or to nothing) with the exact fix command (`<running frob> init --fix-driver`); reports each sibling binary (`siblings`: location `beside-frob`, `path` or `absent`, its version, and a second copy with a different version, D87); reports each corrupt lease file (`leases.corrupt`: path and parse error) as a warning with its remedy; `--fix` installs the merge driver and moves corrupt lease files aside as `<name>.toml.corrupt` (`leases.quarantined`), never deleting them | 0 2 4 | 1 | effect: with `--fix` writes the merge driver and quarantines corrupt leases |
+| `doctor --languages` | frob | frob (bin) | yes, read-only; prints per-language fidelity level, capability precision and the rules that are NotApplicable once per language (universal-model.md 3.3, 4.2) | 0 2 4 | 2 | object: the language fidelity report of the doctor noun |
+| `init --ci` (open question, cicd.md section 7) | frob | frob (bin) | yes, adds only missing files | 0 2 4 | 2 | effect: writes the CI workflow files |
+| `audit --online` (open question, cicd.md section 7: the online action-currency and advisory check) | frob | frob-check | yes, read-only | 0 2 3 4 | 2 | object: the audit of action currency and advisories |
+| `config show --effective` | frob | gob-config | yes, read-only | 0 2 4 | 1 | object: the effective configuration |
+| `config sync` | frob | gob-config | yes | 0 2 4 | 2 | effect: writes the detected config knobs |
+| `schema` | frob | gob-cli | yes, read-only | 0 2 4 | 1 | object: the verb's published JSON schema |
+| `stats [--section velocity\|capacity\|cost\|activity\|flow] [--live]` (one metrics verb, frob-metrics; absorbs `cycle velocity`) | frob | frob-pm | yes, read-only | 0 2 4 | 2 | object: the one metrics noun, each family computed once |
+| `clean` | frob | gob-cache | yes | 0 2 4 | 2 | effect: removes cache directories |
+| `migrate tickets\|directives\|config\|exceptions` | frob | frob-ledger | yes, skips what is imported | 0 2 3 4 | 2 | effect: imports v1 data into the v2 ledger |
+| `exceptions list` | frob | frob-obligations | yes, read-only | 0 2 4 | 2 | object: the exceptions noun |
+| `exceptions audit\|convert\|prune\|budget` | frob | frob-obligations | yes | 0 2 3 4 | 2 | effect: rewrites the exceptions store |
+| `narrative move` | frob | frob-obligations | yes | 0 2 3 4 | 2 | effect: moves narrative text into a ticket |
+| `rule test` (also `grimble rule test`) | frob, grimble | gob-rules | yes, read-only | 0 1 2 4 | 2 | object: the rule noun |
+| `batch` | frob | frob-ledger | yes, all or nothing | 0 2 3 4 | 2 | effect: applies many ledger writes atomically |
+| `ticket new` | frob | frob-ledger | only with `--idempotency-key` or an identical request | 0 2 3 4 | 1 | effect: creates a ticket |
+| `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C] [--full]` (`--full` adds every row's aliases and events in one pass) | frob | frob-ledger | yes, read-only | 0 2 4 | 1 | object: the ticket noun, read views |
+| `ticket doable` (policy: lease-aware dispatch order) | frob | frob-lease | yes, read-only | 0 2 4 | 1 | policy: lease-aware dispatch order |
+| `ticket update\|link\|unlink\|comment` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 | effect: writes one ticket field or link |
+| `ticket body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 2 | effect: writes the ticket body or a criterion acceptance |
+| `ticket attach\|component` | frob | frob-ledger | yes | 0 2 3 4 | 2 | effect: writes ticket attachments and components |
+| `ticket triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes; a repeat of the same decision is `already`, one ledger commit per call (tickets.md section 11.1) | 0 2 3 4 | 1 | effect: records a triage decision |
+| `ticket triage` list view is `ticket list --category triage` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 | object: the triage category of the ticket noun |
+| `ticket evidence` | frob | frob-evidence | yes | 0 2 3 4 | 1 | effect: writes evidence and the done report |
+| `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 2 | effect: writes the done report |
+| `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 | effect: fetches evidence into the ledger |
+| `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `work --here` only for the same holder; others get 3 | 0 2 3 4 | 1 | effect: takes a lease and creates a worktree |
+| `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 | effect: closes, drops or reopens a ticket |
+| `ticket closeout --reason TEXT` | frob | frob-ledger | yes; closes done after the fact under the same evidence, changelog and merge guards, takes no lease, and the close reason is prefixed `retroactive closeout: ` so the ticket counts in no cycle's delivery | 0 2 3 4 | 1 | effect: closes, drops or reopens a ticket |
+| `ticket review` | frob | frob-ledger | yes | 0 2 3 4 | 2 | effect: records a ticket review |
+| `ticket doctor` | frob | frob-ledger | yes | 0 2 3 4 | 1 | effect: repairs the ledger |
+| `ticket reconcile` | frob | frob-ledger | yes | 0 2 3 4 | 2 | effect: repairs the ledger |
+| `merge-driver` (hidden, git invokes it) | frob | frob-ledger | yes, pure union and re-fold | git contract: 0 merged, 1 conflict | 1 | effect: merges ledger files for git |
+| `cycle new\|assign\|plan\|close`; `forecast <milestone\|epic\|ticket\|release>` (the one forecast) | frob | frob-pm | yes | 0 2 3 4 | 2 | object: the cycle noun, with the one forecast |
+| `board [--brief] [--live]` | frob | frob-pm | yes, read-only | 0 2 4 | 1 | policy: WIP limits shared with PM013 |
+| `lease list [--contention]` | frob | frob-lease | yes, read-only | 0 2 4 | 1 | object: the lease noun |
+| `work <ticket>\|--next` | frob | frob-worktree | only for the same holder; others get 3 | 0 2 3 4 | 1 | effect: takes a lease and creates a worktree |
+| `worktree sweep\|remove` | frob | frob-worktree | yes | 0 2 3 4 | 2 | effect: removes worktrees |
+| `land <ticket> [--train] [--wait <secs>] [--dry-run]` | frob | frob-land | yes, a landed ticket returns `already` | 0 2 3 4 | 1 | effect: merges and closes a ticket |
+| `train status` | frob | frob-land | yes, read only | 0 3 | 1 | object: the land train noun |
+| `train run [--wait <secs>]` | frob | frob-land | yes, one round of the land train | 0 3 | 1 | effect: lands one train round |
+| `train drain [--wait <secs>]` | frob | frob-land | yes, rounds until the queue is empty | 0 3 | 1 | effect: lands the whole train queue |
+| `train drop <ticket> --reason <text>` | frob | frob-land | no, a second drop refuses `E-TRAIN-NOT-QUEUED` | 0 2 3 4 | 1 | effect: removes a ticket from the train queue |
+| `check [--ticket] [--fix] [--fail-on]` | frob | frob-check | yes | 0 1 2 3 4 | 1 | policy: the gate set and its exit semantics |
+| `fix` | frob | frob-check | yes | 0 2 3 4 | 2 | effect: rewrites files to fix findings |
+| `ack` | frob | frob-ack | yes | 0 2 3 4 | 1 | effect: records a doc-drift acknowledgement |
+| `test [--base]` | frob | frob-tests | yes | 0 1 2 4 | 1 | policy: touched-set test selection |
+| `coverage` | frob | frob-tests | yes | 0 2 4 | 2 | object: the coverage noun |
+| `graph why\|affects` | frob | frob-ack | yes, read-only | 0 2 4 | 1 | object: the graph noun |
+| `graph query\|outline\|map\|xref` (one graph noun; `explore` folds into it) | frob | frob-explore | yes, read-only | 0 2 4 | 2 | object: the graph noun |
+| `release new\|stamp\|sync\|publish\|status\|changelog` (status prints the `forecast` line) | frob | frob-release | yes | 0 2 3 4 | 2 | object: the release noun |
+| `serve [--mcp\|--http]` (no `tui` verb: `board --live` and `stats --live` exec the sibling `frob-live` binary, D105) | frob | frob-serve | not applicable | 0 2 4 | 2 | effect: opens a server socket or stdio session |
+| `hook <event>` | frob | frob-hook | yes | 0 3 4 | 2 | effect: runs the agent hook event |
+| `fleet status\|route` | frob | frob-fleet | yes, read-only | 0 2 4 | 2 | object: the fleet noun |
+| `git -- ...` | frob | gob-exec | explicit passthrough | 0 2 4 | 2 | effect: passes through to git |
+| `frob2 compare --against frob` | frob | frob (bin) | yes, transitional (migration.md) | 0 2 4 | 2 | object: the migration comparison |
+| `grimble check\|status\|graph\|shrink\|init\|packs` | grimble | grimble-check | yes | 0 1 2 3 4 | 2 | object: the model-drift noun of grimble |
+| `grimble doctor [--languages]` | grimble | grimble-check | yes, read-only | 0 2 4 | 2 | object: the doctor noun of grimble |
+| `grimble fmt` | grimble | grimble-model (the alpha-normal printer) | yes | 0 2 4 | 2 | effect: rewrites model files |
+| `grimble compile [PATH...]` | grimble | gob-plan (the GRL checker) | yes, read-only; types `config.*` relations and row columns from the embedded docs/schemas/config.json (GRL001 on a misspelt key or column), unchecked with a warning if that schema is malformed or empty | 0 1 2 4 | 2 | object: the GRL checker |
+| `grimble config --for FILE` | grimble | gob-packs (path-scoped activation) over gob-rules | yes, read-only | 0 2 3 4 | 2 | object: the path-scoped configuration |
+| `grimble config diff --base REF [--head REF]` | grimble | gob-trust (policy snapshot) with gob-check (GATE001 weakening classifier) | yes, read-only; lists every changed policy setting and the weakenings GATE001 would report; `--head` defaults to the working copy | 0 2 4 | 2 | object: the policy snapshot diff |
+| `grimble exceptions list` | grimble | grimble-check over gob-rules | yes, read-only | 0 2 4 | 2 | object: the exceptions noun |
+| `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 | effect: records a binding acknowledgement |
+| `grimble vet [--hook]` | grimble | grimble-vet | yes; implemented (vet.md); `--hook` not yet | 0 1 2 4 | 2 | policy: the vet gate semantics |
+| `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 | object: the explore noun of grimble |
+| `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 | effect: opens a server session |
+| `agent status\|sync\|uninstall` (install, inspect and undo the agent integration) | frob | frob (bin) | yes; `status` is read-only | 0 1 2 3 4 | 1 | effect: writes or removes the agent hook and skill files |
+| `claim hold\|resume\|touch\|evict\|restore` (a remote collaborator's claim on a ticket, distributed lease) | frob | frob-worktree | no for `hold` and `evict`, yes for `resume` and `touch` | 0 2 3 4 | 1 | object: the claim noun, the distributed form of the lease |
+| `cycle list\|show\|unassign` | frob | frob-pm | yes; `list` and `show` are read-only | 0 2 3 4 | 1 | object: the cycle noun |
+| `explain <code>` (also `grimble explain`) | frob, grimble | frob (bin) | yes, read-only | 0 2 4 | 1 | object: the rule and error code catalog |
+| `lease release\|widen\|rekind` | frob | frob-lease | yes, same request | 0 2 3 4 | 1 | effect: rewrites a lease file |
+| `milestone new\|add\|list\|show` | frob | frob (bin) | yes; `list` and `show` are read-only | 0 2 3 4 | 1 | object: the milestone noun |
+| `milestone criterion add\|remove`, `milestone evidence add\|list` | frob | frob (bin) | `criterion add` yes, the others no; `evidence list` is read-only | 0 2 3 4 | 1 | effect: writes milestone criteria and their evidence |
+| `mirror render\|recreate` | frob | frob (bin) | `render` yes, read-only; `recreate` no | 0 2 3 4 | 1 | effect: `recreate` rewrites the tickets mirror |
+| `profile` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: writes the measured verb timings |
+| `refresh` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: rebuilds the derived caches |
+| `release adopt\|bump\|cut\|notes` | frob | frob (bin) | `cut` no, the others yes | 0 2 3 4 | 1 | object: the release noun |
+| `rule catalog\|check\|fmt\|new` (frob and grimble) | frob, grimble | frob (bin) | `new` no, the others yes | 0 1 2 3 4 | 1 | object: the rule noun, one authoring surface per product |
+| `rule catalog` | crunk | crunk | yes | 0 1 2 4 | 1 | object: the rule noun, one authoring surface per product |
+| `teach` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: writes the agent teaching text |
+| `ticket branch init` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: creates the tickets branch |
+| `ticket fragment` | frob | frob (bin) | no | 0 2 3 4 | 1 | effect: writes a changelog fragment |
+| `ticket migrate\|reindex\|url` | frob | frob (bin) | yes | 0 1 2 3 4 | 1 | effect: rewrites ledger indexes and ticket locations |
+| `ticket proposals list\|accept\|decline` | frob | frob (bin) | `accept` no, the others yes | 0 2 3 4 | 1 | object: the proposals queue of the ticket noun |
+| `tour` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: scaffolds the guided tour files |
+| `trust` | frob | frob (bin) | no | 0 2 3 4 | 1 | effect: records trust in the repository |
+| `gallery check\|enumerate\|render\|triage` | crunk | crunk | per crunk | 0 1 2 3 4 | 1 | object: the gallery noun |
+| crunk verbs (notes/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 | object: the crunk product's own nouns |
 
 `frob check` merges sibling findings when they are installed or linked
 (products.md section 1, boundaries.md section 1). `status` exists in
