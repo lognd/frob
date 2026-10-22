@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a length literal, when crunk extract-token runs, then it is promoted to a token and references rewritten", "Given a duration literal, when crunk extract-token runs, then it is promoted likewise"]
+moved = []
+at = "2026-10-22T20:45:18Z"
+actor = "lognd"
+rev = 1

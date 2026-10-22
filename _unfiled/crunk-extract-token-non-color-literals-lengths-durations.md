@@ -4,9 +4,19 @@ title = "crunk extract-token: non-color literals (lengths, durations)"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-22T06:11:32Z"
-updated = "2026-10-22T06:11:32Z"
+updated = "2026-10-22T20:45:18Z"
+scope = ["crates/crunk/src/extract.rs", "crates/crunk/tests/extract.rs"]
+
+[[acceptance]]
+text = "Given a length literal, when crunk extract-token runs, then it is promoted to a token and references rewritten"
+bound = false
+
+[[acceptance]]
+text = "Given a duration literal, when crunk extract-token runs, then it is promoted likewise"
+bound = false
 +++
 
 Found while working ~PAN1YXT: extract-token only promotes hex colors; other literals are refused with E-EXTRACT-LITERAL.
