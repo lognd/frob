@@ -2,13 +2,13 @@
 id = "01M4CXT1GFPWZAMV0BCBH3WC4G"
 title = "Inferred effect classes (pure, honest) from effects Bounds with may-alias, and NEAT037 effect-row-widening against the base"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:37Z"
-updated = "2026-10-08T04:54:37Z"
+updated = "2026-10-22T11:45:11Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/grimble-check/**"]
 
 [[acceptance]]
