@@ -1,0 +1,128 @@
+# Oracle corpus: the true answer (oracle) beside the answer the analysis gave (observed).
+# docs/design/testing.md section 8.
+
+[[case]]
+id = "rust-resolve_ref-01"
+language = "rust"
+capability = "resolve_ref"
+oracle = "yes"
+observed = "yes"
+
+[[case]]
+id = "rust-resolve_ref-02"
+language = "rust"
+capability = "resolve_ref"
+oracle = "yes"
+observed = "yes"
+
+[[case]]
+id = "rust-resolve_ref-03"
+language = "rust"
+capability = "resolve_ref"
+oracle = "no"
+observed = "no"
+
+[[case]]
+id = "rust-resolve_ref-04"
+language = "rust"
+capability = "resolve_ref"
+oracle = "yes"
+observed = "unknown"
+
+[[case]]
+id = "rust-resolve_ref-05"
+language = "rust"
+capability = "resolve_ref"
+oracle = "unknown"
+observed = "unknown"
+
+[[case]]
+id = "rust-visibility-06"
+language = "rust"
+capability = "visibility"
+oracle = "yes"
+observed = "yes"
+
+[[case]]
+id = "rust-visibility-07"
+language = "rust"
+capability = "visibility"
+oracle = "no"
+observed = "no"
+
+[[case]]
+id = "python-resolve_ref-08"
+language = "python"
+capability = "resolve_ref"
+oracle = "yes"
+observed = "yes"
+
+[[case]]
+id = "python-resolve_ref-09"
+language = "python"
+capability = "resolve_ref"
+oracle = "yes"
+observed = "unknown"
+
+[[case]]
+id = "python-resolve_ref-10"
+language = "python"
+capability = "resolve_ref"
+oracle = "no"
+observed = "unknown"
+
+[[case]]
+id = "python-imports-11"
+language = "python"
+capability = "imports"
+oracle = "yes"
+observed = "yes"
+
+[[case]]
+id = "python-imports-12"
+language = "python"
+capability = "imports"
+oracle = "no"
+observed = "no"
+
+[[case]]
+id = "typescript-resolve_ref-13"
+language = "typescript"
+capability = "resolve_ref"
+oracle = "yes"
+observed = "unknown"
+
+[[case]]
+id = "typescript-resolve_ref-14"
+language = "typescript"
+capability = "resolve_ref"
+oracle = "yes"
+observed = "yes"
+
+[[case]]
+id = "typescript-imports-15"
+language = "typescript"
+capability = "imports"
+oracle = "yes"
+observed = "yes"
+
+[[case]]
+id = "csharp-apply_targets-16"
+language = "csharp"
+capability = "apply_targets"
+oracle = "yes"
+observed = "unknown"
+
+[[case]]
+id = "csharp-apply_targets-17"
+language = "csharp"
+capability = "apply_targets"
+oracle = "unknown"
+observed = "unknown"
+
+[[case]]
+id = "csharp-apply_targets-18"
+language = "csharp"
+capability = "apply_targets"
+oracle = "no"
+observed = "no"
