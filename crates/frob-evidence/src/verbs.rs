@@ -305,7 +305,7 @@ pub struct CaptureFlags {
         long = "ref",
         value_name = "REF",
         allow_hyphen_values = true,
-        help = "Nextest filter args, pytest arguments (node ids), vitest or jest arguments (test files), dotnet arguments (fully qualified test ids and an optional project path), unity arguments (EditMode or PlayMode, .asmdef paths and fully qualified test ids) or the command line (POSIX shell quoting, no shell run), or the file path (not for attestation)"
+        help = "Nextest filter args, pytest arguments (node ids), vitest or jest arguments (test files), dotnet arguments (fully qualified test ids, an optional project path, and the flags --no-build, --no-restore and -c or --configuration <name>), unity arguments (EditMode or PlayMode, .asmdef paths and fully qualified test ids) or the command line (POSIX shell quoting, no shell run), or the file path (not for attestation)"
     )]
     reference: Option<String>,
     #[arg(

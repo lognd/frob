@@ -67,6 +67,9 @@ pub struct FrobConfig {
     pub gc: frob_worktree::GcConfig,
     /// `[evidence]`, owned by `frob-evidence`.
     pub evidence: frob_evidence::EvidenceTable,
+    // frob:ticket 01M4DYPG8A4CEY04ARSW3H4AJR
+    /// `[evidence.dotnet]`, owned by `frob-evidence`.
+    pub dotnet: frob_evidence::DotnetTable,
     /// `[pm]`, `[pm.wip]` and `[pm.classes]`, owned by `frob-pm`.
     pub pm: frob_pm::PmConfig,
     /// `[release]`, owned by `frob-release`.
@@ -117,6 +120,8 @@ impl FrobConfig {
             // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
             gc: doc.table::<frob_worktree::GcConfig>()?.value,
             evidence: doc.table::<frob_evidence::EvidenceTable>()?.value,
+            // frob:ticket 01M4DYPG8A4CEY04ARSW3H4AJR
+            dotnet: doc.table::<frob_evidence::DotnetTable>()?.value,
             pm: frob_pm::PmConfig::from_document(&doc)?,
             release: doc.table::<frob_release::ReleaseConfig>()?.value,
             // frob:ticket 01M4D6NWQ3F11S4MB3KT5K4JHZ

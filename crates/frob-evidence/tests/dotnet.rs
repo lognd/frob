@@ -4,7 +4,7 @@ use gob_path::Shown;
 use std::path::Path;
 use std::time::Duration;
 
-use frob_evidence::provider::{dotnet_filter, parse_trx};
+use frob_evidence::provider::{dotnet_filter, parse_trx, split_dotnet_args};
 use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
@@ -252,7 +252,7 @@ fn a_filter_that_runs_no_test_refuses_and_records_nothing() {
 fn an_option_like_reference_and_a_missing_allowlist_entry_are_refused() {
     // frob:tests crates/frob-evidence/src/provider.rs::run_dotnet
     let dir = repo(&gob_testsupport::fake_dotnet(), Some(TRX), None);
-    let (code, out, err, count) = add_dotnet(dir.path(), "--no-build");
+    let (code, out, err, count) = add_dotnet(dir.path(), "--logger");
     assert_ne!(code, 0, "{out}{err}");
     assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-REF", "{out}");
     assert_eq!(count, 0);
@@ -265,4 +265,54 @@ fn an_option_like_reference_and_a_missing_allowlist_entry_are_refused() {
     assert_ne!(code, 0, "{out}{err}");
     assert_eq!(json(&out)["error"]["code"], "E-EVIDENCE-TOOL", "{out}");
     assert_eq!(count, 0);
+}
+
+// frob:ticket 01M4DYPG8A4CEY04ARSW3H4AJR
+#[test]
+fn allowed_runner_flags_are_passed_and_other_options_are_refused() {
+    // frob:tests crates/frob-evidence/src/provider.rs::split_dotnet_args
+    let args = |a: &[&str]| a.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>();
+    let ok = split_dotnet_args(&args(&["--no-build", "-c", "Release", "T.csproj", "A.B.M"]))
+        .expect("allowed");
+    assert_eq!(ok.flags, ["--no-build", "-c", "Release"]);
+    assert_eq!(ok.projects, ["T.csproj"]);
+    assert_eq!(ok.ids, ["A.B.M"]);
+    let long =
+        split_dotnet_args(&args(&["--configuration", "Debug", "--no-restore"])).expect("long form");
+    assert_eq!(long.flags, ["--configuration", "Debug", "--no-restore"]);
+    for bad in [
+        &["--logger"][..],
+        &["-c"],
+        &["-c", "--no-build"],
+        &["-c", "Rel;ease"],
+        &["--configuration", ""],
+        &["--no-build=false"],
+    ] {
+        assert!(
+            matches!(
+                split_dotnet_args(&args(bad)),
+                Err(frob_evidence::EvidenceError::BadReference(_))
+            ),
+            "{bad:?}"
+        );
+    }
+}
+
+// frob:ticket 01M4DYPG8A4CEY04ARSW3H4AJR
+#[test]
+fn a_no_build_reference_is_recorded_and_the_flags_reach_dotnet() {
+    // frob:tests crates/frob-evidence/src/provider.rs::run_dotnet
+    let dir = repo(&gob_testsupport::fake_dotnet(), Some(TRX), None);
+    let (code, out, err, count) = add_dotnet(
+        dir.path(),
+        "--no-build -c Release Hb.Core.Tests.MathTests.Adds",
+    );
+    assert_eq!(code, 0, "{out}{err}");
+    assert_eq!(count, 1);
+    let inline = json(&out)["data"]["record"]["inline"]
+        .as_str()
+        .expect("inline")
+        .to_owned();
+    assert!(inline.contains("--no-build -c Release"), "{inline}");
+    assert!(inline.contains("--filter FullyQualifiedName="), "{inline}");
 }

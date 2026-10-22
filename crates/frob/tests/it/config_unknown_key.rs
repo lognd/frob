@@ -46,3 +46,26 @@ fn unknown_key_is_refused_by_init_doctor_and_check() {
         "default_milestone",
     );
 }
+
+// frob:ticket 01M4DYPG8A4CEY04ARSW3H4AJR
+// frob:tests crates/frob/src/workspace.rs::load_config
+// frob:tests crates/frob/src/config.rs::FrobConfig.load
+#[test]
+fn a_mistyped_dotnet_evidence_value_is_refused_by_doctor() {
+    let dir = common::git_repo();
+    std::fs::write(
+        dir.path().join("frob.toml"),
+        "[evidence.dotnet]\npath = 5\n",
+    )
+    .expect("frob.toml");
+    let (code, json) = run(dir.path(), "doctor");
+    assert_ne!(code, 0, "{json}");
+    assert_eq!(json["error"]["code"], "E-CONFIG", "{json}");
+    std::fs::write(
+        dir.path().join("frob.toml"),
+        "[evidence.dotnet]\npath = \"dotnet\"\n",
+    )
+    .expect("frob.toml");
+    let (code, json) = run(dir.path(), "doctor");
+    assert_eq!(code, 0, "{json}");
+}

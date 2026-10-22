@@ -1335,6 +1335,61 @@ fn is_dotnet_project_arg(arg: &str) -> bool {
         .any(|ext| arg.ends_with(ext))
 }
 
+// frob:ticket 01M4DYPG8A4CEY04ARSW3H4AJR
+/// The reference arguments of one `dotnet test` run, sorted by role.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct DotnetArgs {
+    /// Allowed runner flags, in order, with their values (`--no-build`, `-c`, `Release`).
+    pub flags: Vec<String>,
+    /// Project and solution paths.
+    pub projects: Vec<String>,
+    /// Fully qualified test ids.
+    pub ids: Vec<String>,
+}
+
+// frob:ticket 01M4DYPG8A4CEY04ARSW3H4AJR
+/// Sort the reference arguments of a `dotnet test` run into allowed flags, projects and test ids.
+///
+/// Allowed flags are `--no-build`, `--no-restore`, and `-c`/`--configuration` followed by a build
+/// configuration name (letters, digits, `_`, `-` and `.`, not starting with `-`). Any other argument starting
+/// with `-` is refused so a reference cannot smuggle options.
+///
+/// # Errors
+///
+/// [`EvidenceError::BadReference`] for an unknown option or a configuration flag without a usable value.
+pub fn split_dotnet_args(args: &[String]) -> Result<DotnetArgs> {
+    let mut out = DotnetArgs::default();
+    let mut it = args.iter();
+    while let Some(arg) = it.next() {
+        match arg.as_str() {
+            "--no-build" | "--no-restore" => out.flags.push(arg.clone()),
+            "-c" | "--configuration" => {
+                let value = it.next().filter(|v| {
+                    !v.is_empty()
+                        && !v.starts_with('-')
+                        && v.chars()
+                            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.'))
+                });
+                let Some(value) = value else {
+                    return Err(EvidenceError::BadReference(format!(
+                        "`{arg}` needs a build configuration name such as `Release`"
+                    )));
+                };
+                out.flags.push(arg.clone());
+                out.flags.push(value.clone());
+            }
+            a if a.starts_with('-') => {
+                return Err(EvidenceError::BadReference(format!(
+                    "`{a}` is not an allowed option; allowed are --no-build, --no-restore and -c/--configuration <name>, then project paths and fully qualified test ids"
+                )));
+            }
+            a if is_dotnet_project_arg(a) => out.projects.push(arg.clone()),
+            _ => out.ids.push(arg.clone()),
+        }
+    }
+    Ok(out)
+}
+
 // frob:ticket 01M44YQWY2SWCH7PS9F9W0WEA9
 /// What one `dotnet test` run needs.
 #[derive(Debug, Clone, Copy)]
@@ -1356,7 +1411,7 @@ pub struct DotnetRun<'a> {
 ///
 /// Arguments ending in a project or solution extension (`.csproj`, `.sln`, ...) are passed as the thing to
 /// test; every other argument is a test id and becomes part of a `--filter` ([`dotnet_filter`]). An argument
-/// starting with `-` is refused, so a reference cannot smuggle options. `dotnet` runs with a fresh
+/// starting with `-` is refused unless it is an allowed flag ([`split_dotnet_args`]), so a reference cannot smuggle options. `dotnet` runs with a fresh
 /// `--results-directory` whose TRX is parsed and removed; the transcript is `dotnet`'s stdout and stderr then
 /// the per-test summary, left to [`build_record`] to redact and escape.
 ///
@@ -1380,12 +1435,9 @@ pub fn run_dotnet(runner: &Runner, job: &DotnetRun<'_>) -> Result<Capture> {
             tool: DOTNET_PROGRAM.to_owned(),
         });
     }
-    if let Some(bad) = args.iter().find(|a| a.starts_with('-')) {
-        tracing::warn!(arg = bad, "dotnet evidence refused: option-like argument");
-        return Err(EvidenceError::BadReference(format!(
-            "`{bad}` looks like an option; pass project paths and fully qualified test ids only"
-        )));
-    }
+    let split = split_dotnet_args(args).inspect_err(|e| {
+        tracing::warn!(error = %e, "dotnet evidence refused: bad argument");
+    })?;
     let missing = || {
         tracing::warn!("dotnet test run refused: dotnet SDK missing");
         EvidenceError::RunnerMissing {
@@ -1420,10 +1472,14 @@ pub fn run_dotnet(runner: &Runner, job: &DotnetRun<'_>) -> Result<Capture> {
         JUNIT_SEQ.fetch_add(1, Ordering::Relaxed)
     ));
     std::fs::create_dir_all(&results).map_err(|e| EvidenceError::io(&results, e))?;
-    let (projects, ids): (Vec<String>, Vec<String>) =
-        args.iter().cloned().partition(|a| is_dotnet_project_arg(a));
+    let DotnetArgs {
+        flags,
+        projects,
+        ids,
+    } = split;
     let mut full = vec!["test".to_owned()];
     full.extend(projects);
+    full.extend(flags);
     full.extend([
         "--nologo".to_owned(),
         "--logger".to_owned(),
