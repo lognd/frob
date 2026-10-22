@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-22T03:58:45Z"
+updated = "2026-10-22T04:21:28Z"
 scope = ["crates/gob-mdtest/**", "crates/frob-obligations/tests/**"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M48PBZRJ30T8TKEE31X6M6MS"
 
 [[acceptance]]
 text = "a cross-file corpus for a link rule passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "an inherited-config test passes"

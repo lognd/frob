@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T04:21:28Z"
+digest = "1bf14617768370cbae036542486e1a91807c263e719ce6efd864ba599020f185"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 50f98a03-a84a-4220-8bd8-24a2f264a1e0 with nextest profile: default
+    Starting 1 test across 7 binaries (75 tests skipped)
+        PASS [   0.008s] gob-mdtest::sections cross_file_link_corpus_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 75 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest cross_file_link_corpus_passes"
+size = 796
+status = "measured"
+test_count = 1
+tests_digest = "72b9326e06c95a9133ff535b646ba4393803d0e60245fb5c102d717578eb0670"
+at = "2026-10-22T04:21:28Z"
+actor = "lognd"
+rev = 1
