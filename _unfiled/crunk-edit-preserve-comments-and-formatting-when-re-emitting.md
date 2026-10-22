@@ -2,12 +2,12 @@
 id = "01M5H8MMRPN3RFSMP5KCEXPWC7"
 title = "crunk edit: preserve comments and formatting when re-emitting TOML"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T07:36:34Z"
-updated = "2026-10-22T17:45:27Z"
+updated = "2026-10-22T17:45:28Z"
 scope = ["crates/crunk/**"]
 
 [[acceptance]]
