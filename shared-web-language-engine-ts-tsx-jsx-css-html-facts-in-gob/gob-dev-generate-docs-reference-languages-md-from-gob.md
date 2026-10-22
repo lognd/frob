@@ -2,7 +2,8 @@
 id = "01M48FXFZMWWZQ233HYSPZ6PP9"
 title = "gob-dev: generate docs/reference/languages.md from gob_symbols::languages_page"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
