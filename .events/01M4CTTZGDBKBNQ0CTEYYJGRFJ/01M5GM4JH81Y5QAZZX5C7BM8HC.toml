@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T01:38:12Z"
+digest = "2e600c06f708b2fcd018ba73ac40c6006a91f631db1d1588bafc171b39666b49"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 40a43989-4fa3-45fc-a7f5-339ebb8be8b2 with nextest profile: default
+    Starting 1 test across 6 binaries (98 tests skipped)
+        PASS [   0.093s] frob-evidence done::tests::epic_and_docs_tickets_close_without_a_fragment_by_default
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.094s] 1 test run: 1 passed, 98 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence epic_and_docs_tickets_close_without_a_fragment_by_default"
+size = 801
+status = "measured"
+test_count = 1
+tests_digest = "70228018880ae4b2affc1abb8d1570841b2fe239896b105cc37441b425e388c6"
+at = "2026-10-22T01:38:12Z"
+actor = "lognd"
+rev = 1
