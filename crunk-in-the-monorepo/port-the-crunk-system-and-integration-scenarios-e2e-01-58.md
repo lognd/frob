@@ -2,7 +2,8 @@
 id = "01M43AVKZWSTQRGWR6YPXH7THX"
 title = "Port the crunk system and integration scenarios (E2E-01..58, INT-01..12) to Rust tests"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
