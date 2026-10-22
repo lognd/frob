@@ -2,12 +2,12 @@
 id = "01M5H3RXWHYH6MRJX6B2M35H0F"
 title = "crunk rename: support design/tokens custom tokens and derived scale tokens"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:11:32Z"
-updated = "2026-10-22T20:45:18Z"
+updated = "2026-10-22T20:45:29Z"
 scope = ["crates/crunk/src/rename.rs", "crates/crunk/tests/rename.rs"]
 
 [[acceptance]]
