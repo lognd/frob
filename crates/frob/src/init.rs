@@ -789,6 +789,8 @@ impl Command for Init {
         let located = Located::discover(&ctx.cwd);
         let repo = located.require_repo()?;
         let root = &located.root;
+        // frob:ticket 01M42H140A7Y1AMEQJ0YVTYZDE
+        frob_ledger::redact::RuleSet::mention_local_files(repo.common_dir());
         let cfg = crate::workspace::load_config(root)?;
         if let Some(r) = self.ledger_ref.as_deref()
             && r.strip_prefix("refs/heads/").is_none_or(str::is_empty)
