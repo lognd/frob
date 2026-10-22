@@ -25,7 +25,7 @@ binary.
 
 Rules over store and infrastructure code join STORE, rules over the declared design join
 SYSDESIGN, and rules over the model vocabulary itself join GRAMMAR. The model-reading rules use
-`model` example inputs and `needs model`. Every rule has a firing and a clean example (the GRAMMAR102-104 rules also a not-applicable one) and an
+`model` example inputs and `reads model`. Every rule has a firing and a clean example (the GRAMMAR102-104 rules also a not-applicable one) and an
 `explain` with `## Remedy`; a rule without a firing and a clean example fails to compile
 (GRL011).
 
