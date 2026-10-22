@@ -272,6 +272,8 @@ step (before `nextest`; `ci.yml` sets up python 3.12 and uv first)
 runs `uv tool install --force` of the pinned `PYTEST_REQUIREMENT` (idempotent; pip
 is not used because hosts under PEP 668 refuse it), and the `nextest` step
 runs with `uv tool dir --bin` in front of `PATH`, so CI cannot skip them.
+The same step also gets `FROB_REQUIRE_NODE_TESTS=1` (`REQUIRE_NODE_TESTS_ENV`), and `ci.yml`
+installs node with `actions/setup-node`, so the TypeScript runner tests never skip either.
 uv is a declared prerequisite: the repo-root `goway.toml` lists it under
 `[toolchain] tools` so `goway doctor --fix` installs it on each helper, and
 `ci.yml` installs it with a pinned `astral-sh/setup-uv` (the zizmor and
