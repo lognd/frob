@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T19:35:13Z"
-updated = "2026-10-22T20:23:17Z"
+updated = "2026-10-22T20:36:06Z"
 scope = ["crates/crunk-spec/**", "crates/crunk/src/new.rs", "crates/crunk/tests/new.rs", "docs/crunk/README.md"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given crunk new flow, when it writes a flow file, then the output passes the validator"
-bound = false
+bound = true
 +++
 
 found while working 76STB57: crunk new flow can only validate TOML syntax
