@@ -8,8 +8,8 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T14:29:24Z"
-updated = "2026-10-22T08:45:17Z"
-scope = ["changelog.d/**", "crates/frob-evidence/**", "crates/frob/**"]
+updated = "2026-10-22T08:55:39Z"
+scope = ["changelog.d/**", "crates/frob-evidence/**", "crates/frob/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "Given --no-build in the evidence ref, when recorded, then it is accepted; given [evidence.dotnet] in frob.toml, when doctor runs, then it validates"
