@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T03:22:16Z"
+digest = "9756eafaf48294a49ec9d9c44a001a8e744c7fb57816c155a4ae6f34ce985232"
+exit_code = 0
+head = "f487420827cf22dad1448e8e8ba65a081f438449"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.67s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2b0d4602-9b2a-4a0f-82a5-57764d54524e with nextest profile: default
+    Starting 4 tests across 4 binaries (438 tests skipped)
+        PASS [   0.079s] frob-cli::it cli::config_sync_adds_missing_knobs_once
+        PASS [   0.086s] frob-cli::it pm_config::pm_knob_order_is_one_across_init_the_sync_list_and_the_repo_frob_toml
+        PASS [   0.261s] frob-cli::it cli::doctor_piped_is_json_envelope_even_with_cfg001
+        PASS [   0.432s] frob-cli::it cli::init_twice_second_is_already_and_changes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.433s] 4 tests run: 4 passed, 438 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli pm_knob_order config_sync_adds_missing init_twice_second doctor_piped"
+size = 906
+status = "measured"
+test_count = 4
+tests_digest = "0df16fc393edb43eac8551a4b0a49705c44a9d08a4cd24739a87a59b49e237b3"
+at = "2026-10-22T03:22:16Z"
+actor = "lognd"
+rev = 1

@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T03:15:56Z"
-updated = "2026-10-22T03:16:54Z"
+updated = "2026-10-22T03:22:16Z"
 scope = ["crates/frob/**", "frob.toml", "docs/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "the three named frob-cli tests pass"
-bound = false
+bound = true
 +++
 
 After YYJGRFJ added [pm] changelog_exempt_types, three frob-cli tests fail: config_sync_adds_missing_knobs_once, init_twice_second_is_already_and_changes_nothing, pm_knob_order_is_one_across_init_the_sync_list_and_the_repo_frob_toml. Add the knob to the init template, sync list, repo frob.toml and snapshots.
