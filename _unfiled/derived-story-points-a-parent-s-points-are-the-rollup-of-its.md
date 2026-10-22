@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:04:18Z"
-updated = "2026-10-22T14:10:58Z"
+updated = "2026-10-22T14:18:36Z"
 labels = ["adoption:hullbreach"]
-scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/gob-config/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/src/product.rs", "docs/reference/**", "docs/schemas/**", "crates/frob/**"]
+scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/gob-config/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/src/product.rs", "docs/reference/**", "docs/schemas/**", "crates/frob/**", "frob.toml"]
 
 [[acceptance]]
 text = "Given a story with no entered points whose subtasks have 2, 2 and 3 points, when frob cycle assign runs on it, then it is accepted with derived points 7 shown as derived, and the cycle commitment counts 7 once (leaves only, never parent plus children)"
