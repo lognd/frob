@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T00:02:04Z"
+digest = "6556eb1775f192f4001118b326793b86b0cebf162aad7b8229bef5b6900ad2d2"
+exit_code = 0
+head = "c58922e68a39bf3a455de95e2e8c3f29395365b0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 293c283f-cc57-4532-8d05-920e08bf7b76 with nextest profile: default
+    Starting 5 tests across 1 binary (97 tests skipped)
+        PASS [   0.005s] gob-plan exec::relations::count::tests::unbounded_counts_never_decide_an_upper_bound
+        PASS [   0.005s] gob-plan exec::relations::count::tests::scaling_decides_exact_counts_and_a_zero_scale_pins_an_open_count
+        PASS [   0.006s] gob-plan exec::relations::count::tests::a_knob_override_replaces_the_default
+        PASS [   0.008s] gob-plan exec::relations::count::tests::interval_comparison_is_sound_against_every_concretisation
+        PASS [   0.126s] gob-plan exec::relations::count::tests::scaled_comparison_is_sound_for_negative_zero_and_fractional_scales
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.127s] 5 tests run: 5 passed, 97 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --lib relations::count"
+size = 1062
+status = "measured"
+test_count = 5
+tests_digest = "8b901b158a60b1ae2b53761377c8abeb46b798cba8135c8f07f7036c94c4b648"
+at = "2026-10-22T00:02:04Z"
+actor = "lognd"
+rev = 1
