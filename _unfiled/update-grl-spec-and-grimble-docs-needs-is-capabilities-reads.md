@@ -2,12 +2,12 @@
 id = "01M5HQMX1NFZNV3R465V2DWJA2"
 title = "Update grl-spec and grimble docs: needs is capabilities, reads is side relations"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T11:58:51Z"
-updated = "2026-10-22T14:50:31Z"
+updated = "2026-10-22T14:50:32Z"
 scope = ["docs/design/grl-spec.md", "docs/grimble/**"]
 
 [[acceptance]]
