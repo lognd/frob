@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T12:42:45Z"
-updated = "2026-10-22T15:00:10Z"
+updated = "2026-10-22T15:00:11Z"
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an unchanged config and report, when the digest is computed twice, then it is identical"
-bound = false
+bound = true
 +++
 
 found while working ~0MQ76H2: repo_digest in crates/frob-check/src/product.rs ignores the [coverage] table and the lcov report, so a cached COV004 result can go stale.
