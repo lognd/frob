@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:43Z"
-updated = "2026-10-22T01:41:59Z"
+updated = "2026-10-22T01:42:02Z"
 scope = ["changelog.d/**", "crates/gob-config/**", "crates/frob-worktree/**", "crates/frob/**", "crates/frob-lease/**", "crates/frob-tests/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given work --here on a fresh ticket, when check --ticket runs after a change, then the change is in the diff"
-bound = false
+bound = true
 +++
 
 notes/review/adoption-trial-2026-10-07.md MEDIUM: init refuses an unknown key while doctor and check warn; work --here leaves check --ticket and test --base main with an empty diff on main.

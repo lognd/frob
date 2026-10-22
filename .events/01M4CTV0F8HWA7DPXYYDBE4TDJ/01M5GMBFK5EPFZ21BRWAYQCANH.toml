@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T01:42:02Z"
+digest = "0adbde54fcf6d47e61ffce6c871cf16bac6067d5dd516f313e23f3f4559a9e0d"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1d51b775-d610-4b4a-a4ea-2e8f1128340d with nextest profile: default
+    Starting 1 test across 4 binaries (431 tests skipped)
+        PASS [   0.373s] frob-cli::it claim_base::work_here_base_keeps_a_committed_change_in_the_test_diff
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.374s] 1 test run: 1 passed, 431 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli work_here_base"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "57e81160855e3946be0c30cddcad66d362a5ab4cc87a08a2411c71f802b91701"
+at = "2026-10-22T01:42:02Z"
+actor = "lognd"
+rev = 1
