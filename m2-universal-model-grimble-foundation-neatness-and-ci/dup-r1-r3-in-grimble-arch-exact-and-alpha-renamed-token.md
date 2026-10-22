@@ -2,7 +2,8 @@
 id = "01M4D958QKMX7VHFJMRMAWDT22"
 title = "DUP R1-R3 in grimble-arch: exact and alpha-renamed token clones above min_tokens with three or more occurrences (Advisory)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
