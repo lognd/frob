@@ -62,7 +62,7 @@ default = "sm"
 
 ## Examples
 
-### COMP001 props-invalid / Examples #1 (line 22) (fire)
+### COMP001 props-invalid / Examples / A default outside the values fires #1 (line 22) (fire)
 
 ```toml
 name = "button"
@@ -74,7 +74,7 @@ values = ["sm", "lg"]
 default = "md"
 ```
 
-### COMP001 props-invalid / Examples #2 (line 34) (clean)
+### COMP001 props-invalid / Examples / A well-formed enum is clean #2 (line 34) (clean)
 
 ```toml
 name = "button"

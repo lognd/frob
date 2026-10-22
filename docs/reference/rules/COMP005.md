@@ -81,7 +81,7 @@ token = "--color-ink"
 
 ## Examples
 
-### COMP005 binding-unresolved / Examples #1 (line 22) (fire)
+### COMP005 binding-unresolved / Examples / An unknown node fires #1 (line 22) (fire)
 
 ```toml
 name = "button"
@@ -95,7 +95,7 @@ property = "color"
 token = "--color-ink"
 ```
 
-### COMP005 binding-unresolved / Examples #2 (line 36) (fire)
+### COMP005 binding-unresolved / Examples / An unknown token fires #2 (line 36) (fire)
 
 ```toml
 name = "button"
@@ -106,7 +106,7 @@ property = "color"
 token = "--color-nope"
 ```
 
-### COMP005 binding-unresolved / Examples #3 (line 47) (clean)
+### COMP005 binding-unresolved / Examples / A resolvable binding is clean #3 (line 47) (clean)
 
 ```toml
 name = "button"

@@ -77,7 +77,7 @@ Use a neutral elevation shadow, or declare `glows` under `[decisions]`.
 
 ## Examples
 
-### SLOP004 coloured-glow-shadows / Examples #1 (line 20) (fire)
+### SLOP004 coloured-glow-shadows / Examples / Two coloured glows fire #1 (line 20) (fire)
 
 ```css
 .a {
@@ -88,7 +88,7 @@ Use a neutral elevation shadow, or declare `glows` under `[decisions]`.
 }
 ```
 
-### SLOP004 coloured-glow-shadows / Examples #2 (line 31) (clean)
+### SLOP004 coloured-glow-shadows / Examples / One glow is clean #2 (line 31) (clean)
 
 ```css
 .a {
@@ -96,7 +96,7 @@ Use a neutral elevation shadow, or declare `glows` under `[decisions]`.
 }
 ```
 
-### SLOP004 coloured-glow-shadows / Examples #3 (line 39) (clean)
+### SLOP004 coloured-glow-shadows / Examples / A neutral shadow is clean #3 (line 39) (clean)
 
 ```css
 .a {
@@ -107,7 +107,7 @@ Use a neutral elevation shadow, or declare `glows` under `[decisions]`.
 }
 ```
 
-### SLOP004 coloured-glow-shadows / Examples #4 (line 50) (clean)
+### SLOP004 coloured-glow-shadows / Examples / A declared glows decision is clean #4 (line 50) (clean)
 
 Config: `decide-glows`
 

@@ -72,7 +72,7 @@ claim c {
 
 ## Examples
 
-### CLAIM003 claim-unresolved / Examples #1 (line 22) (fire)
+### CLAIM003 claim-unresolved / Examples / Fires case 1 #1 (line 22) (fire)
 
 ```grmb
 grimble = "2";
@@ -89,7 +89,7 @@ claim c {
 }
 ```
 
-### CLAIM003 claim-unresolved / Examples #2 (line 39) (clean)
+### CLAIM003 claim-unresolved / Examples / Clean case 2 #2 (line 39) (clean)
 
 ```grmb
 grimble = "2";

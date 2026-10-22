@@ -62,13 +62,13 @@ title = "Edited by hand"
 
 ```
 
-### TICK001 frontmatter-differs-from-fold / Examples #1 (line 22) (fire)
+### TICK001 frontmatter-differs-from-fold / Examples / A violating case fires #1 (line 22) (fire)
 
 ```rust
 pub fn placeholder() {}
 ```
 
-### TICK001 frontmatter-differs-from-fold / Examples #2 (line 28) (clean)
+### TICK001 frontmatter-differs-from-fold / Examples / A conforming case is clean #2 (line 28) (clean)
 
 ```rust
 pub fn placeholder() {}

@@ -50,13 +50,13 @@ pub fn unbound() {}
 
 ## Examples
 
-### DRIFT001 doc-binding-drift / Examples #1 (line 22) (fire)
+### DRIFT001 doc-binding-drift / Examples / A drifted case fires #1 (line 22) (fire)
 
 ```rust
 pub fn bound() {}
 ```
 
-### DRIFT001 doc-binding-drift / Examples #2 (line 28) (clean)
+### DRIFT001 doc-binding-drift / Examples / An unchanged case is clean #2 (line 28) (clean)
 
 ```rust
 pub fn unbound() {}

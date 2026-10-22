@@ -87,7 +87,7 @@ flow f2 : a -> b {
 
 ## Examples
 
-### FLOW001 flow-label-closure / Examples #1 (line 22) (fire)
+### FLOW001 flow-label-closure / Examples / Fires case 1 #1 (line 22) (fire)
 
 ```grmb
 grimble = "2";
@@ -103,7 +103,7 @@ flow f2 : a -> b {
 }
 ```
 
-### FLOW001 flow-label-closure / Examples #2 (line 38) (clean)
+### FLOW001 flow-label-closure / Examples / Clean case 2 #2 (line 38) (clean)
 
 ```grmb
 grimble = "2";
@@ -120,7 +120,7 @@ flow f2 : a -> b {
 boundary b1 declassify f2 : Secret -> Public;
 ```
 
-### FLOW001 flow-label-closure / Examples #3 (line 55) (clean)
+### FLOW001 flow-label-closure / Examples / Clean case 3 #3 (line 55) (clean)
 
 ```grmb
 grimble = "2";

@@ -60,7 +60,7 @@ token = "--color-ink"
 
 ## Examples
 
-### COMP004 literal-unbound / Examples #1 (line 22) (fire)
+### COMP004 literal-unbound / Examples / A literal fires #1 (line 22) (fire)
 
 ```toml
 name = "button"
@@ -71,7 +71,7 @@ property = "color"
 value = "#ff0000"
 ```
 
-### COMP004 literal-unbound / Examples #2 (line 33) (clean)
+### COMP004 literal-unbound / Examples / A token is clean #2 (line 33) (clean)
 
 ```toml
 name = "button"

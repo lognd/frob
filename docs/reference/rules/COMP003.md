@@ -68,13 +68,13 @@ id = "hover"
 
 ## Examples
 
-### COMP003 states-invalid / Examples #1 (line 22) (fire)
+### COMP003 states-invalid / Examples / No states fires #1 (line 22) (fire)
 
 ```toml
 name = "button"
 ```
 
-### COMP003 states-invalid / Examples #2 (line 28) (fire)
+### COMP003 states-invalid / Examples / A repeated state fires #2 (line 28) (fire)
 
 ```toml
 name = "button"
@@ -86,7 +86,7 @@ id = "default"
 id = "default"
 ```
 
-### COMP003 states-invalid / Examples #3 (line 40) (clean)
+### COMP003 states-invalid / Examples / Distinct states are clean #3 (line 40) (clean)
 
 ```toml
 name = "button"

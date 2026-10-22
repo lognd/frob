@@ -56,7 +56,7 @@ pub fn short() {
 
 ## Examples
 
-### LARGE001 arch-large-unit / Examples #1 (line 22) (fire)
+### LARGE001 arch-large-unit / Examples / Fires case 1 #1 (line 22) (fire)
 
 Config: `small`
 
@@ -68,7 +68,7 @@ pub fn long() {
 }
 ```
 
-### LARGE001 arch-large-unit / Examples #2 (line 32) (clean)
+### LARGE001 arch-large-unit / Examples / Clean case 2 #2 (line 32) (clean)
 
 Config: `big`
 

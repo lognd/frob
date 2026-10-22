@@ -67,7 +67,7 @@ flow f1 : a -> b {
 
 ## Examples
 
-### FLOW003 flow-no-rate / Examples #1 (line 22) (fire)
+### FLOW003 flow-no-rate / Examples / Fires case 1 #1 (line 22) (fire)
 
 ```grmb
 grimble = "2";
@@ -81,7 +81,7 @@ flow f1 : a -> b {
 }
 ```
 
-### FLOW003 flow-no-rate / Examples #2 (line 36) (clean)
+### FLOW003 flow-no-rate / Examples / Clean case 2 #2 (line 36) (clean)
 
 ```grmb
 grimble = "2";

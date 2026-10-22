@@ -51,14 +51,14 @@ name = "button"
 
 ## Examples
 
-### COMP009 component-hash-stale / Examples #1 (line 22) (fire)
+### COMP009 component-hash-stale / Examples / A missing hash fires #1 (line 22) (fire)
 
 ```toml
 name = "button"
 status = "ready"
 ```
 
-### COMP009 component-hash-stale / Examples #2 (line 29) (clean)
+### COMP009 component-hash-stale / Examples / A draft needs no hash #2 (line 29) (clean)
 
 ```toml
 name = "button"

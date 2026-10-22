@@ -81,7 +81,7 @@ id = "death"
 
 ## Examples
 
-### STATE006 game-states-missing / Examples #1 (line 22) (fire)
+### STATE006 game-states-missing / Examples / A missing state fires #1 (line 22) (fire)
 
 ```toml
 id = "home"
@@ -101,7 +101,7 @@ id = "disconnect"
 id = "low-hull"
 ```
 
-### STATE006 game-states-missing / Examples #2 (line 42) (clean)
+### STATE006 game-states-missing / Examples / Every state declared is clean #2 (line 42) (clean)
 
 ```toml
 id = "home"

@@ -70,7 +70,7 @@ props = ["label"]
 
 ## Examples
 
-### COMP008 code-props-mismatch / Examples #1 (line 22) (fire)
+### COMP008 code-props-mismatch / Examples / An extra code prop fires #1 (line 22) (fire)
 
 ```toml
 name = "button"
@@ -86,7 +86,7 @@ export = "Button"
 props = ["label", "icon"]
 ```
 
-### COMP008 code-props-mismatch / Examples #2 (line 38) (clean)
+### COMP008 code-props-mismatch / Examples / Matching props are clean #2 (line 38) (clean)
 
 ```toml
 name = "button"

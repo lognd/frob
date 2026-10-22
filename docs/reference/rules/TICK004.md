@@ -68,13 +68,13 @@ See the notes in the repository.
 See /home/someone/projects/secret for the notes.
 ```
 
-### TICK004 absolute-home-path / Examples #1 (line 22) (fire)
+### TICK004 absolute-home-path / Examples / A violating case fires #1 (line 22) (fire)
 
 ```rust
 pub fn placeholder() {}
 ```
 
-### TICK004 absolute-home-path / Examples #2 (line 28) (clean)
+### TICK004 absolute-home-path / Examples / A conforming case is clean #2 (line 28) (clean)
 
 ```rust
 pub fn placeholder() {}

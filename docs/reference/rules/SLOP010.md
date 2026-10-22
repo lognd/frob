@@ -68,7 +68,7 @@ body {
 
 ## Examples
 
-### SLOP010 font-unchosen / Examples #1 (line 20) (fire)
+### SLOP010 font-unchosen / Examples / Inter first fires #1 (line 20) (fire)
 
 ```css
 body {
@@ -76,7 +76,7 @@ body {
 }
 ```
 
-### SLOP010 font-unchosen / Examples #2 (line 28) (fire)
+### SLOP010 font-unchosen / Examples / Space Grotesk first fires #2 (line 28) (fire)
 
 ```css
 h1 {
@@ -84,7 +84,7 @@ h1 {
 }
 ```
 
-### SLOP010 font-unchosen / Examples #3 (line 36) (clean)
+### SLOP010 font-unchosen / Examples / A distinct face is clean #3 (line 36) (clean)
 
 ```css
 body {
@@ -92,7 +92,7 @@ body {
 }
 ```
 
-### SLOP010 font-unchosen / Examples #4 (line 44) (clean)
+### SLOP010 font-unchosen / Examples / A declared fonts decision is clean #4 (line 44) (clean)
 
 Config: `decide-fonts`
 

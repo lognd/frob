@@ -57,14 +57,14 @@ export = "Button"
 
 ## Examples
 
-### COMP007 code-mapping-missing / Examples #1 (line 22) (fire)
+### COMP007 code-mapping-missing / Examples / A locked component without code fires #1 (line 22) (fire)
 
 ```toml
 name = "button"
 status = "ready"
 ```
 
-### COMP007 code-mapping-missing / Examples #2 (line 29) (clean)
+### COMP007 code-mapping-missing / Examples / A mapped component is clean #2 (line 29) (clean)
 
 ```toml
 name = "button"

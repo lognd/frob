@@ -89,7 +89,7 @@ Give roles their own radii, or declare `radius` under `[decisions]`.
 
 ## Examples
 
-### SLOP022 uniform-radius / Examples #1 (line 20) (fire)
+### SLOP022 uniform-radius / Examples / Three identical radii fire #1 (line 20) (fire)
 
 ```css
 .c0 {
@@ -103,7 +103,7 @@ Give roles their own radii, or declare `radius` under `[decisions]`.
 }
 ```
 
-### SLOP022 uniform-radius / Examples #2 (line 34) (clean)
+### SLOP022 uniform-radius / Examples / Varied radii are clean #2 (line 34) (clean)
 
 ```css
 .a {
@@ -117,7 +117,7 @@ Give roles their own radii, or declare `radius` under `[decisions]`.
 }
 ```
 
-### SLOP022 uniform-radius / Examples #3 (line 48) (clean)
+### SLOP022 uniform-radius / Examples / Two radii are clean #3 (line 48) (clean)
 
 ```css
 .a {
@@ -128,7 +128,7 @@ Give roles their own radii, or declare `radius` under `[decisions]`.
 }
 ```
 
-### SLOP022 uniform-radius / Examples #4 (line 59) (clean)
+### SLOP022 uniform-radius / Examples / A declared radius decision is clean #4 (line 59) (clean)
 
 Config: `decide-radius`
 

@@ -71,7 +71,7 @@ axes = { size = "lg" }
 
 ## Examples
 
-### COMP002 variants-incomplete / Examples #1 (line 22) (fire)
+### COMP002 variants-incomplete / Examples / One of two sizes covered fires #1 (line 22) (fire)
 
 ```toml
 name = "button"
@@ -86,7 +86,7 @@ axis = true
 axes = { size = "sm" }
 ```
 
-### COMP002 variants-incomplete / Examples #2 (line 37) (clean)
+### COMP002 variants-incomplete / Examples / Every size covered is clean #2 (line 37) (clean)
 
 ```toml
 name = "button"

@@ -113,7 +113,7 @@ Remove the negative margin or offset, give the siblings room, or waive the rule 
 
 ## Examples
 
-### LAYOUT002 siblings-overlap / Examples #1 (line 22) (fire)
+### LAYOUT002 siblings-overlap / Examples / A negative margin that pulls a sibling over its neighbour fires #1 (line 22) (fire)
 
 ```json
 {
@@ -151,7 +151,7 @@ Remove the negative margin or offset, give the siblings room, or waive the rule 
 }
 ```
 
-### LAYOUT002 siblings-overlap / Examples #2 (line 60) (clean)
+### LAYOUT002 siblings-overlap / Examples / Siblings laid side by side are clean #2 (line 60) (clean)
 
 ```json
 {

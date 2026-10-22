@@ -50,13 +50,13 @@ pub fn unbound() {}
 
 ## Examples
 
-### DRIFT002 dangling-doc-target / Examples #1 (line 22) (fire)
+### DRIFT002 dangling-doc-target / Examples / A drifted case fires #1 (line 22) (fire)
 
 ```rust
 pub fn bound() {}
 ```
 
-### DRIFT002 dangling-doc-target / Examples #2 (line 28) (clean)
+### DRIFT002 dangling-doc-target / Examples / An unchanged case is clean #2 (line 28) (clean)
 
 ```rust
 pub fn unbound() {}

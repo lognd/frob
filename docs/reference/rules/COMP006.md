@@ -71,14 +71,14 @@ min_target = 44
 
 ## Examples
 
-### COMP006 a11y-contract-incomplete / Examples #1 (line 22) (fire)
+### COMP006 a11y-contract-incomplete / Examples / No contract fires #1 (line 22) (fire)
 
 ```toml
 name = "button"
 kinds = ["interactive"]
 ```
 
-### COMP006 a11y-contract-incomplete / Examples #2 (line 29) (fire)
+### COMP006 a11y-contract-incomplete / Examples / A target of 23 fires #2 (line 29) (fire)
 
 ```toml
 name = "button"
@@ -91,7 +91,7 @@ keyboard = { Enter = "activate" }
 min_target = 23
 ```
 
-### COMP006 a11y-contract-incomplete / Examples #3 (line 42) (clean)
+### COMP006 a11y-contract-incomplete / Examples / A complete contract is clean #3 (line 42) (clean)
 
 ```toml
 name = "button"
