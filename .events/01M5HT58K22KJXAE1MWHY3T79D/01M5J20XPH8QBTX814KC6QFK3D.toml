@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T15:00:10Z"
+digest = "05445bb79c894edaa210154c981181aeb9fa8d1df694fba2a90fb5a043a88d4c"
+exit_code = 0
+head = "f54774c0ad1250ab3850c33ece8f590ac05a4ded"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 82979f9c-27ac-4ed2-a0af-ed3a1f301104 with nextest profile: default
+    Starting 1 test across 1 binary (32 tests skipped)
+        PASS [   0.011s] frob-check product::coverage_fingerprint_tests::fingerprint_differs_when_thresholds_or_report_change
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 32 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check --lib fingerprint_differs_when_thresholds_or_report_change"
+size = 589
+status = "measured"
+test_count = 1
+tests_digest = "a9b4e482b17c3d9d9c301efddbd45eae417a87321b97197fd081ef7a1a0b2e45"
+at = "2026-10-22T15:00:10Z"
+actor = "lognd"
+rev = 1

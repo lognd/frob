@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T12:42:45Z"
-updated = "2026-10-22T14:50:17Z"
+updated = "2026-10-22T15:00:10Z"
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
 text = "Given a change to the coverage thresholds config or the lcov report, when the product digest is computed, then the digest differs"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an unchanged config and report, when the digest is computed twice, then it is identical"
