@@ -16,8 +16,8 @@ use crunk_spec::DesignSpec;
 
 use crate::{PRODUCT, product_rules};
 
-/// Language tags whose files can carry `crunk:waive` comments (CSS, TS/TSX style props, HTML).
-const STYLE_TAGS: [&str; 6] = ["css", "tsx", "jsx", "ts", "js", "html"];
+/// Language tags whose files can carry `crunk:waive` comments (CSS, TS/TSX style props, HTML, C# prefab generators).
+const STYLE_TAGS: [&str; 7] = ["css", "tsx", "jsx", "ts", "js", "html", "cs"];
 
 /// Thread-safe facts the pipeline reads for applicability and cache keys (none yet).
 #[derive(Debug, Clone, Copy, Default)]
@@ -229,7 +229,7 @@ impl Product for Crunk {
     }
 
     fn file_checks(&self) -> Vec<Arc<dyn FileCheck<Self>>> {
-        Vec::new()
+        vec![Arc::new(crate::ugui::UguiLiteralCheck)]
     }
 
     fn repo_groups(&self) -> Vec<RepoGroup<Self>> {

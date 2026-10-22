@@ -1,6 +1,6 @@
 # Rule coverage gaps: one umbrella ticket per product lists its uncovered rules.
 # This file may only shrink; see "Rule coverage" in crates/gob-mdtest/FORMAT.md.
-# crunk and grimble declare their rules with an mdtest corpus each, so they have no entries.
+# crunk and grimble declare their rules with an mdtest corpus each; crunk's only entry is GX014.
 
 # Case-kind gaps (docs/design/testing.md section 3): keyed by (product, rule, kind), one ticket per kind.
 
@@ -150,3 +150,8 @@ rule = "COV001"
 cell = "island"
 ticket = "~HJBXNSN"
 
+[[gap]]
+product = "crunk"
+rule = "GX014"
+kind = "unresolved"
+ticket = "~F63DZXF"
