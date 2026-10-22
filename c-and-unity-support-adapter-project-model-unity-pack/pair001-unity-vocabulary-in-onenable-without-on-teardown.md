@@ -2,7 +2,8 @@
 id = "01M4D955ZSR7MHM6TXXD49JJ4V"
 title = "PAIR001 Unity vocabulary: += in OnEnable without -= on teardown, RegisterCallback, action Enable/Disable, Addressables Load/Release"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
