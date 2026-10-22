@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T07:50:51Z"
+digest = "a1f0507987712907824f3d178370dde53d810e5d2ba7f9ea5fa51c6a722f876b"
+exit_code = 0
+head = "5d1cb39a489a18932ec98475a95546d98f9d4ce7"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fb69f14c-249a-4927-862f-1e7ecbabad47 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.020s] crunk-rules::gx_rules gx002_fires_naming_an_unreachable_button
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test gx_rules gx002_fires_naming_an_unreachable_button"
+size = 604
+status = "measured"
+test_count = 1
+tests_digest = "323e07805672768639970417c530aa74019d7a09a3d2039bb9b38bfab690afdf"
+at = "2026-10-22T07:50:51Z"
+actor = "lognd"
+rev = 1
