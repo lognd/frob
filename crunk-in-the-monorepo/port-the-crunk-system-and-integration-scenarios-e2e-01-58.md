@@ -2,13 +2,13 @@
 id = "01M43AVKZWSTQRGWR6YPXH7THX"
 title = "Port the crunk system and integration scenarios (E2E-01..58, INT-01..12) to Rust tests"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:16Z"
-updated = "2026-10-04T11:30:16Z"
+updated = "2026-10-22T18:15:13Z"
 idempotency_key = "crunk-plan-e2e"
 labels = ["area:crunk"]
 scope = ["crates/crunk/tests/e2e/**", "crates/crunk/tests/int/**"]
