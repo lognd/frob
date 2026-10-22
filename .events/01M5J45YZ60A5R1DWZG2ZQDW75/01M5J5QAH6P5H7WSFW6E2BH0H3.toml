@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T16:04:47Z"
+digest = "203593f37f367660ee1b6bf730c328501b198f20ca2cafe82e9c8383ddc84135"
+exit_code = 0
+head = "66158581c1c335fa793c0fb1c2c6b39afc5542dc"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0acf24c3-d8ac-457d-8f5b-ecb52b0647ca with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   3.559s] frob-obligations::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.560s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations --test corpus mdtest_corpus"
+size = 507
+status = "measured"
+test_count = 1
+tests_digest = "9ec64940864b7f20e4bb0f2dc7bcc0f16e3d600664005ed72db069deef3d1d51"
+at = "2026-10-22T16:04:47Z"
+actor = "lognd"
+rev = 1
