@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:37Z"
-updated = "2026-10-22T11:51:56Z"
+updated = "2026-10-22T11:52:38Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/grimble-check/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an FFI boundary with grimble:effects none, when callers are checked, then their classes resolve and the claim itself is reported UNVERIFIED"
-bound = false
+bound = true
 +++
 
 docs/design/cohesion.md 5 (D121): inference first; claims only at boundaries and public contracts; NEAT011 only for public units whose class is Unknown.
