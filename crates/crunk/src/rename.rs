@@ -376,7 +376,7 @@ fn edit_token_file(
     let new_leaf = new_path.rsplit_once('.').map_or(new_path, |(_, l)| l);
     edits.push(TextEdit {
         range,
-        text: if new_leaf.chars().all(is_bare) {
+        text: if is_bare_key(new_leaf) {
             new_leaf.to_owned()
         } else {
             format!("\"{new_leaf}\"")
@@ -418,9 +418,10 @@ impl AliasTarget<'_> {
     }
 }
 
-/// True for the characters a bare TOML key may hold.
-fn is_bare(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '_' || c == '-'
+/// True when `key` can be written as a bare TOML key.
+fn is_bare_key(key: &str) -> bool {
+    key.chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
 
 /// Collect alias edits from every value under `table`, skipping prose fields.
