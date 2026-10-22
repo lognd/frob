@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:44Z"
-updated = "2026-10-22T02:38:46Z"
+updated = "2026-10-22T02:48:33Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/frob-worktree/**", "docs/guides/**"]
 
 [[acceptance]]
@@ -17,6 +17,10 @@ bound = false
 
 [[acceptance]]
 text = "Given [worktree] root inside the repository, when frob work runs, then the worktree is created there and ignored by git"
+bound = false
+
+[[acceptance]]
+text = "Given an existing settings.json with unrelated keys and an allow list, when frob init --agent runs, then those are preserved and the frob server and read allowlist are merged"
 bound = false
 +++
 
