@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T19:27:42Z"
+digest = "cf4830cddfa84bf55582a6328a5fbb52f77eef89f7bb496d589d1fc8d15061a6"
+exit_code = 0
+head = "bc743623aec8dc16a5edcb465fdff2e0ba4a81e4"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6b13678e-26cd-4556-acee-2d7392b976fb with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.095s] crunk::new scaffolds_each_kind_and_screen_and_component_validate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.096s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test new scaffolds_each_kind"
+size = 551
+status = "measured"
+test_count = 1
+tests_digest = "a983f61bbf06fb890fb926fabf91c1727e79a821ec8d9acc60d7dd9591c1b4bf"
+at = "2026-10-22T19:27:42Z"
+actor = "lognd"
+rev = 1
