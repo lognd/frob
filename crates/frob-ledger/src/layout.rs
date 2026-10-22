@@ -111,10 +111,21 @@ pub fn attribute_patterns(layout: Layout, dir: &str, driver_attr: &str) -> Vec<S
     }
 }
 
-/// The `.gitattributes` text of the ticket branch: the [`Layout::Branch`] patterns, one per line.
+/// File globs of the ticket branch that hold ledger text: ticket documents and event records.
+const BRANCH_EOL_GLOBS: [&str; 2] = ["*.md", "*.toml"];
+/// Attribute words pinning a checkout to LF whatever `core.autocrlf` says.
+const EOL_ATTRS: &str = "text eol=lf";
+
+/// The `.gitattributes` text of the ticket branch: the merge-driver patterns, then the LF pin.
+///
+/// The branch holds only frob-owned text, so the pin is unconditional: it needs no `core.autocrlf`
+/// probe and cannot race a config change.
+// frob:ticket 01M5HYRXMB54SZ7KN3W6EQFB65
 #[must_use]
 pub fn branch_gitattributes(dir: &str) -> String {
-    let mut text = attribute_patterns(Layout::Branch, dir, MERGE_DRIVER_ATTR).join("\n");
+    let mut lines = attribute_patterns(Layout::Branch, dir, MERGE_DRIVER_ATTR);
+    lines.extend(BRANCH_EOL_GLOBS.iter().map(|g| format!("{g} {EOL_ATTRS}")));
+    let mut text = lines.join("\n");
     text.push('\n');
     text
 }
@@ -177,7 +188,7 @@ mod tests {
     fn the_branch_gitattributes_holds_the_branch_pattern() {
         assert_eq!(
             branch_gitattributes("tickets"),
-            "*/*.md merge=frob-ledger\n"
+            "*/*.md merge=frob-ledger\n*.md text eol=lf\n*.toml text eol=lf\n"
         );
     }
 }
