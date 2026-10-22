@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T00:51:56Z"
+digest = "d002ababe628ce69e51ec0e06259928f32123094c0aa95a87a27912e2aad9d92"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 94b43b8c-6323-467f-bc50-7545c819bede with nextest profile: default
+    Starting 1 test across 8 binaries (99 tests skipped)
+        PASS [   0.009s] gob-directives::fix fixed_output_is_idempotent_and_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 99 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives fixed_output_is_idempotent"
+size = 547
+status = "measured"
+test_count = 1
+tests_digest = "f78688ee8fdd46db78625e4468fae045489ed10c034821084b1e51c43adfdfe1"
+at = "2026-10-22T00:51:56Z"
+actor = "lognd"
+rev = 1
