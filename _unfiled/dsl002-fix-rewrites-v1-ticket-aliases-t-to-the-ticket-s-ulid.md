@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:52:59Z"
-updated = "2026-10-22T15:15:47Z"
+updated = "2026-10-22T15:24:27Z"
 labels = ["adoption:logand-app"]
-scope = ["crates/frob-obligations/**", "crates/gob-directives/**", "changelog.d/**"]
+scope = ["crates/frob-obligations/**", "crates/gob-directives/**", "changelog.d/**", "docs/reference/rules/DSL002.md"]
 
 [[acceptance]]
 text = "Given imported tickets with v1 aliases and files carrying frob:ticket T-0009 and frob:todo T-0038 note=..., when frob check --only DSL002 --fix runs, then every alias that resolves is rewritten to the full ULID, each site that does not resolve stays as a finding, and frob:todo sites are flagged the same as frob:ticket"
