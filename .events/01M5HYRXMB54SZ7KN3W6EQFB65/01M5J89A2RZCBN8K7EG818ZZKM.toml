@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T16:48:41Z"
+digest = "d44b9fb859ac2984c82e387698cee17420331772e4f9144d6702d7a97979da4e"
+exit_code = 0
+head = "a103f449753b22e8a0ab5c788564f9db727b4c65"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 56.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 634e6ba4-6544-4cd7-8549-c76bf0d32d43 with nextest profile: default
+    Starting 1 test across 1 binary (9 tests skipped)
+        PASS [   0.007s] frob-ledger::layout an_orphan_branch_made_under_autocrlf_pins_ledger_text_to_lf_and_a_second_init_changes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger --test layout an_orphan_branch_made_under_autocrlf"
+size = 721
+status = "measured"
+test_count = 1
+tests_digest = "f5dcbfaa482c65ebb81e0e6e43986b96bdc35bca2cb6adeb120141632b8f2cba"
+at = "2026-10-22T16:48:41Z"
+actor = "lognd"
+rev = 1
