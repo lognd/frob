@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T04:54:16Z"
-updated = "2026-10-22T13:42:42Z"
-scope = ["changelog.d/**", "crates/crunk-check/**", "crates/gob-mdtest/coverage-allowlist.toml", "docs/crunk/rules/**"]
+updated = "2026-10-22T13:42:43Z"
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/gob-mdtest/coverage-allowlist.toml", "docs/crunk/rules/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "Given a generator with a Color literal, when checked, then the finding asks for the generated token constant"
