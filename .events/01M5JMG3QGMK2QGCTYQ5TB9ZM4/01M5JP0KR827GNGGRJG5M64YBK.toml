@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T20:49:31Z"
+digest = "ea407ec0bf62cf641ff6810a0df9867ecaf6a5c82f7450afa655336ce6aaae66"
+exit_code = 0
+head = "40fe41e9c6f16409e630db6db4c865db26ea6307"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a2cbd660-b4a5-49ce-a4f3-00ce28c728c9 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.323s] frob-cli::siblings remedies::remedies_name_only_existing_commands_and_flags
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.323s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test siblings remedies_name_only_existing_commands_and_flags"
+size = 562
+status = "measured"
+test_count = 1
+tests_digest = "e89175ba77d1ed2865570941c1948ffd16bbf1eab4a0231fa0bfa00ff380c5a9"
+at = "2026-10-22T20:49:31Z"
+actor = "lognd"
+rev = 1
