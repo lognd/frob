@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T01:41:59Z"
+digest = "ff71106f52b30f948787a2f2df0751a7690b130862e17ae36b129e1e39bb8596"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4556a364-af96-45ba-801f-6765175cf467 with nextest profile: default
+    Starting 2 tests across 4 binaries (430 tests skipped)
+        PASS [   0.047s] frob-cli::it cli::config_show_rejects_unknown_keys_with_a_suggestion
+        PASS [   0.141s] frob-cli::it config_unknown_key::unknown_key_is_refused_by_init_doctor_and_check
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.142s] 2 tests run: 2 passed, 430 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli unknown_key"
+size = 669
+status = "measured"
+test_count = 2
+tests_digest = "f31e8f2f628fabc1b0136404467238d794238296ec86fb7f45675a60a82c137d"
+at = "2026-10-22T01:41:59Z"
+actor = "lognd"
+rev = 1
