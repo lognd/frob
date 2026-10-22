@@ -8,12 +8,12 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:51Z"
-updated = "2026-10-22T09:19:57Z"
+updated = "2026-10-22T09:22:01Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/grimble-lints/**"]
 
 [[acceptance]]
 text = "Given event += in OnEnable and no -= on any teardown root, when checked, then PAIR001 fires naming both sites"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a lambda subscription, when checked, then the result is Unresolved"
