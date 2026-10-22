@@ -2,7 +2,8 @@
 id = "01M5HT1NDW38SMA2P17A0B2BDV"
 title = "gob-symbols: typescript::calls_resolve_by_scope_import_and_receiver fails on experimental"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
