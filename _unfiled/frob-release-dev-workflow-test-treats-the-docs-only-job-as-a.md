@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:53:03Z"
-updated = "2026-10-22T03:53:30Z"
+updated = "2026-10-22T04:23:14Z"
 scope = ["crates/frob-release/tests/it/dev_workflow.rs"]
 
 [[acceptance]]
