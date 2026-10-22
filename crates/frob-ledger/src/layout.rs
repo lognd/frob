@@ -116,6 +116,25 @@ const BRANCH_EOL_GLOBS: [&str; 2] = ["*.md", "*.toml"];
 /// Attribute words pinning a checkout to LF whatever `core.autocrlf` says.
 const EOL_ATTRS: &str = "text eol=lf";
 
+/// The LF-pin lines (`<glob> text eol=lf`) of the ticket branch that `existing` `.gitattributes` text does not already settle.
+///
+/// A glob counts as settled when any existing line for it carries an `eol=` attribute, so a
+/// hand-set `eol=crlf` is respected and a second pass yields nothing.
+// frob:ticket 01M5J931Y2JCF9J0XFVRP71BER
+#[must_use]
+pub fn missing_eol_pins(existing: &str) -> Vec<String> {
+    BRANCH_EOL_GLOBS
+        .iter()
+        .filter(|glob| {
+            !existing.lines().any(|line| {
+                let mut words = line.split_whitespace();
+                words.next() == Some(**glob) && words.any(|w| w.starts_with("eol="))
+            })
+        })
+        .map(|g| format!("{g} {EOL_ATTRS}"))
+        .collect()
+}
+
 /// The `.gitattributes` text of the ticket branch: the merge-driver patterns, then the LF pin.
 ///
 /// The branch holds only frob-owned text, so the pin is unconditional: it needs no `core.autocrlf`

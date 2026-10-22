@@ -116,6 +116,55 @@ fn adopt_from_origin(repo: &Repo, branch: &str, full: &str) -> Result<Option<Oid
     Ok(Some(tip))
 }
 
+/// Backfill the LF pin into the `.gitattributes` of an existing ticket branch at `tip`, keeping every line already there; returns the new tip, or `tip` when nothing was missing or the branch could not be written (read-only repo, lost race), which is logged and never fatal.
+// frob:ticket 01M5J931Y2JCF9J0XFVRP71BER
+fn pin_eol(repo: &Repo, branch: &str, full: &str, tip: Oid, cas_retries: u32) -> Oid {
+    let existing = match repo.read_blob_at(full, ".gitattributes") {
+        Ok(blob) => blob
+            .map(|b| String::from_utf8_lossy(&b).into_owned())
+            .unwrap_or_default(),
+        Err(e) => {
+            tracing::warn!(%branch, error = %e, "cannot read .gitattributes; eol pin skipped");
+            return tip;
+        }
+    };
+    let missing = crate::layout::missing_eol_pins(&existing);
+    if missing.is_empty() {
+        tracing::debug!(%branch, "ticket branch eol pin already present");
+        return tip;
+    }
+    let mut text = existing;
+    if !text.is_empty() && !text.ends_with('\n') {
+        text.push('\n');
+    }
+    for line in &missing {
+        text.push_str(line);
+        text.push('\n');
+    }
+    let Ok(path) = RelPath::new(".gitattributes") else {
+        return tip;
+    };
+    let opts = CommitOptions {
+        cas_retries,
+        author: None,
+    };
+    match repo.commit_paths(
+        full,
+        &[(path, Some(text.into_bytes()))],
+        "tickets(init): pin ledger text to LF",
+        &opts,
+    ) {
+        Ok(out) => {
+            tracing::info!(%branch, commit = %out.oid, pins = missing.len(), "eol pin backfilled");
+            out.oid
+        }
+        Err(e) => {
+            tracing::warn!(%branch, error = %e, "eol pin backfill failed; branch left as is");
+            tip
+        }
+    }
+}
+
 /// Create the local ticket branch `branch`: adopt `origin`'s copy when it has one (fetching it, shallowly in a shallow clone), else a fresh orphan with a placeholder `README.md` and the merge-driver `.gitattributes`; report it as already there when it is.
 ///
 /// # Errors
@@ -128,12 +177,14 @@ pub fn init_branch(repo: &Repo, branch: &str, cas_retries: u32) -> Result<Branch
     match repo.rev_parse(&full) {
         Ok(tip) => {
             tracing::info!(%branch, %tip, "ticket branch already exists");
+            let tip = pin_eol(repo, branch, &full, tip, cas_retries);
             return Ok(BranchInit::Already(tip));
         }
         Err(GitError::Rev { .. }) => {}
         Err(e) => return Err(e.into()),
     }
     if let Some(tip) = adopt_from_origin(repo, branch, &full)? {
+        let tip = pin_eol(repo, branch, &full, tip, cas_retries);
         return Ok(BranchInit::Adopted(tip));
     }
     let changes = [

@@ -364,3 +364,16 @@ fn an_orphan_branch_made_under_autocrlf_pins_ledger_text_to_lf_and_a_second_init
     assert!(matches!(second, frob_ledger::branch::BranchInit::Already(t) if t == tip));
     assert_eq!(repo.rev_parse(BRANCH).expect("tip again"), tip);
 }
+
+// frob:ticket 01M5J931Y2JCF9J0XFVRP71BER
+// frob:tests crates/frob-ledger/src/layout.rs::missing_eol_pins
+#[test]
+fn missing_eol_pins_lists_only_unsettled_globs() {
+    use frob_ledger::layout::missing_eol_pins;
+    assert_eq!(missing_eol_pins("").len(), 2);
+    assert!(missing_eol_pins("*.md text eol=lf\n*.toml -text eol=crlf\n").is_empty());
+    assert_eq!(
+        missing_eol_pins("*.md text eol=lf\n"),
+        ["*.toml text eol=lf"]
+    );
+}
