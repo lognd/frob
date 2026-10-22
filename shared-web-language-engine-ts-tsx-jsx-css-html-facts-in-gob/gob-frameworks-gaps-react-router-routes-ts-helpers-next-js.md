@@ -26,6 +26,10 @@ bound = false
 [[acceptance]]
 text = "react-router routes.ts helpers, re-exported Next.js route methods and page default export through a binding are resolved"
 bound = false
+
+[[acceptance]]
+text = "a framework-mode routes.ts using route(), index(), layout() and prefix() produces the expected routes"
+bound = false
 +++
 
 Found by ~AVXTRHX: (1) react-router framework-mode routes.ts helpers (route(), index(), layout(), prefix()) are not read; (2) a Next.js route.ts that re-exports its HTTP method handlers reports method ANY at May instead of following the re-export through the module graph; (3) a page's default export is read only from export default syntax, not through export { X as default } or a re-export. Each case must resolve or stay explicitly Unknown/May, never be dropped (language-engines.md 4).
