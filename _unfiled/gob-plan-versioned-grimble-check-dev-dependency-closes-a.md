@@ -2,12 +2,12 @@
 id = "01M5GVQ4JMBG1CC0G6RBS28E9V"
 title = "gob-plan: versioned grimble-check dev-dependency closes a publish cycle"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:50:45Z"
-updated = "2026-10-22T03:50:45Z"
+updated = "2026-10-22T03:50:47Z"
 scope = ["crates/gob-plan/Cargo.toml"]
 
 [[acceptance]]
