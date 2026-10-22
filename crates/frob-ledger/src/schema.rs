@@ -23,7 +23,7 @@ pub enum FieldKind {
     Text,
     /// One of a closed set of spellings.
     Choice(&'static [&'static str]),
-    /// Story points (Fibonacci 1..13).
+    /// Story points (a whole number; the scale is `[pm] point_scale`).
     Points,
     /// A list of strings.
     List,
@@ -251,7 +251,7 @@ pub struct FrontmatterSchema {
     /// Due date (RFC 3339); orders fixed-date tickets
     #[ticket(settable, since = "0.532.0")]
     due: Option<Stamp>,
-    /// Story points: 1, 2, 3, 5, 8 or 13
+    /// Story points: a whole number; the allowed values follow `[pm] point_scale` (Fibonacci 1..13 by default)
     #[ticket(settable)]
     points: Option<Points>,
     /// Parent ticket
@@ -524,7 +524,7 @@ pub fn set_field(t: &mut Ticket, name: &str, value: Option<&toml::Value>) -> Res
                 .as_integer()
                 .ok_or_else(|| "field `points` expects an integer".to_owned())?;
             let n = u8::try_from(n)
-                .map_err(|_| format!("points must be one of 1, 2, 3, 5, 8, 13 (got {n})"))?;
+                .map_err(|_| format!("points must be a whole number from 1 to 255 (got {n})"))?;
             fm.points = Some(Points::new(n).map_err(|e| e.to_string())?);
         }
         "parent" => {

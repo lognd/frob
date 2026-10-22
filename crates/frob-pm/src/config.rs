@@ -11,7 +11,7 @@ use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
 
-use frob_ledger::model::TicketType;
+use frob_ledger::model::{PointScale, TicketType};
 use gob_config::{ConfigError, ConfigTable};
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -165,6 +165,9 @@ pub struct PmTable {
     /// Largest story in points that PM006 accepts; 8 keeps a story finishable within a cycle, 0 turns the check off.
     #[config(default = 8, enforcement)]
     pub max_story_points: u32,
+    /// Which point values a ticket may be entered with: `fibonacci` (1, 2, 3, 5, 8, 13) or `integer` (any whole number from 1); a parent with pointed children derives its points from them either way.
+    #[config(default = PointScale::Fibonacci, enforcement)]
+    pub point_scale: PointScale,
 }
 
 impl PmTable {

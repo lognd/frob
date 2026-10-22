@@ -113,6 +113,9 @@ pub struct Ledger {
     /// Git reads that resolve a revision (tree walks and path reads) this handle has made.
     // frob:ticket 01M4DPJG0W39SCKZE5N807V4XM
     git_reads: std::sync::atomic::AtomicUsize,
+    /// Which point values a write may enter (`[pm] point_scale`); folding accepts any.
+    // frob:ticket 01M4FDAKV07ZFX861ZHJKMRAQ6
+    point_scale: crate::model::PointScale,
 }
 
 /// What one walk of a ticket-branch commit found: where each ticket file is, by frontmatter ULID.
@@ -206,7 +209,23 @@ impl Ledger {
             branch_scan: std::sync::Mutex::new(None),
             rebuilds: std::sync::atomic::AtomicUsize::new(0),
             git_reads: std::sync::atomic::AtomicUsize::new(0),
+            point_scale: crate::model::PointScale::Fibonacci,
         }
+    }
+
+    /// Enforce `scale` on the points that create and edit write.
+    #[must_use]
+    pub fn with_point_scale(self, scale: crate::model::PointScale) -> Self {
+        tracing::debug!(%scale, "point scale selected");
+        Self {
+            point_scale: scale,
+            ..self
+        }
+    }
+
+    /// The point scale writes are checked against.
+    pub fn point_scale(&self) -> crate::model::PointScale {
+        self.point_scale
     }
 
     /// Read and write the ledger in `layout` (the ticket-branch layout needs a ref holding that branch).

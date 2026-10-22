@@ -141,6 +141,19 @@ Milestone 2 or later (D36).
 
 - A cycle is an object: `frob cycle new --start --end --goal`,
   with `capacity_points` either set or derived.
+- Derived points: a ticket with pointed children is estimated by them. Its
+  derived points are the sum of each child's effective points (a child's
+  own derived points when it has pointed children, else its entered points);
+  unpointed children add nothing and closed children still count. A story
+  with no entered points is accepted by `frob cycle assign` with its derived
+  points, shown as derived. Capacity counts leaves only: a member whose
+  ancestor is also in the cycle is covered by that ancestor and counted as
+  zero, so the same work is never counted twice. Entered points that differ
+  from the children's sum are reported by `frob ticket doctor`
+  (`E-DOCTOR-POINTS-ROLLUP`). `[pm] point_scale` picks the allowed entered
+  values: `fibonacci` (default: 1, 2, 3, 5, 8, 13) or `integer` (any whole
+  number from 1 to 255).
+  <!-- frob:ticket 01M4FDAKV07ZFX861ZHJKMRAQ6 -->
 - Every cycle date and state is judged by one clock in one zone: the UTC
   calendar day (`gob_time::Clock::today`, one clock per command), never the machine's local zone, so a run at
   00:06 UTC agrees everywhere. Tests do not pin the clock (no environment

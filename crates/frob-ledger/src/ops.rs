@@ -431,6 +431,7 @@ impl Ledger {
                 "a new ticket starts in triage or todo",
             ));
         }
+        self.check_points("points", req.points)?;
         if let Some(p) = req.parent {
             Self::require_exists(&s, p)?;
         }
@@ -586,6 +587,17 @@ impl Ledger {
         Ok(crate::fold::remap_accepts(&events, since, accepts))
     }
 
+    /// Refuse points the configured `[pm] point_scale` does not allow.
+    // frob:ticket 01M4FDAKV07ZFX861ZHJKMRAQ6
+    fn check_points(&self, field: &str, points: Option<crate::model::Points>) -> Result<()> {
+        if let (Some(n), "points") = (points, field) {
+            self.point_scale()
+                .check(n)
+                .map_err(|e| LedgerError::invalid(e.to_string()))?;
+        }
+        Ok(())
+    }
+
     /// Validate `patch` against ticket `id`: the ticket after it and the events it would write.
     fn plan_update(&self, s: &Synced, id: TicketId, patch: &Patch) -> Result<(Ticket, Vec<Event>)> {
         let (_, current) = Self::load(s, id)?;
@@ -625,6 +637,7 @@ impl Ledger {
                 check_parent(&parent_of, id, parent)?;
             }
             set_field(&mut work, name, new.as_ref()).map_err(LedgerError::invalid)?;
+            self.check_points(name, work.front.points)?;
             events.push(Event::new(
                 self.now(),
                 &actor,

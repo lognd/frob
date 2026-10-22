@@ -1425,3 +1425,26 @@ fn scrub_works_in_both_layouts(layout: Layout) {
     );
 }
 both_layouts!(scrub_works_in_both_layouts);
+
+// frob:ticket 01M4FDAKV07ZFX861ZHJKMRAQ6
+// frob:tests Ledger.with_point_scale
+#[test]
+fn point_scale_gates_which_point_values_a_ticket_may_carry() {
+    let pointed = |n: &str| {
+        let mut req = NewTicket::new("Sized", TicketType::Task);
+        req.points = Some(n.parse().expect("points"));
+        req
+    };
+    let (_dir, fib) = fixture(Layout::Dir, RefMode::Trunk);
+    assert!(
+        fib.new_ticket(pointed("4")).is_err(),
+        "4 is off the fibonacci scale"
+    );
+    assert!(fib.new_ticket(pointed("5")).is_ok());
+    let (_dir2, int) = fixture(Layout::Dir, RefMode::Trunk);
+    let int = int.with_point_scale(frob_ledger::model::PointScale::Integer);
+    assert!(
+        int.new_ticket(pointed("4")).is_ok(),
+        "4 is allowed on the integer scale"
+    );
+}

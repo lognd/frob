@@ -96,6 +96,7 @@ pub mod redact;
 pub mod refresh; // frob:ticket 01M5CW046DKVK5QSJR8TMEN0F2
 pub mod reindex; // frob:ticket 01M3ZX85S7ASFGT31GDYMRB5JX
 pub mod replay; // frob:ticket 01M3ZX86R5V67MT726K3X7KVWM
+pub mod rollup; // frob:ticket 01M4FDAKV07ZFX861ZHJKMRAQ6
 pub mod rules;
 pub mod schema;
 pub mod scrub;

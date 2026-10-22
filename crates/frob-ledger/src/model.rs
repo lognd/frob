@@ -224,24 +224,24 @@ impl Category {
     }
 }
 
-/// Story points: a Fibonacci number from 1 to 13.
+/// Story points: a positive whole number; the project's [`PointScale`] decides which values may be entered.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Points(u8);
 
 impl Points {
-    /// The accepted values.
+    /// The values the default (Fibonacci) scale accepts.
     pub const ALLOWED: [u8; 6] = [1, 2, 3, 5, 8, 13];
 
-    /// Validate `n` as story points.
+    /// Validate `n` as story points: any positive number (the scale is checked at write time).
     ///
     /// # Errors
     ///
-    /// [`PointsError`] when `n` is not in [`Points::ALLOWED`].
+    /// [`PointsError`] when `n` is zero.
     pub fn new(n: u8) -> Result<Self, PointsError> {
-        if Self::ALLOWED.contains(&n) {
-            Ok(Self(n))
+        if n == 0 {
+            Err(PointsError(0))
         } else {
-            Err(PointsError(i64::from(n)))
+            Ok(Self(n))
         }
     }
 
@@ -253,8 +253,63 @@ impl Points {
 
 /// A rejected points value.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[error("points must be one of 1, 2, 3, 5, 8, 13 (got {0})")]
+#[error("points must be a whole number from 1 to 255 (got {0})")]
 pub struct PointsError(pub i64);
+
+string_enum!(
+    /// Which point values a ticket may be entered with (`[pm] point_scale`).
+    PointScale {
+        /// Fibonacci steps: 1, 2, 3, 5, 8 or 13.
+        Fibonacci => "fibonacci",
+        /// Any whole number from 1 up.
+        Integer => "integer",
+    }
+);
+
+/// A points value the configured scale refuses.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("points must be {} on the {scale} scale (got {got})", .scale.describe())]
+pub struct ScaleError {
+    /// The scale that refused it.
+    pub scale: PointScale,
+    /// The refused value.
+    pub got: u8,
+}
+
+impl PointScale {
+    /// Human wording of the accepted values.
+    fn describe(self) -> &'static str {
+        match self {
+            Self::Fibonacci => "one of 1, 2, 3, 5, 8, 13",
+            Self::Integer => "a whole number from 1 to 255",
+        }
+    }
+
+    /// True when `n` may be entered on this scale.
+    pub fn allows(self, n: u8) -> bool {
+        match self {
+            Self::Fibonacci => Points::ALLOWED.contains(&n),
+            Self::Integer => n > 0,
+        }
+    }
+
+    /// Validate `n` against this scale.
+    ///
+    /// # Errors
+    ///
+    /// [`ScaleError`] when the scale does not allow `n`.
+    pub fn check(self, n: Points) -> Result<Points, ScaleError> {
+        if self.allows(n.get()) {
+            Ok(n)
+        } else {
+            tracing::debug!(scale = %self, points = n.get(), "points refused by scale");
+            Err(ScaleError {
+                scale: self,
+                got: n.get(),
+            })
+        }
+    }
+}
 
 impl FromStr for Points {
     type Err = PointsError;
@@ -289,7 +344,7 @@ impl JsonSchema for Points {
     }
 
     fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
-        schemars::json_schema!({ "type": "integer", "enum": [1, 2, 3, 5, 8, 13] })
+        schemars::json_schema!({ "type": "integer", "minimum": 1, "maximum": 255 })
     }
 }
 
@@ -446,11 +501,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn points_accept_fibonacci_only() {
+    fn points_accept_positive_numbers_and_scales_gate_values() {
         assert!("5".parse::<Points>().is_ok());
-        assert!("4".parse::<Points>().is_err());
-        assert!("21".parse::<Points>().is_err());
+        assert!("4".parse::<Points>().is_ok());
+        assert!("0".parse::<Points>().is_err());
         assert!("x".parse::<Points>().is_err());
+        let four = Points::new(4).unwrap();
+        assert!(PointScale::Fibonacci.check(four).is_err());
+        assert!(PointScale::Integer.check(four).is_ok());
+        assert!(
+            PointScale::Fibonacci
+                .check(four)
+                .unwrap_err()
+                .to_string()
+                .contains("1, 2, 3, 5, 8, 13")
+        );
     }
 
     #[test]

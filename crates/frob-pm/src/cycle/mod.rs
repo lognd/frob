@@ -8,4 +8,5 @@ pub mod assign;
 pub mod history;
 pub mod lifecycle;
 pub mod plan;
+pub mod points;
 pub mod velocity;

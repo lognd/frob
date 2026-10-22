@@ -39,7 +39,7 @@ pub fn order_skew(at_secs: i64, ulid_secs: i64) -> Option<i64> {
 /// A problem that is not one of the TICK rules.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Issue {
-    /// Stable code: `E-DOCTOR-UNREADABLE`, `E-DOCTOR-ORDER`, `E-DOCTOR-CONFLICT`, `E-DOCTOR-ID`.
+    /// Stable code: `E-DOCTOR-UNREADABLE`, `E-DOCTOR-ORDER`, `E-DOCTOR-CONFLICT`, `E-DOCTOR-ID`, `E-DOCTOR-POINTS-ROLLUP`.
     pub code: String,
     /// The ticket concerned.
     pub ticket: TicketId,
@@ -146,6 +146,10 @@ impl Ledger {
                 !(f.rule.as_str() == "TICK001"
                     && fixed.iter().any(|i| f.message.contains(&i.to_string())))
             });
+        }
+        match self.list(&crate::index::ListFilter::default()) {
+            Ok(all) => report.issues.extend(points_mismatch_issues(&all)),
+            Err(e) => tracing::warn!(error = %e, "doctor skipped the points rollup check"),
         }
         tracing::info!(
             tickets = report.tickets,
@@ -262,6 +266,27 @@ impl Ledger {
             }
         }
     }
+}
+
+/// One `E-DOCTOR-POINTS-ROLLUP` issue per ticket whose entered points differ from its children's sum.
+// frob:ticket 01M4FDAKV07ZFX861ZHJKMRAQ6
+pub fn points_mismatch_issues(all: &[crate::index::Summary]) -> Vec<Issue> {
+    let by_id: std::collections::BTreeMap<TicketId, &str> =
+        all.iter().map(|s| (s.id, s.handle.as_str())).collect();
+    crate::rollup::Rollup::build(all)
+        .mismatches()
+        .into_iter()
+        .map(|(ticket, r)| Issue {
+            code: "E-DOCTOR-POINTS-ROLLUP".to_owned(),
+            ticket,
+            message: format!(
+                "{} has entered {} points but its children derive {}; clear the entered points or fix the children",
+                by_id.get(&ticket).copied().unwrap_or("ticket"),
+                r.entered.unwrap_or(0),
+                r.derived.unwrap_or(0)
+            ),
+        })
+        .collect()
 }
 
 #[cfg(test)]
