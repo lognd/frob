@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T10:21:28Z"
+digest = "48a0c66a3b3f15813ad5f5bba0e9402292dd1313fdb856498a6040d1724a539f"
+exit_code = 0
+head = "9bdc95cc1ddd731114ad8e09483ae122a262cf68"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2f92bed0-aad7-4607-967a-a90fece8d7f4 with nextest profile: default
+    Starting 3 tests across 1 binary (7 tests skipped)
+        PASS [   0.005s] grimble-check::coh003 fires_py
+        PASS [   0.005s] grimble-check::coh003 fires_rs
+        PASS [   0.005s] grimble-check::coh003 fires_ts
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test coh003 fires_"
+size = 701
+status = "measured"
+test_count = 3
+tests_digest = "298be8b385731cba292db6772799a6f11f9b98b9e73e355998d096e49c17feae"
+at = "2026-10-22T10:21:28Z"
+actor = "lognd"
+rev = 1
