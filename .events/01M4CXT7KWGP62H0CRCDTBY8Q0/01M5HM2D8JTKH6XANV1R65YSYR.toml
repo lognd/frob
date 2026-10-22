@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T10:52:47Z"
+digest = "4c0670d299fae4669c97ff41abb431dc6df3e9245dbfb896d8a94e9de65fe619"
+exit_code = 0
+head = "1a0d70c15eeb83756207646204e7299a89508ee6"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 811ada78-ae0d-4e4b-8f4c-1feeba9e2af2 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.079s] crunk-check::craft010 a_project_that_deleted_its_motion_reports_the_missing_motion_policy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.079s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test craft010 a_project_that_deleted_its_motion_reports_the_missing_motion_policy"
+size = 762
+status = "measured"
+test_count = 1
+tests_digest = "cd3532ba1c84309f32959fbc7b30624d3e7e8b16fb4cdec8fa083c49fbfe751f"
+at = "2026-10-22T10:52:47Z"
+actor = "lognd"
+rev = 1
