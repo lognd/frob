@@ -123,7 +123,7 @@ fn fixture() -> Fixture {
     push_event(&ledger, id, &ev);
     let now = gob_time::Clock::now(&gob_time::SystemClock);
     let lease = format!(
-        "kind = \"lease\"\nat = \"{now}\"\nactor = \"a\"\nrev = 1\nreason = \"lease: ann in /home/ann/work/app-wt/T1; scope: x\"\n"
+        "kind = \"lease\"\nat = \"{now}\"\nactor = \"a\"\nrev = 1\nop = \"renew\"\nreason = \"lease: ann in /home/ann/work/app-wt/T1; scope: x\"\n"
     );
     let lease_ev = Event::parse(frob_ledger::EventId::mint(), &lease).expect("lease");
     push_event(&ledger, id, &lease_ev);
