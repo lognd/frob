@@ -3,6 +3,7 @@
 mod corpus;
 mod deep;
 mod digest_scheme;
+mod effect_class;
 mod equivalence;
 mod eval;
 mod precision;

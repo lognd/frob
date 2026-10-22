@@ -62,6 +62,7 @@ mod attrs;
 pub mod const_value;
 mod defuse;
 mod digest;
+pub mod effect_class;
 pub mod engine;
 pub mod eval;
 mod hot;
