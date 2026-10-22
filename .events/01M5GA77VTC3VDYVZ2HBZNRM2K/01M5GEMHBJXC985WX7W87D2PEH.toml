@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T00:02:07Z"
+digest = "7a8c00e8c2e1ec8f92c1cfad6678bd5f362a1620bf62f20f5844fa224edd8408"
+exit_code = 0
+head = "c58922e68a39bf3a455de95e2e8c3f29395365b0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 39547a66-8d4c-4042-b570-ea2db3748ecc with nextest profile: default
+    Starting 10 tests across 1 binary
+        PASS [   0.009s] gob-plan::ten_rules cov001_examples_pass
+        PASS [   0.011s] gob-plan::ten_rules neat013_examples_pass
+        PASS [   0.012s] gob-plan::ten_rules doc002_examples_pass
+        PASS [   0.012s] gob-plan::ten_rules sys001_examples_pass
+        PASS [   0.012s] gob-plan::ten_rules scope001_examples_pass
+        PASS [   0.013s] gob-plan::ten_rules cap001_examples_pass
+        PASS [   0.013s] gob-plan::ten_rules inv002_examples_pass
+        PASS [   0.014s] gob-plan::ten_rules neat031_examples_pass
+        PASS [   0.018s] gob-plan::ten_rules ci002_examples_pass
+        PASS [   0.023s] gob-plan::ten_rules todo001_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.024s] 10 tests run: 10 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test ten_rules"
+size = 1112
+status = "measured"
+test_count = 10
+tests_digest = "dea6ef7443c9bd1c5ede26e8fb144b7b0a6a0938861602fcfc52eb5e094cd941"
+at = "2026-10-22T00:02:07Z"
+actor = "lognd"
+rev = 1
