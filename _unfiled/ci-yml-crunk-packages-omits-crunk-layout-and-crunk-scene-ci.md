@@ -2,7 +2,8 @@
 id = "01M5JVWWDXDZK5QZKHZP85WPW1"
 title = "ci.yml CRUNK_PACKAGES omits crunk-layout and crunk-scene (ci_plan test fails)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
