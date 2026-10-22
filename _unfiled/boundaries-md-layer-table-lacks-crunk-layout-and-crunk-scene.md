@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T22:32:22Z"
-updated = "2026-10-22T23:17:29Z"
-scope = ["docs/design/boundaries.md"]
+updated = "2026-10-22T23:26:23Z"
+scope = ["docs/design/boundaries.md", "crates/gob-dev/tests/layering.rs"]
 
 [[acceptance]]
 text = "gob-dev layering test workspace_layering_holds_and_every_crate_has_a_layer passes"
