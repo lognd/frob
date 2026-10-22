@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T19:35:13Z"
-updated = "2026-10-22T19:47:34Z"
+updated = "2026-10-22T19:56:12Z"
 scope = ["crates/crunk/tests/**", "tests/crunk-parity/divergences.toml"]
 
 [[acceptance]]
