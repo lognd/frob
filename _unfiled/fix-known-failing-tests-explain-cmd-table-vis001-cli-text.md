@@ -2,12 +2,12 @@
 id = "01M5H5WSR0H3YJHAPAMM7F4X3Q"
 title = "Fix known failing tests: explain_cmd table VIS001, cli text_format, wiring sibling_verbs_print_schemas, web_conformance SYS013, reindex budget"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:48:36Z"
-updated = "2026-10-22T06:48:36Z"
+updated = "2026-10-22T07:15:21Z"
 scope = ["crates/frob/**", "crates/frob-ledger/**"]
 
 [[acceptance]]
