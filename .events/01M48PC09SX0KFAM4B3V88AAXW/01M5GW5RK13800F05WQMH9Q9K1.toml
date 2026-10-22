@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a cross-file corpus for a link rule passes", "an inherited-config test passes", "a section that is both test and group is a parse error", "a case may mix languages (one block per file with its own fidelity), the assertion applies to the union, and a [mdtest] languages list selects matrix cells"]
+new = ["a cross-file corpus for a link rule passes", "an inherited-config test passes", "a section that is both test and group is a parse error", "a case may mix languages (one block per file with its own fidelity), the assertion applies to the union, and a [mdtest] languages list selects matrix cells", "existing mdtest corpora still pass after the heading-tree rewrite"]
+moved = [1, 2, 3, 4]
+at = "2026-10-22T03:58:44Z"
+actor = "lognd"
+rev = 1
