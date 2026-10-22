@@ -2,12 +2,12 @@
 id = "01M4FDAKV07ZFX861ZHJKMRAQ6"
 title = "Derived story points: a parent's points are the rollup of its pointed children; cycle assign accepts it; capacity counts leaves only; [pm] point_scale knob"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:04:18Z"
-updated = "2026-10-09T04:04:18Z"
+updated = "2026-10-22T13:49:00Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/gob-config/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
