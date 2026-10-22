@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T00:30:35Z"
+digest = "f4bfe043e241b6c4d7b5eec8f6e81087b234bddc3c8649c3fac68ffdcd963ef9"
+exit_code = 0
+head = "ca180955a9243d54c835c735457127ba8be3f438"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4d9c5a78-2190-4c02-90c3-4c5acee6f4ab with nextest profile: default
+    Starting 1 test across 2 binaries (17 tests skipped)
+        PASS [   0.025s] gob-frameworks::routes reexported_next_route_handlers_are_reported_per_method_at_must
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 1 test run: 1 passed, 17 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-frameworks reexported_next_route_handlers_are_reported_per_method_at_must"
+size = 576
+status = "measured"
+test_count = 1
+tests_digest = "306cce2bc94e59faa69dcb5b818f610b39f4929570a75f3e70c106d5d42b33ff"
+at = "2026-10-22T00:30:35Z"
+actor = "lognd"
+rev = 1
