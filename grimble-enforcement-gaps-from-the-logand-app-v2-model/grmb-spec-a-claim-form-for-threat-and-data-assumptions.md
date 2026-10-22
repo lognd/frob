@@ -8,14 +8,14 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:38Z"
-updated = "2026-10-22T15:15:53Z"
+updated = "2026-10-22T15:16:57Z"
 idempotency_key = "logand-gaps-D5"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["docs/design/grmb-spec.md", "docs/design/grimble-model.md", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given the decision, when grmb-spec section 4 is read, then it states the proposition kind, its fields, its verdict (Unresolved without evidence) and the MDL008 interaction"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the 27 ported assumptions, when the doc is read, then it shows the target spelling of one CWE assumption and one PII assumption"

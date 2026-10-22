@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T15:16:57Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "4ff78f67917c213fdf1ee5961f917d2163a1368b"
+inline = ""
+passed = true
+provider = "command"
+ref = '''python3 -c "import sys;s=open('docs/design/grmb-spec.md').read();[sys.exit(1) for k in ('attests \"STATEMENT\" [on NODE]','Unresolved with the reason \"attested by OWNER','MDL008 itself') if k not in s]"'''
+size = 0
+status = "measured"
+at = "2026-10-22T15:16:57Z"
+actor = "lognd"
+rev = 1
