@@ -181,21 +181,6 @@
         }
       ]
     },
-    "PointScale": {
-      "description": "Which point values a ticket may be entered with (`[pm] point_scale`).",
-      "oneOf": [
-        {
-          "const": "fibonacci",
-          "description": "Fibonacci steps: 1, 2, 3, 5, 8 or 13.",
-          "type": "string"
-        },
-        {
-          "const": "integer",
-          "description": "Any whole number from 1 up.",
-          "type": "string"
-        }
-      ]
-    },
     "Pull": {
       "description": "How work is assigned: only `rank` exists (pull from `doable`, highest rank first).",
       "oneOf": [
@@ -1389,11 +1374,6 @@
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
-        },
-        "point_scale": {
-          "$ref": "#/$defs/PointScale",
-          "default": "fibonacci",
-          "description": "Which point values a ticket may be entered with: `fibonacci` (1, 2, 3, 5, 8, 13) or `integer` (any whole number from 1); a parent with pointed children derives its points from them either way."
         },
         "pull": {
           "$ref": "#/$defs/Pull",

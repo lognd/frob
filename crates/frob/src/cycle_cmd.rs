@@ -18,6 +18,7 @@ use std::collections::BTreeMap;
 use frob_ledger::Ledger;
 use frob_ledger::TicketId;
 use frob_ledger::model::Stamp;
+use frob_ledger::rollup::Rollup;
 use frob_pm::cycle::assign::{AssignError, AssignPlan, TicketFacts, default_cycle, plan_assign};
 use frob_pm::cycle::history::{cycle_events, deliveries, done_points, member_status};
 use frob_pm::cycle::lifecycle::{
@@ -25,6 +26,7 @@ use frob_pm::cycle::lifecycle::{
     resolve_end, unknown_cycle, with_state,
 };
 use frob_pm::cycle::plan::{Candidate, PlanError, milestone_members, next_milestone, plan_fill};
+use frob_pm::cycle::points;
 use frob_pm::cycle::velocity::{
     Capacity, Delivery, ROLLING_CYCLES, capacity, committed, delivered, done_facts,
     history_capacity, recent_closed, velocity,
@@ -701,9 +703,10 @@ impl Command for CycleList {
 /// What the close rules need to know about each member of `c`, read from the ledger and the lease store.
 fn member_facts(ctx: &Context, ledger: &Ledger, c: &Cycle) -> Result<Vec<MemberFacts>, CliError> {
     let (leases, _) = open_lease_store(ctx)?;
+    let rollup = points_rollup(ledger);
     c.tickets
         .iter()
-        .map(|id| member_fact(ledger, &leases, *id))
+        .map(|id| member_fact(ledger, &leases, &rollup, *id))
         .collect()
 }
 
@@ -711,6 +714,7 @@ fn member_facts(ctx: &Context, ledger: &Ledger, c: &Cycle) -> Result<Vec<MemberF
 fn member_fact(
     ledger: &Ledger,
     leases: &frob_lease::LeaseStore,
+    rollup: &Rollup,
     id: TicketId,
 ) -> Result<MemberFacts, CliError> {
     let s = ledger.show(id).map_err(cli_err)?.summary;
@@ -720,7 +724,7 @@ fn member_fact(
         handle: s.handle,
         status,
         live_lease: leases.live_lease(id)?.is_some(),
-        points: u32::from(s.points.unwrap_or(0)),
+        points: rollup.effective(id).unwrap_or(0),
     })
 }
 
@@ -931,18 +935,40 @@ impl Command for CycleClose {
     }
 }
 
-/// The `(type, points)` of every member of `c`; unreadable members are logged and skipped.
+/// Every ticket's entered and derived points, read once from the ledger.
+fn points_rollup(ledger: &Ledger) -> Rollup {
+    match ledger.list(&frob_ledger::index::ListFilter::default()) {
+        Ok(all) => Rollup::build(&all),
+        Err(e) => {
+            tracing::warn!(error = %e, "tickets unreadable; points are not derived");
+            Rollup::default()
+        }
+    }
+}
+
+/// The `(type, points)` of every member of `c`, leaves only; unreadable members are logged and skipped.
 fn member_points(ledger: &Ledger, c: &Cycle) -> Vec<(frob_ledger::model::TicketType, u32)> {
-    c.tickets
+    member_points_with(ledger, c, None)
+}
+
+/// [`member_points`] as if `adding` were a member too: a member whose ancestor is a member counts 0, the ancestor's derived points cover it.
+fn member_points_with(
+    ledger: &Ledger,
+    c: &Cycle,
+    adding: Option<TicketId>,
+) -> Vec<(frob_ledger::model::TicketType, u32)> {
+    let members: Vec<_> = c
+        .tickets
         .iter()
         .filter_map(|id| match ledger.show(*id) {
-            Ok(v) => Some((v.summary.ty, u32::from(v.summary.points.unwrap_or(0)))),
+            Ok(v) => Some((*id, v.summary.ty)),
             Err(e) => {
                 tracing::warn!(ticket = %id, error = %e, "member ticket unreadable; not counted");
                 None
             }
         })
-        .collect()
+        .collect();
+    points::member_points(&points_rollup(ledger), &members, adding)
 }
 
 /// Output of `cycle assign` and `unassign`.
@@ -954,6 +980,10 @@ pub struct AssignData {
     pub ticket: String,
     /// Alias of the cycle the ticket left (assign moved it).
     pub moved_from: Option<String>,
+    /// Story points the ticket counts for: derived from its pointed children when it has any, else entered.
+    pub points: Option<u32>,
+    /// True when `points` is derived from the ticket's children rather than entered on it.
+    pub derived: bool,
     /// Committed story points of the cycle after the verb (velocity-counting tickets only).
     pub committed: u32,
     /// The capacity statement, for example `capacity not enforced yet: 1 of 3 cycles of history`.
@@ -1028,8 +1058,10 @@ fn assign_one(
     reason: Option<&str>,
 ) -> Result<Assigned, CliError> {
     let id = facts.id;
-    let members = member_points(ledger, target);
-    let plan = plan_assign(target, all, facts, &members, cap.clone(), over_commit)
+    let members = member_points_with(ledger, target, Some(id));
+    let set: std::collections::BTreeSet<TicketId> = target.tickets.iter().copied().collect();
+    let facts = points::assign_facts(&points_rollup(ledger), facts.clone(), &set);
+    let plan = plan_assign(target, all, &facts, &members, cap.clone(), over_commit)
         .map_err(|e| assign_refusal(&e, &target.alias()))?;
     match plan {
         AssignPlan::Already => Ok(Assigned {
@@ -1119,11 +1151,13 @@ impl Command for CycleAssign {
         };
         let id = resolve(&ledger, &self.ticket)?;
         let s = ledger.show(id).map_err(cli_err)?.summary;
+        let rollup = points_rollup(&ledger);
+        let (shown_points, shown_derived) = (rollup.effective(id), rollup.is_derived(id));
         let facts = TicketFacts {
             id,
             handle: s.handle.clone(),
             ty: s.ty,
-            points: s.points.map(u32::from),
+            points: rollup.effective(id),
         };
         let done = done_points(&deliveries(store, &ledger, &all));
         let cap = capacity(
@@ -1161,6 +1195,8 @@ impl Command for CycleAssign {
             cycle: CycleView::of(&c, store),
             ticket: facts.handle,
             moved_from,
+            points: shown_points,
+            derived: shown_derived,
             committed: committed_after,
             capacity: cap.describe(),
             capacity_limit: cap.limit(),
@@ -1243,6 +1279,8 @@ impl Command for CycleUnassign {
             cycle: CycleView::of(&c, store),
             ticket: handle,
             moved_from: None,
+            points: None,
+            derived: false,
             committed,
             capacity: cap.describe(),
             capacity_limit: cap.limit(),
@@ -1463,6 +1501,7 @@ fn ready_candidates(ctx: &Context, ledger: &Ledger) -> Result<Ready, CliError> {
     };
     let mut facts = BTreeMap::new();
     let mut titles = BTreeMap::new();
+    let rollup = points_rollup(ledger);
     let ranked = doable
         .iter()
         .map(|s| {
@@ -1470,7 +1509,7 @@ fn ready_candidates(ctx: &Context, ledger: &Ledger) -> Result<Ready, CliError> {
                 id: s.id,
                 handle: s.handle.clone(),
                 ty: s.ty,
-                points: s.points.map(u32::from),
+                points: rollup.effective(s.id),
             };
             facts.insert(s.id, f.clone());
             titles.insert(s.id, s.title.clone());

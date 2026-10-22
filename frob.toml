@@ -166,6 +166,8 @@ capacity_k = 0.5
 sprint_gate = true
 # Largest story in points that PM006 accepts; 8 keeps a story finishable within a cycle, 0 turns the check off.
 max_story_points = 8
+# Which point values a ticket may be entered with: `fibonacci` (1, 2, 3, 5, 8, 13) or `integer` (any whole number from 1); a parent with pointed children derives its points from them either way.
+point_scale = "fibonacci"
 
 [pm.classes]
 # Expedite tickets that may exceed the repository WIP limit at once; 1 lets one critical fix through without opening the floodgates.
