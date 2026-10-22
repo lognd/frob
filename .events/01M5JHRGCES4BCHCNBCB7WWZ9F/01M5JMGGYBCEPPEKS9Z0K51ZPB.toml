@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T20:23:16Z"
+digest = "08d1b3887dc5ebd9c0ea2505c74d67c8aee3d903283e76344f6ec86f23f96f10"
+exit_code = 0
+head = "0b2465c3a7f36fb77b262b0399afec8ce3312e51"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 565ede54-46bd-450b-b4a8-50063496a498 with nextest profile: default
+    Starting 1 test across 1 binary (14 tests skipped)
+        PASS [   0.004s] crunk-spec flow_file::tests::valid_flow_passes_including_cycles_and_the_skeleton
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 14 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec --lib flow_file::tests::valid_flow"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "114dcaddcb737bda4463ae5c2301a55dbbe53cc17b3790dd0092af2f514d5f11"
+at = "2026-10-22T20:23:16Z"
+actor = "lognd"
+rev = 1
