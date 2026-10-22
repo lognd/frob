@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T07:28:16Z"
-updated = "2026-10-22T17:45:50Z"
+updated = "2026-10-22T18:08:38Z"
 scope = ["crates/frob-ledger/src/reindex.rs"]
 
 [[acceptance]]
 text = "Given the profile command-budgets test, when ticket reindex runs warm, then median time is under the 1000ms budget"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A profile of reindex identifies the dominant cost and the fix is recorded in the ticket"

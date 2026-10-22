@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T18:08:38Z"
+digest = "555f347b87bc06630c305e937a20433e3225ee4d295aedd5749094518f21b020"
+exit_code = 0
+head = "2a27d60d25d5ebd290839c6c0adb08079b1f361f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 674cbc37-456a-403c-9823-a9a8876bf111 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.014s] frob-ledger::gen_tour tour_reindex_skips_unread_event_kinds_without_changing_the_page
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger --test gen_tour tour_reindex_skips_unread_event_kinds_without_changing_the_page"
+size = 572
+status = "measured"
+test_count = 1
+tests_digest = "c93fcedb6223a0e417b0714d11fa015266eaeccf2dc9989650be9e164843061a"
+at = "2026-10-22T18:08:38Z"
+actor = "lognd"
+rev = 1
