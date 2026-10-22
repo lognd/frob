@@ -79,7 +79,10 @@ fn item_finding(entry: &str, lint_name: &str) -> RawFinding {
         Some((head, loc)) => (head.trim_end_matches(", previously").trim(), Some(loc)),
         None => (entry, None),
     };
-    let (path, line) = location.map_or((NO_FILE, None), split_location);
+    let (path, line) = match location {
+        Some(loc) => split_location(loc),
+        None => (NO_FILE, None),
+    };
     let range = line.map_or(RawRange::None, |line| RawRange::LineCol {
         line,
         col: 1,
@@ -109,7 +112,10 @@ fn split_location(loc: &str) -> (&str, Option<u32>) {
 /// Parse `griffe check` output (`path:LINE: object: message`) into one finding per breakage.
 // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
 pub(crate) fn parse_griffe(text: &str) -> Vec<RawFinding> {
-    let out: Vec<RawFinding> = text.lines().filter_map(griffe_line).collect();
+    let mut out = Vec::new();
+    for line in text.lines() {
+        out.extend(griffe_line(line));
+    }
     tracing::debug!(count = out.len(), "griffe findings parsed");
     out
 }
