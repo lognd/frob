@@ -2,13 +2,13 @@
 id = "01M4CXV46WX4E0WSVYJPYM7TRG"
 title = "Fidelity measured, not declared: derive the level from capability cells and measure it with oracle corpora"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:13Z"
-updated = "2026-10-08T04:55:13Z"
+updated = "2026-10-22T11:45:23Z"
 scope = ["changelog.d/**", "crates/gob-caps/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
