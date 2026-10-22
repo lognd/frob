@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "directly inside passes through body groups only"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a call statement is a call and is counted once"
