@@ -2,12 +2,12 @@
 id = "01M5HT1NDW38SMA2P17A0B2BDV"
 title = "gob-symbols: typescript::calls_resolve_by_scope_import_and_receiver fails on experimental"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T12:40:47Z"
-updated = "2026-10-22T14:50:31Z"
+updated = "2026-10-22T14:50:38Z"
 scope = ["crates/gob-symbols/**"]
 
 [[acceptance]]
