@@ -2,7 +2,8 @@
 id = "01M4CXSSGYVE2QQ7ACW7T5Y51S"
 title = "COH003 mixed abstraction levels from callee layer spread"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
