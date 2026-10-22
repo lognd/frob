@@ -273,7 +273,7 @@ fn kind_of(root: &Path, path: &Path) -> Result<&'static str, EditError> {
         Ok("content")
     } else {
         Err(EditError::Target(format!(
-            "{} is not a *.screen.toml, *.component.toml or design/content/*.toml file",
+            "{} is not a screen, component or content design file (*.screen.toml, *.component.toml, or a .toml under design content)",
             rel.to_string_lossy()
         )))
     }
