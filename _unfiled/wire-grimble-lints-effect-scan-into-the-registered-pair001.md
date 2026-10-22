@@ -2,12 +2,12 @@
 id = "01M5HDAS62G7H4YY9FVG59GJ01"
 title = "Wire grimble-lints effect::scan into the registered PAIR001 rule for React effects"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:58:34Z"
-updated = "2026-10-22T08:58:34Z"
+updated = "2026-10-22T23:45:28Z"
 scope = ["crates/grimble-lints/**", "changelog.d/**"]
 
 [[acceptance]]
