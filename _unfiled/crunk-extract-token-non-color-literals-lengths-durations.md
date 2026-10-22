@@ -2,12 +2,12 @@
 id = "01M5H3RXZHDEDM508R6K4DBBVJ"
 title = "crunk extract-token: non-color literals (lengths, durations)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:11:32Z"
-updated = "2026-10-22T20:45:18Z"
+updated = "2026-10-22T20:45:36Z"
 scope = ["crates/crunk/src/extract.rs", "crates/crunk/tests/extract.rs"]
 
 [[acceptance]]
