@@ -306,7 +306,7 @@ fn extract_unit(
     }
 }
 
-fn is_within(term: &Term, mut n: NodeId, ancestor: NodeId) -> bool {
+pub(crate) fn is_within(term: &Term, mut n: NodeId, ancestor: NodeId) -> bool {
     while let Some(p) = term.node(n).parent() {
         if p == ancestor {
             return true;

@@ -1,0 +1,1 @@
+Decision-with-effects cohesion check: a unit that branches on computed data and performs effects in the branches is flagged unless it is a verified shell, judged against grimble:shell and grimble:core roles.
