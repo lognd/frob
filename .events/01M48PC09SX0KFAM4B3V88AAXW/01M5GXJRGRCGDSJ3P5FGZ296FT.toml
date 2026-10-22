@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T04:23:18Z"
+digest = "193e77073467bbe03254e721e981b0a23ae44864c5e6e693650ddeee5bc8cbe5"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6a52696b-434c-4684-8699-cec97ffe8f25 with nextest profile: default
+    Starting 1 test across 7 binaries (75 tests skipped)
+        PASS [   0.005s] gob-mdtest::sections section_that_is_test_and_group_is_a_parse_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 75 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest section_that_is_test_and_group"
+size = 559
+status = "measured"
+test_count = 1
+tests_digest = "e657e91cdc65e2d9c22f4ad4e4cb30f2a5a2eb3e7a6fd5913143e29f2aff28cd"
+at = "2026-10-22T04:23:18Z"
+actor = "lognd"
+rev = 1
