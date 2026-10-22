@@ -2,7 +2,8 @@
 id = "01M4CTV1F6JTX89DKB1QKDYH7A"
 title = "frob init --agent: write Claude Code settings for the project (MCP server, vet hook, permission allowlist for frob verbs) and an in-repo worktree option"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
