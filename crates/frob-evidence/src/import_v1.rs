@@ -21,10 +21,11 @@
 // frob:ticket 01M43BEAR3MSMEANKENBQ1KDT7
 // frob:ticket 01M4FCZT2N5WN3VPVJ8KB92Z06
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use frob_evidence::events::KIND_EVIDENCE;
-use frob_evidence::record::{EvidenceRecord, Provider, Status};
+use crate::events::KIND_EVIDENCE;
+use crate::record::{EvidenceRecord, Provider, Status};
 use frob_ledger::event::{
     CommentData, CreateData, EVENT_REV, Event, EventBody, TransitionData, kind_name,
 };
@@ -618,7 +619,7 @@ fn evidence_events(
             test_count: None,
             tests_digest: None,
             failed_tests: Vec::new(),
-            non_passing: frob_evidence::NonPassingCounts::default(),
+            non_passing: crate::NonPassingCounts::default(),
             inline: None,
             size: 0,
             attestation: None,
@@ -1304,21 +1305,22 @@ pub fn render_report_md(report: &ImportReport) -> String {
          | `done-report.md` | `decision` comment event titled `v1 done-report` |\n\
          | body | the markdown body |\n\n",
     );
-    out.push_str(&format!(
+    let _ = write!(
+        out,
         "## Result\n\n{} tickets and {} events. By type: {}. By category: {}.\n\n",
         report.rows.len(),
         report.events,
         counts_text(&report.by_type),
         counts_text(&report.by_category),
-    ));
+    );
     out.push_str("## Dropped v1 fields\n\n| v1 field | Tickets with a value | Why it is not carried |\n|---|---|---|\n");
     for (field, reason) in DROPPED_FIELDS {
         let n = report.dropped.get(*field).copied().unwrap_or(0);
-        out.push_str(&format!("| `{field}` | {n} | {reason} |\n"));
+        let _ = writeln!(out, "| `{field}` | {n} | {reason} |");
     }
     out.push_str("\n## Dropped behaviour\n\n| What | Why |\n|---|---|\n");
     for (what, reason) in DROPPED_BEHAVIOUR {
-        out.push_str(&format!("| {what} | {reason} |\n"));
+        let _ = writeln!(out, "| {what} | {reason} |");
     }
     out
 }

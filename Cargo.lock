@@ -1210,14 +1210,17 @@ dependencies = [
  "gob-symbols",
  "gob-testsupport",
  "gob-time",
+ "jiff",
  "proptest",
  "schemars",
  "serde",
  "serde_json",
+ "serde_yaml_ng",
  "tempfile",
  "thiserror",
  "toml",
  "tracing",
+ "ulid",
  "which",
 ]
 
@@ -2547,8 +2550,6 @@ dependencies = [
  "crunk-spec",
  "frob-check",
  "frob-cli",
- "frob-evidence",
- "frob-ledger",
  "frob-mirror",
  "gob-cli",
  "gob-config",
@@ -2575,7 +2576,6 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
- "ulid",
 ]
 
 [[package]]

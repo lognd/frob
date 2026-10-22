@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use clap::{Parser, Subcommand};
-use gob_dev::import_v1::{self, ImportOptions};
 use gob_dev::out::emit;
 use gob_dev::{
     Kind, Mode, apply, bench_ic, changes, ci, generate, isolation, profile, publish, test_size,
@@ -21,24 +20,6 @@ struct Cli {
     /// The task to run.
     #[command(subcommand)]
     command: Task,
-}
-
-/// Category an imported open v1 ticket is created in.
-#[derive(Debug, Clone, Copy, clap::ValueEnum)]
-enum OpenCategory {
-    /// Ready to start.
-    Todo,
-    /// Awaiting triage.
-    Triage,
-}
-
-impl From<OpenCategory> for frob_ledger::model::Category {
-    fn from(c: OpenCategory) -> Self {
-        match c {
-            OpenCategory::Todo => Self::Todo,
-            OpenCategory::Triage => Self::Triage,
-        }
-    }
 }
 
 /// Tasks the runner can perform.
@@ -178,36 +159,6 @@ enum Task {
         /// Version every tool must report.
         version: Option<String>,
     },
-    /// Convert the v1 YAML ledger into v2 ULID tickets (one-off, T-0025).
-    ImportV1Tickets {
-        /// The v1 ledger directory.
-        #[arg(long, default_value = "tickets")]
-        from: PathBuf,
-        /// Where to write the v2 tree (must be empty or absent).
-        #[arg(long)]
-        to: PathBuf,
-        /// Convert and verify in memory; write nothing.
-        #[arg(long)]
-        dry_run: bool,
-        /// A selection file naming which open v1 tickets import (for example `docs/migration/v1-selection.toml`); without one every v1 ticket imports.
-        #[arg(long)]
-        selection: Option<PathBuf>,
-        /// Import every v1 ticket as open work, ignoring any selection (the default without `--selection`).
-        #[arg(long)]
-        all: bool,
-        /// `--to` may be an existing v2 ledger: write only new ticket directories; refuse on any id or alias collision.
-        #[arg(long)]
-        merge: bool,
-        /// Category recorded in the create event of imported open tickets.
-        #[arg(long, value_enum, default_value = "todo")]
-        open_category: OpenCategory,
-        /// Also write the `T-NNNN<TAB>ulid` id map to this file.
-        #[arg(long)]
-        map_out: Option<PathBuf>,
-        /// Also write the migration report markdown (docs/migration/v1-import.md) here.
-        #[arg(long)]
-        report_md: Option<PathBuf>,
-    },
 }
 
 /// Failure outcome of a run; `main` returning it makes the process exit 1.
@@ -253,32 +204,6 @@ impl Task {
 fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
     let ok = std::process::ExitCode::SUCCESS;
     match command {
-        Task::ImportV1Tickets {
-            from,
-            to,
-            dry_run,
-            selection,
-            all,
-            merge,
-            open_category,
-            map_out,
-            report_md,
-        } => import_tickets(
-            &ImportOptions {
-                from,
-                to,
-                dry_run,
-                selection: selection.filter(|_| !all),
-                merge,
-                open_category: open_category.into(),
-                privacy_dir: gob_git::Repo::discover(".")
-                    .ok()
-                    .map(|r| r.common_dir().to_path_buf()),
-            },
-            map_out.as_deref(),
-            report_md.as_deref(),
-        )
-        .map(|()| ok),
         Task::Profile {
             runs,
             budget_factor,
@@ -686,75 +611,6 @@ fn publish_crates(
     }
 }
 
-/// Run the v1 import and print its summary table, counts and dropped fields.
-fn import_tickets(
-    opts: &ImportOptions,
-    map_out: Option<&std::path::Path>,
-    report_md: Option<&std::path::Path>,
-) -> Result<(), Failed> {
-    let report = import_v1::run(opts).map_err(|e| {
-        tracing::error!(error = %e, "import failed");
-        Failed(format!("error: {e}"))
-    })?;
-    for line in import_v1::render_table(&report.rows) {
-        emit(&line);
-    }
-    emit("");
-    for line in import_v1::render_selection(&report.dispositions, &report.open, &report.skipped) {
-        emit(&line);
-    }
-    emit("");
-    emit(&format!(
-        "== redaction: private-term rules loaded: {}; tickets rewritten: {}; blocked: {} ==",
-        report.private_rules_loaded,
-        report.redactions.len(),
-        report.blocked.len()
-    ));
-    for (id, what) in &report.redactions {
-        emit(&format!("{id}: {what}"));
-    }
-    for id in &report.blocked {
-        emit(&format!(
-            "{id}: BLOCKED, an absolute home path survived redaction"
-        ));
-    }
-    emit(&format!(
-        "{} tickets, {} events{}",
-        report.rows.len(),
-        report.events,
-        if opts.dry_run {
-            " (dry run, nothing written)"
-        } else {
-            ""
-        }
-    ));
-    emit(&format!("by type: {:?}", report.by_type));
-    emit(&format!("by category: {:?}", report.by_category));
-    for (field, count) in &report.dropped {
-        emit(&format!(
-            "dropped v1 field {field}: {count} tickets carried a value"
-        ));
-    }
-    for warning in &report.warnings {
-        emit(&format!("warning: {warning}"));
-    }
-    let write = |path: &std::path::Path, text: String| {
-        std::fs::write(path, text).map_err(|e| {
-            Failed(format!(
-                "error: {}: {e}",
-                gob_path::Shown::with_home(path, None)
-            ))
-        })
-    };
-    if let Some(path) = map_out {
-        write(path, import_v1::render_id_map(&report.rows))?;
-    }
-    if let Some(path) = report_md {
-        write(path, import_v1::render_report_md(&report))?;
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -795,18 +651,6 @@ mod tests {
                 ..
             }
         ));
-    }
-
-    // frob:ticket 01M4FCZT2N5WN3VPVJ8KB92Z06
-    // frob:tests crates/gob-dev/src/main.rs::Task
-    #[test]
-    fn import_v1_tickets_has_no_default_selection_file() {
-        let cli =
-            Cli::try_parse_from(["gob-dev", "import-v1-tickets", "--to", "out"]).expect("parses");
-        let Task::ImportV1Tickets { selection, .. } = cli.command else {
-            panic!("not an import task");
-        };
-        assert_eq!(selection, None);
     }
 
     // frob:ticket 01M42KHBJ5GC8DVKND63WK9JKE
@@ -923,15 +767,5 @@ mod tests {
             }
         ));
         assert!(Cli::try_parse_from(["gob-dev", "publish", "--apply"]).is_err());
-    }
-
-    #[test]
-    fn import_parses() {
-        let cli = Cli::try_parse_from(["gob-dev", "import-v1-tickets", "--to", "x", "--dry-run"])
-            .expect("parses");
-        assert!(matches!(
-            cli.command,
-            Task::ImportV1Tickets { dry_run: true, .. }
-        ));
     }
 }

@@ -1,0 +1,1 @@
+Moved the one-off v1 ledger importer out of the developer task runner into `frob-evidence` (`cargo run -p frob-evidence --example import_v1`), so `gob-dev` no longer depends on `frob-ledger` or `frob-evidence`.
