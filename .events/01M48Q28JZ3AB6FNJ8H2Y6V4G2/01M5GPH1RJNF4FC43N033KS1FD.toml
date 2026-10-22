@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T02:19:53Z"
+digest = "e0cf598fcb38bd17ee266cf6bb276ab919c34cbcc8f9bf9342c37e2642f5c565"
+exit_code = 0
+head = "4ef48a82ab5fb8ecbfa91fb4868397aa5a273f3f"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e525eda0-4ab3-4dee-8f9d-f6a80a4c44b1 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.007s] gob-dev::verb_admission a_registered_verb_without_a_row_fails_naming_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test verb_admission a_registered_verb_without_a_row_fails_naming_it"
+size = 612
+status = "measured"
+test_count = 1
+tests_digest = "a2f9def57491f29163587b0759b7eb9e217fb3ba484b858bb07f44e929265ea4"
+at = "2026-10-22T02:19:53Z"
+actor = "lognd"
+rev = 1
