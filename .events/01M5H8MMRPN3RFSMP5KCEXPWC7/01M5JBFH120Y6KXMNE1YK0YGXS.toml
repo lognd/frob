@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a crunk TOML file with comments and custom formatting, when crunk edit changes one key, then every comment and untouched line is byte-identical", "Given an edit that adds a new key or table, then it is inserted without disturbing neighbouring comments, and a malformed file is an error that leaves it unchanged"]
+moved = []
+at = "2026-10-22T17:45:27Z"
+actor = "lognd"
+rev = 1
