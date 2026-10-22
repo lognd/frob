@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:11:32Z"
-updated = "2026-10-22T20:45:29Z"
+updated = "2026-10-22T21:02:31Z"
 scope = ["crates/crunk/src/rename.rs", "crates/crunk/tests/rename.rs"]
 
 [[acceptance]]
 text = "Given a custom token in design/tokens, when crunk rename runs, then the definition and all references are rewritten"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a derived scale or font token, when crunk rename runs, then it is renamed or refused with a specific coded reason"
