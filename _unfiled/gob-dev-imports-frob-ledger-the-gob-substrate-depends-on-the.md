@@ -2,7 +2,8 @@
 id = "01M48NCNDQZ27NP0JQ7M8WETW7"
 title = "gob-dev imports frob-ledger: the gob substrate depends on the frob goblin (SYS013 layering inversion)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
