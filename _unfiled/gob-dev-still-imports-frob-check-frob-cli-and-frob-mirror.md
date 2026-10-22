@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:39Z"
-updated = "2026-10-22T22:27:08Z"
-scope = ["crates/gob-dev/**", "crates/frob-docgen/**", "Cargo.toml", "Cargo.lock", "design/**", "docs/design/boundaries.md", "docs/migration/v1-import.md", "docs/guides/upgrade-from-v1.md", "docs/design/migration.md"]
+updated = "2026-10-22T22:27:09Z"
+scope = ["crates/gob-dev/**", "crates/frob-docgen/**", "Cargo.toml", "Cargo.lock", "design/**", "docs/design/boundaries.md", "docs/migration/v1-import.md", "docs/guides/upgrade-from-v1.md", "docs/design/migration.md", "docs/design/README.md"]
 
 [[acceptance]]
 text = "gob-dev has no frob-* dependency in cargo tree"
