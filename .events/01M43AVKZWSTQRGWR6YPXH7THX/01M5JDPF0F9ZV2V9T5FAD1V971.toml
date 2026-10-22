@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T18:24:10Z"
+digest = "8e37677c168f8d6f8b52588054a551f3a3b385e3935621d24dcdd049b64dd730"
+exit_code = 0
+head = "2a27d60d25d5ebd290839c6c0adb08079b1f361f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f011c85f-4268-480c-8d31-c196beea4a54 with nextest profile: default
+    Starting 1 test across 1 binary (137 tests skipped)
+        PASS [   0.038s] crunk::e2e mapping_audit_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.039s] 1 test run: 1 passed, 137 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test e2e mapping_audit_passes"
+size = 522
+status = "measured"
+test_count = 1
+tests_digest = "bb5fbf9efc776b38b0a117f0f667428c0485c3f91aad53c8cc7465b0d0ee5b19"
+at = "2026-10-22T18:24:10Z"
+actor = "lognd"
+rev = 1

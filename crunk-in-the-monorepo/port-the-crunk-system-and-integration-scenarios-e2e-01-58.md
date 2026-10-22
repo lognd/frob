@@ -8,7 +8,7 @@ points = 8
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:16Z"
-updated = "2026-10-22T18:15:13Z"
+updated = "2026-10-22T18:24:10Z"
 idempotency_key = "crunk-plan-e2e"
 labels = ["area:crunk"]
 scope = ["crates/crunk/tests/e2e/**", "crates/crunk/tests/int/**"]
@@ -31,7 +31,7 @@ target = "01M43AVKMT52QCG7DGNQ4J906S"
 
 [[acceptance]]
 text = "Given the mapping table, when audited, then every Python test function is mapped to a Rust test or a dropped entry with a reason"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the Rust suite, when run, then it passes on Linux, macOS and Windows runners"
