@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T20:36:47Z"
-updated = "2026-10-22T00:51:56Z"
+updated = "2026-10-22T00:51:58Z"
 idempotency_key = "g4w-directives"
 scope = ["crates/gob-directives/**", "changelog.d/01M5G2WH43B41KTYYK40WS3RZW.added.md"]
 
@@ -34,7 +34,7 @@ bound = true
 
 [[acceptance]]
 text = "clean input is a no-op"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a finding without a mechanical fix is left unchanged"
