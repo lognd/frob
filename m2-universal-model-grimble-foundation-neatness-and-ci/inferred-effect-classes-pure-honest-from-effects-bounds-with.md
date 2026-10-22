@@ -2,7 +2,8 @@
 id = "01M4CXT1GFPWZAMV0BCBH3WC4G"
 title = "Inferred effect classes (pure, honest) from effects Bounds with may-alias, and NEAT037 effect-row-widening against the base"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
