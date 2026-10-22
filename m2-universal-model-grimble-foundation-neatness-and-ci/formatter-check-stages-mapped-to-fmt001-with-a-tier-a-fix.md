@@ -2,13 +2,13 @@
 id = "01M4D94J5J2TZEXTB8GH36992B"
 title = "Formatter check stages mapped to FMT001 with a tier A fix that runs the formatter within the ticket scope"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:12:36Z"
-updated = "2026-10-08T08:12:36Z"
+updated = "2026-10-22T13:03:09Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
 
 [[acceptance]]
