@@ -417,7 +417,7 @@ fn committed_languages_page_matches_the_generator() {
     assert_eq!(gob_dev::files::marker_problem(&committed), None);
 }
 
-// frob:ticket ~ARDPKKS
+// frob:ticket 01M4CXTR91E8Y8Y52B5ARDPKKS
 #[test]
 // frob:tests crates/gob-dev/src/render/cli.rs::generate
 fn cli_reference_has_a_stable_page_per_product() {
