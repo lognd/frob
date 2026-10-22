@@ -2,12 +2,12 @@
 id = "01M4FDQ3841JN891PHV248NC9A"
 title = "check --ticket defaults its base to the commit where the ticket's work lease started (stacked branches)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:11:07Z"
-updated = "2026-10-09T04:11:07Z"
+updated = "2026-10-22T12:16:51Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-check/**", "crates/frob-lease/**", "changelog.d/**"]
 
