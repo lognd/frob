@@ -4,6 +4,7 @@ use std::path::Path;
 
 // frob:ticket 01M418CXCED7DEBX4WV2PM2R2K
 // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
+// frob:ticket 01M5HW48KRXEE8ARBE3N2JPRYH
 /// A language this crate can (feature permitting) parse.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Language {
@@ -13,7 +14,7 @@ pub enum Language {
     Markdown,
     /// TOML (`.toml`).
     Toml,
-    /// YAML (`.yml`, `.yaml`); comments and keys only, no tree-sitter grammar.
+    /// YAML (`.yml`, `.yaml`, and Unity `.prefab`); comments and keys only, no tree-sitter grammar.
     Yaml,
     /// Python source (`.py`, `.pyi`).
     Python,
@@ -64,7 +65,7 @@ impl Language {
             "rs" => Some(Language::Rust),
             "md" | "markdown" => Some(Language::Markdown),
             "toml" => Some(Language::Toml),
-            "yml" | "yaml" => Some(Language::Yaml),
+            "yml" | "yaml" | "prefab" => Some(Language::Yaml),
             "py" | "pyi" => Some(Language::Python),
             "cs" => Some(Language::CSharp),
             "ts" | "mts" | "cts" => Some(Language::TypeScript),
@@ -129,9 +130,19 @@ mod tests {
         assert_eq!(Language::detect("design/frob.grmb"), Some(Language::Grmb));
         assert_eq!(Language::detect("X.GRMB"), Some(Language::Grmb));
         assert_eq!(Language::Grmb.name(), "grmb");
+        assert_eq!(Language::detect("ui/Hud.prefab"), Some(Language::Yaml));
+        assert_eq!(Language::detect("Hud.PREFAB"), Some(Language::Yaml));
         assert_eq!(Language::detect("a.scss"), None);
         assert_eq!(Language::detect("a.pyc"), None);
         assert_eq!(Language::detect("Makefile"), None);
+    }
+
+    // frob:tests crates/gob-languages/src/language.rs::Language
+    #[test]
+    fn prefab_files_are_detected_as_yaml() {
+        assert_eq!(Language::detect("Assets/Hud.prefab"), Some(Language::Yaml));
+        assert_eq!(Language::detect("Hud.Prefab"), Some(Language::Yaml));
+        assert_eq!(Language::detect("Hud.prefab.meta"), None);
     }
 
     #[test]

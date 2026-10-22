@@ -1,6 +1,7 @@
 //! GX014 through `crunk check`: a uGUI prefab generator must use generated token constants.
 
 // frob:ticket 01M4CXSD8DEYB69E5J7Q1ABGXK
+// frob:ticket 01M5HW48KRXEE8ARBE3N2JPRYH
 
 use std::path::Path;
 
@@ -155,4 +156,72 @@ fn named_literal_arguments_fire_instead_of_going_unresolved() {
     assert!(unresolved(&found).is_empty());
     let mixed = gx014_of(&generator("img.color = new Color(r: red, g: 0f, b: 0f);"));
     assert_eq!(unresolved(&mixed).len(), 1, "{mixed:?}");
+}
+
+/// GX014 findings of one prefab file (`name`) in a fresh repository holding the default preset.
+fn prefab_gx014_of(name: &str, source: &str) -> Vec<gob_rules::Finding> {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "crunk.toml",
+        crunk_spec::presets::preset("default").expect("default preset"),
+    );
+    write(dir.path(), name, source);
+    run(dir.path(), &CheckOptions::default())
+        .expect("run")
+        .report
+        .findings
+        .into_iter()
+        .filter(|f| f.rule.as_str() == "GX014")
+        .collect()
+}
+
+/// A text-serialized prefab with `body` under a `MonoBehaviour` document.
+fn prefab(body: &str) -> String {
+    format!(
+        "%YAML 1.1\n%TAG !u! tag:unity3d.com,2011:\n--- !u!114 &11400000\nMonoBehaviour:\n  m_Enabled: 1\n{body}"
+    )
+}
+
+// frob:tests crates/crunk-check/src/ugui.rs::UguiLiteralCheck
+#[test]
+fn prefab_color_and_font_size_literals_are_audited() {
+    let src = prefab(
+        "  m_Color: {r: 0.1, g: 0.2, b: 0.3, a: 1}\n  m_FontData:\n    m_FontSize: 14 # body\n",
+    );
+    let f = prefab_gx014_of("Assets/Hud.prefab", &src);
+    assert_eq!(f.len(), 2, "{f:?}");
+    assert!(
+        f.iter().all(|x| x.severity == gob_rules::Severity::Error),
+        "{f:?}"
+    );
+    assert!(f[0].message.contains("m_Color"), "{}", f[0].message);
+    assert!(
+        f[1].message.contains("font-size literal `14`"),
+        "{}",
+        f[1].message
+    );
+    // Other Unity serialization extensions are not audited, and a clean prefab is silent.
+    assert!(prefab_gx014_of("Assets/Main.unity", &src).is_empty());
+    assert!(prefab_gx014_of("Assets/Hud.prefab", &prefab("  m_Name: Hud\n")).is_empty());
+}
+
+// frob:tests crates/crunk-check/src/ugui.rs::UguiLiteralCheck
+#[test]
+fn prefab_non_literal_or_malformed_values_are_unresolved_not_findings() {
+    for body in [
+        "  m_Color: *tokenInk\n",
+        "  m_Color:\n    r: 1\n    g: 0\n    b: 0\n",
+        "  m_Color: {r: 1, g: 0, b: 0\n",
+        "  m_Color: {r: $ink, g: 0, b: 0, a: 1}\n",
+        "  m_Color: {r: 1, g: oops}\n",
+        "  m_FontSize: big\n",
+    ] {
+        let f = prefab_gx014_of("Hud.prefab", &prefab(body));
+        assert_eq!(f.len(), 1, "{body}: {f:?}");
+        assert_eq!(f[0].severity, gob_rules::Severity::Unresolved, "{body}");
+    }
+    let binary = prefab_gx014_of("Hud.prefab", "UnityFS\u{0}\u{1}m_Color: {r: 1, g: 1, b: 1}");
+    assert_eq!(binary.len(), 1, "{binary:?}");
+    assert_eq!(binary[0].severity, gob_rules::Severity::Unresolved);
 }

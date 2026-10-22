@@ -344,7 +344,10 @@ Known limitations of the first TOKEN and EXPORT rules (GKXE3V8):
   a project generates its prefabs from code (hullbreach's
   `HudPrefabBuilder.cs`), crunk checks the generator's inputs through the
   C# adapter (literals must be generated token constants) and audits the
-  prefab YAML read-only for colour and font-size literals.
+  prefab YAML read-only for colour and font-size literals. A `.prefab` file is detected as YAML:
+  a numeric `m_Color` flow mapping or `m_FontSize` is a GX014 finding; an
+  alias, block mapping, malformed or non-numeric value, or a binary-serialized
+  prefab, is Unresolved. `.unity` and `.asset` files are not audited.
 - New game UI should use UI Toolkit; crunk's game profile and GX family
   apply to both.
 - The gamepad focus graph comes from scenes and flows (directional
