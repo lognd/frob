@@ -1,0 +1,9 @@
+kind = "create"
+title = "crunk: glossary and tone rules over content keys"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~VAAWD0R: glossary term enforcement and tone checks were cut."
+at = "2026-10-22T06:44:58Z"
+actor = "lognd"
+rev = 1
