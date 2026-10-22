@@ -47,7 +47,7 @@ pub const MATRIX: [Row; 14] = [
     r(Lang::CSharp,     F1, [By,   G,   Kw,  G,  Syn, G,    G,  G,   Man, Syn, NA,  NA ]),
     r(Lang::TypeScript, F3, [Lex,  By,  Kw,  G,  Syn, LexI, G,  G,   Man, Syn, Syn, Syn]),
     r(Lang::Css,        F2, [By,   G,   NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, NA ]),
-    r(Lang::Html,       F0, [NA,   NA,  NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, Syn]),
+    r(Lang::Html,       F1, [NA,   NA,  NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, Syn]),
     r(Lang::Markdown,   F3, [Lnk,  Lnk, NA,  NA, NA,  Syn,  NA, Dec, G,   Syn, NA,  NA ]),
     r(Lang::Yaml,       F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Toml,       F0, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),

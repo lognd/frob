@@ -121,13 +121,14 @@ fn script_and_style_elements_are_region_islands_with_language_tags() {
 <script src=\"x.js\"></script>";
     let folded = fold(src);
     let t = &folded.term;
-    let regions: Vec<(String, String)> = t
+    let regions: Vec<(String, Option<String>)> = t
         .ids()
         .filter_map(|id| match t.operator(id) {
             Operator::Universal(Universal::Region { kind }) => {
+                // A lowered body has no `lit(text)` child; json and data bodies stay text.
                 let body = match t.operator(t.node(id).children()[0]) {
-                    Operator::Universal(Universal::Lit { lexeme, .. }) => lexeme.clone(),
-                    other => panic!("island body: {other:?}"),
+                    Operator::Universal(Universal::Lit { lexeme, .. }) => Some(lexeme.clone()),
+                    _ => None,
                 };
                 Some((kind.clone(), body))
             }
@@ -136,8 +137,10 @@ fn script_and_style_elements_are_region_islands_with_language_tags() {
         .collect();
     let kinds: Vec<&str> = regions.iter().map(|(k, _)| k.as_str()).collect();
     assert_eq!(kinds, ["css", "js", "js", "ts", "json", "data"]);
-    assert_eq!(regions[0].1, "a{color:red}");
-    assert_eq!(regions[1].1, "var x = 1;");
+    assert_eq!(regions[0].1, None, "css body is lowered");
+    assert_eq!(regions[1].1, None, "js body is lowered");
+    assert_eq!(regions[4].1.as_deref(), Some("{\"a\":1}"));
+    assert_eq!(regions[5].1.as_deref(), Some("<p></p>"));
     // A script with only `src` has no body, hence no island.
     assert_eq!(regions.len(), 6);
 }
@@ -233,4 +236,93 @@ fn the_capability_matrix_has_an_html_row() {
         row.identity
     );
     assert!(!row.capabilities.is_empty());
+}
+
+/// The source text a node's `Location::Text` range covers.
+fn span_text<'a>(folded: &gob_symbols::Folded, node: gob_ir::NodeId, src: &'a str) -> &'a str {
+    match folded.term.node(node).location() {
+        gob_ir::Location::Text { range, .. } => &src[range.to_usize_range()],
+        other => panic!("not a text location: {other:?}"),
+    }
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/html/mod.rs::lower
+// frob:tests crates/gob-symbols/src/css/mod.rs::fold_island
+fn a_css_rule_in_a_style_element_answers_the_style_queries_in_html_spans() {
+    let src = "<!doctype html>\n<p>caf\u{e9}</p>\n<style>\n.card { color: red; }\n</style>\n";
+    let (model, folded) = model_of(src);
+    let rules = style::style_rules(&model);
+    assert_eq!(rules.len(), 1);
+    assert_eq!(rules[0].selector, ".card");
+    assert_eq!(
+        span_text(&folded, rules[0].node, src),
+        ".card { color: red; }"
+    );
+    let decls = style::declarations(&model);
+    assert_eq!(decls.len(), 1);
+    assert_eq!(decls[0].property, "color");
+    assert_eq!(span_text(&folded, decls[0].node, src), "color: red;");
+    assert_eq!(decls[0].owner, Some(rules[0].node));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/html/mod.rs::lower
+fn a_call_in_a_script_element_appears_in_the_call_graph() {
+    let src = "<p>x</p>\r\n<script>\r\nfunction main() { helper(); }\r\nmain();\r\n</script>\r\n";
+    let folded = fold(src);
+    let got: Vec<(String, String, u32)> = folded
+        .file
+        .calls
+        .iter()
+        .map(|c| (c.caller.to_string(), c.callee.clone(), c.line))
+        .collect();
+    assert!(
+        got.iter()
+            .any(|(caller, callee, line)| caller.ends_with("::main")
+                && callee == "helper"
+                && *line == 3),
+        "{got:?}"
+    );
+    assert!(
+        got.iter()
+            .any(|(_, callee, line)| callee == "main" && *line == 4),
+        "{got:?}"
+    );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/html/mod.rs::lower
+fn several_islands_merge_their_calls_and_keep_distinct_symbols() {
+    let src = "<script>function a() { b(); }</script><script>function c() { d(); }</script>";
+    let folded = fold(src);
+    let callees: Vec<(&str, String)> = folded
+        .file
+        .calls
+        .iter()
+        .map(|c| (c.callee.as_str(), c.caller.to_string()))
+        .collect();
+    let b = callees.iter().find(|(n, _)| *n == "b").expect("b call");
+    let d = callees.iter().find(|(n, _)| *n == "d").expect("d call");
+    assert!(b.1.ends_with("::a"), "{callees:?}");
+    assert!(d.1.ends_with("::c"), "{callees:?}");
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/html/mod.rs::island
+fn empty_whitespace_json_and_src_only_scripts_lower_nothing() {
+    let (model, _) = model_of(
+        "<script></script><script>  \n </script><script type=\"application/json\">{\"a\":1}</script><script src=\"a.js\"></script><style></style>",
+    );
+    assert!(style::style_rules(&model).is_empty());
+    assert!(style::declarations(&model).is_empty());
+    let folded = fold("<script>  \n </script><script type=\"application/json\">f()</script>");
+    assert!(folded.file.calls.is_empty());
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/html/mod.rs::lower
+fn a_syntax_error_in_a_script_body_is_a_partial_parse_that_keeps_good_calls() {
+    let folded = fold("<script>ok(); function (( {</script>");
+    assert!(folded.file.calls.iter().any(|c| c.callee == "ok"));
 }

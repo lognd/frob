@@ -116,11 +116,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         holes: 0,
         forgiven: Vec::new(),
     };
-    let mut kids = css.items(root)?;
-    if css.holes == 0 && css.has_unforgiven_error(root) {
-        // An error the walk did not reach (inside a value or selector): the file is still a partial parse.
-        kids.push(css.hole(root)?);
-    }
+    let kids = css.body(root)?;
     let Css { cx, .. } = css;
     let mut cx = cx;
     let root_id = cx.add(file_root_spec(&cx, input.size as usize), &kids)?;
@@ -139,6 +135,41 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         "css file folded"
     );
     Ok(Folded { term, scopes, file })
+}
+
+// frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+/// Folds the stylesheet body `text` (parsed to `root`) into the host builder `host` at byte `base`.
+///
+/// Returns the top-level rule, declaration and hole nodes; every location is a span in the host file.
+pub(crate) fn fold_island(
+    host: &mut Cx<'_>,
+    path: &str,
+    text: &str,
+    base: usize,
+    root: Node<'_>,
+) -> R<Vec<NodeId>> {
+    let mut css = Css {
+        cx: host.nest(text, base),
+        path,
+        holes: 0,
+        forgiven: Vec::new(),
+    };
+    let kids = css.body(root)?;
+    host.unnest(css.cx);
+    tracing::debug!(path, base, nodes = kids.len(), "css island folded");
+    Ok(kids)
+}
+
+impl Css<'_> {
+    /// The top-level nodes of the stylesheet `root`, with a hole for an error the walk did not reach.
+    fn body(&mut self, root: Node<'_>) -> R<Vec<NodeId>> {
+        let mut kids = self.items(root)?;
+        if self.holes == 0 && self.has_unforgiven_error(root) {
+            // An error the walk did not reach (inside a value or selector): the file is still a partial parse.
+            kids.push(self.hole(root)?);
+        }
+        Ok(kids)
+    }
 }
 
 /// The scope graph of a stylesheet: one cascade scope holding every custom property at May, every `var()` in it.

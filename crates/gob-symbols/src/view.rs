@@ -67,6 +67,8 @@ pub(crate) enum Naming {
     TypeScript,
     /// `path::.card[dup2]`: selectors, at-rule names and custom properties, escaped by [`style_segment`].
     Style,
+    /// An HTML host: TypeScript naming for script islands, style naming for style-island units.
+    Html,
     /// Only the file node exists.
     Opaque,
 }
@@ -132,9 +134,11 @@ fn kind_of(naming: Naming, kind: &str) -> SymbolKind {
         (Naming::Model, "boundary") => SymbolKind::Boundary,
         (_, "function") => SymbolKind::Function,
         (_, "method") => SymbolKind::Method,
-        (Naming::Python | Naming::CSharp | Naming::TypeScript, "class") => SymbolKind::Class,
-        (Naming::CSharp | Naming::TypeScript, "namespace") => SymbolKind::Namespace,
-        (Naming::CSharp | Naming::TypeScript, "interface") => SymbolKind::Interface,
+        (Naming::Python | Naming::CSharp | Naming::TypeScript | Naming::Html, "class") => {
+            SymbolKind::Class
+        }
+        (Naming::CSharp | Naming::TypeScript | Naming::Html, "namespace") => SymbolKind::Namespace,
+        (Naming::CSharp | Naming::TypeScript | Naming::Html, "interface") => SymbolKind::Interface,
         (Naming::CSharp, "record") => SymbolKind::Record,
         (Naming::CSharp, "delegate") => SymbolKind::Delegate,
         (Naming::CSharp, "property") => SymbolKind::Property,
@@ -242,11 +246,13 @@ fn collect_pending(term: &Term, naming: Naming) -> Vec<Pending> {
             .and_then(|p| base.get(&p).cloned())
             .unwrap_or_default();
         let mut full = parent_base.clone();
-        full.push(if naming == Naming::Style {
-            style_segment(&seg_text(seg))
-        } else {
-            seg_text(seg)
-        });
+        full.push(
+            if naming == Naming::Style || (naming == Naming::Html && is_style_unit(kind)) {
+                style_segment(&seg_text(seg))
+            } else {
+                seg_text(seg)
+            },
+        );
         let mut b = parent_base;
         if kind == "impl" {
             b.push(seg_name(seg));
@@ -303,6 +309,11 @@ fn signature_of(term: &Term, n: NodeId) -> Option<MethodSig> {
         arity,
         ret,
     })
+}
+
+/// True for the unit kinds the CSS adapter emits (their names are selectors, not identifiers).
+fn is_style_unit(kind: &str) -> bool {
+    matches!(kind, "style-rule" | "at-rule" | "custom-property")
 }
 
 /// Computes the view of `term` for `path`.
@@ -363,6 +374,7 @@ pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
         | Naming::CSharp
         | Naming::TypeScript
         | Naming::Style
+        | Naming::Html
         | Naming::Opaque => {}
     }
     view

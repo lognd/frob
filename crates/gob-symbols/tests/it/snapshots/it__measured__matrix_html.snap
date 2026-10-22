@@ -2,7 +2,7 @@
 source: crates/gob-symbols/tests/it/measured.rs
 expression: matrix_of(a)
 ---
-html F0
+html F1
 resolve_ref NotApplicable not-applicable
 apply_targets NotApplicable not-applicable
 visibility NotApplicable not-applicable
