@@ -1,0 +1,19 @@
+# ruff format: Python formatter in check mode (FMT001, fix tier A).
+name = "ruff-format"
+command = "uvx"
+pinned_version = "0.14.1"
+parser = "formatter-list"
+version_args = ["ruff@{version}", "--version"]
+min_version = "0.14.0"
+max_version = "0.14.99"
+args = ["ruff@{version}", "format", "--check", "--no-cache", "."]
+inputs = ["**/*.py", "**/*.pyi"]
+config_files = ["ruff.toml", ".ruff.toml", "pyproject.toml"]
+
+[fix]
+args = ["ruff@{version}", "format", "--no-cache"]
+unattended = true
+
+[exit]
+success = [0]
+findings = [1]

@@ -228,6 +228,7 @@ struct EMessage {
 pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
     match parser {
         ToolParser::None => Ok(Vec::new()),
+        ToolParser::FormatterList => Ok(crate::fmt_parse::parse_formatter_list(stdout)),
         ToolParser::ZizmorJsonV1 => parse_zizmor(stdout),
         ToolParser::ActionlintJson => parse_actionlint(stdout),
         ToolParser::Sarif | ToolParser::RoslynSarif => crate::sarif::parse_sarif(stdout),
@@ -561,6 +562,8 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
         | ToolParser::None => BTreeMap::new(),
         // frob:ticket 01M4D92HMPWHFY5WGGY3KGFTNE
         ToolParser::TyposJson => BTreeMap::from([("typo", "SPELL001")]),
+        // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
+        ToolParser::FormatterList => BTreeMap::from([(crate::fmt_parse::FMT_TOOL_ID, "FMT001")]),
     }
 }
 
@@ -568,6 +571,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
 fn fallback(parser: ToolParser) -> &'static str {
     match parser {
         ToolParser::ActionlintJson => "CI014",
+        ToolParser::FormatterList => "FMT001",
         ToolParser::CargoJson
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
@@ -630,8 +634,10 @@ fn default_severity(rule: &str) -> Severity {
     match rule {
         "CI006" | "CI007" => Severity::Error,
         // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
-        "CI001" | "CI003" | "CI014" | "DEAD001" | "ERR001" | "ERR003" | "CONC001" | "TESTQ001"
-        | "LOGIC001" | "A11Y001" | "REACT001" | "TYPING001" | "UNITY101" => Severity::Warn,
+        "CI001" | "CI003" | "CI014" | "DEAD001" | "FMT001" | "ERR001" | "ERR003" | "CONC001"
+        | "TESTQ001" | "LOGIC001" | "A11Y001" | "REACT001" | "TYPING001" | "UNITY101" => {
+            Severity::Warn
+        }
         _ => Severity::Advisory,
     }
 }
@@ -806,6 +812,7 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
         | ToolParser::TscText
         | ToolParser::EslintJson
         | ToolParser::RoslynSarif
+        | ToolParser::FormatterList
         | ToolParser::TyposJson => Some(vec!["--version".to_owned()]),
         ToolParser::ActionlintJson => Some(vec!["-version".to_owned()]),
         ToolParser::Sarif | ToolParser::CargoJson | ToolParser::None => None,

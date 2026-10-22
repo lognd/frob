@@ -15,6 +15,7 @@ use crate::defs::{self, Live};
 use crate::error::CheckError;
 use crate::filecheck::{opaque_binary, run_file_checks};
 use crate::fix;
+use crate::fmt_fix;
 use crate::options::RunOptions;
 use crate::packages::{Affected, Workspace};
 use crate::product::{BranchChanges, CollectCx, Collected, Product, ScopeView, Snapshot};
@@ -639,13 +640,14 @@ fn pass<P: Product>(
     })
 }
 
-/// The paths `scope` forbids `--fix` to edit among the Deterministic fixes of `findings`, with widen hints.
+/// The paths `scope` forbids `--fix` to edit among the Deterministic fixes and formatter findings of `findings`, with widen hints.
+// frob:ticket 01M4D94J5J2TZEXTB8GH36992B
 fn fix_blocked<S: ScopeView>(
     scope: &S,
     findings: &[Finding],
     files: &gob_text::FileInterner,
 ) -> BTreeMap<String, String> {
-    findings
+    let edited = findings
         .iter()
         .filter_map(|f| {
             f.fix
@@ -653,7 +655,13 @@ fn fix_blocked<S: ScopeView>(
                 .filter(|x| x.kind == gob_rules::FixKind::Deterministic)
         })
         .flat_map(|f| &f.edits)
-        .filter_map(|e| files.path(e.file))
+        .filter_map(|e| files.path(e.file));
+    let formatted = findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "FMT001")
+        .filter_map(|f| f.span.and_then(|s| files.path(s.file)));
+    edited
+        .chain(formatted)
         .filter(|p| !scope.fix_allows(p))
         .map(|p| (p.to_owned(), scope.widen_hint(p).unwrap_or_default()))
         .collect()
@@ -697,19 +705,33 @@ pub fn run<P: Product>(
             &raw,
             &report.fix_blocked,
         )?;
-        if !applied.applied.is_empty() {
+        // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
+        let stages: Vec<_> = table.tool.iter().map(ToolStage::resolved).collect();
+        let formatted = fmt_fix::run_formatters(
+            root,
+            &stages,
+            &report.findings,
+            &report.files,
+            &report.fix_blocked,
+            opts.tool_trust.as_deref(),
+        )?;
+        let mut applied_fixes = applied.applied;
+        applied_fixes.extend(formatted.applied);
+        let mut skipped_scope = applied.skipped_scope;
+        skipped_scope.extend(formatted.skipped_scope);
+        if !applied_fixes.is_empty() {
             tracing::info!(
-                fixes = applied.applied.len(),
+                fixes = applied_fixes.len(),
                 "fixes applied; re-running once"
             );
             report = pass(product, root, opts, &table, &perf, &only)?;
         }
         report.fix = Some(FixOutcome {
-            applied: applied.applied,
+            applied: applied_fixes,
             skipped_overlap: applied.skipped_overlap,
             skipped_invalid: applied.skipped_invalid,
             rolled_back: applied.rolled_back,
-            skipped_scope: applied.skipped_scope,
+            skipped_scope,
             remaining: report.findings.len(),
         });
     }

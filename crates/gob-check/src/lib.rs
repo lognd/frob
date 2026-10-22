@@ -58,6 +58,8 @@ mod error;
 mod filecheck;
 mod fix;
 pub mod fix_validate;
+mod fmt_fix;
+mod fmt_parse;
 pub mod gate001;
 // frob:ticket 01M4CXSZ5PYK101KSEH6SJ9WYR
 pub mod incompleteness;

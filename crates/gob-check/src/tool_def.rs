@@ -148,6 +148,16 @@ impl ToolDef {
         }
     }
 
+    // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
+    /// The unattended fix argv with the pinned version filled in; `None` without a fix or when the fix needs a human.
+    #[must_use]
+    pub fn fix_args(&self) -> Option<Vec<String>> {
+        self.fix
+            .as_ref()
+            .filter(|f| f.unattended)
+            .map(|f| fill(&f.args, &self.pinned_version))
+    }
+
     /// All exit statuses that are not a tool error.
     #[must_use]
     pub fn normal_exits(&self) -> Vec<i32> {
@@ -161,10 +171,14 @@ impl ToolDef {
 }
 
 /// The embedded std tool definitions as `(name, toml text)`; kept here, below `gob-packs` in the layering.
-const TOOL_DEFS: [(&str, &str); 3] = [
+const TOOL_DEFS: [(&str, &str); 7] = [
     ("zizmor", include_str!("tools/zizmor.toml")),
     ("actionlint", include_str!("tools/actionlint.toml")),
     ("ruff", include_str!("tools/ruff.toml")),
+    ("rustfmt", include_str!("tools/rustfmt.toml")),
+    ("ruff-format", include_str!("tools/ruff-format.toml")),
+    ("prettier", include_str!("tools/prettier.toml")),
+    ("dotnet-format", include_str!("tools/dotnet-format.toml")),
 ];
 
 /// The std pack's tool definitions, parsed once; a malformed embedded record is a build defect.
@@ -200,12 +214,20 @@ mod tests {
     // frob:tests crates/gob-check/src/tool_def.rs::lookup
     #[test]
     fn std_definitions_parse_and_name_a_pinned_tool() {
-        for name in ["zizmor", "actionlint", "ruff"] {
+        for name in [
+            "zizmor",
+            "actionlint",
+            "ruff",
+            "rustfmt",
+            "ruff-format",
+            "prettier",
+            "dotnet-format",
+        ] {
             let def = lookup(name).expect("embedded");
             assert!(!def.pinned_version.is_empty());
             assert!(!def.normal_exits().is_empty());
         }
-        assert_eq!(names().len(), 3);
+        assert_eq!(names().len(), 7);
     }
 
     // frob:tests crates/gob-check/src/tool_def.rs::ToolDef.default_args
@@ -218,6 +240,19 @@ mod tests {
             lookup("actionlint").unwrap().default_args()[1],
             "actionlint-py==1.7.12.25"
         );
+    }
+
+    // frob:tests crates/gob-check/src/tool_def.rs::ToolDef.fix_args
+    #[test]
+    fn formatter_defs_carry_an_unattended_fix() {
+        for name in ["rustfmt", "ruff-format", "prettier", "dotnet-format"] {
+            let def = lookup(name).unwrap();
+            assert_eq!(def.parser, crate::config::ToolParser::FormatterList);
+            assert!(def.fix_args().is_some(), "{name} has an unattended fix");
+        }
+        let fix = lookup("ruff-format").unwrap().fix_args().unwrap();
+        assert_eq!(fix[0], "ruff@0.14.1");
+        assert!(lookup("zizmor").unwrap().fix_args().is_none());
     }
 
     fn renamed() -> ToolDef {

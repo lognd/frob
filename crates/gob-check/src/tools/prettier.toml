@@ -1,0 +1,17 @@
+# prettier: web formatter in check mode (FMT001, fix tier A).
+name = "prettier"
+command = "npx"
+pinned_version = "3.3.3"
+parser = "formatter-list"
+version_args = ["--yes", "prettier@{version}", "--version"]
+args = ["--yes", "prettier@{version}", "--check", "."]
+inputs = ["**/*.js", "**/*.ts", "**/*.tsx", "**/*.css", "**/*.json", "**/*.md"]
+config_files = [".prettierrc", ".prettierrc.json", "prettier.config.js"]
+
+[fix]
+args = ["--yes", "prettier@{version}", "--write"]
+unattended = true
+
+[exit]
+success = [0]
+findings = [1]

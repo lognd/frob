@@ -1,0 +1,17 @@
+# dotnet format: C# formatter in verify mode (FMT001, fix tier A).
+name = "dotnet-format"
+command = "dotnet"
+pinned_version = "8.0.0"
+parser = "formatter-list"
+version_args = ["--version"]
+args = ["format", "whitespace", "--verify-no-changes"]
+inputs = ["**/*.cs"]
+config_files = [".editorconfig"]
+
+[fix]
+args = ["format", "whitespace", "--include"]
+unattended = true
+
+[exit]
+success = [0]
+findings = [2]
