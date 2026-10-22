@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T07:36:34Z"
-updated = "2026-10-22T19:15:17Z"
-scope = ["crates/crunk/**"]
+updated = "2026-10-22T19:23:34Z"
+scope = ["crates/crunk/**", "docs/crunk/README.md"]
 
 [[acceptance]]
 text = "Given crunk new component|screen|flow|token NAME, when run in a project, then a valid skeleton design file is written in the documented location and passes crunk validation"
