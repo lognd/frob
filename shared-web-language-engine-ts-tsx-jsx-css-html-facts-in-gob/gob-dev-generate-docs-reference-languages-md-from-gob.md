@@ -8,11 +8,15 @@ points = 2
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:34:53Z"
-updated = "2026-10-22T01:16:45Z"
+updated = "2026-10-22T01:21:01Z"
 scope = ["crates/gob-dev/**", "docs/reference/languages.md", "changelog.d/01M48FXFZMWWZQ233HYSPZ6PP9.added.md", "Cargo.lock", "crates/gob-symbols/src/languages_page.rs"]
 
 [[acceptance]]
 text = "gob-dev gen emits docs/reference/languages.md from gob_symbols::languages_page and --check detects drift"
+bound = false
+
+[[acceptance]]
+text = "gob-dev gen languages writes the page exactly as gob_symbols::languages_page renders it"
 bound = false
 +++
 
