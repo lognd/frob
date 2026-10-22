@@ -1,0 +1,45 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T01:51:53Z"
+digest = "957e1ac9d492bab3dad016de4a72bf8564c84cda5125d115d519ca524bfeff93"
+exit_code = 0
+head = "8a8693fc4afd8570cfe183591a84c8a95dbb1ce7"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling schemars v1.2.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling trybuild v1.0.121
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 52.59s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5c89a92b-5879-4b09-b96f-68b451e74888 with nextest profile: default
+    Starting 1 test across 3 binaries (4 tests skipped)
+        PASS [  16.419s] gob-macros::ui_rule_attr ui_rule_attr
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  16.420s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-macros ui_rule_attr"
+size = 1693
+status = "measured"
+test_count = 1
+tests_digest = "c3e292b638ed9d3fac592c4362d9b339641fa27145be71d9a442c0c639431dc8"
+at = "2026-10-22T01:51:53Z"
+actor = "lognd"
+rev = 1
