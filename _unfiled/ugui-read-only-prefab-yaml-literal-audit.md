@@ -2,12 +2,12 @@
 id = "01M5HW48KRXEE8ARBE3N2JPRYH"
 title = "uGUI: read-only prefab YAML literal audit"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T13:17:09Z"
-updated = "2026-10-22T17:16:34Z"
+updated = "2026-10-22T17:16:35Z"
 scope = ["crates/gob-languages/**"]
 
 [[acceptance]]
