@@ -1,0 +1,9 @@
+kind = "create"
+title = "crunk: per-locale content key completeness rule"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~VAAWD0R: keys missing from non-default locale files are unchecked."
+at = "2026-10-22T06:44:59Z"
+actor = "lognd"
+rev = 1
