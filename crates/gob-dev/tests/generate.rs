@@ -356,3 +356,63 @@ fn check_reports_dangling_links_and_pages_missing_from_summary() {
     let r = apply(dir.path(), &files, Mode::Check).expect("check");
     assert_eq!(r.marker_problems, 2, "b.md is not in SUMMARY: {r:?}");
 }
+
+// frob:ticket 01M48FXFZMWWZQ233HYSPZ6PP9
+#[test]
+// frob:tests crates/gob-dev/src/render/languages.rs::generate
+fn languages_kind_writes_the_page_and_check_detects_drift() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let files = generate(Kind::Languages, &crates_dir()).expect("generate");
+    assert_eq!(files.len(), 1);
+    assert_eq!(files[0].path, "docs/reference/languages.md");
+    apply(dir.path(), &files, Mode::Write).expect("write");
+    let page = dir.path().join("docs/reference/languages.md");
+    assert!(
+        std::fs::read_to_string(&page)
+            .expect("read")
+            .contains("## Extensions")
+    );
+    assert_eq!(
+        apply(dir.path(), &files, Mode::Check)
+            .expect("check")
+            .differing,
+        0
+    );
+    std::fs::write(&page, "stale\n").expect("stale");
+    let drift = apply(dir.path(), &files, Mode::Check).expect("check");
+    assert_eq!(drift.differing, 1);
+    assert_eq!(std::fs::read_to_string(&page).expect("read"), "stale\n");
+}
+
+// frob:ticket 01M48FXFZMWWZQ233HYSPZ6PP9
+#[test]
+// frob:tests crates/gob-dev/src/render/languages.rs::generate
+fn languages_regeneration_is_idempotent_and_leaves_an_equal_page_untouched() {
+    let dir = tempfile::tempdir().expect("tmp");
+    let files = generate(Kind::Languages, &crates_dir()).expect("generate");
+    apply(dir.path(), &files, Mode::Write).expect("first write");
+    let page = dir.path().join("docs/reference/languages.md");
+    let before = std::fs::metadata(&page)
+        .expect("meta")
+        .modified()
+        .expect("mtime");
+    let again = apply(dir.path(), &files, Mode::Write).expect("second write");
+    assert_eq!(again.differing, 0, "an equal page is not rewritten");
+    let after = std::fs::metadata(&page)
+        .expect("meta")
+        .modified()
+        .expect("mtime");
+    assert_eq!(before, after);
+    assert!(std::fs::read_to_string(&page).expect("read").is_ascii());
+}
+
+// frob:ticket 01M48FXFZMWWZQ233HYSPZ6PP9
+#[test]
+// frob:tests crates/gob-dev/src/render/languages.rs::generate
+fn committed_languages_page_matches_the_generator() {
+    let root = workspace_root().expect("workspace root");
+    let files = generate(Kind::Languages, &crates_dir()).expect("generate");
+    let committed = std::fs::read_to_string(root.join(&files[0].path)).expect("committed page");
+    assert_eq!(committed, files[0].content, "run `cargo dev gen languages`");
+    assert_eq!(gob_dev::files::marker_problem(&committed), None);
+}

@@ -208,7 +208,7 @@ fn the_capability_matrix_cells_of_every_web_extension_match_the_snapshot() {
 
 // frob:tests crates/gob-symbols/src/languages_page.rs::languages_page
 #[test]
-fn the_generated_languages_page_lists_every_web_extension_and_matches_the_docs_file() {
+fn the_generated_languages_page_lists_every_web_extension() {
     let page = languages_page();
     for (_, ext, language) in WEB {
         assert!(
@@ -216,8 +216,8 @@ fn the_generated_languages_page_lists_every_web_extension_and_matches_the_docs_f
             ".{ext} row missing"
         );
     }
-    let file = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/reference/languages.md");
-    expect_file(&file, &page);
+    // Equality with docs/reference/languages.md is checked by `gob-dev gen all --check`, where the
+    // adapter feature set is the whole workspace.
 }
 
 /// Fixtures that contain markup and style, with the path that selects each adapter.
