@@ -2,7 +2,8 @@
 id = "01M5H30AQNZSC77EY70P28KM3V"
 title = "Scene rules SCENE002+: duplicate or missing data-id, unknown tags, at-rules (crunk-scene already exposes them)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
