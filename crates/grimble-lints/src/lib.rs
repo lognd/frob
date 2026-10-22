@@ -18,6 +18,13 @@
 //! `UnityEvent` listener, input action `Enable` or Addressables load made in `Awake`, `Start` or
 //! `OnEnable` that no `OnDisable` or `OnDestroy` undoes, from a table of pairs ([`unity::PAIRS`]).
 //!
+//! [`unity_input::scan`] finds `UNITY301`: the legacy `Input` class used when the project's
+//! `activeInputHandler` ([`unity_input::active_input_handler`]) is the Input System.
+//!
+//! [`unity_physics::scan`] finds `UNITY302`: a Rigidbody force or move, or a `transform` move of a
+//! Rigidbody object, made from `Update` or `LateUpdate` rather than `FixedUpdate`. Both share the
+//! [`unity_common::Finding`] shape and the preprocessor-aware walk in [`unity_common`].
+//!
 //! [`path::scan`] finds `PATH001` absolute host path literals and, for Rust and Python, `PATH002`
 //! path-to-string separator handling and `PATH003` paths in command-line strings; a language
 //! without path-conversion roles reports them unresolved.
@@ -51,3 +58,6 @@ pub mod time;
 pub mod time_pass;
 pub mod typing;
 pub mod unity;
+pub mod unity_common;
+pub mod unity_input;
+pub mod unity_physics;
