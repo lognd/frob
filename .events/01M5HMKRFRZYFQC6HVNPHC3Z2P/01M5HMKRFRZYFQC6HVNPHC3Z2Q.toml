@@ -1,0 +1,10 @@
+kind = "create"
+title = "Expose DUP001 min_tokens and min_occurrences as grimble-check config knobs"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**", "crates/grimble-arch/**"]
+body = "found while working ~MAWDT22: DUP001 uses constants MIN_TOKENS=50 and MIN_OCCURRENCES=3 in crates/grimble-arch/src/dup.rs because ArchInput is built literally in grimble-check product.rs; add config fields and pass them through."
+at = "2026-10-22T11:05:48Z"
+actor = "lognd"
+rev = 1
