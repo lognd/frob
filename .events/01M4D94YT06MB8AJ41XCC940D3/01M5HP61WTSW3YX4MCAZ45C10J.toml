@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T11:33:16Z"
+digest = "9c19c8e81443b5a2d561ac184735bf6fb94a9a08c46059b7a94b28f28c34f089"
+exit_code = 0
+head = "35f8d57fbc7be69d71361b952ad54869c31fc472"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0a1818ff-91f3-4c1a-95fd-a28e1f637b74 with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.005s] grimble-lints::unity_hot new_list_in_fixed_update_fires_and_value_types_do_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test unity_hot new_list_in_fixed_update_fires_and_value_types_do_not"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "72c38a3c434a57ae8e163b764f920cd58bb8e1dc223d91facd57cf54e10a4ecb"
+at = "2026-10-22T11:33:16Z"
+actor = "lognd"
+rev = 1
