@@ -34,6 +34,10 @@ bound = false
 [[acceptance]]
 text = "directive binds to the next case only and CRLF does not shift line attribution"
 bound = false
+
+[[acceptance]]
+text = "panics on parallel threads do not leak between threads"
+bound = false
 +++
 
 Wrap each case in catch_unwind, attribute a panic to its markdown line, and support `<!-- expect-panic: substring -->` with the inverse failure when no panic happens (ty mdtest). Source: notes/research/rule-testing.md (D103).
