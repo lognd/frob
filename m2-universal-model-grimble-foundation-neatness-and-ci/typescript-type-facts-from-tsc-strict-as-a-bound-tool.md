@@ -2,7 +2,8 @@
 id = "01M4CXSY224VNMR2R5Q69D9E89"
 title = "TypeScript type facts from tsc --strict as a bound tool"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
