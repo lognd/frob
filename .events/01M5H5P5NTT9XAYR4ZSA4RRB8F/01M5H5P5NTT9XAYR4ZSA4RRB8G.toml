@@ -1,0 +1,9 @@
+kind = "create"
+title = "crunk: component-instance text props and top-level text as literal copy"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~VAAWD0R: CONTENT001 only sees element own-text and copy attributes."
+at = "2026-10-22T06:44:59Z"
+actor = "lognd"
+rev = 1
