@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T09:22:01Z"
+digest = "f74282617456464242a77ec3eb5110f4fd5c52f0205f9bad3abbf87956837872"
+exit_code = 0
+head = "0e0f18c87c678b4afe1ea093e0a720292f301422"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c2445e34-e3f9-432e-a693-c15e659b2f10 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.004s] grimble-lints::unity unity_lambda_subscription_is_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test unity unity_lambda_subscription_is_unresolved"
+size = 549
+status = "measured"
+test_count = 1
+tests_digest = "b9cddfd7ebf7084183052816109993739e5c06f49f30928845aca39ebddc5587"
+at = "2026-10-22T09:22:01Z"
+actor = "lognd"
+rev = 1

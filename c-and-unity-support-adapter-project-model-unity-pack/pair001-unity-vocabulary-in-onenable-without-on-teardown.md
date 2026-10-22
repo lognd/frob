@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a lambda subscription, when checked, then the result is Unresolved"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md row U05 (4.2 N20); notes/research/creators-games-2026-10-08.md GADV031 (lapsed listener: Nystrom, Hipple, Unity docs), GADV079. Depends on the re-scoped ~4CESXMT.
