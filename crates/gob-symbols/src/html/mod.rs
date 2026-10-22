@@ -16,9 +16,13 @@
 //! - A `<script>` body is a `region` child of the element tagged `js` (no `type`, `module`, or a
 //!   JavaScript MIME type), `ts` (`lang="ts"`, `text/typescript`), `json` (`application/json`,
 //!   `application/ld+json`, `importmap`, `speculationrules`) or `data` (any other `type`, such as a
-//!   template); a `<style>` body is a `region(css)`. The region holds the body as one `lit(text)`.
-//!   The bodies are islands only: they are not lowered with the TypeScript and CSS adapters (their term
-//!   builders are per file, so lowering needs a nested-fold seam; filed as a follow-up).
+//!   template); a `<style>` body is a `region(css)`.
+//! - The `css`, `js` and `ts` bodies are lowered through the CSS and TypeScript adapters into the host
+//!   term at the body's byte offset (the nested-fold seam, `Cx::nest`): the region holds the body's rules,
+//!   declarations, units and calls, every span is a span of the HTML file, and symbols and call sites join
+//!   the file's (`path::.card`, `path::main`; top-level script statements belong to the file). `json` and
+//!   `data` bodies, and a body with nothing to lower (empty or whitespace only), stay one `lit(text)`.
+//!   Not modelled: the `var()` cascade across islands, and the top-level names of a script as file binders.
 //! - Comments, the doctype and the extent of the tree are not modelled; syntax errors and stray end
 //!   tags are `hole(parse-error)` (or `hole(missing)`), the file is a partial parse.
 //! - `crunk:waive` comments are bound by the directive scanner (gob-directives), not here.
@@ -34,18 +38,20 @@ use tree_sitter::Node;
 use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
-use crate::css::split_important;
 use crate::css::tokens::{declaration_node, tokens};
+use crate::css::{self, split_important};
 use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of};
 use crate::model::collapse_ws;
 use crate::pipeline::EXTRACTOR_VERSION;
-use crate::typescript::ATTR_MARKUP_GROUP;
+use crate::typescript::{self, ATTR_MARKUP_GROUP, Facts};
 use crate::view::{self, Naming};
 use entities::decode;
 
 /// File extensions (lowercase, no dot) the adapter claims.
 pub(crate) const EXTENSIONS: &[&str] = &["html", "htm"];
 
+/// Region kind of a `<style>` body.
+const REGION_CSS: &str = "css";
 /// Region kind of a `<script>` body written in JavaScript.
 const REGION_JS: &str = "js";
 /// Region kind of a `<script>` body written in TypeScript.
@@ -132,6 +138,8 @@ struct Html<'a> {
     cx: Cx<'a>,
     path: &'a str,
     holes: u32,
+    /// Facts of the lowered script islands, waiting for symrefs.
+    facts: Facts,
 }
 
 fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
@@ -139,24 +147,31 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         cx: Cx::new(input.path, "html", text),
         path: input.path,
         holes: 0,
+        facts: Facts::empty(),
     };
     let mut kids = html.items(root)?;
     if root.has_error() && html.holes == 0 {
         // An error the walk did not reach (inside a tag): the file is still a partial parse.
         kids.push(html.hole(root)?);
     }
-    let Html { mut cx, .. } = html;
+    let Html {
+        mut cx, mut facts, ..
+    } = html;
     let root_id = cx.add(file_root_spec(&cx, input.size as usize), &kids)?;
+    facts.set_root(root_id);
     let term = cx.b.finish(root_id)?;
     let scopes = ScopeGraph::from_term(&term);
-    let v = view::build(&term, input.path, Naming::Opaque);
+    let v = view::build(&term, input.path, Naming::Html);
     let mut file = base_file(input, "html");
     file.fidelity = gob_caps::lang_fidelity(Lang::Html);
     file.parse_status = view::parse_status_of(&term);
+    facts.emit(&mut file, &scopes, &v);
     file.symbols = v.symbols;
     file.extras = v.extras;
     tracing::debug!(
         path = input.path,
+        symbols = file.symbols.len(),
+        calls = file.calls.len(),
         status = ?file.parse_status,
         "html file folded"
     );
@@ -313,7 +328,7 @@ impl Html<'_> {
                     .find(|c| c.kind() == "raw_text" && !c.byte_range().is_empty())
                 {
                     let kind = if n.kind() == "style_element" {
-                        "css"
+                        REGION_CSS
                     } else {
                         script_region_kind(&attrs)
                     };
@@ -334,11 +349,46 @@ impl Html<'_> {
         )
     }
 
-    /// `region(kind)` over the body text of a script or style element.
+    // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+    /// `region(kind)` over the body of a script or style element.
+    ///
+    /// A css, js or ts body is lowered through its adapter into the host term (spans in this file);
+    /// anything else, or a body with nothing to lower, stays one `lit(text)` island.
     fn island(&mut self, body: Node<'_>, kind: &str) -> R<NodeId> {
         let raw = self.t(body).to_owned();
-        let text = self.cx.lit("text", &raw, body)?;
-        self.cx.op(Operator::region(kind), body, &[text])
+        let mut kids = self.lower(&raw, body, kind)?;
+        if kids.is_empty() {
+            kids.push(self.cx.lit("text", &raw, body)?);
+        }
+        self.cx.op(Operator::region(kind), body, &kids)
+    }
+
+    // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+    /// The nodes of `raw` (the body at `body`) lowered through the adapter of `kind`, empty if none applies.
+    fn lower(&mut self, raw: &str, body: Node<'_>, kind: &str) -> R<Vec<NodeId>> {
+        let language = match kind {
+            REGION_CSS => Language::Css,
+            REGION_JS => Language::JavaScript,
+            REGION_TS => Language::TypeScript,
+            _ => return Ok(Vec::new()),
+        };
+        let ParseResult::Parsed(t) = parse(language, raw, &ParseLimits::default()) else {
+            tracing::warn!(
+                path = self.path,
+                kind,
+                "island body did not parse; kept as text"
+            );
+            return Ok(Vec::new());
+        };
+        let base = body.start_byte();
+        let line_base = u32::try_from(body.start_position().row).unwrap_or(u32::MAX);
+        if kind == REGION_CSS {
+            return css::fold_island(&mut self.cx, self.path, &t.text, base, t.root());
+        }
+        let island =
+            typescript::fold_island(&mut self.cx, self.path, &t.text, base, line_base, t.root())?;
+        self.facts.absorb(island.facts);
+        Ok(island.kids)
     }
 
     /// One attribute: its lowercased name, decoded value if written, and its node.

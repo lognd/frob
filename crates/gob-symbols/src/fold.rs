@@ -21,6 +21,8 @@ pub(crate) struct Cx<'a> {
     pub file: gob_text::FileId,
     /// The source text (empty for adapter-less files).
     pub text: &'a str,
+    /// Byte offset of `text` in the host file (0 unless this is a nested body, see [`Cx::nest`]).
+    pub base: usize,
 }
 
 impl<'a> Cx<'a> {
@@ -32,13 +34,37 @@ impl<'a> Cx<'a> {
             b: TermBuilder::new(path, lang),
             file,
             text,
+            base: 0,
         }
+    }
+
+    // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+    /// A context for the nested body `text` that starts at byte `base` of this file.
+    ///
+    /// The nested context takes over the host builder, so its nodes live in the host term and its
+    /// locations are spans in the host file; hand it back with [`Cx::unnest`].
+    pub fn nest<'t>(&mut self, text: &'t str, base: usize) -> Cx<'t> {
+        let b = std::mem::replace(&mut self.b, TermBuilder::new("", ""));
+        tracing::trace!(base, len = text.len(), "nested fold opened");
+        Cx {
+            b,
+            file: self.file,
+            text,
+            base: self.base + base,
+        }
+    }
+
+    // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+    /// Takes the builder back from a nested context opened by [`Cx::nest`].
+    pub fn unnest(&mut self, nested: Cx<'_>) {
+        self.b = nested.b;
     }
 
     /// A text location from byte offsets.
     pub fn loc(&self, start: usize, end: usize) -> Location {
         let clamp = |n: usize| u32::try_from(n).unwrap_or(u32::MAX);
-        Location::text(self.file, clamp(start), clamp(end.max(start)))
+        let (start, end) = (start + self.base, end.max(start) + self.base);
+        Location::text(self.file, clamp(start), clamp(end))
     }
 
     /// The location of a tree-sitter node.

@@ -580,11 +580,11 @@ fn scan_exports(root: Node<'_>, text: &str) -> ExportScan {
     scan
 }
 
-fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-    let exports = scan_exports(root, text);
-    let mut f = Fold {
-        cx: Cx::new(input.path, LANG, text),
-        path: input.path,
+/// A fresh fold of the program text `cx.text` for the file at `path`.
+fn new_fold<'a>(cx: Cx<'a>, path: &'a str, exports: ExportScan) -> Fold<'a> {
+    Fold {
+        cx,
+        path,
         expr: true,
         const_args: false,
         ord_nodes: vec![None],
@@ -602,8 +602,13 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         leftover_doc: None,
         cond_depth: 0,
         test_names: HashMap::new(),
-        is_test_file: super::is_typescript_test_file(input.path),
-    };
+        is_test_file: super::is_typescript_test_file(path),
+    }
+}
+
+fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+    let exports = scan_exports(root, text);
+    let mut f = new_fold(Cx::new(input.path, LANG, text), input.path, exports);
     let stmts: Vec<Node<'_>> = children(root);
     let skip = unit_declarators(&stmts, text);
     let names = scope_binders(Vec::new(), &stmts, text, &skip);
@@ -628,29 +633,13 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let mut file = base_file(input, LANG);
     file.fidelity = super::FIDELITY;
     file.parse_status = view::parse_status_of(&term);
-    let symref_of = |ord: usize| -> Option<Symref> {
-        ord_nodes
-            .get(ord)
-            .copied()
-            .flatten()
-            .and_then(|n| v.by_node.get(&n).cloned())
+    let facts = Facts {
+        ord_nodes,
+        sites,
+        uses,
+        edges,
     };
-    for target in edges {
-        file.imports.push(ImportEdge {
-            from_file: input.path.to_owned(),
-            target,
-        });
-    }
-    for u in uses {
-        file.uses.push(UseBinding {
-            from_file: input.path.to_owned(),
-            local: u.local,
-            target: u.target,
-            public: u.public,
-            container: u.container.and_then(symref_of),
-            kind: crate::UseKind::Plain,
-        });
-    }
+    facts.emit(&mut file, &scopes, &v);
     for (exported, local) in exports.aliases {
         file.uses.push(UseBinding {
             from_file: input.path.to_owned(),
@@ -660,11 +649,6 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
             container: None,
             kind: crate::UseKind::Plain,
         });
-    }
-    for site in sites {
-        if let Some(caller) = symref_of(site.caller) {
-            push_site(&mut file, &scopes, site, caller);
-        }
     }
     file.symbols = v.symbols;
     file.extras = v.extras;
@@ -678,6 +662,143 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         "typescript file folded"
     );
     Ok(Folded { term, scopes, file })
+}
+
+/// The facts a fold collected, waiting for the view to give their units a `Symref`.
+pub(crate) struct Facts {
+    ord_nodes: Vec<Option<NodeId>>,
+    sites: Vec<Site>,
+    uses: Vec<PendingUse>,
+    edges: Vec<String>,
+}
+
+impl Facts {
+    // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+    /// Files the imports, uses, calls and references into `file`, callers named through `v`.
+    pub(crate) fn emit(self, file: &mut FileSymbols, scopes: &ScopeGraph, v: &view::View) {
+        let path = file.path.clone();
+        let symref_of = |ord: usize| -> Option<Symref> {
+            self.ord_nodes
+                .get(ord)
+                .copied()
+                .flatten()
+                .and_then(|n| v.by_node.get(&n).cloned())
+        };
+        for target in self.edges {
+            file.imports.push(ImportEdge {
+                from_file: path.clone(),
+                target,
+            });
+        }
+        for u in self.uses {
+            file.uses.push(UseBinding {
+                from_file: path.clone(),
+                local: u.local,
+                target: u.target,
+                public: u.public,
+                container: u.container.and_then(symref_of),
+                kind: crate::UseKind::Plain,
+            });
+        }
+        for site in self.sites {
+            if let Some(caller) = symref_of(site.caller) {
+                push_site(file, scopes, site, caller);
+            }
+        }
+    }
+}
+
+/// A script body folded into a host builder: its top-level nodes and the facts they carry.
+pub(crate) struct Island {
+    /// The statements of the body, children of the host's region node.
+    pub kids: Vec<NodeId>,
+    pub facts: Facts,
+}
+
+impl Facts {
+    // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+    /// Merges `other` (a nested body's facts) into this host's; ordinals of `other` are shifted.
+    pub(crate) fn absorb(&mut self, other: Facts) {
+        let shift = self.ord_nodes.len() - 1;
+        let at = |o: usize| if o == 0 { 0 } else { o + shift };
+        self.ord_nodes.extend(other.ord_nodes.into_iter().skip(1));
+        self.sites.extend(other.sites.into_iter().map(|mut s| {
+            s.caller = at(s.caller);
+            s
+        }));
+        self.uses.extend(other.uses.into_iter().map(|mut u| {
+            u.container = u.container.map(at);
+            u
+        }));
+        self.edges.extend(other.edges);
+    }
+
+    // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+    /// The facts of a host with no script of its own yet.
+    pub(crate) fn empty() -> Self {
+        Self {
+            ord_nodes: vec![None],
+            sites: Vec::new(),
+            uses: Vec::new(),
+            edges: Vec::new(),
+        }
+    }
+
+    // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+    /// Binds the file-level ordinal to the host's file node `root`, once it exists.
+    pub(crate) fn set_root(&mut self, root: NodeId) {
+        self.ord_nodes[0] = Some(root);
+    }
+}
+
+// frob:ticket 01M48E13W9MYK85YTCWSSRS50S
+/// Folds the script body `text` (parsed to `root`) into the host builder `host` at byte `base`.
+///
+/// `line_base` is the number of host lines before the body, so call lines are host lines. Top-level
+/// statements are attributed to the host file; the body's own top-level names are not file binders.
+pub(crate) fn fold_island(
+    host: &mut Cx<'_>,
+    path: &str,
+    text: &str,
+    base: usize,
+    line_base: u32,
+    root: Node<'_>,
+) -> R<Island> {
+    let exports = scan_exports(root, text);
+    let mut f = new_fold(host.nest(text, base), path, exports);
+    let stmts: Vec<Node<'_>> = children(root);
+    let skip = unit_declarators(&stmts, text);
+    let names = scope_binders(Vec::new(), &stmts, text, &skip);
+    f.bound.push(names.iter().cloned().collect());
+    let kids = f.seq(&stmts, 1, true)?;
+    let Fold {
+        cx,
+        ord_nodes,
+        mut sites,
+        uses,
+        edges,
+        ..
+    } = f;
+    host.unnest(cx);
+    for s in &mut sites {
+        s.line = s.line.saturating_add(line_base);
+    }
+    tracing::debug!(
+        path,
+        base,
+        nodes = kids.len(),
+        sites = sites.len(),
+        "script island folded"
+    );
+    Ok(Island {
+        kids,
+        facts: Facts {
+            ord_nodes,
+            sites,
+            uses,
+            edges,
+        },
+    })
 }
 
 /// Files `s` (found in `caller`) as a call or a value reference of `file`.

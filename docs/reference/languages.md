@@ -16,8 +16,8 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 | `.cts` | typescript | F3 |
 | `.dockerfile` | dockerfile | F2 |
 | `.grmb` | grmb | F4 |
-| `.htm` | html | F0 |
-| `.html` | html | F0 |
+| `.htm` | html | F1 |
+| `.html` | html | F1 |
 | `.js` | typescript | F3 |
 | `.jsx` | typescript | F3 |
 | `.markdown` | markdown | F3 |
@@ -146,7 +146,7 @@ Fidelity F2; extensions `.css`.
 
 ## html
 
-Fidelity F0; extensions `.html`, `.htm`.
+Fidelity F1; extensions `.html`, `.htm`.
 
 | Capability | Cell | Precision |
 |---|---|---|

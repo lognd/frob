@@ -1,6 +1,7 @@
 == web/html/index.html ==
-language html fidelity F0 status Complete digest 098e20640ad058c04b5bc7037a1dffda08fa1221d9c774efc5cacddf3d490948
+language html fidelity F1 status Complete digest 098e20640ad058c04b5bc7037a1dffda08fa1221d9c774efc5cacddf3d490948
 -- symbols --
+web/html/index.html::[.card] Module Private
 -- edges --
 -- markup --
 element title Intrinsic [] children=1
@@ -11,4 +12,6 @@ element script Intrinsic [type="module"] children=1
 element body Intrinsic [class="page"] children=2
 element html Intrinsic [lang="en"] children=2
 -- style --
+rule .card
+declaration color: red
 declaration color: blue
