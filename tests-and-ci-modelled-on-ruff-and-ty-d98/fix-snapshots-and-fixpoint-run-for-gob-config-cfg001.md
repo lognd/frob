@@ -2,7 +2,8 @@
 id = "01M5G2WH1J8G8WR3PGF5N3TAQD"
 title = "Fix snapshots and fixpoint run for gob-config CFG001"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
