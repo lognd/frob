@@ -38,7 +38,7 @@ bound = true
 
 [[acceptance]]
 text = "a finding without a mechanical fix is left unchanged"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a placeholder fix applies only at a higher tier"
