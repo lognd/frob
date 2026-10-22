@@ -2,12 +2,12 @@
 id = "01M5J45YZ60A5R1DWZG2ZQDW75"
 title = "frob-obligations corpus mdtest: doc002.md fails 7 of 19 DOC002 cases on experimental"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T15:37:53Z"
-updated = "2026-10-22T15:45:15Z"
+updated = "2026-10-22T15:45:16Z"
 scope = ["crates/frob-obligations/**"]
 
 [[acceptance]]
