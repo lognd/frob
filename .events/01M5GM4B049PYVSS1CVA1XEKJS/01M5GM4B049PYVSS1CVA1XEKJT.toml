@@ -1,0 +1,10 @@
+kind = "create"
+title = "gob-caps: let capability matrix Gap cells name a ticket"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-caps/**", "crates/gob-symbols/src/languages_page.rs"]
+body = "found while working ~SPZ6PP9: Precision::None renders as bare Gap; code-model.md section 3 wants Gap cells to name a ticket. Needs a data-model change in gob-caps."
+at = "2026-10-22T01:38:08Z"
+actor = "lognd"
+rev = 1
