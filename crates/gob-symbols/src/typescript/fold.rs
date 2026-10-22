@@ -2105,6 +2105,9 @@ impl<'a> Fold<'a> {
                     let id = self.declarator_unit(c, nm, &keyword, export, doc, depth)?;
                     kids.push(id);
                 }
+                Some(_) if keyword == "const" && c.child_by_field_name("value").is_some() => {
+                    kids.push(self.const_declarator(c, depth)?);
+                }
                 _ => {
                     // Not a unit: any doc stays unused.
                     kids.push(self.generic(c, depth + 1)?);
@@ -2113,6 +2116,25 @@ impl<'a> Fold<'a> {
         }
         self.cx
             .op(Operator::adapter(LANG, n.kind(), Sort::Exp), n, &kids)
+    }
+
+    /// A non-module `const name = value` declarator, its value in the `const_value` forms (the evaluator's
+    /// hook finds it by the `variable_declarator` shape under a `const` keyword).
+    // frob:ticket 01M48BMS05GVBRPP3B8NMTWA1V
+    fn const_declarator(&mut self, d: Node<'_>, depth: usize) -> R<NodeId> {
+        let value = d.child_by_field_name("value").map(|v| v.id());
+        let mut kids = Vec::new();
+        for c in children(d) {
+            if Some(c.id()) == value {
+                kids.push(self.with_expr(true, |s| s.const_expr(c, depth + 1))?);
+            } else if c.kind() == "identifier" && is_decl_ident(d, c) {
+                kids.push(self.cx.lit("name", self.t(c), c)?);
+            } else {
+                kids.push(self.tr(c, depth + 1)?);
+            }
+        }
+        self.cx
+            .op(Operator::adapter(LANG, d.kind(), Sort::Exp), d, &kids)
     }
 
     /// One module-level declarator as a unit: a function for an arrow or function value, else a constant.

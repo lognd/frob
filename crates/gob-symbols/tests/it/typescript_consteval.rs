@@ -348,3 +348,140 @@ fn a_wrapper_that_does_not_forward_is_not_a_joiner() {
     let unbound = eval_expr("", "cn('a', 'b')", &[]);
     assert_eq!(unbound.value, ConstValue::Unknown);
 }
+
+// ---- function-local consts and namespace-import members (01M48BMS05GVBRPP3B8NMTWA1V) ----
+
+/// Evaluates `expr` inside a component function whose body starts with `body`.
+fn eval_in_fn(prelude: &str, body: &str, expr: &str, others: &[(&str, &str)]) -> Evaluated {
+    let main = format!(
+        "{prelude}\nexport function C(props) {{\n{body}\nreturn <div className={{{expr}}} />;\n}}\n"
+    );
+    let mut files = vec![("main.tsx", main.as_str())];
+    files.extend_from_slice(others);
+    eval_attr(&files, "className")
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_function_local_const_evaluates() {
+    let got = eval_in_fn(
+        "",
+        "const base = 'p-4';\nconst all = base + ' flex';",
+        "all",
+        &[],
+    );
+    assert_eq!(got.value.known_str(), Some("p-4 flex"));
+    assert_eq!(got.unresolved, None);
+    assert_eq!(got.origins.len(), 2);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_local_const_reads_module_and_imported_consts() {
+    let got = eval_in_fn(
+        "import { gap } from './a';\nconst mod = 'm';",
+        "const x = mod + gap;",
+        "x",
+        &[("a.ts", "export const gap = '-g';\n")],
+    );
+    assert_eq!(got.value.known_str(), Some("m-g"));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_local_const_shadows_a_module_const() {
+    let got = eval_in_fn("const a = 'outer';", "const a = 'inner';", "a", &[]);
+    assert_eq!(got.value.known_str(), Some("inner"));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_local_const_shadows_an_import() {
+    let got = eval_in_fn(
+        "import { a } from './a';",
+        "const a = 'local';",
+        "a",
+        &[("a.ts", "export const a = 'imported';\n")],
+    );
+    assert_eq!(got.value.known_str(), Some("local"));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_block_scoped_const_does_not_leak_into_its_sibling_scope() {
+    let main = "const a = 'outer';\nexport function C(props) {\n  { const a = 'inner'; }\n  return <div className={a} />;\n}\n";
+    let got = eval_attr(&[("main.tsx", main)], "className");
+    assert_eq!(got.value.known_str(), Some("outer"));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_nested_function_sees_the_outer_local_const() {
+    let main = "export function C(props) {\n  const a = 'x';\n  const f = () => <div className={a} />;\n  return f();\n}\n";
+    let got = eval_attr(&[("main.tsx", main)], "className");
+    assert_eq!(got.value.known_str(), Some("x"));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn let_var_and_parameters_are_not_constant() {
+    for body in ["let a = 'x';", "var a = 'x';"] {
+        let got = eval_in_fn("", body, "a", &[]);
+        assert_eq!(got.value, ConstValue::Unknown, "{body}");
+        assert_eq!(got.unresolved, Some(Unresolved::Dynamic), "{body}");
+    }
+    let got = eval_in_fn("", "", "props", &[]);
+    assert_eq!(got.value, ConstValue::Unknown);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::Unresolved
+fn a_local_const_cycle_is_unresolved_with_the_reason() {
+    let got = eval_in_fn("", "const a = b;\nconst b = a;", "a", &[]);
+    assert_eq!(got.value, ConstValue::Unknown);
+    assert_eq!(got.unresolved, Some(Unresolved::Cycle));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_namespace_import_member_evaluates() {
+    let a = "export const gap = 'p-2';\nexport const dyn = f();\n";
+    let prelude = "import * as ns from './a';";
+    let got = eval_expr(prelude, "ns.gap", &[("a.ts", a)]);
+    assert_eq!(got.value.known_str(), Some("p-2"));
+    assert_eq!(got.origins.len(), 1);
+    assert_eq!(got.origins[0].path, "a.ts");
+    let got = eval_expr(prelude, "ns.dyn", &[("a.ts", a)]);
+    assert_eq!(got.value, ConstValue::Unknown);
+    let got = eval_expr(prelude, "ns.missing", &[("a.ts", a)]);
+    assert_eq!(got.value, ConstValue::Unknown);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_shadowed_namespace_and_a_non_namespace_import_stay_unknown() {
+    let a = "export const gap = 'p-2';\n";
+    let got = eval_in_fn(
+        "import * as ns from './a';",
+        "const ns = { gap: 'z' };",
+        "ns.gap",
+        &[("a.ts", a)],
+    );
+    assert_eq!(got.value, ConstValue::Unknown);
+    let got = eval_expr("import ns from './a';", "ns.gap", &[("a.ts", a)]);
+    assert_eq!(got.value, ConstValue::Unknown);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.ts_namespace_targets
+fn a_namespace_member_follows_a_reexport() {
+    let got = eval_expr(
+        "import * as ns from './a';",
+        "ns.gap",
+        &[
+            ("a.ts", "export { gap } from './b';\n"),
+            ("b.ts", "export const gap = 'deep';\n"),
+        ],
+    );
+    assert_eq!(got.value.known_str(), Some("deep"));
+}

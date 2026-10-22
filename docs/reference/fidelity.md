@@ -187,8 +187,10 @@ Imports and the module graph:
   (~C3DEAQX); a local value called, an expression callee, and names no repository file defines.
 - Not modelled: `with` statements (reported as a partial parse); type-directed resolution (a method on a
   typed receiver is May by name); CJS exports other than `module.exports = a`, `module.exports = { a }`
-  and `exports.x = a` (function expressions assigned to `exports` are not units); constant evaluation of
-  class-name strings (~C2F4ZMQ).
+  and `exports.x = a` (function expressions assigned to `exports` are not units); constant evaluation beyond
+  what `const_value` covers: a function-local `const` and a `ns.NAME` member of an `import * as ns` evaluate
+  (~NMTWA1V), while `let`/`var`, destructured bindings, a shadowed namespace and any other member access
+  stay `Unknown`.
 
 JSX lowers to the `gob_ir::markup` forms: an element is `apply(element)` (a `lit(tag)` head for an intrinsic tag, a
 `ref` head for a component, which is also a call edge from the using unit), attributes are `markup.attribute` with a
