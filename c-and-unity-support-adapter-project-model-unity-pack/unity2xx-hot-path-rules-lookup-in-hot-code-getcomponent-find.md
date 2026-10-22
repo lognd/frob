@@ -8,12 +8,12 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:49Z"
-updated = "2026-10-22T11:24:59Z"
+updated = "2026-10-22T11:31:02Z"
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
 
 [[acceptance]]
 text = "Given GetComponent<T>() in a method reachable from Update, when checked, then UNITY201 is Advisory with the cache-in-Awake remedy; given the same call in Awake, then clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given new List<T>() in FixedUpdate, when checked, then UNITY202 fires"
