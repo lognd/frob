@@ -2,7 +2,8 @@
 id = "01M4CTTZGDBKBNQ0CTEYYJGRFJ"
 title = "Definition of done per ticket type: epics and docs tickets are not asked for a changelog fragment or measured evidence by default"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
