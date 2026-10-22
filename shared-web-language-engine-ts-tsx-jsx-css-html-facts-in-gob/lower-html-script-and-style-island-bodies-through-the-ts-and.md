@@ -2,13 +2,13 @@
 id = "01M48E13W9MYK85YTCWSSRS50S"
 title = "Lower HTML script and style island bodies through the TS and CSS adapters (nested-fold seam)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:01:54Z"
-updated = "2026-10-22T02:15:16Z"
+updated = "2026-10-22T02:15:23Z"
 scope = ["crates/gob-symbols/**"]
 
 [[acceptance]]
