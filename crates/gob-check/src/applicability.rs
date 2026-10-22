@@ -113,12 +113,18 @@ fn opaque_precision(facts: &FileFacts<'_>, cap: Capability) -> Precision {
     }
 }
 
-/// Why a declared not-applicable cell is not applicable (today's wording).
+/// Why a declared not-applicable cell is not applicable (today's wording for opaque files).
 fn not_applicable_reason(facts: &FileFacts<'_>, cap: Capability) -> String {
     if facts.lang == Some(Lang::Binary) && cap == Capability::Comments {
         "binary artifact holds no text".to_owned()
-    } else {
+    } else if facts.opaque {
         "no adapter: the file has no parsed items".to_owned()
+    } else {
+        format!(
+            "{} has no {} (declared not applicable)",
+            facts.lang.map_or("the language", Lang::name),
+            cap.name()
+        )
     }
 }
 
@@ -169,8 +175,23 @@ pub fn resolve(applies: &Applies, facts: &FileFacts<'_>) -> SubjectStatus {
         }
         return SubjectStatus::Examine;
     }
+    // A parsed file's matrix cells are static too (universal-model.md 4.4, grl-spec.md 7.0.7):
+    // a declared not-applicable cell decides before the parse is looked at, a gap is unresolved.
+    let cells: Vec<(Capability, Precision)> = facts.lang.map_or_else(Vec::new, |lang| {
+        needs
+            .iter()
+            .map(|&c| (c, gob_caps::precision(lang, c)))
+            .collect()
+    });
+    if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::NotApplicable) {
+        return SubjectStatus::NotApplicable(not_applicable_reason(facts, *cap));
+    }
     if let ParseStatus::Failed { reason } = facts.parse {
         return SubjectStatus::Unresolved(format!("the file failed to parse ({reason})"));
+    }
+    if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::None) {
+        tracing::debug!(?cap, "parsed file lacks a capability the rule needs");
+        return SubjectStatus::Unresolved(format!("capability gap: {}", cap.name()));
     }
     if facts.fidelity < min_fidelity {
         return SubjectStatus::Unresolved(format!(
@@ -376,6 +397,58 @@ mod tests {
         ));
         assert!(matches!(
             resolve(&MARKUP, &binary),
+            SubjectStatus::NotApplicable(_)
+        ));
+    }
+
+    /// The facts of a completely parsed file in `lang` at `fidelity`.
+    fn parsed(lang: Lang, fidelity: Fidelity, parse: &ParseStatus) -> FileFacts<'_> {
+        FileFacts {
+            lang: Some(lang),
+            opaque: false,
+            scanned: false,
+            fidelity,
+            parse,
+        }
+    }
+
+    // frob:tests crates/gob-check/src/applicability.rs::resolve
+    // frob:ticket 01M4CXV36WX1C2T64J454ECDV7
+    #[test]
+    fn a_parsed_file_reads_the_matrix_cell_for_each_need() {
+        let needs = |caps: &'static [Capability]| Applies::Universal {
+            needs: caps,
+            min_fidelity: Fidelity::F1,
+        };
+        let parse = ParseStatus::Complete;
+        // CSS declares no test items: statically not applicable, never a runtime value.
+        let css = parsed(Lang::Css, Fidelity::F2, &parse);
+        assert!(matches!(
+            resolve(&needs(&[Capability::TestItems]), &css),
+            SubjectStatus::NotApplicable(w) if w.contains("css has no test_items")
+        ));
+        // Rust has a gap for effects: unresolved with the capability named, not examined.
+        let rust = parsed(Lang::Rust, Fidelity::F3, &parse);
+        assert_eq!(
+            resolve(&needs(&[Capability::Effects]), &rust),
+            SubjectStatus::Unresolved("capability gap: effects".to_owned())
+        );
+        // A provided cell still examines; a not-applicable cell wins over a gap.
+        assert_eq!(
+            resolve(&needs(&[Capability::Visibility]), &rust),
+            SubjectStatus::Examine
+        );
+        assert!(matches!(
+            resolve(&needs(&[Capability::Effects, Capability::TestItems]), &css),
+            SubjectStatus::NotApplicable(_)
+        ));
+        // A not-applicable cell is static: it decides even when the parse failed.
+        let failed = ParseStatus::Failed {
+            reason: "x".to_owned(),
+        };
+        let css_failed = parsed(Lang::Css, Fidelity::F2, &failed);
+        assert!(matches!(
+            resolve(&needs(&[Capability::TestItems]), &css_failed),
             SubjectStatus::NotApplicable(_)
         ));
     }

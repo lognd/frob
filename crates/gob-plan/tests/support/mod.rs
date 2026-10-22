@@ -3,8 +3,8 @@
 
 use gob_ir::{GroupOrder, Location, Model, NodeId, NodeSpec, Operator, TermBuilder};
 use gob_plan::plan::{
-    Certainty, CmpOp, CostClass, Def, Langs, Limit, NeedSet, Op, OpId, Operand, Plan, PlanParts,
-    Polarity, Position, Provenance, Quant, Report, StrId, Unresolved, VarId,
+    Certainty, CmpOp, CostClass, Def, Langs, Limit, Op, OpId, Operand, Plan, PlanParts, Polarity,
+    Position, Provenance, Quant, ReadSet, Report, StrId, Unresolved, VarId,
 };
 use gob_text::{FileId, FileInterner};
 
@@ -20,7 +20,7 @@ pub struct PlanBuilder {
     unresolved: Vec<Unresolved>,
     reports: Vec<Report>,
     vars: u16,
-    needs: NeedSet,
+    reads: ReadSet,
     max_within: Option<u16>,
 }
 
@@ -37,13 +37,13 @@ impl PlanBuilder {
             unresolved: Vec::new(),
             reports: Vec::new(),
             vars: 0,
-            needs: NeedSet::default(),
+            reads: ReadSet::default(),
             max_within: None,
         }
     }
 
-    pub fn needs(&mut self, needs: NeedSet) -> &mut Self {
-        self.needs = needs;
+    pub fn reads(&mut self, reads: ReadSet) -> &mut Self {
+        self.reads = reads;
         self
     }
 
@@ -219,7 +219,7 @@ impl PlanBuilder {
             provenance: Provenance::Std,
             polarity: self.polarity,
             langs: Langs::Any,
-            needs: self.needs,
+            reads: self.reads,
             prefilter,
             cost: self
                 .max_within

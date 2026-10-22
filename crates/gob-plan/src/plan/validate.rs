@@ -106,9 +106,9 @@ fn limits_and_names(p: &PlanParts) -> Result<(), PlanError> {
             });
         }
     }
-    if !p.needs.valid() {
+    if !p.reads.valid() {
         return Err(PlanError::Invalid {
-            what: "needs",
+            what: "reads",
             why: "unknown side relation bit",
         });
     }
@@ -518,7 +518,7 @@ impl<'a> Walk<'a> {
             }
             Op::FindSide { var, need, .. } => {
                 Self::binder(id, clause)?;
-                if !p.needs.contains(*need) {
+                if !p.reads.contains(*need) {
                     return Err(PlanError::UndeclaredNeed { need: need.name() });
                 }
                 self.bind(*var)?;
@@ -577,7 +577,7 @@ impl<'a> Walk<'a> {
                 self.use_operand(subject)?;
             }
             Op::MatchGlobSet { subject, need, .. } => {
-                if !p.needs.contains(*need) {
+                if !p.reads.contains(*need) {
                     return Err(PlanError::UndeclaredNeed { need: need.name() });
                 }
                 self.use_operand(subject)?;

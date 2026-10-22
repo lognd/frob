@@ -126,8 +126,10 @@ pub enum HeaderKind {
     Scope(Scope),
     /// `must_measure`
     MustMeasure,
-    /// `needs diff, lease`
+    /// `needs test_items, vocab(NAME)`: capabilities the rule requires of a language
     Needs(Vec<Word>),
+    /// `reads diff, lease`: side relations the rule reads
+    Reads(Vec<Word>),
     /// `rollup directory`
     Rollup(Rollup),
     /// `knob depth: int = 12 "doc"`

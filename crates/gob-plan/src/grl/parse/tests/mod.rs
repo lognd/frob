@@ -260,6 +260,7 @@ fn spans_cover_every_clause_header_example_and_explain() {
                     "scope",
                     "must_measure",
                     "needs",
+                    "reads",
                     "rollup",
                     "knob",
                 ],

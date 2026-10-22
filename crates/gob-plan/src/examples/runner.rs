@@ -178,15 +178,22 @@ pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunE
     if let Some(l) = &lang {
         expected.extend(parse_markers(l, &text));
     }
-    let not_applicable = match (&plan.parts().langs, &lang) {
-        // A language the capability matrix does not model has no adapter: its source folds to one
-        // opaque node, so a universal rule has nothing to say about it.
-        (Langs::Any, Some(l)) => lang_of(l).is_none(),
-        (Langs::Any | Langs::Nothing, None) => false,
-        (Langs::Nothing, Some(_)) => true,
-        (Langs::Only(ids), Some(l)) => !ids.iter().any(|&i| plan.parts().strings[i as usize] == *l),
-        (Langs::Only(_), None) => return Err(RunError::NoLanguage),
-    };
+    let lacks_capability = lang
+        .as_deref()
+        .and_then(lang_of)
+        .is_some_and(|l| lacks_needed_capability(rule, l));
+    let not_applicable = lacks_capability
+        || match (&plan.parts().langs, &lang) {
+            // A language the capability matrix does not model has no adapter: its source folds to one
+            // opaque node, so a universal rule has nothing to say about it.
+            (Langs::Any, Some(l)) => lang_of(l).is_none(),
+            (Langs::Any | Langs::Nothing, None) => false,
+            (Langs::Nothing, Some(_)) => true,
+            (Langs::Only(ids), Some(l)) => {
+                !ids.iter().any(|&i| plan.parts().strings[i as usize] == *l)
+            }
+            (Langs::Only(_), None) => return Err(RunError::NoLanguage),
+        };
     let mut actual: Vec<Actual> = Vec::new();
     if !not_applicable {
         let model_lang = lang.as_deref().unwrap_or(EMPTY_MODEL_LANG);
@@ -246,4 +253,13 @@ pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunE
         &actual,
         not_applicable,
     ))
+}
+
+/// Whether the matrix marks any capability the rule `needs` as not applicable in `lang`: the rule
+/// is then `NotApplicable` there, decided statically and never at run time.
+// frob:ticket 01M4CXV36WX1C2T64J454ECDV7
+fn lacks_needed_capability(rule: &Rule, lang: gob_caps::Lang) -> bool {
+    crate::lower::needed_capabilities(rule)
+        .into_iter()
+        .any(|c| gob_caps::precision(lang, c) == gob_caps::Precision::NotApplicable)
 }

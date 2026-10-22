@@ -1,7 +1,7 @@
 rule CAP001 "undeclared-capability" {
   lang *
   severity error
-  needs model
+  reads model
 
   find c: cell where c.observed and not c.granted and not c.excused
   report c "node {c.node.name} uses {c.atom} without a grant (deny by default)"

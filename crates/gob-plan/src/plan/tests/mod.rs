@@ -28,7 +28,7 @@ pub(super) fn sample() -> PlanParts {
         provenance: Provenance::Pack("acme-pack".into()),
         polarity: Polarity::Pplus,
         langs: Langs::Only(vec![0, 4]),
-        needs: NeedSet::of(&[Need::Diff]),
+        reads: ReadSet::of(&[Read::Diff]),
         prefilter: vec![0],
         cost: CostClass::Closure(3),
         vars: 5,
@@ -37,7 +37,7 @@ pub(super) fn sample() -> PlanParts {
             Op::Find { var: 0, kind: 0 },
             Op::FindSide {
                 var: 1,
-                need: Need::Diff,
+                need: Read::Diff,
                 table: 2,
             },
             Op::Cmp {
@@ -167,7 +167,7 @@ fn round_trip_keeps_every_header_field() {
     assert_eq!(back.rule(), "NEAT013");
     assert_eq!(back.provenance(), &Provenance::Pack("acme-pack".into()));
     assert_eq!(back.polarity(), Polarity::Pplus);
-    assert!(back.needs().contains(Need::Diff) && !back.needs().contains(Need::Lease));
+    assert!(back.reads().contains(Read::Diff) && !back.reads().contains(Read::Lease));
     assert_eq!(back.prefilter_kinds().collect::<Vec<_>>(), ["function"]);
     assert_eq!(back.cost(), CostClass::Closure(3));
     assert_eq!(back.to_bytes(), plan.to_bytes());
@@ -347,7 +347,7 @@ fn binding_defects_are_rejected() {
     let mut p = sample();
     p.ops[1] = Op::FindSide {
         var: 0,
-        need: Need::Diff,
+        need: Read::Diff,
         table: 2,
     };
     assert_eq!(err(p), PlanError::Rebound { var: 0 });
@@ -362,7 +362,7 @@ fn binding_defects_are_rejected() {
 #[test]
 fn needs_prefilter_and_cost_must_agree_with_the_ops() {
     let mut p = sample();
-    p.needs = NeedSet::default();
+    p.reads = ReadSet::default();
     assert_eq!(err(p), PlanError::UndeclaredNeed { need: "diff" });
     let mut p = sample();
     p.prefilter = vec![];
@@ -404,8 +404,8 @@ fn names_and_canonical_sets_are_checked() {
     p.langs = Langs::Only(vec![4, 0]);
     assert!(matches!(err(p), PlanError::NotCanonical { .. }));
     let mut p = sample();
-    p.needs = NeedSet(0x80);
-    assert!(matches!(err(p), PlanError::Invalid { what: "needs", .. }));
+    p.reads = ReadSet(0x80);
+    assert!(matches!(err(p), PlanError::Invalid { what: "reads", .. }));
     let mut p = sample();
     p.ops[4] = Op::Reaches {
         from: 0,
@@ -443,7 +443,7 @@ fn a_find_nested_in_a_condition_is_misplaced() {
 // frob:tests crates/gob-plan/src/plan/mod.rs::Plan.rule
 // frob:tests crates/gob-plan/src/plan/mod.rs::Plan.polarity
 // frob:tests crates/gob-plan/src/plan/mod.rs::Plan.cost
-// frob:tests crates/gob-plan/src/plan/ir.rs::NeedSet.iter
+// frob:tests crates/gob-plan/src/plan/ir.rs::ReadSet.iter
 #[test]
 fn accessors_expose_the_validated_fields() {
     let plan = Plan::new(sample()).expect("valid");
@@ -451,12 +451,12 @@ fn accessors_expose_the_validated_fields() {
     assert_eq!(plan.rule(), "NEAT013");
     assert_eq!(plan.polarity(), Polarity::Pplus);
     assert_eq!(plan.cost(), CostClass::Closure(3));
-    assert_eq!(plan.needs().iter().collect::<Vec<_>>(), [Need::Diff]);
+    assert_eq!(plan.reads().iter().collect::<Vec<_>>(), [Read::Diff]);
     assert_eq!(
-        NeedSet::of(&[Need::Model, Need::Config])
+        ReadSet::of(&[Read::Model, Read::Config])
             .iter()
             .collect::<Vec<_>>(),
-        [Need::Config, Need::Model]
+        [Read::Config, Read::Model]
     );
 }
 

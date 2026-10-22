@@ -4,7 +4,7 @@
 //! These checks look at the shape of the rule rather than at names and types: whether a `def`
 //! calls itself or a later `def`, whether a closure is bounded, whether the rule carries the
 //! examples and the `## Remedy` section the spec requires, and whether a side relation it reads is
-//! declared in `needs`.
+//! declared in `reads`.
 
 // frob:ticket 01M3ZX7E2DPA2CXBAQ8ZKM5W7Y
 use std::collections::{BTreeMap, BTreeSet};
@@ -28,7 +28,7 @@ pub(super) fn check_rule(rule: &Rule) -> Vec<Diagnostic> {
     closures(rule, &w, &mut out);
     examples(rule, &mut out);
     remedy(rule, &mut out);
-    needs(rule, &w, &mut out);
+    reads(rule, &w, &mut out);
     tracing::debug!(rule = %rule.id.text, diagnostics = out.len(), "checked rule structure");
     out
 }
@@ -398,22 +398,22 @@ fn remedy(rule: &Rule, out: &mut Vec<Diagnostic>) {
     );
 }
 
-/// GRL014: a side relation read without its root in `needs`.
-fn needs(rule: &Rule, w: &Walker<'_>, out: &mut Vec<Diagnostic>) {
+/// GRL014: a side relation read without its root in `reads`.
+fn reads(rule: &Rule, w: &Walker<'_>, out: &mut Vec<Diagnostic>) {
     let declared: BTreeSet<&str> = rule
         .headers
         .iter()
         .filter_map(|h| match &h.node {
-            HeaderKind::Needs(ws) => Some(ws),
+            HeaderKind::Reads(ws) => Some(ws),
             _ => None,
         })
         .flatten()
         .map(|w| w.text.as_str())
         .collect();
-    let needs_header = rule
+    let reads_header = rule
         .headers
         .iter()
-        .find(|h| matches!(h.node, HeaderKind::Needs(_)));
+        .find(|h| matches!(h.node, HeaderKind::Reads(_)));
     let mut seen = BTreeSet::new();
     for p in &w.sides {
         let root = p.segments[0].text.as_str();
@@ -430,18 +430,18 @@ fn needs(rule: &Rule, w: &Walker<'_>, out: &mut Vec<Diagnostic>) {
         );
         let mut d = Diagnostic::new(
             Code::Grl014,
-            format!("`{name}` is used but `{root}` is not in `needs`"),
+            format!("`{name}` is used but `{root}` is not in `reads`"),
             span,
             format!("reads the `{root}` relation"),
         )
         .with_help(format!(
-            "add `needs {root}` to the header; the rule re-runs when the {root} changes"
+            "add `reads {root}` to the header; the rule re-runs when the {root} changes"
         ));
-        match needs_header {
-            Some(h) => d = d.with_secondary(h.span, format!("`needs` does not list `{root}`")),
+        match reads_header {
+            Some(h) => d = d.with_secondary(h.span, format!("`reads` does not list `{root}`")),
             None => {
                 if let Some(h) = rule.headers.last() {
-                    d = d.with_secondary(h.span, "no `needs` line in the header");
+                    d = d.with_secondary(h.span, "no `reads` line in the header");
                 }
             }
         }

@@ -1,7 +1,7 @@
 rule SYSDESIGN102 "node-owns-test-tree" {
   lang -
   severity advisory
-  needs model
+  reads model
 
   find s: model.selectors where s.selector ~ /(^|[\/"])tests?(\/|"|$)/
   report s "node {s.node} owns a test tree: tests verify the design, they are not part of a node"
