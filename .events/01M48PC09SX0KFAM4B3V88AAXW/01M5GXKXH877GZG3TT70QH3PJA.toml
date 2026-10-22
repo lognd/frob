@@ -1,0 +1,53 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T04:23:19Z"
+digest = "5134740c61c3fece86bf0a846b6c15ab3934be7a28ab593df34a20c607f727a9"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.00s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID db067fdd-19b2-4676-b67b-e294577ed150 with nextest profile: default
+    Starting 2 tests across 9 binaries (83 tests skipped)
+        PASS [   0.010s] frob-obligations comments::tests::lines_cover_exactly_the_shared_corpus_spans
+        PASS [  11.679s] frob-obligations::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  11.680s] 2 tests run: 2 passed, 83 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations corpus"
+size = 2357
+status = "measured"
+test_count = 2
+tests_digest = "770a8cfc9fbcc6b17d68ee8527309d546f9ff972e40a80a36c62d62b0e048883"
+at = "2026-10-22T04:23:19Z"
+actor = "lognd"
+rev = 1
