@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:52:59Z"
-updated = "2026-10-22T15:24:27Z"
+updated = "2026-10-22T15:24:28Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-obligations/**", "crates/gob-directives/**", "changelog.d/**", "docs/reference/rules/DSL002.md"]
 
 [[acceptance]]
 text = "Given imported tickets with v1 aliases and files carrying frob:ticket T-0009 and frob:todo T-0038 note=..., when frob check --only DSL002 --fix runs, then every alias that resolves is rewritten to the full ULID, each site that does not resolve stays as a finding, and frob:todo sites are flagged the same as frob:ticket"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-501 (449 sites, 0 fixes applied) and F-502 (18 frob:todo sites not flagged). Complements ~KP5659Y (alias resolution without rewriting).
