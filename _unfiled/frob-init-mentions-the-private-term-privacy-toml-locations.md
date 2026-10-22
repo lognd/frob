@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T03:58:53Z"
-updated = "2026-10-22T03:59:34Z"
-scope = ["crates/frob/src/init.rs", "docs/design/architecture.md", "docs/reference/rules/TICK005.md", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/rules/tick005.md"]
+updated = "2026-10-22T03:59:35Z"
+scope = ["crates/frob/src/init.rs", "docs/design/architecture.md", "docs/reference/rules/TICK005.md", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/rules/tick005.md", "changelog.d/01M42H140A7Y1AMEQJ0YVTYZDE.*"]
 
 [[acceptance]]
 text = "frob init output names the user and git-common-dir privacy.toml paths and writes neither"
