@@ -246,7 +246,7 @@ fn is_branch(n: Node<'_>) -> bool {
 }
 
 /// The expression an `argument` node wraps (the node itself for anything else).
-fn arg_expr(arg: Node<'_>) -> Node<'_> {
+fn unity_arg_expr(arg: Node<'_>) -> Node<'_> {
     if arg.kind() == "argument" {
         named_children(arg).first().copied().unwrap_or(arg)
     } else {
@@ -256,7 +256,7 @@ fn arg_expr(arg: Node<'_>) -> Node<'_> {
 
 fn arguments_of(call: Node<'_>) -> Vec<Node<'_>> {
     call.child_by_field_name("arguments")
-        .map(|a| named_children(a).into_iter().map(arg_expr).collect())
+        .map(|a| named_children(a).into_iter().map(unity_arg_expr).collect())
         .unwrap_or_default()
 }
 
