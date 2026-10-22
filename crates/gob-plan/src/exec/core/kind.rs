@@ -27,6 +27,15 @@ const MODULE_KINDS: &[&str] = &["module", "namespace", "package"];
 const BRANCH_KINDS: &[&str] = &["if", "branch", "match", "switch", "ternary", "cond"];
 /// Control kinds that count as a `loop` role.
 const LOOP_KINDS: &[&str] = &["loop", "while", "for", "foreach", "do"];
+/// Suffixes a tree-sitter style adapter node name carries after its construct word
+/// (`if_statement`, `for_expression`); stripped to compare the word with the control lists.
+const CONTROL_SUFFIXES: &[&str] = &["_statement", "_expression"];
+/// The suffix of an adapter node name that makes the node a statement.
+const STATEMENT_SUFFIX: &str = "_statement";
+/// Adapter node names that are a statement without the suffix.
+const STATEMENT_NAMES: &[&str] = &["let_declaration"];
+/// The adapter statement that only wraps one expression (`f(x)` as a statement).
+const EXPRESSION_STATEMENT: &str = "expression_statement";
 /// Kinds of `apply` that are an assignment.
 const ASSIGN_KINDS: &[&str] = &["assign", "assignment"];
 
@@ -52,6 +61,8 @@ pub(crate) enum KindTest {
     Control(&'static [&'static str]),
     /// An `apply` whose kind is one of the listed spellings.
     ApplyKinds(&'static [&'static str]),
+    /// A statement: an adapter node named `*_statement` (a Python `expression_statement`).
+    Stmt,
     /// A comment.
     Comment,
     /// A markdown link: an `apply` of kind `link` (inline links and reference definitions).
@@ -97,6 +108,7 @@ impl KindTest {
             "assignment" => Self::ApplyKinds(ASSIGN_KINDS),
             "branch" => Self::Control(BRANCH_KINDS),
             "loop" => Self::Control(LOOP_KINDS),
+            "stmt" => Self::Stmt,
             "comment" => Self::Comment,
             "link" => Self::Link,
             "heading" => Self::Heading,
@@ -147,11 +159,17 @@ impl KindTest {
                 (None, Operator::Adapter(a)) => yes(ks.contains(&a.name.as_str())),
                 _ => None,
             },
-            Self::Control(ks) => match universal {
-                Some(Universal::Apply { kind } | Universal::Bind { kind, .. }) => {
+            Self::Control(ks) => match (universal, n.op()) {
+                (Some(Universal::Apply { kind } | Universal::Bind { kind, .. }), _) => {
                     yes(ks.contains(&kind.as_str()))
                 }
+                // An adapter control node (a Python `if_statement`) names its construct.
+                (None, Operator::Adapter(a)) => yes(ks.contains(&control_word(&a.name))),
                 _ => None,
+            },
+            Self::Stmt => match n.op() {
+                Operator::Adapter(a) => yes(is_statement_name(&a.name)),
+                Operator::Universal(_) => None,
             },
             Self::Link => match universal {
                 Some(Universal::Apply { kind }) => yes(kind == "link"),
@@ -188,6 +206,54 @@ impl KindTest {
             Self::Declaration => yes(matches!(n.op(),
                 Operator::Adapter(a) if a.lang == style::LANG && a.name == "declaration")),
         }
+    }
+}
+
+/// The construct word of an adapter node name: `if_statement` is `if`, `for_expression` is `for`.
+fn control_word(name: &str) -> &str {
+    CONTROL_SUFFIXES
+        .iter()
+        .find_map(|suffix| name.strip_suffix(suffix))
+        .unwrap_or(name)
+}
+
+/// Whether an adapter node name is a statement (`return_statement`, `let_declaration`).
+fn is_statement_name(name: &str) -> bool {
+    name.ends_with(STATEMENT_SUFFIX) || STATEMENT_NAMES.contains(&name)
+}
+
+impl KindTest {
+    /// Whether `x is <kind>` on a statement wrapper looks through to the expression it wraps.
+    ///
+    /// Only the expression kinds do: a wrapper is a statement, never itself a call, but the
+    /// statement `f(x)` "is a call" in the sense a rule means. `find` still iterates the
+    /// wrapped call alone, so nothing is counted twice.
+    pub(crate) fn looks_through_statement(self) -> bool {
+        matches!(
+            self,
+            Self::Apply(_) | Self::ApplyKinds(_) | Self::Control(_)
+        )
+    }
+}
+
+/// Whether `node` is a bare group: sequencing structure that is no level of nesting itself.
+pub(crate) fn is_group(model: &Model, node: NodeId) -> bool {
+    matches!(
+        model.term().node(node).op(),
+        Operator::Universal(Universal::Group { .. })
+    )
+}
+
+/// The expression an `expression_statement` adapter wraps, or `node` itself when it is no wrapper.
+pub(crate) fn unwrap_statement(model: &Model, node: NodeId) -> NodeId {
+    let term = model.term();
+    let n = term.node(node);
+    match n.op() {
+        Operator::Adapter(a) if a.name == EXPRESSION_STATEMENT => match n.children() {
+            [only] => *only,
+            _ => node,
+        },
+        _ => node,
     }
 }
 

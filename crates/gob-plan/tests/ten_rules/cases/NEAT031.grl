@@ -14,14 +14,22 @@ rule NEAT031 "dispatch-site-owns-logic" {
   note d "dispatcher by shape"
 
   example fire python """
+    def a(ctx): pass
+    def b(ctx): pass
+    def c(ctx): pass
+    def d(ctx): pass
     def run(ctx):
         a(ctx)
         if ctx.x:                   #~ advisory
             y = ctx.x * 2
             b(y)
         c(ctx)
+        d(ctx)
   """
   example clean python """
+    def a(ctx): pass
+    def b(ctx): pass
+    def c(ctx): pass
     def run(ctx):
         a(ctx)
         if ctx.x: b(ctx)
