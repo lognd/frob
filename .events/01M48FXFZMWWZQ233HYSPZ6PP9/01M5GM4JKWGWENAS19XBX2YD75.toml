@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-22T01:38:12Z"
+digest = "3c6d21900551049c2c281a31646b5b3734e0523b852e5f9930f4718894d7ddf0"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.88s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0bc44a1a-0e71-48ff-902e-da379c06ef96 with nextest profile: default
+    Starting 1 test across 11 binaries (208 tests skipped)
+        PASS [   0.009s] gob-dev render::languages::tests::emits_the_symbols_page_under_a_valid_marker
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 208 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev emits_the_symbols_page_under_a_valid_marker"
+size = 729
+status = "measured"
+test_count = 1
+tests_digest = "361290cadca5f277f919c6bbe407e8571c254ffba17a927e632376dd11e31ad2"
+at = "2026-10-22T01:38:12Z"
+actor = "lognd"
+rev = 1
