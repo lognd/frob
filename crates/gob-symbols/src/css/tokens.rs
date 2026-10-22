@@ -78,8 +78,10 @@ fn token(word: &str) -> Vec<Token> {
     if let Some(open) = word.find('(').filter(|_| word.ends_with(')')) {
         if &word[..open] == "var" {
             let inner = &word[open + 1..word.len() - 1];
-            let name = inner.split(',').next().unwrap_or_default().trim();
-            return vec![Token::Var(name.to_owned())];
+            let (name, fallback) = inner.split_once(',').unwrap_or((inner, ""));
+            let mut out = vec![Token::Var(name.trim().to_owned())];
+            out.extend(vars_in(fallback));
+            return out;
         }
         let mut out = vec![Token::Lit("function", word.to_owned())];
         out.extend(vars_in(&word[open + 1..]));

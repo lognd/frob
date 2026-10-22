@@ -27,9 +27,9 @@ pub enum Language {
     JavaScript,
     /// JavaScript with JSX (`.jsx`).
     Jsx,
-    /// CSS stylesheets (`.css`).
+    /// CSS stylesheets (`.css`, and Unity `.uss` / `.tss`).
     Css,
-    /// HTML documents (`.html`, `.htm`).
+    /// HTML documents (`.html`, `.htm`, and Unity `.uxml`).
     Html,
     /// `.grmb` design models (`.grmb`); hand-written parser, no tree-sitter grammar.
     Grmb,
@@ -71,8 +71,8 @@ impl Language {
             "tsx" => Some(Language::Tsx),
             "js" | "mjs" | "cjs" => Some(Language::JavaScript),
             "jsx" => Some(Language::Jsx),
-            "css" => Some(Language::Css),
-            "html" | "htm" => Some(Language::Html),
+            "css" | "uss" | "tss" => Some(Language::Css),
+            "html" | "htm" | "uxml" => Some(Language::Html),
             "grmb" => Some(Language::Grmb),
             _ => None,
         };
@@ -123,6 +123,9 @@ mod tests {
         assert_eq!(Language::detect("site.css"), Some(Language::Css));
         assert_eq!(Language::detect("index.HTML"), Some(Language::Html));
         assert_eq!(Language::detect("a.htm"), Some(Language::Html));
+        assert_eq!(Language::detect("ui/Main.USS"), Some(Language::Css));
+        assert_eq!(Language::detect("theme.tss"), Some(Language::Css));
+        assert_eq!(Language::detect("ui/Main.uxml"), Some(Language::Html));
         assert_eq!(Language::detect("design/frob.grmb"), Some(Language::Grmb));
         assert_eq!(Language::detect("X.GRMB"), Some(Language::Grmb));
         assert_eq!(Language::Grmb.name(), "grmb");

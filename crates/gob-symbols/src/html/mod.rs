@@ -23,6 +23,8 @@
 //!   the file's (`path::.card`, `path::main`; top-level script statements belong to the file). `json` and
 //!   `data` bodies, and a body with nothing to lower (empty or whitespace only), stay one `lit(text)`.
 //!   Not modelled: the `var()` cascade across islands, and the top-level names of a script as file binders.
+//! - A `.uxml` file (Unity UI Toolkit, D116) folds the same way but keeps the case of tag and attribute
+//!   names (`ui:Label`); `class` tokens and the `name` attribute are queried as in HTML.
 //! - Comments, the doctype and the extent of the tree are not modelled; syntax errors and stray end
 //!   tags are `hole(parse-error)` (or `hole(missing)`), the file is a partial parse.
 //! - `crunk:waive` comments are bound by the directive scanner (gob-directives), not here.
@@ -48,7 +50,10 @@ use crate::view::{self, Naming};
 use entities::decode;
 
 /// File extensions (lowercase, no dot) the adapter claims.
-pub(crate) const EXTENSIONS: &[&str] = &["html", "htm"];
+pub(crate) const EXTENSIONS: &[&str] = &["html", "htm", UXML_EXTENSION];
+
+/// The Unity UI Toolkit markup extension (D116); folded as HTML with case-preserving names.
+const UXML_EXTENSION: &str = "uxml";
 
 /// Region kind of a `<style>` body.
 const REGION_CSS: &str = "css";
@@ -140,6 +145,16 @@ struct Html<'a> {
     holes: u32,
     /// Facts of the lowered script islands, waiting for symrefs.
     facts: Facts,
+    /// True for a UXML file: XML names are case sensitive, so tags and attributes keep their case.
+    xml: bool,
+}
+
+/// True when `path` is a Unity UXML file (`.uxml`, any case).
+fn is_uxml_path(path: &str) -> bool {
+    std::path::Path::new(path)
+        .extension()
+        .and_then(gob_path::exact_text)
+        .is_some_and(|e| e.eq_ignore_ascii_case(UXML_EXTENSION))
 }
 
 fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
@@ -148,6 +163,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         path: input.path,
         holes: 0,
         facts: Facts::empty(),
+        xml: is_uxml_path(input.path),
     };
     let mut kids = html.items(root)?;
     if root.has_error() && html.holes == 0 {
@@ -299,7 +315,7 @@ impl Html<'_> {
             .copied();
         let tag = open
             .and_then(|o| children(o).into_iter().find(|c| c.kind() == "tag_name"))
-            .map(|t| self.t(t).to_ascii_lowercase())
+            .map(|t| self.name_of(t))
             .unwrap_or_default();
         let head = match open {
             Some(o) => {
@@ -391,13 +407,22 @@ impl Html<'_> {
         Ok(island.kids)
     }
 
+    /// The tag or attribute name at `n`: lowercased for HTML, as written for UXML.
+    fn name_of(&self, n: Node<'_>) -> String {
+        if self.xml {
+            self.t(n).to_owned()
+        } else {
+            self.t(n).to_ascii_lowercase()
+        }
+    }
+
     /// One attribute: its lowercased name, decoded value if written, and its node.
     fn attribute(&mut self, a: Node<'_>) -> R<(String, Option<String>, NodeId)> {
         let cs = children(a);
         let name = cs
             .iter()
             .find(|c| c.kind() == "attribute_name")
-            .map(|c| self.t(*c).to_ascii_lowercase())
+            .map(|c| self.name_of(*c))
             .unwrap_or_default();
         let has_value = cs.iter().any(|c| c.kind() == "=");
         let value_node = cs.iter().find_map(|c| match c.kind() {

@@ -22,4 +22,5 @@ mod typescript;
 mod typescript_consteval;
 mod typescript_types;
 mod unity_project;
+mod uss;
 mod web_corpus;
