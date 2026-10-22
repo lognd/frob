@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T19:47:34Z"
+digest = "a5e476bb7ad5889ff9faa45dc9e34fd5928007ee79d8db0af63ea5aab1629db8"
+exit_code = 0
+head = "6c41adaec66c443c5c14ef55f263d2a11c6dc050"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 24783ca5-b74a-40b5-80a5-24ddf3b70561 with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.198s] crunk::query_parity violations_match_python_for_every_project
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.199s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test query_parity violations_match_python_for_every_project"
+size = 548
+status = "measured"
+test_count = 1
+tests_digest = "567f887667c95fbaa2685109c8baae84c59f1166aab5aaf070dfe0e1373738d7"
+at = "2026-10-22T19:47:34Z"
+actor = "lognd"
+rev = 1
