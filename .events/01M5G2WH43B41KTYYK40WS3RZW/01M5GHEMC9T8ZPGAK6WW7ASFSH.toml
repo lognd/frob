@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["each Deterministic directive rule has a fix fixture, a diff snapshot, and passes the fixpoint harness", "a gob_fix::run_fixture fixture per fixable rule with an insta snapshot and missing_fixtures coverage over the registry", "DSL002 v1 keys fix to a fixpoint with a diff snapshot", "DSL003 deprecated spellings fix to a fixpoint with a diff snapshot", "fixed output is idempotent and leaves no findings", "clean input is a no-op", "a finding without a mechanical fix is left unchanged"]
+new = ["each Deterministic directive rule has a fix fixture, a diff snapshot, and passes the fixpoint harness", "a gob_fix::run_fixture fixture per fixable rule with an insta snapshot and missing_fixtures coverage over the registry", "DSL002 v1 keys fix to a fixpoint with a diff snapshot", "DSL003 deprecated spellings fix to a fixpoint with a diff snapshot", "fixed output is idempotent and leaves no findings", "clean input is a no-op", "a finding without a mechanical fix is left unchanged", "a placeholder fix applies only at a higher tier"]
+moved = [1, 2, 3, 4, 5, 6, 7]
+at = "2026-10-22T00:51:20Z"
+actor = "lognd"
+rev = 1
