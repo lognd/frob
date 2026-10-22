@@ -2,13 +2,13 @@
 id = "01M4D94PD6M68GJ6MEDBVDP7MK"
 title = "Public API checkers mapped to VERSION001: cargo-semver-checks, PublicApiAnalyzers, api-extractor, griffe"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:12:41Z"
-updated = "2026-10-08T08:12:41Z"
+updated = "2026-10-22T13:48:48Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob-obligations/**"]
 
 [[acceptance]]
