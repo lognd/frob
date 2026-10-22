@@ -11,7 +11,7 @@ use gob_text::FileInterner;
 const CELLS: &str = r#"rule CEL001 "cells" {
   lang *
   polarity P+  severity error  scope repo  rollup file
-  needs model
+  reads model
 
   find c: cell where c.observed and not c.granted and not c.excused
   report c "uses {c.atom} without a grant"
@@ -64,7 +64,7 @@ const CELLS: &str = r#"rule CEL001 "cells" {
 const OWNED: &str = r#"rule OWN001 "unowned" {
   lang *
   polarity P-  severity warn  scope repo  rollup directory
-  needs model
+  reads model
 
   find a: artifact
   where some u: unit where u inside a and some n: node where u owned by n

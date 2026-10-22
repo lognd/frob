@@ -148,6 +148,7 @@ const HEADER_WORDS: &[&str] = &[
     "scope",
     "must_measure",
     "needs",
+    "reads",
     "rollup",
     "knob",
 ];
@@ -317,7 +318,8 @@ impl Parser<'_> {
         match w {
             "knob" => !self.is_nth(1, &TokenKind::Dot),
             "some" | "no" => self.at_quant(),
-            "where" => self.starts_line(),
+            // `reads` is also a relation verb (`a reads b`); it is a header only at a line start.
+            "where" | "reads" => self.starts_line(),
             _ => {
                 HEADER_WORDS.contains(&w)
                     || CLAUSE_WORDS.contains(&w)
@@ -434,6 +436,13 @@ impl Parser<'_> {
                     names.push(self.need("a name after `,`")?);
                 }
                 HeaderKind::Needs(names)
+            }
+            "reads" => {
+                let mut names = vec![self.need("a name after `reads`")?];
+                while self.eat(&TokenKind::Comma).is_some() {
+                    names.push(self.need("a name after `,`")?);
+                }
+                HeaderKind::Reads(names)
             }
             _ => HeaderKind::Knob(self.knob()?),
         };

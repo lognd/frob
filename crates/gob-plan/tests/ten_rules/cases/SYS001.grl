@@ -1,7 +1,7 @@
 rule SYS001 "unowned" {
   lang *
   polarity P-  severity warn  scope repo  rollup directory
-  needs model, config
+  reads model, config
 
   find a: artifact where not a.path matches config.grimble.exclude
   where some u: unit where u inside a and some n: node where u owned by n

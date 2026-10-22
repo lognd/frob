@@ -1,6 +1,7 @@
 //! Syntax tree to a name-based tree: the checked clauses with no numbering decided yet.
 
 // frob:ticket 01M3ZX7EKNE5Q0NB0DKCH77AZX
+use gob_caps::Capability;
 use gob_text::Span;
 
 use super::LowerError;
@@ -9,7 +10,7 @@ use crate::grl::ast::{
     LiteralKind, MessagePart, Object, RelKind, Rule, ShapeKind, Source, Term, TermKind,
 };
 use crate::plan::{
-    ANY_NODES, Certainty, CmpOp, MAX_SCALE_PLACES, Need, Polarity, Position, Quant, Scale,
+    ANY_NODES, Certainty, CmpOp, MAX_SCALE_PLACES, Polarity, Position, Quant, Read, Scale,
 };
 
 /// A value a condition compares, by name.
@@ -69,7 +70,7 @@ pub(super) enum Cond {
     },
     GlobSet {
         subject: Opd,
-        need: Need,
+        need: Read,
         table: String,
         column: String,
     },
@@ -161,7 +162,7 @@ pub(super) struct DefItem {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) enum Src {
     Kind(String),
-    Side(Need, String),
+    Side(Read, String),
 }
 
 /// A binder with the conditions written on it (field equalities, relations, `where`).
@@ -189,7 +190,7 @@ pub(super) struct Lowered {
     pub id: String,
     pub langs: LangNames,
     pub polarity: Polarity,
-    pub needs: Vec<Need>,
+    pub needs: Vec<Read>,
     pub repo_scope: bool,
     pub finds: Vec<FindItem>,
     pub wheres: Vec<Cond>,
@@ -294,6 +295,27 @@ fn vocab_need(word: &str) -> Option<&str> {
     word.strip_prefix("vocab(")?.strip_suffix(')')
 }
 
+/// The capability a `needs` word names (its `Capability::name`), if any.
+fn capability_named(word: &str) -> Option<Capability> {
+    Capability::ALL.iter().copied().find(|c| c.name() == word)
+}
+
+/// The capabilities a rule's `needs` headers require of a language (`vocab(...)` needs are not
+/// capabilities and are skipped); a language whose matrix cell for any of them is not applicable
+/// makes the rule `NotApplicable` there, statically (grl-spec section 7.0.7).
+// frob:ticket 01M4CXV36WX1C2T64J454ECDV7
+pub fn needed_capabilities(rule: &Rule) -> Vec<Capability> {
+    rule.headers
+        .iter()
+        .filter_map(|h| match &h.node {
+            HeaderKind::Needs(ws) => Some(ws),
+            _ => None,
+        })
+        .flatten()
+        .filter_map(|w| capability_named(&w.text))
+        .collect()
+}
+
 /// Every `needs vocab(NAME)` must name a declared vocab knob. The need itself is a language
 /// capability gate (a language with no registered vocabulary makes the rule not applicable), not
 /// a data input, so the plan records nothing for it: inside a formula an empty vocabulary is the
@@ -340,11 +362,23 @@ fn header(out: &mut Lowered, h: &Header) -> Result<(), LowerError> {
                     // Checked against the knobs once all headers are read (see `convert`).
                     continue;
                 }
+                // A capability need is a static applicability gate (see `needed_capabilities`);
+                // the plan records nothing for it, so only the name is validated here.
+                if capability_named(&w.text).is_none() {
+                    return Err(LowerError::UnknownNeed {
+                        name: w.text.clone(),
+                        span: w.span,
+                    });
+                }
+            }
+        }
+        HeaderKind::Reads(words) => {
+            for w in words {
                 out.needs.push(match w.text.as_str() {
-                    "config" => Need::Config,
-                    "diff" => Need::Diff,
-                    "lease" => Need::Lease,
-                    "model" => Need::Model,
+                    "config" => Read::Config,
+                    "diff" => Read::Diff,
+                    "lease" => Read::Lease,
+                    "model" => Read::Model,
                     other => {
                         return Err(LowerError::UnknownNeed {
                             name: other.to_owned(),
@@ -619,10 +653,10 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
         },
         Source::Side(p) => {
             let need = match p.segments[0].text.as_str() {
-                "config" => Need::Config,
-                "diff" => Need::Diff,
-                "lease" => Need::Lease,
-                "model" => Need::Model,
+                "config" => Read::Config,
+                "diff" => Read::Diff,
+                "lease" => Read::Lease,
+                "model" => Read::Model,
                 _ => return unsupported("an unknown side relation", p.span),
             };
             if !top {
@@ -1065,21 +1099,21 @@ fn regex_text(r: &crate::grl::Regex) -> String {
 /// The side relation a glob set names (`lease.globs`, `config.lease.shared_files`) with the
 /// column that holds the globs: the catalog's only column for a fixed relation, `value` for a
 /// `config.` list.
-fn side_set(t: &Term) -> Option<(Need, String, String)> {
+fn side_set(t: &Term) -> Option<(Read, String, String)> {
     let TermKind::Path(p) = &t.node else {
         return None;
     };
     let words: Vec<&str> = p.segments.iter().map(|s| s.text.as_str()).collect();
     let table = words.join(".");
     match words.first().copied()? {
-        "config" if words.len() >= 3 => Some((Need::Config, table, "value".to_owned())),
+        "config" if words.len() >= 3 => Some((Read::Config, table, "value".to_owned())),
         "lease" | "diff" | "model" => {
             let rel = crate::catalog::side_relation(&table)?;
             let (col, _) = rel.columns.first()?;
             let need = match words[0] {
-                "lease" => Need::Lease,
-                "diff" => Need::Diff,
-                _ => Need::Model,
+                "lease" => Read::Lease,
+                "diff" => Read::Diff,
+                _ => Read::Model,
             };
             Some((need, table, (*col).to_owned()))
         }

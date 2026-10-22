@@ -23,9 +23,9 @@ pub enum Provenance {
     Pack(String),
 }
 
-/// A side relation a rule may read (grl-spec.md section 6); declared in `needs`.
+/// A side relation a rule may read (grl-spec.md section 6); declared in `reads`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Need {
+pub enum Read {
     /// `config.<table>`.
     Config,
     /// `diff.changed`, `diff.added`.
@@ -36,17 +36,17 @@ pub enum Need {
     Model,
 }
 
-impl Need {
+impl Read {
     /// Every need, in bit order.
-    pub const ALL: [Need; 4] = [Need::Config, Need::Diff, Need::Lease, Need::Model];
+    pub const ALL: [Read; 4] = [Read::Config, Read::Diff, Read::Lease, Read::Model];
 
     /// The relation's GRL name.
     pub fn name(self) -> &'static str {
         match self {
-            Need::Config => "config",
-            Need::Diff => "diff",
-            Need::Lease => "lease",
-            Need::Model => "model",
+            Read::Config => "config",
+            Read::Diff => "diff",
+            Read::Lease => "lease",
+            Read::Model => "model",
         }
     }
 
@@ -57,27 +57,27 @@ impl Need {
 
 /// The set of side relations a plan declares, as a bitset (canonical by construction).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct NeedSet(pub(super) u8);
+pub struct ReadSet(pub(super) u8);
 
-impl NeedSet {
-    /// A set holding exactly `needs`.
-    pub fn of(needs: &[Need]) -> Self {
-        NeedSet(needs.iter().fold(0, |acc, n| acc | n.bit()))
+impl ReadSet {
+    /// A set holding exactly `reads`.
+    pub fn of(reads: &[Read]) -> Self {
+        ReadSet(reads.iter().fold(0, |acc, n| acc | n.bit()))
     }
 
     /// Whether `need` is declared.
-    pub fn contains(self, need: Need) -> bool {
+    pub fn contains(self, need: Read) -> bool {
         self.0 & need.bit() != 0
     }
 
-    /// The declared needs in bit order.
-    pub fn iter(self) -> impl Iterator<Item = Need> {
-        Need::ALL.into_iter().filter(move |n| self.contains(*n))
+    /// The declared reads in bit order.
+    pub fn iter(self) -> impl Iterator<Item = Read> {
+        Read::ALL.into_iter().filter(move |n| self.contains(*n))
     }
 
     /// Raw bits (only the low four are ever valid).
     pub(super) fn valid(self) -> bool {
-        self.0 >> Need::ALL.len() == 0
+        self.0 >> Read::ALL.len() == 0
     }
 }
 
@@ -281,8 +281,8 @@ pub enum Op {
     FindSide {
         /// Variable bound.
         var: VarId,
-        /// The relation, which must be in `needs`.
-        need: Need,
+        /// The relation, which must be in `reads`.
+        need: Read,
         /// Table or column name.
         table: StrId,
     },
@@ -402,8 +402,8 @@ pub enum Op {
     MatchGlobSet {
         /// Value tested.
         subject: Operand,
-        /// The side relation family that must be declared in `needs`.
-        need: Need,
+        /// The side relation family that must be declared in `reads`.
+        need: Read,
         /// The relation's dotted name in the string pool.
         table: StrId,
         /// The column holding the globs, in the string pool.
@@ -512,7 +512,7 @@ pub struct PlanParts {
     /// Languages it applies to.
     pub langs: Langs,
     /// Declared side relations.
-    pub needs: NeedSet,
+    pub reads: ReadSet,
     /// Node kinds a file must contain (any of) for the plan to run; strictly ascending.
     pub prefilter: Vec<StrId>,
     /// Declared cost class.

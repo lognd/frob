@@ -82,7 +82,7 @@ fn arb_op() -> impl Strategy<Value = Op> {
         (var.clone(), st.clone()).prop_map(|(var, kind)| Op::Find { var, kind }),
         (var.clone(), st.clone()).prop_map(|(var, table)| Op::FindSide {
             var,
-            need: Need::Diff,
+            need: Read::Diff,
             table
         }),
         proptest::collection::vec(id.clone(), 0..3).prop_map(Op::And),
@@ -122,7 +122,7 @@ fn arb_parts() -> impl Strategy<Value = PlanParts> {
             provenance: Provenance::Std,
             polarity: Polarity::Pplus,
             langs: Langs::Any,
-            needs: NeedSet::of(&[Need::Diff]),
+            reads: ReadSet::of(&[Read::Diff]),
             prefilter,
             cost: match cost {
                 0 => CostClass::PerFile,
@@ -203,7 +203,7 @@ fn arb_valid() -> impl Strategy<Value = PlanParts> {
                 provenance: Provenance::Pack("p".into()),
                 polarity: Polarity::Pplus,
                 langs: Langs::Nothing,
-                needs: NeedSet::default(),
+                reads: ReadSet::default(),
                 prefilter: (0..u32::from(vars)).collect(),
                 cost: CostClass::PerFile,
                 vars,

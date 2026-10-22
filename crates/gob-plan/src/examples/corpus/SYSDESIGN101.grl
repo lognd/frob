@@ -1,7 +1,7 @@
 rule SYSDESIGN101 "node-kind-unset" {
   lang -
   severity warn  scope repo
-  needs model
+  reads model
 
   find n: model.nodes
   where n.kind == "artifact"

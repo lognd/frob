@@ -1,6 +1,5 @@
 ---
 source: crates/gob-plan/src/grl/parse/tests/mod.rs
-assertion_line: 143
 expression: dump(&p.file)
 ---
 File {
@@ -34,7 +33,7 @@ File {
           span: @64..74 
         },
         Spanned {
-           node: Needs(
+           node: Reads(
             [
               Word {
                  text: "diff",

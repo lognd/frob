@@ -47,7 +47,7 @@ File {
           span: @75..91 
         },
         Spanned {
-           node: Needs(
+           node: Reads(
             [
               Word {
                  text: "model",

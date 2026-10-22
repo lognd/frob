@@ -114,8 +114,8 @@ pub enum PlanError {
         /// The variable slot.
         var: u16,
     },
-    /// A side relation is read without being declared in `needs`.
-    #[error("side relation `{need}` is read but not declared in needs")]
+    /// A side relation is read without being declared in `reads`.
+    #[error("side relation `{need}` is read but not declared in reads")]
     UndeclaredNeed {
         /// The relation name.
         need: &'static str,
