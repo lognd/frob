@@ -31,6 +31,10 @@ bound = false
 [[acceptance]]
 text = "CFG001 complete file is a no-op (zero rounds)"
 bound = false
+
+[[acceptance]]
+text = "CFG001 fixed output is idempotent (second run zero rounds)"
+bound = false
 +++
 
 Follow-up of ~G4WAFJT: wire the gob-fix harness (gob_fix::run_fixture) for these fixable rules: a fixture per rule, an observe closure over the real check pipeline, an insta snapshot of Outcome::snapshot_text, and missing_fixtures over the registry's Deterministic rules.
