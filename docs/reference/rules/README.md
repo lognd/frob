@@ -70,6 +70,14 @@
 | [COMP008](COMP008.md) | code-props-mismatch | error | manual | P+ | true | A code mapping that lists props lists exactly the component's props. |
 | [COMP009](COMP009.md) | component-hash-stale | error | manual | P+ | true | A component that is ready or completed records the hash of its content and the token values it binds. |
 
+## CONTENT
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CONTENT001](CONTENT001.md) | content-literal-copy | error | manual | P+ | true | Copy lives in content keys, not in the scene markup. |
+| [CONTENT002](CONTENT002.md) | content-over-budget | warn | manual | P+ | true | A copy key stays inside its length budget. |
+| [CONTENT003](CONTENT003.md) | content-key-undefined | error | manual | P+ | true | Every copy key a scene references is defined. |
+
 ## CONTRAST
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
