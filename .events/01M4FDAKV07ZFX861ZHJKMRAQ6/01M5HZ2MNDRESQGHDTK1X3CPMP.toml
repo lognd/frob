@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T14:08:41Z"
+digest = "6c938ca78c7b07fc88f105754e14f9e4f2cfc9d1128f4ea5cb8fea2adfb9c9f9"
+exit_code = 0
+head = "2059d25c7d8f9d4438ac98521263834046d23494"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6ad91889-b982-4077-be35-67767762937c with nextest profile: default
+    Starting 1 test across 1 binary (134 tests skipped)
+        PASS [   0.004s] frob-ledger rollup::tests::a_story_whose_entered_points_differ_from_its_children_is_reported
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 134 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger --lib a_story_whose_entered_points"
+size = 583
+status = "measured"
+test_count = 1
+tests_digest = "2ab19bae8f02af239fb4822b9c0939eeeb799125b5f892c3fc93d9de34a829d8"
+at = "2026-10-22T14:08:41Z"
+actor = "lognd"
+rev = 1

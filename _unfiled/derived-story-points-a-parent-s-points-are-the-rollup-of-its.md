@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:04:18Z"
-updated = "2026-10-22T14:08:40Z"
+updated = "2026-10-22T14:08:41Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/gob-config/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/src/product.rs", "docs/reference/**", "docs/schemas/**"]
 
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a story with entered points and pointed children whose sum differs, when ticket doctor runs, then a PM finding reports the mismatch"
-bound = false
+bound = true
 +++
 
 Hullbreach convention (from its Jira): story points are the sum of subtask points and subtasks are the backlog items; sums like 4, 6, 7, 11 and 18 cannot be entered on the Fibonacci scale, and rounding would break the totals the course grades against. Coordinator decision: derive parent points from children (not entered), count only leaves toward capacity, and add a point_scale knob for repositories that use plain integers.
