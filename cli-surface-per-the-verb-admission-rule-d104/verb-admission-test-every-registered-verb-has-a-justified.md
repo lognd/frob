@@ -2,13 +2,13 @@
 id = "01M48Q28JZ3AB6FNJ8H2Y6V4G2"
 title = "Verb admission test: every registered verb has a justified cli.md row"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
 reporter = "lognd"
 created = "2026-10-06T13:39:49Z"
-updated = "2026-10-22T02:15:16Z"
+updated = "2026-10-22T02:15:17Z"
 scope = ["crates/gob-cli/**", "crates/gob-dev/**", "docs/design/cli.md"]
 
 [[acceptance]]
