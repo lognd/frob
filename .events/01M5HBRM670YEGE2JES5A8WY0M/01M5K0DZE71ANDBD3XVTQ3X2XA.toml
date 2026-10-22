@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T23:50:55Z"
+digest = "e331dae24160b2365b69a5ac7678a6cc0a8e93353990452f2cf4b5ed1cfb1077"
+exit_code = 0
+head = "160e2d6cb96b54ef5e32b824e138a8e58ffacca1"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 40.10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 633b1db3-014a-4f2c-8e33-f73216d6e374 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.011s] gob-dev::ci_plan the_crunk_job_lists_every_crunk_package
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test ci_plan the_crunk_job_lists_every_crunk_package"
+size = 598
+status = "measured"
+test_count = 1
+tests_digest = "a4b4f62e3da0581f7a0b16a785bd08c239b53a74f898d8467ac2a8eba246f32a"
+at = "2026-10-22T23:50:55Z"
+actor = "lognd"
+rev = 1

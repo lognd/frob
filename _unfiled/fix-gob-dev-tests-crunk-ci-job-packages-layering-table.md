@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:31:11Z"
-updated = "2026-10-22T23:45:34Z"
+updated = "2026-10-22T23:50:55Z"
 scope = ["crates/gob-dev/**"]
 
 [[acceptance]]
 text = "ci_plan::the_crunk_job_lists_every_crunk_package passes (crunk-layout and crunk-scene listed)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "layering::workspace_layering_holds_and_every_crate_has_a_layer passes, with ALLOWED rows for gob-dev -> crunk and grimble"
