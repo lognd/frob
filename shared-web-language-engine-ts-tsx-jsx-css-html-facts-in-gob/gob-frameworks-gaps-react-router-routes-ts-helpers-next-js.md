@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:09:41Z"
-updated = "2026-10-22T00:30:35Z"
+updated = "2026-10-22T00:30:36Z"
 scope = ["crates/gob-frameworks/**", "changelog.d/01M48EFBCF70PK5KGS0PDZD40N.added.md"]
 
 [[acceptance]]
@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "a Next.js route.ts that re-exports its method handlers yields each method at Must instead of ANY at May"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a page default export given through export { X as default } or a re-export names the component"
