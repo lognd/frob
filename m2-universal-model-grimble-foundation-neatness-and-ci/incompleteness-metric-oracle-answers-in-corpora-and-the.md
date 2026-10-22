@@ -2,13 +2,13 @@
 id = "01M4CXSZ5PYK101KSEH6SJ9WYR"
 title = "Incompleteness metric: oracle answers in corpora and the false-Unknown rate per language in CI"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:35Z"
-updated = "2026-10-08T04:54:35Z"
+updated = "2026-10-22T09:46:23Z"
 scope = ["changelog.d/**", "crates/gob-testsupport/**", "crates/gob-check/**", "docs/design/testing.md"]
 
 [[acceptance]]
