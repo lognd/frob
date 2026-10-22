@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T23:53:53Z"
+digest = "c620ca11d2637f38941d80dbc8f155b3dab9915473b0bc45d38b7bf6a0e6f5e3"
+exit_code = 0
+head = "160e2d6cb96b54ef5e32b824e138a8e58ffacca1"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 49.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 93e99fe0-1f8a-478d-a962-7398041aec10 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.021s] frob-docgen::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen --test profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason"
+size = 1165
+status = "measured"
+test_count = 1
+tests_digest = "59d2af6bb7068fe222677a5063f60036dc54cff05a7a1fa4739af6a172414e15"
+at = "2026-10-22T23:53:53Z"
+actor = "lognd"
+rev = 1
