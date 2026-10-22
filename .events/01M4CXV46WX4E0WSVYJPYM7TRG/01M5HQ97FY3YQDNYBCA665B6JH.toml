@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T11:50:14Z"
+digest = "22ddddec583bad22ce164d506482b57704e6bb25ab068cc6ed6618ce1f10232a"
+exit_code = 0
+head = "1e7f0832628bd824b16d58dd8758de7d2c96670d"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f5e4fa00-8963-4f15-b3c2-60e33a584e96 with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.004s] gob-caps matrix::tests::declared_fidelity_is_justified_by_the_cells
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-caps declared_fidelity_is_justified_by_the_cells"
+size = 658
+status = "measured"
+test_count = 1
+tests_digest = "8c2a0f2711b5838ded03d421d86ceb82da3523218d22760f17df2e0cafcf5586"
+at = "2026-10-22T11:50:14Z"
+actor = "lognd"
+rev = 1
