@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T03:58:53Z"
-updated = "2026-10-22T05:01:42Z"
+updated = "2026-10-22T05:02:08Z"
 scope = ["crates/frob/src/init.rs", "docs/design/architecture.md", "docs/reference/rules/TICK005.md", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/rules/tick005.md", "changelog.d/01M42H140A7Y1AMEQJ0YVTYZDE.*", "crates/frob/tests/it/redact.rs"]
 
 [[acceptance]]
