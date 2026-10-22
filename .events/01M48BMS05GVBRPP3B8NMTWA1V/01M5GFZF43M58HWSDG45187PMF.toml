@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T00:25:34Z"
+digest = "e2451c1bb8c76df83e3aa3b2cd468515a879ce84e61790f436d018a7341ea8c1"
+exit_code = 0
+head = "ca180955a9243d54c835c735457127ba8be3f438"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3e32ff9b-50b5-47d9-8e27-7c8150cf2fb3 with nextest profile: default
+    Starting 1 test across 2 binaries (310 tests skipped)
+        PASS [   0.007s] gob-symbols::it typescript_consteval::a_local_const_cycle_is_unresolved_with_the_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 310 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols a_local_const_cycle_is_unresolved_with_the_reason"
+size = 580
+status = "measured"
+test_count = 1
+tests_digest = "aaad3ada50bbb061b1e1df3e210bd8f37677aa75c7750b7e59de56c6fe9eb47b"
+at = "2026-10-22T00:25:34Z"
+actor = "lognd"
+rev = 1
