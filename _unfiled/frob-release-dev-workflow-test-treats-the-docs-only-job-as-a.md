@@ -2,7 +2,8 @@
 id = "01M5GVVBYCPX09T4N4E0HV9K7N"
 title = "frob-release dev_workflow test treats the docs-only job as a test job the dev channel must await"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
