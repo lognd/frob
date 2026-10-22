@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:59:25Z"
-updated = "2026-10-22T12:44:00Z"
+updated = "2026-10-22T12:58:49Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-obligations/**", "crates/frob-tests/**", "crates/gob-config/**", "changelog.d/**", "docs/reference/config.md", "docs/reference/rules/COV004.md", "docs/reference/rules/README.md", "docs/schemas/config.json"]
 
