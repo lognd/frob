@@ -7,12 +7,12 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:55:44Z"
-updated = "2026-10-22T03:55:47Z"
+updated = "2026-10-22T03:56:00Z"
 scope = ["crates/frob-ledger/tests/scrub.rs"]
 
 [[acceptance]]
 text = "frob-ledger scrub tests pass with a lease event carrying op"
-bound = false
+bound = true
 +++
 
 The hand-written lease event in fixture() lacks the now-required op field, so 3 scrub tests fail with missing field 'op'.

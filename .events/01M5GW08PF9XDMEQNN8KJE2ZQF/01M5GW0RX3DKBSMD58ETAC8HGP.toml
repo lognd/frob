@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T03:56:00Z"
+digest = "7aab9aafaa5caeb08993bf9c459c0d36b64afe79cb61edda1e4cc1f8e21bff4f"
+exit_code = 0
+head = "c29f1c1df2d84e6997cf5cbc6f347e3ad991d69e"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b5c38d16-d1b8-43a0-b109-0d707ac7350a with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.013s] frob-ledger::scrub write_with_a_private_term_is_refused
+        PASS [   0.023s] frob-ledger::scrub a_digest_that_never_matched_is_left_alone
+        PASS [   0.025s] frob-ledger::scrub survivors_are_reported_not_guessed
+        PASS [   0.027s] frob-ledger::scrub private_terms_are_scrubbed_like_home_paths
+        PASS [   0.028s] frob-ledger::scrub second_run_is_a_no_op
+        PASS [   0.028s] frob-ledger::scrub one_commit_scrubs_and_the_ledger_still_folds
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.028s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger --test scrub"
+size = 933
+status = "measured"
+test_count = 6
+tests_digest = "5c9f32f94c637f49199090744ba30f1ea895099600c121e5bcd3d31e6ba48e2e"
+at = "2026-10-22T03:56:00Z"
+actor = "lognd"
+rev = 1
