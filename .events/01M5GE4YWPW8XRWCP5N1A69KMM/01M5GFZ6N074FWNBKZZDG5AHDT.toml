@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T00:25:25Z"
+digest = "c12b2733027b1c3fa0ac273238ab3c7536cc4af8d08f84d3cb9128b0edcf878b"
+exit_code = 0
+head = "ca180955a9243d54c835c735457127ba8be3f438"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 41cdaf9d-17f2-49c1-a250-6453f928b989 with nextest profile: default
+    Starting 1 test across 31 binaries (313 tests skipped)
+        PASS [   0.007s] gob-plan::ten_rules neat031_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 313 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan neat031_examples_pass"
+size = 535
+status = "measured"
+test_count = 1
+tests_digest = "242494d9a4e28ce7fa36ea8c2388774180ac86917638495d5f8da865b7529363"
+at = "2026-10-22T00:25:25Z"
+actor = "lognd"
+rev = 1

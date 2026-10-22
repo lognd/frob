@@ -8,12 +8,12 @@ points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T23:53:37Z"
-updated = "2026-10-22T00:25:22Z"
+updated = "2026-10-22T00:25:25Z"
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/tests/ten_rules/**", "crates/gob-plan/src/**", "crates/gob-plan/tests/**", "docs/reference/rules/*.md", "docs/schemas/config.json", "changelog.d/01M5GE4YWPW8XRWCP5N1A69KMM*"]
 
 [[acceptance]]
 text = "NEAT031 examples 0 and 1 pass and leave KNOWN_ENGINE_GAPS"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "stmt matches adapter statements"
