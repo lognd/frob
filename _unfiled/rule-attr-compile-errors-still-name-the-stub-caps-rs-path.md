@@ -2,12 +2,12 @@
 id = "01M492EQCRNEW2YFYESHABQ4YY"
 title = "rule_attr compile errors still name the stub caps.rs path"
 type = "bug"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-06T16:58:52Z"
-updated = "2026-10-22T01:51:53Z"
+updated = "2026-10-22T01:57:02Z"
 scope = ["crates/gob-macros/**"]
 
 [[acceptance]]
