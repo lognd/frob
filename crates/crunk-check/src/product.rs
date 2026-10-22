@@ -45,6 +45,9 @@ pub struct CrunkInputs {
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     /// The authored `design/screens/*.screen.toml` files, parsed (the STATE rules' input).
     pub screens: Option<crunk_rules::screen_files::ScreenFacts>,
+    /// The authored `design/components/*.component.toml` files, parsed (the COMP rules' input).
+    // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
+    pub components: Option<crunk_rules::component_files::ComponentFacts>,
 }
 
 impl CrunkHost for CrunkInputs {
@@ -77,6 +80,9 @@ impl CrunkHost for CrunkInputs {
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     fn screens(&self) -> Option<&crunk_rules::screen_files::ScreenFacts> {
         self.screens.as_ref()
+    }
+    fn components(&self) -> Option<&crunk_rules::component_files::ComponentFacts> {
+        self.components.as_ref()
     }
 }
 
@@ -175,6 +181,10 @@ impl Product for Crunk {
         let screens = spec
             .as_ref()
             .map(crunk_rules::screen_files::ScreenFacts::load);
+        // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
+        let components = spec
+            .as_ref()
+            .map(crunk_rules::component_files::ComponentFacts::load);
         Ok(Collected {
             shared: CrunkShared,
             inputs: CrunkInputs {
@@ -185,6 +195,7 @@ impl Product for Crunk {
                 tokens,
                 scenes,
                 screens,
+                components,
             },
             findings: Vec::new(),
         })
@@ -203,7 +214,7 @@ impl Product for Crunk {
     }
 
     fn repo_digest(&self, snap: &Snapshot<Self>) -> Vec<u8> {
-        let mut digest = format!("crunk/rules/5/ingest/{INGEST_VERSION}").into_bytes();
+        let mut digest = format!("crunk/rules/6/ingest/{INGEST_VERSION}").into_bytes();
         if let Some(spec) = &snap.inputs.spec {
             digest.extend(serde_json::to_vec(spec).unwrap_or_default());
         }
@@ -224,6 +235,10 @@ impl Product for Crunk {
         }
         if let Some(facts) = &snap.inputs.screens {
             // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+            digest.extend(facts.fingerprint().into_bytes());
+        }
+        if let Some(facts) = &snap.inputs.components {
+            // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
             digest.extend(facts.fingerprint().into_bytes());
         }
         if let Some(spec) = &snap.inputs.spec {

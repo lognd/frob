@@ -11,6 +11,24 @@ pub mod bp003;
 pub mod color001;
 /// Rule `COLOR002`.
 pub mod color002;
+/// Rule `COMP001`.
+pub mod comp001;
+/// Rule `COMP002`.
+pub mod comp002;
+/// Rule `COMP003`.
+pub mod comp003;
+/// Rule `COMP004`.
+pub mod comp004;
+/// Rule `COMP005`.
+pub mod comp005;
+/// Rule `COMP006`.
+pub mod comp006;
+/// Rule `COMP007`.
+pub mod comp007;
+/// Rule `COMP008`.
+pub mod comp008;
+/// Rule `COMP009`.
+pub mod comp009;
 /// Rule `CONTRAST001`.
 pub mod contrast001;
 /// Rule `EXPORT001`.
@@ -126,6 +144,15 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <bp003::Bp003 as gob_rules::RuleDecl>::DEF,
     <color001::Color001 as gob_rules::RuleDecl>::DEF,
     <color002::Color002 as gob_rules::RuleDecl>::DEF,
+    <comp001::Comp001 as gob_rules::RuleDecl>::DEF,
+    <comp002::Comp002 as gob_rules::RuleDecl>::DEF,
+    <comp003::Comp003 as gob_rules::RuleDecl>::DEF,
+    <comp004::Comp004 as gob_rules::RuleDecl>::DEF,
+    <comp005::Comp005 as gob_rules::RuleDecl>::DEF,
+    <comp006::Comp006 as gob_rules::RuleDecl>::DEF,
+    <comp007::Comp007 as gob_rules::RuleDecl>::DEF,
+    <comp008::Comp008 as gob_rules::RuleDecl>::DEF,
+    <comp009::Comp009 as gob_rules::RuleDecl>::DEF,
     <contrast001::Contrast001 as gob_rules::RuleDecl>::DEF,
     <export001::Export001 as gob_rules::RuleDecl>::DEF,
     <export002::Export002 as gob_rules::RuleDecl>::DEF,
@@ -200,6 +227,15 @@ where
     bp003::Bp003: gob_rules::Measured<P>,
     color001::Color001: gob_rules::Measured<P>,
     color002::Color002: gob_rules::Measured<P>,
+    comp001::Comp001: gob_rules::Measured<P>,
+    comp002::Comp002: gob_rules::Measured<P>,
+    comp003::Comp003: gob_rules::Measured<P>,
+    comp004::Comp004: gob_rules::Measured<P>,
+    comp005::Comp005: gob_rules::Measured<P>,
+    comp006::Comp006: gob_rules::Measured<P>,
+    comp007::Comp007: gob_rules::Measured<P>,
+    comp008::Comp008: gob_rules::Measured<P>,
+    comp009::Comp009: gob_rules::Measured<P>,
     contrast001::Contrast001: gob_rules::RepoRule<P>,
     export001::Export001: gob_rules::Measured<P>,
     export002::Export002: gob_rules::Measured<P>,
@@ -260,6 +296,15 @@ where
     rules.push(gob_rules::BoundRule::measured(bp003::Bp003));
     rules.push(gob_rules::BoundRule::measured(color001::Color001));
     rules.push(gob_rules::BoundRule::measured(color002::Color002));
+    rules.push(gob_rules::BoundRule::measured(comp001::Comp001));
+    rules.push(gob_rules::BoundRule::measured(comp002::Comp002));
+    rules.push(gob_rules::BoundRule::measured(comp003::Comp003));
+    rules.push(gob_rules::BoundRule::measured(comp004::Comp004));
+    rules.push(gob_rules::BoundRule::measured(comp005::Comp005));
+    rules.push(gob_rules::BoundRule::measured(comp006::Comp006));
+    rules.push(gob_rules::BoundRule::measured(comp007::Comp007));
+    rules.push(gob_rules::BoundRule::measured(comp008::Comp008));
+    rules.push(gob_rules::BoundRule::measured(comp009::Comp009));
     rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
     rules.push(gob_rules::BoundRule::measured(export001::Export001));
     rules.push(gob_rules::BoundRule::measured(export002::Export002));

@@ -19,6 +19,7 @@ use std::path::Path;
 
 use crunk_ingest::{ProjectStyles, ingest_tree};
 use crunk_rules::CrunkHost;
+use crunk_rules::component_files::ComponentFacts;
 use crunk_rules::review::{AckSignature, ReviewFacts, Subject, judge};
 use crunk_rules::scene_files::SceneFacts;
 use crunk_rules::screen_files::ScreenFacts;
@@ -41,6 +42,7 @@ pub struct Project {
     pub tokens: Option<TokenFacts>,
     pub scenes: Option<SceneFacts>,
     pub screens: Option<ScreenFacts>,
+    pub components: Option<ComponentFacts>,
     _dir: tempfile::TempDir,
 }
 
@@ -65,6 +67,9 @@ impl CrunkHost for Project {
     }
     fn screens(&self) -> Option<&ScreenFacts> {
         self.screens.as_ref()
+    }
+    fn components(&self) -> Option<&ComponentFacts> {
+        self.components.as_ref()
     }
 }
 
@@ -297,6 +302,8 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
     let scenes = Some(SceneFacts::load(&spec));
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     let screens = Some(ScreenFacts::load(&spec));
+    // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
+    let components = Some(ComponentFacts::load(&spec));
     let tailwind = tailwind_facts(&spec, &styles, config);
     let reviews = config.and_then(|c| review_facts(&spec, c));
     Project {
@@ -307,6 +314,7 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
         tokens,
         scenes,
         screens,
+        components,
         _dir: dir,
     }
 }

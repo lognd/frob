@@ -52,6 +52,7 @@
 // frob:ticket 01M43ARX764095Q4VWABWXXV5H
 
 pub mod catalog;
+pub mod component_file;
 mod dynamic;
 mod error;
 mod load;
@@ -65,6 +66,7 @@ pub mod tells;
 mod validate;
 
 pub use catalog::{CATALOG, CONTRAST_AA_FLOOR, CatalogRow, Severity};
+pub use component_file::{ComponentFileError, parse_component_file};
 pub use dynamic::Dyn;
 pub use error::{Location, SpecError, SpecErrorKind};
 pub use load::{OWN_TABLES, load_spec, load_spec_file, parse_spec};

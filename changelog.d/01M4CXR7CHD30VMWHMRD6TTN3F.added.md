@@ -1,0 +1,1 @@
+Component spec files under `design/components` with the COMP001 to COMP009 rules (props, variant matrix, states, token bindings, a11y contract, code mapping, content hash); the STATE rules now judge component files too.

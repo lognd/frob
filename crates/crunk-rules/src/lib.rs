@@ -21,6 +21,7 @@
 //!   `docs/crunk/rules/`.
 //! - [`lint`]: `[lint]` of `crunk.toml` applied to a declared rule or to a finding.
 //! - [`waiver`]: the `crunk:waive` comment: scan, bind to the covered region, turn into exceptions.
+//! - [`component_files`]: the authored `design/components/*.component.toml` files the COMP and STATE rules read.
 //! - [`screen_files`]: the authored `design/screens/*.screen.toml` files the STATE rules read.
 //! - [`review`]: the pure human review judgment HUMAN001 and HUMAN002 read.
 //! - [`scene_files`]: the solved `design/scenes/*.scene.json` files LAYOUT001-005 and RESP001 read.
@@ -34,6 +35,7 @@
 
 pub mod breakpoints;
 pub mod color;
+pub mod component_files;
 pub mod contrast;
 pub mod family;
 pub mod host;
