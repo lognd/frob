@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T02:55:46Z"
+digest = "28a695eae2a24848414e2265be7be39ea715956306e068a7752c49f477e5cf6e"
+exit_code = 0
+head = "680e526f40f11e1b9e9920e9ef8fb448ccd17cce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7bf46a49-c498-4a79-8059-0eb2806de889 with nextest profile: default
+    Starting 3 tests across 1 binary (10 tests skipped)
+        PASS [   0.005s] gob-mdtest::panics probes_cover_every_matrix_cell_in_order
+        PASS [   0.004s] gob-mdtest::panics garbage_that_panics_errors_or_is_silent_is_reported_per_cell
+        PASS [   0.005s] gob-mdtest::panics unresolved_or_not_applicable_on_garbage_satisfies_the_contract
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 3 tests run: 3 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest --test panics probes_cover unresolved_or_not garbage_that"
+size = 761
+status = "measured"
+test_count = 3
+tests_digest = "4ed7eb5a673663f69a49d8bfc0fc078ec8e69f180cfc0daf9e4c46194a128b1f"
+at = "2026-10-22T02:55:46Z"
+actor = "lognd"
+rev = 1

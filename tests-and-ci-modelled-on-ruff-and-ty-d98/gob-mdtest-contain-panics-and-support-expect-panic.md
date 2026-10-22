@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "each adapter has a garbage-input case asserting Unresolved or NotApplicable and no panic"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "expect-panic with an empty substring accepts any panic but still requires one"
