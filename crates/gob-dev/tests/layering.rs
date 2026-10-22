@@ -15,9 +15,6 @@ const ALLOWED: &[(&str, &str, &str)] = &[
     ("frob-lease", "frob-release", "~NRMXHHR"),
     ("gob-dev", "crunk-check", "~M8WETW7"),
     ("gob-dev", "crunk-spec", "~M8WETW7"),
-    ("gob-dev", "frob-check", "~MQE4F44"),
-    ("gob-dev", "frob-cli", "~MQE4F44"),
-    ("gob-dev", "frob-mirror", "~MQE4F44"),
     ("gob-dev", "grimble-check", "~M8WETW7"),
 ];
 
@@ -256,4 +253,75 @@ fn a_crate_missing_from_the_table_fails() {
     let layers = table(&[(0, "base", "gob-text")]);
     let bad = failures(&layers, &edge("gob-text", "gob-new"), &[]);
     assert!(bad[0].contains("`gob-new` has no layer"), "{bad:?}");
+}
+
+/// Crate names `cargo tree -p <package>` lists (normal, build and dev edges, transitively).
+fn tree_crates(package: &str) -> BTreeSet<String> {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
+    let out = Command::new(cargo)
+        .args([
+            "tree",
+            "--package",
+            package,
+            "--edges",
+            "all",
+            "--prefix",
+            "none",
+            "--offline",
+        ])
+        .current_dir(root())
+        .output()
+        .expect("cargo tree runs");
+    assert!(
+        out.status.success(),
+        "cargo tree failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8(out.stdout)
+        .expect("utf-8")
+        .lines()
+        .filter_map(|l| l.split_whitespace().next())
+        .map(str::to_string)
+        .collect()
+}
+
+// frob:ticket 01M5H16QQT8R5N9162DMQE4F44
+#[test]
+fn gob_dev_depends_on_no_frob_crate() {
+    let frob: Vec<String> = tree_crates("gob-dev")
+        .into_iter()
+        .filter(|n| n.starts_with("frob-"))
+        .collect();
+    assert!(
+        frob.is_empty(),
+        "gob-dev must not reach a frob crate (SYS013); the generator links frob in frob-docgen: {frob:?}"
+    );
+}
+
+// frob:ticket 01M5H16QQT8R5N9162DMQE4F44
+#[test]
+fn docs_name_the_import_example_not_a_gob_dev_importer() {
+    let stale = ["docs", "migration", "v1-import.md"];
+    let docs: [&[&str]; 5] = [
+        &stale,
+        &["docs", "guides", "upgrade-from-v1.md"],
+        &["docs", "design", "migration.md"],
+        &["docs", "design", "README.md"],
+        &["crates", "frob-evidence", "src", "import_v1.rs"],
+    ];
+    let needle = ["import", "v1", "tickets"].join("-");
+    let offenders: Vec<String> = docs
+        .iter()
+        .filter(|parts| {
+            let path = parts.iter().fold(root(), |p, part| p.join(part));
+            std::fs::read_to_string(&path)
+                .expect("read doc")
+                .contains(&needle)
+        })
+        .map(|parts| parts.join("_"))
+        .collect();
+    assert!(
+        offenders.is_empty(),
+        "docs must point at `cargo run -p frob-evidence --example import_v1`: {offenders:?}"
+    );
 }

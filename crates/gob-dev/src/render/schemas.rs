@@ -27,7 +27,7 @@ pub fn directives_schema() -> Value {
 }
 
 /// The schema files for the global inventories.
-pub fn generate() -> Vec<GenFile> {
+pub fn generate(frob: &crate::products::FrobProduct) -> Vec<GenFile> {
     let tables: Vec<TableDescription> = {
         let mut t: Vec<_> = all_tables().collect();
         t.sort_by(|a, b| a.table.cmp(&b.table));
@@ -50,10 +50,7 @@ pub fn generate() -> Vec<GenFile> {
         // frob:ticket 01M3ZX836BNV9H9K9ZCKNMAEDB
         GenFile {
             path: "docs/schemas/issue-projection.json".to_owned(),
-            content: json_file(
-                "schemas",
-                frob_mirror::projection::issue_projection_schema(),
-            ),
+            content: json_file("schemas", (frob.issue_schema)()),
         },
     ]
 }

@@ -1275,7 +1275,7 @@ pub fn render_id_map(rows: &[Row]) -> String {
 pub fn render_report_md(report: &ImportReport) -> String {
     let mut out = String::from(
         "# v1 ticket import\n\n\
-         Written by `cargo dev import-v1-tickets` (T-0025). Every v1 ticket became a v2 ULID \
+         Written by `cargo run -p frob-evidence --example import_v1` (T-0025). Every v1 ticket became a v2 ULID \
          ticket whose `aliases` hold the v1 id, so `frob ticket show T-0003` resolves. The v1 \
          ledger itself stays in git history before the import commit.\n\n\
          ## Identity and time\n\n\

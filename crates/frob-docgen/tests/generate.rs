@@ -3,7 +3,13 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
-use gob_dev::{Kind, Mode, apply, generate, workspace_root};
+use gob_dev::{GenError, GenFile, Kind, Mode, apply, workspace_root};
+
+/// Generate with frob registered, as the docgen binary does.
+fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError> {
+    frob_docgen::register();
+    gob_dev::generate(kind, crates_dir)
+}
 
 fn crates_dir() -> std::path::PathBuf {
     workspace_root().expect("workspace root").join("crates")
@@ -81,9 +87,12 @@ fn rule_ids() -> BTreeSet<String> {
         .iter()
         .map(|m| m.id.to_owned())
         .chain(
-            gob_dev::products::all_defs()
-                .into_iter()
-                .map(|(_, d)| d.id.to_owned()),
+            {
+                frob_docgen::register();
+                gob_dev::products::all_defs()
+            }
+            .into_iter()
+            .map(|(_, d)| d.id.to_owned()),
         )
         .collect()
 }

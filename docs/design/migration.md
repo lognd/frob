@@ -16,7 +16,7 @@ D95 (owner decision 2026-10-05): the `frob migrate` verbs in section 1
 deferred. Consumer repositories move from v1 to v2 by hand, one at a
 time: write a fresh v2 `frob.toml` and `grimble.toml` from `frob init`
 and the v1 file as reference, import tickets worth keeping with the
-existing developer importer (`cargo dev import-v1-tickets` with a
+existing developer importer (`cargo run -p frob-evidence --example import_v1` with a
 selection file, as this repository did) or recreate them, and rewrite
 directives and waivers as they are touched. The section 1 table stays as
 the mapping a person follows. There is no `.strata` migration path (D136):
@@ -41,7 +41,7 @@ model is rewritten by hand as `.grmb`, with no tool.
 ### 1.1 Selective ticket import
 
 Owner decision 2026-10-04: the 970 open v1 tickets are not imported wholesale.
-`cargo dev import-v1-tickets` reads `docs/migration/v1-selection.toml`, a
+`cargo run -p frob-evidence --example import_v1` reads `docs/migration/v1-selection.toml`, a
 checked-in mapping generated from `notes/review/v1-gap/B-backlog.md` and
 reviewed like any other change. The selection is data:
 

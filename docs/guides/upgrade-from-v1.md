@@ -137,13 +137,13 @@ you want, using `frob config show` to see the knobs.
 ## Move your tickets
 
 There is no `frob migrate` verb in 0.532.0. The only path is a one-off
-converter, `gob-dev import-v1-tickets`, that lives in the frob source
+converter, the `import_v1` example of `frob-evidence`, that lives in the frob source
 repository (<https://github.com/lognd/frob>) and is not published to crates.io
 or PyPI. You need a checkout of the v2 source and a Rust toolchain.
 
 ```sh
 # in the v2 source checkout
-cargo dev import-v1-tickets --from /path/to/your-repo/tickets --to /path/to/tickets-v2
+cargo run -p frob-evidence --example import_v1 -- --from /path/to/your-repo/tickets --to /path/to/tickets-v2
 ```
 
 By default every v1 ticket imports (open ones as open work); pass
@@ -200,6 +200,4 @@ reported 1243 tickets and no issues.
   was read (`>=3.11`) but pip was not run on a supported interpreter.
 - That v2 reads your v1 `frob.lock` or `frob:` directives, and which v1
   `frob.toml` keys v2 accepts beyond the one that failed.
-- That `cargo dev import-v1-tickets` is the same invocation as running the
-  built `gob-dev import-v1-tickets` binary, which is what was run.
 - That the importer is present at the 0.532.0 tag of the source repository.

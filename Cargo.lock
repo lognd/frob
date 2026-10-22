@@ -1216,6 +1216,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "frob-docgen"
+version = "0.532.0"
+dependencies = [
+ "clap",
+ "crunk",
+ "crunk-check",
+ "frob-check",
+ "frob-cli",
+ "frob-mirror",
+ "gob-check",
+ "gob-cli",
+ "gob-dev",
+ "gob-git",
+ "gob-log",
+ "gob-path",
+ "gob-rules",
+ "grimble",
+ "grimble-check",
+ "serde_json",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
 name = "frob-evidence"
 version = "0.532.0"
 dependencies = [
@@ -2574,9 +2598,7 @@ dependencies = [
  "crunk",
  "crunk-check",
  "crunk-spec",
- "frob-check",
- "frob-cli",
- "frob-mirror",
+ "gob-check",
  "gob-cli",
  "gob-config",
  "gob-diagnostics",

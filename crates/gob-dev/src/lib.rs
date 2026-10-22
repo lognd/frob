@@ -15,6 +15,7 @@ pub mod changes;
 pub mod ci;
 pub mod ecosystem;
 pub mod files;
+pub mod genrun;
 pub mod isolation;
 pub mod out;
 pub mod products;
@@ -58,12 +59,11 @@ pub enum Kind {
 ///
 /// Registrations of config tables, directives, commands and artifacts live in crates the generator
 /// otherwise never calls into; touching one public item of each keeps their object files in the
-/// binary. Rules are not anchored here: the legacy rule inventory is reached through the same
-/// product crates, and `#[rule]` rules arrive through the explicit [`products`] list.
-pub fn link_inventories() {
-    let verbs = frob_cli::cli();
-    tracing::debug!(product = frob_cli::PRODUCT, "frob cli linked");
-    drop(verbs);
+/// binary (frob's through its registered `link`). Rules are not anchored here: the legacy rule
+/// inventory is reached through the same product crates, and `#[rule]` rules arrive through the explicit [`products`] list.
+pub fn link_inventories(frob: &products::FrobProduct) {
+    (frob.link)();
+    tracing::debug!("frob inventories linked");
     // frob:ticket 01M4CXTR91E8Y8Y52B5ARDPKKS
     // Linked so their commands reach the inventory and the CLI reference gets a page per product.
     drop((grimble::cli(), crunk::cli()));
@@ -91,6 +91,9 @@ pub fn link_inventories() {
 /// Why a generation run failed.
 #[derive(Debug, thiserror::Error)]
 pub enum GenError {
+    /// The binary never registered frob's side of the generator.
+    #[error("frob product not registered; run the generator through `cargo dev gen` (frob-docgen)")]
+    FrobNotRegistered,
     /// The per-crate rule indexes could not be generated.
     #[error(transparent)]
     RulesIndex(#[from] render::rules_index::RulesIndexError),
@@ -107,7 +110,8 @@ pub enum GenError {
 /// # Errors
 /// [`GenError`] when a generator rejects its inputs (a malformed rule file, a foreign family).
 pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError> {
-    link_inventories();
+    let frob = products::frob().ok_or(GenError::FrobNotRegistered)?;
+    link_inventories(frob);
     let mut files = Vec::new();
     let all = kind == Kind::All;
     if all || kind == Kind::Rules {
@@ -145,7 +149,7 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
         files.extend(render::languages::generate());
     }
     if all || kind == Kind::Schemas {
-        files.extend(render::schemas::generate());
+        files.extend(render::schemas::generate(frob));
         files.extend(render::artifacts::generate(
             gob_config::ArtifactFamily::Schemas,
         ));
@@ -229,15 +233,16 @@ mod tests {
     #[test]
     fn real_workspace_found_regardless_of_compile_time_path() {
         // Start from this crate's dir; the result must be the live workspace,
-        // whose generated files exist, not a compile-time-baked guess.
+        // not a compile-time-baked guess (its generated files are checked by frob-docgen).
         let start = std::env::current_dir().unwrap();
         let root = find_workspace_root(&start).unwrap();
         assert!(root.join("crates/gob-dev/Cargo.toml").is_file());
-        let files = generate(Kind::Schemas, &root.join("crates")).unwrap();
-        let applied = apply(&root, &files, Mode::Check).unwrap();
-        assert_eq!(
-            applied.differing, 0,
-            "generated files differ or are missing"
-        );
+    }
+
+    #[test]
+    fn generate_refuses_without_frob_registered() {
+        // This test binary never calls register_frob.
+        let err = generate(Kind::Schemas, Path::new("crates")).unwrap_err();
+        assert!(matches!(err, GenError::FrobNotRegistered), "{err}");
     }
 }

@@ -76,7 +76,7 @@ Every capability named in the other design files and the v1 inventories.
 | gob-check | the product-neutral check pipeline: tool-output parsers (`tool_parse.rs`: SARIF, cargo, ruff, ESLint, typos, formatter check mode, stylelint, zizmor, actionlint), snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble-model.md 9.7) | `frob check` and `grimble check` run one pipeline |
 | gob-plan | the GRL lexer, parser and printer, catalog checks, the plan format (IR, codec, validator), the plan executor and codegen (plugins.md section 10, grl-spec.md) | frob, grimble and crunk run one rule language |
 | gob-pattern | the pattern engine for declarative rules: ast-grep shape at grammar level and over U roles (milestone 2, ticket G17, blocked by the `Doc`-over-U spike of rules.md section 3) | GPOL and NEAT-style rule files in every product |
-| gob-dev | the `cargo dev` binary (never shipped): `cargo dev gen` for every product (rule docs, CLI docs, schemas, config docs, TS types; it calls frob-release for the changelog), repo-internal rules (PROC, dependency layering) | one generator |
+| gob-dev | the `cargo dev` binary (never shipped, links no frob crate): `cargo dev gen` for every product (rule docs, CLI docs, schemas, config docs, TS types; it calls frob-release for the changelog), repo-internal rules (PROC, dependency layering) | one generator |
 
 ### 2.2 frob (project management and work accounting)
 
@@ -315,7 +315,7 @@ census is `grimble check --census capabilities`.
 Net: additions are gob-serve, gob-ir (the universal model, below
 gob-symbols), gob-lock, gob-check, gob-pattern, grimble-serve and
 grimble-ci; gob-db (salsa) is a milestone-2 crate. No new products.
-Three binaries, 24 substrate crates (gob-dev included), 16 frob crates,
+Three binaries, 24 substrate crates (gob-dev included), 17 frob crates (frob-docgen, the generator binary that links frob for gob-dev, included),
 12 grimble crates, 10 crunk crates. Each crate builds and tests alone.
 
 ## 5. Naming
@@ -387,3 +387,4 @@ fails the test. Every workspace crate must appear here exactly once.
 | 16 | land | frob-land |
 | 17 | binary | frob-cli |
 | 18 | tool | gob-dev |
+| 19 | docgen | frob-docgen |

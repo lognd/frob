@@ -6,8 +6,8 @@ use std::time::Duration;
 use clap::{Parser, Subcommand};
 use gob_dev::out::emit;
 use gob_dev::{
-    Kind, Mode, apply, bench_ic, changes, ci, generate, isolation, profile, publish, test_size,
-    wheel, wheel_smoke, workspace_root,
+    Kind, bench_ic, changes, ci, genrun, isolation, profile, publish, test_size, wheel,
+    wheel_smoke, workspace_root,
 };
 
 /// Command-line interface of the developer task runner.
@@ -267,7 +267,9 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             work,
             only,
         } => ecosystem_task(&corpus, base_bin, head_bin, work, only),
-        Task::Gen { kind, check, root } => generate_files(kind, check, root).map(|()| ok),
+        Task::Gen { kind, check, root } => genrun::delegate_to_docgen(kind, check, root.as_deref())
+            .map(|()| ok)
+            .map_err(Failed),
     }
 }
 
@@ -348,42 +350,6 @@ fn wheel_task(
     };
     let root = workspace_root().map_err(|e| fail(&e))?;
     task(&root).map_err(|e| fail(&e))
-}
-
-/// Regenerate (or with `check`, diff) the derived files.
-fn generate_files(kind: Kind, check: bool, root: Option<PathBuf>) -> Result<(), Failed> {
-    let workspace = match workspace_root() {
-        Ok(w) => w,
-        Err(e) => return Err(Failed(format!("error: {e}"))),
-    };
-    let root = root.unwrap_or_else(|| workspace.clone());
-    let mode = if check { Mode::Check } else { Mode::Write };
-    let files = match generate(kind, &workspace.join("crates")) {
-        Ok(files) => files,
-        Err(e) => {
-            tracing::error!(error = %e, "generation failed");
-            return Err(Failed(format!("error: {e}")));
-        }
-    };
-    match apply(&root, &files, mode) {
-        Ok(applied)
-            if mode == Mode::Check && (applied.differing > 0 || applied.marker_problems > 0) =>
-        {
-            emit(&format!(
-                "GEN001: {} of {} generated files are stale and {} marker problems; run `cargo dev gen all`",
-                applied.differing, applied.total, applied.marker_problems
-            ));
-            Err(Failed("check failed".to_owned()))
-        }
-        Ok(applied) => {
-            emit(&format!("{} generated files up to date", applied.total));
-            Ok(())
-        }
-        Err(e) => {
-            tracing::error!(error = %e, "generation failed");
-            Err(Failed(format!("error: {e}")))
-        }
-    }
 }
 
 /// Run the CI checks from the workspace root and print the step summary; `remote` offloads via goway.

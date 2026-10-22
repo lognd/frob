@@ -203,7 +203,7 @@ fn pinned_array(frob_toml: &toml::Table, tool: &str, key: &str) -> Result<Vec<St
         .ok_or_else(|| bad("no [[check.tool]] entry"))?;
     // A `def = "<name>"` entry takes its argv and probe from the std-pack tool definition, so
     // resolve it exactly as `frob check` does before reading the arrays.
-    let resolved = frob_check::ToolStage::deserialize(toml::Value::Table(entry.clone()))
+    let resolved = gob_check::ToolStage::deserialize(toml::Value::Table(entry.clone()))
         .map_err(|e| bad(&e.to_string()))?
         .resolved();
     match key {

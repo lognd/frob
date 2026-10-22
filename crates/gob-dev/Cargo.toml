@@ -23,9 +23,7 @@ clap = { version = "4", features = ["derive"] }
 crunk = { path = "../crunk" }
 crunk-check = { path = "../crunk-check" }
 crunk-spec = { path = "../crunk-spec" }
-frob-check = { path = "../frob-check" }
-frob-cli = { path = "../frob" }
-frob-mirror = { path = "../frob-mirror" }
+gob-check = { path = "../gob-check" }
 gob-cli = { path = "../gob-cli" }
 gob-config = { path = "../gob-config" }
 gob-diagnostics = { path = "../gob-diagnostics" }

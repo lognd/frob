@@ -5,7 +5,7 @@ Owner: frob
 Decisions: none
 Audience: contributor
 
-Written by `cargo dev import-v1-tickets` (T-0025). Every v1 ticket became a v2 ULID ticket whose `aliases` hold the v1 id, so `frob ticket show T-0003` resolves. The v1 ledger itself stays in git history before the import commit.
+Written by `cargo run -p frob-evidence --example import_v1` (T-0025). Every v1 ticket became a v2 ULID ticket whose `aliases` hold the v1 id, so `frob ticket show T-0003` resolves. The v1 ledger itself stays in git history before the import commit.
 
 ## Identity and time
 

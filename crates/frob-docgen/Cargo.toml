@@ -1,0 +1,43 @@
+[package]
+name = "frob-docgen"
+version.workspace = true
+description = "Runs the gob-dev generator linked with frob (keeps gob-dev free of frob crates)."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+name = "frob_docgen"
+path = "src/lib.rs"
+
+[[bin]]
+name = "frob-docgen"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+crunk-check = { path = "../crunk-check" }
+frob-check = { path = "../frob-check" }
+frob-cli = { path = "../frob" }
+frob-mirror = { path = "../frob-mirror" }
+gob-dev = { path = "../gob-dev" }
+gob-git = { path = "../gob-git" }
+gob-log = { path = "../gob-log" }
+gob-rules = { path = "../gob-rules" }
+grimble-check = { path = "../grimble-check" }
+tracing = "0.1"
+
+[dev-dependencies]
+crunk = { path = "../crunk" }
+gob-check = { path = "../gob-check" }
+gob-cli = { path = "../gob-cli" }
+gob-path = { path = "../gob-path" }
+grimble = { path = "../grimble" }
+serde_json = "1"
+tempfile = "3"
+
+[lints]
+workspace = true

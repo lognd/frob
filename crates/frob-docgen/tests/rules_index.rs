@@ -59,12 +59,14 @@ fn a_rule_in_a_crate_that_does_not_own_its_family_is_rejected() {
 
 #[test]
 fn the_explicit_product_list_names_every_product_once() {
-    let names: Vec<_> = gob_dev::products::PRODUCTS.iter().map(|p| p.0).collect();
+    frob_docgen::register();
+    let names: Vec<_> = gob_dev::products::products().iter().map(|p| p.0).collect();
     assert_eq!(names, ["frob", "grimble", "crunk"]);
 }
 
 #[test]
 fn product_lists_hold_no_rule_ids_that_repeat() {
+    frob_docgen::register();
     let defs = gob_dev::products::all_defs();
     let mut ids: Vec<_> = defs.iter().map(|(_, d)| d.id).collect();
     ids.sort_unstable();
