@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [6]
+captured_at = "2026-10-22T00:02:07Z"
+digest = "3925b4fc1dd00f932acded42fd4ad0499d45a74c852a596b8360d6302aba9100"
+exit_code = 0
+head = "c58922e68a39bf3a455de95e2e8c3f29395365b0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 95fce458-2433-4007-94a9-1187605ee97f with nextest profile: default
+    Starting 5 tests across 1 binary
+        PASS [   0.006s] gob-plan::count_ratio a_negative_ratio_flips_the_scaled_side
+        PASS [   0.006s] gob-plan::count_ratio a_literal_factor_and_nested_counts_lower_and_run
+        PASS [   0.007s] gob-plan::count_ratio the_ratio_on_the_left_scales_the_first_count
+        PASS [   0.007s] gob-plan::count_ratio zero_counts_and_a_zero_ratio_compare_exactly
+        PASS [   0.007s] gob-plan::count_ratio the_ratio_on_the_right_scales_the_second_count
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 5 tests run: 5 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test count_ratio"
+size = 905
+status = "measured"
+test_count = 5
+tests_digest = "be982902fca5ebc21546d05c4c74a3e5bb21b9a1b2e0b2e89eb37eb7bb918b10"
+at = "2026-10-22T00:02:07Z"
+actor = "lognd"
+rev = 1
