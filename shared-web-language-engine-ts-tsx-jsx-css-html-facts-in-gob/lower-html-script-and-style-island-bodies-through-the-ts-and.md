@@ -2,7 +2,8 @@
 id = "01M48E13W9MYK85YTCWSSRS50S"
 title = "Lower HTML script and style island bodies through the TS and CSS adapters (nested-fold seam)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
