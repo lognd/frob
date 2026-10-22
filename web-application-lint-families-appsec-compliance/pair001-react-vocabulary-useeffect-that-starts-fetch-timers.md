@@ -2,13 +2,13 @@
 id = "01M4D95REZP3PP4F2WD7ASNXV3"
 title = "PAIR001 React vocabulary: useEffect that starts fetch, timers, listeners or subscriptions without a returned cleanup or abort"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "lognd"
 created = "2026-10-08T08:13:16Z"
-updated = "2026-10-08T08:13:16Z"
+updated = "2026-10-22T08:45:24Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-frameworks/**"]
 
 [[acceptance]]
