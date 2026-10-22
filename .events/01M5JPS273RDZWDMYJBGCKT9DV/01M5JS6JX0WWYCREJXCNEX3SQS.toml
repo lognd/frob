@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["docs/crunk/README.md rename row mentions design/tokens custom tokens, typography stacks, HTML var() rewrites and E-RENAME-DERIVED"]
+moved = []
+at = "2026-10-22T21:45:14Z"
+actor = "lognd"
+rev = 1

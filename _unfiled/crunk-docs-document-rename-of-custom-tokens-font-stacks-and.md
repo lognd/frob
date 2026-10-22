@@ -4,10 +4,15 @@ title = "crunk docs: document rename of custom tokens, font stacks and E-RENAME-
 type = "docs"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-10-22T21:02:54Z"
-updated = "2026-10-22T21:02:54Z"
+updated = "2026-10-22T21:45:14Z"
 scope = ["docs/crunk/README.md"]
+
+[[acceptance]]
+text = "docs/crunk/README.md rename row mentions design/tokens custom tokens, typography stacks, HTML var() rewrites and E-RENAME-DERIVED"
+bound = false
 +++
 
 Found while working ~2M35H0F: docs/crunk/README.md rename row (line 22) must mention design/tokens custom tokens, [typography.stacks], HTML scene var() rewrites, CRLF, and the new E-RENAME-DERIVED refusal. The lease on that file was held by K4DBBVJ so the edit was not made. Patch saved at /home/logan/.cache/t2m35-docs.patch.
