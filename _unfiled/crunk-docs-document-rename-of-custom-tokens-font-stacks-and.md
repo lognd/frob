@@ -2,7 +2,8 @@
 id = "01M5JPS273RDZWDMYJBGCKT9DV"
 title = "crunk docs: document rename of custom tokens, font stacks and E-RENAME-DERIVED"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
