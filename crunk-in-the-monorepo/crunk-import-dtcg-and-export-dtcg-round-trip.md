@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-08T04:53:29Z"
-updated = "2026-10-22T03:58:50Z"
+updated = "2026-10-22T04:14:33Z"
 scope = ["changelog.d/**", "crates/crunk-tokens/**", "crates/crunk/**"]
 
 [[acceptance]]
 text = "Given a DTCG file, when imported and exported, then the result equals the input up to key order"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md section 5.

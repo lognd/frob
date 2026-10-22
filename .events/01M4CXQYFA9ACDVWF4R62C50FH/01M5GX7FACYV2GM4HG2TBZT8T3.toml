@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T04:14:33Z"
+digest = "5d1e84840c56ac65984c2093d3e1b7b16ae8b41a47212a586e1675dd1a3ece2b"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a474bd93-a124-483b-915b-e8508781dc49 with nextest profile: default
+    Starting 1 test across 8 binaries (52 tests skipped)
+        PASS [   0.005s] crunk-tokens::interchange interchange_round_trip_equals_input
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 52 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-tokens interchange_round_trip_equals_input"
+size = 1515
+status = "measured"
+test_count = 1
+tests_digest = "cb28f661426e7f678f1bdf23b74e8e158810e09483b3988d443249a696f39426"
+at = "2026-10-22T04:14:33Z"
+actor = "lognd"
+rev = 1
