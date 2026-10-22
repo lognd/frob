@@ -2,13 +2,13 @@
 id = "01M4CXV36WX1C2T64J454ECDV7"
 title = "Applicability resolver reads the matrix for parsed files; GRL needs become capabilities, side relations move to reads"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXTT0JWKFTX1HBB703QA80"
 reporter = "lognd"
 created = "2026-10-08T04:55:12Z"
-updated = "2026-10-08T04:55:12Z"
+updated = "2026-10-22T11:45:17Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/gob-plan/**"]
 
 [[acceptance]]
