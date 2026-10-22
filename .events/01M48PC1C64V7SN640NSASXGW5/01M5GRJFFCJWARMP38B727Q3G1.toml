@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T02:55:46Z"
+digest = "5fd3715107f3530f2460b0b2ae116a13af7637857c0638c3c45d96855d20466e"
+exit_code = 0
+head = "680e526f40f11e1b9e9920e9ef8fb448ccd17cce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e4f6d85f-be8b-4215-95a9-cccd325cbca9 with nextest profile: default
+    Starting 3 tests across 1 binary (10 tests skipped)
+        PASS [   0.005s] gob-mdtest::panics expect_panic_fails_when_nothing_panics
+        PASS [   0.005s] gob-mdtest::panics expect_panic_passes_on_a_matching_panic
+        PASS [   0.006s] gob-mdtest::panics expect_panic_fails_on_a_different_message
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest --test panics expect_panic_passes_on_a_matching_panic expect_panic_fails"
+size = 718
+status = "measured"
+test_count = 3
+tests_digest = "09b22c8db4bade62e83440d18487331ed416fb4ce7a6c52d1fae736cc85889b8"
+at = "2026-10-22T02:55:46Z"
+actor = "lognd"
+rev = 1
