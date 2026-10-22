@@ -1,0 +1,19 @@
+---
+source: crates/gob-directives/tests/fix.rs
+expression: out.snapshot_text()
+---
+rounds: 1
+--- a/src/a.rs
++++ b/src/a.rs
+@@ -1,9 +1,9 @@
+-// frob:pure
++// grimble:effects none
+ fn a() {}
+ 
+-// frob:honest
++// grimble:effects honest
+ fn b() {}
+ 
+-// frob:core
++// grimble:core
+ fn c() {}

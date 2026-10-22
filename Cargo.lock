@@ -2597,6 +2597,7 @@ name = "gob-directives"
 version = "0.532.0"
 dependencies = [
  "gob-config",
+ "gob-fix",
  "gob-languages",
  "gob-macros",
  "gob-mdtest",

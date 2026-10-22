@@ -1,0 +1,1 @@
+gob: the gob-directives fixable rules (DSL002, DSL003) now run through the gob-fix harness, with a fixture and diff snapshot per rule, a fixpoint check, and a coverage check over the registry's Deterministic rules.
