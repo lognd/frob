@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a [coh] config table with custom effect and trivial vocabularies, when grimble check runs on a file with a mixed-concern unit, then COH002 is reported through a registered rule using those vocabularies", "Given no [coh] table, when grimble check runs, then COH002 uses the built-in default vocabularies"]
+moved = []
+at = "2026-10-22T23:45:20Z"
+actor = "lognd"
+rev = 1
