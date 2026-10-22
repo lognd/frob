@@ -1419,3 +1419,77 @@ fn creating_a_ticket_a_file_references_misses_only_that_file() {
     assert!(second.stats.file_misses > 0, "the referencing file misses");
     assert!(second.stats.file_hits > 0, "an unrelated file still hits");
 }
+
+/// A stacked branch: `parent` work sits under the ticket's own commit, and a later ticket exists
+/// only on `main`. Returns the fixture, the first ticket, and the second ticket referenced in code.
+fn stacked_with_lease_base() -> (tempfile::TempDir, String, String) {
+    let (dir, id) = ticket_fixture();
+    let repo = Repo::discover(dir.path()).expect("discover");
+    let opts = CommitOptions::default();
+    let put = |r: &str, path: &str, text: &str| {
+        let change = [(
+            RelPath::new(path).expect("path"),
+            Some(text.as_bytes().to_vec()),
+        )];
+        repo.commit_paths(r, &change, "stack", &opts)
+            .expect("commit");
+    };
+    let tip = repo.rev_parse("main").expect("main");
+    std::fs::write(repo.git_dir().join("refs/heads/stack"), format!("{tip}\n")).expect("branch");
+    std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/stack\n").expect("head");
+    put("refs/heads/stack", "src/parent/lib.rs", "pub fn p() {}\n");
+    let pinned = repo.rev_parse("stack").expect("stack");
+    let ledger = Ledger::open(
+        Repo::discover(dir.path()).expect("discover"),
+        LedgerConfig::default(),
+        Arc::new(gob_time::SystemClock),
+    );
+    let later = ledger
+        .new_ticket(NewTicket::new("Later", TicketType::Task))
+        .expect("later")
+        .ticket
+        .front
+        .id
+        .to_string();
+    let code = format!("// {}:ticket {later}\npub fn a() {{}}\n", "frob");
+    put("refs/heads/stack", "src/a/lib.rs", &code);
+    let clock: Arc<dyn gob_time::Clock> = Arc::new(gob_time::SystemClock);
+    let store = frob_lease::LeaseStore::open(&repo, frob_lease::LeaseConfig::default(), clock)
+        .expect("store");
+    let holder = frob_lease::Holder {
+        actor: "tester".to_owned(),
+        worktree: dir.path().to_path_buf(),
+    };
+    let tid = id.parse().expect("ticket id");
+    store
+        .acquire(tid, &holder, &["src/a/**".to_owned()])
+        .expect("acquire");
+    store
+        .set_base(tid, &holder, &pinned.to_string())
+        .expect("pin base");
+    (dir, id, later)
+}
+
+// frob:tests crates/frob-check/src/scope.rs::ticket_rules
+// frob:tests crates/frob-check/src/scope.rs::effective_base
+#[test]
+fn a_stacked_branch_diffs_against_the_lease_start_commit() {
+    let (dir, id, _later) = stacked_with_lease_base();
+    let mut opts = ticket_opts(&id);
+    opts.base = None;
+    let r = run(dir.path(), &opts).expect("run");
+    assert!(scope001_paths(&r).is_empty(), "{:?}", scope001_paths(&r));
+    assert!(
+        r.findings.iter().all(|f| f.rule.as_str() != "TICK002"),
+        "a ticket committed on main after the stack diverged is not unknown: {:?}",
+        r.findings
+    );
+    let explicit = run(dir.path(), &ticket_opts(&id)).expect("explicit");
+    assert!(
+        scope001_paths(&explicit)
+            .iter()
+            .any(|m| m.contains("src/parent/lib.rs")),
+        "--base still overrides the lease base: {:?}",
+        scope001_paths(&explicit)
+    );
+}

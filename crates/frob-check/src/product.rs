@@ -544,7 +544,7 @@ impl Product for Frob {
                 scope.changes.as_ref().map(|c| c.files.clone());
             return ScopedFindings::default();
         }
-        let mut findings = scope::ticket_rules(snap, scope, &base, &mut diff);
+        let mut findings = scope::ticket_rules(snap, scope, &base, &table.base, &mut diff);
         *self
             .diff
             .lock()
