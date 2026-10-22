@@ -1,0 +1,14 @@
+# cargo-semver-checks: public Rust API breakage against a baseline (VERSION001).
+# Pass `--baseline-rev <ref>` through the stage `args` to compare against a git ref.
+name = "cargo-semver-checks"
+command = "cargo"
+pinned_version = "0.41.0"
+parser = "semver-checks-text"
+version_args = ["semver-checks", "--version"]
+args = ["semver-checks", "--workspace"]
+inputs = ["**/*.rs", "Cargo.toml"]
+config_files = []
+
+[exit]
+success = [0]
+findings = [1]

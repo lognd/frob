@@ -10,12 +10,12 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | Key | Default | Meaning |
 |---|---|---|
 | `name` | required | Stage name; prefixes every message (`zizmor/unpinned-uses: ...`). |
-| `def` | unset | Name of a std-pack tool definition (`zizmor`, `actionlint`, `ruff`, `rustfmt`, `ruff-format`, `prettier`, `dotnet-format`); see Tool definitions. |
+| `def` | unset | Name of a std-pack tool definition (`zizmor`, `actionlint`, `ruff`, `rustfmt`, `ruff-format`, `prettier`, `dotnet-format`, `cargo-semver-checks`, `griffe`); see Tool definitions. |
 | `command` | required (unset with `def`) | Program on `PATH` (no separators); the allowlist is the set of stage commands. |
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `tsc-text`, `eslint-json`, `roslyn-sarif`, `typos-json` or `formatter-list`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `tsc-text`, `eslint-json`, `roslyn-sarif`, `typos-json`, `formatter-list`, `semver-checks-text` or `griffe-text`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -72,6 +72,7 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | roslyn-sarif | `UNT*` (Microsoft.Unity.Analyzers) | `UNITY101` | Warn |
 | roslyn-sarif | `IDE0051`, `IDE0052`, `IDE0060`, `IDE0005`, `CS8019`, `CS0168`, `CS0219` | `DEAD001` | Warn |
 | roslyn-sarif | `VSTHRD*` | `CONC001` | Warn |
+| roslyn-sarif | `RS0016` and `RS0017` (PublicApiAnalyzers) | `VERSION001` | Error |
 | roslyn-sarif | any other id (CA, IDE, CS) | `LINT001` | Advisory |
 | sarif | any id (the stage `id_map` names the rule) | `TOOL002` | Advisory |
 | cargo-json | `unused_*`, `dead_code` | `DEAD001` | rustc level |
@@ -88,6 +89,8 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | ruff-json | any other code | `LINT001` | Advisory |
 | typos-json | any typo | `SPELL001` | Advisory |
 | formatter-list | every file the formatter would rewrite (one per file) | `FMT001` | Warn |
+| semver-checks-text | every public item cargo-semver-checks reports as broken | `VERSION001` | Error |
+| griffe-text | every breakage `griffe check` reports | `VERSION001` | Error |
 
 The cargo-json severity is the rustc level: `error` is Error, `warning` is Warn. Summary lines (`aborting due to`, `warnings emitted`) are not findings; build artifacts and other non-diagnostic lines are skipped. A diagnostic repeated for each cargo target is reported once per site.
 
@@ -133,3 +136,7 @@ max_version = "1.30.99"
 ## Formatter stages
 
 `parser = "formatter-list"` reads the check mode of a formatter and reports one `FMT001` per unformatted file. It reads stdout and stderr together (prettier writes its list to stderr) and recognises the `Diff in <path>:N:` lines of rustfmt, `Would reformat: <path>` of ruff format, `[warn] <path>` of prettier, `<path>(l,c): error ...` of dotnet format and a bare path. Exit 0 and 1 are normal. The std definitions `rustfmt`, `ruff-format`, `prettier` and `dotnet-format` carry `[fix] unattended = true`, so `frob check --fix` is a tier A fix: it runs the formatter's write command over the flagged files and re-checks. Only files inside the run's scope (`--ticket` scope globs) are passed to the formatter; a flagged file outside the scope is left alone and reported as skipped with its `frob lease widen` hint, and a file a formatter touches anyway (a rustfmt child module) is restored byte for byte. A formatter that is missing, untrusted or exits non-zero fails the fix with `E-CHECK-FIX-IO`.
+
+`parser = "semver-checks-text"` reads the text report of `cargo semver-checks` (stdout and stderr together) and reports one `VERSION001` Error per item under a `Failed in:` list, named in the message with its lint and located at the file and line the tool gives (`Cargo.toml` when it gives none). A crate whose `Checking` header reports a breaking change (a major bump, or a minor bump below 1.0) yields no finding, so a bumped version is accepted. The std definition `cargo-semver-checks` compares against the registry baseline; pass `--baseline-rev <ref>` in the stage `args` to compare against a git ref. Exit 0 and 1 are normal.
+
+`parser = "griffe-text"` reads `griffe check` one-line breakages (`path:LINE: object: message`) as `VERSION001` Errors. griffe does not report version bumps, so a major bump is not recognised: scope the stage to releases that keep the major version, or accept the finding. Name the package and baseline in the stage `args`. api-extractor is not bound yet.

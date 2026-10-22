@@ -149,6 +149,14 @@ pub enum ToolParser {
     // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
     #[serde(rename = "formatter-list")]
     FormatterList,
+    /// `cargo semver-checks` text report (stderr): one `VERSION001` per broken public item; a crate whose header reports a breaking bump yields none.
+    // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
+    #[serde(rename = "semver-checks-text")]
+    SemverChecksText,
+    /// `griffe check` one-line breakages (`path:LINE: object: message`): one `VERSION001` each.
+    // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
+    #[serde(rename = "griffe-text")]
+    GriffeText,
 }
 
 /// The earliest check level that runs a tool stage (`tier` of `[[check.tool]]`).
