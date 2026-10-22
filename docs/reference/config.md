@@ -94,6 +94,17 @@ Materialized: yes.
 | `notebook_order` | `String` | `"warn-unresolved"` | yes | How a notebook with an undeclared cell order is treated. |
 | `public_signatures` | `String` | `"warn-unresolved"` | yes | How an unannotated public signature is treated (`warn-unresolved` or `required`). |
 
+## `[coverage]`
+
+Coverage minimums per scope, measured from an lcov report (COV004).
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `report` | `String` | `"lcov.info"` | no | The lcov report to read, relative to the repository root. |
+| `threshold` | `Vec<CoverageThreshold>` | `[]` | no | Minimums per scope, written as `[[coverage.threshold]]` entries. |
+
 ## `[directives]`
 
 Which directive namespaces are honoured (code-model section 4, decision D63).

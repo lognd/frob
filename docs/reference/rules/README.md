@@ -90,6 +90,7 @@
 |---|---|---|---|---|---|---|
 | [COV001](COV001.md) | untested-public-function | warn | manual | P- | true | A public function or method has no test that reaches it. |
 | [COV003](COV003.md) | tests-names-missing-test | error | manual | P- | false | Alias of TEST001; never emitted by this crate. |
+| [COV004](COV004.md) | coverage-below-threshold | error | manual | P+ | false | Measured coverage of a scope is under the minimum the `[coverage]` table requires. |
 
 ## CRAFT
 

@@ -16,6 +16,38 @@
         }
       ]
     },
+    "CoverageThreshold": {
+      "additionalProperties": false,
+      "description": "One coverage minimum: the files matching `scope` must reach `line` and `branch` percent.",
+      "properties": {
+        "branch": {
+          "default": null,
+          "description": "Minimum branch coverage in percent (0 to 100); omit to leave branches unchecked.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "line": {
+          "default": null,
+          "description": "Minimum line coverage in percent (0 to 100); omit to leave lines unchecked.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "scope": {
+          "description": "A path glob over the covered files, or a directory prefix (no glob characters).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope"
+      ],
+      "type": "object"
+    },
     "DoneRequirement": {
       "description": "A predicate of the definition of done (checked on close and land).",
       "oneOf": [
@@ -761,6 +793,26 @@
           "default": "warn-unresolved",
           "description": "How an unannotated public signature is treated (`warn-unresolved` or `required`).",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "coverage": {
+      "additionalProperties": false,
+      "description": "Coverage minimums per scope, measured from an lcov report (COV004).",
+      "properties": {
+        "report": {
+          "default": "lcov.info",
+          "description": "The lcov report to read, relative to the repository root.",
+          "type": "string"
+        },
+        "threshold": {
+          "default": [],
+          "description": "Minimums per scope, written as `[[coverage.threshold]]` entries.",
+          "items": {
+            "$ref": "#/$defs/CoverageThreshold"
+          },
+          "type": "array"
         }
       },
       "type": "object"

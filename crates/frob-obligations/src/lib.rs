@@ -8,6 +8,7 @@
 //! |---|---|---|---|
 //! | `COV001` | Warn | repo | a public function or method has no test reaching it |
 //! | `COV003` | Error | alias | never emitted, see below |
+//! | `COV004` | Error | repo | lcov coverage of a scope is under a `[[coverage.threshold]]` of [`CoverageConfig`] |
 //! | `TODO001` | Error | file | a comment carries a bare upper-case work marker |
 //! | `TODO002` | Warn | repo | a `frob:todo` names a done or dropped ticket |
 //! | `DOC001` | Warn | file | a public Rust item has no doc comment, or a public Python unit no docstring |
@@ -66,6 +67,7 @@ mod collect;
 mod comments;
 mod config;
 mod cov;
+mod coverage;
 mod doc;
 mod exc;
 mod host;
@@ -95,7 +97,7 @@ use gob_symbols::{SymbolGraph, Target};
 use gob_text::{FileId, FileInterner};
 
 pub use collect::{CollectError, Collected, collect};
-pub use config::{ForbidImport, InvariantsConfig};
+pub use config::{CoverageConfig, CoverageThreshold, ForbidImport, InvariantsConfig};
 pub use gob_rules::Resolved;
 pub use host::ObligationHost;
 pub use legacy::{
@@ -105,6 +107,7 @@ pub use mir::{Mir001Reason, MirrorRunState, ScopeReason, mir001};
 pub use native::tool_bound_ids;
 pub use refs::unsettled_ticket_refs;
 pub use rules::cov003::Cov003;
+pub use rules::cov004::Cov004;
 pub use rules::exc001::Exc001;
 pub use rules::exc003::Exc003;
 pub use rules::exc005::Exc005;
@@ -294,13 +297,14 @@ pub fn evaluate_legacy_repo(
     out
 }
 
-/// Every repo-level rule (`COV001`, `TODO002`, `INV001`, `INV002`, `UNITY001`-`UNITY003`); new files are interned into `files`.
+/// Every repo-level rule (`COV001`, `COV004`, `TODO002`, `INV001`, `INV002`, `UNITY001`-`UNITY003`); new files are interned into `files`.
 ///
 /// Findings are raw: exceptions are applied by [`apply_exceptions`].
 pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
     let mut out = evaluate_legacy_repo(inputs, files);
     out.extend(inv::inv001(inputs.graph, inputs.directives, files));
     out.extend(inv::inv002(inputs.root, inputs.graph, inputs.config, files));
+    out.extend(coverage::cov004(inputs.root, files));
     // frob:ticket 01M44YQZ1A507E2J3JETAWMMAV
     out.extend(unity::unity001(inputs.root, files));
     out.extend(unity::unity002(inputs.root, files));

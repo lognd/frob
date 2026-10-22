@@ -3,6 +3,8 @@
 
 /// Rule `COV003`.
 pub mod cov003;
+/// Rule `COV004`.
+pub mod cov004;
 /// Rule `EXC001`.
 pub mod exc001;
 /// Rule `EXC003`.
@@ -26,6 +28,7 @@ pub mod unity003;
 pub const METAS: &[&gob_rules::RuleDef] = &[
     // one entry per rule file
     <cov003::Cov003 as gob_rules::RuleDecl>::DEF,
+    <cov004::Cov004 as gob_rules::RuleDecl>::DEF,
     <exc001::Exc001 as gob_rules::RuleDecl>::DEF,
     <exc003::Exc003 as gob_rules::RuleDecl>::DEF,
     <exc005::Exc005 as gob_rules::RuleDecl>::DEF,
@@ -52,6 +55,7 @@ const _: () = gob_rules::assert_unique("crate", &[&[&INDEX]]);
 pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
 where
     cov003::Cov003: gob_rules::RepoRule<P>,
+    cov004::Cov004: gob_rules::RelayRule<P>,
     exc001::Exc001: gob_rules::RepoRule<P>,
     exc003::Exc003: gob_rules::RepoRule<P>,
     exc005::Exc005: gob_rules::RepoRule<P>,
@@ -64,6 +68,7 @@ where
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::repo(cov003::Cov003));
+    rules.push(gob_rules::BoundRule::relay(cov004::Cov004));
     rules.push(gob_rules::BoundRule::repo(exc001::Exc001));
     rules.push(gob_rules::BoundRule::repo(exc003::Exc003));
     rules.push(gob_rules::BoundRule::repo(exc005::Exc005));
