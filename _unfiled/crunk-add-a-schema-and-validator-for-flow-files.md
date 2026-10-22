@@ -2,12 +2,12 @@
 id = "01M5JHRGCES4BCHCNBCB7WWZ9F"
 title = "crunk: add a schema and validator for flow files"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T19:35:13Z"
-updated = "2026-10-22T20:15:17Z"
+updated = "2026-10-22T20:15:40Z"
 scope = ["crates/crunk-spec/**"]
 
 [[acceptance]]
