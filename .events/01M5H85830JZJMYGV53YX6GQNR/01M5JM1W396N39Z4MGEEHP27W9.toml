@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the fix summary line, when rendered, then it names only existing frob verbs and flags"]
+moved = []
+at = "2026-10-22T20:15:17Z"
+actor = "lognd"
+rev = 1
