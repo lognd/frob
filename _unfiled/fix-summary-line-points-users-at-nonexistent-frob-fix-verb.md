@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T07:28:10Z"
-updated = "2026-10-22T20:25:24Z"
+updated = "2026-10-22T20:30:51Z"
 scope = ["crates/frob-check/src/summary.rs", "docs/design/diagnostics.md"]
 
 [[acceptance]]
