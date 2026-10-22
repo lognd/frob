@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T01:38:11Z"
+digest = "21391f22c463876ab598b25f556b9e95dc3480d0eedf7a5a161f99576830c353"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7a15ede5-8299-457a-93e2-d305b235f4d6 with nextest profile: default
+    Starting 1 test across 11 binaries (208 tests skipped)
+        PASS [   0.010s] gob-dev::generate languages_regeneration_is_idempotent_and_leaves_an_equal_page_untouched
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 208 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev languages_regeneration_is_idempotent"
+size = 583
+status = "measured"
+test_count = 1
+tests_digest = "30550157739d55f03cadd7d620e58e1149fc24e74448c17d060895de9daafac3"
+at = "2026-10-22T01:38:11Z"
+actor = "lognd"
+rev = 1

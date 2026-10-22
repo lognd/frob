@@ -8,7 +8,7 @@ points = 2
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:34:53Z"
-updated = "2026-10-22T01:38:10Z"
+updated = "2026-10-22T01:38:11Z"
 scope = ["crates/gob-dev/**", "docs/reference/languages.md", "changelog.d/01M48FXFZMWWZQ233HYSPZ6PP9.added.md", "Cargo.lock", "crates/gob-symbols/src/languages_page.rs", "crates/gob-symbols/tests/it/web_corpus.rs"]
 
 [[acceptance]]
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "regenerating the languages page twice is idempotent and an already-equal page is not rewritten"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the languages page carries a GEN001-valid marker naming cargo dev gen languages"
