@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T04:35:06Z"
+digest = "350badff72fd3898acb88100fac275e651cbd2f3cb197302f4ae8dedc0f7f796"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d7c5c694-c832-481c-abce-aa31d2ea62e6 with nextest profile: default
+    Starting 1 test across 7 binaries (75 tests skipped)
+        PASS [   0.018s] gob-mdtest::sections inherited_config_corpus_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 1 test run: 1 passed, 75 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest inherited_config_corpus_passes"
+size = 594
+status = "measured"
+test_count = 1
+tests_digest = "d86eff8563caea8f964f53b9d14ea2042e1f612f072de888994ace11244e9302"
+at = "2026-10-22T04:35:06Z"
+actor = "lognd"
+rev = 1
