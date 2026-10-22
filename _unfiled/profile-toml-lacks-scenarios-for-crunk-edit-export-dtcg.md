@@ -2,7 +2,8 @@
 id = "01M5JVWWAHEE8MPEWR40VRSM3E"
 title = "profile.toml lacks scenarios for crunk edit/export dtcg/extract-token/import dtcg/new/rename"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
