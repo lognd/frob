@@ -256,7 +256,12 @@ fn unity_arg_expr(arg: Node<'_>) -> Node<'_> {
 
 fn arguments_of(call: Node<'_>) -> Vec<Node<'_>> {
     call.child_by_field_name("arguments")
-        .map(|a| named_children(a).into_iter().map(unity_arg_expr).collect())
+        .map(|a| {
+            named_children(a)
+                .into_iter()
+                .map(|a| unity_arg_expr(a))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
