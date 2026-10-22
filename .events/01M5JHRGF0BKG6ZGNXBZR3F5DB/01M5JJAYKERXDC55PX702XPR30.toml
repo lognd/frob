@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the crunk parity tests, when run, then every_corpus_project_passes_or_has_a_reasoned_divergence and violations_match_python_for_every_project pass", "Given a CRAFT010 advisory on init_default, when the cause is found, then it is fixed or recorded as a reasoned divergence, not silenced"]
+moved = []
+at = "2026-10-22T19:45:17Z"
+actor = "lognd"
+rev = 1
