@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["function-local const bindings and namespace-import members evaluate in TS const_value"]
+moved = []
+at = "2026-10-22T00:15:13Z"
+actor = "lognd"
+rev = 1
