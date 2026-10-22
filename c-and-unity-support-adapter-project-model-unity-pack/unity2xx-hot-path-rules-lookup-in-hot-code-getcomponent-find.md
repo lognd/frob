@@ -2,7 +2,8 @@
 id = "01M4D94YT06MB8AJ41XCC940D3"
 title = "UNITY2xx hot-path rules: lookup in hot code (GetComponent, Find*, Camera.main) and managed allocation in hot code, Advisory"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
