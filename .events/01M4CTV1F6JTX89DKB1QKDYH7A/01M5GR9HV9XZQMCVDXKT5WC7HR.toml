@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-22T02:50:52Z"
+digest = "124fff0e4b05fc2c809f324962d9e00ba100b57ad371b04857624605083f9aca"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.82s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dc6361af-1f57-4f03-a58c-ce6fe72c31b1 with nextest profile: default
+    Starting 1 test across 1 binary (368 tests skipped)
+        PASS [   0.218s] frob-cli::it init_adopt::init_agent_is_opt_in_and_refuses_malformed_settings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.219s] 1 test run: 1 passed, 368 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test it init_agent_is_opt"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "bb10ed75a9fa903453ed86de5a19f085b7768c0975bc44a74172bdd8df13a251"
+at = "2026-10-22T02:50:52Z"
+actor = "lognd"
+rev = 1
