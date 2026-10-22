@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a count compared against a scaled count lowers, and the NEAT031 lines leave KNOWN_ENGINE_GAPS or are narrowed to the remaining exec blockers"]
+new = ["a count compared against a scaled count lowers, and the NEAT031 lines leave KNOWN_ENGINE_GAPS or are narrowed to the remaining exec blockers", "Scaled-count semantics: Count.compare_scaled is sound over negative, zero and fractional scales and open counts", "Lowering: count(..) vs scale*count(..) (either side, int/decimal literal or knob, nested counts) lowers to CountPair; non-count scaled forms and over-wide decimals are refused", "Plan format: CountPair round-trips through the codec and validate rejects bad scale, var, kind and cond", "Alternatives of plain kind words lower to an any-node find with an or of kind tests", "End to end: a python ratio rule runs its examples correctly, including zero counts and zero or negative ratios"]
+moved = [1]
+at = "2026-10-22T00:02:01Z"
+actor = "lognd"
+rev = 1
