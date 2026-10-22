@@ -1,0 +1,18 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T03:39:56Z"
+digest = "e6ad476c25af940eb89a0004583c2432cf02c87f1a7541a4971d385b4457305c"
+exit_code = 0
+head = "f487420827cf22dad1448e8e8ba65a081f438449"
+inline = """
+    Blocking waiting for file lock on build directory
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4m 09s
+"""
+passed = true
+provider = "command"
+ref = "cargo clippy -j2 -p gob-exec --target x86_64-pc-windows-gnu --all-targets -- -D warnings"
+size = 127
+status = "measured"
+at = "2026-10-22T03:39:56Z"
+actor = "lognd"
+rev = 1
