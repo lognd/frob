@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a griffe-reported breaking change and a package version bump that permits it, when VERSION001 runs, then no error is raised", "Given a griffe-reported breaking change with no version bump, then VERSION001 is an error"]
+moved = []
+at = "2026-10-22T17:37:07Z"
+actor = "lognd"
+rev = 1
