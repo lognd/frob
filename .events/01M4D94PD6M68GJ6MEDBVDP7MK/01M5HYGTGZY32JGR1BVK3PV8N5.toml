@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T13:58:23Z"
+digest = "37e5cfcda1b43c84a932878a13660d931fc90ab284c805f661c0f236d67b2764"
+exit_code = 0
+head = "2059d25c7d8f9d4438ac98521263834046d23494"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3f3cbfc1-9c0d-43c1-b7dd-aa43d35938b6 with nextest profile: default
+    Starting 1 test across 1 binary (140 tests skipped)
+        PASS [   0.039s] gob-check tools::tests::removed_public_function_without_a_version_bump_is_a_version001_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.040s] 1 test run: 1 passed, 140 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --lib removed_public_function_without_a_version_bump_is_a_version001_error"
+size = 638
+status = "measured"
+test_count = 1
+tests_digest = "a212dbdf5d5f1aaaca7c328bf02683527b6b01c7b00e014a72c066539c59e4e0"
+at = "2026-10-22T13:58:23Z"
+actor = "lognd"
+rev = 1
