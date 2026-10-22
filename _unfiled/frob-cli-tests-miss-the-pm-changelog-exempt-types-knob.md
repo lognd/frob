@@ -2,7 +2,8 @@
 id = "01M5GSQD9DV4G2SFP395JM2JJS"
 title = "frob-cli tests miss the pm.changelog_exempt_types knob (config_sync, init_twice, pm_knob_order)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
