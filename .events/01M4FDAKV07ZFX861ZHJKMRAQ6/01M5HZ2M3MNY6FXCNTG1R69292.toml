@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T14:08:40Z"
+digest = "5dd013bedf7797bf610a8f6a1522eca4c17baf427eb370287e96b21700f6d77c"
+exit_code = 0
+head = "2059d25c7d8f9d4438ac98521263834046d23494"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a9e1cfca-57ab-4d1b-b008-0a7e2de85f0e with nextest profile: default
+    Starting 1 test across 1 binary (55 tests skipped)
+        PASS [   0.023s] frob-ledger::ledger point_scale_gates_which_point_values_a_ticket_may_carry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.024s] 1 test run: 1 passed, 55 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger --test ledger point_scale_gates"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "42172cb7759d5616d543432beda11158732eb5af5acc778d635534bb039a7fb7"
+at = "2026-10-22T14:08:40Z"
+actor = "lognd"
+rev = 1

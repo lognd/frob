@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:04:18Z"
-updated = "2026-10-22T14:08:35Z"
+updated = "2026-10-22T14:08:40Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/gob-config/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/src/product.rs", "docs/reference/**", "docs/schemas/**"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = 'Given [pm] point_scale = "integer", when a ticket is pointed 4, then it is accepted; with the default fibonacci scale 4 is refused as today'
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a story with entered points and pointed children whose sum differs, when ticket doctor runs, then a PM finding reports the mismatch"
