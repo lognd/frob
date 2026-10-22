@@ -1,0 +1,21 @@
+[package]
+name = "crunk-scene"
+version.workspace = true
+description = "crunk's scene dialect: restricted HTML and CSS with data-id and component tags, parsed through the gob adapters, and the SCENE001 unsupported-property check."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords = ["html", "css", "design-system", "lint"]
+categories = ["web-programming", "parser-implementations"]
+
+[dependencies]
+gob-ir = { version = "0.532.0", path = "../gob-ir" }
+gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
+thiserror = "2"
+tracing = "0.1"
+
+[lints]
+workspace = true

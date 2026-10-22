@@ -148,6 +148,15 @@ to UXML/USS; gob already parses HTML and CSS (D96). The dialect is the
 restriction: an unsupported property is a finding (SCENE001), not a
 silent approximation. UXML is an export target, not a source.
 
+The `crunk-scene` crate reads the dialect through the gob HTML adapter:
+`parse_scene_html` gives elements (tag as written, so `<Button>` is a
+component and lowercase tags are HTML or unknown; `data-id`; parent) and
+every CSS declaration from `<style>` bodies and inline `style`
+attributes. `unsupported_properties` yields SCENE001 findings: custom
+properties (`--x`) pass, vendor prefixes and unlisted shorthands are
+flagged. Duplicate `data-id`, unknown tags and at-rules are exposed on
+the parsed scene for later rules. Rule page: `crates/crunk-scene/src/scene001.md`.
+
 Layout (D113): two engines with a parity test.
 
 - T1 solve: taffy (block, flexbox, grid) in-process, with text measured
