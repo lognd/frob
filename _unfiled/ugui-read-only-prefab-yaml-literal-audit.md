@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T13:17:09Z"
-updated = "2026-10-22T17:20:40Z"
+updated = "2026-10-22T17:21:49Z"
 scope = ["crates/gob-languages/**", "crates/crunk-check/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "A prefab with a non-literal or malformed color yields Unresolved, not a false finding"
-bound = false
+bound = true
 +++
 
 found while working ~Q1ABGXK: .prefab is not a detected language, so prefab YAML color and fontSize literals are not audited. See docs/design/crunk.md section 7.

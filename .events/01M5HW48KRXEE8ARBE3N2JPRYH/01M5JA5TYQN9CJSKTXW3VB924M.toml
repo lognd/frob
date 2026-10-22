@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T17:21:49Z"
+digest = "f407b162d53e6fb469de2509da16fd58afac2e21d027f9300871ea50e2dcdde1"
+exit_code = 0
+head = "cefc8fcabd432383dfad757cdc6405f29ded69c5"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c89062ed-2ca6-4675-b619-20c367428249 with nextest profile: default
+    Starting 1 test across 1 binary (9 tests skipped)
+        PASS [   0.324s] crunk-check::gx014 prefab_non_literal_or_malformed_values_are_unresolved_not_findings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.324s] 1 test run: 1 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test gx014 prefab_non_literal_or_malformed_values_are_unresolved_not_findings"
+size = 627
+status = "measured"
+test_count = 1
+tests_digest = "dc0308d5796d3adc62d2b29cfc4495e8a0e1fe6d28f6117d0ee7513c52c6d996"
+at = "2026-10-22T17:21:49Z"
+actor = "lognd"
+rev = 1
