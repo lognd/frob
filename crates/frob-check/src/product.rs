@@ -596,6 +596,11 @@ impl Product for Frob {
         shared.unreadable.clone()
     }
 
+    // frob:ticket 01M5GCNBD6AT6HNQKF3MQTXQC5
+    fn malformed_projects(&self, shared: &FrobShared) -> Vec<gob_symbols::MalformedProject> {
+        shared.malformed_projects.clone()
+    }
+
     fn scans_text(&self, path: &str) -> bool {
         Language::detect(path).is_some()
     }
@@ -704,5 +709,32 @@ mod mirror_bot_id_tests {
         let configured = ["42".to_owned(), "some-bot".to_owned(), " 7 ".to_owned()];
         assert_eq!(numeric_bot_ids(&configured), [42, 7]);
         assert!(numeric_bot_ids(&[]).is_empty());
+    }
+}
+
+#[cfg(test)]
+mod malformed_projects_tests {
+    use super::*;
+
+    // frob:tests crates/frob-check/src/product.rs::malformed_projects
+    #[test]
+    fn frob_product_returns_shared_malformed_projects() {
+        let shared = FrobShared {
+            ledger_tip: String::new(),
+            ref_unsettled: std::collections::BTreeMap::default(),
+            obligation_paths: std::collections::BTreeSet::default(),
+            has_ledger: false,
+            file_info: std::collections::BTreeMap::default(),
+            unreadable: Vec::new(),
+            malformed_projects: vec![gob_symbols::MalformedProject {
+                path: "a/b.csproj".to_owned(),
+                reason: "bad xml".to_owned(),
+            }],
+            roles: gob_walk::Roles::new("tickets"),
+        };
+        let frob = Frob::new(CheckOptions::default());
+        let got = frob.malformed_projects(&shared);
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].path, "a/b.csproj");
     }
 }
