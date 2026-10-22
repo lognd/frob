@@ -2,12 +2,12 @@
 id = "01M5JVWWDXDZK5QZKHZP85WPW1"
 title = "ci.yml CRUNK_PACKAGES omits crunk-layout and crunk-scene (ci_plan test fails)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T22:32:22Z"
-updated = "2026-10-22T23:15:13Z"
+updated = "2026-10-22T23:15:21Z"
 scope = [".github/workflows/**"]
 
 [[acceptance]]
