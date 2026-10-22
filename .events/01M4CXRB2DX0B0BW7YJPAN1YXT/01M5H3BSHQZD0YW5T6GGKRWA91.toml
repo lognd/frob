@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T06:04:21Z"
+digest = "9d4c48e299bd32155b22cf616565a4104f52ddffe72ef08c9914603efa64340f"
+exit_code = 0
+head = "ab406ccf80a429ae8b562dd444414363633c1ca9"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fabe163b-0d69-4515-aaf0-19f8b2909702 with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.005s] crunk rewrite::tests::commit_rolls_back_earlier_writes_when_a_later_one_fails
+        PASS [   0.005s] crunk rewrite::tests::toml_rewrites_exact_strings_and_skips_comments
+        PASS [   0.006s] crunk rewrite::tests::comments_and_css_strings_are_not_rewritten
+        PASS [   0.006s] crunk rewrite::tests::hex_matcher_normalises_case_and_shorthand_and_respects_boundaries
+        PASS [   0.007s] crunk rewrite::tests::prefix_overlapping_names_are_left_alone
+        PASS [   0.007s] crunk rewrite::tests::script_only_rewrites_real_references_in_strings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --lib rewrite"
+size = 1027
+status = "measured"
+test_count = 6
+tests_digest = "bff9ffdb1aa417bb25226e38e565b3dbb3583499f7160c13e3878b80e6707d68"
+at = "2026-10-22T06:04:21Z"
+actor = "lognd"
+rev = 1
