@@ -2,7 +2,8 @@
 id = "01M5GE4YWPW8XRWCP5N1A69KMM"
 title = "gob-plan exec: stmt kind, adapter branch/loop nodes, and directly-inside through body groups (NEAT031 examples 0 and 1)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
