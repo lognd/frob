@@ -7,7 +7,7 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use gob_cache::{ArtifactKey, Cache};
-use gob_languages::ParseLimits;
+use gob_languages::{ParseLimits, UnresolvedReason};
 use gob_walk::{ContentSource, FileEntry};
 use rayon::prelude::*;
 
@@ -15,7 +15,7 @@ use crate::adapter::{Adapter, Fidelity, FileInput, Folded, ParseStatus};
 use crate::crates::CrateDeps;
 use crate::dotnet::MalformedProject;
 use crate::fold::{base_file, opaque_file};
-use crate::graph::SymbolGraph;
+use crate::graph::{InputsHasher, LinkCache, SymbolGraph};
 use crate::model::FileSymbols;
 use crate::registry::adapter_for_entry;
 use crate::types::TypeFacts;
@@ -144,8 +144,25 @@ fn opaque_fold(input: &FileInput<'_>) -> Result<Folded, crate::FoldError> {
 /// (`parse_status` is `NotParsed`); an unparsable file yields no symbols with
 /// `degraded` set and `parse_status` `Failed`.
 pub fn extract_file(entry: &FileEntry, text: &str) -> FileSymbols {
+    extract_cacheable(entry, text).0
+}
+
+// frob:ticket 01M4D6NHS19AGZS6NV6B077GY9
+/// Like [`extract_file`], also saying whether the result is a pure function of the content.
+///
+/// A parse that timed out depends on machine load and a fold error is an adapter bug that a
+/// fix must be able to clear, so neither may be remembered; every other result, degraded
+/// (too large, no grammar) or not, may.
+fn extract_cacheable(entry: &FileEntry, text: &str) -> (FileSymbols, bool) {
     match fold_file(entry, text) {
-        Ok(f) => f.file,
+        Ok(f) => {
+            let file = f.file;
+            let cacheable = !matches!(
+                &file.parse_status,
+                ParseStatus::Failed { reason } if *reason == UnresolvedReason::TimedOut.to_string()
+            );
+            (file, cacheable)
+        }
         Err(err) => {
             tracing::error!(path = %entry.path, %err, "adapter bug: fold failed");
             let digest = entry.digest.to_string();
@@ -155,7 +172,7 @@ pub fn extract_file(entry: &FileEntry, text: &str) -> FileSymbols {
             out.parse_status = ParseStatus::Failed {
                 reason: err.to_string(),
             };
-            out
+            (out, false)
         }
     }
 }
@@ -243,9 +260,10 @@ pub fn build_graph_with_stats_typed(
                     return None;
                 }
             };
-            let fs = extract_file(entry, &text);
+            let (fs, cacheable) = extract_cacheable(entry, &text);
             extracted.fetch_add(1, Ordering::Relaxed);
-            if fs.degraded {
+            if !cacheable {
+                tracing::debug!(path = %entry.path, "result depends on more than content; not cached");
                 return Some(fs);
             }
             match postcard::to_stdvec(&fs) {
@@ -283,10 +301,26 @@ pub fn build_graph_with_stats_typed(
     let mut deps = CrateDeps::new(root);
     let paths: Vec<&str> = files.iter().map(|f| f.path.as_str()).collect();
     stats.malformed_projects = deps.malformed_projects(&paths);
-    let graph = SymbolGraph::from_files_with_deps_typed(per_file, &mut deps, facts);
+    let link_cache = LinkCache::new(cache, link_inputs(files));
+    let graph = SymbolGraph::from_files_with_deps_cached(per_file, &mut deps, facts, &link_cache);
     tracing::info!(
         assemble_ms = started.elapsed().as_millis() - per_file_ms,
         "symbol graph assembled"
     );
     (graph, stats)
+}
+
+// frob:ticket 01M4D6NHS19AGZS6NV6B077GY9
+/// Digests every walked file (path, content, adapter identity) into the link-cache inputs string.
+fn link_inputs(files: &[FileEntry]) -> String {
+    let mut inputs = InputsHasher::new();
+    for entry in files {
+        let identity = adapter_for_entry(&entry.path, &entry.language).map(Adapter::identity);
+        inputs.add(
+            &entry.path,
+            &entry.digest.to_string(),
+            identity.as_deref().unwrap_or("opaque"),
+        );
+    }
+    inputs.finish()
 }

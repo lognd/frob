@@ -12,6 +12,7 @@ mod dotnet;
 mod gaps;
 mod html;
 mod inference;
+mod link_cache;
 mod measured;
 mod nodejs;
 mod python;

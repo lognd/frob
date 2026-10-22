@@ -110,8 +110,8 @@ pub use gob_caps::Lang;
 /// The facet digest scheme these digests are computed under (recorded in every lock file).
 pub use gob_ir::DIGEST_SCHEME;
 pub use graph::{
-    CallEdge, EdgeKind, FileInfo, GapReason, ReachSet, ResolveError, Status, StatusEdge,
-    SymbolGraph,
+    CallEdge, EdgeKind, FileInfo, GapReason, InputsHasher, LinkCache, ReachSet, ResolveError,
+    Status, StatusEdge, SymbolGraph,
 };
 pub use html::{HtmlAdapter, is_html_path};
 pub use lang::{lang_of_hint, lang_of_language, lang_of_tag};

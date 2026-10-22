@@ -120,6 +120,12 @@ struct Members {
 }
 
 impl CsIndex {
+    /// Feeds the tables project files shape (`using` directives, implicit usings included) into `h`.
+    pub(super) fn feed_deps(&self, h: &mut blake3::Hasher) {
+        super::linkcache::feed_sorted(h, "cs.uses", &self.uses);
+        h.update(format!("{:?}", self.globals).as_bytes());
+    }
+
     /// Indexes the C# files in `files` against the node table of `g`.
     ///
     /// With `deps`, each file also gets the project-wide namespaces its SDK imports
