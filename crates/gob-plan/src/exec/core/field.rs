@@ -13,7 +13,7 @@ use gob_ir::style;
 use gob_ir::{AttrValue, Model, NodeId, Operator, Truth, Universal};
 use gob_text::SourceText;
 
-use super::kind::{directive_name, is_key, key_path};
+use super::kind::{directive_name, is_canonical_unit, is_key, key_path};
 use crate::plan::CmpOp;
 
 /// A known scalar.
@@ -193,8 +193,19 @@ impl<'a> Reader<'a> {
             "callee" => self.callee(node).map_or(Datum::Absent, Datum::text),
             "target" => self.target(node),
             "slug" => self.slug(node),
+            "unit" => self.unit(node),
             _ => Datum::Unknown,
         }
+    }
+
+    /// The nearest enclosing canonical unit of `node` (itself when it is one), else absent.
+    // frob:ticket 01M5GE4YWPW8XRWCP5N1A69KMM
+    fn unit(&self, node: NodeId) -> Datum {
+        let model = self.model;
+        std::iter::once(node)
+            .chain(model.term().ancestors(node))
+            .find(|&n| is_canonical_unit(model, n))
+            .map_or(Datum::Absent, Datum::Node)
     }
 
     /// The destination of a markdown link as written, else the module an import names.

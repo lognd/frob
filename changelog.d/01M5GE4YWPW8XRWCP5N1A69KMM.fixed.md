@@ -1,0 +1,1 @@
+gob: the rule engine lowers the `stmt` kind, treats adapter `if`/`for` nodes as branch and loop, reads `directly inside` through body groups, and lets a call statement stand for its call, so NEAT031 examples 0 and 1 pass.

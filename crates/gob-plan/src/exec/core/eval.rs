@@ -15,7 +15,7 @@ use regex::Regex;
 
 use super::field::{Datum, Reader, Scalar, compare};
 use super::fxmap::FastMap;
-use super::kind::{KindTest, is_canonical_unit};
+use super::kind::{KindTest, is_canonical_unit, is_group, unwrap_statement};
 use super::verdict::{Doubt, Verdict};
 use crate::exec::relations::{self, Count, Knobs, OWNED_BY, PEER_OF, SideRow, SideTable};
 use crate::plan::{Certainty, Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
@@ -384,6 +384,8 @@ impl<'a> Eval<'a> {
         if self.string(verb) == PEER_OF {
             return Verdict::certain(self.peer_of(a, b));
         }
+        // A statement wrapper has no edges of its own; the call it wraps does (`s resolves to p`).
+        let a = unwrap_statement(self.rd.model, a);
         relations::verb(self.wired.edges[&verb], a, b, certainty)
     }
 
@@ -656,7 +658,12 @@ impl<'a> Eval<'a> {
     fn inside(&self, sub: NodeId, sup: NodeId, direct: bool) -> bool {
         let term = self.rd.model.term();
         if direct {
-            term.parent(sub) == Some(sup)
+            // A group is structure, not a level: a statement's parent is the body group.
+            let mut up = term.parent(sub);
+            while let Some(p) = up.filter(|&p| is_group(self.rd.model, p) && p != sup) {
+                up = term.parent(p);
+            }
+            up == Some(sup)
         } else {
             term.is_ancestor(sup, sub)
         }

@@ -5,6 +5,7 @@ use gob_ir::{AttrValue, Truth};
 
 use super::{
     Datum, Env, Eval, KindTest, Op, Operand, Scalar, StrId, VarId, Verdict, is_canonical_unit,
+    unwrap_statement,
 };
 
 /// Words that test a string value (`l.target is relative`).
@@ -99,7 +100,12 @@ impl Eval<'_> {
             Operand::Var(v) => {
                 let node = Self::node(env, v);
                 if let Some(k) = KindTest::from_word(word) {
-                    return Verdict::certain(k.member(self.rd.model, node) == Some(Truth::Yes));
+                    let target = if k.looks_through_statement() {
+                        unwrap_statement(self.rd.model, node)
+                    } else {
+                        node
+                    };
+                    return Verdict::certain(k.member(self.rd.model, target) == Some(Truth::Yes));
                 }
                 match self.rd.field(node, word) {
                     Datum::Known(Scalar::Bool(b)) => Verdict::certain(b),
