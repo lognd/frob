@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a panicking rule is reported as a failed case, not an aborted run", "expect-panic passes on a matching panic and fails when there is none", "each adapter has a garbage-input case asserting Unresolved or NotApplicable and no panic", "expect-panic with an empty substring accepts any panic but still requires one", "a non-string panic payload is reported with a placeholder"]
+new = ["a panicking rule is reported as a failed case, not an aborted run", "expect-panic passes on a matching panic and fails when there is none", "each adapter has a garbage-input case asserting Unresolved or NotApplicable and no panic", "expect-panic with an empty substring accepts any panic but still requires one", "a non-string panic payload is reported with a placeholder", "directive binds to the next case only and CRLF does not shift line attribution"]
+moved = [1, 2, 3, 4, 5]
+at = "2026-10-22T02:55:40Z"
+actor = "lognd"
+rev = 1
