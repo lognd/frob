@@ -94,3 +94,65 @@ fn a_waiver_with_a_reason_silences_it() {
     let f = gx014_of(&src);
     assert!(f.is_empty(), "{f:?}");
 }
+
+/// The Unresolved GX014 findings among `found`, asserting none is an Error.
+fn unresolved(found: &[gob_rules::Finding]) -> Vec<&gob_rules::Finding> {
+    found
+        .iter()
+        .filter(|f| f.severity == gob_rules::Severity::Unresolved)
+        .collect()
+}
+
+// frob:ticket 01M5HW48CZPQ5KW8E70F63DZXF
+// frob:tests crates/crunk-check/src/ugui.rs::UguiLiteralCheck
+#[test]
+fn non_literal_color_arguments_are_unresolved() {
+    for line in [
+        "img.color = new Color(r, g, b, 1f);",
+        "img.color = new Color(this.red, 0f, 0f);",
+        "img.color = new Color(GetRed(), 0f, 0f);",
+        "img.color = new Color(dark ? 0f : 1f, 0f, 0f);",
+        "img.color = new Color(0.1f, g, 0.3f);",
+        "img.color = new Color32(r, 0, 0, 255);",
+    ] {
+        let found = gx014_of(&generator(line));
+        assert_eq!(found.len(), 1, "{line}: {found:?}");
+        assert_eq!(found[0].severity, gob_rules::Severity::Unresolved, "{line}");
+        assert_eq!(
+            found[0]
+                .reason
+                .as_ref()
+                .map(gob_rules::UnresolvedReason::code),
+            Some("computed-color"),
+            "{line}"
+        );
+    }
+}
+
+// frob:ticket 01M5HW48CZPQ5KW8E70F63DZXF
+// frob:tests crates/crunk-check/src/ugui.rs::UguiLiteralCheck
+#[test]
+fn computed_color_methods_are_unresolved_and_clear_stays_clean() {
+    for line in [
+        "img.color = Color.Lerp(a, b, t);",
+        "img.color = Color.HSVToRGB(h, s, v);",
+    ] {
+        let found = gx014_of(&generator(line));
+        assert_eq!(unresolved(&found).len(), 1, "{line}: {found:?}");
+        assert_eq!(found.len(), 1, "{line}: {found:?}");
+    }
+    assert!(gx014_of(&generator("img.color = Color.clear;")).is_empty());
+    assert!(gx014_of(&generator("img.color = HudTokens.ColorInk;")).is_empty());
+}
+
+// frob:ticket 01M5HW48CZPQ5KW8E70F63DZXF
+// frob:tests crates/crunk-check/src/ugui.rs::UguiLiteralCheck
+#[test]
+fn named_literal_arguments_fire_instead_of_going_unresolved() {
+    let found = gx014_of(&generator("img.color = new Color(r: 1f, g: 0f, b: 0f);"));
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_ne!(found[0].severity, gob_rules::Severity::Unresolved);
+    assert!(unresolved(&found).is_empty());
+    let mixed = gx014_of(&generator("img.color = new Color(r: red, g: 0f, b: 0f);"));
+    assert_eq!(unresolved(&mixed).len(), 1, "{mixed:?}");
+}
