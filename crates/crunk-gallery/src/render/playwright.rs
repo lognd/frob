@@ -21,7 +21,7 @@ pub const SCRIPT: &str = include_str!("../../node/render.mjs");
 pub const REMEDY: &str = "npm install --save-dev playwright && npx playwright install chromium";
 
 /// Hidden directory inside the artifacts dir that holds the script and request files.
-const WORK_DIR: &str = ".crunk";
+pub(crate) const WORK_DIR: &str = ".crunk";
 
 /// Check that Node can resolve `playwright` from the project root.
 ///
@@ -56,7 +56,7 @@ pub(crate) fn probe(runner: &Runner, opts: &RenderOptions, root: &Path) -> Resul
 }
 
 /// The request document the script reads: the resolved web platform plus the state's script.
-fn request(
+pub(crate) fn request(
     spec: &DesignSpec,
     resolved: &Resolved<'_>,
     web: &WebRendererParams,
@@ -97,6 +97,7 @@ fn request(
         "network": state.network,
         "expect_url": state.expect_url,
         "output": target,
+        "axe_output": Value::Null,
     }))
 }
 
