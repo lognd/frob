@@ -1,0 +1,10 @@
+kind = "create"
+title = "Focus graph across scene-to-scene flows and screens"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-layout/**,crates/crunk-rules/**"]
+body = "found while working Q2ZC9QM: the flows half of the focus graph is not built; GX002-GX005 see one scene at a time."
+at = "2026-10-22T08:05:12Z"
+actor = "lognd"
+rev = 1
