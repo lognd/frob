@@ -2,7 +2,8 @@
 id = "01M5J931Y2JCF9J0XFVRP71BER"
 title = "Backfill the ledger text eol=lf pin on existing orphan ticket branches"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 reporter = "lognd"
