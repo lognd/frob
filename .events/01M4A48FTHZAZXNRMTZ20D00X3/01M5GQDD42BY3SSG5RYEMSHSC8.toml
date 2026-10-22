@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T02:35:31Z"
+digest = "d554b995ed555c8c91dbc8584957053a77e1b22edd39ee410e08ca0ebeb95227"
+exit_code = 0
+head = "01526950779fbebe2e68e7041371ec39c6a21e47"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6d88e2ef-c167-48ea-a862-cad4de43ef7c with nextest profile: default
+    Starting 1 test across 12 binaries (215 tests skipped)
+        PASS [   0.005s] gob-dev::ci_parity ci_node_env_is_the_one_that_fails_missing_node
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 215 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev ci_node_env_is_the_one_that_fails_missing_node"
+size = 559
+status = "measured"
+test_count = 1
+tests_digest = "e5f5131f43a43183681c17dde94ac3406b3213842a3dc9511ca866451aba6ad4"
+at = "2026-10-22T02:35:31Z"
+actor = "lognd"
+rev = 1

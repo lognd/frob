@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-07T02:49:39Z"
-updated = "2026-10-22T02:35:30Z"
+updated = "2026-10-22T02:35:31Z"
 scope = ["crates/gob-dev/**", ".github/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "the node-required env makes a missing node fail the TypeScript runner tests instead of skipping"
-bound = false
+bound = true
 +++
 
 found while working ~RNQ92ZK: the verb-level vitest and jest test skips with a named message when node is absent (node is absent on the quasar helper); cargo dev ci and ci.yml should install node and set FROB_REQUIRE_NODE_TESTS=1 like FROB_REQUIRE_PYTHON_TESTS (REQUIRE_PYTHON_TESTS_ENV in crates/gob-dev/src/ci.rs). A real-vitest end-to-end test (npm install of a pinned vitest) can follow.
