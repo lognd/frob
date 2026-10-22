@@ -2,13 +2,13 @@
 id = "01M48PC09SX0KFAM4B3V88AAXW"
 title = "gob-mdtest: section tests, multi-file cases and toml config blocks with inheritance"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-22T03:58:44Z"
+updated = "2026-10-22T03:58:45Z"
 scope = ["crates/gob-mdtest/**", "crates/frob-obligations/tests/**"]
 
 [[links]]
