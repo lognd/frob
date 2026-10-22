@@ -2,15 +2,18 @@
 //!
 //! The patch is applied to an in-memory copy, the result is re-validated by the file kind's own
 //! schema parser, and only then written (atomically). The report carries a unified diff and the
-//! findings of a fresh `crunk check` restricted to the objects the patch touched. Comments in the
-//! edited file are not preserved: the file is re-emitted from its parsed tree.
+//! findings of a fresh `crunk check` restricted to the objects the patch touched. The file is
+//! edited in place as a `toml_edit` document: only the keys and tables the patch changed are
+//! rewritten, so comments, spacing, key order and line endings elsewhere stay byte-identical.
 
 // frob:ticket 01M4CXRA570ABD65ZDFAFVVZ8Y
+// frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
 
 use std::path::Path;
 
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use indexmap::IndexMap;
 use serde::Serialize;
 
 use crate::PRODUCT;
@@ -294,11 +297,182 @@ fn validate(kind: &str, text: &str) -> Result<(), String> {
     }
 }
 
-/// Re-emit a tree as TOML, with arrays of tables written as `[[x]]` and tables as `[x]`.
-fn emit(doc: &Node) -> Result<String, String> {
-    let mut d = toml_edit::ser::to_document(doc).map_err(|e| e.to_string())?;
-    tabulate(d.as_table_mut());
-    Ok(d.to_string())
+/// The text of `before` with `patched` applied by editing only what differs; comments and layout
+/// of untouched keys survive. A file that does not parse as a TOML document is an error.
+// frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
+fn surgery(before: &str, patched: &Node) -> Result<String, String> {
+    let Node::Map(map) = patched else {
+        return Err("the patched document is not a table".to_owned());
+    };
+    let mut doc: toml_edit::DocumentMut = before.parse().map_err(|e| format!("{e}"))?;
+    sync_table(doc.as_table_mut(), map, false)?;
+    let text = doc.to_string();
+    // New lines are written with `\n`; keep a file that was all CRLF all CRLF.
+    let crlf =
+        before.contains("\r\n") && before.matches('\n').count() == before.matches("\r\n").count();
+    Ok(if crlf {
+        text.replace("\r\n", "\n").replace('\n', "\r\n")
+    } else {
+        text
+    })
+}
+
+/// A parsed item as a [`Node`]; `None` for a datetime, which the tree cannot hold.
+fn item_node(item: &toml_edit::Item) -> Option<Node> {
+    use toml_edit::Item;
+    match item {
+        Item::Value(v) => value_node(v),
+        Item::Table(t) => table_node(t),
+        Item::ArrayOfTables(a) => a
+            .iter()
+            .map(|t| table_node(t))
+            .collect::<Option<Vec<_>>>()
+            .map(Node::Arr),
+        Item::None => None,
+    }
+}
+
+/// A parsed value as a [`Node`].
+fn value_node(v: &toml_edit::Value) -> Option<Node> {
+    use toml_edit::Value;
+    match v {
+        Value::String(s) => Some(Node::Str(s.value().clone())),
+        Value::Integer(i) => Some(Node::Int(*i.value())),
+        Value::Float(f) => Some(Node::Float(*f.value())),
+        Value::Boolean(b) => Some(Node::Bool(*b.value())),
+        Value::Datetime(_) => None,
+        Value::Array(a) => a
+            .iter()
+            .map(value_node)
+            .collect::<Option<Vec<_>>>()
+            .map(Node::Arr),
+        Value::InlineTable(t) => table_node(t),
+    }
+}
+
+/// A table-like as a [`Node::Map`].
+fn table_node(t: &dyn toml_edit::TableLike) -> Option<Node> {
+    t.iter()
+        .map(|(k, v)| item_node(v).map(|n| (k.to_owned(), n)))
+        .collect::<Option<IndexMap<_, _>>>()
+        .map(Node::Map)
+}
+
+/// A fresh item for `node`; inside an inline table it is a value, elsewhere tables stay tables.
+fn build(node: &Node, inline: bool) -> Result<toml_edit::Item, String> {
+    let mut wrap = IndexMap::new();
+    wrap.insert("v", node);
+    let mut doc = toml_edit::ser::to_document(&wrap).map_err(|e| e.to_string())?;
+    tabulate(doc.as_table_mut());
+    let item = doc.as_table_mut().remove("v").unwrap_or_default();
+    Ok(if inline {
+        item.into_value().map_or_else(|i| i, toml_edit::Item::Value)
+    } else {
+        item
+    })
+}
+
+/// Make `table` hold exactly `new`, touching only entries that differ.
+fn sync_table(
+    table: &mut dyn toml_edit::TableLike,
+    new: &IndexMap<String, Node>,
+    inline: bool,
+) -> Result<(), String> {
+    let stale: Vec<String> = table
+        .iter()
+        .map(|(k, _)| k.to_owned())
+        .filter(|k| !new.contains_key(k))
+        .collect();
+    for k in stale {
+        tracing::debug!(key = %k, "edit: key removed");
+        table.remove(&k);
+    }
+    for (k, v) in new {
+        if let Some(item) = table.get_mut(k) {
+            sync_item(item, v)?;
+        } else {
+            tracing::debug!(key = %k, "edit: key added");
+            table.insert(k, build(v, inline)?);
+        }
+    }
+    Ok(())
+}
+
+/// Bring one existing item in line with `v`, recursing where the shapes still match.
+fn sync_item(item: &mut toml_edit::Item, v: &Node) -> Result<(), String> {
+    use toml_edit::{Item, Value};
+    if item_node(item).as_ref() == Some(v) {
+        return Ok(());
+    }
+    match (&mut *item, v) {
+        (Item::Table(t), Node::Map(m)) => return sync_table(t, m, false),
+        (Item::Value(Value::InlineTable(t)), Node::Map(m)) => return sync_table(t, m, true),
+        (Item::ArrayOfTables(a), Node::Arr(els))
+            if !els.is_empty() && els.iter().all(|e| matches!(e, Node::Map(_))) =>
+        {
+            return sync_aot(a, els);
+        }
+        _ => {}
+    }
+    tracing::debug!("edit: value replaced");
+    let decor = item.as_value().map(|old| old.decor().clone());
+    let mut fresh = build(v, false)?;
+    if let (Some(decor), Item::Value(value)) = (decor, &mut fresh) {
+        *value.decor_mut() = decor;
+    }
+    *item = fresh;
+    Ok(())
+}
+
+/// The `id` (else `name`) string of a table node.
+fn id_of(node: &Node) -> Option<&str> {
+    let Node::Map(m) = node else { return None };
+    match m.get("id").or_else(|| m.get("name")) {
+        Some(Node::Str(s)) => Some(s),
+        _ => None,
+    }
+}
+
+/// Re-sync an array of tables: unchanged elements are kept verbatim, same-id elements are edited
+/// in place, the rest are new; elements absent from `els` are dropped.
+fn sync_aot(a: &mut toml_edit::ArrayOfTables, els: &[Node]) -> Result<(), String> {
+    let mut old: Vec<Option<(toml_edit::Table, Option<Node>)>> = Vec::new();
+    while !a.is_empty() {
+        let t = a.remove(0);
+        let n = table_node(&t);
+        old.push(Some((t, n)));
+    }
+    let mut slots: Vec<Option<toml_edit::Table>> = els.iter().map(|_| None).collect();
+    let mut pending: Vec<usize> = Vec::new();
+    for (i, e) in els.iter().enumerate() {
+        let hit = old
+            .iter()
+            .position(|o| o.as_ref().is_some_and(|(_, n)| n.as_ref() == Some(e)));
+        match hit.and_then(|h| old[h].take()) {
+            Some((t, _)) => slots[i] = Some(t),
+            None => pending.push(i),
+        }
+    }
+    for i in pending {
+        let e = &els[i];
+        let hit = id_of(e).and_then(|id| {
+            old.iter().position(|o| {
+                o.as_ref()
+                    .is_some_and(|(_, n)| n.as_ref().and_then(id_of) == Some(id))
+            })
+        });
+        slots[i] = Some(match (hit.and_then(|h| old[h].take()), e) {
+            (Some((mut t, _)), Node::Map(m)) => {
+                sync_table(&mut t, m, false)?;
+                t
+            }
+            _ => build(e, false)?.into_table().unwrap_or_default(),
+        });
+    }
+    for t in slots.into_iter().flatten() {
+        a.push(t);
+    }
+    Ok(())
 }
 
 /// Turn inline tables and arrays of inline tables into standard tables, recursively.
@@ -336,7 +510,7 @@ fn plan(root: &Path, path: &Path, patch_path: &Path) -> Result<Plan, EditError> 
     let after = if patched == doc {
         before.clone()
     } else {
-        emit(&patched).map_err(EditError::Schema)?
+        surgery(&before, &patched).map_err(EditError::Schema)?
     };
     validate(kind, &after).map_err(EditError::Schema)?;
     tracing::debug!(

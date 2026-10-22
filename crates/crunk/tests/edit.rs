@@ -187,3 +187,79 @@ fn edit_refuses_files_outside_the_project_or_of_the_wrong_kind() {
         );
     }
 }
+
+const COMMENTED: &str = "# file header\nlocale = \"en\"   # the locale\n\n# first key\n[[key]]\nid = \"home.title\"\ntext   =   \"Hello\"  # greeting\nmax_chars = 10\n\n# second key\n[[key]]\nid = \"home.sub\"\ntext = \"A very long subtitle indeed\"\nmax_chars = 5 # tight\n";
+
+/// Write `text` as the content file and apply `patch_text`, returning (exit, resulting text).
+fn edit_text(text: &str, patch_text: &str) -> (i32, String) {
+    let dir = project();
+    std::fs::write(dir.path().join(REL), text).unwrap();
+    patch(dir.path(), patch_text);
+    let (code, _, _) = crunk(dir.path(), &["edit", REL, "--patch", "p.json"]);
+    (code, read(dir.path()))
+}
+
+// frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
+// frob:tests crates/crunk/src/edit.rs::Edit.run
+#[test]
+fn edit_one_key_keeps_every_comment_and_untouched_line_byte_identical() {
+    let patch_text = r#"[{"op":"replace","path":"/key/home.title/max_chars","value":12}]"#;
+    let (code, after) = edit_text(COMMENTED, patch_text);
+    assert_eq!(code, 0);
+    assert_eq!(after, COMMENTED.replace("max_chars = 10", "max_chars = 12"));
+
+    // A replaced value keeps its trailing comment and spacing.
+    let (_, after) = edit_text(
+        COMMENTED,
+        r#"[{"op":"replace","path":"/key/home.title/text","value":"Hi"}]"#,
+    );
+    assert_eq!(
+        after,
+        COMMENTED.replace("\"Hello\"  # greeting", "\"Hi\"  # greeting")
+    );
+
+    // Removing a key and removing a whole element leave the rest alone.
+    let (_, after) = edit_text(
+        COMMENTED,
+        r#"[{"op":"remove","path":"/key/home.sub/max_chars"}]"#,
+    );
+    assert_eq!(after, COMMENTED.replace("max_chars = 5 # tight\n", ""));
+    let (_, after) = edit_text(COMMENTED, r#"[{"op":"remove","path":"/key/home.sub"}]"#);
+    assert!(after.starts_with("# file header\nlocale = \"en\"   # the locale\n"));
+    assert!(after.contains("text   =   \"Hello\"  # greeting"));
+    assert!(!after.contains("home.sub"));
+
+    // An idempotent no-op edit is byte-identical, and CRLF files stay CRLF.
+    let (_, after) = edit_text(
+        COMMENTED,
+        r#"[{"op":"replace","path":"/key/home.title/max_chars","value":10}]"#,
+    );
+    assert_eq!(after, COMMENTED);
+    let crlf = COMMENTED.replace('\n', "\r\n");
+    let (code, after) = edit_text(&crlf, patch_text);
+    assert_eq!(code, 0);
+    assert_eq!(after, crlf.replace("max_chars = 10", "max_chars = 12"));
+}
+
+// frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
+// frob:tests crates/crunk/src/edit.rs::Edit.run
+#[test]
+fn edit_added_keys_and_tables_keep_neighbouring_comments_and_malformed_files_are_refused() {
+    let sparse = COMMENTED.replace("max_chars = 10\n", "");
+    let (code, after) = edit_text(
+        &sparse,
+        r#"[{"op":"add","path":"/key/home.title/max_chars","value":7},{"op":"add","path":"/key/-","value":{"id":"home.new","text":"New","max_chars":3}}]"#,
+    );
+    assert_eq!(code, 0, "{after}");
+    for line in sparse.lines() {
+        assert!(after.contains(line), "lost {line:?} in {after}");
+    }
+    assert!(after.contains("max_chars = 7"), "{after}");
+    assert!(after.contains("id = \"home.new\""), "{after}");
+
+    // A malformed file is refused and left exactly as it was.
+    let bad = "# c\nlocale = \n[[key]\n";
+    let (code, after) = edit_text(bad, r#"[{"op":"add","path":"/locale","value":"fr"}]"#);
+    assert_ne!(code, 0);
+    assert_eq!(after, bad);
+}
