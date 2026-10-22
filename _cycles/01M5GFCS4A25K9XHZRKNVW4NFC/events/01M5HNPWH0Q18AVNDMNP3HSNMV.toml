@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4D94YT06MB8AJ41XCC940D3"
+committed = 280
+text = "push toward 0.533.0"
+capacity = 177
+at = "2026-10-22T11:24:58Z"
+actor = "lognd"
+rev = 1
