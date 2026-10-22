@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T08:20:43Z"
+digest = "4f3d36ecc025027fdc4c8bf5b413f3965ef52ab7599e78c016bbd7aa2dc8e5fc"
+exit_code = 0
+head = "e165d7dbe94819c15f69a8b7802bcbbc00c3df84"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 19296ad1-cbe1-4e38-aefe-860f4c265332 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.004s] crunk-gallery::visual build_beyond_threshold_fires_vis001_with_the_diff_path
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery --test visual build_beyond_threshold_fires_vis001_with_the_diff_path"
+size = 563
+status = "measured"
+test_count = 1
+tests_digest = "fae03aab2ac421b9385a9a6a252c0f3b1418f60e38d17f541b0e0b629c31f82d"
+at = "2026-10-22T08:20:43Z"
+actor = "lognd"
+rev = 1
