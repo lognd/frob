@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-08T04:53:42Z"
-updated = "2026-10-22T06:08:15Z"
+updated = "2026-10-22T06:13:33Z"
 scope = ["changelog.d/**", "crates/crunk/**", "crates/crunk-spec/**", "docs/crunk/README.md"]
 
 [[acceptance]]
