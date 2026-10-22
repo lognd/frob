@@ -270,6 +270,7 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `capacity_k` | `f64` | `0.5` | yes | Safety factor k in `capacity = rolling_mean - k * stddev` for cycle commitment; 0.5 trades a little throughput for commitments that are usually met. |
+| `changelog_exempt_types` | `Vec<TicketType>` | `["epic", "docs"]` | yes | Ticket types the `changelog_fragment` requirement (close guard and REL003) does not ask for a fragment: an epic is closed by its children and a docs change rarely has a user-visible effect, so both default to exempt; list `[]` to require a fragment for every type, and a ticket of an exempt type that carries a fragment still has it validated. |
 | `cycle_days` | `u32` | `7` | yes | Days per cycle when a cycle is created without an explicit end; one week is the usual scrumban review cadence. |
 | `done_requires` | `Vec<DoneRequirement>` | `["criteria_evidenced", "no_open_children", "changelog_fragment"]` | yes | Definition of done: predicates checked on close and land; the default lists the three evaluable ones (`criteria_evidenced`, `no_open_children`, `changelog_fragment`); `docs_touched_or_excepted` and `objective_target_met` exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice. |
 | `max_story_points` | `u32` | `8` | yes | Largest story in points that PM006 accepts; 8 keeps a story finishable within a cycle, 0 turns the check off. |

@@ -685,6 +685,10 @@ fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope) -> Option<Finding>
         tracing::debug!(handle = %scope.handle, "REL003: ticket already done");
         return None;
     }
+    if frob_release::rel003::type_exempt(&snap.core.root, view.summary.ty) {
+        tracing::debug!(handle = %scope.handle, ty = view.summary.ty.as_str(), "REL003: ticket type is exempt");
+        return None;
+    }
     if snap.inputs.changelog_exempt {
         tracing::info!(handle = %scope.handle, "REL003: exempt by the caller (--no-changelog)");
         return None;

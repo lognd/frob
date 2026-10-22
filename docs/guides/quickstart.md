@@ -131,7 +131,8 @@ named in `[evidence] allowed_tools` (by default `cargo`, `git`, `pytest`, `vites
 ## 7. Add the changelog fragment and check
 
 The default definition of done (`[pm] done_requires`) wants a changelog
-fragment per ticket (rule REL003):
+fragment per ticket (rule REL003), except epics and docs tickets
+(`[pm] changelog_exempt_types`):
 
 ```sh
 frob ticket fragment ~Q5FEE2P

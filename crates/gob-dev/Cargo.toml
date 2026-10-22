@@ -38,6 +38,7 @@ gob-path = { path = "../gob-path" }
 gob-plan = { path = "../gob-plan" }
 gob-mdtest = { path = "../gob-mdtest" }
 gob-rules = { path = "../gob-rules" }
+gob-symbols = { path = "../gob-symbols" }
 grimble-check = { path = "../grimble-check" }
 jiff = "0.2"
 serde = { version = "1", features = ["derive"] }

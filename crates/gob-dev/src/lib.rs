@@ -43,6 +43,8 @@ pub enum Kind {
     Config,
     /// Per-product CLI verb tables.
     Cli,
+    /// The languages page: adapter extensions and capability matrices.
+    Languages,
     /// JSON schemas.
     Schemas,
     /// Parser test inputs extracted from `test_ok` and `test_err` source comments.
@@ -130,6 +132,10 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
     }
     if all || kind == Kind::Cli {
         files.extend(render::cli::generate());
+    }
+    if all || kind == Kind::Languages {
+        // frob:ticket 01M48FXFZMWWZQ233HYSPZ6PP9
+        files.extend(render::languages::generate());
     }
     if all || kind == Kind::Schemas {
         files.extend(render::schemas::generate());

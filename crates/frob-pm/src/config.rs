@@ -11,6 +11,7 @@ use std::fmt;
 use std::path::Path;
 use std::str::FromStr;
 
+use frob_ledger::model::TicketType;
 use gob_config::{ConfigError, ConfigTable};
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -146,6 +147,9 @@ pub struct PmTable {
     /// Definition of done: predicates checked on close and land; the default lists the three evaluable ones (`criteria_evidenced`, `no_open_children`, `changelog_fragment`); `docs_touched_or_excepted` and `objective_target_met` exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice.
     #[config(default = DoneRequirement::DEFAULT.to_vec(), enforcement)]
     pub done_requires: Vec<DoneRequirement>,
+    /// Ticket types the `changelog_fragment` requirement (close guard and REL003) does not ask for a fragment: an epic is closed by its children and a docs change rarely has a user-visible effect, so both default to exempt; list `[]` to require a fragment for every type, and a ticket of an exempt type that carries a fragment still has it validated.
+    #[config(default = vec![TicketType::Epic, TicketType::Docs], enforcement)]
+    pub changelog_exempt_types: Vec<TicketType>,
     /// Days per cycle when a cycle is created without an explicit end; one week is the usual scrumban review cadence.
     #[config(default = 7, enforcement)]
     pub cycle_days: u32,
@@ -161,6 +165,14 @@ pub struct PmTable {
     /// Largest story in points that PM006 accepts; 8 keeps a story finishable within a cycle, 0 turns the check off.
     #[config(default = 8, enforcement)]
     pub max_story_points: u32,
+}
+
+impl PmTable {
+    /// Whether tickets of `ty` are exempt from `changelog_fragment` (`[pm] changelog_exempt_types`).
+    #[must_use]
+    pub fn changelog_exempt(&self, ty: TicketType) -> bool {
+        self.changelog_exempt_types.contains(&ty)
+    }
 }
 
 /// Work-in-progress limits (`[pm.wip]`); 0 turns a limit off.

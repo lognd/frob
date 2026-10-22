@@ -90,6 +90,8 @@ pub struct DoneGuard {
     /// Blockers (`handle (title)`) whose category is not `done`.
     open_blockers: Vec<String>,
     fragment: FragmentState,
+    /// Ticket types `[pm] changelog_exempt_types` does not ask for a fragment.
+    exempt_types: Vec<TicketType>,
     bypass: Option<String>,
     /// A `changelog-exempt` event already on the ticket.
     recorded_exemption: bool,
@@ -129,12 +131,13 @@ impl DoneGuard {
         let fragment = fragment_state(root, id, &view.summary.handle);
         let recorded_exemption =
             frob_ledger::event::changelog_exemption(&ledger.events(id)?).is_some();
-        tracing::debug!(requires = ?pm.pm.done_requires, ?fragment, recorded_exemption, "done guard loaded");
+        tracing::debug!(requires = ?pm.pm.done_requires, exempt = ?pm.pm.changelog_exempt_types, ?fragment, recorded_exemption, "done guard loaded");
         Ok(Self {
             requires: pm.pm.done_requires,
             open_children,
             open_blockers,
             fragment,
+            exempt_types: pm.pm.changelog_exempt_types,
             bypass: None,
             recorded_exemption,
             no_changelog: None,
@@ -316,8 +319,13 @@ impl DoneGuard {
         if self.no_changelog.is_some() || self.recorded_exemption {
             return Ok(());
         }
+        let ty = cx.ticket.front.ty;
         match &self.fragment {
             FragmentState::Valid => Ok(()),
+            FragmentState::Missing if self.exempt_types.contains(&ty) => {
+                tracing::info!(handle = %cx.handle, ty = ty.as_str(), "changelog_fragment: type is exempt, no fragment asked");
+                Ok(())
+            }
             FragmentState::Missing => Err(GuardFailure {
                 code: CODE_FRAGMENT.to_owned(),
                 message: format!(
@@ -619,5 +627,100 @@ mod tests {
         assert_eq!(f.code, CODE_BLOCKERS);
         assert!(f.message.contains(&upstream.handle), "{}", f.message);
         assert!(guard.check(&cx(Some(Outcome::WontFix))).is_ok());
+    }
+
+    /// A repository at `p` with `frob.toml` = `toml`, a ledger over it and one ticket of `ty`.
+    fn repo_with(p: &Path, toml: &str, ty: TicketType) -> (Ledger, frob_ledger::ledger::Applied) {
+        git(p, &["init", "-q"]);
+        git(p, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+        git(p, &["config", "user.name", "T"]);
+        git(p, &["config", "user.email", "t@example.com"]);
+        git(p, &["commit", "-q", "--allow-empty", "-m", "base"]);
+        std::fs::write(p.join("frob.toml"), toml).expect("frob.toml");
+        let ledger = Ledger::open(
+            gob_git::Repo::discover(p).expect("repo"),
+            LedgerConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
+        );
+        let made = ledger
+            .new_ticket(NewTicket::new("Subject", ty))
+            .expect("ticket");
+        (ledger, made)
+    }
+
+    /// The verdict of the `changelog_fragment` requirement alone for a fresh ticket of `ty` under `toml`, with `fragment` written to `changelog.d/<ULID>.changed.md` first when given.
+    fn fragment_verdict(
+        toml: &str,
+        ty: TicketType,
+        fragment: Option<&str>,
+    ) -> Result<(), GuardFailure> {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let p = dir.path();
+        let (ledger, made) = repo_with(p, toml, ty);
+        let id = made.ticket.front.id;
+        if let Some(body) = fragment {
+            std::fs::create_dir_all(p.join("changelog.d")).expect("mkdir");
+            std::fs::write(p.join(format!("changelog.d/{id}.changed.md")), body).expect("fragment");
+        }
+        let guard = DoneGuard::for_ticket(&ledger, id, p).expect("guard");
+        let cx = CloseContext {
+            ticket: &made.ticket,
+            handle: &made.handle,
+            outcome: Some(Outcome::Done),
+        };
+        guard.fragment(&cx)
+    }
+
+    const FRAGMENT_ONLY: &str = "[pm]\ndone_requires = [\"changelog_fragment\"]\n";
+
+    // frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+    #[test]
+    fn epic_and_docs_tickets_close_without_a_fragment_by_default() {
+        for ty in [TicketType::Epic, TicketType::Docs] {
+            assert!(
+                fragment_verdict(FRAGMENT_ONLY, ty, None).is_ok(),
+                "{ty:?} is exempt by default"
+            );
+        }
+    }
+
+    // frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+    #[test]
+    fn other_types_still_need_a_fragment_and_unknown_defaults_stay_strict() {
+        for ty in [
+            TicketType::Task,
+            TicketType::Bug,
+            TicketType::Chore,
+            TicketType::Custom,
+        ] {
+            let f = fragment_verdict(FRAGMENT_ONLY, ty, None).expect_err("refused");
+            assert_eq!(f.code, CODE_FRAGMENT, "{ty:?}");
+        }
+    }
+
+    // frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+    #[test]
+    fn a_docs_ticket_opts_in_by_emptying_the_exempt_list_or_writing_a_fragment() {
+        let strict =
+            "[pm]\ndone_requires = [\"changelog_fragment\"]\nchangelog_exempt_types = []\n";
+        let f = fragment_verdict(strict, TicketType::Docs, None).expect_err("opted in");
+        assert_eq!(f.code, CODE_FRAGMENT);
+        assert!(fragment_verdict(strict, TicketType::Docs, Some("Documented a thing.\n")).is_ok());
+        // An exempt type that carries a fragment still has it validated.
+        let bad = fragment_verdict(FRAGMENT_ONLY, TicketType::Docs, Some("caf\u{e9}\n"));
+        assert_eq!(bad.expect_err("invalid").code, CODE_FRAGMENT);
+        assert!(fragment_verdict(FRAGMENT_ONLY, TicketType::Docs, Some("Fine.\n")).is_ok());
+    }
+
+    // frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+    #[test]
+    fn the_exempt_list_is_configurable_to_other_types() {
+        let cfg = "[pm]\ndone_requires = [\"changelog_fragment\"]\nchangelog_exempt_types = [\"chore\"]\n";
+        assert!(fragment_verdict(cfg, TicketType::Chore, None).is_ok());
+        assert!(fragment_verdict(cfg, TicketType::Docs, None).is_err());
     }
 }

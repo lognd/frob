@@ -161,7 +161,7 @@ nobody read would defeat the point of the fragment. A change with no user-visibl
 close` and `land` accept `--no-changelog --reason TEXT` (both required together, no
 exemption by file type), recorded as an audited `changelog-exempt` event that satisfies
 `changelog_fragment` and REL003 for that ticket; `release status` lists the exempted
-tickets of the milestone so a reviewer sees what shipped without a note. A refusal on
+tickets of the milestone so a reviewer sees what shipped without a note. Epic and docs tickets need no fragment by default (`[pm] changelog_exempt_types`, ~YYJGRFJ; `[]` opts every type in, and a fragment they do carry is still validated). A refusal on
 `changelog_fragment` names both `frob ticket fragment` and `--no-changelog --reason`.
 git-cliff and release-plz are not used:
 commit history is not the user-facing voice.

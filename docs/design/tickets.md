@@ -669,7 +669,15 @@ message, and `check --ticket` reports the same before land. A change with no
 user-visible effect (a design document, an internal refactor, a test-only
 change) is closed with `--no-changelog --reason TEXT` instead (~Y8ZYBDW): both
 flags are required together on `ticket close` and `land`, there is no
-exemption by file type, and the person or agent states why. The reason is
+exemption by file type, and the person or agent states why. The exemption
+by ticket type is `[pm] changelog_exempt_types` (~YYJGRFJ), default `["epic", "docs"]`:
+an epic is closed by its children and a docs change rarely has a user-visible
+effect, so neither is asked for a fragment (the close guard and the per-ticket
+REL003 check skip a missing one); `[]` requires a fragment for every type, a
+fragment an exempt ticket does carry is still validated, and other and custom
+types stay strict. Measured evidence is likewise not asked of epic, docs, chore
+and custom tickets (the evidence guard's code-changing list), so a docs ticket
+closes with neither fragment nor evidence unless the repository opts in. The reason is
 recorded as a `changelog-exempt` event with the actor, written before the close so a crash cannot leave a closed ticket without its record (a refused close leaves the event on the open ticket; a retry with the same reason reuses it), satisfies
 `changelog_fragment` and REL003 for that ticket (`check --ticket` included, and
 `land` passes the exemption to its own check), and is shown by `ticket show`,
