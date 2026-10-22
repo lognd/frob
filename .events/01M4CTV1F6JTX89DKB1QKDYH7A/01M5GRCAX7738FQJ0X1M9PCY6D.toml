@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [6]
+captured_at = "2026-10-22T02:51:53Z"
+digest = "be3146ba023171d137ba2243ecaf4a2ceb275120e833f7f6140e2769da2a7916"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1e48155b-bc14-4cbe-bdac-39f3e5905c94 with nextest profile: default
+    Starting 1 test across 1 binary (31 tests skipped)
+        PASS [   0.130s] frob-worktree::work a_worktree_dir_inside_the_repository_is_created_there_and_git_ignored_once
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.130s] 1 test run: 1 passed, 31 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree --test work a_worktree_dir_inside_the_repository"
+size = 638
+status = "measured"
+test_count = 1
+tests_digest = "140da1f4cdf5bc592db374d324cdc10c8ba4940314850224c659f149dcd52d24"
+at = "2026-10-22T02:51:53Z"
+actor = "lognd"
+rev = 1
