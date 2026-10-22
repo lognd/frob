@@ -2,7 +2,8 @@
 id = "01M5HQMX1NFZNV3R465V2DWJA2"
 title = "Update grl-spec and grimble docs: needs is capabilities, reads is side relations"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
