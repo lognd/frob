@@ -2,13 +2,13 @@
 id = "01M4CXSD8DEYB69E5J7Q1ABGXK"
 title = "uGUI audit: prefab generator inputs must use token constants; read-only prefab YAML literal audit"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T04:54:16Z"
-updated = "2026-10-08T04:54:16Z"
+updated = "2026-10-22T13:03:22Z"
 scope = ["changelog.d/**", "crates/crunk-check/**"]
 
 [[acceptance]]
