@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [8]
+captured_at = "2026-10-22T02:55:50Z"
+digest = "c7a4d847f1a54c5cb94e393b2171f179bc3040907de268871b57360635e76dd0"
+exit_code = 0
+head = "680e526f40f11e1b9e9920e9ef8fb448ccd17cce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 738116ab-00bb-4a9c-99fe-43fa0b395e11 with nextest profile: default
+    Starting 1 test across 1 binary (12 tests skipped)
+        PASS [   0.004s] gob-mdtest::panics garbage_that_panics_errors_or_is_silent_is_reported_per_cell
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 12 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest --test panics garbage_that"
+size = 568
+status = "measured"
+test_count = 1
+tests_digest = "9aa419170040a9e61d45e2c143a76f67b2d90224796d80f564f5b54a8edadd6d"
+at = "2026-10-22T02:55:50Z"
+actor = "lognd"
+rev = 1

@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-22T02:55:49Z"
+updated = "2026-10-22T02:55:50Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
@@ -41,7 +41,7 @@ bound = true
 
 [[acceptance]]
 text = "check_garbage reports panics, errors and silence per cell and passes Unresolved or NotApplicable"
-bound = false
+bound = true
 +++
 
 Wrap each case in catch_unwind, attribute a panic to its markdown line, and support `<!-- expect-panic: substring -->` with the inverse failure when no panic happens (ty mdtest). Source: notes/research/rule-testing.md (D103).
