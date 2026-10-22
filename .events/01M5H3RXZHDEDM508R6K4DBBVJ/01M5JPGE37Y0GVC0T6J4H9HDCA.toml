@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T20:55:29Z"
+digest = "70503dc7aee766c0f46fc5d52de069d83250b2ba1ac57671aeef159073226880"
+exit_code = 0
+head = "d50dcfdd2c4554b091bca6c472bc0faaf629bba5"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ac391adb-3a22-4c3b-ae80-c696a6e1c459 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.016s] crunk::extract extract_token_promotes_a_length_and_rewrites_its_uses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test extract extract_token_promotes_a_length"
+size = 1954
+status = "measured"
+test_count = 1
+tests_digest = "c3b6048632855da14ece13bdd855db333f093bc61aae60b58045464ed4fd81e5"
+at = "2026-10-22T20:55:29Z"
+actor = "lognd"
+rev = 1

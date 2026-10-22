@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:11:32Z"
-updated = "2026-10-22T20:55:18Z"
+updated = "2026-10-22T20:55:29Z"
 scope = ["crates/crunk/src/extract.rs", "crates/crunk/tests/extract.rs", "docs/crunk/README.md", "docs/reference/cli/crunk.md"]
 
 [[acceptance]]
 text = "Given a length literal, when crunk extract-token runs, then it is promoted to a token and references rewritten"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a duration literal, when crunk extract-token runs, then it is promoted likewise"
