@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:04:18Z"
-updated = "2026-10-22T14:08:26Z"
+updated = "2026-10-22T14:08:35Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/gob-config/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-check/src/product.rs", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Given a story with no entered points whose subtasks have 2, 2 and 3 points, when frob cycle assign runs on it, then it is accepted with derived points 7 shown as derived, and the cycle commitment counts 7 once (leaves only, never parent plus children)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = 'Given [pm] point_scale = "integer", when a ticket is pointed 4, then it is accepted; with the default fibonacci scale 4 is refused as today'

@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T14:08:35Z"
+digest = "63392d454c853ea144fa5bc0fc2c449874fc9e1374a9b79d6b5347660f200280"
+exit_code = 0
+head = "2059d25c7d8f9d4438ac98521263834046d23494"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a6242d53-f02a-4373-914f-5b1d74503b26 with nextest profile: default
+    Starting 1 test across 1 binary (55 tests skipped)
+        PASS [   0.004s] frob-pm cycle::points::tests::story_with_pointed_subtasks_assigns_with_derived_points_counted_once
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 55 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm --lib story_with_pointed_subtasks"
+size = 711
+status = "measured"
+test_count = 1
+tests_digest = "41e892e418a1421ebe90d52a0cebb02426f9546b25c5860054ff68d6fdcaa92f"
+at = "2026-10-22T14:08:35Z"
+actor = "lognd"
+rev = 1
