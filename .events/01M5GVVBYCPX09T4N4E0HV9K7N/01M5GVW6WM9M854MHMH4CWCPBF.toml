@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T03:53:30Z"
+digest = "7879beebe36cea2754909a4642e534719356ffe69f4d468ed4bdf9b27e6ebfc4"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f8b5a7df-d1a4-4477-a983-f10cd70ad498 with nextest profile: default
+    Starting 5 tests across 2 binaries (143 tests skipped)
+        PASS [   0.013s] frob-release::it dev_workflow::every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permissions
+        PASS [   0.016s] frob-release::it dev_workflow::nothing_is_published_to_pypi_or_crates_io
+        PASS [   0.018s] frob-release::it dev_workflow::dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job
+        PASS [   0.019s] frob-release::it dev_workflow::assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones
+        PASS [   0.021s] frob-release::it dev_workflow::both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 5 tests run: 5 passed, 143 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release dev_workflow"
+size = 1080
+status = "measured"
+test_count = 5
+tests_digest = "8e9dffd00e85ac38838c0ce2b9160fc9080c2853ed15940612158d98f950a785"
+at = "2026-10-22T03:53:30Z"
+actor = "lognd"
+rev = 1

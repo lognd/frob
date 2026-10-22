@@ -7,12 +7,12 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:53:03Z"
-updated = "2026-10-22T03:53:06Z"
+updated = "2026-10-22T03:53:30Z"
 scope = ["crates/frob-release/tests/it/dev_workflow.rs"]
 
 [[acceptance]]
 text = "frob-release dev_workflow workflow test passes against the current ci.yml"
-bound = false
+bound = true
 +++
 
 dev-artifacts and dev-publish need every always-run test job; the path-scoped docs-only job is skipped on code pushes (and a skipped need skips its dependants) so it joins crunk and crunk-node as a scoped job
