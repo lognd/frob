@@ -30,7 +30,7 @@ bound = true
 
 [[acceptance]]
 text = "Alternatives of plain kind words lower to an any-node find with an or of kind tests"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "End to end: a python ratio rule runs its examples correctly, including zero counts and zero or negative ratios"
