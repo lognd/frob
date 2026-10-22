@@ -1,0 +1,10 @@
+kind = "create"
+title = "Orphan ticket branch .gitattributes gets no tickets eol=lf pin under core.autocrlf"
+type = "task"
+category = "todo"
+priority = "low"
+scope = ["crates/frob-ledger/**", "changelog.d/**"]
+body = "Follow-up of GEKVBBH: the ticket branch .gitattributes is generated in crates/frob-ledger/src/layout.rs and is not pinned to eol=lf when core.autocrlf=true."
+at = "2026-10-22T14:03:23Z"
+actor = "lognd"
+rev = 1
