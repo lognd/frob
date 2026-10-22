@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [8]
+captured_at = "2026-10-22T00:56:03Z"
+digest = "c385422bc4384ff2795648de40109f95d24616ba2953dccf0509f815b3aa70be"
+exit_code = 0
+head = "f6e297417898a5f2886fe220c6ca2ab84de2816f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 137bf0b1-e152-4bad-9515-10cfa7b1f6a4 with nextest profile: default
+    Starting 1 test across 8 binaries (99 tests skipped)
+        PASS [   0.006s] gob-directives::fix placeholder_fix_waits_for_a_higher_tier
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 99 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives placeholder_fix"
+size = 550
+status = "measured"
+test_count = 1
+tests_digest = "6ddd14ab776bd95beaa9b73134d90949a8988a7daae3527b68fb85f96e562501"
+at = "2026-10-22T00:56:03Z"
+actor = "lognd"
+rev = 1
