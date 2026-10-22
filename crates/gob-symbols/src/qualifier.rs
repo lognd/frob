@@ -7,8 +7,10 @@
 //! the call could still be. Soundness: a qualifier only ever narrows by facts
 //! the syntax proves; anything it cannot prove stays [`Admit::Maybe`].
 
+use serde::{Deserialize, Serialize};
+
 /// What an unresolved call says about its callee.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CallQualifier {
     /// A path call (`Type::new`, `module::f`): the last qualifying segment, `Self` and imports resolved.
     Path(String),

@@ -411,14 +411,41 @@ fn missing_on_branch_ledger<'a>(ids: &[&'a str], ledger: &Ledger) -> Vec<&'a str
         .collect()
 }
 
+// frob:ticket 01M4FDQ3841JN891PHV248NC9A
+/// The `ids` not present at the `fallback` base: a stacked branch's lease-start commit predates
+/// tickets committed on the default base, so those are not judged against the lease base.
+fn unknown_on_fallback<'a>(ids: &[&'a str], fallback: &str, ledger: &Ledger) -> Vec<&'a str> {
+    ids.iter()
+        .copied()
+        .filter(|raw| {
+            let known = raw.parse::<TicketId>().is_ok()
+                && ledger.ticket_exists_at(fallback, raw).unwrap_or(false);
+            if known {
+                tracing::debug!(
+                    ticket = raw,
+                    fallback,
+                    "TICK002: ticket resolved on the default base"
+                );
+            }
+            !known
+        })
+        .collect()
+}
+
 // frob:ticket 01M413V8CDKKBSBV8JDV92VDGB
+// frob:ticket 01M4FDQ3841JN891PHV248NC9A
 /// `SCOPE001` (diff against `base` versus the lease) and `TICK002` (referenced tickets on `base`).
+///
+/// `base` is the effective base (explicit, else the lease-start commit, else `fallback`). When it
+/// does not resolve (rebased or collected away) the `fallback` base is used instead; tickets that
+/// are absent at a lease-start `base` but present at `fallback` are not reported by `TICK002`.
 ///
 /// `diff` receives the paths of the branch diff (the set SCOPE001 judged) when it could be computed.
 pub(crate) fn ticket_rules(
     snap: &Snapshot<Frob>,
     scope: &TicketScope,
     base: &str,
+    fallback: &str,
     diff: &mut Option<BTreeSet<String>>,
 ) -> Vec<Finding> {
     let shared = &scope.shared_files;
@@ -437,6 +464,16 @@ pub(crate) fn ticket_rules(
                 unresolved(id_of::<frob_ledger::rules::tick002::Tick002>(), msg),
             ];
         }
+    };
+    let base = if base != fallback && repo.rev_parse(base).is_err() {
+        tracing::warn!(
+            base,
+            fallback,
+            "lease base does not resolve; using the default base"
+        );
+        fallback
+    } else {
+        base
     };
     if let Err(err) = repo.rev_parse(base) {
         tracing::warn!(base, %err, "base ref does not resolve");
@@ -483,6 +520,11 @@ pub(crate) fn ticket_rules(
     }
     let ids: Vec<&str> = ids.into_iter().collect();
     let ids = missing_on_branch_ledger(&ids, &state.ledger);
+    let ids = if base == fallback {
+        ids
+    } else {
+        unknown_on_fallback(&ids, fallback, &state.ledger)
+    };
     match frob_ledger::tick::tick002(&ids, base, &state.ledger) {
         Ok(f) => out.extend(f),
         Err(err) => out.push(unresolved(

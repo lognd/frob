@@ -108,6 +108,13 @@ fn is_relative(spec: &str) -> bool {
 }
 
 impl TsIndex {
+    /// Feeds the tables project files shape (bare specifiers, use bindings, import edges) into `h`.
+    pub(super) fn feed_deps(&self, h: &mut blake3::Hasher) {
+        super::linkcache::feed_sorted(h, "ts.bare", &self.bare);
+        super::linkcache::feed_sorted(h, "ts.uses", &self.uses);
+        h.update(format!("{:?}", self.imports).as_bytes());
+    }
+
     /// Indexes the TypeScript files in `files` against the node table of `g`, placing bare specifiers with `deps`.
     pub(super) fn build(
         g: &SymbolGraph,

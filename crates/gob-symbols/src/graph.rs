@@ -12,6 +12,7 @@ use petgraph::Direction;
 use petgraph::graph::{DiGraph, EdgeIndex, NodeIndex};
 use petgraph::visit::EdgeRef;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::adapter::{Fidelity, ParseStatus};
 use crate::crates::CrateDeps;
@@ -27,18 +28,20 @@ use crate::symref::{Symref, Target, split_qual};
 
 // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
 mod csharp;
+mod linkcache;
 mod python;
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 mod typescript;
 
 use csharp::CsIndex;
+pub use linkcache::{InputsHasher, LinkCache};
 
 use crate::types::TypeFacts;
 use python::{PyIndex, is_python};
 use typescript::{TsIndex, is_ts};
 
 /// Kind of a graph edge.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum EdgeKind {
     /// Parent to child (file or container to member).
     Contains,
@@ -66,7 +69,7 @@ struct Edge {
 }
 
 /// Why a reference has no known target (an `Unknown` edge).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum GapReason {
     /// No candidate in the crate: external or undeclared name.
     Unbound,
@@ -83,7 +86,7 @@ pub enum GapReason {
 }
 
 /// One edge with its resolution status; `to` is `None` for an `Unknown` edge.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StatusEdge {
     /// The referring symbol (a section or file for links).
     pub from: Symref,
@@ -92,6 +95,7 @@ pub struct StatusEdge {
     /// Edge kind (never `Contains`).
     pub kind: EdgeKind,
     /// Must, May or Unknown.
+    #[serde(with = "linkcache::status_serde")]
     pub status: Status,
     /// The spelled callee name or link destination (for `Unknown` edges).
     pub name: Option<String>,
@@ -143,7 +147,7 @@ impl ReachSet {
 }
 
 /// A call after name resolution against the crate's symbols.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CallEdge {
     /// Exactly one candidate in the crate.
     Resolved {
@@ -764,18 +768,18 @@ struct CallSink {
 impl SymbolGraph {
     /// Builds the graph from per-file results (any order), without crate manifests: calls resolve within a crate only.
     pub fn from_files(files: Vec<FileSymbols>) -> Self {
-        Self::build(files, None, TypeFacts::default())
+        Self::build(files, None, TypeFacts::default(), None)
     }
 
     /// Builds the graph like [`Self::from_files`], letting `facts` decide how far Python annotations resolve calls.
     pub fn from_files_typed(files: Vec<FileSymbols>, facts: TypeFacts) -> Self {
-        Self::build(files, None, facts)
+        Self::build(files, None, facts, None)
     }
 
     /// Builds the graph like [`Self::from_files`], resolving path calls across workspace crates
     /// through `use` imports and the dependency closure read by `deps`.
     pub fn from_files_with_deps(files: Vec<FileSymbols>, deps: &mut CrateDeps) -> Self {
-        Self::build(files, Some(deps), TypeFacts::default())
+        Self::build(files, Some(deps), TypeFacts::default(), None)
     }
 
     /// Builds the graph like [`Self::from_files_with_deps`] with checker-derived `facts` weighting Python annotations.
@@ -785,10 +789,27 @@ impl SymbolGraph {
         deps: &mut CrateDeps,
         facts: TypeFacts,
     ) -> Self {
-        Self::build(files, Some(deps), facts)
+        Self::build(files, Some(deps), facts, None)
     }
 
-    fn build(mut files: Vec<FileSymbols>, deps: Option<&mut CrateDeps>, facts: TypeFacts) -> Self {
+    /// Builds the graph like [`Self::from_files_with_deps_typed`], reusing and refreshing the linked
+    /// call resolution kept in `link_cache` (a hit skips resolving every call site).
+    // frob:ticket 01M4D6NHS19AGZS6NV6B077GY9
+    pub fn from_files_with_deps_cached(
+        files: Vec<FileSymbols>,
+        deps: &mut CrateDeps,
+        facts: TypeFacts,
+        link_cache: &LinkCache<'_>,
+    ) -> Self {
+        Self::build(files, Some(deps), facts, Some(link_cache))
+    }
+
+    fn build(
+        mut files: Vec<FileSymbols>,
+        deps: Option<&mut CrateDeps>,
+        facts: TypeFacts,
+        link_cache: Option<&LinkCache<'_>>,
+    ) -> Self {
         let t = std::time::Instant::now();
         let lap = |phase: &str| {
             tracing::debug!(
@@ -818,7 +839,7 @@ impl SymbolGraph {
         g.link_typescript_imports(&idx.ts);
         g.link_reexports(&files, &idx);
         lap("imports");
-        g.link_calls(&files, &idx);
+        g.link_calls(&files, &idx, link_cache);
         lap("calls");
         g.link_refs(&files, &idx);
         lap("refs");
@@ -2085,8 +2106,26 @@ impl SymbolGraph {
     /// Resolution reads only the graph's `Contains` edges and the index, never what the merge
     /// adds, so the result equals a sequential pass; `par_iter().map().collect()` keeps file and
     /// call order, which keeps the merged edges deterministic at any thread count.
-    fn link_calls(&mut self, files: &[FileSymbols], idx: &Index) {
+    ///
+    /// With a `link_cache`, a stored result for the same inputs is replayed instead of resolving.
+    fn link_calls(
+        &mut self,
+        files: &[FileSymbols],
+        idx: &Index,
+        link_cache: Option<&LinkCache<'_>>,
+    ) {
         let t0 = std::time::Instant::now();
+        let key = link_cache.map(|lc| lc.key(&self.type_facts, &linkcache::deps_digest(idx)));
+        if let (Some(lc), Some(key)) = (link_cache, key.as_deref())
+            && let Some(sink) = lc.load(key, self.graph.node_count())
+        {
+            tracing::info!(
+                ms = t0.elapsed().as_millis(),
+                "call resolution reused from cache"
+            );
+            self.merge_sink(sink);
+            return;
+        }
         let all: Vec<&CallSite> = files.iter().flat_map(|f| f.calls.iter()).collect();
         let sinks: Vec<CallSink> = all
             .par_chunks(CALL_CHUNK)
@@ -2137,14 +2176,21 @@ impl SymbolGraph {
             })
             .collect();
         tracing::debug!(ms = t0.elapsed().as_millis(), "calls resolved");
-        for sink in sinks {
-            for (a, b, kind, status) in sink.links {
-                self.link(a, b, kind, status);
-            }
-            self.calls.extend(sink.calls);
-            self.status_edges.extend(sink.status_edges);
-            self.poisoned.extend(sink.poisoned);
+        let sink = CallSink::concat(sinks);
+        if let (Some(lc), Some(key)) = (link_cache, key.as_deref()) {
+            lc.store(key, &sink, self.graph.node_count());
         }
+        self.merge_sink(sink);
+    }
+
+    /// Folds one resolution result into the graph, in the order it was produced.
+    fn merge_sink(&mut self, sink: CallSink) {
+        for (a, b, kind, status) in sink.links {
+            self.link(a, b, kind, status);
+        }
+        self.calls.extend(sink.calls);
+        self.status_edges.extend(sink.status_edges);
+        self.poisoned.extend(sink.poisoned);
     }
 
     /// The type of the impl that directly contains `caller`, when it is a method of one.
