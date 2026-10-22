@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/src/typescript/**", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md", "changelog.d/01M48BMS05GVBRPP3B8NMTWA1V.added.md"]
+new = ["crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/consteval.rs", "crates/gob-symbols/src/typescript/**", "crates/gob-symbols/tests/it/typescript.rs", "docs/reference/fidelity.md", "changelog.d/01M48BMS05GVBRPP3B8NMTWA1V.added.md", "crates/gob-ir/src/const_value.rs"]
+at = "2026-10-22T00:19:19Z"
+actor = "lognd"
+rev = 1
