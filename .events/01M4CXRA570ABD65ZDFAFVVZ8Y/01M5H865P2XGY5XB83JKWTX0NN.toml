@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T07:26:24Z"
+digest = "c8dcf514782a821cb325518099402198bfbee8a9856e9030d52bd15babe83c72"
+exit_code = 0
+head = "6acfee7afeb97173e5998b3712d96ba8bf1963b4"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f5205fd9-0076-4be9-ba76-455d52a59b43 with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.011s] crunk::edit edit_is_atomic_when_a_later_op_fails
+        PASS [   0.012s] crunk::edit edit_refuses_files_outside_the_project_or_of_the_wrong_kind
+        PASS [   0.012s] crunk::edit edit_empty_patch_and_dry_run_write_nothing
+        PASS [   0.013s] crunk::edit edit_refuses_a_schema_violation_and_leaves_the_file_alone
+        PASS [   0.014s] crunk::edit edit_refuses_bad_pointer_missing_id_and_failed_test
+        PASS [   0.061s] crunk::edit edit_applies_by_id_and_reports_diff_and_touched_findings_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.062s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test edit edit_"
+size = 979
+status = "measured"
+test_count = 6
+tests_digest = "a53d7fc2f5d254a623e9769b4f4acd045951aa66a33f594cddee206ba5e98b76"
+at = "2026-10-22T07:26:24Z"
+actor = "lognd"
+rev = 1
