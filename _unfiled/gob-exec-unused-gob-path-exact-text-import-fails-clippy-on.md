@@ -2,12 +2,12 @@
 id = "01M5GTP8KYGJ3571YJYS13SCB1"
 title = "gob-exec: unused gob_path::exact_text import fails clippy on Windows"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:32:47Z"
-updated = "2026-10-22T03:32:47Z"
+updated = "2026-10-22T03:32:50Z"
 scope = ["crates/gob-exec/src/runner.rs"]
 
 [[acceptance]]
