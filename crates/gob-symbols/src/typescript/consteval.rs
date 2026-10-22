@@ -263,10 +263,145 @@ impl Hook<'_, '_> {
     }
 }
 
+impl Hook<'_, '_> {
+    /// The value expression of the function-local `const` binding a reference resolves to, with its guard key.
+    ///
+    /// The declarator is found under the node that opened the binding's scope, skipping nested scopes (a
+    /// declaration there binds in that scope). `let`/`var` and destructuring are never constant.
+    // frob:ticket 01M48BMS05GVBRPP3B8NMTWA1V
+    fn local_const(&self, model: &Model, node: NodeId) -> Option<(NodeId, String)> {
+        let gob_ir::Resolution::Must(d) = model.resolve_node(node) else {
+            return None;
+        };
+        let scopes = model.scopes();
+        let decl = scopes.decl(d);
+        if decl.kind != gob_ir::DeclKind::Binder {
+            return None;
+        }
+        let term = model.term();
+        let owner = scopes.scope_node(decl.scope)?;
+        let mut stack: Vec<NodeId> = term.children(owner).iter().rev().copied().collect();
+        while let Some(n) = stack.pop() {
+            let nested = scopes.scope_at(n).is_some()
+                || matches!(
+                    term.operator(n),
+                    Operator::Universal(Universal::Unit { .. } | Universal::Anon { .. })
+                );
+            if nested {
+                continue;
+            }
+            if let Some(value) = const_declarator_value(model, n, &decl.name) {
+                return Some((value, format!("local:{}:{}", self.path, d.index())));
+            }
+            stack.extend(term.children(n).iter().rev());
+        }
+        None
+    }
+
+    /// The value of `ns.NAME` where `ns` is a namespace import of this file that no local binding shadows.
+    // frob:ticket 01M48BMS05GVBRPP3B8NMTWA1V
+    fn namespace_member(
+        &self,
+        model: &Model,
+        node: NodeId,
+        name: &str,
+    ) -> Option<Vec<(crate::Symref, Status)>> {
+        let (head, member) = name.split_once('.')?;
+        if member.contains('.') {
+            return None;
+        }
+        let scopes = model.scopes();
+        let scope = scopes.reference_of(scopes.ref_at(node)?).scope;
+        if !matches!(
+            scopes.resolve_name(scope, head),
+            gob_ir::Resolution::Unknown
+        ) {
+            trace!(path = self.path, name, "namespace head shadowed locally");
+            return None;
+        }
+        Some(
+            self.project
+                .graph
+                .ts_namespace_targets(self.path, head, member),
+        )
+    }
+
+    /// Evaluates `value` of `model` under the cycle key `key`, with `steps` of budget left.
+    fn follow(
+        &self,
+        key: String,
+        path: &str,
+        model: &Model,
+        value: NodeId,
+        steps: u32,
+    ) -> External {
+        if self.shared.borrow().stack.contains(&key) {
+            debug!(path = self.path, key, "constant cycle");
+            return External {
+                value: ConstValue::Unknown,
+                used: 0,
+                exhausted: false,
+                cyclic: true,
+            };
+        }
+        self.shared.borrow_mut().stack.push(key);
+        let hook = Hook {
+            project: self.project,
+            path,
+            shared: self.shared,
+        };
+        let mut sub = ConstEval::new(model, Budget(steps)).with_external(&hook);
+        let got = sub.eval(value);
+        self.shared.borrow_mut().stack.pop();
+        let spans = std::iter::once(value)
+            .chain(sub.consulted().iter().copied())
+            .filter_map(|n| origin_of(path, model, n));
+        self.shared.borrow_mut().origins.extend(spans);
+        External {
+            value: got,
+            used: steps - sub.remaining(),
+            exhausted: sub.exhausted(),
+            cyclic: sub.cyclic(),
+        }
+    }
+}
+
+/// The value expression of `n` when it is `const name = value` (a `variable_declarator` under a `const` keyword).
+fn const_declarator_value(model: &Model, n: NodeId, name: &str) -> Option<NodeId> {
+    let term = model.term();
+    let Operator::Adapter(a) = term.operator(n) else {
+        return None;
+    };
+    if a.name != "variable_declarator" {
+        return None;
+    }
+    let kids = term.children(n);
+    let lit_is = |id: NodeId, kind: &str, text: Option<&str>| {
+        matches!(term.operator(id), Operator::Universal(Universal::Lit { kind: k, lexeme })
+            if k == kind && text.is_none_or(|t| t == lexeme))
+    };
+    let first = *kids.first()?;
+    if !lit_is(first, "name", Some(name)) {
+        return None;
+    }
+    let keyword = *term.children(term.parent(n)?).first()?;
+    if !lit_is(keyword, "const", None) {
+        return None;
+    }
+    kids.last().copied().filter(|&v| v != first)
+}
+
 impl ExternalRefs for Hook<'_, '_> {
     fn resolve_ref(&self, model: &Model, node: NodeId, steps: u32) -> Option<External> {
         let name = ref_name(model, node)?;
-        let targets = self.project.graph.ts_import_targets(self.path, name);
+        if let Some((value, key)) = self.local_const(model, node) {
+            trace!(path = self.path, name, "local const followed");
+            return Some(self.follow(key, self.path, model, value, steps));
+        }
+        let targets = match self.namespace_member(model, node, name) {
+            Some(t) => t,
+            None => self.project.graph.ts_import_targets(self.path, name),
+        };
         let [(symref, Status::Must)] = targets.as_slice() else {
             trace!(
                 path = self.path,
@@ -278,36 +413,8 @@ impl ExternalRefs for Hook<'_, '_> {
         };
         let (tpath, tmodel, unit) = self.unit_of(symref)?;
         let value = const_value_node(tmodel, unit)?;
-        let key = symref.to_string();
-        if self.shared.borrow().stack.contains(&key) {
-            debug!(path = self.path, name, "import cycle");
-            return Some(External {
-                value: ConstValue::Unknown,
-                used: 0,
-                exhausted: false,
-                cyclic: true,
-            });
-        }
-        self.shared.borrow_mut().stack.push(key);
-        let hook = Hook {
-            project: self.project,
-            path: tpath,
-            shared: self.shared,
-        };
-        let mut sub = ConstEval::new(tmodel, Budget(steps)).with_external(&hook);
-        let got = sub.eval(value);
-        self.shared.borrow_mut().stack.pop();
-        let spans = std::iter::once(value)
-            .chain(sub.consulted().iter().copied())
-            .filter_map(|n| origin_of(tpath, tmodel, n));
-        self.shared.borrow_mut().origins.extend(spans);
         trace!(from = self.path, to = tpath, name, "import followed");
-        Some(External {
-            value: got,
-            used: steps - sub.remaining(),
-            exhausted: sub.exhausted(),
-            cyclic: sub.cyclic(),
-        })
+        Some(self.follow(symref.to_string(), tpath, tmodel, value, steps))
     }
 
     fn call_kind(&self, model: &Model, callee: NodeId) -> Option<CallKind> {

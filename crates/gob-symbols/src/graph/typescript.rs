@@ -353,6 +353,39 @@ impl SymbolGraph {
         out
     }
 
+    /// The units member `member` of the namespace import `local` (`import * as local`) of TypeScript file `from` names.
+    ///
+    /// Empty when `local` is not a namespace import or nothing in the repository answers it.
+    // frob:ticket 01M48BMS05GVBRPP3B8NMTWA1V
+    pub fn ts_namespace_targets(
+        &self,
+        from: &str,
+        local: &str,
+        member: &str,
+    ) -> Vec<(Symref, Status)> {
+        let mut out = Vec::new();
+        for u in Self::ts_uses(&self.ts, &Symref::file(from), local) {
+            if decode_use(&u.target).member != Some("*") {
+                continue;
+            }
+            if let Some(f) = self.ts_binding(&self.ts, from, u, Some(member), 0) {
+                out.extend(
+                    f.nodes
+                        .iter()
+                        .map(|&n| (self.graph[n].symref.clone(), f.status)),
+                );
+            }
+        }
+        tracing::trace!(
+            from,
+            local,
+            member,
+            targets = out.len(),
+            "typescript namespace member resolved"
+        );
+        out
+    }
+
     /// The module specifier and imported member (`default`, `*` or a name) of the import binding `local` in `from`.
     pub fn ts_import_source(&self, from: &str, local: &str) -> Option<(String, String)> {
         let u = *Self::ts_uses(&self.ts, &Symref::file(from), local).first()?;

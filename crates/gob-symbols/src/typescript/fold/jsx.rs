@@ -23,6 +23,7 @@ use tree_sitter::Node;
 
 use super::{Fold, R, Root, Site, call_text, children, is_comment, line_of};
 use crate::css::tokens::{Token, declaration_node, tokens};
+use crate::model::collapse_ws;
 use crate::typescript::style::{css_property, numeric_raw};
 use crate::typescript::{
     ATTR_JSX_ATTRS, ATTR_JSX_KIND, ATTR_JSX_LINE, ATTR_JSX_TAG, ATTR_MARKUP_GROUP,
@@ -291,6 +292,11 @@ impl Fold<'_> {
                 let lowered = self.tr(n, d);
                 self.const_args = false;
                 lowered
+            }
+            // `ns.NAME`: a reference the evaluator's hook follows when `ns` is a namespace import.
+            "member_expression" if is_namespace_member(n) => {
+                let name = collapse_ws(self.t(n));
+                self.cx.op(Operator::reference(&name), n, &[])
             }
             "array" => {
                 let mut args = Vec::new();
@@ -575,6 +581,16 @@ impl Fold<'_> {
         let spec = NodeSpec::new(op, self.cx.node_loc(n)).attr(ATTR_MARKUP_GROUP, role);
         Ok(Some(self.cx.add(spec, &kids)?))
     }
+}
+
+/// Whether `n` is a plain `ident.name` access (no optional chain), the shape of a namespace-import member.
+// frob:ticket 01M48BMS05GVBRPP3B8NMTWA1V
+fn is_namespace_member(n: Node<'_>) -> bool {
+    n.child_by_field_name("object")
+        .is_some_and(|o| o.kind() == "identifier")
+        && n.child_by_field_name("property")
+            .is_some_and(|p| p.kind() == "property_identifier")
+        && !children(n).iter().any(|c| c.kind() == "optional_chain")
 }
 
 #[cfg(test)]

@@ -313,6 +313,7 @@ impl<'m> ConstEval<'m> {
             Resolution::May(ds) => ds.into_iter().collect(),
             Resolution::Unknown => return self.external_ref(node),
         };
+        let n_decls = decls.len();
         let mut all = BTreeSet::new();
         for d in decls {
             if self.visiting.contains(&d) {
@@ -326,6 +327,11 @@ impl<'m> ConstEval<'m> {
                 .iter()
                 .find_map(|&u| const_value_node(self.model, u))
             else {
+                // frob:ticket 01M48BMS05GVBRPP3B8NMTWA1V
+                // A lone local binder has no unit value; the language hook may know its initialiser.
+                if decl.kind == crate::DeclKind::Binder && n_decls == 1 {
+                    return self.external_ref(node);
+                }
                 return ConstValue::Unknown;
             };
             self.consulted.push(value);
