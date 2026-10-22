@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk new component|screen|flow|token NAME [--from ...] scaffolding verb"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk/**"]
+body = "Cut from AFVVZ8Y (only crunk edit shipped). See docs/design/crunk.md section 5."
+at = "2026-10-22T07:36:34Z"
+actor = "lognd"
+rev = 1
