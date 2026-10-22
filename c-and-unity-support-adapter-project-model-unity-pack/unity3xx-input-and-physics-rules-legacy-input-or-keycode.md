@@ -2,13 +2,13 @@
 id = "01M4D94ZPDYBATXNCVY3XRQ6RM"
 title = "UNITY3xx input and physics rules: legacy Input or KeyCode reads in an Input System project; Rigidbody forces or moves in Update"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:50Z"
-updated = "2026-10-16T03:10:05Z"
+updated = "2026-10-22T09:46:28Z"
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
 
 [[acceptance]]
