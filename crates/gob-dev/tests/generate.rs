@@ -416,3 +416,36 @@ fn committed_languages_page_matches_the_generator() {
     assert_eq!(committed, files[0].content, "run `cargo dev gen languages`");
     assert_eq!(gob_dev::files::marker_problem(&committed), None);
 }
+
+// frob:ticket ~ARDPKKS
+#[test]
+// frob:tests crates/gob-dev/src/render/cli.rs::generate
+fn cli_reference_has_a_stable_page_per_product() {
+    let first = generate(Kind::Cli, &crates_dir()).expect("generate");
+    let second = generate(Kind::Cli, &crates_dir()).expect("generate");
+    let paths: Vec<&str> = first.iter().map(|f| f.path.as_str()).collect();
+    for want in ["frob", "grimble", "crunk"] {
+        let path = format!("docs/reference/cli/{want}.md");
+        assert!(paths.contains(&path.as_str()), "{path} missing: {paths:?}");
+        let page = first.iter().find(|f| f.path == path).expect("page");
+        assert!(page.content.contains(&format!("# `{want}` commands")));
+        assert!(page.content.contains("| `check` |"), "{path} lists check");
+    }
+    let a: Vec<(&str, &str)> = first
+        .iter()
+        .map(|f| (f.path.as_str(), f.content.as_str()))
+        .collect();
+    let b: Vec<(&str, &str)> = second
+        .iter()
+        .map(|f| (f.path.as_str(), f.content.as_str()))
+        .collect();
+    assert_eq!(a, b, "generation is deterministic");
+    let grimble = first
+        .iter()
+        .find(|f| f.path.ends_with("grimble.md"))
+        .expect("grimble");
+    assert!(
+        !grimble.content.contains("| `dtcg"),
+        "crunk verbs do not leak into the grimble page"
+    );
+}
