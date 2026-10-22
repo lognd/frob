@@ -2,7 +2,8 @@
 id = "01M5H85830JZJMYGV53YX6GQNR"
 title = "fix_summary_line points users at nonexistent 'frob fix' verb"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
