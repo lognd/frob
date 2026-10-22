@@ -50,6 +50,9 @@ Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this pa
 | RADIUS001 | radius-off-scale | RADIUS | warn | warn | no | T0 | Flags a px or rem `border-radius` (or a corner longhand) that is not a step of `[scales] radii`, naming the bracketing steps and the nearest one. |
 | RESP001 | breakpoint-without-scene | RESP | error | error | no | T1 | Fires once for each `[breakpoints]` width that no scene file is solved at (a scene whose viewport width equals the breakpoint). |
 | SCENE001 | scene-property-unsupported | SCENE | error | error | no | T0 | Fires for each declaration in a scene document (a `<style>` body or an inline `style` attribute) whose property is outside the scene dialect. |
+| SCENE002 | scene-data-id-invalid | SCENE | error | error | no | T0 | Fires for an element with no `data-id` (absent, empty or blank) and for each element that repeats a `data-id` an earlier element of the same scene already uses. |
+| SCENE003 | scene-tag-unknown | SCENE | error | error | no | T0 | Fires for each element whose lowercase tag is outside the dialect's tag list (`<blink>`, `<my-widget>`). |
+| SCENE004 | scene-at-rule-unsupported | SCENE | error | error | no | T0 | Fires for each at-rule other than `@media` in a scene's `<style>` bodies, including at-rules nested inside a `@media` block. |
 | SIZE001 | size-off-scale | SIZE | warn | warn | no | T0 | Flags a px or rem `width`, `height`, `min-width`, `min-height` or `max-height` that is not a step of `[scales] sizes` (of `spacing` when no sizes are declared), naming the bracketing steps and the nearest one. |
 | SLOP001 | default-palette-accent | SLOP | advisory | advisory | no | T0 | Flags a palette entry or a colour literal within two deltaE_OK points of a Tailwind indigo, violet or purple 400-700 stop. |
 | SLOP003 | gradient-abuse | SLOP | advisory | advisory | no | T0 | Flags the fourth gradient background in a project, and any gradient text (`background-clip: text`). |

@@ -175,3 +175,48 @@ fn element_text_keeps_own_runs_and_skips_style_bodies() {
         .expect("style");
     assert!(style.text.is_empty());
 }
+
+// frob:ticket 01M5H30AQNZSC77EY70P28KM3V
+// frob:tests data_id_problems
+#[test]
+fn data_id_problems_flag_missing_empty_and_repeats_once_per_extra() {
+    let doc = parse_scene_html(
+        "<div data-id=\"a\"></div>\n<p data-id=\"\"></p>\n<p></p>\n<p data-id=\"a\"></p>\n<p data-id=\"a\"></p>",
+    )
+    .expect("parses");
+    let hits = crunk_scene::data_id_problems(&doc);
+    assert_eq!(hits.len(), 4, "{hits:?}");
+    assert_eq!(hits[0].problem, crunk_scene::DataIdProblem::Missing);
+    assert!(matches!(
+        hits[2].problem,
+        crunk_scene::DataIdProblem::Duplicate { first_line: 1, .. }
+    ));
+}
+
+// frob:ticket 01M5H30AQNZSC77EY70P28KM3V
+// frob:tests unknown_tags
+#[test]
+fn unknown_tags_skip_components_and_svg_children() {
+    let doc =
+        parse_scene_html("<blink></blink><Card></Card><svg><path></path></svg>").expect("parses");
+    let tags: Vec<_> = crunk_scene::unknown_tags(&doc)
+        .into_iter()
+        .map(|t| t.tag)
+        .collect();
+    assert_eq!(tags, ["blink"]);
+}
+
+// frob:ticket 01M5H30AQNZSC77EY70P28KM3V
+// frob:tests unsupported_at_rules
+#[test]
+fn unsupported_at_rules_keep_media_and_find_nested_ones() {
+    let doc = parse_scene_html(
+        "<style>@import url(x);\n@media (min-width:1px){@keyframes k{from{opacity:0}}}</style>",
+    )
+    .expect("parses");
+    let names: Vec<_> = crunk_scene::unsupported_at_rules(&doc)
+        .into_iter()
+        .map(|a| a.name)
+        .collect();
+    assert_eq!(names, ["import", "keyframes"]);
+}

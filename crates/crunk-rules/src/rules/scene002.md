@@ -1,0 +1,37 @@
+<!-- mdtest: rule=SCENE002 -->
+# SCENE002 scene-data-id-invalid
+
+Every element of a scene carries a stable, unique `data-id`.
+
+## What it does
+
+Fires for an element with no `data-id` (absent, empty or blank) and for each element that repeats a `data-id` an earlier element of the same scene already uses. Ids are scoped to one scene file. The `html`, `head`, `body`, `style` and `script` tags, tags the dialect does not know (SCENE003's) and everything inside an `svg` are exempt.
+
+## Why it matters
+
+Layout solves, focus graphs, exports and review comments address elements by `data-id`; a missing or shared id makes them ambiguous.
+
+## Remedy
+
+Give the element a short, unique, stable `data-id`.
+
+## Examples
+
+### A missing id fires
+
+```html expect=fire file=design/scenes/home.scene.html
+<div data-id="hero"><p>Hello</p></div>
+```
+
+### A duplicate id fires
+
+```html expect=fire file=design/scenes/home.scene.html
+<div data-id="a"></div>
+<div data-id="a"></div>
+```
+
+### Unique ids are clean
+
+```html expect=clean file=design/scenes/home.scene.html
+<div data-id="hero"><p data-id="lede">Hello</p></div>
+```

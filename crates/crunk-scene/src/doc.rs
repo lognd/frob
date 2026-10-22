@@ -77,6 +77,18 @@ pub struct SceneDecl {
     pub line: u32,
 }
 
+// frob:ticket 01M5H30AQNZSC77EY70P28KM3V
+/// One at-rule use of a stylesheet, with where it starts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SceneAtRule {
+    /// The at-rule name without `@`, as the adapter reports it.
+    pub name: String,
+    /// Byte offset of the at-rule.
+    pub offset: usize,
+    /// 1-based line of the at-rule.
+    pub line: u32,
+}
+
 /// A parsed scene.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SceneDoc {
@@ -86,6 +98,9 @@ pub struct SceneDoc {
     pub declarations: Vec<SceneDecl>,
     /// The names of the at-rules the stylesheets use, in source order (`media`, `font-face`).
     pub at_rules: Vec<String>,
+    // frob:ticket 01M5H30AQNZSC77EY70P28KM3V
+    /// The same at-rules with their positions, in source order (nested ones included).
+    pub at_rule_sites: Vec<SceneAtRule>,
 }
 
 impl SceneDoc {
@@ -212,14 +227,13 @@ pub fn parse_scene_html(text: &str) -> Result<SceneDoc, SceneError> {
             }
         })
         .collect();
-    let at_rules = style::at_rules(&model)
-        .into_iter()
-        .map(|a| a.name)
-        .collect();
+    let at_rule_sites = at_rule_sites_of(&model, &lines);
+    let at_rules = at_rule_sites.iter().map(|a| a.name.clone()).collect();
     let doc = SceneDoc {
         elements,
         declarations,
         at_rules,
+        at_rule_sites,
     };
     tracing::debug!(
         elements = doc.elements.len(),
@@ -227,6 +241,21 @@ pub fn parse_scene_html(text: &str) -> Result<SceneDoc, SceneError> {
         "scene parsed"
     );
     Ok(doc)
+}
+
+/// Every at-rule of the model with its position, in node order.
+fn at_rule_sites_of(model: &Model, lines: &LineIndex) -> Vec<SceneAtRule> {
+    style::at_rules(model)
+        .into_iter()
+        .map(|a| {
+            let offset = start_of(model, a.node).unwrap_or(0);
+            SceneAtRule {
+                name: a.name,
+                offset,
+                line: lines.line_of(offset),
+            }
+        })
+        .collect()
 }
 
 /// Byte offset where `node` starts, when it has a text location.
