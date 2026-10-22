@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T14:04:09Z"
-updated = "2026-10-22T16:50:38Z"
+updated = "2026-10-22T16:51:56Z"
 scope = ["crates/gob-check/**", "changelog.d/**", "docs/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given api-extractor is not installed, when VERSION001 runs, then the tool is reported as unresolved (TOOL001)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given clean, empty or malformed api-extractor output, when VERSION001 runs, then no finding is produced"
