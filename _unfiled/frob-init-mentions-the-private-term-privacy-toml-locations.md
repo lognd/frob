@@ -2,7 +2,8 @@
 id = "01M42H140A7Y1AMEQJ0YVTYZDE"
 title = "frob init mentions the private-term privacy.toml locations"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
