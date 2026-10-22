@@ -2,12 +2,12 @@
 id = "01M5H8MMN5PXGJG2XGS76STB57"
 title = "crunk new component|screen|flow|token NAME [--from ...] scaffolding verb"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T07:36:34Z"
-updated = "2026-10-22T19:15:16Z"
+updated = "2026-10-22T19:15:17Z"
 scope = ["crates/crunk/**"]
 
 [[acceptance]]
