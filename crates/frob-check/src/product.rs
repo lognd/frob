@@ -487,6 +487,7 @@ impl Product for Frob {
             out.extend_from_slice(rules.fingerprint().as_bytes());
         }
         out.extend_from_slice(format!("{:?}", snap.inputs.invariants.forbid_imports).as_bytes());
+        out.extend_from_slice(&coverage_fingerprint(&snap.core.root));
         out
     }
 
@@ -705,6 +706,43 @@ fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope) -> Option<Finding>
     frob_release::rel003::missing(&snap.core.root, &id.to_string(), &scope.handle)
 }
 
+/// Bytes that change when COV004's inputs do: the `[coverage]` table and the lcov report it names.
+///
+/// Empty when no threshold is configured (COV004 reads nothing then, and the repo digest of such
+/// a repo stays what it was before this input was tracked). The report is hashed, not embedded,
+/// so a large report costs one read and hash (COV004 itself reads it whole); a missing report hashes to a distinct marker.
+// frob:ticket 01M5HT58K22KJXAE1MWHY3T79D
+#[allow(
+    clippy::disallowed_methods,
+    reason = "the lcov report is a build artifact outside the walked set, which COV004 itself reads from disk"
+)]
+fn coverage_fingerprint(root: &std::path::Path) -> Vec<u8> {
+    let mut out = b"coverage\0".to_vec();
+    let config = match frob_obligations::CoverageConfig::load(root) {
+        Ok(c) => c,
+        Err(err) => {
+            tracing::debug!(%err, "coverage config unreadable; folding the error into the digest");
+            out.extend_from_slice(err.to_string().as_bytes());
+            return out;
+        }
+    };
+    if config.threshold.is_empty() {
+        return Vec::new();
+    }
+    out.extend_from_slice(format!("{config:?}").as_bytes());
+    out.push(0);
+    let hashed = std::fs::read_to_string(root.join(&config.report))
+        .map(|text| blake3::hash(text.as_bytes()));
+    match hashed {
+        Ok(hash) => out.extend_from_slice(hash.to_hex().as_bytes()),
+        Err(err) => {
+            tracing::debug!(%err, report = %config.report, "lcov report unreadable; digest marks it missing");
+            out.extend_from_slice(b"report-missing");
+        }
+    }
+    out
+}
+
 /// True for the files `frob init` and the ledger write: config, git attributes and ignore, tickets, fragments.
 fn is_frob_owned(path: &str) -> bool {
     matches!(path, "frob.toml" | ".gitattributes" | ".gitignore")
@@ -749,5 +787,53 @@ mod malformed_projects_tests {
         let got = frob.malformed_projects(&shared);
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].path, "a/b.csproj");
+    }
+}
+
+#[cfg(test)]
+mod coverage_fingerprint_tests {
+    use super::coverage_fingerprint;
+
+    const TABLE: &str = "[[coverage.threshold]]\nscope = \"src\"\nline = 80\n";
+
+    fn repo(config: &str, report: Option<&str>) -> tempfile::TempDir {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("frob.toml"), config).expect("config");
+        if let Some(text) = report {
+            std::fs::write(dir.path().join("lcov.info"), text).expect("report");
+        }
+        dir
+    }
+
+    // frob:ticket 01M5HT58K22KJXAE1MWHY3T79D
+    // frob:tests crates/frob-check/src/product.rs::coverage_fingerprint
+    #[test]
+    fn fingerprint_differs_when_thresholds_or_report_change() {
+        let base = coverage_fingerprint(repo(TABLE, Some("SF:a\nend_of_record\n")).path());
+        let other_report = coverage_fingerprint(repo(TABLE, Some("SF:b\nend_of_record\n")).path());
+        let other_config = coverage_fingerprint(
+            repo(&TABLE.replace("80", "90"), Some("SF:a\nend_of_record\n")).path(),
+        );
+        let no_report = coverage_fingerprint(repo(TABLE, None).path());
+        assert_ne!(base, other_report, "report change");
+        assert_ne!(base, other_config, "threshold change");
+        assert_ne!(base, no_report, "missing report");
+        assert!(coverage_fingerprint(repo("", None).path()).is_empty());
+    }
+
+    // frob:ticket 01M5HT58K22KJXAE1MWHY3T79D
+    // frob:tests crates/frob-check/src/product.rs::coverage_fingerprint
+    #[test]
+    fn fingerprint_is_stable_for_unchanged_config_and_report() {
+        let dir = repo(TABLE, Some("SF:a\nend_of_record\n"));
+        assert_eq!(
+            coverage_fingerprint(dir.path()),
+            coverage_fingerprint(dir.path())
+        );
+        let twin = repo(TABLE, Some("SF:a\nend_of_record\n"));
+        assert_eq!(
+            coverage_fingerprint(dir.path()),
+            coverage_fingerprint(twin.path())
+        );
     }
 }
