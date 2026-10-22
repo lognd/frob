@@ -2,7 +2,8 @@
 id = "01M5GVQ4JMBG1CC0G6RBS28E9V"
 title = "gob-plan: versioned grimble-check dev-dependency closes a publish cycle"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
