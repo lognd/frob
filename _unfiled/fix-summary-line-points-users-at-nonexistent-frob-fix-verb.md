@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T07:28:10Z"
-updated = "2026-10-22T20:15:18Z"
-scope = ["crates/frob-check/src/summary.rs"]
+updated = "2026-10-22T20:16:24Z"
+scope = ["crates/frob-check/src/summary.rs", "docs/design/diagnostics.md"]
 
 [[acceptance]]
 text = "Given the fix summary line, when rendered, then it names only existing frob verbs and flags"
