@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:39Z"
-updated = "2026-10-22T22:15:29Z"
-scope = ["crates/gob-dev/**"]
+updated = "2026-10-22T22:16:36Z"
+scope = ["crates/gob-dev/**", "crates/frob-docgen/**"]
 
 [[acceptance]]
 text = "gob-dev has no frob-* dependency in cargo tree"
