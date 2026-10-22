@@ -1,0 +1,10 @@
+kind = "create"
+title = "Responsive-section rules for component spec files"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-rules/**"]
+body = "Cut from ~D6TTN3F: component responsive sections are not parsed or judged."
+at = "2026-10-22T05:26:00Z"
+actor = "lognd"
+rev = 1
