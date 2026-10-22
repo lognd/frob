@@ -87,6 +87,7 @@ mod tool_parse;
 mod tools;
 pub mod trust_from;
 mod type_parse;
+mod version_bump;
 
 pub use config::{CheckTable, FailOn, PerfTable, ToolParser, ToolStage, ToolTier, TypesTable};
 pub use core::{Core, FileIndex};

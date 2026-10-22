@@ -22,6 +22,7 @@ use crate::tool_parse::{
     RawFinding, RawRange, VersionVerdict, check_version, classify, default_version_args,
     find_version, parse,
 };
+use crate::version_bump::Gate;
 
 /// A store of finished tool-stage results keyed by the hash of everything the stage reads.
 ///
@@ -673,6 +674,21 @@ fn execute(
     match parse(stage.parser, &text) {
         Ok(raws) => {
             tracing::info!(stage = %stage.name, findings = raws.len(), "tool output parsed");
+            // frob:ticket 01M5HYTAQEYA72YHZWGHPACR52
+            // griffe cannot see the package version, so a version bump that permits breakage is applied here.
+            if stage.parser == ToolParser::GriffeText && !raws.is_empty() {
+                return match crate::version_bump::gate_for(root, &stage.args) {
+                    Gate::Allowed => StageResult::Done(Vec::new()),
+                    Gate::Violation => StageResult::Done(raws),
+                    Gate::Unresolved(why) => StageResult::Failed(failure(
+                        stage,
+                        &stage.args,
+                        &format!("reported breaking changes but {why}"),
+                        &status_text(&output),
+                        &output.stderr,
+                    )),
+                };
+            }
             StageResult::Done(raws)
         }
         Err(err) => StageResult::Failed(failure(
