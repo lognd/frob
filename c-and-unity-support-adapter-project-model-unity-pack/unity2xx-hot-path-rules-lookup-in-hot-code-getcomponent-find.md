@@ -2,13 +2,13 @@
 id = "01M4D94YT06MB8AJ41XCC940D3"
 title = "UNITY2xx hot-path rules: lookup in hot code (GetComponent, Find*, Camera.main) and managed allocation in hot code, Advisory"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-08T08:12:49Z"
-updated = "2026-10-16T03:10:05Z"
+updated = "2026-10-22T11:24:59Z"
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**"]
 
 [[acceptance]]
