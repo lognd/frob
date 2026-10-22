@@ -8,7 +8,7 @@ points = 5
 reporter = "lognd"
 created = "2026-10-22T05:58:06Z"
 updated = "2026-10-22T22:28:13Z"
-scope = ["crates/crunk-rules/**", "crates/crunk-scene/**", "docs/crunk/rules/**", "docs/reference/rules/**"]
+scope = ["crates/crunk-rules/**", "crates/crunk-scene/**", "docs/crunk/rules/**", "docs/reference/rules/**", "docs/design/crunk.md"]
 
 [[acceptance]]
 text = "SCENE002 flags a duplicate or missing data-id in a scene, with a failing and a passing test"
