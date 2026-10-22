@@ -14,6 +14,14 @@
 //! - positive controls: each rule named in a file needs one fire and one
 //!   clean block, else the file fails with [`MissingControl`].
 //!
+//! # Panics
+//!
+//! Each case runs inside `catch_unwind`: a panicking runner fails that one case (reported with the
+//! fence line and panic message) and the rest of the corpus still runs. A known panic is pinned
+//! with `<!-- expect-panic: SUBSTRING -->` on the line(s) before the block; the case passes only
+//! if the runner panics with a message containing the substring (an empty substring accepts any
+//! panic) and fails with "expected to panic but did not" otherwise. See `FORMAT.md`.
+//!
 //! # The `mdtest!` macro
 //!
 //! `mdtest!(dir = "tests/mdtest", runner = my_fn)` expands to ONE `#[test]`
@@ -28,7 +36,9 @@
 //! gob_mdtest::mdtest!(dir = "tests/mdtest", runner = my_runner);
 //! ```
 
+mod contain;
 pub mod coverage;
+pub mod garbage;
 pub mod matrix;
 mod parse;
 mod run;

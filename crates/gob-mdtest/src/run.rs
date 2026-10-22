@@ -9,6 +9,7 @@ use gob_rules::{Finding, RuleId, RuleReport, Severity};
 use gob_text::{LineIndex, SourceText};
 use walkdir::WalkDir;
 
+use crate::contain::{Panicked, contained};
 use crate::parse::{Block, Expect, Marker, Subjects, parse_suite};
 
 /// What the caller's closure receives for each block.
@@ -176,6 +177,11 @@ impl<R: CaseOutput, F: Fn(&Case) -> R> Runner<F> {
     /// Wrap `f`, which evaluates one case.
     pub fn new(f: F) -> Self {
         Self(f)
+    }
+
+    /// Evaluate one case with any panic contained (see [`crate::contain`]).
+    pub(crate) fn evaluate(&self, case: &Case) -> Result<CaseResult, Panicked> {
+        contained(|| (self.0)(case).into_result())
     }
 }
 
@@ -617,6 +623,71 @@ fn check_snapshot(path: &Path, block: &Block, findings: &[Finding]) -> Result<()
     })
 }
 
+/// Run one block through `runner` with panics contained, and judge it against its expectations.
+fn run_case<R: CaseOutput, F: Fn(&Case) -> R>(
+    path: &Path,
+    b: &Block,
+    case: &Case,
+    runner: &Runner<F>,
+) -> Result<(), String> {
+    let ran = runner.evaluate(case);
+    match (ran, &b.expect_panic) {
+        (Ok(result), None) => {
+            let outcome = check(b, &result);
+            if outcome.is_ok() && b.snapshot {
+                check_snapshot(path, b, &result.findings)
+            } else {
+                outcome
+            }
+        }
+        (Ok(result), Some(sub)) => {
+            let mut msg = format!(
+                "    expected the runner to panic{}, but it returned (line {})\n",
+                quoted_substring(sub),
+                b.fence_line
+            );
+            if let Err(other) = check(b, &result) {
+                msg.push_str("    it also failed its expectations:\n");
+                msg.push_str(&other);
+            }
+            Err(msg)
+        }
+        (Err(p), None) => Err(format!(
+            "    the runner panicked at markdown line {}: {}{}\n",
+            b.fence_line,
+            p.message,
+            at(&p)
+        )),
+        (Err(p), Some(sub)) if p.message.contains(sub.as_str()) => {
+            tracing::debug!(case = %b.name, "expected panic observed");
+            Ok(())
+        }
+        (Err(p), Some(sub)) => Err(format!(
+            "    expected a panic{}, but the runner panicked at markdown line {} with: {}{}\n",
+            quoted_substring(sub),
+            b.fence_line,
+            p.message,
+            at(&p)
+        )),
+    }
+}
+
+/// Text for the "containing" clause of a message, or nothing for the empty any-panic substring.
+fn quoted_substring(sub: &str) -> String {
+    if sub.is_empty() {
+        String::new()
+    } else {
+        format!(" containing `{sub}`")
+    }
+}
+
+/// ` (at file:line)` for a panic whose location is known.
+fn at(p: &Panicked) -> String {
+    p.location
+        .as_ref()
+        .map_or_else(String::new, |l| format!(" (at {l})"))
+}
+
 /// Run every block of one markdown file through `runner`.
 pub fn run_file<R: CaseOutput, F: Fn(&Case) -> R>(path: &Path, runner: &Runner<F>) -> FileReport {
     let mut report = FileReport {
@@ -648,11 +719,7 @@ pub fn run_file<R: CaseOutput, F: Fn(&Case) -> R>(path: &Path, runner: &Runner<F
             rules: b.rules.clone(),
             config: b.config.clone(),
         };
-        let result = (runner.0)(&case).into_result();
-        let mut outcome = check(b, &result);
-        if outcome.is_ok() && b.snapshot {
-            outcome = check_snapshot(path, b, &result.findings);
-        }
+        let outcome = run_case(path, b, &case, runner);
         tracing::debug!(case = %b.name, ok = outcome.is_ok(), "mdtest case");
         report.cases.push(CaseReport {
             name: b.name.clone(),

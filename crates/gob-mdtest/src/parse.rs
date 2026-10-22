@@ -117,6 +117,8 @@ pub struct Block {
     pub markers: Vec<Marker>,
     /// True when the `snapshot-diagnostics` suite header was in force.
     pub snapshot: bool,
+    /// `<!-- expect-panic: SUBSTRING -->` before the block: the runner must panic with a message containing the substring (empty matches any panic).
+    pub expect_panic: Option<String>,
 }
 
 /// Why a suite could not be parsed into cases.
@@ -329,12 +331,14 @@ fn markers(text: &str, line_err: usize, default_rule: &RuleId) -> Result<Vec<Mar
 ///
 /// Returns [`ParseError`] for a malformed info string, missing `rule` or
 /// `expect`, an unterminated fence, or markers inside a clean or notapplicable block.
+#[allow(clippy::too_many_lines)] // one linear pass over the fences; splitting hides the state machine
 pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
     let mut blocks = Vec::new();
     let mut h1 = String::new();
     let mut h2 = String::new();
     let mut default_rule: Option<RuleId> = None;
     let mut snapshot = false;
+    let mut pending_panic: Option<(usize, String)> = None;
     let mut lines = md.lines().enumerate();
     while let Some((i, line)) = lines.next() {
         let t = line.trim_start();
@@ -346,6 +350,7 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
                 &mut h2,
                 &mut default_rule,
                 &mut snapshot,
+                &mut pending_panic,
                 i + 1,
             )?;
             continue;
@@ -423,6 +428,13 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             config: opts.get("config").map(|c| (*c).to_owned()),
             markers: marks,
             snapshot,
+            expect_panic: pending_panic.take().map(|(_, sub)| sub),
+        });
+    }
+    if let Some((line, _)) = pending_panic {
+        return Err(ParseError {
+            line,
+            message: "expect-panic directive is not followed by a case block".into(),
         });
     }
     Ok(blocks)
@@ -517,16 +529,42 @@ fn subjects_of(opts: &BTreeMap<&str, &str>) -> Result<Option<Subjects>, String> 
     }
 }
 
-/// Handle a non-fence line: headings and the suite header comment.
+/// The substring of an `<!-- expect-panic: SUBSTRING -->` line (empty for the bare form), if `line` is one.
+fn expect_panic_of(line: &str) -> Option<&str> {
+    let inner = line
+        .trim()
+        .strip_prefix("<!--")?
+        .strip_suffix("-->")?
+        .trim();
+    let rest = inner.strip_prefix("expect-panic")?;
+    if rest.is_empty() {
+        return Some("");
+    }
+    rest.strip_prefix(':').map(str::trim)
+}
+
+/// Handle a non-fence line: headings, the suite header comment and the expect-panic directive.
 fn parse_outside(
     line: &str,
     h1: &mut String,
     h2: &mut String,
     default_rule: &mut Option<RuleId>,
     snapshot: &mut bool,
+    pending_panic: &mut Option<(usize, String)>,
     n: usize,
 ) -> Result<(), ParseError> {
-    if let Some(h) = line.strip_prefix("## ") {
+    if let Some(sub) = expect_panic_of(line) {
+        if let Some((first, _)) = pending_panic {
+            return Err(ParseError {
+                line: n,
+                message: format!(
+                    "second expect-panic directive before a case (first on line {first})"
+                ),
+            });
+        }
+        tracing::debug!(line = n, substring = sub, "expect-panic directive");
+        *pending_panic = Some((n, sub.to_owned()));
+    } else if let Some(h) = line.strip_prefix("## ") {
         h.trim().clone_into(h2);
     } else if let Some(h) = line.strip_prefix("# ") {
         h.trim().clone_into(h1);

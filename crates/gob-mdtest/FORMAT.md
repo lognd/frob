@@ -167,3 +167,26 @@ Every Universal rule needs a block in every cell, or a `[[matrix_gap]]` entry in
 `coverage-allowlist.toml` with `product`, `rule`, `cell` (a name or `*`) and a `~XXXXXXX`
 `ticket`. The list may only shrink: an entry whose cell is now filled fails the test.
 `crates/frob-check/tests/rule_matrix.rs` wires the real deriver.
+
+## Panics and expect-panic
+
+A runner that panics fails only that case ("the runner panicked at
+markdown line N: ..."); the remaining cases and files still run. To pin a
+panic as the expected behaviour, put a directive on the line before the
+case block:
+
+    <!-- expect-panic: SUBSTRING -->
+
+The case passes when the runner panics with a message containing
+SUBSTRING. A bare `<!-- expect-panic -->` (or an empty substring) accepts
+any panic. It fails when the runner returns instead, or panics with a
+different message. A non-string payload is shown as
+`<non-string panic payload>`. A directive not followed by a case block, or
+a second directive before one case, is a parse error.
+
+## Garbage input
+
+`gob_mdtest::garbage::check_garbage(runner, rule, cells)` feeds one
+unparseable probe per language-matrix cell (`garbage::PROBES`) and
+requires no panic and either NotApplicable or only Unresolved findings.
+Each adapter's rule suite calls it so garbage handling is tested per cell.
