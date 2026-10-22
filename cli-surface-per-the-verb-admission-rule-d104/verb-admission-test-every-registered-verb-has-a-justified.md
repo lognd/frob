@@ -2,7 +2,8 @@
 id = "01M48Q28JZ3AB6FNJ8H2Y6V4G2"
 title = "Verb admission test: every registered verb has a justified cli.md row"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
