@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T03:15:56Z"
-updated = "2026-10-22T03:22:16Z"
+updated = "2026-10-22T03:32:15Z"
 scope = ["crates/frob/**", "frob.toml", "docs/**", "changelog.d/**"]
 
 [[acceptance]]
