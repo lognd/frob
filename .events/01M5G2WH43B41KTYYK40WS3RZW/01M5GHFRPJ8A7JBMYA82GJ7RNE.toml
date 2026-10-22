@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-22T00:51:56Z"
+digest = "65b621a00109be1a418dc77c2abe8a50a9190828f3614a46ff8c842a9b99f8c6"
+exit_code = 0
+head = "6890966814d85ea29d9280ff6afde5052df946bb"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 39c52a41-cf3b-4966-8585-744b95fb6e37 with nextest profile: default
+    Starting 1 test across 8 binaries (99 tests skipped)
+        PASS [   0.009s] gob-directives::fix clean_input_is_a_no_op
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 99 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives clean_input_is_a_no_op"
+size = 533
+status = "measured"
+test_count = 1
+tests_digest = "3b843dfcb5554447e24dc1e3de7e3a703b9dabc554863c923329e391043c3137"
+at = "2026-10-22T00:51:56Z"
+actor = "lognd"
+rev = 1

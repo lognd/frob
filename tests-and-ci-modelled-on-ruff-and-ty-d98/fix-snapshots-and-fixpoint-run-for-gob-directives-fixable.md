@@ -30,7 +30,7 @@ bound = true
 
 [[acceptance]]
 text = "fixed output is idempotent and leaves no findings"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "clean input is a no-op"
