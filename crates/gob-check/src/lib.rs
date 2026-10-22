@@ -59,6 +59,8 @@ mod filecheck;
 mod fix;
 pub mod fix_validate;
 pub mod gate001;
+// frob:ticket 01M4CXSZ5PYK101KSEH6SJ9WYR
+pub mod incompleteness;
 mod options;
 mod packages;
 mod pipeline;
