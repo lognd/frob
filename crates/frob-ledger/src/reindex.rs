@@ -166,15 +166,17 @@ pub fn reindex(tree: &Tree, opts: &ReindexOptions<'_>) -> Result<Reindexed> {
     moves.sort_by(|a, b| a.from.cmp(&b.from));
 
     let as_of = newest_event(&out);
-    let input = GenInput {
-        tree: &out.clone(),
-        version: opts.version,
-        handle_min_len: opts.handle_min_len,
-        as_of: as_of.as_deref(),
-        paths: &paths,
+    // The generators borrow `out` and finish before any page is inserted, so no tree copy.
+    let generated: Vec<(String, Vec<u8>)> = {
+        let input = GenInput {
+            tree: &out,
+            version: opts.version,
+            handle_min_len: opts.handle_min_len,
+            as_of: as_of.as_deref(),
+            paths: &paths,
+        };
+        opts.generators.iter().flat_map(|g| g(&input)).collect()
     };
-    let generated: Vec<(String, Vec<u8>)> =
-        opts.generators.iter().flat_map(|g| g(&input)).collect();
     for (path, bytes) in generated {
         out.insert(path, bytes);
     }

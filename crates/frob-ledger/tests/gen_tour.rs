@@ -281,3 +281,66 @@ fn a_pinned_ticket_that_vanishes_is_replaced_and_a_note_reports_it() {
         "{page}"
     );
 }
+
+/// Comment events the tour never reads, on every ticket of `tree` except `skip`.
+fn add_noise(tree: &mut Tree, per_ticket: usize, skip: Option<TicketId>) {
+    let ids: Vec<TicketId> = paths_of(tree)
+        .into_keys()
+        .filter(|i| Some(*i) != skip)
+        .collect();
+    for id in ids {
+        for n in 0..per_ticket {
+            let data = frob_ledger::event::CommentData {
+                subtype: frob_ledger::model::CommentSubtype::Note,
+                body: format!("noise {n}"),
+            };
+            event(
+                tree,
+                id,
+                1_700_000_000 + i64::try_from(n).unwrap_or(0),
+                EventBody::Comment(data),
+            );
+        }
+    }
+}
+
+// frob:ticket 01M5H85DZ6NF1Y2DACWGQ3NZVK
+// frob:tests crates/frob-ledger/src/gen/tour.rs::render
+#[test]
+fn tour_reindex_skips_unread_event_kinds_without_changing_the_page() {
+    let l = ledger();
+    let before = text(&l.tree, "TOUR.md");
+    let mut noisy = l.tree.clone();
+    add_noise(&mut noisy, 20, Some(l.newer));
+    noisy.insert(
+        ".events/garbage/not-an-event.toml".into(),
+        b"kind = [".to_vec(),
+    );
+    let after = text(&reindexed(&noisy), "TOUR.md");
+    let body = |t: &str| {
+        t.lines()
+            .filter(|l| !l.starts_with("As of event"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    assert_eq!(
+        body(&before),
+        body(&after),
+        "unread event kinds must not move the tour"
+    );
+}
+
+// frob:ticket 01M5H85DZ6NF1Y2DACWGQ3NZVK
+// frob:tests crates/frob-ledger/src/gen/tour.rs::render_with
+#[test]
+fn tour_life_stop_still_lists_every_event_of_the_pinned_ticket() {
+    let l = ledger();
+    let mut noisy = l.tree.clone();
+    add_noise(&mut noisy, 3, None);
+    let page = text(&reindexed(&noisy), "TOUR.md");
+    assert_eq!(
+        page.matches("- `comment` at").count(),
+        3,
+        "the pinned ticket's comments belong in its life: {page}"
+    );
+}

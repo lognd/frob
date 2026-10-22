@@ -69,8 +69,36 @@ fn dropped(r: &Row) -> bool {
     )
 }
 
-/// The parsed events of every ticket, in event order; unreadable files are skipped.
-fn events_of(input: &GenInput<'_>) -> BTreeMap<TicketId, Vec<Event>> {
+/// Which events [`events_of`] parses.
+#[derive(Clone, Copy)]
+enum Want {
+    /// Only evidence and land events, all that picking and qualifying read.
+    Outcomes,
+    /// Every event of one ticket, for the life stop.
+    Ticket(TicketId),
+}
+
+/// True when the event text surely is not an evidence or land event, judged from its leading
+/// `kind` line; unsure texts return false so they are parsed in full.
+fn surely_other_kind(text: &str) -> bool {
+    let Some(line) = text.lines().find(|l| !l.trim().is_empty()) else {
+        return false;
+    };
+    let Some(value) = line
+        .strip_prefix("kind")
+        .and_then(|r| r.trim_start().strip_prefix('='))
+    else {
+        return false;
+    };
+    let kind = value.trim().trim_matches('"');
+    !matches!(kind, "evidence" | "land") && !kind.contains(['\'', '\\'])
+}
+
+/// The parsed events wanted by `want`, in event order; unreadable files are skipped.
+///
+/// Skipping the TOML parse of events the tour never reads is the reindex speedup: a large ledger
+/// holds tens of thousands of events and only a few kinds matter.
+fn events_of(input: &GenInput<'_>, want: Want) -> BTreeMap<TicketId, Vec<Event>> {
     let mut out: BTreeMap<TicketId, Vec<Event>> = BTreeMap::new();
     let prefix = format!("{EVENTS_DIR}/");
     for (path, bytes) in input.tree {
@@ -86,10 +114,17 @@ fn events_of(input: &GenInput<'_>) -> BTreeMap<TicketId, Vec<Event>> {
         let (Ok(tid), Ok(eid)) = (tid.parse::<TicketId>(), stem.parse::<EventId>()) else {
             continue;
         };
-        let Some(ev) = std::str::from_utf8(bytes)
-            .ok()
-            .and_then(|t| Event::parse(eid, t).ok())
-        else {
+        match want {
+            Want::Ticket(only) if only != tid => continue,
+            _ => {}
+        }
+        let Ok(text) = std::str::from_utf8(bytes) else {
+            continue;
+        };
+        if matches!(want, Want::Outcomes) && surely_other_kind(text) {
+            continue;
+        }
+        let Ok(ev) = Event::parse(eid, text) else {
             continue;
         };
         out.entry(tid).or_default().push(ev);
@@ -164,12 +199,16 @@ fn pick(facts: &Facts<'_>, rows: &[Row]) -> Pins {
 /// Keep each previous pin that still qualifies; replace the others and say so.
 #[must_use]
 pub fn resolve(input: &GenInput<'_>, previous: &Pins) -> Resolved {
-    let rows = load(input);
+    resolve_rows(input, &load(input), previous)
+}
+
+/// [`resolve`] over rows the caller already loaded.
+fn resolve_rows(input: &GenInput<'_>, rows: &[Row], previous: &Pins) -> Resolved {
     let facts = Facts {
         rows: rows.iter().map(|r| (r.id, r)).collect(),
-        events: events_of(input),
+        events: events_of(input, Want::Outcomes),
     };
-    let fresh = pick(&facts, &rows);
+    let fresh = pick(&facts, rows);
     let mut notes = Vec::new();
     let mut keep = |name: &str,
                     old: Option<TicketId>,
@@ -224,17 +263,27 @@ fn fill(template: &str, vars: &[(&str, String)]) -> String {
 /// Render `TOUR.md` for explicit `pins` and `notes`.
 #[must_use]
 pub fn render_with(input: &GenInput<'_>, pins: &Pins, notes: &[String]) -> Vec<(String, Vec<u8>)> {
-    let rows = load(input);
-    let facts = Facts {
-        rows: rows.iter().map(|r| (r.id, r)).collect(),
-        events: events_of(input),
-    };
-    let row = |id: Option<TicketId>| id.and_then(|i| facts.rows.get(&i).copied());
+    render_rows(input, &load(input), pins, notes)
+}
+
+/// [`render_with`] over rows the caller already loaded.
+fn render_rows(
+    input: &GenInput<'_>,
+    rows: &[Row],
+    pins: &Pins,
+    notes: &[String],
+) -> Vec<(String, Vec<u8>)> {
+    let by_id: BTreeMap<TicketId, &Row> = rows.iter().map(|r| (r.id, r)).collect();
+    let life_events = pins
+        .closed
+        .map(|id| events_of(input, Want::Ticket(id)))
+        .unwrap_or_default();
+    let row = |id: Option<TicketId>| id.and_then(|i| by_id.get(&i).copied());
 
     let epic = row(pins.epic).map_or_else(
         || "not yet chosen (no epic exists)".to_owned(),
         |r| {
-            let size = by_dir(&rows)
+            let size = by_dir(rows)
                 .iter()
                 .find(|(d, m)| top_of(d, m).is_some_and(|t| t.id == r.id))
                 .map_or(0, |(_, m)| m.len());
@@ -245,8 +294,7 @@ pub fn render_with(input: &GenInput<'_>, pins: &Pins, notes: &[String]) -> Vec<(
         || "No ticket has been closed with evidence and a land yet.".to_owned(),
         |r| {
             let mut s = format!("{} followed through its events:\n\n", link(r));
-            for e in facts
-                .events
+            for e in life_events
                 .get(&r.id)
                 .map(Vec::as_slice)
                 .unwrap_or_default()
@@ -296,6 +344,7 @@ pub fn render_with(input: &GenInput<'_>, pins: &Pins, notes: &[String]) -> Vec<(
 /// Render `TOUR.md` with examples picked from scratch (no previous pins).
 #[must_use]
 pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
-    let r = resolve(input, &Pins::default());
-    render_with(input, &r.pins, &r.notes)
+    let rows = load(input);
+    let r = resolve_rows(input, &rows, &Pins::default());
+    render_rows(input, &rows, &r.pins, &r.notes)
 }
