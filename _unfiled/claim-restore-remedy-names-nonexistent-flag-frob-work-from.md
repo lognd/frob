@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T20:23:03Z"
-updated = "2026-10-22T20:49:31Z"
+updated = "2026-10-22T20:57:42Z"
 scope = ["crates/frob-worktree/src/claim_restore.rs"]
 
 [[acceptance]]
