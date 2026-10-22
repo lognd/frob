@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a CSS rule inside an HTML style element answers the style queries with spans in the HTML file", "a function call inside an HTML script element appears in the call graph"]
+new = ["a CSS rule inside an HTML style element answers the style queries with spans in the HTML file", "a function call inside an HTML script element appears in the call graph", "Several script islands in one file merge into the call graph with distinct caller symbols", "Empty, whitespace-only, JSON and src-only script/style elements lower no island content", "A syntax error in a script body keeps the calls parsed before it"]
+moved = [1, 2]
+at = "2026-10-22T02:24:40Z"
+actor = "lognd"
+rev = 1
