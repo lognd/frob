@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T18:08:47Z"
-updated = "2026-10-22T19:45:25Z"
-scope = ["crates/gob-git/src/read.rs"]
+updated = "2026-10-22T19:49:55Z"
+scope = ["crates/gob-git/src/read.rs", "crates/gob-git/tests/read_blobs.rs"]
 
 [[acceptance]]
 text = "Given a large ledger, when reindex_plan reads blobs, then it uses a batched read (cat-file --batch or equivalent) and results are identical to per-blob reads"
