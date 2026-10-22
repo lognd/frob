@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T10:57:44Z"
+digest = "9c1422492f7ca6029337fbf0980c71e51ef97348ae863b0fce737d2e5fcb3e63"
+exit_code = 0
+head = "1a0d70c15eeb83756207646204e7299a89508ee6"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 49.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1fb481b7-9303-49e2-a0bc-ffeaec7f750c with nextest profile: default
+    Starting 1 test across 1 binary (12 tests skipped)
+        PASS [   0.040s] grimble-arch::rules two_copies_make_no_dup_finding
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.040s] 1 test run: 1 passed, 12 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-arch --test rules two_copies_make_no_dup_finding"
+size = 594
+status = "measured"
+test_count = 1
+tests_digest = "7a5f98068f2a0c6c5db2a5e8bbefe4836de2a9db5d5af1daf9b834268dec3c68"
+at = "2026-10-22T10:57:44Z"
+actor = "lognd"
+rev = 1
