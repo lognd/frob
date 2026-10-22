@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T23:27:43Z"
+digest = "7f96c53c87f1bcd3bf5bbd09bf306ad0e2766a7505e303097f52e643fe322de2"
+exit_code = 0
+head = "6f4ec278822c5c318953b013c6d0ce2c4d8ca4c4"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 45849d6e-192e-433f-af34-dd231badbdfa with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.049s] gob-dev::layering workspace_layering_holds_and_every_crate_has_a_layer
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.050s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test layering workspace_layering_holds_and_every_crate_has_a_layer"
+size = 612
+status = "measured"
+test_count = 1
+tests_digest = "29fb0b3726eb310e761de0c3213391bc3f4612f159f1228a0207371086ef922b"
+at = "2026-10-22T23:27:43Z"
+actor = "lognd"
+rev = 1
