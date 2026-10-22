@@ -2,7 +2,8 @@
 id = "01M4CXR7CHD30VMWHMRD6TTN3F"
 title = "Component spec files and COMP001-009: props, variant matrix, states, token bindings, a11y contract, code mapping"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
