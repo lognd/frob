@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T13:55:31Z"
+digest = "883b3881a426f91b4d7bf38089911cc8e7d32186c46fbbe8fdff008e45fae16a"
+exit_code = 0
+head = "2059d25c7d8f9d4438ac98521263834046d23494"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a5b6e0e0-9046-4066-a282-e32bcff5def2 with nextest profile: default
+    Starting 1 test across 1 binary (375 tests skipped)
+        PASS [   0.090s] frob-cli::it init_eol_pin::autocrlf_true_writes_the_lf_pin_and_the_report_says_so
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.091s] 1 test run: 1 passed, 375 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test it init_eol_pin::autocrlf_true_writes_the_lf_pin_and_the_report_says_so"
+size = 627
+status = "measured"
+test_count = 1
+tests_digest = "21c16a7a75d7793ce8849448f64410d2c56af18f08a094b4009bfdcbfa9a81ad"
+at = "2026-10-22T13:55:31Z"
+actor = "lognd"
+rev = 1

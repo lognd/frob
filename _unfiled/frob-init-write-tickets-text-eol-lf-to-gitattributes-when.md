@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T04:00:45Z"
-updated = "2026-10-22T13:48:54Z"
+updated = "2026-10-22T13:55:31Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob/**", "docs/guides/upgrade-from-v1.md", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a repository with core.autocrlf=true, when frob init runs, then .gitattributes contains tickets/** text eol=lf and the init report says so; the upgrade guide explains that attesters defaults to the runner's git user.email"
-bound = false
+bound = true
 +++
 
 Hullbreach game (E, F).
