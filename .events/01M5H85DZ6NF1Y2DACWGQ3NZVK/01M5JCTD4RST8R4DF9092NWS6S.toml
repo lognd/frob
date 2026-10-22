@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/reindex.rs"]
+new = ["crates/frob-ledger/src/reindex.rs", "crates/frob-ledger/**"]
+at = "2026-10-22T18:08:51Z"
+actor = "lognd"
+rev = 1
