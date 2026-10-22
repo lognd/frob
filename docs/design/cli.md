@@ -179,7 +179,11 @@ implemented yet.
   the holder reuses the worktree found through the lease (or, if the
   lease is gone, through the branch name). `frob work --here` (hidden alias `start`) takes the
   lease for the current checkout and records that checkout's root as the
-  holder path. `frob work --next` takes no ticket: it picks the best
+  holder path, and pins the commit it started from on the lease (`base`, the
+  first pin is kept). `frob check --ticket` diffs against that base (an explicit
+  `--base` wins, `[check] base` is the fallback), and `frob test --base <rev>`
+  uses it when `<rev>` is the current HEAD. An unknown key in `frob.toml` is
+  refused with `E-CONFIG` by `init`, `doctor` and `check` alike. `frob work --next` takes no ticket: it picks the best
   doable ticket, claims it, and when the claim race is lost or the
   ticket is leased or not workable it re-queries and tries the next
   candidate (at most 8 attempts, never waiting). When nothing is

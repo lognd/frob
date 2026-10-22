@@ -53,10 +53,12 @@ impl Product for FrobProduct {
 
     fn check(
         ctx: &Context,
-        _root: &Path,
+        root: &Path,
         _opts: &CheckOptions,
         matches: &ArgMatches,
     ) -> Outcome<frob_check::CheckData> {
+        // frob:ticket 01M4CTV0F8HWA7DPXYYDBE4TDJ
+        crate::workspace::load_config(root)?;
         tracing::debug!("frob check through the product verb");
         let payload = frob_check::Check::from_matches(matches)?.run(ctx)?;
         let rows = crate::check_view::check_rows(&payload.data, ctx.verbosity > 0);

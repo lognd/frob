@@ -394,14 +394,11 @@ pub fn doctor_rows(d: &DoctorData) -> Vec<String> {
         ],
     );
     let cf = &d.config;
-    let mut config = vec![
+    let config = vec![
         kv("path", Some(&cf.path)),
         kv("present", Some(&cf.present.to_string())),
         kv("missing knobs", Some(&cf.missing_knobs.to_string())),
     ];
-    if let Some(e) = &cf.error {
-        config.push(kv("error", Some(e)));
-    }
     section(&mut out, "Config", &config);
     let l = &d.ledger;
     let mut ledger = vec![

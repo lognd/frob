@@ -138,8 +138,6 @@ pub struct ConfigInfo {
     pub present: bool,
     /// Materialized knobs absent from the file (each is a CFG001 finding).
     pub missing_knobs: usize,
-    /// Load error (unknown key, bad TOML), when any.
-    pub error: Option<String>,
 }
 
 /// Ledger ref reachability.
@@ -405,14 +403,7 @@ impl Doctor {
             frob_ledger::redact::RuleSet::mention_local_files(repo.common_dir());
         }
 
-        let loaded = FrobConfig::load(&located.root);
-        let (cfg, config_error) = match loaded {
-            Ok(c) => (c, None),
-            Err(e) => {
-                tracing::info!(error = %e, "config did not load; using defaults");
-                (FrobConfig::default(), Some(e.to_string()))
-            }
-        };
+        let cfg = crate::workspace::load_config(&located.root)?;
 
         let cache = cache_info(&located, &cfg);
 
@@ -429,7 +420,6 @@ impl Doctor {
             present: path.is_file(),
             path: Shown::of(&path).to_string(),
             missing_knobs: findings.len(),
-            error: config_error,
         };
 
         let (ledger, protection) = ledger_with_protection(&located, &cfg);

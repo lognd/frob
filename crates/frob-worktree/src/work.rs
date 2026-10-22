@@ -168,7 +168,7 @@ impl Workspace<'_> {
         cwd: &Path,
         opts: &WorkOptions,
     ) -> Result<Started, WorktreeError> {
-        self.begin(
+        let mut started = self.begin(
             ticket,
             &Plan::Start { cwd: clean(cwd) },
             Escapes {
@@ -178,7 +178,27 @@ impl Workspace<'_> {
                 wait_secs: opts.wait_secs,
                 anyway: opts.anyway.as_ref(),
             },
-        )
+        )?;
+        self.record_base(&mut started);
+        Ok(started)
+    }
+
+    /// Pin the current commit as the lease's diff base (frob:ticket 01M4CTV0F8HWA7DPXYYDBE4TDJ); failures are logged, not fatal.
+    fn record_base(&self, started: &mut Started) {
+        let head = match self.ledger.repo().rev_parse("HEAD") {
+            Ok(oid) => oid.to_string(),
+            Err(err) => {
+                tracing::warn!(%err, "no HEAD commit; the lease keeps no diff base");
+                return;
+            }
+        };
+        match self
+            .leases
+            .set_base(started.id, &started.lease.holder, &head)
+        {
+            Ok(lease) => started.lease = lease,
+            Err(err) => tracing::warn!(%err, "could not record the lease diff base"),
+        }
     }
 
     /// Release the lease on `ticket` and move it back to `todo`.

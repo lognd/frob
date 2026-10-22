@@ -13,7 +13,6 @@ expression: v
       "state": "ok"
     },
     "config": {
-      "error": null,
       "missing_knobs": 38,
       "path": "[path]",
       "present": false
@@ -42,6 +41,11 @@ expression: v
       "head": null,
       "linked_worktree": false,
       "root": "[path]"
+    },
+    "lands": {
+      "evicted": 0,
+      "lands": [],
+      "state": "ok"
     },
     "leases": {
       "corrupt": [],

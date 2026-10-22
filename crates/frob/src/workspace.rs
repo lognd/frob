@@ -72,6 +72,18 @@ pub(crate) fn config_refusal(e: &ConfigError) -> CliError {
         .into()
 }
 
+/// Load `<root>/frob.toml`, refusing with `E-CONFIG` on any config error (unknown key, bad TOML, mistyped value).
+///
+/// The one config policy shared by `init`, `doctor` and `check`: a config that does not load is a
+/// refusal everywhere, never a warning that falls back to defaults.
+// frob:ticket 01M4CTV0F8HWA7DPXYYDBE4TDJ
+pub(crate) fn load_config(root: &Path) -> Result<crate::config::FrobConfig, CliError> {
+    crate::config::FrobConfig::load(root).map_err(|e| {
+        tracing::warn!(error = %e, root = ?root, "frob.toml did not load; refusing");
+        config_refusal(&e)
+    })
+}
+
 /// Borrow all registered tables as the slice shape gob-config wants.
 pub(crate) fn table_refs(tables: &[TableDescription]) -> Vec<&TableDescription> {
     tables.iter().collect()

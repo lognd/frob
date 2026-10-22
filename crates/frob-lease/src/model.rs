@@ -68,6 +68,9 @@ pub struct Lease {
     /// The note given to the last `frob claim touch`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub touch_note: Option<String>,
+    /// Commit `work --here` was started from: the diff base for `check --ticket` and `test` on a shared checkout.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base: Option<String>,
 }
 
 impl Lease {

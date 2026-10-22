@@ -66,13 +66,6 @@ expression: v
     "ConfigInfo": {
       "description": "Config materialization status.",
       "properties": {
-        "error": {
-          "description": "Load error (unknown key, bad TOML), when any.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "missing_knobs": {
           "description": "Materialized knobs absent from the file (each is a CFG001 finding).",
           "format": "uint",
@@ -350,6 +343,34 @@ expression: v
       "required": [
         "target",
         "reason"
+      ],
+      "type": "object"
+    },
+    "LandsInfo": {
+      "description": "Local lands not on origin: the row 52 count `frob refresh` prints, as a doctor section.",
+      "properties": {
+        "evicted": {
+          "description": "Tickets whose latest lease event is an eviction.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "lands": {
+          "description": "Done tickets whose land commit origin's base lacks, as `<handle> at <commit>`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "state": {
+          "description": "`ok`, or `skipped: <why>` when there is no work tree, remote base ref or readable ledger.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "lands",
+        "evicted"
       ],
       "type": "object"
     },
@@ -652,6 +673,10 @@ expression: v
       "$ref": "#/$defs/GitInfo",
       "description": "Git discovery."
     },
+    "lands": {
+      "$ref": "#/$defs/LandsInfo",
+      "description": "Local lands origin's base lacks (distributed-tickets.md row 52)."
+    },
     "languages": {
       "anyOf": [
         {
@@ -692,7 +717,8 @@ expression: v
     "driver",
     "siblings",
     "gc",
-    "leases"
+    "leases",
+    "lands"
   ],
   "title": "DoctorData",
   "type": "object"

@@ -47,7 +47,7 @@ fn config_sync_and_doctor_accept_a_land_table() {
     assert_eq!(doc["land"]["block_on_unknown_ci"].as_bool(), Some(true));
     let doctor = frob(dir.path(), &["doctor"]);
     let v: serde_json::Value = serde_json::from_slice(&doctor.stdout).expect("json stdout");
-    assert!(v["data"]["config"]["error"].is_null(), "{v}");
+    assert!(v["error"].is_null(), "{v}");
 }
 
 // frob:tests crates/frob/src/config.rs::load
@@ -61,6 +61,7 @@ fn an_unknown_land_key_is_rejected() {
     .expect("write");
     let out = frob(dir.path(), &["doctor"]);
     let v: serde_json::Value = serde_json::from_slice(&out.stdout).expect("json stdout");
-    let err = v["data"]["config"]["error"].as_str().expect("config error");
-    assert!(err.contains("require_base_green"), "{err}");
+    assert_eq!(v["error"]["code"], "E-CONFIG", "{v}");
+    let err = v["error"]["message"].as_str().expect("config error");
+    assert!(err.contains("require_base_gren"), "{err}");
 }

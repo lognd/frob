@@ -501,6 +501,7 @@ impl LeaseStore {
                 agent: self.agent.clone(),
                 touched_at: None,
                 touch_note: None,
+                base: None,
             },
         };
         let already = existing.is_some_and(|e| e.scope == scope);
@@ -739,6 +740,51 @@ impl LeaseStore {
         self.write(&lock, &lease)?;
         tracing::info!(%ticket, %holder, "claim touched");
         Ok(lease)
+    }
+
+    /// Record `base` (a commit id) as the diff base of `holder`'s lease, keeping an earlier one.
+    ///
+    /// frob:ticket 01M4CTV0F8HWA7DPXYYDBE4TDJ
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::NotHeld`] with no lease, [`LeaseError::Held`] for another holder, plus lock and I/O failures.
+    pub fn set_base(
+        &self,
+        ticket: TicketId,
+        holder: &Holder,
+        base: &str,
+    ) -> Result<Lease, LeaseError> {
+        let lock = self.lock()?;
+        let mut lease = self.find(ticket)?.ok_or(LeaseError::NotHeld { ticket })?;
+        if &lease.holder != holder {
+            return Err(held_by(&lease, SAME_TICKET));
+        }
+        if lease.base.is_none() {
+            lease.base = Some(base.to_owned());
+            self.write(&lock, &lease)?;
+            tracing::info!(%ticket, %holder, base, "lease diff base recorded");
+        } else {
+            tracing::debug!(%ticket, "lease keeps its earlier diff base");
+        }
+        Ok(lease)
+    }
+
+    /// The diff base recorded on a live lease held from `worktree`, if any.
+    ///
+    /// frob:ticket 01M4CTV0F8HWA7DPXYYDBE4TDJ
+    ///
+    /// # Errors
+    ///
+    /// I/O and format failures.
+    pub fn base_for_worktree(&self, worktree: &Path) -> Result<Option<String>, LeaseError> {
+        let now = self.now();
+        let want = same_path(worktree);
+        Ok(self
+            .read_all()?
+            .into_iter()
+            .find(|l| l.is_live(now) && same_path(&l.holder.worktree) == want && l.base.is_some())
+            .and_then(|l| l.base))
     }
 
     /// Re-claim as `agent` (`Some` label) or as a human (`None`): the lease's window kind switches (`lease` op `rekind`).

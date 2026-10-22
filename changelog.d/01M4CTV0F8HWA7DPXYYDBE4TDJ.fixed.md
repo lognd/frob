@@ -1,0 +1,1 @@
+frob: an unknown key in frob.toml is now refused with E-CONFIG by init, doctor and check alike, and `work --here` pins a diff base on the lease so `check --ticket` and `test --base` see changes committed on the same branch.

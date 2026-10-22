@@ -240,7 +240,7 @@ pub(crate) fn resolve(
     snap: &Snapshot<Frob>,
     reference: &str,
     hops: u32,
-    base: &str,
+    (explicit, default): (Option<&str>, &str),
     lease_cfg: LeaseConfig,
 ) -> Result<TicketScope, CheckError> {
     let shared_files = lease_cfg.shared_files.clone();
@@ -289,6 +289,7 @@ pub(crate) fn resolve(
                 agent: None,
                 touched_at: None,
                 touch_note: None,
+                base: None,
             };
             (globs, lease)
         }
@@ -303,7 +304,8 @@ pub(crate) fn resolve(
         .collect();
     let files = with_dependents(snap, files, hops);
     tracing::info!(%handle, files = files.len(), "ticket file set computed");
-    let changes = branch_api_changes(ledger.repo(), &snap.core.root, base, ledger.config());
+    let base = effective_base(explicit, &lease, default);
+    let changes = branch_api_changes(ledger.repo(), &snap.core.root, &base, ledger.config());
     Ok(TicketScope {
         handle,
         lease: Some(lease),
@@ -311,6 +313,13 @@ pub(crate) fn resolve(
         shared_files,
         changes,
     })
+}
+
+/// The diff base of a `--ticket` run: the explicit `--base`, else the commit `work --here` pinned on the lease, else `[check] base` (frob:ticket 01M4CTV0F8HWA7DPXYYDBE4TDJ).
+pub(crate) fn effective_base(explicit: Option<&str>, lease: &Lease, default: &str) -> String {
+    let base = explicit.or(lease.base.as_deref()).unwrap_or(default);
+    tracing::debug!(base, "ticket diff base chosen");
+    base.to_owned()
 }
 
 /// The validated id of the declared rule `R`.
@@ -490,6 +499,33 @@ pub(crate) fn ticket_rules(
     reason = "a test reads the git config it just initialised"
 )]
 mod tests {
+    // frob:tests crates/frob-check/src/scope.rs::effective_base
+    #[test]
+    fn ticket_diff_base_prefers_explicit_then_pinned_then_default() {
+        let now: gob_time::Stamp = "2026-10-02T14:03:11Z".parse().expect("stamp");
+        let mut lease = Lease {
+            ticket: TicketId::mint(),
+            holder: Holder {
+                actor: String::new(),
+                worktree: std::path::PathBuf::new(),
+            },
+            scope: Vec::new(),
+            acquired_at: now,
+            renewed_at: now,
+            ttl_secs: 0,
+            history: Vec::new(),
+            queued: false,
+            agent: None,
+            touched_at: None,
+            touch_note: None,
+            base: None,
+        };
+        assert_eq!(effective_base(None, &lease, "main"), "main");
+        lease.base = Some("abc123".to_owned());
+        assert_eq!(effective_base(None, &lease, "main"), "abc123");
+        assert_eq!(effective_base(Some("dev"), &lease, "main"), "dev");
+    }
+
     // frob:tests crates/frob-check/src/scope.rs::TicketScope.edits_allowed
     #[test]
     fn fix_edits_stop_at_the_lease_and_hint_the_widen_command() {
@@ -510,6 +546,7 @@ mod tests {
             agent: None,
             touched_at: None,
             touch_note: None,
+            base: None,
         };
         let scope = TicketScope {
             handle: "~T".to_owned(),

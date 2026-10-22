@@ -511,7 +511,13 @@ impl Product for Frob {
                 .unwrap_or_default();
             return scope::resolve_diff(snap, table.ticket_hops, base, &cfg);
         }
-        scope::resolve(snap, reference, table.ticket_hops, &table.base, lease_cfg)
+        scope::resolve(
+            snap,
+            reference,
+            table.ticket_hops,
+            (self.opts.base.as_deref(), &table.base),
+            lease_cfg,
+        )
     }
 
     fn scoped_rules(
@@ -520,7 +526,10 @@ impl Product for Frob {
         scope: &TicketScope,
         table: &CheckTable,
     ) -> ScopedFindings {
-        let base = self.opts.base.clone().unwrap_or_else(|| table.base.clone());
+        let base = scope.lease.as_ref().map_or_else(
+            || self.opts.base.clone().unwrap_or_else(|| table.base.clone()),
+            |l| scope::effective_base(self.opts.base.as_deref(), l, &table.base),
+        );
         let mut diff = None;
         *self
             .cone

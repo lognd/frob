@@ -16,10 +16,10 @@ use serde::Serialize;
 mod freshness_hooks;
 
 use crate::PRODUCT;
-use crate::config::{FrobConfig, RefModeKnob};
+use crate::config::RefModeKnob;
 use crate::config_cmd::{SyncData, sync_config};
 use crate::ticket::branch_cmd::ensure_ticket_branch;
-use crate::workspace::{Located, config_refusal};
+use crate::workspace::Located;
 
 /// Merge driver arguments (`%O` ancestor, `%A` ours, `%B` theirs, `%P` path), after the program.
 /// The arguments after the program in the driver command; git substitutes the `%` placeholders.
@@ -779,7 +779,7 @@ impl Command for Init {
         let located = Located::discover(&ctx.cwd);
         let repo = located.require_repo()?;
         let root = &located.root;
-        let cfg = FrobConfig::load(root).map_err(|e| config_refusal(&e))?;
+        let cfg = crate::workspace::load_config(root)?;
         if let Some(r) = self.ledger_ref.as_deref()
             && r.strip_prefix("refs/heads/").is_none_or(str::is_empty)
         {

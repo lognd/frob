@@ -188,6 +188,7 @@ impl Command for TestVerb {
         let repo = ws.ledger.repo();
         let (touched, selected) = match (&self.base, self.all) {
             (Some(base), false) => {
+                let base = &claim_base(&ws, base, ctx);
                 let graph = build_repo_graph(&ws.root).map_err(TestsError::into_cli)?;
                 let touched = touched_set(repo, &graph, base).map_err(TestsError::into_cli)?;
                 let selected = select_tests(&ws.root, &graph, &touched);
@@ -284,6 +285,36 @@ impl Command for TestVerb {
                     e.event, e.ticket
                 ))
             )))
+        }
+    }
+}
+
+/// The base to diff against: `base`, unless it names the current commit and `work --here` pinned an earlier one on this checkout's lease (frob:ticket 01M4CTV0F8HWA7DPXYYDBE4TDJ).
+fn claim_base(ws: &Workspace, base: &str, ctx: &Context) -> String {
+    let repo = ws.ledger.repo();
+    let same_as_head = matches!(
+        (repo.rev_parse(base), repo.rev_parse("HEAD")),
+        (Ok(a), Ok(b)) if a == b
+    );
+    if !same_as_head {
+        return base.to_owned();
+    }
+    let pinned = frob_lease::open_store_from_repo(repo, ctx.clock.clone())
+        .map_err(|e| e.to_string())
+        .and_then(|(store, root)| store.base_for_worktree(&root).map_err(|e| e.to_string()));
+    match pinned {
+        Ok(Some(pinned)) => {
+            tracing::info!(
+                base,
+                pinned,
+                "base is the current commit; using the commit the claim started from"
+            );
+            pinned
+        }
+        Ok(None) => base.to_owned(),
+        Err(err) => {
+            tracing::debug!(%err, "no lease base lookup; using the given base");
+            base.to_owned()
         }
     }
 }
