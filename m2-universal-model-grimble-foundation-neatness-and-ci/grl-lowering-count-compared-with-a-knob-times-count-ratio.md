@@ -2,7 +2,8 @@
 id = "01M5GA77VTC3VDYVZ2HBZNRM2K"
 title = "GRL lowering: count compared with a knob-times-count ratio (NEAT031)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
