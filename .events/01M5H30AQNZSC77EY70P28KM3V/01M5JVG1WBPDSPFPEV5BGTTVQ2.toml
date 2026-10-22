@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T22:25:19Z"
+digest = "6769b4fd4a3b69313e824f988a4dc8f03975c48292690a902c564450634007b7"
+exit_code = 0
+head = "79a96081221a7422c35e1e0a60090fd2bd736a06"
+inline = '''
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e9c1d566-362c-4dee-a75b-308c7d816ec0 with nextest profile: default
+    Starting 2 tests across 1 binary (10 tests skipped)
+        PASS [   0.015s] crunk-rules::scene_rules scene002_fires_on_missing_blank_and_duplicate_data_ids
+        PASS [   0.018s] crunk-rules::scene_rules scene002_is_clean_for_unique_ids_scaffolding_and_svg_children
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.019s] 2 tests run: 2 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test scene_rules scene002"
+size = 882
+status = "measured"
+test_count = 2
+tests_digest = "53e16e1669a1b8931619a4fd031dbb176321a789f77f513ba5a29b7d64be7941"
+at = "2026-10-22T22:25:19Z"
+actor = "lognd"
+rev = 1
