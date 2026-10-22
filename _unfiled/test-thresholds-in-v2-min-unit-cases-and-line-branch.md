@@ -2,12 +2,12 @@
 id = "01M4FD1NX760N78Z1T60MQ76H2"
 title = "Test thresholds in v2: min unit cases and line/branch coverage percent per scope (v1 [testing]) as config-driven COV rules"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T03:59:25Z"
-updated = "2026-10-09T03:59:25Z"
+updated = "2026-10-22T12:16:58Z"
 labels = ["adoption:hullbreach"]
 scope = ["crates/frob-obligations/**", "crates/frob-tests/**", "crates/gob-config/**", "changelog.d/**"]
 
