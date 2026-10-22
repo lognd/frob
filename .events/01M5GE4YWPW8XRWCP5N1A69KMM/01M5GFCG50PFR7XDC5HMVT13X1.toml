@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["NEAT031 examples 0 and 1 pass and leave KNOWN_ENGINE_GAPS"]
+moved = []
+at = "2026-10-22T00:15:13Z"
+actor = "lognd"
+rev = 1
