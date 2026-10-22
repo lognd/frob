@@ -9,7 +9,7 @@ parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:42Z"
 updated = "2026-10-22T01:16:59Z"
-scope = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-release/**", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src", "crates/frob-evidence/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src", "crates/frob-check/tests", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/reference/config.md", "docs/schemas/config.json", "docs/reference/rules/REL003.md", "docs/guides/quickstart.md", "crates/frob-evidence/src/done.rs", "crates/frob-evidence/tests/**"]
+scope = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-release/**", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src", "crates/frob-evidence/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src", "crates/frob-check/tests", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/reference/config.md", "docs/schemas/config.json", "docs/reference/rules/REL003.md", "docs/guides/quickstart.md", "crates/frob-evidence/src/done.rs", "crates/frob-evidence/tests/**", "crates/frob-check/src/product.rs"]
 
 [[acceptance]]
 text = "Given an epic whose children are done, when it closes, then no changelog fragment or command evidence is required by default"
