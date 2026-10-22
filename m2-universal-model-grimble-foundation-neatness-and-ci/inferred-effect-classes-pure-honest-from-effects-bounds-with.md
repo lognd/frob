@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:37Z"
-updated = "2026-10-22T11:45:11Z"
+updated = "2026-10-22T11:51:56Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/grimble-check/**"]
 
 [[acceptance]]
 text = "Given a helper inferred pure on the base, when a change makes it read the clock, then NEAT037 fires with no annotation present"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an FFI boundary with grimble:effects none, when callers are checked, then their classes resolve and the claim itself is reported UNVERIFIED"

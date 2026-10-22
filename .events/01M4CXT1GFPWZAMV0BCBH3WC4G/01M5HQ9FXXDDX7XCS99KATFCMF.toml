@@ -1,0 +1,38 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T11:51:56Z"
+digest = "c69460b2a5300131639d46f44742734962ceead719956f68c0f6bc99560f9ee9"
+exit_code = 0
+head = "1e7f0832628bd824b16d58dd8758de7d2c96670d"
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3b7f87e2-d2aa-4d31-a14b-dbd4df7f5084 with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.004s] grimble-check::neat037 pure_helper_that_reads_the_clock_fires_without_annotation
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test neat037 pure_helper_that_reads_the_clock_fires_without_annotation"
+size = 1441
+status = "measured"
+test_count = 1
+tests_digest = "992da154cf4ed584a092d33abffff07175edb4e6855c30c97e33eaa82380d71e"
+at = "2026-10-22T11:51:56Z"
+actor = "lognd"
+rev = 1
