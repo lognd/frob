@@ -40,7 +40,48 @@ The `[game]` table: a game profile and the accessibility coverage keys it has de
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
+| `action` | array of table | no | `[]` | Input actions (`[[game.action]]`) with their remap, glyph and hold declarations. |
+| `colour_blind_modes` | array of string | no | `[]` | Palette modes (`[palette.modes.<name>]`) that serve as colour-blind modes. |
 | `coverage` | array of string | no | `[]` | Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`]. |
+| `devices` | array of string | no | `[]` | Input device families the game supports (`xbox`, `playstation`, `keyboard`, ...); each action needs a glyph for every one. |
+| `glyph_height_pct` | integer | no | `null` | Measured glyph height of the game's body typeface as a percent of its font size (1 to 100); without it a text size that passes on the font size alone cannot be judged. |
+| `profile` | array of table | no | `[]` | Target profiles (`[[game.profile]]`) the HUD safe area and text size are judged at. |
+| `subtitles` | table | no | `null` | `[game.subtitles]`: subtitle size and the options the player gets. |
+
+## `[[game.action]]`
+
+One `[[game.action]]`: an input action and how the game treats remapping, glyphs and holding.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| `glyphs` | array of string | no | `[]` | Device families that have a glyph for the action. |
+| `hold` | boolean | no | `null` | Whether the action needs a held press; absent means undeclared. |
+| `hold_alternative` | string | no | `null` | What replaces the hold (`toggle`, `tap`, ...) for a player who cannot hold. |
+| `id` | string | yes | `-` | Action id, unique within the game. |
+| `remappable` | boolean | no | `null` | Whether the player can rebind the action; absent means undeclared. |
+
+## `[[game.profile]]`
+
+One `[[game.profile]]`: a target screen with its safe area and minimum text size.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| `height` | integer | yes | `-` | Screen height in pixels. |
+| `id` | string | yes | `-` | Profile id, unique within the game. |
+| `kind` | string | yes | `-` | `console`, `pc` or `mobile`. |
+| `min_text_px` | integer | no | `null` | Minimum body text height in pixels at 1080p; absent means 26 for a console, 18 for a pc and no known minimum for mobile. |
+| `safe_area_pct` | integer | no | `null` | Percent of each edge kept clear of the HUD; absent means 5 for a console and 0 otherwise. |
+| `width` | integer | yes | `-` | Screen width in pixels. |
+
+## `[game.subtitles]`
+
+`[game.subtitles]`: subtitle size and the options the player gets.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| `background` | boolean | no | `null` | Whether a background behind the subtitles is offered; absent means undeclared. |
+| `size_px` | integer | no | `null` | Default subtitle text height in pixels at 1080p. |
+| `speaker_labels` | boolean | no | `null` | Whether speaker names are shown; absent means undeclared. |
 
 ## `[jsx]`
 

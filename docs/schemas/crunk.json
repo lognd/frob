@@ -200,10 +200,72 @@
         }
       ]
     },
+    "GameAction": {
+      "additionalProperties": false,
+      "description": "One `[[game.action]]`: an input action and how the game treats remapping, glyphs and holding.",
+      "properties": {
+        "glyphs": {
+          "default": [],
+          "description": "Device families that have a glyph for the action.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "hold": {
+          "default": null,
+          "description": "Whether the action needs a held press; absent means undeclared.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "hold_alternative": {
+          "default": null,
+          "description": "What replaces the hold (`toggle`, `tap`, ...) for a player who cannot hold.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "Action id, unique within the game.",
+          "type": "string"
+        },
+        "remappable": {
+          "default": null,
+          "description": "Whether the player can rebind the action; absent means undeclared.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
     "GameConfig": {
       "additionalProperties": false,
       "description": "The `[game]` table: a game profile and the accessibility coverage keys it has declared.",
       "properties": {
+        "action": {
+          "default": [],
+          "description": "Input actions (`[[game.action]]`) with their remap, glyph and hold declarations.",
+          "items": {
+            "$ref": "#/$defs/GameAction"
+          },
+          "type": "array"
+        },
+        "colour_blind_modes": {
+          "default": [],
+          "description": "Palette modes (`[palette.modes.<name>]`) that serve as colour-blind modes.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "coverage": {
           "default": [],
           "description": "Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`].",
@@ -211,6 +273,130 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "devices": {
+          "default": [],
+          "description": "Input device families the game supports (`xbox`, `playstation`, `keyboard`, ...); each\naction needs a glyph for every one.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "glyph_height_pct": {
+          "default": null,
+          "description": "Measured glyph height of the game's body typeface as a percent of its font size (1 to\n100); without it a text size that passes on the font size alone cannot be judged.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "profile": {
+          "default": [],
+          "description": "Target profiles (`[[game.profile]]`) the HUD safe area and text size are judged at.",
+          "items": {
+            "$ref": "#/$defs/GameProfile"
+          },
+          "type": "array"
+        },
+        "subtitles": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GameSubtitles"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Subtitle settings (`[game.subtitles]`)."
+        }
+      },
+      "type": "object"
+    },
+    "GameProfile": {
+      "additionalProperties": false,
+      "description": "One `[[game.profile]]`: a target screen with its safe area and minimum text size.",
+      "properties": {
+        "height": {
+          "description": "Screen height in pixels.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "id": {
+          "description": "Profile id, unique within the game.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "`console`, `pc` or `mobile`.",
+          "type": "string"
+        },
+        "min_text_px": {
+          "default": null,
+          "description": "Minimum body text height in pixels at 1080p; absent means 26 for a console, 18 for a pc\nand no known minimum for mobile.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "safe_area_pct": {
+          "default": null,
+          "description": "Percent of each edge kept clear of the HUD; absent means 5 for a console and 0 otherwise.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "width": {
+          "description": "Screen width in pixels.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "width",
+        "height"
+      ],
+      "type": "object"
+    },
+    "GameSubtitles": {
+      "additionalProperties": false,
+      "description": "`[game.subtitles]`: subtitle size and the options the player gets.",
+      "properties": {
+        "background": {
+          "default": null,
+          "description": "Whether a background behind the subtitles is offered; absent means undeclared.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "size_px": {
+          "default": null,
+          "description": "Default subtitle text height in pixels at 1080p.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "speaker_labels": {
+          "default": null,
+          "description": "Whether speaker names are shown; absent means undeclared.",
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "type": "object"

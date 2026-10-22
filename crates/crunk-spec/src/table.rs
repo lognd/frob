@@ -648,6 +648,95 @@ pub struct GameConfig {
     /// Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`].
     #[serde(default)]
     pub coverage: Vec<String>,
+    // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+    /// Target profiles (`[[game.profile]]`) the HUD safe area and text size are judged at.
+    #[serde(default, rename = "profile")]
+    pub profiles: Vec<GameProfile>,
+    // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+    /// Input device families the game supports (`xbox`, `playstation`, `keyboard`, ...); each
+    /// action needs a glyph for every one.
+    #[serde(default)]
+    pub devices: Vec<String>,
+    // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+    /// Input actions (`[[game.action]]`) with their remap, glyph and hold declarations.
+    #[serde(default, rename = "action")]
+    pub actions: Vec<GameAction>,
+    // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+    /// Palette modes (`[palette.modes.<name>]`) that serve as colour-blind modes.
+    #[serde(default)]
+    pub colour_blind_modes: Vec<String>,
+    // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+    /// Measured glyph height of the game's body typeface as a percent of its font size (1 to
+    /// 100); without it a text size that passes on the font size alone cannot be judged.
+    #[serde(default)]
+    pub glyph_height_pct: Option<u32>,
+    // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+    /// Subtitle settings (`[game.subtitles]`).
+    #[serde(default)]
+    pub subtitles: Option<GameSubtitles>,
+}
+
+// frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+/// The profile kinds a `[[game.profile]]` may name.
+pub const GAME_PROFILE_KINDS: [&str; 3] = ["console", "pc", "mobile"];
+
+// frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+/// One `[[game.profile]]`: a target screen with its safe area and minimum text size.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GameProfile {
+    /// Profile id, unique within the game.
+    pub id: String,
+    /// `console`, `pc` or `mobile`.
+    pub kind: String,
+    /// Screen width in pixels.
+    pub width: u32,
+    /// Screen height in pixels.
+    pub height: u32,
+    /// Percent of each edge kept clear of the HUD; absent means 5 for a console and 0 otherwise.
+    #[serde(default)]
+    pub safe_area_pct: Option<u32>,
+    /// Minimum body text height in pixels at 1080p; absent means 26 for a console, 18 for a pc
+    /// and no known minimum for mobile.
+    #[serde(default)]
+    pub min_text_px: Option<u32>,
+}
+
+// frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+/// One `[[game.action]]`: an input action and how the game treats remapping, glyphs and holding.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GameAction {
+    /// Action id, unique within the game.
+    pub id: String,
+    /// Whether the player can rebind the action; absent means undeclared.
+    #[serde(default)]
+    pub remappable: Option<bool>,
+    /// Whether the action needs a held press; absent means undeclared.
+    #[serde(default)]
+    pub hold: Option<bool>,
+    /// What replaces the hold (`toggle`, `tap`, ...) for a player who cannot hold.
+    #[serde(default)]
+    pub hold_alternative: Option<String>,
+    /// Device families that have a glyph for the action.
+    #[serde(default)]
+    pub glyphs: Vec<String>,
+}
+
+// frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+/// `[game.subtitles]`: subtitle size and the options the player gets.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GameSubtitles {
+    /// Default subtitle text height in pixels at 1080p.
+    #[serde(default)]
+    pub size_px: Option<u32>,
+    /// Whether a background behind the subtitles is offered; absent means undeclared.
+    #[serde(default)]
+    pub background: Option<bool>,
+    /// Whether speaker names are shown; absent means undeclared.
+    #[serde(default)]
+    pub speaker_labels: Option<bool>,
 }
 
 impl GameConfig {

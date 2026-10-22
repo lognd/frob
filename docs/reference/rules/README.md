@@ -183,6 +183,13 @@
 | [GX004](GX004.md) | focus-default | error | manual | P+ | true | A scene selects exactly one control when it opens. |
 | [GX005](GX005.md) | focus-nav-invalid | error | manual | P+ | true | Focus attributes name things that exist. |
 | [GX014](GX014.md) | ugui-literal-not-token | error | manual | P+ | false | A uGUI prefab generator holds a colour or font-size literal instead of a generated token. |
+| [GX015](GX015.md) | hud-safe-area | error | manual | P+ | false | A HUD element sits outside the profile's safe area. |
+| [GX016](GX016.md) | text-size-at-distance | error | manual | P+ | false | A text node is too small for the profile's viewing distance. |
+| [GX017](GX017.md) | glyph-coverage | error | manual | P+ | false | An action has no glyph for a supported input device. |
+| [GX018](GX018.md) | remap-coverage | error | manual | P+ | false | An action cannot be remapped. |
+| [GX019](GX019.md) | colour-blind-mode | error | manual | P+ | false | A declared colour-blind mode is not a palette mode. |
+| [GX020](GX020.md) | subtitle-options | error | manual | P+ | false | The subtitle settings are too small or lack a background or speaker labels. |
+| [GX021](GX021.md) | hold-alternative | error | manual | P+ | false | A hold action has no non-hold alternative. |
 
 ## HUMAN
 

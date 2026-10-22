@@ -929,6 +929,66 @@ pub(crate) fn game(raw: &crate::table::GameConfig) -> Res<()> {
             return Err(fail(at, format!("duplicate coverage key `{k}`")));
         }
     }
+    game_profiles(raw)?;
+    game_actions(raw)
+}
+
+// frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+/// `[[game.profile]]`: unique ids, a known kind, a real screen size and a sane safe area.
+fn game_profiles(raw: &crate::table::GameConfig) -> Res<()> {
+    let mut seen: HashSet<&str> = HashSet::new();
+    for (i, p) in raw.profiles.iter().enumerate() {
+        let at = vec![key("game"), key("profile"), Seg::Idx(i)];
+        non_empty(extend(&at, vec![key("id")]), &p.id, "id")?;
+        if !seen.insert(p.id.as_str()) {
+            return Err(fail(
+                extend(&at, vec![key("id")]),
+                format!("duplicate profile id `{}`", p.id),
+            ));
+        }
+        if !crate::table::GAME_PROFILE_KINDS.contains(&p.kind.as_str()) {
+            return Err(fail(
+                extend(&at, vec![key("kind")]),
+                format!(
+                    "unknown profile kind `{}` (expected one of {})",
+                    p.kind,
+                    crate::table::GAME_PROFILE_KINDS.join(", ")
+                ),
+            ));
+        }
+        if p.width == 0 || p.height == 0 {
+            return Err(fail(at, "profile width and height must be positive"));
+        }
+        if p.safe_area_pct.is_some_and(|v| v > 25) {
+            return Err(fail(
+                extend(&at, vec![key("safe_area_pct")]),
+                "safe_area_pct must be at most 25",
+            ));
+        }
+    }
+    if raw.glyph_height_pct.is_some_and(|v| v == 0 || v > 100) {
+        return Err(fail(
+            vec![key("game"), key("glyph_height_pct")],
+            "glyph_height_pct must be between 1 and 100",
+        ));
+    }
+    Ok(())
+}
+
+// frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+/// `[[game.action]]`: unique non-blank ids.
+fn game_actions(raw: &crate::table::GameConfig) -> Res<()> {
+    let mut seen: HashSet<&str> = HashSet::new();
+    for (i, a) in raw.actions.iter().enumerate() {
+        let at = vec![key("game"), key("action"), Seg::Idx(i)];
+        non_empty(extend(&at, vec![key("id")]), &a.id, "id")?;
+        if !seen.insert(a.id.as_str()) {
+            return Err(fail(
+                extend(&at, vec![key("id")]),
+                format!("duplicate action id `{}`", a.id),
+            ));
+        }
+    }
     Ok(())
 }
 

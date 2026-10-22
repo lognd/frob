@@ -904,6 +904,35 @@ fn game_table_loads_reports_missing_keys_and_rejects_unknown_or_duplicate_keys()
     assert!(detail(&dup).contains("duplicate coverage key"));
 }
 
+// frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+// frob:tests crates/crunk-spec/src/table.rs::GameConfig
+// frob:tests crates/crunk-spec/src/table.rs::GameProfile
+// frob:tests crates/crunk-spec/src/table.rs::GameAction
+// frob:tests crates/crunk-spec/src/table.rs::GameSubtitles
+#[test]
+fn game_profiles_actions_and_subtitles_load_and_validate() {
+    let spec = ok(&with(concat!(
+        "[game]\ndevices = [\"xbox\"]\nglyph_height_pct = 70\n",
+        "[[game.profile]]\nid = \"tv\"\nkind = \"console\"\nwidth = 1920\nheight = 1080\n",
+        "[[game.action]]\nid = \"jump\"\nremappable = true\nglyphs = [\"xbox\"]\n",
+        "[game.subtitles]\nsize_px = 30\n",
+    )));
+    let game = spec.game.expect("game");
+    assert_eq!(game.profiles[0].kind, "console");
+    assert_eq!(game.actions[0].remappable, Some(true));
+    assert_eq!(game.subtitles.expect("subtitles").size_px, Some(30));
+    let kind = err(&with(
+        "[game]\n[[game.profile]]\nid = \"a\"\nkind = \"toaster\"\nwidth = 1\nheight = 1\n",
+    ));
+    assert!(detail(&kind).contains("unknown profile kind `toaster`"));
+    let dup = err(&with(
+        "[game]\n[[game.action]]\nid = \"a\"\n[[game.action]]\nid = \"a\"\n",
+    ));
+    assert!(detail(&dup).contains("duplicate action id"));
+    let glyph = err(&with("[game]\nglyph_height_pct = 0\n"));
+    assert!(detail(&glyph).contains("glyph_height_pct"));
+}
+
 // frob:ticket 01M50AQ6XHV6Z8GS0V8J66M9GD
 // frob:tests crates/crunk-spec/src/table.rs::PacksConfig
 // frob:tests crates/crunk-spec/src/table.rs::PacksConfig.is_default
