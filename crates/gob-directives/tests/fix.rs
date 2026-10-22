@@ -97,6 +97,13 @@ fn fixtures() -> Vec<Fixture> {
     ]
 }
 
+/// Snapshot the outcome under `tests/fixtures/snapshots`, which the directive scan excludes.
+fn snap(name: &str, out: &Outcome) {
+    insta::with_settings!({ snapshot_path => "fixtures/snapshots", prepend_module_to_snapshot => false }, {
+        insta::assert_snapshot!(name, out.snapshot_text());
+    });
+}
+
 // frob:tests run_fixture
 // frob:tests Outcome.snapshot_text
 #[test]
@@ -105,7 +112,7 @@ fn dsl002_v1_keys_fix_to_a_fixpoint() {
     let out = run(f, Tier::A);
     assert!(out.passed(), "{:?}", out.violations);
     assert_eq!(out.rounds, 1);
-    insta::assert_snapshot!("dsl002_v1_keys", out.snapshot_text());
+    snap("dsl002_v1_keys", &out);
 }
 
 // frob:tests run_fixture
@@ -116,7 +123,7 @@ fn dsl003_deprecated_spellings_fix_to_a_fixpoint() {
     let out = run(f, Tier::A);
     assert!(out.passed(), "{:?}", out.violations);
     assert_eq!(out.rounds, 1);
-    insta::assert_snapshot!("dsl003_deprecated_spellings", out.snapshot_text());
+    snap("dsl003_deprecated_spellings", &out);
 }
 
 // frob:tests run_fixture
