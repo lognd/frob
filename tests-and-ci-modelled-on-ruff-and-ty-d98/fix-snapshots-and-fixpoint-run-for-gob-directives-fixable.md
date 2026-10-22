@@ -43,6 +43,10 @@ bound = false
 [[acceptance]]
 text = "a placeholder fix applies only at a higher tier"
 bound = false
+
+[[acceptance]]
+text = "every Deterministic registry rule has a fixture (missing_fixtures)"
+bound = false
 +++
 
 Follow-up of ~G4WAFJT: wire the gob-fix harness (gob_fix::run_fixture) for these fixable rules: a fixture per rule, an observe closure over the real check pipeline, an insta snapshot of Outcome::snapshot_text, and missing_fixtures over the registry's Deterministic rules.
