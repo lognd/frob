@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:11:32Z"
-updated = "2026-10-22T21:02:40Z"
+updated = "2026-10-22T21:21:38Z"
 scope = ["crates/crunk/src/rename.rs", "crates/crunk/tests/rename.rs"]
 
 [[acceptance]]
