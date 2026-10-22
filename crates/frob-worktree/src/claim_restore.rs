@@ -39,6 +39,7 @@ pub struct Restored {
 }
 
 /// The refusal for a [`RestoreRefusal`] on `handle`.
+// frob:ticket 01M5JMG3QGMK2QGCTYQ5TB9ZM4
 fn plan_refusal(why: RestoreRefusal, handle: &str) -> WorktreeError {
     match why {
         RestoreRefusal::EmptyReason => {
@@ -51,7 +52,7 @@ fn plan_refusal(why: RestoreRefusal, handle: &str) -> WorktreeError {
                 format!("{handle} was claimed again by {by}; it is too late to restore"),
             )
             .with_remedy(format!(
-                "ask {by} to hand the ticket back, or start fresh with `frob work {handle} --from <parked branch>`"
+                "ask {by} to hand the ticket back with `frob requeue {handle} --reason <why>`, then rerun `frob claim restore {handle} --reason <why>`"
             )),
         ),
         RestoreRefusal::NothingParked => WorktreeError::Refused(
@@ -145,6 +146,19 @@ mod tests {
         assert_eq!(code(RestoreRefusal::NothingParked), E_RESTORE_NOTHING);
         assert_eq!(code(RestoreRefusal::Taken("b".into())), E_RESTORE_TAKEN);
         assert!(code(RestoreRefusal::EmptyReason).starts_with("usage:"));
+    }
+
+    // frob:tests crates/frob-worktree/src/claim_restore.rs::plan_refusal
+    #[test]
+    fn taken_remedy_names_only_real_commands() {
+        let WorktreeError::Refused(r) = plan_refusal(RestoreRefusal::Taken("b".into()), "~X")
+        else {
+            panic!("not a refusal");
+        };
+        let remedy = r.remedy.clone().unwrap_or_default();
+        assert!(remedy.contains("frob requeue ~X --reason"), "{remedy}");
+        assert!(remedy.contains("frob claim restore ~X"), "{remedy}");
+        assert!(!remedy.contains("--from"), "{remedy}");
     }
 
     // frob:tests crates/frob-worktree/src/claim_restore.rs::restore_event
