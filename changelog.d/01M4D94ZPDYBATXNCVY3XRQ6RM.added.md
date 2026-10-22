@@ -1,0 +1,1 @@
+Added the Unity input and physics detectors in grimble-lints: the legacy Input class under an Input System project (rule 301) and Rigidbody forces or moves applied from Update instead of FixedUpdate (rule 302), with preprocessor-aware scanning.
