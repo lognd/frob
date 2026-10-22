@@ -1,0 +1,9 @@
+kind = "create"
+title = "crunk: I18N rules (pseudo-locale expansion, RTL, T1)"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working ~VAAWD0R: I18N T0/T1 rules were cut."
+at = "2026-10-22T06:44:59Z"
+actor = "lognd"
+rev = 1
