@@ -2,7 +2,7 @@
 id = "01M5G2WH43B41KTYYK40WS3RZW"
 title = "Fix snapshots and fixpoint run for gob-directives fixable rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
