@@ -2,7 +2,8 @@
 id = "01M48BMS05GVBRPP3B8NMTWA1V"
 title = "gob-symbols: evaluate function-local const bindings and namespace-import members in TS const_value"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
