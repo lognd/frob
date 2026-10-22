@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T12:37:32Z"
+digest = "8977357e0f2b47d367cd85f516bb7a79151adc2ef05d1225acde1d8f9f720087"
+exit_code = 0
+head = "6bf485c0452ef13e2c5f1f7d95073260dd596d4b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f6b5d4e3-3358-4c8b-97c4-a2fedb55945e with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.074s] frob-obligations::coverage_threshold acceptance_1_below_threshold_names_values_and_no_report_is_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.074s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations --test coverage_threshold acceptance_1_"
+size = 593
+status = "measured"
+test_count = 1
+tests_digest = "fbfd4a2a162a2da6f933011819936d62804184fbd33d4d86e3172f87f697180e"
+at = "2026-10-22T12:37:32Z"
+actor = "lognd"
+rev = 1
