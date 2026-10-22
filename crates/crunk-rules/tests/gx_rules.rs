@@ -56,3 +56,13 @@ fn gx005_fires_for_a_dangling_move() {
     assert_eq!(m.len(), 1, "{m:?}");
     assert!(m[0].contains("ghost"), "{m:?}");
 }
+
+// frob:tests crates/crunk-rules/src/scene_docs.rs::SceneDocFile.focus_graph
+#[test]
+fn focus_graph_lists_the_focusable_controls_of_a_scene() {
+    let text =
+        "<button data-id=\"a\" data-focus-default></button>\n<button data-id=\"b\"></button>\n";
+    let host = support::project(FILE, text, None);
+    let facts = crunk_rules::CrunkHost::scene_docs(&host).expect("scene docs");
+    assert_eq!(facts.files[0].focus_graph().nodes.len(), 2);
+}
