@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T09:24:34Z"
+digest = "a5a4d81f1906969f75add1af144b3e360eaaa259a2bc45394ff6896745d58635"
+exit_code = 0
+head = "0e0f18c87c678b4afe1ea093e0a720292f301422"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 14b709a9-bad0-4b92-bd14-cb00228756eb with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.150s] crunk::slop_report slop_report_lists_every_signal_with_evidence_and_tier_and_no_aggregate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.155s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test slop_report slop_report_lists_every_signal_with_evidence_and_tier_and_no_aggregate"
+size = 576
+status = "measured"
+test_count = 1
+tests_digest = "9f038dac53f50eca8309a905ae83ed41dbeba2e147e0bb6df0b38376c5a81444"
+at = "2026-10-22T09:24:34Z"
+actor = "lognd"
+rev = 1
