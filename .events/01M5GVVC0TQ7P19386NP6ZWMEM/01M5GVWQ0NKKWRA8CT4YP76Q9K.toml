@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T03:53:46Z"
+digest = "7d00bf2b158e011c602a51ffcada21348ac9e2beafe7301224eb5b79681c069d"
+exit_code = 0
+head = "bdf6831d599ec0e9451ec642f8409ff4f69ec940"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f9a2fe79-a27f-49ec-90d4-d19f409cb3dd with nextest profile: default
+    Starting 2 tests across 2 binaries (146 tests skipped)
+        PASS [   0.005s] frob-release::it release_workflow::the_linker_check_rejects_a_linux_job_that_compiles_without_it
+        PASS [   0.016s] frob-release::it release_workflow::every_job_that_compiles_rust_on_linux_installs_the_linker_first
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 2 tests run: 2 passed, 146 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release linker"
+size = 715
+status = "measured"
+test_count = 2
+tests_digest = "c1f026495bbda17639dd1a8569fdcba833e6811e307457d996b54bb47b2e41c1"
+at = "2026-10-22T03:53:46Z"
+actor = "lognd"
+rev = 1
