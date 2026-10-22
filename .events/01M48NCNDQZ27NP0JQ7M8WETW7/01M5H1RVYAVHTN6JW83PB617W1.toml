@@ -1,0 +1,38 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T05:36:30Z"
+digest = "973fcf02277300f1ad1b5829adb5938a18239b72e68f914f83a54b8ed6c4628d"
+exit_code = 0
+head = "593e7abdde6828a35b8b564b71e7aad24b798fea"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b7e933f3-77c3-4a3d-a28e-c8d824b429ae with nextest profile: default
+    Starting 13 tests across 1 binary
+        PASS [   0.010s] frob-evidence::import_v1 crlf_tickets_import_and_a_sprint_becomes_a_label
+        PASS [   0.011s] frob-evidence::import_v1 an_unmapped_open_ticket_stops_the_run
+        PASS [   0.011s] frob-evidence::import_v1 renders_the_id_map
+        PASS [   0.011s] frob-evidence::import_v1 renders_the_migration_report
+        PASS [   0.011s] frob-evidence::import_v1 renders_the_summary_table
+        PASS [   0.011s] frob-evidence::import_v1 refuses_a_non_empty_target
+        PASS [   0.013s] frob-evidence::import_v1 home_paths_and_private_terms_are_redacted
+        PASS [   0.013s] frob-evidence::import_v1 open_category_triage_places_open_tickets_in_triage
+        PASS [   0.015s] frob-evidence::import_v1 selection_imports_requirement_bearing_open_tickets_only
+        PASS [   0.016s] frob-evidence::import_v1 merge_refuses_id_and_alias_collisions_without_writing
+        PASS [   0.017s] frob-evidence::import_v1 merge_adds_only_new_ticket_directories
+        PASS [   0.017s] frob-evidence::import_v1 imports_maps_and_verifies
+        PASS [   0.008s] frob-evidence::import_v1 ulids_keep_creation_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 13 tests run: 13 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --test import_v1"
+size = 1634
+status = "measured"
+test_count = 13
+tests_digest = "cc8bb6a4a5d8022ecc8ebcaa7b16f82708afd67865ae9831ab3693fd59afc1ef"
+at = "2026-10-22T05:36:30Z"
+actor = "lognd"
+rev = 1
