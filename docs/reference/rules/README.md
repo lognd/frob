@@ -91,6 +91,12 @@
 | [COV001](COV001.md) | untested-public-function | warn | manual | P- | true | A public function or method has no test that reaches it. |
 | [COV003](COV003.md) | tests-names-missing-test | error | manual | P- | false | Alias of TEST001; never emitted by this crate. |
 
+## CRAFT
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CRAFT010](CRAFT010.md) | motion-policy | advisory | manual | P+ | false | Flags, once, a project whose stylesheets declare no `transition`, `animation` or `@keyframes` at all (the motion policy was deleted), and, once, a project that has motion but no `prefers-reduced-motion` media query. Advisory. |
+
 ## CYCLE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
