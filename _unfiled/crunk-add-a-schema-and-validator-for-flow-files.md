@@ -2,7 +2,8 @@
 id = "01M5JHRGCES4BCHCNBCB7WWZ9F"
 title = "crunk: add a schema and validator for flow files"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
