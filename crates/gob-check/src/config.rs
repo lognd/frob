@@ -157,6 +157,10 @@ pub enum ToolParser {
     // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
     #[serde(rename = "griffe-text")]
     GriffeText,
+    /// `api-extractor run` report-drift output: one `VERSION001` when the committed API report no longer matches the build.
+    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    #[serde(rename = "api-extractor-text")]
+    ApiExtractorText,
 }
 
 /// The earliest check level that runs a tool stage (`tier` of `[[check.tool]]`).
