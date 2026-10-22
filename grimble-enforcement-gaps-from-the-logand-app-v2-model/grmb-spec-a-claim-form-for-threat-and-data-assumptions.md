@@ -2,13 +2,13 @@
 id = "01M4FGYK3ZMG2PFK5FF7N3TMXS"
 title = "grmb-spec: a claim form for threat and data assumptions without a flow proposition"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:38Z"
-updated = "2026-10-09T05:07:38Z"
+updated = "2026-10-22T15:15:53Z"
 idempotency_key = "logand-gaps-D5"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["docs/design/grmb-spec.md", "docs/design/grimble-model.md", "changelog.d/**"]
