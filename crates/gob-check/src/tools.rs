@@ -532,6 +532,7 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
         | ToolParser::FormatterList
         | ToolParser::SemverChecksText
         | ToolParser::GriffeText
+        | ToolParser::ApiExtractorText
         | ToolParser::RoslynSarif => &[0, 1],
         // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
         // tsc exits 1 on diagnostics with emit skipped and 2 on diagnostics with emit generated.
@@ -647,10 +648,13 @@ fn execute(
     // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
     // Formatters split their report across both streams (ruff and prettier warn on stderr), so read both.
     // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
-    // cargo-semver-checks and griffe report on stderr, so they read both streams too.
+    // cargo-semver-checks, griffe and api-extractor report on stderr, so they read both streams too.
     let both = matches!(
         stage.parser,
-        ToolParser::FormatterList | ToolParser::SemverChecksText | ToolParser::GriffeText
+        ToolParser::FormatterList
+            | ToolParser::SemverChecksText
+            | ToolParser::GriffeText
+            | ToolParser::ApiExtractorText
     );
     let text = if both {
         format!("{}\n{}", output.stdout, output.stderr)
@@ -1498,6 +1502,36 @@ mod tests {
         let script = SEMVER_REPORT.replace("v1.2.1 (CHANGE)", "v2.0.0 (breaking change)");
         let stage = sh_stage("semver", ToolParser::SemverChecksText, &script, VERSION_OK);
         assert!(run_one(&stage).is_empty());
+    }
+
+    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
+    #[test]
+    fn api_extractor_report_drift_is_a_version001_error() {
+        if !gob_exec::require_sh("api_extractor_report_drift_is_a_version001_error") {
+            return;
+        }
+        let script = "echo 'Error: You have changed the public API signature for this project. Please copy the file \"temp/foo.api.md\" to \"etc/foo.api.md\", or perform a local build.'; exit 1";
+        let stage = sh_stage("api", ToolParser::ApiExtractorText, script, VERSION_OK);
+        let found = run_one(&stage);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].rule.as_str(), "VERSION001");
+        assert_eq!(found[0].severity, Severity::Error);
+    }
+
+    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
+    #[test]
+    fn a_missing_api_extractor_is_unresolved() {
+        if !gob_exec::require_sh("a_missing_api_extractor_is_unresolved") {
+            return;
+        }
+        let mut stage = sh_stage("lint", ToolParser::ApiExtractorText, "true", VERSION_OK);
+        stage.command = "frob-no-such-api-extractor".to_owned();
+        assert_tool_failed(
+            &run_one(&stage),
+            &["`lint`", "frob-no-such-api-extractor", "not found"],
+        );
     }
 
     // frob:tests crates/gob-check/src/tools.rs::start_tools

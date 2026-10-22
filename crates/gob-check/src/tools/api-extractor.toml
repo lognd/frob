@@ -1,0 +1,14 @@
+# api-extractor: TypeScript public API report drift against the committed report (VERSION001).
+# Runs in CI mode (no `--local`), so a changed API fails instead of silently rewriting the report.
+name = "api-extractor"
+command = "npx"
+pinned_version = "7.52.8"
+parser = "api-extractor-text"
+version_args = ["--yes", "@microsoft/api-extractor@{version}", "--version"]
+args = ["--yes", "@microsoft/api-extractor@{version}", "run"]
+inputs = ["**/*.ts", "**/*.d.ts", "api-extractor.json"]
+config_files = ["api-extractor.json", "config/api-extractor.json"]
+
+[exit]
+success = [0]
+findings = [1]
