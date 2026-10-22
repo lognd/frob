@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given core.autocrlf=true and an orphan ticket branch, when frob init or ledger setup runs, then the branch .gitattributes carries tickets/** text eol=lf and a second run changes nothing"]
+moved = []
+at = "2026-10-22T16:45:17Z"
+actor = "lognd"
+rev = 1
