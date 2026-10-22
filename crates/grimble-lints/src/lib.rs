@@ -25,6 +25,10 @@
 //! Rigidbody object, made from `Update` or `LateUpdate` rather than `FixedUpdate`. Both share the
 //! [`unity_common::Finding`] shape and the preprocessor-aware walk in [`unity_common`].
 //!
+//! [`unity_hot::scan`] finds `UNITY201` (a component or scene lookup, `Camera.main`) and `UNITY202`
+//! (a managed collection or array allocated) in hot code: `Update`-style callbacks and the
+//! same-class methods they reach. Both are Advisory; `Awake` and `Start` are not hot.
+//!
 //! [`path::scan`] finds `PATH001` absolute host path literals and, for Rust and Python, `PATH002`
 //! path-to-string separator handling and `PATH003` paths in command-line strings; a language
 //! without path-conversion roles reports them unresolved.
@@ -64,5 +68,6 @@ pub mod time_pass;
 pub mod typing;
 pub mod unity;
 pub mod unity_common;
+pub mod unity_hot;
 pub mod unity_input;
 pub mod unity_physics;
