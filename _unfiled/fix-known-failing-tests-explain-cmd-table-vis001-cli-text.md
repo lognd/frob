@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:48:36Z"
-updated = "2026-10-22T07:24:36Z"
-scope = ["crates/frob/**", "crates/frob-ledger/**", "crates/frob-worktree/src/verbs.rs", "crates/grimble-arch/src/lib.rs"]
+updated = "2026-10-22T07:24:37Z"
+scope = ["crates/frob/**", "crates/frob-ledger/**", "crates/frob-worktree/src/verbs.rs", "crates/grimble-arch/src/lib.rs", "crates/grimble-arch/src/vis.rs"]
 
 [[acceptance]]
 text = "Given a clean checkout, when the five named tests run, then they pass"
