@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T02:24:47Z"
+digest = "b42703b0992d07b3f9990ba28a56753dbe5fb4b442e36ab7573f8221e9eb8c1b"
+exit_code = 0
+head = "4ef48a82ab5fb8ecbfa91fb4868397aa5a273f3f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b19ed009-7c75-4357-ad50-c8a419d5c25e with nextest profile: default
+    Starting 1 test across 2 binaries (315 tests skipped)
+        PASS [   0.006s] gob-symbols::it html::several_islands_merge_their_calls_and_keep_distinct_symbols
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 315 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols several_islands_merge"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "5decc117e95ba02152adfdaa25904722a7b1f1252dd4765b1de23c8954e8e21a"
+at = "2026-10-22T02:24:47Z"
+actor = "lognd"
+rev = 1
