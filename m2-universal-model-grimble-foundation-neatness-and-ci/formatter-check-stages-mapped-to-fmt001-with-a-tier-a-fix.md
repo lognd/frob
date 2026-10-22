@@ -8,12 +8,12 @@ points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
 reporter = "lognd"
 created = "2026-10-08T08:12:36Z"
-updated = "2026-10-22T13:03:09Z"
+updated = "2026-10-22T13:17:32Z"
 scope = ["changelog.d/**", "crates/gob-check/**", "crates/frob/**"]
 
 [[acceptance]]
 text = "Given rustfmt, ruff format, prettier and dotnet format in check mode reporting a file, when frob check runs, then one FMT001 per file is reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given frob check --fix --ticket, when it runs, then only files inside the ticket scope are rewritten"

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T13:17:32Z"
+digest = "5734b2bb336445b04b294f4d56bc75a9f3b519b98bead439d0dfb5af9e304634"
+exit_code = 0
+head = "b5a9c279b4e2006d1f262d6ecc43615f827658f2"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0b085b18-bc2e-4ab9-b24c-6315944d9143 with nextest profile: default
+    Starting 1 test across 1 binary (133 tests skipped)
+        PASS [   0.035s] gob-check tools::tests::formatter_check_output_yields_one_fmt001_per_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.036s] 1 test run: 1 passed, 133 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --lib formatter_check_output_yields_one_fmt001_per_file"
+size = 626
+status = "measured"
+test_count = 1
+tests_digest = "6f2882887002bdc2ffe79c94fb6cdbbccfc4a64341dad4c316e26c5c179d43bb"
+at = "2026-10-22T13:17:32Z"
+actor = "lognd"
+rev = 1
