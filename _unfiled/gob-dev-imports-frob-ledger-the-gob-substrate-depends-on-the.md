@@ -2,12 +2,12 @@
 id = "01M48NCNDQZ27NP0JQ7M8WETW7"
 title = "gob-dev imports frob-ledger: the gob substrate depends on the frob goblin (SYS013 layering inversion)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-06T13:10:29Z"
-updated = "2026-10-22T05:16:02Z"
+updated = "2026-10-22T05:16:03Z"
 scope = ["crates/gob-dev/**"]
 
 [[acceptance]]
