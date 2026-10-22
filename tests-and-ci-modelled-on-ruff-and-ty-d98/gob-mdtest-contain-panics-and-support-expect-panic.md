@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-22T02:55:48Z"
+updated = "2026-10-22T02:55:49Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
@@ -37,7 +37,7 @@ bound = true
 
 [[acceptance]]
 text = "panics on parallel threads do not leak between threads"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "check_garbage reports panics, errors and silence per cell and passes Unresolved or NotApplicable"

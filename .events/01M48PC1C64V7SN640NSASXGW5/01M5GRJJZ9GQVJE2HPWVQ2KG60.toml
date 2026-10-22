@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [7]
+captured_at = "2026-10-22T02:55:49Z"
+digest = "f70d075b22dde1f00b99050897d8214488006f4036d639f421da60f6af465fb7"
+exit_code = 0
+head = "680e526f40f11e1b9e9920e9ef8fb448ccd17cce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0f97ae08-516e-4477-af83-b26e756066c7 with nextest profile: default
+    Starting 1 test across 1 binary (12 tests skipped)
+        PASS [   0.006s] gob-mdtest::panics parallel_panics_do_not_leak_between_threads
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 12 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest --test panics parallel_panics"
+size = 551
+status = "measured"
+test_count = 1
+tests_digest = "187e2a4862ac43adac545c3c09ce0b6590485a168cdc21e50794e836c3b97a60"
+at = "2026-10-22T02:55:49Z"
+actor = "lognd"
+rev = 1
