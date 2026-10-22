@@ -2,7 +2,8 @@
 id = "01M4CXRA570ABD65ZDFAFVVZ8Y"
 title = "crunk new and crunk edit --patch: id-addressed RFC 6902 edits validated by schema, returning the diff and findings of touched nodes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
