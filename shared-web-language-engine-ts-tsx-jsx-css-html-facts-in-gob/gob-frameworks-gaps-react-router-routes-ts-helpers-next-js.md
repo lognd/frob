@@ -4,10 +4,11 @@ title = "gob-frameworks gaps: react-router routes.ts helpers, Next.js re-exporte
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T11:09:41Z"
-updated = "2026-10-06T11:09:41Z"
+updated = "2026-10-22T00:15:13Z"
 scope = ["crates/gob-frameworks/**"]
 
 [[acceptance]]
@@ -20,6 +21,10 @@ bound = false
 
 [[acceptance]]
 text = "a page whose default export comes through export { X as default } names X as its component"
+bound = false
+
+[[acceptance]]
+text = "react-router routes.ts helpers, re-exported Next.js route methods and page default export through a binding are resolved"
 bound = false
 +++
 

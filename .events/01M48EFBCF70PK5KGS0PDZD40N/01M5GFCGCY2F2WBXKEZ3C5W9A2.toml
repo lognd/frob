@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a framework-mode routes.ts fixture produces the expected routes", "a re-exported GET handler in a Next.js route.ts yields method GET at Must", "a page whose default export comes through export { X as default } names X as its component"]
+new = ["a framework-mode routes.ts fixture produces the expected routes", "a re-exported GET handler in a Next.js route.ts yields method GET at Must", "a page whose default export comes through export { X as default } names X as its component", "react-router routes.ts helpers, re-exported Next.js route methods and page default export through a binding are resolved"]
+moved = [1, 2, 3]
+at = "2026-10-22T00:15:13Z"
+actor = "lognd"
+rev = 1
