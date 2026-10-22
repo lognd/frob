@@ -9,7 +9,7 @@ parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T04:54:18Z"
 updated = "2026-10-22T19:00:10Z"
-scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**", "docs/reference/**"]
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**", "docs/reference/**", "docs/crunk/**"]
 
 [[acceptance]]
 text = "Given fire and clean cases per GX rule, when the corpus runs, then each fires only on its fire case"
