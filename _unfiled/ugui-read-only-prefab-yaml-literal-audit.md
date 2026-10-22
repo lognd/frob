@@ -2,7 +2,8 @@
 id = "01M5HW48KRXEE8ARBE3N2JPRYH"
 title = "uGUI: read-only prefab YAML literal audit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
