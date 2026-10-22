@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:55:44Z"
-updated = "2026-10-22T03:56:00Z"
+updated = "2026-10-22T04:43:42Z"
 scope = ["crates/frob-ledger/tests/scrub.rs"]
 
 [[acceptance]]
