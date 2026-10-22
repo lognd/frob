@@ -2,7 +2,8 @@
 id = "01M4CXSRE3YHY7FV30R8GMB58A"
 title = "COH002 decision with effects (functional core, imperative shell), judged against grimble:shell and grimble:core roles"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
