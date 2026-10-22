@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T17:42:16Z"
+digest = "f25686874b6c9cb2d5cea80e99d893110a9e5e7bf468c519348a7269ac62b120"
+exit_code = 0
+head = "18de2f92c4f0bf364063c5910faa4ac249cddec2"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a2a9a8fc-b27d-4e63-9856-eeeda53a0ae7 with nextest profile: default
+    Starting 1 test across 1 binary (150 tests skipped)
+        PASS [   0.005s] gob-check version_bump::tests::permitting_bump_allows_breakage
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 150 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --lib version_bump::tests::permitting_bump_allows_breakage"
+size = 615
+status = "measured"
+test_count = 1
+tests_digest = "a8d59fc3dd12eb68cc28890dd5cfe01c3799536851ec7be91c791dd830f490c9"
+at = "2026-10-22T17:42:16Z"
+actor = "lognd"
+rev = 1
