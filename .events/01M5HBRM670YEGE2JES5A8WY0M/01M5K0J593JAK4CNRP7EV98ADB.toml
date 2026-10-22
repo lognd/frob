@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T23:51:36Z"
+digest = "ae74fefacdacf75004f26c519ac2f83ddb1f81a76b55440883a38ed8493c2fbb"
+exit_code = 0
+head = "160e2d6cb96b54ef5e32b824e138a8e58ffacca1"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3f9dd3ec-9cfd-47ac-b6eb-4622ae56cd8a with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        PASS [   0.054s] gob-dev::layering workspace_layering_holds_and_every_crate_has_a_layer
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.054s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev --test layering workspace_layering_holds_and_every_crate_has_a_layer"
+size = 798
+status = "measured"
+test_count = 1
+tests_digest = "29fb0b3726eb310e761de0c3213391bc3f4612f159f1228a0207371086ef922b"
+at = "2026-10-22T23:51:36Z"
+actor = "lognd"
+rev = 1

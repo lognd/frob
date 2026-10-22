@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:31:11Z"
-updated = "2026-10-22T23:50:55Z"
+updated = "2026-10-22T23:51:36Z"
 scope = ["crates/gob-dev/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "layering::workspace_layering_holds_and_every_crate_has_a_layer passes, with ALLOWED rows for gob-dev -> crunk and grimble"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "profile_coverage::every_leaf_command_has_a_scenario_or_a_skip_reason passes for crunk edit, export dtcg, extract-token, import dtcg, rename"
