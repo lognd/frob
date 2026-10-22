@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T21:02:54Z"
-updated = "2026-10-22T21:47:47Z"
+updated = "2026-10-22T21:49:59Z"
 scope = ["docs/crunk/README.md"]
 
 [[acceptance]]
