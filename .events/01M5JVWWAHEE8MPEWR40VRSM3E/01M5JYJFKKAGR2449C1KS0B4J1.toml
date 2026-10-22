@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T23:16:51Z"
+digest = "25c7b61a1e1f7033151d42dee68b87ef00af0d73c6004e879262833c18c3ddef"
+exit_code = 0
+head = "df82ce40155d4ab1d24c83b5d20b6e126bb790f1"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c8e10808-b330-49fd-847a-f520f4dadfd9 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.019s] frob-docgen::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen --test profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "59d2af6bb7068fe222677a5063f60036dc54cff05a7a1fa4739af6a172414e15"
+at = "2026-10-22T23:16:51Z"
+actor = "lognd"
+rev = 1
