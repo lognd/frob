@@ -58,6 +58,29 @@ pub(crate) fn odb_err(e: impl std::fmt::Display) -> GitError {
     GitError::Odb(e.to_string())
 }
 
+/// Batches smaller than this are read on the calling thread; thread start-up would cost more.
+const PARALLEL_MIN_BLOBS: usize = 1024;
+/// Upper bound on reader threads, so a many-core host does not oversubscribe the disk cache.
+const MAX_READ_THREADS: usize = 8;
+
+/// Read `oids` in order from `gix` with one reused scratch buffer.
+fn read_blob_run(gix: &gix::Repository, oids: &[Oid]) -> Result<Vec<Vec<u8>>, GitError> {
+    use gix::prelude::FindExt;
+    let mut scratch = Vec::new();
+    let mut out = Vec::with_capacity(oids.len());
+    for oid in oids {
+        let data = gix.objects.find(oid, &mut scratch).map_err(odb_err)?;
+        if data.kind != gix::object::Kind::Blob {
+            return Err(odb_err(format!(
+                "object {oid} is a {}, not a blob",
+                data.kind
+            )));
+        }
+        out.push(data.data.to_vec());
+    }
+    Ok(out)
+}
+
 impl Repo {
     /// Open the repository containing `cwd`, including from a linked worktree.
     ///
@@ -252,6 +275,52 @@ impl Repo {
     pub fn read_blob(&self, oid: &Oid) -> Result<Vec<u8>, GitError> {
         let blob = self.gix.find_blob(*oid).map_err(odb_err)?;
         Ok(blob.data.clone())
+    }
+
+    /// The contents of every blob in `oids`, in the same order, identical to calling [`Self::read_blob`] per id.
+    ///
+    /// Each worker reuses one scratch buffer, so a blob costs one exact-size allocation instead of
+    /// an object wrapper plus a copy, and large batches are inflated by several threads at once
+    /// (inflate dominates a packed ledger read). This is the hot path of ledger reindex.
+    ///
+    /// # Errors
+    /// [`GitError::Odb`] when any object is missing or not a blob; nothing is returned partially.
+    // frob:ticket 01M5JCT8CXN20B2GJHAE5JDHHC
+    pub fn read_blobs(&self, oids: &[Oid]) -> Result<Vec<Vec<u8>>, GitError> {
+        let workers = if oids.len() < PARALLEL_MIN_BLOBS {
+            1
+        } else {
+            std::thread::available_parallelism()
+                .map_or(1, std::num::NonZero::get)
+                .min(MAX_READ_THREADS)
+        };
+        if workers <= 1 {
+            return read_blob_run(&self.gix, oids);
+        }
+        let shared = self.gix.clone().into_sync();
+        let chunk = oids.len().div_ceil(workers);
+        let parts: Vec<Result<Vec<Vec<u8>>, GitError>> = std::thread::scope(|scope| {
+            let handles: Vec<_> = oids
+                .chunks(chunk)
+                .map(|part| {
+                    let shared = &shared;
+                    scope.spawn(move || read_blob_run(&shared.to_thread_local(), part))
+                })
+                .collect();
+            handles
+                .into_iter()
+                .map(|h| h.join().unwrap_or_else(|p| std::panic::resume_unwind(p)))
+                .collect()
+        });
+        let mut out = Vec::with_capacity(oids.len());
+        for part in parts {
+            out.extend(part?);
+        }
+        debug!(
+            count = out.len(),
+            workers, "blobs read in one parallel batch"
+        );
+        Ok(out)
     }
 
     /// Peel a commit, tag or tree id to its tree.

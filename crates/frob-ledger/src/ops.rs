@@ -1125,10 +1125,13 @@ impl Ledger {
         let Some(tip) = self.tip_of(&ref_name)? else {
             return Ok(ReindexPlan::default());
         };
-        let mut before = Tree::new();
-        for (path, oid) in self.list_blobs(&format!("{tip}^{{tree}}"))? {
-            before.insert(path, self.repo().read_blob(&oid)?);
-        }
+        let blobs = self.list_blobs(&format!("{tip}^{{tree}}"))?;
+        let oids: Vec<Oid> = blobs.iter().map(|(_, oid)| *oid).collect();
+        let before: Tree = blobs
+            .into_iter()
+            .map(|(path, _)| path)
+            .zip(self.repo().read_blobs(&oids)?)
+            .collect();
         let opts = ReindexOptions {
             version: env!("CARGO_PKG_VERSION"),
             handle_min_len: self.config().handle_min_len,
