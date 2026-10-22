@@ -2,7 +2,8 @@
 id = "01M4CXRXWTA9DG9DTV5R149H7C"
 title = "VIS rules: perceptual diff thresholds and design-versus-build comparison"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
