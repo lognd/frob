@@ -2,7 +2,8 @@
 id = "01M48EFBCF70PK5KGS0PDZD40N"
 title = "gob-frameworks gaps: react-router routes.ts helpers, Next.js re-exported route methods, page default export through a binding"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
