@@ -2,7 +2,8 @@
 id = "01M4FDQ3841JN891PHV248NC9A"
 title = "check --ticket defaults its base to the commit where the ticket's work lease started (stacked branches)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
