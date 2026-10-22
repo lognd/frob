@@ -337,16 +337,6 @@ enum Matcher {
     Length(LengthMatcher),
 }
 
-impl Matcher {
-    /// Offer position `k` to the wrapped matcher.
-    fn at(&self, text: &str, k: usize) -> Option<Hit> {
-        match self {
-            Self::Hex(m) => m.at(text, k),
-            Self::Length(m) => m.at(text, k),
-        }
-    }
-}
-
 /// Compute the new token name and every file change, without writing anything.
 fn plan(
     root: &Path,
@@ -386,7 +376,10 @@ fn plan(
         .collect();
     let mut changes = reference_changes(&files, |text, lang| {
         scan(text, lang, |t, k, site| match site {
-            Site::Code => matcher.at(t, k),
+            Site::Code => match &matcher {
+                Matcher::Hex(m) => m.at(t, k),
+                Matcher::Length(m) => m.at(t, k),
+            },
             Site::Str { .. } => None,
         })
     });
