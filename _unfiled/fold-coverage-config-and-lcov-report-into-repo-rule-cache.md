@@ -2,12 +2,12 @@
 id = "01M5HT58K22KJXAE1MWHY3T79D"
 title = "Fold coverage config and lcov report into repo-rule cache key"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T12:42:45Z"
-updated = "2026-10-22T14:15:25Z"
+updated = "2026-10-22T14:50:17Z"
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
