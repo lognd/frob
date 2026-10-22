@@ -1,0 +1,9 @@
+kind = "create"
+title = "crunk rename: support design/tokens custom tokens and derived scale tokens"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "Found while working ~PAN1YXT: rename covers [palette] colors and [layers] only; Custom tokens and derived scale/font tokens refuse with E-RENAME-KIND."
+at = "2026-10-22T06:11:32Z"
+actor = "lognd"
+rev = 1
