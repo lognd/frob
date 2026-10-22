@@ -8,7 +8,7 @@ points = 3
 parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
 reporter = "lognd"
 created = "2026-10-06T13:39:49Z"
-updated = "2026-10-22T02:19:53Z"
+updated = "2026-10-22T02:20:02Z"
 scope = ["crates/gob-cli/**", "crates/gob-dev/**", "docs/design/cli.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "a row without a registered verb fails naming it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the justification column exists for every row"
