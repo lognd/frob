@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-22T16:54:33Z"
+digest = "6004a03356c2e056d4a075c39743d60fb2b50893b34cf1a1f1ef12e4947a3505"
+exit_code = 0
+head = "a103f449753b22e8a0ab5c788564f9db727b4c65"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c2049ba9-bdff-4dd4-9d2e-3120f1fdd751 with nextest profile: default
+    Starting 1 test across 1 binary (146 tests skipped)
+        PASS [   0.006s] gob-check semver_parse::tests::api_extractor_clean_empty_and_malformed_output_yield_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 146 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --lib api_extractor_clean_empty_and_malformed_output_yield_nothing"
+size = 637
+status = "measured"
+test_count = 1
+tests_digest = "683b3fa0e2797b36ba248e85fca22966412e9e6c01634006ac8e2f25d4d0f126"
+at = "2026-10-22T16:54:33Z"
+actor = "lognd"
+rev = 1

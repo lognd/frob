@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T14:04:09Z"
-updated = "2026-10-22T16:51:56Z"
+updated = "2026-10-22T16:54:33Z"
 scope = ["crates/gob-check/**", "changelog.d/**", "docs/**"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given clean, empty or malformed api-extractor output, when VERSION001 runs, then no finding is produced"
-bound = false
+bound = true
 +++
 
 found while working BVDP7MK
