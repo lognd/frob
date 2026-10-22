@@ -2,7 +2,8 @@
 id = "01M5H3RXWHYH6MRJX6B2M35H0F"
 title = "crunk rename: support design/tokens custom tokens and derived scale tokens"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
