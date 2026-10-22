@@ -2,7 +2,8 @@
 id = "01M4CXT7KWGP62H0CRCDTBY8Q0"
 title = "CRAFT001-012 presence rules paired with SLOP rules (type scale, palette roles, radius policy, motion policy, voice file)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
