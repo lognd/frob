@@ -2,7 +2,8 @@
 id = "01M5GW08PF9XDMEQNN8KJE2ZQF"
 title = "Fix scrub test lease fixture missing op"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
