@@ -166,12 +166,12 @@ struct Call {
     in_test: bool,
 }
 
-fn text<'a>(n: Node<'_>, src: &'a str) -> &'a str {
+pub(crate) fn text<'a>(n: Node<'_>, src: &'a str) -> &'a str {
     src.get(n.start_byte()..n.end_byte()).unwrap_or_default()
 }
 
 /// Receiver or name text with `this.` and global-object prefixes removed.
-fn normalise(s: &str) -> String {
+pub(crate) fn normalise(s: &str) -> String {
     let s = s.trim();
     for p in ["this.", "window.", "globalThis.", "self."] {
         if let Some(rest) = s.strip_prefix(p) {
@@ -181,7 +181,7 @@ fn normalise(s: &str) -> String {
     s.to_owned()
 }
 
-fn is_function(kind: &str) -> bool {
+pub(crate) fn is_function(kind: &str) -> bool {
     matches!(
         kind,
         "function_declaration"
@@ -206,7 +206,7 @@ fn range(n: Node<'_>) -> (usize, usize) {
 }
 
 /// The name an expression's value is bound to, if its parent binds it.
-fn bound_name(node: Node<'_>, src: &str) -> Option<String> {
+pub(crate) fn bound_name(node: Node<'_>, src: &str) -> Option<String> {
     let mut cur = node;
     let mut parent = node.parent()?;
     while matches!(
@@ -315,7 +315,7 @@ fn constructed(calls: &[Call], ctor: &str) -> Vec<String> {
         .collect()
 }
 
-fn count_word(haystack: &str, word: &str) -> usize {
+pub(crate) fn count_word(haystack: &str, word: &str) -> usize {
     let ident = |c: char| c.is_alphanumeric() || c == '_' || c == '$';
     haystack
         .match_indices(word)
@@ -326,7 +326,7 @@ fn count_word(haystack: &str, word: &str) -> usize {
         .count()
 }
 
-fn span(start: usize, end: usize) -> TextRange {
+pub(crate) fn span(start: usize, end: usize) -> TextRange {
     let clamp = |n: usize| TextSize::new(u32::try_from(n).unwrap_or(u32::MAX));
     TextRange::new(clamp(start), clamp(end))
 }
