@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T13:17:09Z"
-updated = "2026-10-22T17:16:35Z"
-scope = ["crates/gob-languages/**"]
+updated = "2026-10-22T17:17:22Z"
+scope = ["crates/gob-languages/**", "crates/crunk-check/**"]
 
 [[acceptance]]
 text = "A .prefab file is detected as a language and its YAML Color and fontSize literals are audited read-only by the uGUI rules"
