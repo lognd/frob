@@ -1,0 +1,9 @@
+kind = "create"
+title = "crunk extract-token: non-color literals (lengths, durations)"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "Found while working ~PAN1YXT: extract-token only promotes hex colors; other literals are refused with E-EXTRACT-LITERAL."
+at = "2026-10-22T06:11:32Z"
+actor = "lognd"
+rev = 1
