@@ -2,7 +2,8 @@
 id = "01M4CXQYFA9ACDVWF4R62C50FH"
 title = "crunk import dtcg and export dtcg round-trip"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
