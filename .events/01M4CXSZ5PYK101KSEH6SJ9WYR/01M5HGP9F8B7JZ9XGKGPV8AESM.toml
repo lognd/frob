@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T09:55:15Z"
+digest = "8f817018c61d680bd99b6b9485c369ef1b99d662680b95922ed85d6cd33dc09a"
+exit_code = 101
+head = "570ded8d23c5aa5c500474715a7ff108673f8464"
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+error[E0432]: unresolved import `gob_check::incompleteness`
+  --> crates/gob-check/tests/oracle_gate.rs:10:16
+   |
+10 | use gob_check::incompleteness::{gate, measure, parse_baseline, parse_corpus};
+   |                ^^^^^^^^^^^^^^ could not find `incompleteness` in `gob_check`
+
+error[E0433]: cannot find `incompleteness` in `gob_check`
+  --> crates/gob-check/tests/oracle_gate.rs:45:29
+   |
+45 |     c.observed = gob_check::incompleteness::Verdict::Unknown;
+   |                             ^^^^^^^^^^^^^^ could not find `incompleteness` in `gob_check`
+
+error[E0433]: cannot find `incompleteness` in `gob_check`
+  --> crates/gob-check/tests/oracle_gate.rs:54:29
+   |
+54 |     c.observed = gob_check::incompleteness::Verdict::No;
+   |                             ^^^^^^^^^^^^^^ could not find `incompleteness` in `gob_check`
+
+Some errors have detailed explanations: E0432, E0433.
+For more information about an error, try `rustc --explain E0432`.
+error: could not compile `gob-check` (test "oracle_gate") due to 3 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package gob-check --test oracle_gate` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p gob-check --test oracle_gate corpus_false_unknown_rate_is_reported_and_a_rise_or_false_must_fails"
+size = 1358
+status = "measured"
+at = "2026-10-22T09:55:15Z"
+actor = "lognd"
+rev = 1
