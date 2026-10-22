@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T07:36:34Z"
-updated = "2026-10-22T17:57:41Z"
+updated = "2026-10-22T17:59:56Z"
 scope = ["crates/crunk/**", "docs/crunk/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an edit that adds a new key or table, then it is inserted without disturbing neighbouring comments, and a malformed file is an error that leaves it unchanged"
-bound = false
+bound = true
 +++
 
 Cut from AFVVZ8Y: edit re-emits from a parsed tree, losing comments; move to toml_edit DocumentMut surgery.
