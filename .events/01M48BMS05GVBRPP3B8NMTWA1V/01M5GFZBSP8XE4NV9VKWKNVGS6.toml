@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T00:23:13Z"
+digest = "08ef20c63f10cf9f13620bb0f79aaafda36ed8a37f474499d91efceab8570953"
+exit_code = 0
+head = "ca180955a9243d54c835c735457127ba8be3f438"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 56c8865b-9e18-4dff-bde3-6c395e9564ca with nextest profile: default
+    Starting 1 test across 2 binaries (310 tests skipped)
+        PASS [   0.007s] gob-symbols::it typescript_consteval::a_function_local_const_evaluates
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 310 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols a_function_local_const_evaluates"
+size = 891
+status = "measured"
+test_count = 1
+tests_digest = "577dd258a27a80e250296c54411f3868d30e3c18149cb8f4c9c0d82ce5c2f273"
+at = "2026-10-22T00:23:13Z"
+actor = "lognd"
+rev = 1
