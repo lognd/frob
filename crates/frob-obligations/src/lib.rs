@@ -89,7 +89,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::Path;
 
 use frob_ledger::Ledger;
-use gob_directives::DirectiveRecord;
+use gob_directives::{DirectiveRecord, Dsl002};
 use gob_languages::Language;
 use gob_lock::LockFile;
 use gob_rules::{Exception, Finding, Rule, RuleId, RuleMeta};
@@ -191,6 +191,7 @@ fn file_rules(
     out.extend(doc::doc001(inputs.graph, file, path, text));
     out.extend(doc::doc002(inputs.root, file, path, text));
     out.extend(refs::ref001(directives, tickets));
+    out.extend(refs::dsl002_aliases(directives, tickets));
     // frob:ticket 01M3ZX86MA30ABW915Z943BQYB
     out.extend(tick_paths::tick006(file, path, text, inputs.ledger));
     out
@@ -198,13 +199,14 @@ fn file_rules(
 
 /// The per-file rule metadata, in evaluation order.
 // frob:ticket 01M3ZX86MA30ABW915Z943BQYB
-fn file_rule_metas() -> [&'static RuleMeta; 5] {
+fn file_rule_metas() -> [&'static RuleMeta; 6] {
     [
         Todo001.meta(),
         Doc001.meta(),
         Doc002.meta(),
         Ref001.meta(),
         Tick006.meta(),
+        Dsl002.meta(),
     ]
 }
 

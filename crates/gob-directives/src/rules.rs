@@ -42,7 +42,9 @@ pub struct Dsl001;
 ///
 /// Only full ULIDs persist in tracked text (D24). Handles (`~3M8Z4T7`, bare
 /// 7-char forms) and v1 `T-0042` forms must be replaced with the full id that
-/// `frob ticket show <handle>` prints.
+/// `frob ticket show <handle>` prints. Both `frob:ticket` and `frob:todo` are
+/// checked. With a ledger, `--fix` rewrites each v1 alias that resolves to exactly
+/// one ticket to its ULID; unresolved or ambiguous aliases stay findings.
 #[derive(Debug, Clone, Copy, Default, gob_rules::Rule)]
 #[rule(
     id = "DSL002",

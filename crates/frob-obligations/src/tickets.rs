@@ -33,6 +33,13 @@ impl<'a> Tickets<'a> {
         }
     }
 
+    /// The full ULID `input` (an alias or handle) names, when the ledger resolves it to exactly one ticket.
+    pub(crate) fn canonical(&self, input: &str) -> Option<String> {
+        let id = self.ledger?.resolve(input).ok()?;
+        tracing::debug!(ticket = input, id = %id, "reference resolved to a ULID");
+        Some(id.to_string())
+    }
+
     /// The standing of `input` (a full ULID, `~handle` or alias).
     pub(crate) fn standing(&self, input: &str) -> Standing {
         let Some(ledger) = self.ledger else {
