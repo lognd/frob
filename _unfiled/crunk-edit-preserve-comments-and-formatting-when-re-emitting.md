@@ -2,7 +2,8 @@
 id = "01M5H8MMRPN3RFSMP5KCEXPWC7"
 title = "crunk edit: preserve comments and formatting when re-emitting TOML"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
