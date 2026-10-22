@@ -67,6 +67,69 @@ const _: () = {
     }
 };
 
+// frob:ticket 01M4CXV46WX4E0WSVYJPYM7TRG
+/// Languages whose declared fidelity the cells do not justify yet; the list may only shrink.
+///
+/// Both measure F1 from their corpus, so the pin is a known overclaim, not a licence for new ones.
+pub const UNJUSTIFIED: [Lang; 2] = [Lang::GithubActions, Lang::Dockerfile];
+
+const fn has(cells: &[Precision; 12], cap: Capability) -> bool {
+    cells[cap as usize].is_provided()
+}
+
+/// The highest fidelity the capability `cells` justify (universal-model.md 3.3 read off the matrix).
+///
+/// F1 needs any provided cell; F2 needs `resolve_ref` or `imports` (binders and references);
+/// F3 needs `apply_targets` on top; F4 needs `comments` and `order` (attributes, regions, phases).
+/// Each rung also needs every rung below it.
+pub const fn fidelity_ceiling(cells: &[Precision; 12]) -> Fidelity {
+    let mut any = false;
+    let mut i = 0;
+    while i < cells.len() {
+        any = any || cells[i].is_provided();
+        i += 1;
+    }
+    if !any {
+        Fidelity::F0
+    } else if !(has(cells, Capability::ResolveRef) || has(cells, Capability::Imports)) {
+        Fidelity::F1
+    } else if !has(cells, Capability::ApplyTargets) {
+        Fidelity::F2
+    } else if !(has(cells, Capability::Comments) && has(cells, Capability::Order)) {
+        Fidelity::F3
+    } else {
+        Fidelity::F4
+    }
+}
+
+/// True when the cells of `row` justify the fidelity it declares.
+pub const fn is_justified(row: &Row) -> bool {
+    row.fidelity as u8 <= fidelity_ceiling(&row.cells) as u8
+}
+
+const fn is_unjustified_pin(lang: Lang) -> bool {
+    let mut i = 0;
+    while i < UNJUSTIFIED.len() {
+        if UNJUSTIFIED[i] as usize == lang as usize {
+            return true;
+        }
+        i += 1;
+    }
+    false
+}
+
+// A declared level the cells cannot justify fails the build, unless pinned in UNJUSTIFIED.
+const _: () = {
+    let mut i = 0;
+    while i < MATRIX.len() {
+        assert!(
+            is_justified(&MATRIX[i]) != is_unjustified_pin(MATRIX[i].lang),
+            "MATRIX fidelity is not justified by its cells (or a stale UNJUSTIFIED pin)"
+        );
+        i += 1;
+    }
+};
+
 /// The matrix row of `lang`.
 pub const fn row(lang: Lang) -> &'static Row {
     &MATRIX[lang as usize]
@@ -116,6 +179,30 @@ mod tests {
             assert_eq!(MATRIX[i].lang, l);
             assert_eq!(row(l).lang, l);
         }
+    }
+
+    #[test]
+    // frob:tests crates/gob-caps/src/matrix.rs::fidelity_ceiling
+    fn declared_fidelity_is_justified_by_the_cells() {
+        for row in &MATRIX {
+            assert_eq!(
+                is_justified(row),
+                !UNJUSTIFIED.contains(&row.lang),
+                "{:?}",
+                row.lang
+            );
+        }
+        // Promoting a row past what its cells support is rejected.
+        let mut csharp = *super::row(Lang::CSharp);
+        assert!(is_justified(&csharp));
+        csharp.fidelity = Fidelity::F3;
+        assert!(!is_justified(&csharp));
+        // Rungs: nothing provided is F0; resolve without apply is F2; full rust is F4.
+        assert_eq!(fidelity_ceiling(&[Precision::None; 12]), Fidelity::F0);
+        assert_eq!(fidelity_ceiling(&row(Lang::Css).cells), Fidelity::F2);
+        assert_eq!(fidelity_ceiling(&row(Lang::Rust).cells), Fidelity::F4);
+        assert_eq!(fidelity_ceiling(&row(Lang::Python).cells), Fidelity::F3);
+        assert_eq!(fidelity_ceiling(&row(Lang::Binary).cells), Fidelity::F0);
     }
 
     #[test]

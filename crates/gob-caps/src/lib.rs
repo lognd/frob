@@ -18,4 +18,7 @@ mod matrix;
 
 pub use capability::{Capability, Fidelity, Precision};
 pub use lang::Lang;
-pub use matrix::{MATRIX, Row, lang_fidelity, precision, provides, row, universal_satisfiable};
+pub use matrix::{
+    MATRIX, Row, UNJUSTIFIED, fidelity_ceiling, is_justified, lang_fidelity, precision, provides,
+    row, universal_satisfiable,
+};
