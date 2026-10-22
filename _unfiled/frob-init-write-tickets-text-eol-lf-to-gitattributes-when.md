@@ -2,7 +2,8 @@
 id = "01M4FD43P9VMJC9BE0KGEKVBBH"
 title = "frob init: write tickets/** text eol=lf to .gitattributes when core.autocrlf is set; note [evidence] attesters origin in the upgrade guide"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
