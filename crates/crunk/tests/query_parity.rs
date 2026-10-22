@@ -12,6 +12,7 @@ fn parity_root() -> PathBuf {
 }
 
 /// Rules added after the Python captures; absent from every golden by design.
+// frob:ticket 01M5JHRGF0BKG6ZGNXBZR3F5DB
 const RUST_ONLY_RULES: &[&str] = &[
     "EXPORT001",
     "EXPORT002",
@@ -23,6 +24,7 @@ const RUST_ONLY_RULES: &[&str] = &[
     "TOKEN007",
     "TOKEN008",
     "TOKEN009",
+    "CRAFT010",
 ];
 
 fn golden(path: &Path) -> Value {
