@@ -8,12 +8,12 @@ points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:02Z"
-updated = "2026-10-22T08:31:37Z"
+updated = "2026-10-22T08:34:54Z"
 scope = ["changelog.d/**", "crates/crunk-gallery/**", "crates/crunk-check/**"]
 
 [[acceptance]]
 text = "Given a screen with an axe violation, when checked at T3, then the finding carries the axe rule id and node"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md sections 4 and 6.
