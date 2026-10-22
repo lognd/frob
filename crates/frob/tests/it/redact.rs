@@ -67,6 +67,18 @@ impl Repo {
             .expect("run frob")
     }
 
+    fn frob_logged(&self, args: &[&str]) -> Output {
+        common::frob_command()
+            .current_dir(self.path())
+            .env("FROB_LOG", "info")
+            .env("XDG_CONFIG_HOME", self.config.path())
+            .env("HOME", self.config.path())
+            .arg("--json")
+            .args(args)
+            .output()
+            .expect("run frob")
+    }
+
     fn json(&self, args: &[&str]) -> (i32, Value) {
         let out = self.frob(args);
         let v = serde_json::from_slice(&out.stdout).unwrap_or(Value::Null);
@@ -213,4 +225,30 @@ fn the_repository_contains_neither_rule_nor_term() {
     let mut args = vec!["grep", "-l", "-e", TERM, "-e", LABEL];
     args.extend(revs.iter().copied());
     assert_eq!(git(repo.path(), &args), "", "a rule or term was committed");
+}
+
+/// `frob init` names both local rule files (user and git common dir), writes neither, and never overwrites an existing one, even run twice.
+// frob:ticket 01M42H140A7Y1AMEQJ0YVTYZDE
+// frob:tests crates/frob/src/init.rs::Init
+#[test]
+fn init_names_both_privacy_files_and_writes_neither() {
+    let repo = Repo::new();
+    let user_file = repo.config.path().join("frob").join("privacy.toml");
+    let run = |repo: &Repo| {
+        let out = repo.frob_logged(&["init"]);
+        assert_eq!(code(&out), 0, "{}", everything(&out));
+        String::from_utf8_lossy(&out.stderr).into_owned()
+    };
+    let first = run(&repo);
+    assert_eq!(first.matches("privacy.toml").count(), 2, "{first}");
+    assert!(!repo.rule_file().exists() && !user_file.exists());
+    repo.set_rule();
+    let before = std::fs::read_to_string(repo.rule_file()).expect("rule file");
+    let second = run(&repo);
+    assert_eq!(second.matches("privacy.toml").count(), 2, "{second}");
+    assert!(!user_file.exists());
+    assert_eq!(
+        std::fs::read_to_string(repo.rule_file()).expect("rule file"),
+        before
+    );
 }
