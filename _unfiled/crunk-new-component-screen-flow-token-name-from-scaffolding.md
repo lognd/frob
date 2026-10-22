@@ -2,7 +2,8 @@
 id = "01M5H8MMN5PXGJG2XGS76STB57"
 title = "crunk new component|screen|flow|token NAME [--from ...] scaffolding verb"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
