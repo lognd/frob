@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:11:32Z"
-updated = "2026-10-22T20:55:29Z"
+updated = "2026-10-22T20:58:11Z"
 scope = ["crates/crunk/src/extract.rs", "crates/crunk/tests/extract.rs", "docs/crunk/README.md", "docs/reference/cli/crunk.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a duration literal, when crunk extract-token runs, then it is promoted likewise"
-bound = false
+bound = true
 +++
 
 Found while working ~PAN1YXT: extract-token only promotes hex colors; other literals are refused with E-EXTRACT-LITERAL.

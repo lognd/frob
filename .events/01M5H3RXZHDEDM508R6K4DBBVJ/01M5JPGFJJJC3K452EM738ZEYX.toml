@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T20:58:11Z"
+digest = "01fde086c9f71d29b4ec1b2109fd49559244cec16769bf14d7ab2df123a4bdc4"
+exit_code = 0
+head = "d50dcfdd2c4554b091bca6c472bc0faaf629bba5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3c7a2110-574b-4e45-90ff-e99affd92d8a with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.016s] crunk::extract extract_token_refuses_durations_and_unsupported_lengths
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test extract extract_token_refuses_durations"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "b780a8fb3ec8f27de58cf325ec97ee94c152b42a73480c300107e387d6b66bd1"
+at = "2026-10-22T20:58:11Z"
+actor = "lognd"
+rev = 1
