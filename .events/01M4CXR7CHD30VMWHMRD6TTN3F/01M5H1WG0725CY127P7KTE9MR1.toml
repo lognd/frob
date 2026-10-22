@@ -1,0 +1,57 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T05:36:46Z"
+digest = "64cef821d1e6c2c096907851a818171f962d320c2e868b2da6c960b5ce3a0110"
+exit_code = 0
+head = "775e41a572e886cca2749c3ee5e822656a02a52a"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 29582567-4a6b-40ac-a784-ad4483c4673c with nextest profile: default
+    Starting 18 tests across 1 binary
+        PASS [   0.031s] crunk-rules::component_rules a_unicode_node_name_is_reported_whole
+        PASS [   0.033s] crunk-rules::component_rules a_non_interactive_component_needs_no_contract
+        PASS [   0.037s] crunk-rules::component_rules a_duplicate_prop_and_an_empty_enum_each_fire
+        PASS [   0.041s] crunk-rules::component_rules an_unknown_node_state_and_token_each_fire
+        PASS [   0.049s] crunk-rules::component_rules a_slot_with_min_above_max_fires_and_equal_bounds_do_not
+        PASS [   0.053s] crunk-rules::component_rules a_cross_product_matrix_counts_its_holes
+        PASS [   0.055s] crunk-rules::component_rules a_spec_missing_a_state_and_binding_a_literal_fires_with_the_node_id
+        PASS [   0.060s] crunk-rules::component_rules a_draft_needs_no_mapping_but_a_blank_field_still_fires
+        PASS [   0.061s] crunk-rules::component_rules a_code_mapping_without_a_props_list_is_not_judged_and_a_missing_prop_fires
+        PASS [   0.063s] crunk-rules::component_rules a_repeated_cell_and_an_unknown_value_fire
+        PASS [   0.065s] crunk-rules::component_rules a_binding_with_both_neither_or_a_blank_property_fires
+        PASS [   0.065s] crunk-rules::component_rules a_matching_hash_is_clean_and_a_wrong_one_is_stale
+        PASS [   0.034s] crunk-rules::component_rules the_component_itself_and_a_known_token_resolve
+        PASS [   0.043s] crunk-rules::component_rules the_component_accessors_count_files_and_name_the_missing_input
+        PASS [   0.049s] crunk-rules::component_rules blank_and_repeated_state_ids_fire
+        PASS [   0.034s] crunk-rules::component_rules values_on_a_non_enum_prop_fire
+        PASS [   0.044s] crunk-rules::component_rules the_minimum_target_boundary_is_24
+        PASS [   0.034s] crunk-rules::component_rules variants_without_an_axis_prop_fire_and_no_variants_is_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.087s] 18 tests run: 18 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test component_rules"
+size = 3273
+status = "measured"
+test_count = 18
+tests_digest = "8e7eacc967bf8813f22aad1aa14bf37777353d285f7be2528890f286bbc34d58"
+at = "2026-10-22T05:36:46Z"
+actor = "lognd"
+rev = 1
