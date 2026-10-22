@@ -204,7 +204,7 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
 | # | Construct | Example | Meaning |
 |---|---|---|---|
 | 1 | rule | `rule TODO001 "bare-work-marker" { ... }` | id, slug, body |
-| 2 | header | `lang rust`, `polarity P+`, `severity error`, `scope repo`, `must_measure`, `needs diff, lease` | metadata (rules.md 2) |
+| 2 | header | `lang rust`, `polarity P+`, `severity error`, `scope repo`, `must_measure`, `needs test_items`, `reads diff, lease` | metadata (rules.md 2); `needs` names language capabilities, `reads` names side relations |
 | 3 | snippet | `` `print($$$ARGS)` `` ``rust`if $C { $F($$$A) }` as roles`` | code that looks like this |
 | 4 | metavariables | `$X`, `$$$XS`, `$_` | holes in a snippet |
 | 5 | find | `find f: function where f is public` | bind a variable to each thing of a shape |
@@ -236,6 +236,7 @@ header     = "lang" lang_set
            | "scope" ( "file" | "repo" )
            | "must_measure"
            | "needs" need { "," need }
+           | "reads" need { "," need }
            | "rollup" ( "file" | "directory" | "unit" )
            | knob ;
 need       = NAME | "vocab" "(" NAME ")" ;
@@ -370,16 +371,16 @@ the compiler and the engine read one source. `grimble rule catalog
 | `reaches ... via ... within N` | closure | Q30 | Yes, No or Unknown with the frontier |
 | `vocab(NAME)` | value | Q47 | an empty vocabulary is a NotApplicable cell decided per (rule, language) through `needs` (7.0.7); inside a formula it is the empty set |
 | `config.<table>` | side relation | config schema | typed from docs/schemas/config.json |
-| `diff.changed`, `diff.added` | side relation | gob-git | needs `diff` |
-| `lease.globs`, `lease.ticket` | side relation | frob-lease | needs `lease` |
-| `model.nodes`, `model.selectors` | side relation | grimble-model | needs `model` |
+| `diff.changed`, `diff.added` | side relation | gob-git | declare `reads diff` |
+| `lease.globs`, `lease.ticket` | side relation | frob-lease | declare `reads lease` |
+| `model.nodes`, `model.selectors` | side relation | grimble-model | declare `reads model` |
 | `is integer` | flag | built in | a string value that is a whole signed integer; `auto` and units are not |
 | `glob(s)`, `resolve(path, from)`, `slug(s)`, `valid_glob` | function | built in | typed signatures in the catalog |
 
 Side relations are typed from their JSON schemas (config, diff, lease,
 model); a misspelt column is GRL001 like any other name (survey 8.5
-item 2). A rule that reads a side relation must declare it in `needs`,
-which also decides when the rule must re-run (rules.md 3).
+item 2). A rule that reads a side relation must declare it in `reads` (not `needs`, which names
+language capabilities), which also decides when the rule must re-run (rules.md 3).
 
 In a kind pattern the field name may be written with or without its
 leading dot: `element(.tag = "img")` and `element(tag = "img")` are the
@@ -866,7 +867,7 @@ Unresolved `budget` (plugins.md 6.5).
   header and `module` line are supplied when the text has none) and
   supplies `model.nodes` (name, kind, path; kind defaults to
   `component`, namespaces join names with `.`) and `model.selectors`
-  (one row per `owns`) to rules that `needs model`.
+  (one row per `owns`) to rules that `reads model`.
 - `known-gap` examples document a known miss; they must not fire, and
   they turn into failures when they start firing (so a fix is noticed).
 - `example ... fixed """..."""` asserts the output of the rule's fix.
@@ -893,7 +894,7 @@ Unresolved `budget` (plugins.md 6.5).
 | GRL011 | missing fire or clean example (or the universal third example) | a scaffold of the missing example |
 | GRL012 | explain without `## Remedy` | |
 | GRL013 | (warning) variable bound and never used | |
-| GRL014 | side relation used but not in `needs` | add it to `needs` |
+| GRL014 | side relation used but not in `needs` | add it to `reads` |
 | GRL015 | fix without applicability, or a plugin fix outside its span | |
 | GRL016 | example expectation does not match (a test failure, not a compile error) | the diff of expected and actual findings |
 | GRL017 | `certainly` or `possibly` in a negative position (under `not` or `no`) | "move it out of the negation, or drop the word: the rule's polarity already decides whether Must or May edges count" (7.0.4) |
@@ -1040,7 +1041,7 @@ May edges reach it, and is clean when a Must path exists.
 rule INV002 "forbidden-import" {
   lang *
   severity error  scope repo
-  needs config
+  reads config
 
   find row: config.invariants.forbid_imports              # columns from, to, reason (typed)
   find i: import where i.file.path matches row.from and i.target under row.to
@@ -1086,7 +1087,7 @@ rule INV002 "forbidden-import" {
 rule SCOPE001 "path-outside-lease" {
   lang -
   severity error  scope repo
-  needs diff, lease, config
+  reads diff, lease, config
 
   find p: diff.changed
   where not p matches lease.globs and not p matches config.lease.shared_files
@@ -1123,7 +1124,7 @@ unless the example is `clean`).
 rule SYS001 "unowned" {
   lang *
   polarity P-  severity warn  scope repo  rollup directory
-  needs model, config
+  reads model, config
 
   find a: artifact where not a.path matches config.grimble.exclude
   where some u: unit where u inside a and some n: node where u owned by n
@@ -1159,7 +1160,7 @@ Unresolved.
 rule CAP001 "undeclared-capability" {
   lang *
   severity error
-  needs model
+  reads model
 
   find c: cell where c.observed and not c.granted and not c.excused
   report c "node {c.node.name} uses {c.atom} without a grant (deny by default)"
