@@ -2,12 +2,12 @@
 id = "01M4FG41QM8F4BG9CTMJSMN4BH"
 title = "DSL002: --fix rewrites v1 ticket aliases (T-####) to the ticket's ULID through the imported aliases, and flags frob:todo as well as frob:ticket"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T04:52:59Z"
-updated = "2026-10-09T04:52:59Z"
+updated = "2026-10-22T15:15:47Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-obligations/**", "crates/gob-directives/**", "changelog.d/**"]
 
