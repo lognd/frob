@@ -26,6 +26,10 @@ bound = false
 [[acceptance]]
 text = "regenerating the languages page twice is idempotent and an already-equal page is not rewritten"
 bound = false
+
+[[acceptance]]
+text = "the languages page carries a GEN001-valid marker naming cargo dev gen languages"
+bound = false
 +++
 
 ~4M1BX5H added gob_symbols::languages_page and a test that keeps docs/reference/languages.md equal to it; gob-dev was leased by another ticket then. Add a Languages kind to cargo dev gen so the page is written and checked there, and let the Gap cells name a ticket (code-model.md section 3).
