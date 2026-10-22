@@ -9,17 +9,21 @@ use std::path::Path;
 use gob_ir::const_value::{Budget, ConstValue, Value, const_value_node};
 use gob_ir::{Location, Model, NodeId, Operator, Resolution, Universal};
 use gob_symbols::{
-    ConstProject, Evaluated, Folded, NodeProjects, SymbolGraph, Symref, fold_file,
+    ConstProject, Evaluated, Folded, NodeProjects, SymbolGraph, Symref, Visibility, fold_file,
     is_typescript_path,
 };
 use gob_walk::FileEntry;
 use tracing::{debug, trace, warn};
 
+use crate::exports::{export_specs, module_candidates};
 use crate::registry::in_node_modules;
 use crate::types::{Problem, Status};
 
 /// How far a name is followed through constants and imports to the value it stands for.
 const FOLLOW_DEPTH: usize = 6;
+
+/// How many re-exports deep an exported name is followed.
+const MAX_REEXPORT_DEPTH: usize = 6;
 
 /// The folded sources of a repository over its module graph.
 pub struct Repo<'g> {
@@ -176,9 +180,14 @@ impl<'g> Repo<'g> {
     /// A named function or class resolves to its unit, an anonymous one to `path::default`, anything else
     /// (an expression) to the file itself.
     pub fn default_export(&self, file: &str) -> String {
-        let Some(text) = self.text(file) else {
-            return file.to_owned();
-        };
+        self.declared_default(file)
+            .or_else(|| self.listed_default(file))
+            .unwrap_or_else(|| file.to_owned())
+    }
+
+    /// The default export `file` declares with `export default` itself.
+    fn declared_default(&self, file: &str) -> Option<String> {
+        let text = self.text(file)?;
         for line in text.lines() {
             let Some(rest) = line.trim_start().strip_prefix("export default ") else {
                 continue;
@@ -199,17 +208,108 @@ impl<'g> Repo<'g> {
             let after = rest[ident.len()..].trim_start();
             let named =
                 !ident.is_empty() && (declared || after.is_empty() || after.starts_with(';'));
-            return match (named, declared) {
+            return Some(match (named, declared) {
                 (true, _) => self
-                    .local_unit(file, &ident)
+                    .bound_unit(file, &ident)
                     .unwrap_or_else(|| file.to_owned()),
                 (false, true) => self
                     .local_unit(file, "default")
                     .unwrap_or_else(|| file.to_owned()),
                 (false, false) => file.to_owned(),
-            };
+            });
         }
-        file.to_owned()
+        None
+    }
+
+    /// The default export named by an export list (`export { X as default }`, `export { default } from`).
+    fn listed_default(&self, file: &str) -> Option<String> {
+        let targets = self.export_targets(file, "default", 0);
+        match targets.as_slice() {
+            [(symref, Status::Must)] => Some(symref.clone()),
+            _ => None,
+        }
+    }
+
+    /// The file a relative module specifier `spec` written in `from` names, when it is one of the files.
+    pub fn resolve_module(&self, from: &str, spec: &str) -> Option<String> {
+        module_candidates(from, spec)
+            .into_iter()
+            .find(|c| self.files.contains(c))
+    }
+
+    /// What `file` exports as `name`: its own declaration, an export list entry (local or re-exported from
+    /// a project file) or `export * from`; several answers are all `May`.
+    ///
+    /// Re-exports of packages answer nothing. `default` always answers, with the file when it declares none.
+    pub fn export_targets(&self, file: &str, name: &str, depth: usize) -> Vec<(String, Status)> {
+        if depth >= MAX_REEXPORT_DEPTH {
+            return Vec::new();
+        }
+        if name == "default"
+            && let Some(d) = self.declared_default(file)
+        {
+            return vec![(d, Status::Must)];
+        }
+        let own = self
+            .folded(file)
+            .into_iter()
+            .flat_map(|f| f.file.symbols.iter())
+            .filter(|s| s.visibility == Visibility::Public && s.symref.name() == Some(name))
+            .map(|s| s.symref.to_string())
+            .next();
+        if let Some(symref) = own {
+            return vec![(symref, Status::Must)];
+        }
+        let specs = self.text(file).map(export_specs).unwrap_or_default();
+        let mut found: Vec<(String, Status)> = Vec::new();
+        for spec in specs.iter().filter(|s| s.exported == name) {
+            match &spec.from {
+                None => found.extend(
+                    self.bound_unit(file, &spec.local)
+                        .map(|s| (s, Status::Must)),
+                ),
+                Some(from) => {
+                    if let Some(target) = self.resolve_module(file, from) {
+                        found.extend(self.export_targets(&target, &spec.local, depth + 1));
+                    }
+                }
+            }
+        }
+        if found.is_empty() && name != "default" {
+            for spec in specs.iter().filter(|s| s.exported == "*") {
+                let Some(target) = spec
+                    .from
+                    .as_deref()
+                    .and_then(|f| self.resolve_module(file, f))
+                else {
+                    continue;
+                };
+                found.extend(self.export_targets(&target, name, depth + 1));
+            }
+        }
+        if found.is_empty() && name == "default" && depth > 0 {
+            found.push((file.to_owned(), Status::Must));
+        }
+        found.sort();
+        found.dedup();
+        if found.len() > 1 {
+            for f in &mut found {
+                f.1 = Status::May;
+            }
+        }
+        trace!(file, name, targets = found.len(), "export resolved");
+        found
+    }
+
+    /// The symref text of what `name` is bound to in `file`: a unit of the file, else the single certain
+    /// target of an import or re-export of that name.
+    pub fn bound_unit(&self, file: &str, name: &str) -> Option<String> {
+        self.local_unit(file, name).or_else(|| {
+            match self.graph.ts_import_targets(file, name).as_slice() {
+                [(symref, Status::Must)] => Some(symref.to_string()),
+                _ => None,
+            }
+        })
     }
 
     /// The value expression a `ref` node stands for (a constant of this file or of an imported file).

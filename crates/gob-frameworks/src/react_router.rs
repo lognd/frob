@@ -5,8 +5,11 @@
 //! joins the layout chain of everything below it. A path that is not statically known (a parameter, a
 //! computed key, a spread, an unresolved import) makes the route and everything below it `Unknown`; it is
 //! reported without a pattern, never dropped. A `loader` is the GET handler and an `action` the POST handler.
+//! Framework mode (`routes.ts` helpers) is read by the `config` child module.
 
 // frob:ticket 01M47QKVBB5G9N1QZP3AVXTRHX
+
+mod config;
 
 use std::collections::BTreeSet;
 
@@ -170,6 +173,11 @@ fn discover(repo: &Repo<'_>, det: &Detection) -> Discovery {
         for (base, kid) in roots {
             emit_kid(&kid, &base, det, &mut out.routes);
         }
+    }
+    let sources: Vec<&str> = repo.member_sources(&det.member).collect();
+    for (file, base, kid) in config::roots(repo, &sources) {
+        router_files.insert(file);
+        emit_kid(&kid, &base, det, &mut out.routes);
     }
     out.entrypoints = router_files
         .into_iter()

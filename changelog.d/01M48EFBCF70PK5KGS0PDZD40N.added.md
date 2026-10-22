@@ -1,0 +1,1 @@
+gob: framework discovery reads react-router framework-mode `routes.ts` helpers (`route`, `index`, `layout`, `prefix`), reports re-exported Next.js route handlers per method at Must and resolves page default exports written as `export { X as default }` or a re-export.

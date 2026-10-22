@@ -262,3 +262,156 @@ fn a_repository_without_frameworks_yields_nothing() {
     let a = analyze(dir.path(), &files, &graph);
     assert_eq!(a, Analysis::default());
 }
+
+/// The rendered routes of `framework` whose line mentions `needle`.
+fn routes_with(a: &Analysis, framework: &str, needle: &str) -> Vec<String> {
+    routes_of(a, framework)
+        .into_iter()
+        .filter(|r| r.contains(needle))
+        .collect()
+}
+
+#[test]
+// frob:tests crates/gob-frameworks/src/nextjs.rs::handlers_of
+fn reexported_next_route_handlers_are_reported_per_method_at_must() {
+    let a = run("frameworks");
+    let nx = "apps/nx/app/api";
+    assert_eq!(
+        routes_with(&a, "nextjs", "/api/items ["),
+        [
+            format!(
+                "GET /api/items [Must] {nx}/items/route.ts:1 handler={nx}/items/handlers.ts::GET"
+            ),
+            format!(
+                "POST /api/items [Must] {nx}/items/route.ts:1 handler={nx}/items/handlers.ts::POST"
+            ),
+            format!(
+                "DELETE /api/items [Must] {nx}/items/route.ts:1 handler={nx}/items/handlers.ts::remove"
+            ),
+        ],
+        "named and aliased re-exports resolve to the handler in the source module"
+    );
+    assert_eq!(
+        routes_with(&a, "nextjs", "/api/alias ["),
+        [
+            format!(
+                "GET /api/alias [Must] {nx}/alias/route.ts:1 handler={nx}/alias/route.ts::list"
+            ),
+            format!(
+                "HEAD /api/alias [Must] {nx}/alias/route.ts:1 handler={nx}/alias/route.ts::list"
+            ),
+        ],
+        "one local function exported as two methods"
+    );
+    assert_eq!(
+        routes_with(&a, "nextjs", "/api/star ["),
+        [
+            format!(
+                "GET /api/star [Must] {nx}/star/route.ts:1 handler={nx}/items/handlers.ts::GET"
+            ),
+            format!(
+                "POST /api/star [Must] {nx}/star/route.ts:1 handler={nx}/items/handlers.ts::POST"
+            ),
+        ],
+        "export * contributes the methods the source module exports"
+    );
+    assert_eq!(
+        routes_with(&a, "nextjs", "/api/ext ["),
+        [format!("GET /api/ext [Must] {nx}/ext/route.ts:1")],
+        "a method re-exported from a package is a Must method without a handler"
+    );
+}
+
+#[test]
+// frob:tests crates/gob-frameworks/src/repo.rs::default_export
+fn a_page_default_export_through_a_list_or_reexport_names_the_component() {
+    let a = run("frameworks");
+    let app = "apps/nx/app";
+    for (route, component) in [
+        ("/about", "about/about-page.tsx::AboutPage"),
+        ("/team", "team/team-page.tsx::TeamPage"),
+        ("/blog", "blog/blog-impl.tsx::BlogImpl"),
+        ("/local", "local/page.tsx::Local"),
+    ] {
+        let got = routes_with(&a, "nextjs", &format!("GET {route} "));
+        assert_eq!(got.len(), 1, "{route}: {got:?}");
+        assert!(
+            got[0].contains(&format!("component={app}/{component}")),
+            "{route}: {}",
+            got[0]
+        );
+    }
+}
+
+#[test]
+// frob:tests crates/gob-frameworks/src/react_router/config.rs::roots
+fn a_routes_ts_config_produces_the_expected_routes() {
+    let a = run("frameworks");
+    let rr = "apps/rr/app";
+    let page = |file: &str, name: &str| format!("component={rr}/routes/{file}.tsx::{name}");
+    let expected = [
+        format!("GET ? [Unknown] {rr}/routes.ts:21"),
+        format!(
+            "GET ? [Unknown] {rr}/routes.ts:20 {}",
+            page("dyn", "DynPage")
+        ),
+        format!(
+            "GET / [Must] {rr}/routes.ts:13 {}",
+            page("home", "HomePage")
+        ),
+        format!(
+            "GET /about [Must] {rr}/routes.ts:14 {}",
+            page("about", "AboutPage")
+        ),
+        format!(
+            "GET /admin [Must] {rr}/admin-routes.ts:4 {}",
+            page("admin-home", "AdminHomePage")
+        ),
+        format!(
+            "GET /admin/users/:id [Must] {rr}/admin-routes.ts:5 handler={rr}/routes/user.tsx::loader {}",
+            page("user", "UserPage")
+        ),
+        format!(
+            "POST /admin/users/:id [Must] {rr}/admin-routes.ts:5 handler={rr}/routes/user.tsx::action {}",
+            page("user", "UserPage")
+        ),
+        format!(
+            "GET /dash [Must] {rr}/routes.ts:16 {} layouts={rr}/routes/shell.tsx::ShellPage",
+            page("dash", "DashPage")
+        ),
+        format!(
+            "GET /shop/cart [Must] {rr}/routes.ts:6 {}",
+            page("cart", "CartPage")
+        ),
+        format!(
+            "GET /shop/checkout [Must] {rr}/routes.ts:7 {}",
+            page("checkout", "CheckoutPage")
+        ),
+    ];
+    assert_eq!(routes_of(&a, "react-router"), expected);
+    assert!(
+        a.entrypoints
+            .iter()
+            .any(|e| e.kind == EntrypointKind::Router && e.file == format!("{rr}/routes.ts")),
+        "the config file is a router entrypoint"
+    );
+}
+
+#[test]
+// frob:tests crates/gob-frameworks/src/lib.rs::analyze
+fn the_framework_fixture_detects_next_and_react_router_apps() {
+    let a = run("frameworks");
+    let found: Vec<(&str, &str)> = a
+        .detections
+        .iter()
+        .map(|d| (d.framework, d.member.as_str()))
+        .collect();
+    assert_eq!(
+        found,
+        [
+            ("nextjs", "apps/nx/package.json"),
+            ("react-router", "apps/rr/package.json"),
+        ]
+    );
+    assert!(a.problems.is_empty(), "{:?}", a.problems);
+}

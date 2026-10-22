@@ -41,6 +41,10 @@ pub enum Method {
 }
 
 impl Method {
+    /// The export names that are HTTP method handlers.
+    pub const EXPORTS: [&'static str; 7] =
+        ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
+
     /// The method named by an exported handler `name` (`GET`, `POST`, ...), if it is one.
     pub fn from_export(name: &str) -> Option<Self> {
         Some(match name {

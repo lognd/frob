@@ -14,6 +14,7 @@ use std::collections::BTreeSet;
 use gob_symbols::Visibility;
 use tracing::{debug, trace};
 
+use crate::exports::export_specs;
 use crate::registry::{Detector, FrameworkEntry, join};
 use crate::repo::Repo;
 use crate::types::{Detection, Discovery, Entrypoint, EntrypointKind, Method, Route, Status};
@@ -190,6 +191,78 @@ fn layouts(repo: &Repo<'_>, root: &str, dirs: &[&str], files: &BTreeSet<&str>) -
     chain
 }
 
+/// One exported HTTP method handler of a route file.
+struct MethodHandler {
+    /// The method it answers.
+    method: Method,
+    /// The symref of the function, when it resolves to one.
+    handler: Option<String>,
+    /// How certain it is that the file answers `method`.
+    status: Status,
+}
+
+/// The HTTP methods a route `file` exports: declared here, listed in `export { .. }` (with or without a
+/// source), or re-exported through `export * from`.
+fn handlers_of(repo: &Repo<'_>, file: &str) -> Vec<MethodHandler> {
+    let mut found: Vec<MethodHandler> = repo
+        .folded(file)
+        .map(|f| {
+            f.file
+                .symbols
+                .iter()
+                .filter(|s| s.visibility == Visibility::Public)
+                .filter_map(|s| {
+                    Some(MethodHandler {
+                        method: Method::from_export(s.symref.name()?)?,
+                        handler: Some(s.symref.to_string()),
+                        status: Status::Must,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let specs = repo.text(file).map(export_specs).unwrap_or_default();
+    let mut names: Vec<&str> = specs
+        .iter()
+        .map(|s| s.exported.as_str())
+        .filter(|n| Method::from_export(n).is_some())
+        .collect();
+    if specs.iter().any(|s| s.exported == "*") {
+        names.extend(Method::EXPORTS);
+    }
+    for name in names {
+        let Some(method) = Method::from_export(name) else {
+            continue;
+        };
+        let targets = repo.export_targets(file, name, 0);
+        let explicit = specs.iter().any(|s| s.exported == name);
+        match targets.as_slice() {
+            [(symref, status)] => found.push(MethodHandler {
+                method,
+                handler: Some(symref.clone()),
+                status: *status,
+            }),
+            // Several candidates: the method is exported but the function is not known.
+            [_, ..] => found.push(MethodHandler {
+                method,
+                handler: None,
+                status: Status::May,
+            }),
+            // Named in an export list whose source is outside the project: only the function is unknown.
+            [] if explicit => found.push(MethodHandler {
+                method,
+                handler: None,
+                status: Status::Must,
+            }),
+            [] => {}
+        }
+    }
+    let mut seen = BTreeSet::new();
+    found.retain(|h| seen.insert(h.method));
+    trace!(file, methods = found.len(), "next.js route handlers");
+    found
+}
+
 /// One file of an `app` directory.
 fn app_file(
     repo: &Repo<'_>,
@@ -226,30 +299,19 @@ fn app_file(
         out.entrypoints.push(entry(det, EntrypointKind::Page, file));
         return;
     }
-    let handlers: Vec<(Method, String)> = repo
-        .folded(file)
-        .map(|f| {
-            f.file
-                .symbols
-                .iter()
-                .filter(|s| s.visibility == Visibility::Public)
-                .filter_map(|s| {
-                    let m = Method::from_export(s.symref.name()?)?;
-                    Some((m, s.symref.to_string()))
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+    let mut handlers = handlers_of(repo, file);
     if handlers.is_empty() {
-        // The exports are not declared here (a re-export): a handler exists but its methods are not known.
+        // Nothing names a method (an opaque `export *`): a handler exists but its methods are not known.
         let mut r = route(det, file, pat.clone(), Method::Any);
         r.status = r.status.min(Status::May);
         r.layouts = Vec::new();
         out.routes.push(r);
     }
-    for (method, symref) in handlers {
-        let mut r = route(det, file, pat.clone(), method);
-        r.handler = Some(symref);
+    handlers.sort_by_key(|h| h.method);
+    for h in handlers {
+        let mut r = route(det, file, pat.clone(), h.method);
+        r.status = r.status.min(h.status);
+        r.handler = h.handler;
         out.routes.push(r);
     }
     out.entrypoints

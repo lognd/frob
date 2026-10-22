@@ -60,8 +60,31 @@ pub(crate) fn object_props(model: &Model, node: NodeId) -> Option<Vec<Prop>> {
 
 /// The elements of the array literal at `node`; `None` when `node` is not one.
 pub(crate) fn array_items(model: &Model, node: NodeId) -> Option<Vec<NodeId>> {
-    let (op, args) = op_form(model, node)?;
-    (op == OP_ARRAY).then(|| args.to_vec())
+    match op_form(model, node) {
+        Some((op, args)) => (op == OP_ARRAY).then(|| args.to_vec()),
+        None => raw_array(model, node),
+    }
+}
+
+/// The elements of an array literal the folder left as its raw syntax (one that is not a constant).
+fn raw_array(model: &Model, node: NodeId) -> Option<Vec<NodeId>> {
+    let term = model.term();
+    if !matches!(
+        term.operator(node),
+        Operator::Universal(Universal::Lit { .. }) | Operator::Adapter(_)
+    ) {
+        return None;
+    }
+    let Operator::Adapter(a) = term.operator(node) else {
+        return None;
+    };
+    (a.name == "array").then(|| {
+        term.children(node)
+            .iter()
+            .copied()
+            .filter(|&c| !matches!(term.operator(c), Operator::Universal(Universal::Lit { .. })))
+            .collect()
+    })
 }
 
 /// True when `node` is a spread element.
@@ -80,4 +103,19 @@ pub(crate) fn ref_name(model: &Model, node: NodeId) -> Option<&str> {
 /// True when `node` is `apply(call)` (or the `call` operator form).
 pub(crate) fn is_call(model: &Model, node: NodeId) -> bool {
     matches!(model.term().operator(node), Operator::Universal(Universal::Apply { kind }) if kind == "call")
+}
+
+/// The expression a spread element `node` spreads; `None` when `node` is not a spread.
+pub(crate) fn spread_arg(model: &Model, node: NodeId) -> Option<NodeId> {
+    match op_form(model, node) {
+        Some((OP_SPREAD, args)) => args.first().copied(),
+        Some(_) => None,
+        None => match model.term().operator(node) {
+            // The raw form: `...` then the expression.
+            Operator::Adapter(a) if a.name == "spread_element" => {
+                model.term().children(node).get(1).copied()
+            }
+            _ => None,
+        },
+    }
 }

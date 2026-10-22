@@ -14,10 +14,18 @@
 //!   Next.js (`app` and `pages` directories). A route whose path is not statically known is reported with
 //!   status `Unknown` and no pattern, never omitted.
 //!
-//! The syntactic limits are the adapters' own: a Next.js route handler that re-exports its methods is
-//! reported as method `ANY` with status `May`, and react-router framework-mode `routes.ts` helpers are not
-//! read yet.
+//! - Next.js route handlers that are re-exported (`export { GET } from "./h"`, `export { f as POST }`,
+//!   `export * from`) are reported per method at `Must` with the handler in the source module; a page whose
+//!   default export is `export { X as default }` or `export { default } from` names the component `X`.
+//! - react-router framework mode: the `route`, `index`, `layout` and `prefix` helpers of a `routes.ts`
+//!   (also through constant and imported arrays) are read like route objects, with `loader` and `action`
+//!   exports as handlers.
+//!
+//! The syntactic limits are the adapters' own: re-exports are resolved textually over relative modules (a
+//! package or a computed specifier leaves the handler or component unnamed), and routes produced by
+//! `...flatRoutes()` or any other call are reported as `Unknown`.
 
+mod exports;
 mod nextjs;
 mod react_router;
 mod registry;
