@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-08T04:53:40Z"
-updated = "2026-10-22T06:24:37Z"
-scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**"]
+updated = "2026-10-22T06:25:34Z"
+scope = ["changelog.d/**", "crates/crunk-spec/**", "crates/crunk-check/**", "crates/crunk-rules/**", "crates/crunk-scene/**", "docs/reference/rules/**", "docs/design/crunk.md", "docs/crunk/**"]
 
 [[acceptance]]
 text = "Given a scene with a literal string, when checked, then CONTENT fires and suggests a key"
