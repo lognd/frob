@@ -1,0 +1,10 @@
+kind = "create"
+title = "profile: ticket reindex warm median 2025ms exceeds 1000ms budget"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-ledger/src/reindex.rs"]
+body = "Found while working ~M7F4X3Q: profile command-budgets test; reindex cost scales with ledger size, no cheap fix identified, needs profiling."
+at = "2026-10-22T07:28:16Z"
+actor = "lognd"
+rev = 1
