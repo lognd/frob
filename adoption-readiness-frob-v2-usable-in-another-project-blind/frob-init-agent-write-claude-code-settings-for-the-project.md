@@ -22,6 +22,10 @@ bound = false
 [[acceptance]]
 text = "Given an existing settings.json with unrelated keys and an allow list, when frob init --agent runs, then those are preserved and the frob server and read allowlist are merged"
 bound = false
+
+[[acceptance]]
+text = "Given settings already configured, when frob init --agent runs again, then the file is byte-identical and no entry is duplicated"
+bound = false
 +++
 
 notes/review/adoption-trial-2026-10-07.md agent ergonomics: no generator for agent config; default worktree root ../repo-wt is outside the repository, which a sandboxed agent may not write. After ~MQ1NM4Q lands, the MCP entry points at frob serve.
