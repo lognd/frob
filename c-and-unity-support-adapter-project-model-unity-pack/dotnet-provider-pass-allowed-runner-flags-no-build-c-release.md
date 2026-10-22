@@ -2,7 +2,8 @@
 id = "01M4DYPG8A4CEY04ARSW3H4AJR"
 title = "dotnet provider: pass allowed runner flags (--no-build, -c Release) and register [evidence.dotnet] in FrobConfig::load"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
