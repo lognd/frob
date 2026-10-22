@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T01:38:16Z"
+digest = "e5d8828045db6c49bb78e603a1262422f3939d861136e326ead3170723e2ebe8"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0242f615-01b5-4435-a8fe-bbae0c64969a with nextest profile: default
+    Starting 1 test across 6 binaries (98 tests skipped)
+        PASS [   0.177s] frob-evidence done::tests::a_docs_ticket_opts_in_by_emptying_the_exempt_list_or_writing_a_fragment
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.178s] 1 test run: 1 passed, 98 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence a_docs_ticket_opts_in_by_emptying_the_exempt_list_or_writing_a_fragment"
+size = 589
+status = "measured"
+test_count = 1
+tests_digest = "2c3b47db79459d8689c059f3eeb283256ea86f455c74f2d4971437816d83ab4f"
+at = "2026-10-22T01:38:16Z"
+actor = "lognd"
+rev = 1
