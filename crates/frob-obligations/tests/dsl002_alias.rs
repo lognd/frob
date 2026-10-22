@@ -57,6 +57,7 @@ fn count(ev: &Evaluation, rule: &str) -> usize {
 }
 
 // frob:tests crates/frob-obligations/src/refs.rs::dsl002_aliases
+// frob:tests crates/frob-obligations/src/refs.rs::unsettled_ticket_refs
 #[test]
 fn fix_rewrites_resolving_aliases_and_leaves_the_rest_as_findings() {
     let t = common::tickets();
