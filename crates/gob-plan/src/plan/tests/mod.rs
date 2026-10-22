@@ -625,3 +625,92 @@ fn cost_class_reads_the_deepest_reaches_else_the_scope() {
     assert_eq!(cost_class(&[], true), CostClass::PerRepo);
     assert_eq!(cost_class(&[], false), CostClass::PerFile);
 }
+
+/// The sample with its count comparison swapped for a count-to-count one.
+fn with_pair(lhs: CountSide, rhs: CountSide) -> PlanParts {
+    let mut p = sample();
+    // The right side binds its own variable and owns its own condition (op 10).
+    let mut rhs = rhs;
+    rhs.var = 5;
+    rhs.cond = 10;
+    p.vars = 6;
+    p.ops[10] = Op::Inside {
+        sub: 5,
+        sup: 0,
+        direct: false,
+    };
+    p.ops.push(Op::CountPair {
+        lhs,
+        op: CmpOp::Ge,
+        rhs,
+    });
+    let at = u32::try_from(p.ops.len() - 1).expect("small");
+    for c in &mut p.clauses {
+        if *c == 10 {
+            *c = at;
+        }
+    }
+    p
+}
+
+fn side(scale: Scale) -> CountSide {
+    CountSide {
+        var: 3,
+        kind: 1,
+        cond: 9,
+        scale,
+    }
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/plan/codec.rs::decode
+#[test]
+fn a_count_pair_round_trips_with_its_scales() {
+    let parts = with_pair(
+        side(Scale::ONE),
+        side(Scale {
+            num: -75,
+            places: 2,
+        }),
+    );
+    let plan = Plan::new(parts).expect("valid");
+    assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn a_count_pair_is_range_and_scale_checked() {
+    let ok = Scale {
+        num: 5,
+        places: MAX_SCALE_PLACES,
+    };
+    assert!(Plan::new(with_pair(side(ok), side(Scale::ONE))).is_ok());
+    let wide = Scale {
+        num: 5,
+        places: MAX_SCALE_PLACES + 1,
+    };
+    assert!(matches!(
+        err(with_pair(side(Scale::ONE), side(wide))),
+        PlanError::Invalid {
+            what: "count scale",
+            ..
+        }
+    ));
+    let mut bad = side(Scale::ONE);
+    bad.var = 200;
+    assert!(matches!(
+        err(with_pair(bad, side(Scale::ONE))),
+        PlanError::OutOfRange { .. }
+    ));
+    let mut bad = side(Scale::ONE);
+    bad.kind = 999;
+    assert!(matches!(
+        err(with_pair(side(Scale::ONE), bad)),
+        PlanError::OutOfRange { what: "string", .. }
+    ));
+    let mut bad = side(Scale::ONE);
+    bad.cond = 13; // the pair itself: a child must come strictly earlier
+    let e = err(with_pair(bad, side(Scale::ONE)));
+    assert_eq!(e, PlanError::Cyclic { op: 13, target: 13 });
+}

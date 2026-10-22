@@ -452,6 +452,13 @@ impl<'a> Eval<'a> {
                     hi: n.hi,
                 })
             }
+            Op::CountPair { lhs, op, rhs } => {
+                let l = self.count(lhs.var, lhs.kind, lhs.cond, env);
+                let r = self.count(rhs.var, rhs.kind, rhs.cond, env);
+                Verdict::of(l.compare_scaled(lhs.scale, *op, &r, rhs.scale), || {
+                    Doubt::CountBounds { lo: l.lo, hi: l.hi }
+                })
+            }
             Op::Call { def, args } => self.call(*def, args, env),
             Op::Verb {
                 subject,

@@ -4,7 +4,7 @@
 
 use gob_plan::grl::parse;
 use gob_plan::lower::{LowerError, lower_rule};
-use gob_plan::plan::{Op, Operand, Plan, Polarity, Provenance};
+use gob_plan::plan::{CmpOp, CountSide, Op, Operand, Plan, Polarity, Provenance, Scale};
 use gob_text::FileInterner;
 
 fn lower(src: &str) -> Result<Plan, LowerError> {
@@ -74,6 +74,7 @@ fn the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans() {
             "DOC002.grl",
             "INV002.grl",
             "NEAT013.grl",
+            "NEAT031.grl",
             "NOPE001.grl",
             "SCOPE001.grl",
             "SYS001.grl",
@@ -297,15 +298,120 @@ fn count_lowers_against_an_integer_or_a_knob_in_either_order() {
     assert_eq!(flipped.to_bytes(), plain.to_bytes());
 }
 
-// frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
 // frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
 #[test]
-fn a_count_of_a_count_ratio_is_refused() {
+fn a_scaled_count_compared_with_a_non_count_is_refused() {
+    for clause in [
+        "where 2 * count(c: call directly inside f) > 3.5",
+        "where count(c: call directly inside f) >= 1.5 * 2",
+        "where count(c: call directly inside f) >= 0.1234567890123456789 * count(c: call directly inside f)",
+    ] {
+        let src = knob_rule("", clause);
+        assert!(
+            matches!(lower(&src), Err(LowerError::Unsupported { .. })),
+            "{clause}"
+        );
+    }
+}
+
+fn pairs(plan: &Plan) -> Vec<(CountSide, CmpOp, CountSide)> {
+    plan.parts()
+        .ops
+        .iter()
+        .filter_map(|o| match o {
+            Op::CountPair { lhs, op, rhs } => Some((*lhs, *op, *rhs)),
+            _ => None,
+        })
+        .collect()
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_count_against_a_scaled_count_lowers_to_a_count_pair() {
+    let knob = "knob ratio: float = 0.75 \"d\"";
+    let c = "count(c: call directly inside f)";
+    let right = lower(&knob_rule(knob, &format!("where {c} >= knob.ratio * {c}"))).unwrap();
+    let p = pairs(&right);
+    assert_eq!(p.len(), 1);
+    assert_eq!(p[0].0.scale, Scale::ONE);
+    assert_eq!(p[0].2.scale, Scale { num: 75, places: 2 });
+    let left = lower(&knob_rule(knob, &format!("where knob.ratio * {c} <= {c}"))).unwrap();
+    let p = pairs(&left);
+    assert_eq!(p[0].0.scale, Scale { num: 75, places: 2 });
+    assert_eq!(p[0].2.scale, Scale::ONE);
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn count_pair_scales_cover_int_negative_zero_and_literal_factors() {
+    let c = "count(c: call directly inside f)";
+    let cases = [
+        (
+            "knob ratio: int = 3 \"d\"",
+            "knob.ratio * ",
+            Scale { num: 3, places: 0 },
+        ),
+        (
+            "knob ratio: float = -1.5 \"d\"",
+            "knob.ratio * ",
+            Scale {
+                num: -15,
+                places: 1,
+            },
+        ),
+        (
+            "knob ratio: float = 0.0 \"d\"",
+            "knob.ratio * ",
+            Scale { num: 0, places: 1 },
+        ),
+        ("", "0.25 * ", Scale { num: 25, places: 2 }),
+        ("", "2 * ", Scale { num: 2, places: 0 }),
+    ];
+    for (knob, factor, want) in cases {
+        let plan = lower(&knob_rule(knob, &format!("where {c} > {factor}{c}"))).unwrap();
+        let p = pairs(&plan);
+        assert_eq!(p.len(), 1, "{factor}");
+        assert_eq!(p[0].2.scale, want, "{knob} {factor}");
+    }
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn an_alternative_of_plain_kinds_lowers_and_one_with_fields_is_refused() {
+    let alt = |shape: &str| {
+        lower(&format!(
+            "rule TST005 \"t\" {{\n  lang rust\n  find b: {shape}\n  report b \"x\"\n{EXPLAIN}}}\n"
+        ))
+    };
+    let plan = alt("(branch | loop)").expect("a plain alternative lowers");
+    assert!(plan.parts().ops.iter().any(|o| matches!(o, Op::Or(_))));
+    assert!(matches!(
+        alt("(branch | loop(name = \"x\"))"),
+        Err(LowerError::Unsupported { .. })
+    ));
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn nested_counts_in_a_count_pair_lower_to_separate_counts() {
     let src = knob_rule(
         "",
-        "where count(c: call directly inside f) >= count(c: call directly inside f)",
+        "where count(c: call directly inside f) >= 2 * count(a: assignment inside f where count(c: call inside a) >= 1)",
     );
-    assert!(matches!(lower(&src), Err(LowerError::Unsupported { .. })));
+    let plan = lower(&src).unwrap();
+    assert_eq!(pairs(&plan).len(), 1);
+    let cmps = plan
+        .parts()
+        .ops
+        .iter()
+        .filter(|o| matches!(o, Op::CountCmp { .. }))
+        .count();
+    assert_eq!(cmps, 1);
 }
 
 // frob:ticket 01M4WGCDK2ND23SEPX38Q9444T

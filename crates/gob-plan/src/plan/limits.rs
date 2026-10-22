@@ -22,3 +22,5 @@ pub const MAX_PACK_NAME: usize = 64;
 pub const MAX_DEFS: usize = 1 << 10;
 /// Most parameters or arguments of one def.
 pub const MAX_PARAMS: usize = 32;
+/// Most decimal places of a count's scale (keeps the exact comparison inside 128 bits).
+pub const MAX_SCALE_PLACES: u8 = 18;

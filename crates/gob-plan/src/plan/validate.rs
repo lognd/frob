@@ -16,8 +16,8 @@ use super::ir::{
     CostClass, Langs, Limit, Op, OpId, Operand, PlanParts, Polarity, Provenance, StrId, VarId,
 };
 use super::limits::{
-    MAX_DEFS, MAX_DEPTH, MAX_LIST, MAX_OPS, MAX_PACK_NAME, MAX_PARAMS, MAX_STR_LEN, MAX_STRINGS,
-    MAX_VARS, MAX_WITHIN,
+    MAX_DEFS, MAX_DEPTH, MAX_LIST, MAX_OPS, MAX_PACK_NAME, MAX_PARAMS, MAX_SCALE_PLACES,
+    MAX_STR_LEN, MAX_STRINGS, MAX_VARS, MAX_WITHIN,
 };
 
 /// Checks every invariant of `p`; `Ok` means the executor may run it.
@@ -158,13 +158,12 @@ fn var_in_range(v: VarId, vars: u16) -> Result<(), PlanError> {
 }
 
 /// Children of an op, in order.
-fn children(op: &Op) -> &[OpId] {
+fn children(op: &Op) -> Vec<OpId> {
     match op {
-        Op::And(c) | Op::Or(c) => c,
-        Op::Not(c) | Op::Quant { cond: c, .. } | Op::CountCmp { cond: c, .. } => {
-            std::slice::from_ref(c)
-        }
-        _ => &[],
+        Op::And(c) | Op::Or(c) => c.clone(),
+        Op::Not(c) | Op::Quant { cond: c, .. } | Op::CountCmp { cond: c, .. } => vec![*c],
+        Op::CountPair { lhs, rhs, .. } => vec![lhs.cond, rhs.cond],
+        _ => Vec::new(),
     }
 }
 
@@ -209,7 +208,7 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
     };
     for (i, op) in p.ops.iter().enumerate() {
         let this = i as OpId;
-        for &c in children(op) {
+        for c in children(op) {
             op_ref(c)?;
             if c >= this {
                 return Err(PlanError::Cyclic {
@@ -224,6 +223,18 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
             | Op::CountCmp { var, kind, .. } => {
                 var_in_range(*var, p.vars)?;
                 str_in_range(*kind, n)?;
+            }
+            Op::CountPair { lhs, rhs, .. } => {
+                for side in [lhs, rhs] {
+                    var_in_range(side.var, p.vars)?;
+                    str_in_range(side.kind, n)?;
+                    if side.scale.places > MAX_SCALE_PLACES {
+                        return Err(PlanError::Invalid {
+                            what: "count scale",
+                            why: "more decimal places than the executor supports",
+                        });
+                    }
+                }
             }
             Op::FindSide { var, table, .. } => {
                 var_in_range(*var, p.vars)?;
@@ -483,6 +494,7 @@ impl<'a> Walk<'a> {
         Err(PlanError::PrefilterMissing { kind: name })
     }
 
+    #[allow(clippy::too_many_lines, reason = "one flat match arm per op family")]
     fn visit(&mut self, id: OpId, depth: u32, clause: bool) -> Result<(), PlanError> {
         if depth > MAX_DEPTH {
             return Err(PlanError::TooDeep { limit: MAX_DEPTH });
@@ -517,6 +529,13 @@ impl<'a> Walk<'a> {
                 }
             }
             Op::Not(c) => self.visit(*c, depth + 1, false)?,
+            Op::CountPair { lhs, rhs, .. } => {
+                for side in [lhs, rhs] {
+                    self.bind(side.var)?;
+                    self.visit(side.cond, depth + 1, false)?;
+                    self.vars[usize::from(side.var)] = VarState::Closed;
+                }
+            }
             Op::Quant { var, cond, .. } | Op::CountCmp { var, cond, .. } => {
                 self.bind(*var)?;
                 self.visit(*cond, depth + 1, false)?;

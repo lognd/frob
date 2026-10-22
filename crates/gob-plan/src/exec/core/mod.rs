@@ -184,17 +184,12 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
     for (i, op) in p.ops.iter().enumerate() {
         let id = OpId::try_from(i).expect("validated plans have at most MAX_OPS ops");
         match op {
+            Op::CountPair { lhs, rhs, .. } => {
+                wire_kind(p, rels, &mut wired, &mut kinds, lhs.kind)?;
+                wire_kind(p, rels, &mut wired, &mut kinds, rhs.kind)?;
+            }
             Op::Find { kind, .. } | Op::Quant { kind, .. } | Op::CountCmp { kind, .. } => {
-                let word = &p.strings[*kind as usize];
-                if let Some(table) = row_kind_table(word) {
-                    wire_row_kind(p, rels, &mut wired, (*kind, table))?;
-                    continue;
-                }
-                let test = KindTest::from_word(word).ok_or_else(|| ExecError::UnsupportedKind {
-                    rule: p.rule.clone(),
-                    kind: word.clone(),
-                })?;
-                kinds.insert(*kind, test);
+                wire_kind(p, rels, &mut wired, &mut kinds, *kind)?;
             }
             Op::MatchRegex { pattern, .. } => {
                 let src = &p.strings[*pattern as usize];
@@ -273,6 +268,26 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
     Ok((kinds, matchers, wired))
 }
 
+/// Wires the kind a binder ranges over: a side-table row kind, or a node kind test.
+fn wire_kind<'r>(
+    p: &PlanParts,
+    rels: &'r Relations,
+    wired: &mut Wired<'r>,
+    kinds: &mut HashMap<StrId, KindTest>,
+    kind: StrId,
+) -> Result<(), ExecError> {
+    let word = &p.strings[kind as usize];
+    if let Some(table) = row_kind_table(word) {
+        return wire_row_kind(p, rels, wired, (kind, table));
+    }
+    let test = KindTest::from_word(word).ok_or_else(|| ExecError::UnsupportedKind {
+        rule: p.rule.clone(),
+        kind: word.clone(),
+    })?;
+    kinds.insert(kind, test);
+    Ok(())
+}
+
 /// Wires a model-backed kind word to the side table whose rows it ranges over.
 ///
 /// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
@@ -334,6 +349,13 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
             let mut inner = Vec::new();
             free_vars(p, *cond, &mut inner);
             out.extend(inner.into_iter().filter(|v| v != var));
+        }
+        Op::CountPair { lhs, rhs, .. } => {
+            for side in [lhs, rhs] {
+                let mut inner = Vec::new();
+                free_vars(p, side.cond, &mut inner);
+                out.extend(inner.into_iter().filter(|v| *v != side.var));
+            }
         }
         Op::Call { args, .. } => out.extend(args.iter().copied()),
         Op::Inside { sub: a, sup: b, .. } | Op::Order { a, b, .. } => out.extend([*a, *b]),

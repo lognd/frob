@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 use gob_ir::Truth;
 
-use crate::plan::CmpOp;
+use crate::plan::{CmpOp, Scale};
 
 /// An interval `[lo, hi]` of counts; `hi` is `None` for unbounded (an open domain).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -20,18 +20,69 @@ pub struct Count {
     pub hi: Option<u64>,
 }
 
-/// `x <= y` over naturals with `None` as infinity.
-fn le(x: Option<u64>, y: Option<u64>) -> bool {
-    match (x, y) {
-        (_, None) => true,
-        (None, Some(_)) => false,
-        (Some(a), Some(b)) => a <= b,
-    }
+/// An interval of exact integers; `i128::MIN` and `i128::MAX` stand for the infinities.
+#[derive(Debug, Clone, Copy)]
+struct Span {
+    lo: i128,
+    hi: i128,
 }
 
-/// `x < y` over naturals with `None` as infinity.
-fn lt(x: Option<u64>, y: Option<u64>) -> bool {
-    !le(y, x)
+impl Span {
+    /// The counts in `c`, each multiplied by `factor` (a negative factor flips the interval).
+    fn of(c: &Count, factor: i128) -> Self {
+        let lo = i128::from(c.lo);
+        let hi = c.hi.map(i128::from);
+        match factor.signum() {
+            0 => Self { lo: 0, hi: 0 },
+            1 => Self {
+                lo: lo * factor,
+                hi: hi.map_or(i128::MAX, |h| h * factor),
+            },
+            _ => Self {
+                lo: hi.map_or(i128::MIN, |h| h * factor),
+                hi: lo * factor,
+            },
+        }
+    }
+
+    /// `self < other` (strict) or `self <= other`, three-valued.
+    fn less(&self, other: &Self, strict: bool) -> Truth {
+        let (yes, no) = if strict {
+            (self.hi < other.lo, other.hi <= self.lo)
+        } else {
+            (self.hi <= other.lo, other.hi < self.lo)
+        };
+        if yes {
+            Truth::Yes
+        } else if no {
+            Truth::No
+        } else {
+            Truth::Unknown
+        }
+    }
+
+    /// `self == other`: Yes only for four equal finite endpoints, No for disjoint intervals.
+    fn equal(&self, other: &Self) -> Truth {
+        if self.lo == self.hi && other.lo == other.hi && self.lo == other.lo {
+            Truth::Yes
+        } else if self.hi < other.lo || other.hi < self.lo {
+            Truth::No
+        } else {
+            Truth::Unknown
+        }
+    }
+
+    /// Kleene comparison under `op`.
+    fn compare(&self, op: CmpOp, other: &Self) -> Truth {
+        match op {
+            CmpOp::Lt => self.less(other, true),
+            CmpOp::Le => self.less(other, false),
+            CmpOp::Gt => other.less(self, true),
+            CmpOp::Ge => other.less(self, false),
+            CmpOp::Eq => self.equal(other),
+            CmpOp::Ne => !self.equal(other),
+        }
+    }
 }
 
 impl Count {
@@ -47,44 +98,25 @@ impl Count {
     /// finite endpoints and No iff the intervals are disjoint; `>`, `>=` and `!=` follow by
     /// symmetry and negation. Everything else is Unknown.
     pub fn compare(&self, op: CmpOp, other: &Self) -> Truth {
-        match op {
-            CmpOp::Lt => self.less(other, true),
-            CmpOp::Le => self.less(other, false),
-            CmpOp::Gt => other.less(self, true),
-            CmpOp::Ge => other.less(self, false),
-            CmpOp::Eq => self.equal(other),
-            CmpOp::Ne => !self.equal(other),
-        }
+        self.compare_scaled(Scale::ONE, op, other, Scale::ONE)
     }
 
-    /// `self < other` (strict) or `self <= other`.
-    fn less(&self, other: &Self, strict: bool) -> Truth {
-        let (a, b) = (Some(self.lo), self.hi);
-        let (c, d) = (Some(other.lo), other.hi);
-        let (yes, no) = if strict {
-            (lt(b, c), le(d, a))
-        } else {
-            (le(b, c), lt(d, a))
-        };
-        if yes {
-            Truth::Yes
-        } else if no {
-            Truth::No
-        } else {
-            Truth::Unknown
-        }
-    }
-
-    fn equal(&self, other: &Self) -> Truth {
-        let (a, b) = (Some(self.lo), self.hi);
-        let (c, d) = (Some(other.lo), other.hi);
-        if a == b && c == d && a == c {
-            Truth::Yes
-        } else if lt(b, c) || lt(d, a) {
-            Truth::No
-        } else {
-            Truth::Unknown
-        }
+    /// Kleene comparison of `self * lhs_scale` with `other * rhs_scale`, exactly (no rounding).
+    ///
+    /// Both sides are multiplied by `10^(places of both)` so the comparison is over integers; a
+    /// zero scale pins its side to zero even when the count is unbounded, and a negative scale
+    /// flips the interval (an unbounded count then reaches minus infinity).
+    pub fn compare_scaled(
+        &self,
+        lhs_scale: Scale,
+        op: CmpOp,
+        other: &Self,
+        rhs_scale: Scale,
+    ) -> Truth {
+        let pow = |places: u8| 10i128.pow(u32::from(places));
+        let lf = i128::from(lhs_scale.num) * pow(rhs_scale.places);
+        let rf = i128::from(rhs_scale.num) * pow(lhs_scale.places);
+        Span::of(self, lf).compare(op, &Span::of(other, rf))
     }
 }
 
@@ -175,6 +207,105 @@ mod tests {
         assert_eq!(open.compare(CmpOp::Gt, &Count::exactly(0)), Truth::Yes);
         assert_eq!(open.compare(CmpOp::Le, &Count::exactly(5)), Truth::Unknown);
         assert_eq!(open.compare(CmpOp::Gt, &Count::exactly(5)), Truth::Unknown);
+    }
+
+    /// Whether `a * l  op  b * r` holds exactly, by cross-multiplying out the decimal places.
+    fn scaled_holds(op: CmpOp, a: u64, l: Scale, b: u64, r: Scale) -> bool {
+        let lhs = i128::from(a) * i128::from(l.num) * 10i128.pow(u32::from(r.places));
+        let rhs = i128::from(b) * i128::from(r.num) * 10i128.pow(u32::from(l.places));
+        match op {
+            CmpOp::Eq => lhs == rhs,
+            CmpOp::Ne => lhs != rhs,
+            CmpOp::Lt => lhs < rhs,
+            CmpOp::Le => lhs <= rhs,
+            CmpOp::Gt => lhs > rhs,
+            CmpOp::Ge => lhs >= rhs,
+        }
+    }
+
+    // frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+    // frob:tests crates/gob-plan/src/exec/relations/count.rs::Count.compare_scaled
+    #[test]
+    fn scaled_comparison_is_sound_for_negative_zero_and_fractional_scales() {
+        let scales = [
+            Scale::ONE,
+            Scale { num: 0, places: 0 },
+            Scale { num: 0, places: 3 },
+            Scale { num: 5, places: 1 },
+            Scale { num: 75, places: 2 },
+            Scale { num: 3, places: 0 },
+            Scale { num: -1, places: 0 },
+            Scale {
+                num: -25,
+                places: 2,
+            },
+        ];
+        let ivs: Vec<Count> = (0..3u64)
+            .flat_map(|l| (l..4).map(move |h| Count { lo: l, hi: Some(h) }))
+            .chain((0..3).map(|l| Count { lo: l, hi: None }))
+            .collect();
+        for &x in &ivs {
+            for &y in &ivs {
+                for &sx in &scales {
+                    for &sy in &scales {
+                        for op in OPS {
+                            let t = x.compare_scaled(sx, op, &y, sy);
+                            let (xh, yh) = (x.hi.unwrap_or(8), y.hi.unwrap_or(8));
+                            let outcomes: Vec<bool> = (x.lo..=xh)
+                                .flat_map(|a| {
+                                    (y.lo..=yh).map(move |b| scaled_holds(op, a, sx, b, sy))
+                                })
+                                .collect();
+                            let ctx = format!("{x:?}*{sx:?} {op:?} {y:?}*{sy:?}");
+                            match t {
+                                Truth::Yes => assert!(outcomes.iter().all(|&o| o), "{ctx}"),
+                                Truth::No => assert!(outcomes.iter().all(|&o| !o), "{ctx}"),
+                                Truth::Unknown => {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+    // frob:tests crates/gob-plan/src/exec/relations/count.rs::Count.compare_scaled
+    #[test]
+    fn scaling_decides_exact_counts_and_a_zero_scale_pins_an_open_count() {
+        let half = Scale { num: 5, places: 1 };
+        // 2 >= 0.5 * 4 holds; 1 >= 0.5 * 4 does not.
+        assert_eq!(
+            Count::exactly(2).compare_scaled(Scale::ONE, CmpOp::Ge, &Count::exactly(4), half),
+            Truth::Yes
+        );
+        assert_eq!(
+            Count::exactly(1).compare_scaled(Scale::ONE, CmpOp::Ge, &Count::exactly(4), half),
+            Truth::No
+        );
+        // Zero counts: 0 >= 0.5 * 0 holds, 0 > 0.5 * 0 does not.
+        let zero = Count::exactly(0);
+        assert_eq!(
+            zero.compare_scaled(Scale::ONE, CmpOp::Ge, &zero, half),
+            Truth::Yes
+        );
+        assert_eq!(
+            zero.compare_scaled(Scale::ONE, CmpOp::Gt, &zero, half),
+            Truth::No
+        );
+        // An open count times zero is exactly zero, so the comparison is decided.
+        let open = Count { lo: 0, hi: None };
+        let none = Scale { num: 0, places: 2 };
+        assert_eq!(
+            open.compare_scaled(none, CmpOp::Eq, &zero, Scale::ONE),
+            Truth::Yes
+        );
+        // A negative scale flips the interval: -1 * open <= 0.
+        let neg = Scale { num: -1, places: 0 };
+        assert_eq!(
+            open.compare_scaled(neg, CmpOp::Le, &zero, Scale::ONE),
+            Truth::Yes
+        );
     }
 
     // frob:tests crates/gob-plan/src/exec/relations/count.rs::Knobs.get

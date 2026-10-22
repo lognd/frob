@@ -165,6 +165,35 @@ pub enum Limit {
     },
 }
 
+/// A decimal factor `num / 10^places` applied to a count (`knob.ratio * count(...)`).
+///
+/// A negative or zero factor is legal: the scaled count is then at most zero.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Scale {
+    /// The signed numerator.
+    pub num: i64,
+    /// The decimal places: the denominator is `10^places`.
+    pub places: u8,
+}
+
+impl Scale {
+    /// The factor one, which leaves a count unchanged.
+    pub const ONE: Scale = Scale { num: 1, places: 0 };
+}
+
+/// One side of a count-to-count comparison: a count times a [`Scale`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CountSide {
+    /// Scoped variable.
+    pub var: VarId,
+    /// Node kind iterated.
+    pub kind: StrId,
+    /// The condition each candidate is tested against.
+    pub cond: OpId,
+    /// The factor the count is multiplied by.
+    pub scale: Scale,
+}
+
 /// A non-recursive def: a named condition over parameters, evaluated as a view (7.0.2).
 ///
 /// The parameters are variable slots that are bound only inside the body; a body may call
@@ -328,6 +357,15 @@ pub enum Op {
         op: CmpOp,
         /// What the count is compared with.
         limit: Limit,
+    },
+    /// Condition: `lhs op rhs` over two scaled counts, an interval comparison (7.0.2).
+    CountPair {
+        /// The left count and its factor.
+        lhs: CountSide,
+        /// Comparison of the two scaled counts.
+        op: CmpOp,
+        /// The right count and its factor.
+        rhs: CountSide,
     },
     /// Condition: `d(a1, ..., ak)`, a call of def `def` with variables as arguments.
     Call {

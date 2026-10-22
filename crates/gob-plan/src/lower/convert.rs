@@ -8,7 +8,9 @@ use crate::grl::ast::{
     self, Binding, CastKind, Clause, ClauseKind, CondKind, Header, HeaderKind, LangSet,
     LiteralKind, MessagePart, Object, RelKind, Rule, ShapeKind, Source, Term, TermKind,
 };
-use crate::plan::{ANY_NODES, Certainty, CmpOp, Need, Polarity, Position, Quant};
+use crate::plan::{
+    ANY_NODES, Certainty, CmpOp, MAX_SCALE_PLACES, Need, Polarity, Position, Quant, Scale,
+};
 
 /// A value a condition compares, by name.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -124,6 +126,21 @@ pub(super) enum Cond {
         op: CmpOp,
         limit: Lim,
     },
+    /// `SCALE * count(..) op SCALE * count(..)`: two counts compared, each times a decimal.
+    CountPair {
+        lhs: CountSideC,
+        op: CmpOp,
+        rhs: CountSideC,
+    },
+}
+
+/// One counted side of a [`Cond::CountPair`], in name form.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct CountSideC {
+    pub var: String,
+    pub kind: String,
+    pub cond: Box<Cond>,
+    pub scale: Scale,
 }
 
 /// What a count is compared with, by name.
@@ -187,6 +204,8 @@ pub(super) struct Lowered {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum KnobVal {
     Int(i64),
+    /// A decimal default, exact (`0.7` is 7 over 10^1).
+    Dec(Scale),
     Bool(bool),
     Str(String),
     /// A regex in the plan's pattern form (flags folded in).
@@ -571,7 +590,32 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
                     }
                 }
             }
-            ShapeKind::Alt(_) => return unsupported("alternative shapes", s.span),
+            ShapeKind::Alt(alts) => {
+                // `(a | b)`: every node, kept when it is an `a` or a `b` (plain kind words only).
+                let mut tests = Vec::new();
+                for alt in alts {
+                    match &alt.node {
+                        ShapeKind::Kind { kind, fields, arg }
+                            if fields.is_empty()
+                                && arg.is_none()
+                                && crate::exec::is_test_word(&kind.text, false) =>
+                        {
+                            tests.push(Cond::Is {
+                                subject: Opd::Var(name.clone()),
+                                test: kind.text.clone(),
+                            });
+                        }
+                        _ => {
+                            return unsupported(
+                                "an alternative that is not a plain kind",
+                                alt.span,
+                            );
+                        }
+                    }
+                }
+                attached.push(Cond::Or(tests));
+                Src::Kind(ANY_NODES.to_owned())
+            }
         },
         Source::Side(p) => {
             let need = match p.segments[0].text.as_str() {
@@ -653,9 +697,7 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
             };
             rel_cond(cx, &name, rel)?
         }
-        CondKind::Cmp { op, lhs, rhs }
-            if matches!(lhs.node, TermKind::Count(_)) || matches!(rhs.node, TermKind::Count(_)) =>
-        {
+        CondKind::Cmp { op, lhs, rhs } if has_count(lhs) || has_count(rhs) => {
             count_cmp(cx, *op, lhs, rhs)?
         }
         CondKind::Cmp { op, lhs, rhs } => Cond::Cmp {
@@ -736,8 +778,93 @@ fn cond_of(cx: &mut Cx, c: &ast::Cond) -> Result<Cond, LowerError> {
     })
 }
 
-/// `count(x: SRC ...) op limit` (or the limit first): a count against an integer or a knob.
+/// Whether a term is a count, or a count times a factor.
+fn has_count(t: &Term) -> bool {
+    match &t.node {
+        TermKind::Count(_) => true,
+        TermKind::Binary {
+            op: ast::ArithOp::Mul,
+            lhs,
+            rhs,
+        } => matches!(lhs.node, TermKind::Count(_)) || matches!(rhs.node, TermKind::Count(_)),
+        _ => false,
+    }
+}
+
+/// A decimal literal as written (`0.7`, `-0.25`, `3.`) to an exact [`Scale`].
+fn decimal(text: &str, span: Span) -> Result<Scale, LowerError> {
+    let (neg, body) = match text.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, text.strip_prefix('+').unwrap_or(text)),
+    };
+    let (whole, frac) = body.split_once('.').unwrap_or((body, ""));
+    let places = u8::try_from(frac.len())
+        .ok()
+        .filter(|p| *p <= MAX_SCALE_PLACES);
+    let digits = format!("{whole}{frac}");
+    let num = digits.parse::<i64>().ok().map(|n| if neg { -n } else { n });
+    match (num, places) {
+        (Some(num), Some(places)) => Ok(Scale { num, places }),
+        _ => unsupported("a decimal beyond 18 places or 64 bits", span),
+    }
+}
+
+/// A term used as a count's factor: an integer or decimal literal, or a numeric knob.
+fn scale_of(cx: &Cx, t: &Term) -> Result<Option<Scale>, LowerError> {
+    let int = |i: i64| Scale { num: i, places: 0 };
+    Ok(match &t.node {
+        TermKind::Literal(l) => match &l.node {
+            LiteralKind::Int(i) => i64::try_from(*i).ok().map(int),
+            LiteralKind::Decimal(text) => Some(decimal(text, l.span)?),
+            _ => None,
+        },
+        TermKind::Knob(w) => match knob_of(cx, w)? {
+            KnobVal::Int(i) => Some(int(*i)),
+            KnobVal::Dec(d) => Some(*d),
+            _ => None,
+        },
+        _ => None,
+    })
+}
+
+/// A term that is a count, optionally times a factor: its binder and the factor.
+fn count_side<'a>(cx: &Cx, t: &'a Term) -> Result<Option<(&'a Binding, Scale)>, LowerError> {
+    match &t.node {
+        TermKind::Count(b) => Ok(Some((b, Scale::ONE))),
+        TermKind::Binary {
+            op: ast::ArithOp::Mul,
+            lhs,
+            rhs,
+        } => match (&lhs.node, &rhs.node) {
+            (TermKind::Count(b), _) => Ok(scale_of(cx, rhs)?.map(|s| (&**b, s))),
+            (_, TermKind::Count(b)) => Ok(scale_of(cx, lhs)?.map(|s| (&**b, s))),
+            _ => Ok(None),
+        },
+        _ => Ok(None),
+    }
+}
+
+/// `count(x: SRC ...) op limit` (or the limit first): a count against an integer or a knob, or
+/// against another count, either side optionally scaled by a number or numeric knob.
 fn count_cmp(cx: &mut Cx, op: ast::CmpOp, lhs: &Term, rhs: &Term) -> Result<Cond, LowerError> {
+    if let (Some((lb, ls)), Some((rb, rs))) = (count_side(cx, lhs)?, count_side(cx, rhs)?) {
+        let side = |cx: &mut Cx, b: &Binding, scale| -> Result<CountSideC, LowerError> {
+            let (kind, cond) = scoped(cx, b)?;
+            Ok(CountSideC {
+                var: b.name.text.clone(),
+                kind,
+                cond: Box::new(cond),
+                scale,
+            })
+        };
+        let lhs = side(cx, lb, ls)?;
+        let rhs = side(cx, rb, rs)?;
+        return Ok(Cond::CountPair {
+            lhs,
+            op: cmp_op(op),
+            rhs,
+        });
+    }
     let (binding, other, op) = match (&lhs.node, &rhs.node) {
         (TermKind::Count(b), _) => (b, rhs, op),
         (_, TermKind::Count(b)) => (
@@ -751,7 +878,7 @@ fn count_cmp(cx: &mut Cx, op: ast::CmpOp, lhs: &Term, rhs: &Term) -> Result<Cond
                 same => same,
             },
         ),
-        _ => return unsupported("a count compared with a count", lhs.span),
+        _ => return unsupported("a scaled count compared with a non-count", lhs.span),
     };
     let limit = match &other.node {
         TermKind::Literal(l) => match &l.node {
@@ -903,7 +1030,8 @@ fn knob_value(l: &ast::Literal) -> Result<KnobVal, LowerError> {
                 KnobVal::Other
             }
         }
-        LiteralKind::Decimal(_) | LiteralKind::Call { .. } => KnobVal::Other,
+        LiteralKind::Decimal(text) => KnobVal::Dec(decimal(text, l.span)?),
+        LiteralKind::Call { .. } => KnobVal::Other,
     })
 }
 

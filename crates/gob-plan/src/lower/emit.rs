@@ -4,10 +4,10 @@
 use std::collections::BTreeSet;
 
 use super::LowerError;
-use super::convert::{Cond, DefItem, FindItem, LangNames, Lim, Lowered, Opd, Src};
+use super::convert::{Cond, CountSideC, DefItem, FindItem, LangNames, Lim, Lowered, Opd, Src};
 use crate::plan::{
-    Certainty, Def, Langs, Leaf, Limit, Need, NeedSet, Op, OpId, Operand, Plan, PlanParts,
-    Polarity, Provenance, Report, StrId, Unresolved, VarId, cost_class,
+    Certainty, CountSide, Def, Langs, Leaf, Limit, Need, NeedSet, Op, OpId, Operand, Plan,
+    PlanParts, Polarity, Provenance, Report, StrId, Unresolved, VarId, cost_class,
 };
 
 /// The sort key of a condition: its structure, so equal clauses sort alike in any source order.
@@ -54,6 +54,13 @@ fn free(c: &Cond, bound: &mut Vec<String>, out: &mut BTreeSet<String>) {
             bound.push(var.clone());
             free(cond, bound, out);
             bound.pop();
+        }
+        Cond::CountPair { lhs, rhs, .. } => {
+            for side in [lhs, rhs] {
+                bound.push(side.var.clone());
+                free(&side.cond, bound, out);
+                bound.pop();
+            }
         }
         Cond::Inside { sub, sup, .. } => {
             name(sub, bound);
@@ -288,9 +295,28 @@ impl Builder {
                     },
                 }
             }
+            Cond::CountPair { lhs, op, rhs } => Op::CountPair {
+                lhs: self.count_side(lhs)?,
+                op: *op,
+                rhs: self.count_side(rhs)?,
+            },
             _ => self.relation(c)?,
         };
         Ok(self.push(op))
+    }
+
+    /// One counted side of a pair: a fresh variable scoping its condition.
+    fn count_side(&mut self, side: &CountSideC) -> Result<CountSide, LowerError> {
+        let id = self.fresh();
+        self.env.push((side.var.clone(), id));
+        let inner = self.cond(&side.cond);
+        self.env.pop();
+        Ok(CountSide {
+            var: id,
+            kind: self.intern(&side.kind),
+            cond: inner?,
+            scale: side.scale,
+        })
     }
 
     /// The conditions that relate variables: containment, order, verbs, units, def calls.

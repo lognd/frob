@@ -6,8 +6,8 @@
 
 use super::error::PlanError;
 use super::ir::{
-    Certainty, CmpOp, CostClass, Def, Langs, Leaf, Limit, Need, NeedSet, Op, Operand, PlanParts,
-    Polarity, Position, Provenance, Quant, Report, Unresolved,
+    Certainty, CmpOp, CostClass, CountSide, Def, Langs, Leaf, Limit, Need, NeedSet, Op, Operand,
+    PlanParts, Polarity, Position, Provenance, Quant, Report, Scale, Unresolved,
 };
 use super::limits::{MAX_BYTES, MAX_DEFS, MAX_LIST, MAX_OPS, MAX_PARAMS, MAX_STR_LEN, MAX_STRINGS};
 
@@ -238,6 +238,15 @@ fn polarity_from(tag: u8) -> Result<Polarity, PlanError> {
     })
 }
 
+/// Writes one scaled count: variable, kind, condition, numerator, decimal places.
+fn put_count_side(w: &mut Vec<u8>, s: &CountSide) {
+    put_u16(w, s.var);
+    put_u32(w, s.kind);
+    put_u32(w, s.cond);
+    w.extend_from_slice(&s.scale.num.to_le_bytes());
+    w.push(s.scale.places);
+}
+
 fn put_u16(w: &mut Vec<u8>, v: u16) {
     w.extend_from_slice(&v.to_le_bytes());
 }
@@ -409,6 +418,12 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
                 }
             }
         }
+        Op::CountPair { lhs, op, rhs } => {
+            w.push(24);
+            put_count_side(w, lhs);
+            w.push(*op as u8);
+            put_count_side(w, rhs);
+        }
         Op::Call { def, args } => {
             w.push(14);
             put_u16(w, *def);
@@ -535,6 +550,18 @@ impl Reader<'_> {
     fn u16s(&mut self, what: &'static str, limit: usize) -> Result<Vec<u16>, PlanError> {
         let n = self.count(what, limit, 2)?;
         (0..n).map(|_| self.u16(what)).collect()
+    }
+
+    fn count_side(&mut self) -> Result<CountSide, PlanError> {
+        Ok(CountSide {
+            var: self.u16("var")?,
+            kind: self.u32("kind")?,
+            cond: self.u32("cond")?,
+            scale: Scale {
+                num: self.i64("scale numerator")?,
+                places: self.u8("scale places")?,
+            },
+        })
     }
 
     fn limit(&mut self) -> Result<Limit, PlanError> {
@@ -740,6 +767,11 @@ impl Reader<'_> {
                 cond: self.u32("cond")?,
                 op: self.cmp_op()?,
                 limit: self.limit()?,
+            },
+            24 => Op::CountPair {
+                lhs: self.count_side()?,
+                op: self.cmp_op()?,
+                rhs: self.count_side()?,
             },
             14 => Op::Call {
                 def: self.u16("def")?,
