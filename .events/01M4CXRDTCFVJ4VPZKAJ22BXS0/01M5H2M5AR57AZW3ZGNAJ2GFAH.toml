@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T05:51:26Z"
+digest = "fbd3c47c5695bd797903c7c889e0016594602570490d4b1f226f86162be6a747"
+exit_code = 0
+head = "4f8c69cc40daa10c76d48c2d2240c075006c424c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID efc86bb0-c5d4-449c-a5bd-483cb9e995de with nextest profile: default
+    Starting 1 test across 1 binary (12 tests skipped)
+        PASS [   0.004s] crunk-scene::scene unsupported_property_is_named
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 12 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-scene --test scene unsupported_property_is_named"
+size = 537
+status = "measured"
+test_count = 1
+tests_digest = "934190cf9c852d2e76650e169eb68e8b901f0ccbc7e656a14ca18e0db77d72c3"
+at = "2026-10-22T05:51:26Z"
+actor = "lognd"
+rev = 1
