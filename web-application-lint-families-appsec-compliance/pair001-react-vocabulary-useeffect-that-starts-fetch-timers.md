@@ -8,12 +8,12 @@ points = 2
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "lognd"
 created = "2026-10-08T08:13:16Z"
-updated = "2026-10-22T08:47:03Z"
+updated = "2026-10-22T08:52:58Z"
 scope = ["changelog.d/**", "crates/gob-ir/**", "crates/gob-frameworks/**", "crates/grimble-lints/**"]
 
 [[acceptance]]
 text = "Given useEffect with setInterval and no returned clearInterval, when checked, then PAIR001 fires"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a returned cleanup that clears the interval, when checked, then clean"
