@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T06:36:20Z"
+digest = "2b2f6ebb7036a345f2ae336740f38bac97e3ee035133c32f063d46604631a4be"
+exit_code = 0
+head = "33115f7899efa12311caa33a476d8516f40effa7"
+inline = '''
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.75s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c194e760-b6c0-4ddb-ac0e-3eb35cfa0c43 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.015s] crunk-rules::content_rules content001_fires_on_a_literal_and_suggests_a_key
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test content_rules content001_fires_on_a_literal_and_suggests_a_key"
+size = 696
+status = "measured"
+test_count = 1
+tests_digest = "ac3835964383ea14fc1c3ed97c79f23fc12c5d547f42c0c190b359a2f9678787"
+at = "2026-10-22T06:36:20Z"
+actor = "lognd"
+rev = 1
