@@ -385,3 +385,21 @@ fn an_adapterless_file_is_f0_and_not_parsed() {
     assert_eq!(f.file.parse_status, gob_symbols::ParseStatus::NotParsed);
     assert_eq!(gob_symbols::opaque_adapter().fidelity(), Fidelity::F0);
 }
+
+// frob:ticket 01M4CXV46WX4E0WSVYJPYM7TRG
+// frob:tests crates/gob-caps/src/matrix.rs::fidelity_ceiling
+#[test]
+fn every_adapters_measured_level_fits_under_its_cell_ceiling() {
+    for a in adapters() {
+        let mut cells = [gob_caps::Precision::None; 12];
+        for cap in gob_caps::Capability::ALL {
+            cells[cap as usize] = a.capabilities().precision(cap);
+        }
+        let measured = measure(&corpus_of(a.language())).level();
+        assert!(
+            measured <= gob_caps::fidelity_ceiling(&cells),
+            "{}: corpus measures {measured} above what its cells justify",
+            a.language()
+        );
+    }
+}
