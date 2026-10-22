@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:41Z"
-updated = "2026-10-22T02:48:33Z"
+updated = "2026-10-22T02:50:07Z"
 scope = ["changelog.d/**", "crates/frob-evidence/**", "crates/frob-tests/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a pytest module that fails to collect, when the junit is parsed, then its node id is the file path, not a mangled file::module id"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given several failing runners, when the cause is built, then each shows its exit code and a capped output tail"

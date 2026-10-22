@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-22T02:50:07Z"
+digest = "e4ea447e020cbbb4d9a16d0bdf91d58d5b10c095b806e83426f852f8b89b21bc"
+exit_code = 0
+head = "0c0cafa3b867db72e7113be5583acb3c67e5491b"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 27.86s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 08e45eff-7378-4060-9785-715963fd9ca9 with nextest profile: default
+    Starting 1 test across 6 binaries (99 tests skipped)
+        PASS [   0.006s] frob-evidence provider::tests::a_module_that_failed_to_collect_keeps_its_file_as_the_node_id
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 99 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence a_module_that_failed_to_collect"
+size = 708
+status = "measured"
+test_count = 1
+tests_digest = "93b4a48f5dcc4ed3fd158bc8d6be586e4db8fba47502d84a946632cc96686667"
+at = "2026-10-22T02:50:07Z"
+actor = "lognd"
+rev = 1
