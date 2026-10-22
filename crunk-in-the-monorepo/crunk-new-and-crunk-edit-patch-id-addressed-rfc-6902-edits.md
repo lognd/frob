@@ -2,13 +2,13 @@
 id = "01M4CXRA570ABD65ZDFAFVVZ8Y"
 title = "crunk new and crunk edit --patch: id-addressed RFC 6902 edits validated by schema, returning the diff and findings of touched nodes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-08T04:53:41Z"
-updated = "2026-10-08T04:53:41Z"
+updated = "2026-10-22T07:15:14Z"
 scope = ["changelog.d/**", "crates/crunk/**", "crates/crunk-spec/**"]
 
 [[acceptance]]
