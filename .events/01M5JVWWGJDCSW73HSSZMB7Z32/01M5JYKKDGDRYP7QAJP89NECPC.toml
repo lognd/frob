@@ -1,0 +1,49 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T23:17:29Z"
+digest = "90f6901faab7a7991e06c0777d1c89f0f0828df7f2fba2c5f77dd99dfd728184"
+exit_code = 100
+failed_tests = ["workspace_layering_holds_and_every_crate_has_a_layer"]
+head = "bbb3fad7088a40aededde4131ca06d014a029531"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 036c50ce-e029-47d7-93a3-e0da38f0df51 with nextest profile: default
+    Starting 1 test across 1 binary (6 tests skipped)
+        FAIL [   0.047s] gob-dev::layering workspace_layering_holds_and_every_crate_has_a_layer
+  output \u{2500}\u{2500}\u{2500}
+
+    running 1 test
+
+    thread 'workspace_layering_holds_and_every_crate_has_a_layer' (3951713) panicked at crates/gob-dev/tests/layering.rs:193:5:
+    layering violations:
+    frob-docgen (layer 19 docgen) -> crunk-check (layer 11 product upper): crosses products (frob -> crunk)
+    frob-docgen (layer 19 docgen) -> grimble-check (layer 11 product upper): crosses products (frob -> grimble)
+    gob-dev (layer 18 tool) -> crunk (layer 13 product apex): crosses products (gob -> crunk)
+    gob-dev (layer 18 tool) -> grimble (layer 12 product top): crosses products (gob -> grimble)
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+    test workspace_layering_holds_and_every_crate_has_a_layer ... FAILED
+
+    failures:
+
+    failures:
+        workspace_layering_holds_and_every_crate_has_a_layer
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.04s
+
+
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.048s] 1 test run: 0 passed, 1 failed, 6 skipped
+        FAIL [   0.047s] gob-dev::layering workspace_layering_holds_and_every_crate_has_a_layer
+error: test run failed
+'''
+passed = false
+provider = "nextest"
+ref = "-p gob-dev --test layering workspace_layering_holds_and_every_crate_has_a_layer"
+size = 1656
+status = "measured"
+test_count = 1
+tests_digest = "29fb0b3726eb310e761de0c3213391bc3f4612f159f1228a0207371086ef922b"
+at = "2026-10-22T23:17:29Z"
+actor = "lognd"
+rev = 1

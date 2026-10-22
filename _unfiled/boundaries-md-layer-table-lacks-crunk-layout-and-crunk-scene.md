@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T22:32:22Z"
-updated = "2026-10-22T23:15:27Z"
+updated = "2026-10-22T23:17:29Z"
 scope = ["docs/design/boundaries.md"]
 
 [[acceptance]]
