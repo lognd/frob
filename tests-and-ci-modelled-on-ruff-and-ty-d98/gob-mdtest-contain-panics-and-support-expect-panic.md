@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-22T02:55:46Z"
+updated = "2026-10-22T02:55:47Z"
 scope = ["crates/gob-mdtest/**"]
 
 [[acceptance]]
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "expect-panic with an empty substring accepts any panic but still requires one"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a non-string panic payload is reported with a placeholder"

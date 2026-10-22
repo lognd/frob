@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-22T02:55:47Z"
+digest = "6e1daee49edacead2d9900bcb3223ee4892bee288dcdd9e25e3bc3bfe36a931a"
+exit_code = 0
+head = "680e526f40f11e1b9e9920e9ef8fb448ccd17cce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4a47c939-63c0-4c80-8f70-c104a55e47ea with nextest profile: default
+    Starting 1 test across 1 binary (12 tests skipped)
+        PASS [   0.005s] gob-mdtest::panics empty_expect_panic_accepts_any_panic_but_still_needs_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 12 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest --test panics empty_expect_panic"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "bea6652fab2093f4fd616ed0ddc0eadaaf6ab66ac1f36f1e71e2bec19ac751ea"
+at = "2026-10-22T02:55:47Z"
+actor = "lognd"
+rev = 1
