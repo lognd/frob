@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:42Z"
-updated = "2026-10-22T01:38:19Z"
+updated = "2026-10-22T01:38:20Z"
 scope = ["changelog.d/**", "crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-release/**", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/src", "crates/frob-evidence/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src", "crates/frob-check/tests", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/reference/config.md", "docs/schemas/config.json", "docs/reference/rules/REL003.md", "docs/guides/quickstart.md", "crates/frob-evidence/src/done.rs", "crates/frob-evidence/tests/**", "crates/frob-check/src/product.rs", "docs/design/documentation.md"]
 
 [[acceptance]]
@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the config, when changelog_exempt_types is unset or names an unknown type, then it defaults to epic and docs or is rejected at load"
-bound = false
+bound = true
 +++
 
 notes/review/adoption-trial-2026-10-07.md MEDIUM.

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [6]
+captured_at = "2026-10-22T01:38:20Z"
+digest = "946db3d6472baa55d9ea8e0de6e0854c1868af76df1d7ee1b7f93cf012d1d0c4"
+exit_code = 0
+head = "1726d9c5a9b3cc20387f00773e2ec472268897a8"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 44.06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c081e33a-501b-44c3-91d9-0a546e2d66ac with nextest profile: default
+    Starting 1 test across 4 binaries (96 tests skipped)
+        PASS [   0.006s] frob-pm::config changelog_exempt_types_default_to_epic_and_docs_and_reject_unknown_names
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 96 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm changelog_exempt_types_default_to_epic_and_docs_and_reject_unknown_names"
+size = 634
+status = "measured"
+test_count = 1
+tests_digest = "342015ea49852810f56b36e2e0d7428f09056d1dc05f6c3d72479d91fbc00cb0"
+at = "2026-10-22T01:38:20Z"
+actor = "lognd"
+rev = 1
