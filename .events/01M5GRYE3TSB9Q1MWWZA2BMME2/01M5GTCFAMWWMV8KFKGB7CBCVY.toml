@@ -1,0 +1,54 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T03:24:52Z"
+digest = "9f8a9e2eb80b7dcd781669b4307bcd93568b53be87b122a870209b01122c3a88"
+exit_code = 0
+head = "5dfa29f48aa7b0565a16844053f2c2af1150d474"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eca87d8f-dde3-4a0e-9b32-17edeb1bc880 with nextest profile: default
+    Starting 1 test across 5 binaries (128 tests skipped)
+        PASS [   1.436s] frob-check::rule_matrix garbage_input_never_panics_and_stays_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.437s] 1 test run: 1 passed, 128 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check garbage_input_never_panics_and_stays_unresolved"
+size = 2427
+status = "measured"
+test_count = 1
+tests_digest = "ba7c2c6e52d1d7c816973f677d3cfdc327eeb7ff1b07191355e95af1bdf01280"
+at = "2026-10-22T03:24:52Z"
+actor = "lognd"
+rev = 1
