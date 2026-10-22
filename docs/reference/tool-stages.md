@@ -15,7 +15,7 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `args` | `[]` | Arguments, no shell. |
 | `timeout_secs` | `300` | Kill limit. |
 | `fail_on_nonzero` | `true` | A failing stage is `TOOL001` (Error); a missing binary is `TOOL001` Unresolved and required. |
-| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `eslint-json`, `roslyn-sarif` or `typos-json`: turn stdout into findings. |
+| `parser` | `none` | `zizmor-json-v1`, `actionlint-json`, `stylelint-json`, `sarif`, `cargo-json`, `ruff-json`, `ty-gitlab`, `pyright-json`, `tsc-text`, `eslint-json`, `roslyn-sarif` or `typos-json`: turn stdout into findings. |
 | `labels` | `[]` | actionlint runner labels the repository defines. |
 | `id_map` | `{}` | Tool finding id to rule id, merged over the parser default. |
 | `min_version`, `max_version` | unset | Inclusive dotted-number range of trusted tool versions. |
@@ -94,11 +94,13 @@ ruff-json reads `ruff check --output-format=json`. A diagnostic without a rule c
 
 ty-gitlab reads `ty check --output-format gitlab` and pyright-json reads `pyright --outputjson` (error and warning diagnostics only, 0-based ranges shifted to 1-based). Both map every finding to `LINT001` (Advisory) unless `id_map` says otherwise, and normal exits are 0 and 1. Their findings also decide which Python files are type-clean for `[types] trust`. `frob check` runs the first such stage (fixed argv, no placeholders) once while building the snapshot graph and feeds the clean-file set to the graph build; if the stage is absent, cannot run, exits other than 0 or 1, or prints unreadable output, no file is clean and annotations stay claims (May). With `trust` other than `checked` the stage is not consulted for facts.
 
+tsc-text reads `tsc --strict --noEmit --pretty false` (`path(line,col): error TSnnnn: message`; indented continuation lines join the message; exits 0 to 2 are normal). It only counts as a type-fact source when its args contain `--strict`; without it the stage is skipped for facts. Every TypeScript or JavaScript file the compiler did not report on is type-clean, except a file with `@ts-nocheck`. A line with `@ts-ignore`, `@ts-expect-error` (that line and the next), `as any`, `as unknown`, `<any>` or `<unknown>` is demoted to a claim. Python and TypeScript stages are independent: the first strict stage per language is run and the clean sets are merged.
+
 ## `[types]`
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `trust` | `checked` | How far a parameter annotation narrows a Python method call. `checked`: the call resolves exactly (Must) only when the bound checker reported nothing on the caller's file and the call's line has no `# type: ignore`, `# pyright: ignore` or `# ty: ignore`; otherwise the annotated class is a claim (May). `annotated`: always a claim (May). `none`: annotations are hints only and the call is not narrowed. |
+| `trust` | `checked` | How far a parameter annotation narrows a Python or TypeScript method call. `checked`: the call resolves exactly (Must) only when the bound checker reported nothing on the caller's file and the call's line has no `# type: ignore`, `# pyright: ignore` or `# ty: ignore` (TypeScript: `@ts-ignore`, `@ts-expect-error`, `as any`; a file with `@ts-nocheck` is never clean); otherwise the annotated class is a claim (May). `annotated`: always a claim (May). `none`: annotations are hints only and the call is not narrowed. A TypeScript parameter annotated `any` is a dynamic call (an unresolved edge with reason Dynamic) unless `trust` is `none`. |
 
 `gob_check::type_facts_from_output` turns a checker's stdout into the clean-file set the symbol graph consumes (`SymbolGraph::from_files_typed`).
 

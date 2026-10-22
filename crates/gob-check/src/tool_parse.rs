@@ -81,6 +81,14 @@ pub(crate) enum ParseError {
     /// The JSON is not a SARIF 2.1.0 log.
     #[error("output is not a SARIF 2.1.0 log: {0}")]
     Sarif(String),
+    /// The text is not the line format the parser expects.
+    #[error("output is not valid {format} text: {message}")]
+    Text {
+        /// Parser name.
+        format: &'static str,
+        /// What was wrong.
+        message: String,
+    },
 }
 
 #[derive(Deserialize)]
@@ -228,6 +236,7 @@ pub(crate) fn parse(parser: ToolParser, stdout: &str) -> Result<Vec<RawFinding>,
         ToolParser::RuffJson => parse_ruff(stdout),
         ToolParser::TyGitlab => crate::type_parse::parse_ty_gitlab(stdout),
         ToolParser::PyrightJson => crate::type_parse::parse_pyright(stdout),
+        ToolParser::TscText => crate::type_parse::parse_tsc(stdout),
         ToolParser::TyposJson => parse_typos(stdout),
         ToolParser::EslintJson => parse_eslint(stdout),
     }
@@ -546,6 +555,7 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
+        | ToolParser::TscText
         | ToolParser::EslintJson
         | ToolParser::RoslynSarif
         | ToolParser::None => BTreeMap::new(),
@@ -562,6 +572,7 @@ fn fallback(parser: ToolParser) -> &'static str {
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
+        | ToolParser::TscText
         | ToolParser::EslintJson
         | ToolParser::RoslynSarif => "LINT001",
         _ => "TOOL002",
@@ -792,6 +803,7 @@ pub(crate) fn default_version_args(parser: ToolParser) -> Option<Vec<String>> {
         | ToolParser::RuffJson
         | ToolParser::TyGitlab
         | ToolParser::PyrightJson
+        | ToolParser::TscText
         | ToolParser::EslintJson
         | ToolParser::RoslynSarif
         | ToolParser::TyposJson => Some(vec!["--version".to_owned()]),

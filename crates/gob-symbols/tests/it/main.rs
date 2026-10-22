@@ -19,5 +19,6 @@ mod python_types;
 mod symbols;
 mod typescript;
 mod typescript_consteval;
+mod typescript_types;
 mod unity_project;
 mod web_corpus;

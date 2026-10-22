@@ -530,6 +530,9 @@ fn normal_exits(parser: ToolParser) -> &'static [i32] {
         | ToolParser::PyrightJson
         | ToolParser::EslintJson
         | ToolParser::RoslynSarif => &[0, 1],
+        // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
+        // tsc exits 1 on diagnostics with emit skipped and 2 on diagnostics with emit generated.
+        ToolParser::TscText => &[0, 1, 2],
         // Lints under `-D warnings` and compile errors both exit 101; the diagnostics decide.
         ToolParser::CargoJson => &[0, 101],
         // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
