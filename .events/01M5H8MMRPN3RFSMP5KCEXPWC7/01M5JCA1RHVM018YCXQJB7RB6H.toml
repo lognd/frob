@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-22T17:57:41Z"
+digest = "f76b47bf7c5658b4e5c4c3d2349a5c61d67d610091ffa06893321e0d76580816"
+exit_code = 0
+head = "18de2f92c4f0bf364063c5910faa4ac249cddec2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 05031ff9-f5c3-40ba-b81c-d30d253829a0 with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.217s] crunk::edit edit_one_key_keeps_every_comment_and_untouched_line_byte_identical
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.217s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test edit edit_one_key_keeps_every_comment"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "5554f70b574d97cadb80eb2f64782f0833a9dc4a6e5d522260d9ba9a94b358cf"
+at = "2026-10-22T17:57:41Z"
+actor = "lognd"
+rev = 1
