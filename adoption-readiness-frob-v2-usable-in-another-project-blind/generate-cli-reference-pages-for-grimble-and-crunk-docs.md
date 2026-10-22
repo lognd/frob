@@ -2,7 +2,8 @@
 id = "01M4CXTR91E8Y8Y52B5ARDPKKS"
 title = "Generate CLI reference pages for grimble and crunk (docs/reference/cli/grimble.md, crunk.md)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
