@@ -9,7 +9,6 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use gob_path::exact_text;
 use tracing::{debug, info, warn};
 
 use crate::EnvPolicy;
@@ -412,6 +411,7 @@ fn kill_group(child: &mut Child) {
 /// Pids of every live descendant of `root` (Linux `/proc`; empty elsewhere).
 #[cfg(target_os = "linux")]
 fn descendants(root: i32) -> Vec<i32> {
+    use gob_path::exact_text;
     let mut parent_of = Vec::new();
     if let Ok(dir) = std::fs::read_dir("/proc") {
         for entry in dir.flatten() {
