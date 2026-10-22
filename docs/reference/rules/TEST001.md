@@ -98,14 +98,14 @@ fn adds_one() {
 }
 ```
 
-### TEST001 tests-target-missing / Examples / A target that names no test fires #1 (line 22) (fire)
+### TEST001 tests-target-missing / Examples #1 (line 22) (fire)
 
 ```rust
 // frob:tests src/lib.rs::no_such_test
 pub fn covered() {}
 ```
 
-### TEST001 tests-target-missing / Examples / A target that names a test function is clean #2 (line 29) (clean)
+### TEST001 tests-target-missing / Examples #2 (line 29) (clean)
 
 ```rust
 // frob:tests src/lib.rs::covers_it
@@ -115,7 +115,7 @@ pub fn covered() {}
 fn covers_it() {}
 ```
 
-### TEST001 tests-target-missing / Examples / A `Type::method` target fires with the dotted form as the fix #3 (line 39) (fire)
+### TEST001 tests-target-missing / Examples #3 (line 39) (fire)
 
 ```rust
 // frob:tests src/lib.rs::Widget::spin

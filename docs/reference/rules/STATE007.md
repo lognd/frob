@@ -72,7 +72,7 @@ id = "default"
 
 ## Examples
 
-### STATE007 screen-hash-stale / Examples / A locked screen with no hash fires #1 (line 22) (fire)
+### STATE007 screen-hash-stale / Examples #1 (line 22) (fire)
 
 ```toml
 id = "home"
@@ -83,7 +83,7 @@ status = "ready"
 id = "default"
 ```
 
-### STATE007 screen-hash-stale / Examples / A locked screen with a stale hash fires #2 (line 33) (fire)
+### STATE007 screen-hash-stale / Examples #2 (line 33) (fire)
 
 ```toml
 id = "home"
@@ -95,7 +95,7 @@ content_hash = "0000"
 id = "default"
 ```
 
-### STATE007 screen-hash-stale / Examples / A draft screen is clean #3 (line 45) (clean)
+### STATE007 screen-hash-stale / Examples #3 (line 45) (clean)
 
 ```toml
 id = "home"

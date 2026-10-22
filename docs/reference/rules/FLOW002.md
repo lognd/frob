@@ -69,7 +69,7 @@ boundary b1 endorse f1 : foreign -> trusted when "checked";
 
 ## Examples
 
-### FLOW002 flow-unendorsed / Examples / Fires case 1 #1 (line 22) (fire)
+### FLOW002 flow-unendorsed / Examples #1 (line 22) (fire)
 
 ```grmb
 grimble = "2";
@@ -84,7 +84,7 @@ flow f1 : a -> b {
 }
 ```
 
-### FLOW002 flow-unendorsed / Examples / Clean case 2 #2 (line 37) (clean)
+### FLOW002 flow-unendorsed / Examples #2 (line 37) (clean)
 
 ```grmb
 grimble = "2";

@@ -7,6 +7,8 @@ use crunk_rules::family::{CheckTier, FAMILIES, Gate, family, gate_severity, is_w
 use crunk_rules::registry::{catalog_mismatches, entries, render_markdown, unknown_families};
 use crunk_rules::rules::{
     INDEX, bp001::Bp001, bp002::Bp002, bp003::Bp003, color001::Color001, color002::Color002,
+    comp001::Comp001, comp002::Comp002, comp003::Comp003, comp004::Comp004, comp005::Comp005,
+    comp006::Comp006, comp007::Comp007, comp008::Comp008, comp009::Comp009,
     contrast001::Contrast001, export001::Export001, export002::Export002, gx001::Gx001,
     human001::Human001, human002::Human002, layer001::Layer001, layout001::Layout001,
     layout002::Layout002, layout003::Layout003, layout004::Layout004, layout005::Layout005,
@@ -38,6 +40,15 @@ fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
 fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
     // frob:tests crates/crunk-rules/src/rules/color002.rs::Color002
+    // frob:tests crates/crunk-rules/src/rules/comp001.rs::Comp001
+    // frob:tests crates/crunk-rules/src/rules/comp002.rs::Comp002
+    // frob:tests crates/crunk-rules/src/rules/comp003.rs::Comp003
+    // frob:tests crates/crunk-rules/src/rules/comp004.rs::Comp004
+    // frob:tests crates/crunk-rules/src/rules/comp005.rs::Comp005
+    // frob:tests crates/crunk-rules/src/rules/comp006.rs::Comp006
+    // frob:tests crates/crunk-rules/src/rules/comp007.rs::Comp007
+    // frob:tests crates/crunk-rules/src/rules/comp008.rs::Comp008
+    // frob:tests crates/crunk-rules/src/rules/comp009.rs::Comp009
     // frob:tests crates/crunk-rules/src/rules/contrast001.rs::Contrast001
     // frob:tests crates/crunk-rules/src/rules/space001.rs::Space001
     // frob:tests crates/crunk-rules/src/rules/type001.rs::Type001
@@ -97,6 +108,15 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     match case.rule.as_str() {
         "COLOR001" => support::run::<Color001>(&host),
         "COLOR002" => support::run::<Color002>(&host),
+        "COMP001" => support::run::<Comp001>(&host),
+        "COMP002" => support::run::<Comp002>(&host),
+        "COMP003" => support::run::<Comp003>(&host),
+        "COMP004" => support::run::<Comp004>(&host),
+        "COMP005" => support::run::<Comp005>(&host),
+        "COMP006" => support::run::<Comp006>(&host),
+        "COMP007" => support::run::<Comp007>(&host),
+        "COMP008" => support::run::<Comp008>(&host),
+        "COMP009" => support::run::<Comp009>(&host),
         "CONTRAST001" => support::run::<Contrast001>(&host),
         "SPACE001" => support::run::<Space001>(&host),
         "TYPE001" => support::run::<Type001>(&host),
@@ -181,6 +201,15 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "BP003",
             "COLOR001",
             "COLOR002",
+            "COMP001",
+            "COMP002",
+            "COMP003",
+            "COMP004",
+            "COMP005",
+            "COMP006",
+            "COMP007",
+            "COMP008",
+            "COMP009",
             "CONTRAST001",
             "EXPORT001",
             "EXPORT002",
@@ -379,7 +408,7 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 58);
+    assert_eq!(ids.len(), 67);
     assert!(ids.contains(&"SPACE001"));
 }
 

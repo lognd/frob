@@ -54,7 +54,7 @@ scopes = ["color"]
 
 ## Examples
 
-### TOKEN007 token-scope-violation / Examples / A spacing token read by color fires #1 (line 22) (fire)
+### TOKEN007 token-scope-violation / Examples #1 (line 22) (fire)
 
 Config: `uses-ink`
 
@@ -64,7 +64,7 @@ value = "#101820"
 scopes = ["spacing"]
 ```
 
-### TOKEN007 token-scope-violation / Examples / A color token read by color is clean #2 (line 30) (clean)
+### TOKEN007 token-scope-violation / Examples #2 (line 30) (clean)
 
 Config: `uses-ink`
 

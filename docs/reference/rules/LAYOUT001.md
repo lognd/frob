@@ -118,7 +118,7 @@ Size the child to fit (shrink, wrap or scroll it), enlarge the parent, or waive 
 
 ## Examples
 
-### LAYOUT001 child-overflows-parent / Examples / A child wider than its parent fires #1 (line 22) (fire)
+### LAYOUT001 child-overflows-parent / Examples #1 (line 22) (fire)
 
 ```json
 {
@@ -158,7 +158,7 @@ Size the child to fit (shrink, wrap or scroll it), enlarge the parent, or waive 
 }
 ```
 
-### LAYOUT001 child-overflows-parent / Examples / A child inside its parent is clean #2 (line 62) (clean)
+### LAYOUT001 child-overflows-parent / Examples #2 (line 62) (clean)
 
 ```json
 {

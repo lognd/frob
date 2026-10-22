@@ -62,7 +62,7 @@ Run `crunk tokens` to regenerate the files, and commit them.
 
 ## Examples
 
-### TOKENS001 tokens-file-drift / Examples / A tokens file that is not what the spec renders fires #1 (line 30) (fire)
+### TOKENS001 tokens-file-drift / Examples #1 (line 30) (fire)
 
 ```css
 .a {
@@ -70,7 +70,7 @@ Run `crunk tokens` to regenerate the files, and commit them.
 }
 ```
 
-### TOKENS001 tokens-file-drift / Examples / Token files that match the spec are clean #2 (line 38) (clean)
+### TOKENS001 tokens-file-drift / Examples #2 (line 38) (clean)
 
 Config: `tokens-current`
 

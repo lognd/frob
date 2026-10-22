@@ -75,7 +75,7 @@ body {
 
 ## Examples
 
-### TYPE002 font-family-off-stack / Examples / A family outside the declared stack fires #1 (line 27) (fire)
+### TYPE002 font-family-off-stack / Examples #1 (line 27) (fire)
 
 ```css
 body {
@@ -83,7 +83,7 @@ body {
 }
 ```
 
-### TYPE002 font-family-off-stack / Examples / A declared stack is clean, in any case and quoting #2 (line 35) (clean)
+### TYPE002 font-family-off-stack / Examples #2 (line 35) (clean)
 
 ```css
 body {
@@ -91,7 +91,7 @@ body {
 }
 ```
 
-### TYPE002 font-family-off-stack / Examples / A prefix of the declared stack is clean #3 (line 43) (clean)
+### TYPE002 font-family-off-stack / Examples #3 (line 43) (clean)
 
 ```css
 code {
@@ -99,7 +99,7 @@ code {
 }
 ```
 
-### TYPE002 font-family-off-stack / Examples / A token reference is clean #4 (line 51) (clean)
+### TYPE002 font-family-off-stack / Examples #4 (line 51) (clean)
 
 ```css
 body {

@@ -50,13 +50,13 @@ pub fn unbound() {}
 
 ## Examples
 
-### DRIFT003 stale-ack / Examples / A drifted case fires #1 (line 22) (fire)
+### DRIFT003 stale-ack / Examples #1 (line 22) (fire)
 
 ```rust
 pub fn bound() {}
 ```
 
-### DRIFT003 stale-ack / Examples / An unchanged case is clean #2 (line 28) (clean)
+### DRIFT003 stale-ack / Examples #2 (line 28) (clean)
 
 ```rust
 pub fn unbound() {}

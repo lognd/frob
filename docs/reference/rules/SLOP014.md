@@ -97,7 +97,7 @@ export function Page() {
 
 ## Examples
 
-### SLOP014 eyebrow-chrome / Examples / Three eyebrows fire #1 (line 20) (fire)
+### SLOP014 eyebrow-chrome / Examples #1 (line 20) (fire)
 
 ```tsx
 export function Page() {
@@ -114,7 +114,7 @@ export function Page() {
 }
 ```
 
-### SLOP014 eyebrow-chrome / Examples / A single eyebrow is clean #2 (line 37) (clean)
+### SLOP014 eyebrow-chrome / Examples #2 (line 37) (clean)
 
 ```tsx
 export function Page() {
@@ -127,7 +127,7 @@ export function Page() {
 }
 ```
 
-### SLOP014 eyebrow-chrome / Examples / Plain headings are clean #3 (line 50) (clean)
+### SLOP014 eyebrow-chrome / Examples #3 (line 50) (clean)
 
 ```tsx
 export function Page() {
@@ -141,7 +141,7 @@ export function Page() {
 }
 ```
 
-### SLOP014 eyebrow-chrome / Examples / A declared eyebrows decision is clean #4 (line 64) (clean)
+### SLOP014 eyebrow-chrome / Examples #4 (line 64) (clean)
 
 Config: `decide-eyebrows`
 

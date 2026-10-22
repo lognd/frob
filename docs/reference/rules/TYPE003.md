@@ -71,7 +71,7 @@ b {
 
 ## Examples
 
-### TYPE003 font-weight-off-scale / Examples / A weight nobody declared fires #1 (line 25) (fire)
+### TYPE003 font-weight-off-scale / Examples #1 (line 25) (fire)
 
 ```css
 h1 {
@@ -79,7 +79,7 @@ h1 {
 }
 ```
 
-### TYPE003 font-weight-off-scale / Examples / A declared weight and the normal and bold keywords are clean #2 (line 33) (clean)
+### TYPE003 font-weight-off-scale / Examples #2 (line 33) (clean)
 
 ```css
 h1 {
@@ -93,7 +93,7 @@ strong {
 }
 ```
 
-### TYPE003 font-weight-off-scale / Examples / Relative keywords are exempt #3 (line 47) (clean)
+### TYPE003 font-weight-off-scale / Examples #3 (line 47) (clean)
 
 ```css
 b {

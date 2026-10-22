@@ -58,7 +58,7 @@ Run `crunk tokens` to regenerate the files, and commit them.
 
 ## Examples
 
-### EXPORT001 export-drift / Examples / An export that is not what the spec renders fires #1 (line 26) (fire)
+### EXPORT001 export-drift / Examples #1 (line 26) (fire)
 
 ```css
 .a {
@@ -66,7 +66,7 @@ Run `crunk tokens` to regenerate the files, and commit them.
 }
 ```
 
-### EXPORT001 export-drift / Examples / Exports that match the spec are clean #2 (line 34) (clean)
+### EXPORT001 export-drift / Examples #2 (line 34) (clean)
 
 Config: `tokens-current`
 

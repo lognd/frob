@@ -75,7 +75,7 @@ Use the nearest `var(--radius-*)` step, or add the radius to `[scales] radii`.
 
 ## Examples
 
-### RADIUS001 radius-off-scale / Examples / A radius between two steps fires #1 (line 26) (fire)
+### RADIUS001 radius-off-scale / Examples #1 (line 26) (fire)
 
 ```css
 .card {
@@ -83,7 +83,7 @@ Use the nearest `var(--radius-*)` step, or add the radius to `[scales] radii`.
 }
 ```
 
-### RADIUS001 radius-off-scale / Examples / A corner longhand fires #2 (line 34) (fire)
+### RADIUS001 radius-off-scale / Examples #2 (line 34) (fire)
 
 ```css
 .card {
@@ -91,7 +91,7 @@ Use the nearest `var(--radius-*)` step, or add the radius to `[scales] radii`.
 }
 ```
 
-### RADIUS001 radius-off-scale / Examples / A radius on the scale is clean #3 (line 42) (clean)
+### RADIUS001 radius-off-scale / Examples #3 (line 42) (clean)
 
 ```css
 .card {
@@ -100,7 +100,7 @@ Use the nearest `var(--radius-*)` step, or add the radius to `[scales] radii`.
 }
 ```
 
-### RADIUS001 radius-off-scale / Examples / A percentage radius is exempt #4 (line 51) (clean)
+### RADIUS001 radius-off-scale / Examples #4 (line 51) (clean)
 
 ```css
 .avatar {

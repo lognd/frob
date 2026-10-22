@@ -50,13 +50,13 @@ pub fn unbound() {}
 
 ## Examples
 
-### DRIFT004 reattest-required / Examples / A drifted case fires #1 (line 22) (fire)
+### DRIFT004 reattest-required / Examples #1 (line 22) (fire)
 
 ```rust
 pub fn bound() {}
 ```
 
-### DRIFT004 reattest-required / Examples / An unchanged case is clean #2 (line 28) (clean)
+### DRIFT004 reattest-required / Examples #2 (line 28) (clean)
 
 ```rust
 pub fn unbound() {}

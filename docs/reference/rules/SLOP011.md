@@ -81,7 +81,7 @@ body {
 
 ## Examples
 
-### SLOP011 font-not-shipped / Examples / A named font with no @font-face fires #1 (line 20) (fire)
+### SLOP011 font-not-shipped / Examples #1 (line 20) (fire)
 
 ```css
 body {
@@ -89,7 +89,7 @@ body {
 }
 ```
 
-### SLOP011 font-not-shipped / Examples / A shipped font is clean #2 (line 28) (clean)
+### SLOP011 font-not-shipped / Examples #2 (line 28) (clean)
 
 ```css
 @font-face {
@@ -101,7 +101,7 @@ body {
 }
 ```
 
-### SLOP011 font-not-shipped / Examples / A system stack is clean #3 (line 40) (clean)
+### SLOP011 font-not-shipped / Examples #3 (line 40) (clean)
 
 ```css
 body {
@@ -109,7 +109,7 @@ body {
 }
 ```
 
-### SLOP011 font-not-shipped / Examples / A loader import is clean #4 (line 48) (clean)
+### SLOP011 font-not-shipped / Examples #4 (line 48) (clean)
 
 ```css
 @import url("https://fonts.googleapis.com/css2?family=Gotham");
@@ -118,7 +118,7 @@ body {
 }
 ```
 
-### SLOP011 font-not-shipped / Examples / A declared fonts decision is clean #5 (line 57) (clean)
+### SLOP011 font-not-shipped / Examples #5 (line 57) (clean)
 
 Config: `decide-fonts`
 

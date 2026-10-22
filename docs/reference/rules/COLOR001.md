@@ -110,7 +110,7 @@ export function Button() {
 
 ## Examples
 
-### COLOR001 color-off-palette / Examples / A hex literal outside the palette fires #1 (line 35) (fire)
+### COLOR001 color-off-palette / Examples #1 (line 35) (fire)
 
 ```css
 .btn {
@@ -118,7 +118,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A custom property holding an off-palette literal fires #2 (line 43) (fire)
+### COLOR001 color-off-palette / Examples #2 (line 43) (fire)
 
 ```css
 :root {
@@ -126,7 +126,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A named colour in a JSX style prop fires #3 (line 51) (fire)
+### COLOR001 color-off-palette / Examples #3 (line 51) (fire)
 
 ```tsx
 export function Button() {
@@ -134,7 +134,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A palette colour is clean #4 (line 59) (clean)
+### COLOR001 color-off-palette / Examples #4 (line 59) (clean)
 
 ```css
 .btn {
@@ -143,7 +143,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A translucent variant of an opaque palette colour is clean #5 (line 68) (clean)
+### COLOR001 color-off-palette / Examples #5 (line 68) (clean)
 
 ```css
 .shade {
@@ -151,7 +151,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A token reference and a non-colour keyword are clean #6 (line 76) (clean)
+### COLOR001 color-off-palette / Examples #6 (line 76) (clean)
 
 ```css
 .btn {
@@ -161,7 +161,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / The generated tokens sheet is skipped #7 (line 86) (clean)
+### COLOR001 color-off-palette / Examples #7 (line 86) (clean)
 
 ```css
 :root {

@@ -86,7 +86,7 @@ export function Page() {
 
 ## Examples
 
-### SLOP040 emoji-as-icon / Examples / An emoji list item fires #1 (line 20) (fire)
+### SLOP040 emoji-as-icon / Examples #1 (line 20) (fire)
 
 ```tsx
 export function Page() {
@@ -100,7 +100,7 @@ export function Page() {
 }
 ```
 
-### SLOP040 emoji-as-icon / Examples / An emoji CSS marker fires #2 (line 34) (fire)
+### SLOP040 emoji-as-icon / Examples #2 (line 34) (fire)
 
 ```css
 li::before {
@@ -108,7 +108,7 @@ li::before {
 }
 ```
 
-### SLOP040 emoji-as-icon / Examples / A plain list item is clean #3 (line 42) (clean)
+### SLOP040 emoji-as-icon / Examples #3 (line 42) (clean)
 
 ```tsx
 export function Page() {
@@ -122,7 +122,7 @@ export function Page() {
 }
 ```
 
-### SLOP040 emoji-as-icon / Examples / A declared emoji decision is clean #4 (line 56) (clean)
+### SLOP040 emoji-as-icon / Examples #4 (line 56) (clean)
 
 Config: `decide-emoji`
 

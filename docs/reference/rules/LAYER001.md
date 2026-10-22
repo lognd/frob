@@ -78,7 +78,7 @@ Use the `var(--layer-*)` token of the layer the element belongs to, or add the v
 
 ## Examples
 
-### LAYER001 z-index-off-layers / Examples / A z-index outside the layers fires #1 (line 27) (fire)
+### LAYER001 z-index-off-layers / Examples #1 (line 27) (fire)
 
 ```css
 .modal {
@@ -86,7 +86,7 @@ Use the `var(--layer-*)` token of the layer the element belongs to, or add the v
 }
 ```
 
-### LAYER001 z-index-off-layers / Examples / A negative z-index outside the layers fires #2 (line 35) (fire)
+### LAYER001 z-index-off-layers / Examples #2 (line 35) (fire)
 
 ```css
 .under {
@@ -94,7 +94,7 @@ Use the `var(--layer-*)` token of the layer the element belongs to, or add the v
 }
 ```
 
-### LAYER001 z-index-off-layers / Examples / A declared layer value is clean #3 (line 43) (clean)
+### LAYER001 z-index-off-layers / Examples #3 (line 43) (clean)
 
 ```css
 .menu {
@@ -102,7 +102,7 @@ Use the `var(--layer-*)` token of the layer the element belongs to, or add the v
 }
 ```
 
-### LAYER001 z-index-off-layers / Examples / auto and non-integer values are exempt #4 (line 51) (clean)
+### LAYER001 z-index-off-layers / Examples #4 (line 51) (clean)
 
 ```css
 .a {

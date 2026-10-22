@@ -62,13 +62,13 @@ parent = "01ARZ3NDEKTSV4RRFFQ69G5FAV"
 
 ```
 
-### TICK003 dangling-link / Examples / A violating case fires #1 (line 22) (fire)
+### TICK003 dangling-link / Examples #1 (line 22) (fire)
 
 ```rust
 pub fn placeholder() {}
 ```
 
-### TICK003 dangling-link / Examples / A conforming case is clean #2 (line 28) (clean)
+### TICK003 dangling-link / Examples #2 (line 28) (clean)
 
 ```rust
 pub fn placeholder() {}

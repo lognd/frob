@@ -69,7 +69,7 @@ export function allowed(p: string): boolean {
 
 ## Examples
 
-### PATH003 path-in-command-line / Examples / Fires case 1 #1 (line 22) (fire)
+### PATH003 path-in-command-line / Examples #1 (line 22) (fire)
 
 ```rust
 use std::path::Path;
@@ -81,7 +81,7 @@ fn install(repo: &Path, exe: &Path) {
 }
 ```
 
-### PATH003 path-in-command-line / Examples / Clean case 2 #2 (line 34) (clean)
+### PATH003 path-in-command-line / Examples #2 (line 34) (clean)
 
 ```rust
 use std::path::Path;
@@ -92,7 +92,7 @@ fn install(repo: &Path, exe: &Path) {
 }
 ```
 
-### PATH003 path-in-command-line / Examples / Unresolved case 3 #3 (line 45) (unresolved)
+### PATH003 path-in-command-line / Examples #3 (line 45) (unresolved)
 
 ```typescript
 export function allowed(p: string): boolean {

@@ -98,7 +98,7 @@ Enlarge the target (or its padding) to at least 24x24 px, or waive the rule with
 
 ## Examples
 
-### LAYOUT005 target-below-minimum-size / Examples / A 16 px square button fires #1 (line 22) (fire)
+### LAYOUT005 target-below-minimum-size / Examples #1 (line 22) (fire)
 
 ```json
 {
@@ -128,7 +128,7 @@ Enlarge the target (or its padding) to at least 24x24 px, or waive the rule with
 }
 ```
 
-### LAYOUT005 target-below-minimum-size / Examples / A 44 px square button is clean #2 (line 52) (clean)
+### LAYOUT005 target-below-minimum-size / Examples #2 (line 52) (clean)
 
 ```json
 {

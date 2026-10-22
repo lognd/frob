@@ -52,14 +52,14 @@ ink = "#101820"
 
 ## Examples
 
-### TOKEN004 token-unused / Examples / A token no stylesheet reads fires #1 (line 22) (fire)
+### TOKEN004 token-unused / Examples #1 (line 22) (fire)
 
 ```toml
 [color]
 ink = "#101820"
 ```
 
-### TOKEN004 token-unused / Examples / A token a stylesheet reads is clean #2 (line 29) (clean)
+### TOKEN004 token-unused / Examples #2 (line 29) (clean)
 
 Config: `uses-ink`
 

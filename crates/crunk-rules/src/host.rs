@@ -6,6 +6,7 @@
 use crunk_ingest::ProjectStyles;
 use crunk_spec::DesignSpec;
 
+use crate::component_files::ComponentFacts;
 use crate::review::ReviewFacts;
 use crate::scene_files::SceneFacts;
 use crate::screen_files::ScreenFacts;
@@ -50,6 +51,12 @@ pub trait CrunkHost {
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     /// The authored `design/screens/*.screen.toml` files (the STATE rules' input).
     fn screens(&self) -> Option<&ScreenFacts> {
+        None
+    }
+
+    // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
+    /// The authored `design/components/*.component.toml` files (the COMP and STATE rules' input).
+    fn components(&self) -> Option<&ComponentFacts> {
         None
     }
 
@@ -115,19 +122,46 @@ pub fn scene_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
 }
 
 // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
-/// Why a STATE rule cannot run on `host`, if it cannot: no valid spec, or no screen files.
+// frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
+/// Why a STATE rule cannot run on `host`, if it cannot: no valid spec, or neither screen nor
+/// component files.
 pub fn missing_screen_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
     if host.spec().is_none() {
         return Some("no valid crunk.toml".to_owned());
     }
-    match host.screens() {
-        Some(facts) if !facts.files.is_empty() => None,
-        _ => Some("no design/screens/*.screen.toml files".to_owned()),
+    if screen_subjects(host) + component_subjects(host) > 0 {
+        return None;
     }
+    Some("no design/screens/*.screen.toml or design/components/*.component.toml files".to_owned())
 }
 
 // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
-/// How many screen files `host` carries (the STATE rules' subject count).
+// frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
+/// How many screen and component files `host` carries (the STATE rules' subject count).
+pub fn state_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
+    screen_subjects(host) + component_subjects(host)
+}
+
+// frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+/// How many screen files `host` carries.
 pub fn screen_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
     host.screens().map_or(0, |facts| facts.files.len())
+}
+
+// frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
+/// Why a COMP rule cannot run on `host`, if it cannot: no valid spec, or no component files.
+pub fn missing_component_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
+    if host.spec().is_none() {
+        return Some("no valid crunk.toml".to_owned());
+    }
+    if component_subjects(host) > 0 {
+        return None;
+    }
+    Some("no design/components/*.component.toml files".to_owned())
+}
+
+// frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
+/// How many component files `host` carries (the COMP rules' subject count).
+pub fn component_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
+    host.components().map_or(0, |facts| facts.files.len())
 }

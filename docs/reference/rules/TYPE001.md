@@ -81,7 +81,7 @@ em {
 
 ## Examples
 
-### TYPE001 font-size-off-scale / Examples / A size between two steps fires #1 (line 27) (fire)
+### TYPE001 font-size-off-scale / Examples #1 (line 27) (fire)
 
 ```css
 h1 {
@@ -89,7 +89,7 @@ h1 {
 }
 ```
 
-### TYPE001 font-size-off-scale / Examples / A rem size off the ramp fires #2 (line 35) (fire)
+### TYPE001 font-size-off-scale / Examples #2 (line 35) (fire)
 
 ```css
 p {
@@ -97,7 +97,7 @@ p {
 }
 ```
 
-### TYPE001 font-size-off-scale / Examples / A size on the ramp is clean #3 (line 43) (clean)
+### TYPE001 font-size-off-scale / Examples #3 (line 43) (clean)
 
 ```css
 h1 {
@@ -108,7 +108,7 @@ p {
 }
 ```
 
-### TYPE001 font-size-off-scale / Examples / Keywords and relative units are exempt #4 (line 54) (clean)
+### TYPE001 font-size-off-scale / Examples #4 (line 54) (clean)
 
 ```css
 small {

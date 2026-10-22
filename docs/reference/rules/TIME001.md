@@ -140,7 +140,7 @@ export const stamp = new Date();
 
 ## Examples
 
-### TIME001 local-clock-read / Examples / Fires case 1 #1 (line 22) (fire)
+### TIME001 local-clock-read / Examples #1 (line 22) (fire)
 
 ```python
 import datetime
@@ -151,7 +151,7 @@ def stamp(record):
     return record
 ```
 
-### TIME001 local-clock-read / Examples / Fires case 2 #2 (line 33) (fire)
+### TIME001 local-clock-read / Examples #2 (line 33) (fire)
 
 ```python
 from datetime import datetime as dt
@@ -161,7 +161,7 @@ def stamp():
     return dt.utcnow()
 ```
 
-### TIME001 local-clock-read / Examples / Fires case 3 #3 (line 43) (fire)
+### TIME001 local-clock-read / Examples #3 (line 43) (fire)
 
 ```rust
 use chrono::Local;
@@ -175,7 +175,7 @@ pub fn row() -> Row {
 }
 ```
 
-### TIME001 local-clock-read / Examples / Fires case 4 #4 (line 57) (fire)
+### TIME001 local-clock-read / Examples #4 (line 57) (fire)
 
 ```rust
 use chrono::Local as L;
@@ -190,7 +190,7 @@ fn store(_t: chrono::DateTime<chrono::Local>) -> String {
 }
 ```
 
-### TIME001 local-clock-read / Examples / Clean case 5 #5 (line 72) (clean)
+### TIME001 local-clock-read / Examples #5 (line 72) (clean)
 
 ```python
 import datetime
@@ -201,7 +201,7 @@ def show():
     print(f"started at {now}")
 ```
 
-### TIME001 local-clock-read / Examples / Clean case 6 #6 (line 83) (clean)
+### TIME001 local-clock-read / Examples #6 (line 83) (clean)
 
 ```python
 import datetime
@@ -215,7 +215,7 @@ def stamp(record):
     return record
 ```
 
-### TIME001 local-clock-read / Examples / Clean case 7 #7 (line 97) (clean)
+### TIME001 local-clock-read / Examples #7 (line 97) (clean)
 
 ```rust
 use std::time::{Instant, SystemTime};
@@ -225,7 +225,7 @@ pub fn clocks() -> (SystemTime, Instant, chrono::DateTime<chrono::Utc>) {
 }
 ```
 
-### TIME001 local-clock-read / Examples / Clean case 8 #8 (line 107) (clean)
+### TIME001 local-clock-read / Examples #8 (line 107) (clean)
 
 ```rust
 use chrono::Local;
@@ -236,7 +236,7 @@ pub fn show() {
 }
 ```
 
-### TIME001 local-clock-read / Examples / Unresolved case 9 #9 (line 118) (unresolved)
+### TIME001 local-clock-read / Examples #9 (line 118) (unresolved)
 
 ```typescript
 export const stamp = new Date();

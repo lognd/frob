@@ -111,8 +111,26 @@ STATE rules read them: STATE001 (interactive), STATE002 (data_bound),
 STATE003 (form) and STATE006 (game) require the states each kind needs;
 STATE007 fires when a ready or completed screen's `content_hash` is
 missing or no longer matches the screen's content. STATE004 (render
-coverage per platform), STATE005 (state diff threshold) and STATE001
-over component files need render output and are follow-ups.
+coverage per platform) and STATE005 (state diff threshold) need render
+output and are follow-ups.
+
+Component spec files (`design/components/*.component.toml`) carry `name`,
+`kinds`, `status`, `content_hash`, an `[anatomy]` node list, `[[props]]`
+(bool, enum, text, slot, instance_swap; an enum with `axis = true` spans
+the variant matrix), `[[variants]]` cells, `[[states]]`, `[[bindings]]`
+(node, property, optional state, and a `token` or a literal `value`), an
+`[a11y]` contract and `[[code]]` mappings. A component node is identified
+as `<component>/<node>`. STATE001, STATE002, STATE003 and STATE006 judge
+component files by the same `kinds` rule as screens. COMP001 (props),
+COMP002 (variant matrix coverage), COMP003 (states), COMP004 (a literal
+where a token belongs), COMP005 (binding to an unknown node, state or
+token), COMP006 (a11y contract of interactive components, minimum target
+24 px), COMP007 (code mapping present for ready or completed), COMP008
+(code props against spec props) and COMP009 (content hash of a ready or
+completed component, including the resolved values of the tokens it
+binds) read them. Rendering every variant, validating anatomy against a
+solved scene, responsive-section rules and code-path existence are
+follow-ups.
 
 ## 3. Scenes and the layout engine (D111, D113)
 

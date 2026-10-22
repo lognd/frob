@@ -139,7 +139,7 @@ heading = { pair = ["ink", "paper"], floor = 3.0 }
 
 ## Examples
 
-### CONTRAST001 role-contrast-below-floor / Examples / A role below the default floor fires #1 (line 39) (fire)
+### CONTRAST001 role-contrast-below-floor / Examples #1 (line 39) (fire)
 
 ```toml
 [project]
@@ -167,7 +167,7 @@ buckets = ["base"]
 body = ["ink", "paper"]
 ```
 
-### CONTRAST001 role-contrast-below-floor / Examples / A role that clears the floor is clean #2 (line 67) (clean)
+### CONTRAST001 role-contrast-below-floor / Examples #2 (line 67) (clean)
 
 ```toml
 [project]
@@ -195,7 +195,7 @@ buckets = ["base"]
 body = ["ink", "paper"]
 ```
 
-### CONTRAST001 role-contrast-below-floor / Examples / A role with its own lower floor is judged against that floor #3 (line 95) (clean)
+### CONTRAST001 role-contrast-below-floor / Examples #3 (line 95) (clean)
 
 ```toml
 [project]

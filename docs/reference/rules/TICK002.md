@@ -62,13 +62,13 @@ pub fn placeholder() {}
 // frob:ticket {ticket}
 ```
 
-### TICK002 ticket-not-on-base / Examples / A violating case fires #1 (line 22) (fire)
+### TICK002 ticket-not-on-base / Examples #1 (line 22) (fire)
 
 ```rust
 pub fn placeholder() {}
 ```
 
-### TICK002 ticket-not-on-base / Examples / A conforming case is clean #2 (line 28) (clean)
+### TICK002 ticket-not-on-base / Examples #2 (line 28) (clean)
 
 ```rust
 pub fn placeholder() {}

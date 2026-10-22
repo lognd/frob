@@ -116,7 +116,7 @@ export const late = (a: Date, b: Date) => a < b;
 
 ## Examples
 
-### TIME002 naive-aware-mix / Examples / Fires case 1 #1 (line 22) (fire)
+### TIME002 naive-aware-mix / Examples #1 (line 22) (fire)
 
 ```python
 from datetime import datetime, timezone
@@ -128,7 +128,7 @@ def expired(deadline):
     return end > start
 ```
 
-### TIME002 naive-aware-mix / Examples / Fires case 2 #2 (line 34) (fire)
+### TIME002 naive-aware-mix / Examples #2 (line 34) (fire)
 
 ```python
 import datetime
@@ -140,7 +140,7 @@ def elapsed(tz):
     return b - a
 ```
 
-### TIME002 naive-aware-mix / Examples / Fires case 3 #3 (line 46) (fire)
+### TIME002 naive-aware-mix / Examples #3 (line 46) (fire)
 
 ```rust
 use chrono::{Local, Utc};
@@ -152,7 +152,7 @@ pub fn later(n: chrono::NaiveDateTime) -> bool {
 }
 ```
 
-### TIME002 naive-aware-mix / Examples / Clean case 4 #4 (line 58) (clean)
+### TIME002 naive-aware-mix / Examples #4 (line 58) (clean)
 
 ```python
 from datetime import datetime, timezone
@@ -164,7 +164,7 @@ def expired():
     return end > start
 ```
 
-### TIME002 naive-aware-mix / Examples / Clean case 5 #5 (line 70) (clean)
+### TIME002 naive-aware-mix / Examples #5 (line 70) (clean)
 
 ```python
 from datetime import datetime, timezone
@@ -176,7 +176,7 @@ def span(naive):
     return naive - other, aware - aware, naive.replace(tzinfo=timezone.utc) > aware
 ```
 
-### TIME002 naive-aware-mix / Examples / Clean case 6 #6 (line 82) (clean)
+### TIME002 naive-aware-mix / Examples #6 (line 82) (clean)
 
 ```rust
 use chrono::Utc;
@@ -188,7 +188,7 @@ pub fn order() -> bool {
 }
 ```
 
-### TIME002 naive-aware-mix / Examples / Unresolved case 7 #7 (line 94) (unresolved)
+### TIME002 naive-aware-mix / Examples #7 (line 94) (unresolved)
 
 ```typescript
 export const late = (a: Date, b: Date) => a < b;

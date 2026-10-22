@@ -75,7 +75,7 @@ declaration.
 
 ## Examples
 
-### WAIVE001 waiver-without-reason / Examples / A waiver with no reason fires #1 (line 25) (fire)
+### WAIVE001 waiver-without-reason / Examples #1 (line 25) (fire)
 
 ```css
 .card {
@@ -83,7 +83,7 @@ declaration.
 }
 ```
 
-### WAIVE001 waiver-without-reason / Examples / A blank reason fires #2 (line 33) (fire)
+### WAIVE001 waiver-without-reason / Examples #2 (line 33) (fire)
 
 ```css
 .card {
@@ -92,7 +92,7 @@ declaration.
 }
 ```
 
-### WAIVE001 waiver-without-reason / Examples / A waiver with a reason is clean #3 (line 42) (clean)
+### WAIVE001 waiver-without-reason / Examples #3 (line 42) (clean)
 
 ```css
 .card {
@@ -100,7 +100,7 @@ declaration.
 }
 ```
 
-### WAIVE001 waiver-without-reason / Examples / A comment that only mentions the directive is clean #4 (line 50) (clean)
+### WAIVE001 waiver-without-reason / Examples #4 (line 50) (clean)
 
 ```css
 /* see the crunk:waive docs */

@@ -58,7 +58,7 @@ modes = { dark = "#f5f5f5" }
 
 ## Examples
 
-### TOKEN006 token-mode-incomplete / Examples / A token missing a mode fires #1 (line 22) (fire)
+### TOKEN006 token-mode-incomplete / Examples #1 (line 22) (fire)
 
 ```toml
 [color.ink]
@@ -70,7 +70,7 @@ value = "#202830"
 modes = { high = "#000000" }
 ```
 
-### TOKEN006 token-mode-incomplete / Examples / Every mode overridden is clean #2 (line 34) (clean)
+### TOKEN006 token-mode-incomplete / Examples #2 (line 34) (clean)
 
 ```toml
 [color.ink]

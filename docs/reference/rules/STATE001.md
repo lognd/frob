@@ -81,7 +81,7 @@ id = "disabled"
 
 ## Examples
 
-### STATE001 interactive-states-missing / Examples / A missing state fires #1 (line 22) (fire)
+### STATE001 interactive-states-missing / Examples #1 (line 22) (fire)
 
 ```toml
 id = "home"
@@ -101,7 +101,7 @@ id = "focus-visible"
 id = "active"
 ```
 
-### STATE001 interactive-states-missing / Examples / Every state declared is clean #2 (line 42) (clean)
+### STATE001 interactive-states-missing / Examples #2 (line 42) (clean)
 
 ```toml
 id = "home"

@@ -74,7 +74,7 @@ export function Page() {
 
 ## Examples
 
-### SLOP060 buzzword-density / Examples / Dense buzzwords fire #1 (line 22) (fire)
+### SLOP060 buzzword-density / Examples #1 (line 22) (fire)
 
 ```tsx
 export function Page() {
@@ -86,7 +86,7 @@ export function Page() {
 }
 ```
 
-### SLOP060 buzzword-density / Examples / One buzzword is clean #2 (line 34) (clean)
+### SLOP060 buzzword-density / Examples #2 (line 34) (clean)
 
 ```tsx
 export function Page() {
@@ -98,7 +98,7 @@ export function Page() {
 }
 ```
 
-### SLOP060 buzzword-density / Examples / A declared voice decision is clean #3 (line 46) (clean)
+### SLOP060 buzzword-density / Examples #3 (line 46) (clean)
 
 Config: `decide-voice`
 

@@ -52,7 +52,7 @@ members = ["a", "b"]
 
 ## Examples
 
-### CYCLE001 arch-import-cycle / Examples / Fires case 1 #1 (line 22) (fire)
+### CYCLE001 arch-import-cycle / Examples #1 (line 22) (fire)
 
 Config: `cycle`
 
@@ -61,7 +61,7 @@ Config: `cycle`
 members = ["a", "b"]
 ```
 
-### CYCLE001 arch-import-cycle / Examples / Clean case 2 #2 (line 29) (clean)
+### CYCLE001 arch-import-cycle / Examples #2 (line 29) (clean)
 
 Config: `chain`
 

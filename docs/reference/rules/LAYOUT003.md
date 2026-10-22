@@ -98,7 +98,7 @@ Wrap or shrink the content to the viewport, or waive the rule with a reason when
 
 ## Examples
 
-### LAYOUT003 node-clipped-by-viewport / Examples / A node wider than the viewport fires #1 (line 22) (fire)
+### LAYOUT003 node-clipped-by-viewport / Examples #1 (line 22) (fire)
 
 ```json
 {
@@ -128,7 +128,7 @@ Wrap or shrink the content to the viewport, or waive the rule with a reason when
 }
 ```
 
-### LAYOUT003 node-clipped-by-viewport / Examples / Nodes inside the viewport are clean #2 (line 52) (clean)
+### LAYOUT003 node-clipped-by-viewport / Examples #2 (line 52) (clean)
 
 ```json
 {

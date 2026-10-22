@@ -56,6 +56,20 @@
 | [COLOR001](COLOR001.md) | color-off-palette | error | manual | P+ | true | A colour literal in a stylesheet, a custom property or a JSX style prop must be a palette colour. |
 | [COLOR002](COLOR002.md) | undefined-token-reference | error | manual | P- | true | A `var(--color-x)` that looks like a design token must name a custom property that exists. Each |
 
+## COMP
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [COMP001](COMP001.md) | props-invalid | error | manual | P+ | true | A component prop is named once, an enum lists its values, and a default is one of them. Each block is one component file under `design/components/`. |
+| [COMP002](COMP002.md) | variants-incomplete | error | manual | P+ | true | A component variant matrix lists every combination of its axis props exactly once. |
+| [COMP003](COMP003.md) | states-invalid | warn | manual | P+ | true | A component declares at least one state, each with a distinct id. |
+| [COMP004](COMP004.md) | literal-unbound | error | manual | P+ | true | A component binding points at a design token, never at a literal value. |
+| [COMP005](COMP005.md) | binding-unresolved | error | manual | P+ | true | Every component binding names an anatomy node, a declared state and a defined token. |
+| [COMP006](COMP006.md) | a11y-contract-incomplete | warn | manual | P+ | true | An interactive component carries an a11y contract: a role, an accessible-name source, a keyboard map and a target at least 24 pixels wide. |
+| [COMP007](COMP007.md) | code-mapping-missing | warn | manual | P+ | true | A component that is ready or completed maps to the code that implements it. |
+| [COMP008](COMP008.md) | code-props-mismatch | error | manual | P+ | true | A code mapping that lists props lists exactly the component's props. |
+| [COMP009](COMP009.md) | component-hash-stale | error | manual | P+ | true | A component that is ready or completed records the hash of its content and the token values it binds. |
+
 ## CONTRAST
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
