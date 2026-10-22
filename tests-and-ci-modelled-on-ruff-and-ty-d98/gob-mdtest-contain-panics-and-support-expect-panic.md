@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "directive binds to the next case only and CRLF does not shift line attribution"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "panics on parallel threads do not leak between threads"
