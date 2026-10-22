@@ -222,7 +222,7 @@ fn extract_token_promotes_a_literal_and_rewrites_uses() {
 fn extract_token_refuses_non_hex_and_existing_names() {
     let dir = project();
     let p = dir.path();
-    refused(p, &["extract-token", "12px"], "E-EXTRACT-LITERAL");
+    refused(p, &["extract-token", "banana"], "E-EXTRACT-LITERAL");
     refused(
         p,
         &["extract-token", "#abcdef", "--name", "ink"],
