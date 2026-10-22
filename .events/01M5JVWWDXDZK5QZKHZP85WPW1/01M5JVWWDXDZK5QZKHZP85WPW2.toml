@@ -1,0 +1,10 @@
+kind = "create"
+title = "ci.yml CRUNK_PACKAGES omits crunk-layout and crunk-scene (ci_plan test fails)"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = [".github/workflows/**"]
+body = "found while working ~MQE4F44; pre-existing from in-flight crunk tickets"
+at = "2026-10-22T22:32:22Z"
+actor = "lognd"
+rev = 1
