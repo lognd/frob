@@ -2,13 +2,13 @@
 id = "01M4CXRXWTA9DG9DTV5R149H7C"
 title = "VIS rules: perceptual diff thresholds and design-versus-build comparison"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-08T04:54:01Z"
-updated = "2026-10-08T08:14:12Z"
+updated = "2026-10-22T08:15:14Z"
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-gallery/**"]
 
 [[acceptance]]
