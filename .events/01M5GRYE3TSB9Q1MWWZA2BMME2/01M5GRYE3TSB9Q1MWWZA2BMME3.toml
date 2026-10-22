@@ -1,0 +1,10 @@
+kind = "create"
+title = "Wire gob-mdtest check_garbage against real adapters"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-check/**"]
+body = "found while working ~SASXGW5: call gob_mdtest::garbage::check_garbage from crates/frob-check/tests/rule_matrix.rs per rule so real adapters are probed."
+at = "2026-10-22T03:02:18Z"
+actor = "lognd"
+rev = 1
