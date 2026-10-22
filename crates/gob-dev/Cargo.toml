@@ -56,6 +56,7 @@ ulid = "1"
 # product crates into the tool itself would add their verbs to the generated CLI reference.
 crunk = { path = "../crunk" }
 grimble = { path = "../grimble" }
+gob-testsupport = { path = "../gob-testsupport" }
 
 [lints]
 workspace = true

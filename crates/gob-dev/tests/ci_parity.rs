@@ -459,3 +459,49 @@ fn goway_toml_declares_uv_as_a_required_tool() {
     let tools = table["toolchain"]["tools"].as_array().unwrap();
     assert!(tools.iter().any(|t| t.as_str() == Some("uv")), "{tools:?}");
 }
+
+// frob:ticket 01M4A48FTHZAZXNRMTZ20D00X3
+// frob:tests crates/gob-dev/tests/ci_parity.rs::ci_definition_sets_require_node_tests
+#[test]
+fn ci_definition_sets_require_node_tests() {
+    let steps = ci::steps_with(&root(), true).unwrap();
+    let nextest = steps.iter().find(|s| s.name == "nextest").unwrap();
+    assert!(
+        nextest
+            .env
+            .contains(&(ci::REQUIRE_NODE_TESTS_ENV.to_owned(), "1".to_owned())),
+        "nextest env {:?}",
+        nextest.env
+    );
+    let lenient = ci::steps_with(&root(), false).unwrap();
+    let nextest = lenient.iter().find(|s| s.name == "nextest").unwrap();
+    assert!(
+        !nextest
+            .env
+            .iter()
+            .any(|(k, _)| k == ci::REQUIRE_NODE_TESTS_ENV),
+        "a local run must keep the named skips"
+    );
+}
+
+// frob:ticket 01M4A48FTHZAZXNRMTZ20D00X3
+// frob:tests crates/gob-dev/tests/ci_parity.rs::ci_yml_installs_node_for_the_nextest_job
+#[test]
+fn ci_yml_installs_node_for_the_nextest_job() {
+    let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
+    assert!(
+        text.contains("actions/setup-node@"),
+        "ci.yml must install node so the TypeScript runner tests never skip"
+    );
+}
+
+// frob:ticket 01M4A48FTHZAZXNRMTZ20D00X3
+// frob:tests crates/gob-dev/tests/ci_parity.rs::ci_node_env_is_the_one_that_fails_missing_node
+#[test]
+fn ci_node_env_is_the_one_that_fails_missing_node() {
+    // CI sets the very variable `node_test_prerequisites` panics on, so a missing node fails.
+    assert_eq!(
+        ci::REQUIRE_NODE_TESTS_ENV,
+        gob_testsupport::REQUIRE_NODE_TESTS
+    );
+}

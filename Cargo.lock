@@ -2562,6 +2562,7 @@ dependencies = [
  "gob-plan",
  "gob-rules",
  "gob-symbols",
+ "gob-testsupport",
  "gob-time",
  "grimble",
  "grimble-check",

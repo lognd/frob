@@ -31,6 +31,8 @@ pub const WINDOWS_TARGET: &str = "x86_64-pc-windows-gnu";
 pub const PYTEST_REQUIREMENT: &str = "pytest==8.4.2";
 /// Environment variable that turns a missing python or pytest from a named skip into a failure.
 pub const REQUIRE_PYTHON_TESTS_ENV: &str = "FROB_REQUIRE_PYTHON_TESTS";
+/// Environment variable that turns a missing node (the TypeScript runner tests) from a named skip into a failure.
+pub const REQUIRE_NODE_TESTS_ENV: &str = "FROB_REQUIRE_NODE_TESTS";
 
 /// Wall-clock limit for one step (a cold nextest run is the longest).
 const STEP_TIMEOUT: Duration = Duration::from_mins(60);
@@ -316,10 +318,13 @@ fn nextest_step(require_python: bool) -> Step {
     nextest.uv_tools_on_path = true;
     nextest.env = vec![("INSTA_UPDATE".to_owned(), "no".to_owned())];
     if require_python {
-        tracing::info!("nextest requires python and pytest (no skips)");
+        tracing::info!("nextest requires python, pytest and node (no skips)");
         nextest
             .env
             .push((REQUIRE_PYTHON_TESTS_ENV.to_owned(), "1".to_owned()));
+        nextest
+            .env
+            .push((REQUIRE_NODE_TESTS_ENV.to_owned(), "1".to_owned()));
     }
     nextest
 }
