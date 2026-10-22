@@ -1,4 +1,4 @@
-//! The CYCLE001, LARGE001, DEAD001 and VIS001 rule pages as an mdtest corpus, plus the acceptance tests.
+//! The CYCLE001, LARGE001, DEAD001, VIS001 and DUP001 rule pages as an mdtest corpus, plus the acceptance tests.
 
 // frob:ticket 01M3Z7141TW2H3HXJRK1QBHP7T
 
@@ -70,6 +70,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-arch/src/rules/large001.rs::Large001
     // frob:tests crates/grimble-arch/src/rules/dead001.rs::Dead001
     // frob:tests crates/grimble-arch/src/rules/vis001.rs::Vis001
+    // frob:tests crates/grimble-arch/src/rules/dup001.rs::Dup001
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
     let words = case.config.as_deref().unwrap_or("");
@@ -146,7 +147,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-arch/src/rules/mod.rs::bind
     // frob:tests crates/grimble-arch/src/host.rs::ArchHost.arch_subjects_of
     // frob:tests crates/grimble-arch/src/finding.rs::ArchFinding.into_finding
-    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 4);
+    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 5);
     assert_eq!(
         grimble_arch::host::ArchHost::arch_subjects_of(&Fixed, "DEAD001"),
         7
@@ -161,7 +162,7 @@ fn host_binds_and_converts() {
     assert!(converted.iter().any(|f| f.rule.as_str() == "CYCLE001"));
 }
 
-/// A repository with no source units marks all four rules not applicable instead of vacuous.
+/// A repository with no source units marks all five rules not applicable instead of vacuous.
 #[test]
 fn empty_repository_makes_the_rules_not_applicable() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -177,7 +178,7 @@ fn empty_repository_makes_the_rules_not_applicable() {
         read: &read,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
-    assert_eq!(ids, ["CYCLE001", "DEAD001", "LARGE001", "VIS001"]);
+    assert_eq!(ids, ["CYCLE001", "DEAD001", "DUP001", "LARGE001", "VIS001"]);
 }
 
 /// A repository with only TypeScript units makes `VIS001` (Rust-only) not applicable, and nothing else.
@@ -266,4 +267,105 @@ fn vis_is_clean_for_an_item_re_exported_from_the_crate_root() {
         "mod inner {\n    pub fn helper() {}\n}\n\npub use crate::inner::helper;\n",
     );
     assert!(of_rule(dir.path(), "VIS001").is_empty());
+}
+
+/// Six lines of arithmetic, valid as TypeScript and Python, with `n` to tell copies apart in name only.
+fn block(n: usize) -> String {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    for i in 1..=6 {
+        let _ = writeln!(
+            out,
+            "x{n}{i} = alpha{n} + beta{n} * gamma{n} - delta{n} + {i};"
+        );
+    }
+    out
+}
+
+/// The same six lines for every copy, so the copies are exact.
+fn exact_block() -> String {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    for i in 1..=6 {
+        let _ = writeln!(out, "x{i} = alpha + beta * gamma - delta + {i};");
+    }
+    out
+}
+
+/// The `DUP001` findings over the repository at `root`.
+fn dup_findings(root: &Path) -> Vec<ArchFinding> {
+    of_rule(root, "DUP001")
+}
+
+/// Three copies of a block of about 60 tokens across a TypeScript and a Python file give one finding listing every site.
+// frob:tests crates/grimble-arch/src/dup.rs::check
+// frob:tests crates/grimble-arch/src/lib.rs::analyze
+#[test]
+fn three_copies_across_two_languages_make_one_dup_finding() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "src/a.ts",
+        &format!("export function a() {{}}\n{}", exact_block()),
+    );
+    write(
+        dir.path(),
+        "src/b.ts",
+        &format!("export function b() {{}}\n{}", exact_block()),
+    );
+    write(
+        dir.path(),
+        "tools/c.py",
+        &format!("def c():\n    pass\n{}", exact_block()),
+    );
+    let found = dup_findings(dir.path());
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].severity, Severity::Advisory);
+    for site in ["src/a.ts:2", "src/b.ts:2", "tools/c.py:3"] {
+        assert!(found[0].message.contains(site), "{site} missing: {found:?}");
+    }
+    assert!(found[0].message.starts_with("3 copies"), "{found:?}");
+}
+
+/// Two copies are below the default of three occurrences and give no finding.
+// frob:tests crates/grimble-arch/src/dup.rs::check
+// frob:tests crates/grimble-arch/src/lib.rs::analyze
+#[test]
+fn two_copies_make_no_dup_finding() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "src/a.ts",
+        &format!("export function a() {{}}\n{}", exact_block()),
+    );
+    write(
+        dir.path(),
+        "src/b.ts",
+        &format!("export function b() {{}}\n{}", exact_block()),
+    );
+    assert!(dup_findings(dir.path()).is_empty());
+}
+
+/// Copies that only rename identifiers are found once, at the renamed rung.
+// frob:tests crates/grimble-arch/src/dup.rs::check
+#[test]
+fn renamed_copies_are_reported_at_r2() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    for (i, n) in [1, 2, 3].into_iter().enumerate() {
+        write(dir.path(), &format!("src/f{i}.ts"), &block(n));
+    }
+    let found = dup_findings(dir.path());
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(found[0].anchor.starts_with("R2:"), "{found:?}");
+}
+
+/// Test files, comments and import lines do not count toward a clone.
+// frob:tests crates/grimble-arch/src/dup.rs::check
+#[test]
+fn tests_are_not_lexed() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "src/a.ts", &exact_block());
+    write(dir.path(), "src/b.ts", &exact_block());
+    write(dir.path(), "tests/c.test.ts", &exact_block());
+    assert!(dup_findings(dir.path()).is_empty());
 }
