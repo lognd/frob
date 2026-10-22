@@ -1,0 +1,1 @@
+Added `crunk edit FILE --patch PATCH.json`: applies id-addressed RFC 6902 operations to a screen, component or content file, refuses a patch that breaks the file schema, writes atomically and reports the diff plus the findings of the touched ids only.

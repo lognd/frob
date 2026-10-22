@@ -522,13 +522,16 @@ dependencies = [
  "gob-lock",
  "gob-product",
  "gob-rules",
+ "indexmap",
  "jsonschema",
  "schemars",
  "serde",
  "serde_json",
+ "similar",
  "tempfile",
  "thiserror",
  "toml",
+ "toml_edit",
  "tracing",
 ]
 

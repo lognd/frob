@@ -17,12 +17,14 @@
 pub mod diff;
 pub mod doctor;
 pub mod dtcg;
+pub mod edit;
 pub mod explain;
 pub mod extract;
 pub mod fix;
 pub mod gallery;
 pub mod init;
 pub mod map;
+pub mod patch;
 pub mod preview;
 pub mod query;
 pub mod rename;
@@ -143,6 +145,7 @@ impl Product for CrunkProduct {
             .register::<dtcg::ImportDtcg>()
             .register::<dtcg::ExportDtcg>()
             .register::<rename::Rename>()
+            .register::<edit::Edit>()
             .register::<extract::ExtractToken>()
     }
 }
