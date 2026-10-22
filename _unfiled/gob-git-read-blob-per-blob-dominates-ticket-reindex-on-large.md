@@ -2,12 +2,12 @@
 id = "01M5JCT8CXN20B2GJHAE5JDHHC"
 title = "gob-git: read_blob per blob dominates ticket reindex on large ledgers"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T18:08:47Z"
-updated = "2026-10-22T19:45:17Z"
+updated = "2026-10-22T19:45:25Z"
 scope = ["crates/gob-git/src/read.rs"]
 
 [[acceptance]]
