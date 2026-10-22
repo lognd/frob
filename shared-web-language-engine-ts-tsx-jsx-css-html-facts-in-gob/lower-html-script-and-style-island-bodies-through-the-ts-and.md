@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "A syntax error in a script body keeps the calls parsed before it"
-bound = false
+bound = true
 +++
 
 Deferred by ~EEYTQ0J: <script> and <style> bodies are region islands tagged js/ts/json/data/css but are not lowered, so a CSS rule in a <style> block is no style.declaration and script calls are not in the graph. Each adapter builds its own per-file term; add a seam that folds a nested body into the host builder at a byte offset, reuse it for HTML islands and for css-tagged template literals in TSX (language-engines.md 2-3, D96).
