@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T03:50:45Z"
-updated = "2026-10-22T03:51:02Z"
+updated = "2026-10-22T04:51:44Z"
 scope = ["crates/gob-plan/Cargo.toml"]
 
 [[acceptance]]
