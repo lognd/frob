@@ -8,7 +8,7 @@ points = 3
 parent = "01M48Q27GE8C1P6JS1CXKTCQ3S"
 reporter = "lognd"
 created = "2026-10-06T13:39:49Z"
-updated = "2026-10-22T02:20:03Z"
+updated = "2026-10-22T02:24:17Z"
 scope = ["crates/gob-cli/**", "crates/gob-dev/**", "docs/design/cli.md"]
 
 [[acceptance]]
