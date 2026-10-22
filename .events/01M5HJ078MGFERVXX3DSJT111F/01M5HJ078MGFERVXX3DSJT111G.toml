@@ -1,0 +1,10 @@
+kind = "create"
+title = "COH002: read unit role from grimble:shell and grimble:core directives"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**", "docs/**"]
+body = "The caller supplies the role today; extract it from directives."
+at = "2026-10-22T10:20:11Z"
+actor = "lognd"
+rev = 1
