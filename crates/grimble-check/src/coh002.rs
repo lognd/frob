@@ -151,7 +151,7 @@ fn is_word(s: &str) -> bool {
 }
 
 /// The last identifier of a call head (`a.b.send` gives `send`, `fs::write` gives `write`).
-fn callee_of(term: &Term, call: NodeId) -> Option<String> {
+pub(crate) fn callee_of(term: &Term, call: NodeId) -> Option<String> {
     fn last(term: &Term, n: NodeId) -> Option<String> {
         term.node(n)
             .children()
@@ -166,11 +166,11 @@ fn callee_of(term: &Term, call: NodeId) -> Option<String> {
     last(term, *term.node(call).children().first()?)
 }
 
-fn is_call(term: &Term, n: NodeId) -> bool {
+pub(crate) fn is_call(term: &Term, n: NodeId) -> bool {
     matches!(term.node(n).op(), Operator::Universal(Universal::Apply { kind }) if kind == "call" || kind == "method")
 }
 
-fn is_nested_unit(term: &Term, n: NodeId) -> bool {
+pub(crate) fn is_nested_unit(term: &Term, n: NodeId) -> bool {
     matches!(
         term.node(n).op(),
         Operator::Universal(Universal::Unit { .. } | Universal::Anon { .. })

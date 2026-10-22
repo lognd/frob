@@ -1,0 +1,1 @@
+Mixed-abstraction-level cohesion check: a unit whose callees span layers further apart than the allowed spread, such as a domain call next to raw string slicing, is flagged with both callees and their layers.

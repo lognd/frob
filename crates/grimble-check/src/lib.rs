@@ -40,6 +40,7 @@ use gob_diagnostics as _; // unused today; removal tracked in ~MKG678C
 pub mod bind_cache;
 pub mod coh001;
 pub mod coh002;
+pub mod coh003;
 pub mod coh004;
 pub mod config;
 pub mod example_model;
