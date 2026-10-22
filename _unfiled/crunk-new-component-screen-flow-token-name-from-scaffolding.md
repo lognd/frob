@@ -4,10 +4,23 @@ title = "crunk new component|screen|flow|token NAME [--from ...] scaffolding ver
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-22T07:36:34Z"
-updated = "2026-10-22T07:36:34Z"
+updated = "2026-10-22T19:15:16Z"
 scope = ["crates/crunk/**"]
+
+[[acceptance]]
+text = "Given crunk new component|screen|flow|token NAME, when run in a project, then a valid skeleton design file is written in the documented location and passes crunk validation"
+bound = false
+
+[[acceptance]]
+text = "Given the target file already exists, when crunk new runs, then it refuses without overwriting and exits non-zero"
+bound = false
+
+[[acceptance]]
+text = "Given an invalid NAME or a --from source that does not exist, when crunk new runs, then it fails with a clear error and writes nothing"
+bound = false
 +++
 
 Cut from AFVVZ8Y (only crunk edit shipped). See docs/design/crunk.md section 5.

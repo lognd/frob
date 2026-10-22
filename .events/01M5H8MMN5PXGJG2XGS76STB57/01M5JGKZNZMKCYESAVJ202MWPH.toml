@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given crunk new component|screen|flow|token NAME, when run in a project, then a valid skeleton design file is written in the documented location and passes crunk validation", "Given the target file already exists, when crunk new runs, then it refuses without overwriting and exits non-zero", "Given an invalid NAME or a --from source that does not exist, when crunk new runs, then it fails with a clear error and writes nothing"]
+moved = []
+at = "2026-10-22T19:15:16Z"
+actor = "lognd"
+rev = 1
