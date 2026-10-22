@@ -43,6 +43,14 @@ pub mod export001;
 pub mod export002;
 /// Rule `GX001`.
 pub mod gx001;
+/// Rule `GX002`.
+pub mod gx002;
+/// Rule `GX003`.
+pub mod gx003;
+/// Rule `GX004`.
+pub mod gx004;
+/// Rule `GX005`.
+pub mod gx005;
 /// Rule `HUMAN001`.
 pub mod human001;
 /// Rule `HUMAN002`.
@@ -168,6 +176,10 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <export001::Export001 as gob_rules::RuleDecl>::DEF,
     <export002::Export002 as gob_rules::RuleDecl>::DEF,
     <gx001::Gx001 as gob_rules::RuleDecl>::DEF,
+    <gx002::Gx002 as gob_rules::RuleDecl>::DEF,
+    <gx003::Gx003 as gob_rules::RuleDecl>::DEF,
+    <gx004::Gx004 as gob_rules::RuleDecl>::DEF,
+    <gx005::Gx005 as gob_rules::RuleDecl>::DEF,
     <human001::Human001 as gob_rules::RuleDecl>::DEF,
     <human002::Human002 as gob_rules::RuleDecl>::DEF,
     <layer001::Layer001 as gob_rules::RuleDecl>::DEF,
@@ -255,6 +267,10 @@ where
     export001::Export001: gob_rules::Measured<P>,
     export002::Export002: gob_rules::Measured<P>,
     gx001::Gx001: gob_rules::RepoRule<P>,
+    gx002::Gx002: gob_rules::Measured<P>,
+    gx003::Gx003: gob_rules::Measured<P>,
+    gx004::Gx004: gob_rules::Measured<P>,
+    gx005::Gx005: gob_rules::Measured<P>,
     human001::Human001: gob_rules::RepoRule<P>,
     human002::Human002: gob_rules::RepoRule<P>,
     layer001::Layer001: gob_rules::Measured<P>,
@@ -328,6 +344,10 @@ where
     rules.push(gob_rules::BoundRule::measured(export001::Export001));
     rules.push(gob_rules::BoundRule::measured(export002::Export002));
     rules.push(gob_rules::BoundRule::repo(gx001::Gx001));
+    rules.push(gob_rules::BoundRule::measured(gx002::Gx002));
+    rules.push(gob_rules::BoundRule::measured(gx003::Gx003));
+    rules.push(gob_rules::BoundRule::measured(gx004::Gx004));
+    rules.push(gob_rules::BoundRule::measured(gx005::Gx005));
     rules.push(gob_rules::BoundRule::repo(human001::Human001));
     rules.push(gob_rules::BoundRule::repo(human002::Human002));
     rules.push(gob_rules::BoundRule::measured(layer001::Layer001));

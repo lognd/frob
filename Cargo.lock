@@ -620,6 +620,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "crunk-layout"
+version = "0.532.0"
+dependencies = [
+ "crunk-scene",
+ "tracing",
+]
+
+[[package]]
 name = "crunk-query"
 version = "0.532.0"
 dependencies = [
@@ -638,6 +646,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "crunk-ingest",
+ "crunk-layout",
  "crunk-scene",
  "crunk-spec",
  "crunk-tailwind",

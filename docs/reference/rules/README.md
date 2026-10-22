@@ -165,6 +165,10 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [GX001](GX001.md) | game-coverage-undeclared | error | manual | P+ | false | A project with a `[game]` profile declares every game accessibility coverage key. Each block is |
+| [GX002](GX002.md) | focus-unreachable | error | manual | P+ | true | Every focusable control can be reached with the pad. |
+| [GX003](GX003.md) | focus-trap | error | manual | P+ | true | The pad can always leave a control it has moved onto. |
+| [GX004](GX004.md) | focus-default | error | manual | P+ | true | A scene selects exactly one control when it opens. |
+| [GX005](GX005.md) | focus-nav-invalid | error | manual | P+ | true | Focus attributes name things that exist. |
 
 ## HUMAN
 

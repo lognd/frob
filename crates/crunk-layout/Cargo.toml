@@ -1,0 +1,18 @@
+[package]
+name = "crunk-layout"
+version.workspace = true
+description = "crunk's layout-side graphs over parsed scenes: the gamepad focus graph (reachability, traps, default selection, wrap)."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords = ["design-system", "lint", "gamepad", "focus"]
+categories = ["development-tools"]
+
+[dependencies]
+crunk-scene = { version = "0.532.0", path = "../crunk-scene" }
+tracing = "0.1"
+
+[lints]
+workspace = true

@@ -10,18 +10,18 @@ use crunk_rules::rules::{
     comp001::Comp001, comp002::Comp002, comp003::Comp003, comp004::Comp004, comp005::Comp005,
     comp006::Comp006, comp007::Comp007, comp008::Comp008, comp009::Comp009, content001::Content001,
     content002::Content002, content003::Content003, contrast001::Contrast001, export001::Export001,
-    export002::Export002, gx001::Gx001, human001::Human001, human002::Human002, layer001::Layer001,
-    layout001::Layout001, layout002::Layout002, layout003::Layout003, layout004::Layout004,
-    layout005::Layout005, org001::Org001, org002::Org002, org003::Org003, org004::Org004,
-    org005::Org005, radius001::Radius001, resp001::Resp001, scene001::Scene001, size001::Size001,
-    slop001::Slop001, slop003::Slop003, slop004::Slop004, slop010::Slop010, slop011::Slop011,
-    slop014::Slop014, slop022::Slop022, slop040::Slop040, slop060::Slop060, space001::Space001,
-    state001::State001, state002::State002, state003::State003, state006::State006,
-    state007::State007, token002::Token002, token003::Token003, token004::Token004,
-    token005::Token005, token006::Token006, token007::Token007, token008::Token008,
-    token009::Token009, tokens001::Tokens001, tw001::Tw001, tw002::Tw002, tw003::Tw003,
-    tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002, type003::Type003,
-    waive001::Waive001,
+    export002::Export002, gx001::Gx001, gx002::Gx002, gx003::Gx003, gx004::Gx004, gx005::Gx005,
+    human001::Human001, human002::Human002, layer001::Layer001, layout001::Layout001,
+    layout002::Layout002, layout003::Layout003, layout004::Layout004, layout005::Layout005,
+    org001::Org001, org002::Org002, org003::Org003, org004::Org004, org005::Org005,
+    radius001::Radius001, resp001::Resp001, scene001::Scene001, size001::Size001, slop001::Slop001,
+    slop003::Slop003, slop004::Slop004, slop010::Slop010, slop011::Slop011, slop014::Slop014,
+    slop022::Slop022, slop040::Slop040, slop060::Slop060, space001::Space001, state001::State001,
+    state002::State002, state003::State003, state006::State006, state007::State007,
+    token002::Token002, token003::Token003, token004::Token004, token005::Token005,
+    token006::Token006, token007::Token007, token008::Token008, token009::Token009,
+    tokens001::Tokens001, tw001::Tw001, tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005,
+    type001::Type001, type002::Type002, type003::Type003, waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -95,6 +95,10 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/human001.rs::Human001
     // frob:tests crates/crunk-rules/src/rules/human002.rs::Human002
     // frob:tests crates/crunk-rules/src/rules/gx001.rs::Gx001
+    // frob:tests crates/crunk-rules/src/rules/gx002.rs::Gx002
+    // frob:tests crates/crunk-rules/src/rules/gx003.rs::Gx003
+    // frob:tests crates/crunk-rules/src/rules/gx004.rs::Gx004
+    // frob:tests crates/crunk-rules/src/rules/gx005.rs::Gx005
     // frob:tests crates/crunk-rules/src/rules/resp001.rs::Resp001
     // frob:tests crates/crunk-rules/src/rules/scene001.rs::Scene001
     // frob:tests crates/crunk-rules/src/rules/content001.rs::Content001
@@ -174,6 +178,10 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "EXPORT002" => support::run::<Export002>(&host),
         "TOKENS001" => support::run::<Tokens001>(&host),
         "GX001" => support::run::<Gx001>(&host),
+        "GX002" => support::run::<Gx002>(&host),
+        "GX003" => support::run::<Gx003>(&host),
+        "GX004" => support::run::<Gx004>(&host),
+        "GX005" => support::run::<Gx005>(&host),
         "HUMAN001" => support::run::<Human001>(&host),
         "HUMAN002" => support::run::<Human002>(&host),
         "TW001" => support::run::<Tw001>(&host),
@@ -226,6 +234,10 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "EXPORT001",
             "EXPORT002",
             "GX001",
+            "GX002",
+            "GX003",
+            "GX004",
+            "GX005",
             "HUMAN001",
             "HUMAN002",
             "LAYER001",
@@ -421,7 +433,7 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 71);
+    assert_eq!(ids.len(), 75);
     assert!(ids.contains(&"SPACE001"));
 }
 

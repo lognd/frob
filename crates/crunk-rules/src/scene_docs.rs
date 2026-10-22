@@ -40,6 +40,14 @@ impl SceneDocFile {
     }
 }
 
+impl SceneDocFile {
+    // frob:ticket 01M4CXRSYQQW9C6D7K2Q2ZC9QM
+    /// The gamepad focus graph of this scene (the GX focus rules' input).
+    pub fn focus_graph(&self) -> crunk_layout::FocusGraph {
+        crunk_layout::FocusGraph::from_scene(&self.doc)
+    }
+}
+
 /// Every scene document of a project that parsed, sorted by path.
 #[derive(Debug, Clone, Default)]
 pub struct SceneDocFacts {

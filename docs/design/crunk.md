@@ -351,6 +351,12 @@ Known limitations of the first TOKEN and EXPORT rules (GKXE3V8):
   neighbours, default selection, wrap), so GX checks run at T0/T1
   without the editor; T3 runs the Unity editor in batch mode through the
   unity evidence provider (dotnet-unity.md).
+  Scene documents author it with `data-focus-default` (the control
+  selected on open), `data-focus-group` with `data-focus-axis`
+  (`vertical` or `horizontal`) and `data-focus-wrap` (`clamp` or
+  `wrap`), and `data-nav-up|down|left|right="<data-id>"` overrides
+  (`none` blocks a move). Rules: GX002 unreachable, GX003 trap, GX004
+  default selection, GX005 dangling or invalid focus attributes.
 - Colour-blind support is a token mode (`stress.default`,
   `stress.cb-safe`), so every colour and contrast lint runs in both.
 
