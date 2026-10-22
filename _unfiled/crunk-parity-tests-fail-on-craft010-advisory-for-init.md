@@ -2,7 +2,8 @@
 id = "01M5JHRGF0BKG6ZGNXBZR3F5DB"
 title = "crunk parity tests fail on CRAFT010 advisory for init_default"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
