@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk edit: preserve comments and formatting when re-emitting TOML"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk/**"]
+body = "Cut from AFVVZ8Y: edit re-emits from a parsed tree, losing comments; move to toml_edit DocumentMut surgery."
+at = "2026-10-22T07:36:34Z"
+actor = "lognd"
+rev = 1
