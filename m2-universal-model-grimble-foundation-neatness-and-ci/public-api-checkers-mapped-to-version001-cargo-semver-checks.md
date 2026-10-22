@@ -2,7 +2,8 @@
 id = "01M4D94PD6M68GJ6MEDBVDP7MK"
 title = "Public API checkers mapped to VERSION001: cargo-semver-checks, PublicApiAnalyzers, api-extractor, griffe"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4D8X558Q07HCMEBP224NQP4"
