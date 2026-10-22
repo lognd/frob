@@ -8,12 +8,12 @@ points = 3
 parent = "01M4CTTPJ00PTDE0A1SE4MJFCF"
 reporter = "lognd"
 created = "2026-10-08T04:02:44Z"
-updated = "2026-10-22T02:50:39Z"
+updated = "2026-10-22T02:50:44Z"
 scope = ["changelog.d/**", "crates/frob/**", "crates/frob-worktree/**", "docs/guides/**"]
 
 [[acceptance]]
 text = "Given frob init --agent, when run, then .claude/settings.json gains the frob MCP server and an allowlist for frob read verbs, idempotently"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given [worktree] root inside the repository, when frob work runs, then the worktree is created there and ignored by git"
