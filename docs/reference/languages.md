@@ -28,7 +28,10 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 | `.pyi` | python | F3 |
 | `.rs` | rust | F4 |
 | `.ts` | typescript | F3 |
+| `.tss` | css | F2 |
 | `.tsx` | typescript | F3 |
+| `.uss` | css | F2 |
+| `.uxml` | html | F1 |
 | `.yaml` | yaml | F1 |
 | `.yml` | yaml | F1 |
 
@@ -130,7 +133,7 @@ Fidelity F3; extensions `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.
 
 ## css
 
-Fidelity F2; extensions `.css`.
+Fidelity F2; extensions `.css`, `.uss`, `.tss`.
 
 | Capability | Cell | Precision |
 |---|---|---|
@@ -146,7 +149,7 @@ Fidelity F2; extensions `.css`.
 
 ## html
 
-Fidelity F1; extensions `.html`, `.htm`.
+Fidelity F1; extensions `.html`, `.htm`, `.uxml`.
 
 | Capability | Cell | Precision |
 |---|---|---|
