@@ -2,7 +2,8 @@
 id = "01M5HJ07DTC2JQT9MP5T0TGDAS"
 title = "COH002: effects capability from language adapters"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
