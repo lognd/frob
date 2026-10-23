@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T22:44:53Z"
+digest = "a9e95210a7e1022e66745854183d24e2b415ca241c5d6e25f595e861e968a25e"
+exit_code = 0
+head = "752a0514a35340a595a79f5e810c0f1cf7ae5c61"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 420266b6-39e5-4440-b795-8ddbbc305cef with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.020s] frob-doc::remap remap_rewrites_every_reference_form_and_spares_tickets_and_notes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-doc --test remap remap_rewrites_every_reference_form_and_spares_tickets_and_notes"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "b47eae6e840d4bb49764f924c8c76fabd48688338d93387015b88fe3fa947cf6"
+at = "2026-10-23T22:44:53Z"
+actor = "lognd"
+rev = 1

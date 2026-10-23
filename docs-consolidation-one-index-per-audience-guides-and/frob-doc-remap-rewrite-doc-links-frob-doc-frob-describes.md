@@ -8,7 +8,7 @@ points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:35Z"
-updated = "2026-10-23T22:36:05Z"
+updated = "2026-10-23T22:44:53Z"
 idempotency_key = "docs-consolidation-2026-10-09-p0"
 labels = ["creates:crates/frob-doc/**", "creates:crates/frob/src/doc_cmd.rs", "creates:docs/MOVED.toml"]
 scope = ["crates/frob/src/lib.rs", "crates/frob/src/main.rs", "crates/frob-ack/src/rules.rs", "crates/frob-obligations/src/doc.rs", "docs/reference/cli/frob.md", "docs/reference/rules/DRIFT002.md", "docs/reference/rules/DOC002.md", "Cargo.toml", "Cargo.lock", "changelog.d/**", "crates/frob-doc/**", "crates/frob/src/doc_cmd.rs", "docs/MOVED.toml", "docs/design/**", "docs/guide/**", "docs/schemas/**", "crates/frob-ack/src/eval.rs", "crates/frob-ack/src/inputs.rs", "crates/frob-ack/Cargo.toml", "crates/frob-obligations/Cargo.toml", "crates/frob-obligations/src/collect.rs", "crates/frob/Cargo.toml", "crates/frob/src/product.rs", "crates/frob/tests/**", "docs/reference/**", "crates/frob-check/src/snapshot.rs", "crates/frob-ack/src/lib.rs", "crates/frob-ack/src/rules/**", "crates/frob-obligations/src/legacy.rs", "docs/guides/**"]
@@ -19,7 +19,7 @@ target = "01M4FD0TNGWDEYHP9FHH0RPXYR"
 
 [[acceptance]]
 text = "Given a docs/MOVED.toml with moved, merged, removed and archive rows, when `frob doc remap` runs, then markdown links, frob:doc and frob:describes targets, .grmb ref strings and 'x.md section N' citations in crates/ and docs/ point at the new anchors and nothing under tickets/ or notes/ changes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a map row whose target is not a heading of the new file at HEAD, when `frob doc remap` runs, then it refuses with exit 3 and names the row"
