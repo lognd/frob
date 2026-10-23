@@ -7,8 +7,8 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T13:04:44Z"
-updated = "2026-10-23T13:15:22Z"
-scope = ["crates/gob-check/src/config.rs", "crates/crunk-ingest/src/walk.rs", "crates/crunk-check/src/review.rs", "changelog.d/**"]
+updated = "2026-10-23T13:16:23Z"
+scope = ["crates/gob-check/src/config.rs", "crates/crunk-ingest/src/walk.rs", "crates/crunk-check/src/review.rs", "changelog.d/**", "crates/gob-walk/**", "crates/crunk-check/Cargo.toml", "crates/crunk-ingest/tests/**", "crates/crunk-check/tests/**", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Given the generated config reference, when read, then it documents the opt-in for default-excluded report directories, and crunk walkers use the shared gob-walk list"
