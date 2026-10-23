@@ -2,12 +2,12 @@
 id = "01M5HJ078MGFERVXX3DSJT111F"
 title = "COH002: read unit role from grimble:shell and grimble:core directives"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T02:23:33Z"
+updated = "2026-10-23T02:23:34Z"
 scope = ["crates/grimble-check/**", "docs/**"]
 
 [[acceptance]]
