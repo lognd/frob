@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T23:05:36Z"
-updated = "2026-10-23T12:41:13Z"
+updated = "2026-10-23T12:59:22Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble/src/**", "crates/grimble-check/src/**", "changelog.d/**", "crates/grimble/tests/**", "crates/grimble-check/tests/**"]
 
