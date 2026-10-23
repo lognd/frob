@@ -3,7 +3,7 @@
 //! `ecosystem.toml` pins real repositories by commit ([`Corpus`]). The runner ([`run`]) checks each
 //! project with the base and the head build of frob, grimble and crunk and classifies every run
 //! ([`classify`]): findings, a structured error, or a crash. This module holds the pure part: how
-//! two runs of one tool compare ([`diff_runs`]) and the markdown a pull-request comment carries
+//! two runs of one tool compare ([`diff_findings`]) and the markdown a pull-request comment carries
 //! ([`render`]). Design: `docs/design/build-test-ci.md` section 6 ("Ecosystem check").
 //!
 //! Comparison rules, chosen so a diff is never noise and never silently empty:
