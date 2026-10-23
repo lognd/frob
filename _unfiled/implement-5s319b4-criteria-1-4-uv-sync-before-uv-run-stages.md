@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T15:00:54Z"
-updated = "2026-10-23T19:18:17Z"
+updated = "2026-10-23T19:37:36Z"
 scope = ["crates/gob-check/src/tools.rs", "crates/frob-worktree/**", "crates/frob-evidence/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a fresh ticket worktree or land base checkout without .venv, when a uv-run tool stage runs, then frob syncs the environment first (or the stage reports Unresolved with the remedy), never a red gate"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a vitest project, when the vitest evidence provider runs, then node_modules/.bin is on PATH"
