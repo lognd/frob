@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T07:54:25Z"
+digest = "df05d83186003db702e783118b869c4edb457aef15a31a311a94cfa8f26f1e3c"
+exit_code = 0
+head = "fff7ad1f8f708d01902eca3cd79956e0954048c4"
+inline = '''
+   Compiling tracing-core v0.1.36
+   Compiling serde_json v1.0.151
+   Compiling memchr v2.8.3
+   Compiling tracing v0.1.44
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling schemars v1.2.2
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.61s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 809d6add-40c7-4aeb-99dc-219fb2ea7f98 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.004s] grimble-verdict::verdict resolved_verdict_converts_to_a_finding
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-verdict --test verdict resolved_verdict_converts_to_a_finding"
+size = 1021
+status = "measured"
+test_count = 1
+tests_digest = "35f72544ae30be3cf0a9193de4151f8e57c6f048041f7843773932084db66be0"
+at = "2026-10-23T07:54:25Z"
+actor = "lognd"
+rev = 1
