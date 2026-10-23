@@ -43,8 +43,9 @@
 //!   reference edge (G4).
 //! - Cached payloads are serialized with `postcard` (compact, stable wire
 //!   format, serde-derived) under the adapter identity
-//!   `gob-symbols/v<EXTRACTOR_VERSION>/<grammar identity>`. Terms are not
-//!   cached until gob-ir is serializable; a miss re-folds from source.
+//!   `gob-symbols/v<EXTRACTOR_VERSION>/<grammar identity>`. Folded terms
+//!   are cached too (`gob_ir::wire`, read by `grimble-bind`'s
+//!   `CodeFile::folded`); a miss re-folds from source.
 
 mod adapter;
 mod ambient;
