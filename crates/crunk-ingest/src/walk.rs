@@ -100,7 +100,7 @@ pub fn bucket_for(
     (None, None)
 }
 
-fn posix(path: &Path) -> String {
+pub(crate) fn posix(path: &Path) -> String {
     path.components()
         .map(|c| c.as_os_str().to_string_lossy())
         .collect::<Vec<_>>()

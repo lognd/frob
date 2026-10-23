@@ -153,6 +153,13 @@ pub fn scene_doc_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
     host.scene_docs().map_or(0, |facts| facts.files.len())
 }
 
+// frob:ticket 01M5H30AT7FM2BAXCTTDEGWV6J
+/// How many scene documents `host` found, loaded or not (SCENE005's subject count).
+pub fn scene_doc_load_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
+    host.scene_docs()
+        .map_or(0, |facts| facts.files.len() + facts.problems.len())
+}
+
 // frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
 /// Why a CONTENT rule that reads the content files cannot run on `host`, if it cannot.
 pub fn missing_content_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {

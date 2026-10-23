@@ -3,16 +3,14 @@
 
 // frob:ticket 01M5H30AMSB0THE4GW322D4K54
 
-use crunk_scene::{SceneDoc, parse_scene_html};
+use crunk_ingest::scene::{SceneDocProblem, load_scene_docs};
+use crunk_scene::SceneDoc;
 use crunk_spec::DesignSpec;
 
-use crate::sheets::site_path;
+pub use crunk_ingest::scene::SCENE_DOC_SUFFIX;
 
 /// The project directory holding the authored scene files, relative to the root.
 pub const SCENES_DIR: &str = "design/scenes";
-
-/// The file suffix that marks an HTML scene document.
-pub const SCENE_DOC_SUFFIX: &str = ".scene.html";
 
 /// One scene document that parsed.
 #[derive(Debug, Clone)]
@@ -48,51 +46,33 @@ impl SceneDocFile {
     }
 }
 
-/// Every scene document of a project that parsed, sorted by path.
+/// Every scene document of a project that parsed, sorted by path, and those that did not.
 #[derive(Debug, Clone, Default)]
 pub struct SceneDocFacts {
     /// The files, in path order.
     pub files: Vec<SceneDocFile>,
+    /// The documents that did not load, and duplicate scene names, in path order.
+    pub problems: Vec<SceneDocProblem>,
 }
 
 impl SceneDocFacts {
-    /// Read and parse `<root>/design/scenes/*.scene.html`; a missing directory gives no files and
-    /// an unreadable or unparsable file is skipped with a warning.
+    /// Discover and parse `<root>/design/scenes/**/*.scene.html` through `crunk-ingest`; a missing
+    /// directory gives no files, and a file that does not load becomes a [`SceneDocProblem`].
     pub fn load(spec: &DesignSpec) -> Self {
-        let dir = spec.root.join(SCENES_DIR);
-        let mut paths: Vec<_> = match std::fs::read_dir(&dir) {
-            Ok(entries) => entries
-                .filter_map(Result::ok)
-                .map(|e| e.path())
-                .filter(|p| {
-                    p.file_name()
-                        .is_some_and(|n| n.to_string_lossy().ends_with(SCENE_DOC_SUFFIX))
-                })
-                .collect(),
-            Err(_) => Vec::new(),
-        };
-        paths.sort();
-        let files: Vec<SceneDocFile> = paths
+        let loaded = load_scene_docs(&spec.root, SCENES_DIR);
+        let files = loaded
+            .docs
             .into_iter()
-            .filter_map(|path| {
-                let rel = site_path(spec, &path);
-                let text = std::fs::read_to_string(&path)
-                    .inspect_err(|err| {
-                        tracing::warn!(path = %rel, %err, "scene document unreadable; skipped");
-                    })
-                    .ok()?;
-                let doc = parse_scene_html(&text)
-                    .inspect_err(|err| tracing::warn!(path = %rel, %err, "scene does not parse; skipped"))
-                    .ok()?;
-                tracing::debug!(path = %rel, elements = doc.elements.len(), "scene document parsed");
-                Some(SceneDocFile {
-                    path: rel,
-                    text,
-                    doc,
-                })
+            .map(|d| SceneDocFile {
+                path: d.path,
+                text: d.text,
+                doc: d.doc,
             })
             .collect();
-        Self { files }
+        Self {
+            files,
+            problems: loaded.problems,
+        }
     }
 
     /// A stable digest of the files' paths and texts, for the repo digest.
@@ -102,6 +82,12 @@ impl SceneDocFacts {
             hasher.update(file.path.as_bytes());
             hasher.update(b"\0");
             hasher.update(file.text.as_bytes());
+            hasher.update(b"\0");
+        }
+        for problem in &self.problems {
+            hasher.update(problem.path.as_bytes());
+            hasher.update(b"\0");
+            hasher.update(problem.message.as_bytes());
             hasher.update(b"\0");
         }
         hasher.finalize().to_hex().to_string()

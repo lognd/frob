@@ -601,6 +601,7 @@ dependencies = [
 name = "crunk-ingest"
 version = "0.532.0"
 dependencies = [
+ "crunk-scene",
  "crunk-spec",
  "crunk-tailwind",
  "crunk-values",
