@@ -2,12 +2,13 @@
 id = "01M5MK67S8WWDN0CTHMP6P98AB"
 title = "Regenerate stale docs/reference/rules/MDL008.md"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "invalid"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T14:38:40Z"
-updated = "2026-10-23T22:24:57Z"
+updated = "2026-10-23T22:24:58Z"
 scope = ["docs/reference/rules/MDL008.md"]
 
 [[acceptance]]
