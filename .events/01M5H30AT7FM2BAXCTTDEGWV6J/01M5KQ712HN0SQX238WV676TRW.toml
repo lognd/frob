@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-ingest/**", "crates/crunk-check/**", "crates/crunk-scene/**", "Cargo.lock", "crates/crunk-rules/src/scene_docs.rs", "crates/crunk-rules/src/rules/scene005.*", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/tests/rules.rs", "crates/crunk-rules/tests/scene_rules.rs", "docs/crunk/**", "changelog/**"]
+new = ["crates/crunk-ingest/**", "crates/crunk-check/**", "crates/crunk-scene/**", "Cargo.lock", "crates/crunk-rules/src/scene_docs.rs", "crates/crunk-rules/src/rules/scene005.*", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/tests/rules.rs", "crates/crunk-rules/tests/scene_rules.rs", "docs/crunk/**", "changelog/**", "docs/reference/rules/SCENE005.md"]
+at = "2026-10-23T06:29:45Z"
+actor = "lognd"
+rev = 1
