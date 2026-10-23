@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T17:02:40Z"
+digest = "80fef8f4b4dd4e94f63f2645d8c31e04a48214685ae1d7045c60d00bcce3241f"
+exit_code = 0
+head = "15f90abf7d9f729924a45f1dc8fc43e80b556194"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0609ffa4-f47e-4b41-a598-ae266a9093ac with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.066s] grimble-bind::vmodel_ref a_table_row_id_anchor_binds
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.066s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test vmodel_ref a_table_row_id_anchor_binds"
+size = 594
+status = "measured"
+test_count = 1
+tests_digest = "b5b0d407613af6b50b4f9b773d8acb30df96a4a0da88d5f97fca17ff2ad65470"
+at = "2026-10-23T17:02:40Z"
+actor = "lognd"
+rev = 1

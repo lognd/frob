@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:55Z"
-updated = "2026-10-23T16:58:56Z"
+updated = "2026-10-23T17:02:40Z"
 idempotency_key = "logand-gaps-V2"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/grimble-model/**", "changelog.d/**"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given ref docs/spec/L2.md#spec-060 where spec-060 is a table row id, when grimble check runs, then it binds"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a heading with a code span, when referenced by its GitHub slug, then it binds"
