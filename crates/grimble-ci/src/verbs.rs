@@ -2,7 +2,7 @@
 //!
 //! The inventory is a static table here rather than a read of the CLI definition: the verb tree
 //! lives in `frob-cli` (layer 17) and `grimble-ci` (layer 11) may not depend upward, so the table
-//! is copied and a drift test belongs next to the CLI. The scan is lexical, not a shell parser:
+//! is copied, and the frob-cli test `verb_table_drift` fails when it differs from the real clap tree. The scan is lexical, not a shell parser:
 //! it finds simple commands (split on `|`, `&`, `;`, parentheses and backquotes), skips comments,
 //! heredoc bodies, `NAME=value` prefixes and wrappers, and reads the verb path of every command
 //! whose word is `frob`. Anything it cannot know (an expression or variable in the verb) is not
@@ -11,7 +11,7 @@
 // frob:ticket 01M5F010Y998BXB67KPZ4T040N
 
 /// Top-level `frob` verbs and their subcommands (empty for a leaf verb), deprecated aliases included.
-const VERBS: &[(&str, &[&str])] = &[
+pub const VERBS: &[(&str, &[&str])] = &[
     ("schema", &[]),
     ("serve", &[]),
     ("check", &[]),
@@ -81,6 +81,7 @@ const VERBS: &[(&str, &[&str])] = &[
     ("land", &[]),
     ("train", &["status", "run", "drain", "drop"]),
     ("start", &[]),
+    ("merge-driver", &[]),
     ("help", &[]),
 ];
 
