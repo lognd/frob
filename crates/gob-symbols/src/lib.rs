@@ -55,6 +55,8 @@ mod css;
 mod html;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 mod csharp;
+// frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
+mod docstatus;
 // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
 mod dotnet;
 mod fold;
@@ -102,6 +104,7 @@ pub use csharp::{
 pub use css::{CssAdapter, is_css_path};
 pub use def_use::{PYTHON_SYNTAX, RUST_SYNTAX, TYPESCRIPT_SYNTAX, def_use_of, syntax_for};
 pub use dockerfile::{DockerfileAdapter, is_dockerfile_path};
+pub use docstatus::{DocHeader, DocStatus, StatusProblem, is_generated, parse_header};
 pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
     parse_project, parse_solution,

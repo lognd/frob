@@ -134,6 +134,7 @@
 |---|---|---|---|---|---|---|
 | [DOC001](DOC001.md) | undocumented-public-item | warn | manual | P- | false | A public item has no doc comment. |
 | [DOC002](DOC002.md) | broken-markdown-link | error | manual | P+ | false | A markdown link points at a missing path or a missing heading. |
+| [DOC003](DOC003.md) | doc-status-header | warn | manual | P+ | false | A document under `docs/` has no status header, a status outside the vocabulary, or a `superseded-by` that names a missing document. |
 
 ## DRIFT
 

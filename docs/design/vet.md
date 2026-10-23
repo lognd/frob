@@ -1,5 +1,9 @@
 # grimble vet: what is implemented
 
+Status: current
+Owner: grimble
+Decisions: none
+
 Design context: cli.md (`grimble vet`), boundaries.md 2.3.
 
 Inputs: `Cargo.lock`, the allowlist `.grimble/vet.toml` (`allow = ["serde",

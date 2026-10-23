@@ -4,6 +4,7 @@ pub mod artifacts;
 pub mod cli;
 pub mod config;
 pub mod directives;
+pub mod docs_index;
 pub mod grl_catalog;
 pub mod inline;
 pub mod languages;
@@ -24,6 +25,7 @@ pub fn source_of(kind: &str) -> &'static str {
         "cli" => "command registry",
         "languages" => "gob_symbols::languages_page",
         "inline" => "inline test comments in parser source",
+        "docs-index" => "status headers of the documents under docs",
         "std-rules" => "std GRL sources (packs/std/rules)",
         _ => "schema declarations",
     }

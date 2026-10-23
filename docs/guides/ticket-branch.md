@@ -1,5 +1,9 @@
 # Keep the ledger on its own branch
 
+Status: current
+Owner: frob
+Decisions: none
+
 How-to (Diataxis: task). By default frob commits ledger events to your code
 branch, so every ticket write is a commit there. With the ticket branch the
 ledger lives on a separate orphan branch, `frob-tickets`: ledger writes never

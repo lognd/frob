@@ -1,5 +1,9 @@
 # Claude Code hooks
 
+Status: current
+Owner: frob
+Decisions: none
+
 Versioned copies of the user-level hooks live in `scripts/claude-hooks/`.
 
 ## frob-suggest

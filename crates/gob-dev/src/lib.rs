@@ -51,6 +51,8 @@ pub enum Kind {
     Inline,
     /// Rust modules compiled from the std GRL rules (`packs/std`).
     StdRules,
+    /// The documentation index `docs/README.md`: every document with its status header.
+    DocsIndex,
     /// Everything above.
     All,
 }
@@ -100,6 +102,9 @@ pub enum GenError {
     /// The std GRL rules could not be compiled to Rust.
     #[error(transparent)]
     StdRules(#[from] render::std_rules::StdRulesError),
+    /// The documentation index could not be generated.
+    #[error(transparent)]
+    DocsIndex(#[from] render::docs_index::DocsIndexError),
     /// The inline parser tests could not be extracted.
     #[error(transparent)]
     Inline(#[from] render::inline::InlineError),
@@ -131,6 +136,11 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
         // frob:ticket 01M3ZX7HN0YF3SYGVJRT5H07H5
         let root = crates_dir.parent().unwrap_or(crates_dir);
         files.extend(render::std_rules::generate(root)?);
+    }
+    if all || kind == Kind::DocsIndex {
+        // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
+        let root = crates_dir.parent().unwrap_or(crates_dir);
+        files.extend(render::docs_index::generate(root)?);
     }
     if all || kind == Kind::Directives {
         files.extend(render::directives::generate());

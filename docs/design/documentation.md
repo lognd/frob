@@ -29,7 +29,7 @@ generate what it can and keep the rest honest.
 
 ```
 docs/
-  README.md                index
+  README.md                index of every document with its status (generated)
   architecture.md          workspace codemap, gob-* boundaries, invariants
   style.md                 code and comment rules, each with a Rationale line
   decisions/               ADRs; README.md index generated
@@ -64,6 +64,7 @@ This table is the one path table; every other file links here.
 | capabilities | `docs/grimble/reference/capabilities.md` | `Capability` derive | `cargo dev gen` |
 | ticket and per-verb response schemas (the `TicketSchema` derive is landed; the generated pages are Milestone 2 or later (D36)) | `docs/schemas/ticket.json`, `docs/schemas/*-response.json` | ticket model and `--json` response types | `cargo dev gen schemas` |
 | sibling contract schema (Milestone 2 or later (D36)) | `docs/schemas/sibling.json`, `docs/schemas/grimble-graph.json` | the sibling `--json` types (grimble-model.md 9.5, 9.3) | `cargo dev gen schemas` |
+| docs index | `docs/README.md` | the status header of each document under `docs/` (DOC003 checks the headers) | `cargo dev gen docs-index` |
 | ADR index | `docs/decisions/README.md` | ADR frontmatter | `cargo dev gen adr-index` |
 | web types | `web/src/api.ts` | response schemas | `cargo dev gen ts` |
 | editor grammar | `editors/grimble.tmLanguage.json` | grimble keyword table | `cargo dev gen editors` |

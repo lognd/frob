@@ -29,6 +29,7 @@ thing, and generate wherever possible.
 | code and doc stay paired | `frob:doc path#section` on a symbol (or `frob:describes` in the doc); `frob ack` records both digests; DRIFT001 fires when either side changes until the pair is re-read and acked |
 | reference pages match the code | generated from one source (CLI, config, rules, schemas); GEN001 fails on a stale copy |
 | links resolve | DOC002 |
+| every document under `docs/` has one status header from the fixed vocabulary, and `superseded-by` names an existing document | DOC003 |
 | public items are documented | DOC001 |
 
 The gap: nothing binds a doc to another doc, nothing checks the facts

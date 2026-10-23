@@ -1,5 +1,9 @@
 # The grimble-websec pack
 
+Status: current
+Owner: grimble
+Decisions: none
+
 `packs/grimble-websec` is a data pack (packs.md tier 1 manifest, GRL rules) for server-side web
 code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 

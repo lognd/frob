@@ -1,5 +1,9 @@
 # Freshness hooks
 
+Status: current
+Owner: frob
+Decisions: none
+
 Keep the local view of the ticket ledger current without remembering to run anything
 (`docs/design/distributed-tickets.md`, section 5.4).
 

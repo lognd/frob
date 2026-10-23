@@ -1,5 +1,9 @@
 # Effective policy snapshot
 
+Status: current
+Owner: gob
+Decisions: none
+
 Implements the GATE001 inputs of security.md section 2.7 in
 `gob_trust::policy`.
 

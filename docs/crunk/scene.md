@@ -1,5 +1,9 @@
 # Scene ingest and layout solve
 
+Status: current
+Owner: crunk
+Decisions: none
+
 `crunk-ingest::scene` reads a JSON scene description of boxes and text runs and solves it with taffy into a layout-solve JSON. The LAYOUT and RESP rules read that solve; it does not render anything.
 
 ## Scene format
