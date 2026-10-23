@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T06:30:44Z"
+digest = "dd676c59dab4916923d056747ccd9d859841ec4295da57112a1870204d07defa"
+exit_code = 0
+head = "5859602979f3103da132cc33b9b9236ff3afeb45"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ed1052b7-dbd5-4768-887c-4c5859d2da00 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.076s] crunk-check::scene_docs a_non_utf8_nested_scene_is_a_finding_not_a_panic
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.077s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check --test scene_docs a_non_utf8_nested_scene_is_a_finding_not_a_panic"
+size = 558
+status = "measured"
+test_count = 1
+tests_digest = "e68ff67c58481cf641629dd3db1e2c2071a96bcc6ad75fb224a1a0d8de77bb52"
+at = "2026-10-23T06:30:44Z"
+actor = "lognd"
+rev = 1
