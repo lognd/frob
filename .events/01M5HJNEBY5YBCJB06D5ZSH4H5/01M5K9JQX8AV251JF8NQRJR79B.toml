@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T02:31:22Z"
+digest = "f02340cb4367221f70bd3b07ba6f58d1fd446e022e9f01cf0a86ac85f5449418"
+exit_code = 0
+head = "2593eea045bc34e439430b4530ee934ac2cce3d9"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.61s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5c587dce-c677-4949-8305-2624e58a1570 with nextest profile: default
+    Starting 1 test across 1 binary (18 tests skipped)
+        PASS [   0.007s] grimble-lints::testq csharp_assertion_calls_are_classified_not_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 18 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test testq csharp_assertion_calls_are_classified_not_unresolved"
+size = 616
+status = "measured"
+test_count = 1
+tests_digest = "249843d2e3bffb9ca23cc649e05ebb085861038e6cab09b745c019299d623397"
+at = "2026-10-23T02:31:22Z"
+actor = "lognd"
+rev = 1
