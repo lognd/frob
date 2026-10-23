@@ -384,6 +384,8 @@ fn arch_report(
         graph: &graph,
         crates: &crates,
         large_lines: usize::try_from(table.large_lines).unwrap_or(usize::MAX),
+        dup_min_tokens: usize::try_from(table.dup_min_tokens).unwrap_or(usize::MAX),
+        dup_min_occurrences: usize::try_from(table.dup_min_occurrences).unwrap_or(usize::MAX),
         read,
     })
 }
@@ -436,7 +438,12 @@ fn reports(
     // hit skips reading and parsing every file (~SNJ3PH5).
     let started = std::time::Instant::now();
     let engine = cx.cache.engine().to_owned();
-    let arch_key = report_cache::key("arch", digest, &engine, table.large_lines);
+    // The DUP001 knobs change the arch report, so they are part of its key.
+    let arch_kind = format!(
+        "arch-{}-{}",
+        table.dup_min_tokens, table.dup_min_occurrences
+    );
+    let arch_key = report_cache::key(&arch_kind, digest, &engine, table.large_lines);
     let path_key = report_cache::key("path", digest, &engine, table.large_lines);
     let arch_hit = cx
         .cache

@@ -170,7 +170,7 @@ Everything below runs in a plain `grimble check`; the knobs are in
 | `CAP` | Code uses a capability its node does not grant (CAP001) or a node grants one nothing uses (CAP002). | Add `may ATOM;` to the node, or remove the use. |
 | `FLOW` | A label above the destination's clearance (FLOW001), an endorse missing on a flow into a higher-trust node (FLOW002), no rate on a foreign flow (FLOW003). | Add a `boundary`, change a `clearance`, or add a `rate`. |
 | `CLAIM` | A `claim` (`noflow`, `reach`) that the declared flows refute (CLAIM001). | Write claims for the guarantees you care about. |
-| `CYCLE`, `LARGE`, `DEAD` | Architecture: crates that import each other, functions longer than `large_lines` (default 400), unreferenced private functions. | Tune `[grimble] large_lines`; 0 turns LARGE001 off. |
+| `CYCLE`, `LARGE`, `DEAD` | Architecture: crates that import each other, functions longer than `large_lines` (default 400), unreferenced private functions. | Tune `[grimble] large_lines`; 0 turns LARGE001 off. DUP001 (copied blocks) is tuned by `dup_min_tokens` (50) and `dup_min_occurrences` (3). |
 | `PATH` | Code that hard-codes host paths or joins paths with a literal separator. | Pass paths as their own arguments. |
 
 Each rule has a generated page under

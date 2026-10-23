@@ -1,18 +1,19 @@
 //! DUP001: blocks of code copied three or more times, found by token hashing (clone rungs R1-R3).
 //!
 //! Each supported source file becomes a language-agnostic token stream ([`crate::dup_lex`]). Every
-//! window of [`MIN_TOKENS`] tokens is hashed three ways, one per rung:
+//! window of `min_tokens` tokens is hashed three ways, one per rung:
 //!
 //! - **R1** the exact tokens;
 //! - **R2** the tokens with identifiers alpha-renamed by first occurrence in the window, so a copy
 //!   that only renamed variables still matches;
 //! - **R3** the token shape: identifiers, numbers and strings abstracted to their kind.
 //!
-//! Windows that share a hash form a class; a class with at least [`MIN_OCCURRENCES`] disjoint
+//! Windows that share a hash form a class; a class with at least `min_occurrences` disjoint
 //! sites is a clone, and consecutive windows over the same sites merge into one block. A block
 //! already reported by a stricter rung is not reported again by a looser one.
 
 // frob:ticket 01M4D958QKMX7VHFJMRMAWDT22
+// frob:ticket 01M5HMKRFRZYFQC6HVNPHC3Z2P
 
 use std::collections::HashMap;
 
@@ -22,10 +23,6 @@ use gob_symbols::SymbolGraph;
 use crate::dup_lex::{Kind, Tok, tokens};
 use crate::{ArchFinding, DUP};
 
-/// Tokens a window needs to count as a clone; shorter repeats are idiom, not copy and paste.
-pub(crate) const MIN_TOKENS: usize = 50;
-/// Disjoint sites a block needs before it is reported; two copies are tolerated (the threshold is contested).
-pub(crate) const MIN_OCCURRENCES: usize = 3;
 /// Tokens over the whole walk beyond which the pass is skipped, so a huge repo cannot stall a check.
 const MAX_TOTAL_TOKENS: usize = 2_000_000;
 /// Sites listed in a message before it says "and N more".
@@ -225,10 +222,14 @@ fn wanted(path: &str, language: &str) -> bool {
     LANGUAGES.contains(&language) && !grimble_bind::eval::is_test_unit(path)
 }
 
-/// Findings for blocks copied at least [`MIN_OCCURRENCES`] times, and the files examined.
+/// Findings for blocks of `min_tokens` tokens copied at least `min_occurrences` times, and the files examined.
+///
+/// A `min_tokens` of 0 or a `min_occurrences` below 2 finds nothing (see [`find_clones`]).
 pub(crate) fn check(
     graph: &SymbolGraph,
     read: &dyn Fn(&str) -> Option<String>,
+    min_tokens: usize,
+    min_occurrences: usize,
 ) -> (Vec<ArchFinding>, usize) {
     let mut paths: Vec<(&str, bool)> = Vec::new();
     for (path, info) in graph.files() {
@@ -254,7 +255,7 @@ pub(crate) fn check(
         );
         return (Vec::new(), texts.len());
     }
-    let findings = find_clones(&files, MIN_TOKENS, MIN_OCCURRENCES)
+    let findings = find_clones(&files, min_tokens, min_occurrences)
         .into_iter()
         .map(|c| finding(&c, &texts, &files))
         .collect();
