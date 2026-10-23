@@ -2,12 +2,12 @@
 id = "01M4H0RKJHHWWT0XC17W5JD1VG"
 title = "DOC rule: every design and guide document carries one status header from a fixed vocabulary (current, draft, superseded-by X, historical, generated); generated docs/README.md index lists every document with its status"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T19:03:13Z"
-updated = "2026-10-23T15:45:11Z"
+updated = "2026-10-23T15:45:12Z"
 labels = ["docs"]
 scope = ["crates/frob-obligations/**", "crates/gob-dev/**", "changelog.d/**", "docs/**"]
 
