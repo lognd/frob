@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given ERR001-ERR003 declared as rules, when grimble check runs on a corpus with certain error-handling defects, then Certain sites warn and Unknown sites are Unresolved", "Each ERR rule has a docs page with a fire case and a clean case, and appears in the rules index"]
+moved = []
+at = "2026-10-23T11:15:15Z"
+actor = "lognd"
+rev = 1
