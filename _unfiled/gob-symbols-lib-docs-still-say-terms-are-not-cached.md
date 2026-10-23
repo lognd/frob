@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T21:46:32Z"
-updated = "2026-10-23T22:58:23Z"
+updated = "2026-10-23T22:58:40Z"
 scope = ["crates/gob-symbols/src/lib.rs", "crates/gob-symbols/tests/it/**"]
 
 [[acceptance]]
