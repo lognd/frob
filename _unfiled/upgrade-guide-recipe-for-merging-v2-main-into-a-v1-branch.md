@@ -2,12 +2,12 @@
 id = "01M4GK56B7ADTTC87X31CR03NE"
 title = "Upgrade guide: recipe for merging v2 main into a v1 branch (ticket tree rename conflicts: take main's tickets/ tree, or git merge -X no-renames)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T15:05:26Z"
-updated = "2026-10-09T16:28:40Z"
+updated = "2026-10-23T14:15:25Z"
 labels = ["adoption:logand-app"]
 scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**"]
 
