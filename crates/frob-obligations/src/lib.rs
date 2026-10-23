@@ -14,6 +14,7 @@
 //! | `DOC001` | Warn | file | a public Rust item has no doc comment, or a public Python unit no docstring |
 //! | `DOC002` | Error | file | a markdown link points at a missing path or heading |
 //! | `DOC003` | Warn | repo | a document under `docs/` has no valid status header |
+//! | `DOC006` | Warn | repo | a prose citation `x.md section N` or `x.md#anchor` names a missing file, section or anchor |
 //! | `REF001` | Error | file | a `frob:ticket` names no ticket of the ledger |
 //! | `INV001` | Warn | repo | `invariants/<slug>.md` has no `frob:invariant <slug>` in code |
 //! | `INV002` | Error | repo | an import matches `forbid_imports` of [`InvariantsConfig`] |
@@ -70,6 +71,7 @@ mod config;
 mod cov;
 mod coverage;
 mod doc;
+mod doc_citation;
 mod docstatus;
 mod exc;
 mod host;
@@ -111,6 +113,7 @@ pub use refs::unsettled_ticket_refs;
 pub use rules::cov003::Cov003;
 pub use rules::cov004::Cov004;
 pub use rules::doc003::Doc003;
+pub use rules::doc006::Doc006;
 pub use rules::exc001::Exc001;
 pub use rules::exc003::Exc003;
 pub use rules::exc005::Exc005;
@@ -302,7 +305,7 @@ pub fn evaluate_legacy_repo(
     out
 }
 
-/// Every repo-level rule (`COV001`, `COV004`, `DOC003`, `TODO002`, `INV001`, `INV002`, `UNITY001`-`UNITY003`); new files are interned into `files`.
+/// Every repo-level rule (`COV001`, `COV004`, `DOC003`, `DOC006`, `TODO002`, `INV001`, `INV002`, `UNITY001`-`UNITY003`); new files are interned into `files`.
 ///
 /// Findings are raw: exceptions are applied by [`apply_exceptions`].
 pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
@@ -312,6 +315,8 @@ pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) ->
     out.extend(coverage::cov004(inputs.root, files));
     // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
     out.extend(docstatus::doc003(inputs.root, files));
+    // frob:ticket 01M4H0RE1Q9A1M47ZT7Q1ZG43K
+    out.extend(doc_citation::doc006(inputs.root, files));
     // frob:ticket 01M44YQZ1A507E2J3JETAWMMAV
     out.extend(unity::unity001(inputs.root, files));
     out.extend(unity::unity002(inputs.root, files));

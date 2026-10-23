@@ -25,12 +25,14 @@
 //! assert_eq!(snip.to_string(), "let y = oops;\n        ^^^^");
 //! ```
 
+mod citation;
 mod file;
 mod line_index;
 mod size;
 mod snippet;
 mod source;
 
+pub use citation::{Citation, Headings, Locator, scan_line, scan_markdown};
 pub use file::{FileId, FileInterner, Span};
 pub use line_index::{LineCol, LineIndex};
 pub use size::{TextRange, TextSize, TextTooLarge};
