@@ -2,7 +2,8 @@
 id = "01M5HBRM670YEGE2JES5A8WY0M"
 title = "Fix gob-dev tests: crunk CI job packages, layering table, profile scenarios"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
