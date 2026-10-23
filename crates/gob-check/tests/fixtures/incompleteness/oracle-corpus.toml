@@ -1,10 +1,20 @@
 # Oracle corpus: the true answer (oracle) beside the answer the analysis gave (observed).
 # docs/design/testing.md section 8.
+# Each case carries a probe (file, query, source) the real adapter reads; `observed` is checked
+# against that live answer by tests/oracle_live.rs and regenerated with FROB_BLESS_ORACLE=1.
 
 [[case]]
 id = "rust-resolve_ref-01"
 language = "rust"
 capability = "resolve_ref"
+file = "example.rs"
+query = "helper"
+source = '''
+fn helper() {}
+fn main() {
+    helper();
+}
+'''
 oracle = "yes"
 observed = "yes"
 
@@ -12,6 +22,19 @@ observed = "yes"
 id = "rust-resolve_ref-02"
 language = "rust"
 capability = "resolve_ref"
+file = "example.rs"
+query = "new"
+source = '''
+struct S;
+impl S {
+    fn new() -> S {
+        S
+    }
+}
+fn main() {
+    S::new();
+}
+'''
 oracle = "yes"
 observed = "yes"
 
@@ -19,20 +42,44 @@ observed = "yes"
 id = "rust-resolve_ref-03"
 language = "rust"
 capability = "resolve_ref"
+file = "example.rs"
+query = "missing"
+source = '''
+fn main() {
+    missing();
+}
+'''
 oracle = "no"
-observed = "no"
+observed = "unknown"
 
 [[case]]
 id = "rust-resolve_ref-04"
 language = "rust"
 capability = "resolve_ref"
+file = "example.rs"
+query = "go"
+source = '''
+trait Go {
+    fn go(&self);
+}
+fn run(t: &dyn Go) {
+    t.go();
+}
+'''
 oracle = "yes"
-observed = "unknown"
+observed = "yes"
 
 [[case]]
 id = "rust-resolve_ref-05"
 language = "rust"
 capability = "resolve_ref"
+file = "example.rs"
+query = "f"
+source = '''
+fn run(f: fn()) {
+    f();
+}
+'''
 oracle = "unknown"
 observed = "unknown"
 
@@ -40,6 +87,11 @@ observed = "unknown"
 id = "rust-visibility-06"
 language = "rust"
 capability = "visibility"
+file = "example.rs"
+query = "open"
+source = '''
+pub fn open() {}
+'''
 oracle = "yes"
 observed = "yes"
 
@@ -47,6 +99,11 @@ observed = "yes"
 id = "rust-visibility-07"
 language = "rust"
 capability = "visibility"
+file = "example.rs"
+query = "hidden"
+source = '''
+fn hidden() {}
+'''
 oracle = "no"
 observed = "no"
 
@@ -54,6 +111,16 @@ observed = "no"
 id = "python-resolve_ref-08"
 language = "python"
 capability = "resolve_ref"
+file = "example.py"
+query = "helper"
+source = '''
+def helper():
+    pass
+
+
+def main():
+    helper()
+'''
 oracle = "yes"
 observed = "yes"
 
@@ -61,6 +128,17 @@ observed = "yes"
 id = "python-resolve_ref-09"
 language = "python"
 capability = "resolve_ref"
+file = "example.py"
+query = "go"
+source = '''
+class A:
+    def go(self):
+        pass
+
+
+def main():
+    A().go()
+'''
 oracle = "yes"
 observed = "unknown"
 
@@ -68,6 +146,12 @@ observed = "unknown"
 id = "python-resolve_ref-10"
 language = "python"
 capability = "resolve_ref"
+file = "example.py"
+query = "missing"
+source = '''
+def main():
+    missing()
+'''
 oracle = "no"
 observed = "unknown"
 
@@ -75,6 +159,11 @@ observed = "unknown"
 id = "python-imports-11"
 language = "python"
 capability = "imports"
+file = "example.py"
+query = "os"
+source = '''
+import os
+'''
 oracle = "yes"
 observed = "yes"
 
@@ -82,6 +171,11 @@ observed = "yes"
 id = "python-imports-12"
 language = "python"
 capability = "imports"
+file = "example.py"
+query = "sys"
+source = '''
+import os
+'''
 oracle = "no"
 observed = "no"
 
@@ -89,6 +183,16 @@ observed = "no"
 id = "typescript-resolve_ref-13"
 language = "typescript"
 capability = "resolve_ref"
+file = "example.ts"
+query = "go"
+source = '''
+class A {
+  go() {}
+}
+function main() {
+  new A().go();
+}
+'''
 oracle = "yes"
 observed = "unknown"
 
@@ -96,6 +200,14 @@ observed = "unknown"
 id = "typescript-resolve_ref-14"
 language = "typescript"
 capability = "resolve_ref"
+file = "example.ts"
+query = "helper"
+source = '''
+function helper() {}
+function main() {
+  helper();
+}
+'''
 oracle = "yes"
 observed = "yes"
 
@@ -103,6 +215,11 @@ observed = "yes"
 id = "typescript-imports-15"
 language = "typescript"
 capability = "imports"
+file = "example.ts"
+query = "./mod"
+source = '''
+import { x } from "./mod";
+'''
 oracle = "yes"
 observed = "yes"
 
@@ -110,6 +227,14 @@ observed = "yes"
 id = "csharp-apply_targets-16"
 language = "csharp"
 capability = "apply_targets"
+file = "example.cs"
+query = "F"
+source = '''
+class A {
+    void F() {}
+    void G() { F(); }
+}
+'''
 oracle = "yes"
 observed = "unknown"
 
@@ -117,6 +242,13 @@ observed = "unknown"
 id = "csharp-apply_targets-17"
 language = "csharp"
 capability = "apply_targets"
+file = "example.cs"
+query = "a"
+source = '''
+class A {
+    void G(System.Action a) { a(); }
+}
+'''
 oracle = "unknown"
 observed = "unknown"
 
@@ -124,5 +256,13 @@ observed = "unknown"
 id = "csharp-apply_targets-18"
 language = "csharp"
 capability = "apply_targets"
+file = "example.cs"
+query = "F"
+source = '''
+class A {
+    void F() {}
+    void G() {}
+}
+'''
 oracle = "no"
-observed = "no"
+observed = "unknown"

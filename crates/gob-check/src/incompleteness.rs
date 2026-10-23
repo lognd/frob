@@ -47,8 +47,17 @@ pub struct OracleCase {
     pub capability: String,
     /// The true answer, known by construction; `unknown` when genuinely undecidable.
     pub oracle: Verdict,
-    /// The answer the analysis gave.
+    /// The answer the analysis gave; the live column that `incompleteness_live` checks.
     pub observed: Verdict,
+    /// The file name the probe source is read as; its extension picks the adapter.
+    #[serde(default)]
+    pub file: Option<String>,
+    /// The probe source text the real adapter reads.
+    #[serde(default)]
+    pub source: Option<String>,
+    /// What is asked of the source: a symbol, callee or import target, by capability.
+    #[serde(default)]
+    pub query: Option<String>,
 }
 
 /// What one case shows.
@@ -409,6 +418,9 @@ mod tests {
             capability: "resolve_ref".to_owned(),
             oracle,
             observed,
+            file: None,
+            source: None,
+            query: None,
         }
     }
 

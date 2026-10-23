@@ -147,5 +147,13 @@ The gate compares that rate with a committed baseline
 - a false Must (a decided answer that differs from the oracle, or a decided
   answer to an undecidable question) fails always and is never baselined.
 
-The committed corpus records observed answers; wiring live adapter output into
-the `observed` column is separate work.
+Each case also carries a probe (`file`, `query`, `source`) that the real
+adapter reads (`gob_check::incompleteness_live`): `visibility` is the symbol's
+declared visibility, `imports` is whether the complete parse lists the target,
+`resolve_ref` is Yes only for a proven (Must) call edge, and a capability the
+language's adapter does not provide is Unknown. The test `oracle_live` fails
+when the committed `observed` column differs from these live answers (a source
+that no adapter parses is an error, not a verdict, so a flaky parse never
+flips the column). Regenerate the column deliberately with
+`FROB_BLESS_ORACLE=1 cargo test -p gob-check --test oracle_live`, then review
+the diff and refresh `baseline.toml` by hand if a rate moved.

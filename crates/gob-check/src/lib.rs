@@ -63,6 +63,8 @@ mod fmt_parse;
 pub mod gate001;
 // frob:ticket 01M4CXSZ5PYK101KSEH6SJ9WYR
 pub mod incompleteness;
+// frob:ticket 01M5HGCQ5CDB7HEEFGTRVP9DA6
+pub mod incompleteness_live;
 mod options;
 mod packages;
 mod pipeline;
