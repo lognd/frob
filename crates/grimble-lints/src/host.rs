@@ -1,8 +1,9 @@
-//! The host traits the PATH, TIME and PAIR `#[rule]` declarations evaluate against.
+//! The host traits the PATH, TIME, PAIR and UNITY `#[rule]` declarations evaluate against.
 
 // frob:ticket 01M59A2N1QCS2E5GPGD09V34R1
 // frob:ticket 01M44R5W4WJEXFM000S8KVQQN5
 // frob:ticket 01M5HDAS62G7H4YY9FVG59GJ01
+// frob:ticket 01M5HPSP14N3NCX5TNA9XDR1GY
 
 /// What a PATH rule may ask of its product: how many files the scan examined.
 ///
@@ -27,4 +28,12 @@ pub trait TimeHost {
 pub trait PairHost {
     /// Files the PAIR pass examined for rule `id` on this run (0 when it examined none).
     fn pair_subjects_of(&self, id: &str) -> usize;
+}
+
+/// What a UNITY rule may ask of its product: how many files the scan examined.
+///
+/// `UNITY201` and `UNITY202` are evaluated in one pass over the walk, like the PATH rules.
+pub trait UnityHost {
+    /// Files the UNITY pass examined for rule `id` on this run (0 when it examined none).
+    fn unity_subjects_of(&self, id: &str) -> usize;
 }

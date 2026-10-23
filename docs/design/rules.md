@@ -258,6 +258,14 @@ Warn; a cleanup returned only under a branch, or one the scan cannot read,
 is Unresolved. A walk with no such file is not applicable. The Unity
 vocabulary (`unity::scan`) and other languages are not wired yet.
 
+Implemented (~9XDR1GY): UNITY201 `lookup-in-hot-code` and UNITY202
+`allocation-in-hot-code` ship in `grimble-lints` (`unity_hot::scan`, the
+`unity_pass` product pass). Both are Advisory and run only on C# files that
+mention `UnityEngine` or `MonoBehaviour`; a lookup (`GetComponent`, `Find*`,
+`Camera.main`) or managed allocation reachable from `Update`, `LateUpdate`,
+`FixedUpdate` or `OnGUI` fires, while a lookup cached in `Awake`, `Start` or
+`OnEnable` stays quiet. A walk with no Unity C# file is not applicable.
+
 The grimble check reads `[rules.<id>] severity = "advisory" | "warn" |
 "error"` (`RuleOverrides` in `grimble-check`). The override beats the rule
 default and `[grimble] strict`. An unknown rule id is logged and ignored

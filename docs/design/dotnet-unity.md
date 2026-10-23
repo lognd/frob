@@ -86,6 +86,7 @@ dead in player builds or the reverse.
 - Hot context: the `hot(region)` capability (universal-model.md 4.4)
   takes `Update`, `FixedUpdate`, `LateUpdate` and `OnGUI` as hot roots;
   UNITY2xx rules fire only in code reachable from them.
+  UNITY201 and UNITY202 are implemented (see rules.md, ~9XDR1GY).
 - Version gate: the engine version is read from
   `ProjectSettings/ProjectVersion.txt`; `Find*` lookups and `foreach`
   allocation behaviour changed across versions, so rules that depend on
