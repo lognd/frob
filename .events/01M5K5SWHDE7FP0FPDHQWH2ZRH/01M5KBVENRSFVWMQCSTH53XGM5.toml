@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T03:11:10Z"
+digest = "7f569f462159107fcd8352f0de41646bd80f449278bde84f08858f86de78dee9"
+exit_code = 0
+head = "3a777ebeb61b8d2f6d08f84a3e08d388e1d1488e"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.92s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 02004430-20bb-4c93-bd71-6dc65015e5ee with nextest profile: default
+    Starting 1 test across 1 binary (51 tests skipped)
+        PASS [   0.005s] crunk-spec::spec default_preset_declares_the_state_roles
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 51 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec --test spec default_preset_declares_the_state_roles"
+size = 765
+status = "measured"
+test_count = 1
+tests_digest = "ffd9f799daa80c9d729130794d9c70179e5816f0bf3a9038def2b92475fd7cb7"
+at = "2026-10-23T03:11:10Z"
+actor = "lognd"
+rev = 1
