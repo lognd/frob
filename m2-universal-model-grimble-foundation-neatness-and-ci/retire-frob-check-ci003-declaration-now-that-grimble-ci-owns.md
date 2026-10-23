@@ -8,7 +8,7 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:32:37Z"
-updated = "2026-10-23T06:13:53Z"
+updated = "2026-10-23T06:16:16Z"
 scope = ["crates/frob-check/**", "docs/reference/rules/CI003.md", "crates/gob-check/**", "crates/frob/**", "docs/reference/**", "docs/schemas/config.json", "crates/grimble-check/**"]
 
 [[links]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a workflow that trips CI003, when frob check and grimble check run, then the finding is reported once"
-bound = false
+bound = true
 +++
 
 docs/reference/rules/CI003.md says the id is declared in frob-check until grimble-ci owns it; reconcile the two declarations (found while working ~8886VJ4).

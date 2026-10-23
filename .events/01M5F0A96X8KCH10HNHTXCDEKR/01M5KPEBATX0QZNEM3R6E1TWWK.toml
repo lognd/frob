@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T06:16:16Z"
+digest = "833db095fce0e1069a77686831793b828fd8b90beba5c9b56800b8af29440aed"
+exit_code = 0
+head = "2e4f79a3ef31b9bd11964982c9c21efff86fc37e"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e7a3791e-d9e8-493a-a78c-0f9a9c1e180c with nextest profile: default
+    Starting 1 test across 1 binary (96 tests skipped)
+        PASS [   0.107s] frob-check::it tool_bind::a_zizmor_permissions_finding_is_reported_once_as_ci003
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.108s] 1 test run: 1 passed, 96 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check --test it a_zizmor_permissions"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "d7e2c0d4c45f6c5fb9132c6640a091d94348dbbfa43f37cb6ca692726b0158e7"
+at = "2026-10-23T06:16:16Z"
+actor = "lognd"
+rev = 1
