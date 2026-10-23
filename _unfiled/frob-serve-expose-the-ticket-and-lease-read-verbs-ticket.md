@@ -2,12 +2,12 @@
 id = "01M4H2C3YV4ZDRNNTVKKYD6J5K"
 title = "frob serve: expose the ticket and lease read verbs (ticket show|list|doable|brief|doctor|triage list, lease list, ticket contention, ticket evidence list) as MCP tools"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T19:31:22Z"
-updated = "2026-10-09T19:31:26Z"
+updated = "2026-10-23T13:15:28Z"
 scope = ["crates/frob/src/ticket/**", "crates/frob-lease/src/**", "crates/frob-evidence/src/**", "changelog.d/**"]
 
 [[links]]
