@@ -2,7 +2,8 @@
 id = "01M5MDT81QR8F0E67N61AYZDN2"
 title = 'Document [check] exclude opt-in ("!dir/") in gob-check config doc comment and single-source crunk NOISE_DIRS with gob-walk GENERATED_DIRS'
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 reporter = "lognd"
