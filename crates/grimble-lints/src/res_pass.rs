@@ -37,7 +37,9 @@ fn describe(id: &str) -> String {
         .and_then(|p| p.release.first())
         .copied()
         .unwrap_or("its release");
-    format!("resource acquire `{id}` has no paired release in scope; call `{release}` or hand the resource to an owner that does")
+    format!(
+        "resource acquire `{id}` has no paired release in scope; call `{release}` or hand the resource to an owner that does"
+    )
 }
 
 /// The verdict for one site of file `f`; `lines` are the file's lines.

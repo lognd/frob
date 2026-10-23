@@ -23,7 +23,16 @@ pub trait CohHost {
 
 /// Everything a declared grimble rule may ask: the model, binding, architecture and path hosts.
 pub trait GrimbleHost:
-    MdlHost + BindHost + ArchHost + PathHost + TimeHost + PairHost + ErrHost + ResHost + UnityHost + CohHost
+    MdlHost
+    + BindHost
+    + ArchHost
+    + PathHost
+    + TimeHost
+    + PairHost
+    + ErrHost
+    + ResHost
+    + UnityHost
+    + CohHost
 {
 }
 

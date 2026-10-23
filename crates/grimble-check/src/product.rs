@@ -829,7 +829,8 @@ impl Product for Grimble {
             max_level_spread: u32::try_from(coh_table.max_level_spread).unwrap_or(u32::MAX),
             model: ModelLayers::from_model(&model),
         };
-        let (arch, path, time, pair, err, res, unity, coh) = reports(cx, &digest, &table, &coh_opts);
+        let (arch, path, time, pair, err, res, unity, coh) =
+            reports(cx, &digest, &table, &coh_opts);
         let started = std::time::Instant::now();
         let ci = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);
