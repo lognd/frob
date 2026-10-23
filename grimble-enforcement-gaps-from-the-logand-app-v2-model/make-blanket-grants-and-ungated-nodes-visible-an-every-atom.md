@@ -2,13 +2,13 @@
 id = "01M4GYBZZB9Z4QPMW451DC0JFG"
 title = "Make blanket grants and ungated nodes visible: an every-atom grant over a whole tree is reported as a declared trust zone, and nodes that are not CAP subjects (no code-owning selector) are listed as ungated"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T18:21:23Z"
-updated = "2026-10-09T18:21:23Z"
+updated = "2026-10-23T14:39:01Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble*/**", "changelog.d/**"]
 
