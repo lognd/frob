@@ -2,7 +2,8 @@
 id = "01M5M1TVWKJPZX3BMF736VJAHT"
 title = "Extract shared PathLeaves selector helper from grimble-bind owner into a public helper"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 reporter = "lognd"
