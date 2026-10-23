@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T01:25:29Z"
-updated = "2026-10-23T03:03:13Z"
-scope = ["crates/crunk-spec/src/presets/**", "crates/crunk-spec/tests/**", "crates/crunk-rules/tests/**", "tests/crunk-parity/fixtures/e2e/e2e_12_ungoverned/**"]
+updated = "2026-10-23T03:03:14Z"
+scope = ["crates/crunk-spec/src/presets/**", "crates/crunk-spec/tests/**", "crates/crunk-rules/tests/**", "tests/crunk-parity/fixtures/e2e/e2e_12_ungoverned/**", "tests/crunk-parity/fixtures/e2e/e2e_54_pathmode/**"]
 
 [[acceptance]]
 text = "Given a project initialised with the default crunk preset, when crunk check runs, then CRAFT008 reports nothing"
