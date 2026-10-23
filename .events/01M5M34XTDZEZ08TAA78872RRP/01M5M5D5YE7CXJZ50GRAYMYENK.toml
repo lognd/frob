@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T10:37:47Z"
+digest = "f2aafdef9d8be1240bf921129b577a2b3926008bc2cede9637ad25b838f01cd6"
+exit_code = 0
+head = "6d7ee56d7fa847b1d0c7057ef912f46ae708613c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 58922fa4-6e62-4caf-b4fb-da2bf1236062 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.076s] grimble-check::coh003_external external_callees_never_produce_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.076s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test coh003_external external_callees_never_produce_unresolved"
+size = 558
+status = "measured"
+test_count = 1
+tests_digest = "f04549a419ab6e838b20cde96532bd3104ff2959e43bc6a4a7391101da004aeb"
+at = "2026-10-23T10:37:47Z"
+actor = "lognd"
+rev = 1

@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T09:58:20Z"
-updated = "2026-10-23T10:32:59Z"
+updated = "2026-10-23T10:37:47Z"
 scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "External callees (not resolved to any repo file) are excluded from COH003 layer judgement and never produce Unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A single-depth repo with no layered model yields at most one repo-level COH003 Unresolved note, not one per file"
