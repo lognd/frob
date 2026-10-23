@@ -2,7 +2,8 @@
 id = "01M5K9QNQFYJNXZSSG2X91FJBQ"
 title = "Add TS/JS/C# nondeterminism and control-flow vocabulary to testq"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
