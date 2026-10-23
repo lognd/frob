@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:08Z"
-updated = "2026-10-23T01:16:46Z"
-scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk/tests/query_parity.rs", "crates/crunk/tests/parity/compare.rs", "crates/crunk-check/tests/color001.rs", "crates/crunk-check/tests/waive001.rs"]
+updated = "2026-10-23T01:32:29Z"
+scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk/tests/query_parity.rs", "crates/crunk/tests/parity/compare.rs", "crates/crunk-check/tests/color001.rs", "crates/crunk-check/tests/waive001.rs", "docs/crunk/rules/**"]
 
 [[acceptance]]
 text = "Given a palette with no danger, warning or success role in [palette.roles], when crunk check runs, then CRAFT008 reports each missing semantic role"
