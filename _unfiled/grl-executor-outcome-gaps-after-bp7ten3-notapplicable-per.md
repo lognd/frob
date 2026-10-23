@@ -2,7 +2,8 @@
 id = "01M4HGGN9JCP9C1F7PQSVFPB29"
 title = "GRL executor outcome gaps after ~BP7TEN3: NotApplicable per language from the capability matrix, the assumed:certainly@span conditional-fire cap (grl-spec 7.0.4), and dedicated UnresolvedReason variants for budget and partial"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
