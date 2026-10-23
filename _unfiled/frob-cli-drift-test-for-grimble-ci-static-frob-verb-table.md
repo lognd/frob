@@ -2,12 +2,12 @@
 id = "01M5KE9866QXR3E94E7J94DZY4"
 title = "frob-cli: drift test for grimble-ci static frob verb table"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T03:53:41Z"
-updated = "2026-10-23T04:17:48Z"
+updated = "2026-10-23T04:17:56Z"
 scope = ["crates/frob-cli/**"]
 
 [[acceptance]]
