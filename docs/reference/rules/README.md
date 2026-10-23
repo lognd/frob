@@ -53,6 +53,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [COH002](COH002.md) | decision-with-effects | advisory | manual | P+ | true | A unit that branches on computed data and performs effects inside those branches. |
+| [COH003](COH003.md) | mixed-abstraction-levels | advisory | manual | P+ | true | A unit whose callees sit on abstraction layers further apart than the allowed spread. |
 
 ## COLOR
 

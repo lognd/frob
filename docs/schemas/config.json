@@ -795,7 +795,7 @@
     },
     "coh": {
       "additionalProperties": false,
-      "description": "The `[coh]` table: project overrides for what COH002 (\"decision with effects\") counts as an effect.\n\nThe language adapter's effects capability decides by default (a call through `fs`, `os`,\n`subprocess` is an effect, `console.log` is not). A configured list adds to it and matches on\nthe callee's last path segment in any language, so `a.b.send` is `send`: `effect_calls` marks\na name as an effect, `trivial` as never one, and a name in both is trivial. Both default to\nempty. A call the capability cannot place leaves the verdict Unresolved until it is listed.",
+      "description": "The `[coh]` table: project overrides for COH002 (\"decision with effects\") and COH003 (\"mixed abstraction levels\").\n\nThe language adapter's effects capability decides by default (a call through `fs`, `os`,\n`subprocess` is an effect, `console.log` is not). A configured list adds to it and matches on\nthe callee's last path segment in any language, so `a.b.send` is `send`: `effect_calls` marks\na name as an effect, `trivial` as never one, and a name in both is trivial. Both default to\nempty. A call the capability cannot place leaves the verdict Unresolved until it is listed.\n`max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.",
       "properties": {
         "effect_calls": {
           "default": [],
@@ -804,6 +804,13 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "max_level_spread": {
+          "default": 1,
+          "description": "The largest layer distance between a unit's callees that COH003 still accepts as one level of abstraction.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
         },
         "trivial": {
           "default": [],
