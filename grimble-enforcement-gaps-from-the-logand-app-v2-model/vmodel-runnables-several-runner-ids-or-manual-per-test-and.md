@@ -8,7 +8,7 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:56Z"
-updated = "2026-10-23T19:17:58Z"
+updated = "2026-10-23T19:38:21Z"
 idempotency_key = "logand-gaps-V3"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/gob-languages/**", "crates/grimble-model/**", "changelog.d/**"]
@@ -19,7 +19,7 @@ target = "01M4FGZ22EX779T6RNS4FKJ689"
 
 [[acceptance]]
 text = "Given a test with several runnable ids, when grimble check runs, then there is no SYS003 and each id binds"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a manual test, when grimble check runs, then no MDL014 and no MDL005, and it is listed as manual"

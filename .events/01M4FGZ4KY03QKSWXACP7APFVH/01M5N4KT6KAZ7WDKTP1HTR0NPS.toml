@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T19:38:21Z"
+digest = "7b7970632f9daf68ee3ec035bb0b5dbd2fa0c55a66f3692fb1cd0d71f80b452b"
+exit_code = 0
+head = "a0a22938fb7bac55956e10b438f4f6e72c6ca4a1"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bef498ed-7ad6-4382-aae3-e6cbba6987bd with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.104s] grimble-bind::vmodel_runnables several_runnable_ids_each_bind_without_sys003
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.105s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test vmodel_runnables several_runnable_ids_each_bind_without_sys003"
+size = 1236
+status = "measured"
+test_count = 1
+tests_digest = "f056ab84b655609113ef2a2796e9c1eadb94b3d51bc02d2013b35616a1c97ae4"
+at = "2026-10-23T19:38:21Z"
+actor = "lognd"
+rev = 1
