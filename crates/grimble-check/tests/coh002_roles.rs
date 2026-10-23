@@ -7,8 +7,8 @@
 use gob_languages::Language;
 use gob_symbols::{Folded, fold_file};
 use gob_walk::{Digest, FileEntry, LanguageHint};
-use grimble_check::coh_pass::analyze;
-use grimble_check::coh002::{Coh002Options, UnitRole};
+use grimble_check::coh_pass::{CohPassOptions, analyze};
+use grimble_check::coh002::UnitRole;
 use grimble_check::unit_role::{declared_roles, resolve_role};
 use grimble_lints::pass::{PathFile, PathFinding};
 
@@ -43,7 +43,7 @@ fn findings(path: &str, language: Language, text: &str) -> Vec<PathFinding> {
         language,
         text,
     };
-    analyze(&[file], &Coh002Options::default()).findings
+    analyze(&[file], &CohPassOptions::default()).findings
 }
 
 // frob:tests crates/grimble-check/src/unit_role.rs::declared_roles

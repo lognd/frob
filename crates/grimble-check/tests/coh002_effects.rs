@@ -8,7 +8,7 @@ use gob_ir::{NodeId, Operator, Universal};
 use gob_languages::Language;
 use gob_symbols::{Folded, def_use_of, fold_file};
 use gob_walk::{Digest, FileEntry, LanguageHint};
-use grimble_check::coh_pass::analyze;
+use grimble_check::coh_pass::{CohPassOptions, analyze};
 use grimble_check::coh002::{Coh002, Coh002Options, Coh002Unresolved, UnitRole, coh002, judge};
 use grimble_check::effects::{EffectClass, effects_for};
 use grimble_lints::pass::PathFile;
@@ -236,8 +236,13 @@ fn empty_and_mixed_language_files_are_judged_per_file() {
             text: &fire_rs,
         },
     ];
-    let report = analyze(&files, &Coh002Options::default());
-    let mut hit: Vec<&str> = report.findings.iter().map(|f| f.file.as_str()).collect();
+    let report = analyze(&files, &CohPassOptions::default());
+    let mut hit: Vec<&str> = report
+        .findings
+        .iter()
+        .filter(|f| f.rule == "COH002")
+        .map(|f| f.file.as_str())
+        .collect();
     hit.sort_unstable();
     assert_eq!(hit, ["a.py", "c.rs"], "{:?}", report.findings);
 }

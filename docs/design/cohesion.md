@@ -20,8 +20,16 @@ keys, `effect_calls` and `trivial`: project overrides that add to the capability
 callee's last path segment); both default to empty, a name in both lists is trivial. Unknown
 `[coh]` keys are rejected. The capability tables live in grimble-check until the adapters declare
 the `Effects` capability themselves.
-`min_slice_statements` and `max_level_spread` are not in the table yet (COH001 and COH003
-are not registered rules). A unit carrying a `grimble:core` or `grimble:shell`
+The `[coh]` table also holds `max_level_spread` (default 1), the largest layer distance
+COH003 tolerates between the callees of one unit; `min_slice_statements` is not in the table
+yet (COH001 is not a registered rule). COH003 is registered and runs in the same pass as COH002
+(`coh_pass::analyze`): the pass first folds every file, collects the functions each defines, asks
+`layers::coh003_options` for the callee layers (grimble model first, module depth otherwise),
+then judges each unit. A repo where no layer source places a callee (no layered model node and
+every file at one directory depth) reports one Unresolved COH003 per file with unplaced
+callees, never Clean. The report cache key carries a `layers-v1` tag, the COH002 vocabularies
+and `max_level_spread`, so a change to any of them (or to a `.grmb` file, which is part of the
+walk digest) recomputes the report. A unit carrying a `grimble:core` or `grimble:shell`
 directive on its function is judged against that role (COH002 reads it from the
 directive; a unit with no directive is judged as written). Both on one unit is a
 conflict and the stricter `core` wins. A `grimble:shell` claim is reported as

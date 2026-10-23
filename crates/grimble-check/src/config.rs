@@ -70,13 +70,14 @@ impl PacksTable {
     }
 }
 
-/// The `[coh]` table: project overrides for what COH002 ("decision with effects") counts as an effect.
+/// The `[coh]` table: project overrides for COH002 ("decision with effects") and COH003 ("mixed abstraction levels").
 ///
 /// The language adapter's effects capability decides by default (a call through `fs`, `os`,
 /// `subprocess` is an effect, `console.log` is not). A configured list adds to it and matches on
 /// the callee's last path segment in any language, so `a.b.send` is `send`: `effect_calls` marks
 /// a name as an effect, `trivial` as never one, and a name in both is trivial. Both default to
 /// empty. A call the capability cannot place leaves the verdict Unresolved until it is listed.
+/// `max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
 #[config(table = "coh")]
 pub struct CohTable {
@@ -86,6 +87,9 @@ pub struct CohTable {
     /// Extra callee names that are trivial (logging, metrics, asserts) and never count as an effect.
     #[config(default = crate::coh002::default_trivial())]
     pub trivial: Vec<String>,
+    /// The largest layer distance between a unit's callees that COH003 still accepts as one level of abstraction.
+    #[config(default = u64::from(crate::coh003::DEFAULT_MAX_LEVEL_SPREAD))]
+    pub max_level_spread: u64,
 }
 
 impl CohTable {

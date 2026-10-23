@@ -9,7 +9,7 @@ use std::path::Path;
 use gob_languages::Language;
 use gob_rules::Finding;
 use gob_text::FileInterner;
-use grimble_check::coh_pass::analyze;
+use grimble_check::coh_pass::{CohPassOptions, analyze};
 use grimble_check::coh002::Coh002Options;
 use grimble_check::config::CohTable;
 use grimble_check::{CheckOptions, run, sibling_document};
@@ -44,18 +44,26 @@ fn coh_findings(config: &str, source: &str) -> Vec<serde_json::Value> {
         .collect()
 }
 
-/// Run one mdtest example through the COH pass with the built-in vocabularies.
+/// Run one mdtest example through the COH pass with the built-in vocabularies; the case's `file=` blocks join the run.
 fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
     // frob:tests crates/grimble-check/src/rules/coh002.rs::Coh002
-    let language = Language::detect(&case.file_name).expect("a known extension");
-    let file = PathFile {
-        path: &case.file_name,
-        language,
-        text: &case.text,
-    };
+    // frob:tests crates/grimble-check/src/rules/coh003.rs::Coh003
     let mut files = FileInterner::new();
-    analyze(&[file], &Coh002Options::default())
+    // Intern in case order so a finding's `FileId::index()` is the file's place in `case.files`.
+    for f in &case.files {
+        files.intern(&f.file_name);
+    }
+    let inputs: Vec<PathFile<'_>> = case
+        .files
+        .iter()
+        .map(|f| PathFile {
+            path: &f.file_name,
+            language: Language::detect(&f.file_name).expect("a known extension"),
+            text: &f.text,
+        })
+        .collect();
+    analyze(&inputs, &CohPassOptions::default())
         .findings
         .into_iter()
         .filter(|f| f.rule == case.rule.as_str())

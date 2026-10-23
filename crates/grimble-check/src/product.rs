@@ -19,6 +19,8 @@ use grimble_model::{ModelFiles, check_model, file_table};
 
 use crate::bind_cache::{self, BindSummary};
 use crate::coh002::Coh002Options;
+use crate::coh_pass::CohPassOptions;
+use crate::layers::ModelLayers;
 use crate::config::{CohTable, GrimbleTable, PRODUCT, RuleOverrides};
 use crate::fidelity::language_tag;
 use crate::model_view::ModelView;
@@ -55,7 +57,7 @@ pub struct GrimbleInputs {
     pub pair: PathReport,
     /// The UNITY201 and UNITY202 verdicts (grimble-lints), cached like the PAIR report.
     pub unity: PathReport,
-    /// The COH report (COH002 verdicts under the `[coh]` vocabularies).
+    /// The COH report (COH002 and COH003 verdicts under the `[coh]` table and the model's layers).
     pub coh: PathReport,
     /// The `[rules.<id>]` severity overrides of `grimble.toml`.
     pub overrides: RuleOverrides,
@@ -368,11 +370,11 @@ fn unity_report(
     grimble_lints::unity_pass::analyze_all(&files, &settings)
 }
 
-/// Run COH002 over every Rust, Python and TypeScript file of the walk (uncached).
+/// Run COH002 and COH003 over every Rust, Python and TypeScript file of the walk (uncached).
 fn coh_report(
     entries: &[gob_walk::FileEntry],
     read: &dyn Fn(&str) -> Option<String>,
-    opts: &Coh002Options,
+    opts: &CohPassOptions,
 ) -> PathReport {
     let texts: Vec<(&str, gob_languages::Language, String)> = entries
         .iter()
@@ -393,12 +395,15 @@ fn coh_report(
 }
 
 /// The cache kind of the COH report: it embeds a digest of the vocabularies, so a changed `[coh]` misses.
-fn coh_kind(opts: &Coh002Options) -> String {
-    // The version tag invalidates reports cached before the effects capability decided COH002.
-    let mut text = String::from("capability-v1\u{1f}");
-    text.push_str(&opts.effect_calls.join("\n"));
+fn coh_kind(opts: &CohPassOptions) -> String {
+    // The version tag invalidates reports cached before COH003 joined the pass; the model's layers
+    // are a function of the walk digest, which already keys the artifact.
+    let mut text = String::from("layers-v1\u{1f}");
+    text.push_str(&opts.coh002.effect_calls.join("\n"));
     text.push('\u{1f}');
-    text.push_str(&opts.trivial.join("\n"));
+    text.push_str(&opts.coh002.trivial.join("\n"));
+    text.push('\u{1f}');
+    text.push_str(&opts.max_level_spread.to_string());
     format!("coh-{}", gob_walk::Digest::of(text.as_bytes()))
 }
 
@@ -507,7 +512,7 @@ fn reports(
     cx: &mut CollectCx<'_>,
     digest: &str,
     table: &GrimbleTable,
-    coh_opts: &Coh002Options,
+    coh_opts: &CohPassOptions,
 ) -> (
     ArchReport,
     PathReport,
@@ -717,7 +722,12 @@ impl Product for Grimble {
             summary
         };
         cx.timing.push("binding", started.elapsed(), true);
-        let coh_opts = Coh002Options::from(&CohTable::load(&cx.core.root)?);
+        let coh_table = CohTable::load(&cx.core.root)?;
+        let coh_opts = CohPassOptions {
+            coh002: Coh002Options::from(&coh_table),
+            max_level_spread: u32::try_from(coh_table.max_level_spread).unwrap_or(u32::MAX),
+            model: ModelLayers::from_model(&model),
+        };
         let (arch, path, time, pair, unity, coh) = reports(cx, &digest, &table, &coh_opts);
         let started = std::time::Instant::now();
         let ci = cx.core.with_content(|reader| {

@@ -23,7 +23,10 @@ use crate::coh002::{callee_of, is_call, is_nested_unit};
 /// The name an index or slice expression (`s[1:3]`, `xs[i + 1]`) carries in a verdict.
 pub const INDEX_CALLEE: &str = "[]";
 
-/// Knobs of COH003 (the `[coh]` table of cohesion.md, defaults here until the table lands).
+/// The default `max_level_spread`: callees one layer apart are still one level of abstraction.
+pub const DEFAULT_MAX_LEVEL_SPREAD: u32 = 1;
+
+/// Knobs of COH003 (`max_level_spread` from the `[coh]` table; layers from the model or module depth).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Coh003Options {
     /// The largest layer distance that is still one level of abstraction.
@@ -41,7 +44,7 @@ pub struct Coh003Options {
 impl Default for Coh003Options {
     fn default() -> Self {
         Self {
-            max_level_spread: 1,
+            max_level_spread: DEFAULT_MAX_LEVEL_SPREAD,
             layers: BTreeMap::new(),
             primitive_layer: 0,
             primitive_calls: [
