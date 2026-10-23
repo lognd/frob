@@ -1,0 +1,9 @@
+kind = "create"
+title = "Feed grimble:shell/grimble:core role detection into COH002 UnitRole"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**"]
+at = "2026-10-23T00:05:49Z"
+actor = "lognd"
+rev = 1
