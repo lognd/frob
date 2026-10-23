@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T06:30:43Z"
+digest = "f1304f0faeef37b5e5162b8c336799056c3d255d8ce885f071e128039db83e0e"
+exit_code = 100
+failed_tests = ["discovers_and_parses_scene_html_files_recursively_in_path_order"]
+head = "5859602979f3103da132cc33b9b9236ff3afeb45"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2586ae01-6eab-4321-bfc4-6b9811f6e715 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        FAIL [   0.011s] crunk-ingest::scene_docs discovers_and_parses_scene_html_files_recursively_in_path_order
+  output \u{2500}\u{2500}\u{2500}
+
+    running 1 test
+
+    thread 'discovers_and_parses_scene_html_files_recursively_in_path_order' (1447416) panicked at crates/crunk-ingest/tests/scene_docs.rs:40:5:
+    assertion `left == right` failed
+      left: ["design/scenes/Z.scene.HTML", "design/scenes/b.scene.html", "design/scenes/nested/deep/a.scene.html"]
+     right: ["design/scenes/b.scene.html", "design/scenes/nested/deep/a.scene.html", "design/scenes/Z.scene.HTML"]
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+    test discovers_and_parses_scene_html_files_recursively_in_path_order ... FAILED
+
+    failures:
+
+    failures:
+        discovers_and_parses_scene_html_files_recursively_in_path_order
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.01s
+
+
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 0 passed, 1 failed, 4 skipped
+        FAIL [   0.011s] crunk-ingest::scene_docs discovers_and_parses_scene_html_files_recursively_in_path_order
+error: test run failed
+'''
+passed = false
+provider = "nextest"
+ref = "-p crunk-ingest --test scene_docs discovers_and_parses_scene_html_files_recursively_in_path_order"
+size = 1562
+status = "measured"
+test_count = 1
+tests_digest = "4cb3a8d2ebf8aedfa67bcb2da400a49a760d92b56d3b2a18562258bf4a4e7508"
+at = "2026-10-23T06:30:43Z"
+actor = "lognd"
+rev = 1
