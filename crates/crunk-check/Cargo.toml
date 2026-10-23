@@ -25,6 +25,7 @@ gob-plan = { version = "0.532.0", path = "../gob-plan" }
 gob-lock = { version = "0.532.0", path = "../gob-lock" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
+gob-walk = { version = "0.532.0", path = "../gob-walk" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
