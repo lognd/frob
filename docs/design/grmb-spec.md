@@ -554,8 +554,9 @@ vmodel t_gate_exit {
 | name | `vmodel NAME` | name | yes | |
 | kind | `kind K;` | `artifact`, `test`, `decision` | yes | v1 node kinds |
 | level | `level L;` | a level of the table below | yes | |
-| ref | `ref "SYMREF";` | symref of a document anchor or code unit | artifact: yes | the spec artifact |
-| runnable | `runnable SELECTOR;` | selector resolving to one test unit | test: yes | the test |
+| ref | `ref "SYMREF";` | symref of a document anchor (4.5.1) or code unit | artifact: yes | the spec artifact |
+| runnable | `runnable SELECTOR;` | selector resolving to one test unit; the clause may repeat (4.5.2) | test: one or more `runnable` or one `manual` | the test |
+| manual | `manual because="REASON";` | a non-empty reason string (4.5.2) | test: alternative to `runnable` | a test a person performs, with no runner id |
 | links | `satisfies X;` `verifies X;` `refines X;` `allocates X;` `decides X;` `supersedes X because="...";` `blocked_by X;` | ref to a vmodel | list | edges from THIS entity to X; v1 `vmodel_edge`, with `supersedes` requiring `because` |
 
 Levels: ten, in five pairs, each pair requirement-side and test-side.
@@ -572,12 +573,131 @@ and printed canonical by the formatter.
 
 Construction errors are model-load errors (MDL014): a link whose
 endpoints are of the wrong kind, a `verifies` between unpaired levels,
-a missing `ref` or `runnable`, a duplicate link. A link target that
+a missing `ref`, a test with neither `runnable` nor `manual`, a test with
+both, a duplicate link or duplicate `runnable`, a malformed `ref` (4.5.1). A link target that
 resolves to nothing is MDL006; one that resolves to an entity that is not
 a vmodel is MDL014. The five structural
 closure rules (orphan requirement, unjustified design, untested artifact,
 orphan test, trace cycle) and milestone known gaps belong to the kernel
 (G03); their rule ids are open question 4.
+
+#### 4.5.1 Document anchors in `ref`
+
+A `ref` to a document is `PATH#ANCHOR` (the legacy spelling) or
+`PATH::ANCHOR`; both name the same markdown unit. An ANCHOR is one of
+three things, all in ONE namespace per document:
+
+1. A heading slug. GitHub rules, the ones `gob-symbols` applies
+   (`slugify`): lowercase; keep letters, digits, `-` and `_`; each space
+   becomes `-`; every other character is dropped (so `&`, `/`, `.`, `(`
+   and `:` vanish and the spaces around them stay, giving `--` for
+   ` & `); link syntax keeps only its text. A code span keeps its CONTENT
+   and loses only its backticks: the heading ``## The `foo.bar` API`` is
+   `the-foobar-api` (the `.` is punctuation and is dropped), and
+   ``## `a & b` ``  is `a--b`. A repeated slug in one file gets `-1`,
+   `-2` in document order; the first keeps the bare slug. A heading whose
+   slug is empty has no anchor.
+2. An explicit anchor `{#ID}` at the end of a heading line, as in
+   ``## `a & b` {#ab-pair}``. ID matches `[A-Za-z0-9_-]+`, is taken
+   verbatim (no lowercasing, no suffixing), and REPLACES the heading's
+   slug: the slug is then no anchor of that heading. Two explicit anchors
+   with one ID in a file, or an ID equal to another anchor, are an
+   ambiguous ref (SYS003 `ambiguous-singleton`), never silently the first.
+3. A table-row id. In a markdown table the first cell of a body row is
+   the row's id when it is a single token, bare or in one code span
+   (``| `R-12` | ... |``, `| R-12 | ... |`). The anchor is that token
+   slugged by rule 1 (`R-12` is `r-12`), or the ID of a trailing `{#ID}`
+   in the same cell. A first cell of several words is not an id. Header
+   and separator rows have no id. Row anchors are scoped to the document,
+   not to the enclosing heading, and duplicate with rule 1's `-N`
+   suffixing in document order.
+
+An author who needs a ref that survives heading edits and reordering
+uses rule 2, since slugs and `-N` suffixes move with the text. A `ref` with an
+empty ANCHOR (`doc.md#`), more than one `#`, or an ANCHOR containing
+whitespace or `{`, `}` is malformed and is MDL014 at load; a well-formed
+anchor that matches no unit is SYS011 (binding.md 6.11), and one that
+matches several is SYS003 `ambiguous-singleton`.
+
+Status: the shipped adapter implements rule 1 only (headings, with code
+spans, `&` and links handled as above); table-row ids, explicit `{#ID}`
+and the malformed-ref finding are specified here and follow in ticket
+~ADSY7K8.
+
+#### 4.5.2 A test with several runner ids, and a manual test
+
+A test vmodel is verified by ALL of its runnables: `runnable` repeats,
+one clause per runner id,
+
+```
+vmodel t_gate_exit {
+  kind test;
+  level customer_test;
+  runnable "crates/frob/tests/check_verb.rs::error_finding_exits_1";
+  runnable "web/e2e/gate.test.ts::[gate > shows exit state]";
+  verifies req_gate_exit;
+}
+```
+
+Each clause must itself resolve to exactly one test unit; a glob that
+selects several units is SYS003 `ambiguous-singleton`, as before, but two
+DIFFERENT clauses are not an ambiguity: the singleton predicate is
+per clause, not per role. A clause that selects no test unit is SYS011
+(`Error`), reported on that clause, so one broken runner id of three is
+named alone. Two clauses resolving to the same unit are a duplicate
+(MDL014).
+
+A manual test is `manual because="REASON";` in place of every
+`runnable`. It has no code term, so SYS011 has no subject and SYS003
+cannot fire; it is not a defect and not silent: `grimble status` lists
+it as `manual` with its reason, the kernel counts it as evidence at the
+manual rung only (G03 states the ladder), and a manual test whose
+`verifies` target claims an automated proof rung is that claim's
+SYS010. An empty REASON, `manual` together with `runnable`, or neither
+clause on a `kind test` vmodel, is MDL014.
+
+Status: today one `runnable` per vmodel is read and a second one is
+SYS003; `manual` is not in the grammar. Both follow in ticket ~P7APFVH.
+
+#### 4.5.3 Runner ids and the selectors that name them
+
+A `runnable` selector is `FILE::QUALNAME` (6.2); a runner reports a
+different identifier, so the spec fixes how each maps. The segment text
+of QUALNAME follows the unit qualnames of code-model.md section 2; a
+segment holding characters outside a name (spaces, `>`, `/`) is written
+in brackets, `[..]`, verbatim.
+
+| Runner | Runner id | Selector | Rule |
+|---|---|---|---|
+| pytest | `tests/t.py::TestA::test_b` | `tests/t.py::TestA.test_b` | `::` after the file becomes `::`, further `::` become `.`; a parametrized suffix `[p]` is dropped |
+| cargo test, integration | `--test check_verb error_finding` | `crates/frob/tests/check_verb.rs::error_finding` | `--test NAME` is the file `tests/NAME.rs` of the crate; the filter is the fn name |
+| cargo test, in-source | `frob_check::tests::it_works` | `crates/frob-check/src/lib.rs::tests.it_works` | the module path after the crate name becomes dotted segments, and the FILE is the one that declares the module; the crate name is never in the qualname |
+| vitest / jest | `web/e2e/gate.test.ts > gate > shows exit state` | `web/e2e/gate.test.ts::[gate > shows exit state]` | the file path, then the `describe` chain and the `it` or `test` title as ONE bracketed segment, joined by ` > `, titles verbatim |
+
+The runner id is the human-facing key; the selector is the model-facing
+one. The adapter query `test_items` (Q35) returns each test unit with
+its runner id, so a tool can print the runner id for a selector and
+accept a pasted runner id where a selector is expected (it is mapped by
+this table, then resolved by Q22).
+
+Recognition. A unit is a test unit when the language adapter says so;
+the location is a hint, never the rule:
+
+| Language | A test unit is |
+|---|---|
+| Rust | a `fn` carrying `#[test]` or a path ending `::test` (`#[tokio::test]`), anywhere: in `tests/`, or in a `#[cfg(test)] mod` inside `src/` |
+| Python | a `test_*` function or method, or a `Test*` class member, in `test_*.py`, `*_test.py` or under a `tests` directory |
+| TypeScript, JavaScript | an `it` or `test` call (including `.each`) in a `*.test.*`, `*.spec.*` file or under `__tests__` |
+
+A unit in a file or module that matches none of these is not a test unit,
+so a `runnable` naming it is SYS011 `selects no test unit`.
+
+Status: the shipped stand-in (`is_test_unit` in `grimble-bind`) is
+path-and-qualname based: a path under `tests/`, a `*_test` or `test_*`
+file stem, or a `test`/`tests` qualname segment. It covers Rust
+in-source `mod tests` and Python, not TypeScript titles, `#[test]` fns
+outside those places, or bracketed segments; the real Q35 answer and the
+runner-id mapping follow in ticket ~P7APFVH.
 
 ### 4.6 boundary and pack
 
@@ -821,6 +941,10 @@ A glob string is `PATH [ "::" QUALNAME ]`.
   code-model.md section 2: `.` separates segments, `*` matches one
   segment, `**` any depth, `[...]` is the opaque bracket of a symref
   segment (`Type[Trait].method`). Literal text matches literally.
+- For a `runnable` the QUALNAME is the test unit's, and runner ids
+  (pytest node ids, cargo test paths, vitest titles) are mapped to it by
+  the table of 4.5.3; a bracketed segment `[..]` carries a title that is
+  not a name.
 - A PATH with no wildcard and no `::` names a FILE (and everything it
   contains); with `::` it names units. The empty PATH is MDL009.
 
@@ -1270,7 +1394,7 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL011 | MDL-MODULE | Error | `part of` name differs from the root `module`, or two roots declare the same module name, or an included file declares `module` |
 | MDL012 | MDL-DEPRECATED-NAME | Warn | a reference by a `renamed_from` name, or a `renamed_from` clause that nothing needs any more (this second half needs lock data and is deferred to G12; grimble-model reports only the reference half) |
 | MDL013 | MDL-EXCEPTION | Error | malformed exception clause: wrong attribute set for the kind, `on` inside a body, missing `on` at top level, unknown rule id, malformed `ticket` or `until`, a `grimble:accept` style directive in a .grmb comment |
-| MDL014 | MDL-VMODEL | Error | V-model construction error (wrong endpoint kinds, including a link target that resolves to an entity that is not a vmodel; an unresolved link target is MDL006, including a link target that resolves to an entity that is not a vmodel; an unresolved link target is MDL006, unpaired levels on `verifies`, missing `ref` or `runnable`, duplicate link, `supersedes` without `because`) |
+| MDL014 | MDL-VMODEL | Error | V-model construction error (wrong endpoint kinds, including a link target that resolves to an entity that is not a vmodel; an unresolved link target is MDL006, unpaired levels on `verifies`, missing `ref`, a test with neither or both of `runnable` and `manual`, an empty `manual` reason, a malformed `ref` anchor (4.5.1), duplicate link or duplicate `runnable`, `supersedes` without `because`) |
 | MDL015 | MDL-SHADOW | Advisory | the resolved entity shadows a different entity of the same name at an outer level |
 | MDL016 | MDL-UNKNOWN-ATOM | Error | a capability atom in no registry and no enabled pack |
 | MDL017 | MDL-DUPLICATE-CLAUSE | Advisory | a list clause repeated with identical content |

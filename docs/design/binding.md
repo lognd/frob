@@ -516,7 +516,7 @@ migration report because `.strata` models are rewritten by hand (D136).
 | B6 | flows as import permission | `flow A -> B` allowed Python `import` edges from A's files to B's; D-decision: a flow is directed data movement and code edges run with or against it (pulls and pushes), so a flow in either direction between two owners allows the edge, and direction matters for label checks only; FOREIGN endpoints unchecked | (b) | owners come from `owns` rows; the check is a rule over edges between owners (Q28, Q21) and declared flows: SYS013 (reserved, 11.3) in every language that has edges | CHANGED | Python-only `ast` resolution; an edge whose owner is Unknown is Unresolved, never allowed and never denied |
 | B7 | marker attrs and a token scan of bound code | `attr timeout;` on a flow or node; a regex such as `\btimeout\s*=` over every file the node owns | (c) | `attr` markers stay (Attr facet); the "does the code honour it" proof is a pack detector rule (reliability pack, G04) that runs over the node's bound identities and yields May evidence with the pack and rule in provenance | MOVED | pooled-file token scanning; the REL2xx-39x families' bespoke Python (moved to pack data, deferred to G04) |
 | B8 | `refine X into {...}` and `abstract` | decomposition tree; code binding legal only on leaves; `frob sys plan` frontier | (d) | none: a node that owns nothing is legal (an external system or an unrefined box) and has the residual of an empty clause list, not a binding | DROPPED | the construct (grmb-spec 14.1 item 16); the migration report lists each `refine` and its leaves so the leaves keep their `owns` |
-| B9 | vmodel `code_ref "path[:symbol]"` and `runnable "path::Class.method"` | strings attached to a vmodel node; presence checked, resolution left to frob | (b) | `ref SYMREF` and `runnable SEL` rows with roles `ref` and `runnable`; resolved through Q22 and Q35; SYS011 when they resolve to nothing, SYS003 `ambiguous-singleton` when to several | CHANGED | string-only attributes that nothing resolved |
+| B9 | vmodel `code_ref "path[:symbol]"` and `runnable "path::Class.method"` | strings attached to a vmodel node; presence checked, resolution left to frob | (b) | `ref SYMREF` and `runnable SEL` rows with roles `ref` and `runnable`; resolved through Q22 and Q35; SYS011 when they resolve to nothing, SYS003 `ambiguous-singleton` when one clause resolves to several. A document `ref` anchor is a heading slug, an explicit `{#ID}` or a table-row id (grmb-spec 4.5.1); a test may carry several `runnable` clauses, each checked alone, or `manual because="..."` (4.5.2); runner ids map to selectors by the table of grmb-spec 4.5.3 | CHANGED | string-only attributes that nothing resolved; the one-runnable limit |
 | B10 | `[graph].exclude` in frob.toml | shared exclusion globs for binding, capability scan and the "fully excluded node" skip | (d) | `[grimble] exclude` (materialized, grimble-review M5): excluded files are not in the walk; they are not in I, so they are not FOREIGN and not Unknown, and a selector says nothing about them (grmb-spec 6.4 step 1). It removes identities, which no source can do, hence rank 4 | MOVED | the "fully excluded node" skip (a node whose files are all excluded is just a node whose clause matches no file: MDL005, SYS004 suppressed) |
 | B11 | Unity .asmdef generator (T-4512) | generated a root module with one node per asmdef, `code=<dir>/**`, edges from references | (c) | a pack inference rule over the manifest adapter: an asmdef gives an owner for the directory at May, requested by the node's `attr infer` | DEFERRED (G04 for the pack; the manifest adapter of grimble-model.md 9.8) | writing a model file from the generator (the model is never auto-written to match code); the synthetic default assembly |
 | B12 | `frob sys init` bootstrap | one node per package directory and one flow per observed import direction, once, never `may` | (c) | `grimble init --propose` prints a skeleton from the same pack rules (names of packages and directories); a human edits it; once edited its clauses are rank 2 | DEFERRED (G18 and the adoption design, grimble-review M10) | any automatic write; flows from observed imports are a suggestion only |
@@ -763,7 +763,7 @@ One rule with a `kind` attribute on each finding. All kinds fire from `lo`:
 |---|---|---|
 | `directive-directive` | two rank 1 rows for one identity and role `owns`, two different nodes | `owner` is Unknown |
 | `directive-selector` | 2.5 item 3: a rank 1 Must owner X not in the top set of the Must rank 2 candidates | `owner` stays X |
-| `ambiguous-singleton` | `lo(e, role)` has at least 2 identities for `shape`, `runnable` or `ref` | covers the id grmb-spec 4.3 reserved |
+| `ambiguous-singleton` | `lo(e, role)` has at least 2 identities for `shape` or `ref`, or one `runnable` clause (grmb-spec 4.5.2) resolves to at least 2 | covers the id grmb-spec 4.3 reserved |
 | `end-owner` | a Must `producer` (or `consumer`) identity of flow `A -> B` has owner Exact Some(n) with n not the node of A (of B), excluding `external` endpoints | the model contradicts itself |
 | `dangling-operand` | a `grimble:binds` entity operand names no entity, or a symref operand resolves to nothing | the v1 dangling-directive error |
 | `ambiguous-operand` | a symref operand has several candidates | rows are May for each |
@@ -928,7 +928,13 @@ One rule with a `kind` attribute on each finding. All kinds fire from `lo`:
 - Subject: a vmodel `ref` (artifact) or `runnable` (test).
 - Predicate: `hi(v, ref)` or `hi(v, runnable)` is empty: the document anchor
   does not exist (Q22 NotFound over the document's slugs) or the runnable
-  names no test unit. Several test units is SYS003 `ambiguous-singleton`.
+  names no test unit. Several test units from ONE clause is SYS003
+  `ambiguous-singleton`; several `runnable` clauses are not (each is
+  judged alone and a failing one is reported on that clause, grmb-spec
+  4.5.2). A `manual` test has no `runnable` and no subject here. A table-row
+  id or explicit `{#ID}` anchor is a unit of the document (grmb-spec
+  4.5.1) and resolves through Q22 like a heading slug. Today only one
+  `runnable` and heading slugs are implemented (tickets ~P7APFVH, ~ADSY7K8).
 - Fires: `hi` empty and the target artifact (a document or a test file) is
   in the walk and not opaque.
 - Certified clean: `lo` holds exactly one identity of the right kind.
