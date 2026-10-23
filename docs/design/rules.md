@@ -266,6 +266,17 @@ mention `UnityEngine` or `MonoBehaviour`; a lookup (`GetComponent`, `Find*`,
 `FixedUpdate` or `OnGUI` fires, while a lookup cached in `Awake`, `Start` or
 `OnEnable` stays quiet. A walk with no Unity C# file is not applicable.
 
+Implemented (~T08HTWJ): UNITY301 `legacy-input-under-input-system` and
+UNITY302 `physics-force-outside-fixed-update` run in the same `unity_pass`
+product pass (`analyze_project`, called through `analyze_all`). Both are
+Warn. UNITY301 reads `activeInputHandler` from the nearest
+`ProjectSettings/ProjectSettings.asset` above each C# file (so several
+projects in one repo each follow their own settings) and fires only for
+handler `1` (Input System only); `0` and `2` are clean. A file under no
+readable `PlayerSettings` asset is not examined, and a walk with none is
+not applicable. UNITY302 needs no settings and fires on a Rigidbody force
+or move made from `Update` or `LateUpdate`.
+
 The grimble check reads `[rules.<id>] severity = "advisory" | "warn" |
 "error"` (`RuleOverrides` in `grimble-check`). The override beats the rule
 default and `[grimble] strict`. An unknown rule id is logged and ignored

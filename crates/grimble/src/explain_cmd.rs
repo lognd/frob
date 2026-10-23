@@ -12,8 +12,8 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "MDL006", "FLOW003", "MDL015", "PATH001", "MDL017", "FLOW002", "MDL008", "PATH002", "SYS009",
     "SYS006", "DEAD001", "MDL007", "MDL020", "SYS008", "SYS001", "MDL019", "MDL014", "MDL003",
     "SYS013", "MDL009", "SYS011", "PATH003", "MDL021", "SYS002", "SYS010", "SYS003", "SYS004",
-    "SYS005", "TIME001", "TIME002", "PAIR001", "UNITY201", "UNITY202", "COH002", "DUP001",
-    "VIS001",
+    "SYS005", "TIME001", "TIME002", "PAIR001", "UNITY201", "UNITY202", "UNITY301", "UNITY302",
+    "COH002", "DUP001", "VIS001",
 ];
 
 /// Print the full page of one rule offline; an unknown id exits 2 with the closest ids.

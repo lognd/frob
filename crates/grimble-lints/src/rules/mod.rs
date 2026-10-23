@@ -17,6 +17,10 @@ pub mod time002;
 pub mod unity201;
 /// Rule `UNITY202`.
 pub mod unity202;
+/// Rule `UNITY301`.
+pub mod unity301;
+/// Rule `UNITY302`.
+pub mod unity302;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -29,6 +33,8 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <time002::Time002 as gob_rules::RuleDecl>::DEF,
     <unity201::Unity201 as gob_rules::RuleDecl>::DEF,
     <unity202::Unity202 as gob_rules::RuleDecl>::DEF,
+    <unity301::Unity301 as gob_rules::RuleDecl>::DEF,
+    <unity302::Unity302 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -53,6 +59,8 @@ where
     time002::Time002: gob_rules::Measured<P>,
     unity201::Unity201: gob_rules::Measured<P>,
     unity202::Unity202: gob_rules::Measured<P>,
+    unity301::Unity301: gob_rules::Measured<P>,
+    unity302::Unity302: gob_rules::Measured<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::measured(pair001::Pair001));
@@ -63,6 +71,8 @@ where
     rules.push(gob_rules::BoundRule::measured(time002::Time002));
     rules.push(gob_rules::BoundRule::measured(unity201::Unity201));
     rules.push(gob_rules::BoundRule::measured(unity202::Unity202));
+    rules.push(gob_rules::BoundRule::measured(unity301::Unity301));
+    rules.push(gob_rules::BoundRule::measured(unity302::Unity302));
     rules
 }
 

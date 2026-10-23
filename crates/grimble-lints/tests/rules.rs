@@ -10,10 +10,16 @@ use gob_rules::{Finding, Severity, UnresolvedReason};
 use gob_text::FileInterner;
 use grimble_lints::pass::{PathFile, PathFinding, analyze};
 use grimble_lints::path::Options;
+use grimble_lints::unity_pass::SettingsFile;
 use grimble_lints::{pair_pass, time_pass, unity_pass};
 
 /// Analyze one file and return its findings.
 fn run(path: &str, text: &str) -> Vec<PathFinding> {
+    run_with(path, text, &[])
+}
+
+/// Analyze one file with the given `ProjectSettings` files and return its findings.
+fn run_with(path: &str, text: &str, settings: &[SettingsFile<'_>]) -> Vec<PathFinding> {
     let language = Language::detect(path).expect("a known extension");
     let file = PathFile {
         path,
@@ -22,7 +28,7 @@ fn run(path: &str, text: &str) -> Vec<PathFinding> {
     };
     let mut found = time_pass::analyze(std::slice::from_ref(&file)).findings;
     found.extend(pair_pass::analyze(std::slice::from_ref(&file)).findings);
-    found.extend(unity_pass::analyze(std::slice::from_ref(&file)).findings);
+    found.extend(unity_pass::analyze_all(std::slice::from_ref(&file), settings).findings);
     found.extend(
         analyze(
             &[PathFile {
@@ -47,8 +53,19 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-lints/src/rules/pair001.rs::Pair001
     // frob:tests crates/grimble-lints/src/rules/unity201.rs::Unity201
     // frob:tests crates/grimble-lints/src/rules/unity202.rs::Unity202
+    // frob:tests crates/grimble-lints/src/rules/unity301.rs::Unity301
+    // frob:tests crates/grimble-lints/src/rules/unity302.rs::Unity302
     let mut files = FileInterner::new();
-    run(&case.file_name, &case.text)
+    let settings: Vec<SettingsFile<'_>> = case
+        .files
+        .iter()
+        .filter(|f| unity_pass::is_project_settings(&f.file_name))
+        .map(|f| SettingsFile {
+            path: &f.file_name,
+            text: &f.text,
+        })
+        .collect();
+    run_with(&case.file_name, &case.text, &settings)
         .into_iter()
         .filter(|f| f.rule == case.rule.as_str())
         .filter_map(|f| f.into_finding(&mut files))
@@ -145,7 +162,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-lints/src/host.rs::PathHost.path_subjects_of
     // frob:tests crates/grimble-lints/src/host.rs::UnityHost.unity_subjects_of
     // frob:tests crates/grimble-lints/src/pass.rs::PathFinding.into_finding
-    assert_eq!(grimble_lints::rules::bind::<Fixed>().len(), 8);
+    assert_eq!(grimble_lints::rules::bind::<Fixed>().len(), 10);
     assert_eq!(
         grimble_lints::host::UnityHost::unity_subjects_of(&Fixed, "UNITY201"),
         11
