@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T14:45:49Z"
+digest = "e60b03f01318459e45b3e2e1fab908e057b6c8255be8aac9d1504227a4632035"
+exit_code = 0
+head = "39c71d09b9111a52e9b6f8294e414fd49605cbc3"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6261752c-b5bf-4820-bb1d-da7153b364e6 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.058s] grimble::status status_lists_trust_zones_and_ungated_nodes_with_counts
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.060s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble --test status status_lists_trust_zones_and_ungated_nodes_with_counts"
+size = 612
+status = "measured"
+test_count = 1
+tests_digest = "3489450392db933c0d09bc3df5d567841f0fe1b18edc35397e35660b39dc4737"
+at = "2026-10-23T14:45:49Z"
+actor = "lognd"
+rev = 1
