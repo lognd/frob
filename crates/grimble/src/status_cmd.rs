@@ -245,10 +245,10 @@ fn baseline(root: &Path, table: &GrimbleTable) -> Option<(String, ModelFiles)> {
     let mut walk = Vec::new();
     for (path, oid) in repo.blobs_at(&rev).ok()? {
         walk.push(path.clone());
-        if path.ends_with(MODEL_EXTENSION) {
-            if let Ok(bytes) = repo.read_blob(&oid) {
-                files.files.insert(path, bytes);
-            }
+        if path.ends_with(MODEL_EXTENSION)
+            && let Ok(bytes) = repo.read_blob(&oid)
+        {
+            files.files.insert(path, bytes);
         }
     }
     files.walk = Some(walk);
