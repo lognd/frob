@@ -8,6 +8,7 @@ mod csharp;
 mod csharp_fixtures;
 mod css;
 mod def_use;
+mod doc_claims;
 mod dotnet;
 mod gaps;
 mod html;
