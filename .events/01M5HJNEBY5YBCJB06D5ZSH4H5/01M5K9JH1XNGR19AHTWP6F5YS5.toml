@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T02:31:20Z"
+digest = "cc98f1b4ffcf55fb6570b9f015e3b59abc62331c4e8855160d41671df649de67"
+exit_code = 0
+head = "2593eea045bc34e439430b4530ee934ac2cce3d9"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0c7028d1-bf1b-42ad-920f-ea2cc79a7774 with nextest profile: default
+    Starting 1 test across 1 binary (18 tests skipped)
+        PASS [   0.006s] grimble-lints::testq ts_and_js_assertion_calls_are_classified_not_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 18 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test testq ts_and_js_assertion_calls_are_classified_not_unresolved"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "f0c4af5dbbf804a5e7ed548a9ec38b22f8fa21e64893c306a4459b1455e539c6"
+at = "2026-10-23T02:31:20Z"
+actor = "lognd"
+rev = 1
