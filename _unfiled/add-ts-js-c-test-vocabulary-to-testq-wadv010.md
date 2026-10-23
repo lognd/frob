@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:31:46Z"
-updated = "2026-10-23T02:31:22Z"
+updated = "2026-10-23T02:49:07Z"
 scope = ["crates/grimble-lints/src/testq/**", "crates/grimble-lints/src/testq.rs", "crates/grimble-lints/tests/**", "crates/grimble-lints/src/lib.rs"]
 
 [[acceptance]]
