@@ -158,6 +158,14 @@
 |---|---|---|---|---|---|---|
 | [DUP001](DUP001.md) | arch-duplicate-code | advisory | manual | Pn | true | A block of code copied three or more times. |
 
+## ERR
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [ERR001](ERR001.md) | empty-error-handler | warn | manual | P- | true | An error handler with an empty body that silently swallows the error. |
+| [ERR002](ERR002.md) | discarded-result | warn | manual | P- | true | The result of a fallible call is bound to `_` and dropped. |
+| [ERR003](ERR003.md) | silent-catch-all | warn | manual | P- | true | A catch-all handler that neither rethrows nor logs the error. |
+
 ## EXC
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

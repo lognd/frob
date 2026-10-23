@@ -65,6 +65,7 @@
 
 pub mod effect;
 pub mod err;
+pub mod err_pass;
 pub mod host;
 pub mod neat;
 pub mod pair_pass;

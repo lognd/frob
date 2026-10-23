@@ -249,6 +249,20 @@ and Python files finds no site, so the Error raise is applied in this
 repository's `grimble.toml` (`[rules.TIME001]` and `[rules.TIME002]`,
 `severity = "error"`).
 
+Implemented (~7YMB3EQ): ERR001 `empty-error-handler`, ERR002
+`discarded-result` and ERR003 `silent-catch-all` ship in `grimble-lints`
+(`err::scan`, the `err_pass` product pass) and run in `grimble check`.
+ERR001 covers Rust, Python, TypeScript and C#; ERR002 is Rust only
+(`let _ = call()`); ERR003 covers Python, TypeScript and C#. A Certain
+site is a Warn; an ERR002 site whose callee fallibility is not readable
+in the file is Unresolved (fidelity), never a guessed Warn. Languages
+the scan does not read (JavaScript, TSX) are not judged, and a walk with
+no qualifying file makes the rule not applicable. Each rule has a page
+(`crates/grimble-lints/src/rules/err00N.md`) with fire and clean cases
+(and an unresolved case for ERR002) and appears in the generated rules
+index. They ship at Warn (`since = "0.532.0"`) under the new-rule
+ramp-in (section 6).
+
 Implemented (~G59GJ01): PAIR001 `acquire-without-release` ships in
 `grimble-lints` (`effect::scan`, the `pair_pass` product pass) for React
 effects in TypeScript, TSX, JavaScript and JSX: a `useEffect`,
