@@ -1204,6 +1204,7 @@ dependencies = [
  "gob-trust",
  "gob-walk",
  "grimble",
+ "grimble-ci",
  "insta",
  "jsonschema",
  "schemars",
