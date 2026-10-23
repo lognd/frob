@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a project initialised with the default crunk preset, when crunk check runs, then CRAFT008 reports nothing", "Given the default preset, when its roles are listed, then danger, warning and success roles are declared"]
+moved = []
+at = "2026-10-23T02:53:04Z"
+actor = "lognd"
+rev = 1
