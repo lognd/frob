@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T06:31:02Z"
+digest = "23907faa8543ffe7b5fc5a5af009591d23a70deaa3a0de39f10b7b09832c5294"
+exit_code = 0
+head = "53420114a1df9c547de3ca31c6558e4089b256ef"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d123a0a4-bf34-435c-b6f4-1c539fbbc4bf with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.010s] crunk-ingest::scene_docs discovers_and_parses_scene_html_files_recursively_in_path_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-ingest --test scene_docs discovers_and_parses_scene_html_files_recursively_in_path_order"
+size = 575
+status = "measured"
+test_count = 1
+tests_digest = "4cb3a8d2ebf8aedfa67bcb2da400a49a760d92b56d3b2a18562258bf4a4e7508"
+at = "2026-10-23T06:31:02Z"
+actor = "lognd"
+rev = 1
