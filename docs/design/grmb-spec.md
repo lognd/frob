@@ -1598,10 +1598,9 @@ Why the rules accept it:
   reasoning ("a CLI never serves") is about this node, not about how an
   atom applies to a kind of code. A template excuse (4.7) is the right
   tool only for the latter, for example generated stubs.
-- `grimble check` reports zero Errors and MDL005 Warn for the two
-  distinct selectors that name crates not yet created
-  (`crates/grimble-*/**`, written in two clauses and reported once with both
-  sites, and `crates/grimble-model/src/**`); these are warnings by design and
+- `grimble check` reports zero Errors and MDL005 Warn for the three
+  selectors that name crates not yet created (`crates/grimble-*/**` twice
+  and `crates/grimble-model/src/**`); these are warnings by design and
   disappear when G08 creates the crates. SYS004 is suppressed for them.
 - Capability atoms `fs.read`, `fs.write`, `exec`, `net.listen` and
   `net.connect` are registry atoms (grimble-model.md 9.6).

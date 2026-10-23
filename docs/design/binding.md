@@ -396,11 +396,6 @@ of B and the findings of 2.1-2.4.
    node of B, unless the endpoint is an `external` node that owns no code.
    Otherwise SYS003 kind `end-owner` (the model contradicts itself about
    who owns the code a flow end names). May owners give no finding.
-   One clause that reaches several wrong-owner identities reports once, not
-   once per identity: a single identity keeps the per-identity message; two or
-   more give one finding per (flow, role) naming the clause, the count, the
-   owners and a sample of at most three identities (`+N more` beyond that).
-   The per-identity detail stays in the `bindings` rows of `check --json`.
 6. IDEMPOTENCE AND ORDER. The result does not depend on file order, on the
    order of clauses, or on which file declared what (grmb-spec 3.3). B is
    a set; ties are symmetric.
