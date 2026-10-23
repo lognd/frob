@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T19:03:08Z"
-updated = "2026-10-23T21:52:36Z"
+updated = "2026-10-23T21:57:32Z"
 labels = ["docs"]
-scope = ["crates/frob-obligations/**", "crates/gob-text/**", "changelog.d/**"]
+scope = ["crates/frob-obligations/**", "crates/gob-text/**", "changelog.d/**", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "Given a crate comment or doc citing 'tickets.md section 6' where tickets.md has no section 6, when frob check runs, then a finding names the citation and the target; citations resolved through docs/MOVED.toml after consolidation are followed, not reported"
