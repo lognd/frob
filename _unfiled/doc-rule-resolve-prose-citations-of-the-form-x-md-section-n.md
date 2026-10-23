@@ -2,7 +2,8 @@
 id = "01M4H0RE1Q9A1M47ZT7Q1ZG43K"
 title = "DOC rule: resolve prose citations of the form 'x.md section N' and 'x.md#anchor' in docs, crates and notes; a citation to a missing file, section or anchor is a finding"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
