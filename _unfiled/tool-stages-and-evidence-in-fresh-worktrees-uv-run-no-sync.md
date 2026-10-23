@@ -2,7 +2,8 @@
 id = "01M4GKDSGA7ZSF99T7M5S319B4"
 title = "Tool stages and evidence in fresh worktrees: uv run --no-sync fails with no .venv, vitest provider lacks node_modules/.bin on PATH, E-ATTEST-NOT-HUMAN fallback unclear"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
