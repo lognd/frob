@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a Unity project whose input settings trip UNITY301, when grimble check runs, then UNITY301 is reported through a registered rule with a docs page", "Given a Unity project whose physics settings trip UNITY302, when grimble check runs, then UNITY302 is reported through a registered rule with a docs page"]
+moved = []
+at = "2026-10-23T01:39:37Z"
+actor = "lognd"
+rev = 1
