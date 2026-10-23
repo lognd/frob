@@ -8,8 +8,12 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:32:37Z"
-updated = "2026-10-23T03:45:20Z"
+updated = "2026-10-23T03:46:51Z"
 scope = ["crates/frob-check/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M5KDWHPF5YTVP64PYCXX0FRT"
 
 [[acceptance]]
 text = "Given the workspace, when CI003 is looked up, then exactly one declaration owns it and the other reference is removed or delegates"
