@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-23T08:27:51Z"
+updated = "2026-10-23T08:30:07Z"
 scope = ["crates/grimble-ci/**", "docs/reference/rules/**", "docs/schemas/**", "docs/design/cicd.md", "Cargo.lock"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "CI016 (trust from protected ref) is a native rule with fire, no-fire and unresolved tests"
-bound = false
+bound = true
 +++
 
 Deferred from ~8886VJ4: the actionlint/zizmor-delegated rules CI013-CI015 and native CI016.
