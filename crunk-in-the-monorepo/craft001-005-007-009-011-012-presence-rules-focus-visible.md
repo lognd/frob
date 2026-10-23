@@ -8,8 +8,8 @@ points = 8
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:08Z"
-updated = "2026-10-23T05:34:21Z"
-scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk-check/**", "Cargo.lock"]
+updated = "2026-10-23T05:51:50Z"
+scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk-check/**", "Cargo.lock", "docs/crunk/rules/**"]
 
 [[acceptance]]
 text = "each of CRAFT001 CRAFT002 CRAFT003 CRAFT004 CRAFT005 CRAFT007 CRAFT009 CRAFT011 CRAFT012 is declared and fires on a fixture that lacks the presence it checks"
