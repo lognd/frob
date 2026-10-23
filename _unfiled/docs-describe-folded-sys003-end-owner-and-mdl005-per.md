@@ -2,12 +2,12 @@
 id = "01M5MRKJQ8JA1EBR70QJ3C9H73"
 title = "Docs: describe folded SYS003 end-owner and MDL005 per-selector findings in binding.md and grmb-spec.md"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T16:13:20Z"
-updated = "2026-10-23T16:51:07Z"
+updated = "2026-10-23T16:51:09Z"
 scope = ["docs/design/binding.md", "docs/design/grmb-spec.md"]
 
 [[acceptance]]
