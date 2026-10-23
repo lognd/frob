@@ -3,6 +3,7 @@
 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
 // frob:ticket 01M4GYBZZB9Z4QPMW451DC0JFG
 
+use std::fmt::Write as _;
 use std::path::Path;
 use std::process::Command;
 
@@ -128,9 +129,7 @@ fn blanket_model() -> String {
     );
     m.push_str("node tools : trusted {\n");
     for atom in grimble_bind::grants::leaf_atoms() {
-        m.push_str(&format!(
-            "  may {atom} at \"lib/**\" because=\"tooling\";\n"
-        ));
+        writeln!(m, "  may {atom} at \"lib/**\" because=\"tooling\";").unwrap();
     }
     m.push_str("}\nnode loose : trusted {\n  kind component;\n}\nnode outside : trusted {\n  kind external;\n}\n");
     m
