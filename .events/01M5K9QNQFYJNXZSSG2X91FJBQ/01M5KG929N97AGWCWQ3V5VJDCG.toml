@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T04:28:32Z"
+digest = "60ebb34151be7ec6021aa60056a356a4a0a620bbed180887da08c5406c80e5e5"
+exit_code = 0
+head = "4fcb063d1ddf01a5ee130f4e62fb53730aa985ad"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a65e081a-c87c-4194-abd4-19ff614d6120 with nextest profile: default
+    Starting 1 test across 1 binary (21 tests skipped)
+        PASS [   0.014s] grimble-lints::testq deterministic_ts_js_and_csharp_tests_stay_quiet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test testq deterministic_ts_js_and_csharp_tests_stay_quiet"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "21fd7aaf12ff201bb4b44d9417bd6c805a098ddf69cad201c263b429965a1e6b"
+at = "2026-10-23T04:28:32Z"
+actor = "lognd"
+rev = 1
