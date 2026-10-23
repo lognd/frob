@@ -8,8 +8,8 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-23T07:45:20Z"
-scope = ["crates/grimble-ci/**", "crates/grimble-arch/**", "crates/grimble-check/**", "Cargo.lock"]
+updated = "2026-10-23T07:45:50Z"
+scope = ["crates/grimble-ci/**", "crates/grimble-arch/**", "crates/grimble-check/**", "Cargo.lock", "crates/grimble-verdict/**"]
 
 [[acceptance]]
 text = "grimble-ci and grimble-arch share one verdict/finding type instead of CiFinding aliasing ArchFinding, with no layering violation"
