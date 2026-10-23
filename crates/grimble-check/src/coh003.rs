@@ -6,10 +6,11 @@
 //! a callee named in [`Coh003Options::layers`] (filled from the grimble model or module depth)
 //! sits on that layer, a primitive callee or an index/slice expression sits on
 //! [`Coh003Options::primitive_layer`], trivial calls (logging) do not count. P+: the rule fires
-//! only when two placed callees are provably further apart than the spread. A callee on no layer
+//! only when two placed callees are provably further apart than the spread. A repo-defined callee on no layer
 //! leaves the verdict Unresolved with those callees named, never a silent pass.
 
 // frob:ticket 01M4CXSSGYVE2QQ7ACW7T5Y51S
+// frob:ticket 01M5M34XTDZEZ08TAA78872RRP
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -39,6 +40,9 @@ pub struct Coh003Options {
     pub primitive_calls: Vec<String>,
     /// Callee names that are trivial (logging, metrics, asserts); never placed on a layer.
     pub trivial: Vec<String>,
+    /// Every function name a walked file defines; `None` means unknown, so every unplaced callee counts.
+    /// When set, a callee outside it is external (a library call) and is neither placed nor Unresolved.
+    pub defined: Option<BTreeSet<String>>,
 }
 
 impl Default for Coh003Options {
@@ -75,6 +79,7 @@ impl Default for Coh003Options {
             .map(str::to_owned)
             .to_vec(),
             trivial: CohOptions::default().trivial,
+            defined: None,
         }
     }
 }
@@ -178,6 +183,9 @@ pub fn coh003(term: &Term, lang: &str, unit: NodeId, opts: &Coh003Options) -> Co
                 callee,
                 layer,
             }),
+            None if opts.defined.as_ref().is_some_and(|d| !d.contains(&callee)) => {
+                trace!(%callee, "coh003 external callee excluded");
+            }
             None => {
                 unknown.insert(callee);
             }

@@ -16,6 +16,7 @@
 
 // frob:ticket 01M5HJDX1Q27XGZ77ACWXQ03KP
 // frob:ticket 01M5M1TVWKJPZX3BMF736VJAHT
+// frob:ticket 01M5M34XTDZEZ08TAA78872RRP
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -290,5 +291,10 @@ pub fn callee_layers(
 pub fn coh003_options(model: &ModelLayers, defs: &[Definitions]) -> Coh003Options {
     let mut opts = Coh003Options::default();
     opts.layers = callee_layers(model, defs, opts.primitive_layer).layers;
+    opts.defined = Some(
+        defs.iter()
+            .flat_map(|d| d.functions.iter().cloned())
+            .collect(),
+    );
     opts
 }

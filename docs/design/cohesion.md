@@ -26,8 +26,10 @@ yet (COH001 is not a registered rule). COH003 is registered and runs in the same
 (`coh_pass::analyze`): the pass first folds every file, collects the functions each defines, asks
 `layers::coh003_options` for the callee layers (grimble model first, module depth otherwise),
 then judges each unit. A repo where no layer source places a callee (no layered model node and
-every file at one directory depth) reports one Unresolved COH003 per file with unplaced
-callees, never Clean. The report cache key carries a `layers-v1` tag, the COH002 vocabularies
+every file at one directory depth) reports one repo-level Unresolved COH003 note naming the
+unplaced project callees (never one per file), never Clean. Callees that no walked file defines
+(`console.log`, library calls) are external: they are never placed and never Unresolved. The
+report cache key carries a `layers-v2` tag, the COH002 vocabularies
 and `max_level_spread`, so a change to any of them (or to a `.grmb` file, which is part of the
 walk digest) recomputes the report. A unit carrying a `grimble:core` or `grimble:shell`
 directive on its function is judged against that role (COH002 reads it from the
@@ -146,8 +148,9 @@ and the two are never mixed, because their scales are not comparable:
    depth says nothing and nothing is placed.
 
 A callee is mapped by its last path segment to the layer of the files
-defining it; a name defined on several different layers, or in no walked
-file, is left out and COH003 reports it Unresolved, never Clean.
+defining it. A name defined in no walked file is external (a library call)
+and is ignored; a name defined on several different layers, or in a file
+no layer places, is left out and COH003 reports it Unresolved, never Clean.
 
 ## 2. Type precision and gradual typing (D119)
 

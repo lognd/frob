@@ -7,6 +7,9 @@
 
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
 // frob:ticket 01M5M1TVT09K4YPK17S62Y1A18
+// frob:ticket 01M5M34XTDZEZ08TAA78872RRP
+
+use std::fmt::Write as _;
 
 use gob_ir::{NodeId, Operator, Universal};
 use gob_languages::Language;
@@ -214,7 +217,14 @@ fn unplaced_message(unknown: &[String], layers_known: bool) -> String {
 }
 
 /// Judge every function of one file with COH003 under `opts` and push the findings.
-fn judge_coh003(f: &PathFile<'_>, folded: &Folded, opts: &Coh003Options, report: &mut PathReport) {
+///
+/// Returns the sorted, deduplicated callee names on no layer; the caller decides how to report them.
+fn judge_coh003(
+    f: &PathFile<'_>,
+    folded: &Folded,
+    opts: &Coh003Options,
+    report: &mut PathReport,
+) -> Vec<String> {
     let mut unknown: Vec<String> = Vec::new();
     for unit in function_units(folded) {
         let name = folded.term.node(unit).name().unwrap_or("<anonymous>");
@@ -249,19 +259,51 @@ fn judge_coh003(f: &PathFile<'_>, folded: &Folded, opts: &Coh003Options, report:
             Coh003::Clean => {}
         }
     }
-    if !unknown.is_empty() {
-        unknown.sort();
-        unknown.dedup();
-        // One Unresolved verdict per file keeps an unplaced vocabulary from flooding.
-        report.findings.push(PathFinding {
-            rule: COH003,
-            severity: Severity::Unresolved,
-            file: f.path.to_owned(),
-            range: (0, 0),
-            message: unplaced_message(&unknown, !opts.layers.is_empty()),
-            reason: Some(UnresolvedReason::EdgeUnknown),
-            anchor: format!("{}:unresolved:{COH003}", f.path),
-        });
+    unknown.sort();
+    unknown.dedup();
+    unknown
+}
+
+/// Report the unplaced callees: per file when layers exist, else one repo-level note.
+///
+/// With no layer source at all (a single-depth repo, a model placing nothing) every file would
+/// carry the same Unresolved, so the whole run gets one note anchored on the first affected file.
+fn report_unplaced(unplaced: &[(String, Vec<String>)], layered: bool, report: &mut PathReport) {
+    let Some((first, _)) = unplaced.first() else {
+        return;
+    };
+    if layered {
+        for (file, names) in unplaced {
+            report.findings.push(unresolved_coh003(
+                file,
+                unplaced_message(names, true),
+                format!("{file}:unresolved:{COH003}"),
+            ));
+        }
+        return;
+    }
+    let mut names: Vec<String> = unplaced.iter().flat_map(|(_, n)| n.clone()).collect();
+    names.sort();
+    names.dedup();
+    let mut message = unplaced_message(&names, false);
+    let _ = write!(message, " [{} files affected]", unplaced.len());
+    report.findings.push(unresolved_coh003(
+        first,
+        message,
+        format!("repo:unresolved:{COH003}"),
+    ));
+}
+
+/// An Unresolved COH003 finding on `file`.
+fn unresolved_coh003(file: &str, message: String, anchor: String) -> PathFinding {
+    PathFinding {
+        rule: COH003,
+        severity: Severity::Unresolved,
+        file: file.to_owned(),
+        range: (0, 0),
+        message,
+        reason: Some(UnresolvedReason::EdgeUnknown),
+        anchor,
     }
 }
 
@@ -276,10 +318,15 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
         .collect();
     let mut coh003_opts = coh003_options(&opts.model, &defs);
     coh003_opts.max_level_spread = opts.max_level_spread;
+    let mut unplaced: Vec<(String, Vec<String>)> = Vec::new();
     for p in &parsed {
         judge_coh002(p.file, &p.folded, &opts.coh002, &mut report);
-        judge_coh003(p.file, &p.folded, &coh003_opts, &mut report);
+        let names = judge_coh003(p.file, &p.folded, &coh003_opts, &mut report);
+        if !names.is_empty() {
+            unplaced.push((p.file.path.to_owned(), names));
+        }
     }
+    report_unplaced(&unplaced, !coh003_opts.layers.is_empty(), &mut report);
     if examined == 0 {
         for id in [COH002, COH003] {
             report.not_applicable.insert(

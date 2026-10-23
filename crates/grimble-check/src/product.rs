@@ -398,7 +398,7 @@ fn coh_report(
 fn coh_kind(opts: &CohPassOptions) -> String {
     // The version tag invalidates reports cached before COH003 joined the pass; the model's layers
     // are a function of the walk digest, which already keys the artifact.
-    let mut text = String::from("layers-v1\u{1f}");
+    let mut text = String::from("layers-v2\u{1f}");
     text.push_str(&opts.coh002.effect_calls.join("\n"));
     text.push('\u{1f}');
     text.push_str(&opts.coh002.trivial.join("\n"));
