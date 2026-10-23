@@ -401,8 +401,10 @@ tune performance (thread counts, cache sizes) are not materialized.
 - `frob serve` (MCP via rmcp, HTTP for the GUI in gui.md) exposes the
   same handlers with a warm db; the tool list is generated from the
   same `#[derive(Command)]` metadata so CLI and MCP cannot drift.
-  grimble exposes its own `serve --mcp` (crate `grimble-serve`); crunk
-  has no MCP server.
+  grimble exposes its own `serve --mcp` (crate `grimble-serve`: read-only
+  `check` and `graph`, token in `params._meta.token` on every request,
+  announced once on stderr; synchronous stdio until tokio/rmcp are
+  vendored); crunk has no MCP server.
 - Exit code 3 refusals carry a machine-readable `retry_after_ms` hint
   when retrying later can succeed (cli.md section 2).
 - The v1 hook fleet (eight python processes per Bash call) is replaced

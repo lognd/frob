@@ -1,0 +1,15 @@
+//! `grimble serve --mcp` is taken by the token-gated server, not the tokenless generic verb.
+
+// frob:ticket 01M3Z714XYJEHXHNWXKVXAYFQJ
+
+use grimble::serve_mcp::requested;
+
+// frob:tests crates/grimble/src/serve_mcp.rs::requested
+#[test]
+fn only_serve_with_mcp_is_taken() {
+    assert!(requested(&["serve", "--mcp"]));
+    assert!(requested(&["serve", "--json", "--mcp"]));
+    assert!(!requested(&["serve"]));
+    assert!(!requested(&["check", "--mcp"]));
+    assert!(!requested::<&str>(&[]));
+}

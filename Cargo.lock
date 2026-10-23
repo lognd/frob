@@ -2941,6 +2941,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "gob-serve"
+version = "0.532.0"
+dependencies = [
+ "getrandom 0.3.4",
+ "serde_json",
+ "subtle",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "gob-symbols"
 version = "0.532.0"
 dependencies = [
@@ -3050,6 +3061,7 @@ dependencies = [
  "grimble-bind",
  "grimble-check",
  "grimble-model",
+ "grimble-serve",
  "grimble-vet",
  "jsonschema",
  "schemars",
@@ -3190,6 +3202,17 @@ dependencies = [
  "inventory",
  "proptest",
  "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "grimble-serve"
+version = "0.532.0"
+dependencies = [
+ "gob-serve",
+ "grimble-check",
+ "serde_json",
+ "tempfile",
  "tracing",
 ]
 

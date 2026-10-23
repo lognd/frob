@@ -18,6 +18,7 @@ pub mod explain_cmd;
 pub mod fmt_cmd;
 pub mod init;
 pub mod rule_cmd;
+pub mod serve_mcp;
 pub mod shrink_cmd;
 pub mod vet_cmd;
 mod workspace;

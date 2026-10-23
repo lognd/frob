@@ -1,0 +1,21 @@
+[package]
+name = "grimble-serve"
+version.workspace = true
+description = "grimble's read-only MCP tools (check, graph) on gob-serve, behind a per-launch token."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[dependencies]
+gob-serve = { version = "0.532.0", path = "../gob-serve" }
+grimble-check = { version = "0.532.0", path = "../grimble-check" }
+serde_json = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true

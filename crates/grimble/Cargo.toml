@@ -39,6 +39,7 @@ gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 grimble-bind = { version = "0.532.0", path = "../grimble-bind" }
 grimble-check = { version = "0.532.0", path = "../grimble-check" }
+grimble-serve = { version = "0.532.0", path = "../grimble-serve" }
 grimble-model = { version = "0.532.0", path = "../grimble-model" }
 grimble-vet = { version = "0.532.0", path = "../grimble-vet" }
 schemars = "1"

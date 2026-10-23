@@ -71,7 +71,7 @@ Every capability named in the other design files and the v1 inventories.
 | gob-lock | lock file format (typed entries, `digest_scheme`), ack mechanics and the ack planner, one file per product (`frob.lock`, `grimble.lock`), the shared `ack` implementation | frob acks, grimble drift acks |
 | gob-cli | clap conventions: global flags, `--json/--text/--schema`, did-you-mean, completions, help generation, `schema` | identical surface in three binaries |
 | gob-log | tracing subscriber setup, telemetry record, redaction, `--timing` span tree | one observability story |
-| gob-serve | MCP and HTTP transport plumbing on tokio (rmcp setup, JSON envelope over HTTP, SSE, token and Origin checks) | tools and routes stay per product |
+| gob-serve | MCP transport plumbing: per-launch token (D29) checked on every request, newline-delimited JSON-RPC over stdio, read-only tool annotations. Today synchronous with no tokio or rmcp (neither is vendored yet); the HTTP, SSE and Origin side lands with the GUI server on tokio | tools and routes stay per product |
 | gob-mdtest | markdown corpus harness over datatest-stable | rule tests in every product |
 | gob-check | the product-neutral check pipeline: tool-output parsers (`tool_parse.rs`: SARIF, cargo, ruff, ESLint, typos, formatter check mode, stylelint, zizmor, actionlint), snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble-model.md 9.7) | `frob check` and `grimble check` run one pipeline |
 | gob-plan | the GRL lexer, parser and printer, catalog checks, the plan format (IR, codec, validator), the plan executor and codegen (plugins.md section 10, grl-spec.md) | frob, grimble and crunk run one rule language |
@@ -118,7 +118,7 @@ Every grimble crate is Milestone 2 or later (D36).
 | grimble-vet | dependency vetting: lockfile allowlist, advisories (OSV, RustSec), typosquat, install-script and capability scan of dependencies, delta-only mode, `vet --hook` pre-install mode that `frob hook pre-tool` invokes |
 | grimble-packs | data packs: threat obligations, reliability markers, compliance views, PII categories; pack loader and schema |
 | grimble-check | grimble's own `check`, `status`, `graph`, `shrink`, `init`, `packs`, `explore`; sync, no tokio |
-| grimble-serve | MCP tools for design queries on gob-serve (tokio stays out of grimble-check) |
+| grimble-serve | MCP tools for design queries on gob-serve: read-only `check` and `graph` (`explore` follows once grimble has it); `launch` mints the token and announces it once on stderr (grimble-check stays free of the transport) |
 | grimble (bin) | thin |
 
 vet lives here because it is the capability model applied to
@@ -376,16 +376,17 @@ fails the test. Every workspace crate must appear here exactly once.
 | 4 | model | gob-cache, gob-ir |
 | 5 | rules | gob-pattern, gob-rules, gob-symbols |
 | 6 | config | crunk-scene, gob-config, gob-diagnostics, gob-fix, gob-frameworks, gob-plan |
-| 7 | pipeline | crunk-layout, gob-check, gob-cli, gob-directives, gob-mdtest, gob-packs, gob-testsupport |
+| 7 | pipeline | crunk-layout, gob-check, gob-cli, gob-directives, gob-mdtest, gob-packs, gob-serve, gob-testsupport |
 | 8 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, gob-product, grimble-capabilities, grimble-lints, grimble-model, grimble-verdict, grimble-vet |
 | 9 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-mirror, frob-pm, grimble-bind |
 | 10 | product mid | crunk-query, crunk-rules, frob-metrics, frob-release, frob-worktree, grimble-arch |
 | 11 | product upper | crunk-check, frob-evidence, frob-gh, grimble-ci |
 | 12 | product top | crunk-fix, frob-tests, grimble-check |
-| 13 | product apex | crunk, grimble |
-| 14 | obligations | frob-obligations |
-| 15 | check | frob-check |
-| 16 | land | frob-land |
-| 17 | binary | frob-cli |
-| 18 | tool | gob-dev |
-| 19 | docgen | frob-docgen |
+| 13 | product serve | grimble-serve |
+| 14 | product apex | crunk, grimble |
+| 15 | obligations | frob-obligations |
+| 16 | check | frob-check |
+| 17 | land | frob-land |
+| 18 | binary | frob-cli |
+| 19 | tool | gob-dev |
+| 20 | docgen | frob-docgen |
