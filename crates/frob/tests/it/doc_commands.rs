@@ -254,3 +254,78 @@ fn every_readme_and_guide_link_resolves() {
     }
     assert!(broken.is_empty(), "broken links:\n{}", broken.join("\n"));
 }
+
+/// The text of the v1 upgrade guide.
+fn upgrade_guide() -> String {
+    std::fs::read_to_string(repo_root().join("docs/guides/upgrade-from-v1.md"))
+        .expect("upgrade guide")
+}
+
+/// The upgrade guide carries a merge recipe that takes main's `tickets/` tree and says what `-X no-renames` does.
+// frob:ticket 01M4GK56B7ADTTC87X31CR03NE
+#[test]
+fn upgrade_guide_has_the_v1_branch_merge_recipe() {
+    let text = upgrade_guide();
+    for needle in [
+        "## Merge v2 main into a v1 branch",
+        "git merge --no-commit --no-ff origin/main",
+        "git checkout origin/main -- tickets",
+        "git diff --quiet origin/main HEAD -- tickets",
+        "-X no-renames",
+        "rename detection",
+        "No ticket data is lost",
+    ] {
+        assert!(text.contains(needle), "guide lacks {needle}");
+    }
+}
+
+/// The upgrade guide says 0.532.0 is on `PyPI` and no longer calls it unpublished.
+// frob:ticket 01M4GK56B7ADTTC87X31CR03NE
+#[test]
+fn upgrade_guide_says_0_532_0_is_published() {
+    let text = upgrade_guide();
+    assert!(
+        text.contains("0.532.0 is on PyPI"),
+        "states it is published"
+    );
+    for stale in [
+        "not published yet",
+        "is published,",
+        "once 0.532.0 is published",
+    ] {
+        assert!(!text.contains(stale), "stale wording: {stale}");
+    }
+}
+
+/// The upgrade guide maps every v1 `frob.toml` table and the directive rewrites.
+// frob:ticket 01M4GK56B7ADTTC87X31CR03NE
+#[test]
+fn upgrade_guide_maps_every_v1_key_and_directive() {
+    let text = upgrade_guide();
+    for needle in [
+        "## Migrate frob.toml",
+        "`check_base` | `[check] base`",
+        "`min_frob_version` | removed",
+        "`[dup]`",
+        "`[arch]`",
+        "`[[docblocks.commands]]`",
+        "`[[refs.entrypoint]]`",
+        "`[gates.severity]`",
+        "`[gates.ratchet]`",
+        "`[testing]`",
+        "`[[test.runner]]`",
+        "`[[native]]`",
+        "`[profile]`",
+        "`[tickets] default_milestone`",
+        "`[strata]`",
+        "`[vet]`",
+        "`[clean]`",
+        "`[fuzz] enforce`",
+        "`[release] dev_version_bump`",
+        "frob:accept RULE because=",
+        "frob:defer RULE because=",
+        "The `frob:tests` direction flips",
+    ] {
+        assert!(text.contains(needle), "guide lacks {needle}");
+    }
+}

@@ -5,6 +5,8 @@ Owner: frob
 Decisions: none
 Audience: contributor
 
+Merging v2 `main` into a branch that still has the v1 `tickets/` tree needs a recipe, not a plain merge; see [Merge v2 main into a v1 branch](../guides/upgrade-from-v1.md#merge-v2-main-into-a-v1-branch).
+
 Written by `cargo run -p frob-evidence --example import_v1` (T-0025). Every v1 ticket became a v2 ULID ticket whose `aliases` hold the v1 id, so `frob ticket show T-0003` resolves. The v1 ledger itself stays in git history before the import commit.
 
 ## Identity and time

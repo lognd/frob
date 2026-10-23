@@ -68,6 +68,7 @@ pub mod incompleteness_live;
 mod options;
 mod packages;
 mod pipeline;
+mod prereq;
 mod product;
 mod product_rules;
 mod repo;

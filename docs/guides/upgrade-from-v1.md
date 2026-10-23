@@ -9,7 +9,8 @@ How-to guide (Diataxis: task). Read this if you use frob 0.531.0 or earlier,
 or if you have never seen v2 and want to know what the 0.532.0 upgrade does.
 
 frob 0.532.0 is the v2 rewrite, written in Rust. It replaces v1 on upgrade:
-installing or upgrading the `frob` package after 0.531.0 gives you v2. The
+installing or upgrading the `frob` package after 0.531.0 gives you v2.
+0.532.0 is on PyPI. The
 release notes lead the 0.532.0 section of [CHANGELOG.md](../../CHANGELOG.md);
 v1's history is in [CHANGELOG-v1.md](../../CHANGELOG-v1.md).
 
@@ -32,8 +33,8 @@ Notes:
   then reports "Nothing to upgrade" and hints that `frob` is pinned. To move to
   v2 later, run `uv tool install frob@latest`.
 - With pip, the pin only applies to that command. A later `pip install -U frob`
-  upgrades to v2 once 0.532.0 is published, so keep the pin in your
-  requirements file or constraints file.
+  upgrades to v2 (0.532.0 is on PyPI), so keep the pin in your requirements
+  file or constraints file.
 - Pin it in CI too, or a fresh CI image installs v2.
 
 ## What changed
@@ -128,11 +129,10 @@ did the following:
 It does not create `tickets/` or `frob.lock`. `frob ticket new --title T`
 creates `tickets/` and commits the new ticket.
 
-An existing v1 `frob.toml` is not read as is. In a test, v2 refused a v1
-`frob.toml` that had a key it does not know (`default_milestone` in
-`[tickets]`) with `E-CONFIG`, and `frob init` and `frob config show` failed the
-same way. Move the v1 file aside, run `frob init`, then copy over the settings
-you want, using `frob config show` to see the knobs.
+An existing v1 `frob.toml` is not read as is. v2 refuses an unknown key
+inside a table it knows with `E-CONFIG`, and `frob init` and `frob config show`
+fail the same way. Move the v1 file aside, run `frob init`, then copy over the
+settings you want using the mapping in [Migrate frob.toml](#migrate-frobtoml).
 
 ## Move your tickets
 
@@ -191,13 +191,139 @@ I ran the converter on this project's own v1 ledger (1243 tickets), put the
 output in a fresh repository after `frob init`, and `frob ticket doctor`
 reported 1243 tickets and no issues.
 
+## Merge v2 main into a v1 branch
+
+Use this when a long-lived branch still carries the v1 `tickets/` tree and
+`main` has the converted v2 tree. A plain merge is wrong here, and not only
+noisy. In the project that hit this, about 600 ticket files conflicted,
+because git's rename detection paired a v1 `done-report.md` with a v2
+`events/*.toml` file of similar text. Where git does not stop, it can merge a
+v1 edit into an unrelated v2 event file without a conflict marker. Do not
+resolve those pairs by hand.
+
+The rule is that `main`'s `tickets/` tree wins in full. Run this on the v1
+branch:
+
+```sh
+git fetch origin
+git merge --no-commit --no-ff origin/main   # conflicts in tickets/ are expected
+git rm -r -q -f --ignore-unmatch tickets
+git checkout origin/main -- tickets
+git diff --quiet origin/main HEAD -- tickets && echo "tickets/ matches main"
+git commit
+```
+
+Resolve any conflicts outside `tickets/` as usual before the commit. The
+`git diff --quiet` line prints the message only when `tickets/` is identical to
+`main`'s. Afterwards run `frob ticket doctor`.
+
+Notes:
+
+- `git merge -X no-renames origin/main` stops the wrong pairing, but it does
+  not make `tickets/` conflict-free. A v1 ticket file that the branch changed
+  and `main` deleted becomes a modify/delete conflict. Use it if you want git to
+  merge the code unattended, then run the `git rm` and `git checkout` lines
+  above for `tickets/`. To make it the default for one repository, run
+  `git config merge.renames false`.
+- No ticket data is lost. The v1 tree stays in the history of the branch, and
+  `main` already holds every ticket it imported.
+- Tickets created on the v1 branch after the import do not exist in `main`.
+  Take them from the branch before merging: run the converter on the v1 tree
+  (`git show` of the branch or a checkout of it) as described in [Move your
+  tickets](#move-your-tickets), and add the result to `main`. Taking `main`'s
+  tree drops them from the working tree only.
+- The `merge=frob-ledger` driver from `frob init` applies to v2 ticket files
+  only. It does not help with the v1 files.
+- The importer report, [the v1 import report](../migration/v1-import.md),
+  links back to this recipe.
+
+## Migrate frob.toml
+
+There is no migrate command. The owner decision of 2026-10-09 is that you move
+`frob.toml` by hand with this table. Start from the file `frob init` wrote.
+v2 ignores a whole top-level table it has no schema for, and refuses an unknown
+key in a table it has (as `default_milestone` in `[tickets]` and
+`dev_version_bump` in `[release]`). Delete a removed key, or the run stops with
+`E-CONFIG`.
+
+Every v1 key is below. "Removed" means v2 has no knob and you delete the key.
+
+| v1 key | v2 key | Why |
+|---|---|---|
+| `min_frob_version` | removed | v2 has no minimum-version pin in `frob.toml`. |
+| `check_base` | `[check] base` | Same meaning: the ref a `--ticket` run diffs against. |
+| `[dup]` `enforce`, `threshold`, `region_kernel`, `native_rungs` | removed | The `DUP` rules run with fixed settings; none is a knob. |
+| `[graph]` `exclude` | `[check] exclude` | Globs of paths no rule inspects. |
+| `[arch]` `max_function_lines`, `max_class_methods`, `max_local_imports`, `max_nesting_depth`, `max_file_lines`, `lcom4_min_methods`, `lcom4_min_field_using_methods`, `god_module_min_exports`, `god_module_min_clusters`, `mixed_concern_min_decision_points` | removed | v2 does not keep the v1 architecture-metric thresholds; its size rules use `[check] size_cap` only for skipping large files. |
+| `[arch.layering.layers]`, `[arch.layering.allow]` | `[invariants] forbid_imports` | v2 states forbidden imports, each with a `reason`, not allowed layers. Rewrite each disallowed edge as a `forbid_imports` entry. |
+| `[[docblocks.commands]]` `prog`, `parser`, `config`, `forwarded` | removed | The v1 CLI doc-block check has no v2 counterpart; reference pages are generated. |
+| `[[refs.entrypoint]]` `path`, `reason` | removed | v2 has no entry-point list for dead-symbol checks. |
+| `[gates.severity]` | `[packs.severity]` | v2 overrides severity by atom, then rule. The keys are not the same shape, so rewrite them. |
+| `[gates.ratchet]` `rules` | removed | v2 has no ratchet table; `[check] fail_on` sets the failing severity. |
+| `[testing]` coverage floors (`unit_branch_cov`, `module_line_cov`, `system_line_cov`) | `[[coverage.threshold]]` | Minimums per scope, read from an lcov report (`[coverage] report`). |
+| `[testing]` case counts (`min_unit_cases`, `min_integration`) | removed | v2 binds tests to tickets with evidence, not by count. |
+| `[[test.runner]]` `language`, `command`, `all_command`, `cwd`, `collector`, `timeout_s` | `[tests] python`, or `[evidence]` providers | v2 runs tests through evidence providers; `[tests] python` picks the interpreter for pytest. |
+| `[[native]]` `name`, `build_cmd`, `language` | removed | v2 does not build native extensions for you. |
+| `[profile]` `profile`, `override_ratchet` | removed | Profiles and the ratchet are gone. |
+| `[profile]` `backpressure_max_depth`, `backpressure_max_age_s`, `rapid_soft_warn_depth`, `rapid_soft_warn_age_s`, `stale_archive_warn`, `stale_archive_error` | `[pm.wip]` and `[pm.max_age_days]` | Flow limits live in the `[pm]` tables, set per class. |
+| `[tickets] default_milestone` | removed | Refused with `E-CONFIG`. Milestones are tickets of their own; use `frob milestone add`. |
+| `[worktree]` | `[worktree] dir` | Parent directory of ticket worktrees. |
+| `[strata]` `design_dir`, scope and capability maps | removed | The strata model is replaced by `[grimble]` and `[packs]`. |
+| `[vet]`, `[vet.allow]`, `[vet.detectors]` | removed | Vet is not a v2 verb. Use `frob:accept` for a permanent exception. |
+| `[clean]` | `[gc]` | `frob gc` replaces the clean sweep. |
+| `[perf]` sketch store, sampler, redundancy keys | `[perf] budget_ms`, `enforce` | v2 keeps only a time budget for its own rules. |
+| `[fuzz] enforce` | removed | No fuzz gate. |
+| `[sys]`, `[ty] target_platforms` | removed | No counterpart. |
+| `[release] dev_version_bump`, `dev_version_major_ack` | removed | Refused with `E-CONFIG`. See `[release]` in the [config reference](../reference/config.md). |
+| `[*_schema] known_keys` (ten tables) | removed | v1 schema-of-the-schema checks; v2 checks keys itself. |
+
+The v1 table `[project]` and `[tool]` belong to Python packaging, not frob.
+Leave them in `pyproject.toml`. The current knob list is in the
+[config reference](../reference/config.md); run `frob config show` after
+editing.
+
+## Migrate directives by hand
+
+v1 `frob:` directives in your code are not converted. Two rewrites are needed.
+
+`frob:waive` becomes one of two directives, chosen by whether the waiver
+carries a ticket:
+
+| v1 | v2 |
+|---|---|
+| `frob:waive RULE reason="text"` (permanent) | `frob:accept RULE because="text"` |
+| `frob:debt RULE reason="text" ticket="T-0160"` or a waiver whose reason names a ticket | `frob:defer RULE because="text" ticket=<full ULID>` |
+
+Rules:
+
+- `reason=` is renamed `because=`, and it is required in v2.
+- A permanent exception is `frob:accept`. It takes an optional `until=`.
+- A tracked gap is `frob:defer`. `ticket=` is required and must be the full
+  26-character ULID, not `T-0160`. Look the ULID up with
+  `frob ticket show T-0160` after the import, because the v1 id is an alias.
+- The rule id itself may have changed. Check it in the
+  [rule reference](../reference/rules/); a rule v2 does not have means the
+  directive can be deleted.
+- `frob:ticket T-0160` becomes `frob:ticket <full ULID>` the same way.
+
+The `frob:tests` direction flips. In v1 the directive sat on the code symbol
+and its target was a test id (`path::Class.method`). In v2 it sits on the test
+and its target is the symbol it covers (a symref). To migrate, move each line
+from the code to the test it names, and swap the target for the code symbol.
+The optional `kind=` argument keeps its meaning.
+
 ## Not verified
 
-- That `pip install -U frob` moves a pinned-by-command install to v2: 0.532.0
-  is not published yet, so no upgrade was run. The uv behaviour above was run
-  against 0.531.0 only.
+- That `pip install -U frob` moves a pinned-by-command install to v2: no
+  upgrade was run here, although 0.532.0 is on PyPI. The uv behaviour above was
+  run against 0.531.0 only.
 - That `pip install frob==0.531.0` works on your Python: the package metadata
   was read (`>=3.11`) but pip was not run on a supported interpreter.
-- That v2 reads your v1 `frob.lock` or `frob:` directives, and which v1
-  `frob.toml` keys v2 accepts beyond the one that failed.
+- That v2 reads your v1 `frob.lock` or v1 `frob:` directives: it does not
+  convert them, so migrate by hand as above.
+- That each mapped v2 key behaves like its v1 counterpart. The mapping says
+  which v2 key is closest; it was checked against the config reference, and
+  only the unknown-key refusal was run against the release binary.
+- The merge recipe was run on a small test repository, not on a 600-conflict
+  history.
 - That the importer is present at the 0.532.0 tag of the source repository.
