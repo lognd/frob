@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a TypeScript receiver annotated with an interface, when a method is called on it, then the call graph links the call to the interface method declaration", "Given a class extending a base class that defines the method, when called on an annotated receiver of the derived type, then the call links to the inherited method"]
+moved = []
+at = "2026-10-23T00:15:19Z"
+actor = "lognd"
+rev = 1
