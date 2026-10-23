@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T04:25:58Z"
+digest = "b896231019756bdc4d68d7024db8d92c719a2b32a4e3d4d69c8d1fd19fae6212"
+exit_code = 0
+head = "9b68f1561c46d583dc3ec56a3f5beebb0d3df967"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.64s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 84a92546-599b-43f9-8f36-a61711ac2b63 with nextest profile: default
+    Starting 1 test across 1 binary (377 tests skipped)
+        PASS [   0.012s] frob-cli::it verb_table_drift::grimble_ci_table_matches_the_real_verb_tree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 377 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test it verb_table_drift::grimble_ci_table_matches_the_real_verb_tree"
+size = 620
+status = "measured"
+test_count = 1
+tests_digest = "975f2be24d6ceb9923fd3454a563c91114af502345fea153b994068df564b873"
+at = "2026-10-23T04:25:58Z"
+actor = "lognd"
+rev = 1
