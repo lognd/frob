@@ -2,13 +2,13 @@
 id = "01M4FGYNKKP10PVPT90AKKMHBY"
 title = "Finding floods: SYS003 end-owner once per clause, MDL005 once per selector"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:41Z"
-updated = "2026-10-09T05:07:41Z"
+updated = "2026-10-23T15:45:40Z"
 idempotency_key = "logand-gaps-F1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/grimble-check/**", "crates/grimble-model/**", "changelog.d/**"]
