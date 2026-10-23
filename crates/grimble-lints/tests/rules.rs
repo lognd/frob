@@ -143,8 +143,13 @@ impl grimble_lints::host::PathHost for Fixed {
 fn host_binds_and_converts() {
     // frob:tests crates/grimble-lints/src/rules/mod.rs::bind
     // frob:tests crates/grimble-lints/src/host.rs::PathHost.path_subjects_of
+    // frob:tests crates/grimble-lints/src/host.rs::UnityHost.unity_subjects_of
     // frob:tests crates/grimble-lints/src/pass.rs::PathFinding.into_finding
     assert_eq!(grimble_lints::rules::bind::<Fixed>().len(), 8);
+    assert_eq!(
+        grimble_lints::host::UnityHost::unity_subjects_of(&Fixed, "UNITY201"),
+        11
+    );
     assert_eq!(
         grimble_lints::host::PathHost::path_subjects_of(&Fixed, "PATH003"),
         7
