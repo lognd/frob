@@ -598,6 +598,16 @@ impl Workspace<'_> {
             );
             // frob:ticket 01M4DPJJW8D3KXZVTEN5D4WN5G
             seed_caches(&self.primary_root());
+            // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
+            let venv = crate::python_env::ensure_worktree_venv(
+                repo.runner(),
+                &Program::Tool {
+                    name: "uv".to_owned(),
+                },
+                &primary,
+                path,
+            );
+            tracing::debug!(?venv, "worktree python environment");
             tracing::info!(ticket = %id, handle, path = %Shown::of(path), branch, base = %base, aged, "worktree created");
         }
         let (merge, conflicts) = if exists {

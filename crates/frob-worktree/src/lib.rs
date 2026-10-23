@@ -24,6 +24,7 @@ pub mod evict;
 pub mod gc;
 pub mod next;
 pub(crate) mod pathtext;
+pub mod python_env;
 pub mod verbs;
 pub mod wip;
 pub mod work;
