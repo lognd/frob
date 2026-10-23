@@ -1,0 +1,20 @@
++++
+id = "01M1QDTV1HBQD1X3VBA9MJ1ARV"
+title = "spec failures carry the offending detail; documented defaults are real defaults (A-009, A-010)"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-05T00:00:00Z"
+updated = "2026-09-05T00:00:02Z"
+aliases = ["crunk:T-0049"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/spec/models.py", "src/crunk/spec/load.py", "src/crunk/spec/__init__.py", "src/crunk/app/app.py", "tests/unit/test_spec.py", "tests/unit/test_app.py", "tests/integration/test_int_01*.py", "tests/system/test_e2e_07*.py", "tests/system/test_e2e_18_19_schema.py"]
+
+[[acceptance]]
+text = "given an crunk.toml missing a section or with a bad key, when check runs without -v, then stderr names the offender and exits 2; and given the documented minimal crunk.toml, when it loads, then omitted lint/org fields take the documented defaults (E2E-18/19)"
+bound = false
++++
+
+Per r5 spec.md/shell.md: load_spec returns Result[DesignSpec, SpecFailure] where SpecFailure is a frozen {kind: SpecError, detail: str}; every _invalid/read path fills detail with the already-composed message; App logs kind.value plus detail at error level in every _run_*. Optionality: [lint] section optional (all defaults), OrgConfig class_case='kebab'/component_prefix=true/tokens_only_custom_props=true defaults; required set per 02. Update every test comparing danger_err to a bare SpecError.

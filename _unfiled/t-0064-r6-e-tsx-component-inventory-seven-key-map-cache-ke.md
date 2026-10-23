@@ -1,0 +1,36 @@
++++
+id = "01M1QDTV20SQ6SXZ70CRZSBZ0V"
+title = "R6-E: TSX component inventory, seven-key map, cache-key closure, unused utility uses (CR-18 + closures)"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-05T00:00:00Z"
+updated = "2026-09-05T00:00:02Z"
+aliases = ["crunk:T-0064"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/query/**", "src/crunk/report/terminal.py", "src/crunk/report/json_out.py", "src/crunk/app/**", "tests/unit/test_query.py", "tests/unit/test_report.py", "tests/unit/test_app.py", "tests/system/test_e2e_26_tsx_inventory.py", "tests/system/test_e2e_09_map.py", "tests/integration/test_int_07_shell_wiring.py", "tickets/T-0070/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV1WHKSQHWQY5KASC9GH"
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV1X39GRJS23113J5FPH"
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV1YJ6HC5CW905KQDHBH"
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV1ZC490G7YY856GTCNB"
+
+[[acceptance]]
+text = "given the jsx fixture, when query component/find/unused and map run, then the TSX component cards and ranks, unused subtracts utility-mapped tokens, map shows the seven-key jsx group, and the cache key changes when a jsx source or the tailwind config changes (E2E-26, UT-SH-09 cache part)"
+bound = false
++++
+
+Per r6 query.md (TSX components section, UT-QRY-07), report.md (seven-key map, UT-REP-07 map part), shell.md r6 wiring (cache inventory extension -- INV-CACHE-01 obligation -- and unused extra_used set from utilities x tw_theme). App: _styles_cached key covers jsx-matched sources + tailwind config bytes; _run_query wires extra_used.

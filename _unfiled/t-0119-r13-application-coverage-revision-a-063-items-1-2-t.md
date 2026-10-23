@@ -1,0 +1,20 @@
++++
+id = "01M1T07J3QWKR581B9BN8NZMG0"
+title = "r13: application-coverage revision (A-063 items 1+2, TW004/TW005)"
+type = "docs"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-06T00:00:00Z"
+updated = "2026-09-06T00:00:03Z"
+aliases = ["crunk:T-0119"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["docs/design/01-customer-requirements.md", "docs/design/02-specification.md", "docs/design/subsystems/rules.md", "docs/design/subsystems/tokens.md", "docs/design/05-components.md"]
+
+[[acceptance]]
+text = "given the five design docs, when read, then CR-24, TW004/TW005 semantics, catalog rows, and CT/E2E ids are stated and cross-linked"
+bound = true
++++
+
+The adopting project's delta audit found apl check silent on 5500 new lines while a raw Tailwind default color, a bypassed layer scale, and five arbitrary-value escapes went unflagged. r13 adds CR-24 application coverage: TW004 default-palette denylist, TW005 governed-scale exclusivity, TW001 extension to zIndex and size prefixes plus non-px-comparable units in governed families; contrast-usage pairing folds into the observed-pair roadmap item.

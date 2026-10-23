@@ -1,0 +1,20 @@
++++
+id = "01M1QDTV311ETE4PZ0TV78BD4Z"
+title = "r10: SIZE001 and viewport discipline (Logan: width/height tracked; never surprised by mobile)"
+type = "docs"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-05T00:00:00Z"
+updated = "2026-09-05T00:00:03Z"
+aliases = ["crunk:T-0097"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["docs/design/*.md", "docs/design/subsystems/*.md"]
+
+[[acceptance]]
+text = "given the two decisions, when the design tree is read, then SIZE001 and the BP family have full layer-1..4 contracts including the honest boundary statement"
+bound = true
++++
+
+Two customer decisions: width/height ARE judged (as SIZE001 with its own sizes scale, spacing fallback, max-width exempt -- the coordinator's recommendation over widening SPACE001) and viewport discipline becomes design law: declared breakpoints, BP001 (media query uses an undeclared viewport number), BP002 (responsive-variant utility in a base-required family with no unprefixed mobile base -- desktop-only styling with undefined mobile behavior), BP003 (fixed width wider than the smallest declared breakpoint guarantees horizontal overflow on mobile). The static-enforcement boundary is stated honestly: crunk cannot prove mobile correctness, it makes these three surprise classes impossible.

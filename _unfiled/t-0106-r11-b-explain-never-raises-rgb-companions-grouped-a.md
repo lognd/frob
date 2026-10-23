@@ -1,0 +1,24 @@
++++
+id = "01M1QDTV3AGHH4JVF4GD14H356"
+title = "R11-B: explain never raises; -rgb companions grouped (A-046)"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-05T00:00:00Z"
+updated = "2026-09-05T00:00:02Z"
+aliases = ["crunk:T-0106"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/query/engine.py", "src/crunk/query/models.py", "tests/unit/test_query.py", "tests/system/test_e2e_46_explain_hardened.py"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV38SJ2596PJFEEW1NYG"
+
+[[acceptance]]
+text = "given alpha_channels emission, when explain runs on a -rgb companion, then it answers as the parent color's channel form (group color-channels); explain on any unknown name exits 2 cleanly; no code path in explain can raise to the caller (E2E-46)"
+bound = false
++++
+
+Per r11 query.md: the field crash was a raw KeyError from _token_groups[full_name] escaping to main (exit 1, traceback). Fix: -rgb companions join the groups map as color-channels with the parent's triplet value; every lookup in explain is guarded -- any miss is the UnknownToken error VALUE. Add a unit test asserting explain returns Err (never raises) for adversarial names including names in entries but absent from groups.

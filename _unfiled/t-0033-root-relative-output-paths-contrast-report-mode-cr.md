@@ -1,0 +1,20 @@
++++
+id = "01M1QDTV11YBN4ZWJ0J4H8A2Q4"
+title = "root-relative output paths + contrast report mode (CR-14, A-006/A-007)"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-05T00:00:00Z"
+updated = "2026-09-05T00:00:02Z"
+aliases = ["crunk:T-0033"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/app/**", "src/crunk/__main__.py", "src/crunk/report/**", "tests/unit/test_app.py", "tests/unit/test_main.py", "tests/unit/test_report.py", "tests/system/test_e2e_15_output.py", "docs/commands/check.md", "docs/design/subsystems/report.md", "docs/design/subsystems/shell.md", "README.md", "docs/commands/fix.md", "docs/commands/init.md", "docs/commands/map.md", "docs/commands/tokens.md", "docs/index.md", "src/crunk/scaffold/presets.py", "src/crunk/scaffold/write.py", "tests/integration/test_int_07_shell_wiring.py", "docs/design/02-specification.md", "src/crunk/rules/_contrast.py", "tickets/T-0042/ticket.md"]
+
+[[acceptance]]
+text = "given a violating fixture tree, when check/fix/map run, then every rendered path (terminal and json) is relative to the project root, and check --contrast prints every role pair with its ratio and exits by the 4.5 floor (E2E-15)"
+bound = false
++++
+
+Per docs/design r4 (report.md path policy + shell.md r4 wiring): shell relativizes violation paths via _relpath at the output boundary (one place); report gains render_contrast/render_contrast_json; parser/AppConfig gain check_contrast. Do NOT add --no-cache or query flags (later tickets). UT-SH-05(contrast part)/06, UT-REP-05, E2E-15.

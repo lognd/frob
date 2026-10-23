@@ -1,0 +1,42 @@
++++
+id = "01M1J91D0K77GYG4MYHNCJVG86"
+title = "post-land sweep regression from T-0008: 6 new (rule, file) identit(ies), 13 finding(s) (GATERULE001)"
+type = "bug"
+category = "done"
+outcome = "wont-fix"
+priority = "high"
+reporter = "agent"
+created = "2026-09-03T00:00:00Z"
+updated = "2026-09-03T00:00:02Z"
+aliases = ["crunk:T-0019"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/rules/_color.py", "src/crunk/rules/_contrast.py", "src/crunk/rules/_layers.py", "src/crunk/rules/_org.py", "src/crunk/rules/_scales.py", "src/crunk/rules/_typography.py"]
++++
+
+The deferred post-land unscoped sweep (T-1684) for T-0008 at commit 1f150d4300990234ed6b57371fdb54a8875eee93 found 7 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES (6), not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). An independent re-measurement found 13 actual finding(s) across those 6 identit(ies).
+
+New (rule, file) identit(ies) filed here:
+
+- GATERULE001  src/crunk/rules/_color.py
+- GATERULE001  src/crunk/rules/_contrast.py
+- GATERULE001  src/crunk/rules/_layers.py
+- GATERULE001  src/crunk/rules/_org.py
+- GATERULE001  src/crunk/rules/_scales.py
+- GATERULE001  src/crunk/rules/_typography.py
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+- GATERULE001  src/crunk/rules/_color.py  -> attributed to T-0008 (commit 1f150d430099, already closed/dropped -- filed below) via src/crunk/rules/_color.py::_TOKEN_NAMESPACES
+- GATERULE001  src/crunk/rules/_contrast.py  -> attributed to T-0008 (commit 1f150d430099, already closed/dropped -- filed below) via src/crunk/rules/_contrast.py::_AA_FLOOR
+- GATERULE001  src/crunk/rules/_layers.py  -> attributed to T-0008 (commit 1f150d430099, already closed/dropped -- filed below) via src/crunk/rules/_layers.py::layer001
+- GATERULE001  src/crunk/rules/_org.py  -> attributed to T-0008 (commit 1f150d430099, already closed/dropped -- filed below) via src/crunk/rules/_org.py::_BEM_SPLIT_RE
+- GATERULE001  src/crunk/rules/_scales.py  -> attributed to T-0008 (commit 1f150d430099, already closed/dropped -- filed below) via src/crunk/rules/_scales.py::_COMPARABLE_KINDS
+- GATERULE001  src/crunk/rules/_typography.py  -> attributed to T-0008 (commit 1f150d430099, already closed/dropped -- filed below) via src/crunk/rules/_typography.py::_EXEMPT_WEIGHT_KEYWORDS
+- TEST006  tests/unit/test_rules_org.py  -> attributed to T-0008 (commit 1f150d430099, already closed/dropped -- filed below) via tests/unit/test_rules_org.py::_TOML
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-09-03: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (GATERULE001 src/crunk/rules/_color.py, GATERULE001 src/crunk/rules/_contrast.py, GATERULE001 src/crunk/rules/_layers.py, GATERULE001 src/crunk/rules/_org.py, GATERULE001 src/crunk/rules/_scales.py, GATERULE001 src/crunk/rules/_typography.py) is absent from a direct re-check of exactly the 6 named (rule, file) identit(ies) (not a full sweep) that completed with no failed/silent tool stage at doable's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.

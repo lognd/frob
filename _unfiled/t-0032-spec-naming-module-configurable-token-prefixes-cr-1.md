@@ -1,0 +1,20 @@
++++
+id = "01M1QDTV10V68Y2CNVD2A8NT1Q"
+title = "spec naming module + configurable token prefixes (CR-12, A-004)"
+type = "task"
+category = "done"
+outcome = "done"
+priority = "medium"
+reporter = "human"
+created = "2026-09-05T00:00:00Z"
+updated = "2026-09-05T00:00:02Z"
+aliases = ["crunk:T-0032"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/spec/**", "src/crunk/tokens/render.py", "src/crunk/tokens/__init__.py", "src/crunk/rules/_color.py", "tests/unit/test_spec.py", "tests/unit/test_tokens.py", "tests/unit/test_rules_color.py", "tests/system/test_e2e_13_prefixes.py", "docs/design/subsystems/spec.md", "docs/design/subsystems/tokens.md", "docs/design/subsystems/rules.md"]
+
+[[acceptance]]
+text = "given an crunk.toml with an empty color prefix and palette key bg-primary, when tokens/check/fix run, then --bg-primary is exported, accepted, and emitted in fixes (E2E-13)"
+bound = false
++++
+
+Per docs/design r4: create spec/naming.py (sanitize_ident, format_step, color_token/space_token/font_size_token/radius_token/layer_token/font_family_token, token_namespaces) as the canonical naming home; add TokensConfig (the tokens prefix table, validation per spec.md); tokens/render.py consumes naming helpers and exposes entries(spec); rules/_color.py takes namespaces + replacement names from spec.naming, never hardcoded strings. Rename the tokens.md naming-scheme heading and repoint the source frob:doc anchors atomically. UT-SPEC-06, UT-TOK-05, UT-RUL-PREFIX, E2E-13.

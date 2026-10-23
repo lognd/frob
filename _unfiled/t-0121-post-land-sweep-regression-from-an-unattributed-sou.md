@@ -1,0 +1,28 @@
++++
+id = "01M1T07J3S5S4EEWJWTSYV0D12"
+title = "post-land sweep regression from an unattributed source (sweep spawned by T-0118): 1 new (rule, file) identit(ies), 1 finding(s) (TEST006)"
+type = "bug"
+category = "done"
+outcome = "wont-fix"
+priority = "high"
+reporter = "agent"
+created = "2026-09-06T00:00:00Z"
+updated = "2026-09-06T00:00:01Z"
+aliases = ["crunk:T-0121"]
+labels = ["v1-cluster:C3", "component:crunk", "source:crunk"]
+scope = [".frob/coverage-stamp"]
++++
+
+The deferred post-land unscoped sweep (T-1684) for an unattributed source (sweep spawned by T-0118) at commit 5bd292678a8558dd0a5fdb262bbb7eb4650fcbd4 found 1 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES (1), not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). An independent re-measurement found 1 actual finding(s) across those 1 identit(ies).
+
+New (rule, file) identit(ies) filed here:
+
+- TEST006  .frob/coverage-stamp
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+- TEST006  .frob/coverage-stamp  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.

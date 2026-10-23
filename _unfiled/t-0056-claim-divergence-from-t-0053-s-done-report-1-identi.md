@@ -1,0 +1,21 @@
++++
+id = "01M1QDTV1RZRGP3TXB3XQCSM26"
+title = "claim divergence from T-0053's Done report (1 identit(ies))"
+type = "bug"
+category = "done"
+outcome = "done"
+priority = "high"
+reporter = "agent"
+created = "2026-09-05T00:00:00Z"
+updated = "2026-09-05T00:00:02Z"
+aliases = ["crunk:T-0056"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["tests/system/test_e2e_23_header.py"]
++++
+
+Deferred post-land claim-divergence check (T-2938) found that T-0053's Done report's captured gate-state claim (T-0754) no longer holds against the tree this sweep measured at b1e1f80365c6 -- reusing this sweep's own unscoped `frob check` result as both the count and the per-finding identity source, no second spawn.
+
+Diverging (rule, file) identit(ies):
+- TEST006: tests/system/test_e2e_23_header.py
+
+This is a report-honesty finding, not necessarily bad content on main -- the land already published; the tree itself was already covered by this land's own pre-land check plus this sweep's unscoped post-land measurement. Determine whether the claim was a stale/incorrect capture or a real self-introduced regression, fix or refresh accordingly, then dispose the quarantine entry this ticket raised.
