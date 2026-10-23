@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T14:27:14Z"
+digest = "694c878e77871ae4eac0d8c6deb09a3c29e7d7d5d79a49322d827b0dbd81d9e7"
+exit_code = 0
+head = "1ec776968a9256a88e27403afba4042ddd87a7ba"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a58377fd-7022-4696-92d1-6805d18a0fea with nextest profile: default
+    Starting 1 test across 1 binary (384 tests skipped)
+        PASS [   0.010s] frob-cli::it doc_commands::upgrade_guide_says_0_532_0_is_published
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 384 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test it upgrade_guide_says_0_532_0_is_published"
+size = 796
+status = "measured"
+test_count = 1
+tests_digest = "3b1590faccb4818bbffa9f8d3c74f6ccf9f72731c38aaf8e1b7bace515bb32c1"
+at = "2026-10-23T14:27:14Z"
+actor = "lognd"
+rev = 1
