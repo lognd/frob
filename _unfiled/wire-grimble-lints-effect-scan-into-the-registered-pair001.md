@@ -2,7 +2,8 @@
 id = "01M5HDAS62G7H4YY9FVG59GJ01"
 title = "Wire grimble-lints effect::scan into the registered PAIR001 rule for React effects"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
