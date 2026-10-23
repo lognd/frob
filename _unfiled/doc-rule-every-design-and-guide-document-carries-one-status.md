@@ -2,7 +2,8 @@
 id = "01M4H0RKJHHWWT0XC17W5JD1VG"
 title = "DOC rule: every design and guide document carries one status header from a fixed vocabulary (current, draft, superseded-by X, historical, generated); generated docs/README.md index lists every document with its status"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
