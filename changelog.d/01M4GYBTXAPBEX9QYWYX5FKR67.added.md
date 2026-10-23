@@ -1,0 +1,1 @@
+May grants can carry a because= or ticket= reason (MDL008 warns when neither is given), and the new grimble status verb reports grant count, per-node breadth and the delta since grimble.lock, naming widened grants.

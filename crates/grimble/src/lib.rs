@@ -20,6 +20,7 @@ pub mod init;
 pub mod rule_cmd;
 pub mod serve_mcp;
 pub mod shrink_cmd;
+pub mod status_cmd;
 pub mod vet_cmd;
 mod workspace;
 
@@ -144,6 +145,8 @@ impl Product for GrimbleProduct {
             .register::<vet_cmd::Vet>()
             // frob:ticket 01M5A5F8CN6EKHGV1C4QZCQZMP
             .register::<shrink_cmd::Shrink>()
+            // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
+            .register::<status_cmd::Status>()
             .register::<rule_cmd::RuleTest>()
             .register::<rule_cmd::RuleCheck>()
             .register::<rule_cmd::RuleCatalog>()
