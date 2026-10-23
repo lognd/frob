@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T16:13:20Z"
-updated = "2026-10-23T16:51:09Z"
-scope = ["docs/design/binding.md", "docs/design/grmb-spec.md"]
+updated = "2026-10-23T16:52:09Z"
+scope = ["docs/design/binding.md", "docs/design/grmb-spec.md", "crates/grimble-check/tests/design_docs.rs"]
 
 [[acceptance]]
 text = "Given binding.md section 5, when read, then it states one clause reaching several wrong-owner units reports once with count, owners, sample of 3 and per-unit rows in check --json bindings"
