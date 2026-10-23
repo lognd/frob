@@ -8,13 +8,13 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T18:21:18Z"
-updated = "2026-10-23T13:45:20Z"
+updated = "2026-10-23T14:05:24Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble*/**", "docs/design/grmb-spec.md", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a may clause without because= or ticket=, when grimble check runs, then an MDL finding asks for the reason"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given grants added or widened since grimble.lock, when grimble status runs, then it reports grant count, selector breadth (files matched) per node and the delta, and a widening is listed by name"

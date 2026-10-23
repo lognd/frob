@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T14:05:24Z"
+digest = "da7ad7a7329baee7097af58640339e35934077a7f20590e1cd52bfbcd2df3648"
+exit_code = 0
+head = "3bc1fed2bfba535cca2ff2fe5441976b9ec41614"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.95s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID be70bb55-e239-4cab-aa9e-62467e519f35 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.004s] grimble-model::may_reason grant_without_reason_asks_for_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model --test may_reason grant_without_reason_asks_for_one"
+size = 1144
+status = "measured"
+test_count = 1
+tests_digest = "d018e8eb302aef0e7189a1b3ba42f78f95ec7595e39aca3bd7b90699d87c4d64"
+at = "2026-10-23T14:05:24Z"
+actor = "lognd"
+rev = 1
