@@ -2,7 +2,8 @@
 id = "01M5KRYDC70Q3YAYW6KXF9H0J6"
 title = "Restore DOC002 unresolved mdtest case so every_frob_rule_has_a_corpus passes"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
