@@ -7,9 +7,9 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T15:05:26Z"
-updated = "2026-10-23T14:28:47Z"
+updated = "2026-10-23T15:02:09Z"
 labels = ["adoption:logand-app"]
-scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**", "crates/frob/tests/it/doc_commands.rs"]
+scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**", "crates/frob/tests/it/doc_commands.rs", "docs/migration/v1-import.md"]
 
 [[acceptance]]
 text = "Given a v1 branch and v2 main, when a reader follows the guide's recipe, then the merge resolves with main's tickets/ tree and no ticket data is lost; the importer report points at the recipe"
