@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T07:54:29Z"
+digest = "350060734cd97a5652811ff7dbbdc685bf15b73dbf4e344da2864b064776fab6"
+exit_code = 0
+head = "fff7ad1f8f708d01902eca3cd79956e0954048c4"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9117ddd5-598a-4cd2-9cbc-6120689dbfb5 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.065s] grimble-check::ci_wiring verdict_output_is_stable_across_the_shared_type
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.065s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test ci_wiring verdict_output_is_stable_across_the_shared_type"
+size = 717
+status = "measured"
+test_count = 1
+tests_digest = "780456d1a0d1dacd2c87b7458f700fff26184f7432dee8d57e31c9d95e5daaa4"
+at = "2026-10-23T07:54:29Z"
+actor = "lognd"
+rev = 1
