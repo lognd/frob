@@ -2,7 +2,8 @@
 id = "01M4FGYNKKP10PVPT90AKKMHBY"
 title = "Finding floods: SYS003 end-owner once per clause, MDL005 once per selector"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
