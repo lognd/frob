@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:58:34Z"
-updated = "2026-10-23T00:12:07Z"
+updated = "2026-10-23T00:22:56Z"
 scope = ["crates/grimble-lints/**", "changelog.d/**", "crates/grimble/**", "crates/grimble-check/**", "docs/**"]
 
 [[acceptance]]
 text = "Given a useEffect starting an interval without cleanup in a scanned file, when grimble check runs, then PAIR001 is reported through the registered rule"
-bound = false
+bound = true
 +++
 
 Follow-up from ~7ASNXV3: effect::scan exists but is not yet called by the rule.
