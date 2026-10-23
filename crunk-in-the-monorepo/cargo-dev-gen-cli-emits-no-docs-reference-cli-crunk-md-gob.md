@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-21T07:55:27Z"
-updated = "2026-10-23T03:49:30Z"
+updated = "2026-10-23T03:50:20Z"
 labels = ["area:crunk"]
 scope = ["crates/gob-dev/**", "docs/reference/cli/**", "docs/crunk/migration.md", "crates/frob-docgen/tests/generate.rs"]
 
