@@ -8,7 +8,7 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-23T03:51:37Z"
+updated = "2026-10-23T03:51:38Z"
 scope = ["crates/grimble-ci/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a workflow whose frob verbs all exist, when grimble-ci analyzes it, then CI012 stays quiet"
-bound = false
+bound = true
 +++
 
 Deferred from ~8886VJ4: compare frob verbs with the commands workflows run.
