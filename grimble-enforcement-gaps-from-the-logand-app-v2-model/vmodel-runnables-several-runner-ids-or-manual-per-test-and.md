@@ -2,13 +2,13 @@
 id = "01M4FGZ4KY03QKSWXACP7APFVH"
 title = "vmodel runnables: several runner ids or manual per test, and derivable TS and Rust selectors"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:56Z"
-updated = "2026-10-09T05:08:20Z"
+updated = "2026-10-23T19:17:58Z"
 idempotency_key = "logand-gaps-V3"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/gob-languages/**", "crates/grimble-model/**", "changelog.d/**"]
