@@ -1,7 +1,7 @@
 //! CRAFT009: a scene shows real content, not a stand-in. CONTENT001 and CONTENT003 judge whether
 //! copy is referenced and whether the key exists; CRAFT009 judges what is behind the reference.
 //! It fires for a `data-copy*` attribute with an empty key, for a defined content key whose text
-//! is blank or placeholder (lorem ipsum, TODO, TBD, placeholder, xxx), for an `<img>` with no
+//! is blank or placeholder (lorem ipsum, to-do, TBD, placeholder, xxx), for an `<img>` with no
 //! `alt` text (or `data-copy-alt` key), and for an `<img>` with no `data-provenance` naming where
 //! the picture came from. Unknown keys stay with CONTENT003 and literal copy with CONTENT001.
 //! Advisory; a project with no scene documents is not judged.

@@ -235,4 +235,19 @@ mod tests {
         assert!(!has_variant("@apply is-active:scale-95", "active"));
         assert!(!has_variant("@apply active", "active"));
     }
+
+    // frob:tests crates/crunk-rules/src/craft.rs::has_word
+    #[test]
+    fn word_needs_identifier_boundaries() {
+        assert!(has_word("lorem ipsum", "ipsum"));
+        assert!(!has_word("ipsumx", "ipsum"));
+        assert!(!has_word("x-ipsum", "ipsum"));
+    }
+
+    // frob:tests crates/crunk-rules/src/craft.rs::body_props
+    #[test]
+    fn body_props_lists_lowercased_property_names() {
+        assert_eq!(body_props("Color: red; margin : 0;"), ["color", "margin"]);
+        assert!(body_props("").is_empty());
+    }
 }

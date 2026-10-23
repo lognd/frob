@@ -65,6 +65,8 @@ fn focus_and_press_fire_when_the_ui_never_styles_them() {
     );
 }
 
+// frob:tests crates/crunk-rules/src/craft.rs::state_styled
+// frob:tests crates/crunk-rules/src/craft.rs::ui_sheets
 // frob:tests crates/crunk-rules/src/rules/craft001.rs::Craft001
 // frob:tests crates/crunk-rules/src/rules/craft005.rs::Craft005
 #[test]
@@ -159,6 +161,7 @@ fn shadows_fire_when_lit_from_another_side_and_are_quiet_when_alike() {
     assert!(run::<Craft007>(CSS, "", None).is_empty());
 }
 
+// frob:tests crates/crunk-rules/src/craft.rs::has_word
 // frob:tests crates/crunk-rules/src/rules/craft009.rs::Craft009
 #[test]
 fn content_fires_on_stand_ins_and_bare_images_and_is_quiet_when_real() {
