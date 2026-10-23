@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-09T18:21:12Z"
 updated = "2026-10-23T21:13:00Z"
 labels = ["grimble", "adoption:logand-app"]
-scope = ["crates/grimble*/**", "changelog.d/**", "docs/design/**", "docs/guides/**"]
+scope = ["crates/grimble*/**", "changelog.d/**", "docs/design/**", "docs/guides/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "Given a commit that adds or widens a may grant (new atom, broader at selector, new node grant), when grimble check runs, then a finding names the grant change until grimble ack records an attester from the frob [evidence] attesters list (agents refused as with E-ATTEST-NOT-HUMAN); narrowing or removing a grant needs no ack"
