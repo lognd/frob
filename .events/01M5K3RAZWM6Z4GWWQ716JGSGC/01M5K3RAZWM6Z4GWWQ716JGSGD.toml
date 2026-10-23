@@ -1,0 +1,10 @@
+kind = "create"
+title = "Feed unity::scan and other language vocabularies into PAIR001"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-lints/**"]
+body = "found while working G59GJ01: PAIR001 only runs effect::scan over TS/JS files; Unity OnEnable/OnDisable and other languages are not wired in."
+at = "2026-10-23T00:49:41Z"
+actor = "lognd"
+rev = 1
