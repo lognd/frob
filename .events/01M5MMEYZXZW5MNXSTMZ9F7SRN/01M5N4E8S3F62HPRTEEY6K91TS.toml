@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T19:40:08Z"
+digest = "24c1379686abd2435f7f61a39f4b0217d3c78e677425a470e95d59fc0f143f8f"
+exit_code = 0
+head = "b8f7387a26260b19d71add4f00811b83d315671a"
+inline = '''
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.68s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dab8f507-e169-40ee-9fca-fc1531b4a2c8 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.094s] frob-evidence::attestation an_agent_actors_refusal_names_the_agent_usable_providers
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.094s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --test attestation an_agent_actors_refusal"
+size = 640
+status = "measured"
+test_count = 1
+tests_digest = "b90efe8f81c2ecaade53bd594ea428b574130204d25dec8ca62ce6136fc20c96"
+at = "2026-10-23T19:40:08Z"
+actor = "lognd"
+rev = 1
