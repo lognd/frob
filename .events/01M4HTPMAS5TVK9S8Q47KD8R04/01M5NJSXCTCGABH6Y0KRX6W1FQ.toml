@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T23:51:09Z"
+digest = "82a2ee151c0ec19fd621ea212e5df4945df844d6b98f05040743fdaf6862e26d"
+exit_code = 0
+head = "5ada3ddbb094ba0792b0a87290fe624940e6022e"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.46s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 39e10873-075f-4fc7-ac81-a3d9253145f8 with nextest profile: default
+    Starting 1 test across 1 binary (12 tests skipped)
+        PASS [   0.052s] frob-pm::pm doctor_order_tolerates_command_clock_lag_but_not_an_at_ahead_of_its_ulid
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.052s] 1 test run: 1 passed, 12 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm --test pm doctor_order_tolerates"
+size = 627
+status = "measured"
+test_count = 1
+tests_digest = "0d261fb2295a94b5e2ced7f145d9f89f6aa1b81ae08a2765c6963dcc345bcbca"
+at = "2026-10-23T23:51:09Z"
+actor = "lognd"
+rev = 1
