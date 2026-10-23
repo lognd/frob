@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-spec/src/presets/**", "crates/crunk-spec/tests/**", "crates/crunk-rules/tests/**", "tests/crunk-parity/fixtures/e2e/e2e_12_ungoverned/**", "tests/crunk-parity/fixtures/e2e/e2e_54_pathmode/**", "crates/crunk-rules/src/rules/craft008.md", "crates/crunk-check/tests/color001.rs", "docs/reference/rules/CRAFT008.md", "docs/reference/rules/README.md", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md", "changelog.d/01M1QDTYRJ3P3GT8828GCNECVB.added.md", "changelog.d/01M1T07NW78MGWRF7HZQMPSRAV.security.md", "changelog.d/01M1T07NWAFVRT2V4RAPVJ9SQM.added.md", "changelog.d/01M1T07NX1SZYZBZYYW821FN00.added.md", "changelog.d/01M1T07NY615PQ6RAEB4CESXMT.security.md"]
+new = ["crates/crunk-spec/src/presets/**", "crates/crunk-spec/tests/**", "crates/crunk-rules/tests/**", "tests/crunk-parity/fixtures/e2e/e2e_12_ungoverned/**", "tests/crunk-parity/fixtures/e2e/e2e_54_pathmode/**", "crates/crunk-rules/src/rules/craft008.md", "crates/crunk-check/tests/color001.rs", "docs/reference/rules/CRAFT008.md", "docs/reference/rules/README.md", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md", "changelog.d/01M1QDTYRJ3P3GT8828GCNECVB.added.md", "changelog.d/01M1T07NW78MGWRF7HZQMPSRAV.security.md", "changelog.d/01M1T07NWAFVRT2V4RAPVJ9SQM.added.md", "changelog.d/01M1T07NX1SZYZBZYYW821FN00.added.md", "changelog.d/01M1T07NY615PQ6RAEB4CESXMT.security.md", "changelog.d/01M2VFD1ZAS7PZERWYPQDMB8GH.added.md"]
+at = "2026-10-23T03:04:38Z"
+actor = "lognd"
+rev = 1
