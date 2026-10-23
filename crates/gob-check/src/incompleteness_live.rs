@@ -9,6 +9,7 @@
 // frob:ticket 01M5HGCQ5CDB7HEEFGTRVP9DA6
 
 use std::collections::BTreeMap;
+use std::fmt::Write as _;
 
 use gob_symbols::{
     Capability, EdgeKind, FileSymbols, ParseStatus, Status, SymbolGraph, Visibility,
@@ -201,7 +202,7 @@ pub fn rewrite_observed(text: &str, live: &[(String, Verdict)]) -> String {
         } else if line.starts_with("observed = ")
             && let Some(v) = id.as_deref().and_then(|i| live.get(i))
         {
-            out.push_str(&format!("observed = \"{}\"\n", spelled(*v)));
+            let _ = writeln!(out, "observed = \"{}\"", spelled(*v));
         } else {
             out.push_str(line);
         }
