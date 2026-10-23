@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T08:57:18Z"
-scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock", "docs/reference/config.md"]
+updated = "2026-10-23T08:57:19Z"
+scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock", "docs/reference/config.md", "docs/schemas/**"]
 
 [[acceptance]]
 text = "COH002 decides effects from a language-adapter capability rather than the callee-name vocabulary"
