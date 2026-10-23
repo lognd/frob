@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T08:48:24Z"
+digest = "34ebc32d5efdee2e3ccdd1382507e09103f1520cb17a12495855918072a865a3"
+exit_code = 0
+head = "4fb493c96078d340f42b06dedbea30fd61ae0fcf"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 95c67cd3-f4b9-4cfd-95e8-fe2240244c0c with nextest profile: default
+    Starting 1 test across 1 binary (155 tests skipped)
+        PASS [   0.005s] gob-check tool_parse::tests::every_actionlint_kind_maps_to_ci014
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 155 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --lib every_actionlint_kind_maps_to_ci014"
+size = 555
+status = "measured"
+test_count = 1
+tests_digest = "9ef4fa5c0a8cb337d4cba20c9c3326e57caea3f944f2a4308c0155d34ae69323"
+at = "2026-10-23T08:48:24Z"
+actor = "lognd"
+rev = 1
