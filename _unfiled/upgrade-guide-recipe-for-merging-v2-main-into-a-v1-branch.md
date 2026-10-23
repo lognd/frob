@@ -7,13 +7,13 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T15:05:26Z"
-updated = "2026-10-23T14:20:01Z"
+updated = "2026-10-23T14:23:56Z"
 labels = ["adoption:logand-app"]
 scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**", "crates/frob/tests/it/doc_commands.rs"]
 
 [[acceptance]]
 text = "Given a v1 branch and v2 main, when a reader follows the guide's recipe, then the merge resolves with main's tickets/ tree and no ticket data is lost; the importer report points at the recipe"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the upgrade guide, when it lands, then it states that 0.532.0 is on PyPI (logand F-552)"
