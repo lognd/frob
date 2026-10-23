@@ -2,7 +2,8 @@
 id = "01M4H2C3YV4ZDRNNTVKKYD6J5K"
 title = "frob serve: expose the ticket and lease read verbs (ticket show|list|doable|brief|doctor|triage list, lease list, ticket contention, ticket evidence list) as MCP tools"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
