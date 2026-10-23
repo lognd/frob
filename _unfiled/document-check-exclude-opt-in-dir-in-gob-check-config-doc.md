@@ -7,7 +7,7 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T13:04:44Z"
-updated = "2026-10-23T13:31:31Z"
+updated = "2026-10-23T13:31:32Z"
 scope = ["crates/gob-check/src/config.rs", "crates/crunk-ingest/src/walk.rs", "crates/crunk-check/src/review.rs", "changelog.d/**", "crates/gob-walk/**", "crates/crunk-check/Cargo.toml", "crates/crunk-ingest/tests/**", "crates/crunk-check/tests/**", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
