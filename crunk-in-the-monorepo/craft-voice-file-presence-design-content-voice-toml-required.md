@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:08Z"
-updated = "2026-10-23T01:55:49Z"
+updated = "2026-10-23T01:58:26Z"
 scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk-check/tests/**", "crates/crunk/tests/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the voice file exists, when crunk check runs, then that rule reports nothing"
-bound = false
+bound = true
 +++
 
 found while working ~DTBY8Q0; cut from its scope

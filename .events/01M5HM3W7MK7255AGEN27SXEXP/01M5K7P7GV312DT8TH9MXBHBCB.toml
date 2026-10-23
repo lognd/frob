@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T01:58:26Z"
+digest = "7d5382a4c0661b873893836d75919b6fb6f5ee3ceb02a529cd1e704a690920e6"
+exit_code = 0
+head = "62dd33f2d31524d695322b0061e391b1e42f1ae3"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c23c6fbb-87d4-4be2-b0f0-ece19998e98d with nextest profile: default
+    Starting 1 test across 1 binary (9 tests skipped)
+        PASS [   0.015s] crunk-rules::craft013_rules a_voice_file_with_content_reports_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test craft013_rules a_voice_file_with_content_reports_nothing"
+size = 556
+status = "measured"
+test_count = 1
+tests_digest = "7c5d16d2ac9268f983bdeecb5ab422f6cecd594836a8786738581b1b87d6e30b"
+at = "2026-10-23T01:58:26Z"
+actor = "lognd"
+rev = 1
