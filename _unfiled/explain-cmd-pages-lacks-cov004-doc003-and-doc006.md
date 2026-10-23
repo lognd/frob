@@ -2,7 +2,8 @@
 id = "01M5NFNV870VQSGDJAT79HY9GP"
 title = "explain_cmd PAGES lacks COV004, DOC003 and DOC006"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
