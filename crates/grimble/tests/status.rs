@@ -63,6 +63,7 @@ fn node<'a>(doc: &'a Value, name: &str) -> &'a Value {
         .unwrap_or_else(|| panic!("no node {name}: {doc}"))
 }
 
+// frob:tests crates/grimble-bind/src/grants.rs::facts
 // frob:tests crates/grimble/src/status_cmd.rs::Status
 #[test]
 fn status_reports_counts_breadth_delta_and_names_the_widening() {

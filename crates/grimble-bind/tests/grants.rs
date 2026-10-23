@@ -32,6 +32,7 @@ fn no_baseline_reports_counts_without_delta() {
     assert_eq!(r.nodes[0].base_grants, None);
 }
 
+// frob:tests crates/grimble-bind/src/grants.rs::ChangeKind.as_str
 // frob:tests crates/grimble-bind/src/grants.rs::ratchet
 #[test]
 fn widening_is_named_and_narrowing_is_not_a_widening() {
