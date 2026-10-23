@@ -39,6 +39,16 @@ fn krate(root: &Path, name: &str, dep: Option<&str>) {
 
 /// Analyze the repository at `root` with the `large_lines` knob.
 fn run(root: &Path, large_lines: usize) -> Vec<ArchFinding> {
+    run_dup(root, large_lines, 50, 3)
+}
+
+/// Analyze the repository at `root` with every knob.
+fn run_dup(
+    root: &Path,
+    large_lines: usize,
+    dup_min_tokens: usize,
+    dup_min_occurrences: usize,
+) -> Vec<ArchFinding> {
     let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
     let code = Code::build(root, &walked.files);
     let graph = grimble_bind::edges::build_graph(root, &code);
@@ -53,6 +63,8 @@ fn run(root: &Path, large_lines: usize) -> Vec<ArchFinding> {
         graph: &graph,
         crates: &crates,
         large_lines,
+        dup_min_tokens,
+        dup_min_occurrences,
         read: &read,
     })
     .findings
@@ -175,6 +187,8 @@ fn empty_repository_makes_the_rules_not_applicable() {
         graph: &graph,
         crates: &crates,
         large_lines: 100,
+        dup_min_tokens: 50,
+        dup_min_occurrences: 3,
         read: &read,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
@@ -205,6 +219,8 @@ fn a_repository_without_rust_makes_only_vis001_not_applicable() {
         graph: &graph,
         crates: &crates,
         large_lines: 100,
+        dup_min_tokens: 50,
+        dup_min_occurrences: 3,
         read: &read,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
@@ -368,4 +384,32 @@ fn tests_are_not_lexed() {
     write(dir.path(), "src/b.ts", &exact_block());
     write(dir.path(), "tests/c.test.ts", &exact_block());
     assert!(dup_findings(dir.path()).is_empty());
+}
+
+/// The `DUP001` thresholds come from the input: two copies fire at 2 occurrences, and 0 tokens or a huge window turns the rule off.
+// frob:tests crates/grimble-arch/src/dup.rs::check
+// frob:tests crates/grimble-arch/src/lib.rs::analyze
+#[test]
+fn dup_thresholds_come_from_the_input() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    for name in ["a", "b"] {
+        write(
+            dir.path(),
+            &format!("src/{name}.ts"),
+            &format!("export function f() {{}}\n{}", exact_block()),
+        );
+    }
+    let count = |tokens, occ| {
+        run_dup(dir.path(), 400, tokens, occ)
+            .iter()
+            .filter(|f| f.rule == "DUP001")
+            .count()
+    };
+    assert_eq!(count(50, 3), 0);
+    let two = run_dup(dir.path(), 400, 50, 2);
+    assert_eq!(two.len(), 1, "{two:?}");
+    assert_eq!(count(0, 2), 0);
+    assert_eq!(count(50, 1), 0);
+    assert_eq!(count(usize::MAX, 2), 0);
+    assert_eq!(count(50, usize::MAX), 0);
 }

@@ -205,6 +205,8 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `dup_min_occurrences` | `u64` | `3` | no | Disjoint copies a block needs before DUP001 fires; below 2 turns the rule off. |
+| `dup_min_tokens` | `u64` | `50` | no | Tokens a window needs to count as a DUP001 clone; 0 turns the rule off. |
 | `large_lines` | `u64` | `400` | no | A function, method or type longer than this many lines fires LARGE001; 0 turns the rule off. |
 | `modeled` | `Vec<String>` | `[]` | no | Selectors whose public units must have an owner (SYS005); empty turns the rule off. |
 | `models` | `Vec<String>` | `["design/model.grmb"]` | yes | Root `.grmb` files, one independent model each; only files reachable from them through `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared). |

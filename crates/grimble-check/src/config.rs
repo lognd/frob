@@ -8,6 +8,7 @@
 // frob:ticket 01M4H4WTSTB7X4A6STFEF8K8S3
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
 // frob:ticket 01M5FSSDC7EG5QA70CRABC8SMA
+// frob:ticket 01M5HMKRFRZYFQC6HVNPHC3Z2P
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -122,6 +123,12 @@ pub struct GrimbleTable {
     /// A function, method or type longer than this many lines fires LARGE001; 0 turns the rule off.
     #[config(default = 400_u64)]
     pub large_lines: u64,
+    /// Tokens a window needs to count as a DUP001 clone; 0 turns the rule off.
+    #[config(default = grimble_arch::DUP_MIN_TOKENS)]
+    pub dup_min_tokens: u64,
+    /// Disjoint copies a block needs before DUP001 fires; below 2 turns the rule off.
+    #[config(default = grimble_arch::DUP_MIN_OCCURRENCES)]
+    pub dup_min_occurrences: u64,
 }
 
 impl GrimbleTable {

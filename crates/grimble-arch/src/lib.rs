@@ -57,6 +57,12 @@ pub const VIS: &str = "VIS001";
 /// Rule id of the duplicated code rule.
 pub const DUP: &str = "DUP001";
 
+/// Default tokens a window needs to count as a clone; shorter repeats are idiom, not copy and paste.
+pub const DUP_MIN_TOKENS: u64 = 50;
+
+/// Default disjoint sites a block needs before it is reported; two copies are tolerated (the threshold is contested).
+pub const DUP_MIN_OCCURRENCES: u64 = 3;
+
 /// Everything the architecture pass reads.
 pub struct ArchInput<'a> {
     /// The symbol graph of the walk.
@@ -65,6 +71,10 @@ pub struct ArchInput<'a> {
     pub crates: &'a BTreeMap<String, String>,
     /// A unit longer than this many lines fires `LARGE001`; 0 turns the rule off.
     pub large_lines: usize,
+    /// Tokens a window needs to count as a `DUP001` clone; 0 turns the rule off ([`DUP_MIN_TOKENS`] by default).
+    pub dup_min_tokens: usize,
+    /// Disjoint copies a block needs for `DUP001` to fire; below 2 turns the rule off ([`DUP_MIN_OCCURRENCES`] by default).
+    pub dup_min_occurrences: usize,
     /// The text of a repo-relative file, `None` when unreadable (only called when `LARGE001` or `DUP001` is on).
     pub read: &'a dyn Fn(&str) -> Option<String>,
 }
@@ -113,7 +123,12 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
             .insert(VIS, "no Rust source files in the walk".to_owned());
     }
     report.findings.extend(findings);
-    let (findings, lexed) = dup::check(input.graph, input.read);
+    let (findings, lexed) = dup::check(
+        input.graph,
+        input.read,
+        input.dup_min_tokens,
+        input.dup_min_occurrences,
+    );
     report.subjects.insert(DUP, lexed);
     report.findings.extend(findings);
     report
