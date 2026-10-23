@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T03:04:19Z"
-updated = "2026-10-23T23:50:51Z"
+updated = "2026-10-23T23:58:53Z"
 labels = ["adoption:logand-app"]
-scope = ["crates/frob-lease/src/**", "crates/frob-obligations/src/**", "changelog.d/**"]
+scope = ["crates/frob-lease/src/**", "crates/frob-obligations/src/**", "changelog.d/**", "docs/reference/rules/SCOPE001.md"]
 
 [[acceptance]]
 text = "Given scope entry backend/tests naming a directory, when leases and SCOPE001 evaluate it, then it covers backend/tests/** and a scope entry matching zero files (and not declared creates:) warns at ticket update and frob work"
