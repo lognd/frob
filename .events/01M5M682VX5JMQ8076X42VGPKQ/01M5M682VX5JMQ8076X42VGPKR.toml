@@ -1,0 +1,9 @@
+kind = "create"
+title = "grimble-serve: add the explore tool"
+type = "task"
+category = "todo"
+priority = "low"
+scope = ["crates/grimble-serve/**"]
+at = "2026-10-23T10:52:29Z"
+actor = "lognd"
+rev = 1
