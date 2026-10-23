@@ -1,0 +1,9 @@
+kind = "create"
+title = "Add min_slice_statements and max_level_spread keys to the [coh] table"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**"]
+at = "2026-10-23T00:05:49Z"
+actor = "lognd"
+rev = 1
