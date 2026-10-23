@@ -222,9 +222,13 @@ impl<T: Tools> Server<T> {
                 "serverInfo": { "name": self.name, "version": self.version },
             })),
             "ping" => Ok(json!({})),
-            "tools/list" => Ok(json!({
-                "tools": self.tools.list().iter().map(|spec| spec.listing()).collect::<Vec<_>>(),
-            })),
+            "tools/list" => {
+                let mut listed = Vec::new();
+                for spec in self.tools.list() {
+                    listed.push(spec.listing());
+                }
+                Ok(json!({ "tools": listed }))
+            }
             "tools/call" => self.call(params).map_err(|m| (CODE_INVALID_PARAMS, m)),
             _ => Err((CODE_METHOD_NOT_FOUND, "method not found".to_owned())),
         }
