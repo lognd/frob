@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the workspace, when CI003 is looked up, then exactly one declaration owns it and the other reference is removed or delegates", "Given a workflow that trips CI003, when frob check and grimble check run, then the finding is reported once"]
+moved = []
+at = "2026-10-23T03:45:18Z"
+actor = "lognd"
+rev = 1
