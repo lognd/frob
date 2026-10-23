@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T08:45:09Z"
+updated = "2026-10-23T08:55:42Z"
 scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = false
 
 [[acceptance]]
 text = "COH002 fire and no-fire tests exist for at least two adapter languages, and unresolved when an adapter lacks the capability"
-bound = false
+bound = true
 +++
 
 Replace the callee-name vocabulary with a real effects capability from the adapters.
