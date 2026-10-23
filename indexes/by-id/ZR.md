@@ -5,4 +5,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV1BZRB15ERAWYTE22KQ | ~YTE22KQ | reconcile held r4 doc text with landed wave-1 doc edits | [_unfiled/reconcile-held-r4-doc-text-with-landed-wave-1-doc-edits.md](../../_unfiled/reconcile-held-r4-doc-text-with-landed-wave-1-doc-edits.md) |
+| 01M1QDTV1RZRGP3TXB3XQCSM26 | ~XQCSM26 | claim divergence from T-0053's Done report (1 identit(ies)) | [_unfiled/claim-divergence-from-t-0053-s-done-report-1-identit-ies.md](../../_unfiled/claim-divergence-from-t-0053-s-done-report-1-identit-ies.md) |
 | 01M4GRXFQYZRDJ2TP68WFY48QC | ~WFY48QC | Culprit finding: a red post-land CI names the land range between last green and first red and files a blocking fix ticket | [fast-lands-testmon-style-affected-cone-checks-at-land-full/culprit-finding-a-red-post-land-ci-names-the-land-range.md](../../fast-lands-testmon-style-affected-cone-checks-at-land-full/culprit-finding-a-red-post-land-ci-names-the-land-range.md) |

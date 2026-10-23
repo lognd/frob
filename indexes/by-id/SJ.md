@@ -5,6 +5,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV38SJ2596PJFEEW1NYG | ~EEW1NYG | R11-A: self-derived tw_theme + alpha-modifier stripping (A-045, A-047) | [_unfiled/r11-a-self-derived-tw-theme-alpha-modifier-stripping-a-045-a.md](../../_unfiled/r11-a-self-derived-tw-theme-alpha-modifier-stripping-a-045-a.md) |
 | 01M2VFD1K7SJNZT4XMZ4A5N2FT | ~4A5N2FT | Multi-target directive grammar and the one documented continuation form, with a DSL001 mid-token break check | [_unfiled/multi-target-directive-grammar-and-the-one-documented.md](../../_unfiled/multi-target-directive-grammar-and-the-one-documented.md) |
 | 01M3WYJ803SJM87D7TS77Y40A4 | ~77Y40A4 | Workspace skeleton: Cargo workspace, lints as errors, linker, CI, MIT | [m1-frob-v2-self-hosts-checks-and-lands-this-repository/workspace-skeleton-cargo-workspace-lints-as-errors-linker-ci.md](../../m1-frob-v2-self-hosts-checks-and-lands-this-repository/workspace-skeleton-cargo-workspace-lints-as-errors-linker-ci.md) |
 | 01M561ZF9TSJF59M2CAXW3KTP0 | ~XW3KTP0 | Migrate COV001 and TODO002 (repo:obligations RepoGroup) to the declared two-file shape | [_unfiled/migrate-cov001-and-todo002-repo-obligations-repogroup-to-the.md](../../_unfiled/migrate-cov001-and-todo002-repo-obligations-repogroup-to-the.md) |

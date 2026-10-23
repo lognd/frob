@@ -5,4 +5,5 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV19ZQKEQX7WHEA4QM6B | ~EA4QM6B | scaffold reset.css hardcodes --color- prefix instead of spec.naming | [_unfiled/scaffold-reset-css-hardcodes-color-prefix-instead-of-spec.md](../../_unfiled/scaffold-reset-css-hardcodes-color-prefix-instead-of-spec.md) |
 | 01M4S1RY71ZQ2AA09ZSA3VMJ4G | ~A3VMJ4G | frob-gh: route Client::execute through send_with_policy and graphql::parse_response, dropping its own retry loop | [_unfiled/frob-gh-route-client-execute-through-send-with-policy-and.md](../../_unfiled/frob-gh-route-client-execute-through-send-with-policy-and.md) |

@@ -5,4 +5,5 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV20SQ6SXZ70CRZSBZ0V | ~RZSBZ0V | R6-E: TSX component inventory, seven-key map, cache-key closure, unused utility uses (CR-18 + closures) | [_unfiled/r6-e-tsx-component-inventory-seven-key-map-cache-key-closure.md](../../_unfiled/r6-e-tsx-component-inventory-seven-key-map-cache-key-closure.md) |
 | 01M48Q29NESQDWE88YC8HBYT4Z | ~8HBYT4Z | frob board --brief: what is being done now, next and blocked | [views-and-metrics-board-brief-backlog-tree-frob-metrics/frob-board-brief-what-is-being-done-now-next-and-blocked.md](../../views-and-metrics-board-brief-backlog-tree-frob-metrics/frob-board-brief-what-is-being-done-now-next-and-blocked.md) |

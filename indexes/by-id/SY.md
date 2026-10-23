@@ -5,4 +5,5 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1J91D0DSY37S3KYZ1XGRE1G | ~1XGRE1G | integration suite INT-01..08 | [_unfiled/integration-suite-int-01-08.md](../../_unfiled/integration-suite-int-01-08.md) |
 | 01M4069YE7SYCYT7YGT2FCV344 | ~2FCV344 | 0.532.0 release notes and v1 to v2 upgrade guide (pin 0.531.0) | [m2-universal-model-grimble-foundation-neatness-and-ci/0-532-0-release-notes-and-v1-to-v2-upgrade-guide-pin-0-531-0.md](../../m2-universal-model-grimble-foundation-neatness-and-ci/0-532-0-release-notes-and-v1-to-v2-upgrade-guide-pin-0-531-0.md) |

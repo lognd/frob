@@ -5,5 +5,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1T07J40ZJBZ9BJY3QCENHNA | ~QCENHNA | r15: absent css root degrades to warning; --version flag (A-072) | [_unfiled/r15-absent-css-root-degrades-to-warning-version-flag-a-072.md](../../_unfiled/r15-absent-css-root-degrades-to-warning-version-flag-a-072.md) |
 | 01M4P2N1D8ZJN8A3EDD9T7ZT21 | ~9T7ZT21 | agent: frob agent hook handlers (pre-bash, pre-read, session-start, pre-compact, user-prompt, stop) | [epic-frob-agent-native-claude-code-hooks-install-undo-heavy/agent-frob-agent-hook-handlers-pre-bash-pre-read-session.md](../../epic-frob-agent-native-claude-code-hooks-install-undo-heavy/agent-frob-agent-hook-handlers-pre-bash-pre-read-session.md) |
 | 01M4Z1MYJSZJ8CMH8NEA8K30K4 | ~A8K30K4 | Land train: adaptive batch size controller (grow on green, halve on red, train_max cap) | [land-train-batch-ready-tickets-into-one-rolled-up-candidate/land-train-adaptive-batch-size-controller-grow-on-green.md](../../land-train-batch-ready-tickets-into-one-rolled-up-candidate/land-train-adaptive-batch-size-controller-grow-on-green.md) |

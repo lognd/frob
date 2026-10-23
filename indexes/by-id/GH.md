@@ -5,5 +5,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1J91D02GHGF72BFHP7JJEVZ | ~P7JJEVZ | Cover frob-generated ticket files in refs entrypoints | [_unfiled/cover-frob-generated-ticket-files-in-refs-entrypoints.md](../../_unfiled/cover-frob-generated-ticket-files-in-refs-entrypoints.md) |
+| 01M1QDTV3AGHH4JVF4GD14H356 | ~D14H356 | R11-B: explain never raises; -rgb companions grouped (A-046) | [_unfiled/r11-b-explain-never-raises-rgb-companions-grouped-a-046.md](../../_unfiled/r11-b-explain-never-raises-rgb-companions-grouped-a-046.md) |
 | 01M4CTV91FGHN34XM00QQSAJAT | ~QQSAJAT | grimble user guide: model files, check, fmt and the rule families an adopter turns on first | [adoption-readiness-frob-v2-usable-in-another-project-blind/grimble-user-guide-model-files-check-fmt-and-the-rule.md](../../adoption-readiness-frob-v2-usable-in-another-project-blind/grimble-user-guide-model-files-check-fmt-and-the-rule.md) |
 | 01M55VDSD2GHYJMFSQWPR7WM45 | ~PR7WM45 | frob check: flag to skip tool stages so CI does not run fmt/clippy/gen/zizmor/actionlint/deny/shear/typos twice (audit M18) | [_unfiled/frob-check-flag-to-skip-tool-stages-so-ci-does-not-run-fmt.md](../../_unfiled/frob-check-flag-to-skip-tool-stages-so-ci-does-not-run-fmt.md) |

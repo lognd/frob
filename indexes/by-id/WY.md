@@ -5,4 +5,5 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV14WYX41P0NEG5H1VX2 | ~G5H1VX2 | named typography stacks (CR-10, A-002) | [_unfiled/named-typography-stacks-cr-10-a-002.md](../../_unfiled/named-typography-stacks-cr-10-a-002.md) |
 | 01M3ZX82TWWY2616S1Q5N48KNK | ~5N48KNK | Index, fold and merge driver read the new layout through ULIDs, never paths | [deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/index-fold-and-merge-driver-read-the-new-layout-through.md](../../deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/index-fold-and-merge-driver-read-the-new-layout-through.md) |

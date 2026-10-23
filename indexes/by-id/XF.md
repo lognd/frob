@@ -5,6 +5,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV2DXFNFC4JANYE6H9ZW | ~YE6H9ZW | component props and variants in the inventory (A-027 item 1 remainder) | [_unfiled/component-props-and-variants-in-the-inventory-a-027-item-1.md](../../_unfiled/component-props-and-variants-in-the-inventory-a-027-item-1.md) |
 | 01M38BCNAVXFTEC5S1ZCQ25VQC | ~CQ25VQC | lang_support: frob.tickets and frob.webapp unregistered in source-tree facet audit | [_unfiled/lang-support-frob-tickets-and-frob-webapp-unregistered-in.md](../../_unfiled/lang-support-frob-tickets-and-frob-webapp-unregistered-in.md) |
 | 01M43ARY26XF7A4MSRAZ8V73JM | ~Z8V73JM | gob-symbols: CSS adapter with declarations, at-rules, custom properties and waivers | [shared-web-language-engine-ts-tsx-jsx-css-html-facts-in-gob/gob-symbols-css-adapter-with-declarations-at-rules-custom.md](../../shared-web-language-engine-ts-tsx-jsx-css-html-facts-in-gob/gob-symbols-css-adapter-with-declarations-at-rules-custom.md) |
 | 01M44R5WJRXFM7RP45R24CQJDM | ~24CQJDM | TIME003: test date literal against code that reads the wall clock | [time-discipline-d93-gob-time-one-clock-time-lint-family/time003-test-date-literal-against-code-that-reads-the-wall.md](../../time-discipline-d93-gob-time-one-clock-time-lint-family/time003-test-date-literal-against-code-that-reads-the-wall.md) |

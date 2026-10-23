@@ -5,4 +5,5 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1T07J41MRGS4WS1KBGWHSSA | ~BGWHSSA | Absent css root degrades to diagnostic; --version flag (r15, A-072) | [_unfiled/absent-css-root-degrades-to-diagnostic-version-flag-r15-a.md](../../_unfiled/absent-css-root-degrades-to-diagnostic-version-flag-r15-a.md) |
 | 01M5F8MNQZMR2YA5Y1BEVX8AZR | ~EVX8AZR | plumb enabled packs through ObligationInputs instead of cov001 re-reading frob.toml | [c-and-unity-support-adapter-project-model-unity-pack/plumb-enabled-packs-through-obligationinputs-instead-of.md](../../c-and-unity-support-adapter-project-model-unity-pack/plumb-enabled-packs-through-obligationinputs-instead-of.md) |

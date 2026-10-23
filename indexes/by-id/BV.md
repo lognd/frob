@@ -5,5 +5,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV2GBVNWMYN78M069NB5 | ~M069NB5 | init for existing Vite+Tailwind repos and token watch mode (A-027 item 10 remainder) | [_unfiled/init-for-existing-vite-tailwind-repos-and-token-watch-mode-a.md](../../_unfiled/init-for-existing-vite-tailwind-repos-and-token-watch-mode-a.md) |
 | 01M35RZY7WBVBZEP6AJPTSGQXT | ~PTSGQXT | COMPLY101-108: privacy-policy page content, CCPA/CalOPPA | [web-application-lint-families-appsec-compliance/comply101-108-privacy-policy-page-content-ccpa-caloppa.md](../../web-application-lint-families-appsec-compliance/comply101-108-privacy-policy-page-content-ccpa-caloppa.md) |
 | 01M4052TC4BVA3JFFCHZX82EWS | ~ZX82EWS | Per-issue reconcile: revert repository-owned fields changed by others and propose | [deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/per-issue-reconcile-revert-repository-owned-fields-changed.md](../../deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/per-issue-reconcile-revert-repository-owned-fields-changed.md) |

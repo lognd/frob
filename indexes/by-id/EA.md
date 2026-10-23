@@ -6,5 +6,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 | ULID | Handle | Title | Path |
 |---|---|---|---|
 | 01M12TN65GEAY4904XCSTGE3MD | ~STGE3MD | Migrate docstring archaeology into cited tickets (DOCARCH001 findings) | [_unfiled/migrate-docstring-archaeology-into-cited-tickets-docarch001.md](../../_unfiled/migrate-docstring-archaeology-into-cited-tickets-docarch001.md) |
+| 01M1QDTV2YEAB07P7BZ980EGYC | ~980EGYC | unused tokens in report v2 (A-037) | [_unfiled/unused-tokens-in-report-v2-a-037.md](../../_unfiled/unused-tokens-in-report-v2-a-037.md) |
 | 01M1QDTYQEEAFC68ACF76TH9AC | ~76TH9AC | F-017: docs/strata/surface.md + threat.md node grammar shows attr IDENT form but the real form needs STRING (attr "privacy-policy"; retention=90d) -- fix the docs to show the STRING attr form | [_unfiled/f-017-docs-strata-surface-md-threat-md-node-grammar-shows.md](../../_unfiled/f-017-docs-strata-surface-md-threat-md-node-grammar-shows.md) |
 | 01M4KZWDQ2EATVKFDQX16ATP75 | ~16ATP75 | base-ref config tests commit without an identity and fail NoIdentity on CI | [_unfiled/base-ref-config-tests-commit-without-an-identity-and-fail.md](../../_unfiled/base-ref-config-tests-commit-without-an-identity-and-fail.md) |

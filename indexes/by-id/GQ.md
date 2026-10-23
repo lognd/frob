@@ -5,5 +5,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV2FGQZV0DWY1MMNBM5D | ~MMNBM5D | constrained theme derivation in OKLab: light/dark/high-contrast from one seed (A-027 item 9) | [_unfiled/constrained-theme-derivation-in-oklab-light-dark-high.md](../../_unfiled/constrained-theme-derivation-in-oklab-light-dark-high.md) |
 | 01M1T07NXSGQEK1JQ4XKQSJFAK | ~KQSJFAK | F-236+: frontend delta audit -- substring-as-prefix is now a measured cross-language, cross-repo recurrence | [f-236-frontend-delta-audit-substring-as-prefix-is-now-a/EPIC.md](../../f-236-frontend-delta-audit-substring-as-prefix-is-now-a/EPIC.md) |
 | 01M35RZY9FGQ04HZK0YMW0TZ9S | ~MW0TZ9S | Gate registry derived views are not consumed by the check job runner; @gate registration does not run a detector | [_unfiled/gate-registry-derived-views-are-not-consumed-by-the-check.md](../../_unfiled/gate-registry-derived-views-are-not-consumed-by-the-check.md) |

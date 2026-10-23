@@ -5,4 +5,5 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV29CFFES3TB8PH8QF9P | ~PH8QF9P | design-intent files per screen: regions/states/breakpoints/motion diffed against the implementation (A-027 item 2) | [_unfiled/design-intent-files-per-screen-regions-states-breakpoints.md](../../_unfiled/design-intent-files-per-screen-regions-states-breakpoints.md) |
 | 01M4M2JEYVCFSJ86PJ74VTM1FH | ~4VTM1FH | CI uploads the nextest junit report as an artifact when the nextest step fails, so failing tests can be read without log access | [audit-2026-10-07-structural-fixes-for-land-cost-build-cost/ci-uploads-the-nextest-junit-report-as-an-artifact-when-the.md](../../audit-2026-10-07-structural-fixes-for-land-cost-build-cost/ci-uploads-the-nextest-junit-report-as-an-artifact-when-the.md) |

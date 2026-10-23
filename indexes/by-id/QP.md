@@ -5,5 +5,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1T07J3YQPFGZ1XYZZTRGB98 | ~ZTRGB98 | r14: --config flag for borrowed specs (A-070) | [_unfiled/r14-config-flag-for-borrowed-specs-a-070.md](../../_unfiled/r14-config-flag-for-borrowed-specs-a-070.md) |
 | 01M1T07NZ7QPBX3WD3ZVWSJX8H | ~VWSJX8H | F-273: auth-pages audit -- V-model closure is satisfied by existence, never by reachability | [f-273-auth-pages-audit-v-model-closure-is-satisfied-by/EPIC.md](../../f-273-auth-pages-audit-v-model-closure-is-satisfied-by/EPIC.md) |
 | 01M38BCNNNQPBQYTYC6XY1KN97 | ~XY1KN97 | land: run the ty pre-check after the post-merge natives rebuild (stale extension at ty time) | [_unfiled/land-run-the-ty-pre-check-after-the-post-merge-natives.md](../../_unfiled/land-run-the-ty-pre-check-after-the-post-merge-natives.md) |

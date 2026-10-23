@@ -5,6 +5,8 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV1DCN8AAT89YVFGC3T4 | ~VFGC3T4 | Register ORG005 in frob gate WIRE _KNOWN_GATE_RULES | [_unfiled/register-org005-in-frob-gate-wire-known-gate-rules.md](../../_unfiled/register-org005-in-frob-gate-wire-known-gate-rules.md) |
+| 01M1T07J3TCN6FNPK10S5DWN08 | ~S5DWN08 | Refresh coverage lockfile after r13 lands | [_unfiled/refresh-coverage-lockfile-after-r13-lands.md](../../_unfiled/refresh-coverage-lockfile-after-r13-lands.md) |
 | 01M418CX3WCN4WPW7XTZ2QPBZ2 | ~Z2QPBZ2 | Extract a reusable workflow_call for plan, build and smoke, used by release.yml and dev.yml | [m2-universal-model-grimble-foundation-neatness-and-ci/extract-a-reusable-workflow-call-for-plan-build-and-smoke.md](../../m2-universal-model-grimble-foundation-neatness-and-ci/extract-a-reusable-workflow-call-for-plan-build-and-smoke.md) |
 | 01M43ARZ3VCNDX20C9BZZCCYHY | ~ZZCCYHY | crunk-ingest: Tailwind config ingest and theme mapping | [crunk-in-the-monorepo/crunk-ingest-tailwind-config-ingest-and-theme-mapping.md](../../crunk-in-the-monorepo/crunk-ingest-tailwind-config-ingest-and-theme-mapping.md) |
 | 01M4HT2BSXCN48AG9Z18GC1GYM | ~8GC1GYM | CI frob check step skips stages already run as dedicated steps | [_unfiled/ci-frob-check-step-skips-stages-already-run-as-dedicated.md](../../_unfiled/ci-frob-check-step-skips-stages-already-run-as-dedicated.md) |

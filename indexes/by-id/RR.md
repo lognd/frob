@@ -5,4 +5,5 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV1ERR372T9KFTACKNTY | ~TACKNTY | post-land sweep regression from T-0039: 1 new (rule, file) identit(ies), 1 finding(s) (OPAQUE001) | [_unfiled/post-land-sweep-regression-from-t-0039-1-new-rule-file.md](../../_unfiled/post-land-sweep-regression-from-t-0039-1-new-rule-file.md) |
 | 01M4235FSBRRXMX4Q72QAFRXM3 | ~QAFRXM3 | land refuses only findings the ticket introduces; pre-existing base findings are reported, not blocking (ratchet) | [_unfiled/land-refuses-only-findings-the-ticket-introduces-pre.md](../../_unfiled/land-refuses-only-findings-the-ticket-introduces-pre.md) |

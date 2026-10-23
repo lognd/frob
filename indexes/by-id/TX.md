@@ -5,4 +5,5 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV27TXJT9Q4B713N7CEB | ~13N7CEB | glob '**/' must match zero directories (jsx/entry/ignore) | [_unfiled/glob-must-match-zero-directories-jsx-entry-ignore.md](../../_unfiled/glob-must-match-zero-directories-jsx-entry-ignore.md) |
 | 01M3Z714BATXCX8X2XN0XW0SPK | ~0XW0SPK | G13: frob orchestration of grimble as a sibling stage | [m2-universal-model-grimble-foundation-neatness-and-ci/g13-frob-orchestration-of-grimble-as-a-sibling-stage.md](../../m2-universal-model-grimble-foundation-neatness-and-ci/g13-frob-orchestration-of-grimble-as-a-sibling-stage.md) |

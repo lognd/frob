@@ -5,6 +5,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV1HBQD1X3VBA9MJ1ARV | ~9MJ1ARV | spec failures carry the offending detail; documented defaults are real defaults (A-009, A-010) | [_unfiled/spec-failures-carry-the-offending-detail-documented-defaults.md](../../_unfiled/spec-failures-carry-the-offending-detail-documented-defaults.md) |
 | 01M1T07NZYBQ9HWDJZ80FPQXHD | ~0FPQXHD | H3-7: empty catch/degrade path with no logging in src/ | [f-296-engine-round-3-audit-contracts-stated-in-prose/h3-7-empty-catch-degrade-path-with-no-logging-in-src.md](../../f-296-engine-round-3-audit-contracts-stated-in-prose/h3-7-empty-catch-degrade-path-with-no-logging-in-src.md) |
 | 01M4069ZE5BQECP28D8PTH7VKB | ~PTH7VKB | Create the 0.532.0 milestone object and move the release:0.532.0 labels onto it | [m2-universal-model-grimble-foundation-neatness-and-ci/create-the-0-532-0-milestone-object-and-move-the-release-0.md](../../m2-universal-model-grimble-foundation-neatness-and-ci/create-the-0-532-0-milestone-object-and-move-the-release-0.md) |
 | 01M5DJW52ZBQRYN9ZSTGSJJYF3 | ~GSJJYF3 | work --next: evict idle agent claims when evict_agent = auto | [distributed-tickets-claims-eviction-and-automatic-freshness/work-next-evict-idle-agent-claims-when-evict-agent-auto.md](../../distributed-tickets-claims-eviction-and-automatic-freshness/work-next-evict-idle-agent-claims-when-evict-agent-auto.md) |

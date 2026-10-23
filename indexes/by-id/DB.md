@@ -5,6 +5,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV26DB9Z0N54XQ6MGVE2 | ~Q6MGVE2 | query_out.py: render ComponentAnswer's r6 utilities/colors/spacings/layers fields | [_unfiled/query-out-py-render-componentanswer-s-r6-utilities-colors.md](../../_unfiled/query-out-py-render-componentanswer-s-r6-utilities-colors.md) |
 | 01M3AXSD7VDBAJ8DNVFEWSM4J3 | ~EWSM4J3 | Helm values ingestion | [sysdesign-system-design-linting-and-strata-architecture/helm-values-ingestion.md](../../sysdesign-system-design-linting-and-strata-architecture/helm-values-ingestion.md) |
 | 01M3DG64DYDB3WZKETCM7XBF7P | ~M7XBF7P | frob check: csharp/unity project type -- detection via detect_unity_project or *.asmdef and a dispatcher that runs gates plus a configurable [[test.runner]] step | [_unfiled/frob-check-csharp-unity-project-type-detection-via-detect.md](../../_unfiled/frob-check-csharp-unity-project-type-detection-via-detect.md) |
 | 01M3ZX883TDB46GGDYS92KDR1Q | ~92KDR1Q | ticket new --good-first scaffolds the Start here section | [m2-universal-model-grimble-foundation-neatness-and-ci/ticket-new-good-first-scaffolds-the-start-here-section.md](../../m2-universal-model-grimble-foundation-neatness-and-ci/ticket-new-good-first-scaffolds-the-start-here-section.md) |

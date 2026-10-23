@@ -5,6 +5,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV23JP68WEKTT38XHP5P | ~38XHP5P | post-land sweep regression from T-0062: 1 new (rule, file) identit(ies), 1 finding(s) (OPAQUE001) | [_unfiled/post-land-sweep-regression-from-t-0062-1-new-rule-file.md](../../_unfiled/post-land-sweep-regression-from-t-0062-1-new-rule-file.md) |
 | 01M2VFD1ZBJP6X2ACJ4KCF29W6 | ~KCF29W6 | frob-suggest: replace blanket FROB_SUGGEST_ACK with per-rule token, update docs | [_unfiled/frob-suggest-replace-blanket-frob-suggest-ack-with-per-rule.md](../../_unfiled/frob-suggest-replace-blanket-frob-suggest-ack-with-per-rule.md) |
 | 01M4CTE4TWJP2W6EV2PZN62TQN | ~ZN62TQN | crunk applies exceptions (crunk-check/src/product.rs 78) and gob-check owns binding (audit M4) | [audit-2026-10-07-structural-fixes-for-land-cost-build-cost/crunk-applies-exceptions-crunk-check-src-product-rs-78-and.md](../../audit-2026-10-07-structural-fixes-for-land-cost-build-cost/crunk-applies-exceptions-crunk-check-src-product-rs-78-and.md) |
 | 01M5ETB7SWJPH7EVK97WHEVEHY | ~WHEVEHY | GRL example runner: model inputs plus engine relations cell/owned_by (SYS001, CAP001) | [m2-universal-model-grimble-foundation-neatness-and-ci/grl-example-runner-model-inputs-plus-engine-relations-cell.md](../../m2-universal-model-grimble-foundation-neatness-and-ci/grl-example-runner-model-inputs-plus-engine-relations-cell.md) |

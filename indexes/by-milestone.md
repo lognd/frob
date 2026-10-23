@@ -3,7 +3,7 @@
 
 As of event 01M5N9D48EBKV70488XWNMZVD5. From the `milestone:` labels.
 
-## (none) (1458)
+## (none) (1598)
 
 | Handle | Title | Priority | Points | Path |
 |---|---|---|---|---|
@@ -208,7 +208,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. From the `milestone:` labels.
 | ~VQKN1E9 | Token dialect compiles to DTCG 2025.10: tiers, aliases, composites, scopes and modes through the resolver module | high | 5 | [crunk-in-the-monorepo/token-dialect-compiles-to-dtcg-2025-10-tiers-aliases.md](../crunk-in-the-monorepo/token-dialect-compiles-to-dtcg-2025-10-tiers-aliases.md) |
 | ~QY70Q62 | LAYOUT and RESP rules at T1: overflow, overlap, clipping, safe area, target size, breakpoint coverage | high | 5 | [crunk-in-the-monorepo/layout-and-resp-rules-at-t1-overflow-overlap-clipping-safe.md](../crunk-in-the-monorepo/layout-and-resp-rules-at-t1-overflow-overlap-clipping-safe.md) |
 
-1258 more not shown; find any ticket in [by-id](by-id/).
+1398 more not shown; find any ticket in [by-id](by-id/).
 
 ## 0.532.0 (2)
 

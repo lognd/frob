@@ -5,5 +5,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1T07J3MVCCZM2X6AD0JA3N4 | ~D0JA3N4 | Ship apl console-script alias (A-057 npx GraphQL-CLI collision) | [_unfiled/ship-apl-console-script-alias-a-057-npx-graphql-cli.md](../../_unfiled/ship-apl-console-script-alias-a-057-npx-graphql-cli.md) |
 | 01M40PAJ47VC22S2EXC3A9XXRK | ~3A9XXRK | pm-enforcement.md: align knob defaults with releases.md and the landed [pm] tables | [m2-universal-model-grimble-foundation-neatness-and-ci/pm-enforcement-md-align-knob-defaults-with-releases-md-and.md](../../m2-universal-model-grimble-foundation-neatness-and-ci/pm-enforcement-md-align-knob-defaults-with-releases-md-and.md) |
 | 01M4W7DAHAVC5HDWJJ5NPGXR8M | ~NPGXR8M | Land verification re-runs the whole workspace (clippy, rustdoc, test build) on every land: make it touched-set incremental and offloadable | [_unfiled/land-verification-re-runs-the-whole-workspace-clippy-rustdoc.md](../../_unfiled/land-verification-re-runs-the-whole-workspace-clippy-rustdoc.md) |

@@ -3,7 +3,7 @@
 
 As of event 01M5N9D48EBKV70488XWNMZVD5. From the `area:` labels.
 
-## (none) (1828)
+## (none) (1958)
 
 | Handle | Title | Priority | Points | Path |
 |---|---|---|---|---|
@@ -208,7 +208,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. From the `area:` labels.
 | ~2SM2G7J | grl-spec.md 7.0: denotational semantics of GRL into K3 over lo/hi structures (count as intervals, within N truncation as Unknown, polarity map, static NotApplicable, defs as views) | high | 3 | [m2-universal-model-grimble-foundation-neatness-and-ci/grl-spec-md-7-0-denotational-semantics-of-grl-into-k3-over.md](../m2-universal-model-grimble-foundation-neatness-and-ci/grl-spec-md-7-0-denotational-semantics-of-grl-into-k3-over.md) |
 | ~D672RXD | frob-ledger: sync the ticket index incrementally by tree diff, keyed by tree id; pm writes update the key | high | 3 | [audit-2026-10-07-structural-fixes-for-land-cost-build-cost/frob-ledger-sync-the-ticket-index-incrementally-by-tree-diff.md](../audit-2026-10-07-structural-fixes-for-land-cost-build-cost/frob-ledger-sync-the-ticket-index-incrementally-by-tree-diff.md) |
 
-1628 more not shown; find any ticket in [by-id](by-id/).
+1758 more not shown; find any ticket in [by-id](by-id/).
 
 ## check (1)
 
@@ -216,7 +216,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. From the `area:` labels.
 |---|---|---|---|---|
 | ~2PM2R2K | frob:accept CI006 in a YAML comment does not suppress the zizmor finding | medium | - | [_unfiled/frob-accept-ci006-in-a-yaml-comment-does-not-suppress-the.md](../_unfiled/frob-accept-ci006-in-a-yaml-comment-does-not-suppress-the.md) |
 
-## crunk (67)
+## crunk (77)
 
 | Handle | Title | Priority | Points | Path |
 |---|---|---|---|---|
@@ -275,7 +275,17 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. From the `area:` labels.
 | ~WKS14DV | crunk-rules: decide ORG001/ORG002/ORG004 honoring [org].ignore and tokens sheet | medium | - | [_unfiled/crunk-rules-decide-org001-org002-org004-honoring-org-ignore.md](../_unfiled/crunk-rules-decide-org001-org002-org004-honoring-org-ignore.md) |
 | ~G3SK7JG | crunk: LAYER001 underscore integers and golden provenance note | medium | - | [_unfiled/crunk-layer001-underscore-integers-and-golden-provenance.md](../_unfiled/crunk-layer001-underscore-integers-and-golden-provenance.md) |
 | ~2PZPVYD | SEO113-120: spam-policy shape detectors | low | 5 | [web-application-lint-families-appsec-compliance/seo113-120-spam-policy-shape-detectors.md](../web-application-lint-families-appsec-compliance/seo113-120-spam-policy-shape-detectors.md) |
+| ~PH8QF9P | design-intent files per screen: regions/states/breakpoints/motion diffed against the implementation (A-027 item 2) | low | - | [_unfiled/design-intent-files-per-screen-regions-states-breakpoints.md](../_unfiled/design-intent-files-per-screen-regions-states-breakpoints.md) |
+| ~R2SWXHG | motion and interaction tokens with lint and generated TS module (A-027 item 3) | low | - | [_unfiled/motion-and-interaction-tokens-with-lint-and-generated-ts.md](../_unfiled/motion-and-interaction-tokens-with-lint-and-generated-ts.md) |
+| ~3T33TZ5 | palette intelligence: OKLab/OKLCH ramps, heat gradients, depth shading, accessible pairs (A-027 item 4) | low | - | [_unfiled/palette-intelligence-oklab-oklch-ramps-heat-gradients-depth.md](../_unfiled/palette-intelligence-oklab-oklch-ramps-heat-gradients-depth.md) |
+| ~EGHX2S1 | screenshot-driven review: rendered breakpoints, measured contrast/spacing/grid, visual-regression baseline (A-027 item 5) | low | - | [_unfiled/screenshot-driven-review-rendered-breakpoints-measured.md](../_unfiled/screenshot-driven-review-rendered-breakpoints-measured.md) |
+| ~YE6H9ZW | component props and variants in the inventory (A-027 item 1 remainder) | low | - | [_unfiled/component-props-and-variants-in-the-inventory-a-027-item-1.md](../_unfiled/component-props-and-variants-in-the-inventory-a-027-item-1.md) |
+| ~15M39WM | microcopy lint and state-text templates (A-027 item 8) | low | - | [_unfiled/microcopy-lint-and-state-text-templates-a-027-item-8.md](../_unfiled/microcopy-lint-and-state-text-templates-a-027-item-8.md) |
+| ~MMNBM5D | constrained theme derivation in OKLab: light/dark/high-contrast from one seed (A-027 item 9) | low | - | [_unfiled/constrained-theme-derivation-in-oklab-light-dark-high.md](../_unfiled/constrained-theme-derivation-in-oklab-light-dark-high.md) |
+| ~M069NB5 | init for existing Vite+Tailwind repos and token watch mode (A-027 item 10 remainder) | low | - | [_unfiled/init-for-existing-vite-tailwind-repos-and-token-watch-mode-a.md](../_unfiled/init-for-existing-vite-tailwind-repos-and-token-watch-mode-a.md) |
 | ~C707FRF | F-012: add a Playwright (@playwright/test) test collector so specs can be bound as frob:tests evidence | low | - | [_unfiled/f-012-add-a-playwright-playwright-test-test-collector-so.md](../_unfiled/f-012-add-a-playwright-playwright-test-test-collector-so.md) |
+| ~CKRC4B9 | roadmap: prose/markdown styling rule mapped to type and spacing scales (A-050.3) | low | - | [_unfiled/roadmap-prose-markdown-styling-rule-mapped-to-type-and.md](../_unfiled/roadmap-prose-markdown-styling-rule-mapped-to-type-and.md) |
+| ~79H7B2E | scaffold seeds breakpoints from the resolved tailwind config (A-050.4) | low | - | [_unfiled/scaffold-seeds-breakpoints-from-the-resolved-tailwind-config.md](../_unfiled/scaffold-seeds-breakpoints-from-the-resolved-tailwind-config.md) |
 | ~NJ6WT20 | frob:tests kind=a11y obligation | low | - | [f-236-frontend-delta-audit-substring-as-prefix-is-now-a/frob-tests-kind-a11y-obligation.md](../f-236-frontend-delta-audit-substring-as-prefix-is-now-a/frob-tests-kind-a11y-obligation.md) |
 | ~SSFY6KD | M-8: error-state a11y assertion plus RHF aria-invalid lint | low | - | [f-273-auth-pages-audit-v-model-closure-is-satisfied-by/m-8-error-state-a11y-assertion-plus-rhf-aria-invalid-lint.md](../f-273-auth-pages-audit-v-model-closure-is-satisfied-by/m-8-error-state-a11y-assertion-plus-rhf-aria-invalid-lint.md) |
 | ~JGEK1XJ | A11Y: WCAG 2.2 Level A and AA static rules over HTML/JSX/TSX/Vue/templates plus accessibility statement page (42 criteria, 40 static) | low | - | [web-application-lint-families-appsec-compliance/a11y-wcag-2-2-level-a-and-aa-static-rules-over-html-jsx-tsx.md](../web-application-lint-families-appsec-compliance/a11y-wcag-2-2-level-a-and-aa-static-rules-over-html-jsx-tsx.md) |

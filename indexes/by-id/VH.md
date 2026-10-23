@@ -5,5 +5,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV28VH1T0HG8P16RJC28 | ~16RJC28 | r7: peer-session wishlist (A-027) -- suggested tokens, terminal preview/diff/explain, roadmap | [_unfiled/r7-peer-session-wishlist-a-027-suggested-tokens-terminal.md](../../_unfiled/r7-peer-session-wishlist-a-027-suggested-tokens-terminal.md) |
 | 01M2Y1SS0MVHB8M891RN134SE7 | ~N134SE7 | Web application lint families: appsec, compliance, accessibility, SEO and web performance, SQL -- every rule cites its external authority | [web-application-lint-families-appsec-compliance/EPIC.md](../../web-application-lint-families-appsec-compliance/EPIC.md) |
 | 01M3AXSDADVHG21QWC2V9E6M2A | ~V9E6M2A | STORE303: multi-entity ACID write pattern issued against a store declared with no native multi-record transactions | [store-database-paradigm-misuse-lint-family/store303-multi-entity-acid-write-pattern-issued-against-a.md](../../store-database-paradigm-misuse-lint-family/store303-multi-entity-acid-write-pattern-issued-against-a.md) |

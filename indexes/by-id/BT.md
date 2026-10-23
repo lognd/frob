@@ -5,4 +5,5 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1WJM94DBTPN2PFTFNKB5TT1 | ~NKB5TT1 | Rename project apollo -> crunk (package, CLI, config, docs, metadata) | [_unfiled/rename-project-apollo-crunk-package-cli-config-docs-metadata.md](../../_unfiled/rename-project-apollo-crunk-package-cli-config-docs-metadata.md) |
 | 01M4GKBEBGBTA03VFB90SDR858 | ~0SDR858 | Evidence test node ids are pytest-rootdir-relative instead of repository-relative; test-only tickets need an explicit changelog exemption path | [_unfiled/evidence-test-node-ids-are-pytest-rootdir-relative-instead.md](../../_unfiled/evidence-test-node-ids-are-pytest-rootdir-relative-instead.md) |

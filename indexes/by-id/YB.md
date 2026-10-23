@@ -5,5 +5,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV11YBN4ZWJ0J4H8A2Q4 | ~4H8A2Q4 | root-relative output paths + contrast report mode (CR-14, A-006/A-007) | [_unfiled/root-relative-output-paths-contrast-report-mode-cr-14-a-006.md](../../_unfiled/root-relative-output-paths-contrast-report-mode-cr-14-a-006.md) |
 | 01M4D6NJCEYBXJKANS5BY7YNSY | ~BY7YNSY | gob-git/gob-walk: one repository, index and filter pipeline per process; hash each file once | [audit-2026-10-07-structural-fixes-for-land-cost-build-cost/gob-git-gob-walk-one-repository-index-and-filter-pipeline.md](../../audit-2026-10-07-structural-fixes-for-land-cost-build-cost/gob-git-gob-walk-one-repository-index-and-filter-pipeline.md) |
 | 01M4D94ZPDYBATXNCVY3XRQ6RM | ~3XRQ6RM | UNITY3xx input and physics rules: legacy Input or KeyCode reads in an Input System project; Rigidbody forces or moves in Update | [c-and-unity-support-adapter-project-model-unity-pack/unity3xx-input-and-physics-rules-legacy-input-or-keycode.md](../../c-and-unity-support-adapter-project-model-unity-pack/unity3xx-input-and-physics-rules-legacy-input-or-keycode.md) |

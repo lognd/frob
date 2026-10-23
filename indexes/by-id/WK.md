@@ -5,6 +5,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1T07J3QWKR581B9BN8NZMG0 | ~N8NZMG0 | r13: application-coverage revision (A-063 items 1+2, TW004/TW005) | [_unfiled/r13-application-coverage-revision-a-063-items-1-2-tw004.md](../../_unfiled/r13-application-coverage-revision-a-063-items-1-2-tw004.md) |
 | 01M1WJMD2FWKPS1J7MPF18KDVY | ~F18KDVY | consumer round-4 backend audit: nine findings written as why the gates missed them, including a second independent report of waiver premises expiring unchecked | [consumer-round-4-backend-audit-nine-findings-written-as-why/EPIC.md](../../consumer-round-4-backend-audit-nine-findings-written-as-why/EPIC.md) |
 | 01M38BCNASWK1GWJ9Q0AFPG5XF | ~AFPG5XF | gates-security stage-group golden drifted: extra a11y member | [_unfiled/gates-security-stage-group-golden-drifted-extra-a11y-member.md](../../_unfiled/gates-security-stage-group-golden-drifted-extra-a11y-member.md) |
 | 01M4052TKZWKG1QBB3CWHQ9MVM | ~WHQ9MVM | frob ticket proposals accept: TTY, no agent marker, escaped diff, mapped identities, full value fetched | [deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/frob-ticket-proposals-accept-tty-no-agent-marker-escaped.md](../../deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/frob-ticket-proposals-accept-tty-no-agent-marker-escaped.md) |

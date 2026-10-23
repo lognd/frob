@@ -5,6 +5,8 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV1VBYG7Y76JZ97YCMH3 | ~97YCMH3 | r6: JSX/Tailwind-native crunk -- design for A-021..A-025 | [_unfiled/r6-jsx-tailwind-native-crunk-design-for-a-021-a-025.md](../../_unfiled/r6-jsx-tailwind-native-crunk-design-for-a-021-a-025.md) |
+| 01M1T07J42BYAD1FDNJHY06C0F | ~HY06C0F | Absent tailwind config: located diagnostic like the css root (A-074) | [_unfiled/absent-tailwind-config-located-diagnostic-like-the-css-root.md](../../_unfiled/absent-tailwind-config-located-diagnostic-like-the-css-root.md) |
 | 01M35RZYA6BY9936Z3H6M7AGD4 | ~6M7AGD4 | sqlfluff plugin: schema/session-level performance rules split off T-5335 | [_unfiled/sqlfluff-plugin-schema-session-level-performance-rules-split.md](../../_unfiled/sqlfluff-plugin-schema-session-level-performance-rules-split.md) |
 | 01M48BQD10BY692FWCD0DE95KF | ~0DE95KF | Bump rustls past RUSTSEC-2026-0285 (frob-gh pins =0.23.43) | [_unfiled/bump-rustls-past-rustsec-2026-0285-frob-gh-pins-0-23-43.md](../../_unfiled/bump-rustls-past-rustsec-2026-0285-frob-gh-pins-0-23-43.md) |
 | 01M4YZCC0PBYFW8CSBB8ERKFXE | ~8ERKFXE | crunk-gallery: discover routes from router.tsx as GALLERY005 input | [_unfiled/crunk-gallery-discover-routes-from-router-tsx-as-gallery005.md](../../_unfiled/crunk-gallery-discover-routes-from-router-tsx-as-gallery005.md) |

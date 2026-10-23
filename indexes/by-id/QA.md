@@ -5,6 +5,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1QDTV12QAGJQ4CSNHM7PR6B | ~HM7PR6B | alpha-aware COLOR001: variants conform, fixes preserve alpha (CR-09, A-003) | [_unfiled/alpha-aware-color001-variants-conform-fixes-preserve-alpha.md](../../_unfiled/alpha-aware-color001-variants-conform-fixes-preserve-alpha.md) |
 | 01M1WJMD43QA4H55AS684P9467 | ~84P9467 | evidence classification: a test whose subject is constructed in the test file rather than imported from the package is weaker evidence | [consumer-round-4-backend-audit-nine-findings-written-as-why/evidence-classification-a-test-whose-subject-is-constructed.md](../../consumer-round-4-backend-audit-nine-findings-written-as-why/evidence-classification-a-test-whose-subject-is-constructed.md) |
 | 01M4RP0GFBQAGQXK1MGGFBGN4Y | ~GFBGN4Y | Replace serde_yaml_ng (unsafe-libyaml, RUSTSEC-2024-0449) with a maintained YAML parser and drop the deny.toml ignore | [_unfiled/replace-serde-yaml-ng-unsafe-libyaml-rustsec-2024-0449-with.md](../../_unfiled/replace-serde-yaml-ng-unsafe-libyaml-rustsec-2024-0449-with.md) |
 | 01M4VN38GBQAPJWK0FZPSDN1CC | ~PSDN1CC | frob test --base leaves stale fingerprints: later cargo builds in the worktree compile old sources | [_unfiled/frob-test-base-leaves-stale-fingerprints-later-cargo-builds.md](../../_unfiled/frob-test-base-leaves-stale-fingerprints-later-cargo-builds.md) |

@@ -3,7 +3,7 @@
 
 As of event 01M5N9D48EBKV70488XWNMZVD5. Highest priority first.
 
-## done (1696)
+## done (1826)
 
 | Handle | Title | Priority | Points | Path |
 |---|---|---|---|---|
@@ -208,7 +208,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Highest priority first.
 | ~BCW6PWV | frob-gh: status classification (301, 404, 410) and the token blindness check | high | 3 | [deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/frob-gh-status-classification-301-404-410-and-the-token.md](../deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/frob-gh-status-classification-301-404-410-and-the-token.md) |
 | ~GXM4RK4 | GitHub lookup: list the bot's issues by creator newest first (read-your-writes) | high | 3 | [deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/github-lookup-list-the-bot-s-issues-by-creator-newest-first.md](../deferred-from-0-533-0-by-owner-decision-2026-10-11-tracker/github-lookup-list-the-bot-s-issues-by-creator-newest-first.md) |
 
-1496 more not shown; find any ticket in [by-id](by-id/).
+1626 more not shown; find any ticket in [by-id](by-id/).
 
 ## in-progress (2)
 
@@ -217,7 +217,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Highest priority first.
 | ~Z908DQB | frob test --base main fails with E-INTERNAL Argument list too long | medium | 2 | [_unfiled/frob-test-base-main-fails-with-e-internal-argument-list-too.md](../_unfiled/frob-test-base-main-fails-with-e-internal-argument-list-too.md) |
 | ~N2GX6NN | Capability grants need human acknowledgement: a new or widened may grant is a finding until acked by an attester, so agents cannot self-approve the ceilings they are checked against | medium | 5 | [grimble-enforcement-gaps-from-the-logand-app-v2-model/capability-grants-need-human-acknowledgement-a-new-or.md](../grimble-enforcement-gaps-from-the-logand-app-v2-model/capability-grants-need-human-acknowledgement-a-new-or.md) |
 
-## todo (637)
+## todo (647)
 
 | Handle | Title | Priority | Points | Path |
 |---|---|---|---|---|
@@ -422,7 +422,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Highest priority first.
 | ~EKGVRT7 | cycle plan --apply: call PmStore::assign_many once instead of assign_one per ticket | medium | - | [_unfiled/cycle-plan-apply-call-pmstore-assign-many-once-instead-of.md](../_unfiled/cycle-plan-apply-call-pmstore-assign-many-once-instead-of.md) |
 | ~B33SE5T | gob-symbols: lift the 160 depth cap in the python, csharp and typescript adapters | medium | - | [_unfiled/gob-symbols-lift-the-160-depth-cap-in-the-python-csharp-and.md](../_unfiled/gob-symbols-lift-the-160-depth-cap-in-the-python-csharp-and.md) |
 
-437 more not shown; find any ticket in [by-id](by-id/).
+447 more not shown; find any ticket in [by-id](by-id/).
 
 ## triage (0)
 

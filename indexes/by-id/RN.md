@@ -5,4 +5,6 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1J91D09RNQEWN3BCKSA51M4 | ~KSA51M4 | fixes subsystem: byte-range autofix planning and application | [_unfiled/fixes-subsystem-byte-range-autofix-planning-and-application.md](../../_unfiled/fixes-subsystem-byte-range-autofix-planning-and-application.md) |
+| 01M1J91D0ERNET33MMQ02XNRNR | ~02XNRNR | system E2E suite E2E-01..09 | [_unfiled/system-e2e-suite-e2e-01-09.md](../../_unfiled/system-e2e-suite-e2e-01-09.md) |
 | 01M4CXR89ERNB60CEDG60E2DXH | ~60E2DXH | Screen spec files extend [[screen]]: states, platforms, landmarks, copy keys, status and content hash; STATE001-006 | [crunk-in-the-monorepo/screen-spec-files-extend-screen-states-platforms-landmarks.md](../../crunk-in-the-monorepo/screen-spec-files-extend-screen-states-platforms-landmarks.md) |

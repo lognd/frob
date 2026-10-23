@@ -5,6 +5,7 @@ As of event 01M5N9D48EBKV70488XWNMZVD5. Ids are permanent; the path changes when
 
 | ULID | Handle | Title | Path |
 |---|---|---|---|
+| 01M1J91D06KVQ7M18D086BWD76 | ~86BWD76 | ingest subsystem: CSS tree to located declarations | [_unfiled/ingest-subsystem-css-tree-to-located-declarations.md](../../_unfiled/ingest-subsystem-css-tree-to-located-declarations.md) |
 | 01M404HHK0KV8XZ213YFDTYYEE | ~FDTYYEE | Design consistency pass: resolve the planner's fifteen contradictions | [m2-universal-model-grimble-foundation-neatness-and-ci/design-consistency-pass-resolve-the-planner-s-fifteen.md](../../m2-universal-model-grimble-foundation-neatness-and-ci/design-consistency-pass-resolve-the-planner-s-fifteen.md) |
 | 01M5CW046DKVK5QSJR8TMEN0F2 | ~TMEN0F2 | Refresh state and remote probe | [distributed-tickets-claims-eviction-and-automatic-freshness/refresh-state-and-remote-probe.md](../../distributed-tickets-claims-eviction-and-automatic-freshness/refresh-state-and-remote-probe.md) |
 | 01M5CW05SGKV3HDVCTTMAQT9TT | ~MAQT9TT | Evidence records the commit it measured | [distributed-tickets-claims-eviction-and-automatic-freshness/evidence-records-the-commit-it-measured.md](../../distributed-tickets-claims-eviction-and-automatic-freshness/evidence-records-the-commit-it-measured.md) |
