@@ -2,12 +2,12 @@
 id = "01M5M1TVT09K4YPK17S62Y1A18"
 title = "Wire COH003 layers into coh_pass and product so live runs use them"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T09:35:21Z"
-updated = "2026-10-23T09:45:12Z"
+updated = "2026-10-23T09:45:13Z"
 scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
