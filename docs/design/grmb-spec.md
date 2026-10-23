@@ -379,9 +379,20 @@ node cli : trusted {
 | kind | `kind IDENT;` | node kind | no, default `component` | core kinds `component store queue cache gateway external`; a pack may add kinds (the v1 keywords cdn, balancer, queue, cache, secret, resource become kinds with typed attrs) |
 | clearance | `clearance LABEL;` | element of the label lattice | no, default `Secret` | maximum data label that may rest here; labels `Public` < `Internal` < `Pii` < `Secret` |
 | owns | `owns SELECTOR;` | selector (section 6) | list, none allowed (a node that owns nothing is legal: an external system) | the set of code identities this node owns |
-| may | `may ATOM [ "(" ARGS ")" ] [ at SELECTOR ];` | grant | list | capability grant. ARGS is a comma list of strings constraining the atom (host names, env names, paths); the grant applies at SELECTOR, default the node's whole `owns` set. This replaces v1's `of CONSTRAINT` and the colon form `net.connect:host` |
+| may | `may ATOM [ "(" ARGS ")" ] [ at SELECTOR ] [ because="WHY" ] [ ticket="ID" ];` | grant | list | capability grant. ARGS is a comma list of strings constraining the atom (host names, env names, paths); the grant applies at SELECTOR, default the node's whole `owns` set. This replaces v1's `of CONSTRAINT` and the colon form `net.connect:host`. A grant states why it exists with `because=` or `ticket=` (a non-blank string); a grant with neither is MDL008 at Warn severity, so adopters can ratchet it. `grimble status` reports grant count and breadth (see the grant ratchet below) |
 | surface | `surface SELECTOR;` | selector | list (union) | the intended public API; SYS014 (reserved by binding.md 11.3) compares it with observed public symbols |
 | attrs | `attr` | typed value | list | markers and magnitudes (`attr timeout = 30 s;`, `attr idempotency_key;`) |
+
+**Grant ratchet.** `grimble status` reports, per node, the number of `may` grants
+and their breadth (distinct files the grants' selectors match; a grant without
+`at` covers the node's `owns` files), and the delta against the model as of the
+newest first-parent commit that changed `grimble.lock`. Both sides are measured
+over the same current walk, so a delta is a grant that changed, not a repo that
+grew. Grants are matched by node, atom and string arguments. A grant that matches
+a file its baseline did not is `widened` and listed by name; one that only loses
+files is `narrowed`; new and deleted grants are `added` and `removed`. Without a
+committed lock there is no baseline: counts only, `baseline` is null and there is
+no delta. Grants that state no reason are listed as well.
 
 A node without a `trust` is MDL008. A node carries NO excuse clause:
 capabilities are denied by default (binding.md 7.2), so a node never
@@ -1245,7 +1256,7 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL005 | MDL-SELECTOR-NO-FILE | Warn | a selector's PATH matches no file in the walk. A WARNING by design: a model may legitimately describe code that does not exist yet. It suppresses SYS001 for the same selector so one root cause is one finding; a selector whose file matches but whose units do not is SYS001 |
 | MDL006 | MDL-UNRESOLVED-REF | Error | a reference (flow endpoint, claim operand, link, exception target, `frob:tests` target) resolves to no entity, or to an entity of the wrong kind (except a V-model link target that is not a vmodel, which is MDL014) |
 | MDL007 | MDL-VERSION | Error | missing header, unsupported major, or files of one model with different majors |
-| MDL008 | MDL-FIELD | Error | a required field is missing (`trust`, flow `label`, contract `shape`, claim `what`, vmodel `kind` and `level`, a template's `excuse` clause, an excuse's `for` or non-empty `because`), a scalar clause appears twice, or an `extend` sets a scalar |
+| MDL008 | MDL-FIELD | Error | a required field is missing (`trust`, flow `label`, contract `shape`, claim `what`, vmodel `kind` and `level`, a template's `excuse` clause, an excuse's `for` or non-empty `because`), a scalar clause appears twice, or an `extend` sets a scalar; also a `may` grant with neither `because=` nor `ticket=` (Warn) |
 | MDL009 | MDL-TYPE | Error | an ill-typed value: unit outside the table, comparing dimensions, a path with `..` or empty, a boundary pair on the wrong lattice, a malformed date |
 | MDL010 | MDL-SELECTOR-EMPTY-BY-CONSTRUCTION | Warn | a selector that cannot match anything whatever the repository holds (`lang(rust) & lang(python)`, `a & !a`) |
 | MDL011 | MDL-MODULE | Error | `part of` name differs from the root `module`, or two roots declare the same module name, or an included file declares `module` |

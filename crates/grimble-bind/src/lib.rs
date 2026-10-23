@@ -37,6 +37,7 @@ pub mod directives;
 pub mod drift;
 pub mod edges;
 pub mod frob_owned;
+pub mod grants;
 pub mod live;
 pub mod model;
 pub mod owner;

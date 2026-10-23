@@ -173,6 +173,7 @@ ParsedFile {
                                         ),
                                     },
                                 ),
+                                attrs: [],
                             },
                         ),
                         span: Span {
@@ -287,6 +288,7 @@ ParsedFile {
                                         ),
                                     },
                                 ),
+                                attrs: [],
                             },
                         ),
                         span: Span {

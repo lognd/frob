@@ -182,6 +182,12 @@ A usage error such as `E-CHECK-ONLY` names the bad `--only` value; an unknown
 word is neither a family nor an id. `grimble doctor --text` is the first thing
 to run when `check` says a model file did not parse.
 
+## Watching grants grow
+
+Give every `may` a reason (`because="..."` or `ticket="..."`); one without is an MDL008 warning.
+`grimble status` prints grant count and file breadth per node and, against the commit that last
+changed `grimble.lock`, names every grant that widened.
+
 ## Where next
 
 - `grimble --help` and `grimble check --help`: every verb and flag.
