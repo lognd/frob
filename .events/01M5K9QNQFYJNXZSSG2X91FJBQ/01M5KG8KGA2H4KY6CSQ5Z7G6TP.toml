@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T04:27:50Z"
+digest = "f42a4b28d7c904319abc783517a7cd2557c88f27d42bff172597417427a535e6"
+exit_code = 0
+head = "4fcb063d1ddf01a5ee130f4e62fb53730aa985ad"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 27.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6534763e-91c4-492f-af6b-90904c5bb285 with nextest profile: default
+    Starting 1 test across 1 binary (21 tests skipped)
+        PASS [   0.009s] grimble-lints::testq ts_js_and_csharp_nondeterminism_is_reported_not_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test testq ts_js_and_csharp_nondeterminism_is_reported_not_unresolved"
+size = 623
+status = "measured"
+test_count = 1
+tests_digest = "bafc002d8b0e1f2c6c7bf6d4c773a61218868af5b263a8416564874962f6d4bc"
+at = "2026-10-23T04:27:50Z"
+actor = "lognd"
+rev = 1
