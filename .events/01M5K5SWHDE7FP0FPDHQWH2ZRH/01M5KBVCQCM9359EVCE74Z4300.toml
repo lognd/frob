@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T03:10:32Z"
+digest = "d5332ff0955dda72a4be2affbb13adcf05ab17acf5e402d93e0e1dc043302218"
+exit_code = 0
+head = "3a777ebeb61b8d2f6d08f84a3e08d388e1d1488e"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 295ce179-8e0e-4958-a2de-6bc18ad0cd53 with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.022s] crunk-rules::craft008_rules every_preset_is_clean_on_a_fresh_init
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test craft008_rules every_preset_is_clean_on_a_fresh_init"
+size = 873
+status = "measured"
+test_count = 1
+tests_digest = "fa580d78c2e1af19f81ea4a66ee877b2c1bd6b6911f7b6a23db5d2b8c6c81924"
+at = "2026-10-23T03:10:32Z"
+actor = "lognd"
+rev = 1
