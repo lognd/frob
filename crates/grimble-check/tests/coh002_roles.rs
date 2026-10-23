@@ -37,13 +37,18 @@ fn roles(path: &str, language: Language, text: &str) -> Vec<UnitRole> {
     found
 }
 
+/// The COH002 findings of one file; COH003 has its own tests.
 fn findings(path: &str, language: Language, text: &str) -> Vec<PathFinding> {
     let file = PathFile {
         path,
         language,
         text,
     };
-    analyze(&[file], &CohPassOptions::default()).findings
+    analyze(&[file], &CohPassOptions::default())
+        .findings
+        .into_iter()
+        .filter(|f| f.rule == "COH002")
+        .collect()
 }
 
 // frob:tests crates/grimble-check/src/unit_role.rs::declared_roles
