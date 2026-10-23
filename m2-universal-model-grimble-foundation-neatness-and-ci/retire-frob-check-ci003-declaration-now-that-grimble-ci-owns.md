@@ -2,13 +2,13 @@
 id = "01M5F0A96X8KCH10HNHTXCDEKR"
 title = "Retire frob-check CI003 declaration now that grimble-ci owns CI003"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:32:37Z"
-updated = "2026-10-23T03:45:18Z"
+updated = "2026-10-23T03:45:20Z"
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
