@@ -1,0 +1,9 @@
+kind = "create"
+title = "Register COH001, COH003 and COH004 as grimble-check rules"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**"]
+at = "2026-10-23T00:05:49Z"
+actor = "lognd"
+rev = 1
