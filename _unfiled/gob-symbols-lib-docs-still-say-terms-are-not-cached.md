@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T21:46:32Z"
-updated = "2026-10-23T22:46:39Z"
-scope = ["crates/gob-symbols/src/lib.rs"]
+updated = "2026-10-23T22:58:23Z"
+scope = ["crates/gob-symbols/src/lib.rs", "crates/gob-symbols/tests/it/**"]
 
 [[acceptance]]
 text = "Given crates/gob-symbols/src/lib.rs, when read, then its docs state that folded terms are cached via grimble-bind CodeFile::folded"
