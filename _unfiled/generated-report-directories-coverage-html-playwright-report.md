@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T15:09:35Z"
-updated = "2026-10-23T12:17:14Z"
+updated = "2026-10-23T12:19:49Z"
 labels = ["adoption:logand-app"]
-scope = ["crates/gob-walk/**", "crates/gob-config/**", "crates/crunk-check/**", "changelog.d/**"]
+scope = ["crates/gob-walk/**", "crates/gob-config/**", "crates/crunk-check/**", "changelog.d/**", "docs/**"]
 
 [[acceptance]]
 text = "Given a vitest HTML coverage report at the repository root, when frob check runs, then crunk and frob rules skip it by default (a documented default exclude list), and config can opt back in"
