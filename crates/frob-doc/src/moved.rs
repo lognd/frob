@@ -291,6 +291,13 @@ impl MovedMap {
 mod tests {
     use super::*;
 
+    // frob:tests crates/frob-doc/src/moved.rs::Row.shown
+    #[test]
+    fn shown_renders_the_row_as_written() {
+        let map = MovedMap::parse("[moved]\n\"docs/a.md\" = \"docs/b.md\"\n").unwrap();
+        assert_eq!(map.rows()[0].shown(), "\"docs/a.md\" = \"docs/b.md\"");
+    }
+
     const MAP: &str = r#"
 [moved]
 "docs/a.md" = "docs/b.md"

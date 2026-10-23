@@ -1,5 +1,9 @@
 # Moving docs without breaking references
 
+Status: current
+Owner: frob
+Decisions: none
+
 When a document, heading or section moves, record it in `docs/MOVED.toml` and let frob rewrite the
 references.
 

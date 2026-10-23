@@ -100,7 +100,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [guides/claude-hooks.md](guides/claude-hooks.md) | Claude Code hooks | current | frob |
 | [guides/freshness-hooks.md](guides/freshness-hooks.md) | Freshness hooks | current | frob |
 | [guides/grimble.md](guides/grimble.md) | grimble user guide: model files, check, fmt and the first rules | current | grimble |
-| [guides/moving-docs.md](guides/moving-docs.md) | Moving docs without breaking references | invalid | - |
+| [guides/moving-docs.md](guides/moving-docs.md) | Moving docs without breaking references | current | frob |
 | [guides/quickstart.md](guides/quickstart.md) | Quickstart: from `frob init` to a landed ticket | current | frob |
 | [guides/release.md](guides/release.md) | Cut a release | current | frob |
 | [guides/ticket-branch.md](guides/ticket-branch.md) | Keep the ledger on its own branch | current | frob |
