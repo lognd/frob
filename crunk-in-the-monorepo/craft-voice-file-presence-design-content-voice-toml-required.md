@@ -2,7 +2,8 @@
 id = "01M5HM3W7MK7255AGEN27SXEXP"
 title = "CRAFT voice file presence: design/content/voice.toml required when scenes use copy keys (pairs SLOP060)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
