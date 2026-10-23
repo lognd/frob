@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:55Z"
-updated = "2026-10-23T17:02:40Z"
+updated = "2026-10-23T17:04:53Z"
 idempotency_key = "logand-gaps-V2"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/grimble-model/**", "changelog.d/**"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a heading with a code span, when referenced by its GitHub slug, then it binds"
-bound = false
+bound = true
 +++
 
 Repros 12 (~/projects/frob-v2-repros/logand-grimble-20261009/12-vmodel-ref-table-row-anchor) and 15-vmodel-ref-single-colon-silent (~/projects/frob-v2-repros/logand-grimble-20261009/15-vmodel-ref-single-colon-silent). 12 follows the anchor decision of the vmodel docs ticket. 15 is independent: ref docs/r.md:COMP-0101 (v1 spelling) produces no finding and no binding row, so an unresolvable ref silently disappears.
