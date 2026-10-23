@@ -106,7 +106,7 @@ fn unquote(raw: &str) -> String {
 mod tests {
     use super::*;
 
-    // frob:tests testnames.rs::js_test_ids
+    // frob:tests crates/gob-languages/src/testnames.rs::js_test_ids
     #[test]
     fn describe_chain_joins_with_separator() {
         let src = "describe('gate', () => { describe(\"inner\", () => { it('runs', () => {}); }); it.only(`solo`, () => {}); });\ntest('top', () => {});\n";
@@ -116,7 +116,7 @@ mod tests {
         );
     }
 
-    // frob:tests testnames.rs::js_test_ids
+    // frob:tests crates/gob-languages/src/testnames.rs::js_test_ids
     #[test]
     fn other_languages_and_dynamic_titles_yield_nothing() {
         assert!(js_test_ids(Language::Python, "def test_a(): pass").is_empty());
