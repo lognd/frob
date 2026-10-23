@@ -1,0 +1,10 @@
+kind = "create"
+title = "Move COH002 effects tables into gob-caps Effects capability"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-caps/**"]
+body = "Found while working ~T0TGDAS: the COH002 effects tables live in crates/grimble-check/src/effects.rs; the gob-caps Capability::Effects column is a gap for Rust, Python, C# and TypeScript. Move the tables into the language adapters."
+at = "2026-10-23T09:06:18Z"
+actor = "lognd"
+rev = 1
