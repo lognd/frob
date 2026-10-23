@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T01:14:21Z"
+digest = "e1def914e9a8c03a9060879e7f4f3b6b09cda59136a008f14e414a7d8730c3e0"
+exit_code = 0
+head = "2fbf17a06eea493c7dbd4f194cb7d89b7acb46c4"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 85632bb4-3703-456d-af54-8eb80bd7952d with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.020s] crunk-rules::craft008_rules a_palette_with_no_semantic_role_reports_each_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test craft008_rules a_palette_with_no_semantic_role_reports_each_one"
+size = 618
+status = "measured"
+test_count = 1
+tests_digest = "d43d534082dce37c73e63f78e13a363aecddda3281f0f48b1eba64239804a20e"
+at = "2026-10-23T01:14:21Z"
+actor = "lognd"
+rev = 1
