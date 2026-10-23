@@ -1,0 +1,81 @@
+<!-- mdtest: rule=UNITY202 -->
+# UNITY202 allocation-in-hot-code
+
+A managed allocation (collection, StringBuilder, array) in code Unity runs every frame.
+
+## What it does
+
+Fires in a Unity C# file (one that names `UnityEngine` or a `MonoBehaviour`) for `new` of a managed collection (`List`, `Dictionary`, `HashSet`, `Queue`, `Stack` and the sorted and linked kinds), a `StringBuilder` or `object`, or an array, made in a per-frame callback (`Update`, `LateUpdate`, `FixedUpdate`, `OnGUI`, `OnAnimatorMove`, the `*Stay` collision and trigger messages) or in a method of the same class that such a callback calls, transitively. A target-typed `new()` is judged by the declared type of its variable or field. Value types such as `Vector3` and types the scan cannot tell are never reported. Allocation in `Awake`, `Start` and `OnEnable` runs once and is clean, and so is a lazy cache (a field assigned under a null test, or with `??=`). A plain .NET class that names no Unity type is not examined. The rule is Advisory: zero allocation as a global target is contested.
+
+## Why it matters
+
+Every managed allocation in a frame adds to the garbage collector's work; the collection pause that follows is a visible hitch.
+
+## Remedy
+
+Allocate once into a field and clear it for reuse (`list.Clear()`), or take the object from a pool.
+
+## Examples
+
+### Fires case 1
+
+```csharp expect=fire file=Assets/Scripts/Scan.cs
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Scan : MonoBehaviour
+{
+    void Update()
+    {
+        var hits = new List<Collider>();
+        hits.Clear();
+    }
+}
+```
+
+### Fires case 2
+
+```csharp expect=fire file=Assets/Scripts/Buf.cs
+using UnityEngine;
+
+public class Buf : MonoBehaviour
+{
+    void FixedUpdate()
+    {
+        var scratch = new float[64];
+        scratch[0] = 1f;
+    }
+}
+```
+
+### Clean case 3
+
+```csharp expect=clean file=Assets/Scripts/Scan.cs
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Scan : MonoBehaviour
+{
+    readonly List<Collider> hits = new List<Collider>();
+
+    void Update()
+    {
+        hits.Clear();
+    }
+}
+```
+
+### Clean case 4
+
+```csharp expect=clean file=Assets/Scripts/Plain.cs
+using System.Collections.Generic;
+
+public class Plain
+{
+    void Update()
+    {
+        var items = new List<int>();
+        items.Add(1);
+    }
+}
+```

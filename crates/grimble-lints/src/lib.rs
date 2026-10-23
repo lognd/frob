@@ -32,6 +32,9 @@
 //! (a managed collection or array allocated) in hot code: `Update`-style callbacks and the
 //! same-class methods they reach. Both are Advisory; `Awake` and `Start` are not hot.
 //!
+//! [`unity_pass::analyze`] runs [`unity_hot::scan`] over the walked Unity C# files and returns the
+//! `UNITY201` and `UNITY202` verdicts for the product; the rules are declared in [`rules`].
+//!
 //! [`path::scan`] finds `PATH001` absolute host path literals and, for Rust and Python, `PATH002`
 //! path-to-string separator handling and `PATH003` paths in command-line strings; a language
 //! without path-conversion roles reports them unresolved.
@@ -74,4 +77,5 @@ pub mod unity;
 pub mod unity_common;
 pub mod unity_hot;
 pub mod unity_input;
+pub mod unity_pass;
 pub mod unity_physics;
