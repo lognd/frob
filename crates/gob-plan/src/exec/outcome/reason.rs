@@ -20,20 +20,23 @@ pub enum Reason {
 }
 
 impl Reason {
-    /// The stable code of this reason, as the finding carries it.
+    /// The typed reason of this Unresolved cause, using the dedicated variants where one exists.
+    #[must_use]
     pub fn unresolved(&self) -> UnresolvedReason {
-        UnresolvedReason::from_code(match self {
+        match self {
             Self::Doubt(d) => match d {
-                Doubt::MayEdge { .. } | Doubt::CountBounds { .. } => "edge:may",
-                Doubt::Frontier { .. } => "edge:unknown",
-                Doubt::Budget { .. } | Doubt::StepBudget => "budget",
-                Doubt::Hidden => "partial",
-                Doubt::Dynamic { .. } | Doubt::Member { .. } => "dynamic:unresolvable",
+                Doubt::MayEdge { .. } | Doubt::CountBounds { .. } => UnresolvedReason::EdgeMay,
+                Doubt::Frontier { .. } => UnresolvedReason::EdgeUnknown,
+                Doubt::Budget { .. } | Doubt::StepBudget => UnresolvedReason::Budget,
+                Doubt::Hidden => UnresolvedReason::Partial,
+                Doubt::Dynamic { .. } | Doubt::Member { .. } => {
+                    UnresolvedReason::DynamicUnresolvable
+                }
             },
-            Self::When(text) => text,
-            Self::ParseError => "hole",
-            Self::Hidden => "partial",
-        })
+            Self::When(text) => UnresolvedReason::from_code(text),
+            Self::ParseError => UnresolvedReason::Hole,
+            Self::Hidden => UnresolvedReason::Partial,
+        }
     }
 }
 

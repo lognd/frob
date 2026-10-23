@@ -29,6 +29,7 @@ const TABLE: &[(&str, UnresolvedReason)] = &[
     ("fidelity", UnresolvedReason::Fidelity),
     ("parse-failed", UnresolvedReason::ParseFailed),
     ("partial", UnresolvedReason::Partial),
+    ("budget", UnresolvedReason::Budget),
 ];
 
 // frob:tests crates/gob-rules/src/unresolved.rs::UnresolvedReason

@@ -1,0 +1,1 @@
+Tool stages that run under uv now sync a missing environment first, the vitest provider puts node_modules/.bin on PATH, an agent refused attestation is told which providers it can use, and new worktrees of uv projects get their own venv.

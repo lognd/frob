@@ -19,15 +19,23 @@
 //!
 //! Clean bindings of a P+ plan are never enumerated (the core prunes them), so an `unresolved
 //! when` condition cannot turn one of them into an Unresolved; for P- every subject is visible.
-//! `NotApplicable` is decided per (rule, language) before evaluation and is not this layer's.
+//! `NotApplicable` is decided per (rule, language) before evaluation: [`outcomes_in`] takes the
+//! language and the capabilities the rule needs and returns [`Applicability::NotApplicable`] with
+//! no findings (7.0.7), never a clean or an Unresolved result.
+//!
+//! A `certainly` or `possibly` that turned an Unknown into a definite answer is an assumption
+//! (7.0.4): a fire that is Unresolved when those collapses are read as identity is conditional,
+//! carries an [`Assumption`] with the reason `assumed:certainly@span`, and is capped at Advisory.
 
+mod assume;
 mod reason;
 
 use gob_ir::{NodeId, Truth};
 
+pub use assume::Assumption;
 pub use reason::Reason;
 
-use super::core::{Env, Row, Verdict, evaluator, rows_of};
+use super::core::{Env, Eval, Row, Verdict, evaluator, identity_evaluator, rows_of};
 use super::relations::Relations;
 use super::{ExecError, Input};
 use crate::plan::{Op, OpId, Plan, Polarity, Quant, StrId, VarId};
@@ -67,6 +75,29 @@ pub struct Finding {
     pub reasons: Vec<Reason>,
     /// The first witness of each `some` clause, in clause order.
     pub witnesses: Vec<Witness>,
+    /// The `certainly`/`possibly` assumptions a fire rests on; non-empty means conditional.
+    pub assumptions: Vec<Assumption>,
+}
+
+impl Finding {
+    /// Whether this fire rests on a `certainly`/`possibly` assumption and is capped at Advisory.
+    #[must_use]
+    pub fn is_conditional(&self) -> bool {
+        self.kind == Kind::Fire && !self.assumptions.is_empty()
+    }
+}
+
+/// Whether a rule applies to the language it ran on (grl-spec.md 7.0.7).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Applicability {
+    /// The rule applies; its findings are in [`Outcomes::findings`].
+    Applicable,
+    /// The capability matrix marks `capability` not applicable for the language: no findings, no
+    /// clean count and no Unresolved.
+    NotApplicable {
+        /// The needed capability whose matrix cell is not applicable.
+        capability: gob_caps::Capability,
+    },
 }
 
 /// The result of running a plan to outcomes.
@@ -80,6 +111,37 @@ pub struct Outcomes {
     pub clean: usize,
     /// Whether the evaluation budget ran out; unreached bindings are not in `rows`.
     pub truncated: bool,
+    /// Whether the rule applied to the language; not applicable runs are empty.
+    pub applicability: Applicability,
+}
+
+/// Runs `plan` for `lang`: `NotApplicable` when any capability in `needs` is not applicable there
+/// (decided before evaluation), else as [`outcomes`].
+///
+/// # Errors
+/// As [`super::run_with`].
+pub fn outcomes_in(
+    plan: &Plan,
+    input: &Input<'_>,
+    rels: &Relations,
+    lang: gob_caps::Lang,
+    needs: &[gob_caps::Capability],
+) -> Result<Outcomes, ExecError> {
+    let gap = needs
+        .iter()
+        .copied()
+        .find(|&c| gob_caps::precision(lang, c) == gob_caps::Precision::NotApplicable);
+    let Some(capability) = gap else {
+        return outcomes(plan, input, rels);
+    };
+    tracing::debug!(rule = %plan.parts().rule, ?lang, ?capability, "not applicable");
+    Ok(Outcomes {
+        findings: Vec::new(),
+        rows: Vec::new(),
+        clean: 0,
+        truncated: false,
+        applicability: Applicability::NotApplicable { capability },
+    })
 }
 
 /// Runs `plan` over `input` and maps every binding to its outcome.
@@ -90,6 +152,15 @@ pub fn outcomes(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Outc
     let ev = evaluator(plan, input, rels)?;
     let run = rows_of(&ev);
     let p = plan.parts();
+    let assumed = assume::certainties(p);
+    // V0: the same plan with the collapses read as identity, run only when a collapse exists.
+    let identity = if assumed.is_empty() {
+        None
+    } else {
+        let ev0 = identity_evaluator(plan, input, rels)?;
+        let run0 = rows_of(&ev0);
+        Some((ev0, run0))
+    };
     let mut findings = Vec::new();
     let mut clean = 0;
     for (i, row) in run.rows.iter().enumerate() {
@@ -123,6 +194,12 @@ pub fn outcomes(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Outc
             .filter(|&r| guards[r].truth == Truth::Unknown)
             .collect();
         let witnesses = witnesses(&ev, &mut env, kind);
+        let assumptions = match &identity {
+            Some((ev0, run0)) if kind == Kind::Fire => {
+                conditional(ev0, &run0.rows, row, &assumed, ev.rd.model, subject, &ev)
+            }
+            _ => Vec::new(),
+        };
         findings.push(Finding {
             kind,
             row: i,
@@ -135,6 +212,7 @@ pub fn outcomes(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Outc
                 reasons
             },
             witnesses,
+            assumptions,
         });
     }
     tracing::debug!(
@@ -145,7 +223,41 @@ pub fn outcomes(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Outc
         rows: run.rows,
         clean,
         truncated: run.truncated,
+        applicability: Applicability::Applicable,
     })
+}
+
+/// The assumptions behind a fire on `row`: all of `assumed` when the same binding is not a fire
+/// with the collapses read as identity, else none. A binding the identity run did not reach
+/// (its budget ran out) is left unconditional.
+fn conditional(
+    ev0: &Eval<'_>,
+    rows0: &[Row],
+    row: &Row,
+    assumed: &[crate::plan::Certainty],
+    model: &gob_ir::Model,
+    subject: Option<NodeId>,
+    ev: &Eval<'_>,
+) -> Vec<Assumption> {
+    let Some(base_row) = rows0.iter().find(|r| r.vars == row.vars) else {
+        tracing::debug!("identity run did not reach the binding; fire stays unconditional");
+        return Vec::new();
+    };
+    let mut env = base_row.vars.clone();
+    let (guards, w) = report_guards(ev0, &mut env);
+    let (kind0, _, _) = decide(ev0.plan.polarity, base_row, &w, &guards, ev0.plan);
+    if kind0 == Some(Kind::Fire) {
+        return Vec::new();
+    }
+    let span = assume::span_of(ev, model, subject);
+    tracing::debug!(%span, "fire rests on a certainty assumption");
+    assumed
+        .iter()
+        .map(|&certainty| Assumption {
+            certainty,
+            span: span.clone(),
+        })
+        .collect()
 }
 
 /// Each report's guard under `env`, and their `or` (`Yes` when a report has no guard).

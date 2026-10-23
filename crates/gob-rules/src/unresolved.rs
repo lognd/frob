@@ -66,6 +66,8 @@ pub enum UnresolvedReason {
     ParseFailed,
     /// A file parsed partially, with holes (`partial`).
     Partial,
+    /// The evaluation budget (steps or rows) ran out before the answer was decided (`budget`).
+    Budget,
 }
 
 impl UnresolvedReason {
@@ -91,6 +93,7 @@ impl UnresolvedReason {
             Self::Fidelity => "fidelity",
             Self::ParseFailed => "parse-failed",
             Self::Partial => "partial",
+            Self::Budget => "budget",
         }
     }
 
@@ -117,6 +120,7 @@ impl UnresolvedReason {
             "fidelity" => Self::Fidelity,
             "parse-failed" => Self::ParseFailed,
             "partial" => Self::Partial,
+            "budget" => Self::Budget,
             other => Self::Opaque(other.to_owned()),
         }
     }
@@ -129,9 +133,10 @@ impl UnresolvedReason {
             Self::DynamicSite | Self::DynamicUnresolvable | Self::DynamicStringCode => {
                 UnknownClass::DynamicSite
             }
-            Self::ExpansionBudget | Self::NormalizationUnverified | Self::Fidelity => {
-                UnknownClass::AnalysisLimit
-            }
+            Self::ExpansionBudget
+            | Self::Budget
+            | Self::NormalizationUnverified
+            | Self::Fidelity => UnknownClass::AnalysisLimit,
             _ => UnknownClass::Undecidable,
         }
     }
