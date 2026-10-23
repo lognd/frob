@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T08:36:33Z"
-updated = "2026-10-23T08:48:24Z"
+updated = "2026-10-23T08:48:31Z"
 scope = ["crates/gob-check/src/tool_parse.rs", "crates/gob-check/src/rules.rs", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "actionlint findings map to grimble CI014 where applicable, with a test"
-bound = false
+bound = true
 +++
 
 found while working 01M5F010V5GV0B7KJ7M5QQG70Q: grimble-ci now declares CI013 to CI016 natively; gob-check declares only CI014 and the tool stage has no mapping for zizmor secrets-inherit (CI013) or archived-uses (CI015).
