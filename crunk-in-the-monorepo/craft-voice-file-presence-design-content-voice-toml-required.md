@@ -2,13 +2,13 @@
 id = "01M5HM3W7MK7255AGEN27SXEXP"
 title = "CRAFT voice file presence: design/content/voice.toml required when scenes use copy keys (pairs SLOP060)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:08Z"
-updated = "2026-10-23T01:39:37Z"
+updated = "2026-10-23T01:40:00Z"
 scope = ["crates/crunk-rules/**", "docs/reference/rules/**"]
 
 [[acceptance]]
