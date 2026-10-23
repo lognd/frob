@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:55Z"
-updated = "2026-10-23T16:51:34Z"
+updated = "2026-10-23T16:58:56Z"
 idempotency_key = "logand-gaps-V2"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/grimble-model/**", "changelog.d/**"]
@@ -19,7 +19,7 @@ target = "01M4FGZ22EX779T6RNS4FKJ689"
 
 [[acceptance]]
 text = "Given ref docs/r.md:COMP-0101, when grimble check runs, then a finding names the malformed symref and suggests the # spelling"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given ref docs/spec/L2.md#spec-060 where spec-060 is a table row id, when grimble check runs, then it binds"
