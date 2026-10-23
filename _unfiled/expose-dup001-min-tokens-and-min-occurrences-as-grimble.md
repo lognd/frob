@@ -2,7 +2,8 @@
 id = "01M5HMKRFRZYFQC6HVNPHC3Z2P"
 title = "Expose DUP001 min_tokens and min_occurrences as grimble-check config knobs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
