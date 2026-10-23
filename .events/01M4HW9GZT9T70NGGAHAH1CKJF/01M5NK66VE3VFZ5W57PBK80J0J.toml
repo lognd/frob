@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T23:57:50Z"
+digest = "697e37fbaaa2cf70b6c289ff6f704037801cf5339f37c2ff3dc827acad5c17fa"
+exit_code = 0
+head = "5ada3ddbb094ba0792b0a87290fe624940e6022e"
+inline = '''
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.53s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e348999f-4ed1-49d9-ba54-7ccc0c19f1e7 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.081s] frob-evidence::file_committed a_gitignored_untracked_or_staged_file_is_refused_with_a_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.082s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --test file_committed a_gitignored_untracked_or_staged"
+size = 649
+status = "measured"
+test_count = 1
+tests_digest = "e48f41b7dc910906d42e119dfc0951f8a366efdce52567b3a9fc31d7e141fe68"
+at = "2026-10-23T23:57:50Z"
+actor = "lognd"
+rev = 1
