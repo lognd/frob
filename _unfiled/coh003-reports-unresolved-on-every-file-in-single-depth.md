@@ -2,7 +2,8 @@
 id = "01M5M34XTDZEZ08TAA78872RRP"
 title = "COH003 reports Unresolved on every file in single-depth repos with no layered model"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
