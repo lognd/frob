@@ -2,12 +2,12 @@
 id = "01M5M1TVWKJPZX3BMF736VJAHT"
 title = "Extract shared PathLeaves selector helper from grimble-bind owner into a public helper"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T09:35:21Z"
-updated = "2026-10-23T09:35:21Z"
+updated = "2026-10-23T10:15:14Z"
 scope = ["crates/grimble-check/**", "crates/grimble-bind/**"]
 
 [[acceptance]]
