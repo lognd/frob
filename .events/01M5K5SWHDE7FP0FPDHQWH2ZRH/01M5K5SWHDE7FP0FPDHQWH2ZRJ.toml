@@ -1,0 +1,10 @@
+kind = "create"
+title = "Declare danger/warning/success roles in the default crunk preset"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-spec/src/presets/**"]
+body = "found while working 01M5HM3W18AJZET52BZBEJFYD4: CRAFT008 now fires on the default preset, which declares only a body role; add state roles so a fresh init is clean."
+at = "2026-10-23T01:25:29Z"
+actor = "lognd"
+rev = 1
