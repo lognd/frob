@@ -2,7 +2,8 @@
 id = "01M4FGZ22EX779T6RNS4FKJ689"
 title = "grmb-spec 4.5/6.2: decide vmodel anchors, several runnables or manual per test, and runner-id mapping"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
