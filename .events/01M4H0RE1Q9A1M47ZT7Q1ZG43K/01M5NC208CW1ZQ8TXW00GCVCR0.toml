@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T21:52:36Z"
+digest = "9ea67e74008b4c0199b887a69419be38b190c1637f000d989524830f78b88dc3"
+exit_code = 0
+head = "ea454d5bc5793057dc7712d9701680eda1bfc9b0"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e3b18e8f-8721-4ce0-a9d1-23a79194f1f7 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.081s] frob-obligations::doc_citation missing_section_names_the_citation_and_the_target
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.082s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations --test doc_citation missing_section_names_the_citation_and_the_target"
+size = 622
+status = "measured"
+test_count = 1
+tests_digest = "779cd0e202bdb60312e75e8d0fe2f8fcb8ab5633abea1c97bee509dcd3b8acdd"
+at = "2026-10-23T21:52:36Z"
+actor = "lognd"
+rev = 1

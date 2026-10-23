@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T19:03:08Z"
-updated = "2026-10-23T21:16:08Z"
+updated = "2026-10-23T21:52:36Z"
 labels = ["docs"]
 scope = ["crates/frob-obligations/**", "crates/gob-text/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given a crate comment or doc citing 'tickets.md section 6' where tickets.md has no section 6, when frob check runs, then a finding names the citation and the target; citations resolved through docs/MOVED.toml after consolidation are followed, not reported"
-bound = false
+bound = true
 +++
 
 Owner 2026-10-09: why didn't we catch the doc drift? The docs consolidation audit (notes/review/docs-consolidation-2026-10-09.md) found 427 plain-text section citations that nothing resolves, several dangling.
