@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T15:10:08Z"
-updated = "2026-10-23T14:18:11Z"
+updated = "2026-10-23T14:38:06Z"
 labels = ["adoption:logand-app", "creates:crates/frob-worktree/tests/python_env.rs", "creates:crates/frob-worktree/src/python_env.rs"]
 scope = ["changelog.d/**", "crates/gob-check/src/tools.rs", "crates/frob-worktree/src/work.rs", "crates/frob-worktree/tests/python_env.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/python_env.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-evidence/src/error.rs", "crates/frob-evidence/tests/providers.rs", "crates/gob-check/src/config.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/fmt_fix.rs", "crates/gob-check/src/tool_parse.rs", "crates/gob-check/src/type_parse.rs", "crates/frob-obligations/src/native.rs", "crates/gob-check/tests/boundary.rs", "crates/gob-check/tests/config_docs.rs", "crates/gob-check/tests/fixtures", "crates/gob-check/tests/oracle_gate.rs", "crates/gob-check/tests/oracle_live.rs", "crates/gob-check/tests/pipeline.rs", "crates/gob-check/tests/product_rules", "crates/gob-check/tests/product_rules.rs", "crates/gob-check/tests/rule_defs.rs", "crates/gob-check/tests/ui_product", "crates/gob-check/tests/ui_product.rs", "crates/frob-check/tests/corpus.rs", "crates/frob-check/tests/it", "crates/frob-check/tests/mdtest", "crates/frob-check/tests/rule_coverage.rs", "crates/frob-check/tests/rule_matrix.rs", "crates/frob-check/tests/snapshots", "docs/README.md", "docs/assets", "docs/crunk", "docs/decisions", "docs/grimble", "docs/migration", "docs/reference", "docs/schemas", "crates/gob-check/tests/tool_requires.rs", "docs/design/tool-stages.md", "docs/guides/tool-stages.md", "crates/gob-check/src/prereq.rs", "crates/gob-check/src/lib.rs"]
 
@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = 'Given a tool stage that needs gitignored build output (e.g. a wasm-pack package or a generated setup file), when it declares requires = ["<command>"] or the repository declares [check] setup steps, then land checkouts and fresh worktrees run them before the stage, and a stage whose prerequisite failed reports Unresolved naming the prerequisite instead of passing failures as pre-existing (logand F-567)'
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-558.
