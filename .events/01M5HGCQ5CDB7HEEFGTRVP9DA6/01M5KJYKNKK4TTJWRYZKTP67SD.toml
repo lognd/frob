@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["a test runs the real adapters over the incompleteness oracle corpus and produces the observed answers", "the test fails when the committed observed column differs from the live adapter answers"]
+moved = []
+at = "2026-10-23T05:15:15Z"
+actor = "lognd"
+rev = 1
