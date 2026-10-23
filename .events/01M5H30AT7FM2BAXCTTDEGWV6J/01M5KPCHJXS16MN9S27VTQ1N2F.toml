@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["a .scene.html file in a project is discovered and loaded through crunk_scene::parse_scene_bytes by crunk-ingest", "crunk-check scene discovery includes .scene.html files and reports parse failures as findings"]
+moved = []
+at = "2026-10-23T06:15:18Z"
+actor = "lognd"
+rev = 1
