@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T11:07:25Z"
-updated = "2026-10-23T00:26:46Z"
+updated = "2026-10-23T00:36:48Z"
 scope = ["crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/**"]
 
 [[acceptance]]
