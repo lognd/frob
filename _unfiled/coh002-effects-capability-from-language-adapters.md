@@ -2,12 +2,12 @@
 id = "01M5HJ07DTC2JQT9MP5T0TGDAS"
 title = "COH002: effects capability from language adapters"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T08:15:20Z"
+updated = "2026-10-23T08:45:09Z"
 scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
