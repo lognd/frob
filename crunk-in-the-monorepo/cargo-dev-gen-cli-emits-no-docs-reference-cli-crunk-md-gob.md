@@ -4,12 +4,21 @@ title = "cargo dev gen cli emits no docs/reference/cli/crunk.md (gob-dev links c
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-21T07:55:27Z"
-updated = "2026-10-21T07:55:27Z"
+updated = "2026-10-23T03:45:18Z"
 labels = ["area:crunk"]
-scope = ["crates/gob-dev/**"]
+scope = ["crates/gob-dev/**", "docs/reference/cli/**"]
+
+[[acceptance]]
+text = "Given gob-dev gen cli, when it runs, then docs/reference/cli/crunk.md is generated from the crunk verb inventory"
+bound = false
+
+[[acceptance]]
+text = "Given the committed page, when gen all --check runs, then it reports the page fresh"
+bound = false
 +++
 
 found while working ~CDYEYV6: docs/reference/cli has only any.md and frob.md; the crunk verb inventory is never generated, so docs/crunk/migration.md points at crunk --help instead of a generated page.

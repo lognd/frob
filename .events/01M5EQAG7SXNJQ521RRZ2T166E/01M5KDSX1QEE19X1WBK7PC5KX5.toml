@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given gob-dev gen cli, when it runs, then docs/reference/cli/crunk.md is generated from the crunk verb inventory", "Given the committed page, when gen all --check runs, then it reports the page fresh"]
+moved = []
+at = "2026-10-23T03:45:18Z"
+actor = "lognd"
+rev = 1
