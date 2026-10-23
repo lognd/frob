@@ -1,0 +1,44 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T13:17:20Z"
+digest = "91f0c506822602f631be6bcb45b974fe3027892b2c6e0e22ab529e3793338895"
+exit_code = 0
+head = "83f154c932de19a70574bc47ec73541bad58774c"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fbe7fa23-d313-4c15-b847-cce19c65cb53 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.009s] grimble explain_cmd::tests::the_table_covers_every_generated_page_of_the_product
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble --lib explain_cmd::tests::the_table_covers_every_generated_page_of_the_product"
+size = 1812
+status = "measured"
+test_count = 1
+tests_digest = "5141fb67586278cea47b488617ba027468e0850d67e24d4c95750d624ad3e5ae"
+at = "2026-10-23T13:17:20Z"
+actor = "lognd"
+rev = 1

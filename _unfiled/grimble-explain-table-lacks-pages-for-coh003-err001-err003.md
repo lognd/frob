@@ -7,10 +7,10 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T13:04:44Z"
-updated = "2026-10-23T13:15:15Z"
+updated = "2026-10-23T13:17:20Z"
 scope = ["crates/grimble/src/explain_cmd.rs", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given the generated rule pages, when the explain table test runs, then it passes and covers COH003, ERR001-ERR003, RES001 and SYS006"
-bound = false
+bound = true
 +++
