@@ -2,12 +2,12 @@
 id = "01M5NFNVB515TW2DH23FSH0MZS"
 title = "frob-check fixture_b snapshot lacks a DOC003 finding"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T22:56:32Z"
-updated = "2026-10-23T23:16:11Z"
+updated = "2026-10-23T23:16:20Z"
 scope = ["crates/frob-check/tests/**"]
 
 [[acceptance]]
