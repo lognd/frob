@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T02:23:34Z"
+updated = "2026-10-23T02:27:30Z"
 scope = ["crates/grimble-check/**", "docs/**"]
 
 [[acceptance]]
 text = "Given a unit carrying a grimble:shell or grimble:core directive, when COH002 runs, then the role is read from the directive without the caller supplying it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a unit with no role directive, when COH002 runs, then the caller-supplied role (or none) is used unchanged"

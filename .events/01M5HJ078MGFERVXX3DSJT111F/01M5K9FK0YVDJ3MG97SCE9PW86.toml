@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T02:27:30Z"
+digest = "a4b3c34c38e386e4526b1e16b0a07460a474542e021cd2183aca77109e76ae59"
+exit_code = 0
+head = "2593eea045bc34e439430b4530ee934ac2cce3d9"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.63s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e03b1dd5-ee8b-4c4e-9996-ff30ba956ad3 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.005s] grimble-check::coh002_roles a_core_directive_declares_the_core_role
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test coh002_roles a_core_directive_declares_the_core_role"
+size = 624
+status = "measured"
+test_count = 1
+tests_digest = "9f623cbd246975c9880a370e1f4010c28160518226341aece97744e7b4d0e10a"
+at = "2026-10-23T02:27:30Z"
+actor = "lognd"
+rev = 1
