@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T04:39:49Z"
+digest = "e1ac22153f2e1da4a5d8e44997ddc12b56534ec9305c4f8bc03e0fc87642f731"
+exit_code = 0
+head = "69b81869eb4801595bdcc02b5782e02425e7c7a0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 94f98539-9e8d-4314-a916-fa136b4d70cb with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.476s] grimble-check::dup_knobs config_knobs_reach_the_dup001_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.477s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test dup_knobs config_knobs_reach_the_dup001_pass"
+size = 546
+status = "measured"
+test_count = 1
+tests_digest = "ad3ec1ae13c0710ef4cab5111e7d93fa2190a43673e69aecc60a2bf5b5739623"
+at = "2026-10-23T04:39:49Z"
+actor = "lognd"
+rev = 1
