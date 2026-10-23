@@ -8,7 +8,7 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T18:21:12Z"
-updated = "2026-10-23T21:13:01Z"
+updated = "2026-10-23T21:13:59Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble*/**", "changelog.d/**", "docs/design/**", "docs/guides/**", "docs/reference/**", "docs/README.md", "Cargo.lock"]
 
