@@ -8,12 +8,12 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-23T03:45:43Z"
+updated = "2026-10-23T03:51:37Z"
 scope = ["crates/grimble-ci/**"]
 
 [[acceptance]]
 text = "Given a workflow that runs a frob verb that does not exist, when grimble-ci analyzes it, then CI012 reports it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a workflow whose frob verbs all exist, when grimble-ci analyzes it, then CI012 stays quiet"
