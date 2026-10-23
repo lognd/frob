@@ -2,7 +2,8 @@
 id = "01M5KE9866QXR3E94E7J94DZY4"
 title = "frob-cli: drift test for grimble-ci static frob verb table"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
