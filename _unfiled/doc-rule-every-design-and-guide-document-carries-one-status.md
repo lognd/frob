@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T19:03:13Z"
-updated = "2026-10-23T16:12:03Z"
+updated = "2026-10-23T16:43:44Z"
 labels = ["docs"]
 scope = ["crates/frob-obligations/**", "crates/gob-dev/**", "changelog.d/**", "docs/**", "crates/gob-symbols/**"]
 
