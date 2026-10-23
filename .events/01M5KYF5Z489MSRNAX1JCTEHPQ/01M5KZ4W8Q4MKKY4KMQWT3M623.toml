@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T08:48:23Z"
+digest = "ff656b87c16e8ef0ab81df7e1f047a05a9d2554be65eb50617b73ad9ba08d127"
+exit_code = 0
+head = "4fb493c96078d340f42b06dedbea30fd61ae0fcf"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a378ee7b-904b-4ff3-9185-dac619c685e9 with nextest profile: default
+    Starting 1 test across 1 binary (155 tests skipped)
+        PASS [   0.005s] gob-check tool_parse::tests::zizmor_secrets_inherit_and_archived_uses_map_to_ci013_and_ci015
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 155 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --lib zizmor_secrets_inherit_and_archived_uses_map_to_ci013_and_ci015"
+size = 583
+status = "measured"
+test_count = 1
+tests_digest = "60fda1e8ee7e5a0f92e624c419cbea54cc1fbac6aa750a884f2a58b95ae6e07d"
+at = "2026-10-23T08:48:23Z"
+actor = "lognd"
+rev = 1
