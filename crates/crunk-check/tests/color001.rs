@@ -33,7 +33,13 @@ fn findings_of(spec_text: &str, rel: &str, source: &str) -> Vec<gob_rules::Findi
         .filter(|f| {
             !matches!(
                 f.rule.as_str(),
-                "ORG001" | "TOKENS001" | "EXPORT001" | "CRAFT008" | "CRAFT010"
+                "ORG001"
+                    | "TOKENS001"
+                    | "EXPORT001"
+                    | "CRAFT001"
+                    | "CRAFT005"
+                    | "CRAFT008"
+                    | "CRAFT010"
             )
         })
         .collect()
