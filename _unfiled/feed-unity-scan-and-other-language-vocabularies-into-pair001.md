@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T00:49:41Z"
-updated = "2026-10-23T03:02:27Z"
+updated = "2026-10-23T03:05:16Z"
 scope = ["crates/grimble-lints/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a Unity class that pairs OnEnable and OnDisable correctly, when PAIR001 runs, then nothing is reported"
-bound = false
+bound = true
 +++
 
 found while working G59GJ01: PAIR001 only runs effect::scan over TS/JS files; Unity OnEnable/OnDisable and other languages are not wired in.
