@@ -1,0 +1,10 @@
+kind = "create"
+title = "Document grimble check --summary in sibling-contract.md"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["docs/design/sibling-contract.md"]
+body = "Found while working JB1G32M: add a section 2 bullet describing grimble check --summary (schema grimble.check-summary/1, tiers per-node/per-signature/totals, 64 KB budget)."
+at = "2026-10-23T12:52:06Z"
+actor = "lognd"
+rev = 1
