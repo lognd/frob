@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T08:55:52Z"
+digest = "a51e28babd9c8f6af3e8710a7b4c8e9adc986713e4dca08272f4c2996d0d8929"
+exit_code = 0
+head = "4fb493c96078d340f42b06dedbea30fd61ae0fcf"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 11751b21-c032-4035-82ef-12bdf70e3f2d with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.006s] grimble-check::coh002_effects module_qualified_io_fires_in_python_rust_and_typescript
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test coh002_effects module_qualified_io_fires"
+size = 572
+status = "measured"
+test_count = 1
+tests_digest = "805d53485a1e5661921563c37628301f3df4dc168c3739540bbec49ae51d6e0c"
+at = "2026-10-23T08:55:52Z"
+actor = "lognd"
+rev = 1

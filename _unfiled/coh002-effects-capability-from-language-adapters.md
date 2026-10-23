@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T08:55:42Z"
+updated = "2026-10-23T08:55:52Z"
 scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "COH002 decides effects from a language-adapter capability rather than the callee-name vocabulary"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "COH002 fire and no-fire tests exist for at least two adapter languages, and unresolved when an adapter lacks the capability"
