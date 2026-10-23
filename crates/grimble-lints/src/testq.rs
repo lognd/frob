@@ -251,8 +251,8 @@ fn py_test<'t>(cx: &Ctx<'t>, f: Node<'t>) -> Option<Test<'t>> {
 /// Call roots that declare a JS/TS test.
 const JS_TEST_ROOTS: &[&str] = &["it", "test", "specify", "xit", "xtest", "xspecify"];
 
-/// Call roots that group JS/TS tests.
-const JS_SUITE_ROOTS: &[&str] = &["describe", "suite", "context", "xdescribe", "xcontext"];
+/// Call roots that group JS/TS tests; an `x` prefix on any of them marks the suite skipped.
+const JS_SUITE_ROOTS: &[&str] = &["describe", "suite", "context"];
 
 /// Modifiers that keep a call a test declaration (`it.only`, `test.concurrent.each(..)(..)`).
 const JS_MODIFIERS: &[&str] = &[
@@ -283,11 +283,14 @@ fn js_chain(cx: &Ctx<'_>, mut n: Node<'_>) -> Option<(String, Vec<String>)> {
     }
 }
 
-/// True when a suite call (`describe.skip(..)`, `xdescribe(..)`) skips its tests.
+/// True when a suite call (`describe.skip(..)` or an x-prefixed root) skips its tests.
 fn js_suite_skips(cx: &Ctx<'_>, call: Node<'_>) -> bool {
     js_chain(cx, call).is_some_and(|(root, mods)| {
-        JS_SUITE_ROOTS.contains(&root.as_str())
-            && (root.starts_with('x') || mods.iter().any(|m| m == "skip" || m == "todo"))
+        let base = root.strip_prefix('x');
+        let prefixed = base.is_some_and(|b| JS_SUITE_ROOTS.contains(&b));
+        prefixed
+            || (JS_SUITE_ROOTS.contains(&root.as_str())
+                && mods.iter().any(|m| m == "skip" || m == "todo"))
     })
 }
 
