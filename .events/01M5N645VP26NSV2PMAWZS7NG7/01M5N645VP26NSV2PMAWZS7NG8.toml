@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble status: list manual tests with their reason"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble/**"]
+body = "found while working P7APFVH: Binding.manual_tests is exposed by grimble-bind but the status renderer does not list it"
+at = "2026-10-23T20:09:35Z"
+actor = "lognd"
+rev = 1
