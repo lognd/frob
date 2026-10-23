@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T01:25:29Z"
-updated = "2026-10-23T03:04:34Z"
-scope = ["crates/crunk-spec/src/presets/**", "crates/crunk-spec/tests/**", "crates/crunk-rules/tests/**", "tests/crunk-parity/fixtures/e2e/e2e_12_ungoverned/**", "tests/crunk-parity/fixtures/e2e/e2e_54_pathmode/**", "crates/crunk-rules/src/rules/craft008.md", "crates/crunk-check/tests/color001.rs", "docs/reference/rules/CRAFT008.md", "docs/reference/rules/README.md", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md"]
+updated = "2026-10-23T03:04:35Z"
+scope = ["crates/crunk-spec/src/presets/**", "crates/crunk-spec/tests/**", "crates/crunk-rules/tests/**", "tests/crunk-parity/fixtures/e2e/e2e_12_ungoverned/**", "tests/crunk-parity/fixtures/e2e/e2e_54_pathmode/**", "crates/crunk-rules/src/rules/craft008.md", "crates/crunk-check/tests/color001.rs", "docs/reference/rules/CRAFT008.md", "docs/reference/rules/README.md", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md", "changelog.d/01M1QDTYRJ3P3GT8828GCNECVB.added.md"]
 
 [[acceptance]]
 text = "Given a project initialised with the default crunk preset, when crunk check runs, then CRAFT008 reports nothing"
