@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T19:37:32Z"
+digest = "102df0392dfa49f319e7b0a6d101175262cc11cb392433942743bff929566b1d"
+exit_code = 0
+head = "bf13f4c5577103abe2687dddb9f97b6e534c8aea"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 584d054b-8067-4dc1-b6f2-331d83380351 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.004s] gob-plan::exec_outcome_gaps a_fire_resting_on_certainly_is_conditional_with_an_assumed_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test exec_outcome_gaps a_fire_resting"
+size = 635
+status = "measured"
+test_count = 1
+tests_digest = "7ea45d5677b14cc1a824104c75b3b94694c0e4b91eea357a39df488e727896d2"
+at = "2026-10-23T19:37:32Z"
+actor = "lognd"
+rev = 1
