@@ -2,7 +2,8 @@
 id = "01M5NFNVB515TW2DH23FSH0MZS"
 title = "frob-check fixture_b snapshot lacks a DOC003 finding"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
