@@ -2,7 +2,8 @@
 id = "01M5K5SWHDE7FP0FPDHQWH2ZRH"
 title = "Declare danger/warning/success roles in the default crunk preset"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
