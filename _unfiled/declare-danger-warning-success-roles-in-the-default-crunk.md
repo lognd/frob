@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T01:25:29Z"
-updated = "2026-10-23T02:53:12Z"
-scope = ["crates/crunk-spec/src/presets/**"]
+updated = "2026-10-23T02:54:05Z"
+scope = ["crates/crunk-spec/src/presets/**", "crates/crunk-spec/tests/**"]
 
 [[acceptance]]
 text = "Given a project initialised with the default crunk preset, when crunk check runs, then CRAFT008 reports nothing"
