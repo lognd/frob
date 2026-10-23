@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T19:03:13Z"
-updated = "2026-10-09T19:03:13Z"
+updated = "2026-10-23T15:45:11Z"
 labels = ["docs"]
-scope = ["crates/frob-obligations/**", "crates/gob-dev/**", "changelog.d/**"]
+scope = ["crates/frob-obligations/**", "crates/gob-dev/**", "changelog.d/**", "docs/**"]
 
 [[acceptance]]
 text = "Given a docs/ markdown file with no status header, a status outside the vocabulary, or 'superseded-by' naming a missing document, when frob check runs, then a finding names it; the index page is generated and checked by the generated-file gate"
