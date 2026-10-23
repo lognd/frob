@@ -2,13 +2,13 @@
 id = "01M5HM3WE0PDTYAJ31B2C2A8A0"
 title = "CRAFT001-005,007,009,011,012 presence rules (focus-visible, states, moment, fonts, press feedback, elevation, copy keys, optical alignment, intent coverage)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:08Z"
-updated = "2026-10-23T05:10:55Z"
+updated = "2026-10-23T05:11:02Z"
 scope = ["crates/crunk-rules/**", "docs/reference/rules/**"]
 
 [[acceptance]]
