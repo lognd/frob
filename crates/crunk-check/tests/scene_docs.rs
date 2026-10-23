@@ -33,7 +33,7 @@ fn scene005(files: &[(&str, &[u8])]) -> Vec<gob_rules::Finding> {
         .collect()
 }
 
-// frob:tests crunk_check.run
+// frob:tests crates/crunk-check/src/lib.rs::run
 // frob:tests SceneDocFacts.load
 #[test]
 fn a_non_utf8_nested_scene_is_a_finding_not_a_panic() {
@@ -48,7 +48,7 @@ fn a_non_utf8_nested_scene_is_a_finding_not_a_panic() {
     );
 }
 
-// frob:tests crunk_check.run
+// frob:tests crates/crunk-check/src/lib.rs::run
 #[test]
 fn well_formed_scenes_raise_no_scene005() {
     let found = scene005(&[("design/scenes/ok.scene.html", b"<div data-id=\"a\"></div>")]);
