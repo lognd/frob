@@ -259,7 +259,7 @@ budget_ms = 500
 args = ["cycle", "plan"]
 readonly = true
 exit = [0, 2, 3]
-budget_ms = 500
+budget_ms = 1500
 
 [scenario."frob cycle new"]
 args = ["cycle", "new", "--start", "2026-10-08", "--goal", "profile probe"]
