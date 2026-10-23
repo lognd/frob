@@ -121,6 +121,26 @@ COH003 needs `apply_targets` and a layer source. A language without the
 capability gets Unresolved with the missing capability named, never a
 silent pass (Theorem 3).
 
+The COH003 layer source (`grimble_check::layers`) is tried in this order
+and the two are never mixed, because their scales are not comparable:
+
+1. The grimble model. A `node` with `attr layer = N;` and `owns SEL;`
+   puts every function defined in a file the selector surely matches on
+   layer `N`. Nodes with a missing, non-numeric or repeated-different
+   layer, or an unparsable selector, are skipped with a warning. A file
+   owned by nodes with different layers has no layer. Once the model
+   declares any layer it is the sole source: files it leaves out stay
+   unplaced instead of falling back to depth.
+2. Module depth, only when the model declares no layer. A deeper
+   directory is a lower layer: the deepest file sits one above the
+   primitive layer, each directory level up adds one, and equal depths
+   share a layer. When every file has one depth (a single-module repo)
+   depth says nothing and nothing is placed.
+
+A callee is mapped by its last path segment to the layer of the files
+defining it; a name defined on several different layers, or in no walked
+file, is left out and COH003 reports it Unresolved, never Clean.
+
 ## 2. Type precision and gradual typing (D119)
 
 Types make many questions decidable that are not decidable without

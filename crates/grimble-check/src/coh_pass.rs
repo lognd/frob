@@ -56,7 +56,7 @@ fn range_of(folded: &Folded, node: NodeId) -> (usize, usize) {
 }
 
 /// The ids of the function units of a folded file, in source order.
-fn function_units(folded: &Folded) -> Vec<NodeId> {
+pub(crate) fn function_units(folded: &Folded) -> Vec<NodeId> {
     folded
         .term
         .ids()

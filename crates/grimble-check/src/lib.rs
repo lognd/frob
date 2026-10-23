@@ -48,6 +48,7 @@ pub mod effects;
 pub mod example_model;
 pub mod fidelity;
 mod host;
+pub mod layers;
 pub mod model_view;
 pub mod neat037;
 pub mod packs;
