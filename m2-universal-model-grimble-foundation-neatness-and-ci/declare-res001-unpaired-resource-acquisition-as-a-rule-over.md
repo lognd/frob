@@ -8,7 +8,7 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-11T03:34:49Z"
-updated = "2026-10-23T11:37:14Z"
+updated = "2026-10-23T11:43:02Z"
 scope = ["crates/grimble-lints/**", "crates/grimble-check/src/product_rules.rs", "crates/grimble-check/Cargo.toml", "docs/reference/rules/RES*.md", "docs/design/**", "docs/reference/**", "docs/schemas/**", "Cargo.lock", "crates/grimble-check/**"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M4MBJ35HGM0P2MH4B7YMB3EQ"
 
 [[acceptance]]
 text = "Given a TypeScript file with performance.mark() and no clearMarks, when grimble check runs, then RES001 fires at Warn; given the paired release, then it stays quiet"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an Unknown site (handle returned from the scope), when grimble check runs, then the finding is Unresolved, not Warn"
