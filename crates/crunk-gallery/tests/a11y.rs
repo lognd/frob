@@ -5,7 +5,7 @@
 use std::path::Path;
 
 use crunk_gallery::a11y::{A11yError, AxeScanner, PlaywrightAxe, check_a11y, parse_axe};
-use crunk_gallery::cells::{Cell, enumerate};
+use crunk_gallery::cells::Cell;
 use crunk_gallery::render::RenderOptions;
 use crunk_spec::{DesignSpec, Severity, parse_spec};
 
@@ -104,6 +104,7 @@ fn non_web_platform_cannot_be_scanned() {
 #[cfg(unix)]
 mod fake_node {
     use super::*;
+    use crunk_gallery::cells::enumerate;
     use gob_exec::Program;
     use std::os::unix::fs::PermissionsExt;
 

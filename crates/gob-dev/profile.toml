@@ -460,6 +460,12 @@ fixture = "tmp"
 exit = [0, 2, 3]
 budget_ms = 500
 
+[scenario."grimble status"]
+args = ["status"]
+readonly = true
+exit = [0, 1, 3]
+budget_ms = 3000
+
 [scenario."grimble exceptions list"]
 args = ["exceptions", "list"]
 readonly = true
