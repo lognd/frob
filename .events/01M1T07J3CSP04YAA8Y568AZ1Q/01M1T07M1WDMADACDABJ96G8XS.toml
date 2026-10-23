@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Ceremonial attribution, same shape as T-0084/T-0096.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `cmd:frob check --ticket T-0108 exit=0 sha256=dbe2174e7377` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 215 warning(s), 4 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-06T00:00:02Z"
+actor = "import"
+rev = 1

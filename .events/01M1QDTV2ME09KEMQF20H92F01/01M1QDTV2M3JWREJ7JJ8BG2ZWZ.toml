@@ -1,0 +1,13 @@
+kind = "create"
+title = "post-r7 coverage stamp refresh"
+type = "docs"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0084"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["frob-coverage.lock.json"]
+acceptance = ["given main after the r7 lands, when frob check runs, then TEST006/PRE/SCOPE are clean"]
+body = "The r7 land squashes shifted stamped-file hashes; this attributes the main-side stamp refresh commit."
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1

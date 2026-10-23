@@ -1,0 +1,15 @@
+kind = "create"
+title = "integration suite INT-01..08"
+type = "task"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0013"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["tests/integration/*.py", "tests/conftest.py", "src/crunk/report", "src/crunk/rules", "src/crunk/scaffold", "src/crunk/spec/load.py", "src/crunk/tokens/render.py"]
+at = "2026-09-03T00:00:00Z"
+actor = "agent"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M1J91D0C0CWGFJB2FYD5ZS8Q"

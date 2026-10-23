@@ -1,0 +1,33 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Implemented the r4 ungoverned walk (CR-11/A-001): OrgConfig.ignore, ProjectStyles.ungoverned, ingest_tree's outside-css_root scan (dot-dir/noise-set/ignore-glob skipping), and rules/_org.py::org005 registered in the engine. E2E-12 proves a stray .css outside css_root is caught, named, and silenceable via [org].ignore, and that map stays unaffected. Filed T-0045 for WIRE001's out-of-scope frob-tool registration (waived in-diff); used frob ack + frob:waive AFFECT001 for rules.md per the ticket's own read-only instruction.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_12_ungoverned.py::test_outside_css_flagged_as_org005` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_org_ignore_defaults_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_org_ignore_default_and_load` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_org_unknown_key_still_rejected` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ungoverned_walk_finds_outside_css` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ungoverned_walk_skips_dot_dirs_and_noise_set` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ungoverned_walk_honors_org_ignore` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ingest_paths_never_populates_ungoverned` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_org.py::test_org005_flags_ungoverned_path` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_org.py::test_org005_empty_ungoverned_yields_none` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_12_ungoverned.py::test_org_ignore_glob_silences_exactly_it` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_12_ungoverned.py::test_map_still_shows_only_governed_files` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 12 passed (from 12 evidence id(s))
+- gates: 0 error(s), 73 warning(s), 2 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

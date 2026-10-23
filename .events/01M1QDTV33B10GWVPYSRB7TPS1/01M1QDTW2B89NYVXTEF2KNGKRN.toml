@@ -1,0 +1,34 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+SIZE001 lands as a fourth px-comparable-length rule in _scales.py, reusing
+_off_scale/_fixable_sheet/waiver_for exactly like SPACE001/TYPE001/RADIUS001
+rather than duplicating the walk. width/height/min-width/min-height/max-height
+are judged; max-width stays exempt per the customer's CR-22 decision that box
+sizes are their own vocabulary distinct from spacing, not because a helper
+happened to omit it. The sizes-empty fallback to spacing (and the matching
+size_token/space_token suggested-token switch) lives entirely inside size001
+so the shared _scale_violations body stays single-scale-per-call. Registered
+in engine.py with a single added line. Removed size_token's WIRE001 waiver
+now that SIZE001 is its consumer.
+
+### Changed
+```
+ tickets/T-0099/ticket.md | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_e2e_41_sizes.py::test_e2e_41_size001_warns_and_fix_snaps_in_css_only` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 373 warning(s), 5 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

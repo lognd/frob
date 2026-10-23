@@ -1,0 +1,40 @@
+kind = "create"
+title = "post-land sweep regression from an unattributed source (sweep spawned by T-0015): 8 new (rule, file) identit(ies), 8 finding(s) (REF001)"
+type = "bug"
+category = "todo"
+priority = "high"
+aliases = ["crunk:T-0027"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["invariants/INV-001.md", "invariants/INV-002.md", "invariants/INV-003.md", "invariants/INV-004.md", "invariants/INV-005.md", "invariants/INV-006.md", "invariants/INV-007.md", "invariants/INV-008.md", "invariants/*.md", "frob-coverage.lock.json", "coverage.xml", "src/crunk/values/color.py", "src/crunk/values/length.py", "src/crunk/spec/models.py", "src/crunk/ingest/parse.py", "src/crunk/rules/engine.py", "src/crunk/tokens/render.py", "src/crunk/fixes/plan.py", "tests/integration/test_int_05_fixes_pipeline.py", "tests/unit/test_invariants.py", "tests/unit/test_values.py", "tests/unit/test_spec.py", "tests/unit/test_ingest.py", "tests/unit/test_rules_engine.py", "tests/unit/test_fixes.py"]
+body = """
+The deferred post-land unscoped sweep (T-1684) for an unattributed source (sweep spawned by T-0015) at commit 7de77dc875394ad6a4afa404dd8026764cf6d140 found 9 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES (8), not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). An independent re-measurement found 8 actual finding(s) across those 8 identit(ies).
+
+New (rule, file) identit(ies) filed here:
+
+- REF001  invariants/INV-001.md
+- REF001  invariants/INV-002.md
+- REF001  invariants/INV-003.md
+- REF001  invariants/INV-004.md
+- REF001  invariants/INV-005.md
+- REF001  invariants/INV-006.md
+- REF001  invariants/INV-007.md
+- REF001  invariants/INV-008.md
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+- REF001  invariants/INV-001.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  invariants/INV-002.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  invariants/INV-003.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  invariants/INV-004.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  invariants/INV-005.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  invariants/INV-006.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  invariants/INV-007.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- REF001  invariants/INV-008.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- TEST006  tests/unit/test_invariants.py  -> attributed to T-0015 (commit 7de77dc87539, already closed/dropped -- filed below) via tests/unit/test_invariants.py::_FULL_TOML
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly."""
+at = "2026-09-03T00:00:00Z"
+actor = "agent"
+rev = 1

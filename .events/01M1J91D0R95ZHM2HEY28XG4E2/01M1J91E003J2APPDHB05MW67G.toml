@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "imported from v1 state `queued` as history only, not open work: v1 cluster C3 (FROB-FRICTION): frob friction filed from crunk (gate rules, waivers, sweep regressions); frob owns the fix"
+at = "2026-09-03T00:00:01Z"
+actor = "import"
+rev = 1

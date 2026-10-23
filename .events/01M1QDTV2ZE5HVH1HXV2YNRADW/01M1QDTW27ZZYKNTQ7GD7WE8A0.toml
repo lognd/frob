@@ -1,0 +1,101 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Changed:
+- src/crunk/ingest/parse.py::_channel_triplet_color
+- src/crunk/ingest/parse.py::_collect_declarations
+
+Evidence:
+- tests/system/test_e2e_40_channel_triplets.py::test_channel_triplet_and_exact_rgba_both_yield_color001
+- tests/system/test_e2e_40_channel_triplets.py::test_glass_panel_definition_sites_both_yield_org004
+- tests/unit/test_ingest.py::test_custom_prop_channel_triplet_parsed_as_color
+- tests/unit/test_ingest.py::test_ordinary_declaration_channel_triplet_not_a_color
+- tests/unit/test_ingest.py::test_custom_prop_triplet_out_of_range_ignored
+- tests/unit/test_ingest.py::test_custom_prop_triplet_wrong_arity_ignored
+- tests/unit/test_rules_color.py::test_color001_flags_off_palette_channel_triplet_custom_prop
+- tests/unit/test_rules_org.py::test_org004_fires_for_layer_nested_entry_sheet_custom_props
+
+Filed: none
+
+DIAGNOSIS (A-038 investigation): reproduced the .glass-panel shape
+end-to-end (an [org].entry-matched entry stylesheet under
+model = "utility-first", custom props nested inside @layer) both before
+and after the channel-triplet fix. ORG004 already fired correctly for
+both custom-prop definition sites in every variant tried (single-level
+@layer, doubly-nested @layer, with and without an explicit [org].entry
+glob, tokens_only_custom_props true). No defect exists in
+rules/_org.py::org004 (it only exempts Bucket.TOKENS, never ENTRY) or in
+ingest/parse.py's _walk_rules recursion into @layer/media/supports
+at-rules -- both were already correct. The field report's "no ORG004"
+observation traces entirely to the MISSING channel-triplet color fact:
+before this ticket, a bare `40 40 40` custom-prop value produced no
+LocatedColor at all, so COLOR001 never fired for that site. Seeing no
+finding at all on that line read as "crunk missed both disciplines,"
+but the ORG004 (tokens-only-custom-props) discipline was firing all
+along -- only the color-value discipline was genuinely missing. Pinned
+the already-correct ORG004 behavior against a future regression with
+test_org004_fires_for_layer_nested_entry_sheet_custom_props.
+
+CR-09 RESOLUTION (as directed by the ticket body): an exactly-matching
+rgba literal (RGB channels equal to an OPAQUE palette entry's, e.g.
+rgba(26, 26, 26, 0.7) against --color-ink #1a1a1a) stays conformant BY
+VALUE under CR-09's existing alpha semantics (_color.py::is_conformant_color)
+-- no COLOR001 for that literal, unchanged. The audit's actual finding
+for that site is the custom-prop DEFINITION-site discipline (ORG004:
+tokens_only_custom_props), not the value. This is asserted directly in
+test_channel_triplet_and_exact_rgba_both_yield_color001 (no COLOR001 at
+the exact-match rgba's line) and
+test_glass_panel_definition_sites_both_yield_org004 (ORG004 at both
+definition lines). CR-09 semantics are unchanged by this ticket. Per
+the ticket's instruction to raise rather than unilaterally change this:
+if the design intends an exact-match raw rgba literal used as a
+custom-prop DEFINITION (as opposed to an ordinary declaration value) to
+ALSO trip a value-level finding -- on the theory that even a
+conformant-by-value literal should not live in a custom prop outside
+the tokens file -- that would be a new rule/severity question, not a
+CR-09 change; I did not make that change and flag it here as a question
+for design rather than deciding it myself.
+
+Gates: `frob check --ticket T-0095` -- all gates PASS except:
+  - gate:PRE (ruff-format): FAILS repo-wide, but on 12 files NONE of
+    which this ticket touches (json_out.py, _tailwind.py, _typography.py,
+    and assorted pre-existing test files) -- verified via
+    `ruff format --check .` that none of parse.py, test_ingest.py,
+    test_rules_org.py, test_rules_color.py, or the new
+    test_e2e_40_channel_triplets.py appear in the reformat list; all 5
+    are already `ruff format`-clean. Pre-existing repo-wide drift, out
+    of T-0095 scope (no repo-wide `frob format` run, per instructions).
+  - gate:FLAGCOV: UNRESOLVED repo-wide (FLAGCOV001, parser resolution
+    failure for crunk.__main__:_build_parser) -- pre-existing, unrelated
+    to this ticket's files.
+All other gates (SCOPE, TEST, TICK, ARCH, COV, CPLACE, EXHAUST, LARGE,
+OPAQUE, PERF, PII, ROOT) pass clean or with only pre-existing waivers.
+`frob coverage --full --fail-on-degraded` run and lockfile committed.
+`pytest tests/ -q -n 2` (full suite, with FROB_SUGGEST_ACK=1): all green.
+
+### Changed
+```
+ frob-coverage.lock.json                      | 110 +++++++++++------------
+ src/crunk/ingest/parse.py                   |  24 +++++
+ tests/system/test_e2e_40_channel_triplets.py | 128 +++++++++++++++++++++++++++
+ tests/unit/test_ingest.py                    |  72 +++++++++++++++
+ tests/unit/test_rules_color.py               |  14 +++
+ tests/unit/test_rules_org.py                 |  41 +++++++++
+ tickets/T-0095/ticket.md                     |   9 +-
+ 7 files changed, 341 insertions(+), 57 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_e2e_40_channel_triplets.py::test_channel_triplet_and_exact_rgba_both_yield_color001` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_40_channel_triplets.py::test_glass_panel_definition_sites_both_yield_org004` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 2 passed (from 2 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

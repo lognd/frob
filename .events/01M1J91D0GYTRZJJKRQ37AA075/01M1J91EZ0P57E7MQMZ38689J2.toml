@@ -1,0 +1,86 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Changed:
+  frob.toml -- [[docblocks.commands]] entry (prog=crunk, parser=
+    crunk.__main__:_build_parser, config=crunk.app.config:AppConfig,
+    forwarded=crunk.app.config:FORWARDED_FIELD_NAMES) so FLAGCOV001/
+    DOC004/DOC005/DOC012 can measure crunk's CLI surface at all.
+  src/crunk/app/config.py::FORWARDED_FIELD_NAMES -- new module constant
+    (frozenset[str]) promoting the field-name tuple that
+    AppConfig.from_external already hardcoded, so frob.toml's forwarded=
+    key has a real dotted path to name (FLAGCOV001 requires forwarded=
+    alongside config=, not optional).
+  src/crunk/app/config.py::AppConfig.from_external -- now iterates
+    FORWARDED_FIELD_NAMES instead of a duplicated inline tuple; added
+    frob:doc docs/index.md#public-api (was missing one, COV001).
+  src/crunk/report/terminal.py::_IsattyStream.isatty -- added frob:doc
+    docs/design/subsystems/report.md#public-api (was missing one,
+    COV001).
+  docs/index.md -- documented FORWARDED_FIELD_NAMES and
+    AppConfig.from_external; added frob:describes edges; linked
+    docs/commands/.
+  docs/design/subsystems/shell.md -- noted FORWARDED_FIELD_NAMES in the
+    AppConfig public-API entry (AFFECT001 closure for the config.py
+    change).
+  docs/design/subsystems/report.md -- added frob:describes anchor for
+    _IsattyStream.isatty.
+  docs/commands/init.md, check.md, tokens.md, fix.md, map.md -- new:
+    one dedicated section per subcommand (usage, flags, exit codes),
+    satisfying DOC012; each has a frob:describes anchor on its usage
+    code block (DOC004) and is cross-linked from both README.md and
+    docs/index.md (REF001/REF002 need 2+ inbound references).
+  README.md -- replaced the scaffold Quick start with a command table
+    (DOC005) plus real crunk usage (init/check/tokens/fix/map) and an
+    crunk.toml customization note pointing at
+    docs/design/02-specification.md.
+
+Evidence:
+  FROB_SUGGEST_ACK=1 uv run pytest -q -n 2 -- full suite green (163
+    tests via `frob ticket sweep`/local run; no regressions).
+  uv run pytest --cov=src/crunk -q -n 2 && uv run coverage xml -i &&
+    frob check --stamp-coverage -- coverage stamp refreshed
+    (source_sha=69410649, 42 modules locked).
+  PYTHONPATH="<worktree>/src:<worktree>/.venv/lib/python3.11/site-
+    packages" frob check --ticket T-0016 --only flag_coverage --only
+    docblocks -- 0 errors, 0 warnings (FLAGCOV001 measured and clean;
+    DOC004/DOC005/DOC012 clean). See FROBLEMS.md for why PYTHONPATH is
+    required to get frob to resolve crunk's own dotted CLI paths.
+
+Filed: T-0029 ("fix ty type errors and stale mypy
+  suppressions in test_report.py/test_spec.py") -- 3 [ty]
+  invalid-argument-type findings at tests/unit/test_report.py:57:9 and
+  2 SUPPRESS001 findings at tests/unit/test_spec.py:434,443. Confirmed
+  pre-existing (present on a clean `git stash` of this branch, in test
+  files outside T-0016's docs-only scope) via `git stash` + `frob
+  check` before this ticket's own changes were re-applied.
+
+Gates: `frob check --ticket T-0016` (run with the PYTHONPATH above so
+  FLAGCOV001/DOC004 actually resolve, per FROBLEMS.md): 2 errors
+  remaining, both the pre-existing tests/unit/test_report.py +
+  tests/unit/test_spec.py findings just above (filed as
+  T-0029, out of docs-only scope) -- confirmed present before
+  any T-0016 change via `git stash`. FLAGCOV001 is measured and clean
+  (was UNMEASURED at ticket start). No DOC/DRIFT/COV warning in the
+  final run is attributable to documentation; the two `ruff-format`
+  warnings (tests/system/test_e2e_05_tokens.py,
+  tests/system/test_e2e_06_waiver.py) are likewise pre-existing and
+  outside scope.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `cmd:frob check --only doclink exit=0 sha256=28e5668b3d4f` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 99 warning(s), 2 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-03T00:00:02Z"
+actor = "import"
+rev = 1

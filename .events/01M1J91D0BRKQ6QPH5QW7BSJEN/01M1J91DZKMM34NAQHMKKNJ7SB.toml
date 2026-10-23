@@ -1,0 +1,59 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Implemented crunk.scaffold per shell.md and 02-specification.md
+Presets/Configuration: scaffold(root, preset, force) writes the preset
+crunk.toml payload, org.buckets directories with .gitkeep, a minimal
+conforming base/reset.css (box-sizing, margin 0, font-family/color/
+background from var(--font-family-base) and the body role's tokens),
+then crunk.tokens.write_tokens. PRESETS holds default (the documented
+crunk.toml example) and mono (monochrome, monospace, 8px spacing) as
+checked-in TOML text, split across presets.py/write.py/__init__.py per
+05-components.md. force=True overwrites crunk.toml and regenerates
+tokens but never deletes existing bucket dirs/.gitkeep/reset.css.
+
+Changed:
+- src/crunk/scaffold/presets.py::PRESETS
+- src/crunk/scaffold/write.py::ScaffoldError
+- src/crunk/scaffold/write.py::scaffold
+- src/crunk/scaffold/__init__.py (re-exports)
+- tests/unit/test_scaffold.py (UT-SH-04)
+- docs/design/subsystems/shell.md (refined PRESETS type to dict[str, str]
+  and documented the presets.py/write.py/__init__.py file split, and the
+  force-never-deletes-user-CSS invariant)
+
+Evidence: tests/unit/test_scaffold.py::test_fresh_dir_writes_documented_tree,
+test_existing_without_force_is_exists, test_force_overwrites,
+test_unknown_preset_names_known_presets, test_all_presets_load_cleanly,
+test_preset_reset_css_only_uses_known_tokens
+
+Filed: none
+
+Gates: frob check --ticket T-0011 clean (0 errors, 15 warnings repo-wide
+pre-existing/unrelated, 1 unresolved FLAGCOV001 repo-wide pre-existing)
+
+WIRE001 waived on scaffold/write.py::scaffold and ::ScaffoldError with
+follow_up=T-0012 (shell wiring consumes scaffold), per contract.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_scaffold.py::test_fresh_dir_writes_documented_tree` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold.py::test_existing_without_force_is_exists` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold.py::test_force_overwrites` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold.py::test_unknown_preset_names_known_presets` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold.py::test_all_presets_load_cleanly` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold.py::test_preset_reset_css_only_uses_known_tokens` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 16 warning(s), 0 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-03T00:00:01Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,17 @@
+kind = "create"
+title = "R7-C: crunk preview and crunk diff (A-027 item 6, CT-31)"
+type = "task"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0083"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/report/preview_out.py", "src/crunk/report/__init__.py", "src/crunk/spec/load.py", "src/crunk/spec/__init__.py", "src/crunk/app/**", "src/crunk/__main__.py", "tests/unit/test_report_preview.py", "tests/unit/test_spec.py", "tests/unit/test_app.py", "tests/unit/test_main.py", "tests/system/test_e2e_31_preview_diff.py", "docs/commands/preview.md", "docs/index.md", "README.md"]
+acceptance = ["given a spec, when crunk preview runs, then every palette entry and scale step renders (plain under NO_COLOR, deterministic); crunk diff against an edited copy shows exactly the added/removed/changed tokens (E2E-31)"]
+body = "Per r7 report.md (render_preview/render_diff in preview_out.py, UT-REP-08), spec.md (load_spec_file), shell.md r7 wiring: preview and diff commands, OTHER as directory-or-toml-path, ANSI truecolor swatches with ASCII-only source and output text, entries-based diff rows. New docs/commands/preview.md covers both verbs; README table rows."
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV2J8PDS3FE3BT246153"

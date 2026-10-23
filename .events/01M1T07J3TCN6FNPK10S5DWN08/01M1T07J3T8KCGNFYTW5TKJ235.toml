@@ -1,0 +1,13 @@
+kind = "create"
+title = "Refresh coverage lockfile after r13 lands"
+type = "docs"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0122"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["frob-coverage.lock.json"]
+acceptance = ["given the refreshed lockfile, when frob check runs, then TEST006 is clear"]
+body = "Post-land stamp refresh on the primary after T-0119/T-0120 landed; the lockfile change needs ticket attribution per the standing pattern."
+at = "2026-09-06T00:00:00Z"
+actor = "human"
+rev = 1

@@ -1,0 +1,68 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+r11 (A-044): `[layers]` becomes optional (absent -> {}) and `[scales].radii`
+accepts an empty list (min_length 0, ascending validated only when
+non-empty); spacing/font_sizes stay required non-empty. `entries`/
+`token_names`/`theme_mapping`/`render_tailwind` needed no guard changes --
+iterating an empty list/dict already yields zero pairs/keys by
+construction (confirmed with new golden tests). Two real bugs did need
+fixing: `_off_scale` indexes `ordered[0]`/`ordered[-1]` unconditionally
+and would `IndexError` on an empty scale, so `radius001` now
+short-circuits to `[]` before calling it when `radii` is empty; and
+`layer001`'s `value in declared` check would flag EVERY z-index once
+`declared` is the empty set from an absent `[layers]` -- the opposite of
+"absent design law judges nothing" -- so it now short-circuits too.
+SIZE001 does not consult `radii` at all (only `sizes`/`spacing`), so no
+change was needed there.
+
+Evidence bound to acceptance[1] (E2E-47):
+tests/system/test_e2e_47_optional_dims.py::test_e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks,
+::test_e2e_47_radius001_and_layer001_stay_silent,
+::test_e2e_47_tokens_emit_no_radius_or_layer_tokens.
+
+Plus unit coverage on every changed symbol in test_spec.py,
+test_rules_scales.py, test_tokens.py (radii-empty/layers-absent load,
+RADIUS001/LAYER001 silence, entries/token_names/render_css/render_tailwind/
+theme_mapping golden empty-dimension checks; test_empty_scale_rejected
+updated to assert spacing/font_sizes -- not radii -- stay required).
+
+Filed: none (no out-of-scope discoveries).
+
+Gates: `frob check --ticket T-0107` clean. One in-code AFFECT001 waiver
+added on `layer001` (rules.md's r11/A-044 silence bullet already documents
+this verbatim; doc edits out of scope, follow_up T-0024) -- matches the
+existing pattern already on `radius001`/`space001`/`type001`.
+`frob coverage --full --fail-on-degraded` run, lockfile committed.
+`FROB_SUGGEST_ACK=1 uv run pytest tests/ -q -n 2`: 699 tests, all pass.
+
+### Changed
+```
+ frob-coverage.lock.json                   | 112 +++++++++++++++---------------
+ src/crunk/rules/_layers.py               |  11 ++-
+ src/crunk/rules/_scales.py               |   8 ++-
+ src/crunk/spec/load.py                   |  43 ++++++++----
+ src/crunk/spec/models.py                 |  29 ++++++--
+ tests/system/test_e2e_47_optional_dims.py | 108 ++++++++++++++++++++++++++++
+ tests/unit/test_rules_scales.py           |  33 +++++++++
+ tests/unit/test_spec.py                   |  76 +++++++++++++++++++-
+ tests/unit/test_tokens.py                 |  82 ++++++++++++++++++++++
+ tickets/T-0107/ticket.md                  |  11 ++-
+ 10 files changed, 431 insertions(+), 82 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_e2e_47_optional_dims.py::test_e2e_47_minimal_spec_without_layers_and_radii_loads_and_checks` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_47_optional_dims.py::test_e2e_47_radius001_and_layer001_stay_silent` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_47_optional_dims.py::test_e2e_47_tokens_emit_no_radius_or_layer_tokens` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

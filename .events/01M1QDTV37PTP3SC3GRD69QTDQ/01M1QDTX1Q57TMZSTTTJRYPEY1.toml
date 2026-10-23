@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+A-044..A-048 contracted: shell overlays tokens.theme_mapping onto tw_theme when the tokens file is configured; utility matching strips alpha modifiers; explain never raises and groups -rgb with the parent color; layers/radii optional; JSON artifacts compare parsed. CT-45..48, E2E-45..48. Note: this pass also cost a cwd mixup (edits briefly landed in a stale worktree, recovered via patch; the stale T-0101 ghost lease cleared by removing the worktree).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `cmd:frob check --ticket T-0103 exit=0 sha256=76dce197819f` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 246 warning(s), 4 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:02Z"
+actor = "import"
+rev = 1

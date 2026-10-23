@@ -1,0 +1,29 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+A-090's partial: the r18 all-empty note gated on every non-jsx bucket, and the field project's tokens file and entry sheet kept it from ever firing while all four org rows read empty. The gate now tests the declared organization buckets alone (entry/tokens excluded on purpose, jsx stays the live-surface pointer); report.md sharpened; the exact field shape is the bound test.
+
+### Changed
+```
+ docs/design/subsystems/report.md | 14 ++++++++------
+ frob-coverage.lock.json          |  2 +-
+ src/crunk/report/terminal.py    | 18 ++++++++++++------
+ tests/unit/test_report.py        | 23 ++++++++++++++++++++++-
+ tickets/T-0137/ticket.md         |  7 +++++--
+ 5 files changed, 48 insertions(+), 16 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_report.py::test_render_map_entry_and_tokens_do_not_block_note` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 1 error(s), 266 warning(s), 5 waived
+- error-findings: PRE001@tickets/T-0137"""
+at = "2026-09-06T00:00:01Z"
+actor = "import"
+rev = 1

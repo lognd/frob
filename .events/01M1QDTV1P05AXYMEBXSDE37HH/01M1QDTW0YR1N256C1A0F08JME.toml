@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-05: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (TEST006 .frob/coverage-stamp) is absent from a full unscoped `frob check --json` run that completed with no budget deferral and no failed/silent tool stage at T-0049's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached."
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

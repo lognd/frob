@@ -1,0 +1,17 @@
+kind = "create"
+title = "R11-C: optional layers and radii (A-044)"
+type = "task"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0107"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/spec/models.py", "src/crunk/spec/load.py", "src/crunk/tokens/render.py", "src/crunk/rules/_scales.py", "src/crunk/rules/_layers.py", "tests/unit/test_spec.py", "tests/unit/test_tokens.py", "tests/unit/test_rules_scales.py", "tests/system/test_e2e_47_optional_dims.py"]
+acceptance = ["given a spec with no layers section and radii = [], when tokens and check run, then no layer/radius tokens are emitted, LAYER001/RADIUS001 stay silent, and everything else works (E2E-47)"]
+body = "Per r11 spec.md/tokens.md/rules.md: layers optional (absent -> {}), radii accepts empty (validator min_length 0, ascending when non-empty); render/entries/token_names skip empty dimensions; RADIUS001 (and SIZE001's radii-adjacent paths if any) guard the empty scale; LAYER001 already iterates spec.layers so absent = silent -- prove it. spacing/font_sizes stay required."
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV33B10GWVPYSRB7TPS1"

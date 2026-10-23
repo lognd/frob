@@ -1,0 +1,12 @@
+kind = "evidence"
+at = "2026-09-03T00:00:01Z"
+actor = "import"
+rev = 1
+provider = "command"
+ref = "frob check --only doclink"
+digest = "28e5668b3d4f"
+status = "measured"
+captured_at = "2026-09-03T00:00:01Z"
+passed = true
+exit_code = 0
+size = 0

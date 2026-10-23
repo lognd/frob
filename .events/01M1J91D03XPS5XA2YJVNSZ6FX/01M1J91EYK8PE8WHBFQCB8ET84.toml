@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Five-layer waterfall design tree under docs/design/: customer requirements with CT-01..09, specification with the full CLI/config/rule catalog and E2E-01..09, system design with subsystem map and INT-01..08, eight subsystem contracts each carrying its error set, invariants, and unit test plan, and the component-level symbol map with bottom-up build order. Two upward revisions recorded (values subsystem extraction; run_rules token_names parameter), demonstrating the agile-inside-waterfall loop. Layers cross-link for traceability (and REF002).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+(no evidence recorded)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 4 warning(s), 0 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-03T00:00:02Z"
+actor = "import"
+rev = 1

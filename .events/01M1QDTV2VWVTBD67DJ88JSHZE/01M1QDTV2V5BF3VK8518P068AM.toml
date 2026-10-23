@@ -1,0 +1,13 @@
+kind = "create"
+title = "Tailwind default-key collisions: warning + namespace_keys (A-034)"
+type = "bug"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0091"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/tokens/**", "src/crunk/spec/models.py", "src/crunk/spec/load.py", "tests/unit/test_tokens.py", "tests/unit/test_spec.py", "tests/system/test_e2e_36_keyspace.py", "docs/commands/tokens.md", "crunk-cli"]
+acceptance = ["given the audit's spacing scale (bare 0/4/8... keys), when tokens or tokens --check runs, then each colliding default key draws a warning; with namespace_keys = true the emitted keys are space-4-style and nothing warns (E2E-36)"]
+body = "Per r9 tokens.md (Target-framework key space) and 02 (Target-framework awareness): new data module with Tailwind v3 default theme keys per emitted scale (spacing, borderRadius, zIndex, fontSize -- transcribe from Tailwind v3 docs, cite the version in the module docstring); render_tailwind + write/check warn per collision (reuse the A-030 warning plumbing); TailwindConfig gains namespace_keys AND alpha_channels booleans (both default false; alpha_channels is implemented by the NEXT ticket -- add the field + validation only, with a frob:todo-free note in the field docstring pointing at the r9 design). namespace_keys emits prefix-qualified keys from the configured prefixes; layer keys stay name-keyed."
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1

@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+One _glob_match helper (fnmatch plus all subsets of elided **/ segments) replaces the three bare fnmatch sites; flat-layout jsx ingestion works, nested behavior unchanged, full suite green, scoped gate 0 errors.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_ingest.py::test_glob_match_double_star_zero_dirs` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 164 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,29 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+r17 design from A-080: the in-repo cache directory tripped the adopter's out-of-scope gate (an agent deleted it twice) and polluted borrowed trees. The store moves wholesale to the user cache home -- env override, XDG fallback, short-hash subdirectory per resolved root -- with cache_home as the one resolution home; init drops the obsolete ignore line; key semantics and INV-CACHE-01 untouched. CT-55/E2E-55 bind the tree-stays-clean proof.
+
+### Changed
+```
+ docs/design/01-customer-requirements.md |  5 +++++
+ docs/design/02-specification.md         | 19 +++++++++++++++++--
+ docs/design/subsystems/cache.md         | 11 +++++++++++
+ frob-coverage.lock.json                 |  2 +-
+ tickets/T-0133/ticket.md                |  9 +++++++--
+ 5 files changed, 41 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `cmd:grep -c 'A-080' docs/design/02-specification.md docs/design/subsystems/cache.md docs/design/01-customer-requirements.md exit=0 sha256=af1af14bf32b` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 1 error(s), 241 warning(s), 5 waived
+- error-findings: PRE001@tickets/T-0133"""
+at = "2026-09-06T00:00:02Z"
+actor = "import"
+rev = 1

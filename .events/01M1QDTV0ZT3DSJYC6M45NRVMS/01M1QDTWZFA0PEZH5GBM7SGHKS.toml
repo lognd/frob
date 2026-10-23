@@ -1,0 +1,12 @@
+kind = "evidence"
+at = "2026-09-05T00:00:02Z"
+actor = "import"
+rev = 1
+provider = "command"
+ref = "frob check --ticket T-0031"
+digest = "ac395d7acfd4"
+status = "measured"
+captured_at = "2026-09-05T00:00:02Z"
+passed = true
+exit_code = 0
+size = 0

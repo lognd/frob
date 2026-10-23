@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Report-honesty triage, same recurring TEST006 stale-stamp mechanism (root cause in FROBLEMS: frob's pytest spawn resolves the global uv-tool pytest). T-0052 reverified clean; its E2E passes on main.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_20_21_ux.py::test_fix_dry_run_names_unfixable_remainder` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 123 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

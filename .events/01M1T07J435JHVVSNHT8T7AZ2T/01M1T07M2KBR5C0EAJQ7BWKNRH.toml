@@ -1,0 +1,29 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+r16 design from A-076 (false clean: path-scoped check dropped named tsx/ts sources entirely, so an agent trusted a clean the repo-wide run contradicts) and A-077 (adopters could not see how to get real size utilities). Path mode now specifies jsx parsing for named sources with the theme always built; project-scope rules stay full-scan-only with the boundary stated honestly; the wiring note obligation is recorded for the tokens command doc and README. CT-54/E2E-54 bind the exact false-clean shape.
+
+### Changed
+```
+ docs/design/01-customer-requirements.md |  4 ++++
+ docs/design/02-specification.md         | 21 ++++++++++++++++++++-
+ docs/design/subsystems/ingest.md        |  7 ++++++-
+ frob-coverage.lock.json                 |  2 +-
+ tickets/T-0131/ticket.md                |  9 +++++++--
+ 5 files changed, 38 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `cmd:grep -c 'A-076' docs/design/02-specification.md docs/design/subsystems/ingest.md docs/design/01-customer-requirements.md exit=0 sha256=754f27116f03` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 1 error(s), 245 warning(s), 5 waived
+- error-findings: PRE001@tickets/T-0131"""
+at = "2026-09-06T00:00:02Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,29 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Consistency fix from the engine-branch gate run (A-074): the absent configured tailwind config now yields the same located-diagnostic shape r15 gave the absent css root, naming the resolved path and the self-derived-theme fallback, instead of a bare errno line; dangling-symlink and permission failures keep the OS reason. Bound unit test proves the shape and the absence of errno text.
+
+### Changed
+```
+ docs/design/subsystems/ingest.md |  5 +++++
+ frob-coverage.lock.json          |  4 ++--
+ src/crunk/ingest/walk.py        | 24 ++++++++++++++++++------
+ tests/unit/test_ingest.py        | 19 +++++++++++++++++++
+ tickets/T-0130/ticket.md         |  7 +++++--
+ 5 files changed, 49 insertions(+), 10 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ingest.py::test_tailwind_config_absent_located_diagnostic` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 1 error(s), 244 warning(s), 5 waived
+- error-findings: PRE001@tickets/T-0130"""
+at = "2026-09-06T00:00:01Z"
+actor = "import"
+rev = 1

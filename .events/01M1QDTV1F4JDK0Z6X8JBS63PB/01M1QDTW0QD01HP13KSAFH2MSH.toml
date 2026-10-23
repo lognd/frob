@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+_extract_value_facts now recurses into function-token arguments for var() refs only (literals inside stay the host function's business, per the doc line added to ingest.md). Regression test covers color-mix and doubly-nested calc/min; full suite green at 96 percent; scoped gate 0 errors.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_ingest.py::test_var_ref_nested_in_color_mix_extracted` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 105 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

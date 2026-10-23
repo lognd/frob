@@ -1,0 +1,13 @@
+kind = "create"
+title = "fix summary omits unfixable remainder when fixes apply (A-012 residual)"
+type = "bug"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0058"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/app/app.py", "tests/unit/test_app.py", "tests/system/test_e2e_20_21_ux.py"]
+acceptance = ["given one fixable and one unfixable error, when fix --dry-run runs, then the output mentions the unfixable count and exits 1"]
+body = "Third trial: 'would apply 1 fix(es), 0 dropped' + exit 1 with an unfixable COLOR001 present but unmentioned. Extend the T-0052 message logic: after the per-file lines, when unwaived error-severity violations remain unfixed, print the same remainder line the no-plans branch uses."
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1

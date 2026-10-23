@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Triage of the T-0008 land: dialed GATERULE001 to warn in frob.toml (frob-repo-shaped gate misfiring on crunk's domain rule ids; FROBLEMS.md), refreshed the coverage stamp, reverified T-0008 clean, and dismissed all 7 quarantined findings with diagnoses. No behaviour change: config and bookkeeping only.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_rules_engine.py::test_run_rules_sorted_deterministic` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 38 warning(s), 0 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-03T00:00:01Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,29 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Implemented crunk.tokens per the tokens.md contract: render.py (render_css, render_json, token_names, naming helpers) and io.py (write_tokens, check_tokens, TokensStatus, TokensError), re-exported through __init__.py. Naming scheme, value formatting, and the CSS-ident sanitize fallback match the documented spec exactly; INV-TOK-01 determinism verified by repeated-render and cross-process-load byte-identity tests. UT-TOK-01..04 all implemented in tests/unit/test_tokens.py, all passing. frob check --ticket T-0007 is clean (0 errors).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_tokens.py::test_golden_render_css` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_golden_render_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_naming_scheme_edge_cases` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_write_then_check_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_check_drifted` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_check_missing` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_write_unwritable_parent` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_render_repeated_byte_identical` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 8 passed (from 8 evidence id(s))
+- gates: 0 error(s), 9 warning(s), 0 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-03T00:00:01Z"
+actor = "import"
+rev = 1

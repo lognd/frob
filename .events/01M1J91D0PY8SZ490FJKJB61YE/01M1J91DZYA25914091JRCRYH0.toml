@@ -1,0 +1,45 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Changed: src/crunk/rules/_typography.py::type002
+Evidence: tests/unit/test_rules_typography.py::test_type002_var_ref_stack_is_clean, tests/unit/test_rules_typography.py::test_type002_literal_off_family_stack_still_flagged, tests/unit/test_rules_typography.py::test_type002_mixed_var_and_literal_stack_is_clean, tests/unit/test_scaffold.py::test_scaffolded_default_preset_passes_check_clean
+Filed: none
+Gates: frob check --ticket T-0022 clean (0 errors, exit 0)
+
+type002() now exempts any font-family declaration carrying at least one
+var() reference (checked via Declaration.var_refs, mirroring how
+COLOR001/COLOR002 treat var() refs as conformant by construction) --
+a token-provided family stack, including one mixing a var() ref with
+literal names, is never split and matched against spec.typography.families.
+This was the root cause of scaffold's own generated base/reset.css
+(`font-family: var(--font-family-base);`) failing `crunk check`
+immediately after `crunk init`, violating CT-01. scaffold/write.py
+needed no change -- the starter reset.css is correct as written, the
+bug was entirely in the rule's inability to recognize a var() reference.
+Added regression tests for the var()-only, literal-off-family, and
+mixed var()+literal cases, plus a CT-01-level end-to-end test that
+scaffolds the default preset into tmp_path and asserts run_rules
+yields zero unwaived error-severity violations. Documented the
+mixed-stack softness (exempt wholesale rather than checking the
+literal tail) in docs/design/subsystems/rules.md's TYPE002 bullet.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_rules_typography.py::test_type002_var_ref_stack_is_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_typography.py::test_type002_literal_off_family_stack_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_typography.py::test_type002_mixed_var_and_literal_stack_is_clean` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold.py::test_scaffolded_default_preset_passes_check_clean` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 0 error(s), 77 warning(s), 2 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-03T00:00:01Z"
+actor = "import"
+rev = 1

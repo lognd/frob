@@ -1,0 +1,32 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Added the TW rule family (TW001/TW002), the shared JSX never-fixable guard, and utility-first org model behavior per r6/CR-17/CR-21, with unit and E2E coverage for each acceptance case.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_24_25_jsx.py::test_e2e_24_jsx_style_props_judged_never_fixable` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_24_25_jsx.py::test_e2e_25_tw001_arbitrary_utilities_and_tw002_undefined_mapping` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_29_utility_first.py::test_utility_first_tree_checks_clean` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_29_utility_first.py::test_utility_first_tree_planted_drift_still_fires` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_29_utility_first.py::test_same_tree_under_buckets_model_shows_org001` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_tailwind.py::test_tw001_color_nearest_naming` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_tailwind.py::test_tw002_flags_undefined_mapping` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_color.py::test_color001_jsx_sheet_not_fixable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_org.py::test_org001_silent_under_utility_first` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_org.py::test_org003_silent_under_utility_first` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_org.py::test_jsx_sheet_exempt_from_org001` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 11 passed (from 11 evidence id(s))
+- gates: 1 error(s), 158 warning(s), 3 waived
+- error-findings: OPAQUE001@src/crunk/rules/_tailwind.py"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

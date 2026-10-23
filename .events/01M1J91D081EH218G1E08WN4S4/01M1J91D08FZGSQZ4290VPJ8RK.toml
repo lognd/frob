@@ -1,0 +1,15 @@
+kind = "create"
+title = "rules subsystem: the lint engine and full rule catalog"
+type = "task"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0008"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/rules/*.py", "tests/unit/test_rules_color.py", "tests/unit/test_rules_scales.py", "tests/unit/test_rules_typography.py", "tests/unit/test_rules_contrast.py", "tests/unit/test_rules_org.py", "tests/unit/test_rules_engine.py", "docs/design/subsystems/rules.md", "src/crunk/spec/models.py", "docs/design/subsystems/spec.md", "docs/design/05-components.md", "src/crunk/values/color.py", "src/crunk/values/length.py", "src/crunk/ingest/walk.py"]
+at = "2026-09-03T00:00:00Z"
+actor = "agent"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M1J91D06KVQ7M18D086BWD76"

@@ -1,0 +1,15 @@
+kind = "create"
+title = "report subsystem: terminal and JSON rendering"
+type = "task"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0010"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/report/*.py", "tests/unit/test_report.py", "docs/design/subsystems/report.md"]
+at = "2026-09-03T00:00:00Z"
+actor = "agent"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M1J91D081EH218G1E08WN4S4"

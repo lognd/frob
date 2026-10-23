@@ -1,0 +1,13 @@
+kind = "create"
+title = "post-r10-r11 coverage stamp refresh"
+type = "docs"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0108"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["frob-coverage.lock.json"]
+acceptance = ["given main after the lands, when frob check runs, then PRE/SCOPE are clean"]
+body = "Attributes the main-side stamp refresh after the combined r10/r11 lands (same ceremony as T-0084/T-0096)."
+at = "2026-09-06T00:00:00Z"
+actor = "human"
+rev = 1

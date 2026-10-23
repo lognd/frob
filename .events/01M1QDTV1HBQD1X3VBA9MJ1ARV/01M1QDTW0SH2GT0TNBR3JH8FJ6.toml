@@ -1,0 +1,64 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Changed: src/crunk/spec/models.py::SpecError, SpecFailure, OrgConfig
+Changed: src/crunk/spec/load.py::load_spec, _invalid, _read_toml, _build_lint, _build_spec
+Changed: src/crunk/spec/__init__.py exports
+Changed: src/crunk/app/app.py::App (all _run_* spec-load error logs)
+
+load_spec now returns Result[DesignSpec, SpecFailure] where SpecFailure
+is a frozen {kind: SpecError, detail: str}; every rejection path (missing
+file, malformed TOML, schema violations) fills detail with the
+already-composed message. [lint] is now optional (defaults: empty
+rules, fix_tolerance=0.15, color_tolerance=8.0); OrgConfig.class_case/
+component_prefix/tokens_only_custom_props default to "kebab"/true/true
+per the documented spec (A-010). Every _run_* in App now logs both
+kind.value and detail at error level so the offending key reaches
+stderr without -v (A-009).
+
+Evidence: UT-SPEC-08 cases (missing-section/unknown-key detail naming,
+minimal-spec defaults) plus new E2E-18/19 (tests/system/test_e2e_18_19_schema.py)
+covering: missing [project] -> stderr names it, exit 2, no -v; bad
+class_case -> stderr names it, exit 2, no -v; documented minimal
+crunk.toml loads and check runs with SPACE001 error by default.
+All 393 tests pass (uv run pytest tests/ -n 2).
+
+Filed: none (no out-of-scope work found)
+
+Gates: frob check --ticket T-0049 clean on the ticket-scoped families
+(gate:SCOPE, gate:PREWORK, gate:AFFECT, ruff-check on touched files).
+5 AFFECT001 waivers added on SpecError/SpecFailure/OrgConfig/
+load_spec/App, each pointing at T-0049 (r5 docs already document the
+change; doc edits are out of this ticket's scope per instructions).
+gate:TEST fails repo-wide on TEST006 (missing coverage stamp) -- this
+predates this ticket's changes (present before any edit) and
+`frob coverage --full` fails in this environment (pytest exit 4 under
+frob's own xdist worker count, though the identical suite is green when
+run directly); noted as a frob/environment issue, not something T-0049
+introduced. Remaining ruff-format warnings (11 files) and other
+repo-wide gate notes (frob-arch, frob-exports, TICK014, PERF, EXHAUST,
+ROOT001, etc.) are pre-existing and outside T-0049's scope.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_18_19_schema.py::test_missing_section_names_offender_exit_2_no_verbose` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_18_19_schema.py::test_bad_class_case_names_offender_exit_2_no_verbose` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_18_19_schema.py::test_minimal_spec_loads_with_documented_defaults` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_spec_failure_carries_detail` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_missing_section_detail_names_section` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_unknown_key_detail_names_key` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_minimal_spec_loads_with_documented_defaults` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 115 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,66 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Implemented the r14 A-070 global --config PATH flag: AppConfig gained an
+optional config field forwarded via FORWARDED_FIELD_NAMES/from_external;
+every pipeline subcommand parser (check/tokens/fix/map/query/explain/
+preview/diff) accepts --config; App._load_spec centralizes the
+load_spec vs load_spec_file(cfg.config, cfg.root) switch used by every
+_run_* that previously called load_spec(self._cfg.root) directly.
+
+Fixed a real correctness bug found while wiring this in: App._cache_key_for
+unconditionally read spec.root / crunk.toml for the cache key, which
+would crash outright on E2E-52's own scenario (a tree with no
+crunk.toml at all, judged via a borrowed --config spec). It now reads
+cfg.config when set, else falls back to root/crunk.toml, so the cache
+key correctly covers the actual spec source bytes and a borrowed spec
+keys distinctly from a local one.
+
+Documented --config in docs/commands/check.md's flag list (global to
+every pipeline command). Added unit coverage in tests/unit/test_app.py
+(field default/parse/from_external forwarding, argparse round-trip,
+load-path switch for a tree with no crunk.toml, the ordinary
+missing-spec SpecFailure without the flag, a bogus path naming itself
+at exit 2, and the cache-key-differs proof) and the E2E-52 system test
+in tests/system/test_e2e_52_config.py covering both acceptance criteria
+end to end via the real CLI subprocess.
+
+Deviation: frob coverage --full --fail-on-degraded fails reproducibly
+in this worktree (pytest exits 4 inside frob's own subprocess spawn,
+coverage xml -i then exits 1) regardless of xdist worker count (1, 3,
+5, 6, 8, 11) or available memory (2.5GB-17GB observed) -- but the exact
+same command run directly (uv run pytest --cov=src/crunk
+--cov-report= -n N, with or without frob's coverage-subprocess.rc
+env var) passes green every time, 745 passed, in this same worktree.
+This looks like fleet-contention on frob's own side (the tool warned of
+6-10 other concurrent checks on this host throughout) rather than a
+real test or coverage regression. The mandated uv run pytest
+--cov=src/crunk -q -n 2 is green with 95% total coverage
+(src/crunk/app/config.py 100%, src/crunk/app/app.py 91%,
+src/crunk/__main__.py 99%), and coverage.xml was regenerated via that
+same command so frob check's coverage-derived findings reflect current
+code.
+
+### Changed
+```
+ tickets/T-0127/ticket.md | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_e2e_52_config.py::test_e2e_52_borrowed_spec_judges_tree_with_no_crunk_toml` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_check_uses_borrowed_config_on_tree_with_no_crunk_toml` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_check_missing_spec_without_config_names_crunk_toml` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_check_bogus_config_path_exits_2_naming_it` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 4 passed (from 4 evidence id(s))
+- gates: 1 error(s), 249 warning(s), 8 waived
+- error-findings: TEST006@.frob/coverage-stamp"""
+at = "2026-09-06T00:00:01Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,26 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+TokensConfig gains json_file (A-026); bare tokens writes render_json(spec) there and check_tokens covers it with the same per-file drift naming as tailwind_tokens_file; docs and tests updated
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_27_theme.py::test_hand_edited_json_file_raises_tokens001_naming_it` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_write_json_tokens_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_check_tokens_files_names_drifted_json_file` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_tokens_json_file_accepted` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_tokens_unknown_key_still_invalid_alongside_json_file` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 157 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

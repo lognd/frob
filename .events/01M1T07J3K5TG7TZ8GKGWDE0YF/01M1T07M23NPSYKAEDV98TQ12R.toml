@@ -1,0 +1,27 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Docs truth-up after T-0114 (A-055): the tokens.md Tailwind-theme-rendering bullet still said zIndex values were bare integer strings; it now describes the var(--layer-name) emission via spec.naming.layer_token and why (utility-map var() search resolves z-utilities; tokens.css is the live z source). Doc-only change; evidence is the grep of the updated sentence.
+
+### Changed
+```
+ docs/design/subsystems/tokens.md |   5 +-
+ frob-coverage.lock.json          | 112 +++++++++++++++++++--------------------
+ tickets/T-0115/ticket.md         |   5 +-
+ 3 files changed, 64 insertions(+), 58 deletions(-)
+```
+
+### Evidence
+- `cmd:grep -n 'var(--layer-<name>)' docs/design/subsystems/tokens.md exit=0 sha256=ab0269c90695` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 1 error(s), 220 warning(s), 4 waived
+- error-findings: PRE001@tickets/T-0115"""
+at = "2026-09-06T00:00:02Z"
+actor = "import"
+rev = 1

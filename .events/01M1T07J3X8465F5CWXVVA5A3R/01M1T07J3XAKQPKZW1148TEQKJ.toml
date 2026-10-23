@@ -1,0 +1,13 @@
+kind = "create"
+title = "README: never invoke crunk/apl through npx (A-068)"
+type = "docs"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0125"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["README.md"]
+acceptance = ["given the README, when read, then it states both binaries and warns against npx by name"]
+body = "The adopting project's agents twice reached for npx (A-057 GraphQL CLI, A-068 an unrelated apl package) because the tool lints frontend repos where npx is muscle memory. Document plainly: crunk installs as a uv tool, both binaries live on PATH, npx must never be used and resolves unrelated npm packages."
+at = "2026-09-06T00:00:00Z"
+actor = "human"
+rev = 1

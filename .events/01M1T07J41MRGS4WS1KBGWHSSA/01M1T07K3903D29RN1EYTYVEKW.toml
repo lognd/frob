@@ -1,0 +1,64 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+r15 (A-072): ingest_tree now returns Ok with zero css sheets plus a
+ParseDiagnostic naming the resolved css_root when it is absent (jsx/tailwind
+still ingest); css_root existing-but-not-a-directory and OS walk failures
+stay Err(Unreadable). The shell renders Unreadable with the resolved
+css_root path appended via a new _render_ingest_error helper used at every
+check/fix/map/query/explain call site. check also logs each ingest
+diagnostic at WARNING so an absent css root is never silent. --version is
+now a real argparse version action mirroring App._cache_key_for's
+importlib.metadata fallback; -v/--verbose is unchanged.
+
+Changed:
+- src/crunk/ingest/walk.py: ingest_tree, new _resolve_css_root_files
+- src/crunk/ingest/models.py: IngestError docstring narrowed for r15
+- src/crunk/app/app.py: new _render_ingest_error; _run_check,
+  _run_fix, _run_map, _run_query, _run_query_violations, _run_explain
+  updated to render it; _run_check also logs ingest diagnostics
+- src/crunk/__main__.py: new _crunk_version; _build_parser adds
+  --version
+
+Evidence: tests/unit/test_ingest.py::test_absent_css_root_degrades_to_diagnostic,
+tests/unit/test_ingest.py::test_unreadable_css_root,
+tests/unit/test_app.py::test_render_ingest_error_appends_resolved_css_root,
+tests/unit/test_app.py::test_run_check_unreadable_css_root_logs_resolved_path,
+tests/unit/test_app.py::test_parser_version_prints_and_exits_0,
+tests/system/test_e2e_53_borrower.py::test_e2e_53_absent_css_root_borrower_still_runs_jsx
+
+Filed: none
+
+Gates: frob check --ticket T-0129 clean except TEST006 (coverage stamp
+stale) -- frob coverage --full --fail-on-degraded failed 3x with pytest
+exiting 4 under xdist worker counts of 5 and 8 while many concurrent frob
+checks were running on the host; a bare pytest --cov=src/crunk -q -n 2 run
+went green with 95% total coverage and wrote coverage.xml cleanly, matching
+the documented T-0127 precedent for this exact failure mode.
+
+Scope additions: src/crunk/ingest/models.py (IngestError's frob:tests
+anchor needed updating alongside walk.py's r15 narrowing), frob.lock
+(written by frob ack on ingest_tree's moved digest).
+
+### Changed
+```
+ tickets/T-0129/ticket.md | 28 +++++++++++++++++++++++++---
+ 1 file changed, 25 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ingest.py::test_absent_css_root_degrades_to_diagnostic` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_53_borrower.py::test_e2e_53_absent_css_root_borrower_still_runs_jsx` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_parser_version_prints_and_exits_0` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 1 error(s), 260 warning(s), 9 waived
+- error-findings: TEST006@.frob/coverage-stamp"""
+at = "2026-09-06T00:00:01Z"
+actor = "import"
+rev = 1

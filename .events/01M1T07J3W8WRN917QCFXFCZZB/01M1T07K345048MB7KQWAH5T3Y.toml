@@ -1,0 +1,29 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Sizes scale becomes consumable (r14, A-066): --size-<n> export after radii, the six sizing theme categories, TW005 extended to size prefixes with numeric-only judgment, TW001 off-scale suggested_token, and the explain/unused compound-prefix gap fixed so the drain shape resolves end to end (E2E-51).
+
+### Changed
+```
+ tickets/T-0124/ticket.md | 28 +++++++++++++++++++++++++---
+ 1 file changed, 25 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_tokens.py::test_render_tailwind_sizing_categories` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_theme_mapping_includes_sizing_categories` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_51_sizes.py::test_e2e_51_size_export_and_theme_and_suggested_token` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_tailwind.py::test_tw005_flags_size_prefixes` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_51_sizes.py::test_e2e_51_size_prefixes_bypass_default_scale` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 407 warning(s), 10 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-06T00:00:01Z"
+actor = "import"
+rev = 1

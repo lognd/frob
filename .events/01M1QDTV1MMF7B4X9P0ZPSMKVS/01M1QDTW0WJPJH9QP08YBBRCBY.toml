@@ -1,0 +1,26 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Split crunk tokens into preview (explicit --format) vs write (bare command) so an explicit --format never overwrites a hand-edited tokens file (A-011); fix --dry-run now names the unfixable-error count instead of reading like success (A-012). Both e2e/unit covered; docs/commands updated; frob check and full pytest suite green.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_20_21_ux.py::test_tokens_format_css_previews_without_writing` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_20_21_ux.py::test_fix_dry_run_names_unfixable_remainder` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main.py::test_tokens_format_defaults_to_none_sentinel` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_tokens_css_preview_does_not_write` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_fix_dry_run_unfixable_remainder_names_count` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: 0 error(s), 130 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

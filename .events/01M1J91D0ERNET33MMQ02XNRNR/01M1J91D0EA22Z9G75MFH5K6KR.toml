@@ -1,0 +1,15 @@
+kind = "create"
+title = "system E2E suite E2E-01..09"
+type = "task"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0014"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["tests/system/*.py", "frob.toml"]
+at = "2026-09-03T00:00:00Z"
+actor = "agent"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M1J91D0C0CWGFJB2FYD5ZS8Q"
