@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-10T02:36:32Z"
-updated = "2026-10-23T23:47:52Z"
-scope = ["crates/frob-pm/src/doctor.rs", "changelog.d/**"]
+updated = "2026-10-23T23:51:08Z"
+scope = ["crates/frob-pm/src/doctor.rs", "changelog.d/**", "crates/frob-pm/tests/pm.rs"]
 
 [[acceptance]]
 text = "Given a cycle or milestone event whose ULID was minted up to 6 hours after its at timestamp, when ticket doctor runs, then no E-PM-ORDER fires; an at ahead of its ULID by more than the skew still fires"
