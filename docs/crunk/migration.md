@@ -12,7 +12,8 @@ to the Rust `crunk` binary. It maps every Python verb to its Rust equivalent or 
 removed, then lists the install, cache and dependency differences. The per-finding and parser
 divergences (the reasoned list) are in [hullbreach-migration.md](hullbreach-migration.md); the
 exact commands a CI step changes to are in its "CI step" table. The verbs and flags of the Rust
-binary are in [README.md](README.md) (`crunk --help` and `crunk SUBCOMMAND --help` are the
+binary are in [README.md](README.md) (the generated verb table is
+[the crunk CLI reference](../reference/cli/crunk.md); `crunk --help` and `crunk SUBCOMMAND --help` are the
 authoritative flag lists); the generated rule index is [rules/README.md](rules/README.md); `crunk.toml` is in [config.md](config.md).
 
 The Python source is not part of this repository; the Python verb list below is taken from the
