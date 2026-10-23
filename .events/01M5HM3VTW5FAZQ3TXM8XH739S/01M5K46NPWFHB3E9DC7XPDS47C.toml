@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk/tests/query_parity.rs", "crates/crunk/tests/parity/compare.rs", "tests/crunk-parity/divergences.toml"]
+new = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk/tests/query_parity.rs", "crates/crunk/tests/parity/compare.rs", "tests/crunk-parity/divergences.toml", "docs/crunk/rules/**"]
+at = "2026-10-23T00:57:30Z"
+actor = "lognd"
+rev = 1
