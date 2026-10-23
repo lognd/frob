@@ -11,7 +11,7 @@ created = "2026-10-09T19:05:35Z"
 updated = "2026-10-23T22:24:52Z"
 idempotency_key = "docs-consolidation-2026-10-09-p0"
 labels = ["creates:crates/frob-doc/**", "creates:crates/frob/src/doc_cmd.rs", "creates:docs/MOVED.toml"]
-scope = ["crates/frob/src/lib.rs", "crates/frob/src/main.rs", "crates/frob-ack/src/rules.rs", "crates/frob-obligations/src/doc.rs", "docs/reference/cli/frob.md", "docs/reference/rules/DRIFT002.md", "docs/reference/rules/DOC002.md", "Cargo.toml", "Cargo.lock", "changelog.d/**", "crates/frob-doc/**", "crates/frob/src/doc_cmd.rs", "docs/MOVED.toml", "docs/design/**", "docs/guide/**", "docs/schemas/**", "crates/frob-ack/src/eval.rs"]
+scope = ["crates/frob/src/lib.rs", "crates/frob/src/main.rs", "crates/frob-ack/src/rules.rs", "crates/frob-obligations/src/doc.rs", "docs/reference/cli/frob.md", "docs/reference/rules/DRIFT002.md", "docs/reference/rules/DOC002.md", "Cargo.toml", "Cargo.lock", "changelog.d/**", "crates/frob-doc/**", "crates/frob/src/doc_cmd.rs", "docs/MOVED.toml", "docs/design/**", "docs/guide/**", "docs/schemas/**", "crates/frob-ack/src/eval.rs", "crates/frob-ack/src/inputs.rs"]
 
 [[links]]
 kind = "blocked-by"
