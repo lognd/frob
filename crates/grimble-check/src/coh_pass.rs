@@ -12,6 +12,7 @@ use gob_walk::{Digest, FileEntry, LanguageHint};
 use grimble_lints::pass::{PathFile, PathFinding, PathReport};
 
 use crate::coh002::{Coh002, Coh002Options, Coh002Unresolved, UnitRole, coh002};
+use crate::unit_role::{declared_roles, resolve_role};
 
 /// Rule id of the decision-with-effects rule.
 pub const COH002: &str = "COH002";
@@ -71,10 +72,11 @@ pub fn analyze(files: &[PathFile<'_>], opts: &Coh002Options) -> PathReport {
         };
         examined += 1;
         let mut unknown: Vec<String> = Vec::new();
+        let roles = declared_roles(&folded, f.language, f.text);
         for unit in function_units(&folded) {
             let name = folded.term.node(unit).name().unwrap_or("<anonymous>");
-            let Some(verdict) = coh002(&folded, f.language.name(), unit, UnitRole::None, opts)
-            else {
+            let role = resolve_role(roles.get(&unit).copied(), UnitRole::None);
+            let Some(verdict) = coh002(&folded, f.language.name(), unit, role, opts) else {
                 continue;
             };
             match verdict {
@@ -99,7 +101,22 @@ pub fn analyze(files: &[PathFile<'_>], opts: &Coh002Options) -> PathReport {
                 Coh002::Unresolved(Coh002Unresolved::UnknownCallees { callees }) => {
                     unknown.extend(callees);
                 }
-                Coh002::Unresolved(Coh002Unresolved::UnverifiedShell { .. }) | Coh002::Clean => {}
+                Coh002::Unresolved(Coh002Unresolved::UnverifiedShell { decisions }) => {
+                    report.findings.push(PathFinding {
+                        rule: COH002,
+                        severity: Severity::Unresolved,
+                        file: f.path.to_owned(),
+                        range: decisions
+                            .first()
+                            .map_or((0, 0), |d| range_of(&folded, d.decision)),
+                        message: format!(
+                            "`{name}` claims `grimble:shell` but the claim is not verified; its decisions with effects stay unjudged"
+                        ),
+                        reason: Some(UnresolvedReason::AnnotationEffects),
+                        anchor: format!("{}:{name}:shell", f.path),
+                    });
+                }
+                Coh002::Clean => {}
             }
         }
         if !unknown.is_empty() {

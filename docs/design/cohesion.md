@@ -16,8 +16,11 @@ the effect and trivial callee vocabularies. A configured list replaces the built
 an empty `effect_calls` turns COH002 off; an empty `trivial` makes logging calls unknown
 callees (Unresolved); a name in both lists is trivial. Unknown `[coh]` keys are rejected.
 `min_slice_statements` and `max_level_spread` are not in the table yet (COH001 and COH003
-are not registered rules). Units are judged as written until role detection feeds
-`grimble:core` and `grimble:shell` into COH002.
+are not registered rules). A unit carrying a `grimble:core` or `grimble:shell`
+directive on its function is judged against that role (COH002 reads it from the
+directive; a unit with no directive is judged as written). Both on one unit is a
+conflict and the stricter `core` wins. A `grimble:shell` claim is reported as
+Unresolved until an effects rule verifies it.
 
 Provenance: accepted direction, owner questions 2026-10-08: "enforce a one
 job per function rule, where we don't mix logic; how would you detect
