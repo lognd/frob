@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T03:46:45Z"
-updated = "2026-10-23T05:17:37Z"
+updated = "2026-10-23T05:27:21Z"
 scope = ["crates/grimble-check/**", "crates/grimble-ci/**", "Cargo.lock", "docs/**"]
 
 [[acceptance]]
 text = "grimble check calls grimble_ci::analyze on workflow files and reports its findings"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a zizmor finding and a grimble-ci finding for the same workflow and rule are reported once"

@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T05:27:21Z"
+digest = "9ab7e205e34ae29ede1b7f31e4649afee1f5bfd07710ece7f274733e1768945d"
+exit_code = 0
+head = "30b355d52541d79bb0262e0c704ccb89d2434a0f"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6d070855-6204-45be-ba3d-62f6b513daa8 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.112s] grimble-check::ci_wiring check_reports_grimble_ci_findings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.112s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test ci_wiring check_reports_grimble_ci_findings"
+size = 676
+status = "measured"
+test_count = 1
+tests_digest = "a9fc2d47c6445b3b4ab26b91938ee968884ce76912a6462e54ef635bab233892"
+at = "2026-10-23T05:27:21Z"
+actor = "lognd"
+rev = 1
