@@ -2,12 +2,12 @@
 id = "01M5HJ07B6E0NZ47RCV0HWZR5Y"
 title = "COH002: detect Rust match-arm decisions"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T02:53:04Z"
+updated = "2026-10-23T02:53:05Z"
 scope = ["crates/grimble-check/**", "docs/**"]
 
 [[acceptance]]
