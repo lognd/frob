@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T09:58:42Z"
-updated = "2026-10-23T01:58:45Z"
-scope = ["crates/grimble-check/**", "crates/grimble-lints/**", "docs/**"]
+updated = "2026-10-23T02:07:26Z"
+scope = ["crates/grimble-check/**", "crates/grimble-lints/**", "docs/**", "crates/grimble/src/explain_cmd.rs"]
 
 [[acceptance]]
 text = "Given a Unity project whose input settings trip UNITY301, when grimble check runs, then UNITY301 is reported through a registered rule with a docs page"
