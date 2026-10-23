@@ -73,6 +73,16 @@ impl Provider {
         names
     };
 
+    /// The spellings of the providers an agent actor may record evidence with: every provider but the person-only attestation.
+    #[must_use]
+    pub fn agent_usable() -> Vec<&'static str> {
+        Self::ALL
+            .iter()
+            .filter(|p| **p != Self::Attestation)
+            .map(|p| p.as_str())
+            .collect()
+    }
+
     /// The spellings as prose: `a, b or c`.
     pub fn expected() -> String {
         let (rest, last) = Self::NAMES.split_at(Self::NAMES.len() - 1);

@@ -86,7 +86,7 @@ pub enum EvidenceError {
         project: String,
     },
     /// An attestation was attempted without a person at a terminal.
-    #[error("E-ATTEST-NOT-HUMAN: an attestation is a person's statement; refused because {}", .reasons.join("; "))]
+    #[error("{}", not_human_message(.reasons))]
     NotHuman {
         /// Why presence failed: a stream is not a terminal, or an agent marker is set.
         reasons: Vec<String>,
@@ -290,6 +290,16 @@ impl EvidenceError {
             None => CliError::internal(self),
         }
     }
+}
+
+// frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
+/// The refusal text for an attestation without a person: the reasons, then the providers an agent may use instead.
+fn not_human_message(reasons: &[String]) -> String {
+    format!(
+        "E-ATTEST-NOT-HUMAN: an attestation is a person's statement; refused because {}; an agent can record evidence with the measuring providers: {}",
+        reasons.join("; "),
+        crate::record::Provider::agent_usable().join(", ")
+    )
 }
 
 fn not_attester_message(identity: Option<&String>, listed: &[String]) -> String {

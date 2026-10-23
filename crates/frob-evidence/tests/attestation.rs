@@ -261,3 +261,22 @@ fn an_ascii_statement_still_attests() {
     .expect("attests");
     assert!(rec.attestation.is_some());
 }
+
+#[test]
+fn an_agent_actors_refusal_names_the_agent_usable_providers() {
+    // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
+    // frob:tests crates/frob-evidence/src/attestation.rs::Presence.require_human
+    let dir = repo(r#"["owner@example.com"]"#);
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
+    let agent = Presence::from_parts(true, true, |n| (n == "CLAUDECODE").then(|| "1".to_owned()));
+    let text = refused(&ws, &agent, &request("fine", &[])).to_string();
+    for provider in ["nextest", "pytest", "vitest", "jest", "command", "file"] {
+        assert!(text.contains(provider), "{provider} missing from: {text}");
+    }
+    let (_, offered) = text.split_once("measuring providers: ").expect("list");
+    assert!(
+        !offered.contains("attestation"),
+        "an agent is not offered attestation: {offered}"
+    );
+}

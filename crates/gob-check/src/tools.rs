@@ -604,6 +604,54 @@ fn report_text(stage: &ToolStage, output: &gob_exec::Output) -> String {
     }
 }
 
+/// The `uv sync` line a uv-run `stage` needs before it can run in `root`, when the checkout has no `.venv`.
+///
+/// `None` unless the stage runs `uv run` against a project (a `pyproject.toml` in `root`, no
+/// `--no-project`/`--isolated`/`--script`), the checkout has no virtual environment yet, and the
+/// environment location is not redirected by `UV_PROJECT_ENVIRONMENT`. It is `uv sync --frozen`
+/// when a lockfile exists so the sync never rewrites it, else `uv sync`.
+// frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
+#[must_use]
+pub(crate) fn uv_sync_line(root: &Path, stage: &ToolStage) -> Option<String> {
+    if stage.command != "uv" || std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
+        return None;
+    }
+    let mut words = stage.args.iter().filter(|a| !a.starts_with('-'));
+    if words.next().map(String::as_str) != Some("run") {
+        return None;
+    }
+    let opts_out = ["--no-project", "--isolated", "--script"];
+    if stage.args.iter().any(|a| opts_out.contains(&a.as_str())) {
+        return None;
+    }
+    if !root.join("pyproject.toml").is_file() || root.join(".venv").join("pyvenv.cfg").is_file() {
+        return None;
+    }
+    Some(if root.join("uv.lock").is_file() {
+        "uv sync --frozen".to_owned()
+    } else {
+        "uv sync".to_owned()
+    })
+}
+
+/// Run the prerequisites `stage` needs, syncing a missing uv environment first; `Err` is the Unresolved message.
+// frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
+fn ensure_prereqs(
+    runner: &Runner,
+    root: &Path,
+    stage: &ToolStage,
+    trust: Option<&dyn ToolTrust>,
+    prereqs: &Prereqs,
+) -> Result<(), String> {
+    let Some(line) = uv_sync_line(root, stage) else {
+        return prereqs.ensure(runner, root, stage, trust);
+    };
+    tracing::info!(stage = %stage.name, line, "uv environment missing; syncing first");
+    let mut with_sync = stage.clone();
+    with_sync.requires.insert(0, line);
+    prereqs.ensure(runner, root, &with_sync, trust)
+}
+
 fn execute(
     runner: &Runner,
     root: &Path,
@@ -616,8 +664,10 @@ fn execute(
         Err(result) => return result,
     };
     // frob:ticket 01M4GKDSGA7ZSF99T7M5S319B4
+    // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
     // Build output the stage reads is produced first; a failed prerequisite is Unresolved, never a verdict.
-    if let Err(message) = prereqs.ensure(runner, root, stage, trust) {
+    // A uv-run stage in a checkout without `.venv` syncs the environment as its first prerequisite.
+    if let Err(message) = ensure_prereqs(runner, root, stage, trust, prereqs) {
         return StageResult::Failed(message);
     }
     let pack = pack.as_ref();
@@ -1914,5 +1964,85 @@ mod tests {
         let t: crate::config::CheckTable =
             toml::from_str("[[tool]]\nname = \"x\"\ndef = \"nope\"\n").unwrap();
         assert!(t.tool[0].validate().is_err());
+    }
+
+    fn uv_run(args: &[&str]) -> ToolStage {
+        let mut stage = named_uv();
+        stage.args = args.iter().map(|a| (*a).to_owned()).collect();
+        stage
+    }
+
+    fn named_uv() -> ToolStage {
+        let mut stage = sh_stage("py", ToolParser::None, "true", "true");
+        stage.command = "uv".to_owned();
+        stage
+    }
+
+    // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
+    // frob:tests crates/gob-check/src/tools.rs::uv_sync_line
+    #[test]
+    fn a_uv_run_stage_without_a_venv_syncs_first_and_otherwise_does_not() {
+        if std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
+            return;
+        }
+        let root = tempfile::tempdir().expect("root");
+        let stage = uv_run(&["run", "--no-sync", "pytest"]);
+        // No pyproject: nothing to sync.
+        assert_eq!(uv_sync_line(root.path(), &stage), None);
+        std::fs::write(root.path().join("pyproject.toml"), "[project]\n").expect("write");
+        assert_eq!(
+            uv_sync_line(root.path(), &stage).as_deref(),
+            Some("uv sync")
+        );
+        // A lockfile makes the sync frozen so it never rewrites the lock.
+        std::fs::write(root.path().join("uv.lock"), "").expect("write");
+        assert_eq!(
+            uv_sync_line(root.path(), &stage).as_deref(),
+            Some("uv sync --frozen")
+        );
+        // Flags before the subcommand still find `run`; project-less runs and other programs never sync.
+        let flagged = uv_run(&["--quiet", "run", "pytest"]);
+        assert!(uv_sync_line(root.path(), &flagged).is_some());
+        for args in [
+            &["run", "--no-project", "x"][..],
+            &["run", "--isolated", "x"],
+            &["pip", "list"],
+        ] {
+            assert_eq!(uv_sync_line(root.path(), &uv_run(args)), None, "{args:?}");
+        }
+        let mut other = uv_run(&["run", "pytest"]);
+        other.command = "poetry".to_owned();
+        assert_eq!(uv_sync_line(root.path(), &other), None);
+        // An existing environment is left alone.
+        let venv = root.path().join(".venv");
+        std::fs::create_dir_all(&venv).expect("mkdir");
+        std::fs::write(venv.join("pyvenv.cfg"), "home = x\n").expect("write");
+        assert_eq!(uv_sync_line(root.path(), &stage), None);
+    }
+
+    // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
+    // frob:tests crates/gob-check/src/tools.rs::execute
+    #[test]
+    fn a_failed_environment_sync_is_unresolved_never_a_red_verdict() {
+        let on_path = std::env::var_os("PATH")
+            .is_some_and(|p| std::env::split_paths(&p).any(|d| d.join("uv").is_file()));
+        if !on_path || std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
+            return;
+        }
+        let root = tempfile::tempdir().expect("root");
+        // A malformed project makes `uv sync` fail deterministically, offline or not.
+        std::fs::write(root.path().join("pyproject.toml"), "[project\n").expect("write");
+        let mut stage = uv_run(&["run", "--no-sync", "pytest"]);
+        stage.name = "py".to_owned();
+        let found = run_full(&stage, root.path()).findings;
+        assert_eq!(found.len(), 1, "{found:?}");
+        let finding = &found[0].finding;
+        assert_eq!(finding.severity, Severity::Unresolved, "{finding:?}");
+        assert!(finding.message.contains("uv sync"), "{}", finding.message);
+        assert!(
+            finding.message.contains("then re-run"),
+            "{}",
+            finding.message
+        );
     }
 }

@@ -867,6 +867,40 @@ fn find_js_runner(root: &Path, cwd: &Path, name: &str) -> Option<PathBuf> {
     which::which(name).ok()
 }
 
+// frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
+/// The `PATH` value a JavaScript runner starts with: every `node_modules/.bin` from `cwd` up to `root` (nearest first), then `existing`.
+///
+/// Runners spawn sibling tools by bare name (vite, esbuild, tsc), which only resolve when the project's bin
+/// directories lead `PATH`. Returns `None` when no such directory exists (nothing to add) or the value cannot be joined.
+#[must_use]
+pub fn js_bin_path(
+    root: &Path,
+    cwd: &Path,
+    existing: Option<std::ffi::OsString>,
+) -> Option<String> {
+    let mut dirs: Vec<PathBuf> = Vec::new();
+    for dir in cwd.ancestors() {
+        let bin = dir.join("node_modules").join(".bin");
+        if bin.is_dir() {
+            dirs.push(bin);
+        }
+        if dir == root {
+            break;
+        }
+    }
+    if dirs.is_empty() {
+        return None;
+    }
+    dirs.extend(std::env::split_paths(&existing.unwrap_or_default()));
+    match std::env::join_paths(dirs) {
+        Ok(joined) => gob_path::exact_text(&joined).map(str::to_owned),
+        Err(e) => {
+            tracing::warn!(error = %e, "node_modules bin directories not added to PATH: unjoinable entry");
+            None
+        }
+    }
+}
+
 // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
 /// What one vitest or jest run needs.
 #[derive(Debug, Clone, Copy)]
@@ -965,7 +999,12 @@ pub fn run_js_tests(runner: &Runner, job: &JsRun<'_>) -> Result<Capture> {
         ]
     };
     full.extend(args.iter().cloned());
-    let out = runner.run(&spec(Program::Hook { path }, full, &cwd, timeout));
+    let mut run_spec = spec(Program::Hook { path }, full, &cwd, timeout);
+    if let Some(path_var) = js_bin_path(root, &cwd, std::env::var_os("PATH")) {
+        tracing::debug!(tool, "node_modules bin directories put on PATH");
+        run_spec.env.push(("PATH".to_owned(), path_var));
+    }
+    let out = runner.run(&run_spec);
     let json = std::fs::read_to_string(&report).unwrap_or_default();
     if report.exists()
         && let Err(e) = std::fs::remove_file(&report)
