@@ -153,6 +153,8 @@ fn main() -> ExitCode {
         selection: args.selection.filter(|_| !args.all),
         merge: args.merge,
         open_category: args.open_category.into(),
+        alias_prefix: None,
+        extra_labels: Vec::new(),
         privacy_dir: gob_git::Repo::discover(".")
             .ok()
             .map(|r| r.common_dir().to_path_buf()),

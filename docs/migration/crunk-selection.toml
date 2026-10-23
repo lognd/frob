@@ -1,0 +1,57 @@
+# Selection for the crunk ticket import (~JBTM6EF), same format as v1-selection.toml.
+#
+# Data, not code: the importer reads this file. Every open crunk ticket must be named here
+# (by cluster membership or an override); an unmapped open ticket stops the run, so a crunk
+# that has grown since this file was written forces a review instead of importing blindly.
+# Closed crunk tickets (done, dropped) always import as closed history and are not listed.
+# Imported ids are aliased `crunk:T-nnnn`, so they never collide with a frob `T-nnnn`.
+#
+# The GitHub main of lognd/crunk holds T-0001..T-0141 only. The ticket text speaks of ~250
+# tickets up to T-0294: those live in an unpushed local state. Ids that are named below but
+# absent on GitHub only produce "not an open v1 ticket" warnings; they take effect on the
+# re-run once crunk is pushed.
+
+[cluster.C1]
+title = "crunk product roadmap items (A-027) and open crunk-owned work"
+status = "OPEN"
+disposition = "import-open"
+area = "crunk"
+ids = [
+  "T-0073", "T-0074", "T-0075", "T-0076", "T-0077", "T-0078", "T-0079", "T-0080",
+  "T-0111", "T-0112",
+]
+
+[cluster.C2]
+title = "crunk work named in the retirement ticket but not yet on GitHub main"
+status = "OPEN"
+disposition = "import-open"
+area = "crunk"
+ids = [
+  "T-0142", "T-0158", "T-0159", "T-0164", "T-0166", "T-0175", "T-0179", "T-0202",
+  "T-0222", "T-0225", "T-0226", "T-0245", "T-0251", "T-0258", "T-0259", "T-0264",
+  "T-0283", "T-0288", "T-0292",
+]
+
+[cluster.C3]
+title = "frob friction filed from crunk (gate rules, waivers, sweep regressions); frob owns the fix"
+status = "FROB-FRICTION"
+disposition = "wont-fix-history"
+area = "crunk"
+ids = [
+  "T-0023", "T-0024", "T-0121", "T-0194", "T-0213", "T-0216", "T-0237", "T-0238",
+  "T-0274", "T-0280", "T-0281", "T-0287", "T-0291", "T-0293",
+]
+
+[cluster.C4]
+title = "crunk repository housekeeping that retires with the repo (README, rename)"
+status = "OPEN"
+disposition = "wont-fix-history"
+area = "crunk"
+ids = ["T-0140", "T-0141"]
+
+[cluster.C5]
+title = "Covered by crunk-tailwind and gob-symbols tickets already in frob"
+status = "TICKETED"
+disposition = "skip-ticketed"
+area = "crunk"
+ids = ["T-0203", "T-0294"]

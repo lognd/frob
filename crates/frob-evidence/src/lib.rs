@@ -28,6 +28,7 @@ pub mod done;
 pub mod error;
 pub mod events;
 pub mod guard;
+pub mod import_crunk;
 pub mod import_v1;
 pub(crate) mod pathtext;
 pub mod provider;
