@@ -468,7 +468,8 @@ pub(crate) fn identity_evaluator<'a>(
     input: &Input<'a>,
     rels: &'a Relations,
 ) -> Result<Eval<'a>, ExecError> {
-    evaluator(plan, input, rels).map(Eval::with_identity_collapse)
+    let base = evaluator(plan, input, rels)?;
+    Ok(base.with_identity_collapse())
 }
 
 /// Counts the members of the quantifier `quant` (an op of `plan`) under the bindings of `row`:

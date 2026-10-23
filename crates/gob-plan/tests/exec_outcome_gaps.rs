@@ -92,6 +92,7 @@ fn a_not_applicable_cell_yields_no_finding_no_clean_and_no_unresolved() {
 // frob:tests crates/gob-plan/src/exec/outcome/mod.rs::outcomes
 // frob:tests crates/gob-plan/src/exec/outcome/mod.rs::Finding.is_conditional
 // frob:tests crates/gob-plan/src/exec/outcome/assume.rs::Assumption.code
+// frob:tests crates/gob-plan/src/exec/outcome/assume.rs::Assumption.unresolved
 #[test]
 fn a_fire_resting_on_certainly_is_conditional_with_an_assumed_reason() {
     let (m, fs) = model(&["target", "x"]);
