@@ -92,6 +92,7 @@ const RUST_ONLY_RULES: &[&str] = &[
     "TOKEN008",
     "TOKEN009",
     "CRAFT006",
+    "CRAFT008",
     "CRAFT010",
 ];
 

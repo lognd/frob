@@ -243,6 +243,17 @@ fn apply_radii_config(spec_text: &mut String, config: Option<&str>) {
     }
 }
 
+// frob:ticket 01M5HM3W18AJZET52BZBEJFYD4
+/// The `config=roles-semantic` case adds danger, warning and success roles to the preset's `body` role.
+fn apply_roles_config(spec_text: &mut String, config: Option<&str>) {
+    if config == Some("roles-semantic") {
+        *spec_text = spec_text.replace(
+            "body = [\"ink\", \"paper\"]",
+            "body = [\"ink\", \"paper\"]\ndanger = [\"ink\", \"paper\"]\nwarning = [\"ink\", \"paper\"]\nsuccess = [\"ink\", \"paper\"]",
+        );
+    }
+}
+
 fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) -> Project {
     let dir = tempfile::tempdir().expect("tempdir");
     if config.is_some_and(|c| c.starts_with("tw-theme-")) {
@@ -255,6 +266,7 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
         spec_text.push_str(" = \"chosen on purpose\"\n");
     }
     apply_radii_config(&mut spec_text, config);
+    apply_roles_config(&mut spec_text, config);
     if config == Some("palette-indigo") {
         spec_text = spec_text.replace("accent = \"#2f6fed\"", "accent = \"#6366f1\"");
     }

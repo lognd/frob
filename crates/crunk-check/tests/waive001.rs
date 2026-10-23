@@ -47,7 +47,7 @@ fn ids(run: &CrunkRun) -> Vec<String> {
         .filter(|id| {
             !matches!(
                 id.as_str(),
-                "ORG001" | "TOKENS001" | "EXPORT001" | "CRAFT010"
+                "ORG001" | "TOKENS001" | "EXPORT001" | "CRAFT008" | "CRAFT010"
             )
         })
         .collect()
@@ -139,7 +139,7 @@ fn findings_from_several_files_are_ordered_by_path_line_rule() {
         .as_array()
         .expect("findings")
         .iter()
-        .filter(|f| f["rule"] != "TOKENS001" && f["rule"] != "EXPORT001")
+        .filter(|f| f["rule"] != "TOKENS001" && f["rule"] != "EXPORT001" && f["rule"] != "CRAFT008")
         .map(|f| {
             (
                 f["file"].as_str().unwrap_or_default().to_owned(),

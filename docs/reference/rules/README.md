@@ -103,6 +103,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [CRAFT006](CRAFT006.md) | scales-present | advisory | manual | P+ | false | A project whose `crunk.toml` is the default preset (spacing, font sizes and radii all declared) |
+| [CRAFT008](CRAFT008.md) | semantic-roles-complete | advisory | manual | P+ | false | A project whose `crunk.toml` is the default preset declares only a `body` role, so the fire case |
 | [CRAFT010](CRAFT010.md) | motion-policy | advisory | manual | P+ | false | Flags, once, a project whose stylesheets declare no `transition`, `animation` or `@keyframes` at all (the motion policy was deleted), and, once, a project that has motion but no `prefers-reduced-motion` media query. Advisory. |
 
 ## CYCLE
