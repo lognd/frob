@@ -2,7 +2,8 @@
 id = "01M4GKCSFB13Y0VH1E1DDTA99H"
 title = "Generated report directories (coverage HTML, playwright-report, htmlcov) are walked by crunk and frob rules; exclude them by default"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
