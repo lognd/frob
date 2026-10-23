@@ -8,7 +8,7 @@ points = 8
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:08Z"
-updated = "2026-10-23T05:34:20Z"
+updated = "2026-10-23T05:34:21Z"
 scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk-check/**", "Cargo.lock"]
 
 [[acceptance]]
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "each rule has a docs page and a registry row"
-bound = false
+bound = true
 +++
 
 found while working ~DTBY8Q0; cut from its scope
