@@ -2,12 +2,12 @@
 id = "01M4HTPMAS5TVK9S8Q47KD8R04"
 title = "frob-pm doctor E-PM-ORDER uses the same symmetric clock-skew check that flagged normal command-clock lag in frob-ledger (~Y8NVYNZ); apply the same asymmetric order_skew rule"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-10T02:36:32Z"
-updated = "2026-10-10T02:36:32Z"
+updated = "2026-10-23T23:47:52Z"
 scope = ["crates/frob-pm/src/doctor.rs", "changelog.d/**"]
 
 [[acceptance]]
