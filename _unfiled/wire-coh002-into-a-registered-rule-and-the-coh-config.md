@@ -2,7 +2,8 @@
 id = "01M5HJ075VJZAP88EVTCX1MH8C"
 title = "Wire COH002 into a registered rule and the [coh] config"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
