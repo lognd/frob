@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Failure log: not doable as scoped. The only live CI003 declaration is gob-check/src/rules.rs Ci003 (outside crates/frob-check/**; frob-check only re-exports it). grimble-ci declares CI003 too but no crate depends on grimble-ci, so grimble check never raises it; retiring the gob-check declaration now would lose the finding (zizmor id map, rule registry, mdtest ci003 corpus, docs page). Today it is reported once, not doubled. Blocked by ~CXX0FRT (wire grimble-ci in); then retire gob-check Ci003 and update the CI003 docs page and tool_parse id map. No code changed."
+at = "2026-10-23T03:46:54Z"
+actor = "lognd"
+rev = 1

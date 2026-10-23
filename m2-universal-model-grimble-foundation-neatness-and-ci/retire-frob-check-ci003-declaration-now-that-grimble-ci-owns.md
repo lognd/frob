@@ -8,7 +8,7 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:32:37Z"
-updated = "2026-10-23T03:46:51Z"
+updated = "2026-10-23T03:46:54Z"
 scope = ["crates/frob-check/**"]
 
 [[links]]
