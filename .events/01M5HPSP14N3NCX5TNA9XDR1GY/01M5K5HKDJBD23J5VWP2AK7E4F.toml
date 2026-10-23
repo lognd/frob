@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T01:20:57Z"
+digest = "2a359c316ee26d35765ec1c380b67ca6751148a6c2feec69b7a5e430fcf4700f"
+exit_code = 0
+head = "821ec335a15e6c6dc4bba56af3a0a1c84279778c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4e671d6c-edae-47a1-9da2-67de099a2c09 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.072s] grimble-check::unity_rules allocation_in_update_reports_unity202_through_the_pipeline
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.072s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test unity_rules allocation_in_update_reports_unity202_through_the_pipeline"
+size = 572
+status = "measured"
+test_count = 1
+tests_digest = "85583d81b5e64a0c93686e50573a24e45c60f80df76c8f768648aa6087925dd2"
+at = "2026-10-23T01:20:57Z"
+actor = "lognd"
+rev = 1
