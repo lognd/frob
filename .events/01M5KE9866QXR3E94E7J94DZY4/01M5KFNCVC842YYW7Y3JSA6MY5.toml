@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["a frob-cli test fails when the grimble-ci static verb table differs from the real clap verb tree", "the test passes when the table matches the tree"]
+moved = []
+at = "2026-10-23T04:17:48Z"
+actor = "lognd"
+rev = 1
