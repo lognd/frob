@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["each of CRAFT001 CRAFT002 CRAFT003 CRAFT004 CRAFT005 CRAFT007 CRAFT009 CRAFT011 CRAFT012 is declared and fires on a fixture that lacks the presence it checks", "a fixture that has the presence stays quiet for every one of these rules", "each rule has a docs page and a registry row"]
+moved = []
+at = "2026-10-23T05:10:55Z"
+actor = "lognd"
+rev = 1
