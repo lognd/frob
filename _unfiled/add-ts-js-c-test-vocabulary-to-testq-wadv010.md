@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:31:46Z"
-updated = "2026-10-23T02:23:41Z"
-scope = ["crates/grimble-lints/src/testq/**"]
+updated = "2026-10-23T02:29:36Z"
+scope = ["crates/grimble-lints/src/testq/**", "crates/grimble-lints/src/testq.rs"]
 
 [[acceptance]]
 text = "Given a TypeScript or JavaScript test using a known assertion call, when WADV010 runs, then it is classified instead of Unresolved"
