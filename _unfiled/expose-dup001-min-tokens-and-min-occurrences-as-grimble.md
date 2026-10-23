@@ -2,12 +2,12 @@
 id = "01M5HMKRFRZYFQC6HVNPHC3Z2P"
 title = "Expose DUP001 min_tokens and min_occurrences as grimble-check config knobs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T11:05:48Z"
-updated = "2026-10-23T04:17:48Z"
+updated = "2026-10-23T04:17:49Z"
 scope = ["crates/grimble-check/**", "crates/grimble-arch/**"]
 
 [[acceptance]]
