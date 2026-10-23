@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at 59dc2db2fb7a (rust (windows-latest) (failure) https://github.com/lognd/frob/actions/runs/40031202779/job/120679761934; rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/40031202779/job/120679761210): base CI red, authorized by owner"
+at = "2026-10-23T22:15:51Z"
+actor = "lognd"
+rev = 1
