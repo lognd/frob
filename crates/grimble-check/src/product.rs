@@ -301,7 +301,8 @@ fn pair_report(
     grimble_lints::pair_pass::analyze(&files)
 }
 
-/// Run UNITY201 and UNITY202 over every C# file of the walk (uncached).
+/// Run UNITY201, UNITY202, UNITY301 and UNITY302 over the walk (uncached).
+// frob:ticket 01M5HGRWG7RDR3DTS7PT08HTWJ
 fn unity_report(
     entries: &[gob_walk::FileEntry],
     read: &dyn Fn(&str) -> Option<String>,
@@ -321,7 +322,16 @@ fn unity_report(
             text,
         })
         .collect();
-    grimble_lints::unity_pass::analyze(&files)
+    let setting_texts: Vec<(&str, String)> = entries
+        .iter()
+        .filter(|e| grimble_lints::unity_pass::is_project_settings(&e.path))
+        .filter_map(|e| read(&e.path).map(|text| (e.path.as_str(), text)))
+        .collect();
+    let settings: Vec<grimble_lints::unity_pass::SettingsFile<'_>> = setting_texts
+        .iter()
+        .map(|(path, text)| grimble_lints::unity_pass::SettingsFile { path, text })
+        .collect();
+    grimble_lints::unity_pass::analyze_all(&files, &settings)
 }
 
 /// Run COH002 over every Rust, Python and TypeScript file of the walk (uncached).

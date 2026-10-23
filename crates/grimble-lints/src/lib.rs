@@ -34,6 +34,9 @@
 //!
 //! [`unity_pass::analyze`] runs [`unity_hot::scan`] over the walked Unity C# files and returns the
 //! `UNITY201` and `UNITY202` verdicts for the product; the rules are declared in [`rules`].
+//! [`unity_pass::analyze_all`] adds `UNITY301` (legacy `Input` under the Input System handler,
+//! read from `ProjectSettings/ProjectSettings.asset`) and `UNITY302` (a Rigidbody force from
+//! `Update`), both Warn.
 //!
 //! [`path::scan`] finds `PATH001` absolute host path literals and, for Rust and Python, `PATH002`
 //! path-to-string separator handling and `PATH003` paths in command-line strings; a language

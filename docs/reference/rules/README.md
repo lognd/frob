@@ -522,6 +522,8 @@
 | [UNITY003](UNITY003.md) | duplicate-guid | error | manual | P+ | false | Two or more tracked `.meta` files carry the same `guid`. |
 | [UNITY201](UNITY201.md) | lookup-in-hot-code | advisory | manual | P- | true | A component or object lookup (GetComponent, Find, Camera.main) in code Unity runs every frame. |
 | [UNITY202](UNITY202.md) | allocation-in-hot-code | advisory | manual | P- | true | A managed allocation (collection, StringBuilder, array) in code Unity runs every frame. |
+| [UNITY301](UNITY301.md) | legacy-input-under-input-system | warn | manual | P- | true | The legacy Input class used in a project whose active input handler is the Input System. |
+| [UNITY302](UNITY302.md) | physics-force-outside-fixed-update | warn | manual | P- | true | A Rigidbody force or move applied from Update or LateUpdate instead of FixedUpdate. |
 
 ## VIS
 

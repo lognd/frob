@@ -1,0 +1,95 @@
+<!-- mdtest: rule=UNITY301 -->
+# UNITY301 legacy-input-under-input-system
+
+The legacy Input class used in a project whose active input handler is the Input System.
+
+## What it does
+
+Fires in a Unity C# file (one that names `UnityEngine` or a `MonoBehaviour`) for a read of the legacy `Input` class (`Input.GetKey`, `Input.GetAxis`, `Input.mousePosition`, `Input.touches` and the rest of its members), including `UnityEngine.Input` and a bare call under `using static UnityEngine.Input;`, when the nearest `ProjectSettings/ProjectSettings.asset` above the file sets `activeInputHandler: 1` (the Input System package only). The setting `0` (legacy) and `2` (both) keep the legacy API working and are clean. In the Input System mode Unity defines `ENABLE_INPUT_SYSTEM` and not `ENABLE_LEGACY_INPUT_MANAGER`, so code under `#if ENABLE_LEGACY_INPUT_MANAGER` is dead and is not reported. A file that declares its own `Input` symbol cannot be told apart from Unity's, so its hits are Unresolved. With several Unity projects in one repository each file follows its own project's settings. A file under no `ProjectSettings.asset`, or under one that is not a `PlayerSettings` document or has an unreadable handler value, is not examined, and a walk with no such file is not applicable. The rule is Warn.
+
+## Why it matters
+
+Under the Input System handler the legacy `Input` class throws `InvalidOperationException` at runtime, so the code compiles and then fails the first time the line runs.
+
+## Remedy
+
+Read the device through the Input System (`Keyboard.current`, `Mouse.current`, or an `InputAction`), or set the project's Active Input Handling to Both while the code is migrated.
+
+## Examples
+
+### Fires case 1
+
+```csharp expect=fire file=Assets/Scripts/Mover.cs
+using UnityEngine;
+
+public class Mover : MonoBehaviour
+{
+    void Update()
+    {
+        if (Input.GetKey(KeyCode.W))
+        {
+            transform.Translate(Vector3.forward);
+        }
+    }
+}
+```
+
+```yaml file=ProjectSettings/ProjectSettings.asset
+%YAML 1.1
+--- !u!129 &1
+PlayerSettings:
+  serializedVersion: 26
+  activeInputHandler: 1
+```
+
+### Clean case 2
+
+```csharp expect=clean file=Assets/Scripts/Mover.cs
+using UnityEngine;
+
+public class Mover : MonoBehaviour
+{
+    void Update()
+    {
+        if (Input.GetKey(KeyCode.W))
+        {
+            transform.Translate(Vector3.forward);
+        }
+    }
+}
+```
+
+```yaml file=ProjectSettings/ProjectSettings.asset
+%YAML 1.1
+--- !u!129 &1
+PlayerSettings:
+  serializedVersion: 26
+  activeInputHandler: 2
+```
+
+### Clean case 3
+
+```csharp expect=clean file=Assets/Scripts/Guarded.cs
+using UnityEngine;
+
+public class Guarded : MonoBehaviour
+{
+    void Update()
+    {
+#if ENABLE_LEGACY_INPUT_MANAGER
+        if (Input.GetKey(KeyCode.W))
+        {
+            transform.Translate(Vector3.forward);
+        }
+#endif
+    }
+}
+```
+
+```yaml file=ProjectSettings/ProjectSettings.asset
+%YAML 1.1
+--- !u!129 &1
+PlayerSettings:
+  serializedVersion: 26
+  activeInputHandler: 1
+```
