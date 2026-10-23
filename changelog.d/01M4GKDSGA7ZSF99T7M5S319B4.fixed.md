@@ -1,0 +1,1 @@
+Tool stages can declare `requires` commands, and a repository can declare `[check] setup` steps, that run in the checkout before the stage; a failed prerequisite leaves the stage Unresolved naming it.

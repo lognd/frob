@@ -22,6 +22,15 @@ A tool stage runs an external command after the built-in rules of `frob check`. 
 | `version_args` | parser default | Arguments of `command` that print the version (needed behind `uvx`). |
 | `optional` | `false` | A missing binary is Unresolved but not required. |
 | `tier` | `ticket` | Earliest check level that runs the stage: `ticket` (also under `frob check --ticket --quick`), `train` (a plain `--ticket` run, which is the land and train check) or `ci` (only the unscoped check). Levels widen, so a `ci` stage never delays a land. |
+| `requires` | `[]` | Command lines run in the checkout root before the stage; see Prerequisites and setup. |
+
+## Prerequisites and setup
+
+A stage that reads gitignored build output (a `wasm-pack` package, a generated setup file) declares `requires = ["wasm-pack build --dev"]`; the repository can also declare `[check] setup = ["..."]`, steps that precede every tool stage. Each entry is a program on `PATH` plus plain whitespace-separated arguments: there is no shell and no quoting, so anything more goes in a script (`"sh scripts/prepare.sh"`). A path program, quotes or shell syntax are refused when the config loads.
+
+They run in the root of the tree being checked, so a land checkout and a fresh ticket worktree build their own output before the stage. Each distinct command line runs at most once per check run, however many stages name it, so it must be safe to run again on a tree that already has its output. They pass the same trust gate as stage commands. A stage reused from the memo of an identical earlier pass does not re-run them.
+
+A prerequisite that exits nonzero, times out, cannot be found or is refused leaves every stage that needs it Unresolved (`TOOL001`, required), with a message naming the prerequisite and its stderr, and the stage itself is not run. Its failures are never reported as findings of the stage, so they cannot be mistaken for pre-existing ones.
 
 ## eslint stages
 

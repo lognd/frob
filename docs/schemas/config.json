@@ -487,6 +487,14 @@
           "default": "none",
           "description": "Output format of the tool; anything but `none` turns its findings into frob findings."
         },
+        "requires": {
+          "default": [],
+          "description": "Command lines (program plus plain arguments, no shell) run in the checkout root before this stage, to produce gitignored build output it reads; a failure leaves the stage Unresolved naming the command.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "tier": {
           "$ref": "#/$defs/ToolTier",
           "default": "ticket",
@@ -658,6 +666,14 @@
           "default": true,
           "description": "When true an unusable configured sibling is a required Unresolved (`SIB001`).",
           "type": "boolean"
+        },
+        "setup": {
+          "default": [],
+          "description": "Command lines (program plus plain arguments, no shell) run once in the checkout root before any tool stage, e.g. to build gitignored output; a failure leaves the stages Unresolved.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "sibling_timeout_secs": {
           "default": 120,

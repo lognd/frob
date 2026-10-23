@@ -242,6 +242,9 @@ pub struct ToolStage {
     /// What the `{packages}` argument token expands to outside a `--ticket` run (default `--workspace`); in a `--ticket` run it becomes `-p <name>` for each affected cargo package.
     #[serde(default = "default_unscoped_packages")]
     pub unscoped_packages: Vec<String>,
+    /// Command lines (program plus plain arguments, no shell) run in the checkout root before this stage, to produce gitignored build output it reads; a failure leaves the stage Unresolved naming the command.
+    #[serde(default)]
+    pub requires: Vec<String>,
 }
 
 /// Sentinel `args` of a stage that declared no template; [`ToolStage::validate`] refuses it by name.
@@ -291,6 +294,20 @@ impl ToolStage {
         }
         if self.args.iter().any(|a| a == MISSING_TEMPLATE) {
             return bad("no `args` argv template declared (use `args = []` for none)");
+        }
+        self.validate_requires()
+    }
+
+    /// Refuse a `requires` entry that is not a plain command line.
+    fn validate_requires(&self) -> Result<(), ConfigError> {
+        for line in &self.requires {
+            if let Err(why) = crate::prereq::split(line) {
+                tracing::warn!(stage = %self.name, line, "CFG tool stage requires refused");
+                return Err(ConfigError::Invalid {
+                    table: "check.tool".to_owned(),
+                    message: format!("stage `{}`: `requires` entry `{line}`: {why}", self.name),
+                });
+            }
         }
         Ok(())
     }
@@ -410,6 +427,9 @@ pub struct CheckTable {
     /// Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB).
     #[config(default = 67_108_864)]
     pub output_cap_bytes: u64,
+    /// Command lines (program plus plain arguments, no shell) run once in the checkout root before any tool stage, e.g. to build gitignored output; a failure leaves the stages Unresolved.
+    #[config(default = Vec::new())]
+    pub setup: Vec<String>,
 }
 
 /// The time budget of the built-in rules.

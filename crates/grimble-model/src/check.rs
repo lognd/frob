@@ -913,6 +913,20 @@ impl<'a> Checker<'a> {
                 if let Some(at) = &m.at {
                     self.selector(rec, at, anchor);
                 }
+                // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
+                if !m.has_reason() {
+                    self.emit(
+                        "MDL008",
+                        Some(Severity::Warn),
+                        rec.file,
+                        c.span,
+                        format!(
+                            "`may {}` states no reason; add `because=\"...\"` or `ticket=\"...\"`",
+                            m.atom.written()
+                        ),
+                        anchor,
+                    );
+                }
             }
             ClauseKind::Excuses(x) => {
                 self.atom(rec, &x.atom, false, anchor);

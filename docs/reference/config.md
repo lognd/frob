@@ -43,6 +43,7 @@ Materialized: yes.
 | `output_cap_bytes` | `u64` | `67108864` | no | Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB). |
 | `process_spawners` | `Vec<String>` | `[]` | no | Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off. |
 | `require_siblings` | `bool` | `true` | yes | When true an unusable configured sibling is a required Unresolved (`SIB001`). |
+| `setup` | `Vec<String>` | `[]` | no | Command lines (program plus plain arguments, no shell) run once in the checkout root before any tool stage, e.g. to build gitignored output; a failure leaves the stages Unresolved. |
 | `sibling_timeout_secs` | `u64` | `120` | yes | Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7). |
 | `size_cap` | `u64` | `4194304` | no | Files larger than this many bytes are skipped. |
 | `telemetry` | `bool` | `true` | no | Append one JSON line per run to `.frob/telemetry.jsonl`. |

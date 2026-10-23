@@ -508,7 +508,14 @@ impl Parser<'_> {
             match &t.tok {
                 Tok::Eof | Tok::P(Punct::RBrace | Punct::LBrace) => break,
                 Tok::P(Punct::Semi) if depth == 0 => break,
-                Tok::Ident(w) if depth == 0 && stop_at_because && w == "because" => break,
+                Tok::Ident(w)
+                    if depth == 0
+                        && stop_at_because
+                        && (w == "because"
+                            || (w == "ticket" && self.peek_n(1).tok == Tok::P(Punct::Eq))) =>
+                {
+                    break;
+                }
                 Tok::P(Punct::LParen) => depth += 1,
                 Tok::P(Punct::RParen) => depth = depth.saturating_sub(1),
                 _ => {}
@@ -1185,11 +1192,17 @@ impl Parser<'_> {
             self.expect_p(Punct::RParen)?;
         }
         let at = if self.eat_kw("at") {
-            Some(self.selector()?)
+            Some(self.selector_to(true)?)
         } else {
             None
         };
-        Ok(May { atom, args, at })
+        let attrs = self.key_vals()?;
+        Ok(May {
+            atom,
+            args,
+            at,
+            attrs,
+        })
     }
 }
 

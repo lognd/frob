@@ -2,3 +2,4 @@
 pack: grimble/p 1.0.0
 fmt: roundtrip
 error: CLAIM001
+warn: MDL008

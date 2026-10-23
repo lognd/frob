@@ -40,8 +40,16 @@ pub struct Grant {
     pub atom: String,
     /// The atom as written, for messages.
     pub written: String,
+    /// The constraining string arguments, `may fs.read("a")`.
+    pub args: Vec<String>,
     /// The `at` selector when it parsed; `None` grants the atom over the whole node.
     pub at: Option<Selector>,
+    /// The `at` selector text as written, `None` when the grant has no `at`.
+    pub at_text: Option<String>,
+    /// The written `because=` reason, when non-blank.
+    pub because: Option<String>,
+    /// The written `ticket=` reference, when non-blank.
+    pub ticket: Option<String>,
     /// The .grmb file the grant is written in.
     pub file: String,
     /// The clause span in that file.
@@ -197,7 +205,11 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
             ent.grants.push(Grant {
                 atom: m.atom.name.clone(),
                 written: m.atom.written(),
+                args: m.args.iter().map(|a| a.value.clone()).collect(),
                 at,
+                at_text: m.at.as_ref().map(|s| s.text.trim().to_owned()),
+                because: m.reason("because").map(str::to_owned),
+                ticket: m.reason("ticket").map(str::to_owned),
                 file: file.to_owned(),
                 span: c.span,
             });

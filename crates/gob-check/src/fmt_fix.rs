@@ -155,6 +155,7 @@ mod tests {
             inputs: Vec::new(),
             tier: crate::ToolTier::Ticket,
             unscoped_packages: Vec::new(),
+            requires: Vec::new(),
         }
     }
 
