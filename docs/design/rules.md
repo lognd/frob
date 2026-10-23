@@ -249,6 +249,15 @@ and Python files finds no site, so the Error raise is applied in this
 repository's `grimble.toml` (`[rules.TIME001]` and `[rules.TIME002]`,
 `severity = "error"`).
 
+Implemented (~G59GJ01): PAIR001 `acquire-without-release` ships in
+`grimble-lints` (`effect::scan`, the `pair_pass` product pass) for React
+effects in TypeScript, TSX, JavaScript and JSX: a `useEffect`,
+`useLayoutEffect` or `useInsertionEffect` that starts a timer, listener,
+request, observer or subscription and returns no matching cleanup is a
+Warn; a cleanup returned only under a branch, or one the scan cannot read,
+is Unresolved. A walk with no such file is not applicable. The Unity
+vocabulary (`unity::scan`) and other languages are not wired yet.
+
 The grimble check reads `[rules.<id>] severity = "advisory" | "warn" |
 "error"` (`RuleOverrides` in `grimble-check`). The override beats the rule
 default and `[grimble] strict`. An unknown rule id is logged and ignored

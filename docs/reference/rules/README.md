@@ -270,6 +270,12 @@
 | [ORG004](ORG004.md) | custom-property-outside-tokens | error | manual | P+ | true | Custom properties are defined in the generated tokens file only. Each block is one source file in a |
 | [ORG005](ORG005.md) | ungoverned-stylesheet | error | manual | P+ | true | Every stylesheet of the project is under `css_root`. Each block is one source file in a project whose |
 
+## PAIR
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [PAIR001](PAIR001.md) | acquire-without-release | warn | manual | P- | true | An acquire (timer, listener, request, observer, subscription) with no release on the teardown path. |
+
 ## PARSE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
