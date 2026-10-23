@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T16:13:02Z"
+digest = "4a4eb9673200bdebccbd8944fe538b96cbb2b1bb18cc045fa0a53be1b139d93a"
+exit_code = 0
+head = "bce3b99fc20bb6473de7bdb617af2d3c4403ac4c"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 55cb3971-d1fa-415a-bc56-7423c3764690 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.089s] grimble-check::finding_floods a_selector_in_three_clauses_gets_one_mdl005_listing_the_sites
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.089s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test finding_floods a_selector_in_three_clauses_gets_one_mdl005_listing_the_sites"
+size = 633
+status = "measured"
+test_count = 1
+tests_digest = "8dbf71b1b80ce20074c684b5550d87b6cd263eea6594e05ed99686854a968f48"
+at = "2026-10-23T16:13:02Z"
+actor = "lognd"
+rev = 1

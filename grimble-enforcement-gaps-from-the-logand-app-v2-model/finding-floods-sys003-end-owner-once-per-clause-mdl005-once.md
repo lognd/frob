@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:41Z"
-updated = "2026-10-23T16:12:25Z"
+updated = "2026-10-23T16:13:02Z"
 idempotency_key = "logand-gaps-F1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/grimble-check/**", "crates/grimble-model/**", "changelog.d/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given selector future3/** written in three clauses, when grimble check runs, then one MDL005 per distinct selector listing the clause sites"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given check --json, when read, then the per-unit detail is still present"
