@@ -154,7 +154,7 @@ scope and content.
 | SIB | frob | sibling unavailable: SIB001 `sibling-unavailable` (sibling-contract.md section 6), one required Unresolved per configured product with a reason of `absent`, `incompatible`, `failed`, `timeout` or `malformed`; ids SIB001-SIB099; owner frob, crate frob-check |
 | PACK | grimble | data packs and the registry drift-lock: PACK001 lock mismatch, PACK002 unknown atom, PACK003 detector unavailable, PACK004 duplicate, PACK005 malformed pack, PACK006 pack unavailable, PACK007 unknown infer rule, PACK008 redundant override (packs.md section 9); ids PACK001-PACK099; owner grimble, crate grimble-capabilities |
 | MDL | grimble | .grmb well-formedness: MDL000 lexical and parse errors, MDL001-MDL018 (grmb-spec.md section 11 table: includes, headers, names, selectors, types, exceptions, V-model, atoms, duplicate clauses); ids MDL000-MDL099; owner grimble, crate grimble-model |
-| SYS, CAP | grimble | model binds, capability matrix, declared-plus-proven (one parametric rule, not 51); CAP001, CAP002 (evaluated in grimble-bind `caps` from observed callee-vocabulary uses and `may` grants; pack severities and `at` sub-file scopes pending), CAP004 (excused but used, owner grimble-capabilities); CAP003 is retired (D75), its id is never reused; SYS012 is a matrix-build check implemented in grimble-capabilities (G14) |
+| SYS, CAP | grimble | model binds, capability matrix, declared-plus-proven (one parametric rule, not 51); CAP001, CAP002 (evaluated in grimble-bind `caps` from observed callee-vocabulary uses and `may` grants; pack severities and `at` sub-file scopes pending), CAP004 (excused but used, owner grimble-capabilities), CAP005 (a new or widened `may` grant with no attester's approval in `grimble.grants.toml`, evaluated in grimble-bind `grant_ack`); CAP003 is retired (D75), its id is never reused; SYS012 is a matrix-build check implemented in grimble-capabilities (G14) |
 | PM | frob | project-management discipline (pm-enforcement.md) |
 | SEC, PII, VET | code+deps | secrets, pii structural, dependency vetting |
 | BIND | graph | cross-language sig mismatch, missing counterpart |
@@ -603,7 +603,7 @@ gob-rules              EXC family except the ticket-bound exits (Milestone 2);
 gob-check              the product-neutral check pipeline (grimble-model.md 9.7)
 frob-pm                PM family (pm-enforcement.md)
 grimble-bind           SYS family (model drift) and BIND
-grimble-capabilities   CAP family (CAP001, CAP002, CAP004; CAP003 retired) and SYS012
+grimble-capabilities   CAP family (CAP001, CAP002, CAP004; CAP003 retired; CAP005 in grimble-bind) and SYS012
 grimble-lints          universal and language structural rules, NEAT, GPOL (code)
 grimble-ci             CI and DK (cicd.md)
 grimble-arch           CYCLE ARCH LARGE DEAD DUP

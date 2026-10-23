@@ -17,6 +17,7 @@ gob-directives = { version = "0.532.0", path = "../gob-directives" }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
 gob-lock = { version = "0.532.0", path = "../gob-lock" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
@@ -27,9 +28,9 @@ postcard = { version = "1", default-features = false, features = ["use-std"] }
 rayon = "1"
 serde_json = "1"
 thiserror = "2"
+toml = "1"
 tracing = "0.1"
 
 [dev-dependencies]
 gob-mdtest = { path = "../gob-mdtest" }
-gob-path = { version = "0.532.0", path = "../gob-path" }
 tempfile = "3"

@@ -66,7 +66,7 @@ impl GrantFacts {
 
 type GrantKey = (String, String, Vec<String>);
 
-fn files_of(selectors: &[&Selector], walk: &WalkResult) -> BTreeSet<String> {
+pub(crate) fn files_of(selectors: &[&Selector], walk: &WalkResult) -> BTreeSet<String> {
     selectors
         .iter()
         .flat_map(|s| select_files(s, walk))

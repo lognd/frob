@@ -29,6 +29,8 @@ pub struct Clause {
     pub span: Span,
     /// The selector, when the clause carries one that parsed.
     pub selector: Option<Selector>,
+    /// The selector text as written, for the grant approval ledger.
+    pub selector_text: Option<String>,
     /// The symref text of a `ref "S"` or `evidence ref "S"` clause.
     pub symref: Option<String>,
 }
@@ -181,20 +183,22 @@ fn selector_role(kind: &ClauseKind) -> Option<(Role, &grimble_model::ast::Sel)> 
 
 /// Add the binding facts of one AST clause to `ent`.
 fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
-    let push = |ent: &mut Entity, role: Role, sel: Option<&Selector>, sym: Option<String>| {
-        let n = ent.clauses.iter().filter(|x| x.role == role).count();
-        ent.clauses.push(Clause {
-            anchor: format!("{}/{}[{n}]", ent.anchor, role_keyword(role)),
-            role,
-            file: file.to_owned(),
-            span: c.span,
-            selector: sel.cloned(),
-            symref: sym,
-        });
-    };
+    let push =
+        |ent: &mut Entity, role: Role, sel: Option<(&Selector, &str)>, sym: Option<String>| {
+            let n = ent.clauses.iter().filter(|x| x.role == role).count();
+            ent.clauses.push(Clause {
+                anchor: format!("{}/{}[{n}]", ent.anchor, role_keyword(role)),
+                role,
+                file: file.to_owned(),
+                span: c.span,
+                selector: sel.map(|(s, _)| s.clone()),
+                selector_text: sel.map(|(_, t)| t.trim().to_owned()),
+                symref: sym,
+            });
+        };
     if let Some((role, s)) = selector_role(&c.kind) {
         if let Ok(sel) = &s.parsed {
-            push(ent, role, Some(sel), None);
+            push(ent, role, Some((sel, s.text.as_str())), None);
         } else {
             tracing::debug!(entity = %ent.anchor, role = role.as_str(), "selector did not parse; clause skipped");
         }

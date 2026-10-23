@@ -15,9 +15,11 @@ use gob_git::{CommitOptions, RelPath, Repo};
 use gob_lock::PlanError;
 use grimble_bind::PRODUCT;
 use grimble_bind::ack::{AckError, AckRequest, plan_ack};
+use grimble_bind::grant_ack;
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::presence::{Presence, authorize};
 use crate::workspace::{check_error, locate_root};
 
 /// Output of `ack`.
@@ -35,7 +37,9 @@ pub struct AckData {
     pub commit: Option<String>,
     /// The branch committed on.
     pub branch: Option<String>,
-    /// The lock file, repo-relative.
+    /// Grants approved by `--grants` (`node: grant`).
+    pub grants: Vec<String>,
+    /// The lock file, repo-relative (the grant ledger under `--grants`).
     pub lock_file: String,
     /// True when nothing was written because of `--dry-run`.
     pub dry_run: bool,
@@ -52,6 +56,7 @@ pub struct AckData {
 pub struct Ack {
     targets: Vec<String>,
     all: bool,
+    grants: bool,
     reason: Option<String>,
     renames: Vec<(String, String)>,
 }
@@ -79,13 +84,13 @@ fn bind_root(root: &Path) -> Result<grimble_bind::Binding, CliError> {
     grimble_check::bind_repo(root).map_err(check_error)
 }
 
-/// Commit `bytes` as the lock on the current branch; `None` outside a repository (written plainly).
+/// Commit `bytes` as the repo-relative file `name` (the lock or the grant ledger) on the current branch; `None` outside a repository (written plainly).
 fn write_lock(
     root: &Path,
+    name: &str,
     bytes: Vec<u8>,
     message: &str,
 ) -> Result<(Option<String>, Option<String>), CliError> {
-    let name = gob_lock::file_name(PRODUCT);
     match Repo::discover(root) {
         Ok(repo) => {
             let branch = repo
@@ -101,7 +106,7 @@ fn write_lock(
                         .with_remedy("git switch <branch>"),
                     )
                 })?;
-            let rel = RelPath::new(name).map_err(CliError::internal)?;
+            let rel = RelPath::new(name.to_owned()).map_err(CliError::internal)?;
             let done = repo
                 .commit_paths(
                     &branch,
@@ -110,16 +115,69 @@ fn write_lock(
                     &CommitOptions::default(),
                 )
                 .map_err(CliError::internal)?;
-            tracing::info!(%branch, commit = %done.oid, "grimble.lock committed");
+            tracing::info!(%branch, commit = %done.oid, file = name, "ack committed");
             Ok((Some(done.oid.to_string()), Some(branch)))
         }
         Err(err) => {
-            tracing::warn!(%err, "not a git repository; grimble.lock written but not committed");
-            let path = root.join(&name);
+            tracing::warn!(%err, file = name, "not a git repository; written but not committed");
+            let path = root.join(name);
             gob_fs::write_atomic(&path, &bytes).map_err(CliError::internal)?;
             Ok((None, None))
         }
     }
+}
+
+/// Approve every pending grant under `root` as the git user, if `presence` and the attesters allow it.
+///
+/// # Errors
+///
+/// `E-ATTEST-NOT-HUMAN` or `E-ATTEST-NOT-ATTESTER` when nobody here may approve; a usage or
+/// internal error when the repository cannot be bound or the ledger written.
+pub fn ack_grants(
+    root: &Path,
+    presence: &Presence,
+    reason: &str,
+    at: &str,
+    dry_run: bool,
+) -> Result<AckData, CliError> {
+    let attesters = grant_ack::attesters(root);
+    let identity = Repo::discover(root)
+        .ok()
+        .and_then(|r| r.config_user())
+        .map(|(_, email)| email);
+    let who = authorize(presence, identity.as_deref(), &attesters)?;
+    let binding = bind_root(root)?;
+    let existing = grant_ack::load(root)
+        .map_err(|e| CliError::Usage(e.to_string()))?
+        .unwrap_or_default();
+    let next = grant_ack::approve(&binding.grants, &existing, &who, reason, at);
+    let grants: Vec<String> = binding
+        .grants
+        .pending
+        .iter()
+        .map(|p| format!("{}: {}", p.node, p.name))
+        .collect();
+    tracing::info!(%who, approved = grants.len(), dry_run, "grant ack planned");
+    let mut data = AckData {
+        acked: Vec::new(),
+        renamed: Vec::new(),
+        reattested: Vec::new(),
+        dropped: Vec::new(),
+        commit: None,
+        branch: None,
+        grants,
+        lock_file: grant_ack::LEDGER_FILE.to_owned(),
+        dry_run,
+    };
+    let changed = next != existing;
+    if !dry_run && changed {
+        let message = format!("ack: {} grants\n\n{reason}", data.grants.len());
+        let bytes = grant_ack::render(&next).into_bytes();
+        let (commit, branch) = write_lock(root, grant_ack::LEDGER_FILE, bytes, &message)?;
+        data.commit = commit;
+        data.branch = branch;
+    }
+    Ok(data)
 }
 
 impl Ack {
@@ -127,6 +185,9 @@ impl Ack {
     fn precheck(&self) -> Result<(), AckError> {
         if self.reason.as_deref().is_none_or(|r| r.trim().is_empty()) {
             return Err(AckError::ReasonRequired);
+        }
+        if self.grants {
+            return Ok(());
         }
         if self.targets.is_empty() && !self.all && self.renames.is_empty() {
             return Err(AckError::Plan(PlanError::NothingToAck));
@@ -150,6 +211,11 @@ struct AckArgs {
         help = "Re-ack every acked entry that still exists; with --reason it migrates a stale lock"
     )]
     all: bool,
+    #[arg(
+        long,
+        help = "Approve every new or widened `may` grant in grimble.grants.toml (a person who is an [evidence] attester only)"
+    )]
+    grants: bool,
     #[arg(
         long,
         value_name = "TEXT",
@@ -178,6 +244,7 @@ impl Command for Ack {
         Ok(Self {
             targets: a.targets,
             all: a.all,
+            grants: a.grants,
             reason: a.reason,
             renames: a
                 .rename
@@ -192,6 +259,24 @@ impl Command for Ack {
     fn run(&self, ctx: &Context) -> Outcome<AckData> {
         self.precheck().map_err(cli_error)?;
         let root = locate_root(&ctx.cwd);
+        if self.grants {
+            if !self.targets.is_empty() || self.all || !self.renames.is_empty() {
+                return Err(CliError::Usage(
+                    "--grants approves grants only; do not combine it with targets, --all or --rename"
+                        .to_owned(),
+                ));
+            }
+            let reason = self.reason.as_deref().unwrap_or_default().trim();
+            let data = ack_grants(
+                &root,
+                &Presence::detect(),
+                reason,
+                &ctx.clock.now().precise(),
+                ctx.dry_run,
+            )?;
+            let already = data.grants.is_empty();
+            return Ok(Payload::new(data).with_already(already));
+        }
         if self.all && self.targets.is_empty() && self.renames.is_empty() {
             let lock = gob_lock::LockFile::load(&root.join(gob_lock::file_name(PRODUCT)))
                 .map_err(|e| cli_error(AckError::Lock(e)))?;
@@ -225,6 +310,7 @@ impl Command for Ack {
             dropped: plan.dropped,
             commit: None,
             branch: None,
+            grants: Vec::new(),
             lock_file: gob_lock::file_name(PRODUCT),
             dry_run: ctx.dry_run,
         };
@@ -240,7 +326,8 @@ impl Command for Ack {
                 Some(r) => format!("ack: {n} entries\n\n{r}"),
                 None => format!("ack: {n} entries"),
             };
-            let (commit, branch) = write_lock(&root, bytes, &message)?;
+            let (commit, branch) =
+                write_lock(&root, &gob_lock::file_name(PRODUCT), bytes, &message)?;
             data.commit = commit;
             data.branch = branch;
         }

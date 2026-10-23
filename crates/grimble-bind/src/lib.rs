@@ -38,6 +38,7 @@ pub mod directives;
 pub mod drift;
 pub mod edges;
 pub mod frob_owned;
+pub mod grant_ack;
 pub mod grants;
 pub mod live;
 pub mod model;
@@ -99,6 +100,8 @@ pub struct Binding {
     pub flow_contracts: BTreeMap<String, model::FlowContract>,
     /// Rules whose whole scope is `NotApplicable` on this model, with the reason (never a finding).
     pub not_applicable: BTreeMap<&'static str, &'static str>,
+    /// The grant approval state (`grimble ack --grants` writes the ledger from it).
+    pub grants: grant_ack::GrantState,
     /// Manual tests (`manual because=`): vmodel anchor to its reason, for `grimble status`.
     pub manual_tests: BTreeMap<String, String>,
 }
@@ -175,10 +178,43 @@ fn expand_files(
     out
 }
 
+/// The grant approvals ledger and attesters of `root`; `None` when there is no ledger or it is unreadable (logged).
+fn read_grant_ledger(root: &Path) -> Option<grant_ack::Ledger> {
+    match grant_ack::load(root) {
+        Ok(Some(approvals)) => Some(grant_ack::Ledger {
+            approvals,
+            attesters: grant_ack::attesters(root),
+        }),
+        Ok(None) => None,
+        Err(err) => {
+            tracing::error!(%err, "grant ledger is unreadable; CAP005 cannot run");
+            None
+        }
+    }
+}
+
+/// The grant state of the snapshot against `ledger` (an empty ledger when none exists).
+fn grants_state(
+    root: &Path,
+    model: &model::Model,
+    code: &code::Code,
+    ledger: Option<grant_ack::Ledger>,
+) -> grant_ack::GrantState {
+    let ledger = ledger.unwrap_or_else(|| grant_ack::Ledger {
+        approvals: Vec::new(),
+        attesters: grant_ack::attesters(root),
+    });
+    grant_ack::state(model, &code.walk, &ledger)
+}
+
 /// Build B and evaluate the SYS rules for one snapshot.
 ///
 /// Returns an empty [`Binding`] when the model declares no entity: with nothing to bind there
 /// is no subject, and every file reading as unowned would be noise.
+#[expect(
+    clippy::too_many_lines,
+    reason = "one linear pipeline: model, relation, owners, rules, drift, grants"
+)]
 pub fn bind(input: &BindInput<'_>) -> Binding {
     let model = model::load(input.model);
     let lock_path = input.root.join(gob_lock::file_name(PRODUCT));
@@ -225,6 +261,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     } else {
         gob_symbols::SymbolGraph::default()
     };
+    let grant_ledger = read_grant_ledger(input.root);
     let cx = eval::Cx {
         model: &model,
         code: &code,
@@ -235,6 +272,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         graph: &graph,
         ledger_dir: input.ledger_dir,
         packs: &input.model.packs,
+        grant_ledger: grant_ledger.as_ref(),
     };
     let not_applicable = inapplicable_verdicts(&model, &rel, &graph, &lock);
     let mut out = eval::evaluate(&cx);
@@ -277,5 +315,6 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         live,
         flow_contracts,
         manual_tests,
+        grants: grants_state(input.root, &model, &code, grant_ledger),
     }
 }

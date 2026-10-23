@@ -123,6 +123,20 @@ Every verb, every time:
   findings without re-deriving it. Landed state: `gob-diagnostics`
   (`exit.rs`) skips Unresolved today; changing it is the first item of
   build-test-ci.md Milestone 2.
+- `grimble ack --grants --reason TEXT` approves capability grants. A new
+  `may` atom, a broader `at` selector (or a node whose `owns` grew under a
+  whole-node grant) and a new node grant are findings (CAP005, Error) until
+  an approval is in `grimble.grants.toml`; narrowing or removing a grant
+  needs none, and the next ack prunes the approval of a gone grant. The
+  verb refuses without a person at a terminal or with an agent marker set
+  (`E-ATTEST-NOT-HUMAN`) and when git `user.email` is not in frob.toml
+  `[evidence] attesters` (`E-ATTEST-NOT-ATTESTER`; an empty list means nobody
+  may). The check is a snapshot against the ledger, not a diff against git,
+  so a merge commit is judged on the merged result and a renamed node is a
+  new identity that needs a re-ack. It is opt-in: a repository with no
+  `grimble.grants.toml` raises nothing, the first `ack --grants` creates it,
+  and deleting it turns the check off again, as deleting `grimble.lock`
+  does. An approval whose attester has left the list counts as none.
 - `grimble shrink` is dry-run by default: it prints a diff that removes each
 `may` grant CAP002 reports as declared-unused (Exact absence only) and
 writes nothing until `--apply`. Each proposed removal carries the
@@ -331,7 +345,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble config --for FILE` | grimble | gob-packs (path-scoped activation) over gob-rules | yes, read-only | 0 2 3 4 | 2 | object: the path-scoped configuration |
 | `grimble config diff --base REF [--head REF]` | grimble | gob-trust (policy snapshot) with gob-check (GATE001 weakening classifier) | yes, read-only; lists every changed policy setting and the weakenings GATE001 would report; `--head` defaults to the working copy | 0 2 4 | 2 | object: the policy snapshot diff |
 | `grimble exceptions list` | grimble | grimble-check over gob-rules | yes, read-only | 0 2 4 | 2 | object: the exceptions noun |
-| `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 | effect: records a binding acknowledgement |
+| `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 | effect: records a binding acknowledgement; `--grants` records a person's approval of new or widened `may` grants in `grimble.grants.toml` (CAP005), refused for an agent (`E-ATTEST-NOT-HUMAN`) or a non-attester (`E-ATTEST-NOT-ATTESTER`) |
 | `grimble vet [--hook]` | grimble | grimble-vet | yes; implemented (vet.md); `--hook` not yet | 0 1 2 4 | 2 | policy: the vet gate semantics |
 | `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 | object: the explore noun of grimble |
 | `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 | effect: opens a server session |

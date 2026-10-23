@@ -33,6 +33,17 @@ const BIG: &str = "{ let mut total = x; for i in 0..x { total = total + i * 2; }
 /// A Python file that opens a file, spawns a process and listens on a socket.
 const PY: &str = "import socket\nimport subprocess\n\ndef go():\n    with open(\"/etc/hosts\") as f:\n        f.read()\n    subprocess.run([\"ls\"])\n    s = socket.socket()\n    s.listen()\n";
 
+/// A ledger approving `fs.read` of node `a` on `src/lib.rs` only.
+const GRANT_LEDGER: &str = r#"[[grant]]
+node = "node/a"
+atom = "fs.read"
+args = []
+selectors = ['"src/lib.rs"']
+attester = "me@example.com"
+reason = "initial"
+at = "2026-10-02T00:00:00Z"
+"#;
+
 /// The files every `grmb` example finds beside its model.
 fn fixed_files(web: bool) -> Vec<(&'static str, String)> {
     let mut files = vec![
@@ -119,6 +130,7 @@ fn ack_flow(root: &Path) {
 fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-bind/src/rules/cap001.rs::Cap001
     // frob:tests crates/grimble-bind/src/rules/cap002.rs::Cap002
+    // frob:tests crates/grimble-bind/src/rules/cap005.rs::Cap005
     // frob:tests crates/grimble-bind/src/rules/sys001.rs::Sys001
     // frob:tests crates/grimble-bind/src/rules/sys002.rs::Sys002
     // frob:tests crates/grimble-bind/src/rules/sys003.rs::Sys003
@@ -156,6 +168,14 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     }
     if has("py") {
         write(root, "src/x.py", PY);
+    }
+    if has("grants") {
+        write(
+            root,
+            "frob.toml",
+            "[evidence]\nattesters = [\"me@example.com\"]\n",
+        );
+        write(root, "grimble.grants.toml", GRANT_LEDGER);
     }
     write(root, &case.file_name, &case.text);
     let modeled = if has("modeled") {

@@ -24,6 +24,7 @@
 |---|---|---|---|---|---|---|
 | [CAP001](CAP001.md) | cap-undeclared | error | manual | P+ | false | Code a node owns uses a capability atom the node does not grant. |
 | [CAP002](CAP002.md) | cap-declared-unused | warn | manual | P- | false | A node grants a capability atom that no code it owns uses. |
+| [CAP005](CAP005.md) | cap-grant-unacknowledged | error | manual | P+ | false | A new or widened `may` grant has no human acknowledgement. |
 
 ## CFG
 

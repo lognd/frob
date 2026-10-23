@@ -44,6 +44,8 @@ pub struct Cx<'a> {
     pub ledger_dir: &'a str,
     /// The enabled packs by id: their atoms and detector rows (CAP001 and CAP002 enforce them).
     pub packs: &'a BTreeMap<String, grimble_model::PackPin>,
+    /// The grant approvals ledger; `None` when the repository keeps none (CAP005 off).
+    pub grant_ledger: Option<&'a crate::grant_ack::Ledger>,
 }
 
 /// The findings and subject counts of one evaluation.
@@ -1174,6 +1176,7 @@ pub fn evaluate(cx: &Cx<'_>) -> Output {
     sys011(cx, &mut out);
     crate::edges::sys013(cx, &mut out);
     crate::caps::evaluate(cx, &mut out);
+    crate::grant_ack::evaluate(cx, &mut out);
     tracing::info!(findings = out.findings.len(), "binding rules evaluated");
     out
 }
