@@ -2,7 +2,8 @@
 id = "01M5F0A96X8KCH10HNHTXCDEKR"
 title = "Retire frob-check CI003 declaration now that grimble-ci owns CI003"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
