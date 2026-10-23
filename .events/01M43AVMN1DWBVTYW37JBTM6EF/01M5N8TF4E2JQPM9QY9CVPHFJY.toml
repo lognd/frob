@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T20:56:42Z"
+digest = "2a2b4ba9377f78009b754c8663fbf3c60635e000a67e1f6cc4fd45cf70302c9a"
+exit_code = 0
+head = "79f58767224d1fcb2251a3c09e90004853f0d7ec"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c5b745cb-2aee-4e25-ba2e-8a04fc2f82f3 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.009s] frob-evidence::import_crunk aliases_are_namespaced_and_a_rerun_refuses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --test import_crunk aliases_are_namespaced"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "7d351ca413f0c4aebf137bc72c5bebe33bb8300ea2aefcfa26de068296df9914"
+at = "2026-10-23T20:56:42Z"
+actor = "lognd"
+rev = 1
