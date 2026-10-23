@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T02:34:11Z"
-updated = "2026-10-23T04:28:32Z"
-scope = ["crates/grimble-lints/src/testq/**"]
+updated = "2026-10-23T04:34:30Z"
+scope = ["crates/grimble-lints/src/testq/**", "crates/grimble-lints/**"]
 
 [[acceptance]]
 text = "TESTQ002 reports nondeterminism in TS, JS and C# tests instead of unresolved"
