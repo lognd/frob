@@ -255,3 +255,112 @@ fn host_binds_and_converts() {
         .collect();
     assert!(converted.iter().any(|f| f.rule.as_str() == "CI002"));
 }
+
+/// A one-job workflow whose single step runs `script` (indented under a literal block).
+fn verb_workflow(script: &str, extra_step_keys: &str) -> String {
+    let body: String = script.lines().fold(String::new(), |mut acc, l| {
+        acc.push_str("          ");
+        acc.push_str(l);
+        acc.push('\n');
+        acc
+    });
+    format!(
+        "name: ci\non: push\npermissions:\n  contents: read\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - {extra_step_keys}run: |\n{body}"
+    )
+}
+
+/// The `frob` verb paths CI012 reports for `script`, with dependabot present so only verbs show.
+fn bad_verbs(script: &str, extra_step_keys: &str) -> Vec<String> {
+    let wf = verb_workflow(script, extra_step_keys);
+    let dependabot =
+        "version: 2\nupdates:\n  - package-ecosystem: github-actions\n    directory: /\n";
+    run(
+        &[
+            (".github/workflows/ci.yml", wf.as_str()),
+            (".github/dependabot.yml", dependabot),
+        ],
+        &CiConfig::default(),
+    )
+    .findings
+    .into_iter()
+    .filter(|f| f.rule == "CI012")
+    .filter_map(|f| f.anchor.split_once(":verb:").map(|(_, v)| v.to_owned()))
+    .collect()
+}
+
+#[test]
+fn unknown_frob_verb_fires() {
+    // frob:tests crates/grimble-ci/src/lib.rs::analyze
+    assert_eq!(bad_verbs("frob chek\n", ""), ["chek"]);
+    assert_eq!(
+        bad_verbs("frob ticket frobnicate T-1\n", ""),
+        ["ticket frobnicate"]
+    );
+    let found = run(
+        &[(
+            ".github/workflows/ci.yml",
+            verb_workflow("frob chek\n", "").as_str(),
+        )],
+        &CiConfig::default(),
+    );
+    let hit = found
+        .findings
+        .iter()
+        .find(|f| f.anchor.contains(":verb:"))
+        .expect("a verb finding");
+    assert!(hit.message.contains("`check`"), "{}", hit.message);
+}
+
+#[test]
+fn known_frob_verbs_stay_quiet() {
+    // frob:tests crates/grimble-ci/src/lib.rs::analyze
+    let script = "frob check --ticket T-1\nfrob ticket show T-1\nfrob lease list\nfrob work T-1\nfrob land T-1 --wait 3\nfrob help whatever\nfrob\nfrob --help\nfrob -V\n";
+    assert_eq!(bad_verbs(script, ""), Vec::<String>::new());
+}
+
+#[test]
+fn frob_verb_scan_handles_shell_shapes() {
+    // frob:tests crates/grimble-ci/src/lib.rs::analyze
+    // Judged: pipelines, env prefixes, wrappers, control flow, paths, globals, continuations.
+    for (script, want) in [
+        ("echo hi | frob nope", "nope"),
+        ("true && frob nope", "nope"),
+        ("FOO=1 BAR='a b' frob nope", "nope"),
+        ("sudo -E env X=1 frob nope", "nope"),
+        ("if ! frob nope; then echo; fi", "nope"),
+        ("x=$(frob nope)", "nope"),
+        ("./target/release/frob nope", "nope"),
+        ("frob --format json --cwd sub nope", "nope"),
+        ("frob \\\n  ticket \\\n  nope", "ticket nope"),
+        ("frob 'nope'", "nope"),
+        ("frob ticket nope # trailing", "ticket nope"),
+    ] {
+        assert_eq!(bad_verbs(script, ""), [want], "{script:?}");
+    }
+    // Not judged: comments, quoted text, arguments, heredoc bodies, interpolation, flags only.
+    for script in [
+        "# frob nope",
+        "echo \"frob nope\"",
+        "echo 'run frob nope'",
+        "git add frob nope",
+        "cat <<'EOF'\nfrob nope\nEOF",
+        "frob ${{ matrix.verb }}",
+        "frob \"$VERB\" now",
+        "frob ticket ${{ matrix.sub }}",
+        "frob ticket --cwd x show",
+        "frob --json",
+        "frob nope --help",
+        "${{ env.BIN }} nope",
+        "for t in frob grimble; do cp $t out; done",
+        "cargo run -p frob -- nope",
+        "command -v frob",
+    ] {
+        assert_eq!(bad_verbs(script, ""), Vec::<String>::new(), "{script:?}");
+    }
+    // Another shell is not read; repeats collapse to one finding.
+    assert_eq!(
+        bad_verbs("frob nope", "shell: python\n        "),
+        Vec::<String>::new()
+    );
+    assert_eq!(bad_verbs("frob nope\nfrob nope", ""), ["nope"]);
+}

@@ -1,10 +1,12 @@
 //! CI012: the CI configuration agrees with the repository's manifests and ownership files.
 //!
-//! Four joins: the toolchain a step installs against `rust-toolchain.toml`, numeric toolchains
+//! Five joins: the toolchain a step installs against `rust-toolchain.toml`, numeric toolchains
 //! against the highest `rust-version` of the Cargo manifests, the ecosystems the manifests imply
-//! against Dependabot's `updates`, and `CODEOWNERS` against `.github`.
+//! against Dependabot's `updates`, `CODEOWNERS` against `.github`, and the `frob` verbs the `run:`
+//! scripts invoke against the verbs frob has (`crate::verbs`).
 
 // frob:ticket 01M3Z7157776CWEKRPG8886VJ4
+// frob:ticket 01M5F010Y998BXB67KPZ4T040N
 
 use std::collections::BTreeSet;
 
@@ -12,6 +14,7 @@ use gob_rules::Severity;
 use serde_yaml_ng::Value;
 
 use crate::finding::{CiFinding, fire};
+use crate::verbs::unknown_verbs;
 use crate::workflow::{Workflow, key, run_of, scalar, uses_of, with_of};
 
 /// Rule id of the consistency rule.
@@ -32,6 +35,7 @@ pub(crate) fn check(repo: &Repo<'_>, workflows: &[Workflow<'_>]) -> Vec<CiFindin
     let msrv = max_msrv(repo);
     tracing::debug!(?pinned, ?msrv, "CI012 manifest facts");
     for wf in workflows {
+        frob_verbs(wf, &mut out);
         for (job, tc) in toolchains(wf) {
             if let (Some(p), true) = (&pinned, tc.from_step)
                 && !compatible(&tc.value, p)
@@ -62,6 +66,40 @@ pub(crate) fn check(repo: &Repo<'_>, workflows: &[Workflow<'_>]) -> Vec<CiFindin
         codeowners(repo, first.path, &mut out);
     }
     out
+}
+
+/// Findings for `frob` verbs that the workflow's `run:` scripts invoke and frob does not have.
+fn frob_verbs(wf: &Workflow<'_>, out: &mut Vec<CiFinding>) {
+    for job in wf.jobs() {
+        for step in job.steps() {
+            let Some(script) = run_of(step) else { continue };
+            let shell = key(step, "shell").and_then(Value::as_str).unwrap_or("bash");
+            if !(shell.starts_with("bash") || shell.starts_with("sh")) {
+                tracing::debug!(
+                    shell,
+                    job = job.id,
+                    "run step in another shell; verbs not read"
+                );
+                continue;
+            }
+            for bad in unknown_verbs(script) {
+                let anchor = format!("{}:{}:verb:{}", wf.path, job.id, bad.path);
+                if out.iter().any(|f| f.anchor == anchor) {
+                    continue;
+                }
+                out.push(fire(
+                    CI012,
+                    Severity::Warn,
+                    (wf.path, wf.within_job(job.id, &bad.word)),
+                    format!(
+                        "job `{}` runs `frob {}`, but frob has no such verb; use one of {}",
+                        job.id, bad.path, bad.valid
+                    ),
+                    anchor,
+                ));
+            }
+        }
+    }
 }
 
 /// A toolchain a job uses.

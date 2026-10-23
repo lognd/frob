@@ -18,7 +18,7 @@
 //! | `CI009` | P+ | a long-lived token publish where trusted publishing exists |
 //! | `CI010` | P+ | `actions/checkout` without `persist-credentials: false` where it matters |
 //! | `CI011` | P- | `pull_request_target` without explicit read-only `permissions` |
-//! | `CI012` | P0 | toolchain, MSRV, Dependabot or CODEOWNERS disagree with the manifests |
+//! | `CI012` | P0 | toolchain, MSRV, Dependabot, CODEOWNERS or the `frob` verbs run disagree with the repository |
 //! | `DK001` | P- | the final stage runs as root |
 //! | `DK002` | P+ | a base image is not pinned by digest (opt-in: `require_digest`) |
 //! | `DK003` | P+ | a base image has no tag or `latest` |
@@ -29,7 +29,10 @@
 //! # Known limits
 //!
 //! - `CI012` reads a YAML float matrix entry (`1.70`) as `1.7`; quote versions in matrices.
-//! - `CI012` does not yet compare frob verbs with the commands a workflow runs.
+//! - `CI012` reads the `frob` verbs of `run:` scripts lexically against a static verb table (not the
+//!   CLI definition, which sits in a higher layer): a verb behind an alias, a variable or an
+//!   expression, inside a command substitution within quotes, or run through another program
+//!   (`cargo run -p frob -- ..`) is not judged, and only the verb and its first subcommand are.
 //! - `CI001`, `CI006`, `CI007` and `CI010` are lexical fallbacks of the bound zizmor rules; they
 //!   read the workflow text only (no `uses:` resolution, no shell parsing), so `CI007` and `CI010`
 //!   are Advisory where the match is a guess. `CI013` to `CI015` belong to the bound zizmor and
@@ -37,6 +40,7 @@
 
 // frob:ticket 01M3Z7157776CWEKRPG8886VJ4
 // frob:ticket 01M5F010QB00AR00D4HYVYYPWH
+// frob:ticket 01M5F010Y998BXB67KPZ4T040N
 
 mod ci;
 mod consistency;
@@ -46,6 +50,7 @@ mod finding;
 pub mod host;
 pub mod rules;
 mod supply;
+mod verbs;
 mod workflow;
 
 use std::collections::BTreeMap;
