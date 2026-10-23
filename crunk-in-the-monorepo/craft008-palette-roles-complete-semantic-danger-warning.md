@@ -2,7 +2,8 @@
 id = "01M5HM3W18AJZET52BZBEJFYD4"
 title = "CRAFT008 palette roles complete: semantic danger/warning/success roles in [palette.roles]"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
