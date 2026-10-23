@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T19:03:13Z"
-updated = "2026-10-23T15:47:21Z"
+updated = "2026-10-23T16:12:03Z"
 labels = ["docs"]
 scope = ["crates/frob-obligations/**", "crates/gob-dev/**", "changelog.d/**", "docs/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "Given a docs/ markdown file with no status header, a status outside the vocabulary, or 'superseded-by' naming a missing document, when frob check runs, then a finding names it; the index page is generated and checked by the generated-file gate"
-bound = false
+bound = true
 +++
 
 Audit: 24 shipped design files still say DRAFT (T-0001); status lines come in 9 spellings; nothing indexes 217 documents.
