@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T15:00:54Z"
-updated = "2026-10-23T19:37:36Z"
+updated = "2026-10-23T19:40:03Z"
 scope = ["crates/gob-check/src/tools.rs", "crates/frob-worktree/**", "crates/frob-evidence/**", "changelog.d/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a vitest project, when the vitest evidence provider runs, then node_modules/.bin is on PATH"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an agent actor, when attestation evidence is refused, then the message names the agent-usable providers"
