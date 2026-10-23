@@ -2,7 +2,8 @@
 id = "01M5KDWHPF5YTVP64PYCXX0FRT"
 title = "Wire grimble-ci into the grimble check pipeline so it can own the CI family"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
