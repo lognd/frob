@@ -2,12 +2,12 @@
 id = "01M5KRYDC70Q3YAYW6KXF9H0J6"
 title = "Restore DOC002 unresolved mdtest case so every_frob_rule_has_a_corpus passes"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T07:00:01Z"
-updated = "2026-10-23T07:00:01Z"
+updated = "2026-10-23T07:15:12Z"
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
