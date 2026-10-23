@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-22T05:58:06Z"
 updated = "2026-10-23T06:16:37Z"
-scope = ["crates/crunk-ingest/**", "crates/crunk-check/**", "crates/crunk-scene/**", "Cargo.lock", "crates/crunk-rules/src/scene_docs.rs", "crates/crunk-rules/src/rules/scene005.*", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/tests/rules.rs"]
+scope = ["crates/crunk-ingest/**", "crates/crunk-check/**", "crates/crunk-scene/**", "Cargo.lock", "crates/crunk-rules/src/scene_docs.rs", "crates/crunk-rules/src/rules/scene005.*", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/tests/rules.rs", "crates/crunk-rules/tests/scene_rules.rs"]
 
 [[acceptance]]
 text = "a .scene.html file in a project is discovered and loaded through crunk_scene::parse_scene_bytes by crunk-ingest"
