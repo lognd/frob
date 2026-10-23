@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T19:36:56Z"
+digest = "914895fa7809076b9984d9f212dcdf17ab22534eda408b9f155f263e60a35149"
+exit_code = 0
+head = "bf13f4c5577103abe2687dddb9f97b6e534c8aea"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aa04cdf6-4b02-4bd1-aed9-cb30366d64a9 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.006s] gob-plan::exec_outcome_gaps a_not_applicable_cell_yields_no_finding_no_clean_and_no_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test exec_outcome_gaps a_not_applicable"
+size = 636
+status = "measured"
+test_count = 1
+tests_digest = "245c3d77fe03d24f96d084cabb8875463e6ddc10b8328002bde7bbaa361f63b5"
+at = "2026-10-23T19:36:56Z"
+actor = "lognd"
+rev = 1

@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T23:38:30Z"
-updated = "2026-10-23T19:27:22Z"
+updated = "2026-10-23T19:36:56Z"
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-rules/src/**", "changelog.d/**", "crates/gob-diagnostics/src/text.rs", "crates/gob-plan/tests/**", "crates/gob-rules/tests/**"]
 
 [[acceptance]]
 text = "Given a rule evaluated on a language whose capability matrix cell is not-applicable, when outcomes run, then the binding is NotApplicable, never clean or Unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a fire that rests on a certainly() assumption, when outcomes run, then it is capped as conditional with reason assumed:certainly@span per grl-spec 7.0.4"
