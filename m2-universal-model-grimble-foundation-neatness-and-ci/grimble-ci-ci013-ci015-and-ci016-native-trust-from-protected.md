@@ -2,13 +2,13 @@
 id = "01M5F010V5GV0B7KJ7M5QQG70Q"
 title = "grimble-ci: CI013-CI015 and CI016 (native, trust-from-protected-ref)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-23T08:15:20Z"
+updated = "2026-10-23T08:15:21Z"
 scope = ["crates/grimble-ci/**", "docs/reference/rules/**", "docs/schemas/**", "docs/design/cicd.md", "Cargo.lock"]
 
 [[acceptance]]
