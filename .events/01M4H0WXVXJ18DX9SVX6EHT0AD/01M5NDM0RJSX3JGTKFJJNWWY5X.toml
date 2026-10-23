@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/6EHT0AD; scope: crates/frob/src/lib.rs, crates/frob/src/main.rs, crates/frob-ack/src/rules.rs, crates/frob-obligations/src/doc.rs, docs/reference/cli/frob.md, docs/reference/rules/DRIFT002.md, docs/reference/rules/DOC002.md, Cargo.toml, Cargo.lock, changelog.d/**, crates/frob-doc/**, crates/frob/src/doc_cmd.rs, docs/MOVED.toml; ttl 7200s"
+at = "2026-10-23T22:20:29Z"
+actor = "lognd"
+rev = 1

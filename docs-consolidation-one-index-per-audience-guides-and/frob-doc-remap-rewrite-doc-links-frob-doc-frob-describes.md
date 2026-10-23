@@ -2,13 +2,13 @@
 id = "01M4H0WXVXJ18DX9SVX6EHT0AD"
 title = "frob doc remap: rewrite doc links, frob:doc/frob:describes targets, .grmb refs and 'x.md section N' citations from docs/MOVED.toml; DRIFT002 and DOC002 say 'moved to X'"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:35Z"
-updated = "2026-10-09T19:05:35Z"
+updated = "2026-10-23T22:20:29Z"
 idempotency_key = "docs-consolidation-2026-10-09-p0"
 labels = ["creates:crates/frob-doc/**", "creates:crates/frob/src/doc_cmd.rs", "creates:docs/MOVED.toml"]
 scope = ["crates/frob/src/lib.rs", "crates/frob/src/main.rs", "crates/frob-ack/src/rules.rs", "crates/frob-obligations/src/doc.rs", "docs/reference/cli/frob.md", "docs/reference/rules/DRIFT002.md", "docs/reference/rules/DOC002.md", "Cargo.toml", "Cargo.lock", "changelog.d/**", "crates/frob-doc/**", "crates/frob/src/doc_cmd.rs", "docs/MOVED.toml"]
