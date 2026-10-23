@@ -49,6 +49,12 @@
 | [CLAIM001](CLAIM001.md) | claim-refuted | error | manual | P+ | false | A claim's proposition is refuted by the declared flows, with the witness path. |
 | [CLAIM003](CLAIM003.md) | claim-unresolved | error | manual | P+ | false | A claim cannot be evaluated on this model, so it has no verdict. |
 
+## COH
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [COH002](COH002.md) | decision-with-effects | advisory | manual | P+ | true | A unit that branches on computed data and performs effects inside those branches. |
+
 ## COLOR
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

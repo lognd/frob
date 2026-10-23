@@ -10,6 +10,15 @@ judge code structure, not work accounting; products.md section 1), with
 knobs under `[coh]` in `grimble.toml`. frob runs them only through the
 sibling protocol.
 
+Status: COH002 is a registered rule (`grimble-check`, `src/rules/coh002.rs`) run by
+`grimble check`. The `[coh]` table currently holds two keys, `effect_calls` and `trivial`:
+the effect and trivial callee vocabularies. A configured list replaces the built-in one;
+an empty `effect_calls` turns COH002 off; an empty `trivial` makes logging calls unknown
+callees (Unresolved); a name in both lists is trivial. Unknown `[coh]` keys are rejected.
+`min_slice_statements` and `max_level_spread` are not in the table yet (COH001 and COH003
+are not registered rules). Units are judged as written until role detection feeds
+`grimble:core` and `grimble:shell` into COH002.
+
 Provenance: accepted direction, owner questions 2026-10-08: "enforce a one
 job per function rule, where we don't mix logic; how would you detect
 that in the cross-language linter?" and "do we account for Python being

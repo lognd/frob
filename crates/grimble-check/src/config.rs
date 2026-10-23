@@ -6,6 +6,7 @@
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 // frob:ticket 01M4H4WTSTB7X4A6STFEF8K8S3
+// frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
 // frob:ticket 01M5FSSDC7EG5QA70CRABC8SMA
 
 use std::collections::BTreeMap;
@@ -65,6 +66,33 @@ impl PacksTable {
     /// enabled ids outside the `local/` repository packs (a built-in is only partly compiled in).
     pub fn requests_packs(&self) -> bool {
         !self.external.is_empty() || self.enabled.iter().any(|id| !id.starts_with("local/"))
+    }
+}
+
+/// The `[coh]` table: the vocabularies COH002 ("decision with effects") judges callees against.
+///
+/// A configured list replaces the built-in one (it does not extend it); an empty `effect_calls`
+/// turns COH002 off, an empty `trivial` makes logging calls unknown callees (Unresolved). A name
+/// in both lists is trivial. Callees match on their last path segment, so `a.b.send` is `send`.
+#[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
+#[config(table = "coh")]
+pub struct CohTable {
+    /// Callee names that perform an effect (IO, messaging, persistence) when called inside a decision.
+    #[config(default = crate::coh002::default_effect_calls())]
+    pub effect_calls: Vec<String>,
+    /// Callee names that are trivial (logging, metrics, asserts) and never count as an effect.
+    #[config(default = crate::coh002::default_trivial())]
+    pub trivial: Vec<String>,
+}
+
+impl CohTable {
+    /// Load `[coh]` from `<root>/grimble.toml` (a missing file or table means the built-in vocabularies).
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load(root: &Path) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
     }
 }
 

@@ -11,5 +11,5 @@ use crate::GrimbleHost;
 gob_check::product_rules! {
     product = Grimble;
     host = dyn GrimbleHost;
-    crates = [grimble_model, grimble_bind, grimble_arch, grimble_lints];
+    crates = [grimble_model, grimble_bind, grimble_arch, grimble_lints, crate];
 }

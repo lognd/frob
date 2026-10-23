@@ -29,6 +29,7 @@ fn rule_of(id: &str) -> Option<&'static str> {
     grimble_arch::rules::METAS
         .iter()
         .chain(grimble_lints::rules::METAS)
+        .chain(crate::rules::METAS)
         .map(|d| d.id)
         .find(|r| *r == id)
 }

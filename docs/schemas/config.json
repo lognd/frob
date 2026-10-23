@@ -793,6 +793,69 @@
       },
       "type": "object"
     },
+    "coh": {
+      "additionalProperties": false,
+      "description": "The `[coh]` table: the vocabularies COH002 (\"decision with effects\") judges callees against.\n\nA configured list replaces the built-in one (it does not extend it); an empty `effect_calls`\nturns COH002 off, an empty `trivial` makes logging calls unknown callees (Unresolved). A name\nin both lists is trivial. Callees match on their last path segment, so `a.b.send` is `send`.",
+      "properties": {
+        "effect_calls": {
+          "default": [
+            "write",
+            "write_all",
+            "writeln",
+            "send",
+            "send_all",
+            "sendall",
+            "emit",
+            "publish",
+            "dispatch",
+            "save",
+            "persist",
+            "commit",
+            "execute",
+            "delete",
+            "remove",
+            "unlink",
+            "remove_file",
+            "mkdir",
+            "create_dir",
+            "rename",
+            "open",
+            "fetch",
+            "post",
+            "put",
+            "request",
+            "sleep",
+            "spawn",
+            "exit",
+            "flush"
+          ],
+          "description": "Callee names that perform an effect (IO, messaging, persistence) when called inside a decision.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "trivial": {
+          "default": [
+            "print",
+            "println",
+            "log",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "trace",
+            "assert"
+          ],
+          "description": "Callee names that are trivial (logging, metrics, asserts) and never count as an effect.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "compute": {
       "additionalProperties": false,
       "description": "The substrate `[compute]` knobs every product reads (architecture.md section 6).",

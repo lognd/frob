@@ -42,6 +42,7 @@ pub mod coh001;
 pub mod coh002;
 pub mod coh003;
 pub mod coh004;
+pub mod coh_pass;
 pub mod config;
 pub mod example_model;
 pub mod fidelity;
@@ -52,6 +53,7 @@ pub mod packs;
 mod product;
 pub mod product_rules;
 pub mod report_cache;
+pub mod rules;
 pub mod sibling;
 pub mod websec_pack;
 
