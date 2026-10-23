@@ -2,7 +2,8 @@
 id = "01M5MRKJQ8JA1EBR70QJ3C9H73"
 title = "Docs: describe folded SYS003 end-owner and MDL005 per-selector findings in binding.md and grmb-spec.md"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
