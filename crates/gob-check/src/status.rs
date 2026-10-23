@@ -56,7 +56,12 @@ pub fn hole_caveat(info: &FileInfo, meta: &RuleMeta) -> Option<String> {
 
 /// [`hole_caveat`] for a rule that declares `applies`.
 pub(crate) fn hole_caveat_of(info: &FileInfo, applies: &Applies) -> Option<String> {
-    match (&info.parse_status, applies.symbol_subjects()) {
+    // frob:ticket 01M5KQCAD16D6T307SXYNP04N0
+    // A language-scoped rule with no capability need reads the language's own content (markdown
+    // links), which a parse hole hides just as it hides symbols.
+    let hidden = applies.symbol_subjects()
+        || matches!(applies, Applies::Languages { needs, .. } if needs.is_empty());
+    match (&info.parse_status, hidden) {
         (ParseStatus::Partial { holes }, true) => Some(format!(
             "the file parsed partially ({holes} hole(s)); subjects inside or across a hole cannot be decided"
         )),
@@ -575,6 +580,8 @@ mod tests {
         assert_eq!(subject_status(&i, meta("DOC001")), SubjectStatus::Examine);
         assert!(hole_caveat(&i, meta("DOC001")).is_some());
         assert!(hole_caveat(&i, meta("TODO001")).is_none());
+        // DOC002 reads markdown links, which a hole hides.
+        assert!(hole_caveat(&i, meta("DOC002")).is_some());
     }
 
     #[test]

@@ -117,9 +117,11 @@ fn not_applicable_is_counted_never_a_finding() {
     assert_eq!(opaque.not_applicable["REF"], 1, "only the PNG");
     assert_eq!(opaque.unresolved["TODO001"], 1);
     // D106: a capability rule over adapter-less text is one rolled-up Unresolved, not a silent pass.
-    for rule in ["DOC001", "DOC002", "INV002"] {
+    for rule in ["DOC001", "INV002"] {
         assert_eq!(opaque.unresolved[rule], 1, "{rule}");
     }
+    // DOC002 is markdown-only: adapter-less text is NotApplicable to it, never Unresolved.
+    assert!(!opaque.unresolved.contains_key("DOC002"));
     assert_eq!(opaque.unresolved["REF001"], 1);
     assert_eq!(opaque.files_examined, 0);
 }
