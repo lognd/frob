@@ -1,5 +1,5 @@
 //! Guards the crate docs against claiming terms are uncached.
-// frob:ticket
+// frob:ticket 01M5NBNPGFD58QQA90YXK87ZP2
 use std::path::Path;
 
 #[test]
