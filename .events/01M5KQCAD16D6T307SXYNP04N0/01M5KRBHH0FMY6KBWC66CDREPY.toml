@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T06:47:24Z"
+digest = "f94d153c71e48d04afdc7d2ae2bc9b03b8f67a928c0bbc527feeac1e7702a21c"
+exit_code = 0
+head = "f3265d8e70a21cdaed178999376d9d55b4cb8e2d"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 974442f2-7859-4a92-b734-41d08b19f0bf with nextest profile: default
+    Starting 8 tests across 1 binary (89 tests skipped)
+        PASS [   0.116s] frob-check::it fidelity::a_p_plus_rule_over_an_opaque_text_file_is_unresolved_not_silent
+        PASS [   0.122s] frob-check::it fidelity::a_partial_markdown_parse_points_at_the_table_row_and_names_the_cause
+        PASS [   0.122s] frob-check::it unreadable::fidelity_counts_skipped_files_by_reason
+        PASS [   0.122s] frob-check::it fidelity::pm_rules_inapplicable_reasons_appear_in_the_not_applicable_list
+        PASS [   0.123s] frob-check::it fidelity::not_applicable_is_counted_never_a_finding
+        PASS [   0.126s] frob-check::it fidelity::a_partial_parse_is_examined_and_unresolved_for_its_symbol_rules
+        PASS [   0.127s] frob-check::it fidelity::a_fresh_repository_with_only_frob_owned_files_has_no_unresolved_finding
+        PASS [   0.127s] frob-check::it fidelity::every_walked_file_appears_in_the_fidelity_counts
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.128s] 8 tests run: 8 passed, 89 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check --test it fidelity"
+size = 1533
+status = "measured"
+test_count = 8
+tests_digest = "2b7f8419deb1917e9c69ddc71af0d6b4319e726b2de9f36f17a32a62498ad45c"
+at = "2026-10-23T06:47:24Z"
+actor = "lognd"
+rev = 1
