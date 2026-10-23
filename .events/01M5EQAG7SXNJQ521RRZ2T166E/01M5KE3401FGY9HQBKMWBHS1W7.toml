@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T03:49:30Z"
+digest = "0d2b8f0c68d64c8faf01f2e3c4283a47ea3f7944e9863c22d5ddf1b3f42ad544"
+exit_code = 0
+head = "7e2d93aefff4e79b698069a9c12284c06c61eb97"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 095bc538-9ad2-4e4e-ab10-b8877843737e with nextest profile: default
+    Starting 1 test across 1 binary (19 tests skipped)
+        PASS [   0.013s] frob-docgen::generate committed_crunk_cli_page_is_fresh_and_has_its_verbs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 19 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen --test generate committed_crunk_cli_page_is_fresh_and_has_its_verbs"
+size = 617
+status = "measured"
+test_count = 1
+tests_digest = "ce200083e476b163b994bede35b21861d9051667da8d33e593df17bf30c87e3a"
+at = "2026-10-23T03:49:30Z"
+actor = "lognd"
+rev = 1
