@@ -2,7 +2,8 @@
 id = "01M4FGZ4KY03QKSWXACP7APFVH"
 title = "vmodel runnables: several runner ids or manual per test, and derivable TS and Rust selectors"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
