@@ -2,13 +2,13 @@
 id = "01M5HM3VTW5FAZQ3TXM8XH739S"
 title = "CRAFT006 scales present: type scale, spacing scale and radius policy presence paired with SLOP022 and TYPE rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:07Z"
-updated = "2026-10-23T00:15:19Z"
+updated = "2026-10-23T00:15:20Z"
 scope = ["crates/crunk-rules/**", "docs/reference/rules/**"]
 
 [[acceptance]]
