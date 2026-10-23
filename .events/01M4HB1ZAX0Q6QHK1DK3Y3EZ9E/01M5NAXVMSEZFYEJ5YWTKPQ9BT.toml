@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T21:32:30Z"
+digest = "445dbb4df5167309a1e62dcd7310c4c2758673243443a77290551cc40bc2ebf1"
+exit_code = 0
+head = "71668e0e2f3993bd5d9c3140acb3b6c05748a4b7"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-text v0.532.0 (<worktree>/crates/gob-text)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 00s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e0fb1e60-635c-4fea-bef8-be645c35b0cc with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.015s] grimble-bind::term_cache warm_build_reads_terms_from_cache_without_parsing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test term_cache warm_build_reads_terms_from_cache_without_parsing"
+size = 1613
+status = "measured"
+test_count = 1
+tests_digest = "4c9fc127f5f69dff647032408fb1c489fe54303e2ffd2dbe11f06009dccb2fb7"
+at = "2026-10-23T21:32:30Z"
+actor = "lognd"
+rev = 1
