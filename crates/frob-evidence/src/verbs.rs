@@ -486,6 +486,7 @@ impl Command for AddVerb {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket evidence list",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)

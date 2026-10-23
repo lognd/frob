@@ -40,6 +40,7 @@ mod refresh;
 mod release;
 mod release_cut;
 mod release_status;
+mod serve_read_verbs;
 mod shared_files;
 mod sibling_discovery;
 mod sync_policy;

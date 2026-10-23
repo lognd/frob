@@ -161,6 +161,7 @@ pub struct ShowData {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket show",
+    read_only,
     product = "frob",
     markdown,
     idempotent = true,
@@ -311,6 +312,7 @@ impl ListData {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket list",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)
@@ -537,6 +539,7 @@ impl List {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket doable",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, usage, internal)
@@ -725,6 +728,7 @@ pub struct BriefData {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket brief",
+    read_only,
     product = "frob",
     deprecated = "ticket show --format md",
     idempotent = true,

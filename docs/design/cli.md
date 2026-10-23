@@ -391,6 +391,16 @@ stdin and stdout and lists one tool per live verb declared
 - Absent by construction: any verb without `read_only` (default false),
   deprecated aliases, and the write flags `--fix` and `--dry-run` of
   read-only verbs; a call that names them is refused as invalid params.
+- The ticket, lease and evidence reads are tools: `frob_ticket_show`,
+  `frob_ticket_list`, `frob_ticket_doable`, `frob_ticket_doctor`,
+  `frob_lease_list` and `frob_ticket_evidence_list`. The deprecated
+  aliases `ticket brief`, `ticket triage list` and `ticket contention`
+  are read-only too but unlisted; their replacements (`ticket show
+  --format md`, `ticket list --category triage`, `lease list
+  --contention`) are tools. `ticket doctor` is listed without `--fix`.
+  Output is not truncated by the server, so bound large reads with the
+  verb's own filters (`limit` on `ticket doable`, `category` and `parent`
+  on `ticket list`).
 - Server-side work happens only inside a call. Between calls the process
   blocks on stdin, so idle CPU is zero; EOF on stdin exits 0.
 - Tools run in the directory `serve` was started in; point the client

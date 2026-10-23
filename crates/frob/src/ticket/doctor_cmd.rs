@@ -87,6 +87,7 @@ impl From<PmIssue> for PmIssueView {
 #[derive(Debug, Clone, Copy, gob_cli::Command)]
 #[command(
     verb = "ticket doctor",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, usage, internal)
