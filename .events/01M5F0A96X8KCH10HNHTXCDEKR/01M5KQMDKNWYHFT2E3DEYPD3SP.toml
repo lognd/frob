@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "d705752c6c75b0ee6debd8b691ed2aae306d9198"
+branch = "ticket/TXCDEKR"
+pushed = false
+at = "2026-10-23T06:34:11Z"
+actor = "lognd"
+rev = 1
