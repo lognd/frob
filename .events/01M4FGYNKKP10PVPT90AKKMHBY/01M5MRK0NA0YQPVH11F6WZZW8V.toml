@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T16:12:25Z"
+digest = "ce457ca013965fdeda4dfcd86bba529d9d8c8d486f1949b189801ef013d7afeb"
+exit_code = 0
+head = "bce3b99fc20bb6473de7bdb617af2d3c4403ac4c"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1169bc12-8948-4462-9892-df7269097ee9 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.266s] grimble-check::finding_floods seven_wrong_owner_units_fold_into_one_sys003
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.267s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test finding_floods seven_wrong_owner_units_fold_into_one_sys003"
+size = 892
+status = "measured"
+test_count = 1
+tests_digest = "11e20dc2f341f0291b243144f56db236969d1ec05cf3601b48b95639c8c2dde4"
+at = "2026-10-23T16:12:25Z"
+actor = "lognd"
+rev = 1
