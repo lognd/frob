@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T23:05:36Z"
-updated = "2026-10-23T12:16:43Z"
+updated = "2026-10-23T12:28:38Z"
 labels = ["grimble", "adoption:logand-app"]
-scope = ["crates/grimble/src/**", "crates/grimble-check/src/**", "changelog.d/**"]
+scope = ["crates/grimble/src/**", "crates/grimble-check/src/**", "changelog.d/**", "crates/grimble/tests/**"]
 
 [[acceptance]]
 text = "Given a large model, when grimble check --summary --json runs, then the output is under 64 KB, lists counts per rule and severity and per-node capability cells, and carries the compute digest of the full document"
