@@ -8,7 +8,7 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:32:37Z"
-updated = "2026-10-23T06:05:21Z"
+updated = "2026-10-23T06:13:53Z"
 scope = ["crates/frob-check/**", "docs/reference/rules/CI003.md", "crates/gob-check/**", "crates/frob/**", "docs/reference/**", "docs/schemas/config.json", "crates/grimble-check/**"]
 
 [[links]]
@@ -17,7 +17,7 @@ target = "01M5KDWHPF5YTVP64PYCXX0FRT"
 
 [[acceptance]]
 text = "Given the workspace, when CI003 is looked up, then exactly one declaration owns it and the other reference is removed or delegates"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a workflow that trips CI003, when frob check and grimble check run, then the finding is reported once"
