@@ -1,0 +1,12 @@
+kind = "create"
+title = "Extract shared PathLeaves selector helper from grimble-bind owner into a public helper"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+scope = ["crates/grimble-check/**", "crates/grimble-bind/**"]
+acceptance = ["layers.rs and grimble-bind owner share one public selector helper with no duplicate"]
+body = "Follow-up of WXQ03KP: PathLeaves is duplicated in grimble-check layers.rs."
+at = "2026-10-23T09:35:21Z"
+actor = "lognd"
+rev = 1
