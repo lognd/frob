@@ -105,6 +105,7 @@
 | [CRAFT006](CRAFT006.md) | scales-present | advisory | manual | P+ | false | A project whose `crunk.toml` is the default preset (spacing, font sizes and radii all declared) |
 | [CRAFT008](CRAFT008.md) | semantic-roles-complete | advisory | manual | P+ | false | A project whose `crunk.toml` is the default preset declares only a `body` role, so the fire case |
 | [CRAFT010](CRAFT010.md) | motion-policy | advisory | manual | P+ | false | Flags, once, a project whose stylesheets declare no `transition`, `animation` or `@keyframes` at all (the motion policy was deleted), and, once, a project that has motion but no `prefers-reduced-motion` media query. Advisory. |
+| [CRAFT013](CRAFT013.md) | voice-file-present | warn | manual | P+ | false | A scene that references a copy key needs the project's voice file; the clean case adds |
 
 ## CYCLE
 
