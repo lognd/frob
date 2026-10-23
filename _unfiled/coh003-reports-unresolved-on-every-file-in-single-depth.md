@@ -2,12 +2,12 @@
 id = "01M5M34XTDZEZ08TAA78872RRP"
 title = "COH003 reports Unresolved on every file in single-depth repos with no layered model"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T09:58:20Z"
-updated = "2026-10-23T10:32:58Z"
+updated = "2026-10-23T10:32:59Z"
 scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
