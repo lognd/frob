@@ -2,12 +2,12 @@
 id = "01M5MMEYZXZW5MNXSTMZ9F7SRN"
 title = "Implement 5S319B4 criteria 1-4: uv sync before uv-run stages, vitest PATH, attestation message, per-worktree venv"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T15:00:54Z"
-updated = "2026-10-23T15:00:54Z"
+updated = "2026-10-23T19:18:17Z"
 scope = ["crates/gob-check/src/tools.rs", "crates/frob-worktree/**", "crates/frob-evidence/**", "changelog.d/**"]
 
 [[acceptance]]
