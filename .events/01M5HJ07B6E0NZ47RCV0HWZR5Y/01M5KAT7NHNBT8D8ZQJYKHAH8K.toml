@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a Rust function whose body branches with a match expression, when COH002 runs, then the match arms are counted as decisions", "Given a Rust function with no match, when COH002 runs, then its decision count is unchanged"]
+moved = []
+at = "2026-10-23T02:53:04Z"
+actor = "lognd"
+rev = 1

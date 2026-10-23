@@ -4,10 +4,19 @@ title = "COH002: detect Rust match-arm decisions"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-22T10:20:11Z"
+updated = "2026-10-23T02:53:04Z"
 scope = ["crates/grimble-check/**", "docs/**"]
+
+[[acceptance]]
+text = "Given a Rust function whose body branches with a match expression, when COH002 runs, then the match arms are counted as decisions"
+bound = false
+
+[[acceptance]]
+text = "Given a Rust function with no match, when COH002 runs, then its decision count is unchanged"
+bound = false
 +++
 
 match arms fold as a Group of pattern binds under an expression_statement, so match decisions are not detected.
