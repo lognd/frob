@@ -266,6 +266,7 @@ fn an_ascii_statement_still_attests() {
 fn an_agent_actors_refusal_names_the_agent_usable_providers() {
     // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
     // frob:tests crates/frob-evidence/src/attestation.rs::Presence.require_human
+    // frob:tests crates/frob-evidence/src/record.rs::Provider.agent_usable
     let dir = repo(r#"["owner@example.com"]"#);
     let ws =
         Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
