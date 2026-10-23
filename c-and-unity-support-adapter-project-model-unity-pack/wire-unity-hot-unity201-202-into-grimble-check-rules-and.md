@@ -2,7 +2,8 @@
 id = "01M5HPSP14N3NCX5TNA9XDR1GY"
 title = "Wire unity_hot (UNITY201/202) into grimble-check rules and docs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
