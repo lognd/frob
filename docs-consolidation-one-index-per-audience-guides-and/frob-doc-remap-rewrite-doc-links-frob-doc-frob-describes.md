@@ -2,7 +2,8 @@
 id = "01M4H0WXVXJ18DX9SVX6EHT0AD"
 title = "frob doc remap: rewrite doc links, frob:doc/frob:describes targets, .grmb refs and 'x.md section N' citations from docs/MOVED.toml; DRIFT002 and DOC002 say 'moved to X'"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
