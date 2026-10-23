@@ -1,6 +1,7 @@
 //! `frob serve` lists the ticket, lease and evidence read verbs as MCP tools and answers them with the CLI envelope.
 // frob:ticket 01M4H2C3YV4ZDRNNTVKKYD6J5K
 
+use std::fmt::Write as _;
 use std::io::Cursor;
 use std::path::Path;
 
@@ -41,7 +42,10 @@ fn repo() -> tempfile::TempDir {
 
 /// Send `requests` to the MCP server rooted at `dir` and return the replies in order.
 fn mcp(dir: &Path, requests: &[Value]) -> Vec<Value> {
-    let input: String = requests.iter().map(|r| format!("{r}\n")).collect();
+    let mut input = String::new();
+    for r in requests {
+        writeln!(input, "{r}").expect("write to string");
+    }
     let mut out = Vec::new();
     frob_cli::cli()
         .serve_mcp(Cursor::new(input), &mut out, dir)
@@ -54,12 +58,12 @@ fn mcp(dir: &Path, requests: &[Value]) -> Vec<Value> {
 }
 
 /// The CLI's JSON envelope for `args` in `dir`.
-fn cli_envelope(dir: &Path, args: &[&str]) -> Value {
-    let mut argv = vec!["--json"];
-    argv.extend_from_slice(args);
+fn cli_envelope(root: &Path, args: &[&str]) -> Value {
+    let mut words = vec!["--json"];
+    words.extend_from_slice(args);
     let out = common::frob_command()
-        .current_dir(dir)
-        .args(argv)
+        .current_dir(root)
+        .args(words)
         .output()
         .expect("run frob");
     serde_json::from_slice(&out.stdout).expect("envelope")
@@ -118,7 +122,10 @@ fn tools_list_offers_the_read_verbs_with_schemas_and_no_mutating_verb() {
 #[test]
 fn read_tool_calls_return_the_same_envelope_as_the_cli() {
     let dir = repo();
-    let made = cli_envelope(dir.path(), &["ticket", "new", "--title", "t", "--type", "task"]);
+    let made = cli_envelope(
+        dir.path(),
+        &["ticket", "new", "--title", "t", "--type", "task"],
+    );
     let id = made["data"]["id"].as_str().expect("id").to_owned();
     let (doable, is_error) = call(dir.path(), "frob_ticket_doable", &json!({}));
     assert!(!is_error);
@@ -133,7 +140,11 @@ fn read_tool_calls_return_the_same_envelope_as_the_cli() {
 #[test]
 fn a_failing_read_call_is_an_envelope_not_a_transport_error() {
     let dir = repo();
-    let (env, _) = call(dir.path(), "frob_ticket_show", &json!({"ticket": "~NOSUCH0"}));
+    let (env, _) = call(
+        dir.path(),
+        "frob_ticket_show",
+        &json!({"ticket": "~NOSUCH0"}),
+    );
     assert_ne!(env["ok"], json!(true), "{env}");
     let req = json!({"jsonrpc":"2.0","id":2,"method":"tools/call",
         "params":{"name":"frob_ticket_new","arguments":{}}});
