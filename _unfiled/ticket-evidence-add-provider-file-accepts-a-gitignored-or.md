@@ -2,12 +2,12 @@
 id = "01M4HW9GZT9T70NGGAHAH1CKJF"
 title = "ticket evidence add --provider file accepts a gitignored or untracked path, leaving evidence that exists on no ref"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-10T03:04:20Z"
-updated = "2026-10-10T03:04:20Z"
+updated = "2026-10-23T23:47:46Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-evidence/src/**", "changelog.d/**"]
 
