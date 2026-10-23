@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T19:37:47Z"
+digest = "573cd38f9d21e53242a73f76b34e666f4921e2a0c3b3a592469e1f968890829d"
+exit_code = 0
+head = "bf13f4c5577103abe2687dddb9f97b6e534c8aea"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 21962fa4-c3cc-4466-8f63-aac7eb5b2987 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.004s] gob-plan::exec_outcome_gaps budget_and_partial_subjects_map_to_their_dedicated_variants
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test exec_outcome_gaps budget_and_partial"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "d0b0de4d348312c4328399da6c7178a7e97e3c7b3ad1a45a8f77a3231dbf2936"
+at = "2026-10-23T19:37:47Z"
+actor = "lognd"
+rev = 1

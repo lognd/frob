@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T23:38:30Z"
-updated = "2026-10-23T19:37:32Z"
+updated = "2026-10-23T19:37:47Z"
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-rules/src/**", "changelog.d/**", "crates/gob-diagnostics/src/text.rs", "crates/gob-plan/tests/**", "crates/gob-rules/tests/**"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a budget-truncated or partially parsed subject, when mapped to gob_rules::UnresolvedReason, then dedicated budget and partial variants are used, not Opaque codes"
-bound = false
+bound = true
 +++
 
 Deferred by ~BP7TEN3's implementer (recorded as cut scope, not dropped).
