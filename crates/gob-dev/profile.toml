@@ -700,3 +700,7 @@ skip = "interactive teaching mode reads and writes per-user seen state, so it is
 
 [scenario."frob doc remap"]
 args = ["doc", "remap", "--dry-run"]
+readonly = true
+runs = 3
+budget_ms = 500
+exit = [0, 3]
