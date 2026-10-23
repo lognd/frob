@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T11:43:03Z"
+digest = "38630a018e27ce378ce5156bbfd168ad9c1a6dc7840b9ebcd0041a4588f4dff1"
+exit_code = 0
+head = "cc9544d8420d0a93bd8aeb84605fcb1db775cc45"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7551ae77-29e9-4b3c-a514-90ae286875ff with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.094s] grimble-check::res_rules a_handle_that_escapes_the_scope_is_unresolved_not_warn
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.094s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test res_rules a_handle_that_escapes_the_scope_is_unresolved_not_warn"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "a8ab7e9272fe3dceb956cebbc1fbe5cb649256bc4ffce4231789be47039696d3"
+at = "2026-10-23T11:43:03Z"
+actor = "lognd"
+rev = 1
