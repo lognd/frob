@@ -458,3 +458,31 @@ fn cli_reference_has_a_stable_page_per_product() {
         "crunk verbs do not leak into the grimble page"
     );
 }
+
+// frob:ticket 01M5EQAG7SXNJQ521RRZ2T166E
+#[test]
+// frob:tests crates/gob-dev/src/render/cli.rs::generate
+fn committed_crunk_cli_page_is_fresh_and_has_its_verbs() {
+    let root = workspace_root().expect("workspace root");
+    let files = generate(Kind::Cli, &crates_dir()).expect("generate");
+    let page = files
+        .iter()
+        .find(|f| f.path == "docs/reference/cli/crunk.md")
+        .expect("crunk page is generated");
+    let committed = std::fs::read_to_string(root.join(&page.path)).expect("committed page");
+    assert_eq!(committed, page.content, "run `cargo dev gen cli`");
+    assert_eq!(gob_dev::files::marker_problem(&committed), None);
+    for verb in ["| `check` |", "| `export dtcg` |", "| `explain` |"] {
+        assert!(committed.contains(verb), "crunk page lists {verb}");
+    }
+}
+
+// frob:ticket 01M5EQAG7SXNJQ521RRZ2T166E
+#[test]
+fn crunk_migration_guide_links_the_generated_cli_page() {
+    let root = workspace_root().expect("workspace root");
+    let guide = std::fs::read_to_string(root.join("docs/crunk/migration.md")).expect("guide");
+    let link = "../reference/cli/crunk.md";
+    assert!(guide.contains(&format!("]({link})")), "guide links {link}");
+    assert!(root.join("docs/crunk").join(link).is_file());
+}
