@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T23:23:25Z"
+digest = "d0734cdcd78ab3779e0f69007501a0c116183732c82e52ad98216c5bb05f8cd6"
+exit_code = 0
+head = "6d594ec49f9b23322b142aa1d1f3b058dc041e04"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c8f69d8e-cf83-4e28-9d2e-4d4a3cd53f69 with nextest profile: default
+    Starting 1 test across 1 binary (66 tests skipped)
+        PASS [   0.034s] frob-cli explain_cmd::tests::the_table_covers_every_generated_page_of_the_product
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.035s] 1 test run: 1 passed, 66 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --lib explain_cmd::tests::the_table_covers_every_generated_page_of_the_product"
+size = 625
+status = "measured"
+test_count = 1
+tests_digest = "5141fb67586278cea47b488617ba027468e0850d67e24d4c95750d624ad3e5ae"
+at = "2026-10-23T23:23:25Z"
+actor = "lognd"
+rev = 1
