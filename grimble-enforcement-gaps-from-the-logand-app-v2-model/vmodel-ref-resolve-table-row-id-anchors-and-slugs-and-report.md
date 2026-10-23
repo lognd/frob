@@ -2,13 +2,13 @@
 id = "01M4FGZ39WXWBRDRHW2ADSY7K8"
 title = "vmodel ref: resolve table-row id anchors and slugs, and report a malformed ref"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:55Z"
-updated = "2026-10-09T05:08:22Z"
+updated = "2026-10-23T16:51:34Z"
 idempotency_key = "logand-gaps-V2"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/grimble-model/**", "changelog.d/**"]
