@@ -2,6 +2,7 @@
 
 // frob:ticket 01M4D957J2HZ655A1H8DJ4K8YD
 // frob:ticket 01M5HJNEBY5YBCJB06D5ZSH4H5
+// frob:ticket 01M5K9QNQFYJNXZSSG2X91FJBQ
 
 use std::path::Path;
 
@@ -321,7 +322,7 @@ fn ts_skipped_grouped_and_callbackless_tests_are_handled() {
         Language::TypeScript,
         "it('a', () => { expect(1).toBe(1); });",
     );
-    assert_eq!(r.unresolved, [Kind::Nondeterminism, Kind::ControlFlow]);
+    assert!(r.unresolved.is_empty());
 }
 
 // frob:tests crates/grimble-lints/src/testq.rs::scan
@@ -369,4 +370,166 @@ fn csharp_test_without_assertion_fires_and_variants_are_handled() {
     assert!(cs(local).is_empty());
     let dbg = "public class T {\n [Fact]\n public void A() { Console.WriteLine(1); }\n}\n";
     assert_eq!(cs(dbg).len(), 1);
+}
+
+fn ts_kind(src: &str, kind: Kind) -> Vec<String> {
+    of(Language::TypeScript, src, kind)
+        .into_iter()
+        .map(|(d, _)| d)
+        .collect()
+}
+
+fn cs_kind(src: &str, kind: Kind) -> Vec<String> {
+    let wrapped = format!("public class T {{\n [Fact]\n public void A() {{ {src} }}\n}}\n");
+    of(Language::CSharp, &wrapped, kind)
+        .into_iter()
+        .map(|(d, _)| d)
+        .collect()
+}
+
+fn it_body(body: &str) -> String {
+    format!("it('a', async () => {{ {body} }});")
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn ts_js_and_csharp_nondeterminism_is_reported_not_unresolved() {
+    let n = Kind::Nondeterminism;
+    for (body, want) in [
+        ("const x = Math.random();", "Math.random"),
+        ("const t = Date.now();", "Date.now"),
+        ("const d = new Date();", "new Date"),
+        ("const t = performance.now();", "performance.now"),
+        ("const u = crypto.randomUUID();", "crypto.randomUUID"),
+        (
+            "globalThis.crypto.getRandomValues(buf);",
+            "globalThis.crypto.getRandomValues",
+        ),
+        (
+            "await new Promise((r) => setTimeout(r, 100));",
+            "setTimeout",
+        ),
+        ("window.setInterval(f, 5);", "window.setInterval"),
+    ] {
+        assert_eq!(ts_kind(&it_body(body), n), [want], "typescript: {body}");
+        let js = of(Language::JavaScript, &it_body(body), n);
+        assert_eq!(js.len(), 1, "javascript: {body}");
+    }
+    let imported = "import { randomBytes } from 'node:crypto';\nimport { setTimeout as wait } from 'node:timers/promises';\n";
+    let src = format!("{imported}{}", it_body("randomBytes(4); await wait(10);"));
+    assert_eq!(
+        ts_kind(&src, n),
+        ["crypto.randomBytes", "timers.promises.setTimeout"]
+    );
+    for (body, want) in [
+        ("var t = DateTime.Now;", "DateTime.Now"),
+        (
+            "var t = System.DateTime.UtcNow.Ticks;",
+            "System.DateTime.UtcNow",
+        ),
+        ("var t = DateTimeOffset.UtcNow;", "DateTimeOffset.UtcNow"),
+        ("var g = Guid.NewGuid();", "Guid.NewGuid"),
+        ("var r = new Random();", "new Random"),
+        ("var v = Random.Shared.Next(5);", "Random.Shared.Next"),
+        ("await Task.Delay(500);", "Task.Delay"),
+        ("Thread.Sleep(10);", "Thread.Sleep"),
+        ("var sw = Stopwatch.StartNew();", "Stopwatch.StartNew"),
+    ] {
+        assert_eq!(cs_kind(body, n), [want], "csharp: {body}");
+    }
+    let r = report(Language::TypeScript, &it_body("Math.random();"));
+    assert!(r.unresolved.is_empty());
+    let r = report(
+        Language::CSharp,
+        "public class T {\n [Fact]\n public void A() { Assert.True(true); }\n}\n",
+    );
+    assert!(r.unresolved.is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn ts_js_and_csharp_control_flow_is_reported_not_unresolved() {
+    let c = Kind::ControlFlow;
+    for (body, want) in [
+        ("if (x) { run(); }", "if_statement"),
+        ("for (let i = 0; i < 3; i++) { run(i); }", "for_statement"),
+        ("for (const v of xs) { run(v); }", "for_in_statement"),
+        ("while (go()) { run(); }", "while_statement"),
+        ("do { run(); } while (go());", "do_statement"),
+        ("switch (x) { case 1: run(); }", "switch_statement"),
+        ("const v = ok ? 1 : 2;", "ternary_expression"),
+        ("try { run(); } catch (e) { fail(e); }", "try_statement"),
+    ] {
+        assert_eq!(ts_kind(&it_body(body), c), [want], "typescript: {body}");
+        assert_eq!(of(Language::JavaScript, &it_body(body), c).len(), 1);
+    }
+    // Only the outermost construct is reported; a callback is a separate function.
+    assert_eq!(
+        ts_kind(&it_body("if (a) { for (const v of xs) { run(v); } }"), c),
+        ["if_statement"]
+    );
+    assert!(ts_kind(&it_body("xs.forEach((v) => { if (v) { run(); } });"), c).is_empty());
+    for (body, want) in [
+        ("if (x) { Run(); }", "if_statement"),
+        ("for (var i = 0; i < 3; i++) { Run(i); }", "for_statement"),
+        ("foreach (var v in xs) { Run(v); }", "foreach_statement"),
+        ("while (Go()) { Run(); }", "while_statement"),
+        ("do { Run(); } while (Go());", "do_statement"),
+        ("switch (x) { case 1: Run(); break; }", "switch_statement"),
+        ("var v = x switch { 1 => 2, _ => 3 };", "switch_expression"),
+        ("var v = ok ? 1 : 2;", "conditional_expression"),
+        ("try { Run(); } catch (Exception) { }", "try_statement"),
+    ] {
+        assert_eq!(cs_kind(body, c), [want], "csharp: {body}");
+    }
+    let r = report(Language::TypeScript, &it_body("if (x) { run(); }"));
+    assert!(r.unresolved.is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn deterministic_ts_js_and_csharp_tests_stay_quiet() {
+    let n = Kind::Nondeterminism;
+    let c = Kind::ControlFlow;
+    for body in [
+        "expect(add(1, 2)).toBe(3);",
+        "const d = new Date(0); expect(d.getTime()).toBe(0);",
+        "const d = new Date('2020-01-01T00:00:00Z'); expect(d).toBeDefined();",
+        "const t = Date.parse('2020-01-01');",
+        "expect(clock.now()).toBe(1); expect(rng.random()).toBe(2);",
+        "expect(Math.randomize()).toBe(1); expect(MyDate.now()).toBe(1);",
+        "expect(Math.floor(1.5)).toBe(1);",
+        "setTimeout(done, 0);",
+        "// Math.random() and Date.now() and if (x) are only words here\nexpect(1).toBe(1);",
+        "const s = 'Math.random() Date.now() new Date() if (x) { } while (y)';\nexpect(s).toBeDefined();",
+        "const s = `setTimeout ${1} for while`;\nexpect(s).toBeDefined();",
+        "await fetch(url); expect(1).toBe(1);",
+    ] {
+        let src = it_body(body);
+        assert!(ts_kind(&src, n).is_empty(), "nondet: {body}");
+        assert!(ts_kind(&src, c).is_empty(), "flow: {body}");
+    }
+    for pinned in [
+        "jest.useFakeTimers();\nit('a', () => { setTimeout(f, 10); Date.now(); new Date(); expect(1).toBe(1); });",
+        "beforeEach(() => { vi.setSystemTime(0); });\nit('a', () => { Date.now(); expect(1).toBe(1); });",
+        "vi.spyOn(Math, 'random').mockReturnValue(0.5);\nit('a', () => { Math.random(); expect(1).toBe(1); });",
+        "Math.random = () => 4;\nit('a', () => { Math.random(); expect(1).toBe(1); });",
+    ] {
+        assert!(ts_kind(pinned, n).is_empty(), "pinned: {pinned}");
+    }
+    for body in [
+        "var r = new Random(42); Assert.Equal(1, r.Next());",
+        "var r = new System.Random(seed); Assert.True(r.Next() >= 0);",
+        "Assert.Equal(1, clock.Now); Assert.Equal(2, MyDateTime.Now);",
+        "Assert.Equal(3, Add(1, 2));",
+        "Thread.Sleep(0); Assert.True(true);",
+        "await Task.Delay(TimeSpan.FromSeconds(1), fakeTimeProvider); Assert.True(true);",
+        "// DateTime.Now Guid.NewGuid() if (x) are only words here\nAssert.True(true);",
+        "var s = \"DateTime.Now Guid.NewGuid() while (y) if (x)\"; Assert.NotNull(s);",
+        "var d = new DateTime(2020, 1, 1); Assert.Equal(2020, d.Year);",
+        "var c = await client.GetAsync(url); Assert.NotNull(c);",
+    ] {
+        assert!(cs_kind(body, n).is_empty(), "nondet: {body}");
+        assert!(cs_kind(body, c).is_empty(), "flow: {body}");
+    }
 }

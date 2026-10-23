@@ -5,16 +5,18 @@
 //! sleep, a seeded generator.
 
 // frob:ticket 01M4D957J2HZ655A1H8DJ4K8YD
+// frob:ticket 01M5K9QNQFYJNXZSSG2X91FJBQ
 
 use tree_sitter::Node;
 
 use super::ctx::{Callee, Ctx};
 use super::lang::Lang;
+use super::{nondet_cs, nondet_script};
 use crate::syntax::text;
 
 /// What kind of nondeterminism a call is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Class {
+pub(super) enum Class {
     Sleep,
     Clock,
     Rng,
@@ -28,7 +30,7 @@ pub(super) struct Hit<'t> {
     pub detail: String,
 }
 
-fn ends(e: &[String], tail: &[&str]) -> bool {
+pub(super) fn ends(e: &[String], tail: &[&str]) -> bool {
     e.len() >= tail.len()
         && e[e.len() - tail.len()..]
             .iter()
@@ -94,7 +96,24 @@ fn py_class(e: &[String], args_empty: bool) -> Option<Class> {
     rng.then_some(Class::Rng)
 }
 
-fn args_empty(n: Node<'_>) -> bool {
+/// Call `f` on `n` and every node below it, in source order.
+pub(super) fn visit<'t>(n: Node<'t>, f: &mut dyn FnMut(Node<'t>)) {
+    f(n);
+    let mut cur = n.walk();
+    for c in n.children(&mut cur) {
+        visit(c, f);
+    }
+}
+
+/// `e` without its leading segments that only name a namespace or global object.
+pub(super) fn strip<'a>(e: &'a [String], skip: &[&str]) -> Vec<&'a str> {
+    e.iter()
+        .map(String::as_str)
+        .skip_while(|s| skip.contains(s))
+        .collect()
+}
+
+pub(super) fn args_empty(n: Node<'_>) -> bool {
     n.child_by_field_name("arguments")
         .is_none_or(|a| a.named_child_count() == 0)
 }
@@ -122,9 +141,10 @@ fn module_calls<'t>(cx: &Ctx<'t>, n: Node<'t>, out: &mut Vec<Callee<'t>>) {
 
 /// Every nondeterministic call of `func`; `marks` is the text of its attributes or decorators.
 pub(super) fn find<'t>(cx: &Ctx<'t>, func: Node<'t>, marks: &str, root: Node<'t>) -> Vec<Hit<'t>> {
-    // TESTQ002 has vocabulary for Rust and Python only; other languages stay unresolved.
-    if cx.lang.flow().is_none() {
-        return Vec::new();
+    match cx.lang {
+        Lang::Script => return nondet_script::find(cx, func, root),
+        Lang::CSharp => return nondet_cs::find(cx, func),
+        Lang::Rust | Lang::Python => {}
     }
     let Some(body) = func.child_by_field_name("body") else {
         return Vec::new();
@@ -139,7 +159,7 @@ pub(super) fn find<'t>(cx: &Ctx<'t>, func: Node<'t>, marks: &str, root: Node<'t>
                 || expanded.iter().any(|e| ends(e, &["time", "pause"]));
             (paused, paused, false)
         }
-        Lang::Script | Lang::CSharp => return Vec::new(),
+        Lang::Script | Lang::CSharp => unreachable!("dispatched above"),
         Lang::Python => {
             let patched = calls.iter().zip(&expanded).any(|(c, e)| {
                 matches!(

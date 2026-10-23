@@ -4,8 +4,6 @@
 
 use gob_languages::Language;
 
-use crate::syntax;
-
 /// A language family whose tests TESTQ001 can read.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Lang {
@@ -30,15 +28,6 @@ impl Lang {
             }
             Language::CSharp => Some(Self::CSharp),
             _ => None,
-        }
-    }
-
-    /// The flow-scanner tag, for the languages that also have nondeterminism vocabulary.
-    pub(crate) fn flow(self) -> Option<syntax::Lang> {
-        match self {
-            Self::Rust => Some(syntax::Lang::Rust),
-            Self::Python => Some(syntax::Lang::Python),
-            Self::Script | Self::CSharp => None,
         }
     }
 }

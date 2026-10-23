@@ -3,8 +3,11 @@
 //! [`scan`] finds, in the tests of one Rust, Python, TypeScript/JavaScript or C# file, a test with no assertion
 //! (`TESTQ001`), a sleep, wall-clock read or unseeded random source in a test body (`TESTQ002`)
 //! and control flow in a test body (`TESTQ003`, off by default: [`Kind::default_enabled`]).
-//! TypeScript, JavaScript (jest, vitest, mocha, node:test) and `C#` (`xUnit`, `NUnit`, `MSTest`) have
-//! `TESTQ001` vocabulary only; their `TESTQ002` and `TESTQ003` stay unresolved.
+//! TypeScript, JavaScript (jest, vitest, mocha, node:test) and `C#` (`xUnit`, `NUnit`, `MSTest`)
+//! have vocabulary for all three kinds. Timers, clock reads and random sources are reported
+//! unless the test (or, for scripts, a hook in the file) pins them: fake timers, a set system
+//! time, a stubbed `Math.random`, a seeded `new Random(seed)`. Network calls such as `fetch` are
+//! not TESTQ002 hits: the rule covers sleeps, clocks and random sources only.
 //!
 //! `TESTQ001` follows same-file helpers and is three-valued: a helper whose body is out of sight
 //! (imported from a support module, a `mod x;` file, a mixin base) yields a site with
@@ -14,11 +17,14 @@
 
 // frob:ticket 01M4D957J2HZ655A1H8DJ4K8YD
 // frob:ticket 01M5HJNEBY5YBCJB06D5ZSH4H5
+// frob:ticket 01M5K9QNQFYJNXZSSG2X91FJBQ
 
 mod assert;
 mod ctx;
 mod lang;
 mod nondet;
+mod nondet_cs;
+mod nondet_script;
 
 use std::path::Path;
 
@@ -446,13 +452,47 @@ fn control_flow<'t>(lang: Lang, n: Node<'t>, out: &mut Vec<Node<'t>>) {
             "while_statement",
             "match_statement",
         ],
-        Lang::Script | Lang::CSharp => return,
+        Lang::Script => &[
+            "if_statement",
+            "for_statement",
+            "for_in_statement",
+            "while_statement",
+            "do_statement",
+            "switch_statement",
+            "ternary_expression",
+            "try_statement",
+        ],
+        Lang::CSharp => &[
+            "if_statement",
+            "for_statement",
+            "foreach_statement",
+            "while_statement",
+            "do_statement",
+            "switch_statement",
+            "switch_expression",
+            "conditional_expression",
+            "try_statement",
+        ],
     };
     if kinds.contains(&n.kind()) {
         out.push(n);
         return;
     }
-    if matches!(n.kind(), "function_item" | "function_definition") {
+    if matches!(
+        n.kind(),
+        "function_item"
+            | "function_definition"
+            | "function_declaration"
+            | "function_expression"
+            | "function"
+            | "generator_function"
+            | "generator_function_declaration"
+            | "arrow_function"
+            | "method_definition"
+            | "local_function_statement"
+            | "lambda_expression"
+            | "anonymous_method_expression"
+    ) {
         return;
     }
     for c in children(n) {
@@ -544,11 +584,7 @@ pub fn scan(language: Language, text: &str) -> Result<Report, ScanError> {
         sites = sites.len(),
         "testq sites scanned"
     );
-    // Script and C# tests are read for TESTQ001 only: the other two kinds have no vocabulary.
-    let unresolved = if lang.flow().is_some() {
-        Vec::new()
-    } else {
-        vec![Kind::Nondeterminism, Kind::ControlFlow]
-    };
+    // Every language with test roles has vocabulary for all three kinds.
+    let unresolved = Vec::new();
     Ok(Report { sites, unresolved })
 }

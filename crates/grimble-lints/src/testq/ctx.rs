@@ -446,7 +446,7 @@ impl<'t> Ctx<'t> {
     /// The dotted path a call target spells, with `?` for a part that is not a plain name.
     ///
     /// `expect(x).not.toBe` flattens to `expect.not.toBe`, `x.Should().Be` to `x.Should.Be`.
-    fn chain(&self, n: Node<'t>) -> Vec<String> {
+    pub fn chain(&self, n: Node<'t>) -> Vec<String> {
         let here = |t: &str| vec![t.to_owned()];
         match n.kind() {
             "identifier" | "this" | "super" | "this_expression" | "base_expression" => {
