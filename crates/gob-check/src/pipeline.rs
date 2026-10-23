@@ -57,6 +57,7 @@ fn known_here<P: Product>(product: &P, name: &str) -> bool {
         .filter(|m| product.includes(m))
         .any(|m| m.family == name || m.id == name)
         || set.defs().any(|d| d.family == name || d.id == name)
+        || crate::tool_parse::is_sibling_bound_id(name)
 }
 
 // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q

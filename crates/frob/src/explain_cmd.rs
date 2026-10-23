@@ -20,7 +20,6 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "DRIFT002",
     "EXC014",
     "DRIFT004",
-    "CI003",
     "EXC016",
     "INV002",
     "PM002",

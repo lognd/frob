@@ -54,7 +54,7 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | Parser | Tool id | Rule | Severity |
 |---|---|---|---|
 | zizmor | `unpinned-uses` | `CI001` | Warn |
-| zizmor | `excessive-permissions` | `CI003` | Warn |
+| zizmor | `excessive-permissions` | `CI003` (declared by grimble-ci) | Warn |
 | zizmor | `dangerous-triggers` | `CI006` | Error |
 | zizmor | `template-injection` | `CI007` | Error |
 | zizmor | `artipacked` | `CI010` | Advisory |

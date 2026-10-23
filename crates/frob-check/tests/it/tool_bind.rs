@@ -394,3 +394,31 @@ fn unparseable_output_is_a_required_tool_failed() {
     assert!(report.findings[0].required.is_some());
     assert_eq!(report.exit_code(), ExitCode::Negative);
 }
+
+/// One zizmor `excessive-permissions` finding is one `CI003` finding in `frob check`, with no native twin.
+// frob:ticket 01M5F0A96X8KCH10HNHTXCDEKR
+// frob:tests crates/gob-check/src/tool_parse.rs::classify
+#[test]
+fn a_zizmor_permissions_finding_is_reported_once_as_ci003() {
+    if !gob_exec::require_sh("a_zizmor_permissions_finding_is_reported_once_as_ci003") {
+        return;
+    }
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), ".github/workflows/ci.yml", &workflow(""));
+    let fixture = r#"[{"ident":"excessive-permissions","desc":"overly broad permissions","locations":[{"symbolic":{"key":{"Local":{"verbatim_path":"./.github/workflows/ci.yml"}},"annotation":"here","kind":"Primary"},"concrete":{"location":{"offset_span":{"start":10,"end":20}}}}]}]"#;
+    let toml = stage(dir.path(), fixture, 11, "zizmor-json-v1", "");
+    write(dir.path(), "frob.toml", &toml);
+    let report = run(dir.path(), &options()).expect("run");
+    let ci003 = report
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "CI003")
+        .count();
+    assert_eq!(ci003, 1, "{:?}", report.findings);
+    let only = CheckOptions {
+        only: vec!["CI003".to_owned()],
+        ..options()
+    };
+    let narrowed = run(dir.path(), &only).expect("--only CI003 is still a known rule");
+    assert_eq!(rules(&narrowed), ["CI003"]);
+}

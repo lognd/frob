@@ -104,25 +104,6 @@ pub struct Read001;
 )]
 pub struct Ci001;
 
-/// A workflow or job grants a broader `GITHUB_TOKEN` scope than it needs.
-///
-/// Bound to zizmor `excessive-permissions`. Declare `permissions: contents: read` at the top of the workflow and widen single jobs only. Raised by a `[[check.tool]]` stage with `parser = "zizmor-json-v1"`.
-///
-/// Declared here until the grimble-ci crate owns the CI family; the id and meaning stay.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "CI003",
-    slug = "no-top-level-write",
-    family = "CI",
-    severity = Warn,
-    tier = Universal,
-    scope = File,
-    fix = Manual,
-    polarity = Pplus,
-    version = 1
-)]
-pub struct Ci003;
-
 /// A dangerous trigger (`pull_request_target`, `workflow_run`) runs with untrusted pull request content.
 ///
 /// Bound to zizmor `dangerous-triggers`. Do not check out or run the pull request head in a privileged workflow; split the untrusted build from the privileged step. Raised by a `[[check.tool]]` stage with `parser = "zizmor-json-v1"`.

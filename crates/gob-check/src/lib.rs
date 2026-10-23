@@ -109,9 +109,7 @@ pub use report::{
     AppliedFix, CheckReport, Counts, FixOutcome, SkippedFix, StageTime, Stats, Timing,
 };
 pub use rule_set::RuleSet;
-pub use rules::{
-    Ci001, Ci003, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Read001, Tool001, Tool002,
-};
+pub use rules::{Ci001, Ci006, Ci007, Ci010, Ci014, Perf001, Proc001, Read001, Tool001, Tool002};
 pub use status::{
     FidelityReport, HoleSite, LanguageFidelity, OtherCopy, SiblingRow, SkippedReport,
     SubjectStatus, hole_caveat, is_binary, locate_hole, malformed_project_finding, opaque_finding,

@@ -18,12 +18,6 @@ ticket = "~G6YQBDT"
 
 [[gap]]
 product = "frob"
-rule = "CI003"
-kind = "unresolved"
-ticket = "~G6YQBDT"
-
-[[gap]]
-product = "frob"
 rule = "CI006"
 kind = "unresolved"
 ticket = "~G6YQBDT"

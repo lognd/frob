@@ -5,6 +5,7 @@ mod attestation;
 mod board;
 mod build_identity;
 mod check_verb;
+mod ci003_owner;
 mod claim_base;
 mod cli;
 mod close_guards;

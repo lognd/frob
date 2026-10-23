@@ -581,6 +581,18 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
     }
 }
 
+// frob:ticket 01M5F0A96X8KCH10HNHTXCDEKR
+/// True when `id` is a rule a bound stage can report but another product declares.
+///
+/// `CI003` is declared by `grimble-ci`; the zizmor stage still raises it here, so `--only CI003`
+/// must stay a known name even though no frob declaration carries it.
+pub(crate) fn is_sibling_bound_id(id: &str) -> bool {
+    SIBLING_OWNED.contains(&id)
+}
+
+/// Rule ids a frob stage raises that a sibling product declares.
+const SIBLING_OWNED: [&str; 1] = ["CI003"];
+
 /// Rule used for a tool id that no map covers.
 fn fallback(parser: ToolParser) -> &'static str {
     match parser {
