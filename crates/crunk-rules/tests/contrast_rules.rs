@@ -60,7 +60,8 @@ fn measure_roles_reports_ratio_and_floor_per_role() {
         None,
     );
     let measured = measure_roles(&host.spec, &Mode::DEFAULT);
-    assert_eq!(measured.len(), 1);
+    assert_eq!(measured.len(), 4, "body plus the three state roles");
+    assert_eq!(measured[0].role, "body");
     assert!(
         (measured[0].ratio - 21.0).abs() < 0.01,
         "{}",

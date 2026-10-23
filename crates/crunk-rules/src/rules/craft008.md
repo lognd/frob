@@ -1,8 +1,8 @@
 <!-- mdtest: rule=CRAFT008 -->
 # CRAFT008 semantic-roles-complete
 
-A project whose `crunk.toml` is the default preset declares only a `body` role, so the fire case
-is the preset itself; the clean case adds the danger, warning and success roles.
+The default preset declares danger, warning and success roles beside `body`, so a fresh init is
+clean and is the clean case; the fire case drops the three state roles to leave only `body`.
 
 ## What it does
 
@@ -24,17 +24,17 @@ turn CRAFT008 off under `[lint]` for a design with no state colours.
 
 ## Examples
 
-### The default preset has no state roles and fires
+### A palette with only a body role fires
 
-```css expect=fire file=styles/app.css
+```css expect=fire file=styles/app.css config=roles-body-only
 .card {
   color: #111111;
 }
 ```
 
-### Danger, warning and success roles are clean
+### The default preset declares danger, warning and success roles and is clean
 
-```css expect=clean file=styles/app.css config=roles-semantic
+```css expect=clean file=styles/app.css
 .card {
   color: #111111;
 }

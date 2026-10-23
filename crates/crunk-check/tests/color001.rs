@@ -153,12 +153,15 @@ fn a_contrast_failure_only_in_the_cb_safe_mode_names_the_mode() {
         .iter()
         .filter(|f| f.rule.as_str() == "CONTRAST001")
         .collect();
-    assert_eq!(hits.len(), 1, "{hits:?}");
-    assert!(
-        hits[0].message.ends_with(" in mode `cb-safe`"),
-        "{}",
-        hits[0].message
-    );
+    // The darkened paper is the background of body and of the three state roles.
+    assert_eq!(hits.len(), 4, "{hits:?}");
+    for hit in &hits {
+        assert!(
+            hit.message.ends_with(" in mode `cb-safe`"),
+            "{}",
+            hit.message
+        );
+    }
 }
 
 /// A spec-only project: a valid `crunk.toml` and nothing to ingest.

@@ -61,7 +61,9 @@ turn CRAFT008 off under `[lint]` for a design with no state colours.
 
 ## Examples
 
-### CRAFT008 semantic-roles-complete / Examples / The default preset has no state roles and fires #1 (line 29) (fire)
+### CRAFT008 semantic-roles-complete / Examples / A palette with only a body role fires #1 (line 29) (fire)
+
+Config: `roles-body-only`
 
 ```css
 .card {
@@ -69,9 +71,7 @@ turn CRAFT008 off under `[lint]` for a design with no state colours.
 }
 ```
 
-### CRAFT008 semantic-roles-complete / Examples / Danger, warning and success roles are clean #2 (line 37) (clean)
-
-Config: `roles-semantic`
+### CRAFT008 semantic-roles-complete / Examples / The default preset declares danger, warning and success roles and is clean #2 (line 37) (clean)
 
 ```css
 .card {

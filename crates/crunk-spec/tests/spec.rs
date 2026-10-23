@@ -23,7 +23,7 @@ fn full_example_loads_every_field() {
     assert!((spec.project.root_font_size - 16.0).abs() < f64::EPSILON);
     assert_eq!(
         spec.palette.keys().collect::<Vec<_>>(),
-        ["ink", "paper", "accent"],
+        ["ink", "paper", "accent", "danger", "warning", "success"],
         "palette keeps declaration order"
     );
     assert_eq!(spec.roles["body"].foreground, "ink");
@@ -249,7 +249,10 @@ fn malformed_roles_name_the_role() {
 
 #[test]
 fn roles_must_be_a_table() {
-    let text = swap("[palette.roles]\nbody = [\"ink\", \"paper\"]\n", "");
+    let text = swap(
+        "[palette.roles]\nbody = [\"ink\", \"paper\"]\ndanger = [\"danger\", \"paper\"]\nwarning = [\"warning\", \"paper\"]\nsuccess = [\"success\", \"paper\"]\n",
+        "",
+    );
     let text = swap_in(&text, "[palette]\n", "[palette]\nroles = 3\n");
     assert!(detail(&err(&text)).contains("[palette].roles"));
 }
@@ -520,6 +523,29 @@ fn preset_comments_state_the_path_base_rule() {
     }
     assert_eq!(crunk_spec::presets::preset_names(), ["default", "mono"]);
     assert!(crunk_spec::presets::preset("nope").is_none());
+}
+
+// frob:ticket 01M5K5SWHDE7FP0FPDHQWH2ZRH
+// frob:tests crates/crunk-spec/src/presets.rs::DEFAULT
+#[test]
+fn default_preset_declares_the_state_roles() {
+    let spec = ok(crunk_spec::presets::DEFAULT);
+    let names: Vec<&str> = spec.roles.keys().map(String::as_str).collect();
+    assert_eq!(names, ["body", "danger", "warning", "success"]);
+    for role in ["danger", "warning", "success"] {
+        assert_eq!(spec.roles[role].background, "paper", "{role}");
+        assert!(spec.palette.contains_key(role), "{role} has its own colour");
+    }
+}
+
+// frob:ticket 01M5K5SWHDE7FP0FPDHQWH2ZRH
+// frob:tests crates/crunk-spec/src/presets.rs::MONO
+#[test]
+fn mono_preset_declares_the_state_roles_too() {
+    let spec = ok(crunk_spec::presets::MONO);
+    for role in ["danger", "warning", "success"] {
+        assert!(spec.roles.contains_key(role), "{role}");
+    }
 }
 
 #[test]

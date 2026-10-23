@@ -9,8 +9,13 @@ use crunk_rules::rules::craft008::Craft008;
 use crunk_spec::model::RolePair;
 use gob_rules::{RepoRule, Severity};
 
+/// The default preset with only its `body` role, the state of a palette that skips CRAFT008's roles.
 fn css() -> support::Project {
-    support::project("styles/app.css", ".a { color: #111111; }\n", None)
+    support::project(
+        "styles/app.css",
+        ".a { color: #111111; }\n",
+        Some("roles-body-only"),
+    )
 }
 
 fn declare(host: &mut support::Project, names: &[&str]) {
@@ -102,4 +107,26 @@ fn the_rule_applies_to_a_project_with_a_spec_and_styles() {
         RepoRule::<support::Project>::inapplicable(&Craft008, &css()),
         None
     );
+}
+
+// frob:ticket 01M5K5SWHDE7FP0FPDHQWH2ZRH
+// frob:tests crates/crunk-rules/src/rules/craft008.rs::Craft008
+#[test]
+fn every_preset_is_clean_on_a_fresh_init() {
+    for (name, text) in crunk_spec::presets::PRESETS {
+        let host = support::project("crunk.toml", text, None);
+        assert!(messages(&host).is_empty(), "{name}: {:?}", messages(&host));
+    }
+}
+
+// frob:ticket 01M5K5SWHDE7FP0FPDHQWH2ZRH
+// frob:tests crates/crunk-rules/src/rules/contrast001.rs::Contrast001
+#[test]
+fn the_state_roles_of_every_preset_clear_their_contrast_floor() {
+    use crunk_rules::rules::contrast001::Contrast001;
+    for (name, text) in crunk_spec::presets::PRESETS {
+        let host = support::project("crunk.toml", text, None);
+        let found = support::run::<Contrast001>(&host);
+        assert!(found.is_empty(), "{name}: {found:?}");
+    }
 }

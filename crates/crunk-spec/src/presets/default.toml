@@ -10,9 +10,15 @@ root_font_size = 16
 ink = "#1a1a1a"
 paper = "#fafaf7"
 accent = "#2f6fed"
+danger = "#b42318"
+warning = "#8a5a00"
+success = "#146c43"
 
 [palette.roles]
 body = ["ink", "paper"]
+danger = ["danger", "paper"]
+warning = ["warning", "paper"]
+success = ["success", "paper"]
 
 [scales]
 spacing = [0, 4, 8, 12, 16, 24, 32, 48, 64]

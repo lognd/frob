@@ -141,7 +141,7 @@ fn one_default_mode_without_declared_modes() {
     assert_eq!(modes, [mode::Mode::DEFAULT]);
     assert!(modes[0].is_default());
     assert_eq!(modes[0].suffix(), "");
-    assert_eq!(modes[0].palette(&host.spec).len(), 3);
+    assert_eq!(modes[0].palette(&host.spec).len(), 6);
 }
 
 fn def<R: RuleDecl>() -> &'static RuleDef {

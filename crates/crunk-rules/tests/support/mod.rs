@@ -244,13 +244,19 @@ fn apply_radii_config(spec_text: &mut String, config: Option<&str>) {
 }
 
 // frob:ticket 01M5HM3W18AJZET52BZBEJFYD4
-/// The `config=roles-semantic` case adds danger, warning and success roles to the preset's `body` role.
+/// The `config=roles-body-only` case drops the preset's danger, warning and success roles, leaving `body`.
 fn apply_roles_config(spec_text: &mut String, config: Option<&str>) {
-    if config == Some("roles-semantic") {
-        *spec_text = spec_text.replace(
-            "body = [\"ink\", \"paper\"]",
-            "body = [\"ink\", \"paper\"]\ndanger = [\"ink\", \"paper\"]\nwarning = [\"ink\", \"paper\"]\nsuccess = [\"ink\", \"paper\"]",
-        );
+    if config == Some("roles-body-only") {
+        *spec_text = spec_text
+            .lines()
+            .filter(|line| {
+                !["danger = [", "warning = [", "success = ["]
+                    .iter()
+                    .any(|role| line.starts_with(role))
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n";
     }
 }
 
