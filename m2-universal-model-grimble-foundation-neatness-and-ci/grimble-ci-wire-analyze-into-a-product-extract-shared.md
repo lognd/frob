@@ -9,7 +9,7 @@ parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
 updated = "2026-10-23T07:45:52Z"
-scope = ["crates/grimble-ci/**", "crates/grimble-arch/**", "crates/grimble-check/**", "Cargo.lock", "crates/grimble-verdict/**", "docs/design/boundaries.md", "docs/design/cicd.md"]
+scope = ["crates/grimble-ci/**", "crates/grimble-arch/**", "crates/grimble-check/**", "Cargo.lock", "crates/grimble-verdict/**", "docs/design/boundaries.md", "docs/design/cicd.md", "crates/gob-dev/tests/layering.rs"]
 
 [[acceptance]]
 text = "grimble-ci and grimble-arch share one verdict/finding type instead of CiFinding aliasing ArchFinding, with no layering violation"
