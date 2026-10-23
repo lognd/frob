@@ -2,7 +2,8 @@
 id = "01M5KYF5Z489MSRNAX1JCTEHPQ"
 title = "gob-check: map zizmor secrets-inherit and archived-uses to CI013 and CI015, actionlint to grimble CI014"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
