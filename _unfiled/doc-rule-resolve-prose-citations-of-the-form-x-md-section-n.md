@@ -2,12 +2,12 @@
 id = "01M4H0RE1Q9A1M47ZT7Q1ZG43K"
 title = "DOC rule: resolve prose citations of the form 'x.md section N' and 'x.md#anchor' in docs, crates and notes; a citation to a missing file, section or anchor is a finding"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T19:03:08Z"
-updated = "2026-10-09T19:03:08Z"
+updated = "2026-10-23T21:16:08Z"
 labels = ["docs"]
 scope = ["crates/frob-obligations/**", "crates/gob-text/**", "changelog.d/**"]
 
