@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T23:38:30Z"
-updated = "2026-10-23T20:19:14Z"
+updated = "2026-10-23T20:28:47Z"
 scope = ["crates/gob-plan/src/exec/**", "crates/gob-rules/src/**", "changelog.d/**", "crates/gob-diagnostics/src/text.rs", "crates/gob-plan/tests/**", "crates/gob-rules/tests/**", "docs/reference/rules/MDL014.md"]
 
 [[acceptance]]
