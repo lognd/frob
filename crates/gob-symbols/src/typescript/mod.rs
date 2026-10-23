@@ -11,8 +11,9 @@
 //!   declarators. An `export default` function or class without a name is the unit `default`.
 //! - Every unit has children in groups: `attr("doc")` (the preceding `JSDoc` comment), one `attr` per
 //!   decorator (also in the signature, G7), a `group` marked `ir.facet = "sig"` with the name, type
-//!   parameters, parameters, return type and modifiers as tokens, and the body as one `group`. An
-//!   interface, type alias or enum is all signature.
+//!   parameters, parameters, return type and modifiers as tokens, and the body as one `group`.
+//!   An interface body holds one body-less `method` unit per method signature; a type alias or enum is all
+//!   signature. Class and interface `extends`/`implements` names are recorded as `bases`.
 //! - Visibility: a declaration is `public` when it is exported (`export`, `export { a as b }`,
 //!   `export default a`, `module.exports = ..`, `exports.x = a`), else `private`; a class member is
 //!   `private` for `private` or `#name`, `crate` for `protected`, else `public`.

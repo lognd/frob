@@ -78,6 +78,8 @@ pub(super) struct TsIndex {
     kids: HashMap<(NodeIndex, String), Vec<NodeIndex>>,
     /// Simple method name to every TypeScript method so named.
     methods: HashMap<String, Vec<NodeIndex>>,
+    /// Class or interface node to the base type names its heritage clauses list (`extends`, `implements`).
+    bases: HashMap<NodeIndex, Vec<String>>,
     /// Importing file to its use bindings.
     uses: HashMap<String, Vec<UseBinding>>,
     /// TypeScript file path to its import edges, in source order.
@@ -132,6 +134,11 @@ impl TsIndex {
             let Some(&file_node) = ix.file_nodes.get(&f.path) else {
                 continue;
             };
+            for e in f.extras.iter().filter(|e| !e.facts.bases.is_empty()) {
+                if let Some(&n) = g.index.get(&e.symref) {
+                    ix.bases.insert(n, e.facts.bases.clone());
+                }
+            }
             ix.uses.insert(f.path.clone(), f.uses.clone());
             ix.imports.push((f.path.clone(), f.imports.clone()));
             if let Some(d) = deps.as_deref_mut() {
@@ -152,7 +159,14 @@ impl TsIndex {
                         .entry((parent, base.clone()))
                         .or_default()
                         .push(node);
-                    if s.kind == SymbolKind::Method {
+                    // An interface signature is a declaration, not an implementation: it is no fan-out candidate.
+                    if s.kind == SymbolKind::Method
+                        && !s.parent.as_ref().is_some_and(|p| {
+                            g.index
+                                .get(p)
+                                .is_some_and(|&pn| g.graph[pn].kind == SymbolKind::Interface)
+                        })
+                    {
                         ix.methods.entry(base).or_default().push(node);
                     }
                 }
@@ -586,11 +600,11 @@ impl SymbolGraph {
         Some(Found { nodes, status })
     }
 
-    /// `x.m()` where parameter `x` is annotated `ty`: an `any` receiver is dynamic, else the method of the annotated class, weighed by the type facts.
+    /// `x.m()` where parameter `x` is annotated `ty`: an `any` receiver is dynamic, else the method of the annotated class or interface (own, else inherited through `extends`/`implements`), weighed by the type facts.
     ///
     /// Exact (Must) only where `tsc --strict` vouches for the file and one method answers, claimed
     /// (May) otherwise; `None` (fall back to every method of that name) when annotations are hints
-    /// only or the annotated class does not declare the method here (inherited, an interface, external).
+    /// only or no type in the repository declares or inherits the method (external, unannotated bases).
     // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
     fn ts_typed_method(
         &self,
@@ -607,32 +621,11 @@ impl SymbolGraph {
             tracing::debug!(callee = %call.callee, "any-typed receiver is dynamic");
             return Some(Outcome::Gap(GapReason::Dynamic));
         }
-        let mut segs = ty.split('.').map(str::to_owned);
-        let head = segs.next()?;
-        let rest: Vec<String> = segs.collect();
-        let lexical = self.ts_lexical(ts, node, &head);
-        let mut classes = if lexical.is_empty() {
-            let from = call.caller.path();
-            Self::ts_uses(ts, &call.caller, &head)
-                .into_iter()
-                .filter_map(|u| self.ts_path(ts, from, u, &rest))
-                .flat_map(|f| f.nodes)
-                .collect()
-        } else {
-            let mut cur = lexical;
-            for seg in &rest {
-                cur = cur
-                    .iter()
-                    .flat_map(|&n| ts.kids_of(n, seg).iter().copied())
-                    .collect();
-            }
-            cur
-        };
-        classes.retain(|&n| self.graph[n].kind == SymbolKind::Class);
-        let mut methods: Vec<NodeIndex> = classes
-            .iter()
-            .flat_map(|&c| ts.kids_of(c, &call.callee).iter().copied())
-            .collect();
+        let types = self.ts_type_nodes(ts, node, &call.caller, ty);
+        let mut methods: Vec<NodeIndex> = Vec::new();
+        for t in types {
+            methods.extend(self.ts_member(ts, t, &call.callee, &mut HashSet::new()));
+        }
         methods.sort();
         methods.dedup();
         if methods.is_empty() {
@@ -645,6 +638,94 @@ impl SymbolGraph {
         };
         tracing::debug!(callee = %call.callee, ty, ?weight, ?status, "annotated receiver resolved");
         Some(Outcome::Hit(methods, status))
+    }
+
+    /// The classes and interfaces the type name `ty` (`A`, `ns.A`) denotes at `node`, through lexical scope then imports.
+    fn ts_type_nodes(
+        &self,
+        ts: &TsIndex,
+        node: NodeIndex,
+        caller: &Symref,
+        ty: &str,
+    ) -> Vec<NodeIndex> {
+        let mut segs = ty.split('.').map(str::to_owned);
+        let Some(head) = segs.next() else {
+            return Vec::new();
+        };
+        let rest: Vec<String> = segs.collect();
+        let lexical = self.ts_lexical(ts, node, &head);
+        let mut types: Vec<NodeIndex> = if lexical.is_empty() {
+            Self::ts_uses(ts, caller, &head)
+                .into_iter()
+                .filter_map(|u| self.ts_path(ts, caller.path(), u, &rest))
+                .flat_map(|f| f.nodes)
+                .collect()
+        } else {
+            let mut cur = lexical;
+            for seg in &rest {
+                cur = cur
+                    .iter()
+                    .flat_map(|&n| ts.kids_of(n, seg).iter().copied())
+                    .collect();
+            }
+            cur
+        };
+        types.retain(|&n| {
+            matches!(
+                self.graph[n].kind,
+                SymbolKind::Class | SymbolKind::Interface
+            )
+        });
+        types.sort();
+        types.dedup();
+        types
+    }
+
+    /// The declarations of method `name` that type `t` answers to: its own, else the nearest inherited ones.
+    ///
+    /// A class prefers its `extends` chain over the interfaces it `implements`; an interface unions all
+    /// of its `extends` bases. `seen` breaks cycles (`A extends B`, `B extends A`).
+    fn ts_member(
+        &self,
+        ts: &TsIndex,
+        t: NodeIndex,
+        name: &str,
+        seen: &mut HashSet<NodeIndex>,
+    ) -> Vec<NodeIndex> {
+        if !seen.insert(t) {
+            tracing::debug!(ty = %self.graph[t].symref, "cyclic heritage cut");
+            return Vec::new();
+        }
+        let own: Vec<NodeIndex> = ts
+            .kids_of(t, name)
+            .iter()
+            .copied()
+            .filter(|&m| self.graph[m].kind == SymbolKind::Method)
+            .collect();
+        if !own.is_empty() {
+            return own;
+        }
+        let Some(parent) = self.parent_of(t) else {
+            return Vec::new();
+        };
+        let owner = self.graph[t].symref.clone();
+        let mut bases: Vec<NodeIndex> = Vec::new();
+        for b in ts.bases.get(&t).into_iter().flatten() {
+            bases.extend(self.ts_type_nodes(ts, parent, &owner, b));
+        }
+        let (classes, interfaces): (Vec<_>, Vec<_>) = bases
+            .into_iter()
+            .partition(|&b| self.graph[b].kind == SymbolKind::Class);
+        for group in [classes, interfaces] {
+            let mut found: Vec<NodeIndex> = Vec::new();
+            for b in group {
+                found.extend(self.ts_member(ts, b, name, seen));
+            }
+            if !found.is_empty() {
+                return found;
+            }
+        }
+        Vec::new()
     }
 
     /// Every TypeScript method named `name` as May candidates, or an external gap when none exists.

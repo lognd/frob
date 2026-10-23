@@ -177,11 +177,11 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     facts.set_root(root_id);
     let term = cx.b.finish(root_id)?;
     let scopes = ScopeGraph::from_term(&term);
-    let v = view::build(&term, input.path, Naming::Html);
+    let mut v = view::build(&term, input.path, Naming::Html);
     let mut file = base_file(input, "html");
     file.fidelity = gob_caps::lang_fidelity(Lang::Html);
     file.parse_status = view::parse_status_of(&term);
-    facts.emit(&mut file, &scopes, &v);
+    facts.emit(&mut file, &scopes, &mut v);
     file.symbols = v.symbols;
     file.extras = v.extras;
     tracing::debug!(
