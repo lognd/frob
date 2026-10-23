@@ -2,7 +2,8 @@
 id = "01M5MMEYZXZW5MNXSTMZ9F7SRN"
 title = "Implement 5S319B4 criteria 1-4: uv sync before uv-run stages, vitest PATH, attestation message, per-worktree venv"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
