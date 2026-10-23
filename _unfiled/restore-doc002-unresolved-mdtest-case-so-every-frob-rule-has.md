@@ -7,8 +7,8 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T07:00:01Z"
-updated = "2026-10-23T07:15:12Z"
-scope = ["crates/frob-check/**"]
+updated = "2026-10-23T07:18:14Z"
+scope = ["crates/frob-check/**", "crates/frob-obligations/tests/mdtest/doc002.md"]
 
 [[acceptance]]
 text = "rule_coverage::every_frob_rule_has_a_corpus passes"
