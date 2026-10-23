@@ -2,13 +2,13 @@
 id = "01M4GYBTXAPBEX9QYWYX5FKR67"
 title = "may grants carry a reason (because= or ticket=) and grimble status reports grant count, breadth and their change since the lock (grant ratchet)"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T18:21:18Z"
-updated = "2026-10-09T18:21:18Z"
+updated = "2026-10-23T13:45:20Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble*/**", "docs/design/grmb-spec.md", "changelog.d/**"]
 
