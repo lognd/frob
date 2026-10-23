@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T19:31:22Z"
-updated = "2026-10-23T13:21:17Z"
+updated = "2026-10-23T13:21:21Z"
 scope = ["crates/frob/src/ticket/**", "crates/frob-lease/src/**", "crates/frob-evidence/src/**", "changelog.d/**", "docs/design/cli.md", "docs/reference/**", "crates/frob/tests/it/serve_read_verbs.rs", "crates/frob/tests/it/main.rs"]
 
 [[links]]
@@ -20,7 +20,7 @@ target = "01M4FDPNXX3X842GBA3FP0SDK3"
 
 [[acceptance]]
 text = "Given frob serve, when tools/list runs, then the ticket, lease and evidence read verbs are listed with schemas, and a frob_ticket_doable call returns the same envelope as the CLI"
-bound = false
+bound = true
 +++
 
 Deferred from ~MQ1NM4Q (files leased by ~ZZQ6PA9 and ~FP0SDK3); patch at the coordinator scratchpad mq1nm4q-deferred-read-only.patch. Needed before switching the owner's MCP server from frob-v1 serve (v1 exposes frob_doable_tickets).
