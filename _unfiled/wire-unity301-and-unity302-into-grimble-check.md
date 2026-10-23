@@ -2,7 +2,8 @@
 id = "01M5HGRWG7RDR3DTS7PT08HTWJ"
 title = "Wire UNITY301 and UNITY302 into grimble-check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
