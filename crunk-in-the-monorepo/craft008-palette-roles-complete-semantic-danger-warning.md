@@ -4,11 +4,20 @@ title = "CRAFT008 palette roles complete: semantic danger/warning/success roles 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:08Z"
-updated = "2026-10-22T10:57:08Z"
+updated = "2026-10-23T01:04:42Z"
 scope = ["crates/crunk-rules/**", "docs/reference/rules/**"]
+
+[[acceptance]]
+text = "Given a palette with no danger, warning or success role in [palette.roles], when crunk check runs, then CRAFT008 reports each missing semantic role"
+bound = false
+
+[[acceptance]]
+text = "Given a palette declaring danger, warning and success roles, when crunk check runs, then CRAFT008 reports nothing"
+bound = false
 +++
 
 found while working ~DTBY8Q0; cut from its scope

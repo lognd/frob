@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a palette with no danger, warning or success role in [palette.roles], when crunk check runs, then CRAFT008 reports each missing semantic role", "Given a palette declaring danger, warning and success roles, when crunk check runs, then CRAFT008 reports nothing"]
+moved = []
+at = "2026-10-23T01:04:42Z"
+actor = "lognd"
+rev = 1
