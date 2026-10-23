@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-21T07:55:27Z"
-updated = "2026-10-23T03:50:20Z"
+updated = "2026-10-23T03:54:40Z"
 labels = ["area:crunk"]
 scope = ["crates/gob-dev/**", "docs/reference/cli/**", "docs/crunk/migration.md", "crates/frob-docgen/tests/generate.rs"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the committed page, when gen all --check runs, then it reports the page fresh"
-bound = false
+bound = true
 +++
 
 found while working ~CDYEYV6: docs/reference/cli has only any.md and frob.md; the crunk verb inventory is never generated, so docs/crunk/migration.md points at crunk --help instead of a generated page.

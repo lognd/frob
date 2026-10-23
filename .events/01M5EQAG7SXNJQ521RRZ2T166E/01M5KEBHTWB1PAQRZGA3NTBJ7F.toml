@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T03:54:40Z"
+digest = "4abeb4bcdb35c2d7628877a8c835a84478f35fb301b9ae887e2feebf7410f85b"
+exit_code = 0
+head = "34d91fcf0491bbafdd3bd76ba9b707efd9551a98"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4d7a070e-8fb1-4416-a48f-efdc3b060410 with nextest profile: default
+    Starting 1 test across 1 binary (19 tests skipped)
+        PASS [   0.021s] frob-docgen::generate committed_crunk_cli_page_is_fresh_and_has_its_verbs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 19 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen --test generate committed_crunk_cli_page_is_fresh_and_has_its_verbs"
+size = 923
+status = "measured"
+test_count = 1
+tests_digest = "ce200083e476b163b994bede35b21861d9051667da8d33e593df17bf30c87e3a"
+at = "2026-10-23T03:54:40Z"
+actor = "lognd"
+rev = 1
