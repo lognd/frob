@@ -19,6 +19,7 @@ use crate::ast::{
 use crate::claim::Verdict;
 use crate::fold::{LABELS, TRUST_LEVELS};
 use crate::model::{EntityRec, Index, LoadedRoot, ModelFiles, Via, load_roots, root_list};
+use crate::refspec::malformed_ref;
 use crate::span::Span;
 use crate::text::{canonical_level, clause_key, clause_text, selector_text};
 
@@ -1467,6 +1468,13 @@ impl<'a> Checker<'a> {
         if kind.as_deref() == Some("test") && !has("runnable") {
             let msg = format!("test `{}` needs `runnable SELECTOR`", e.name.text);
             self.emit("MDL014", None, rec.file, e.name.span, msg, anchor);
+        }
+        for c in &e.clauses {
+            if let ClauseKind::Ref(s) = &c.kind
+                && let Some(msg) = malformed_ref(&s.value)
+            {
+                self.emit("MDL014", None, rec.file, s.span, msg, anchor);
+            }
         }
         let mut seen: Vec<String> = Vec::new();
         for c in &e.clauses {

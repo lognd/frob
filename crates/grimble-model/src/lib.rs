@@ -42,6 +42,7 @@ pub mod keywords;
 pub mod lex;
 pub mod model;
 pub mod parse;
+pub mod refspec;
 pub mod rules;
 pub mod span;
 pub mod text;

@@ -31,6 +31,7 @@
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 
 pub mod ack;
+pub mod anchors;
 pub mod caps;
 pub mod code;
 pub mod directives;

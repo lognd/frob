@@ -9,6 +9,7 @@ use gob_ir::{owner_of_unit, select};
 use gob_walk::{EntityName, Selector, select_files};
 use grimble_model::ast::EntityKind;
 
+use crate::anchors::{ROW_KIND, row_anchors};
 use crate::code::{Code, CodeFile, unit_kind};
 use crate::directives::CodeDirective;
 use crate::model::{Clause, Entity, Model};
@@ -66,6 +67,34 @@ fn path_of_symref(text: &str) -> &str {
     path.split("::").next().unwrap_or(path)
 }
 
+/// The table-row ids of a markdown `file` that `text` (`path#anchor` or `path::anchor`) names.
+fn row_hits(file: &CodeFile, units: &[crate::code::Unit], text: &str) -> Vec<UnitHit> {
+    let Some(at) = text.find(['#', ':']) else {
+        return Vec::new();
+    };
+    let anchor = text[at..].trim_start_matches(['#', ':']);
+    if file.language != "markdown" || anchor.is_empty() {
+        return Vec::new();
+    }
+    let prefix = format!("{}::", file.path);
+    let headings: Vec<String> = units
+        .iter()
+        .filter_map(|u| u.symref.strip_prefix(&prefix).map(str::to_owned))
+        .collect();
+    let Some(src) = file.source() else {
+        return Vec::new();
+    };
+    if !row_anchors(&src, &headings).iter().any(|a| a == anchor) {
+        return Vec::new();
+    }
+    tracing::debug!(path = %file.path, anchor, "ref resolved to a table-row id");
+    vec![UnitHit {
+        symref: format!("{prefix}{anchor}"),
+        kind: ROW_KIND.to_owned(),
+        status: Status::Must,
+    }]
+}
+
 /// Resolve `text` (`path::qualname` or `path#slug`): exact spelling, then the unique-suffix rule.
 pub fn resolve_symref(code: &Code, text: &str) -> Resolution {
     let path = path_of_symref(text);
@@ -89,6 +118,9 @@ pub fn resolve_symref(code: &Code, text: &str) -> Resolution {
         .collect();
     let mut hits = exact;
     hits.dedup_by(|a, b| a.symref == b.symref);
+    if hits.is_empty() {
+        hits = row_hits(file, &units, text);
+    }
     if hits.is_empty()
         && let (Some(folded), Ok(sel)) = (file.folded(), Selector::parse(&format!("{text:?}")))
     {
