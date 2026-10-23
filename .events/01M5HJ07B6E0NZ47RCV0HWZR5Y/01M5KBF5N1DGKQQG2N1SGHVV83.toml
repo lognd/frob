@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T03:02:12Z"
+digest = "7357da4ca321071793dc7ef13af972754d71072f2b6806100a9f2880ebf4041c"
+exit_code = 0
+head = "3a777ebeb61b8d2f6d08f84a3e08d388e1d1488e"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dd58079c-0bad-4cec-a100-857d1b28b6dd with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.005s] grimble-check::coh002_match match_arms_are_counted_as_decisions
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test coh002_match match_arms_are_counted_as_decisions"
+size = 620
+status = "measured"
+test_count = 1
+tests_digest = "877be7e06ae60c3239c5a0a47349fecdadd8b7006a2e9f672b011a1ed4448543"
+at = "2026-10-23T03:02:12Z"
+actor = "lognd"
+rev = 1
