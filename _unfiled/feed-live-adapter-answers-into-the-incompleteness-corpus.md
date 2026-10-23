@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T09:52:03Z"
-updated = "2026-10-23T05:26:51Z"
-scope = ["crates/gob-check/**", "crates/gob-testsupport/**"]
+updated = "2026-10-23T05:37:46Z"
+scope = ["crates/gob-check/**", "crates/gob-testsupport/**", "docs/design/testing.md"]
 
 [[acceptance]]
 text = "a test runs the real adapters over the incompleteness oracle corpus and produces the observed answers"
