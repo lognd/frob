@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T00:00:32Z"
+updated = "2026-10-23T00:00:42Z"
 scope = ["crates/grimble-check/**", "docs/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given no [coh] table, when grimble check runs, then COH002 uses the built-in default vocabularies"
-bound = false
+bound = true
 +++
 
 COH002 is a detector library only; effect and trivial vocabularies are hardcoded defaults. Declare the rule and expose the vocabularies in config.
