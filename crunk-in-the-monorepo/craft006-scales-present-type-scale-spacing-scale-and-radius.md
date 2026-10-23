@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:07Z"
-updated = "2026-10-23T00:28:33Z"
-scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk/tests/query_parity.rs"]
+updated = "2026-10-23T00:28:35Z"
+scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk/tests/query_parity.rs", "crates/crunk/tests/parity/compare.rs"]
 
 [[acceptance]]
 text = "Given a crunk project with no type scale, spacing scale or radius policy declared, when crunk check runs, then CRAFT006 reports each missing scale and names the paired SLOP022 or TYPE rule"
