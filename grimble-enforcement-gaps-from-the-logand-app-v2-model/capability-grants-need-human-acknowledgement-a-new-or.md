@@ -2,7 +2,8 @@
 id = "01M4GYBNW01DT1MJ6NJN2GX6NN"
 title = "Capability grants need human acknowledgement: a new or widened may grant is a finding until acked by an attester, so agents cannot self-approve the ceilings they are checked against"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
