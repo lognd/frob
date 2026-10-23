@@ -2,7 +2,8 @@
 id = "01M5F0111KG4GZSMSS7PX9D61N"
 title = "grimble-ci: wire analyze into a product; extract shared verdict type from grimble-arch"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
