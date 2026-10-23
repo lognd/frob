@@ -1,0 +1,11 @@
+kind = "create"
+title = "frob-check rule_matrix tests fail at baseline (markdown COV001/DOC001 cells, DOC001 island garbage probe)"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-check/tests/**"]
+acceptance = ["Given the frob-check rule_matrix tests, when they run, then every_universal_frob_rule_fills_the_matrix and garbage_input_never_panics_and_stays_unresolved pass"]
+body = "Found while working 01M5NFNVB515TW2DH23FSH0MZS. Failing at baseline: COV001/DOC001 markdown cell expects clean but the capability matrix derives notapplicable; DOC001 island garbage probe reports neither Unresolved nor NotApplicable."
+at = "2026-10-23T23:26:32Z"
+actor = "lognd"
+rev = 1
