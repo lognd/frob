@@ -618,7 +618,7 @@
         },
         "exclude": {
           "default": [],
-          "description": "Glob patterns of paths no rule inspects. Generated report directories (coverage HTML,\n`htmlcov`, `playwright-report`) are skipped by default; a `!dir/` entry such as\n`\"!coverage/\"` removes that default so the directory is walked again.",
+          "description": "Glob patterns of paths no rule inspects.",
           "items": {
             "type": "string"
           },
