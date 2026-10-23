@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T09:58:42Z"
-updated = "2026-10-23T01:58:39Z"
+updated = "2026-10-23T01:58:45Z"
 scope = ["crates/grimble-check/**", "crates/grimble-lints/**", "docs/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a Unity C# file that applies a Rigidbody force from Update (UNITY302 needs no project settings), when grimble check runs, then UNITY302 is reported through a registered rule with a docs page."
-bound = false
+bound = true
 +++
 
 Found while working ~3XRQ6RM. grimble_lints::unity_input::scan and unity_physics::scan are detector libraries only. Declare UNITY301/UNITY302 as #[rule]s with mdtest pages, add a pass (read ProjectSettings/ProjectSettings.asset via unity_input::active_input_handler; not_applicable when absent), and wire into grimble-check product, host and report cache like PATH/TIME.

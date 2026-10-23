@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T01:58:45Z"
+digest = "2a28dda4bc1a3f6f7b511f7d557651c3ccd74c0bb3cdf51cdeb253b04a7926f7"
+exit_code = 0
+head = "62dd33f2d31524d695322b0061e391b1e42f1ae3"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 53.53s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d0e1fcaa-a61c-45b1-8047-05df0cd2dfcb with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.081s] grimble-check::unity_project_rules a_force_from_update_reports_unity302
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.082s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test unity_project_rules a_force_from_update_reports_unity302"
+size = 613
+status = "measured"
+test_count = 1
+tests_digest = "3d10af2d17210953249594fa98a8596b9d81da8486bd1479b7cca6c17aa874df"
+at = "2026-10-23T01:58:45Z"
+actor = "lognd"
+rev = 1
