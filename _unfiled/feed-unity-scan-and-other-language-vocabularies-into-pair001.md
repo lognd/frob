@@ -2,12 +2,12 @@
 id = "01M5K3RAZWM6Z4GWWQ716JGSGC"
 title = "Feed unity::scan and other language vocabularies into PAIR001"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T00:49:41Z"
-updated = "2026-10-23T02:53:04Z"
+updated = "2026-10-23T02:53:18Z"
 scope = ["crates/grimble-lints/**"]
 
 [[acceptance]]
