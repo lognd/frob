@@ -2,7 +2,8 @@
 id = "01M5HGCQ5CDB7HEEFGTRVP9DA6"
 title = "Feed live adapter answers into the incompleteness corpus observed column"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
