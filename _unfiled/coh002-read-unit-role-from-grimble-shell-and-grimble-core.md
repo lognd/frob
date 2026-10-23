@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T02:29:46Z"
-scope = ["crates/grimble-check/**", "docs/**"]
+updated = "2026-10-23T02:31:37Z"
+scope = ["crates/grimble-check/**", "docs/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "Given a unit carrying a grimble:shell or grimble:core directive, when COH002 runs, then the role is read from the directive without the caller supplying it"
