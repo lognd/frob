@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T06:32:39Z"
-updated = "2026-10-23T06:47:24Z"
+updated = "2026-10-23T06:55:56Z"
 scope = ["crates/frob-check/**", "crates/gob-check/src/status.rs"]
 
 [[acceptance]]
