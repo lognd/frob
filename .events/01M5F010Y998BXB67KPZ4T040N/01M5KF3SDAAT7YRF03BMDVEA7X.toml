@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T04:08:10Z"
+digest = "4154e52d17789380c49c33764a4c4f2b06a9dc321cf707a9a3fab259358dc27c"
+exit_code = 0
+head = "69b81869eb4801595bdcc02b5782e02425e7c7a0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 55136dec-b73a-42ab-8862-55334d1e79be with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.005s] grimble-ci::rules known_frob_verbs_stay_quiet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-ci --test rules known_frob_verbs_stay_quiet"
+size = 534
+status = "measured"
+test_count = 1
+tests_digest = "249eea03310ea065161f0b6247fd95b76c8315be510f4b337942f56b527902e8"
+at = "2026-10-23T04:08:10Z"
+actor = "lognd"
+rev = 1
