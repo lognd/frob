@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a Unity C# class that subscribes in OnEnable and never unsubscribes in OnDisable, when PAIR001 runs, then it is reported", "Given a Unity class that pairs OnEnable and OnDisable correctly, when PAIR001 runs, then nothing is reported"]
+moved = []
+at = "2026-10-23T02:53:04Z"
+actor = "lognd"
+rev = 1
