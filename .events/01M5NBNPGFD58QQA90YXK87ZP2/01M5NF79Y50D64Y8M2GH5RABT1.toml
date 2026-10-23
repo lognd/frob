@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T22:46:39Z"
+digest = "45d093d1f13a6b7b274d48610d08ba754f904b31808e9b90c3e07569b9c70cfe"
+exit_code = 0
+head = "752a0514a35340a595a79f5e810c0f1cf7ae5c61"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 47.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aabfaaad-b478-4203-b92c-6a0dd7d8d0e2 with nextest profile: default
+    Starting 1 test across 1 binary (267 tests skipped)
+        PASS [   0.005s] gob-symbols::it doc_claims::lib_docs_do_not_claim_terms_are_uncached
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 267 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols --test it lib_docs_do_not_claim_terms_are_uncached"
+size = 680
+status = "measured"
+test_count = 1
+tests_digest = "58731183f318b6056a989397c19b43deff94b271c02735a45ba17a20738ec2a9"
+at = "2026-10-23T22:46:39Z"
+actor = "lognd"
+rev = 1
