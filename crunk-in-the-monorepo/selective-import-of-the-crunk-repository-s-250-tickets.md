@@ -2,7 +2,8 @@
 id = "01M43AVMN1DWBVTYW37JBTM6EF"
 title = "Selective import of the crunk repository's 250 tickets (dependent ticket; imports nothing yet)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
