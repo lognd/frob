@@ -2,7 +2,8 @@
 id = "01M5NFNV4SC3DTH5PMHP4DMPY9"
 title = "DOC006 should adopt the shared frob-doc MOVED.toml parser"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
