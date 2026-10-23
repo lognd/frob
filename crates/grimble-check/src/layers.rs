@@ -15,12 +15,14 @@
 //! A callee name defined in several files is placed only when every definition agrees.
 
 // frob:ticket 01M5HJDX1Q27XGZ77ACWXQ03KP
+// frob:ticket 01M5M1TVWKJPZX3BMF736VJAHT
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_symbols::Folded;
 use gob_walk::Selector;
-use gob_walk::selector::{AttrPred, Glob, Leaves, Tri};
+use gob_walk::selector::Tri;
+use grimble_bind::owner::PathLeaves;
 use grimble_model::ModelFiles;
 use grimble_model::ast::{ClauseKind, EntityKind, Value};
 use grimble_model::model::{Index, load_roots};
@@ -69,33 +71,6 @@ pub enum FileLayer {
     Conflict(Vec<String>),
     /// No layered node surely owns the file.
     Unowned,
-}
-
-/// Selector leaves for a bare repo path: only globs decide, everything else is unknown.
-struct PathLeaves<'a>(&'a str);
-
-impl Leaves for PathLeaves<'_> {
-    fn glob(&self, glob: &Glob) -> Tri {
-        if !glob.matches_path(self.0) {
-            Tri::No
-        } else if glob.qual().is_some() {
-            Tri::Unknown
-        } else {
-            Tri::Yes
-        }
-    }
-
-    fn lang(&self, _lang: &str) -> Tri {
-        Tri::Unknown
-    }
-
-    fn kind(&self, _kinds: &[String]) -> Tri {
-        Tri::Unknown
-    }
-
-    fn attr(&self, _pred: &AttrPred) -> Tri {
-        Tri::Unknown
-    }
 }
 
 /// The layer a node's clauses declare: none, one, or `Err` when two values disagree or one is not a number.
@@ -180,7 +155,7 @@ impl ModelLayers {
     /// The layer the model gives the file at `path`.
     #[must_use]
     pub fn layer_of(&self, path: &str) -> FileLayer {
-        let leaves = PathLeaves(path);
+        let leaves = PathLeaves::new(path);
         let owners: Vec<&LayeredNode> = self
             .nodes
             .iter()

@@ -2,6 +2,7 @@
 //! (rank 3 is the inference stub and contributes nothing yet).
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
+// frob:ticket 01M5M1TVWKJPZX3BMF736VJAHT
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -73,9 +74,32 @@ pub struct Owners {
     pub files: BTreeMap<String, FileOwn>,
 }
 
-struct PathLeaves<'a> {
+/// Selector leaves for a repo path: only globs (and the language tag, when known) decide.
+///
+/// Shared by owner resolution here and by the layer source of `grimble-check`, so the two never
+/// disagree on what a selector surely matches. A glob with a qualifier is Unknown; kind and
+/// attribute leaves are always Unknown.
+#[derive(Debug, Clone, Copy)]
+pub struct PathLeaves<'a> {
     path: &'a str,
-    file: &'a CodeFile,
+    lang: Option<&'a str>,
+}
+
+impl<'a> PathLeaves<'a> {
+    /// Leaves for `path` with no language known: a `lang` leaf is Unknown.
+    #[must_use]
+    pub fn new(path: &'a str) -> Self {
+        Self { path, lang: None }
+    }
+
+    /// Leaves for `path` whose language tag is `lang`: a `lang` leaf is decided by equality.
+    #[must_use]
+    pub fn with_lang(path: &'a str, lang: &'a str) -> Self {
+        Self {
+            path,
+            lang: Some(lang),
+        }
+    }
 }
 
 impl Leaves for PathLeaves<'_> {
@@ -90,7 +114,8 @@ impl Leaves for PathLeaves<'_> {
     }
 
     fn lang(&self, lang: &str) -> Tri {
-        Tri::from_bool(self.file.hint.tag() == lang)
+        self.lang
+            .map_or(Tri::Unknown, |l| Tri::from_bool(l == lang))
     }
 
     fn kind(&self, _kinds: &[String]) -> Tri {
@@ -103,10 +128,7 @@ impl Leaves for PathLeaves<'_> {
 }
 
 fn claimants(all: &[(EntityName, Selector)], file: &CodeFile) -> Vec<(EntityName, Selector)> {
-    let leaves = PathLeaves {
-        path: &file.path,
-        file,
-    };
+    let leaves = PathLeaves::with_lang(&file.path, file.hint.tag());
     all.iter()
         .filter(|(_, sel)| sel.truth(&leaves) != Tri::No)
         .cloned()
@@ -288,6 +310,26 @@ mod tests {
     use gob_walk::owner::resolve_owner;
 
     use super::*;
+
+    // frob:tests crates/grimble-bind/src/owner.rs::PathLeaves.new
+    #[test]
+    fn path_leaves_decide_globs_and_leave_the_rest_unknown() {
+        let leaves = PathLeaves::new("src/a/b.rs");
+        let truth = |t: &str| Selector::parse(t).unwrap().truth(&leaves);
+        assert_eq!(truth(r#""src/**""#), Tri::Yes);
+        assert_eq!(truth(r#""docs/**""#), Tri::No);
+        assert_eq!(truth("lang(rust)"), Tri::Unknown);
+        assert_eq!(truth(r#""src/**" & lang(rust)"#), Tri::Unknown);
+    }
+
+    // frob:tests crates/grimble-bind/src/owner.rs::PathLeaves.with_lang
+    #[test]
+    fn path_leaves_with_lang_decide_the_language_leaf() {
+        let leaves = PathLeaves::with_lang("a.rs", "rust");
+        let truth = |t: &str| Selector::parse(t).unwrap().truth(&leaves);
+        assert_eq!(truth("lang(rust)"), Tri::Yes);
+        assert_eq!(truth("lang(python)"), Tri::No);
+    }
 
     fn cand(e: &str, spec: [i32; 6], status: MatchStatus) -> Candidate {
         Candidate {
