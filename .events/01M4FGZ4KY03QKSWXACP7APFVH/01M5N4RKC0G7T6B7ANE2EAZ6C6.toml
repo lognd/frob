@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T19:45:00Z"
+digest = "8e24e073df1c98baf96b74ab8ea017ef892e10e1822aa5230ded037707d28dac"
+exit_code = 0
+head = "a0a22938fb7bac55956e10b438f4f6e72c6ca4a1"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 46.87s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 88034e14-63df-40dd-a4e7-bc874246e9c6 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.083s] grimble-bind::vmodel_runnables a_vitest_selector_and_cargo_selectors_bind
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.083s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test vmodel_runnables a_vitest_selector"
+size = 771
+status = "measured"
+test_count = 1
+tests_digest = "540169e50ebb6729671b6849cfd3a20366e2a3292c03aa2c4a98ae4578c395c0"
+at = "2026-10-23T19:45:00Z"
+actor = "lognd"
+rev = 1
