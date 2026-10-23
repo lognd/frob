@@ -227,7 +227,7 @@ fn slug(text: &str) -> String {
     out.trim_end_matches('_').to_owned()
 }
 
-/// `literal` cut to [`QUOTE_MAX`] characters with an ellipsis, for a finding.
+/// `literal` cut to `QUOTE_MAX` characters with an ellipsis, for a finding.
 #[must_use]
 pub fn quote(literal: &str) -> String {
     if literal.chars().count() <= QUOTE_MAX {
