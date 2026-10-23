@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:07Z"
-updated = "2026-10-23T00:33:08Z"
+updated = "2026-10-23T00:33:09Z"
 scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk/tests/query_parity.rs", "crates/crunk/tests/parity/compare.rs", "tests/crunk-parity/divergences.toml"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a project declaring all three scales, when crunk check runs, then CRAFT006 reports nothing"
-bound = false
+bound = true
 +++
 
 found while working ~DTBY8Q0; cut from its scope
