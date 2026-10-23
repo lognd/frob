@@ -550,6 +550,10 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
             ("template-injection", "CI007"),
             ("artipacked", "CI010"),
             ("excessive-permissions", "CI003"),
+            // frob:ticket 01M5KYF5Z489MSRNAX1JCTEHPQ
+            // `secrets: inherit` and archived action repositories; both declared by grimble-ci.
+            ("secrets-inherit", "CI013"),
+            ("archived-uses", "CI015"),
         ]),
         // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
         // The crunk web-CSS family: specificity wars, id selectors and `!important` (all Advisory).
@@ -584,14 +588,14 @@ pub(crate) fn default_id_map(parser: ToolParser) -> BTreeMap<&'static str, &'sta
 // frob:ticket 01M5F0A96X8KCH10HNHTXCDEKR
 /// True when `id` is a rule a bound stage can report but another product declares.
 ///
-/// `CI003` is declared by `grimble-ci`; the zizmor stage still raises it here, so `--only CI003`
-/// must stay a known name even though no frob declaration carries it.
+/// `CI003`, `CI013` and `CI015` are declared by `grimble-ci`; the zizmor stage still raises them
+/// here, so `--only CI013` must stay a known name even though no frob declaration carries it.
 pub(crate) fn is_sibling_bound_id(id: &str) -> bool {
     SIBLING_OWNED.contains(&id)
 }
 
 /// Rule ids a frob stage raises that a sibling product declares.
-const SIBLING_OWNED: [&str; 1] = ["CI003"];
+const SIBLING_OWNED: [&str; 3] = ["CI003", "CI013", "CI015"];
 
 /// Rule used for a tool id that no map covers.
 fn fallback(parser: ToolParser) -> &'static str {
@@ -1033,6 +1037,54 @@ mod tests {
                 ("TOOL002".to_owned(), Severity::Advisory)
             ]
         );
+    }
+
+    // frob:ticket 01M5KYF5Z489MSRNAX1JCTEHPQ
+    // frob:tests crates/gob-check/src/tool_parse.rs::default_id_map
+    #[test]
+    fn zizmor_secrets_inherit_and_archived_uses_map_to_ci013_and_ci015() {
+        let st = stage(ToolParser::ZizmorJsonV1);
+        let raw = |id: &str| RawFinding {
+            tool_id: id.to_owned(),
+            ..parse(ToolParser::ZizmorJsonV1, ZIZMOR).expect("parse")[0].clone()
+        };
+        let got: Vec<_> = ["secrets-inherit", "archived-uses", "no-such-audit"]
+            .iter()
+            .filter_map(|id| classify(&st, &raw(id)))
+            .map(|(id, sev)| (id.to_string(), sev))
+            .collect();
+        assert_eq!(
+            got,
+            [
+                ("CI013".to_owned(), Severity::Advisory),
+                ("CI015".to_owned(), Severity::Advisory),
+                ("TOOL002".to_owned(), Severity::Advisory)
+            ]
+        );
+        assert!(is_sibling_bound_id("CI013") && is_sibling_bound_id("CI015"));
+        let mut over = stage(ToolParser::ZizmorJsonV1);
+        over.id_map
+            .insert("archived-uses".to_owned(), "CI001".to_owned());
+        assert_eq!(
+            classify(&over, &raw("archived-uses")).map(|c| c.0.to_string()),
+            Some("CI001".to_owned())
+        );
+    }
+
+    // frob:ticket 01M5KYF5Z489MSRNAX1JCTEHPQ
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
+    #[test]
+    fn every_actionlint_kind_maps_to_ci014() {
+        let st = stage(ToolParser::ActionlintJson);
+        let found = parse(ToolParser::ActionlintJson, ACTIONLINT).expect("parse");
+        for kind in ["syntax-check", "expression", "events", "some-future-kind"] {
+            let raw = RawFinding {
+                tool_id: kind.to_owned(),
+                ..found[1].clone()
+            };
+            let (id, sev) = classify(&st, &raw).expect("classified");
+            assert_eq!((id.as_str(), sev), ("CI014", Severity::Warn), "{kind}");
+        }
     }
 
     #[test]

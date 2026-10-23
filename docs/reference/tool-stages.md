@@ -58,6 +58,8 @@ With a `parser` the stage exit status no longer decides: tools exit nonzero when
 | zizmor | `dangerous-triggers` | `CI006` | Error |
 | zizmor | `template-injection` | `CI007` | Error |
 | zizmor | `artipacked` | `CI010` | Advisory |
+| zizmor | `secrets-inherit` | `CI013` (declared by grimble-ci) | Advisory |
+| zizmor | `archived-uses` | `CI015` (declared by grimble-ci) | Advisory |
 | zizmor | any other id | `TOOL002` | Advisory |
 | actionlint | every kind | `CI014` | Warn |
 | stylelint | `no-descending-specificity`, `selector-max-compound-selectors`, `selector-max-specificity` | `WCSS001` | Advisory |
