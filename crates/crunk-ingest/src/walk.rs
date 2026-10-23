@@ -24,13 +24,16 @@ use crate::parse::{ParsedCss, parse_css_source};
 pub const INGEST_VERSION: u32 = 1;
 
 /// Directories the ungoverned scan never enters, whatever `[org] ignore` says.
-const NOISE_DIRS: [&str; 9] = [
+///
+/// Generated report directories (`coverage`, `htmlcov`, ...) are not listed: the walk skips
+/// them through the shared `gob_walk::GENERATED_DIRS` list.
+// frob:ticket 01M5MDT81QR8F0E67N61AYZDN2
+const NOISE_DIRS: [&str; 8] = [
     "node_modules",
     "venv",
     "dist",
     "build",
     "out",
-    "coverage",
     "vendor",
     "target",
     "__pycache__",

@@ -133,6 +133,11 @@ fn source_files(root: &Path, rel: &str) -> Vec<PathBuf> {
                 continue;
             }
             if p.is_dir() {
+                // frob:ticket 01M5MDT81QR8F0E67N61AYZDN2
+                if gob_walk::is_generated_dir(&p) {
+                    tracing::debug!(dir = ?p, "review: generated report directory skipped");
+                    continue;
+                }
                 walk(&p, out);
             } else {
                 out.push(p);

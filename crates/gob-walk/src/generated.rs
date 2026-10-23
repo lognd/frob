@@ -70,3 +70,10 @@ pub(crate) fn is_generated(rules: &[GeneratedDir], dir: &Path) -> bool {
     }
     hit
 }
+
+// frob:ticket 01M5MDT81QR8F0E67N61AYZDN2
+/// True when `dir` is a default-excluded generated report directory (no `exclude` opt-ins).
+#[must_use]
+pub fn is_generated_dir(dir: &Path) -> bool {
+    is_generated(&active_rules(&[]), dir)
+}
