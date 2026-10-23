@@ -2,7 +2,8 @@
 id = "01M5K3RAZWM6Z4GWWQ716JGSGC"
 title = "Feed unity::scan and other language vocabularies into PAIR001"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
