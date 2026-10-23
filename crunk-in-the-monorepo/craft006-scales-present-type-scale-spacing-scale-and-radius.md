@@ -4,11 +4,20 @@ title = "CRAFT006 scales present: type scale, spacing scale and radius policy pr
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:07Z"
-updated = "2026-10-22T10:57:07Z"
+updated = "2026-10-23T00:15:19Z"
 scope = ["crates/crunk-rules/**", "docs/reference/rules/**"]
+
+[[acceptance]]
+text = "Given a crunk project with no type scale, spacing scale or radius policy declared, when crunk check runs, then CRAFT006 reports each missing scale and names the paired SLOP022 or TYPE rule"
+bound = false
+
+[[acceptance]]
+text = "Given a project declaring all three scales, when crunk check runs, then CRAFT006 reports nothing"
+bound = false
 +++
 
 found while working ~DTBY8Q0; cut from its scope

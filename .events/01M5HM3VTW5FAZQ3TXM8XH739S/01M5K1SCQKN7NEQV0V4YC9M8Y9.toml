@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a crunk project with no type scale, spacing scale or radius policy declared, when crunk check runs, then CRAFT006 reports each missing scale and names the paired SLOP022 or TYPE rule", "Given a project declaring all three scales, when crunk check runs, then CRAFT006 reports nothing"]
+moved = []
+at = "2026-10-23T00:15:19Z"
+actor = "lognd"
+rev = 1
