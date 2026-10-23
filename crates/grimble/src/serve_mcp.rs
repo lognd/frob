@@ -35,10 +35,10 @@ pub fn run() -> i32 {
     }
 }
 
-/// The process arguments after the program name, lossily decoded.
+/// The process arguments after the program name; non-Unicode arguments are dropped.
 pub fn process_args() -> Vec<String> {
     std::env::args_os()
         .skip(1)
-        .map(|a: OsString| a.to_string_lossy().into_owned())
+        .filter_map(|a: OsString| a.into_string().ok())
         .collect()
 }

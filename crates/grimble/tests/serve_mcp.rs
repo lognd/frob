@@ -13,3 +13,10 @@ fn only_serve_with_mcp_is_taken() {
     assert!(!requested(&["check", "--mcp"]));
     assert!(!requested::<&str>(&[]));
 }
+
+// frob:tests crates/grimble/src/serve_mcp.rs::process_args
+#[test]
+fn process_args_exclude_the_program_name() {
+    let args = grimble::serve_mcp::process_args();
+    assert!(!args.iter().any(|a| a.ends_with("serve_mcp")));
+}

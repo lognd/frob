@@ -91,6 +91,8 @@ fn notifications_get_no_reply_and_malformed_input_gets_an_error() {
 }
 
 // frob:tests crates/gob-serve/src/lib.rs::Server.handle_line
+// frob:tests crates/gob-serve/src/lib.rs::Tools.list
+// frob:tests crates/gob-serve/src/lib.rs::Tools.call
 #[test]
 fn unknown_tool_and_bad_arguments_are_invalid_params() {
     let reply = ask("tools/call", Some(TOKEN), &json!({ "name": "rm" }));

@@ -223,7 +223,7 @@ impl<T: Tools> Server<T> {
             })),
             "ping" => Ok(json!({})),
             "tools/list" => Ok(json!({
-                "tools": self.tools.list().iter().map(ToolSpec::listing).collect::<Vec<_>>(),
+                "tools": self.tools.list().iter().map(|spec| spec.listing()).collect::<Vec<_>>(),
             })),
             "tools/call" => self.call(params).map_err(|m| (CODE_INVALID_PARAMS, m)),
             _ => Err((CODE_METHOD_NOT_FOUND, "method not found".to_owned())),
