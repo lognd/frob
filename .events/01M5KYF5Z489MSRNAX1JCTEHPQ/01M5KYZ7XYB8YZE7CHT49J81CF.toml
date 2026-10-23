@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["zizmor secrets-inherit maps to CI013 and archived-uses to CI015 in gob-check tool_parse, with tests", "actionlint findings map to grimble CI014 where applicable, with a test"]
+moved = []
+at = "2026-10-23T08:45:19Z"
+actor = "lognd"
+rev = 1
