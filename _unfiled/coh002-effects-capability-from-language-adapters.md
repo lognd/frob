@@ -4,10 +4,19 @@ title = "COH002: effects capability from language adapters"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-22T10:20:11Z"
-scope = ["crates/grimble-check/**", "docs/**"]
+updated = "2026-10-23T08:15:20Z"
+scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
+
+[[acceptance]]
+text = "COH002 decides effects from a language-adapter capability rather than the callee-name vocabulary"
+bound = false
+
+[[acceptance]]
+text = "COH002 fire and no-fire tests exist for at least two adapter languages, and unresolved when an adapter lacks the capability"
+bound = false
 +++
 
 Replace the callee-name vocabulary with a real effects capability from the adapters.

@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["COH002 decides effects from a language-adapter capability rather than the callee-name vocabulary", "COH002 fire and no-fire tests exist for at least two adapter languages, and unresolved when an adapter lacks the capability"]
+moved = []
+at = "2026-10-23T08:15:20Z"
+actor = "lognd"
+rev = 1
