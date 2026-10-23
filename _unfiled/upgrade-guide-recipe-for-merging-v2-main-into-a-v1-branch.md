@@ -2,7 +2,8 @@
 id = "01M4GK56B7ADTTC87X31CR03NE"
 title = "Upgrade guide: recipe for merging v2 main into a v1 branch (ticket tree rename conflicts: take main's tickets/ tree, or git merge -X no-renames)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
