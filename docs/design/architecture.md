@@ -100,6 +100,15 @@ without it).
    `size_cap` it is not reported either. A file claimed by an adapter
    (`.md`, `.rs`, `.toml`) that cannot be decoded is always reported;
    exclude it explicitly if it is generated.
+   Generated report directories are skipped by default (gob-walk
+   `GENERATED_DIRS`, defined once and shared by every product walk):
+   `coverage/` holding `lcov-report`, `prettify.js` or `base.css`, and
+   `lcov-report/`, `htmlcov/`, `playwright-report/` each holding
+   `index.html`, at any depth. The marker file keeps a hand-written
+   `src/coverage/` walked; tracked and gitignored report directories are
+   treated alike. A `[check] exclude` entry `"!coverage/"` opts that
+   default back in (the leading `!` removes the default rule of that
+   name; it is never passed to the glob matcher).
 4. Render through `gob-diagnostics`; every finding carries a remedy
    string generated from the rule's `fix_title` or `remedy` doc section.
 5. Exit code per the table in cli.md section 2: 0 ok (domain state such

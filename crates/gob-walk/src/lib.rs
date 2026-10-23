@@ -21,6 +21,7 @@ use ignore::{WalkBuilder, WalkState};
 use rayon::prelude::*;
 
 mod content;
+mod generated;
 pub mod owner;
 mod role;
 mod select;
@@ -31,6 +32,7 @@ pub use content::{
     BackendError, ContentBackend, ContentLocator, ContentReader, ContentSource, FileReader,
     install_backend,
 };
+pub use generated::{GENERATED_DIRS, GeneratedDir};
 pub use owner::{Candidate, EntityName, MatchStatus, Owner, Ownership};
 pub use role::{DEFAULT_LEDGER_DIR, FileRole, Roles};
 pub use select::{PathMatch, owner_of_path, select_files, unseen_files};
@@ -202,8 +204,9 @@ const READ_CHUNK: usize = 256;
 // frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
 /// Lists the files under the cap (path, size) and the oversized ones; reads no content.
 fn list(root: &Path, config: &WalkConfig) -> Result<(Vec<(String, u64)>, WalkResult), WalkError> {
+    let rules = generated::active_rules(&config.exclude);
     let mut ob = OverrideBuilder::new(root);
-    for glob in &config.exclude {
+    for glob in config.exclude.iter().filter(|g| !g.starts_with('!')) {
         ob.add(&format!("!{glob}"))
             .map_err(|source| WalkError::BadGlob {
                 glob: glob.clone(),
@@ -221,7 +224,11 @@ fn list(root: &Path, config: &WalkConfig) -> Result<(Vec<(String, u64)>, WalkRes
         .require_git(false)
         .follow_links(config.follow_links)
         .overrides(overrides)
-        .filter_entry(|e| !is_state_entry(e));
+        .filter_entry(move |e| {
+            let generated = e.file_type().is_some_and(|t| t.is_dir())
+                && generated::is_generated(&rules, e.path());
+            !(is_state_entry(e) || generated)
+        });
 
     let items: Mutex<Vec<Item>> = Mutex::new(Vec::new());
     let cap = config.size_cap;
@@ -458,6 +465,38 @@ mod tests {
         write(root, "src/a.rs", "a");
         let found = walk(root, &WalkConfig::default()).unwrap();
         assert_eq!(paths(&found), [".frobrc", "src/a.rs"]);
+    }
+
+    // frob:ticket 01M4GKCSFB13Y0VH1E1DDTA99H
+    // frob:tests crates/gob-walk/src/lib.rs::walk
+    #[test]
+    fn generated_report_dirs_are_skipped_by_default_and_opt_in_works() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        write(root, "coverage/index.html", "<html>");
+        write(root, "coverage/base.css", "x");
+        write(root, "coverage/lcov-report/a.js.html", "x");
+        write(root, "pkg/web/coverage/prettify.js", "x");
+        write(root, "playwright-report/index.html", "x");
+        write(root, "htmlcov/index.html", "x");
+        write(root, "src/coverage/mod.rs", "legit source");
+        write(root, "docs/htmlcov/notes.md", "no marker, kept");
+        write(root, "src/a.rs", "a");
+        let found = walk(root, &WalkConfig::default()).unwrap();
+        assert_eq!(
+            paths(&found),
+            ["docs/htmlcov/notes.md", "src/a.rs", "src/coverage/mod.rs"]
+        );
+        let cfg = WalkConfig {
+            exclude: vec!["!coverage/".into(), "!playwright-report".into()],
+            ..WalkConfig::default()
+        };
+        let binding = walk(root, &cfg).unwrap();
+        let opted = paths(&binding);
+        assert!(opted.contains(&"coverage/index.html"));
+        assert!(opted.contains(&"pkg/web/coverage/prettify.js"));
+        assert!(opted.contains(&"playwright-report/index.html"));
+        assert!(!opted.contains(&"htmlcov/index.html"));
     }
 
     #[test]
