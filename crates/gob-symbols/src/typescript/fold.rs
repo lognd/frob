@@ -219,6 +219,8 @@ struct Fold<'a> {
     /// The next call lowers its arguments to the `const_value` forms (set by the value-expression lowering).
     const_args: bool,
     ord_nodes: Vec<Option<NodeId>>,
+    /// Base type names per class or interface ordinal, for member dispatch.
+    heritage: Vec<(usize, Vec<String>)>,
     /// Enclosing units, innermost last: (ordinal, kind).
     units: Vec<(usize, Ctx)>,
     /// Binder names of the enclosing scopes (file, functions), innermost last.
@@ -596,6 +598,7 @@ fn new_fold<'a>(cx: Cx<'a>, path: &'a str, exports: ExportScan) -> Fold<'a> {
         sites: Vec::new(),
         uses: Vec::new(),
         edges: Vec::new(),
+        heritage: Vec::new(),
         exports,
         export: None,
         direct: false,
@@ -627,12 +630,13 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         sites,
         uses,
         edges,
+        heritage,
         exports,
         ..
     } = f;
     let term = cx.b.finish(root_id)?;
     let scopes = ScopeGraph::from_term(&term);
-    let v = view::build(&term, input.path, Naming::TypeScript);
+    let mut v = view::build(&term, input.path, Naming::TypeScript);
     let mut file = base_file(input, LANG);
     file.fidelity = super::FIDELITY;
     file.parse_status = view::parse_status_of(&term);
@@ -641,8 +645,9 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         sites,
         uses,
         edges,
+        heritage,
     };
-    facts.emit(&mut file, &scopes, &v);
+    facts.emit(&mut file, &scopes, &mut v);
     for (exported, local) in exports.aliases {
         file.uses.push(UseBinding {
             from_file: input.path.to_owned(),
@@ -673,12 +678,14 @@ pub(crate) struct Facts {
     sites: Vec<Site>,
     uses: Vec<PendingUse>,
     edges: Vec<String>,
+    heritage: Vec<(usize, Vec<String>)>,
 }
 
 impl Facts {
     // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
-    /// Files the imports, uses, calls and references into `file`, callers named through `v`.
-    pub(crate) fn emit(self, file: &mut FileSymbols, scopes: &ScopeGraph, v: &view::View) {
+    // frob:ticket 01M5HMPQB3WG50FBPZ3TQNJ1XC
+    /// Files the imports, uses, calls, references and base types into `file` and `v`, callers named through `v`.
+    pub(crate) fn emit(self, file: &mut FileSymbols, scopes: &ScopeGraph, v: &mut view::View) {
         let path = file.path.clone();
         let symref_of = |ord: usize| -> Option<Symref> {
             self.ord_nodes
@@ -708,6 +715,16 @@ impl Facts {
                 push_site(file, scopes, site, caller);
             }
         }
+        let bases: Vec<(Symref, Vec<String>)> = self
+            .heritage
+            .into_iter()
+            .filter_map(|(ord, names)| symref_of(ord).map(|s| (s, names)))
+            .collect();
+        for (symref, names) in bases {
+            if let Some(e) = v.extras.iter_mut().find(|e| e.symref == symref) {
+                e.facts.bases = names;
+            }
+        }
     }
 }
 
@@ -734,6 +751,8 @@ impl Facts {
             u
         }));
         self.edges.extend(other.edges);
+        self.heritage
+            .extend(other.heritage.into_iter().map(|(o, b)| (at(o), b)));
     }
 
     // frob:ticket 01M48E13W9MYK85YTCWSSRS50S
@@ -744,6 +763,7 @@ impl Facts {
             sites: Vec::new(),
             uses: Vec::new(),
             edges: Vec::new(),
+            heritage: Vec::new(),
         }
     }
 
@@ -780,6 +800,7 @@ pub(crate) fn fold_island(
         mut sites,
         uses,
         edges,
+        heritage,
         ..
     } = f;
     host.unnest(cx);
@@ -800,6 +821,7 @@ pub(crate) fn fold_island(
             sites,
             uses,
             edges,
+            heritage,
         },
     })
 }
@@ -886,14 +908,14 @@ impl<'a> Fold<'a> {
     }
 
     /// The declared class type of `name` when its innermost binding is an annotated parameter (`any` included).
-    // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
+    // frob:ticket 01M5HMPQB3WG50FBPZ3TQNJ1XC
     fn annotation_of(&self, name: &str) -> Option<&str> {
         let i = self.bound.iter().rposition(|s| s.contains(name))?;
         self.annotated[i].get(name).map(String::as_str)
     }
 
     /// The simple-identifier parameters of `f` annotated with a plain or dotted class name or `any`; a name the body redeclares (`var`, `function`) is left out.
-    // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
+    // frob:ticket 01M5HMPQB3WG50FBPZ3TQNJ1XC
     fn param_annotations(&self, f: Node<'_>, binders: &[String]) -> HashMap<String, String> {
         let mut out = HashMap::new();
         let Some(params) = f.child_by_field_name("parameters") else {
@@ -1137,7 +1159,7 @@ impl<'a> Fold<'a> {
             "member_expression" if self.expr => self.member(n, depth),
             "function_declaration" | "generator_function_declaration" => self.func_decl(n, depth),
             "class_declaration" | "abstract_class_declaration" => self.class_unit(n, depth),
-            "interface_declaration" => self.simple_unit(n, "interface", depth),
+            "interface_declaration" => self.interface_unit(n, depth),
             "type_alias_declaration" => self.simple_unit(n, "type", depth),
             "enum_declaration" => self.simple_unit(n, "enum", depth),
             "internal_module" => self.namespace_unit(n, depth),
@@ -2102,6 +2124,10 @@ impl<'a> Fold<'a> {
         let sig = self.with_expr(false, |s| s.sig_lits(n, &[body]))?;
         let vis = self.scope_vis(&name, export.is_some());
         let ord = self.alloc();
+        let bases = Self::class_bases(n, self.cx.text);
+        if !bases.is_empty() {
+            self.heritage.push((ord, bases));
+        }
         self.units.push((ord, Ctx::Class));
         let members: Vec<Node<'_>> = children(body).into_iter().filter(Node::is_named).collect();
         let kids = self.seq(&members, depth + 1, false);
@@ -2117,6 +2143,81 @@ impl<'a> Fold<'a> {
             decorators,
         };
         self.make_unit(ord, &head, doc, sig, vec![group], &[])
+    }
+
+    /// The base type names a class declares: its `extends` expression, then its `implements` list.
+    fn class_bases(n: Node<'_>, text: &str) -> Vec<String> {
+        children(n)
+            .into_iter()
+            .filter(|c| c.kind() == "class_heritage")
+            .flat_map(children)
+            .flat_map(children)
+            .filter_map(|b| base_name(b, text))
+            .collect()
+    }
+
+    /// An interface: a signature unit holding one `method` unit per method signature, with its `extends` list as bases.
+    // frob:ticket 01M5HMPQB3WG50FBPZ3TQNJ1XC
+    fn interface_unit(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
+        let export = self.take_export();
+        let (Some(name_node), Some(body)) =
+            (n.child_by_field_name("name"), n.child_by_field_name("body"))
+        else {
+            return self.generic(n, depth);
+        };
+        let doc = self.take_doc()?;
+        let name = unit_name(self.t(name_node));
+        let sig = self.with_expr(false, |s| s.sig_lits(n, &[]))?;
+        let ord = self.alloc();
+        let bases: Vec<String> = children(n)
+            .into_iter()
+            .filter(|c| c.kind() == "extends_type_clause")
+            .flat_map(children)
+            .filter_map(|b| base_name(b, self.cx.text))
+            .collect();
+        if !bases.is_empty() {
+            self.heritage.push((ord, bases));
+        }
+        self.units.push((ord, Ctx::Function));
+        self.scan_calls(n);
+        let mut members = Vec::new();
+        for m in children(body)
+            .into_iter()
+            .filter(|c| c.kind() == "method_signature")
+        {
+            members.push(self.signature_unit(m)?);
+        }
+        self.units.pop();
+        let group = self
+            .cx
+            .op(Operator::group(GroupOrder::Sequence), body, &members)?;
+        let head = UnitHead {
+            kind: "interface",
+            vis: self.scope_vis(&name, export.is_some()),
+            name,
+            span: export.unwrap_or((n.start_byte(), n.end_byte())),
+            decorators: Vec::new(),
+        };
+        self.make_unit(ord, &head, doc, sig, vec![group], &[])
+    }
+
+    /// One interface method signature `m(a: A): R;` as a body-less `method` unit.
+    // frob:ticket 01M5HMPQB3WG50FBPZ3TQNJ1XC
+    fn signature_unit(&mut self, m: Node<'_>) -> R<NodeId> {
+        let name_node = m.child_by_field_name("name").unwrap_or(m);
+        let name = self.member_name(name_node);
+        let mut sig = vec![self.cx.lit("name", &name, name_node)?];
+        sig.extend(self.with_expr(false, |s| s.sig_lits(m, &[name_node]))?);
+        let ord = self.alloc();
+        let body = self.cx.op(Operator::group(GroupOrder::Sequence), m, &[])?;
+        let head = UnitHead {
+            kind: "method",
+            name,
+            vis: "public",
+            span: (m.start_byte(), m.end_byte()),
+            decorators: Vec::new(),
+        };
+        self.make_unit(ord, &head, None, sig, vec![body], &[])
     }
 
     /// The visibility word of a class member from its modifiers and name.
@@ -2447,4 +2548,15 @@ impl<'a> Fold<'a> {
         let spec = NodeSpec::new(Operator::anon("function"), self.cx.node_loc(n)).binders(&refs);
         self.cx.add(spec, &[sig, body?])
     }
+}
+
+/// The simple name a heritage entry `b` stands for (`Base`, `ns.Base`; type arguments dropped), if it is a plain reference.
+fn base_name(b: Node<'_>, text: &str) -> Option<String> {
+    let name = match b.kind() {
+        "generic_type" => b.child_by_field_name("name")?,
+        "identifier" | "type_identifier" | "nested_type_identifier" | "member_expression" => b,
+        _ => return None,
+    };
+    let raw = name.utf8_text(text.as_bytes()).ok()?;
+    Some(raw.chars().filter(|c| !c.is_whitespace()).collect())
 }
