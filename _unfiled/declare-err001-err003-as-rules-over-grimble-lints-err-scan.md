@@ -2,12 +2,12 @@
 id = "01M4MBJ35HGM0P2MH4B7YMB3EQ"
 title = "Declare ERR001-ERR003 as rules over grimble_lints::err::scan, with pages and corpora, and run them in grimble check"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T02:09:38Z"
-updated = "2026-10-23T11:15:15Z"
+updated = "2026-10-23T11:15:17Z"
 scope = ["crates/grimble-lints/**", "crates/grimble-check/src/product_rules.rs", "crates/grimble-check/Cargo.toml", "docs/reference/rules/ERR*.md", "docs/design/**", "docs/reference/**", "docs/schemas/**", "Cargo.lock", "crates/grimble-check/**"]
 
 [[acceptance]]
