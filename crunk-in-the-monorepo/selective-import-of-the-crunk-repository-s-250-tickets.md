@@ -8,7 +8,7 @@ points = 5
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:17Z"
-updated = "2026-10-23T20:48:57Z"
+updated = "2026-10-23T20:48:59Z"
 idempotency_key = "crunk-plan-import"
 labels = ["area:crunk"]
 scope = ["crates/gob-dev/src/import_crunk.rs", "crates/gob-dev/src/import_crunk/**", "crates/gob-dev/tests/import_crunk.rs", "docs/migration/**", "crates/gob-dev/src/main.rs", "Cargo.lock", "crates/frob-evidence/src/lib.rs", "crates/frob-evidence/src/import_v1.rs", "crates/frob-evidence/src/import_v1/**", "crates/frob-evidence/src/import_crunk.rs", "crates/frob-evidence/examples/import_crunk.rs", "crates/frob-evidence/examples/import_v1.rs", "crates/frob-evidence/tests/import_crunk.rs", "crates/frob-evidence/tests/import_v1.rs"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a frob-friction tracker, when the dry-run lists it, then its disposition and reason are shown and it is not open"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an imported id, when written, then it is an alias like crunk:T-0042 that cannot collide with a frob T-0042"
