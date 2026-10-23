@@ -4,7 +4,7 @@ use gob_git::RelPath;
 use gob_rules::{Finding, RuleDecl, RuleId, Severity};
 
 use crate::model::Lease;
-use crate::overlap::{covers_foreign_fragments, glob_set, is_own_fragment, matcher};
+use crate::overlap::{ScopeMatcher, covers_foreign_fragments, glob_set, is_own_fragment};
 use crate::rules::scope001::Scope001;
 
 /// `SCOPE001`: one finding per path of `diff_paths` outside `lease.scope` and not in `shared`.
@@ -26,7 +26,7 @@ pub fn scope001(diff_paths: &[RelPath], lease: &Lease, shared: &[String]) -> Vec
             }
             !skip
         })
-        .filter_map(|g| match matcher(g) {
+        .filter_map(|g| match ScopeMatcher::new(g) {
             Ok(m) => Some(m),
             Err(e) => {
                 tracing::warn!(ticket = %lease.ticket, error = %e, "scope glob ignored");
