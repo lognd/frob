@@ -85,6 +85,17 @@ pub enum EvidenceError {
         /// The project directory, repository-relative or as given.
         project: String,
     },
+    // frob:ticket 01M4HW9GZT9T70NGGAHAH1CKJF
+    /// A `file` reference is not a regular file tracked and unmodified at `HEAD`, so its hash would exist on no ref.
+    #[error(
+        "E-EVIDENCE-FILE-UNCOMMITTED: `{path}` {reason}; file evidence must be committed content, so nothing was recorded"
+    )]
+    FileNotCommitted {
+        /// The reference as given.
+        path: String,
+        /// Why it does not qualify.
+        reason: String,
+    },
     /// An attestation was attempted without a person at a terminal.
     #[error("{}", not_human_message(.reasons))]
     NotHuman {
@@ -183,6 +194,10 @@ impl EvidenceError {
     }
 
     /// The CLI error: a refusal when the caller can fix it, else internal.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one flat match mapping every variant to its refusal"
+    )]
     pub fn into_cli(self) -> CliError {
         use RefusalClass::{GuardNeedsAction, UsageError};
         let refusal = match &self {
@@ -259,6 +274,7 @@ impl EvidenceError {
                         "close the Unity editor (or the other batch run) that has the project open, then rerun",
                     ),
             ),
+            Self::FileNotCommitted { path, .. } => Some(file_uncommitted_refusal(path, self.to_string())),
             Self::BadReference(_) | Self::BadProvider(_) | Self::BadAccepts(_) => {
                 Some(Refusal::new(code_of(&self), UsageError, self.to_string()))
             }
@@ -339,5 +355,15 @@ fn not_executed_refusal(message: String) -> Refusal {
 fn runner_error_refusal(message: String) -> Refusal {
     Refusal::new("E-EVIDENCE-RUNNER-ERROR", RefusalClass::GuardNeedsAction, message).with_remedy(
         "fix the collection or import error named above (is the project importable by the pytest interpreter? set [tests] python in frob.toml), then rerun",
+    )
+}
+
+// frob:ticket 01M4HW9GZT9T70NGGAHAH1CKJF
+/// The refusal for file evidence that is not committed content, naming both ways out.
+fn file_uncommitted_refusal(path: &str, message: String) -> Refusal {
+    Refusal::new("E-EVIDENCE-FILE-UNCOMMITTED", RefusalClass::GuardNeedsAction, message).with_remedy(
+        format!(
+            "commit `{path}` (git add and git commit, and un-ignore it if gitignored) and rerun, or record the measurement with command evidence instead: --provider command"
+        ),
     )
 }

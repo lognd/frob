@@ -1179,6 +1179,51 @@ pub fn build_record(
     })
 }
 
+// frob:ticket 01M4HW9GZT9T70NGGAHAH1CKJF
+/// Refuse a `file` reference whose bytes are not exactly a regular file tracked at `HEAD`.
+///
+/// Gitignored, untracked, staged-but-uncommitted, modified, symlinked, absolute and
+/// `..`-escaping paths all fail: the hash would name content that exists on no ref.
+/// The comparison is on raw bytes, so a working tree that rewrites line endings on
+/// checkout counts as modified.
+///
+/// # Errors
+///
+/// [`EvidenceError::FileNotCommitted`] with the reason; [`EvidenceError::Io`] when the file cannot be read.
+pub fn require_committed(ws: &Workspace, path: &str) -> Result<()> {
+    let refuse = |reason: &str| {
+        tracing::warn!(path, reason, "file evidence refused");
+        Err(EvidenceError::FileNotCommitted {
+            path: path.to_owned(),
+            reason: reason.to_owned(),
+        })
+    };
+    let Ok(rel) = gob_path::RelPath::new(path.strip_prefix("./").unwrap_or(path)) else {
+        return refuse("is not a path inside the repository");
+    };
+    let rel = rel.as_str();
+    let full = ws.root.join(rel);
+    let meta = std::fs::symlink_metadata(&full).map_err(|e| EvidenceError::io(&full, e))?;
+    if meta.file_type().is_symlink() {
+        return refuse("is a symlink, not a regular tracked file");
+    }
+    let disk = std::fs::read(&full).map_err(|e| EvidenceError::io(&full, e))?;
+    let repo = ws.ledger.repo();
+    if repo.rev_parse("HEAD").is_err() {
+        return refuse("is not committed (the repository has no commit yet)");
+    }
+    match repo.read_blob_at("HEAD", rel)? {
+        None => refuse("is not tracked at HEAD (it is untracked, gitignored or only staged)"),
+        Some(committed) if committed != disk => {
+            refuse("differs from its committed content (it is modified)")
+        }
+        Some(_) => {
+            tracing::debug!(path, "file evidence matches HEAD");
+            Ok(())
+        }
+    }
+}
+
 /// Hash the file at `path` (relative to `root`) as a `file` record.
 ///
 /// # Errors
@@ -2095,6 +2140,8 @@ fn capture_unstamped(
     );
     let cap = match provider {
         Provider::File => {
+            // frob:ticket 01M4HW9GZT9T70NGGAHAH1CKJF
+            require_committed(ws, reference)?;
             return hash_file(&ws.root, reference, accepts, ws.ledger.clock().now());
         }
         Provider::Attestation => {
