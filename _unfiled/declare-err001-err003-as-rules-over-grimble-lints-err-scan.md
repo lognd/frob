@@ -2,7 +2,8 @@
 id = "01M4MBJ35HGM0P2MH4B7YMB3EQ"
 title = "Declare ERR001-ERR003 as rules over grimble_lints::err::scan, with pages and corpora, and run them in grimble check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
