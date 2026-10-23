@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:53Z"
-updated = "2026-10-23T15:22:21Z"
+updated = "2026-10-23T15:23:09Z"
 idempotency_key = "logand-gaps-V1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["docs/design/grmb-spec.md", "docs/design/binding.md", "changelog.d/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a test backed by several runner ids and a manual test, when the spec is read, then each has a stated form and finding"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given vitest titles and cargo paths, when the spec is read, then a table maps runner ids to selectors and states how test units are recognised outside tests/"

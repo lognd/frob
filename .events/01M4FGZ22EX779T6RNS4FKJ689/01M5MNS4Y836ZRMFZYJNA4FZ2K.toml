@@ -1,0 +1,44 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T15:23:09Z"
+digest = "e23a7fa421a21f46a2b43f1e21114b778f87664899120487cc9cffe51db99fb1"
+exit_code = 0
+head = "8a130c37acca6c2107db62b472c5b10fb3bb284d"
+inline = '''
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 46.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8ac752b3-cea9-49d6-ab72-07584394a6eb with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   1.366s] grimble-bind::corpus every_corpus_case_matches_its_expectations
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.366s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test corpus every_corpus_case_matches_its_expectations"
+size = 1779
+status = "measured"
+test_count = 1
+tests_digest = "6c3802e51a8d01f2abfb5bbda0d60b24bbe4f5d777a7501f18eeedc66f00d5d9"
+at = "2026-10-23T15:23:09Z"
+actor = "lognd"
+rev = 1
