@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T09:58:42Z"
-updated = "2026-10-23T01:39:38Z"
+updated = "2026-10-23T01:58:39Z"
 scope = ["crates/grimble-check/**", "crates/grimble-lints/**", "docs/**"]
 
 [[acceptance]]
@@ -15,7 +15,7 @@ text = "Given a Unity project whose input settings trip UNITY301, when grimble c
 bound = false
 
 [[acceptance]]
-text = "Given a Unity project whose physics settings trip UNITY302, when grimble check runs, then UNITY302 is reported through a registered rule with a docs page"
+text = "Given a Unity C# file that applies a Rigidbody force from Update (UNITY302 needs no project settings), when grimble check runs, then UNITY302 is reported through a registered rule with a docs page."
 bound = false
 +++
 
