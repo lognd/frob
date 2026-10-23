@@ -251,6 +251,10 @@ pub fn clause_text(k: &ClauseKind) -> String {
             if let Some(at) = &m.at {
                 let _ = write!(out, " at {}", selector_text(at));
             }
+            let attrs = key_vals_text(&m.attrs);
+            if !attrs.is_empty() {
+                let _ = write!(out, " {attrs}");
+            }
             out
         }
         ClauseKind::Excuses(e) => {

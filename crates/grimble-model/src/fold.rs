@@ -728,6 +728,7 @@ impl Folder<'_> {
                 if let Some(at) = &m.at {
                     kids.push(select_t(at));
                 }
+                kids.extend(m.attrs.iter().map(kv_attr));
                 (attr("may", sp, vec![apply("grant", sp, kids)]), Place::Body)
             }
             ClauseKind::Excuses(x) => {

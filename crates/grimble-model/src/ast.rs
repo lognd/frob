@@ -139,6 +139,23 @@ pub struct May {
     pub args: Vec<Spanned<String>>,
     /// The `at` selector, if any.
     pub at: Option<Sel>,
+    /// Trailing `because="..."` / `ticket="..."` attributes giving the grant's reason.
+    pub attrs: Vec<KeyVal>,
+}
+
+impl May {
+    /// The reason attribute `key` (`because` or `ticket`) when written with a non-blank string.
+    pub fn reason(&self, key: &str) -> Option<&str> {
+        self.attrs.iter().find_map(|kv| match &kv.value.value {
+            Value::Str(s) if kv.key.text == key && !s.trim().is_empty() => Some(s.as_str()),
+            _ => None,
+        })
+    }
+
+    /// True when the grant states a reason (`because=` or `ticket=`, non-blank).
+    pub fn has_reason(&self) -> bool {
+        self.reason("because").is_some() || self.reason("ticket").is_some()
+    }
 }
 
 /// An `excuses ATOM because="..."` clause.

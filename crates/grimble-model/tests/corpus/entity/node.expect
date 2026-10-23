@@ -1,2 +1,4 @@
 # a node without trust is MDL008
 error: MDL008
+warn: MDL008
+warn: MDL008
