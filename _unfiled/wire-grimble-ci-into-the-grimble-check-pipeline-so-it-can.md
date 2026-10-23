@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T03:46:45Z"
-updated = "2026-10-23T05:10:56Z"
-scope = ["crates/grimble-check/**", "crates/grimble-ci/**"]
+updated = "2026-10-23T05:17:37Z"
+scope = ["crates/grimble-check/**", "crates/grimble-ci/**", "Cargo.lock", "docs/**"]
 
 [[acceptance]]
 text = "grimble check calls grimble_ci::analyze on workflow files and reports its findings"
