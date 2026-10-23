@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked by CXX0FRT: grimble-ci not wired into any product"
+at = "2026-10-23T03:47:02Z"
+actor = "lognd"
+rev = 1
