@@ -5,11 +5,11 @@
 
 // frob:ticket 01M3Z714XYJEHXHNWXKVXAYFQJ
 
-use std::ffi::OsString;
+use std::ffi::OsStr;
 use std::io;
 
 /// True when `args` (without the program name) ask for `serve --mcp`.
-pub fn requested<S: AsRef<str>>(args: &[S]) -> bool {
+pub fn requested<S: AsRef<OsStr>>(args: &[S]) -> bool {
     args.first().is_some_and(|a| a.as_ref() == "serve")
         && args.iter().any(|a| a.as_ref() == "--mcp")
 }
@@ -35,10 +35,7 @@ pub fn run() -> i32 {
     }
 }
 
-/// The process arguments after the program name; non-Unicode arguments are dropped.
-pub fn process_args() -> Vec<String> {
-    std::env::args_os()
-        .skip(1)
-        .filter_map(|a: OsString| a.into_string().ok())
-        .collect()
+/// The process arguments after the program name.
+pub fn process_args() -> Vec<std::ffi::OsString> {
+    std::env::args_os().skip(1).collect()
 }

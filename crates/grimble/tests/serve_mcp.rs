@@ -18,5 +18,5 @@ fn only_serve_with_mcp_is_taken() {
 #[test]
 fn process_args_exclude_the_program_name() {
     let args = grimble::serve_mcp::process_args();
-    assert!(!args.iter().any(|a| a.ends_with("serve_mcp")));
+    assert_eq!(args.len() + 1, std::env::args_os().count());
 }

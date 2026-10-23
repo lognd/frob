@@ -107,7 +107,7 @@ pub struct ToolSpec {
 
 impl ToolSpec {
     /// The MCP `tools/list` entry, always annotated read-only and idempotent.
-    fn listing(&self) -> Value {
+    fn as_listing(&self) -> Value {
         json!({
             "name": self.name,
             "description": self.description,
@@ -225,7 +225,7 @@ impl<T: Tools> Server<T> {
             "tools/list" => {
                 let mut listed = Vec::new();
                 for spec in self.tools.list() {
-                    listed.push(spec.listing());
+                    listed.push(spec.as_listing());
                 }
                 Ok(json!({ "tools": listed }))
             }
