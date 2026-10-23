@@ -2,12 +2,12 @@
 id = "01M5K9QNQFYJNXZSSG2X91FJBQ"
 title = "Add TS/JS/C# nondeterminism and control-flow vocabulary to testq"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T02:34:11Z"
-updated = "2026-10-23T04:17:48Z"
+updated = "2026-10-23T04:18:02Z"
 scope = ["crates/grimble-lints/src/testq/**"]
 
 [[acceptance]]
