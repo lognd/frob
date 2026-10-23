@@ -4,11 +4,20 @@ title = "CRAFT voice file presence: design/content/voice.toml required when scen
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-22T10:57:08Z"
-updated = "2026-10-22T10:57:08Z"
+updated = "2026-10-23T01:39:37Z"
 scope = ["crates/crunk-rules/**", "docs/reference/rules/**"]
+
+[[acceptance]]
+text = "Given scenes using copy keys and no design/content/voice.toml, when crunk check runs, then a CRAFT rule reports the missing voice file and names SLOP060"
+bound = false
+
+[[acceptance]]
+text = "Given the voice file exists, when crunk check runs, then that rule reports nothing"
+bound = false
 +++
 
 found while working ~DTBY8Q0; cut from its scope
