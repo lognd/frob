@@ -2,13 +2,13 @@
 id = "01M5EQAG7SXNJQ521RRZ2T166E"
 title = "cargo dev gen cli emits no docs/reference/cli/crunk.md (gob-dev links crunk only as a dev-dependency)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-21T07:55:27Z"
-updated = "2026-10-23T03:45:18Z"
+updated = "2026-10-23T03:45:50Z"
 labels = ["area:crunk"]
 scope = ["crates/gob-dev/**", "docs/reference/cli/**"]
 
