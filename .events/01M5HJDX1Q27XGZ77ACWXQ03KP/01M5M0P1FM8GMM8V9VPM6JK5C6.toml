@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["COH003 reads its layers from the grimble model, falling back to module depth, instead of an empty Coh003Options.layers", "COH003 tests cover model-supplied layers, the module-depth fallback, and docs/design/cohesion.md section 1.2 names the layer source"]
+moved = []
+at = "2026-10-23T09:15:15Z"
+actor = "lognd"
+rev = 1
