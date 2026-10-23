@@ -2,12 +2,12 @@
 id = "01M4HEMDB8A1X1RQFNVJB1G32M"
 title = "grimble check --summary: a compact JSON summary (counts per rule and severity, per-node CAP cell counts, digests) suitable as file evidence under frob's size cap"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T23:05:36Z"
-updated = "2026-10-09T23:05:36Z"
+updated = "2026-10-23T12:16:43Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble/src/**", "crates/grimble-check/src/**", "changelog.d/**"]
 
