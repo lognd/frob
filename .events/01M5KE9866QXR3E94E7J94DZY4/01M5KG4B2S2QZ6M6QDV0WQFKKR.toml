@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T04:25:36Z"
+digest = "8a4738ab7ab0042638c1f473396869db378d9827ba30c31001cdb3256c55e1dc"
+exit_code = 0
+head = "9b68f1561c46d583dc3ec56a3f5beebb0d3df967"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e7dd025b-10da-4c5a-8758-a6dbc6d7c852 with nextest profile: default
+    Starting 1 test across 1 binary (377 tests skipped)
+        PASS [   0.013s] frob-cli::it verb_table_drift::drift_is_reported_in_both_directions
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 377 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test it verb_table_drift::drift_is_reported_in_both_directions"
+size = 993
+status = "measured"
+test_count = 1
+tests_digest = "9653530980d099be379378548a94d650feeb9a9fbea82671b642f75692e0dd5b"
+at = "2026-10-23T04:25:36Z"
+actor = "lognd"
+rev = 1
