@@ -2,7 +2,8 @@
 id = "01M5NBNPGFD58QQA90YXK87ZP2"
 title = "gob-symbols: lib docs still say terms are not cached"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
