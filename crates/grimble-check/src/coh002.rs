@@ -13,10 +13,11 @@
 
 // frob:ticket 01M4CXSRE3YHY7FV30R8GMB58A
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
+// frob:ticket 01M5HJ07B6E0NZ47RCV0HWZR5Y
 
 use std::collections::BTreeSet;
 
-use gob_ir::{DefUseEdge, NodeId, Operator, Term, Universal};
+use gob_ir::{DefUseEdge, GroupOrder, NodeId, Operator, Term, Universal};
 use gob_symbols::{Folded, def_use_of, syntax_for};
 use tracing::{debug, trace};
 
@@ -222,7 +223,42 @@ struct Decision {
     bodies: Vec<NodeId>,
 }
 
+/// True when `n` is a sequence group.
+fn is_sequence(term: &Term, n: NodeId) -> bool {
+    matches!(
+        term.node(n).op(),
+        Operator::Universal(Universal::Group {
+            order: GroupOrder::Sequence
+        })
+    )
+}
+
+/// True when `n` is a Rust match arm: a `pattern` bind.
+fn is_arm(term: &Term, n: NodeId) -> bool {
+    matches!(term.node(n).op(), Operator::Universal(Universal::Bind { kind, .. }) if kind == "pattern")
+}
+
+/// A Rust `match`: the adapter folds it to a sequence of the scrutinee and a sequence of arm binds.
+fn match_of(term: &Term, n: NodeId) -> Option<Decision> {
+    if !is_sequence(term, n) {
+        return None;
+    }
+    let [scrutinee, arms] = term.node(n).children() else {
+        return None;
+    };
+    let arm_list = term.node(*arms).children();
+    (is_sequence(term, *arms) && !arm_list.is_empty() && arm_list.iter().all(|&a| is_arm(term, a)))
+        .then(|| Decision {
+            node: n,
+            condition: *scrutinee,
+            bodies: vec![*arms],
+        })
+}
+
 fn decision_of(term: &Term, n: NodeId, syntax: &gob_ir::DefUseSyntax) -> Option<Decision> {
+    if let Some(m) = match_of(term, n) {
+        return Some(m);
+    }
     match term.node(n).op() {
         Operator::Universal(Universal::Bind { kind, .. }) if kind == "if-let" => {
             let [body, scrutinee, ..] = term.node(n).children() else {
