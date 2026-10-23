@@ -28,7 +28,7 @@ use crate::types::TypeFacts;
 // frob:ticket 01M47QKT10CG0RSF784EEYTQ0J
 /// Bump when extraction output changes for the same input; part of the
 /// cache key.
-pub const EXTRACTOR_VERSION: u32 = 24;
+pub const EXTRACTOR_VERSION: u32 = 25;
 
 /// Files read per filter pipeline (building one loads the index and attributes).
 const READ_CHUNK: usize = 256;
