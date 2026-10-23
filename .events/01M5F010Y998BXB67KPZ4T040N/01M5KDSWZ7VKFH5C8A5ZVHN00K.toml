@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a workflow that runs a frob verb that does not exist, when grimble-ci analyzes it, then CI012 reports it", "Given a workflow whose frob verbs all exist, when grimble-ci analyzes it, then CI012 stays quiet"]
+moved = []
+at = "2026-10-23T03:45:18Z"
+actor = "lognd"
+rev = 1
