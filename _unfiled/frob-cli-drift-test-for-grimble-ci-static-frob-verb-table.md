@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T03:53:41Z"
-updated = "2026-10-23T04:17:56Z"
-scope = ["crates/frob-cli/**"]
+updated = "2026-10-23T04:18:40Z"
+scope = ["crates/frob-cli/**", "crates/grimble-ci/**"]
 
 [[acceptance]]
 text = "a frob-cli test fails when the grimble-ci static verb table differs from the real clap verb tree"
