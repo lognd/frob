@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T03:02:12Z"
+updated = "2026-10-23T03:04:30Z"
 scope = ["crates/grimble-check/**", "docs/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a Rust function with no match, when COH002 runs, then its decision count is unchanged"
-bound = false
+bound = true
 +++
 
 match arms fold as a Group of pattern binds under an expression_statement, so match decisions are not detected.
