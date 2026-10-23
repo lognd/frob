@@ -3,7 +3,7 @@
 
 use std::path::Path;
 
-use frob_evidence::import_crunk::{self, ALIAS_PREFIX, extract_tickets, render_dispositions};
+use frob_evidence::import_crunk::{self, ALIAS_PREFIX, REPO, clone_args, render_dispositions};
 use frob_evidence::import_v1::{self, ImportError, ImportOptions, load_tree};
 use frob_ledger::doc;
 use frob_ledger::model::{Category, Outcome};
@@ -124,7 +124,6 @@ fn friction_tracker_shows_disposition_and_reason_and_is_not_open() {
 }
 
 // frob:tests crates/frob-evidence/src/import_crunk.rs::options
-// frob:tests crates/frob-evidence/src/import_crunk.rs::extract_tickets
 #[test]
 fn aliases_are_namespaced_and_a_rerun_refuses() {
     let tmp = tempfile::tempdir().expect("tmp");
@@ -161,23 +160,14 @@ fn aliases_are_namespaced_and_a_rerun_refuses() {
     assert_ne!(format!("{ALIAS_PREFIX}T-0042"), "T-0042");
     let again = import_v1::run(&opts);
     assert!(matches!(again, Err(ImportError::Collision(_))), "{again:?}");
-    // Extraction from a GitHub-shaped tarball keeps only tickets/.
-    let pack = tmp.path().join("pack/crunk-main");
-    std::fs::create_dir_all(pack.join("docs")).expect("docs");
-    std::fs::write(pack.join("docs/x.md"), "x").expect("x");
-    std::fs::create_dir_all(pack.join("tickets")).expect("tickets");
-    crunk(&pack.join("tickets"));
-    let tgz = tmp.path().join("c.tgz");
-    let st = std::process::Command::new("tar")
-        .arg("-czf")
-        .arg(&tgz)
-        .arg("-C")
-        .arg(tmp.path().join("pack"))
-        .arg("crunk-main")
-        .status()
-        .expect("tar");
-    assert!(st.success());
-    let dir = extract_tickets(&tgz, &tmp.path().join("out")).expect("extract");
-    assert!(dir.join("T-0042/ticket.md").is_file());
-    assert!(!tmp.path().join("out/docs").exists());
+}
+
+// frob:tests crates/frob-evidence/src/import_crunk.rs::clone_args
+// frob:tests crates/frob-evidence/src/import_crunk.rs::fetch
+#[test]
+fn the_fetch_is_a_shallow_read_only_clone() {
+    let args = clone_args(REPO, "main", Path::new("w/src"));
+    assert_eq!(&args[..3], ["repo", "clone", REPO]);
+    assert!(args.contains(&"--depth=1".to_owned()));
+    assert!(args.iter().all(|a| a != "push"));
 }

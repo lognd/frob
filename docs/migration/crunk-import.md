@@ -9,7 +9,7 @@ Selective import of the crunk repository's tickets into frob, built for the crun
 
 ## Source
 
-crunk keeps no GitHub issues. Its tickets are a v1 `tickets/T-NNNN/{ticket.md,done-report.md}` tree on `main` of `lognd/crunk`. The runner fetches one tarball with `gh api repos/lognd/crunk/tarball/main` (read-only, no pagination, no per-file rate limit) and extracts `tickets/`. `--from <dir>` uses an already extracted tree instead.
+crunk keeps no GitHub issues. Its tickets are a v1 `tickets/T-NNNN/{ticket.md,done-report.md}` tree on `main` of `lognd/crunk`. The runner makes one shallow, read-only `gh repo clone lognd/crunk -- --depth=1 --branch=main` (no pagination, no truncated trees) and reads its `tickets/`. `--from <dir>` uses an existing `tickets/` directory instead.
 
 GitHub `main` holds T-0001..T-0141 (116 done, 9 dropped, 15 open). The retirement ticket talks of about 250 tickets up to T-0294; the rest is unpushed local state. Push crunk first and re-run the dry run: the selection already names those ids, and any open ticket it does not name stops the run.
 
