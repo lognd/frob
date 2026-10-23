@@ -8,10 +8,10 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-23T10:45:25Z"
+updated = "2026-10-23T10:50:01Z"
 idempotency_key = "m2-serve"
 labels = ["milestone:2"]
-scope = ["crates/grimble-serve/**", "crates/gob-serve/**", "docs/design/**", "docs/reference/**", "Cargo.lock", "docs/schemas/**"]
+scope = ["crates/grimble-serve/**", "crates/gob-serve/**", "docs/design/**", "docs/reference/**", "Cargo.lock", "docs/schemas/**", "crates/grimble/**"]
 
 [[links]]
 kind = "blocked-by"
