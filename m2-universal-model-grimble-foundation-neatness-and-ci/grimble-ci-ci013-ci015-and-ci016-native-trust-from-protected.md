@@ -2,7 +2,8 @@
 id = "01M5F010V5GV0B7KJ7M5QQG70Q"
 title = "grimble-ci: CI013-CI015 and CI016 (native, trust-from-protected-ref)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
