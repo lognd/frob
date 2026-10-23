@@ -12,7 +12,7 @@ use std::collections::HashSet;
 use tree_sitter::Node;
 
 use super::ctx::{Callee, Ctx};
-use crate::syntax::Lang;
+use super::lang::Lang;
 
 /// How far helper-to-helper resolution goes before giving up as Unknown.
 const MAX_DEPTH: usize = 8;
@@ -60,6 +60,79 @@ const STDLIB: &[&str] = &[
     "secrets",
 ];
 
+/// JavaScript/Node standard-library roots: calls into them are never test helpers.
+const JS_STDLIB: &[&str] = &[
+    "fs",
+    "path",
+    "os",
+    "util",
+    "events",
+    "http",
+    "https",
+    "crypto",
+    "stream",
+    "url",
+    "child_process",
+    "buffer",
+    "zlib",
+    "net",
+];
+
+/// C# standard-library root namespace.
+const CS_STDLIB: &[&str] = &["System"];
+
+/// C# types whose static members are assertions (`using static Xunit.Assert;`).
+pub(super) const CS_ASSERT_TYPES: &[&str] = &[
+    "Assert",
+    "CollectionAssert",
+    "StringAssert",
+    "FileAssert",
+    "DirectoryAssert",
+];
+
+/// Segments that make a JS call chain an assertion (`assert.equal`, `x.should.eql`, `chai.expect`).
+const JS_ASSERT_SEGS: &[&str] = &["assert", "expect", "should"];
+
+/// Receiver-method names of ava/tape style `t.ok(...)` assertions.
+const JS_T_METHODS: &[&str] = &[
+    "ok",
+    "equal",
+    "notEqual",
+    "is",
+    "not",
+    "deepEqual",
+    "notDeepEqual",
+    "true",
+    "truthy",
+    "falsy",
+    "false",
+    "throws",
+    "notThrows",
+    "rejects",
+    "pass",
+    "fail",
+    "same",
+    "notSame",
+    "match",
+    "notMatch",
+    "snapshot",
+    "assert",
+    "error",
+];
+
+/// Segments that make a `C#` call chain an assertion (`xUnit`, `NUnit`, `MSTest`, `FluentAssertions`, `NSubstitute`).
+const CS_ASSERT_SEGS: &[&str] = &[
+    "Assert",
+    "CollectionAssert",
+    "StringAssert",
+    "FileAssert",
+    "DirectoryAssert",
+    "Should",
+    "Received",
+    "DidNotReceive",
+    "Check",
+];
+
 /// Name prefixes that read as a check in either language.
 const PREFIXES: &[&str] = &[
     "assert",
@@ -104,14 +177,30 @@ pub(super) fn name_asserts(lang: Lang, name: &str) -> bool {
     match lang {
         Lang::Rust => matches!(name, "unwrap_err" | "expect_err"),
         Lang::Python => name == "expect",
+        Lang::Script => matches!(name, "expect" | "expectTypeOf" | "expectAsync" | "fail"),
+        Lang::CSharp => false,
     }
 }
 
+/// True when `word` reads as test support (`helpers`, `fixtures`, `testing-library`).
+pub(super) fn helper_word(word: &str) -> bool {
+    let l = word.to_ascii_lowercase();
+    HELPER_WORDS.iter().any(|w| l.contains(w))
+}
+
 fn helperish(path: &[String]) -> bool {
-    path.iter().any(|s| {
-        let l = s.to_ascii_lowercase();
-        HELPER_WORDS.iter().any(|w| l.contains(w))
-    })
+    path.iter().any(|s| helper_word(s))
+}
+
+/// True when the JS call path `e` is an assertion no prefix rule catches.
+fn script_special(e: &[String]) -> bool {
+    e.iter().any(|s| JS_ASSERT_SEGS.contains(&s.as_str()))
+        || (e.len() >= 2 && e[0] == "t" && JS_T_METHODS.contains(&e[e.len() - 1].as_str()))
+}
+
+/// True when the C# call path `e` is an assertion no prefix rule catches.
+fn cs_special(e: &[String]) -> bool {
+    e.iter().any(|s| CS_ASSERT_SEGS.contains(&s.as_str()))
 }
 
 fn py_special(e: &[String]) -> bool {
@@ -185,6 +274,8 @@ impl<'a, 't> Resolver<'a, 't> {
         let stdlib = match self.cx.lang {
             Lang::Rust => matches!(root, "std" | "core" | "alloc"),
             Lang::Python => STDLIB.contains(&root),
+            Lang::Script => JS_STDLIB.contains(&root),
+            Lang::CSharp => CS_STDLIB.contains(&root),
         };
         if stdlib {
             return Verdict::No;
@@ -205,6 +296,8 @@ impl<'a, 't> Resolver<'a, 't> {
         if name_asserts(cx.lang, last)
             || name_asserts(cx.lang, elast)
             || (cx.lang == Lang::Python && py_special(&expanded))
+            || (cx.lang == Lang::Script && script_special(&expanded))
+            || (cx.lang == Lang::CSharp && cs_special(&expanded))
         {
             return Verdict::Asserts;
         }
@@ -219,18 +312,27 @@ impl<'a, 't> Resolver<'a, 't> {
             if let Some(full) = cx.aliases.get(first) {
                 return self.imported(full, cx.relative.contains(first));
             }
+            if cx.lang == Lang::CSharp && cx.assert_statics {
+                return Verdict::Asserts;
+            }
+            if cx.lang == Lang::CSharp && self.class_open {
+                return Verdict::Unknown;
+            }
             return if cx.wildcards.iter().any(|(m, rel)| *rel || helperish(m)) {
                 Verdict::Unknown
             } else {
                 Verdict::No
             };
         }
-        if matches!(first, "Self" | "self" | "super" | "crate" | "cls") {
+        if matches!(
+            first,
+            "Self" | "self" | "this" | "super" | "base" | "crate" | "cls"
+        ) {
             if let Some(v) = self.by_name(last, depth) {
                 return v;
             }
-            let open =
-                matches!(first, "super" | "crate") || (cx.lang == Lang::Python && self.class_open);
+            let open = matches!(first, "super" | "base" | "crate")
+                || (matches!(cx.lang, Lang::Python | Lang::CSharp) && self.class_open);
             return if open { Verdict::Unknown } else { Verdict::No };
         }
         if cx.aliases.contains_key(first) {
@@ -241,6 +343,14 @@ impl<'a, 't> Resolver<'a, 't> {
         }
         if cx.bodyless_mods.contains(first) {
             return Verdict::Unknown;
+        }
+        if matches!(cx.lang, Lang::Script | Lang::CSharp) {
+            if let Some(v) = self.by_name(last, depth) {
+                return v;
+            }
+            if helperish(&c.segs) {
+                return Verdict::Unknown;
+            }
         }
         Verdict::No
     }

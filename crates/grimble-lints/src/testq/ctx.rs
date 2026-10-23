@@ -6,7 +6,8 @@ use std::collections::{HashMap, HashSet};
 
 use tree_sitter::Node;
 
-use crate::syntax::{Lang, children, text};
+use super::lang::Lang;
+use crate::syntax::{children, text};
 
 /// One call found in a body: the path called, and whether it was a method call on a value.
 #[derive(Debug, Clone)]
@@ -46,6 +47,8 @@ pub(super) struct Ctx<'t> {
     pub bodyless_mods: HashSet<String>,
     /// Types, traits, classes and inline modules defined in this file.
     pub local_types: HashSet<String>,
+    /// C# `using static Xunit.Assert;`: bare calls without a local definition are assertions.
+    pub assert_statics: bool,
 }
 
 /// Split `a::b::<T>::c` into its plain segments.
@@ -76,6 +79,7 @@ impl<'t> Ctx<'t> {
             wildcards: Vec::new(),
             bodyless_mods: HashSet::new(),
             local_types: HashSet::new(),
+            assert_statics: false,
         };
         cx.collect(root);
         tracing::debug!(
@@ -93,7 +97,10 @@ impl<'t> Ctx<'t> {
 
     fn collect(&mut self, n: Node<'t>) {
         match (self.lang, n.kind()) {
-            (Lang::Rust, "function_item") | (Lang::Python, "function_definition") => {
+            (Lang::Rust, "function_item")
+            | (Lang::Python, "function_definition")
+            | (Lang::Script, "function_declaration" | "method_definition")
+            | (Lang::CSharp, "method_declaration" | "local_function_statement") => {
                 if let Some(name) = self.name_of(n) {
                     self.defs.entry(name).or_default().push(n);
                 }
@@ -116,11 +123,23 @@ impl<'t> Ctx<'t> {
                 Lang::Rust,
                 "struct_item" | "enum_item" | "trait_item" | "union_item" | "type_item",
             )
-            | (Lang::Python, "class_definition") => {
+            | (Lang::Python, "class_definition")
+            | (Lang::Script, "class_declaration")
+            | (
+                Lang::CSharp,
+                "class_declaration"
+                | "struct_declaration"
+                | "record_declaration"
+                | "interface_declaration"
+                | "enum_declaration",
+            ) => {
                 if let Some(name) = self.name_of(n) {
                     self.local_types.insert(name);
                 }
             }
+            (Lang::Script, "variable_declarator") => self.js_declarator(n),
+            (Lang::Script, "import_statement") => self.js_import(n),
+            (Lang::CSharp, "using_directive") => self.cs_using(n),
             (Lang::Python, "import_statement") => self.py_import(n),
             (Lang::Python, "import_from_statement") => self.py_from(n),
             _ => {}
@@ -241,6 +260,134 @@ impl<'t> Ctx<'t> {
         }
     }
 
+    /// Bind `local` to the module `source` (and `member` of it, when given).
+    fn js_bind(&mut self, local: String, source: &str, member: Option<String>) {
+        let mut segs = module_segs(source);
+        segs.extend(member);
+        if support_path(source) {
+            self.relative.insert(local.clone());
+        }
+        self.aliases.insert(local, segs);
+    }
+
+    fn js_import(&mut self, n: Node<'t>) {
+        let Some(source) = n.child_by_field_name("source") else {
+            return;
+        };
+        let source = unquote(text(source, self.src)).to_owned();
+        for clause in children(n)
+            .into_iter()
+            .filter(|c| c.kind() == "import_clause")
+        {
+            for c in children(clause).into_iter().filter(Node::is_named) {
+                match c.kind() {
+                    "identifier" => self.js_bind(text(c, self.src).to_owned(), &source, None),
+                    "namespace_import" => {
+                        if let Some(id) = children(c).into_iter().find(|x| x.kind() == "identifier")
+                        {
+                            self.js_bind(text(id, self.src).to_owned(), &source, None);
+                        }
+                    }
+                    "named_imports" => {
+                        for spec in children(c)
+                            .into_iter()
+                            .filter(|x| x.kind() == "import_specifier")
+                        {
+                            let name = spec.child_by_field_name("name");
+                            let alias = spec.child_by_field_name("alias").or(name);
+                            if let (Some(nm), Some(al)) = (name, alias) {
+                                let member = text(nm, self.src).to_owned();
+                                self.js_bind(text(al, self.src).to_owned(), &source, Some(member));
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    /// A `const x = () => ...` definition, or a `const x = require('m')` import.
+    fn js_declarator(&mut self, n: Node<'t>) {
+        let (Some(name), Some(value)) = (
+            n.child_by_field_name("name"),
+            n.child_by_field_name("value"),
+        ) else {
+            return;
+        };
+        match value.kind() {
+            "arrow_function" | "function_expression" | "function"
+                if name.kind() == "identifier" =>
+            {
+                self.defs
+                    .entry(text(name, self.src).to_owned())
+                    .or_default()
+                    .push(value);
+            }
+            "call_expression" => {
+                let is_require = value
+                    .child_by_field_name("function")
+                    .is_some_and(|f| text(f, self.src) == "require");
+                let arg = value
+                    .child_by_field_name("arguments")
+                    .and_then(|a| children(a).into_iter().find(|c| c.kind() == "string"));
+                let (true, Some(arg)) = (is_require, arg) else {
+                    return;
+                };
+                let source = unquote(text(arg, self.src)).to_owned();
+                match name.kind() {
+                    "identifier" => self.js_bind(text(name, self.src).to_owned(), &source, None),
+                    "object_pattern" => {
+                        for p in children(name).into_iter().filter(Node::is_named) {
+                            match p.kind() {
+                                "shorthand_property_identifier_pattern" => {
+                                    let id = text(p, self.src).to_owned();
+                                    self.js_bind(id.clone(), &source, Some(id));
+                                }
+                                "pair_pattern" => {
+                                    let key = p.child_by_field_name("key");
+                                    let val = p.child_by_field_name("value");
+                                    if let (Some(k), Some(v)) = (key, val) {
+                                        let member = text(k, self.src).to_owned();
+                                        self.js_bind(
+                                            text(v, self.src).to_owned(),
+                                            &source,
+                                            Some(member),
+                                        );
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn cs_using(&mut self, n: Node<'t>) {
+        let kids = children(n);
+        let target = kids
+            .iter()
+            .rev()
+            .find(|c| matches!(c.kind(), "qualified_name" | "identifier"));
+        let Some(target) = target else { return };
+        let segs = split_dots(text(*target, self.src));
+        if let Some(alias) = n.child_by_field_name("name") {
+            self.aliases.insert(text(alias, self.src).to_owned(), segs);
+            return;
+        }
+        let is_static = kids.iter().any(|c| c.kind() == "static");
+        let last = segs.last().map(String::as_str).unwrap_or_default();
+        if is_static && super::assert::CS_ASSERT_TYPES.contains(&last) {
+            self.assert_statics = true;
+        } else {
+            self.wildcards.push((segs, false));
+        }
+    }
+
     /// `segs` with its first segment replaced by what it was imported as.
     pub fn expand(&self, segs: &[String]) -> Vec<String> {
         match segs.first().and_then(|f| self.aliases.get(f)) {
@@ -253,6 +400,11 @@ impl<'t> Ctx<'t> {
     pub fn callee(&self, call: Node<'t>) -> Option<Callee<'t>> {
         let mut f = call.child_by_field_name("function")?;
         let (segs, method) = match self.lang {
+            Lang::Script | Lang::CSharp => {
+                let segs = self.chain(f);
+                let method = segs.first().is_some_and(|s| s == "?");
+                (segs, method)
+            }
             Lang::Rust => {
                 while f.kind() == "generic_function" {
                     f = f.child_by_field_name("function")?;
@@ -291,6 +443,59 @@ impl<'t> Ctx<'t> {
         })
     }
 
+    /// The dotted path a call target spells, with `?` for a part that is not a plain name.
+    ///
+    /// `expect(x).not.toBe` flattens to `expect.not.toBe`, `x.Should().Be` to `x.Should.Be`.
+    fn chain(&self, n: Node<'t>) -> Vec<String> {
+        let here = |t: &str| vec![t.to_owned()];
+        match n.kind() {
+            "identifier" | "this" | "super" | "this_expression" | "base_expression" => {
+                here(text(n, self.src))
+            }
+            "generic_name" => children(n)
+                .into_iter()
+                .find(|c| c.kind() == "identifier")
+                .map_or_else(|| here("?"), |c| here(text(c, self.src))),
+            "member_expression" | "member_access_expression" => {
+                let obj = n
+                    .child_by_field_name("object")
+                    .or_else(|| n.child_by_field_name("expression"));
+                let prop = n
+                    .child_by_field_name("property")
+                    .or_else(|| n.child_by_field_name("name"));
+                let mut segs = match obj {
+                    Some(o) => self.chain(o),
+                    // `base.Run()`: the keyword is an anonymous token, not a field.
+                    None => here(text(n, self.src).split('.').next().unwrap_or("?").trim()),
+                };
+                segs.extend(prop.map_or_else(|| here("?"), |p| self.chain(p)));
+                segs
+            }
+            "subscript_expression" | "element_access_expression" => {
+                let mut segs = n
+                    .child_by_field_name("object")
+                    .or_else(|| n.child_by_field_name("expression"))
+                    .map_or_else(|| here("?"), |o| self.chain(o));
+                segs.push("?".to_owned());
+                segs
+            }
+            "property_identifier" | "private_property_identifier" => here(text(n, self.src)),
+            "call_expression" | "invocation_expression" => n
+                .child_by_field_name("function")
+                .map_or_else(|| here("?"), |f| self.chain(f)),
+            "await_expression"
+            | "parenthesized_expression"
+            | "non_null_expression"
+            | "as_expression"
+            | "postfix_unary_expression"
+            | "conditional_access_expression" => children(n)
+                .into_iter()
+                .find(Node::is_named)
+                .map_or_else(|| here("?"), |c| self.chain(c)),
+            _ => here("?"),
+        }
+    }
+
     fn py_chain(&self, n: Node<'t>) -> Option<Vec<String>> {
         let attr = text(n.child_by_field_name("attribute")?, self.src).to_owned();
         let obj = n.child_by_field_name("object")?;
@@ -326,12 +531,21 @@ impl<'t> Ctx<'t> {
                 }
                 return;
             }
-            (Lang::Rust, "call_expression") | (Lang::Python, "call") => {
+            (Lang::Rust | Lang::Script, "call_expression")
+            | (Lang::Python, "call")
+            | (Lang::CSharp, "invocation_expression") => {
                 if let Some(c) = self.callee(n) {
                     b.calls.push(c);
                 }
             }
             (Lang::Python, "assert_statement" | "raise_statement") => b.direct = true,
+            // chai/should.js: `x.should.equal(1)` or a bare `x.should.be.true`.
+            (Lang::Script, "member_expression")
+                if n.child_by_field_name("property")
+                    .is_some_and(|p| text(p, self.src) == "should") =>
+            {
+                b.direct = true;
+            }
             _ => {}
         }
         for c in children(n) {
@@ -370,4 +584,32 @@ impl<'t> Ctx<'t> {
             }
         }
     }
+}
+
+/// The text of a JS string literal without its quotes.
+fn unquote(s: &str) -> &str {
+    s.trim_matches(['"', '\'', '`'])
+}
+
+/// The plain path components of a module specifier (`node:assert/strict` -> `assert`, `strict`).
+fn module_segs(source: &str) -> Vec<String> {
+    let bare = source.strip_prefix("node:").unwrap_or(source);
+    bare.split(std::path::is_separator)
+        .filter(|p| !p.is_empty() && *p != "." && *p != "..")
+        .map(str::to_owned)
+        .collect()
+}
+
+/// Directory names that mark a relative import as test support rather than the code under test.
+const SUPPORT_DIRS: &[&str] = &["test", "tests", "__tests__", "__mocks__", "mocks", "e2e"];
+
+/// True when a relative import reaches into test-support code, whose body is out of sight.
+///
+/// Importing the unit under test (`./add`) is not a helper: its calls are not assertions and
+/// must not turn every test into Unresolved.
+fn support_path(source: &str) -> bool {
+    source.starts_with('.')
+        && module_segs(source)
+            .iter()
+            .any(|s| SUPPORT_DIRS.contains(&s.as_str()) || super::assert::helper_word(s))
 }

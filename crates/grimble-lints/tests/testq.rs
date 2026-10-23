@@ -1,6 +1,7 @@
 //! TESTQ001 to TESTQ003: test without assertion, nondeterminism in a test, control flow in a test.
 
 // frob:ticket 01M4D957J2HZ655A1H8DJ4K8YD
+// frob:ticket 01M5HJNEBY5YBCJB06D5ZSH4H5
 
 use std::path::Path;
 
@@ -193,8 +194,8 @@ fn control_flow_reports_the_outermost_construct_and_is_off_by_default() {
 #[test]
 fn language_without_roles_is_unresolved_not_clean() {
     assert!(has_test_roles(Language::Rust));
-    assert!(!has_test_roles(Language::TypeScript));
-    let r = report(Language::TypeScript, "test('a', () => {});");
+    assert!(!has_test_roles(Language::Yaml));
+    let r = report(Language::Yaml, "a: 1\n");
     assert!(r.sites.is_empty());
     assert_eq!(
         r.unresolved,
@@ -218,4 +219,154 @@ fn python_test_files_are_recognised_by_name_and_directory() {
     assert!(is_test_file(Path::new("conftest.py")));
     assert!(is_test_file(Path::new("tests").join("x.py").as_path()));
     assert!(!is_test_file(Path::new("pkg").join("main.py").as_path()));
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::is_test_file
+#[test]
+fn script_and_csharp_test_files_are_recognised_by_name() {
+    assert!(is_test_file(Path::new("add.test.ts")));
+    assert!(is_test_file(Path::new("add.spec.js")));
+    assert!(is_test_file(
+        Path::new("__tests__").join("add.ts").as_path()
+    ));
+    assert!(is_test_file(Path::new("AddTests.cs")));
+    assert!(is_test_file(Path::new("AddTest.cs")));
+    assert!(!is_test_file(Path::new("add.ts")));
+    assert!(!is_test_file(Path::new("Latest.py")));
+}
+
+fn ts(src: &str) -> Vec<(String, Certainty)> {
+    of(Language::TypeScript, src, Kind::NoAssertion)
+}
+
+fn cs(src: &str) -> Vec<(String, Certainty)> {
+    of(Language::CSharp, src, Kind::NoAssertion)
+}
+
+/// A relative module specifier, built without a literal separator.
+fn rel(name: &str) -> String {
+    format!(".{}{name}", std::path::MAIN_SEPARATOR)
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn ts_and_js_assertion_calls_are_classified_not_unresolved() {
+    let asserting = [
+        "test('a', () => { expect(add(1, 2)).toBe(3); });",
+        "it('a', () => { expect(x).not.toBe(1); });",
+        "it('a', async () => { await expect(p).rejects.toThrow(); });",
+        "it('a', function () { expect(x).toMatchSnapshot(); });",
+        "import assert from 'node:assert/strict';\nit('a', () => { assert.equal(1, 1); });",
+        "const assert = require('assert');\nit('a', () => { assert.deepStrictEqual(a, b); });",
+        "import { strictEqual } from 'assert';\nit('a', () => { strictEqual(1, 1); });",
+        "it('a', () => { x.should.equal(1); });",
+        "it('a', () => { chai.expect(x).to.equal(1); });",
+        "test('a', (t) => { t.is(1, 1); });",
+        "it('a', () => { expectTypeOf(x).toEqualTypeOf<number>(); });",
+    ];
+    for src in asserting {
+        assert!(ts(src).is_empty(), "should be clean: {src}");
+        assert!(
+            of(Language::JavaScript, src, Kind::NoAssertion).is_empty(),
+            "js: {src}"
+        );
+    }
+    assert!(
+        ts("it('a', () => { expect(x).toBe(1); });").is_empty()
+            && report(Language::Tsx, "it('a', () => { expect(x).toBe(1); });")
+                .unresolved
+                .iter()
+                .all(|k| *k != Kind::NoAssertion)
+    );
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn ts_test_without_assertion_fires_and_unknown_helpers_stay_unresolved() {
+    assert_eq!(
+        ts("it('does nothing', () => { const x = add(1, 2); log(x); });"),
+        [("does nothing".to_owned(), Certainty::Certain)]
+    );
+    let helper = format!(
+        "import {{ finish }} from '{}';\nit('a', () => {{ finish(); }});",
+        rel("helpers")
+    );
+    assert_eq!(ts(&helper), [("a".to_owned(), Certainty::Unknown)]);
+    let unit = format!(
+        "import {{ add }} from '{}';\nit('a', () => {{ add(1, 2); }});",
+        rel("add")
+    );
+    assert_eq!(ts(&unit), [("a".to_owned(), Certainty::Certain)]);
+    let local = "function check2(x) { expect(x).toBe(1); }\nit('a', () => { check2(1); });";
+    assert!(ts(local).is_empty());
+    let local_none = "function run(x) { return x; }\nit('a', () => { run(1); });";
+    assert_eq!(ts(local_none).len(), 1);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn ts_skipped_grouped_and_callbackless_tests_are_handled() {
+    assert!(ts("it.skip('a', () => {});").is_empty());
+    assert!(ts("xit('a', () => {});").is_empty());
+    assert!(ts("it.todo('a');").is_empty());
+    assert!(ts("describe.skip('s', () => { it('a', () => {}); });").is_empty());
+    assert!(ts("describe('s', () => { beforeEach(() => { setup(); }); });").is_empty());
+    assert_eq!(
+        ts("describe('s', () => { it.only('a', () => { run(); }); });").len(),
+        1
+    );
+    assert_eq!(ts("it.each([1, 2])('n %d', (n) => { run(n); });").len(), 1);
+    assert!(ts("it.each([1, 2])('n %d', (n) => { expect(n).toBe(n); });").is_empty());
+    let r = report(
+        Language::TypeScript,
+        "it('a', () => { expect(1).toBe(1); });",
+    );
+    assert_eq!(r.unresolved, [Kind::Nondeterminism, Kind::ControlFlow]);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_assertion_calls_are_classified_not_unresolved() {
+    let wrap = |body: &str| {
+        format!(
+            "using Xunit;\nnamespace T {{\n public class AddTests {{\n  [Fact]\n  public void A() {{ {body} }}\n }}\n}}\n"
+        )
+    };
+    for body in [
+        "Assert.Equal(3, Add(1, 2));",
+        "Assert.Throws<ArgumentException>(() => Add(-1, 0));",
+        "await Assert.ThrowsAsync<InvalidOperationException>(() => Run());",
+        "Assert.That(x, Is.EqualTo(1));",
+        "x.Should().Be(1);",
+        "await act.Should().ThrowAsync<InvalidOperationException>();",
+        "mock.Received().Run();",
+        "Assert.Multiple(() => { Assert.True(a); });",
+    ] {
+        assert!(cs(&wrap(body)).is_empty(), "should be clean: {body}");
+    }
+    let statics = "using static Xunit.Assert;\npublic class T {\n [Fact]\n public void A() { Equal(1, 1); }\n}\n";
+    assert!(cs(statics).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_test_without_assertion_fires_and_variants_are_handled() {
+    let none = "public class T {\n [Fact]\n public void Smoke() { var x = Add(1, 2); }\n}\n";
+    assert_eq!(cs(none), [("Smoke".to_owned(), Certainty::Certain)]);
+    let nunit = "public class T {\n [Test]\n public void Smoke() { Add(1, 2); }\n}\n";
+    assert_eq!(cs(nunit).len(), 1);
+    let skipped = "public class T {\n [Fact(Skip = \"later\")]\n public void A() { Add(1, 2); }\n [Test, Ignore(\"x\")]\n public void B() { Add(1, 2); }\n}\n";
+    assert!(cs(skipped).is_empty());
+    let expected = "public class T {\n [TestCase(1, ExpectedResult = 2)]\n public int A(int x) { return x + 1; }\n}\n";
+    assert!(cs(expected).is_empty());
+    let not_a_test = "public class T {\n public void Helper() { Add(1, 2); }\n}\n";
+    assert!(cs(not_a_test).is_empty());
+    let open = "public class T : TestBase {\n [Fact]\n public void A() { Prepare(); }\n}\n";
+    assert_eq!(cs(open), [("A".to_owned(), Certainty::Unknown)]);
+    let closed = "public class T : IDisposable {\n [Fact]\n public void A() { Prepare(); }\n}\n";
+    assert_eq!(cs(closed), [("A".to_owned(), Certainty::Certain)]);
+    let local = "public class T {\n [Fact]\n public void A() { Verify2(); }\n void Verify2() { Assert.True(true); }\n}\n";
+    assert!(cs(local).is_empty());
+    let dbg = "public class T {\n [Fact]\n public void A() { Console.WriteLine(1); }\n}\n";
+    assert_eq!(cs(dbg).len(), 1);
 }

@@ -1,8 +1,10 @@
 //! Test-quality sites: `TESTQ001` to `TESTQ003` (lint catalogue row K20).
 //!
-//! [`scan`] finds, in the tests of one Rust or Python file, a test with no assertion
+//! [`scan`] finds, in the tests of one Rust, Python, TypeScript/JavaScript or C# file, a test with no assertion
 //! (`TESTQ001`), a sleep, wall-clock read or unseeded random source in a test body (`TESTQ002`)
 //! and control flow in a test body (`TESTQ003`, off by default: [`Kind::default_enabled`]).
+//! TypeScript, JavaScript (jest, vitest, mocha, node:test) and `C#` (`xUnit`, `NUnit`, `MSTest`) have
+//! `TESTQ001` vocabulary only; their `TESTQ002` and `TESTQ003` stay unresolved.
 //!
 //! `TESTQ001` follows same-file helpers and is three-valued: a helper whose body is out of sight
 //! (imported from a support module, a `mod x;` file, a mixin base) yields a site with
@@ -11,9 +13,11 @@
 //! to the rule that consumes it.
 
 // frob:ticket 01M4D957J2HZ655A1H8DJ4K8YD
+// frob:ticket 01M5HJNEBY5YBCJB06D5ZSH4H5
 
 mod assert;
 mod ctx;
+mod lang;
 mod nondet;
 
 use std::path::Path;
@@ -23,8 +27,9 @@ use gob_text::TextRange;
 use tree_sitter::Node;
 
 use crate::res::Certainty;
-use crate::syntax::{Lang, children, text};
+use crate::syntax::{children, text};
 use ctx::Ctx;
+use lang::Lang;
 
 pub use crate::res::ScanError;
 
@@ -102,7 +107,10 @@ pub fn has_test_roles(language: Language) -> bool {
     Lang::of(language).is_some()
 }
 
-/// True when a Python file at `path` is a test file by name or directory.
+/// True when the file at `path` is a test file by name or directory.
+///
+/// Covers Python (`test_x.py`, `x_test.py`, `conftest.py`), JS/TS (`x.test.ts`, `x.spec.js`,
+/// `__tests__/`) and C# (`XTests.cs`, `XTest.cs`), plus any `test`/`tests` directory.
 pub fn is_test_file(path: &Path) -> bool {
     let stem = path
         .file_stem()
@@ -110,15 +118,23 @@ pub fn is_test_file(path: &Path) -> bool {
         .unwrap_or_default();
     stem.starts_with(b"test_")
         || stem.ends_with(b"_test")
+        || stem.ends_with(b".test")
+        || stem.ends_with(b".spec")
         || stem == b"conftest"
-        || path
-            .components()
-            .any(|c| c.as_os_str() == "tests" || c.as_os_str() == "test")
+        || (path.extension().is_some_and(|e| e == "cs")
+            && (stem.ends_with(b"Test") || stem.ends_with(b"Tests")))
+        || path.components().any(|c| {
+            let c = c.as_os_str();
+            c == "tests" || c == "test" || c == "__tests__"
+        })
 }
 
 /// One test function found in the file.
 struct Test<'t> {
     func: Node<'t>,
+    /// The node a finding points at, and its display name.
+    name_node: Node<'t>,
+    name: String,
     /// Attribute or decorator text, for exemptions.
     marks: String,
     skipped: bool,
@@ -159,8 +175,11 @@ fn rust_test<'t>(cx: &Ctx<'t>, f: Node<'t>) -> Option<Test<'t>> {
     let returns_result = f
         .child_by_field_name("return_type")
         .is_some_and(|r| text(r, cx.src).contains("Result"));
+    let name_node = f.child_by_field_name("name").unwrap_or(f);
     Some(Test {
         func: f,
+        name_node,
+        name: text(name_node, cx.src).to_owned(),
         marks: attrs.join("\n"),
         skipped: names.iter().any(|n| n == "ignore"),
         exempt: returns_result || names.iter().any(|n| n == "should_panic"),
@@ -217,11 +236,179 @@ fn py_test<'t>(cx: &Ctx<'t>, f: Node<'t>) -> Option<Test<'t>> {
             .unwrap_or_default();
         head.trim().rsplit('.').next() == Some("skip")
     });
+    let name_node = f.child_by_field_name("name")?;
     Some(Test {
         func: f,
+        name_node,
+        name: name.to_owned(),
         marks: marks.join("\n"),
         skipped,
         exempt: false,
+        class_open,
+    })
+}
+
+/// Call roots that declare a JS/TS test.
+const JS_TEST_ROOTS: &[&str] = &["it", "test", "specify", "xit", "xtest", "xspecify"];
+
+/// Call roots that group JS/TS tests.
+const JS_SUITE_ROOTS: &[&str] = &["describe", "suite", "context", "xdescribe", "xcontext"];
+
+/// Modifiers that keep a call a test declaration (`it.only`, `test.concurrent.each(..)(..)`).
+const JS_MODIFIERS: &[&str] = &[
+    "only",
+    "skip",
+    "todo",
+    "concurrent",
+    "each",
+    "fails",
+    "failing",
+    "sequential",
+    "serial",
+];
+
+/// The root name and modifiers of a call chain such as `it.skip.each([..])`.
+fn js_chain(cx: &Ctx<'_>, mut n: Node<'_>) -> Option<(String, Vec<String>)> {
+    let mut mods = Vec::new();
+    loop {
+        match n.kind() {
+            "call_expression" => n = n.child_by_field_name("function")?,
+            "member_expression" => {
+                mods.push(text(n.child_by_field_name("property")?, cx.src).to_owned());
+                n = n.child_by_field_name("object")?;
+            }
+            "identifier" => return Some((text(n, cx.src).to_owned(), mods)),
+            _ => return None,
+        }
+    }
+}
+
+/// True when a suite call (`describe.skip(..)`, `xdescribe(..)`) skips its tests.
+fn js_suite_skips(cx: &Ctx<'_>, call: Node<'_>) -> bool {
+    js_chain(cx, call).is_some_and(|(root, mods)| {
+        JS_SUITE_ROOTS.contains(&root.as_str())
+            && (root.starts_with('x') || mods.iter().any(|m| m == "skip" || m == "todo"))
+    })
+}
+
+fn js_test<'t>(cx: &Ctx<'t>, call: Node<'t>) -> Option<Test<'t>> {
+    let (root, mods) = js_chain(cx, call.child_by_field_name("function")?)?;
+    if !JS_TEST_ROOTS.contains(&root.as_str())
+        || !mods.iter().all(|m| JS_MODIFIERS.contains(&m.as_str()))
+    {
+        return None;
+    }
+    let args = children(call.child_by_field_name("arguments")?);
+    let func = args.iter().rev().find(|a| a.is_named()).filter(|a| {
+        matches!(
+            a.kind(),
+            "arrow_function" | "function_expression" | "function"
+        )
+    })?;
+    let name_node = args
+        .iter()
+        .find(|a| a.kind() == "string" || a.kind() == "template_string")
+        .copied()
+        .unwrap_or(call);
+    let mut skipped = root.starts_with('x') || mods.iter().any(|m| m == "skip" || m == "todo");
+    let mut up = call.parent();
+    while let Some(p) = up {
+        if p.kind() == "call_expression" && js_suite_skips(cx, p) {
+            skipped = true;
+        }
+        up = p.parent();
+    }
+    Some(Test {
+        func: *func,
+        name_node,
+        name: text(name_node, cx.src)
+            .trim_matches(['"', '\'', '`'])
+            .to_owned(),
+        marks: String::new(),
+        skipped,
+        exempt: false,
+        class_open: false,
+    })
+}
+
+/// C# attributes that make a method a test.
+const CS_TEST_ATTRS: &[&str] = &[
+    "Test",
+    "TestCase",
+    "TestCaseSource",
+    "Theory",
+    "Fact",
+    "TestMethod",
+    "DataTestMethod",
+    "Property",
+];
+
+/// The attribute names (`Fact`, `Ignore`, without `Attribute` or a namespace) on `n`.
+fn cs_attrs(cx: &Ctx<'_>, n: Node<'_>) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    for list in children(n)
+        .into_iter()
+        .filter(|c| c.kind() == "attribute_list")
+    {
+        for a in children(list)
+            .into_iter()
+            .filter(|c| c.kind() == "attribute")
+        {
+            let full = text(a, cx.src).to_owned();
+            let head = full.split('(').next().unwrap_or_default().trim();
+            let head = head.rsplit('.').next().unwrap_or_default();
+            let head = head.strip_suffix("Attribute").unwrap_or(head);
+            out.push((head.to_owned(), full));
+        }
+    }
+    out
+}
+
+fn cs_test<'t>(cx: &Ctx<'t>, m: Node<'t>) -> Option<Test<'t>> {
+    let attrs = cs_attrs(cx, m);
+    if !attrs
+        .iter()
+        .any(|(n, _)| CS_TEST_ATTRS.contains(&n.as_str()))
+    {
+        return None;
+    }
+    let class =
+        std::iter::successors(m.parent(), Node::parent).find(|p| p.kind() == "class_declaration");
+    let class_attrs = class.map(|c| cs_attrs(cx, c)).unwrap_or_default();
+    let ignored = |a: &[(String, String)]| a.iter().any(|(n, _)| n == "Ignore" || n == "Explicit");
+    let skip_arg = attrs
+        .iter()
+        .any(|(n, full)| matches!(n.as_str(), "Fact" | "Theory") && full.contains("Skip"));
+    let exempt = attrs
+        .iter()
+        .any(|(n, full)| n == "ExpectedException" || full.contains("ExpectedResult"));
+    let class_open = class.is_some_and(|c| {
+        let partial = children(c)
+            .iter()
+            .any(|k| k.kind() == "modifier" && text(*k, cx.src) == "partial");
+        let bases = children(c).into_iter().find(|k| k.kind() == "base_list");
+        let inherits = bases.is_some_and(|b| {
+            children(b).into_iter().filter(Node::is_named).any(|t| {
+                let t = text(t, cx.src).rsplit('.').next().unwrap_or_default();
+                let mut ch = t.chars();
+                let iface = ch.next() == Some('I') && ch.next().is_some_and(char::is_uppercase);
+                !iface && t != "object"
+            })
+        });
+        partial || inherits
+    });
+    let name_node = m.child_by_field_name("name")?;
+    Some(Test {
+        func: m,
+        name_node,
+        name: text(name_node, cx.src).to_owned(),
+        marks: attrs
+            .iter()
+            .map(|(_, f)| f.as_str())
+            .collect::<Vec<_>>()
+            .join("\n"),
+        skipped: ignored(&attrs) || ignored(&class_attrs) || skip_arg,
+        exempt,
         class_open,
     })
 }
@@ -230,6 +417,8 @@ fn discover<'t>(cx: &Ctx<'t>, n: Node<'t>, out: &mut Vec<Test<'t>>) {
     let found = match (cx.lang, n.kind()) {
         (Lang::Rust, "function_item") => rust_test(cx, n),
         (Lang::Python, "function_definition") => py_test(cx, n),
+        (Lang::Script, "call_expression") => js_test(cx, n),
+        (Lang::CSharp, "method_declaration") => cs_test(cx, n),
         _ => None,
     };
     out.extend(found);
@@ -254,6 +443,7 @@ fn control_flow<'t>(lang: Lang, n: Node<'t>, out: &mut Vec<Node<'t>>) {
             "while_statement",
             "match_statement",
         ],
+        Lang::Script | Lang::CSharp => return,
     };
     if kinds.contains(&n.kind()) {
         out.push(n);
@@ -304,8 +494,7 @@ pub fn scan(language: Language, text: &str) -> Result<Report, ScanError> {
         });
     };
     for t in tests.iter().filter(|t| !t.skipped) {
-        let name_node = t.func.child_by_field_name("name").unwrap_or(t.func);
-        let name = crate::syntax::text(name_node, text).to_owned();
+        let (name_node, name) = (t.name_node, t.name.clone());
         if !t.exempt {
             let verdict = assert::Resolver::new(&cx, t.class_open).function(t.func, 0);
             match verdict {
@@ -352,8 +541,11 @@ pub fn scan(language: Language, text: &str) -> Result<Report, ScanError> {
         sites = sites.len(),
         "testq sites scanned"
     );
-    Ok(Report {
-        sites,
-        unresolved: Vec::new(),
-    })
+    // Script and C# tests are read for TESTQ001 only: the other two kinds have no vocabulary.
+    let unresolved = if lang.flow().is_some() {
+        Vec::new()
+    } else {
+        vec![Kind::Nondeterminism, Kind::ControlFlow]
+    };
+    Ok(Report { sites, unresolved })
 }

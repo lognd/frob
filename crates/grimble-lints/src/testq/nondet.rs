@@ -9,7 +9,8 @@
 use tree_sitter::Node;
 
 use super::ctx::{Callee, Ctx};
-use crate::syntax::{Lang, text};
+use super::lang::Lang;
+use crate::syntax::text;
 
 /// What kind of nondeterminism a call is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -121,6 +122,10 @@ fn module_calls<'t>(cx: &Ctx<'t>, n: Node<'t>, out: &mut Vec<Callee<'t>>) {
 
 /// Every nondeterministic call of `func`; `marks` is the text of its attributes or decorators.
 pub(super) fn find<'t>(cx: &Ctx<'t>, func: Node<'t>, marks: &str, root: Node<'t>) -> Vec<Hit<'t>> {
+    // TESTQ002 has vocabulary for Rust and Python only; other languages stay unresolved.
+    if cx.lang.flow().is_none() {
+        return Vec::new();
+    }
     let Some(body) = func.child_by_field_name("body") else {
         return Vec::new();
     };
@@ -134,6 +139,7 @@ pub(super) fn find<'t>(cx: &Ctx<'t>, func: Node<'t>, marks: &str, root: Node<'t>
                 || expanded.iter().any(|e| ends(e, &["time", "pause"]));
             (paused, paused, false)
         }
+        Lang::Script | Lang::CSharp => return Vec::new(),
         Lang::Python => {
             let patched = calls.iter().zip(&expanded).any(|(c, e)| {
                 matches!(
@@ -160,6 +166,7 @@ pub(super) fn find<'t>(cx: &Ctx<'t>, func: Node<'t>, marks: &str, root: Node<'t>
         let class = match cx.lang {
             Lang::Rust => rust_class(e),
             Lang::Python => py_class(e, args_empty(c.node)),
+            Lang::Script | Lang::CSharp => None,
         };
         let Some(class) = class else { continue };
         let exempt = match class {
