@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T20:48:57Z"
+digest = "42ff2fc1bc96e8a26a2e3a1527d2ef5c86dfdda8000c7d41533cb56da7dd802c"
+exit_code = 0
+head = "7179be1a5e0150d6da14994a26bf236e1a96de85"
+inline = '''
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ae7c0b43-fcba-4e4d-a08c-55cb656ac528 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.007s] frob-evidence::import_crunk dry_run_counts_dispositions_and_lists_open_tickets
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --test import_crunk dry_run_counts"
+size = 635
+status = "measured"
+test_count = 1
+tests_digest = "3170c17e9d1fc0e954225605e6ebbde79d03cb0ce474df1f8f81afb4db5a0bfd"
+at = "2026-10-23T20:48:57Z"
+actor = "lognd"
+rev = 1
