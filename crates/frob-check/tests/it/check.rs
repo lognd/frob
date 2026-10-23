@@ -572,6 +572,131 @@ fn a_failed_parsed_tool_fails_the_default_gate_with_its_stderr() {
     assert_eq!(report.exit_code(), ExitCode::Negative);
 }
 
+const NEEDS_OUT: &str = "args = [\"-c\", \"test -f out.txt\"]\n";
+
+/// Two stages that read `out.txt` (gitignored build output) and a `mk.sh` that makes it and counts its runs.
+fn requires_fixture(dir: &std::path::Path, extra: &str) {
+    write(
+        dir,
+        "mk.sh",
+        "echo run >> count.txt\necho built > out.txt\n",
+    );
+    write(dir, ".gitignore", "out.txt\ncount.txt\n");
+    write(
+        dir,
+        "frob.toml",
+        &format!(
+            "{extra}[[check.tool]]\nname = \"a\"\ncommand = \"sh\"\n{NEEDS_OUT}requires = [\"sh mk.sh\"]\n\n[[check.tool]]\nname = \"b\"\ncommand = \"sh\"\n{NEEDS_OUT}requires = [\"sh mk.sh\"]\n"
+        ),
+    );
+}
+
+// frob:ticket 01M4GKDSGA7ZSF99T7M5S319B4
+// frob:tests crates/gob-check/src/prereq.rs::Prereqs.ensure
+#[test]
+fn a_stage_prerequisite_builds_ignored_output_once_before_the_stages() {
+    if !gob_exec::require_sh("a_stage_prerequisite_builds_ignored_output_once_before_the_stages") {
+        return;
+    }
+    let dir = tempfile::tempdir().expect("tempdir");
+    requires_fixture(dir.path(), "");
+    let report = run(dir.path(), &tool_options()).expect("run");
+    assert!(report.findings.is_empty(), "{:?}", report.findings);
+    let count = std::fs::read_to_string(dir.path().join("count.txt")).expect("count");
+    assert_eq!(count.lines().count(), 1, "shared prerequisite ran once");
+}
+
+// frob:ticket 01M4GKDSGA7ZSF99T7M5S319B4
+// frob:tests crates/gob-check/src/prereq.rs::Prereqs.ensure
+#[test]
+fn a_failed_prerequisite_leaves_the_stage_unresolved_naming_it() {
+    if !gob_exec::require_sh("a_failed_prerequisite_leaves_the_stage_unresolved_naming_it") {
+        return;
+    }
+    let dir = tempfile::tempdir().expect("tempdir");
+    requires_fixture(dir.path(), "");
+    write(dir.path(), "mk.sh", "echo no toolchain >&2\nexit 3\n");
+    let report = run(dir.path(), &tool_options()).expect("run");
+    assert_eq!(rules_of(&report.findings), ["TOOL001", "TOOL001"]);
+    for f in &report.findings {
+        assert_eq!(f.severity, gob_rules::Severity::Unresolved);
+        assert!(matches!(
+            f.required,
+            Some(RequiredReason::ToolFailed { .. })
+        ));
+        assert!(
+            f.message.contains("prerequisite `sh mk.sh`"),
+            "{}",
+            f.message
+        );
+        assert!(f.message.contains("no toolchain"), "{}", f.message);
+    }
+    assert_eq!(report.exit_code(), ExitCode::Negative);
+}
+
+// frob:ticket 01M4GKDSGA7ZSF99T7M5S319B4
+// frob:tests crates/gob-check/src/prereq.rs::Prereqs.ensure
+#[test]
+fn repository_setup_steps_run_before_every_stage() {
+    if !gob_exec::require_sh("repository_setup_steps_run_before_every_stage") {
+        return;
+    }
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "mk.sh",
+        "echo run >> count.txt\necho built > out.txt\n",
+    );
+    write(
+        dir.path(),
+        "frob.toml",
+        &format!(
+            "[check]\nsetup = [\"sh mk.sh\"]\n\n[[check.tool]]\nname = \"a\"\ncommand = \"sh\"\n{NEEDS_OUT}"
+        ),
+    );
+    let report = run(dir.path(), &tool_options()).expect("run");
+    assert!(report.findings.is_empty(), "{:?}", report.findings);
+
+    write(dir.path(), "mk.sh", "exit 1\n");
+    std::fs::remove_file(dir.path().join("out.txt")).expect("rm");
+    let failed = run(dir.path(), &tool_options()).expect("run");
+    assert_eq!(rules_of(&failed.findings), ["TOOL001"]);
+    assert!(
+        failed.findings[0].message.contains("setup step `sh mk.sh`"),
+        "{}",
+        failed.findings[0].message
+    );
+}
+
+// frob:ticket 01M4GKDSGA7ZSF99T7M5S319B4
+// frob:tests crates/gob-check/src/prereq.rs::Prereqs.ensure
+#[test]
+fn a_prerequisite_whose_command_is_missing_is_unresolved_not_a_failure_of_the_stage() {
+    if !gob_exec::require_sh(
+        "a_prerequisite_whose_command_is_missing_is_unresolved_not_a_failure_of_the_stage",
+    ) {
+        return;
+    }
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "frob.toml",
+        &format!(
+            "[[check.tool]]\nname = \"a\"\ncommand = \"sh\"\n{NEEDS_OUT}requires = [\"frob-no-such-builder --dev\"]\n"
+        ),
+    );
+    let report = run(dir.path(), &tool_options()).expect("run");
+    assert_eq!(rules_of(&report.findings), ["TOOL001"]);
+    assert_eq!(report.findings[0].severity, gob_rules::Severity::Unresolved);
+    assert!(
+        report.findings[0]
+            .message
+            .contains("frob-no-such-builder --dev"),
+        "{}",
+        report.findings[0].message
+    );
+}
+
 #[test]
 fn a_missing_tool_binary_fails_under_required_and_passes_under_never() {
     let dir = tempfile::tempdir().expect("tempdir");

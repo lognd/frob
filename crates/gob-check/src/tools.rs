@@ -16,6 +16,7 @@ use gob_text::{FileInterner, LineCol, LineIndex, Span, TextRange, TextSize};
 
 use crate::config::{FILE_TOKEN, ToolParser, ToolStage};
 use crate::packages::Affected;
+use crate::prereq::Prereqs;
 use crate::report::Timing;
 use crate::rules::Tool001;
 use crate::tool_parse::{
@@ -110,7 +111,7 @@ fn tail(text: &str) -> String {
 }
 
 /// Escape `text` for one line of a finding: control characters become visible escapes.
-fn escape(text: &str) -> String {
+pub(crate) fn escape(text: &str) -> String {
     text.chars()
         .flat_map(|c| {
             if c.is_control() {
@@ -136,7 +137,7 @@ fn error_looking(line: &str) -> bool {
 ///
 /// Output that fits the cap is quoted whole. Longer output shows the last two
 /// error-looking lines and the last two lines, so leading INFO noise is dropped.
-fn excerpt(text: &str) -> String {
+pub(crate) fn excerpt(text: &str) -> String {
     let t = text.trim();
     if t.is_empty() {
         return "(empty)".to_owned();
@@ -181,7 +182,7 @@ fn command_line(stage: &ToolStage, args: &[String]) -> String {
 }
 
 /// The status of a finished run, for a finding.
-fn status_text(o: &Output) -> String {
+pub(crate) fn status_text(o: &Output) -> String {
     match o.status {
         Outcome::Exited(code) => format!("exit {code}"),
         Outcome::Signaled => "terminated by a signal".to_owned(),
@@ -264,7 +265,7 @@ fn spec(root: &Path, stage: &ToolStage, args: Vec<String>) -> Spec {
 }
 
 /// Run `stage` with `args`: through the verified `pack` when there is one, else by name.
-fn launch(
+pub(crate) fn launch(
     runner: &Runner,
     root: &Path,
     stage: &ToolStage,
@@ -590,11 +591,17 @@ fn execute(
     root: &Path,
     stage: &ToolStage,
     trust: Option<&dyn ToolTrust>,
+    prereqs: &Prereqs,
 ) -> StageResult {
     let pack = match vet(root, stage, trust) {
         Ok(pack) => pack,
         Err(result) => return result,
     };
+    // frob:ticket 01M4GKDSGA7ZSF99T7M5S319B4
+    // Build output the stage reads is produced first; a failed prerequisite is Unresolved, never a verdict.
+    if let Err(message) = prereqs.ensure(runner, root, stage, trust) {
+        return StageResult::Failed(message);
+    }
     let pack = pack.as_ref();
     let parsed = stage.parser != ToolParser::None;
     let variant_stage;
@@ -701,6 +708,22 @@ fn execute(
     }
 }
 
+/// [`vet`] with the refusal reduced to its message, for callers that only need the reason.
+pub(crate) fn vet_message(
+    root: &Path,
+    stage: &ToolStage,
+    trust: Option<&dyn ToolTrust>,
+) -> Result<Option<ProcessPack>, String> {
+    vet(root, stage, trust).map_err(|result| match result {
+        StageResult::Missing(m)
+        | StageResult::Untrusted(m)
+        | StageResult::Failed(m)
+        | StageResult::Problem(m)
+        | StageResult::Lag(m) => m,
+        StageResult::Done(_) => String::new(),
+    })
+}
+
 // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
 /// Run `stage`'s fix command `args` under the same trust gate as its check; `Err` is the reason it did not complete.
 pub(crate) fn run_fix(
@@ -709,14 +732,7 @@ pub(crate) fn run_fix(
     trust: Option<&dyn ToolTrust>,
     args: &[String],
 ) -> Result<(), String> {
-    let pack = vet(root, stage, trust).map_err(|result| match result {
-        StageResult::Missing(m)
-        | StageResult::Untrusted(m)
-        | StageResult::Failed(m)
-        | StageResult::Problem(m)
-        | StageResult::Lag(m) => m,
-        StageResult::Done(_) => String::new(),
-    })?;
+    let pack = vet_message(root, stage, trust)?;
     let runner = Runner::new(Limits::default()).allow_tools([stage.command.clone()]);
     match launch(&runner, root, stage, pack.as_ref(), args.to_vec()) {
         Ok(o) if o.status == Outcome::Exited(0) => {
@@ -908,6 +924,7 @@ pub(crate) fn start_tools(
     stages: &[ToolStage],
     memo: Option<&std::sync::Arc<dyn ToolMemo>>,
     trust: Option<&std::sync::Arc<dyn ToolTrust>>,
+    setup: &[String],
 ) -> Option<ToolRun> {
     if stages.is_empty() {
         return None;
@@ -928,8 +945,11 @@ pub(crate) fn start_tools(
                 }
             }
         });
+    let prereqs = std::sync::Arc::new(Prereqs::new(setup));
     let runner = std::sync::Arc::new(
-        Runner::new(Limits::default()).allow_tools(stages.iter().map(|s| s.command.clone())),
+        Runner::new(Limits::default())
+            .allow_tools(stages.iter().map(|s| s.command.clone()))
+            .allow_tools(prereqs.programs(stages)),
     );
     let mut groups: Vec<(String, Vec<usize>)> = Vec::new();
     for (i, stage) in stages.iter().enumerate() {
@@ -948,6 +968,7 @@ pub(crate) fn start_tools(
         .into_iter()
         .map(|(key, members)| {
             let runner = std::sync::Arc::clone(&runner);
+            let prereqs = std::sync::Arc::clone(&prereqs);
             let root = root.to_path_buf();
             let work: Vec<(usize, ToolStage, Option<String>)> = members
                 .into_iter()
@@ -972,7 +993,7 @@ pub(crate) fn start_tools(
                             tracing::info!(stage = %stage.name, "tool stage reused a recorded pass");
                             return (i, StageResult::Done(raws), started.elapsed(), true);
                         }
-                        let result = execute(&runner, &root, &stage, trust.as_deref());
+                        let result = execute(&runner, &root, &stage, trust.as_deref(), &prereqs);
                         // Only a stage that ran to a verdict is recorded; failures are never reused.
                         if let (StageResult::Done(raws), Some(m), Some(k)) =
                             (&result, memo.as_ref(), key.as_deref())
@@ -1279,6 +1300,7 @@ mod tests {
             inputs: Vec::new(),
             tier: crate::ToolTier::Ticket,
             unscoped_packages: vec!["--workspace".to_owned()],
+            requires: Vec::new(),
         }
     }
 
@@ -1293,7 +1315,7 @@ mod tests {
     fn run_full(stage: &ToolStage, root: &Path) -> ToolOutput {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
-        start_tools(root, std::slice::from_ref(stage), None, None)
+        start_tools(root, std::slice::from_ref(stage), None, None, &[])
             .expect("one stage")
             .finish(&mut timing, &mut files)
     }
@@ -1310,7 +1332,7 @@ mod tests {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
         let started = Instant::now();
-        let found = start_tools(Path::new("."), &stages, None, None)
+        let found = start_tools(Path::new("."), &stages, None, None, &[])
             .expect("stages")
             .finish(&mut timing, &mut files);
         let wall = started.elapsed();
@@ -1451,7 +1473,13 @@ mod tests {
             stage.fail_on_nonzero = false;
             let runner = Runner::new(Limits::default()).allow_tools(["sh".to_owned()]);
             // A working directory that does not exist makes the OS refuse the spawn.
-            let result = execute(&runner, Path::new("/frob-no-such-dir/x"), &stage, None);
+            let result = execute(
+                &runner,
+                Path::new("/frob-no-such-dir/x"),
+                &stage,
+                None,
+                &Prereqs::new(&[]),
+            );
             let mut files = FileInterner::default();
             let id: RuleId = Tool001.meta().rule_id().expect("id");
             let found = stage_findings(Path::new("."), &id, &stage, result, &mut files);
@@ -1824,9 +1852,15 @@ mod tests {
         let run = || {
             let mut timing = Timing::default();
             let mut files = FileInterner::default();
-            start_tools(dir.path(), std::slice::from_ref(&stage), Some(&memo), None)
-                .expect("stage")
-                .finish(&mut timing, &mut files);
+            start_tools(
+                dir.path(),
+                std::slice::from_ref(&stage),
+                Some(&memo),
+                None,
+                &[],
+            )
+            .expect("stage")
+            .finish(&mut timing, &mut files);
             timing.stages[0].name.clone()
         };
         let spawns = || {

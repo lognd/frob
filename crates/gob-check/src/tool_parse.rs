@@ -885,6 +885,7 @@ mod tests {
             inputs: Vec::new(),
             tier: crate::ToolTier::Ticket,
             unscoped_packages: vec!["--workspace".to_owned()],
+            requires: Vec::new(),
         }
     }
 

@@ -254,6 +254,7 @@ mod tests {
             inputs: Vec::new(),
             tier: gob_check::ToolTier::Ticket,
             unscoped_packages: Vec::new(),
+            requires: Vec::new(),
         };
         stage.id_map.insert("a".into(), "CI001".into());
         stage.id_map.insert("b".into(), "not a rule".into());
