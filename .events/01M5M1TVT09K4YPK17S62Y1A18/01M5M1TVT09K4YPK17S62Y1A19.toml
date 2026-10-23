@@ -1,0 +1,12 @@
+kind = "create"
+title = "Wire COH003 layers into coh_pass and product so live runs use them"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/grimble-check/**"]
+acceptance = ["COH003 is registered and runs through coh_pass and product using layers::coh003_options"]
+body = "Follow-up of WXQ03KP: layers.rs fills Coh003Options but no live run consumes it."
+at = "2026-10-23T09:35:21Z"
+actor = "lognd"
+rev = 1
