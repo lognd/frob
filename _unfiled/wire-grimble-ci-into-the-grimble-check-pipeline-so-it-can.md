@@ -2,12 +2,12 @@
 id = "01M5KDWHPF5YTVP64PYCXX0FRT"
 title = "Wire grimble-ci into the grimble check pipeline so it can own the CI family"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T03:46:45Z"
-updated = "2026-10-23T05:10:55Z"
+updated = "2026-10-23T05:10:56Z"
 scope = ["crates/grimble-check/**", "crates/grimble-ci/**"]
 
 [[acceptance]]
