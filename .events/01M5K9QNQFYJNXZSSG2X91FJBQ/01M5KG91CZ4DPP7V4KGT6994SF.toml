@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T04:28:17Z"
+digest = "486446c40c9cb0a5fb457dc6a1040e90a1eda5c85c0933271add76d38c6e240b"
+exit_code = 0
+head = "4fcb063d1ddf01a5ee130f4e62fb53730aa985ad"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 046a8102-0046-4aa8-9d71-c28dc0ff0ca0 with nextest profile: default
+    Starting 1 test across 1 binary (21 tests skipped)
+        PASS [   0.013s] grimble-lints::testq ts_js_and_csharp_control_flow_is_reported_not_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test testq ts_js_and_csharp_control_flow_is_reported_not_unresolved"
+size = 673
+status = "measured"
+test_count = 1
+tests_digest = "34c12ac267052abc6eb56025f1aac5102e45712696624cb2779f94771ee353f7"
+at = "2026-10-23T04:28:17Z"
+actor = "lognd"
+rev = 1

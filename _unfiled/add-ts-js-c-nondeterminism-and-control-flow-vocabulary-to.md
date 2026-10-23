@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T02:34:11Z"
-updated = "2026-10-23T04:27:50Z"
+updated = "2026-10-23T04:28:17Z"
 scope = ["crates/grimble-lints/src/testq/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "TESTQ003 reports control flow in TS, JS and C# tests instead of unresolved"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "deterministic straight-line tests in those languages stay quiet"
