@@ -2,12 +2,12 @@
 id = "01M4HW9FXBQ4BMRS0D4KS41FS3"
 title = "A bare-directory scope entry (backend/tests) matches nothing; treat it as dir/** and warn when any scope entry matches zero files"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T03:04:19Z"
-updated = "2026-10-10T03:04:19Z"
+updated = "2026-10-23T23:47:37Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob-lease/src/**", "crates/frob-obligations/src/**", "changelog.d/**"]
 
