@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T16:13:20Z"
-updated = "2026-10-23T17:04:54Z"
+updated = "2026-10-23T17:12:24Z"
 scope = ["docs/design/binding.md", "docs/design/grmb-spec.md", "crates/grimble-check/tests/design_docs.rs"]
 
 [[acceptance]]
