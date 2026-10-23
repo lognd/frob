@@ -8,10 +8,14 @@ points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-22T11:44:00Z"
-updated = "2026-10-23T01:05:42Z"
+updated = "2026-10-23T01:16:54Z"
 scope = ["crates/grimble-check/**", "crates/grimble-lints/**", "docs/**", "crates/grimble/src/explain_cmd.rs"]
 
 [[acceptance]]
 text = "Given GetComponent in Update, when grimble check runs, then UNITY201 is reported through a registered rule with a docs page"
+bound = false
+
+[[acceptance]]
+text = "Given an allocation in Update, when grimble check runs, then UNITY202 is reported through a registered rule with a docs page"
 bound = false
 +++
