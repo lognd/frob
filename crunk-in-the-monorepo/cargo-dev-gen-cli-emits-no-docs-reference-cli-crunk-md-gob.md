@@ -8,9 +8,9 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-21T07:55:27Z"
-updated = "2026-10-23T03:46:59Z"
+updated = "2026-10-23T03:47:00Z"
 labels = ["area:crunk"]
-scope = ["crates/gob-dev/**", "docs/reference/cli/**", "docs/crunk/migration.md"]
+scope = ["crates/gob-dev/**", "docs/reference/cli/**", "docs/crunk/migration.md", "crates/frob-docgen/tests/generate.rs"]
 
 [[acceptance]]
 text = "Given gob-dev gen cli, when it runs, then docs/reference/cli/crunk.md is generated from the crunk verb inventory"
