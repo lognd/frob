@@ -1,6 +1,7 @@
 //! `grimble status` end to end: grant count, breadth per node and the delta since the lock.
 
 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
+// frob:ticket 01M4GYBZZB9Z4QPMW451DC0JFG
 
 use std::path::Path;
 use std::process::Command;
@@ -119,4 +120,63 @@ fn status_without_a_lock_has_counts_and_no_delta() {
     assert_eq!(doc["data"]["grants"], 2);
     assert!(doc["data"]["changes"].as_array().unwrap().is_empty());
     assert!(node(&doc, "b")["base_grants"].is_null());
+}
+
+fn blanket_model() -> String {
+    let mut m = String::from(
+        "grimble = \"2\";\nmodule m;\nnode a : trusted {\n  owns \"src/**\";\n  may fs.read at \"src/a/**\" because=\"r\";\n}\n",
+    );
+    m.push_str("node tools : trusted {\n");
+    for atom in grimble_bind::grants::leaf_atoms() {
+        m.push_str(&format!(
+            "  may {atom} at \"lib/**\" because=\"tooling\";\n"
+        ));
+    }
+    m.push_str("}\nnode loose : trusted {\n  kind component;\n}\nnode outside : trusted {\n  kind external;\n}\n");
+    m
+}
+
+// frob:tests crates/grimble-bind/src/grants.rs::trust_zones
+// frob:tests crates/grimble-bind/src/grants.rs::gating
+// frob:tests crates/grimble/src/status_cmd.rs::Status
+#[test]
+fn status_lists_trust_zones_and_ungated_nodes_with_counts() {
+    let dir = repo(&blanket_model(), false);
+    let doc = status(dir.path());
+    let d = &doc["data"];
+    let zones = d["trust_zones"].as_array().unwrap();
+    assert_eq!(zones.len(), 1, "{doc}");
+    assert!(zones[0]["node"].as_str().unwrap().ends_with("tools"));
+    assert_eq!(zones[0]["files"], 1);
+    assert_eq!(d["trust_zone_files"], 1);
+    let ungated: Vec<&str> = d["ungated_nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|n| n.as_str().unwrap())
+        .collect();
+    assert_eq!(ungated.len(), 2, "tools and loose own nothing: {doc}");
+    assert!(ungated.iter().any(|n| n.ends_with("loose")));
+    assert_eq!(
+        (d["gated_nodes"].as_u64(), d["external_nodes"].as_u64()),
+        (Some(1), Some(1))
+    );
+
+    let (code, out, _) = run_for_test(&grimble::cli(), &["status", "--text"], dir.path());
+    assert_eq!(code, 0);
+    assert!(out.contains("trust zones: 1"), "{out}");
+    assert!(
+        out.contains("ungated nodes: 2 (1 gated, 1 external"),
+        "{out}"
+    );
+}
+
+// frob:tests crates/grimble/src/status_cmd.rs::Status
+#[test]
+fn status_on_an_empty_model_reports_zero_zones_and_zero_ungated() {
+    let dir = repo("grimble = \"2\";\nmodule m;\n", false);
+    let doc = status(dir.path());
+    assert_eq!(doc["data"]["trust_zones"].as_array().unwrap().len(), 0);
+    assert_eq!(doc["data"]["ungated_nodes"].as_array().unwrap().len(), 0);
+    assert_eq!(doc["data"]["gated_nodes"], 0);
 }

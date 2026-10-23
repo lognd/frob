@@ -1,10 +1,11 @@
 //! Grant ratchet: counts, breadth and the delta against a baseline.
 
 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
+// frob:ticket 01M4GYBZZB9Z4QPMW451DC0JFG
 
 use std::collections::BTreeSet;
 
-use grimble_bind::grants::{ChangeKind, GrantFacts, ratchet};
+use grimble_bind::grants::{ChangeKind, GrantFacts, ratchet, trust_zones};
 
 fn grant(node: &str, atom: &str, files: &[&str], reason: bool) -> GrantFacts {
     GrantFacts {
@@ -71,4 +72,65 @@ fn removed_grant_and_node_rows_carry_baseline() {
     assert_eq!(r.changes[0].kind, ChangeKind::Removed);
     assert_eq!(r.nodes[0].base_grants, Some(1));
     assert_eq!(r.nodes[0].grants, 0);
+}
+
+fn at(node: &str, atom: &str, glob: &str, files: &[&str]) -> GrantFacts {
+    GrantFacts {
+        at: Some(glob.into()),
+        ..grant(node, atom, files, true)
+    }
+}
+
+fn universe() -> Vec<String> {
+    vec!["fs.read".into(), "fs.write".into(), "net.connect".into()]
+}
+
+// frob:tests crates/grimble-bind/src/grants.rs::trust_zones
+#[test]
+fn every_atom_at_a_broad_glob_is_a_zone_and_overlaps_count_once() {
+    let mut all = Vec::new();
+    for a in ["fs", "net.connect"] {
+        all.push(at(
+            "node/t",
+            a,
+            "\"scripts/**\"",
+            &["scripts/a", "scripts/b"],
+        ));
+        all.push(at(
+            "node/u",
+            a,
+            "\"scripts/**\"",
+            &["scripts/b", "scripts/c"],
+        ));
+    }
+    let z = trust_zones(&all, &universe());
+    assert_eq!(z.zones.len(), 2, "{z:?}");
+    assert_eq!((z.zones[0].node.as_str(), z.zones[0].files), ("node/t", 2));
+    assert_eq!(z.files, 3, "scripts/b is counted once");
+}
+
+// frob:tests crates/grimble-bind/src/grants.rs::trust_zones
+#[test]
+fn partial_narrow_scoped_and_empty_inputs_are_not_zones() {
+    let f = ["x"];
+    // Missing net.connect; a single file glob; an argument-scoped atom; a symbol glob.
+    let mut all = vec![
+        at("node/a", "fs", "\"t/**\"", &f),
+        at("node/b", "fs", "\"one.py\"", &f),
+        at("node/b", "net.connect", "\"one.py\"", &f),
+        at("node/c", "fs", "\"t/**\"", &f),
+        at("node/d", "fs", "\"t/x.py::f**\"", &f),
+        at("node/d", "net.connect", "\"t/x.py::f**\"", &f),
+        grant("node/e", "fs", &f, true),
+        grant("node/e", "net.connect", &f, true),
+    ];
+    let mut scoped = at("node/c", "net.connect", "\"t/**\"", &f);
+    scoped.args = vec!["api.example.com".into()];
+    all.push(scoped);
+    assert!(trust_zones(&all, &universe()).zones.is_empty());
+    assert!(trust_zones(&[], &universe()).zones.is_empty());
+    assert!(
+        trust_zones(&all, &[]).zones.is_empty(),
+        "no atoms means no every-atom claim"
+    );
 }

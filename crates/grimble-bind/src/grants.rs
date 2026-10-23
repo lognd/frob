@@ -5,11 +5,15 @@
 //! compares like with like: both the current and the baseline grants are evaluated over the
 //! SAME file universe, so a delta means a grant changed, not that the repo grew.
 //!
+//! Trust zones and ungated nodes (ticket 1DC0JFG) are read from the same facts: a zone is a node's
+//! every-atom grant at one broad glob, an ungated node owns no code, so no capability check judges it.
+//!
 //! Grants are identified across the two models by `(node, atom as written, string arguments)`.
 //! A grant is widened when it matches a file its baseline did not (even if it also lost others),
 //! narrowed when it only lost files, and added or removed when the identity is new or gone.
 
 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
+// frob:ticket 01M4GYBZZB9Z4QPMW451DC0JFG
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -295,4 +299,139 @@ pub fn ratchet(cur: &[GrantFacts], base: Option<&[GrantFacts]>) -> Ratchet {
         changes,
         unreasoned,
     }
+}
+
+/// The glob a grant must carry to count as broad: a tree pattern, never a single file or symbol.
+const BROAD_MARK: &str = "**";
+
+/// One node's every-atom grant at one broad glob: a declared trust zone, not an enforced one.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TrustZone {
+    /// The node anchor.
+    pub node: String,
+    /// The `at` selector text the atoms are granted at.
+    pub at: String,
+    /// Distinct files the zone covers in the evaluated walk.
+    pub files: usize,
+    /// The .grmb file the first of the zone's grants is written in.
+    pub file: String,
+}
+
+/// The trust zones of a model and how much of the tree they cover together.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Zones {
+    /// One entry per `(node, glob)` pair, ordered by node then glob.
+    pub zones: Vec<TrustZone>,
+    /// Distinct files covered by any zone: overlapping zones count a file once.
+    pub files: usize,
+}
+
+/// The leaf atoms of the registry: every registered atom that has no registered child.
+pub fn leaf_atoms() -> Vec<String> {
+    let names: Vec<&str> = gob_ir::registry::atoms().iter().map(|a| a.name).collect();
+    names
+        .iter()
+        .filter(|n| {
+            !names
+                .iter()
+                .any(|m| m.strip_prefix(**n).is_some_and(|r| r.starts_with('.')))
+        })
+        .map(|n| (*n).to_owned())
+        .collect()
+}
+
+/// True when the selector text names a tree of files (has `**`) and not a symbol.
+fn is_broad(at: &str) -> bool {
+    at.contains(BROAD_MARK) && !at.contains("::")
+}
+
+/// True when a grant of `granted` covers `atom`: the atom itself or its parent.
+fn grant_covers(granted: &str, atom: &str) -> bool {
+    let granted = gob_ir::registry::canonical(granted).unwrap_or(granted);
+    granted == atom
+        || atom
+            .strip_prefix(granted)
+            .is_some_and(|r| r.starts_with('.'))
+}
+
+/// The trust zones among `all`: grants without string arguments (an argument-scoped grant is
+/// narrow by construction) at one broad glob of one node that together cover every atom of
+/// `universe`. Zones may overlap; each is listed and the union is counted once.
+pub fn trust_zones(all: &[GrantFacts], universe: &[String]) -> Zones {
+    let mut groups: BTreeMap<(&str, &str), Vec<&GrantFacts>> = BTreeMap::new();
+    for g in all.iter().filter(|g| g.args.is_empty()) {
+        if let Some(at) = g.at.as_deref().filter(|a| is_broad(a)) {
+            groups.entry((g.node.as_str(), at)).or_default().push(g);
+        }
+    }
+    let mut out = Zones::default();
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
+    for ((node, at), grants) in groups {
+        let every = !universe.is_empty()
+            && universe
+                .iter()
+                .all(|a| grants.iter().any(|g| grant_covers(&g.atom, a)));
+        if !every {
+            continue;
+        }
+        let files: BTreeSet<&str> = grants
+            .iter()
+            .flat_map(|g| g.files.iter().map(String::as_str))
+            .collect();
+        seen.extend(files.iter().copied());
+        out.zones.push(TrustZone {
+            node: node.to_owned(),
+            at: at.to_owned(),
+            files: files.len(),
+            file: grants[0].file.clone(),
+        });
+    }
+    out.files = seen.len();
+    tracing::info!(
+        zones = out.zones.len(),
+        files = out.files,
+        "trust zones found"
+    );
+    out
+}
+
+/// How many nodes a capability check can judge and which it cannot.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Gating {
+    /// Every node of the model.
+    pub nodes: usize,
+    /// External nodes (`kind external`): they own no code by definition and are not counted ungated.
+    pub external: usize,
+    /// Nodes with a code-owning selector: subjects of CAP001 and CAP002.
+    pub gated: usize,
+    /// Nodes that are neither external nor gated, as anchors in order.
+    pub ungated: Vec<String>,
+}
+
+/// Classify the nodes of `model`. A node is gated when it has an `owns` clause whose selector
+/// parsed; one whose every `owns` selector failed to parse owns no code and is ungated.
+pub fn gating(model: &Model) -> Gating {
+    let mut out = Gating::default();
+    for e in model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Node)
+    {
+        out.nodes += 1;
+        if e.external {
+            out.external += 1;
+        } else if e.clauses_of(Role::Owns).any(|c| c.selector.is_some()) {
+            out.gated += 1;
+        } else {
+            out.ungated.push(e.anchor.clone());
+        }
+    }
+    out.ungated.sort();
+    tracing::info!(
+        nodes = out.nodes,
+        gated = out.gated,
+        ungated = out.ungated.len(),
+        "node gating classified"
+    );
+    out
 }

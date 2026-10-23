@@ -394,6 +394,14 @@ files is `narrowed`; new and deleted grants are `added` and `removed`. Without a
 committed lock there is no baseline: counts only, `baseline` is null and there is
 no delta. Grants that state no reason are listed as well.
 
+**Trust zones and ungated nodes.** `grimble status` also lists each node that grants EVERY
+registered leaf atom (a parent atom such as `fs` covers its children) at one broad `at` glob, one
+without string arguments, whose text has `**` and no `::`, as a declared trust zone with the
+files it covers; `trust_zone_files` counts the union, so overlapping zones count a file once.
+Nodes that are not `kind external` and have no `owns` clause with a parsed selector are listed
+as ungated (`ungated_nodes`), next to `gated_nodes` and `external_nodes` counts: no capability
+rule (CAP001, CAP002) judges them. Pack-declared atoms are not in the every-atom universe.
+
 A node without a `trust` is MDL008. A node carries NO excuse clause:
 capabilities are denied by default (binding.md 7.2), so a node never
 needs to say "not this atom"; a not-granted atom is simply denied, and

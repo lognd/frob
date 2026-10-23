@@ -6,6 +6,7 @@
 //! no baseline: counts only, `baseline: none`.
 
 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
+// frob:ticket 01M4GYBZZB9Z4QPMW451DC0JFG
 
 use std::fmt::Write as _;
 use std::path::Path;
@@ -91,6 +92,27 @@ pub struct StatusData {
     pub widened: Vec<String>,
     /// Current grants that state no `because=` or `ticket=`.
     pub unreasoned: Vec<String>,
+    /// Every-atom grants at a broad glob: declared trust zones, covered but not enforced.
+    pub trust_zones: Vec<ZoneRow>,
+    /// Distinct files covered by any trust zone (overlapping zones count a file once).
+    pub trust_zone_files: usize,
+    /// Nodes with a code-owning selector, the subjects of the capability rules.
+    pub gated_nodes: usize,
+    /// Nodes with no code-owning selector (not external): no capability rule judges them.
+    pub ungated_nodes: Vec<String>,
+    /// External nodes, which own no code by definition and are not counted as ungated.
+    pub external_nodes: usize,
+}
+
+/// One trust zone: a node granting every atom at one broad glob.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ZoneRow {
+    /// The node anchor.
+    pub node: String,
+    /// The glob the atoms are granted at.
+    pub at: String,
+    /// Distinct files the zone covers.
+    pub files: usize,
 }
 
 impl Command for Status {
@@ -117,18 +139,22 @@ impl Command for Status {
             files: entries,
             oversized: Vec::new(),
         };
-        let now = grants::facts(&bind_model::load(&current_files), &walk);
+        let current = bind_model::load(&current_files);
+        let now = grants::facts(&current, &walk);
         let base = baseline(&root, &table);
         let base_facts = base
             .as_ref()
             .map(|(_, files)| grants::facts(&bind_model::load(files), &walk));
         let report = grants::ratchet(&now, base_facts.as_deref());
-        let data = to_data(
+        let zones = grants::trust_zones(&now, &grants::leaf_atoms());
+        let gating = grants::gating(&current);
+        let mut data = to_data(
             &report,
             base.map(|(rev, _)| rev),
             &now,
             base_facts.as_deref(),
         );
+        add_coverage(&mut data, &zones, gating);
         Ok(Payload::new(data.clone()).with_rendered(render(&data)))
     }
 }
@@ -174,7 +200,29 @@ fn to_data(
         changes,
         widened,
         unreasoned: r.unreasoned.clone(),
+        trust_zones: Vec::new(),
+        trust_zone_files: 0,
+        gated_nodes: 0,
+        ungated_nodes: Vec::new(),
+        external_nodes: 0,
     }
+}
+
+/// Fill the trust zone and ungated-node sections, so coverage is never read as enforcement.
+fn add_coverage(d: &mut StatusData, zones: &grants::Zones, gating: grants::Gating) {
+    d.trust_zones = zones
+        .zones
+        .iter()
+        .map(|z| ZoneRow {
+            node: z.node.clone(),
+            at: z.at.clone(),
+            files: z.files,
+        })
+        .collect();
+    d.trust_zone_files = zones.files;
+    d.gated_nodes = gating.gated;
+    d.external_nodes = gating.external;
+    d.ungated_nodes = gating.ungated;
 }
 
 /// Human lines: totals, one row per node, then the changes with widenings named.
@@ -208,6 +256,26 @@ fn render(d: &StatusData) -> Vec<String> {
     }
     for u in &d.unreasoned {
         out.push(format!("no reason: {u}"));
+    }
+    out.push(format!(
+        "trust zones: {} ({} files; every atom granted, declared not enforced)",
+        d.trust_zones.len(),
+        d.trust_zone_files
+    ));
+    for z in &d.trust_zones {
+        out.push(format!(
+            "  zone: {} at {} ({} files)",
+            z.node, z.at, z.files
+        ));
+    }
+    out.push(format!(
+        "ungated nodes: {} ({} gated, {} external; no code-owning selector, no capability check)",
+        d.ungated_nodes.len(),
+        d.gated_nodes,
+        d.external_nodes
+    ));
+    for n in &d.ungated_nodes {
+        out.push(format!("  ungated: {n}"));
     }
     out
 }
