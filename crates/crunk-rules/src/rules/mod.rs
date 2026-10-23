@@ -37,12 +37,30 @@ pub mod content002;
 pub mod content003;
 /// Rule `CONTRAST001`.
 pub mod contrast001;
+/// Rule `CRAFT001`.
+pub mod craft001;
+/// Rule `CRAFT002`.
+pub mod craft002;
+/// Rule `CRAFT003`.
+pub mod craft003;
+/// Rule `CRAFT004`.
+pub mod craft004;
+/// Rule `CRAFT005`.
+pub mod craft005;
 /// Rule `CRAFT006`.
 pub mod craft006;
+/// Rule `CRAFT007`.
+pub mod craft007;
 /// Rule `CRAFT008`.
 pub mod craft008;
+/// Rule `CRAFT009`.
+pub mod craft009;
 /// Rule `CRAFT010`.
 pub mod craft010;
+/// Rule `CRAFT011`.
+pub mod craft011;
+/// Rule `CRAFT012`.
+pub mod craft012;
 /// Rule `CRAFT013`.
 pub mod craft013;
 /// Rule `EXPORT001`.
@@ -187,9 +205,18 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <content002::Content002 as gob_rules::RuleDecl>::DEF,
     <content003::Content003 as gob_rules::RuleDecl>::DEF,
     <contrast001::Contrast001 as gob_rules::RuleDecl>::DEF,
+    <craft001::Craft001 as gob_rules::RuleDecl>::DEF,
+    <craft002::Craft002 as gob_rules::RuleDecl>::DEF,
+    <craft003::Craft003 as gob_rules::RuleDecl>::DEF,
+    <craft004::Craft004 as gob_rules::RuleDecl>::DEF,
+    <craft005::Craft005 as gob_rules::RuleDecl>::DEF,
     <craft006::Craft006 as gob_rules::RuleDecl>::DEF,
+    <craft007::Craft007 as gob_rules::RuleDecl>::DEF,
     <craft008::Craft008 as gob_rules::RuleDecl>::DEF,
+    <craft009::Craft009 as gob_rules::RuleDecl>::DEF,
     <craft010::Craft010 as gob_rules::RuleDecl>::DEF,
+    <craft011::Craft011 as gob_rules::RuleDecl>::DEF,
+    <craft012::Craft012 as gob_rules::RuleDecl>::DEF,
     <craft013::Craft013 as gob_rules::RuleDecl>::DEF,
     <export001::Export001 as gob_rules::RuleDecl>::DEF,
     <export002::Export002 as gob_rules::RuleDecl>::DEF,
@@ -285,9 +312,18 @@ where
     content002::Content002: gob_rules::Measured<P>,
     content003::Content003: gob_rules::Measured<P>,
     contrast001::Contrast001: gob_rules::RepoRule<P>,
+    craft001::Craft001: gob_rules::RepoRule<P>,
+    craft002::Craft002: gob_rules::RepoRule<P>,
+    craft003::Craft003: gob_rules::RepoRule<P>,
+    craft004::Craft004: gob_rules::RepoRule<P>,
+    craft005::Craft005: gob_rules::RepoRule<P>,
     craft006::Craft006: gob_rules::RepoRule<P>,
+    craft007::Craft007: gob_rules::RepoRule<P>,
     craft008::Craft008: gob_rules::RepoRule<P>,
+    craft009::Craft009: gob_rules::RepoRule<P>,
     craft010::Craft010: gob_rules::RepoRule<P>,
+    craft011::Craft011: gob_rules::RepoRule<P>,
+    craft012::Craft012: gob_rules::RepoRule<P>,
     craft013::Craft013: gob_rules::RepoRule<P>,
     export001::Export001: gob_rules::Measured<P>,
     export002::Export002: gob_rules::Measured<P>,
@@ -369,9 +405,18 @@ where
     rules.push(gob_rules::BoundRule::measured(content002::Content002));
     rules.push(gob_rules::BoundRule::measured(content003::Content003));
     rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
+    rules.push(gob_rules::BoundRule::repo(craft001::Craft001));
+    rules.push(gob_rules::BoundRule::repo(craft002::Craft002));
+    rules.push(gob_rules::BoundRule::repo(craft003::Craft003));
+    rules.push(gob_rules::BoundRule::repo(craft004::Craft004));
+    rules.push(gob_rules::BoundRule::repo(craft005::Craft005));
     rules.push(gob_rules::BoundRule::repo(craft006::Craft006));
+    rules.push(gob_rules::BoundRule::repo(craft007::Craft007));
     rules.push(gob_rules::BoundRule::repo(craft008::Craft008));
+    rules.push(gob_rules::BoundRule::repo(craft009::Craft009));
     rules.push(gob_rules::BoundRule::repo(craft010::Craft010));
+    rules.push(gob_rules::BoundRule::repo(craft011::Craft011));
+    rules.push(gob_rules::BoundRule::repo(craft012::Craft012));
     rules.push(gob_rules::BoundRule::repo(craft013::Craft013));
     rules.push(gob_rules::BoundRule::measured(export001::Export001));
     rules.push(gob_rules::BoundRule::measured(export002::Export002));

@@ -1,0 +1,49 @@
+<!-- mdtest: rule=CRAFT004 -->
+# CRAFT004 fonts-shipped
+
+Custom fonts are shipped with `@font-face` and a fallback metric match.
+
+## What it does
+
+Flags a custom family named in `font-family` or a `--font*` property with no `@font-face` in the project, an `@font-face` without `font-display` or `unicode-range`, and, once, a set of faces none of which has a metric override (`size-adjust`, `ascent-override` or `descent-override`). System and generic stacks need nothing. Comments and strings are ignored. Advisory.
+
+## Why it matters
+
+A font that is named but not shipped silently falls back. One shipped without `font-display` blocks text, and without a metric override the layout jumps when it loads.
+
+## Remedy
+
+Add the `@font-face` with `font-display: swap`, a `unicode-range` and a metric override, or use a system stack.
+
+## Examples
+
+### A custom family with no face fires
+
+```css expect=fire file=styles/app.css
+body {
+  font-family: "Inter", sans-serif;
+}
+```
+
+### A complete face is clean
+
+```css expect=clean file=styles/app.css
+@font-face {
+  font-family: "Inter";
+  src: url(inter.woff2);
+  font-display: swap;
+  unicode-range: U+0000-00FF;
+  size-adjust: 105%;
+}
+body {
+  font-family: "Inter", sans-serif;
+}
+```
+
+### A system stack is clean
+
+```css expect=clean file=styles/app.css
+body {
+  font-family: system-ui, sans-serif;
+}
+```

@@ -1,0 +1,57 @@
+<!-- mdtest: rule=CRAFT012 -->
+# CRAFT012 intent-coverage
+
+Most styling values come from tokens.
+
+## What it does
+
+Counts colours and non-zero pixel or rem lengths written as literals against `var()` reads of defined custom properties and non-arbitrary utilities. With at least 10 values and under 90 percent from tokens, fires once at the sheet with the most literals. Custom property definitions are not counted. Advisory.
+
+## Why it matters
+
+Literal values bypass the decisions in the design tokens, so the design drifts from its own system.
+
+## Remedy
+
+Replace literals with tokens, or turn CRAFT012 off under `[lint]`.
+
+## Examples
+
+### Twelve literal colours fire
+
+```css expect=fire file=styles/app.css
+.c0 { color: #100111; }
+.c1 { color: #101111; }
+.c2 { color: #102111; }
+.c3 { color: #103111; }
+.c4 { color: #104111; }
+.c5 { color: #105111; }
+.c6 { color: #106111; }
+.c7 { color: #107111; }
+.c8 { color: #108111; }
+.c9 { color: #109111; }
+.c10 { color: #110111; }
+.c11 { color: #111111; }
+
+```
+
+### Styling from tokens is clean
+
+```css expect=clean file=styles/app.css
+:root {
+  --ink: #111111;
+}
+.c0 { color: var(--ink); }
+.c1 { color: var(--ink); }
+.c2 { color: var(--ink); }
+.c3 { color: var(--ink); }
+.c4 { color: var(--ink); }
+.c5 { color: var(--ink); }
+.c6 { color: var(--ink); }
+.c7 { color: var(--ink); }
+.c8 { color: var(--ink); }
+.c9 { color: var(--ink); }
+.c10 { color: var(--ink); }
+.c11 { color: var(--ink); }
+
+```

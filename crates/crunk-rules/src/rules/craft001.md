@@ -1,0 +1,44 @@
+<!-- mdtest: rule=CRAFT001 -->
+# CRAFT001 focus-visible-defined
+
+A stylesheet with a UI styles keyboard focus; the clean case adds a `:focus-visible` rule.
+
+## What it does
+
+Flags, once and at the first stylesheet that styles something, a project whose styling never defines `:focus-visible` (a non-empty rule on the pseudo-class, an `@apply focus-visible:` variant or a Tailwind `focus-visible:` utility). Comments and strings do not count. A project with no styling, or only token files, has no UI and is quiet. Advisory.
+
+## Why it matters
+
+A keyboard user navigates by the focus ring. Without a designed `:focus-visible` style the browser default is the only cue, which is often invisible against the design.
+
+## Remedy
+
+Add a `:focus-visible` rule with a visible outline to the interactive elements, or turn CRAFT001 off under `[lint]` for a design with no interactive UI.
+
+## Examples
+
+### A UI that never styles focus fires
+
+```css expect=fire file=styles/app.css
+.btn {
+  color: #111111;
+}
+/* :focus-visible is only mentioned here */
+```
+
+### A `:focus-visible` rule is clean
+
+```css expect=clean file=styles/app.css
+.btn {
+  color: #111111;
+}
+.btn:focus-visible {
+  outline: 2px solid #1d4ed8;
+}
+```
+
+### A file with no styling is clean
+
+```css expect=clean file=styles/app.css
+
+```

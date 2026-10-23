@@ -479,6 +479,14 @@ fn write_content(root: &Path, config: Option<&str>) {
             "voice = \"plain and warm\"\n",
         );
     }
+    // frob:ticket 01M5HM3WE0PDTYAJ31B2C2A8A0
+    if config == Some("content-placeholder") {
+        write(
+            root,
+            "design/content/en.toml",
+            "locale = \"en\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Lorem ipsum dolor\"\nmax_chars = 40\n",
+        );
+    }
     if config == Some("content-en") {
         write(
             root,
