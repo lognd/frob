@@ -4,7 +4,8 @@
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Write as _;
 
 use gob_directives::is_full_ulid;
 use gob_rules::{Finding, Registry, RequiredReason, RuleId, Severity};
@@ -290,6 +291,30 @@ fn near_miss(name: &str) -> String {
     }
 }
 
+/// One selector that matches no walk file, with every clause that writes it (MDL005).
+struct NoFile {
+    /// Index of the file holding the first clause.
+    file: usize,
+    /// Span of the first clause's selector.
+    span: Span,
+    /// Anchor of the first clause (the fingerprint source).
+    anchor: String,
+    /// The canonical selector text.
+    text: String,
+    /// `path:line` of each clause, in encounter order.
+    sites: Vec<String>,
+}
+
+/// The 1-based line of byte offset `at` in `text`.
+fn line_at(text: &str, at: usize) -> usize {
+    text.as_bytes()
+        .iter()
+        .take(at)
+        .filter(|b| **b == b'\n')
+        .count()
+        + 1
+}
+
 struct Checker<'a> {
     input: &'a ModelFiles,
     root: &'a LoadedRoot,
@@ -297,6 +322,10 @@ struct Checker<'a> {
     ids: &'a mut FileInterner,
     out: Vec<Finding>,
     known_rules: BTreeSet<String>,
+    /// MDL005 candidates: one entry per distinct selector (and exception scope), flushed at the end of the run.
+    no_file: Vec<NoFile>,
+    /// Index into `no_file` by selector text and exception scope.
+    no_file_idx: BTreeMap<(String, Option<String>), usize>,
 }
 
 impl<'a> Checker<'a> {
@@ -313,6 +342,8 @@ impl<'a> Checker<'a> {
             ids,
             out: Vec::new(),
             known_rules,
+            no_file: Vec::new(),
+            no_file_idx: BTreeMap::new(),
         }
     }
 
@@ -373,6 +404,63 @@ impl<'a> Checker<'a> {
             self.top_exception(&top);
         }
         self.packs();
+        self.flush_no_file();
+    }
+
+    /// The scope an `accept` for MDL005 gives a selector: its entity or file, else none (groupable model-wide).
+    fn mdl005_scope(&self, rec: &EntityRec<'_>) -> Option<String> {
+        let is_mdl005 = |x: &crate::ast::Exception| x.rule.text == "MDL005";
+        if rec
+            .entity
+            .clauses
+            .iter()
+            .any(|c| matches!(&c.kind, ClauseKind::Exception(x) if is_mdl005(x)))
+        {
+            return Some(format!("entity/{}", rec.full));
+        }
+        self.idx
+            .top_exceptions
+            .iter()
+            .any(|t| t.file == rec.file && is_mdl005(&t.exc.exception))
+            .then(|| format!("file/{}", self.root.files[rec.file].parsed.path))
+    }
+
+    /// Record a selector with no walk file; clauses writing the same selector share one finding.
+    fn note_no_file(&mut self, rec: &EntityRec<'_>, sel: &Sel, text: String, anchor: &str) {
+        let parsed = &self.root.files[rec.file].parsed;
+        let site = format!("{}:{}", parsed.path, line_at(&parsed.text, sel.span.start));
+        let key = (text.clone(), self.mdl005_scope(rec));
+        if let Some(&i) = self.no_file_idx.get(&key) {
+            tracing::debug!(selector = %text, %site, "selector with no file repeated; folded into one MDL005");
+            if !self.no_file[i].sites.contains(&site) {
+                self.no_file[i].sites.push(site);
+            }
+            return;
+        }
+        self.no_file_idx.insert(key, self.no_file.len());
+        self.no_file.push(NoFile {
+            file: rec.file,
+            span: sel.span,
+            anchor: anchor.to_owned(),
+            text,
+            sites: vec![site],
+        });
+    }
+
+    /// Emit one MDL005 per distinct selector, listing every clause site when there are several.
+    fn flush_no_file(&mut self) {
+        for n in std::mem::take(&mut self.no_file) {
+            let mut msg = format!("selector {} matches no file in the walk", n.text);
+            if n.sites.len() > 1 {
+                let _ = write!(
+                    msg,
+                    " (written in {} clauses: {})",
+                    n.sites.len(),
+                    n.sites.join(", ")
+                );
+            }
+            self.emit("MDL005", None, n.file, n.span, msg, &n.anchor);
+        }
     }
 
     // ----- files, versions, modules, includes -----
@@ -681,17 +769,7 @@ impl<'a> Checker<'a> {
             let mut globs = Vec::new();
             collect_globs(parsed.root(), &mut globs);
             if !globs.is_empty() && !globs.iter().any(|g| walk.iter().any(|p| g.matches_path(p))) {
-                self.emit(
-                    "MDL005",
-                    None,
-                    rec.file,
-                    sel.span,
-                    format!(
-                        "selector {} matches no file in the walk",
-                        selector_text(sel)
-                    ),
-                    anchor,
-                );
+                self.note_no_file(rec, sel, selector_text(sel), anchor);
             }
         }
         if !satisfiable(parsed.root()) {
