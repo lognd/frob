@@ -14,7 +14,7 @@
 //! listener, observer or subscription without a returned cleanup that undoes it, from a table of
 //! effect-started pairs ([`effect::PAIRS`]).
 //!
-//! [`pair_pass::analyze`] runs [`effect::scan`] over the walked files and returns the `PAIR001`
+//! [`pair_pass::analyze`] runs [`effect::scan`] (TS/JS) and [`unity::scan`] (Unity C#) over the walked files and returns the `PAIR001`
 //! verdicts for the product; the rule is declared in [`rules`] and staged like the TIME rules.
 //!
 //! [`unity::scan`] is the Unity vocabulary of `PAIR001`: a C# event subscription, `RegisterCallback`,

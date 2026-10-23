@@ -37,7 +37,7 @@ const RULES: [&str; 2] = [RULE_LOOKUP, RULE_ALLOC];
 /// True when a C# file is Unity code: it names the engine namespace or a `MonoBehaviour`.
 ///
 /// A plain .NET class with an `Update` method is not on a frame loop, so it is not examined.
-fn is_unity_source(text: &str) -> bool {
+pub(crate) fn is_unity_source(text: &str) -> bool {
     text.contains("UnityEngine") || text.contains("MonoBehaviour")
 }
 
