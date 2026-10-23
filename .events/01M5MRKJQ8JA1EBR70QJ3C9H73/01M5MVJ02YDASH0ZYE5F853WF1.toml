@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T17:04:53Z"
+digest = "5b1c66105a2da1c6b264fb83dabc34388a5f8bed0e75fc83241ee7d531c9e545"
+exit_code = 0
+head = "3e2baf3655f9fb354f9f02dac494beefeaa9f88a"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d808c28e-0394-4186-9228-442247454171 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.013s] grimble-check::design_docs binding_md_says_end_owner_reports_once_per_clause
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test design_docs binding_md_says"
+size = 614
+status = "measured"
+test_count = 1
+tests_digest = "d29aaf48ef0e26414538ae515d9488984a5d59c2430c83c48d8edb7be02b1108"
+at = "2026-10-23T17:04:53Z"
+actor = "lognd"
+rev = 1

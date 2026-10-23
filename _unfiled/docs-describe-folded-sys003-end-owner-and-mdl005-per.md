@@ -7,12 +7,12 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T16:13:20Z"
-updated = "2026-10-23T16:52:09Z"
+updated = "2026-10-23T17:04:53Z"
 scope = ["docs/design/binding.md", "docs/design/grmb-spec.md", "crates/grimble-check/tests/design_docs.rs"]
 
 [[acceptance]]
 text = "Given binding.md section 5, when read, then it states one clause reaching several wrong-owner units reports once with count, owners, sample of 3 and per-unit rows in check --json bindings"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given grmb-spec.md example, when read, then it states two MDL005 findings with one finding listing both clause sites"
