@@ -8,7 +8,7 @@ points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:56Z"
-updated = "2026-10-23T19:38:21Z"
+updated = "2026-10-23T19:43:11Z"
 idempotency_key = "logand-gaps-V3"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-bind/**", "crates/gob-languages/**", "crates/grimble-model/**", "changelog.d/**"]
@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a manual test, when grimble check runs, then no MDL014 and no MDL005, and it is listed as manual"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a vitest test under web/ and a cargo test, when referenced by the documented selector, then each binds and a wrong id in an existing file names the nearest real id"
