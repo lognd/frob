@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T11:05:48Z"
-updated = "2026-10-23T04:35:37Z"
-scope = ["crates/grimble-check/**", "crates/grimble-arch/**", "docs/reference/config.md"]
+updated = "2026-10-23T04:35:38Z"
+scope = ["crates/grimble-check/**", "crates/grimble-arch/**", "docs/reference/config.md", "docs/reference/rules/DUP001.md"]
 
 [[acceptance]]
 text = "grimble-check config accepts DUP001 min_tokens and min_occurrences and passes them to the DUP001 pass"
