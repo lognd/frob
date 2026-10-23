@@ -206,6 +206,26 @@ fn doc_to_missing_heading_fires_drift002_with_nearest_heading() {
     );
 }
 
+// frob:ticket 01M4H0WXVXJ18DX9SVX6EHT0AD
+// frob:tests crates/frob-ack/src/rules/drift002.rs::Drift002
+#[test]
+fn drift002_on_a_moved_anchor_names_the_new_location() {
+    let fx = Fixture::new();
+    std::fs::write(
+        fx.root().join("docs/MOVED.toml"),
+        "[moved]\n\"docs/guide.md#farewell\" = \"docs/guide.md#greeting\"\n",
+    )
+    .unwrap();
+    fx.edit("src/lib.rs", "guide.md#greeting", "guide.md#farewell");
+    fx.edit("docs/guide.md", "## Farewell", "## Goodbye");
+    let found = fx.findings();
+    let msg = &messages(&found, "DRIFT002")[0];
+    assert!(
+        msg.contains("it moved to `docs/guide.md#greeting`"),
+        "{msg}"
+    );
+}
+
 // frob:tests crates/frob-ack/src/rules/drift001.rs::Drift001
 #[test]
 fn code_and_doc_changes_under_an_acked_binding_fire_drift001_naming_the_facet() {

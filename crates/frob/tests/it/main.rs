@@ -16,6 +16,7 @@ mod config_unknown_key;
 mod cycle;
 mod deprecated_aliases;
 mod doc_commands;
+mod doc_remap;
 mod e2e_init_loop;
 mod envelope_invariant;
 mod explain;

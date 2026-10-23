@@ -13,7 +13,7 @@ A binding to nothing guards nothing: the symbol looks documented while no doc is
 
 ## Remedy
 
-Fix the path or the slug in the directive, or restore the heading.
+Fix the path or the slug in the directive, or restore the heading. When `docs/MOVED.toml` lists the old anchor, the message names its new location; `frob doc remap` rewrites every such reference.
 
 ## Examples
 

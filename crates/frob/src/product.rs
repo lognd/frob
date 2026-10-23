@@ -96,6 +96,8 @@ impl Product for FrobProduct {
         let cli = cli.register::<crate::trust_cmd::Trust>();
         // frob:ticket 01M3ZX81N4AFEA0W55R756T5RD
         let cli = cli.register::<crate::teach_cmd::Teach>();
+        // frob:ticket 01M4H0WXVXJ18DX9SVX6EHT0AD
+        let cli = cli.register::<crate::doc_cmd::DocRemap>();
         let cli = crate::release_cmd::register(cli);
         let cli = cli
             .register::<crate::rule_cmd::RuleTest>()

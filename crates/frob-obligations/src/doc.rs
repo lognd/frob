@@ -220,7 +220,12 @@ fn check_link(
         .to_string()
         .replace('\\', "/");
     if !target.is_empty() && !root.join(&resolved).exists() {
-        return Some(format!("link target `{target}` does not exist"));
+        return Some(with_moved(
+            format!("link target `{target}` does not exist"),
+            root,
+            &rel,
+            None,
+        ));
     }
     let anchor = anchor.filter(|a| !a.is_empty())?;
     if !is_markdown(&rel) {
@@ -230,9 +235,22 @@ fn check_link(
     if anchors.has(&rel, &slug) {
         None
     } else {
-        Some(format!(
-            "link anchor `#{anchor}` matches no heading of `{rel}`"
+        Some(with_moved(
+            format!("link anchor `#{anchor}` matches no heading of `{rel}`"),
+            root,
+            &rel,
+            Some(anchor),
         ))
+    }
+}
+
+// frob:ticket 01M4H0WXVXJ18DX9SVX6EHT0AD
+/// `msg`, plus where `docs/MOVED.toml` says `rel` (and `anchor`) went, when it knows.
+fn with_moved(msg: String, root: &Path, rel: &str, anchor: Option<&str>) -> String {
+    let locator = anchor.map(|a| gob_text::Locator::Anchor(a.to_owned()));
+    match frob_doc::MovedMap::load(root).hint(rel, locator.as_ref()) {
+        Some(hint) => format!("{msg}; {hint}"),
+        None => msg,
     }
 }
 

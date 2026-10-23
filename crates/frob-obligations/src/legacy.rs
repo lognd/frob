@@ -55,7 +55,8 @@ pub struct Doc001;
 /// existing file or directory (relative to the file, or to the repo root with
 /// a leading `/`), and an anchor on a markdown target must match a heading
 /// slug. External `http(s)` and `mailto` links, and links inside code, are
-/// ignored. Fix the path or the anchor.
+/// ignored. Fix the path or the anchor. When `docs/MOVED.toml` lists the old target, the
+/// message names its new location and `frob doc remap` rewrites the link.
 #[derive(Debug, Clone, Copy, Default, Rule)]
 #[rule(
     id = "DOC002",

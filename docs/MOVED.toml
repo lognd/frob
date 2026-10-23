@@ -1,0 +1,4 @@
+# Where moved, merged, removed and archived doc anchors went.
+# `frob doc remap` rewrites references to match; DOC002 and DRIFT002 name the new place.
+# Rows: "old.md" or "old.md#anchor" = "new.md" or "new.md#anchor".
+[moved]

@@ -10,6 +10,7 @@ authors.workspace = true
 
 [dependencies]
 frob-ack = { version = "0.532.0", path = "../frob-ack" }
+frob-doc = { version = "0.532.0", path = "../frob-doc" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-tests = { version = "0.532.0", path = "../frob-tests" }

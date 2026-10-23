@@ -38,6 +38,7 @@ gob-time = { version = "0.532.0", path = "../gob-time" }
 gob-trust = { version = "0.532.0", path = "../gob-trust" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
+frob-doc = { version = "0.532.0", path = "../frob-doc" }
 frob-ack = { version = "0.532.0", path = "../frob-ack" }
 frob-check = { version = "0.532.0", path = "../frob-check" }
 gob-check = { version = "0.532.0", path = "../gob-check" }

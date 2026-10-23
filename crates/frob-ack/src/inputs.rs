@@ -15,6 +15,7 @@ use gob_walk::{ContentReader, ContentSource, FileEntry, Roles, WalkConfig, walk}
 use serde::{Deserialize, Serialize};
 
 use crate::error::AckError;
+use frob_doc::MovedMap;
 
 /// The product this crate acks for; names `frob.lock` and `.frob/`.
 pub const PRODUCT: &str = "frob";
@@ -152,6 +153,8 @@ pub struct Inputs {
     pub docs: Vec<DocDirective>,
     /// Resolves the `FileId`s inside [`DocDirective::span`].
     pub files: FileInterner,
+    /// The `docs/MOVED.toml` relocation map (empty when absent); diagnostics name new places from it.
+    pub moved: MovedMap,
 }
 
 /// The digest recorded for a markdown section: blake3 over its sig and body digests.
@@ -225,6 +228,7 @@ impl Inputs {
             lock,
             docs,
             files,
+            moved: MovedMap::load(root),
         })
     }
 

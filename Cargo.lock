@@ -1098,6 +1098,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "clap",
+ "frob-doc",
  "gob-cache",
  "gob-cli",
  "gob-config",
@@ -1178,6 +1179,7 @@ dependencies = [
  "crunk",
  "frob-ack",
  "frob-check",
+ "frob-doc",
  "frob-evidence",
  "frob-land",
  "frob-lease",
@@ -1215,6 +1217,20 @@ dependencies = [
  "tempfile",
  "thiserror",
  "toml",
+ "tracing",
+]
+
+[[package]]
+name = "frob-doc"
+version = "0.532.0"
+dependencies = [
+ "gob-config",
+ "gob-git",
+ "gob-languages",
+ "gob-symbols",
+ "gob-text",
+ "tempfile",
+ "thiserror",
  "tracing",
 ]
 
@@ -1406,6 +1422,7 @@ name = "frob-obligations"
 version = "0.532.0"
 dependencies = [
  "frob-ack",
+ "frob-doc",
  "frob-ledger",
  "frob-tests",
  "globset",

@@ -142,7 +142,7 @@ pub(crate) fn drift002(inputs: &Inputs) -> Vec<Raw> {
         if inputs.graph.get(&d.target).is_some() {
             continue;
         }
-        let hint = if inputs.graph.get(&Symref::file(d.target.path())).is_none() {
+        let mut hint = if inputs.graph.get(&Symref::file(d.target.path())).is_none() {
             format!("the file `{}` is not in the repository", d.target.path())
         } else if let Some((slug, dist)) = nearest_heading(inputs, &d.target) {
             format!(
@@ -152,6 +152,14 @@ pub(crate) fn drift002(inputs: &Inputs) -> Vec<Raw> {
         } else {
             format!("`{}` has no headings", d.target.path())
         };
+        // frob:ticket 01M4H0WXVXJ18DX9SVX6EHT0AD
+        let locator = match d.target.target() {
+            Target::Anchor(slug) => Some(gob_text::Locator::Anchor(slug.to_owned())),
+            _ => None,
+        };
+        if let Some(moved) = inputs.moved.hint(d.target.path(), locator.as_ref()) {
+            hint = format!("{moved}; {hint}");
+        }
         out.push(Raw::new(
             meta,
             Some(d.span),

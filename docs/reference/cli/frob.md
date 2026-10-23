@@ -26,6 +26,7 @@
 | `cycle plan` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Propose filling a cycle from ready work in rank order, preferring the next milestone, never past capacity; `--apply` assigns. |
 | `cycle show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one cycle (default: the current one) with its members, carried work, ratio and retro. |
 | `cycle unassign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Take a ticket out of a cycle; idempotent when it was not a member. |
+| `doc remap` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Rewrite markdown links, `frob:doc` targets, `.grmb` refs and prose citations to the anchors named in `docs/MOVED.toml`. |
 | `doctor` | yes | no | 0 ok, 3 refused | Report toolchain, git, cache, config and ledger health; never fails on findings. |
 | `explain` | yes | no | 0 ok, 2 usage, 4 internal | Print the full page of one rule offline; an unknown id exits 2 with the closest ids. |
 | `graph affects` | yes | no | 0 ok, 2 usage, 4 internal | List the transitive dependents of a symbol, grouped by file. |

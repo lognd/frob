@@ -35,6 +35,7 @@ pub use ack::{AckOutcome, ack, plan_ack};
 pub use cmd::{Ack, AckData, GraphAffects, GraphWhy, register};
 pub use error::AckError;
 pub use eval::{check, evaluate, partial_parse_files};
+pub use frob_doc::MovedMap;
 pub use gob_lock::Plan;
 pub use host::AckHost;
 pub use inputs::{DocDirective, Inputs, PRODUCT, doc_pair, section_digest};

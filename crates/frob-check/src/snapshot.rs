@@ -523,6 +523,7 @@ pub(crate) fn collect(
                 lock,
                 docs,
                 files: files.clone(),
+                moved: frob_ack::MovedMap::load(root),
             },
             directives,
             ledger,
