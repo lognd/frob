@@ -413,6 +413,32 @@ fn sys003(cx: &Cx<'_>, out: &mut Output) {
     }
 }
 
+/// Units named in an end-owner message before it folds the rest into `(+N more)`.
+const END_OWNER_SAMPLE: usize = 3;
+
+/// The end-owner units of one flow clause that break (or may break) the flow's endpoint.
+#[derive(Default)]
+struct EndOwnerGroup {
+    /// Units owned by a node other than the endpoint, with that owner (sorted by unit).
+    wrong: Vec<(String, String)>,
+    /// Units whose owner is only May or Unknown and not known to be the endpoint.
+    maybe: Vec<String>,
+}
+
+/// Name `units` as `count` plus a bounded sample, e.g. `3 units (a, b, c)` or `5 units (a, b, c; +2 more)`.
+fn unit_sample(units: &[&str]) -> String {
+    let shown: Vec<&str> = units.iter().take(END_OWNER_SAMPLE).copied().collect();
+    let mut s = format!("{} units (", units.len());
+    for (i, u) in shown.iter().enumerate() {
+        let _ = write!(s, "{}`{u}`", if i == 0 { "" } else { ", " });
+    }
+    if units.len() > shown.len() {
+        let _ = write!(s, "; +{} more", units.len() - shown.len());
+    }
+    s.push(')');
+    s
+}
+
 fn end_owner(cx: &Cx<'_>, flow: &Entity, out: &mut Output) {
     let Some((from, to)) = &flow.ends else { return };
     for (role, end) in [(Role::Producer, from), (Role::Consumer, to)] {
@@ -423,32 +449,92 @@ fn end_owner(cx: &Cx<'_>, flow: &Entity, out: &mut Output) {
         if flow.clauses_of(role).next().is_some() {
             out.count("SYS003", 1);
         }
+        let mut group = EndOwnerGroup::default();
         for sym in singleton_rows(cx, flow, role) {
             let Some(uo) = cx.owners.units.get(&sym) else {
                 continue;
             };
-            let site = flow
-                .clauses_of(role)
-                .next()
-                .map(|c| (c.file.as_str(), (c.span.start, c.span.end)));
-            let anchor = format!("{}/{}|{sym}", flow.anchor, role.as_str());
             match &uo.merged.owner {
-                Owner::Must(n) if n.as_str() != end => out.fire(
-                    "SYS003",
-                    Severity::Error,
-                    format!("end-owner: the {} of {} is `{sym}`, owned by `{n}`, not by `{end}`", role.as_str(), flow.anchor),
-                    &anchor,
-                    site,
-                ),
-                Owner::May(set) | Owner::Unknown(set) if set.iter().any(|n| n.as_str() != end) && !set.is_empty() => out.unresolved(
-                    "SYS003",
-                    Reason::MayOnlyOwner,
-                    &format!("end-owner: the owner of `{sym}` (the {} of {}) is not known to be `{end}`", role.as_str(), flow.anchor),
-                    &anchor,
-                    site,
-                ),
+                Owner::Must(n) if n.as_str() != end => group.wrong.push((sym, n.to_string())),
+                Owner::May(set) | Owner::Unknown(set)
+                    if set.iter().any(|n| n.as_str() != end) && !set.is_empty() =>
+                {
+                    group.maybe.push(sym);
+                }
                 _ => {}
             }
+        }
+        let site = flow
+            .clauses_of(role)
+            .next()
+            .map(|c| (c.file.as_str(), (c.span.start, c.span.end)));
+        end_owner_findings(flow, role, end, &group, site, out);
+    }
+}
+
+/// Emit the end-owner findings of one clause: per unit for a single unit, one grouped finding otherwise.
+fn end_owner_findings(
+    flow: &Entity,
+    role: Role,
+    end: &str,
+    group: &EndOwnerGroup,
+    site: Option<(&str, (usize, usize))>,
+    out: &mut Output,
+) {
+    let role_name = role.as_str();
+    match group.wrong.as_slice() {
+        [] => {}
+        [(sym, n)] => out.fire(
+            "SYS003",
+            Severity::Error,
+            format!("end-owner: the {role_name} of {} is `{sym}`, owned by `{n}`, not by `{end}`", flow.anchor),
+            &format!("{}/{role_name}|{sym}", flow.anchor),
+            site,
+        ),
+        many => {
+            let mut owners: BTreeMap<&str, usize> = BTreeMap::new();
+            for (_, n) in many {
+                *owners.entry(n.as_str()).or_default() += 1;
+            }
+            let by: Vec<String> = owners.iter().map(|(n, c)| format!("`{n}` ({c})")).collect();
+            let units: Vec<&str> = many.iter().map(|(u, _)| u.as_str()).collect();
+            tracing::debug!(flow = %flow.anchor, role = role_name, units = units.len(), "end-owner findings folded per clause");
+            out.fire(
+                "SYS003",
+                Severity::Error,
+                format!(
+                    "end-owner: the {role_name} clause of {} reaches {}, none owned by `{end}`; owners: {}; per-unit rows are in the bindings of `check --json`",
+                    flow.anchor,
+                    unit_sample(&units),
+                    by.join(", ")
+                ),
+                &format!("{}/{role_name}|end-owner", flow.anchor),
+                site,
+            );
+        }
+    }
+    match group.maybe.as_slice() {
+        [] => {}
+        [sym] => out.unresolved(
+            "SYS003",
+            Reason::MayOnlyOwner,
+            &format!("end-owner: the owner of `{sym}` (the {role_name} of {}) is not known to be `{end}`", flow.anchor),
+            &format!("{}/{role_name}|{sym}", flow.anchor),
+            site,
+        ),
+        many => {
+            let units: Vec<&str> = many.iter().map(String::as_str).collect();
+            out.unresolved(
+                "SYS003",
+                Reason::MayOnlyOwner,
+                &format!(
+                    "end-owner: the owner of {} (the {role_name} clause of {}) is not known to be `{end}`; per-unit rows are in the bindings of `check --json`",
+                    unit_sample(&units),
+                    flow.anchor
+                ),
+                &format!("{}/{role_name}|end-owner-maybe", flow.anchor),
+                site,
+            );
         }
     }
 }

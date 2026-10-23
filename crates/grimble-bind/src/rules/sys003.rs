@@ -1,4 +1,8 @@
 //! SYS003: Bindings contradict each other or an operand does not resolve.
+//!
+//! The end-owner kind (a flow end whose code another node owns) reports once per flow clause:
+//! one wrong-owner unit keeps its per-unit message, several give one finding with the count,
+//! the owners and a sample of at most three units. The per-unit rows stay in `check --json`.
 
 // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
 

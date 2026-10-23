@@ -1,4 +1,8 @@
 //! MDL005: A selector's path matches no file in the walk.
+//!
+//! One finding is reported per distinct selector, not per clause: a selector written in
+//! several clauses lists every clause site (`path:line`) in the one message. Selectors under
+//! different `accept` scopes stay separate so an exception parks only the finding it covers.
 
 // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
 
