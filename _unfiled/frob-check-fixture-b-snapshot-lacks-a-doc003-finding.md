@@ -7,10 +7,10 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T22:56:32Z"
-updated = "2026-10-23T23:16:20Z"
+updated = "2026-10-23T23:26:33Z"
 scope = ["crates/frob-check/tests/**"]
 
 [[acceptance]]
 text = "Given the frob-check fixture_b snapshot, when equivalence::fixture_b_matches_the_recorded_findings runs, then it passes with the DOC003 finding recorded"
-bound = false
+bound = true
 +++

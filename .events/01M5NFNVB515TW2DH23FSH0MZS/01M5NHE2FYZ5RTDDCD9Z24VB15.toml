@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T23:26:33Z"
+digest = "b0b80fd9c087fe7f5624747753035c30e4d3c4d5e516aa5a404b1216a8694124"
+exit_code = 0
+head = "6d594ec49f9b23322b142aa1d1f3b058dc041e04"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 40.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5a6fd6d2-6609-4664-9b3b-d59364771831 with nextest profile: default
+    Starting 1 test across 1 binary (100 tests skipped)
+        PASS [   0.110s] frob-check::it equivalence::fixture_b_matches_the_recorded_findings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.111s] 1 test run: 1 passed, 100 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check --test it equivalence::fixture_b_matches_the_recorded_findings"
+size = 613
+status = "measured"
+test_count = 1
+tests_digest = "d2d2835877be5b5c7200e6636ab79442406faed0b853260c810393e42c7992ed"
+at = "2026-10-23T23:26:33Z"
+actor = "lognd"
+rev = 1
