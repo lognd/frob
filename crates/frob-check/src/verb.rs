@@ -744,6 +744,47 @@ mod tests {
         );
     }
 
+    // frob:ticket 01M4GKBXQS0VY1PWG3B6QH12NZ
+    // frob:tests crates/frob-check/src/verb.rs::data_of
+    #[test]
+    fn timing_flag_fills_the_stage_and_rule_table_and_its_absence_leaves_it_out() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(dir.path().join("src")).expect("mkdir");
+        std::fs::write(dir.path().join("src/lib.rs"), "pub fn f() {}\n").expect("write");
+        let opts = CheckOptions {
+            skip_telemetry: true,
+            skip_tools: true,
+            ..CheckOptions::default()
+        };
+        let report = crate::run(dir.path(), &opts).expect("run");
+        let timed = data_of(dir.path(), &report, true, true, None);
+        let view = timed.timing.clone().expect("timing present with the flag");
+        let names: Vec<&str> = view.stages.iter().map(|s| s.name.as_str()).collect();
+        assert!(names.contains(&"walk"), "stage rows: {names:?}");
+        assert!(
+            names.iter().any(|n| n.starts_with("repo:")),
+            "per-rule rows: {names:?}"
+        );
+        assert_eq!(view.tools_ms, 0, "skipped tools cost nothing");
+        let budgeted: u64 = view
+            .stages
+            .iter()
+            .filter(|s| s.budgeted)
+            .map(|s| s.ms)
+            .sum();
+        assert_eq!(view.budget_ms, budgeted);
+        let again = crate::run(dir.path(), &opts).expect("rerun");
+        let second = data_of(dir.path(), &again, true, true, None)
+            .timing
+            .expect("timing");
+        let order = |v: &TimingView| v.stages.iter().map(|s| s.name.clone()).collect::<Vec<_>>();
+        assert_eq!(order(&view), order(&second), "stage order is deterministic");
+        let plain = data_of(dir.path(), &report, true, false, None);
+        assert!(plain.timing.is_none(), "no flag, no timing");
+        let json = serde_json::to_value(&timed).expect("json");
+        assert!(json["timing"]["stages"].is_array());
+    }
+
     // frob:tests crates/frob-check/src/verb.rs::taught_pages
     #[test]
     fn teach_with_a_rule_prints_only_that_rule_in_full() {
