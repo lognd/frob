@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T11:07:25Z"
-updated = "2026-10-23T00:26:12Z"
+updated = "2026-10-23T00:26:46Z"
 scope = ["crates/gob-symbols/src/graph/typescript.rs", "crates/gob-symbols/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a class extending a base class that defines the method, when called on an annotated receiver of the derived type, then the call links to the inherited method"
-bound = false
+bound = true
 +++
 
 found while working ~69D9E89

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T00:26:46Z"
+digest = "c5d7602e8992a0d35458a5c042cbb8363eefec3c5b3fecd4914755f9c2dab9e1"
+exit_code = 0
+head = "d2104a03cb7978d59598b5fe9316c1193ecd76e0"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 851aca37-d241-46d7-8a35-177c879b7fb8 with nextest profile: default
+    Starting 1 test across 1 binary (266 tests skipped)
+        PASS [   0.011s] gob-symbols::it typescript_inherit::derived_receiver_links_to_inherited_method
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 266 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols --test it typescript_inherit::derived_receiver_links_to_inherited_method"
+size = 624
+status = "measured"
+test_count = 1
+tests_digest = "01017b3a2045fc0960ba89221011e09b8b9df1af9b3f6d69a990b0859e5a1a1d"
+at = "2026-10-23T00:26:46Z"
+actor = "lognd"
+rev = 1
