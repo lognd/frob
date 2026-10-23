@@ -2,7 +2,8 @@
 id = "01M5MDT7Z1XX8K9EWBK4ARF255"
 title = "grimble explain table lacks pages for COH003, ERR001-ERR003, RES001, SYS006 (lib test explain_cmd the_table_covers_every_generated_page fails)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
