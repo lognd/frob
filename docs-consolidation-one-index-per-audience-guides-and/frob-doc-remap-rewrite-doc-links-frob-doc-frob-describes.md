@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an old anchor listed in docs/MOVED.toml, when DRIFT002 or DOC002 fires on it, then the message names the new location"
-bound = false
+bound = true
 +++
 
 Phase 0 of notes/review/docs-consolidation-2026-10-09.md (section 4.2). Value forms: path#anchor, merged:, removed:superseded-by, archive:. Never rewrites tickets/ or notes/. Relates to ~Q1ZG43K (prose citation resolution): share the citation parser.

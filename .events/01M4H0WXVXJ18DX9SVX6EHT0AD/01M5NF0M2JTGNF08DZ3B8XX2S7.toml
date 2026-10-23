@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T22:44:54Z"
+digest = "56ef87d35710fb6ec6f3e8a7a5065ba6cc429931d2066c164eb17fdc38904ac5"
+exit_code = 0
+head = "752a0514a35340a595a79f5e810c0f1cf7ae5c61"
+inline = '''
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e51d3eba-6aa0-4b91-b739-d71fc273909f with nextest profile: default
+    Starting 1 test across 1 binary (16 tests skipped)
+        PASS [   0.114s] frob-ack::ack drift002_on_a_moved_anchor_names_the_new_location
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.114s] 1 test run: 1 passed, 16 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ack --test ack drift002_on_a_moved_anchor_names_the_new_location"
+size = 612
+status = "measured"
+test_count = 1
+tests_digest = "730e6e951c50077be3e6ec26c95fb208e36d9d37353fa003abe3f8f88a572ac5"
+at = "2026-10-23T22:44:54Z"
+actor = "lognd"
+rev = 1
