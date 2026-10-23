@@ -2,12 +2,12 @@
 id = "01M5K5SWHDE7FP0FPDHQWH2ZRH"
 title = "Declare danger/warning/success roles in the default crunk preset"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T01:25:29Z"
-updated = "2026-10-23T02:53:04Z"
+updated = "2026-10-23T02:53:12Z"
 scope = ["crates/crunk-spec/src/presets/**"]
 
 [[acceptance]]
