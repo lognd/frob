@@ -396,6 +396,14 @@ of B and the findings of 2.1-2.4.
    node of B, unless the endpoint is an `external` node that owns no code.
    Otherwise SYS003 kind `end-owner` (the model contradicts itself about
    who owns the code a flow end names). May owners give no finding.
+   The finding is per clause, not per unit: one `producer` (or `consumer`)
+   clause that reaches several wrong-owner units reports once. A single
+   wrong-owner unit keeps the per-unit message; two or more fold into one
+   SYS003 giving the count of units, the owners with their unit counts,
+   and a sample of at most 3 units (`+N more` for the rest). The per-unit
+   rows are not lost: every unit keeps its own row in the `bindings` of
+   `grimble check --json`. A May or Unknown owner that is not the end node
+   folds the same way into one Unresolved SYS003 per clause.
 6. IDEMPOTENCE AND ORDER. The result does not depend on file order, on the
    order of clauses, or on which file declared what (grmb-spec 3.3). B is
    a set; ties are symmetric.
