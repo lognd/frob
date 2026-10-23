@@ -4,9 +4,10 @@
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
 // frob:ticket 01M5HDAS62G7H4YY9FVG59GJ01
 // frob:ticket 01M5HPSP14N3NCX5TNA9XDR1GY
+// frob:ticket 01M4MGE2XKGBNJEV1AECPBVHQF
 use grimble_arch::host::ArchHost;
 use grimble_bind::host::BindHost;
-use grimble_lints::host::{ErrHost, PairHost, PathHost, TimeHost, UnityHost};
+use grimble_lints::host::{ErrHost, PairHost, PathHost, ResHost, TimeHost, UnityHost};
 use grimble_model::host::MdlHost;
 
 use crate::GrimbleInputs;
@@ -22,7 +23,7 @@ pub trait CohHost {
 
 /// Everything a declared grimble rule may ask: the model, binding, architecture and path hosts.
 pub trait GrimbleHost:
-    MdlHost + BindHost + ArchHost + PathHost + TimeHost + PairHost + ErrHost + UnityHost + CohHost
+    MdlHost + BindHost + ArchHost + PathHost + TimeHost + PairHost + ErrHost + ResHost + UnityHost + CohHost
 {
 }
 
@@ -34,6 +35,7 @@ impl<
         + TimeHost
         + PairHost
         + ErrHost
+        + ResHost
         + UnityHost
         + CohHost
         + ?Sized,
@@ -76,6 +78,12 @@ impl PairHost for GrimbleInputs {
 impl ErrHost for GrimbleInputs {
     fn err_subjects_of(&self, id: &str) -> usize {
         self.err.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+impl ResHost for GrimbleInputs {
+    fn res_subjects_of(&self, id: &str) -> usize {
+        self.res.subjects.get(id).copied().unwrap_or(0)
     }
 }
 

@@ -72,6 +72,7 @@ pub mod pair_pass;
 pub mod pass;
 pub mod path;
 pub mod res;
+pub mod res_pass;
 pub mod rules;
 pub(crate) mod syntax;
 pub mod testq;

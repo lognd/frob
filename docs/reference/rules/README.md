@@ -371,6 +371,12 @@
 | [REL002](REL002.md) | lockstep-version-mismatch | error | manual | P- | false | Crates or the wheel whose version differs from the workspace version. |
 | [REL003](REL003.md) | changelog-fragment-required | error | manual | P- | false | A changelog fragment that is missing for the checked ticket or that fails validation. |
 
+## RES
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [RES001](RES001.md) | unpaired-resource-acquisition | warn | manual | P- | true | An acquire call with no paired release in its scope: the resource is never given back. |
+
 ## RESP
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

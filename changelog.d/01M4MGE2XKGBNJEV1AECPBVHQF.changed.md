@@ -1,0 +1,1 @@
+The grimble check command now reports an acquire call with no paired release in its scope (performance.mark, Map.set, setTimeout and similar) as RES001 at Warn, and as Unresolved when the handle may be released out of sight.

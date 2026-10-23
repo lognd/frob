@@ -263,6 +263,25 @@ no qualifying file makes the rule not applicable. Each rule has a page
 index. They ship at Warn (`since = "0.532.0"`) under the new-rule
 ramp-in (section 6).
 
+Implemented (~CPBVHQF): RES001 `unpaired-resource-acquisition` ships in
+`grimble-lints` (`res::scan`, the `res_pass` product pass) and runs in
+`grimble check`. It reads TypeScript, TSX, JavaScript and JSX for an
+acquire call (`performance.mark`, `Map.set`, `setTimeout`,
+`setInterval`, `addEventListener`, `URL.createObjectURL`,
+`new AbortController`) with no paired release (`clearMarks`, `delete`,
+`clearTimeout`, `clearInterval`, `removeEventListener`,
+`revokeObjectURL`, `abort`) in the pair's scope (file, class or
+function, per the pairs table; same receiver where the API needs it). A
+Certain site is a Warn; a site whose handle is used elsewhere in scope
+or discarded, so a release may live out of sight, is Unresolved
+(fidelity), never a guessed Warn. A release in another scope or on
+another receiver does not pair, test bodies are
+exempt, and other languages are not judged; a walk with no script file
+makes the rule not applicable. The report is cached under `res-v1`. The
+rule has a page (`crates/grimble-lints/src/rules/res001.md`) with fire,
+clean and unresolved cases and ships at Warn (`since = "0.532.0"`) under
+the new-rule ramp-in (section 6).
+
 Implemented (~G59GJ01): PAIR001 `acquire-without-release` ships in
 `grimble-lints` (`effect::scan`, the `pair_pass` product pass) for React
 effects in TypeScript, TSX, JavaScript and JSX: a `useEffect`,

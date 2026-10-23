@@ -57,6 +57,8 @@ pub struct GrimbleInputs {
     pub pair: PathReport,
     /// The ERR001 to ERR003 verdicts (grimble-lints), cached like the PAIR report.
     pub err: PathReport,
+    /// The RES001 verdicts (grimble-lints), cached like the ERR report.
+    pub res: PathReport,
     /// The UNITY201 and UNITY202 verdicts (grimble-lints), cached like the PAIR report.
     pub unity: PathReport,
     /// The COH report (COH002 and COH003 verdicts under the `[coh]` table and the model's layers).
@@ -102,6 +104,7 @@ const DIRECTIVE_RULES: [&str; 5] = ["PARSE001", "PARSE002", "DSL001", "DSL002", 
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
 // frob:ticket 01M5HDAS62G7H4YY9FVG59GJ01
 // frob:ticket 01M5HPSP14N3NCX5TNA9XDR1GY
+// frob:ticket 01M4MGE2XKGBNJEV1AECPBVHQF
 /// The legacy metadata of a declared rule, leaked once per process (the legacy groups hold `&'static`).
 fn legacy_meta(def: &'static RuleDef) -> &'static RuleMeta {
     let summary = def.summary();
@@ -164,14 +167,14 @@ fn path_metas() -> Vec<&'static RuleMeta> {
     lint_metas()
         .into_iter()
         .filter(|m| {
-            !["TIME", "PAIR", "ERR", "UNITY"]
+            !["TIME", "PAIR", "ERR", "RES", "UNITY"]
                 .iter()
                 .any(|f| m.id.starts_with(f))
         })
         .collect()
 }
 
-/// Every rule `grimble-lints` declares (the PATH, TIME, PAIR, ERR and UNITY families).
+/// Every rule `grimble-lints` declares (the PATH, TIME, PAIR, ERR, RES and UNITY families).
 fn lint_metas() -> Vec<&'static RuleMeta> {
     static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
     legacy_metas(&CELL, grimble_lints::rules::METAS)
@@ -198,6 +201,14 @@ fn err_metas() -> Vec<&'static RuleMeta> {
     lint_metas()
         .into_iter()
         .filter(|m| m.id.starts_with("ERR"))
+        .collect()
+}
+
+/// The resource-lifecycle rules (the RES family `grimble-lints` declares).
+fn res_metas() -> Vec<&'static RuleMeta> {
+    lint_metas()
+        .into_iter()
+        .filter(|m| m.id.starts_with("RES"))
         .collect()
 }
 
@@ -258,6 +269,7 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .or_else(|| snap.inputs.time.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.pair.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.err.not_applicable.get(def.id).cloned())
+        .or_else(|| snap.inputs.res.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.unity.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.coh.not_applicable.get(def.id).cloned())
 }
@@ -369,6 +381,29 @@ fn err_report(
         })
         .collect();
     grimble_lints::err_pass::analyze(&files)
+}
+
+/// Run RES001 over the TypeScript and JavaScript files of the walk (uncached).
+fn res_report(
+    entries: &[gob_walk::FileEntry],
+    read: &dyn Fn(&str) -> Option<String>,
+) -> PathReport {
+    let texts: Vec<(&str, gob_languages::Language, String)> = entries
+        .iter()
+        .filter_map(|e| {
+            let language = gob_languages::Language::detect(&e.path)?;
+            read(&e.path).map(|text| (e.path.as_str(), language, text))
+        })
+        .collect();
+    let files: Vec<PathFile<'_>> = texts
+        .iter()
+        .map(|(path, language, text)| PathFile {
+            path,
+            language: *language,
+            text,
+        })
+        .collect();
+    grimble_lints::res_pass::analyze(&files)
 }
 
 /// Run UNITY201, UNITY202, UNITY301 and UNITY302 over the walk (uncached).
@@ -555,6 +590,7 @@ fn reports(
     PathReport,
     PathReport,
     PathReport,
+    PathReport,
 ) {
     // The architecture and PATH reports are pure in the same digest plus `large_lines`, so a
     // hit skips reading and parsing every file (~SNJ3PH5).
@@ -590,6 +626,11 @@ fn reports(
         .cache
         .get_artifact(&err_key)
         .and_then(|b| report_cache::decode_path(&b));
+    let res_key = report_cache::key("res-v1", digest, &engine, table.large_lines);
+    let res_hit = cx
+        .cache
+        .get_artifact(&res_key)
+        .and_then(|b| report_cache::decode_path(&b));
     let unity_key = report_cache::key("unity", digest, &engine, table.large_lines);
     let unity_hit = cx
         .cache
@@ -602,6 +643,7 @@ fn reports(
         .and_then(|b| report_cache::decode_path(&b));
     let pair_cached = pair_hit.is_some();
     let err_cached = err_hit.is_some();
+    let res_cached = res_hit.is_some();
     let unity_cached = unity_hit.is_some();
     let (arch_cached, path_cached, time_cached, coh_cached) = (
         arch_hit.is_some(),
@@ -609,12 +651,13 @@ fn reports(
         time_hit.is_some(),
         coh_hit.is_some(),
     );
-    let (arch, path, time, pair, err, unity, coh) = if let (
+    let (arch, path, time, pair, err, res, unity, coh) = if let (
         Some(arch),
         Some(path),
         Some(time),
         Some(pair),
         Some(err),
+        Some(res),
         Some(unity),
         Some(coh),
     ) = (
@@ -623,15 +666,16 @@ fn reports(
         time_hit.clone(),
         pair_hit.clone(),
         err_hit.clone(),
+        res_hit.clone(),
         unity_hit.clone(),
         coh_hit.clone(),
     ) {
-        tracing::info!(digest = %digest, "architecture, path, time, pair, err, unity and coh reports reused from cache");
-        (arch, path, time, pair, err, unity, coh)
+        tracing::info!(digest = %digest, "architecture, path, time, pair, err, res, unity and coh reports reused from cache");
+        (arch, path, time, pair, err, res, unity, coh)
     } else {
         // One reader for both passes: `Core::text` opens the repository per call, which on
         // a 20k-file walk is the dominant cost of the run.
-        let (arch, arch_took, path, path_took, time, pair, err, unity, coh) =
+        let (arch, arch_took, path, path_took, time, pair, err, res, unity, coh) =
             cx.core.with_content(|reader| {
                 let reader = std::cell::RefCell::new(reader);
                 let read = |p: &str| reader.borrow_mut().read_text(p).ok();
@@ -645,10 +689,11 @@ fn reports(
                 let time = time_hit.unwrap_or_else(|| time_report(&cx.core.entries, &read));
                 let pair = pair_hit.unwrap_or_else(|| pair_report(&cx.core.entries, &read));
                 let err = err_hit.unwrap_or_else(|| err_report(&cx.core.entries, &read));
+                let res = res_hit.unwrap_or_else(|| res_report(&cx.core.entries, &read));
                 let unity = unity_hit.unwrap_or_else(|| unity_report(&cx.core.entries, &read));
                 let coh = coh_hit.unwrap_or_else(|| coh_report(&cx.core.entries, &read, coh_opts));
                 (
-                    arch, arch_took, path, path_took, time, pair, err, unity, coh,
+                    arch, arch_took, path, path_took, time, pair, err, res, unity, coh,
                 )
             });
         if !arch_cached {
@@ -667,6 +712,10 @@ fn reports(
             cx.cache
                 .put_artifact(&pair_key, &report_cache::encode_path(&pair));
         }
+        if !res_cached {
+            cx.cache
+                .put_artifact(&res_key, &report_cache::encode_path(&res));
+        }
         if !err_cached {
             cx.cache
                 .put_artifact(&err_key, &report_cache::encode_path(&err));
@@ -684,16 +733,17 @@ fn reports(
             ?path_took,
             "architecture and path reports computed"
         );
-        (arch, path, time, pair, err, unity, coh)
+        (arch, path, time, pair, err, res, unity, coh)
     };
     cx.timing.push("architecture", started.elapsed(), false);
     cx.timing.push("path", std::time::Duration::ZERO, false);
     cx.timing.push("time", std::time::Duration::ZERO, false);
     cx.timing.push("pair", std::time::Duration::ZERO, false);
     cx.timing.push("err", std::time::Duration::ZERO, false);
+    cx.timing.push("res", std::time::Duration::ZERO, false);
     cx.timing.push("unity", std::time::Duration::ZERO, false);
     cx.timing.push("coh", std::time::Duration::ZERO, false);
-    (arch, path, time, pair, err, unity, coh)
+    (arch, path, time, pair, err, res, unity, coh)
 }
 
 /// A repo group over the findings of one `grimble-lints` report (`pick` names it on the inputs).
@@ -779,7 +829,7 @@ impl Product for Grimble {
             max_level_spread: u32::try_from(coh_table.max_level_spread).unwrap_or(u32::MAX),
             model: ModelLayers::from_model(&model),
         };
-        let (arch, path, time, pair, err, unity, coh) = reports(cx, &digest, &table, &coh_opts);
+        let (arch, path, time, pair, err, res, unity, coh) = reports(cx, &digest, &table, &coh_opts);
         let started = std::time::Instant::now();
         let ci = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);
@@ -801,6 +851,7 @@ impl Product for Grimble {
                 .chain(&time.not_applicable)
                 .chain(&pair.not_applicable)
                 .chain(&err.not_applicable)
+                .chain(&res.not_applicable)
                 .chain(&unity.not_applicable)
                 .chain(&coh.not_applicable)
                 .map(|(rule, why)| ((*rule).to_owned(), why.clone()))
@@ -820,6 +871,7 @@ impl Product for Grimble {
                 time,
                 pair,
                 err,
+                res,
                 unity,
                 coh,
                 overrides,
@@ -934,6 +986,7 @@ impl Product for Grimble {
             report_group("repo:time", time_metas(), |i| &i.time),
             report_group("repo:pair", pair_metas(), |i| &i.pair),
             report_group("repo:err", err_metas(), |i| &i.err),
+            report_group("repo:res", res_metas(), |i| &i.res),
             report_group("repo:unity", unity_metas(), |i| &i.unity),
             report_group("repo:coh", coh_metas(), |i| &i.coh),
         ]
@@ -947,6 +1000,7 @@ impl Product for Grimble {
             && !snap.inputs.time.not_applicable.contains_key(meta.id)
             && !snap.inputs.pair.not_applicable.contains_key(meta.id)
             && !snap.inputs.err.not_applicable.contains_key(meta.id)
+            && !snap.inputs.res.not_applicable.contains_key(meta.id)
             && !snap.inputs.unity.not_applicable.contains_key(meta.id)
             && !snap.inputs.coh.not_applicable.contains_key(meta.id)
     }
