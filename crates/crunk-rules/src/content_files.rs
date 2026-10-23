@@ -2,6 +2,7 @@
 //! copy a scene document carries: literal text that should be a key, and the keys it references.
 
 // frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
+// frob:ticket 01M5HM3W7MK7255AGEN27SXEXP
 
 use std::collections::BTreeMap;
 
@@ -12,6 +13,9 @@ use crate::sheets::site_path;
 
 /// The project directory holding the authored content files, relative to the root.
 pub const CONTENT_DIR: &str = "design/content";
+
+/// The voice and tone file's name inside [`CONTENT_DIR`]; it is not a copy file.
+pub const VOICE_FILE: &str = "voice.toml";
 
 /// The attribute that makes an element's text a reference to a copy key.
 pub const COPY_ATTR: &str = "data-copy";
@@ -42,11 +46,53 @@ impl ContentDocFile {
     }
 }
 
+/// What `design/content/voice.toml` is on disk (CRAFT013).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum VoiceFile {
+    /// No such regular file.
+    #[default]
+    Missing,
+    /// A file with no content but whitespace and `#` comments: a placeholder, not a voice.
+    Blank,
+    /// A file with content; whether it is well formed is not this fact's concern.
+    Present,
+}
+
+impl VoiceFile {
+    /// Classify a voice file's text: no line besides blanks and `#` comments is `Blank`.
+    #[must_use]
+    pub fn of_text(text: &str) -> Self {
+        let live = text
+            .lines()
+            .map(str::trim)
+            .any(|l| !l.is_empty() && !l.starts_with('#'));
+        if live { Self::Present } else { Self::Blank }
+    }
+
+    /// Read the voice file under `spec`'s root; an unreadable file counts as present.
+    #[must_use]
+    pub fn load(spec: &DesignSpec) -> Self {
+        let path = spec.root.join(CONTENT_DIR).join(VOICE_FILE);
+        if !path.is_file() {
+            return Self::Missing;
+        }
+        match std::fs::read_to_string(&path) {
+            Ok(text) => Self::of_text(&text),
+            Err(err) => {
+                tracing::warn!(%err, "voice file unreadable; counted as present");
+                Self::Present
+            }
+        }
+    }
+}
+
 /// Every content file of a project that parsed, sorted by path.
 #[derive(Debug, Clone, Default)]
 pub struct ContentFacts {
-    /// The files, in path order.
+    /// The files, in path order (the voice file is not one).
     pub files: Vec<ContentDocFile>,
+    /// The state of `design/content/voice.toml`.
+    pub voice: VoiceFile,
 }
 
 impl ContentFacts {
@@ -59,6 +105,7 @@ impl ContentFacts {
                 .filter_map(Result::ok)
                 .map(|e| e.path())
                 .filter(|p| p.extension().is_some_and(|x| x == "toml"))
+                .filter(|p| p.file_name().is_none_or(|n| n != VOICE_FILE))
                 .collect(),
             Err(_) => Vec::new(),
         };
@@ -85,7 +132,9 @@ impl ContentFacts {
                 })
             })
             .collect();
-        Self { files }
+        let voice = VoiceFile::load(spec);
+        tracing::debug!(?voice, "voice file state");
+        Self { files, voice }
     }
 
     /// How many keys the files define in all.
@@ -112,6 +161,7 @@ impl ContentFacts {
             hasher.update(file.text.as_bytes());
             hasher.update(b"\0");
         }
+        hasher.update(format!("voice:{:?}", self.voice).as_bytes());
         hasher.finalize().to_hex().to_string()
     }
 }

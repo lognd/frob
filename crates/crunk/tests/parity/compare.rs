@@ -94,6 +94,7 @@ const RUST_ONLY_RULES: &[&str] = &[
     "CRAFT006",
     "CRAFT008",
     "CRAFT010",
+    "CRAFT013",
 ];
 
 /// The comparable core of a check report: sorted `rule severity path` triples of the findings.

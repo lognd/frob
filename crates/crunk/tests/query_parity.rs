@@ -27,6 +27,7 @@ const RUST_ONLY_RULES: &[&str] = &[
     "CRAFT006",
     "CRAFT008",
     "CRAFT010",
+    "CRAFT013",
 ];
 
 fn golden(path: &Path) -> Value {

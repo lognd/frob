@@ -465,6 +465,14 @@ fn review_facts(spec: &DesignSpec, config: &str) -> Option<ReviewFacts> {
 
 /// Write the `content-en` config's copy file (one key, `home.hero`) under `root`.
 fn write_content(root: &Path, config: Option<&str>) {
+    // frob:ticket 01M5HM3W7MK7255AGEN27SXEXP
+    if config == Some("content-voice") {
+        write(
+            root,
+            "design/content/voice.toml",
+            "voice = \"plain and warm\"\n",
+        );
+    }
     if config == Some("content-en") {
         write(
             root,
