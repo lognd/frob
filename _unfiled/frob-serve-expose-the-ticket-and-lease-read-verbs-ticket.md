@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T19:31:22Z"
-updated = "2026-10-23T13:15:28Z"
-scope = ["crates/frob/src/ticket/**", "crates/frob-lease/src/**", "crates/frob-evidence/src/**", "changelog.d/**"]
+updated = "2026-10-23T13:21:08Z"
+scope = ["crates/frob/src/ticket/**", "crates/frob-lease/src/**", "crates/frob-evidence/src/**", "changelog.d/**", "docs/design/cli.md"]
 
 [[links]]
 kind = "blocked-by"
