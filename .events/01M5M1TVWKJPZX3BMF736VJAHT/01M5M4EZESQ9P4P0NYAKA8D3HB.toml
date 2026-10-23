@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T10:21:16Z"
+digest = "4b2faed343b5d3aa9e55e82447eadceca6e7ca287a7d53282b38fd9f56163cd0"
+exit_code = 0
+head = "8f46e7dde01dd8c8a7361f7dc49b70bd3e475f80"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.70s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d2581ea0-a418-4ea4-afe4-120e69faf195 with nextest profile: default
+    Starting 2 tests across 1 binary (11 tests skipped)
+        PASS [   0.004s] grimble-bind owner::tests::path_leaves_with_lang_decide_the_language_leaf
+        PASS [   0.004s] grimble-bind owner::tests::path_leaves_decide_globs_and_leave_the_rest_unknown
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 2 tests run: 2 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --lib path_leaves"
+size = 736
+status = "measured"
+test_count = 2
+tests_digest = "e0782dc729821f7cb4656fd567b68567f39c2216c7c2ba4a92a4775d979dff22"
+at = "2026-10-23T10:21:16Z"
+actor = "lognd"
+rev = 1
