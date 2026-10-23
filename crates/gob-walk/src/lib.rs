@@ -32,7 +32,7 @@ pub use content::{
     BackendError, ContentBackend, ContentLocator, ContentReader, ContentSource, FileReader,
     install_backend,
 };
-pub use generated::{GENERATED_DIRS, GeneratedDir};
+pub use generated::{GENERATED_DIRS, GeneratedDir, is_generated_dir};
 pub use owner::{Candidate, EntityName, MatchStatus, Owner, Ownership};
 pub use role::{DEFAULT_LEDGER_DIR, FileRole, Roles};
 pub use select::{PathMatch, owner_of_path, select_files, unseen_files};

@@ -557,6 +557,7 @@ dependencies = [
  "gob-plan",
  "gob-rules",
  "gob-text",
+ "gob-walk",
  "serde",
  "serde_json",
  "tempfile",

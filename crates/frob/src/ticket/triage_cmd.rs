@@ -361,6 +361,7 @@ struct InboxListArgs {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket triage list",
+    read_only,
     product = "frob",
     deprecated = "ticket list --category triage",
     idempotent = true,

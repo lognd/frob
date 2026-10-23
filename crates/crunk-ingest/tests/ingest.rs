@@ -330,3 +330,26 @@ fn many_files_parse_in_parallel_but_place_in_path_order() {
         got.styles.diagnostics
     );
 }
+
+// frob:ticket 01M5MDT81QR8F0E67N61AYZDN2
+// frob:tests crates/crunk-ingest/src/walk.rs::ingest_tree
+#[test]
+fn the_ungoverned_scan_skips_report_dirs_from_the_shared_gob_walk_list() {
+    let (dir, spec) = synthetic(&[
+        ("styles/base/a.css", CSS),
+        ("other/x.css", CSS),
+        ("coverage/lcov-report/r.css", CSS),
+        ("htmlcov/index.html", "<html></html>"),
+        ("htmlcov/style.css", CSS),
+        ("playwright-report/index.html", "<html></html>"),
+        ("playwright-report/p.css", CSS),
+        // Same name, no report marker: hand-written source stays walked.
+        ("src/coverage/real.css", CSS),
+    ]);
+    let got = ingest_tree(&spec, &Cache::null()).unwrap();
+    let root = dir.path();
+    assert_eq!(
+        got.styles.ungoverned,
+        [root.join("other/x.css"), root.join("src/coverage/real.css")]
+    );
+}

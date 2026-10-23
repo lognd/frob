@@ -74,6 +74,7 @@ pub struct LeaseListData {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "lease list",
+    read_only,
     product = "frob",
     idempotent = true,
     exits(ok, refused, internal)
@@ -168,6 +169,7 @@ impl From<Contended> for ContendedFile {
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket contention",
+    read_only,
     product = "frob",
     deprecated = "lease list --contention",
     idempotent = true,

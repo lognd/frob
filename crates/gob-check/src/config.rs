@@ -375,7 +375,9 @@ pub struct CheckTable {
     /// Which Unresolved findings fail the gate: `required`, `never` or `all`.
     #[config(default = UnresolvedPolicy::Required, enforcement)]
     pub fail_on_unresolved: UnresolvedPolicy,
-    /// Glob patterns of paths no rule inspects.
+    /// Glob patterns of paths no rule inspects. Generated report directories (coverage HTML,
+    /// `htmlcov`, `playwright-report`) are skipped by default; a `!dir/` entry such as
+    /// `"!coverage/"` removes that default so the directory is walked again.
     #[config(default = Vec::new())]
     pub exclude: Vec<String>,
     /// Files larger than this many bytes are skipped.
