@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use gob_rules::Severity;
 use gob_symbols::{SymbolGraph, SymbolKind};
 
-use crate::{ArchFinding, LARGE};
+use crate::{LARGE, Verdict};
 
 /// True for the kinds whose length is a design smell: callables and type definitions.
 fn is_sized(kind: SymbolKind) -> bool {
@@ -29,7 +29,7 @@ pub(crate) fn check(
     graph: &SymbolGraph,
     limit: usize,
     read: &dyn Fn(&str) -> Option<String>,
-) -> (Vec<ArchFinding>, usize) {
+) -> (Vec<Verdict>, usize) {
     let mut by_file: BTreeMap<&str, Vec<&gob_symbols::SymbolRecord>> = BTreeMap::new();
     for rec in graph.records().filter(|r| is_sized(r.kind)) {
         by_file.entry(rec.symref.path()).or_default().push(rec);
@@ -54,7 +54,7 @@ pub(crate) fn check(
             let lines = body.split(|&b| b == b'\n').count();
             if lines > limit {
                 tracing::debug!(unit = %rec.symref, lines, limit, "LARGE001 unit over the limit");
-                findings.push(ArchFinding::fire(
+                findings.push(Verdict::fire(
                     LARGE,
                     Severity::Warn,
                     (path, (start, end)),

@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 use gob_check::ArtifactKey;
 use gob_rules::{Severity, UnresolvedReason};
-use grimble_arch::{ArchFinding, ArchReport};
+use grimble_arch::{ArchReport, Verdict};
 use grimble_lints::pass::{PathFinding, PathReport};
 use serde_json::{Value, json};
 
@@ -149,7 +149,7 @@ pub fn decode_arch(bytes: &[u8]) -> Option<ArchReport> {
         .iter()
         .map(|f| {
             let (rule, severity, file, range, message, reason, anchor) = row_of(f)?;
-            Some(ArchFinding {
+            Some(Verdict {
                 rule,
                 severity,
                 file,
@@ -255,7 +255,7 @@ mod tests {
     #[test]
     fn arch_report_round_trips() {
         let r = ArchReport {
-            findings: vec![ArchFinding {
+            findings: vec![Verdict {
                 rule: "CYCLE001",
                 severity: Severity::Error,
                 file: "c.rs".into(),
@@ -267,6 +267,30 @@ mod tests {
             subjects: BTreeMap::from([("CYCLE001", 2)]),
             not_applicable: BTreeMap::new(),
         };
+        assert_eq!(decode_arch(&encode_arch(&r)), Some(r));
+    }
+
+    /// A v1 payload written before the shared verdict type still decodes: the stored shape and
+    /// the cache key are unchanged by the extraction, so no schema bump is needed.
+    // frob:ticket 01M5F0111KG4GZSMSS7PX9D61N
+    // frob:tests crates/grimble-check/src/report_cache.rs::decode_arch
+    #[test]
+    fn v1_payload_decodes_into_the_shared_verdict() {
+        let r = ArchReport {
+            findings: vec![Verdict::fire(
+                "DEAD001",
+                Severity::Warn,
+                ("d.rs", (4, 8)),
+                "dead".into(),
+                "d".into(),
+            )],
+            subjects: BTreeMap::new(),
+            not_applicable: BTreeMap::new(),
+        };
+        assert_eq!(SCHEMA, 1, "a changed encoding must bump the schema");
+        let doc: Value = serde_json::from_slice(&encode_arch(&r)).expect("json");
+        assert_eq!(doc["schema"], 1);
+        assert_eq!(doc["findings"][0]["rule"], "DEAD001");
         assert_eq!(decode_arch(&encode_arch(&r)), Some(r));
     }
 

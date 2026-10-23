@@ -2,7 +2,7 @@
 //! `rules.md` repo-scope family, ticket G10).
 //!
 //! [`analyze`] reads one [`gob_symbols::SymbolGraph`] and returns every verdict as an
-//! [`ArchFinding`]; the product converts them to its own findings. The five rules never run one
+//! [`Verdict`]; the product converts them to its own findings. The five rules never run one
 //! by one: they are declared with `#[rule]` ([`rules`]) and staged, like the SYS rules.
 //!
 //! | Rule | Polarity | Fires | Unresolved |
@@ -32,7 +32,6 @@ mod cycle;
 mod dead;
 mod dup;
 mod dup_lex;
-mod finding;
 pub mod host;
 mod large;
 pub mod rules;
@@ -42,7 +41,7 @@ use std::collections::BTreeMap;
 
 use gob_symbols::SymbolGraph;
 
-pub use finding::ArchFinding;
+pub use grimble_verdict::Verdict;
 
 /// Rule id of the import cycle rule.
 pub const CYCLE: &str = "CYCLE001";
@@ -83,7 +82,7 @@ pub struct ArchInput<'a> {
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ArchReport {
     /// Findings of the five rules, sorted by file, rule and anchor.
-    pub findings: Vec<ArchFinding>,
+    pub findings: Vec<Verdict>,
     /// Subjects examined per rule (nodes, sized units, private functions, `pub` functions, lexed files); a rule that is off has none.
     pub subjects: BTreeMap<&'static str, usize>,
     /// Rules whose whole scope is absent here (rule id to the reason), so zero subjects is not a gap.

@@ -205,8 +205,9 @@ with their JSON parsers in gob-check (`tool_parse.rs`) and id maps in frob-check
 
 Implementation status (grimble-ci): the crate `grimble-ci` implements CI001, CI002, CI003, CI004, CI005,
 CI006, CI007, CI008, CI009, CI010, CI011, CI012 (toolchain pin, `rust-version` floor, Dependabot ecosystems, CODEOWNERS
-coverage of `.github`, and the `frob` verbs `run:` scripts invoke against a static verb table) and DK001 to DK004 as `#[rule]` declarations with mdtest pages. Like
-`grimble-arch` it is a library: `grimble_ci::analyze` is not yet wired into a product. CI001, CI006, CI007 and CI010 are
+coverage of `.github`, and the `frob` verbs `run:` scripts invoke against a static verb table) and DK001 to DK004 as `#[rule]` declarations with mdtest pages. It is a library
+that `grimble check` runs through `grimble_ci::analyze` (section 5.1); its verdicts are the `Verdict` type shared with
+grimble-arch from grimble-verdict, so the two passes do not depend on each other. CI001, CI006, CI007 and CI010 are
 native lexical fallbacks for the zizmor-bound rules (they do not parse the shell); `CiConfig`
 gains `allow_tag_pins_for` (owners exempt from CI001) and `contexts` (extra narrow CI007
 contexts). Deferred: CI013 to CI015 (bound to actionlint), CI016 (native).

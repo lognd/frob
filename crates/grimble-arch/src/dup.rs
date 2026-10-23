@@ -21,7 +21,7 @@ use gob_rules::Severity;
 use gob_symbols::SymbolGraph;
 
 use crate::dup_lex::{Kind, Tok, tokens};
-use crate::{ArchFinding, DUP};
+use crate::{DUP, Verdict};
 
 /// Tokens over the whole walk beyond which the pass is skipped, so a huge repo cannot stall a check.
 const MAX_TOTAL_TOKENS: usize = 2_000_000;
@@ -230,7 +230,7 @@ pub(crate) fn check(
     read: &dyn Fn(&str) -> Option<String>,
     min_tokens: usize,
     min_occurrences: usize,
-) -> (Vec<ArchFinding>, usize) {
+) -> (Vec<Verdict>, usize) {
     let mut paths: Vec<(&str, bool)> = Vec::new();
     for (path, info) in graph.files() {
         if wanted(path, &info.language) {
@@ -263,7 +263,7 @@ pub(crate) fn check(
 }
 
 /// The finding for one clone block, anchored at its first copy and naming every copy.
-fn finding(c: &Clone, texts: &[(&str, bool, String)], files: &[Vec<Tok<'_>>]) -> ArchFinding {
+fn finding(c: &Clone, texts: &[(&str, bool, String)], files: &[Vec<Tok<'_>>]) -> Verdict {
     let place = |&(f, p): &Site| format!("{}:{}", texts[f].0, files[f][p].line);
     let mut listed: Vec<String> = c.sites.iter().take(LISTED_SITES).map(place).collect();
     if c.sites.len() > LISTED_SITES {
@@ -271,7 +271,7 @@ fn finding(c: &Clone, texts: &[(&str, bool, String)], files: &[Vec<Tok<'_>>]) ->
     }
     let (f, p) = c.sites[0];
     let range = (files[f][p].start, files[f][p + c.len - 1].end);
-    ArchFinding::fire(
+    Verdict::fire(
         DUP,
         Severity::Advisory,
         (texts[f].0, range),

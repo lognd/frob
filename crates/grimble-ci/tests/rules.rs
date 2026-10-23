@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 
 use gob_rules::{Finding, Severity, UnresolvedReason};
 use gob_text::FileInterner;
-use grimble_ci::{CiConfig, CiFinding, CiInput, analyze};
+use grimble_ci::{CiConfig, CiInput, Verdict, analyze};
 
 /// Analyze an in-memory repository of `(path, text)` pairs.
 fn run(repo: &[(&str, &str)], config: &CiConfig) -> grimble_ci::CiReport {
@@ -166,7 +166,7 @@ fn unparsable_workflow_is_unresolved() {
         &[(".github/workflows/ci.yml", "on: [\n  :")],
         &CiConfig::default(),
     );
-    let f: &CiFinding = report.findings.first().expect("a verdict");
+    let f: &Verdict = report.findings.first().expect("a verdict");
     assert_eq!(f.severity, Severity::Unresolved);
     assert!(matches!(f.reason, Some(UnresolvedReason::ParseFailed)));
 }
@@ -243,7 +243,7 @@ impl grimble_ci::host::CiHost for Fixed {
 fn host_binds_and_converts() {
     // frob:tests crates/grimble-ci/src/rules/mod.rs::bind
     // frob:tests crates/grimble-ci/src/host.rs::CiHost.ci_subjects_of
-    // frob:tests crates/grimble-arch/src/finding.rs::ArchFinding.into_finding
+    // frob:tests crates/grimble-verdict/src/lib.rs::Verdict.into_finding
     assert_eq!(grimble_ci::rules::bind::<Fixed>().len(), 16);
     assert_eq!(grimble_ci::host::CiHost::ci_subjects_of(&Fixed, "CI002"), 5);
     let report = run(&[(".github/workflows/ci.yml", BARE)], &CiConfig::default());

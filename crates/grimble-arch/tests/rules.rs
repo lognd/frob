@@ -8,7 +8,7 @@ use std::path::Path;
 use gob_rules::{Finding, Severity, UnresolvedReason};
 use gob_symbols::CrateDeps;
 use gob_text::FileInterner;
-use grimble_arch::{ArchFinding, ArchInput, analyze};
+use grimble_arch::{ArchInput, Verdict, analyze};
 use grimble_bind::code::Code;
 
 /// Write `text` at `rel` under `root`.
@@ -38,7 +38,7 @@ fn krate(root: &Path, name: &str, dep: Option<&str>) {
 }
 
 /// Analyze the repository at `root` with the `large_lines` knob.
-fn run(root: &Path, large_lines: usize) -> Vec<ArchFinding> {
+fn run(root: &Path, large_lines: usize) -> Vec<Verdict> {
     run_dup(root, large_lines, 50, 3)
 }
 
@@ -48,7 +48,7 @@ fn run_dup(
     large_lines: usize,
     dup_min_tokens: usize,
     dup_min_occurrences: usize,
-) -> Vec<ArchFinding> {
+) -> Vec<Verdict> {
     let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
     let code = Code::build(root, &walked.files);
     let graph = grimble_bind::edges::build_graph(root, &code);
@@ -158,7 +158,7 @@ impl grimble_arch::host::ArchHost for Fixed {
 fn host_binds_and_converts() {
     // frob:tests crates/grimble-arch/src/rules/mod.rs::bind
     // frob:tests crates/grimble-arch/src/host.rs::ArchHost.arch_subjects_of
-    // frob:tests crates/grimble-arch/src/finding.rs::ArchFinding.into_finding
+    // frob:tests crates/grimble-verdict/src/lib.rs::Verdict.into_finding
     assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 5);
     assert_eq!(
         grimble_arch::host::ArchHost::arch_subjects_of(&Fixed, "DEAD001"),
@@ -228,7 +228,7 @@ fn a_repository_without_rust_makes_only_vis001_not_applicable() {
 }
 
 /// The findings of `rule` over the repository at `root`.
-fn of_rule(root: &Path, rule: &str) -> Vec<ArchFinding> {
+fn of_rule(root: &Path, rule: &str) -> Vec<Verdict> {
     run(root, 0)
         .into_iter()
         .filter(|f| f.rule == rule)
@@ -309,7 +309,7 @@ fn exact_block() -> String {
 }
 
 /// The `DUP001` findings over the repository at `root`.
-fn dup_findings(root: &Path) -> Vec<ArchFinding> {
+fn dup_findings(root: &Path) -> Vec<Verdict> {
     of_rule(root, "DUP001")
 }
 

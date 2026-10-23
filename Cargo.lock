@@ -3070,6 +3070,7 @@ dependencies = [
  "gob-text",
  "gob-walk",
  "grimble-bind",
+ "grimble-verdict",
  "tempfile",
  "tracing",
 ]
@@ -3150,7 +3151,7 @@ dependencies = [
  "gob-rules",
  "gob-symbols",
  "gob-text",
- "grimble-arch",
+ "grimble-verdict",
  "serde_yaml_ng",
  "toml",
  "tracing",
@@ -3189,6 +3190,15 @@ dependencies = [
  "inventory",
  "proptest",
  "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "grimble-verdict"
+version = "0.532.0"
+dependencies = [
+ "gob-rules",
+ "gob-text",
  "tracing",
 ]
 

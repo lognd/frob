@@ -1,13 +1,15 @@
-//! The verdict type the architecture pass returns.
-
-// frob:ticket 01M3Z7141TW2H3HXJRK1QBHP7T
+//! The verdict a grimble rule pass returns before the product interns its span.
+//!
+//! The architecture and CI passes both return this one type, so neither depends on the other for
+//! it; the product converts each [`Verdict`] to a pipeline `Finding` with [`Verdict::into_finding`].
+// frob:ticket 01M5F0111KG4GZSMSS7PX9D61N
 
 use gob_rules::{Finding, RuleId, Severity, UnresolvedReason};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 
-/// One architecture verdict before the product interns its span.
+/// One rule-pass verdict before the product interns its span.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ArchFinding {
+pub struct Verdict {
     /// The rule id (`CYCLE001`).
     pub rule: &'static str,
     /// The severity; `Unresolved` when `reason` is set.
@@ -24,9 +26,10 @@ pub struct ArchFinding {
     pub anchor: String,
 }
 
-impl ArchFinding {
-    /// A resolved finding at `severity`.
-    pub(crate) fn fire(
+impl Verdict {
+    /// A resolved verdict of `rule` at `severity` in `site` (file, byte range).
+    #[must_use]
+    pub fn fire(
         rule: &'static str,
         severity: Severity,
         site: (&str, (usize, usize)),
@@ -44,8 +47,9 @@ impl ArchFinding {
         }
     }
 
-    /// An Unresolved finding with its `reason`.
-    pub(crate) fn unresolved(
+    /// An Unresolved verdict of `rule` with its `reason`.
+    #[must_use]
+    pub fn unresolved(
         rule: &'static str,
         reason: UnresolvedReason,
         site: (&str, (usize, usize)),
@@ -68,7 +72,7 @@ impl ArchFinding {
         let id: RuleId = match self.rule.parse() {
             Ok(id) => id,
             Err(err) => {
-                tracing::error!(rule = self.rule, %err, "architecture finding names an invalid rule id");
+                tracing::error!(rule = self.rule, %err, "verdict names an invalid rule id");
                 return None;
             }
         };

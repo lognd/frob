@@ -14,7 +14,7 @@ workspace = true
 [dependencies]
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
-grimble-arch = { version = "0.532.0", path = "../grimble-arch" }
+grimble-verdict = { version = "0.532.0", path = "../grimble-verdict" }
 serde_yaml_ng = "0.10"
 toml = "1"
 tracing = "0.1"

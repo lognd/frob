@@ -2,7 +2,7 @@
 //! `docs/design/cicd.md` section 5).
 //!
 //! [`analyze`] reads the repository's files through [`CiInput`] and returns every verdict as a
-//! [`CiFinding`]; the product converts them to its own findings. Rules are declared with `#[rule]`
+//! [`Verdict`]; the product converts them to its own findings. Rules are declared with `#[rule]`
 //! ([`rules`]) and staged, like the architecture rules.
 //!
 //! | Rule | Polarity | Fires |
@@ -55,7 +55,7 @@ mod workflow;
 
 use std::collections::BTreeMap;
 
-pub use finding::CiFinding;
+pub use grimble_verdict::Verdict;
 pub use verbs::VERBS;
 
 /// The workflow rules that judge each parsed workflow (CI012 is joined separately).
@@ -119,7 +119,7 @@ pub struct CiInput<'a> {
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct CiReport {
     /// Findings, sorted by file, rule and anchor.
-    pub findings: Vec<CiFinding>,
+    pub findings: Vec<Verdict>,
     /// Subjects examined per rule (workflows, jobs, Dockerfiles); a rule with no scope has none.
     pub subjects: BTreeMap<&'static str, usize>,
     /// Rules whose whole scope is absent here (rule id to the reason), so zero subjects is not a gap.

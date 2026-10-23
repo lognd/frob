@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use gob_rules::{Severity, UnresolvedReason};
 use gob_symbols::{EdgeKind, Status, SymbolGraph, SymbolKind, SymbolRecord, Symref};
 
-use crate::{ArchFinding, DEAD};
+use crate::{DEAD, Verdict};
 
 /// What reaches a unit.
 #[derive(Default)]
@@ -27,7 +27,7 @@ pub(crate) fn last_segment(name: &str) -> &str {
 }
 
 /// Findings for dead private functions and methods, and the candidates examined.
-pub(crate) fn check(graph: &SymbolGraph) -> (Vec<ArchFinding>, usize) {
+pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
     let public: BTreeSet<String> = graph
         .public_api()
         .iter()
@@ -94,7 +94,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<ArchFinding>, usize) {
         }
         if r.is_some_and(|r| r.may) {
             tracing::debug!(unit = %key, "DEAD001 only a May edge reaches the unit");
-            findings.push(ArchFinding::unresolved(
+            findings.push(Verdict::unresolved(
                 DEAD,
                 UnresolvedReason::EdgeMay,
                 site,
@@ -103,7 +103,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<ArchFinding>, usize) {
             ));
         } else if spelled.contains(name) {
             tracing::debug!(unit = %key, "DEAD001 an unresolved call spells the name");
-            findings.push(ArchFinding::unresolved(
+            findings.push(Verdict::unresolved(
                 DEAD,
                 UnresolvedReason::EdgeUnknown,
                 site,
@@ -111,7 +111,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<ArchFinding>, usize) {
                 key,
             ));
         } else {
-            findings.push(ArchFinding::fire(
+            findings.push(Verdict::fire(
                 DEAD,
                 Severity::Warn,
                 site,

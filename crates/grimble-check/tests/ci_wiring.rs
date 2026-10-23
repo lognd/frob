@@ -71,3 +71,29 @@ fn a_write_all_workflow_is_reported_once_as_ci003() {
         "{found:?}"
     );
 }
+
+/// The CI and architecture verdicts reach the report with the severity and message the passes
+/// built, unchanged by the shared `Verdict` type (ticket 01M5F0111KG4GZSMSS7PX9D61N).
+// frob:ticket 01M5F0111KG4GZSMSS7PX9D61N
+// frob:tests crates/grimble-check/src/product.rs::ci_report
+#[test]
+fn verdict_output_is_stable_across_the_shared_type() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), ".github/workflows/ci.yml", UNPINNED);
+    let done = run(dir.path(), &CheckOptions::default()).expect("run");
+    let ci: Vec<_> = done
+        .report
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "CI001")
+        .map(|f| (f.severity, f.message.clone()))
+        .collect();
+    assert_eq!(ci.len(), 1, "{ci:?}");
+    assert_eq!(ci[0].0, gob_rules::Severity::Warn);
+    assert!(
+        ci[0]
+            .1
+            .starts_with("job `build` uses `actions/checkout@v4` which is not pinned"),
+        "{ci:?}"
+    );
+}

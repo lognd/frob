@@ -13,9 +13,10 @@ use std::collections::BTreeSet;
 use gob_rules::Severity;
 use serde_yaml_ng::Value;
 
-use crate::finding::{CiFinding, fire};
+use crate::finding::fire;
 use crate::verbs::unknown_verbs;
 use crate::workflow::{Workflow, key, run_of, scalar, uses_of, with_of};
+use grimble_verdict::Verdict;
 
 /// Rule id of the consistency rule.
 pub const CI012: &str = "CI012";
@@ -29,7 +30,7 @@ pub(crate) struct Repo<'a> {
 }
 
 /// Findings of CI012 for the parsed workflows of `repo`.
-pub(crate) fn check(repo: &Repo<'_>, workflows: &[Workflow<'_>]) -> Vec<CiFinding> {
+pub(crate) fn check(repo: &Repo<'_>, workflows: &[Workflow<'_>]) -> Vec<Verdict> {
     let mut out = Vec::new();
     let pinned = pinned_channel(repo);
     let msrv = max_msrv(repo);
@@ -69,7 +70,7 @@ pub(crate) fn check(repo: &Repo<'_>, workflows: &[Workflow<'_>]) -> Vec<CiFindin
 }
 
 /// Findings for `frob` verbs that the workflow's `run:` scripts invoke and frob does not have.
-fn frob_verbs(wf: &Workflow<'_>, out: &mut Vec<CiFinding>) {
+fn frob_verbs(wf: &Workflow<'_>, out: &mut Vec<Verdict>) {
     for job in wf.jobs() {
         for step in job.steps() {
             let Some(script) = run_of(step) else { continue };
@@ -270,7 +271,7 @@ fn ecosystems(repo: &Repo<'_>, has_workflows: bool) -> BTreeSet<&'static str> {
 }
 
 /// Dependabot (or Renovate) coverage of the implied ecosystems.
-fn dependabot(repo: &Repo<'_>, anchor: &Workflow<'_>, out: &mut Vec<CiFinding>) {
+fn dependabot(repo: &Repo<'_>, anchor: &Workflow<'_>, out: &mut Vec<Verdict>) {
     let implied = ecosystems(repo, true);
     let has = |p: &str| repo.files.iter().any(|f| f == p);
     let renovate = [
@@ -344,7 +345,7 @@ fn join<'a>(names: impl IntoIterator<Item = &'a &'a str>) -> String {
 }
 
 /// CODEOWNERS covering `.github` when the file exists.
-fn codeowners(repo: &Repo<'_>, anchor: &str, out: &mut Vec<CiFinding>) {
+fn codeowners(repo: &Repo<'_>, anchor: &str, out: &mut Vec<Verdict>) {
     let Some(path) = ["CODEOWNERS", ".github/CODEOWNERS", "docs/CODEOWNERS"]
         .into_iter()
         .find(|p| repo.files.iter().any(|f| f == p))

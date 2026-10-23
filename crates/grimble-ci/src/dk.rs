@@ -6,7 +6,8 @@ use gob_rules::Severity;
 
 use crate::CiConfig;
 use crate::docker::{Instruction, Stage, is_internal, split_ref, stages};
-use crate::finding::{CiFinding, fire};
+use crate::finding::fire;
+use grimble_verdict::Verdict;
 
 /// Rule id: the image runs as root.
 pub const DK001: &str = "DK001";
@@ -18,7 +19,7 @@ pub const DK003: &str = "DK003";
 pub const DK004: &str = "DK004";
 
 /// Findings of DK001 to DK004 for the Dockerfile `path`; the count is the subjects examined per rule.
-pub(crate) fn check(path: &str, text: &str, cfg: &CiConfig) -> Vec<CiFinding> {
+pub(crate) fn check(path: &str, text: &str, cfg: &CiConfig) -> Vec<Verdict> {
     let all = stages(text);
     tracing::debug!(path, stages = all.len(), "checking Dockerfile");
     let mut out = Vec::new();
@@ -50,7 +51,7 @@ fn effective_user(all: &[Stage], idx: usize, depth: usize) -> Option<String> {
 }
 
 /// DK001 on the final stage.
-fn root_user(path: &str, all: &[Stage], out: &mut Vec<CiFinding>) {
+fn root_user(path: &str, all: &[Stage], out: &mut Vec<Verdict>) {
     let Some(last) = all.last() else { return };
     if last.image.eq_ignore_ascii_case("scratch") {
         tracing::debug!(path, "DK001 skips a scratch final stage");
@@ -81,7 +82,7 @@ fn base_image(
     stage: &Stage,
     earlier: &[Stage],
     cfg: &CiConfig,
-    out: &mut Vec<CiFinding>,
+    out: &mut Vec<Verdict>,
 ) {
     let image = stage.image.as_str();
     if image.is_empty() || image.contains('$') || is_internal(image, earlier) {
@@ -112,7 +113,7 @@ fn base_image(
 }
 
 /// DK004 on one `RUN`.
-fn pipe_to_shell(path: &str, ins: &Instruction, cfg: &CiConfig, out: &mut Vec<CiFinding>) {
+fn pipe_to_shell(path: &str, ins: &Instruction, cfg: &CiConfig, out: &mut Vec<Verdict>) {
     if ins.args.starts_with('[') {
         return;
     }

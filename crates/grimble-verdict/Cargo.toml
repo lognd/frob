@@ -1,0 +1,17 @@
+[package]
+name = "grimble-verdict"
+version.workspace = true
+description = "The verdict a grimble rule pass returns before the product interns its span; shared by the architecture and CI passes."
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
+tracing = "0.1"

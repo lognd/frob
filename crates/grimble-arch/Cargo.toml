@@ -14,11 +14,12 @@ workspace = true
 [dependencies]
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
-gob-text = { version = "0.532.0", path = "../gob-text" }
 grimble-bind = { version = "0.532.0", path = "../grimble-bind" }
+grimble-verdict = { version = "0.532.0", path = "../grimble-verdict" }
 tracing = "0.1"
 
 [dev-dependencies]
+gob-text = { version = "0.532.0", path = "../gob-text" }
 gob-mdtest = { path = "../gob-mdtest" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 tempfile = "3"

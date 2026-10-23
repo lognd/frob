@@ -111,6 +111,7 @@ Every grimble crate is Milestone 2 or later (D36).
 | grimble-bind | model-to-symbol resolution, ambiguity, FOREIGN, the `binds` cross-language edge with per-`via` signature comparison, contract fingerprints, drift findings (SYS family), shrink, `grimble ack` on gob-lock |
 | grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble-model.md 9.6) with matrix-build template excuses, CAP family: CAP001, CAP002, CAP004 (CAP003 retired, D75) and the matrix-build rule SYS012 (binding.md 6.12) |
 | grimble-lints | universal rules over U (sort in loop, network in retry loop, secret literal, ...), the NEAT family (neatness.md), language-specific structural rules (tree-sitter queries or ast-grep patterns), GPOL user policy over code; callee vocabularies are views over the gob-ir registry |
+| grimble-verdict | the `Verdict` a grimble rule pass returns before the product interns its span (rule, severity, file, byte range, message, optional Unresolved reason, fingerprint anchor) and its conversion to a gob-rules `Finding`; its own crate so grimble-arch and grimble-ci share it without depending on each other | grimble-arch, grimble-ci |
 | grimble-ci | the CI and DK families (cicd.md) over the GitHub Actions and Dockerfile adapters, CI012 consistency joins through the F2 manifest adapter (grimble-model.md 9.8) |
 | grimble-arch | metrics core (size, nesting, LCOM, coupling), layering contracts, CYCLE, DEAD, LARGE, dup rungs R1-R5 |
 | grimble-security | SEC and PII structural patterns, secrets, CVE fingerprints as a data pack |
@@ -316,7 +317,7 @@ Net: additions are gob-serve, gob-ir (the universal model, below
 gob-symbols), gob-lock, gob-check, gob-pattern, grimble-serve and
 grimble-ci; gob-db (salsa) is a milestone-2 crate. No new products.
 Three binaries, 24 substrate crates (gob-dev included), 17 frob crates (frob-docgen, the generator binary that links frob for gob-dev, included),
-12 grimble crates, 13 crunk crates. Each crate builds and tests alone.
+13 grimble crates, 13 crunk crates. Each crate builds and tests alone.
 
 ## 5. Naming
 
@@ -376,7 +377,7 @@ fails the test. Every workspace crate must appear here exactly once.
 | 5 | rules | gob-pattern, gob-rules, gob-symbols |
 | 6 | config | crunk-scene, gob-config, gob-diagnostics, gob-fix, gob-frameworks, gob-plan |
 | 7 | pipeline | crunk-layout, gob-check, gob-cli, gob-directives, gob-mdtest, gob-packs, gob-testsupport |
-| 8 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, gob-product, grimble-capabilities, grimble-lints, grimble-model, grimble-vet |
+| 8 | product base | crunk-spec, crunk-tailwind, frob-ack, frob-ledger, gob-product, grimble-capabilities, grimble-lints, grimble-model, grimble-verdict, grimble-vet |
 | 9 | product core | crunk-gallery, crunk-ingest, crunk-tokens, frob-lease, frob-mirror, frob-pm, grimble-bind |
 | 10 | product mid | crunk-query, crunk-rules, frob-metrics, frob-release, frob-worktree, grimble-arch |
 | 11 | product upper | crunk-check, frob-evidence, frob-gh, grimble-ci |

@@ -966,7 +966,7 @@ mod tests {
     /// A native report holding one `rule` finding in `file`.
     fn native(rule: &'static str, file: &str, message: &str) -> CiReport {
         let mut report = CiReport::default();
-        report.findings.push(grimble_ci::CiFinding {
+        report.findings.push(grimble_ci::Verdict {
             rule,
             severity: Severity::Warn,
             file: file.to_owned(),

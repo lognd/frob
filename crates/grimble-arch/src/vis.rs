@@ -8,7 +8,7 @@ use gob_rules::{Severity, UnresolvedReason};
 use gob_symbols::{EdgeKind, Status, SymbolGraph, SymbolKind, SymbolRecord};
 
 use crate::dead::last_segment;
-use crate::{ArchFinding, VIS};
+use crate::{VIS, Verdict};
 
 /// What reaches a unit from outside its own package.
 #[derive(Default)]
@@ -38,7 +38,7 @@ pub(crate) fn has_rust(graph: &SymbolGraph) -> bool {
 pub(crate) fn check(
     graph: &SymbolGraph,
     crates: &BTreeMap<String, String>,
-) -> (Vec<ArchFinding>, usize) {
+) -> (Vec<Verdict>, usize) {
     let exported: BTreeSet<String> = graph
         .public_api()
         .iter()
@@ -99,7 +99,7 @@ pub(crate) fn check(
         }
         if r.is_some_and(|r| r.may) {
             tracing::debug!(unit = %key, "VIS001 only a May edge reaches the unit from outside");
-            findings.push(ArchFinding::unresolved(
+            findings.push(Verdict::unresolved(
                 VIS,
                 UnresolvedReason::EdgeMay,
                 site,
@@ -113,7 +113,7 @@ pub(crate) fn check(
             .is_some_and(|pkgs| pkgs.iter().any(|p| *p != own))
         {
             tracing::debug!(unit = %key, "VIS001 an unresolved call from outside spells the name");
-            findings.push(ArchFinding::unresolved(
+            findings.push(Verdict::unresolved(
                 VIS,
                 UnresolvedReason::EdgeUnknown,
                 site,
@@ -121,7 +121,7 @@ pub(crate) fn check(
                 key,
             ));
         } else {
-            findings.push(ArchFinding::fire(
+            findings.push(Verdict::fire(
                 VIS,
                 Severity::Advisory,
                 site,

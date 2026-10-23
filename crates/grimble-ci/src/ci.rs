@@ -6,8 +6,9 @@ use gob_rules::Severity;
 use serde_yaml_ng::Value;
 
 use crate::CiConfig;
-use crate::finding::{CiFinding, fire};
+use crate::finding::fire;
 use crate::workflow::{Job, Workflow, key, run_of, scalar, uses_of};
+use grimble_verdict::Verdict;
 
 /// Rule id: no least-privilege `permissions`.
 pub const CI002: &str = "CI002";
@@ -52,7 +53,7 @@ pub(crate) struct Subjects {
 }
 
 /// Findings of the CI rules this module owns for one parsed workflow.
-pub(crate) fn check(wf: &Workflow<'_>, cfg: &CiConfig, subjects: &mut Subjects) -> Vec<CiFinding> {
+pub(crate) fn check(wf: &Workflow<'_>, cfg: &CiConfig, subjects: &mut Subjects) -> Vec<Verdict> {
     let mut out = Vec::new();
     let jobs = wf.jobs();
     tracing::debug!(path = wf.path, jobs = jobs.len(), "checking workflow");
@@ -83,7 +84,7 @@ fn grants_id_token(v: Option<&Value>) -> bool {
 }
 
 /// CI002, CI003 and CI011.
-fn permissions(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<CiFinding>) {
+fn permissions(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
     let top = wf.permissions();
     let uncovered = top.is_none() && jobs.iter().any(|j| j.permissions().is_none());
     if uncovered {
@@ -121,7 +122,7 @@ fn permissions(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<CiFinding>) {
 }
 
 /// CI004.
-fn concurrency(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<CiFinding>) {
+fn concurrency(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
     let triggers = wf.triggers();
     if !(triggers.contains("push") || triggers.contains("pull_request")) {
         return;
@@ -140,7 +141,7 @@ fn concurrency(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<CiFinding>) {
 }
 
 /// CI005.
-fn timeouts(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Vec<CiFinding>) {
+fn timeouts(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Vec<Verdict>) {
     for job in jobs.iter().filter(|j| !j.is_call()) {
         let message = match key(job.value, "timeout-minutes") {
             None => Some(format!(
@@ -208,7 +209,7 @@ fn token_secrets(text: &str) -> Vec<String> {
 }
 
 /// CI008 and CI009.
-fn publishes(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<CiFinding>) {
+fn publishes(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
     let triggers = wf.triggers();
     let push_untagged = triggers.contains("push")
         && wf

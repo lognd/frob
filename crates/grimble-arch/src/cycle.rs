@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use gob_rules::{Severity, UnresolvedReason};
 use gob_symbols::{EdgeKind, Status, SymbolGraph};
 
-use crate::{ArchFinding, CYCLE};
+use crate::{CYCLE, Verdict};
 
 /// Node-index adjacency: `adj[n]` is the sorted successors of node `n`.
 type Adj = Vec<BTreeSet<usize>>;
@@ -73,7 +73,7 @@ fn cycles(adj: &Adj) -> Vec<BTreeSet<usize>> {
 pub(crate) fn check(
     graph: &SymbolGraph,
     crates: &BTreeMap<String, String>,
-) -> (Vec<ArchFinding>, usize) {
+) -> (Vec<Verdict>, usize) {
     let node_of = |file: &str| crates.get(file).cloned().unwrap_or_else(|| file.to_owned());
     let mut ids: BTreeMap<String, usize> = BTreeMap::new();
     let mut first_file: Vec<String> = Vec::new();
@@ -149,7 +149,7 @@ fn report(
     names: &[String],
     first_file: &[String],
     reason: Option<UnresolvedReason>,
-) -> ArchFinding {
+) -> Verdict {
     let members: Vec<&str> = comp.iter().map(|&i| names[i].as_str()).collect();
     let anchor = format!("cycle/{}", members.join(","));
     let file = comp
@@ -159,14 +159,14 @@ fn report(
         .unwrap_or("");
     let site = (file, (0, 0));
     match reason {
-        None => ArchFinding::fire(
+        None => Verdict::fire(
             CYCLE,
             Severity::Error,
             site,
             format!("import cycle between {}", members.join(", ")),
             anchor,
         ),
-        Some(r) => ArchFinding::unresolved(
+        Some(r) => Verdict::unresolved(
             CYCLE,
             r,
             site,

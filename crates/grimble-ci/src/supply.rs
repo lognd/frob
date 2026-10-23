@@ -10,8 +10,9 @@ use gob_rules::Severity;
 use serde_yaml_ng::Value;
 
 use crate::CiConfig;
-use crate::finding::{CiFinding, fire};
+use crate::finding::fire;
 use crate::workflow::{Job, Workflow, run_of, uses_of, with_of};
+use grimble_verdict::Verdict;
 
 /// Rule id: an external `uses:` not pinned to a full commit SHA.
 pub const CI001: &str = "CI001";
@@ -80,7 +81,7 @@ const SAFE_LEAVES: [&str; 9] = [
 const FIRST_PARTY_OWNERS: [&str; 2] = ["actions", "github"];
 
 /// Findings of CI001, CI006, CI007 and CI010 for one parsed workflow.
-pub(crate) fn check(wf: &Workflow<'_>, cfg: &CiConfig, out: &mut Vec<CiFinding>) {
+pub(crate) fn check(wf: &Workflow<'_>, cfg: &CiConfig, out: &mut Vec<Verdict>) {
     let jobs = wf.jobs();
     pinned_refs(wf, &jobs, cfg, out);
     if PRIVILEGED_TRIGGERS
@@ -144,7 +145,7 @@ fn all_uses<'a>(jobs: &'a [Job<'a>]) -> Vec<(&'a str, &'a str)> {
 }
 
 /// CI001.
-fn pinned_refs(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Vec<CiFinding>) {
+fn pinned_refs(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Vec<Verdict>) {
     for (job, uses) in all_uses(jobs) {
         let uses = uses.trim();
         if uses.is_empty() || is_local(uses) {
@@ -177,7 +178,7 @@ fn pinned_refs(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Ve
 }
 
 /// CI006 (only called for a privileged trigger).
-fn head_checkouts(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<CiFinding>) {
+fn head_checkouts(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
     for job in jobs {
         for (idx, step) in job.steps().into_iter().enumerate() {
             if !is_checkout(step) {
@@ -280,7 +281,7 @@ fn reach_of(token: &str, cfg: &CiConfig) -> Option<Reach> {
 }
 
 /// CI007.
-fn injections(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Vec<CiFinding>) {
+fn injections(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Vec<Verdict>) {
     for job in jobs {
         for (idx, step) in job.steps().into_iter().enumerate() {
             let Some(run) = run_of(step) else { continue };
@@ -339,7 +340,7 @@ fn credentials_dropped(step: &Value) -> bool {
 }
 
 /// CI010.
-fn persisted_credentials(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<CiFinding>) {
+fn persisted_credentials(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
     let steps = || jobs.iter().flat_map(Job::steps);
     let risky = steps().any(|s| uploads(s) || third_party(s));
     if !risky {
