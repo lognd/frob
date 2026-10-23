@@ -16,7 +16,9 @@ use crate::operator::{Operator, Universal};
 use crate::symref::{Segment, Symref};
 
 /// Index of a node in its term's arena.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub struct NodeId(pub(crate) u32);
 
 impl NodeId {
@@ -295,10 +297,10 @@ impl TermBuilder {
 /// A sealed term: an arena of nodes under one root.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Term {
-    locator: String,
-    nodes: Vec<Node>,
-    root: NodeId,
-    symrefs: Vec<Option<Symref>>,
+    pub(crate) locator: String,
+    pub(crate) nodes: Vec<Node>,
+    pub(crate) root: NodeId,
+    pub(crate) symrefs: Vec<Option<Symref>>,
 }
 
 /// Derive every unit and anon symref with one explicit-stack preorder walk.
@@ -306,7 +308,7 @@ pub struct Term {
 /// Each stack entry carries the arena index of the nearest enclosing symref owner (`None` is the
 /// locator root); anon segments count per owner in preorder, exactly as the recursive pass did.
 // frob:ticket 01M3Z8NVCBM9KXN5ZY97QWX8P1
-fn compute_symrefs(term: &Term) -> Vec<Option<Symref>> {
+pub(crate) fn compute_symrefs(term: &Term) -> Vec<Option<Symref>> {
     let mut out: Vec<Option<Symref>> = vec![None; term.nodes.len()];
     // One anon counter per possible owner, plus the locator root in the last slot.
     let mut counters = vec![0_u32; term.nodes.len() + 1];

@@ -19,7 +19,9 @@ use crate::operator::{Operator, Universal};
 use crate::term::{NodeId, Term};
 
 /// How sure a resolution edge or declaration is; ordered `Unknown < May < Must`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum Status {
     /// The edge may or may not exist; nothing is claimed.
     Unknown,
@@ -40,7 +42,7 @@ impl Status {
 macro_rules! id_type {
     ($(#[$m:meta])* $name:ident) => {
         $(#[$m])*
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
         pub struct $name(pub(crate) u32);
         impl $name {
             /// The dense index.
@@ -56,7 +58,9 @@ id_type!(/// A reference (use site).
     RefId);
 
 /// The label of a scope edge; lower labels are searched first and shadow later ones.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum Label {
     /// Names brought in by an import.
     Import,
@@ -80,7 +84,7 @@ impl Label {
 }
 
 /// What introduced a declaration.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum DeclKind {
     /// A `unit`: its name is part of its identity.
     Unit,
@@ -91,7 +95,7 @@ pub enum DeclKind {
 }
 
 /// A declaration of a name in a scope.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Decl {
     /// The declared name.
     pub name: String,
@@ -110,7 +114,7 @@ pub struct Decl {
 }
 
 /// A use of a name in a scope.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Reference {
     /// The spelled name.
     pub name: String,
@@ -121,7 +125,7 @@ pub struct Reference {
 }
 
 /// A labelled edge between scopes.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Edge {
     /// Edge label.
     pub label: Label,
@@ -132,7 +136,7 @@ pub struct Edge {
 }
 
 /// Which names an opaque region may define.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub enum MayDefine {
     /// Nothing is claimed to be defined.
     #[default]
@@ -154,7 +158,7 @@ impl MayDefine {
 }
 
 /// Hints carried by an opaque region about its effect on the surrounding scope.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct OpaqueHint {
     /// Names the region may define in the scope.
     pub may_define: MayDefine,
@@ -164,12 +168,12 @@ pub struct OpaqueHint {
     pub node: Option<NodeId>,
 }
 
-#[derive(Debug, Clone, Default)]
-struct Scope {
-    node: Option<NodeId>,
-    edges: Vec<Edge>,
-    decls: Vec<DeclId>,
-    hints: Vec<OpaqueHint>,
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub(crate) struct Scope {
+    pub(crate) node: Option<NodeId>,
+    pub(crate) edges: Vec<Edge>,
+    pub(crate) decls: Vec<DeclId>,
+    pub(crate) hints: Vec<OpaqueHint>,
 }
 
 /// The result of resolving a reference.
@@ -197,14 +201,14 @@ impl Resolution {
 /// The scope graph of one term (or one adapter run).
 #[derive(Debug, Clone, Default)]
 pub struct ScopeGraph {
-    scopes: Vec<Scope>,
-    decls: Vec<Decl>,
-    refs: Vec<Reference>,
-    ref_of_node: HashMap<NodeId, RefId>,
-    decl_of_node: HashMap<NodeId, DeclId>,
-    scope_of_node: HashMap<NodeId, ScopeId>,
-    decl_index: HashMap<(ScopeId, String, Option<String>, bool), DeclId>,
-    memo: Memo,
+    pub(crate) scopes: Vec<Scope>,
+    pub(crate) decls: Vec<Decl>,
+    pub(crate) refs: Vec<Reference>,
+    pub(crate) ref_of_node: HashMap<NodeId, RefId>,
+    pub(crate) decl_of_node: HashMap<NodeId, DeclId>,
+    pub(crate) scope_of_node: HashMap<NodeId, ScopeId>,
+    pub(crate) decl_index: HashMap<(ScopeId, String, Option<String>, bool), DeclId>,
+    pub(crate) memo: Memo,
 }
 
 /// Per-reference resolution cache, keyed by `RefId` (one cell per reference).
@@ -212,7 +216,7 @@ pub struct ScopeGraph {
 /// Cells fill lazily on the first [`ScopeGraph::resolve`]; any graph mutation that can change a
 /// resolution (an edge, a declaration, an opaque hint) empties them again.
 #[derive(Debug, Default)]
-struct Memo {
+pub(crate) struct Memo {
     cells: Vec<OnceLock<Resolution>>,
     /// Set once any cell was filled, so a mutation only pays to clear after a resolve.
     filled: AtomicBool,
@@ -231,6 +235,14 @@ impl Clone for Memo {
 }
 
 impl Memo {
+    /// A fresh cache with one empty cell per reference.
+    pub(crate) fn with_cells(n: usize) -> Self {
+        Self {
+            cells: (0..n).map(|_| OnceLock::new()).collect(),
+            ..Self::default()
+        }
+    }
+
     /// Drop every cached resolution if any exist.
     fn invalidate(&mut self) {
         if *self.filled.get_mut() {

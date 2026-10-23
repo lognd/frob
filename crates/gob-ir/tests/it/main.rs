@@ -15,3 +15,4 @@ mod select;
 mod soundness;
 mod support;
 mod web;
+mod wire;

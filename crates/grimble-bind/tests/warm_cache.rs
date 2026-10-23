@@ -16,7 +16,7 @@ fn second_build_parses_nothing_and_folds_terms_only_on_demand() {
     std::fs::write(root.join("a.rs"), "pub fn a() -> u32 { 1 }\n").expect("write");
     std::fs::write(root.join("b.rs"), "// grimble:binds a\npub fn b() {}\n").expect("write");
     std::fs::write(root.join("c.bin"), [0u8, 1, 2]).expect("write");
-    let cache = Cache::open(&dir.path().join("cache"));
+    let cache = std::sync::Arc::new(Cache::open(&dir.path().join("cache")));
     let entries = walk(&root, &WalkConfig::default()).expect("walk").files;
 
     let cold = Code::build_with(&root, &entries, &cache);
