@@ -2,7 +2,8 @@
 id = "01M4GYBZZB9Z4QPMW451DC0JFG"
 title = "Make blanket grants and ungated nodes visible: an every-atom grant over a whole tree is reported as a declared trust zone, and nodes that are not CAP subjects (no code-owning selector) are listed as ungated"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
