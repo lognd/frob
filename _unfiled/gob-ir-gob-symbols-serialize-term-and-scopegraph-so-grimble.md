@@ -2,7 +2,8 @@
 id = "01M4HB1ZAX0Q6QHK1DK3Y3EZ9E"
 title = "gob-ir/gob-symbols: serialize Term and ScopeGraph so grimble-bind can cache folded terms"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
