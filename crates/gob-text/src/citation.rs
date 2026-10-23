@@ -385,7 +385,7 @@ mod tests {
         assert_eq!(&text[c.start..c.start + c.len], "t.md section 6");
     }
 
-    // frob:tests Headings::parse
+    // frob:tests Headings.parse
     #[test]
     fn headings_offer_numbers_and_slugs() {
         let h = Headings::parse(
