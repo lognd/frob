@@ -172,6 +172,8 @@ fn fixture_a_matches_the_recorded_findings() {
 }
 
 // frob:tests crates/frob-check/src/lib.rs::run
+// frob:ticket 01M5NFNVB515TW2DH23FSH0MZS
+// The snapshot records DOC003 for `docs/guide.md`, which has no `Status:` header line.
 #[test]
 fn fixture_b_matches_the_recorded_findings() {
     check_snapshot("fixture_b", fixture_b);
