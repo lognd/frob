@@ -2,7 +2,8 @@
 id = "01M4GYBTXAPBEX9QYWYX5FKR67"
 title = "may grants carry a reason (because= or ticket=) and grimble status reports grant count, breadth and their change since the lock (grant ratchet)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
