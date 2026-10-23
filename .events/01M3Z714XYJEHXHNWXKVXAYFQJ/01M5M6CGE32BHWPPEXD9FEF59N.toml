@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T10:52:39Z"
+digest = "f9e68d15264e425c2209e5d3f0b9990e3ce8d2acaa64fd9f83f9d54a220ec930"
+exit_code = 0
+head = "344e510fbef69348afa4121eeae96c474cc5e71c"
+inline = '''
+   Compiling gob-serve v0.532.0 (<worktree>/crates/gob-serve)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7f2e1e66-2a51-4257-b529-c7baa27ad1c5 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.006s] grimble-serve::serve a_client_lists_check_and_graph_and_a_request_without_the_token_is_refused
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-serve --test serve a_client_lists_check_and_graph"
+size = 712
+status = "measured"
+test_count = 1
+tests_digest = "aab282d131ca0da5cec4cf66500ffad8891659a833fba8dec6951d664c2a1ae0"
+at = "2026-10-23T10:52:39Z"
+actor = "lognd"
+rev = 1
