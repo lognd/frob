@@ -2,12 +2,12 @@
 id = "01M5HJNEBY5YBCJB06D5ZSH4H5"
 title = "Add TS/JS/C# test vocabulary to testq (WADV010)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:31:46Z"
-updated = "2026-10-23T02:23:33Z"
+updated = "2026-10-23T02:23:41Z"
 scope = ["crates/grimble-lints/src/testq/**"]
 
 [[acceptance]]
