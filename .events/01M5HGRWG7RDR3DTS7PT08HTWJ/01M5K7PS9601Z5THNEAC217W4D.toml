@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T01:58:39Z"
+digest = "23f65d4f1aea0f083fe3ccf069226100f7694f232094f8f4f7aef8cd15b5de32"
+exit_code = 0
+head = "62dd33f2d31524d695322b0061e391b1e42f1ae3"
+inline = '''
+    Blocking waiting for file lock on package cache
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.87s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4ae8b0c7-aef9-4e21-820c-0454080358e6 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.072s] grimble-check::unity_project_rules legacy_input_under_the_input_system_reports_unity301
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.072s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test unity_project_rules legacy_input_under_the_input_system_reports_unity301"
+size = 766
+status = "measured"
+test_count = 1
+tests_digest = "bfd5aefa3d7f3f1173778e9773faacf2a3a59e6ebcae97fdb8a1d5fd31e52b18"
+at = "2026-10-23T01:58:39Z"
+actor = "lognd"
+rev = 1

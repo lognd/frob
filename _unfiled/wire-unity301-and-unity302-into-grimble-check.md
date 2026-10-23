@@ -12,7 +12,7 @@ scope = ["crates/grimble-check/**", "crates/grimble-lints/**", "docs/**"]
 
 [[acceptance]]
 text = "Given a Unity project whose input settings trip UNITY301, when grimble check runs, then UNITY301 is reported through a registered rule with a docs page"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a Unity C# file that applies a Rigidbody force from Update (UNITY302 needs no project settings), when grimble check runs, then UNITY302 is reported through a registered rule with a docs page."
