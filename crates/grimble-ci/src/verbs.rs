@@ -99,9 +99,9 @@ const WRAPPERS: [&str; 5] = ["time", "exec", "sudo", "env", "command"];
 /// A `frob` invocation whose verb path is not in the inventory.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct UnknownVerb {
-    /// The verb path as written (`ticket foo`, `chek`).
+    /// The verb path as written (`ticket foo`, `frobnicate`).
     pub path: String,
-    /// The word that is wrong (`foo`, `chek`).
+    /// The word that is wrong (`foo`, `frobnicate`).
     pub word: String,
     /// What would have been valid at that position, comma-joined and backquoted.
     pub valid: String,
@@ -198,10 +198,15 @@ fn is_assignment(w: &str) -> bool {
         && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
+/// The shell line-continuation marker.
+const CONTINUATION: char = 0x5c_u8 as char;
+
 /// The simple commands of a script as word lists: continuations joined, heredoc bodies and
 /// comments dropped, quotes removed.
 fn commands(script: &str) -> Vec<Vec<String>> {
-    let joined = script.replace("\\\r\n", "").replace("\\\n", "");
+    let joined = script
+        .replace(&format!("{CONTINUATION}\r\n"), "")
+        .replace(&format!("{CONTINUATION}\n"), "");
     let mut out = Vec::new();
     let mut heredoc: Option<String> = None;
     for line in joined.lines() {
@@ -246,7 +251,7 @@ fn split_line(line: &str) -> Vec<Vec<String>> {
     let mut i = 0;
     while i < chars.len() {
         let c = chars[i];
-        let rest = |n: usize| chars.get(i + n).copied();
+        let peek = |n: usize| chars.get(i + n).copied();
         match c {
             '\'' => {
                 let end = chars[i + 1..].iter().position(|x| *x == '\'');
@@ -267,13 +272,13 @@ fn split_line(line: &str) -> Vec<Vec<String>> {
                 }
             }
             '\\' => {
-                if let Some(n) = rest(1) {
+                if let Some(n) = peek(1) {
                     cur.get_or_insert_with(String::new).push(n);
                     i += 1;
                 }
             }
-            '$' if rest(1) == Some('{') => {
-                let close = if rest(2) == Some('{') { "}}" } else { "}" };
+            '$' if peek(1) == Some('{') => {
+                let close = if peek(2) == Some('{') { "}}" } else { "}" };
                 let tail: String = chars[i..].iter().collect();
                 let len = tail.find(close).map_or(tail.len(), |p| p + close.len());
                 let take = tail[..len].chars().count();

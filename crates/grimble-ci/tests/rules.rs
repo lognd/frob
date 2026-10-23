@@ -291,7 +291,7 @@ fn bad_verbs(script: &str, extra_step_keys: &str) -> Vec<String> {
 #[test]
 fn unknown_frob_verb_fires() {
     // frob:tests crates/grimble-ci/src/lib.rs::analyze
-    assert_eq!(bad_verbs("frob chek\n", ""), ["chek"]);
+    assert_eq!(bad_verbs("frob frobnicate\n", ""), ["frobnicate"]);
     assert_eq!(
         bad_verbs("frob ticket frobnicate T-1\n", ""),
         ["ticket frobnicate"]
@@ -299,7 +299,7 @@ fn unknown_frob_verb_fires() {
     let found = run(
         &[(
             ".github/workflows/ci.yml",
-            verb_workflow("frob chek\n", "").as_str(),
+            verb_workflow("frob frobnicate\n", "").as_str(),
         )],
         &CiConfig::default(),
     );
