@@ -83,7 +83,10 @@ impl Prereqs {
             .chain(stage.requires.iter().map(|l| ("prerequisite", l)))
         {
             let slot = {
-                let mut done = self.done.lock().unwrap_or_else(|e| e.into_inner());
+                let mut done = self
+                    .done
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
                 Arc::clone(done.entry(line.clone()).or_default())
             };
             slot.get_or_init(|| run_one(runner, root, stage, trust, line))

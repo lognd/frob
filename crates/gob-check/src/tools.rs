@@ -586,6 +586,24 @@ fn with_variant(stage: &ToolStage, version: Option<&str>) -> ToolStage {
     out
 }
 
+// frob:ticket 01M4D94J5J2TZEXTB8GH36992B
+// frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
+/// The text a parser reads: formatters, cargo-semver-checks, griffe and api-extractor report on stderr too.
+fn report_text(stage: &ToolStage, output: &gob_exec::Output) -> String {
+    let both = matches!(
+        stage.parser,
+        ToolParser::FormatterList
+            | ToolParser::SemverChecksText
+            | ToolParser::GriffeText
+            | ToolParser::ApiExtractorText
+    );
+    if both {
+        format!("{}\n{}", output.stdout, output.stderr)
+    } else {
+        output.stdout.clone()
+    }
+}
+
 fn execute(
     runner: &Runner,
     root: &Path,
@@ -653,22 +671,7 @@ fn execute(
             &output.stderr,
         ));
     }
-    // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
-    // Formatters split their report across both streams (ruff and prettier warn on stderr), so read both.
-    // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
-    // cargo-semver-checks, griffe and api-extractor report on stderr, so they read both streams too.
-    let both = matches!(
-        stage.parser,
-        ToolParser::FormatterList
-            | ToolParser::SemverChecksText
-            | ToolParser::GriffeText
-            | ToolParser::ApiExtractorText
-    );
-    let text = if both {
-        format!("{}\n{}", output.stdout, output.stderr)
-    } else {
-        output.stdout.clone()
-    };
+    let text = report_text(stage, &output);
     if output.status != Outcome::Exited(0) && text.trim().is_empty() {
         return StageResult::Failed(failure(
             stage,
@@ -947,9 +950,12 @@ pub(crate) fn start_tools(
         });
     let prereqs = std::sync::Arc::new(Prereqs::new(setup));
     let runner = std::sync::Arc::new(
-        Runner::new(Limits::default())
-            .allow_tools(stages.iter().map(|s| s.command.clone()))
-            .allow_tools(prereqs.programs(stages)),
+        Runner::new(Limits::default()).allow_tools(
+            stages
+                .iter()
+                .map(|s| s.command.clone())
+                .chain(prereqs.programs(stages)),
+        ),
     );
     let mut groups: Vec<(String, Vec<usize>)> = Vec::new();
     for (i, stage) in stages.iter().enumerate() {
