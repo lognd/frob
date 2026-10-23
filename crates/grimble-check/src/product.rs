@@ -48,6 +48,8 @@ pub struct GrimbleInputs {
     pub path: PathReport,
     /// The TIME001 and TIME002 verdicts (grimble-lints), cached like the PATH report.
     pub time: PathReport,
+    /// The PAIR001 verdicts (grimble-lints), cached like the TIME report.
+    pub pair: PathReport,
     /// The COH report (COH002 verdicts under the `[coh]` vocabularies).
     pub coh: PathReport,
     /// The `[rules.<id>]` severity overrides of `grimble.toml`.
@@ -89,6 +91,7 @@ const DIRECTIVE_RULES: [&str; 5] = ["PARSE001", "PARSE002", "DSL001", "DSL002", 
 
 // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
+// frob:ticket 01M5HDAS62G7H4YY9FVG59GJ01
 /// The legacy metadata of a declared rule, leaked once per process (the legacy groups hold `&'static`).
 fn legacy_meta(def: &'static RuleDef) -> &'static RuleMeta {
     let summary = def.summary();
@@ -143,11 +146,11 @@ fn arch_metas() -> Vec<&'static RuleMeta> {
 fn path_metas() -> Vec<&'static RuleMeta> {
     lint_metas()
         .into_iter()
-        .filter(|m| !m.id.starts_with("TIME"))
+        .filter(|m| !m.id.starts_with("TIME") && !m.id.starts_with("PAIR"))
         .collect()
 }
 
-/// Every rule `grimble-lints` declares (the PATH and TIME families).
+/// Every rule `grimble-lints` declares (the PATH, TIME and PAIR families).
 fn lint_metas() -> Vec<&'static RuleMeta> {
     static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
     legacy_metas(&CELL, grimble_lints::rules::METAS)
@@ -158,6 +161,14 @@ fn time_metas() -> Vec<&'static RuleMeta> {
     lint_metas()
         .into_iter()
         .filter(|m| m.id.starts_with("TIME"))
+        .collect()
+}
+
+/// The acquire-and-release pairing rules (the PAIR family `grimble-lints` declares).
+fn pair_metas() -> Vec<&'static RuleMeta> {
+    lint_metas()
+        .into_iter()
+        .filter(|m| m.id.starts_with("PAIR"))
         .collect()
 }
 
@@ -201,6 +212,7 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .or_else(|| snap.inputs.arch.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.path.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.time.not_applicable.get(def.id).cloned())
+        .or_else(|| snap.inputs.pair.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.coh.not_applicable.get(def.id).cloned())
 }
 
@@ -248,6 +260,29 @@ fn time_report(
         })
         .collect();
     grimble_lints::time_pass::analyze(&files)
+}
+
+/// Run PAIR001 over every TypeScript and JavaScript file of the walk (uncached).
+fn pair_report(
+    entries: &[gob_walk::FileEntry],
+    read: &dyn Fn(&str) -> Option<String>,
+) -> PathReport {
+    let texts: Vec<(&str, gob_languages::Language, String)> = entries
+        .iter()
+        .filter_map(|e| {
+            let language = gob_languages::Language::detect(&e.path)?;
+            read(&e.path).map(|text| (e.path.as_str(), language, text))
+        })
+        .collect();
+    let files: Vec<PathFile<'_>> = texts
+        .iter()
+        .map(|(path, language, text)| PathFile {
+            path,
+            language: *language,
+            text,
+        })
+        .collect();
+    grimble_lints::pair_pass::analyze(&files)
 }
 
 /// Run COH002 over every Rust, Python and TypeScript file of the walk (uncached).
@@ -336,7 +371,7 @@ fn reports(
     digest: &str,
     table: &GrimbleTable,
     coh_opts: &Coh002Options,
-) -> (ArchReport, PathReport, PathReport, PathReport) {
+) -> (ArchReport, PathReport, PathReport, PathReport, PathReport) {
     // The architecture and PATH reports are pure in the same digest plus `large_lines`, so a
     // hit skips reading and parsing every file (~SNJ3PH5).
     let started = std::time::Instant::now();
@@ -356,29 +391,42 @@ fn reports(
         .cache
         .get_artifact(&time_key)
         .and_then(|b| report_cache::decode_path(&b));
+    let pair_key = report_cache::key("pair", digest, &engine, table.large_lines);
+    let pair_hit = cx
+        .cache
+        .get_artifact(&pair_key)
+        .and_then(|b| report_cache::decode_path(&b));
     let coh_key = report_cache::key(&coh_kind(coh_opts), digest, &engine, table.large_lines);
     let coh_hit = cx
         .cache
         .get_artifact(&coh_key)
         .and_then(|b| report_cache::decode_path(&b));
+    let pair_cached = pair_hit.is_some();
     let (arch_cached, path_cached, time_cached, coh_cached) = (
         arch_hit.is_some(),
         path_hit.is_some(),
         time_hit.is_some(),
         coh_hit.is_some(),
     );
-    let (arch, path, time, coh) = if let (Some(arch), Some(path), Some(time), Some(coh)) = (
+    let (arch, path, time, pair, coh) = if let (
+        Some(arch),
+        Some(path),
+        Some(time),
+        Some(pair),
+        Some(coh),
+    ) = (
         arch_hit.clone(),
         path_hit.clone(),
         time_hit.clone(),
+        pair_hit.clone(),
         coh_hit.clone(),
     ) {
-        tracing::info!(digest = %digest, "architecture, path, time and coh reports reused from cache");
-        (arch, path, time, coh)
+        tracing::info!(digest = %digest, "architecture, path, time, pair and coh reports reused from cache");
+        (arch, path, time, pair, coh)
     } else {
         // One reader for both passes: `Core::text` opens the repository per call, which on
         // a 20k-file walk is the dominant cost of the run.
-        let (arch, arch_took, path, path_took, time, coh) = cx.core.with_content(|reader| {
+        let (arch, arch_took, path, path_took, time, pair, coh) = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);
             let read = |p: &str| reader.borrow_mut().read_text(p).ok();
             let started = std::time::Instant::now();
@@ -389,8 +437,9 @@ fn reports(
             let path = path_hit.unwrap_or_else(|| path_report(&cx.core.entries, &read));
             let path_took = started.elapsed();
             let time = time_hit.unwrap_or_else(|| time_report(&cx.core.entries, &read));
+            let pair = pair_hit.unwrap_or_else(|| pair_report(&cx.core.entries, &read));
             let coh = coh_hit.unwrap_or_else(|| coh_report(&cx.core.entries, &read, coh_opts));
-            (arch, arch_took, path, path_took, time, coh)
+            (arch, arch_took, path, path_took, time, pair, coh)
         });
         if !arch_cached {
             cx.cache
@@ -404,6 +453,10 @@ fn reports(
             cx.cache
                 .put_artifact(&time_key, &report_cache::encode_path(&time));
         }
+        if !pair_cached {
+            cx.cache
+                .put_artifact(&pair_key, &report_cache::encode_path(&pair));
+        }
         if !coh_cached {
             cx.cache
                 .put_artifact(&coh_key, &report_cache::encode_path(&coh));
@@ -413,13 +466,14 @@ fn reports(
             ?path_took,
             "architecture and path reports computed"
         );
-        (arch, path, time, coh)
+        (arch, path, time, pair, coh)
     };
     cx.timing.push("architecture", started.elapsed(), false);
     cx.timing.push("path", std::time::Duration::ZERO, false);
     cx.timing.push("time", std::time::Duration::ZERO, false);
+    cx.timing.push("pair", std::time::Duration::ZERO, false);
     cx.timing.push("coh", std::time::Duration::ZERO, false);
-    (arch, path, time, coh)
+    (arch, path, time, pair, coh)
 }
 
 /// A repo group over the findings of one `grimble-lints` report (`pick` names it on the inputs).
@@ -500,7 +554,7 @@ impl Product for Grimble {
         };
         cx.timing.push("binding", started.elapsed(), true);
         let coh_opts = Coh002Options::from(&CohTable::load(&cx.core.root)?);
-        let (arch, path, time, coh) = reports(cx, &digest, &table, &coh_opts);
+        let (arch, path, time, pair, coh) = reports(cx, &digest, &table, &coh_opts);
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
             trace.view = Some(Arc::clone(&view));
@@ -513,6 +567,7 @@ impl Product for Grimble {
                 .chain(&arch.not_applicable)
                 .chain(&path.not_applicable)
                 .chain(&time.not_applicable)
+                .chain(&pair.not_applicable)
                 .chain(&coh.not_applicable)
                 .map(|(rule, why)| ((*rule).to_owned(), why.clone()))
                 .collect();
@@ -528,6 +583,7 @@ impl Product for Grimble {
                 arch,
                 path,
                 time,
+                pair,
                 coh,
                 overrides,
             },
@@ -617,6 +673,7 @@ impl Product for Grimble {
             }),
             report_group("repo:path", path_metas(), |i| &i.path),
             report_group("repo:time", time_metas(), |i| &i.time),
+            report_group("repo:pair", pair_metas(), |i| &i.pair),
             report_group("repo:coh", coh_metas(), |i| &i.coh),
         ]
     }
@@ -626,6 +683,7 @@ impl Product for Grimble {
             && !snap.inputs.arch.not_applicable.contains_key(meta.id)
             && !snap.inputs.path.not_applicable.contains_key(meta.id)
             && !snap.inputs.time.not_applicable.contains_key(meta.id)
+            && !snap.inputs.pair.not_applicable.contains_key(meta.id)
             && !snap.inputs.coh.not_applicable.contains_key(meta.id)
     }
 

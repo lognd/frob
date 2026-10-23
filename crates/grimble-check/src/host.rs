@@ -2,9 +2,10 @@
 
 // frob:ticket 01M48R04HAG82FJV1T77Z6YH8P
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
+// frob:ticket 01M5HDAS62G7H4YY9FVG59GJ01
 use grimble_arch::host::ArchHost;
 use grimble_bind::host::BindHost;
-use grimble_lints::host::{PathHost, TimeHost};
+use grimble_lints::host::{PairHost, PathHost, TimeHost};
 use grimble_model::host::MdlHost;
 
 use crate::GrimbleInputs;
@@ -19,9 +20,15 @@ pub trait CohHost {
 }
 
 /// Everything a declared grimble rule may ask: the model, binding, architecture and path hosts.
-pub trait GrimbleHost: MdlHost + BindHost + ArchHost + PathHost + TimeHost + CohHost {}
+pub trait GrimbleHost:
+    MdlHost + BindHost + ArchHost + PathHost + TimeHost + PairHost + CohHost
+{
+}
 
-impl<T: MdlHost + BindHost + ArchHost + PathHost + TimeHost + CohHost + ?Sized> GrimbleHost for T {}
+impl<T: MdlHost + BindHost + ArchHost + PathHost + TimeHost + PairHost + CohHost + ?Sized>
+    GrimbleHost for T
+{
+}
 
 impl MdlHost for GrimbleInputs {}
 
@@ -46,6 +53,12 @@ impl PathHost for GrimbleInputs {
 impl TimeHost for GrimbleInputs {
     fn time_subjects_of(&self, id: &str) -> usize {
         self.time.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+impl PairHost for GrimbleInputs {
+    fn pair_subjects_of(&self, id: &str) -> usize {
+        self.pair.subjects.get(id).copied().unwrap_or(0)
     }
 }
 
