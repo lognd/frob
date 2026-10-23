@@ -1,0 +1,10 @@
+kind = "create"
+title = "Regenerate docs/crunk/rules/README.md with the CRAFT013 row"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["docs/crunk/rules/**"]
+body = "found while working ~27SXEXP; docs/** lease held by ~T08HTWJ. Run gob-dev gen all; crunk-check waive001 the_committed_registry_page_is_fresh fails until then."
+at = "2026-10-23T02:04:38Z"
+actor = "lognd"
+rev = 1
