@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T02:29:46Z"
+digest = "43f6e2abc179743a2a1930b195d53eecff5ec9ba0b78b1ad82c444bf3791a66a"
+exit_code = 0
+head = "2593eea045bc34e439430b4530ee934ac2cce3d9"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8146d13d-b7de-4755-893a-10fd7be53ad3 with nextest profile: default
+    Starting 1 test across 1 binary (8 tests skipped)
+        PASS [   0.006s] grimble-check::coh002_roles without_a_directive_the_supplied_role_is_used_unchanged
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 8 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test coh002_roles without_a_directive_the_supplied_role_is_used_unchanged"
+size = 570
+status = "measured"
+test_count = 1
+tests_digest = "e7fb708cd0553b8b53441ed7c11d8f5f20655c88befd3c81a3e646423868ca5a"
+at = "2026-10-23T02:29:46Z"
+actor = "lognd"
+rev = 1

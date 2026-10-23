@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:20:11Z"
-updated = "2026-10-23T02:27:30Z"
+updated = "2026-10-23T02:29:46Z"
 scope = ["crates/grimble-check/**", "docs/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a unit with no role directive, when COH002 runs, then the caller-supplied role (or none) is used unchanged"
-bound = false
+bound = true
 +++
 
 The caller supplies the role today; extract it from directives.
