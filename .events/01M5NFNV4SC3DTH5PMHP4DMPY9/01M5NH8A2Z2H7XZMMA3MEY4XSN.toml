@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T23:24:00Z"
+digest = "2ff96ff52b9f78257bb97a71d51781ffc2f095a50df1d053691f2267f86cc34f"
+exit_code = 0
+head = "6d594ec49f9b23322b142aa1d1f3b058dc041e04"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 879f69e3-cd3f-4756-a676-0da9bf79f89a with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.051s] frob-obligations::doc_citation merged_and_archive_rows_follow_through_the_shared_parser
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.052s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations --test doc_citation merged_and_archive_rows_follow_through_the_shared_parser"
+size = 706
+status = "measured"
+test_count = 1
+tests_digest = "9692a9219ab67d35212b3df1461ff61e9bd32e244eeb29a932ee50264e087c49"
+at = "2026-10-23T23:24:00Z"
+actor = "lognd"
+rev = 1
