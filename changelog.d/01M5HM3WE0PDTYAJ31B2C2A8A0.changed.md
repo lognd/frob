@@ -1,0 +1,1 @@
+Crunk now flags missing focus-visible and press styles, incomplete component states, scenes without a moment, thin font faces, mismatched shadows, placeholder copy, unaligned rows and mostly literal styling.
