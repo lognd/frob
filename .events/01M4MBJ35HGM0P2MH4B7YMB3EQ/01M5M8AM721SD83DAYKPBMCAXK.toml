@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T11:28:49Z"
+digest = "512260efa844a2e8b50684e1c52282fec4277edf6ddc40079f09443896a19abf"
+exit_code = 0
+head = "6a52e0003baf5a491da4165c4289bb07c5386b8a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4d342199-ab4f-4767-9daa-e88a2c0ec420 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.081s] grimble-check::err_rules an_unknown_callee_is_unresolved_not_warn
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.082s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test err_rules an_unknown_callee_is_unresolved_not_warn"
+size = 552
+status = "measured"
+test_count = 1
+tests_digest = "b825c677d31342e2826e3533db455d8362db8f897517e25d46114b50ca971e15"
+at = "2026-10-23T11:28:49Z"
+actor = "lognd"
+rev = 1
