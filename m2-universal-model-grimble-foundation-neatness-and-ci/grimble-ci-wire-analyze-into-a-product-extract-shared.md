@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-23T07:52:12Z"
+updated = "2026-10-23T07:54:29Z"
 scope = ["crates/grimble-ci/**", "crates/grimble-arch/**", "crates/grimble-check/**", "Cargo.lock", "crates/grimble-verdict/**", "docs/design/boundaries.md", "docs/design/cicd.md", "crates/gob-dev/tests/layering.rs"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "grimble check output for arch and ci findings is unchanged (existing tests pass)"
-bound = false
+bound = true
 +++
 
 CiFinding aliases grimble_arch::ArchFinding; extract a shared type and wire grimble-ci (and grimble-arch) into grimble check. Also generate docs/reference/rules pages (gob-dev gen rules) once wired.
