@@ -2,7 +2,8 @@
 id = "01M4HEMDB8A1X1RQFNVJB1G32M"
 title = "grimble check --summary: a compact JSON summary (counts per rule and severity, per-node CAP cell counts, digests) suitable as file evidence under frob's size cap"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
