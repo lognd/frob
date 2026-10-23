@@ -3116,6 +3116,7 @@ dependencies = [
  "gob-check",
  "gob-config",
  "gob-diagnostics",
+ "gob-directives",
  "gob-ir",
  "gob-languages",
  "gob-mdtest",

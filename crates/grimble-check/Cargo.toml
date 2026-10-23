@@ -12,6 +12,7 @@ authors.workspace = true
 blake3 = "1"
 gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
+gob-directives = { version = "0.532.0", path = "../gob-directives" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-packs = { version = "0.532.0", path = "../gob-packs" }
