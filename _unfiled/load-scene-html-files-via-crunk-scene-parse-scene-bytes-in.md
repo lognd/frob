@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:58:06Z"
-updated = "2026-10-23T06:31:02Z"
+updated = "2026-10-23T06:44:07Z"
 scope = ["crates/crunk-ingest/**", "crates/crunk-check/**", "crates/crunk-scene/**", "Cargo.lock", "crates/crunk-rules/src/scene_docs.rs", "crates/crunk-rules/src/rules/scene005.*", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/tests/rules.rs", "crates/crunk-rules/tests/scene_rules.rs", "docs/crunk/**", "changelog/**", "docs/reference/rules/SCENE005.md", "docs/reference/rules/README.md"]
 
 [[acceptance]]
