@@ -4,8 +4,13 @@ title = "frob-check fixture_b snapshot lacks a DOC003 finding"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-23T22:56:32Z"
-updated = "2026-10-23T22:56:32Z"
+updated = "2026-10-23T23:16:11Z"
 scope = ["crates/frob-check/tests/**"]
+
+[[acceptance]]
+text = "Given the frob-check fixture_b snapshot, when equivalence::fixture_b_matches_the_recorded_findings runs, then it passes with the DOC003 finding recorded"
+bound = false
 +++
