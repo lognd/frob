@@ -144,3 +144,35 @@ fn unparsable_map_is_one_finding_and_missing_map_is_fine() {
     assert_eq!(found.len(), 1, "{found:?}");
     assert!(doc006(&[("docs/a.md", "# A\n")]).is_empty());
 }
+
+// frob:ticket 01M5NFNV4SC3DTH5PMHP4DMPY9
+// frob:tests doc006
+#[test]
+fn merged_and_archive_rows_follow_through_the_shared_parser() {
+    let found = doc006(&[
+        ("docs/tickets.md", TICKETS),
+        (
+            "docs/MOVED.toml",
+            "[moved]\n\"old.md section 1\" = \"merged:tickets.md section 2\"\n\"arch.md\" = \"archive:tickets.md\"\n",
+        ),
+        ("docs/a.md", "# A\n\nold.md section 1, arch.md section 1.\n"),
+    ]);
+    assert!(found.is_empty(), "{found:?}");
+}
+
+// frob:ticket 01M5NFNV4SC3DTH5PMHP4DMPY9
+// frob:tests doc006
+#[test]
+fn malformed_row_and_cycle_are_reported_once() {
+    let bad = doc006(&[("docs/MOVED.toml", "[moved]\n\"old.md\" = \"nothing\"\n")]);
+    assert_eq!(bad.len(), 1, "{bad:?}");
+    assert!(bad[0].message.contains("old.md"), "{}", bad[0].message);
+    let cyc = doc006(&[
+        (
+            "docs/MOVED.toml",
+            "[moved]\n\"a.md\" = \"b.md\"\n\"b.md\" = \"a.md\"\n",
+        ),
+        ("docs/c.md", "# C\n\na.md section 1.\n"),
+    ]);
+    assert_eq!(cyc.len(), 1, "{cyc:?}");
+}
