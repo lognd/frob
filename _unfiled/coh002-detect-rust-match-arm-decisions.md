@@ -2,7 +2,8 @@
 id = "01M5HJ07B6E0NZ47RCV0HWZR5Y"
 title = "COH002: detect Rust match-arm decisions"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
