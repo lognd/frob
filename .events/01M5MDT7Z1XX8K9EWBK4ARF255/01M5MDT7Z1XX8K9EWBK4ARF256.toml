@@ -1,0 +1,11 @@
+kind = "create"
+title = "grimble explain table lacks pages for COH003, ERR001-ERR003, RES001, SYS006 (lib test explain_cmd the_table_covers_every_generated_page fails)"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["crates/grimble/src/explain_cmd.rs", "changelog.d/**"]
+acceptance = ["Given the generated rule pages, when the explain table test runs, then it passes and covers COH003, ERR001-ERR003, RES001 and SYS006"]
+at = "2026-10-23T13:04:44Z"
+actor = "lognd"
+rev = 1
