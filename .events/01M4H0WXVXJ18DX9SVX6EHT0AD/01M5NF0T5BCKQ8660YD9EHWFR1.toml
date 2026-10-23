@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T22:45:00Z"
+digest = "370157a9210d348177ca95324ab5cc397b28d68856172ead4efb4db69c9efd3d"
+exit_code = 0
+head = "752a0514a35340a595a79f5e810c0f1cf7ae5c61"
+inline = '''
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.55s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0f8615ed-3f3d-4fe1-a2ba-015cfd773f9e with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   0.080s] frob-obligations::doc002_moved link_to_a_moved_heading_names_the_new_location
+        PASS [   0.084s] frob-obligations::doc002_moved link_to_a_moved_file_names_the_new_location
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.084s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations --test doc002_moved"
+size = 784
+status = "measured"
+test_count = 2
+tests_digest = "632f51195ac052cef2408a54ae4b142fce6ec86713fbbb7580cd4f86b4f3a61a"
+at = "2026-10-23T22:45:00Z"
+actor = "lognd"
+rev = 1
