@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given crates/gob-symbols/src/lib.rs, when read, then its docs state that folded terms are cached via grimble-bind CodeFile::folded"]
+moved = []
+at = "2026-10-23T22:45:19Z"
+actor = "lognd"
+rev = 1
