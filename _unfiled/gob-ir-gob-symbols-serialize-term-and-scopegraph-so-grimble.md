@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T22:03:06Z"
-updated = "2026-10-23T21:38:03Z"
+updated = "2026-10-23T21:51:00Z"
 scope = ["crates/gob-ir/**", "crates/gob-symbols/src/pipeline.rs", "crates/grimble-bind/src/code.rs", "crates/grimble-bind/tests/term_cache.rs", "crates/grimble-bind/tests/warm_cache.rs", "Cargo.lock", "crates/grimble-bind/src/**"]
 
 [[acceptance]]
