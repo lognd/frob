@@ -36,7 +36,7 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `base` | `String` | `"main"` | yes | Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against. |
-| `exclude` | `Vec<String>` | `[]` | no | Glob patterns of paths no rule inspects. |
+| `exclude` | `Vec<String>` | `[]` | no | Glob patterns of paths no rule inspects. Generated report directories (coverage HTML, `htmlcov`, `playwright-report`) are skipped by default; a `!dir/` entry such as `"!coverage/"` removes that default so the directory is walked again. |
 | `fail_on` | `FailOn` | `"error"` | yes | Lowest severity that makes `frob check` exit 1; `none` never fails. |
 | `fail_on_unresolved` | `UnresolvedPolicy` | `"required"` | yes | Which Unresolved findings fail the gate: `required`, `never` or `all`. |
 | `fix_requires_scope` | `bool` | `false` | no | Refuse `--fix` unless `--ticket` scopes the run. |
