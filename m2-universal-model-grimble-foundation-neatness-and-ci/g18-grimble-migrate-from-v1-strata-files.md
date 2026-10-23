@@ -2,13 +2,13 @@
 id = "01M3Z714TX00GDEADXET0GMFJA"
 title = "G18: grimble migrate from v1 strata files"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "low"
 points = 8
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-02T21:06:25Z"
-updated = "2026-10-23T11:12:44Z"
+updated = "2026-10-23T11:13:23Z"
 idempotency_key = "m2-migrate"
 labels = ["milestone:2"]
 scope = ["crates/grimble-model/**", "crates/grimble/**", "docs/design/**", "docs/reference/**", "Cargo.lock", "docs/schemas/**"]

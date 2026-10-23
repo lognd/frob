@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "D136 removed grimble migrate; ticket is stale, owner decision needed to drop"
+at = "2026-10-23T11:13:23Z"
+actor = "lognd"
+rev = 1
