@@ -5,7 +5,7 @@
 //! generators, the generated token class itself (it carries the `GENERATED` banner) is exempt,
 //! and comments and string contents are never scanned.
 //!
-//! The same check also audits `.prefab` files read-only ([`prefab_literals`]): a `Color` flow
+//! The same check also audits `.prefab` files read-only (`prefab_literals`): a `Color` flow
 //! mapping with numeric channels and a numeric font size are literals; a colour or size that is not
 //! a plain number (an alias, a block mapping, a malformed or unterminated flow mapping) is
 //! Unresolved, and so is a prefab that is not text YAML (a binary-serialized one). Nothing is ever
