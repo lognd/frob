@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["External callees (not resolved to any repo file) are excluded from COH003 layer judgement and never produce Unresolved", "A single-depth repo with no layered model yields at most one repo-level COH003 Unresolved note, not one per file"]
+moved = []
+at = "2026-10-23T10:32:58Z"
+actor = "lognd"
+rev = 1
