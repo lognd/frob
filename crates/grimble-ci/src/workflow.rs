@@ -49,7 +49,7 @@ impl<'a> Workflow<'a> {
     }
 
     /// The `on:` value (YAML 1.1 readers may have turned the key into a boolean `true`).
-    fn on(&self) -> Option<&Value> {
+    pub fn on(&self) -> Option<&Value> {
         key(&self.root, "on").or_else(|| self.root.as_mapping()?.get(Value::Bool(true)))
     }
 

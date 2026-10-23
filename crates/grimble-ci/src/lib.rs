@@ -19,6 +19,10 @@
 //! | `CI010` | P+ | `actions/checkout` without `persist-credentials: false` where it matters |
 //! | `CI011` | P- | `pull_request_target` without explicit read-only `permissions` |
 //! | `CI012` | P0 | toolchain, MSRV, Dependabot, CODEOWNERS or the `frob` verbs run disagree with the repository |
+//! | `CI013` | P+ | a job calls an external reusable workflow with `secrets: inherit` |
+//! | `CI014` | P+ | a workflow breaks the Actions syntax (a missing `on`, `jobs`, `runs-on` or step body) |
+//! | `CI015` | P+ | an external action is archived or runs on an end-of-life Node runtime |
+//! | `CI016` | P+ | a privileged workflow runs frob, grimble or crunk with trust not from a protected ref |
 //! | `DK001` | P- | the final stage runs as root |
 //! | `DK002` | P+ | a base image is not pinned by digest (opt-in: `require_digest`) |
 //! | `DK003` | P+ | a base image has no tag or `latest` |
@@ -33,23 +37,31 @@
 //!   CLI definition, which sits in a higher layer): a verb behind an alias, a variable or an
 //!   expression, inside a command substitution within quotes, or run through another program
 //!   (`cargo run -p frob -- ..`) is not judged, and only the verb and its first subcommand are.
-//! - `CI001`, `CI006`, `CI007` and `CI010` are lexical fallbacks of the bound zizmor rules; they
-//!   read the workflow text only (no `uses:` resolution, no shell parsing), so `CI007` and `CI010`
-//!   are Advisory where the match is a guess. `CI013` to `CI015` belong to the bound zizmor and
-//!   actionlint stages and have no fallback here.
+//! - `CI001`, `CI006`, `CI007`, `CI010`, `CI013` and `CI015` are lexical fallbacks of the bound
+//!   zizmor rules, and `CI014` of actionlint; they read the workflow text only (no `uses:`
+//!   resolution, no shell parsing), so `CI007` and `CI010` are Advisory where the match is a
+//!   guess. `CI014` knows only a few structural errors (no runner-label or expression typing),
+//!   and `CI015` only a small offline table of archived actions and end-of-life Node majors.
+//! - `CI016` reads `run:` scripts lexically: a literal `--trust-from` ref is taken as protected
+//!   (the workflow text cannot show branch protection), and a ref held in an expression or variable
+//!   that is neither a base nor a head context, or a step guarded by an `if:` on `head.repo.fork`
+//!   or `ref_protected`, is Unresolved.
 
 // frob:ticket 01M3Z7157776CWEKRPG8886VJ4
 // frob:ticket 01M5F010QB00AR00D4HYVYYPWH
 // frob:ticket 01M5F010Y998BXB67KPZ4T040N
+// frob:ticket 01M5F010V5GV0B7KJ7M5QQG70Q
 
 mod ci;
 mod consistency;
 mod dk;
 mod docker;
 mod finding;
+mod gha;
 pub mod host;
 pub mod rules;
 mod supply;
+mod trust;
 mod verbs;
 mod workflow;
 
@@ -59,7 +71,7 @@ pub use grimble_verdict::Verdict;
 pub use verbs::VERBS;
 
 /// The workflow rules that judge each parsed workflow (CI012 is joined separately).
-const WORKFLOW_RULES: [&str; 12] = [
+const WORKFLOW_RULES: [&str; 16] = [
     supply::CI001,
     ci::CI002,
     ci::CI003,
@@ -72,6 +84,10 @@ const WORKFLOW_RULES: [&str; 12] = [
     supply::CI010,
     ci::CI011,
     consistency::CI012,
+    gha::CI013,
+    gha::CI014,
+    gha::CI015,
+    trust::CI016,
 ];
 
 /// The Dockerfile rules.
@@ -174,6 +190,8 @@ fn workflow_pass(input: &CiInput<'_>, files: &[(&str, String)], report: &mut CiR
                     .findings
                     .extend(ci::check(&wf, input.config, &mut subjects));
                 supply::check(&wf, input.config, &mut report.findings);
+                gha::check(&wf, &mut report.findings);
+                trust::check(&wf, &mut report.findings);
                 parsed.push(wf);
             }
             Err(why) => {

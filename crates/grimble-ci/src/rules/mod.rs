@@ -25,6 +25,14 @@ pub mod ci010;
 pub mod ci011;
 /// Rule `CI012`.
 pub mod ci012;
+/// Rule `CI013`.
+pub mod ci013;
+/// Rule `CI014`.
+pub mod ci014;
+/// Rule `CI015`.
+pub mod ci015;
+/// Rule `CI016`.
+pub mod ci016;
 /// Rule `DK001`.
 pub mod dk001;
 /// Rule `DK002`.
@@ -49,6 +57,10 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <ci010::Ci010 as gob_rules::RuleDecl>::DEF,
     <ci011::Ci011 as gob_rules::RuleDecl>::DEF,
     <ci012::Ci012 as gob_rules::RuleDecl>::DEF,
+    <ci013::Ci013 as gob_rules::RuleDecl>::DEF,
+    <ci014::Ci014 as gob_rules::RuleDecl>::DEF,
+    <ci015::Ci015 as gob_rules::RuleDecl>::DEF,
+    <ci016::Ci016 as gob_rules::RuleDecl>::DEF,
     <dk001::Dk001 as gob_rules::RuleDecl>::DEF,
     <dk002::Dk002 as gob_rules::RuleDecl>::DEF,
     <dk003::Dk003 as gob_rules::RuleDecl>::DEF,
@@ -81,6 +93,10 @@ where
     ci010::Ci010: gob_rules::Measured<P>,
     ci011::Ci011: gob_rules::Measured<P>,
     ci012::Ci012: gob_rules::Measured<P>,
+    ci013::Ci013: gob_rules::Measured<P>,
+    ci014::Ci014: gob_rules::Measured<P>,
+    ci015::Ci015: gob_rules::Measured<P>,
+    ci016::Ci016: gob_rules::Measured<P>,
     dk001::Dk001: gob_rules::Measured<P>,
     dk002::Dk002: gob_rules::Measured<P>,
     dk003::Dk003: gob_rules::Measured<P>,
@@ -99,6 +115,10 @@ where
     rules.push(gob_rules::BoundRule::measured(ci010::Ci010));
     rules.push(gob_rules::BoundRule::measured(ci011::Ci011));
     rules.push(gob_rules::BoundRule::measured(ci012::Ci012));
+    rules.push(gob_rules::BoundRule::measured(ci013::Ci013));
+    rules.push(gob_rules::BoundRule::measured(ci014::Ci014));
+    rules.push(gob_rules::BoundRule::measured(ci015::Ci015));
+    rules.push(gob_rules::BoundRule::measured(ci016::Ci016));
     rules.push(gob_rules::BoundRule::measured(dk001::Dk001));
     rules.push(gob_rules::BoundRule::measured(dk002::Dk002));
     rules.push(gob_rules::BoundRule::measured(dk003::Dk003));

@@ -24,10 +24,10 @@ pub const CI007: &str = "CI007";
 pub const CI010: &str = "CI010";
 
 /// Triggers that run with a privileged token in the base repository context.
-const PRIVILEGED_TRIGGERS: [&str; 2] = ["pull_request_target", "workflow_run"];
+pub(crate) const PRIVILEGED_TRIGGERS: [&str; 2] = ["pull_request_target", "workflow_run"];
 
 /// Substrings (lowercase) of a checkout `ref` or `repository` that name the pull request head.
-const HEAD_MARKERS: [&str; 5] = [
+pub(crate) const HEAD_MARKERS: [&str; 5] = [
     "github.event.pull_request.head",
     "github.event.pull_request.merge_commit_sha",
     "github.head_ref",

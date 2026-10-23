@@ -84,6 +84,10 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-ci/src/rules/ci010.rs::Ci010
     // frob:tests crates/grimble-ci/src/rules/ci011.rs::Ci011
     // frob:tests crates/grimble-ci/src/rules/ci012.rs::Ci012
+    // frob:tests crates/grimble-ci/src/rules/ci013.rs::Ci013
+    // frob:tests crates/grimble-ci/src/rules/ci014.rs::Ci014
+    // frob:tests crates/grimble-ci/src/rules/ci015.rs::Ci015
+    // frob:tests crates/grimble-ci/src/rules/ci016.rs::Ci016
     // frob:tests crates/grimble-ci/src/rules/dk001.rs::Dk001
     // frob:tests crates/grimble-ci/src/rules/dk002.rs::Dk002
     // frob:tests crates/grimble-ci/src/rules/dk003.rs::Dk003
@@ -156,7 +160,7 @@ fn no_files_makes_every_rule_not_applicable() {
     // frob:tests crates/grimble-ci/src/lib.rs::analyze
     let report = run(&[("README.md", "hi")], &CiConfig::default());
     assert!(report.findings.is_empty());
-    assert_eq!(report.not_applicable.len(), 16);
+    assert_eq!(report.not_applicable.len(), 20);
 }
 
 #[test]
@@ -244,7 +248,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-ci/src/rules/mod.rs::bind
     // frob:tests crates/grimble-ci/src/host.rs::CiHost.ci_subjects_of
     // frob:tests crates/grimble-verdict/src/lib.rs::Verdict.into_finding
-    assert_eq!(grimble_ci::rules::bind::<Fixed>().len(), 16);
+    assert_eq!(grimble_ci::rules::bind::<Fixed>().len(), 20);
     assert_eq!(grimble_ci::host::CiHost::ci_subjects_of(&Fixed, "CI002"), 5);
     let report = run(&[(".github/workflows/ci.yml", BARE)], &CiConfig::default());
     let mut files = FileInterner::new();
@@ -363,4 +367,98 @@ fn frob_verb_scan_handles_shell_shapes() {
         Vec::<String>::new()
     );
     assert_eq!(bad_verbs("frob nope\nfrob nope", ""), ["nope"]);
+}
+
+/// Rule ids fired on a single workflow body.
+fn wf_ids(on: &str, job: &str) -> Vec<String> {
+    let text = format!("name: ci\non: {on}\npermissions:\n  contents: read\njobs:\n{job}");
+    ids(&text, &CiConfig::default())
+}
+
+/// A privileged-trigger job that runs one script.
+fn prt_ids(script: &str, job_keys: &str) -> Vec<String> {
+    let job = format!(
+        "  c:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n{job_keys}    steps:\n      - run: {script}\n"
+    );
+    wf_ids("pull_request_target", &job)
+}
+
+#[test]
+fn ci016_edge_cases() {
+    let fires = |s: &str| prt_ids(s, "").iter().any(|i| i == "CI016");
+    for s in [
+        "frob check",
+        "frob trust",
+        "frob check --trust-all",
+        "frob check --trust-from=HEAD",
+        "frob check --trust-from refs/pull/1/merge",
+        "FOO=1 frob check",
+    ] {
+        assert!(fires(s), "{s:?}");
+    }
+    for s in [
+        "frob check --trust-from=origin/main",
+        "frob check --trust-from ${{ github.base_ref }}",
+        "frob check --skip-tools",
+        "echo frob check",
+        "frob tickets",
+    ] {
+        assert!(!fires(s), "{s:?}");
+    }
+    assert!(
+        prt_ids("frob check --trust-from $REF", "")
+            .iter()
+            .any(|i| i == "CI016")
+    );
+    let guarded = "    if: github.event.pull_request.head.repo.fork == false\n";
+    assert!(prt_ids("frob check", guarded).iter().any(|i| i == "CI016"));
+    // Non-privileged triggers are not judged.
+    let job = "  c:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - run: frob check\n";
+    assert!(!wf_ids("pull_request", job).iter().any(|i| i == "CI016"));
+    assert!(wf_ids("workflow_run", job).iter().any(|i| i == "CI016"));
+}
+
+#[test]
+fn ci013_to_ci015_edge_cases() {
+    let sha = "a".repeat(40);
+    let call =
+        |extra: &str| format!("  c:\n    uses: acme/shared/.github/workflows/b.yml@{sha}\n{extra}");
+    assert!(
+        wf_ids("push", &call("    secrets: inherit\n"))
+            .iter()
+            .any(|i| i == "CI013")
+    );
+    assert!(!wf_ids("push", &call("")).iter().any(|i| i == "CI013"));
+    let step = |u: &str| {
+        format!(
+            "  c:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - uses: {u}\n"
+        )
+    };
+    assert!(
+        wf_ids("push", &step("actions/checkout@v3"))
+            .iter()
+            .any(|i| i == "CI015")
+    );
+    assert!(
+        !wf_ids("push", &step("actions/checkout@v4"))
+            .iter()
+            .any(|i| i == "CI015")
+    );
+    assert!(
+        !wf_ids("push", &step(&format!("actions/checkout@{sha}")))
+            .iter()
+            .any(|i| i == "CI015")
+    );
+    assert!(
+        !wf_ids("push", &step("./local"))
+            .iter()
+            .any(|i| i == "CI015")
+    );
+    let bad = "  c:\n    steps:\n      - run: x\n";
+    assert!(wf_ids("push", bad).iter().any(|i| i == "CI014"));
+    assert!(
+        !wf_ids("push", &step("actions/checkout@v4"))
+            .iter()
+            .any(|i| i == "CI014")
+    );
 }

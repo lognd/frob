@@ -9,6 +9,7 @@
 //! judged.
 
 // frob:ticket 01M5F010Y998BXB67KPZ4T040N
+// frob:ticket 01M5F010V5GV0B7KJ7M5QQG70Q
 
 /// Top-level `frob` verbs and their subcommands (empty for a leaf verb), deprecated aliases included.
 pub const VERBS: &[(&str, &[&str])] = &[
@@ -122,8 +123,8 @@ pub(crate) fn unknown_verbs(script: &str) -> Vec<UnknownVerb> {
     out
 }
 
-/// The verdict on one simple command, `None` when it is not `frob`, is fine or cannot be judged.
-fn judge(words: &[String]) -> Option<UnknownVerb> {
+/// The program a simple command runs and the words after it, past assignments, keywords and wrappers.
+fn program_and_args(words: &[String]) -> Option<(&str, Vec<&str>)> {
     let mut it = words.iter().map(String::as_str).peekable();
     while let Some(w) = it.peek().copied() {
         if is_assignment(w) {
@@ -138,9 +139,58 @@ fn judge(words: &[String]) -> Option<UnknownVerb> {
         }
     }
     let program = it.next()?;
+    Some((program, it.collect()))
+}
+
+/// One invocation of a tool: its program path as written and the words after it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Call {
+    /// The program word (`frob`, `./target/release/grimble`).
+    pub program: String,
+    /// The words after the program.
+    pub args: Vec<String>,
+}
+
+impl Call {
+    /// The program's file name (`grimble` of `./target/release/grimble`).
+    pub fn name(&self) -> &str {
+        self.program.rsplit('/').next().unwrap_or(&self.program)
+    }
+
+    /// The first positional word, skipping the global options that take a value.
+    pub fn verb(&self) -> Option<&str> {
+        let mut it = self.args.iter().map(String::as_str);
+        while let Some(w) = it.next() {
+            if VALUE_FLAGS.contains(&w) {
+                it.next();
+            } else if !w.starts_with('-') {
+                return Some(w);
+            }
+        }
+        None
+    }
+}
+
+/// Every simple command of `script` whose program file name is one of `programs`.
+pub(crate) fn calls(script: &str, programs: &[&str]) -> Vec<Call> {
+    commands(script)
+        .iter()
+        .filter_map(|words| program_and_args(words))
+        .map(|(program, args)| Call {
+            program: program.to_owned(),
+            args: args.into_iter().map(str::to_owned).collect(),
+        })
+        .filter(|c| programs.contains(&c.name()))
+        .collect()
+}
+
+/// The verdict on one simple command, `None` when it is not `frob`, is fine or cannot be judged.
+fn judge(words: &[String]) -> Option<UnknownVerb> {
+    let (program, args) = program_and_args(words)?;
     if program != "frob" && !program.ends_with("/frob") {
         return None;
     }
+    let mut it = args.into_iter();
     let mut positionals: Vec<&str> = Vec::new();
     let mut flag_between = false;
     while let Some(w) = it.next() {
