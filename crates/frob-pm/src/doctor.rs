@@ -2,13 +2,12 @@
 
 use std::collections::BTreeMap;
 
+use frob_ledger::doctor::order_skew;
+
 use crate::error::Result;
 use crate::fold::fold;
 use crate::model::{Day, Object, ObjectId, ObjectKind};
 use crate::store::PmStore;
-
-/// Seconds an event's `at` may differ from its ULID time before it is flagged.
-pub const CLOCK_SKEW_SECS: i64 = frob_ledger::doctor::CLOCK_SKEW_SECS;
 
 /// One problem found in an object.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -175,8 +174,8 @@ impl PmStore<'_> {
         };
         for ev in &events {
             let ulid_secs = i64::try_from(ev.id.timestamp_ms() / 1000).unwrap_or(0);
-            let skew = (ev.at.unix() - ulid_secs).abs();
-            if skew > CLOCK_SKEW_SECS {
+            // frob:ticket 01M4HTPMAS5TVK9S8Q47KD8R04
+            if let Some(skew) = order_skew(ev.at.unix(), ulid_secs) {
                 found.push((
                     "E-PM-ORDER",
                     format!(

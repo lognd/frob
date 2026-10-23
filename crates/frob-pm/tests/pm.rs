@@ -752,3 +752,78 @@ fn assigning_many_tickets_is_one_commit() {
     assert!(members(old).is_empty(), "both moved out");
     assert!(pm.assign_many(new, &[], Vec::new()).is_err());
 }
+
+/// Rewrite the `at` of an object's only event to `ulid_secs + delta` and report whether doctor flags it.
+fn order_fires(ledger: &Ledger, kind: ObjectKind, id: frob_pm::ObjectId, delta: i64) -> bool {
+    let pm = PmStore::new(ledger);
+    let tip = ledger.tip_hex().expect("tip").expect("some");
+    let ev = pm.read_events_at(&tip, kind, id).expect("events").remove(0);
+    let ulid_secs = i64::try_from(ev.id.timestamp_ms() / 1000).expect("secs");
+    let path = format!("{}/events/{}.toml", pm.object_dir(kind, id), ev.id);
+    let text = ledger
+        .read_text_at(&tip, &path)
+        .expect("read")
+        .expect("exists");
+    let at = gob_time::Stamp::from_unix(ulid_secs + delta);
+    let rewritten: String = text
+        .lines()
+        .map(|l| {
+            if l.starts_with("at = ") {
+                format!("at = \"{at}\"")
+            } else {
+                l.to_owned()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    ledger
+        .commit_files(
+            "test: skew",
+            &[(path, Some(format!("{rewritten}\n").into_bytes()))],
+        )
+        .expect("commit");
+    pm.doctor(false)
+        .expect("doctor")
+        .issues
+        .iter()
+        .any(|i| i.code == "E-PM-ORDER" && i.subject == id.to_string())
+}
+
+// frob:ticket 01M4HTPMAS5TVK9S8Q47KD8R04
+// frob:tests crates/frob-pm/src/doctor.rs::PmStore.doctor
+#[test]
+fn doctor_order_tolerates_command_clock_lag_but_not_an_at_ahead_of_its_ulid() {
+    const SIX_HOURS: i64 = 6 * 3600;
+    let (_dir, ledger) = fixture();
+    let pm = PmStore::new(&ledger);
+    let m = pm.create(milestone("0.1.0", &[])).expect("m").object.id();
+    let c = pm
+        .create(NewObject::Cycle {
+            start: day("2026-10-05"),
+            end: day("2026-10-18"),
+            goal: "g".into(),
+            capacity_points: None,
+        })
+        .expect("c")
+        .object
+        .id();
+    for (kind, id) in [(ObjectKind::Milestone, m), (ObjectKind::Cycle, c)] {
+        // ULID minted up to six hours after `at`: fine, including exactly at the boundary.
+        assert!(
+            !order_fires(&ledger, kind, id, -5 * 3600),
+            "{kind:?} 5h lag"
+        );
+        assert!(
+            !order_fires(&ledger, kind, id, -SIX_HOURS),
+            "{kind:?} 6h lag"
+        );
+        assert!(
+            order_fires(&ledger, kind, id, -SIX_HOURS - 1),
+            "{kind:?} beyond lag"
+        );
+        // `at` ahead of its ULID: only the small clock-skew allowance.
+        assert!(!order_fires(&ledger, kind, id, 600), "{kind:?} 600s ahead");
+        assert!(order_fires(&ledger, kind, id, 601), "{kind:?} 601s ahead");
+        assert!(order_fires(&ledger, kind, id, 3600), "{kind:?} 1h ahead");
+    }
+}
