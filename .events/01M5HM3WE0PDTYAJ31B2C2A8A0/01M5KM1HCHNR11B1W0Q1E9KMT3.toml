@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T05:34:06Z"
+digest = "8230b53480aafd41197a4f4e36ac02a18a3f94693b2a6151e65b09d88d820109"
+exit_code = 0
+head = "b23d38ae250967e5f45dab8040a84727127fa991"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bd3b9cef-465e-4931-895a-5c865b6121ab with nextest profile: default
+    Starting 8 tests across 1 binary (3 tests skipped)
+        PASS [   0.051s] crunk-rules::craft_presence_rules focus_and_press_fire_when_the_ui_never_styles_them
+        PASS [   0.064s] crunk-rules::craft_presence_rules components_fire_per_missing_state_and_are_quiet_when_complete
+        PASS [   0.077s] crunk-rules::craft_presence_rules coverage_fires_on_mostly_literal_styling_and_is_quiet_on_tokens
+        PASS [   0.078s] crunk-rules::craft_presence_rules shadows_fire_when_lit_from_another_side_and_are_quiet_when_alike
+        PASS [   0.079s] crunk-rules::craft_presence_rules content_fires_on_stand_ins_and_bare_images_and_is_quiet_when_real
+        PASS [   0.085s] crunk-rules::craft_presence_rules scenes_fire_on_two_moments_or_a_long_scene_with_none
+        PASS [   0.087s] crunk-rules::craft_presence_rules fonts_fire_without_a_complete_face_and_are_quiet_for_system_stacks
+        PASS [   0.091s] crunk-rules::craft_presence_rules rows_fire_when_flex_has_no_alignment_and_are_quiet_otherwise
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.092s] 8 tests run: 8 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test craft_presence_rules fire"
+size = 2425
+status = "measured"
+test_count = 8
+tests_digest = "11e5381d1f53b230d86c301784511b5742a6d1f00403ea5d830e5d85eee8fbdb"
+at = "2026-10-23T05:34:06Z"
+actor = "lognd"
+rev = 1
