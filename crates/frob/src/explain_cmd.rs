@@ -1,6 +1,7 @@
 //! `explain RULE`: the full rule page, offline, from pages embedded in the binary.
 
 // frob:ticket 01M3ZX7ZD77ZW385N5B992NX3A
+// frob:ticket 01M5NFNV870VQSGDJAT79HY9GP
 
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, ExplainArgs, ExplainData, Outcome, Page};
@@ -83,6 +84,9 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "UNITY001",
     "UNITY002",
     "UNITY003",
+    "COV004",
+    "DOC003",
+    "DOC006",
 ];
 
 /// Print the full page of one rule offline; an unknown id exits 2 with the closest ids.
