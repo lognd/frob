@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T15:00:54Z"
-updated = "2026-10-23T19:40:08Z"
+updated = "2026-10-23T19:40:09Z"
 scope = ["crates/gob-check/src/tools.rs", "crates/frob-worktree/**", "crates/frob-evidence/**", "changelog.d/**"]
 
 [[acceptance]]
@@ -24,7 +24,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a uv/venv Python project whose shared .venv is an editable install of the main checkout, when frob work creates the worktree, then tests in that worktree import the worktree's code"
-bound = false
+bound = true
 +++
 
 Ticket 5S319B4 closed with criteria 1-4 marked bound by a workspace-wide nextest command, but the code is absent on experimental (no uv --no-sync handling, no python_env.rs, no vitest PATH handling). Only criterion 5 (requires / [check] setup) was implemented.

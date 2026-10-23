@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-23T19:40:09Z"
+digest = "ca6655dca6af8b0c93b01095c18a6b310ff491154f7b2adacc0bdbce1ea9e4af"
+exit_code = 0
+head = "b8f7387a26260b19d71add4f00811b83d315671a"
+inline = '''
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.81s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 564e7d30-58d8-4826-bc1e-1b09870e7b67 with nextest profile: default
+    Starting 1 test across 1 binary (2 tests skipped)
+        PASS [   0.025s] frob-worktree::python_env a_new_worktree_gets_its_own_venv_pinned_to_the_worktree
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.025s] 1 test run: 1 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree --test python_env a_new_worktree_gets_its_own_venv"
+size = 638
+status = "measured"
+test_count = 1
+tests_digest = "e3ee61b4477cb3b90e829a4721ed57317b77a594c0d47c8c5e9c9e5c36d237cd"
+at = "2026-10-23T19:40:09Z"
+actor = "lognd"
+rev = 1
