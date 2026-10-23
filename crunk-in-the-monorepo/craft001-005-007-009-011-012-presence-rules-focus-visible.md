@@ -2,7 +2,8 @@
 id = "01M5HM3WE0PDTYAJ31B2C2A8A0"
 title = "CRAFT001-005,007,009,011,012 presence rules (focus-visible, states, moment, fonts, press feedback, elevation, copy keys, optical alignment, intent coverage)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
