@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T15:05:26Z"
-updated = "2026-10-23T14:27:14Z"
+updated = "2026-10-23T14:28:47Z"
 labels = ["adoption:logand-app"]
 scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**", "crates/frob/tests/it/doc_commands.rs"]
 
@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the owner decision of 2026-10-09 (no migrate command), when the guide lands, then it carries the complete v1 to v2 frob.toml key mapping (each v1 key: v2 key or removed, with reason), the frob:waive to frob:accept/frob:defer rewrite rules, and the frob:tests direction flip, for by-hand migration"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-547: about 600 ticket file conflicts from rename detection pairing v1 done-report.md with v2 events/*.toml.

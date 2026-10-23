@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T14:28:47Z"
+digest = "088fb855adb263e2096b337516ea4f2ba8985e4bcd11ba19de33b929a98b6c09"
+exit_code = 0
+head = "1ec776968a9256a88e27403afba4042ddd87a7ba"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID be9f4799-b5bb-4495-902a-90b360263fd0 with nextest profile: default
+    Starting 1 test across 1 binary (384 tests skipped)
+        PASS [   0.010s] frob-cli::it doc_commands::upgrade_guide_maps_every_v1_key_and_directive
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 384 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test it upgrade_guide_maps_every_v1_key_and_directive"
+size = 618
+status = "measured"
+test_count = 1
+tests_digest = "8552218267f21ac883fcf01fbbd6462d342f7d1a1fde94e02a920e2b9544a467"
+at = "2026-10-23T14:28:47Z"
+actor = "lognd"
+rev = 1
