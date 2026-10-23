@@ -8,7 +8,7 @@ points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-23T07:54:25Z"
+updated = "2026-10-23T07:52:12Z"
 scope = ["crates/grimble-ci/**", "crates/grimble-arch/**", "crates/grimble-check/**", "Cargo.lock", "crates/grimble-verdict/**", "docs/design/boundaries.md", "docs/design/cicd.md", "crates/gob-dev/tests/layering.rs"]
 
 [[acceptance]]
