@@ -2,7 +2,8 @@
 id = "01M5F010Y998BXB67KPZ4T040N"
 title = "grimble-ci: CI012 frob verbs versus workflow commands"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
