@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/src/import_crunk.rs", "crates/gob-dev/src/import_crunk/**", "crates/gob-dev/tests/import_crunk.rs", "docs/migration/**", "crates/gob-dev/src/main.rs", "Cargo.lock", "crates/frob-evidence/src/lib.rs", "crates/frob-evidence/src/import_v1.rs", "crates/frob-evidence/src/import_v1/**", "crates/frob-evidence/src/import_crunk.rs", "crates/frob-evidence/examples/import_crunk.rs", "crates/frob-evidence/examples/import_v1.rs", "crates/frob-evidence/tests/import_crunk.rs"]
+new = ["crates/gob-dev/src/import_crunk.rs", "crates/gob-dev/src/import_crunk/**", "crates/gob-dev/tests/import_crunk.rs", "docs/migration/**", "crates/gob-dev/src/main.rs", "Cargo.lock", "crates/frob-evidence/src/lib.rs", "crates/frob-evidence/src/import_v1.rs", "crates/frob-evidence/src/import_v1/**", "crates/frob-evidence/src/import_crunk.rs", "crates/frob-evidence/examples/import_crunk.rs", "crates/frob-evidence/examples/import_v1.rs", "crates/frob-evidence/tests/import_crunk.rs", "crates/frob-evidence/tests/import_v1.rs"]
+at = "2026-10-23T20:43:09Z"
+actor = "lognd"
+rev = 1
