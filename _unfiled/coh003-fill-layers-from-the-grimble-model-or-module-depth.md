@@ -2,12 +2,12 @@
 id = "01M5HJDX1Q27XGZ77ACWXQ03KP"
 title = "COH003: fill layers from the grimble model or module depth"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:27:39Z"
-updated = "2026-10-23T09:15:15Z"
+updated = "2026-10-23T09:15:16Z"
 scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
