@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T00:49:41Z"
-updated = "2026-10-23T02:53:18Z"
+updated = "2026-10-23T03:02:27Z"
 scope = ["crates/grimble-lints/**"]
 
 [[acceptance]]
 text = "Given a Unity C# class that subscribes in OnEnable and never unsubscribes in OnDisable, when PAIR001 runs, then it is reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a Unity class that pairs OnEnable and OnDisable correctly, when PAIR001 runs, then nothing is reported"

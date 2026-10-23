@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T03:02:27Z"
+digest = "3e0558bbd5c3bb76e8d101a6c8c9b047d1346ec234cff25fa5d6ab7e2eefbc2d"
+exit_code = 0
+head = "051a457b4afd0d5b9bd5697663519a8794b58878"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b0c76964-8a60-46f1-8168-f3a24ce0605e with nextest profile: default
+    Starting 1 test across 1 binary (13 tests skipped)
+        PASS [   0.006s] grimble-lints::pair_pass unity_onenable_without_ondisable_is_reported
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test pair_pass unity_onenable_without_ondisable_is_reported"
+size = 683
+status = "measured"
+test_count = 1
+tests_digest = "767b6fe8b503e3aea3b64a4aaaf3939599fa20719f824b45eaf43d311cbc17a7"
+at = "2026-10-23T03:02:27Z"
+actor = "lognd"
+rev = 1
