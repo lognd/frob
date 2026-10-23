@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T10:37:47Z"
+digest = "bd2718565ebc9c20eb745f065975a32fbdc5f48ca3c43c8f97b4edb9844b5492"
+exit_code = 0
+head = "6d7ee56d7fa847b1d0c7057ef912f46ae708613c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f26c5ef6-f93e-4de3-bd67-883192bafbe2 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.085s] grimble-check::coh003_external single_depth_repo_without_layers_yields_one_repo_note
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.086s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test coh003_external single_depth_repo_without_layers_yields_one_repo_note"
+size = 570
+status = "measured"
+test_count = 1
+tests_digest = "2c83423260d15509d97bf961b8b87b99f1bae2bd2f12628515cc0a3155e31f6e"
+at = "2026-10-23T10:37:47Z"
+actor = "lognd"
+rev = 1
