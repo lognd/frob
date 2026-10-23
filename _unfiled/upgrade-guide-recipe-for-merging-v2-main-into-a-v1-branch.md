@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-09T15:05:26Z"
-updated = "2026-10-23T15:02:09Z"
+updated = "2026-10-23T15:07:42Z"
 labels = ["adoption:logand-app"]
 scope = ["docs/guides/upgrade-from-v1.md", "changelog.d/**", "crates/frob/tests/it/doc_commands.rs", "docs/migration/v1-import.md"]
 
