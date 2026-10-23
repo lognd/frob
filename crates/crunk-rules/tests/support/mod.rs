@@ -232,6 +232,17 @@ pub fn project(file: &str, text: &str, config: Option<&str>) -> Project {
     build(spec_text, file, text, config)
 }
 
+// frob:ticket 01M5HM3VTW5FAZQ3TXM8XH739S
+/// The `config=no-radii` cases drop the preset's radii; `no-radii-decided` also declares a radius decision.
+fn apply_radii_config(spec_text: &mut String, config: Option<&str>) {
+    if matches!(config, Some("no-radii" | "no-radii-decided")) {
+        *spec_text = spec_text.replace("radii = [0, 4, 8, 16]", "radii = []");
+    }
+    if config == Some("no-radii-decided") {
+        spec_text.push_str("\n[decisions]\nradius = \"square on purpose\"\n");
+    }
+}
+
 fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) -> Project {
     let dir = tempfile::tempdir().expect("tempdir");
     if config.is_some_and(|c| c.starts_with("tw-theme-")) {
@@ -243,6 +254,7 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
         spec_text.push_str(key);
         spec_text.push_str(" = \"chosen on purpose\"\n");
     }
+    apply_radii_config(&mut spec_text, config);
     if config == Some("palette-indigo") {
         spec_text = spec_text.replace("accent = \"#2f6fed\"", "accent = \"#6366f1\"");
     }
