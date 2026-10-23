@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T13:31:31Z"
+digest = "a810b4fd126b912b10d2a63293114686638ca5a01e979e038817ae21b2f3ca9a"
+exit_code = 0
+head = "fd5c2f70c6677f736146bc422803f067ca64dd4d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 31aa41f8-65c5-4c2a-bf97-3fb2f4e665d6 with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   0.005s] gob-check::config_docs the_generated_config_reference_documents_the_exclude_opt_in
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --test config_docs the_generated_config_reference_documents_the_exclude_opt_in"
+size = 551
+status = "measured"
+test_count = 1
+tests_digest = "00673b2664aa70db07ce7412c181f59a210ea215d51177f3c3841e7934da7bb4"
+at = "2026-10-23T13:31:31Z"
+actor = "lognd"
+rev = 1
