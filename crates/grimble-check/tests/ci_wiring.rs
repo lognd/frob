@@ -55,3 +55,19 @@ fn missing_and_malformed_workflows_do_not_crash() {
     let found = run_ids(dir.path());
     assert!(found.iter().any(|r| r == "CI002"), "{found:?}");
 }
+
+/// A workflow granting `write-all` is reported as CI003 exactly once by the check run.
+// frob:ticket 01M5F0A96X8KCH10HNHTXCDEKR
+// frob:tests crates/grimble-check/src/product.rs::dedupe_ci
+#[test]
+fn a_write_all_workflow_is_reported_once_as_ci003() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let wf = "name: ci\non: push\npermissions: write-all\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo hi\n";
+    write(dir.path(), ".github/workflows/ci.yml", wf);
+    let found = run_ids(dir.path());
+    assert_eq!(
+        found.iter().filter(|r| *r == "CI003").count(),
+        1,
+        "{found:?}"
+    );
+}
