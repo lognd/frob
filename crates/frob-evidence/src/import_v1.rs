@@ -241,6 +241,10 @@ pub struct ImportOptions {
     pub merge: bool,
     /// The category recorded in the create event of imported open tickets (`todo` or `triage`).
     pub open_category: Category,
+    /// Namespace put before every source id to form its alias (`crunk:` gives `crunk:T-0042`); `None` keeps the bare id.
+    pub alias_prefix: Option<String>,
+    /// Labels added to every imported ticket (for example `component:crunk`).
+    pub extra_labels: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -347,6 +351,8 @@ pub struct ImportReport {
     pub open: Vec<OpenRow>,
     /// Open v1 tickets that do not import as open work, in v1 id order.
     pub skipped: Vec<SkipRow>,
+    /// Open tickets the selection imports closed as wont-fix history, with their reason, in id order.
+    pub wont_fix: Vec<SkipRow>,
     /// Tickets whose text was rewritten by redaction: `(v1 id, what)`; never the matched text.
     pub redactions: Vec<(String, String)>,
     /// Tickets whose text still holds an absolute home path after redaction (blocks a real import).
@@ -683,6 +689,7 @@ fn create_data(
     decision: &Decision,
     category: Category,
     ids: &BTreeMap<String, TicketId>,
+    opts: &ImportOptions,
     report: &mut ImportReport,
 ) -> Result<CreateData, ImportError> {
     let f = &v1.front;
@@ -704,6 +711,9 @@ fn create_data(
     labels.extend(f.component.iter().map(|c| format!("component:{c}")));
     labels.extend(decision.cluster.iter().map(|c| format!("v1-cluster:{c}")));
     labels.extend(decision.area.iter().map(|a| format!("area:{a}")));
+    labels.extend(opts.extra_labels.iter().cloned());
+    let mut seen = BTreeSet::new();
+    labels.retain(|l| seen.insert(l.clone()));
     Ok(CreateData {
         title: f.title.clone(),
         ty,
@@ -719,7 +729,11 @@ fn create_data(
         capability: None,
         outcome_text: None,
         idempotency_key: None,
-        aliases: vec![f.id.clone()],
+        aliases: vec![format!(
+            "{}{}",
+            opts.alias_prefix.as_deref().unwrap_or_default(),
+            f.id
+        )],
         labels,
         scope: f.scope.clone(),
         acceptance: f.acceptance.iter().map(|a| a.text.clone()).collect(),
@@ -734,7 +748,7 @@ fn convert(
     decision: &Decision,
     id: TicketId,
     ids: &BTreeMap<String, TicketId>,
-    open_category: Category,
+    opts: &ImportOptions,
     report: &mut ImportReport,
 ) -> Result<Rendered, ImportError> {
     let f = &v1.front;
@@ -745,7 +759,7 @@ fn convert(
     let create_category = if category == Category::Done {
         Category::Todo
     } else {
-        open_category
+        opts.open_category
     };
     let mut events = vec![event_text(
         &mut clock,
@@ -755,6 +769,7 @@ fn convert(
             decision,
             create_category,
             ids,
+            opts,
             report,
         )?)),
     )?];
@@ -1081,6 +1096,14 @@ fn decide_all(
             .dispositions
             .entry(decision.disposition.name().to_owned())
             .or_default() += 1;
+        if decision.disposition == Disposition::WontFixHistory {
+            report.wont_fix.push(SkipRow {
+                v1: id.clone(),
+                disposition: decision.disposition.name().to_owned(),
+                cluster: decision.cluster.clone().unwrap_or_default(),
+                reason: decision.reason.clone().unwrap_or_default(),
+            });
+        }
         if decision.disposition.imports() {
             kept.push((v, decision));
         } else {
@@ -1190,7 +1213,7 @@ pub fn run(opts: &ImportOptions) -> Result<ImportReport, ImportError> {
             decision,
             ids[&v.front.id],
             &ids,
-            opts.open_category,
+            opts,
             &mut report,
         )?);
     }

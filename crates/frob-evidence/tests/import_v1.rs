@@ -66,6 +66,8 @@ fn opts(root: &Path, dry_run: bool) -> ImportOptions {
         privacy_dir: None,
         merge: false,
         open_category: Category::Todo,
+        alias_prefix: None,
+        extra_labels: Vec::new(),
     }
 }
 
