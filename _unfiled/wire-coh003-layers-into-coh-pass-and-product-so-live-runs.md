@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T09:35:21Z"
-updated = "2026-10-23T09:51:47Z"
-scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
+updated = "2026-10-23T09:57:17Z"
+scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock", "docs/reference/config.md"]
 
 [[acceptance]]
 text = "COH003 is registered and runs through coh_pass and product using layers::coh003_options"
