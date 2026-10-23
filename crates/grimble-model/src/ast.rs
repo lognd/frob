@@ -393,6 +393,8 @@ pub enum ClauseKind {
     Ref(Spanned<String>),
     /// `runnable SEL;`
     Runnable(Sel),
+    /// `manual because="REASON";` replaces every `runnable` of a test.
+    Manual(Spanned<String>),
     /// A vmodel link.
     Link(Link),
     /// `version "X.Y.Z";` of a pack.

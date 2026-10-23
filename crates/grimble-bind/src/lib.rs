@@ -99,6 +99,8 @@ pub struct Binding {
     pub flow_contracts: BTreeMap<String, model::FlowContract>,
     /// Rules whose whole scope is `NotApplicable` on this model, with the reason (never a finding).
     pub not_applicable: BTreeMap<&'static str, &'static str>,
+    /// Manual tests (`manual because=`): vmodel anchor to its reason, for `grimble status`.
+    pub manual_tests: BTreeMap<String, String>,
 }
 
 /// Declare the rules whose subject fact is absent, before any rule runs.
@@ -238,6 +240,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     let mut out = eval::evaluate(&cx);
     let live = live::Live::build(&code);
     let flow_contracts = model.flow_contracts();
+    let manual_tests = model.manual_tests();
     match lock {
         Ok(lock) => drift::evaluate(
             &drift::DriftCx {
@@ -273,5 +276,6 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         edges: rel.edges,
         live,
         flow_contracts,
+        manual_tests,
     }
 }

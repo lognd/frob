@@ -328,6 +328,9 @@ fn selector_clause(
                 file.path.clone(),
             ));
         }
+        if clause.role == Role::Runnable && !result.matches.iter().any(|(_, p)| *p == file.path) {
+            js_title_hit(sel, file, entity, clause, rel, &mut result);
+        }
         for _ in selection.hidden {
             let reason = hidden_for(file);
             result.hidden.push(reason);
@@ -335,6 +338,61 @@ fn selector_clause(
         }
     }
     rel.clauses.push(result);
+}
+
+/// The bracketed title a vitest/jest selector names: `file::[describe > title]` gives the text
+/// inside the brackets.
+fn bracket_title(sel: &Selector) -> Option<String> {
+    let q = sel.literal()?.qual()?;
+    let inner = q.strip_prefix('[')?.strip_suffix(']')?;
+    Some(inner.to_owned())
+}
+
+/// Binds a `file::[a > b]` runnable selector to a vitest/jest title the symbol view does not
+/// carry: scans the file's `describe`/`it`/`test` calls and emits a test unit on an exact id.
+fn js_title_hit(
+    sel: &Selector,
+    file: &CodeFile,
+    entity: &Entity,
+    clause: &Clause,
+    rel: &mut Relation,
+    result: &mut ClauseResult,
+) {
+    let Some(title) = bracket_title(sel) else {
+        return;
+    };
+    let Some(lang) = gob_languages::Language::detect(&file.path) else {
+        return;
+    };
+    let Some(text) = file.source() else {
+        return;
+    };
+    if !gob_languages::js_test_ids(lang, &text).contains(&title) {
+        return;
+    }
+    let symref = format!("{}::[{title}]", file.path);
+    tracing::debug!(%symref, anchor = %clause.anchor, "runnable bound to a test title");
+    let kind = "test".to_owned();
+    rel.rows.push(Row {
+        entity: entity.anchor.clone(),
+        role: clause.role,
+        identity: Some(symref.clone()),
+        unit_kind: Some(kind.clone()),
+        status: Status::Must,
+        source: Source::Selector,
+        anchor: Some(clause.anchor.clone()),
+        reason: None,
+        specificity: None,
+        overridden: false,
+    });
+    result.matches.push((
+        UnitHit {
+            symref,
+            kind,
+            status: Status::Must,
+        },
+        file.path.clone(),
+    ));
 }
 
 fn ref_clause(code: &Code, entity: &Entity, clause: &Clause, text: &str, rel: &mut Relation) {

@@ -50,6 +50,7 @@ mod inline;
 mod language;
 mod parse;
 mod query;
+mod testnames;
 
 pub use comments::{comment_spans, parse_comment_spans};
 pub use grammar::grammar_identity;
@@ -59,3 +60,4 @@ pub use inline::{markdown_code_ranges, markdown_code_spans, markdown_link_destin
 pub use language::Language;
 pub use parse::{ParseLimits, ParseResult, ParsedTree, Unresolved, UnresolvedReason, parse};
 pub use query::{Capture, CompiledQuery, QueryError, captures, compiled_query};
+pub use testnames::{TITLE_SEP, js_test_ids};

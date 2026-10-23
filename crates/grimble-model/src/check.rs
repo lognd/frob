@@ -233,7 +233,7 @@ fn allowed(kind: EntityKind, key: &str) -> bool {
             "noflow" | "reach" | "bound" | "proof" | "assumed" | "evidence"
         ),
         EntityKind::Vmodel => {
-            matches!(key, "kind" | "level" | "ref" | "runnable")
+            matches!(key, "kind" | "level" | "ref" | "runnable" | "manual")
                 || LinkKind::ALL.iter().any(|l| l.keyword() == key)
         }
         EntityKind::Boundary => false,
@@ -247,6 +247,7 @@ fn is_list(key: &str) -> bool {
     matches!(
         key,
         "owns"
+            | "runnable"
             | "may"
             | "excuses"
             | "excuse"
@@ -1465,9 +1466,33 @@ impl<'a> Checker<'a> {
             let msg = format!("artifact `{}` needs `ref \"SYMREF\"`", e.name.text);
             self.emit("MDL014", None, rec.file, e.name.span, msg, anchor);
         }
-        if kind.as_deref() == Some("test") && !has("runnable") {
-            let msg = format!("test `{}` needs `runnable SELECTOR`", e.name.text);
-            self.emit("MDL014", None, rec.file, e.name.span, msg, anchor);
+        if kind.as_deref() == Some("test") {
+            let (runs, manual) = (has("runnable"), has("manual"));
+            let msg = match (runs, manual) {
+                (false, false) => Some(format!(
+                    "test `{}` needs one `runnable SELECTOR` per runner id, or `manual because=\"REASON\"`",
+                    e.name.text
+                )),
+                (true, true) => Some(format!(
+                    "test `{}` has both `manual` and `runnable`; `manual` replaces every `runnable`",
+                    e.name.text
+                )),
+                _ => None,
+            };
+            if let Some(msg) = msg {
+                self.emit("MDL014", None, rec.file, e.name.span, msg, anchor);
+            }
+        }
+        for c in &e.clauses {
+            if let ClauseKind::Manual(b) = &c.kind
+                && b.value.trim().is_empty()
+            {
+                let msg = format!(
+                    "test `{}` has an empty `manual because` reason",
+                    e.name.text
+                );
+                self.emit("MDL014", None, rec.file, b.span, msg, anchor);
+            }
         }
         for c in &e.clauses {
             if let ClauseKind::Ref(s) = &c.kind

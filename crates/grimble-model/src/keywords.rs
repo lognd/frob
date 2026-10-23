@@ -38,6 +38,7 @@ pub const KEYWORDS: &[&str] = &[
     "label",
     "latency",
     "level",
+    "manual",
     "may",
     "module",
     "namespace",

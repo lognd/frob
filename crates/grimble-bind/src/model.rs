@@ -85,6 +85,8 @@ pub struct Entity {
     pub contract: Option<String>,
     /// For a contract: the `compat=` value of its `versioning` clause (grmb-spec 4.3).
     pub compat: Option<String>,
+    /// For a `kind test` vmodel: the reason of its `manual because=` clause; such a test has no runnable.
+    pub manual: Option<String>,
 }
 
 /// The contract a flow names and what its `versioning` clause allows skew to be.
@@ -127,6 +129,15 @@ impl Model {
                 let compat = self.entities.get(&anchor).and_then(|c| c.compat.clone());
                 Some((e.anchor.clone(), FlowContract { anchor, compat }))
             })
+            .collect()
+    }
+
+    /// Vmodel anchor to the reason of its `manual because=` clause, for every manual test.
+    #[must_use]
+    pub fn manual_tests(&self) -> BTreeMap<String, String> {
+        self.entities
+            .values()
+            .filter_map(|e| Some((e.anchor.clone(), e.manual.clone()?)))
             .collect()
     }
 
@@ -215,6 +226,7 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
             });
         }
         ClauseKind::Ref(s) => push(ent, Role::Ref, None, Some(s.value.clone())),
+        ClauseKind::Manual(b) => ent.manual = Some(b.value.clone()),
         ClauseKind::Kind(k) if k.text == "external" => ent.external = true,
         ClauseKind::Proof(p) => ent.proof = parse_proof(&p.text),
         ClauseKind::Assumed(_) => ent.assumed = true,
@@ -256,6 +268,7 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 infer_requested: false,
                 contract: None,
                 compat: None,
+                manual: None,
             });
         if let Header::Flow { from, to } = &e.header {
             ent.ends = Some((node_anchor(&rec.ctx, from), node_anchor(&rec.ctx, to)));

@@ -108,13 +108,24 @@ fn qual_of(symref: &str) -> &str {
     symref.split_once("::").map_or("", |(_, q)| q)
 }
 
+fn stem_parts(path: &str) -> std::str::Split<'_, char> {
+    path.rsplit('/').next().unwrap_or(path).split('.')
+}
+
 /// True when a unit looks like a test item: under `tests/`, a `*_test`/`test_*` file or a
 /// `test`/`tests` qualifier. A stand-in for the adapter query `test_items` (Q35).
 pub fn is_test_unit(symref: &str) -> bool {
     let path = path_of(symref);
     let stem = path.rsplit('/').next().unwrap_or(path);
     let stem = stem.split('.').next().unwrap_or(stem);
-    path.starts_with("tests/")
+    let js_test = {
+        let mut parts = stem_parts(path);
+        parts.next();
+        parts.any(|p| p == "test" || p == "spec")
+    };
+    js_test
+        || qual_of(symref).starts_with('[')
+        || path.starts_with("tests/")
         || path.contains("/tests/")
         || stem.ends_with("_test")
         || stem.starts_with("test_")
@@ -339,18 +350,35 @@ fn sys002(cx: &Cx<'_>, out: &mut Output) {
     }
 }
 
+/// The identities the `must` rows of one entity and role name.
 fn singleton_rows(cx: &Cx<'_>, e: &Entity, role: Role) -> BTreeSet<String> {
-    cx.rel
-        .rows
-        .iter()
-        .filter(|r| {
-            r.entity == e.anchor
-                && r.role == role
-                && r.status == Status::Must
-                && r.source != Source::Residual
-        })
-        .filter_map(|r| r.identity.clone())
+    singleton_rows_by_clause(cx, e, role)
+        .into_values()
+        .flatten()
         .collect()
+}
+
+/// The identities the `must` rows of one entity and role name, grouped by the clause that produced them.
+fn singleton_rows_by_clause(
+    cx: &Cx<'_>,
+    e: &Entity,
+    role: Role,
+) -> BTreeMap<Option<String>, BTreeSet<String>> {
+    let mut by_clause: BTreeMap<Option<String>, BTreeSet<String>> = BTreeMap::new();
+    for r in cx.rel.rows.iter().filter(|r| {
+        r.entity == e.anchor
+            && r.role == role
+            && r.status == Status::Must
+            && r.source != Source::Residual
+    }) {
+        if let Some(id) = &r.identity {
+            by_clause
+                .entry(r.anchor.clone())
+                .or_default()
+                .insert(id.clone());
+        }
+    }
+    by_clause
 }
 
 fn sys003(cx: &Cx<'_>, out: &mut Output) {
@@ -387,12 +415,27 @@ fn sys003(cx: &Cx<'_>, out: &mut Output) {
             if e.clauses_of(role).next().is_none() {
                 continue;
             }
-            out.count("SYS003", 1);
-            let ids = singleton_rows(cx, e, role);
-            if ids.len() >= 2 {
+            let by_clause = singleton_rows_by_clause(cx, e, role);
+            // A runnable names one test unit per clause (one runner id each), so it is
+            // judged per clause; shape and ref are singletons of the whole role.
+            let groups: Vec<(Option<String>, BTreeSet<String>)> = if role == Role::Runnable {
+                e.clauses_of(role)
+                    .map(|c| {
+                        let ids = by_clause.get(&Some(c.anchor.clone())).cloned();
+                        (Some(c.anchor.clone()), ids.unwrap_or_default())
+                    })
+                    .collect()
+            } else {
+                vec![(None, by_clause.into_values().flatten().collect())]
+            };
+            for (clause_anchor, ids) in groups {
+                out.count("SYS003", 1);
+                if ids.len() < 2 {
+                    continue;
+                }
                 let site = e
                     .clauses_of(role)
-                    .next()
+                    .find(|c| clause_anchor.as_ref().is_none_or(|a| *a == c.anchor))
                     .map(|c| (c.file.as_str(), (c.span.start, c.span.end)));
                 let names: Vec<String> = ids.into_iter().collect();
                 out.fire(
@@ -404,7 +447,7 @@ fn sys003(cx: &Cx<'_>, out: &mut Output) {
                         role.as_str(),
                         names.join(", ")
                     ),
-                    &format!("{}/{}", e.anchor, role.as_str()),
+                    &clause_anchor.unwrap_or_else(|| format!("{}/{}", e.anchor, role.as_str())),
                     site,
                 );
             }
@@ -964,6 +1007,81 @@ fn sys010(cx: &Cx<'_>, out: &mut Output) {
     }
 }
 
+/// Levenshtein distance of two strings, by characters.
+fn edit_distance(a: &str, b: &str) -> usize {
+    let b: Vec<char> = b.chars().collect();
+    let mut prev: Vec<usize> = (0..=b.len()).collect();
+    for (i, ca) in a.chars().enumerate() {
+        let mut cur = vec![i + 1];
+        for (j, cb) in b.iter().enumerate() {
+            let sub = prev[j] + usize::from(ca != *cb);
+            cur.push(sub.min(prev[j + 1] + 1).min(cur[j] + 1));
+        }
+        prev = cur;
+    }
+    prev[b.len()]
+}
+
+/// The real test ids of one file as `(qualifier text, selector spelling)` pairs.
+fn real_ids(file: &crate::code::CodeFile) -> Vec<(String, String)> {
+    if let Some(lang) = gob_languages::Language::detect(&file.path) {
+        let ids = file
+            .source()
+            .map(|t| gob_languages::js_test_ids(lang, &t))
+            .unwrap_or_default();
+        if !ids.is_empty() {
+            return ids
+                .into_iter()
+                .map(|id| {
+                    let spelled = format!("{}::[{id}]", file.path);
+                    (id, spelled)
+                })
+                .collect();
+        }
+    }
+    let Some(folded) = file.folded() else {
+        return Vec::new();
+    };
+    folded
+        .term
+        .units()
+        .into_iter()
+        .map(|u| u.symref.to_string())
+        .filter(|s| is_test_unit(s))
+        .map(|s| (qual_of(&s).to_owned(), s))
+        .collect()
+}
+
+/// A `; nearest real id: ...` suffix naming the closest test id of the clause's files, or empty.
+fn nearest_hint(cx: &Cx<'_>, c: &crate::model::Clause) -> String {
+    let Some(sel) = c.selector.as_ref() else {
+        return String::new();
+    };
+    let Some(glob) = sel.literal() else {
+        return String::new();
+    };
+    let Some(want) = glob.qual() else {
+        return String::new();
+    };
+    let want = want
+        .strip_prefix('[')
+        .and_then(|w| w.strip_suffix(']'))
+        .unwrap_or(want);
+    let best = gob_walk::select_files(sel, &cx.code.walk)
+        .iter()
+        .filter_map(|m| cx.code.file(&m.path))
+        .flat_map(real_ids)
+        .map(|(q, spelled)| (edit_distance(want, &q), spelled))
+        .min_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+    match best {
+        Some((d, spelled)) if d <= (want.chars().count() / 2).max(3) => {
+            tracing::debug!(clause = %c.anchor, %spelled, d, "nearest real id");
+            format!("; nearest real id: `{spelled}`")
+        }
+        _ => String::new(),
+    }
+}
+
 fn sys011(cx: &Cx<'_>, out: &mut Output) {
     for e in cx
         .model
@@ -1016,7 +1134,7 @@ fn sys011(cx: &Cx<'_>, out: &mut Output) {
                 out.fire(
                     "SYS011",
                     Severity::Error,
-                    format!("{} selects no test unit", c.anchor),
+                    format!("{} selects no test unit{}", c.anchor, nearest_hint(cx, c)),
                     &c.anchor,
                     site,
                 );
@@ -1025,8 +1143,9 @@ fn sys011(cx: &Cx<'_>, out: &mut Output) {
                     "SYS011",
                     Severity::Error,
                     format!(
-                        "{} resolves to nothing although its file is in the walk",
-                        c.anchor
+                        "{} resolves to nothing although its file is in the walk{}",
+                        c.anchor,
+                        nearest_hint(cx, c)
                     ),
                     &c.anchor,
                     site,

@@ -65,7 +65,7 @@ Role = owns | producer | consumer | shape | runnable | ref | evidence
 | producer | flow | `producer SEL`; `grimble:binds design:flow/F role=producer` | a set |
 | consumer | flow | `consumer SEL`; `... role=consumer` | a set |
 | shape | contract | `shape SEL` | exactly one identity is required (SYS003 kind `ambiguous-singleton` otherwise) |
-| runnable | vmodel (test) | `runnable SEL` | exactly one test unit is required |
+| runnable | vmodel (test) | `runnable SEL` | exactly one test unit per clause is required (a test may repeat the clause, or carry `manual because="..."`) |
 | ref | vmodel (artifact) | `ref "SYMREF"` | exactly one unit (a code unit or a document anchor) |
 | evidence | claim | `evidence tests SEL`, `evidence ref "SYMREF"`, `frob:tests` on a test (grmb-spec 8.3) | a set |
 

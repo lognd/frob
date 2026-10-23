@@ -183,6 +183,7 @@ pub fn clause_key(k: &ClauseKind) -> &'static str {
         ClauseKind::Level(_) => "level",
         ClauseKind::Ref(_) => "ref",
         ClauseKind::Runnable(_) => "runnable",
+        ClauseKind::Manual(_) => "manual",
         ClauseKind::Link(l) => l.kind.keyword(),
         ClauseKind::Version(_) => "version",
         ClauseKind::Digest(_) => "digest",
@@ -216,7 +217,7 @@ pub fn clause_rank(k: &ClauseKind) -> u8 {
         ClauseKind::Evidence(_) => 20,
         ClauseKind::Level(_) => 21,
         ClauseKind::Ref(_) => 22,
-        ClauseKind::Runnable(_) => 23,
+        ClauseKind::Runnable(_) | ClauseKind::Manual(_) => 23,
         ClauseKind::Version(_) => 24,
         ClauseKind::Digest(_) => 25,
         ClauseKind::Link(_) => 26,
@@ -310,6 +311,7 @@ pub fn clause_text(k: &ClauseKind) -> String {
         ClauseKind::Level(i) => format!("level {}", canonical_level(&i.text)),
         ClauseKind::Ref(s) => format!("ref {}", quote(&s.value)),
         ClauseKind::Runnable(s) => format!("runnable {}", selector_text(s)),
+        ClauseKind::Manual(b) => format!("manual because={}", quote(&b.value)),
         ClauseKind::Link(l) => match &l.because {
             Some(b) => format!(
                 "{} {} because={}",

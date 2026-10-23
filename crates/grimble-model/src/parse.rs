@@ -1147,6 +1147,10 @@ impl Parser<'_> {
             "level" => ClauseKind::Level(self.any_ident("a level")?),
             "ref" => ClauseKind::Ref(self.string("a symref string")?),
             "runnable" => ClauseKind::Runnable(self.selector()?),
+            "manual" => match self.because_opt()? {
+                Some(reason) => ClauseKind::Manual(reason),
+                None => return self.unexpected("`because=\"REASON\"`"),
+            },
             "version" => ClauseKind::Version(self.string("a version string")?),
             "digest" => ClauseKind::Digest(self.string("a digest string")?),
             "baseline" => {

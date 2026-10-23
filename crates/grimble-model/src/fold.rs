@@ -836,6 +836,18 @@ impl Folder<'_> {
                 (attr("ref", sp, vec![payload]), Place::Body)
             }
             ClauseKind::Runnable(s) => sel_attr("runnable", s, Place::Body),
+            ClauseKind::Manual(b) => (
+                apply(
+                    "manual",
+                    sp,
+                    vec![attr(
+                        "because",
+                        b.span,
+                        vec![lit("string", &b.value, b.span)],
+                    )],
+                ),
+                Place::Body,
+            ),
             ClauseKind::Link(l) => {
                 let mut kids = vec![reference(&l.target.written(), l.target.span)];
                 if let Some(b) = &l.because {

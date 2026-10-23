@@ -656,8 +656,12 @@ manual rung only (G03 states the ladder), and a manual test whose
 SYS010. An empty REASON, `manual` together with `runnable`, or neither
 clause on a `kind test` vmodel, is MDL014.
 
-Status: today one `runnable` per vmodel is read and a second one is
-SYS003; `manual` is not in the grammar. Both follow in ticket ~P7APFVH.
+Status: implemented (ticket ~P7APFVH): `runnable` repeats, the singleton
+predicate is per runnable clause, `manual because="REASON"` parses and is
+exposed as `Binding.manual_tests`, and MDL014 covers neither, both and an
+empty reason. Two clauses spelled identically are MDL017; two different
+spellings that resolve to the same unit are not yet detected, and the
+`grimble status` listing of manual tests is a follow-up in `crates/grimble`.
 
 #### 4.5.3 Runner ids and the selectors that name them
 
@@ -696,8 +700,13 @@ Status: the shipped stand-in (`is_test_unit` in `grimble-bind`) is
 path-and-qualname based: a path under `tests/`, a `*_test` or `test_*`
 file stem, or a `test`/`tests` qualname segment. It covers Rust
 in-source `mod tests` and Python, not TypeScript titles, `#[test]` fns
-outside those places, or bracketed segments; the real Q35 answer and the
-runner-id mapping follow in ticket ~P7APFVH.
+outside those places. A bracketed segment (a vitest/jest title) is a test
+unit, and `FILE::[describe > title]` binds by scanning the file's
+`describe`/`it`/`test` calls (`gob_languages::js_test_ids`; `.only` and
+`.skip` count, `.each` and dynamic titles do not). A runnable that names a
+wrong id in an existing file is SYS011 and the message ends with
+`; nearest real id: ...` when a real id is close. The real Q35 answer and
+the pasted-runner-id mapping remain future work.
 
 ### 4.6 boundary and pack
 
