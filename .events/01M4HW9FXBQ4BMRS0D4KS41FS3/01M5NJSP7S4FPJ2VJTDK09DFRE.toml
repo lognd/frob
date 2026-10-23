@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T23:50:51Z"
+digest = "a99e923a90b3a57468509846787e30b28297e49c20e6e4a205fc34d3c688e6c4"
+exit_code = 0
+head = "5ada3ddbb094ba0792b0a87290fe624940e6022e"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.75s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 21ba49a4-522f-4120-bf7d-ce02b08ff285 with nextest profile: default
+    Starting 2 tests across 1 binary (11 tests skipped)
+        PASS [   0.014s] frob-lease overlap::tests::bare_dir_scope_covers_its_subtree_and_edge_cases_hold
+        PASS [   0.015s] frob-lease unmatched::tests::bare_dir_scope_is_covered_and_zero_match_warns_unless_creates
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 2 tests run: 2 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease --lib bare_dir"
+size = 742
+status = "measured"
+test_count = 2
+tests_digest = "13208db4ac5177ec30dcad8722f394e74d85f3d4aab0b2e6f53b67f1698a98f4"
+at = "2026-10-23T23:50:51Z"
+actor = "lognd"
+rev = 1
