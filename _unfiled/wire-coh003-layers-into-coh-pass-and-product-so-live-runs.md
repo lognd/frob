@@ -2,7 +2,8 @@
 id = "01M5M1TVT09K4YPK17S62Y1A18"
 title = "Wire COH003 layers into coh_pass and product so live runs use them"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
