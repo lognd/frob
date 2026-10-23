@@ -8,7 +8,7 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-11T03:34:49Z"
-updated = "2026-10-23T11:43:03Z"
+updated = "2026-10-23T11:50:35Z"
 scope = ["crates/grimble-lints/**", "crates/grimble-check/src/product_rules.rs", "crates/grimble-check/Cargo.toml", "docs/reference/rules/RES*.md", "docs/design/**", "docs/reference/**", "docs/schemas/**", "Cargo.lock", "crates/grimble-check/**"]
 
 [[links]]
