@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T05:26:51Z"
+digest = "07d1f4715969901c708a09251a91faabc29fe02a675a49b476f228fc93f38751"
+exit_code = 0
+head = "bb96d18e141f7e25b9167109f774d986779a21cc"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5d410d00-845d-4f16-9032-2efb2c1a9ee9 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.010s] gob-check::oracle_live committed_observed_column_matches_the_live_adapter_answers
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --test oracle_live committed_observed_column_matches_the_live_adapter_answers"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "b4dac191cd4601ea77f2b4be1be1f4e2a5a65754645b7c741502bbf63bc4d898"
+at = "2026-10-23T05:26:51Z"
+actor = "lognd"
+rev = 1
