@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["grimble-check config accepts DUP001 min_tokens and min_occurrences and passes them to the DUP001 pass", "omitting the knobs keeps the defaults 50 and 3"]
+moved = []
+at = "2026-10-23T04:17:48Z"
+actor = "lognd"
+rev = 1

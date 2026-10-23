@@ -4,10 +4,19 @@ title = "Expose DUP001 min_tokens and min_occurrences as grimble-check config kn
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-22T11:05:48Z"
-updated = "2026-10-22T11:05:48Z"
+updated = "2026-10-23T04:17:48Z"
 scope = ["crates/grimble-check/**", "crates/grimble-arch/**"]
+
+[[acceptance]]
+text = "grimble-check config accepts DUP001 min_tokens and min_occurrences and passes them to the DUP001 pass"
+bound = false
+
+[[acceptance]]
+text = "omitting the knobs keeps the defaults 50 and 3"
+bound = false
 +++
 
 found while working ~MAWDT22: DUP001 uses constants MIN_TOKENS=50 and MIN_OCCURRENCES=3 in crates/grimble-arch/src/dup.rs because ArchInput is built literally in grimble-check product.rs; add config fields and pass them through.
