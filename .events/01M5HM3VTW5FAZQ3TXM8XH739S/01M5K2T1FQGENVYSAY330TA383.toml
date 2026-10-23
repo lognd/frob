@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T00:33:08Z"
+digest = "1544b81c3fc88af45d1fe3e3d2f33e5b7bec1900b0850f49ce71260f1ace4d0c"
+exit_code = 0
+head = "d2104a03cb7978d59598b5fe9316c1193ecd76e0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2de1237c-3321-43e2-9645-2905a9e231c1 with nextest profile: default
+    Starting 1 test across 1 binary (5 tests skipped)
+        PASS [   0.015s] crunk-rules::craft006_rules every_missing_scale_is_reported_with_its_paired_rule
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test craft006_rules every_missing_scale_is_reported_with_its_paired_rule"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "97bf09fd57439cf5d1301b3e9ccf7de1f7589e1456ed6c770652224778776562"
+at = "2026-10-23T00:33:08Z"
+actor = "lognd"
+rev = 1
