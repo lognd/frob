@@ -2,7 +2,8 @@
 id = "01M5HMPQB3WG50FBPZ3TQNJ1XC"
 title = "TypeScript interface and inherited method dispatch from annotated receivers"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
