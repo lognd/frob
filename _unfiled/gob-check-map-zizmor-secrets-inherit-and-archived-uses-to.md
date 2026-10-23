@@ -2,12 +2,12 @@
 id = "01M5KYF5Z489MSRNAX1JCTEHPQ"
 title = "gob-check: map zizmor secrets-inherit and archived-uses to CI013 and CI015, actionlint to grimble CI014"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T08:36:33Z"
-updated = "2026-10-23T08:45:19Z"
+updated = "2026-10-23T08:45:20Z"
 scope = ["crates/gob-check/src/tool_parse.rs", "crates/gob-check/src/rules.rs", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
