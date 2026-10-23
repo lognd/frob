@@ -2,7 +2,8 @@
 id = "01M5H30AT7FM2BAXCTTDEGWV6J"
 title = "Load .scene.html files via crunk-scene::parse_scene_bytes in crunk-ingest/crunk-check scene discovery"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
