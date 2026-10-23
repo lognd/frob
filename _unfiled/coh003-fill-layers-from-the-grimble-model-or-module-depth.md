@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:27:39Z"
-updated = "2026-10-23T09:23:33Z"
+updated = "2026-10-23T09:30:37Z"
 scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
