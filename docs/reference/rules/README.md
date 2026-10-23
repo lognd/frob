@@ -36,7 +36,6 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [CI001](CI001.md) | pinned-ref | warn | manual | P+ | false | An external `uses:` reference is not pinned to a full commit SHA. |
-| [CI003](CI003.md) | no-top-level-write | warn | manual | P+ | false | A workflow or job grants a broader `GITHUB_TOKEN` scope than it needs. |
 | [CI006](CI006.md) | no-prt-head-checkout | error | manual | P+ | false | A dangerous trigger (`pull_request_target`, `workflow_run`) runs with untrusted pull request content. |
 | [CI007](CI007.md) | no-event-interpolation-in-run | error | manual | P+ | false | A `run:` script interpolates an expression an attacker can influence. |
 | [CI010](CI010.md) | checkout-no-persist | advisory | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
@@ -377,6 +376,7 @@
 | [SCENE002](SCENE002.md) | scene-data-id-invalid | error | manual | P+ | true | Every element of a scene carries a stable, unique `data-id`. |
 | [SCENE003](SCENE003.md) | scene-tag-unknown | error | manual | P+ | true | A scene uses only the HTML tags of the scene dialect, plus capitalised component tags. |
 | [SCENE004](SCENE004.md) | scene-at-rule-unsupported | error | manual | P+ | true | A scene stylesheet uses only `@media`. |
+| [SCENE005](SCENE005.md) | scene-document-unloadable | error | manual | P+ | true | Every scene document under `design/scenes` loads, and each scene name is used once. |
 
 ## SCOPE
 

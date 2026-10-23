@@ -1,0 +1,1 @@
+Scene discovery now loads nested, any-case .scene.html files through the scene reader, and the new SCENE005 rule reports files that are unreadable, not UTF-8, empty or duplicate-named instead of skipping them silently.

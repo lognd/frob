@@ -309,6 +309,7 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "SCENE002",
             "SCENE003",
             "SCENE004",
+            "SCENE005",
             "SIZE001",
             "SLOP001",
             "SLOP003",
@@ -488,7 +489,7 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 91);
+    assert_eq!(ids.len(), 92);
     assert!(ids.contains(&"SPACE001"));
 }
 

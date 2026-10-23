@@ -40,14 +40,14 @@ fn discovers_and_parses_scene_html_files_recursively_in_path_order() {
     assert_eq!(
         paths(&load),
         [
+            "design/scenes/Z.scene.HTML",
             "design/scenes/b.scene.html",
             "design/scenes/nested/deep/a.scene.html",
-            "design/scenes/Z.scene.HTML",
         ]
     );
     assert!(load.problems.is_empty(), "{:?}", load.problems);
-    assert_eq!(load.docs[2].doc.elements.len(), 1);
-    assert_eq!(load.docs[0].text, GOOD);
+    assert_eq!(load.docs[0].doc.elements.len(), 1);
+    assert_eq!(load.docs[1].text, GOOD);
 }
 
 // frob:tests load_scene_docs

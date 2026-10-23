@@ -115,6 +115,7 @@ pub mod scene002;
 pub mod scene003;
 /// Rule `SCENE004`.
 pub mod scene004;
+/// Rule `SCENE005`.
 pub mod scene005;
 /// Rule `SIZE001`.
 pub mod size001;
