@@ -79,6 +79,7 @@ mod status_relation;
 pub mod style;
 mod symref;
 mod term;
+mod wire;
 
 pub use answer::{Answer, Truth};
 pub use attrs::{AttrValue, Attributes, reserved};
@@ -107,3 +108,4 @@ pub use select::{
 pub use status_relation::StatusRelation;
 pub use symref::{Anchor, Identity, IdentityDelta, Segment, Symref, SymrefError};
 pub use term::{Node, NodeId, NodeSpec, Term, TermBuilder, TermError};
+pub use wire::TERM_SCHEMA_VERSION;

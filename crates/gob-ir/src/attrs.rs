@@ -24,7 +24,9 @@ pub mod reserved {
 }
 
 /// A structured attribute value.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum AttrValue {
     /// A boolean flag.
     Bool(bool),
@@ -70,7 +72,7 @@ impl From<String> for AttrValue {
 /// a.set("visibility", "pub");
 /// assert_eq!(a.get("visibility"), Some(&AttrValue::Str("pub".into())));
 /// ```
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Attributes {
     map: BTreeMap<String, AttrValue>,
 }

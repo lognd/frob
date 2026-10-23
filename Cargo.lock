@@ -2750,7 +2750,9 @@ dependencies = [
  "gob-text",
  "gob-walk",
  "inventory",
+ "postcard",
  "proptest",
+ "serde",
  "thiserror",
  "tracing",
 ]

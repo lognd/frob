@@ -4,7 +4,9 @@
 use std::fmt;
 
 /// The result sort of an operator.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum Sort {
     /// A declaration (`unit`, `anon`, `attr`).
     Decl,
@@ -32,7 +34,9 @@ impl Sort {
 }
 
 /// The ordering discipline of a `group` (universal-model.md 2.3).
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum GroupOrder {
     /// Evaluated in order.
     Sequence,
@@ -72,7 +76,7 @@ impl GroupOrder {
 }
 
 /// The thirteen universal operators with their parameters.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Universal {
     /// A nameable entity; `role` distinguishes parts of one identity.
     Unit {
@@ -150,7 +154,7 @@ pub enum Universal {
 }
 
 /// A language-specific operator extending the universal signature.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct AdapterOp {
     /// Language tag (`rust`, `prolog`).
     pub lang: String,
@@ -161,7 +165,7 @@ pub struct AdapterOp {
 }
 
 /// An operator of `Sigma_U` + `Sigma_L`.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Operator {
     /// One of the thirteen universal operators.
     Universal(Universal),

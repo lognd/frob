@@ -3,14 +3,15 @@
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 // frob:ticket 01M4D6NGJANPW3T3DKM77B0T1W
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
+// frob:ticket 01M4HB1ZAX0Q6QHK1DK3Y3EZ9E
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, OnceLock};
 
 use gob_cache::{ArtifactKey, Cache};
-use gob_ir::{NodeId, Operator, Term, Universal};
+use gob_ir::{NodeId, Operator, ScopeGraph, Term, Universal};
 use gob_symbols::{Adapter, Fidelity, FileSymbols, Folded, adapter_for};
 
 use crate::frob_owned::STATE_DIR;
@@ -19,6 +20,20 @@ use rayon::prelude::*;
 
 /// The tag of a file no adapter claims.
 pub const OPAQUE: &str = "opaque";
+
+/// Process-wide count of adapter parses (`fold_file` calls), for the warm-cache counter test.
+static ADAPTER_FOLDS: AtomicUsize = AtomicUsize::new(0);
+
+/// How many adapter parses this process has run so far (cache hits do not count).
+pub fn adapter_folds() -> usize {
+    ADAPTER_FOLDS.load(Ordering::Relaxed)
+}
+
+/// Parses and folds one file, counting the parse.
+fn counted_fold(e: &FileEntry, text: &str) -> Result<Folded, gob_symbols::FoldError> {
+    ADAPTER_FOLDS.fetch_add(1, Ordering::Relaxed);
+    gob_symbols::fold_file(e, text)
+}
 
 /// One walked file with what folding it produced.
 ///
@@ -46,6 +61,17 @@ pub struct CodeFile {
     folded: OnceLock<Option<Folded>>,
     /// Where to re-fold from: the source root and the walk entry.
     origin: (PathBuf, FileEntry),
+    /// The artifact cache the folded term is read from and written back to.
+    cache: CacheHandle,
+}
+
+/// A shared handle on the artifact cache (the cache itself has no `Debug`).
+struct CacheHandle(Arc<Cache>);
+
+impl std::fmt::Debug for CacheHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("CacheHandle")
+    }
 }
 
 /// How many files a [`Code::build`] folded from source versus read from the artifact cache.
@@ -98,8 +124,18 @@ impl CodeFile {
                 if self.unreadable {
                     return None;
                 }
-                tracing::debug!(path = %self.path, "folding on demand (term not cached)");
                 let (root, entry) = &self.origin;
+                if let (Some(a), Some(symbols)) = (adapter_for(&entry.language), &self.symbols)
+                    && let Some((term, scopes)) = cached_term(&self.cache.0, entry, a)
+                {
+                    tracing::debug!(path = %self.path, "term and scopes read from cache");
+                    return Some(Folded {
+                        term,
+                        scopes,
+                        file: symbols.clone(),
+                    });
+                }
+                tracing::debug!(path = %self.path, "folding on demand (term not cached)");
                 let text = if adapter_for(&entry.language).is_some() {
                     match std::fs::read_to_string(root.join(&entry.path)) {
                         Ok(t) => t,
@@ -111,8 +147,15 @@ impl CodeFile {
                 } else {
                     String::new()
                 };
-                match gob_symbols::fold_file(entry, &text) {
-                    Ok(f) => Some(f),
+                match counted_fold(entry, &text) {
+                    Ok(f) => {
+                        if let Some(a) = adapter_for(&entry.language)
+                            && !f.file.degraded
+                        {
+                            store_term(&self.cache.0, entry, a, &f);
+                        }
+                        Some(f)
+                    }
                     Err(err) => {
                         tracing::error!(path = %self.path, %err, "adapter bug: fold failed");
                         None
@@ -178,11 +221,15 @@ pub struct Code {
 impl Code {
     /// Fold every entry of `entries` under `root` (in parallel), using the repository-shared cache.
     pub fn build(root: &Path, entries: &[FileEntry]) -> Self {
-        Self::build_with(root, entries, &Cache::open_shared(root, STATE_DIR))
+        Self::build_with(
+            root,
+            entries,
+            &Arc::new(Cache::open_shared(root, STATE_DIR)),
+        )
     }
 
     /// Like [`Code::build`] with an explicit artifact `cache`.
-    pub fn build_with(root: &Path, entries: &[FileEntry], cache: &Cache) -> Self {
+    pub fn build_with(root: &Path, entries: &[FileEntry], cache: &Arc<Cache>) -> Self {
         let cached = AtomicUsize::new(0);
         let mut files: Vec<CodeFile> = entries
             .par_iter()
@@ -261,6 +308,43 @@ fn cached_facts(
     }
 }
 
+/// The cache key of the folded term and scope graph (schema version rides in the identity).
+fn term_key(e: &FileEntry, adapter: &dyn Adapter) -> ArtifactKey {
+    ArtifactKey {
+        content_digest: e.digest.to_string(),
+        producer_identity: format!(
+            "grimble-bind/term-v{}/{}",
+            gob_ir::TERM_SCHEMA_VERSION,
+            adapter.identity()
+        ),
+    }
+}
+
+/// The cached term and scope graph of `e`; `None` on a miss, a corrupt entry or a mismatched pair.
+fn cached_term(cache: &Cache, e: &FileEntry, adapter: &dyn Adapter) -> Option<(Term, ScopeGraph)> {
+    let bytes = cache.get_artifact(&term_key(e, adapter))?;
+    let (term, scopes): (Term, ScopeGraph) = match postcard::from_bytes(&bytes) {
+        Ok(pair) => pair,
+        Err(err) => {
+            tracing::warn!(path = %e.path, %err, "cached term undecodable; refolding");
+            return None;
+        }
+    };
+    if !scopes.nodes_within(term.len()) {
+        tracing::warn!(path = %e.path, "cached scope graph does not fit its term; refolding");
+        return None;
+    }
+    Some((term, scopes))
+}
+
+/// Writes the folded term and scope graph to `cache`, best-effort.
+fn store_term(cache: &Cache, e: &FileEntry, adapter: &dyn Adapter, folded: &Folded) {
+    match postcard::to_stdvec(&(&folded.term, &folded.scopes)) {
+        Ok(bytes) => cache.put_artifact(&term_key(e, adapter), &bytes),
+        Err(err) => tracing::warn!(path = %e.path, %err, "term not serializable; not cached"),
+    }
+}
+
 /// Decodes a cached payload; `None` (and a warning) when it is undecodable.
 fn postcard_decode(bytes: &[u8]) -> Option<FileSymbols> {
     match postcard::from_bytes(bytes) {
@@ -277,18 +361,18 @@ fn postcard_encode(fs: &FileSymbols) -> Option<Vec<u8>> {
     postcard::to_stdvec(fs).ok()
 }
 
-fn fold_entry(root: &Path, e: &FileEntry, cache: &Cache, cached: &AtomicUsize) -> CodeFile {
+fn fold_entry(root: &Path, e: &FileEntry, cache: &Arc<Cache>, cached: &AtomicUsize) -> CodeFile {
     let adapter = adapter_for(&e.language);
     let language = adapter.map_or(OPAQUE, |a| a.language()).to_owned();
     if let Some(a) = adapter
-        && let Some((fs, unseen, binds)) = cached_facts(cache, e, a)
+        && let Some((fs, unseen, binds)) = cached_facts(cache.as_ref(), e, a)
     {
         let text = if binds {
             match std::fs::read_to_string(root.join(&e.path)) {
                 Ok(t) => Some(t),
                 Err(err) => {
                     tracing::warn!(path = %e.path, %err, "file unreadable; all of it is unseen");
-                    return unreadable(root, e, language);
+                    return unreadable(root, e, language, cache);
                 }
             }
         } else {
@@ -306,6 +390,7 @@ fn fold_entry(root: &Path, e: &FileEntry, cache: &Cache, cached: &AtomicUsize) -
             unseen,
             folded: OnceLock::new(),
             origin: (root.to_path_buf(), e.clone()),
+            cache: CacheHandle(Arc::clone(cache)),
         };
     }
     let text = if adapter.is_some() {
@@ -313,13 +398,13 @@ fn fold_entry(root: &Path, e: &FileEntry, cache: &Cache, cached: &AtomicUsize) -
             Ok(t) => Some(t),
             Err(err) => {
                 tracing::warn!(path = %e.path, %err, "file unreadable; all of it is unseen");
-                return unreadable(root, e, language);
+                return unreadable(root, e, language, cache);
             }
         }
     } else {
         None
     };
-    match gob_symbols::fold_file(e, text.as_deref().unwrap_or("")) {
+    match counted_fold(e, text.as_deref().unwrap_or("")) {
         Ok(folded) => {
             let unseen = term_has_unseen(&folded.term);
             let binds = text.as_deref().is_some_and(|t| t.contains("grimble:binds"));
@@ -327,6 +412,7 @@ fn fold_entry(root: &Path, e: &FileEntry, cache: &Cache, cached: &AtomicUsize) -
                 && !folded.file.degraded
             {
                 store_facts(cache, e, a, &folded.file, unseen, binds);
+                store_term(cache, e, a, &folded);
             }
             CodeFile {
                 path: e.path.clone(),
@@ -339,11 +425,12 @@ fn fold_entry(root: &Path, e: &FileEntry, cache: &Cache, cached: &AtomicUsize) -
                 unseen,
                 folded: OnceLock::from(Some(folded)),
                 origin: (root.to_path_buf(), e.clone()),
+                cache: CacheHandle(Arc::clone(cache)),
             }
         }
         Err(err) => {
             tracing::error!(path = %e.path, %err, "adapter bug: fold failed");
-            unreadable(root, e, language)
+            unreadable(root, e, language, cache)
         }
     }
 }
@@ -375,7 +462,7 @@ fn store_facts(
     );
 }
 
-fn unreadable(root: &Path, e: &FileEntry, language: String) -> CodeFile {
+fn unreadable(root: &Path, e: &FileEntry, language: String, cache: &Arc<Cache>) -> CodeFile {
     CodeFile {
         path: e.path.clone(),
         hint: e.language.clone(),
@@ -387,5 +474,6 @@ fn unreadable(root: &Path, e: &FileEntry, language: String) -> CodeFile {
         unseen: true,
         folded: OnceLock::from(None),
         origin: (root.to_path_buf(), e.clone()),
+        cache: CacheHandle(Arc::clone(cache)),
     }
 }

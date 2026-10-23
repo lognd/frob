@@ -15,11 +15,13 @@ gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 inventory = "0.3"
+serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 tracing = "0.1"
 
 [dev-dependencies]
 criterion = { version = "0.5", default-features = false }
+postcard = { version = "1", default-features = false, features = ["use-std"] }
 proptest = "1"
 inventory = "0.3"
 
