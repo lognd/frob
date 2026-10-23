@@ -64,15 +64,6 @@ grimble graph --json                       # the graph export, section 3.8
 - `--base <ref>` is the ref diff-scoped rules diff against. frob passes
   `[check] base`; a sibling with no diff-scoped rule echoes it and
   ignores it.
-- `grimble check --summary` (grimble only, not part of the contract)
-  replaces `data` with a compact summary, `grimble.check-summary/1`,
-  in text and JSON mode alike: findings per rule and severity, the
-  capability cells per node (read from the CAP findings), the
-  `compute_digest` and a `document_digest` of the full document
-  (without `timing`). It stays under 64 KB, the size cap of file
-  evidence, by aggregation: per-node rows fold into per-signature
-  counts and then totals (`capabilities.nodes_detail` names the tier),
-  never into a cut list. The exit code is that of the full run.
 - The sibling reads the same `[compute]` table as frob (architecture.md
   section 6): from `frob.toml`, or from its own `grimble.toml` when no
   `frob.toml` exists.
