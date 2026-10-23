@@ -25,13 +25,41 @@ mod workspace;
 
 use std::path::Path;
 
-use gob_cli::clap::ArgMatches;
+use gob_cli::clap::{Arg, ArgAction, ArgMatches};
 use gob_cli::{Cli, Context, Outcome};
 use gob_product::{CheckOptions, Product, ProductRun};
 use serde_json::Value;
 
 /// Product name, also the config file stem (`grimble.toml`).
 pub const PRODUCT: &str = "grimble";
+
+/// The `check --summary` flag id and spelling.
+const SUMMARY_FLAG: &str = "summary";
+
+/// Replace the data of a finished `check` with `summary` when one was asked for.
+///
+/// The gate verdict, the exit code and the warnings are untouched; a gate failure keeps its
+/// message and only its data is swapped, so `--summary` is as strict as the full run.
+fn with_summary(outcome: Outcome<Value>, summary: Option<Value>) -> Outcome<Value> {
+    let Some(summary) = summary else {
+        return outcome;
+    };
+    tracing::debug!("check data replaced by the summary");
+    match outcome {
+        Ok(mut payload) => {
+            payload.data = summary;
+            Ok(payload)
+        }
+        Err(gob_cli::CliError::Gate {
+            message, warnings, ..
+        }) => Err(gob_cli::CliError::Gate {
+            message,
+            data: summary,
+            warnings,
+        }),
+        Err(other) => Err(other),
+    }
+}
 
 /// grimble as a [`Product`]: the generic verbs plus `ack`, `init`, `fmt` and `exceptions list`.
 #[derive(Debug, Clone, Copy, Default)]
@@ -52,8 +80,10 @@ impl Product for GrimbleProduct {
         ctx: &Context,
         root: &Path,
         opts: &CheckOptions,
-        _matches: &ArgMatches,
+        matches: &ArgMatches,
     ) -> Outcome<Value> {
+        // frob:ticket 01M4HEMDB8A1X1RQFNVJB1G32M
+        let summarize = matches.get_flag(SUMMARY_FLAG);
         let run = grimble_check::run(
             root,
             &grimble_check::CheckOptions {
@@ -65,18 +95,35 @@ impl Product for GrimbleProduct {
         )
         .map(|run| {
             let document = grimble_check::sibling_document(&run);
+            let summary = summarize.then(|| grimble_check::summary_document(&document));
             let mut warnings = run.warnings;
             // frob:ticket 01M406M2HX6Z6SEGM6HRPQKHAV
             if let Some(base) = opts.base.as_deref() {
                 warnings.extend(vet_cmd::check_warnings(root, base));
             }
-            ProductRun {
-                report: run.report,
-                document,
-                warnings,
-            }
+            (
+                ProductRun {
+                    report: run.report,
+                    document,
+                    warnings,
+                },
+                summary,
+            )
         });
-        gob_product::sibling_check(Self::NAME, ctx, run)
+        let (run, summary) = match run {
+            Ok((run, summary)) => (Ok(run), summary),
+            Err(e) => (Err(e), None),
+        };
+        with_summary(gob_product::sibling_check(Self::NAME, ctx, run), summary)
+    }
+
+    fn configure_check(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_product::shared_flags(cmd).arg(
+            Arg::new(SUMMARY_FLAG)
+                .long(SUMMARY_FLAG)
+                .action(ArgAction::SetTrue)
+                .help("Print a compact summary (under 64 KB) instead of the whole document, in text and JSON mode alike"),
+        )
     }
 
     fn doctor(_ctx: &Context, root: &Path, _matches: &ArgMatches) -> Outcome<doctor::DoctorData> {

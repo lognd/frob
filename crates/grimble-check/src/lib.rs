@@ -57,6 +57,7 @@ pub mod product_rules;
 pub mod report_cache;
 pub mod rules;
 pub mod sibling;
+pub mod summary;
 pub mod unit_role;
 pub mod websec_pack;
 
@@ -70,6 +71,7 @@ pub use host::GrimbleHost;
 pub use model_view::ModelView;
 pub use product::{Grimble, GrimbleInputs, GrimbleShared, MODEL_EXTENSION};
 pub use sibling::{SCHEMA_VERSION, exceptions_json, sibling_document};
+pub use summary::{SUMMARY_BUDGET, summary_document};
 
 use config::{ComputeTable, GrimbleTable, PRODUCT, PacksTable};
 use gob_walk::FileEntry;
