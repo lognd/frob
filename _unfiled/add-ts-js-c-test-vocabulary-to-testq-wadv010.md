@@ -2,7 +2,8 @@
 id = "01M5HJNEBY5YBCJB06D5ZSH4H5"
 title = "Add TS/JS/C# test vocabulary to testq (WADV010)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
