@@ -2,13 +2,13 @@
 id = "01M5F0111KG4GZSMSS7PX9D61N"
 title = "grimble-ci: wire analyze into a product; extract shared verdict type from grimble-arch"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-21T10:27:34Z"
-updated = "2026-10-23T07:45:19Z"
+updated = "2026-10-23T07:45:20Z"
 scope = ["crates/grimble-ci/**", "crates/grimble-arch/**", "crates/grimble-check/**", "Cargo.lock"]
 
 [[acceptance]]
