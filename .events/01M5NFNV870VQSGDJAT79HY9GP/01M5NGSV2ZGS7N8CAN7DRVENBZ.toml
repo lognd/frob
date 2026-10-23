@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given explain_cmd PAGES, when the test the_table_covers_every_generated_page_of_the_product runs, then it passes with COV004, DOC003 and DOC006 listed"]
+moved = []
+at = "2026-10-23T23:16:11Z"
+actor = "lognd"
+rev = 1
