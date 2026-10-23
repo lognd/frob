@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:27:39Z"
-updated = "2026-10-23T09:21:17Z"
+updated = "2026-10-23T09:23:33Z"
 scope = ["crates/grimble-check/**", "docs/design/**", "docs/reference/rules/**", "Cargo.lock"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "COH003 tests cover model-supplied layers, the module-depth fallback, and docs/design/cohesion.md section 1.2 names the layer source"
-bound = false
+bound = true
 +++
 
 Nothing fills Coh003Options.layers; read layers from the model or module depth. Also update docs/design/cohesion.md section 1.2 with the layer source.

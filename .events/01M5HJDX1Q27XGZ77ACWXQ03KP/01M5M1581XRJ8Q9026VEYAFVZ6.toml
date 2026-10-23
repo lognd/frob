@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T09:23:33Z"
+digest = "03457ade7dd12e8f8f5c11018fe18052918c24a85f8d5ce9234538601f51ee4b"
+exit_code = 0
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1b9c1079-03fa-456b-8f7d-4f665c34b4bc with nextest profile: default
+    Starting 1 test across 1 binary (7 tests skipped)
+        PASS [   0.005s] grimble-check::coh003_layers module_depth_fills_layers_without_a_model
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 7 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test coh003_layers module_depth_fills_layers_without_a_model"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "b115fff97d1e91103808dcbf2865acd8cb6381c2f6aa26dafe3140f1c94a0c22"
+at = "2026-10-23T09:23:33Z"
+actor = "lognd"
+rev = 1
