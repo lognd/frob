@@ -279,13 +279,20 @@ fn upgrade_guide_has_the_v1_branch_merge_recipe() {
     }
 }
 
-/// The upgrade guide says 0.532.0 is on PyPI and no longer calls it unpublished.
+/// The upgrade guide says 0.532.0 is on `PyPI` and no longer calls it unpublished.
 // frob:ticket 01M4GK56B7ADTTC87X31CR03NE
 #[test]
 fn upgrade_guide_says_0_532_0_is_published() {
     let text = upgrade_guide();
-    assert!(text.contains("0.532.0 is on PyPI"), "states it is published");
-    for stale in ["not published yet", "is published,", "once 0.532.0 is published"] {
+    assert!(
+        text.contains("0.532.0 is on PyPI"),
+        "states it is published"
+    );
+    for stale in [
+        "not published yet",
+        "is published,",
+        "once 0.532.0 is published",
+    ] {
         assert!(!text.contains(stale), "stale wording: {stale}");
     }
 }
