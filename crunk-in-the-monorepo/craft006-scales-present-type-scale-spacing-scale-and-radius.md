@@ -2,7 +2,8 @@
 id = "01M5HM3VTW5FAZQ3TXM8XH739S"
 title = "CRAFT006 scales present: type scale, spacing scale and radius policy presence paired with SLOP022 and TYPE rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
