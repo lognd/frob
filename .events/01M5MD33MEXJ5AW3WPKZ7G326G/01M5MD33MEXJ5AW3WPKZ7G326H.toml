@@ -1,0 +1,10 @@
+kind = "create"
+title = "Expose full capability matrix to grimble check --summary"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-bind/src/**"]
+body = "Found while working JB1G32M: summary derives per-node cells from CAP findings only, so uses/denied/excused cells are absent."
+at = "2026-10-23T12:52:06Z"
+actor = "lognd"
+rev = 1
