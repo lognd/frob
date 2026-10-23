@@ -10,6 +10,7 @@
 //! - A release of a different event, handler, receiver or handle does not pair the acquire.
 //! - A `+=` counts as a subscription only when the target is a declared or well-known event, the
 //!   handler is a method of the class or an anonymous function; `total += value` is arithmetic.
+//! - A `partial` class may release in another part this file cannot see, so its sites are Unknown.
 //! - Static events pair by their full target text (`GameManager.OnWin`).
 
 // frob:ticket 01M4D955ZSR7MHM6TXXD49JJ4V
@@ -635,11 +636,19 @@ fn judge(
     Some((a.certainty, reason))
 }
 
+/// True when the class declaration carries the `partial` modifier.
+fn is_partial(class: Node<'_>, src: &str) -> bool {
+    named_children(class)
+        .iter()
+        .any(|c| c.kind() == "modifier" && text(*c, src) == "partial")
+}
+
 /// Scans one class declaration.
 fn scan_class(class: Node<'_>, src: &str, out: &mut Vec<Site>) {
     let Some(body) = class.child_by_field_name("body") else {
         return;
     };
+    let partial = is_partial(class, src);
     let methods = methods_of(body, src);
     let facts = class_facts(body, src);
     let rels = releases(&methods, src);
@@ -656,7 +665,11 @@ fn scan_class(class: Node<'_>, src: &str, out: &mut Vec<Site>) {
             continue;
         };
         for a in acquires_in(mbody, class, &facts, src) {
-            if let Some((certainty, reason)) = judge(&a, &rels, teardown.is_some(), src) {
+            if let Some((mut certainty, reason)) = judge(&a, &rels, teardown.is_some(), src) {
+                // The release may sit in another part of a partial class, which this file cannot see.
+                if partial {
+                    certainty = Certainty::Unknown;
+                }
                 out.push(Site {
                     pair: a.pair.id,
                     range: span(a.node.start_byte(), a.node.end_byte()),
