@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T15:23:57Z"
+digest = "6e05b2895a8c237ee50fa078dd93a510ef3a2808122f38c19c5b656eb61203da"
+exit_code = 0
+head = "8a130c37acca6c2107db62b472c5b10fb3bb284d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3d9e7660-ba7e-4c9e-861c-8c8fe6461e60 with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   0.241s] grimble-bind::corpus every_corpus_case_matches_its_expectations
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.242s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test corpus every_corpus_case_matches_its_expectations"
+size = 532
+status = "measured"
+test_count = 1
+tests_digest = "6c3802e51a8d01f2abfb5bbda0d60b24bbe4f5d777a7501f18eeedc66f00d5d9"
+at = "2026-10-23T15:23:57Z"
+actor = "lognd"
+rev = 1
