@@ -1,0 +1,64 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T15:22:21Z"
+digest = "0b3a52332ea0baf0599402292da71c51c28144852e5c39701083dca95f2355f4"
+exit_code = 0
+head = "8a130c37acca6c2107db62b472c5b10fb3bb284d"
+inline = '''
+   Compiling zerocopy-derive v0.8.59
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling darling_core v0.20.11
+   Compiling zerocopy v0.8.59
+   Compiling indexmap v2.14.2
+   Compiling serde_json v1.0.151
+   Compiling darling_macro v0.20.11
+   Compiling winnow v1.0.4
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling ahash v0.8.12
+   Compiling hashbrown v0.14.5
+   Compiling half v2.7.1
+   Compiling darling v0.20.11
+   Compiling tree-sitter v0.27.0
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling clap_builder v4.6.7
+   Compiling ciborium-ll v0.2.2
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling hashlink v0.9.1
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling rusqlite v0.32.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling ciborium v0.2.2
+   Compiling clap v4.6.7
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling tinytemplate v1.2.1
+   Compiling petgraph v0.8.3
+   Compiling criterion v0.5.1
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 47.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aa97554d-536f-43e2-87be-2e45dc430bb4 with nextest profile: default
+    Starting 1 test across 1 binary (69 tests skipped)
+        PASS [   0.004s] gob-symbols markdown::tests::github_slugs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 69 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols --lib github_slugs"
+size = 2198
+status = "measured"
+test_count = 1
+tests_digest = "8c9802b0547957df40d9e33070a7136d9eb8355b4b045608f0226262a4089491"
+at = "2026-10-23T15:22:21Z"
+actor = "lognd"
+rev = 1

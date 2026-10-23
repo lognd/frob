@@ -8,14 +8,14 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:53Z"
-updated = "2026-10-23T15:20:32Z"
+updated = "2026-10-23T15:22:21Z"
 idempotency_key = "logand-gaps-V1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["docs/design/grmb-spec.md", "docs/design/binding.md", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given the decision, when grmb-spec 4.5 is read, then it defines table-row id anchors, explicit {#id} anchors and GitHub slug rules for code spans"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a test backed by several runner ids and a manual test, when the spec is read, then each has a stated form and finding"
