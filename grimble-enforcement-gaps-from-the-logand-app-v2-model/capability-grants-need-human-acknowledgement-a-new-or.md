@@ -2,13 +2,13 @@
 id = "01M4GYBNW01DT1MJ6NJN2GX6NN"
 title = "Capability grants need human acknowledgement: a new or widened may grant is a finding until acked by an attester, so agents cannot self-approve the ceilings they are checked against"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T18:21:12Z"
-updated = "2026-10-09T18:21:12Z"
+updated = "2026-10-23T20:45:16Z"
 labels = ["grimble", "adoption:logand-app"]
 scope = ["crates/grimble*/**", "changelog.d/**"]
 
