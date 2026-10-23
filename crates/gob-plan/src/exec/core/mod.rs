@@ -462,6 +462,15 @@ pub(crate) fn evaluator<'a>(
     ))
 }
 
+/// Like [`evaluator`], with `certainly`/`possibly` read as identity: the `V0` of grl-spec.md 7.0.4.
+pub(crate) fn identity_evaluator<'a>(
+    plan: &'a Plan,
+    input: &Input<'a>,
+    rels: &'a Relations,
+) -> Result<Eval<'a>, ExecError> {
+    evaluator(plan, input, rels).map(Eval::with_identity_collapse)
+}
+
 /// Counts the members of the quantifier `quant` (an op of `plan`) under the bindings of `row`:
 /// `[l, h]` where `l` counts those whose body is certainly true and `h` those for which it is not
 /// certainly false, `h` unbounded when the model has unread regions (grl-spec.md 7.0.2).

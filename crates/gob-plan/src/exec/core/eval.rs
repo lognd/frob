@@ -99,6 +99,8 @@ pub(crate) struct Eval<'a> {
     pub(crate) plan: &'a PlanParts,
     pub(crate) rd: Reader<'a>,
     pub(crate) hidden: bool,
+    /// Whether `certainly`/`possibly` read as identity (grl-spec.md 7.0.4: the value `V0`).
+    identity: bool,
     kinds: HashMap<StrId, KindTest>,
     matchers: HashMap<OpId, Matcher>,
     wired: Wired<'a>,
@@ -173,6 +175,7 @@ impl<'a> Eval<'a> {
             plan,
             rd: Reader { model, source },
             hidden,
+            identity: false,
             kinds,
             matchers,
             wired,
@@ -185,6 +188,22 @@ impl<'a> Eval<'a> {
             views: RefCell::default(),
             steps: Cell::new(0),
             snippets: RefCell::default(),
+        }
+    }
+
+    /// This evaluator with the `certainly`/`possibly` collapses read as identity (`V0`, 7.0.4).
+    #[must_use]
+    pub(crate) fn with_identity_collapse(mut self) -> Self {
+        self.identity = true;
+        self
+    }
+
+    /// The certainty to apply: the op's own, or `Default` when collapses read as identity.
+    fn effective(&self, certainty: Certainty) -> Certainty {
+        if self.identity {
+            Certainty::Default
+        } else {
+            certainty
         }
     }
 
@@ -386,7 +405,7 @@ impl<'a> Eval<'a> {
         }
         // A statement wrapper has no edges of its own; the call it wraps does (`s resolves to p`).
         let a = unwrap_statement(self.rd.model, a);
-        relations::verb(self.wired.edges[&verb], a, b, certainty)
+        relations::verb(self.wired.edges[&verb], a, b, self.effective(certainty))
     }
 
     fn eval_op(&self, id: OpId, env: &mut Env) -> Verdict {
@@ -484,7 +503,7 @@ impl<'a> Eval<'a> {
                     self.closures.borrow_mut().insert(key, Rc::clone(&c));
                     c
                 });
-                relations::reaches_in(&closure, a, b, *within, *certainty)
+                relations::reaches_in(&closure, a, b, *within, self.effective(*certainty))
             }
             Op::Find { .. } | Op::FindSide { .. } => {
                 unreachable!("binders are clauses, enumerated by the run")

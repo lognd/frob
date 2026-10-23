@@ -442,6 +442,10 @@ fn reason_words(reason: &UnresolvedReason) -> (&'static str, &'static str) {
             "a file parsed only partially, with holes",
             "fix the parse errors",
         ),
+        UnresolvedReason::Budget => (
+            "the evaluation budget ran out before the answer was decided",
+            "raise the budget or narrow the scope",
+        ),
     }
 }
 
