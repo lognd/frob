@@ -2,7 +2,8 @@
 id = "01M4FGZ39WXWBRDRHW2ADSY7K8"
 title = "vmodel ref: resolve table-row id anchors and slugs, and report a malformed ref"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
