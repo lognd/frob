@@ -2,12 +2,12 @@
 id = "01M5KQCAD16D6T307SXYNP04N0"
 title = "Fix failing frob-check fidelity tests on experimental"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T06:32:39Z"
-updated = "2026-10-23T06:32:39Z"
+updated = "2026-10-23T06:37:27Z"
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
