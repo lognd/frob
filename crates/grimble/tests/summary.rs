@@ -49,11 +49,18 @@ fn summary_of_a_large_model_is_compact() {
     large_model(dir.path(), 500);
     let full = check(dir.path(), &["check", "--json"]);
     let full_len = full["data"].to_string().len();
-    assert!(full_len > 64 * 1024, "model is not large enough: {full_len}");
+    assert!(
+        full_len > 64 * 1024,
+        "model is not large enough: {full_len}"
+    );
 
     let first = check(dir.path(), &["check", "--summary", "--json"]);
     let data = &first["data"];
-    assert!(data.to_string().len() < 64 * 1024, "{}", data.to_string().len());
+    assert!(
+        data.to_string().len() < 64 * 1024,
+        "{}",
+        data.to_string().len()
+    );
     assert_eq!(data["schema_version"], "grimble.check-summary/1");
     assert_eq!(data["compute_digest"], full["data"]["compute_digest"]);
     assert!(

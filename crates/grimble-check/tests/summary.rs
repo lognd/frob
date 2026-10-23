@@ -15,8 +15,10 @@ fn document(nodes: usize) -> Value {
     let mut entities = Vec::new();
     let mut findings = Vec::new();
     for i in 0..nodes {
-        entities.push(json!({"kind": "node", "anchor": format!("m.n{i}"), "file": "m.grmb",
-                             "range": {"start": i, "end": i + 1}}));
+        entities.push(
+            json!({"kind": "node", "anchor": format!("m.n{i}"), "file": "m.grmb",
+                             "range": {"start": i, "end": i + 1}}),
+        );
         for _ in 0..i % 8 {
             findings.push(finding("CAP001", "error", i));
         }

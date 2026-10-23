@@ -125,8 +125,7 @@ fn signature_json(sig: Signature) -> Value {
 ///
 /// Returns the tier name and its value. Nodes with no cell finding are only counted.
 fn node_section(nodes: &BTreeMap<String, Signature>) -> (&'static str, Value) {
-    let flagged: Vec<(&String, &Signature)> =
-        nodes.iter().filter(|(_, s)| **s != [0; 3]).collect();
+    let flagged: Vec<(&String, &Signature)> = nodes.iter().filter(|(_, s)| **s != [0; 3]).collect();
     let rows: Vec<Value> = flagged
         .iter()
         .map(|(anchor, s)| {
