@@ -12,6 +12,7 @@
 //! those callees named, never a silent pass. Nested functions and lambdas are other units.
 
 // frob:ticket 01M4CXSRE3YHY7FV30R8GMB58A
+// frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
 
 use std::collections::BTreeSet;
 
@@ -20,8 +21,55 @@ use gob_symbols::{Folded, def_use_of, syntax_for};
 use tracing::{debug, trace};
 
 use crate::coh001::{CohOptions, is_within, statements};
+use crate::config::CohTable;
 
-/// Knobs of COH002 (the `[coh]` table of cohesion.md, defaults here until the table lands).
+/// The built-in effect vocabulary: callee names (last path segment) that perform IO, messaging or persistence.
+pub const DEFAULT_EFFECT_CALLS: &[&str] = &[
+    "write",
+    "write_all",
+    "writeln",
+    "send",
+    "send_all",
+    "sendall",
+    "emit",
+    "publish",
+    "dispatch",
+    "save",
+    "persist",
+    "commit",
+    "execute",
+    "delete",
+    "remove",
+    "unlink",
+    "remove_file",
+    "mkdir",
+    "create_dir",
+    "rename",
+    "open",
+    "fetch",
+    "post",
+    "put",
+    "request",
+    "sleep",
+    "spawn",
+    "exit",
+    "flush",
+];
+
+/// The built-in effect vocabulary as owned strings (the `[coh] effect_calls` default).
+pub fn default_effect_calls() -> Vec<String> {
+    DEFAULT_EFFECT_CALLS
+        .iter()
+        .map(|s| (*s).to_owned())
+        .collect()
+}
+
+/// The built-in trivial vocabulary as owned strings (the `[coh] trivial` default).
+pub fn default_trivial() -> Vec<String> {
+    CohOptions::default().trivial
+}
+
+/// Knobs of COH002: the effect and trivial vocabularies, from the `[coh]` table or the built-ins.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Coh002Options {
     /// Callee names (last path segment) that perform an effect: IO, messaging, persistence.
@@ -33,40 +81,23 @@ pub struct Coh002Options {
 impl Default for Coh002Options {
     fn default() -> Self {
         Self {
-            effect_calls: [
-                "write",
-                "write_all",
-                "writeln",
-                "send",
-                "send_all",
-                "sendall",
-                "emit",
-                "publish",
-                "dispatch",
-                "save",
-                "persist",
-                "commit",
-                "execute",
-                "delete",
-                "remove",
-                "unlink",
-                "remove_file",
-                "mkdir",
-                "create_dir",
-                "rename",
-                "open",
-                "fetch",
-                "post",
-                "put",
-                "request",
-                "sleep",
-                "spawn",
-                "exit",
-                "flush",
-            ]
-            .map(str::to_owned)
-            .to_vec(),
-            trivial: CohOptions::default().trivial,
+            effect_calls: default_effect_calls(),
+            trivial: default_trivial(),
+        }
+    }
+}
+
+impl From<&CohTable> for Coh002Options {
+    /// The vocabularies of a loaded `[coh]` table; a configured list replaces the built-in one.
+    fn from(table: &CohTable) -> Self {
+        debug!(
+            effect_calls = table.effect_calls.len(),
+            trivial = table.trivial.len(),
+            "COH002 options from the [coh] table"
+        );
+        Self {
+            effect_calls: table.effect_calls.clone(),
+            trivial: table.trivial.clone(),
         }
     }
 }

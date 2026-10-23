@@ -79,6 +79,21 @@ Materialized: yes.
 | `expedite` | `u32` | `1` | no | Days an expedite claim may sit idle: a critical fix must not be parked on someone's absence. |
 | `intangible` | `u32` | `7` | no | Days an intangible claim (chores, debt) may sit idle: slow upkeep gets a longer leash. |
 
+## `[coh]`
+
+The `[coh]` table: the vocabularies COH002 ("decision with effects") judges callees against.
+
+A configured list replaces the built-in one (it does not extend it); an empty `effect_calls`
+turns COH002 off, an empty `trivial` makes logging calls unknown callees (Unresolved). A name
+in both lists is trivial. Callees match on their last path segment, so `a.b.send` is `send`.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `effect_calls` | `Vec<String>` | `["write", "write_all", "writeln", "send", "send_all", "sendall", "emit", "publish", "dispatch", "save", "persist", "commit", "execute", "delete", "remove", "unlink", "remove_file", "mkdir", "create_dir", "rename", "open", "fetch", "post", "put", "request", "sleep", "spawn", "exit", "flush"]` | no | Callee names that perform an effect (IO, messaging, persistence) when called inside a decision. |
+| `trivial` | `Vec<String>` | `["print", "println", "log", "debug", "info", "warn", "error", "trace", "assert"]` | no | Callee names that are trivial (logging, metrics, asserts) and never count as an effect. |
+
 ## `[compute]`
 
 The substrate `[compute]` knobs every product reads (architecture.md section 6).
