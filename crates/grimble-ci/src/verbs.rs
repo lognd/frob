@@ -11,7 +11,7 @@
 // frob:ticket 01M5F010Y998BXB67KPZ4T040N
 
 /// Top-level `frob` verbs and their subcommands (empty for a leaf verb), deprecated aliases included.
-const VERBS: &[(&str, &[&str])] = &[
+pub const VERBS: &[(&str, &[&str])] = &[
     ("schema", &[]),
     ("serve", &[]),
     ("check", &[]),
@@ -81,6 +81,7 @@ const VERBS: &[(&str, &[&str])] = &[
     ("land", &[]),
     ("train", &["status", "run", "drain", "drop"]),
     ("start", &[]),
+    ("merge-driver", &[]),
     ("help", &[]),
 ];
 

@@ -56,6 +56,7 @@ mod workflow;
 use std::collections::BTreeMap;
 
 pub use finding::CiFinding;
+pub use verbs::VERBS;
 
 /// The workflow rules that judge each parsed workflow (CI012 is joined separately).
 const WORKFLOW_RULES: [&str; 12] = [

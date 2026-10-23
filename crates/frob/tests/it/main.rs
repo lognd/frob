@@ -63,5 +63,6 @@ mod ticket_url;
 mod tour;
 mod triage;
 mod trust;
+mod verb_table_drift;
 mod wiring;
 mod work_unplanned;
