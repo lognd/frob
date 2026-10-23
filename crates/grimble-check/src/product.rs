@@ -18,11 +18,11 @@ use grimble_lints::pass::{PathFile, PathReport};
 use grimble_model::{ModelFiles, check_model, file_table};
 
 use crate::bind_cache::{self, BindSummary};
-use crate::coh002::Coh002Options;
 use crate::coh_pass::CohPassOptions;
-use crate::layers::ModelLayers;
+use crate::coh002::Coh002Options;
 use crate::config::{CohTable, GrimbleTable, PRODUCT, RuleOverrides};
 use crate::fidelity::language_tag;
+use crate::layers::ModelLayers;
 use crate::model_view::ModelView;
 use crate::report_cache;
 use crate::{bind_models, read_models};

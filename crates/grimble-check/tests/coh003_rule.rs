@@ -80,7 +80,11 @@ fn model_layers_make_coh003_fire_through_the_product() {
 // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
 #[test]
 fn a_single_depth_repo_is_unresolved_not_clean() {
-    let found = findings(&[("grimble.toml", "[check]\n"), ("top.py", TOP), ("price.py", PRICE)]);
+    let found = findings(&[
+        ("grimble.toml", "[check]\n"),
+        ("top.py", TOP),
+        ("price.py", PRICE),
+    ]);
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0]["severity"], "unresolved", "{found:?}");
 }

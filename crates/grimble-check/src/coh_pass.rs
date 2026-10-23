@@ -16,7 +16,7 @@ use gob_walk::{Digest, FileEntry, LanguageHint};
 use grimble_lints::pass::{PathFile, PathFinding, PathReport};
 
 use crate::coh002::{Coh002, Coh002Options, Coh002Unresolved, UnitRole, coh002};
-use crate::coh003::{Coh003, Coh003Options, DEFAULT_MAX_LEVEL_SPREAD, Coh003Unresolved, coh003};
+use crate::coh003::{Coh003, Coh003Options, Coh003Unresolved, DEFAULT_MAX_LEVEL_SPREAD, coh003};
 use crate::layers::{ModelLayers, coh003_options, definitions};
 use crate::unit_role::{declared_roles, resolve_role};
 
@@ -141,8 +141,7 @@ fn judge_coh002(f: &PathFile<'_>, folded: &Folded, opts: &Coh002Options, report:
         match verdict {
             Coh002::Fire { decisions, .. } => {
                 for d in decisions {
-                    let callees: Vec<&str> =
-                        d.effects.iter().map(|e| e.callee.as_str()).collect();
+                    let callees: Vec<&str> = d.effects.iter().map(|e| e.callee.as_str()).collect();
                     report.findings.push(PathFinding {
                         rule: COH002,
                         severity: Severity::Advisory,
