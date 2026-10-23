@@ -24,7 +24,9 @@ An acquire (timer, listener, request, observer, subscription) with no release on
 
 ## What it does
 
-Fires in TypeScript, TSX, JavaScript and JSX for a `useEffect`, `useLayoutEffect` or `useInsertionEffect` that starts a timer (`setInterval`, `setTimeout`, `requestAnimationFrame`), an event listener, a `fetch`, a `subscribe` or `addListener`, or an observer or socket (`IntersectionObserver`, `ResizeObserver`, `MutationObserver`, `WebSocket`, `EventSource`) and returns no cleanup that undoes it. A cleanup that releases a different handle, event type or handler does not pair the acquire, a `return` inside a nested function is not the effect's cleanup, and an `async` effect callback returns a promise, never a cleanup. A cleanup returned only under a branch, or a returned value the scan cannot read (an imported function), reports the rule Unresolved, never a guessed Warn. Other languages are not judged by this rule yet.
+Fires in TypeScript, TSX, JavaScript and JSX for a `useEffect`, `useLayoutEffect` or `useInsertionEffect` that starts a timer (`setInterval`, `setTimeout`, `requestAnimationFrame`), an event listener, a `fetch`, a `subscribe` or `addListener`, or an observer or socket (`IntersectionObserver`, `ResizeObserver`, `MutationObserver`, `WebSocket`, `EventSource`) and returns no cleanup that undoes it. A cleanup that releases a different handle, event type or handler does not pair the acquire, a `return` inside a nested function is not the effect's cleanup, and an `async` effect callback returns a promise, never a cleanup. A cleanup returned only under a branch, or a returned value the scan cannot read (an imported function), reports the rule Unresolved, never a guessed Warn. 
+
+In a Unity C# class (a file naming `UnityEngine` or `MonoBehaviour`) it fires for an event subscription (`+=`), `RegisterCallback`, `AddListener`, input action `Enable` or Addressables load made in `Awake`, `Start` or `OnEnable` that no `OnDisable` or `OnDestroy` undoes (following calls to methods of the same class). An anonymous handler, a release under a branch or loop, and any site in a `partial` class (the release may sit in another part) report the rule Unresolved. A plain .NET class is not judged. Other languages are not judged by this rule yet.
 
 ## Why it matters
 
@@ -98,9 +100,32 @@ export function Ticker({ tick }: { tick: () => void }) {
 }
 ```
 
+### Fires case 6
+
+```csharp expect=fire file=Assets/Hud.cs
+using UnityEngine;
+
+public class Hud : MonoBehaviour {
+    void OnEnable() { Health.Changed += Hit; }
+    void Hit() {}
+}
+```
+
+### Clean case 7
+
+```csharp expect=clean file=Assets/Hud.cs
+using UnityEngine;
+
+public class Hud : MonoBehaviour {
+    void OnEnable() { Health.Changed += Hit; }
+    void OnDisable() { Health.Changed -= Hit; }
+    void Hit() {}
+}
+```
+
 ## Examples
 
-### PAIR001 acquire-without-release / Examples / Fires case 1 #1 (line 22) (fire)
+### PAIR001 acquire-without-release / Examples / Fires case 1 #1 (line 24) (fire)
 
 ```tsx
 import { useEffect } from "react";
@@ -113,7 +138,7 @@ export function Ticker({ tick }: { tick: () => void }) {
 }
 ```
 
-### PAIR001 acquire-without-release / Examples / Fires case 2 #2 (line 35) (fire)
+### PAIR001 acquire-without-release / Examples / Fires case 2 #2 (line 37) (fire)
 
 ```jsx
 export function Size({ onResize }) {
@@ -125,7 +150,7 @@ export function Size({ onResize }) {
 }
 ```
 
-### PAIR001 acquire-without-release / Examples / Clean case 3 #3 (line 47) (clean)
+### PAIR001 acquire-without-release / Examples / Clean case 3 #3 (line 49) (clean)
 
 ```tsx
 import { useEffect } from "react";
@@ -139,7 +164,7 @@ export function Ticker({ tick }: { tick: () => void }) {
 }
 ```
 
-### PAIR001 acquire-without-release / Examples / Clean case 4 #4 (line 61) (clean)
+### PAIR001 acquire-without-release / Examples / Clean case 4 #4 (line 63) (clean)
 
 ```tsx
 export function helper() {
@@ -148,7 +173,7 @@ export function helper() {
 }
 ```
 
-### PAIR001 acquire-without-release / Examples / Unresolved case 5 #5 (line 70) (unresolved)
+### PAIR001 acquire-without-release / Examples / Unresolved case 5 #5 (line 72) (unresolved)
 
 ```tsx
 import { stop } from "./stop";
@@ -159,5 +184,28 @@ export function Ticker({ tick }: { tick: () => void }) {
     return stop;
   }, [tick]);
   return null;
+}
+```
+
+### PAIR001 acquire-without-release / Examples / Fires case 6 #6 (line 86) (fire)
+
+```csharp
+using UnityEngine;
+
+public class Hud : MonoBehaviour {
+    void OnEnable() { Health.Changed += Hit; }
+    void Hit() {}
+}
+```
+
+### PAIR001 acquire-without-release / Examples / Clean case 7 #7 (line 97) (clean)
+
+```csharp
+using UnityEngine;
+
+public class Hud : MonoBehaviour {
+    void OnEnable() { Health.Changed += Hit; }
+    void OnDisable() { Health.Changed -= Hit; }
+    void Hit() {}
 }
 ```
