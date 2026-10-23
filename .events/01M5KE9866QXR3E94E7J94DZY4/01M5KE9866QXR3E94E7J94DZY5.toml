@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob-cli: drift test for grimble-ci static frob verb table"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-cli/**"]
+body = "grimble-ci CI012 (T040N) judges workflow frob verbs against a static VERBS table in crates/grimble-ci/src/verbs.rs because layering forbids depending on the CLI tree. Add a test in frob-cli that walks the real clap verb tree and fails when the table differs."
+at = "2026-10-23T03:53:41Z"
+actor = "lognd"
+rev = 1
