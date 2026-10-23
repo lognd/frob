@@ -394,7 +394,9 @@ fn coh_report(
 
 /// The cache kind of the COH report: it embeds a digest of the vocabularies, so a changed `[coh]` misses.
 fn coh_kind(opts: &Coh002Options) -> String {
-    let mut text = opts.effect_calls.join("\n");
+    // The version tag invalidates reports cached before the effects capability decided COH002.
+    let mut text = String::from("capability-v1\u{1f}");
+    text.push_str(&opts.effect_calls.join("\n"));
     text.push('\u{1f}');
     text.push_str(&opts.trivial.join("\n"));
     format!("coh-{}", gob_walk::Digest::of(text.as_bytes()))

@@ -25,6 +25,21 @@ fn judged(language: Language) -> bool {
     )
 }
 
+/// The file-level Unresolved finding for a unit whose language has no effects capability.
+fn no_capability(path: &str, unit: &str, lang: &str) -> PathFinding {
+    PathFinding {
+        rule: COH002,
+        severity: Severity::Unresolved,
+        file: path.to_owned(),
+        range: (0, 0),
+        message: format!(
+            "the {lang} adapter declares no effects capability; `{unit}` cannot be judged"
+        ),
+        reason: Some(UnresolvedReason::Fidelity),
+        anchor: format!("{path}:{unit}:no-effects-capability"),
+    }
+}
+
 /// The byte range of a node, or an empty range when it has no span.
 fn range_of(folded: &Folded, node: NodeId) -> (usize, usize) {
     folded
@@ -116,6 +131,9 @@ pub fn analyze(files: &[PathFile<'_>], opts: &Coh002Options) -> PathReport {
                         anchor: format!("{}:{name}:shell", f.path),
                     });
                 }
+                Coh002::Unresolved(Coh002Unresolved::NoEffectsCapability { lang }) => {
+                    report.findings.push(no_capability(f.path, name, &lang));
+                }
                 Coh002::Clean => {}
             }
         }
@@ -129,7 +147,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &Coh002Options) -> PathReport {
                 file: f.path.to_owned(),
                 range: (0, 0),
                 message: format!(
-                    "branches call callees with an unknown effect ({}); add them to [coh] effect_calls or trivial",
+                    "branches call callees with an unknown effect ({}); the language adapter cannot place them; add them to [coh] effect_calls or trivial",
                     unknown.join(", ")
                 ),
                 reason: Some(UnresolvedReason::EdgeUnknown),

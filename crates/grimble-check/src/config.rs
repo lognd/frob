@@ -70,24 +70,26 @@ impl PacksTable {
     }
 }
 
-/// The `[coh]` table: the vocabularies COH002 ("decision with effects") judges callees against.
+/// The `[coh]` table: project overrides for what COH002 ("decision with effects") counts as an effect.
 ///
-/// A configured list replaces the built-in one (it does not extend it); an empty `effect_calls`
-/// turns COH002 off, an empty `trivial` makes logging calls unknown callees (Unresolved). A name
-/// in both lists is trivial. Callees match on their last path segment, so `a.b.send` is `send`.
+/// The language adapter's effects capability decides by default (a call through `fs`, `os`,
+/// `subprocess` is an effect, `console.log` is not). A configured list adds to it and matches on
+/// the callee's last path segment in any language, so `a.b.send` is `send`: `effect_calls` marks
+/// a name as an effect, `trivial` as never one, and a name in both is trivial. Both default to
+/// empty. A call the capability cannot place leaves the verdict Unresolved until it is listed.
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
 #[config(table = "coh")]
 pub struct CohTable {
-    /// Callee names that perform an effect (IO, messaging, persistence) when called inside a decision.
+    /// Extra callee names that perform an effect (IO, messaging, persistence) when called inside a decision.
     #[config(default = crate::coh002::default_effect_calls())]
     pub effect_calls: Vec<String>,
-    /// Callee names that are trivial (logging, metrics, asserts) and never count as an effect.
+    /// Extra callee names that are trivial (logging, metrics, asserts) and never count as an effect.
     #[config(default = crate::coh002::default_trivial())]
     pub trivial: Vec<String>,
 }
 
 impl CohTable {
-    /// Load `[coh]` from `<root>/grimble.toml` (a missing file or table means the built-in vocabularies).
+    /// Load `[coh]` from `<root>/grimble.toml` (a missing file or table means no overrides).
     ///
     /// # Errors
     ///

@@ -11,10 +11,15 @@ knobs under `[coh]` in `grimble.toml`. frob runs them only through the
 sibling protocol.
 
 Status: COH002 is a registered rule (`grimble-check`, `src/rules/coh002.rs`) run by
-`grimble check`. The `[coh]` table currently holds two keys, `effect_calls` and `trivial`:
-the effect and trivial callee vocabularies. A configured list replaces the built-in one;
-an empty `effect_calls` turns COH002 off; an empty `trivial` makes logging calls unknown
-callees (Unresolved); a name in both lists is trivial. Unknown `[coh]` keys are rejected.
+`grimble check`. COH002 decides what is an effect from the language's effects capability
+(`grimble-check`, `src/effects.rs`), which classifies a call from its qualified path: `fs.write`,
+`os.remove`, `subprocess.run` are effects, `console.log`, `logging.info` are trivial. A call the
+capability cannot place (an aliased or imported bare name, an unknown receiver) leaves the verdict
+Unresolved, and so does any language without an effects capability. The `[coh]` table holds two
+keys, `effect_calls` and `trivial`: project overrides that add to the capability (matched on the
+callee's last path segment); both default to empty, a name in both lists is trivial. Unknown
+`[coh]` keys are rejected. The capability tables live in grimble-check until the adapters declare
+the `Effects` capability themselves.
 `min_slice_statements` and `max_level_spread` are not in the table yet (COH001 and COH003
 are not registered rules). A unit carrying a `grimble:core` or `grimble:shell`
 directive on its function is judged against that role (COH002 reads it from the

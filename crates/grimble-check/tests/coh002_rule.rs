@@ -68,24 +68,23 @@ gob_mdtest::mdtest!(dir = "src/rules", runner = runner);
 // frob:tests crates/grimble-check/src/product.rs::Grimble
 // frob:tests crates/grimble-check/src/config.rs::CohTable
 #[test]
-fn custom_vocabularies_decide_what_is_an_effect() {
-    let config = "[coh]\neffect_calls = [\"transmit\"]\ntrivial = [\"log\"]\n";
+fn configured_names_add_to_the_adapter_capability() {
+    let config = "[coh]\neffect_calls = [\"transmit\"]\n";
     let custom = coh_findings(config, &unit_calling("transmit"));
     assert_eq!(custom.len(), 1, "{custom:?}");
     assert_eq!(custom[0]["severity"], "advisory", "{custom:?}");
-    // `send` is no longer in the replaced effect list, so it is an unknown callee.
-    let default_word = coh_findings(config, &unit_calling("send"));
-    assert_eq!(default_word.len(), 1, "{default_word:?}");
-    assert_eq!(
-        default_word[0]["severity"], "unresolved",
-        "{default_word:?}"
-    );
+    // The capability still knows `send`: the list adds to it, it does not replace it.
+    let known = coh_findings(config, &unit_calling("send"));
+    assert_eq!(known[0]["severity"], "advisory", "{known:?}");
+    // A trivial override silences a name the capability cannot place.
+    let quiet = coh_findings("[coh]\ntrivial = [\"mystery\"]\n", &unit_calling("mystery"));
+    assert!(quiet.is_empty(), "{quiet:?}");
 }
 
 // frob:tests crates/grimble-check/src/product.rs::Grimble
 // frob:tests crates/grimble-check/src/coh002.rs::default_effect_calls
 #[test]
-fn without_a_coh_table_the_default_vocabularies_apply() {
+fn without_a_coh_table_the_adapter_capability_decides() {
     let found = coh_findings("[check]\n", &unit_calling("send"));
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0]["severity"], "advisory", "{found:?}");
@@ -95,23 +94,18 @@ fn without_a_coh_table_the_default_vocabularies_apply() {
 
 // frob:tests crates/grimble-check/src/coh002.rs::default_effect_calls
 #[test]
-fn an_empty_effect_list_turns_the_rule_off() {
+fn an_empty_effect_list_no_longer_turns_the_rule_off() {
     let found = coh_findings("[coh]\neffect_calls = []\n", &unit_calling("send"));
-    assert!(
-        found.iter().all(|f| f["severity"] == "unresolved"),
-        "{found:?}"
-    );
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0]["severity"], "advisory", "{found:?}");
 }
 
 // frob:tests crates/grimble-check/src/coh002.rs::default_trivial
 #[test]
-fn an_empty_trivial_list_makes_logging_unresolved() {
+fn an_empty_trivial_list_keeps_the_capability_trivial_calls() {
     let src = "def f(a):\n    x = compute(a)\n    if x > 3:\n        log(x)\n    return x\n";
-    let default = coh_findings("[check]\n", src);
-    assert!(default.is_empty(), "{default:?}");
-    let found = coh_findings("[coh]\ntrivial = []\n", src);
-    assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0]["severity"], "unresolved", "{found:?}");
+    assert!(coh_findings("[check]\n", src).is_empty());
+    assert!(coh_findings("[coh]\ntrivial = []\n", src).is_empty());
 }
 
 // frob:tests crates/grimble-check/src/coh002.rs::default_trivial

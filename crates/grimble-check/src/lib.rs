@@ -44,6 +44,7 @@ pub mod coh003;
 pub mod coh004;
 pub mod coh_pass;
 pub mod config;
+pub mod effects;
 pub mod example_model;
 pub mod fidelity;
 mod host;

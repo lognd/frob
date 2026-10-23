@@ -6,10 +6,13 @@
 //! A decision is an `if`/`elif`/`match`-style branch whose condition is computed: it contains a
 //! call, or reads a variable the body itself defined (a def-use edge whose definition is not the
 //! unit's parameter list). A guard on a bare parameter is a dispatch guard (NEAT031), not a
-//! decision. An effect is a call in a branch body whose callee is in the effect vocabulary;
-//! trivial calls (logging) are not effects. P+: the rule fires only on a proven effect. A branch
-//! whose bodies call something outside both vocabularies leaves the verdict Unresolved with
-//! those callees named, never a silent pass. Nested functions and lambdas are other units.
+//! decision. An effect is a call in a branch body that the language's effects capability
+//! ([`crate::effects`]) classifies as an effect from its qualified path; trivial calls (logging)
+//! are not effects. The `[coh]` lists only add project overrides on top of the capability.
+//! P+: the rule fires only on a proven effect. A branch whose bodies call something the capability
+//! cannot place leaves the verdict Unresolved with those callees named, never a silent pass; a
+//! language without an effects capability is Unresolved whenever a decision has calls to classify.
+//! Nested functions and lambdas are other units.
 
 // frob:ticket 01M4CXSRE3YHY7FV30R8GMB58A
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
@@ -21,61 +24,26 @@ use gob_ir::{DefUseEdge, GroupOrder, NodeId, Operator, Term, Universal};
 use gob_symbols::{Folded, def_use_of, syntax_for};
 use tracing::{debug, trace};
 
-use crate::coh001::{CohOptions, is_within, statements};
+use crate::coh001::{is_within, statements};
 use crate::config::CohTable;
+use crate::effects::{EffectClass, EffectsCapability, effects_for};
 
-/// The built-in effect vocabulary: callee names (last path segment) that perform IO, messaging or persistence.
-pub const DEFAULT_EFFECT_CALLS: &[&str] = &[
-    "write",
-    "write_all",
-    "writeln",
-    "send",
-    "send_all",
-    "sendall",
-    "emit",
-    "publish",
-    "dispatch",
-    "save",
-    "persist",
-    "commit",
-    "execute",
-    "delete",
-    "remove",
-    "unlink",
-    "remove_file",
-    "mkdir",
-    "create_dir",
-    "rename",
-    "open",
-    "fetch",
-    "post",
-    "put",
-    "request",
-    "sleep",
-    "spawn",
-    "exit",
-    "flush",
-];
-
-/// The built-in effect vocabulary as owned strings (the `[coh] effect_calls` default).
+/// The built-in `[coh] effect_calls` default: empty, the adapter capability supplies the effects.
 pub fn default_effect_calls() -> Vec<String> {
-    DEFAULT_EFFECT_CALLS
-        .iter()
-        .map(|s| (*s).to_owned())
-        .collect()
+    Vec::new()
 }
 
-/// The built-in trivial vocabulary as owned strings (the `[coh] trivial` default).
+/// The built-in `[coh] trivial` default: empty, the adapter capability supplies the trivial calls.
 pub fn default_trivial() -> Vec<String> {
-    CohOptions::default().trivial
+    Vec::new()
 }
 
-/// Knobs of COH002: the effect and trivial vocabularies, from the `[coh]` table or the built-ins.
+/// Knobs of COH002: project overrides added on top of the language effects capability.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Coh002Options {
-    /// Callee names (last path segment) that perform an effect: IO, messaging, persistence.
+    /// Extra callee names (last path segment, any language) that perform an effect.
     pub effect_calls: Vec<String>,
-    /// Callee names that are trivial (logging, metrics, asserts); never an effect.
+    /// Extra callee names that are trivial (logging, metrics, asserts); trivial wins over effect.
     pub trivial: Vec<String>,
 }
 
@@ -89,7 +57,7 @@ impl Default for Coh002Options {
 }
 
 impl From<&CohTable> for Coh002Options {
-    /// The vocabularies of a loaded `[coh]` table; a configured list replaces the built-in one.
+    /// The overrides of a loaded `[coh]` table; they add to the capability's classification.
     fn from(table: &CohTable) -> Self {
         debug!(
             effect_calls = table.effect_calls.len(),
@@ -148,6 +116,11 @@ pub enum Coh002Unresolved {
         /// The sorted callee names whose effect is unknown.
         callees: Vec<String>,
     },
+    /// The language has no effects capability, so its calls cannot be classified.
+    NoEffectsCapability {
+        /// The language tag lacking the capability.
+        lang: String,
+    },
 }
 
 /// COH002's judgement of one unit.
@@ -196,6 +169,41 @@ pub(crate) fn callee_of(term: &Term, call: NodeId) -> Option<String> {
             })
     }
     last(term, *term.node(call).children().first()?)
+}
+
+/// The path segments of a name (`os.path.remove` and `fs::write` split on `.` and `::`).
+fn segments(name: &str) -> impl Iterator<Item = String> + '_ {
+    name.trim_end_matches('!')
+        .split(['.', ':'])
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+}
+
+/// The head identifiers of a call in order, qualifiers first (`a.b.send` gives `[a, b, send]`).
+///
+/// A method call's receiver supplies the qualifiers; a call nested in the receiver contributes its
+/// own head only (`foo(x).send(y)` gives `[foo, send]`). A head of any other shape falls back to
+/// its last identifier.
+pub(crate) fn callee_path(term: &Term, call: NodeId) -> Vec<String> {
+    let kids = term.node(call).children();
+    let Some(&head) = kids.first() else {
+        return Vec::new();
+    };
+    let Some(name) = ident_of(term, head) else {
+        return callee_of(term, call).into_iter().collect();
+    };
+    let mut path = Vec::new();
+    if matches!(term.node(call).op(), Operator::Universal(Universal::Apply { kind }) if kind == "method")
+        && let Some(&recv) = kids.get(1)
+    {
+        if is_call(term, recv) {
+            path = callee_path(term, recv);
+        } else if let Some(r) = ident_of(term, recv) {
+            path = segments(r).collect();
+        }
+    }
+    path.extend(segments(name));
+    path
 }
 
 pub(crate) fn is_call(term: &Term, n: NodeId) -> bool {
@@ -327,15 +335,13 @@ fn is_computed(term: &Term, unit: NodeId, cond: NodeId, edges: &[DefUseEdge]) ->
             .any(|e| e.def != unit && (e.use_site == cond || is_within(term, e.use_site, cond)))
 }
 
-fn calls_in(term: &Term, n: NodeId, out: &mut Vec<(NodeId, String)>) {
+fn calls_in(term: &Term, n: NodeId, out: &mut Vec<(NodeId, Vec<String>)>) {
     for &c in term.node(n).children() {
         if is_nested_unit(term, c) {
             continue;
         }
-        if is_call(term, c)
-            && let Some(name) = callee_of(term, c)
-        {
-            out.push((c, name));
+        if is_call(term, c) {
+            out.push((c, callee_path(term, c)));
         }
         calls_in(term, c, out);
     }
@@ -350,7 +356,8 @@ pub fn coh002(
     opts: &Coh002Options,
 ) -> Option<Coh002> {
     let edges = def_use_of(folded, lang, unit)?;
-    Some(judge(&folded.term, lang, unit, &edges, role, opts))
+    let effects = effects_for(lang);
+    Some(judge(&folded.term, lang, unit, &edges, role, effects, opts))
 }
 
 /// Judge a unit from precomputed def-use edges (the pure core of [`coh002`]).
@@ -360,10 +367,13 @@ pub fn judge(
     unit: NodeId,
     edges: &[DefUseEdge],
     role: UnitRole,
+    effects: Option<&EffectsCapability>,
     opts: &Coh002Options,
 ) -> Coh002 {
     let Some(syntax) = syntax_for(lang) else {
-        return Coh002::Clean;
+        return Coh002::Unresolved(Coh002Unresolved::NoEffectsCapability {
+            lang: lang.to_owned(),
+        });
     };
     let mut found = Vec::new();
     for stmt in statements(term, unit) {
@@ -374,36 +384,48 @@ pub fn judge(
     }
     let mut mixed = Vec::new();
     let mut unknown = BTreeSet::new();
+    let mut no_capability = false;
     for d in found
         .iter()
         .filter(|d| is_computed(term, unit, d.condition, edges))
     {
         let mut calls = Vec::new();
         for &b in &d.bodies {
-            if is_call(term, b)
-                && let Some(name) = callee_of(term, b)
-            {
-                calls.push((b, name));
+            if is_call(term, b) {
+                calls.push((b, callee_path(term, b)));
             }
             calls_in(term, b, &mut calls);
         }
         calls.sort();
-        let mut effects = Vec::new();
-        for (call, callee) in calls {
+        let mut effect_calls = Vec::new();
+        for (call, path) in calls {
+            let Some(callee) = path.last().cloned() else {
+                continue;
+            };
             if opts.trivial.contains(&callee) {
                 continue;
             }
-            if opts.effect_calls.contains(&callee) {
-                effects.push(EffectCall { call, callee });
+            let class = if opts.effect_calls.contains(&callee) {
+                EffectClass::Effect
+            } else if let Some(cap) = effects {
+                cap.classify(&path)
             } else {
-                unknown.insert(callee);
+                no_capability = true;
+                continue;
+            };
+            match class {
+                EffectClass::Trivial => {}
+                EffectClass::Effect => effect_calls.push(EffectCall { call, callee }),
+                EffectClass::Unknown => {
+                    unknown.insert(callee);
+                }
             }
         }
-        trace!(decision = ?d.node, effects = effects.len(), "coh002 decision");
-        if !effects.is_empty() {
+        trace!(decision = ?d.node, effects = effect_calls.len(), "coh002 decision");
+        if !effect_calls.is_empty() {
             mixed.push(MixedDecision {
                 decision: d.node,
-                effects,
+                effects: effect_calls,
             });
         }
     }
@@ -417,6 +439,9 @@ pub fn judge(
             role,
             decisions: mixed,
         },
+        (_, true) if no_capability => Coh002::Unresolved(Coh002Unresolved::NoEffectsCapability {
+            lang: lang.to_owned(),
+        }),
         (_, true) if !unknown.is_empty() => Coh002::Unresolved(Coh002Unresolved::UnknownCallees {
             callees: unknown.into_iter().collect(),
         }),
