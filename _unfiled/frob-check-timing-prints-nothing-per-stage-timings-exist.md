@@ -2,7 +2,8 @@
 id = "01M4GKBXQS0VY1PWG3B6QH12NZ"
 title = "frob check --timing prints nothing; per-stage timings exist only in .frob/telemetry.jsonl"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
