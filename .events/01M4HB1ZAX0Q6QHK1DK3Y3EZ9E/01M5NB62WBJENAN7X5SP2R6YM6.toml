@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-ir/**", "crates/gob-symbols/src/pipeline.rs", "crates/grimble-bind/src/code.rs"]
+new = ["crates/gob-ir/**", "crates/gob-symbols/src/pipeline.rs", "crates/grimble-bind/src/code.rs", "crates/grimble-bind/tests/term_cache.rs"]
+at = "2026-10-23T21:38:00Z"
+actor = "lognd"
+rev = 1

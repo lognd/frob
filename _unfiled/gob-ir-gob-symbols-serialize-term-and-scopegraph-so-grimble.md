@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T22:03:06Z"
-updated = "2026-10-23T21:32:30Z"
-scope = ["crates/gob-ir/**", "crates/gob-symbols/src/pipeline.rs", "crates/grimble-bind/src/code.rs"]
+updated = "2026-10-23T21:38:00Z"
+scope = ["crates/gob-ir/**", "crates/gob-symbols/src/pipeline.rs", "crates/grimble-bind/src/code.rs", "crates/grimble-bind/tests/term_cache.rs"]
 
 [[acceptance]]
 text = "Given a warm cache, when grimble ack --dry-run --all runs on this repository, then no adapter parse occurs (counter test) and user CPU drops by at least 50 percent"
