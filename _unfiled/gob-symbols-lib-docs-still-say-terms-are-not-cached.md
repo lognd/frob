@@ -2,12 +2,12 @@
 id = "01M5NBNPGFD58QQA90YXK87ZP2"
 title = "gob-symbols: lib docs still say terms are not cached"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T21:46:32Z"
-updated = "2026-10-23T22:45:19Z"
+updated = "2026-10-23T22:45:21Z"
 scope = ["crates/gob-symbols/src/lib.rs"]
 
 [[acceptance]]
