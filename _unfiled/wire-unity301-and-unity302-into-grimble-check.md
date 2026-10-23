@@ -2,12 +2,12 @@
 id = "01M5HGRWG7RDR3DTS7PT08HTWJ"
 title = "Wire UNITY301 and UNITY302 into grimble-check"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T09:58:42Z"
-updated = "2026-10-23T01:39:37Z"
+updated = "2026-10-23T01:39:38Z"
 scope = ["crates/grimble-check/**", "crates/grimble-lints/**", "docs/**"]
 
 [[acceptance]]
