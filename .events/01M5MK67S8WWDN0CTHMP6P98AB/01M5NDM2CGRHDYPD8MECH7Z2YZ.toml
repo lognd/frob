@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the MDL008 rule source, when gob-dev gen all runs, then docs/reference/rules/MDL008.md is regenerated and gen --check is clean"]
+moved = []
+at = "2026-10-23T22:20:36Z"
+actor = "lognd"
+rev = 1
