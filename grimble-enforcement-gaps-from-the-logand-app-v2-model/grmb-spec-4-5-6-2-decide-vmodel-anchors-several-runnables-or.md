@@ -2,13 +2,13 @@
 id = "01M4FGZ22EX779T6RNS4FKJ689"
 title = "grmb-spec 4.5/6.2: decide vmodel anchors, several runnables or manual per test, and runner-id mapping"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:53Z"
-updated = "2026-10-09T05:07:53Z"
+updated = "2026-10-23T15:20:32Z"
 idempotency_key = "logand-gaps-V1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["docs/design/grmb-spec.md", "docs/design/binding.md", "changelog.d/**"]
