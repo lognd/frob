@@ -2,7 +2,8 @@
 id = "01M5HJDX1Q27XGZ77ACWXQ03KP"
 title = "COH003: fill layers from the grimble model or module depth"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
