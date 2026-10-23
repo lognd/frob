@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:58:34Z"
-updated = "2026-10-23T00:22:56Z"
+updated = "2026-10-23T00:56:09Z"
 scope = ["crates/grimble-lints/**", "changelog.d/**", "crates/grimble/**", "crates/grimble-check/**", "docs/**"]
 
 [[acceptance]]
