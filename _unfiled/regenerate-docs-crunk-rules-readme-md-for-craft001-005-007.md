@@ -2,11 +2,12 @@
 id = "01M5KM102PMKFXQE3NB68Z8PDV"
 title = "Regenerate docs/crunk/rules/README.md for CRAFT001-005,007,009,011,012"
 type = "docs"
-category = "todo"
+category = "done"
+outcome = "invalid"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-23T05:34:02Z"
-updated = "2026-10-23T05:34:02Z"
+updated = "2026-10-23T05:59:46Z"
 scope = ["docs/crunk/rules/README.md"]
 +++
 

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "invalid"
+reason = "registry rows were regenerated and landed with ~2C2A8A0"
+at = "2026-10-23T05:59:46Z"
+actor = "lognd"
+rev = 1
