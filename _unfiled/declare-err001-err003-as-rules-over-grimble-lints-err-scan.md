@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Each ERR rule has a docs page with a fire case and a clean case, and appears in the rules index"
-bound = false
+bound = true
 +++
 
 found while working ~K4B9CKF: the detectors landed; still needed: #[rule] declarations (Unknown sites are Unresolved, Certain ones Warn), rule pages with fire and clean mdtest cases, product_rules wiring, ramp-in (new_rule_warn_releases), depends on the FileCx language ticket
