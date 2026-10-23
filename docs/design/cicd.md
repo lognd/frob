@@ -156,6 +156,21 @@ threshold and list is a materialized knob under `[ci]` in
 | DK003 | docker-no-latest: an external `FROM` with no tag or `:latest` | P+ | Warn | grimble or hadolint DL3006 and DL3007 |
 | DK004 | docker-no-pipe-to-shell: a `RUN` text in which `curl` or `wget` output is piped to `sh` or `bash`; a lexical scan of the opaque shell payload; allowlist by URL host | P+ | Advisory | grimble or hadolint |
 
+### 5.1 One report per rule and file (tool versus native)
+
+`grimble check` runs `grimble_ci::analyze` over the walk on every run
+(uncached, because CI012 reads files outside the walk) and reports its
+findings with the other grimble families. Where a rule has both a bound
+tool stage and a native lexical fallback (CI001, CI006, CI007, CI010
+with zizmor), the two are never both reported for one workflow: the
+tool finding is authoritative for a (rule, file) pair, and the native
+finding for that pair is dropped before severity overrides and
+exceptions apply. Line numbers and messages are not compared, since the
+sources never agree on them. When the tool reports nothing for the pair,
+or is not installed, the native finding stands. `[rules.<id>]` overrides
+(including off) apply to whichever finding remains. The `[ci]` knob
+table is not read yet; the defaults of `CiConfig` apply.
+
 Terraform, Helm, Kubernetes and Ansible: bind checkov, tflint,
 kube-linter and ansible-lint; nothing is owned there until a
 repository in the fleet needs it.
