@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T01:55:49Z"
+digest = "9700286791a7acac2ec971b0f090a87070734903b9be889d22721802701c3be5"
+exit_code = 0
+head = "62dd33f2d31524d695322b0061e391b1e42f1ae3"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.61s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 361a1575-9440-41d2-bfc1-ea7f06bc72b0 with nextest profile: default
+    Starting 1 test across 1 binary (9 tests skipped)
+        PASS [   0.014s] crunk-rules::craft013_rules copy_keys_without_a_voice_file_report_it_and_name_slop060
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test craft013_rules copy_keys_without_a_voice_file_report_it_and_name_slop060"
+size = 693
+status = "measured"
+test_count = 1
+tests_digest = "a8599c831630d33ce4ce2be6609169cc881403d0ce9f9cd5e7a1eb489f1d470b"
+at = "2026-10-23T01:55:49Z"
+actor = "lognd"
+rev = 1
