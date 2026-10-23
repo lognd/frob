@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-23T15:00:54Z"
-updated = "2026-10-23T19:40:09Z"
-scope = ["crates/gob-check/src/tools.rs", "crates/frob-worktree/**", "crates/frob-evidence/**", "changelog.d/**"]
+updated = "2026-10-23T20:01:39Z"
+scope = ["crates/gob-check/src/tools.rs", "crates/frob-worktree/**", "crates/frob-evidence/**", "changelog.d/**", "docs/reference/rules/MDL014.md"]
 
 [[acceptance]]
 text = "Given a fresh ticket worktree or land base checkout without .venv, when a uv-run tool stage runs, then frob syncs the environment first (or the stage reports Unresolved with the remedy), never a red gate"
