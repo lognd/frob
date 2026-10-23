@@ -1,0 +1,9 @@
+kind = "create"
+title = "DOC006 should adopt the shared frob-doc MOVED.toml parser"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-obligations/src/doc_citation.rs"]
+at = "2026-10-23T22:56:31Z"
+actor = "lognd"
+rev = 1
