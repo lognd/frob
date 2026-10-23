@@ -1,0 +1,57 @@
+//! `grimble check` runs `grimble-ci` over the workflow files of the walk and reports its findings.
+
+// frob:ticket 01M5KDWHPF5YTVP64PYCXX0FRT
+
+use std::path::Path;
+
+use grimble_check::{CheckOptions, run};
+
+/// Write `text` to the repo-relative `rel` under `root`, creating parents.
+fn write(root: &Path, rel: &str, text: &str) {
+    let path = root.join(rel);
+    std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+    std::fs::write(path, text).expect("write");
+}
+
+/// A workflow whose one step uses an action pinned to a mutable tag.
+const UNPINNED: &str = "name: ci\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n";
+
+/// The rule ids a run over `dir` reports.
+fn run_ids(dir: &Path) -> Vec<String> {
+    let done = run(dir, &CheckOptions::default()).expect("run");
+    done.report
+        .findings
+        .iter()
+        .map(|f| f.rule.as_str().to_owned())
+        .collect()
+}
+
+/// A mutable-tag `uses:` in a workflow, nested or not, is reported as CI001 by the check run.
+// frob:tests crates/grimble-check/src/lib.rs::run
+// frob:tests crates/grimble-check/src/product.rs::ci_report
+#[test]
+fn check_reports_grimble_ci_findings() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), ".github/workflows/ci.yml", UNPINNED);
+    write(dir.path(), "sub/.github/workflows/nested.yml", UNPINNED);
+    let found = run_ids(dir.path());
+    assert_eq!(
+        found.iter().filter(|r| *r == "CI001").count(),
+        2,
+        "{found:?}"
+    );
+}
+
+/// No workflows is not an error: the run is clean, and malformed YAML is Unresolved.
+// frob:tests crates/grimble-check/src/lib.rs::run
+// frob:tests crates/grimble-check/src/product.rs::ci_report
+#[test]
+fn missing_and_malformed_workflows_do_not_crash() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "README.md", "# x\n");
+    let found = run_ids(dir.path());
+    assert!(!found.iter().any(|r| r.starts_with("CI0")), "{found:?}");
+    write(dir.path(), ".github/workflows/bad.yml", "on: [\n  : : :\n");
+    let found = run_ids(dir.path());
+    assert!(found.iter().any(|r| r == "CI002"), "{found:?}");
+}

@@ -13,6 +13,7 @@ use gob_rules::{
 };
 use gob_text::{FileInterner, Span};
 use grimble_arch::{ArchInput, ArchReport};
+use grimble_ci::{CiConfig, CiInput, CiReport};
 use grimble_lints::pass::{PathFile, PathReport};
 use grimble_model::{ModelFiles, check_model, file_table};
 
@@ -44,6 +45,8 @@ pub struct GrimbleInputs {
     pub binding: BindSummary,
     /// The CYCLE, LARGE and DEAD verdicts (grimble-arch), recomputed each run.
     pub arch: ArchReport,
+    /// The CI and Dockerfile verdicts (grimble-ci), recomputed each run.
+    pub ci: CiReport,
     /// The PATH001 to PATH003 verdicts (grimble-lints), recomputed each run.
     pub path: PathReport,
     /// The TIME001 and TIME002 verdicts (grimble-lints), cached like the PATH report.
@@ -145,6 +148,13 @@ fn arch_metas() -> Vec<&'static RuleMeta> {
     legacy_metas(&CELL, grimble_arch::rules::METAS)
 }
 
+// frob:ticket 01M5KDWHPF5YTVP64PYCXX0FRT
+/// The CI workflow and Dockerfile rules `grimble-ci` declares, minus ids `gob-check` already owns.
+fn ci_metas() -> Vec<&'static RuleMeta> {
+    static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
+    legacy_metas(&CELL, grimble_ci::rules::METAS)
+}
+
 /// The host-path portability rules (the PATH family `grimble-lints` declares).
 fn path_metas() -> Vec<&'static RuleMeta> {
     lint_metas()
@@ -197,11 +207,17 @@ fn coh_metas() -> Vec<&'static RuleMeta> {
 pub(crate) fn registry() -> &'static Registry {
     static CELL: OnceLock<Registry> = OnceLock::new();
     CELL.get_or_init(|| {
-        let metas = Registry::global()
+        let global = Registry::global();
+        let metas = global
             .iter()
             .chain(model_metas())
             .chain(binding_metas())
             .chain(arch_metas())
+            .chain(
+                ci_metas()
+                    .into_iter()
+                    .filter(|m| global.by_id(m.id).is_none()),
+            )
             .chain(lint_metas())
             .chain(coh_metas());
         Registry::from_metas(metas)
@@ -225,11 +241,29 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .get(def.id)
         .cloned()
         .or_else(|| snap.inputs.arch.not_applicable.get(def.id).cloned())
+        .or_else(|| snap.inputs.ci.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.path.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.time.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.pair.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.unity.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.coh.not_applicable.get(def.id).cloned())
+}
+
+// frob:ticket 01M5KDWHPF5YTVP64PYCXX0FRT
+/// Run the CI and Dockerfile rules over the walk with the default `CiConfig` (uncached, so the files CI012 reads beyond the walk are never stale).
+fn ci_report(entries: &[gob_walk::FileEntry], read: &dyn Fn(&str) -> Option<String>) -> CiReport {
+    let files: Vec<String> = entries.iter().map(|e| e.path.clone()).collect();
+    let report = grimble_ci::analyze(&CiInput {
+        files: &files,
+        read,
+        config: &CiConfig::default(),
+    });
+    tracing::info!(
+        findings = report.findings.len(),
+        not_applicable = report.not_applicable.len(),
+        "ci report computed"
+    );
+    report
 }
 
 /// Run the PATH rules over every Rust, Python, TypeScript and C# file of the walk (uncached).
@@ -388,6 +422,52 @@ fn arch_report(
         dup_min_occurrences: usize::try_from(table.dup_min_occurrences).unwrap_or(usize::MAX),
         read,
     })
+}
+
+// frob:ticket 01M5KDWHPF5YTVP64PYCXX0FRT
+/// Drop each native grimble-ci finding whose rule and file a bound tool (zizmor) also reported.
+///
+/// Policy: the bound tool stage is authoritative for a (rule, file) pair, because the CI001, CI006,
+/// CI007 and CI010 verdicts of `grimble-ci` are lexical fallbacks of the zizmor audits. Line numbers
+/// and messages are ignored when matching, since the two sources never agree on them. When the tool
+/// reports nothing for the pair (or is absent) the native finding stands.
+pub(crate) fn dedupe_ci(raw: Vec<Finding>, ci: &CiReport, files: &FileInterner) -> Vec<Finding> {
+    let path_of = |f: &Finding| {
+        f.span
+            .and_then(|s| files.path(s.file))
+            .unwrap_or_default()
+            .to_owned()
+    };
+    let is_ci = |f: &Finding| {
+        grimble_ci::rules::METAS
+            .iter()
+            .any(|d| d.id == f.rule.as_str())
+    };
+    let native = |f: &Finding| {
+        let path = path_of(f);
+        ci.findings
+            .iter()
+            .any(|n| n.rule == f.rule.as_str() && n.file == path && n.message == f.message)
+    };
+    let tool_pairs: std::collections::BTreeSet<(String, String)> = raw
+        .iter()
+        .filter(|f| is_ci(f) && !native(f))
+        .map(|f| (f.rule.as_str().to_owned(), path_of(f)))
+        .collect();
+    if tool_pairs.is_empty() {
+        return raw;
+    }
+    raw.into_iter()
+        .filter(|f| {
+            let dup = is_ci(f)
+                && native(f)
+                && tool_pairs.contains(&(f.rule.as_str().to_owned(), path_of(f)));
+            if dup {
+                tracing::info!(rule = %f.rule, file = %path_of(f), "native CI finding dropped: a bound tool reported the same rule for the file");
+            }
+            !dup
+        })
+        .collect()
 }
 
 /// Key under which a suppressed finding is remembered: rule, file, offset and message.
@@ -637,6 +717,12 @@ impl Product for Grimble {
         cx.timing.push("binding", started.elapsed(), true);
         let coh_opts = Coh002Options::from(&CohTable::load(&cx.core.root)?);
         let (arch, path, time, pair, unity, coh) = reports(cx, &digest, &table, &coh_opts);
+        let started = std::time::Instant::now();
+        let ci = cx.core.with_content(|reader| {
+            let reader = std::cell::RefCell::new(reader);
+            ci_report(&cx.core.entries, &|p| reader.borrow_mut().read_text(p).ok())
+        });
+        cx.timing.push("ci", started.elapsed(), false);
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
             trace.view = Some(Arc::clone(&view));
@@ -647,6 +733,7 @@ impl Product for Grimble {
                 .not_applicable
                 .iter()
                 .chain(&arch.not_applicable)
+                .chain(&ci.not_applicable)
                 .chain(&path.not_applicable)
                 .chain(&time.not_applicable)
                 .chain(&pair.not_applicable)
@@ -664,6 +751,7 @@ impl Product for Grimble {
                 view,
                 binding,
                 arch,
+                ci,
                 path,
                 time,
                 pair,
@@ -681,6 +769,7 @@ impl Product for Grimble {
             .iter()
             .chain(grimble_bind::rules::METAS)
             .chain(grimble_arch::rules::METAS)
+            .chain(grimble_ci::rules::METAS)
             .chain(grimble_lints::rules::METAS)
             .chain(crate::rules::METAS)
             .copied()
@@ -755,6 +844,27 @@ impl Product for Grimble {
                     .map(|(rule, n)| (*rule, *n))
                     .collect()
             }),
+            RepoGroup::new(
+                "repo:ci",
+                ci_metas(),
+                |s: &Snapshot<Self>, files: &mut FileInterner| {
+                    s.inputs
+                        .ci
+                        .findings
+                        .iter()
+                        .cloned()
+                        .filter_map(|f| f.into_finding(files))
+                        .collect()
+                },
+            )
+            .counting(|s| {
+                s.inputs
+                    .ci
+                    .subjects
+                    .iter()
+                    .map(|(rule, n)| (*rule, *n))
+                    .collect()
+            }),
             report_group("repo:path", path_metas(), |i| &i.path),
             report_group("repo:time", time_metas(), |i| &i.time),
             report_group("repo:pair", pair_metas(), |i| &i.pair),
@@ -766,6 +876,7 @@ impl Product for Grimble {
     fn applicable(&self, snap: &Snapshot<Self>, meta: &RuleMeta) -> bool {
         !snap.inputs.binding.not_applicable.contains_key(meta.id)
             && !snap.inputs.arch.not_applicable.contains_key(meta.id)
+            && !snap.inputs.ci.not_applicable.contains_key(meta.id)
             && !snap.inputs.path.not_applicable.contains_key(meta.id)
             && !snap.inputs.time.not_applicable.contains_key(meta.id)
             && !snap.inputs.pair.not_applicable.contains_key(meta.id)
@@ -786,7 +897,7 @@ impl Product for Grimble {
         let rows = snap.inputs.view.bound();
         let bounds: Vec<BoundException> = rows.iter().map(|(_, b)| (*b).clone()).collect();
         let ctx = ExceptionCtx { files };
-        let mut raw = raw;
+        let mut raw = dedupe_ci(raw, &snap.inputs.ci, files);
         snap.inputs.overrides.apply(&mut raw);
         let mut resolved = apply_exceptions(raw, &bounds, &ctx);
         // EXC016: an accept never parks an Unresolved finding.
@@ -823,5 +934,77 @@ impl Product for Grimble {
             findings: resolved.findings,
             suppressed: parked,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gob_text::{TextRange, TextSize};
+
+    /// A finding of `rule` in `file` at byte `at` with `message`.
+    fn finding(
+        files: &mut FileInterner,
+        rule: &str,
+        file: &str,
+        at: u32,
+        message: &str,
+    ) -> Finding {
+        let span = Span::new(
+            files.intern(file),
+            TextRange::new(TextSize::new(at), TextSize::new(at + 1)),
+        );
+        Finding::new(
+            rule.parse().expect("rule id"),
+            Severity::Warn,
+            Some(span),
+            message,
+            file,
+        )
+    }
+
+    /// A native report holding one `rule` finding in `file`.
+    fn native(rule: &'static str, file: &str, message: &str) -> CiReport {
+        let mut report = CiReport::default();
+        report.findings.push(grimble_ci::CiFinding {
+            rule,
+            severity: Severity::Warn,
+            file: file.to_owned(),
+            range: (10, 11),
+            message: message.to_owned(),
+            reason: None,
+            anchor: file.to_owned(),
+        });
+        report
+    }
+
+    /// A tool and a native finding of one rule and file are reported once, whatever their lines; other pairs stand.
+    // frob:ticket 01M5KDWHPF5YTVP64PYCXX0FRT
+    // frob:tests crates/grimble-check/src/product.rs::dedupe_ci
+    #[test]
+    fn tool_finding_wins_over_native_for_the_same_rule_and_file() {
+        let mut files = FileInterner::new();
+        let wf = ".github/workflows/ci.yml";
+        let ci = native("CI001", wf, "lexical");
+        let raw = vec![
+            finding(&mut files, "CI001", wf, 10, "lexical"),
+            finding(&mut files, "CI001", wf, 99, "zizmor says"),
+            finding(&mut files, "CI006", wf, 10, "lexical other rule"),
+        ];
+        let out = dedupe_ci(raw, &ci, &files);
+        let msgs: Vec<&str> = out.iter().map(|f| f.message.as_str()).collect();
+        assert_eq!(msgs, ["zizmor says", "lexical other rule"]);
+    }
+
+    /// With no tool finding the native one stands.
+    // frob:ticket 01M5KDWHPF5YTVP64PYCXX0FRT
+    // frob:tests crates/grimble-check/src/product.rs::dedupe_ci
+    #[test]
+    fn native_finding_stands_without_a_tool_finding() {
+        let mut files = FileInterner::new();
+        let wf = ".github/workflows/ci.yml";
+        let ci = native("CI001", wf, "lexical");
+        let raw = vec![finding(&mut files, "CI001", wf, 10, "lexical")];
+        assert_eq!(dedupe_ci(raw, &ci, &files).len(), 1);
     }
 }

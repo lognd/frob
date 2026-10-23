@@ -23,6 +23,7 @@ gob-text = { version = "0.532.0", path = "../gob-text" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 grimble-arch = { version = "0.532.0", path = "../grimble-arch" }
+grimble-ci = { version = "0.532.0", path = "../grimble-ci" }
 grimble-bind = { version = "0.532.0", path = "../grimble-bind" }
 grimble-lints = { version = "0.532.0", path = "../grimble-lints" }
 grimble-model = { version = "0.532.0", path = "../grimble-model" }
