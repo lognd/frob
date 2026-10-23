@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T23:58:07Z"
+digest = "3dbd9b203c1906888c43e4035856ebc0411e9bba28c737f6f2b1f9ad9564198c"
+exit_code = 0
+head = "5ada3ddbb094ba0792b0a87290fe624940e6022e"
+inline = '''
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.03s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 72714217-3e04-46e1-acb0-9102df9f961f with nextest profile: default
+    Starting 4 tests across 1 binary
+        PASS [   0.006s] frob-evidence::file_committed outside_a_git_repository_there_is_no_workspace_to_check_against
+        PASS [   0.074s] frob-evidence::file_committed a_tracked_unmodified_file_is_accepted_including_a_spaced_name
+        PASS [   0.080s] frob-evidence::file_committed a_gitignored_untracked_or_staged_file_is_refused_with_a_remedy
+        PASS [   0.080s] frob-evidence::file_committed a_modified_symlinked_escaping_or_unborn_reference_is_refused
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.081s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --test file_committed"
+size = 985
+status = "measured"
+test_count = 4
+tests_digest = "34a107b3a395de524520fb6b6d87348aafb01dd8e3239624f6f55de1ecc849bd"
+at = "2026-10-23T23:58:07Z"
+actor = "lognd"
+rev = 1
