@@ -16,6 +16,11 @@
 - Project scene files live at `design/scenes/*.scene.json`; the LAYOUT rules solve each one and RESP001 matches their viewport widths to `[breakpoints]`.
 - A `text` node carries `text.content`, `text.font_size`, optional `line_height` (default 1.2) and `max_width`.
 
+## HTML scene documents
+
+- Authored scenes live at `design/scenes/**/*.scene.html`: nested directories are searched, the suffix matches in any case, and ignore files are honored. Each file is read as bytes and parsed through `crunk_scene::parse_scene_bytes`; results are ordered by project-relative path.
+- A file that cannot be loaded is never a crash. SCENE005 reports it as a finding at the file: unreadable, over the 4 MiB size cap, not UTF-8, no elements (empty, blank or comments only), or a name (file name without the suffix, case-insensitive) already used by an earlier file. The loadable files are still checked by the other SCENE rules.
+
 ## Text metrics
 
 There is no font engine, so the solve is identical everywhere: a character is `0.6 * font_size` wide, a line is `font_size * line_height` tall, and a run wraps at `max_width`.

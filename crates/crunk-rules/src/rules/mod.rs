@@ -115,6 +115,8 @@ pub mod scene002;
 pub mod scene003;
 /// Rule `SCENE004`.
 pub mod scene004;
+/// Rule `SCENE005`.
+pub mod scene005;
 /// Rule `SIZE001`.
 pub mod size001;
 /// Rule `SLOP001`.
@@ -244,6 +246,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <scene002::Scene002 as gob_rules::RuleDecl>::DEF,
     <scene003::Scene003 as gob_rules::RuleDecl>::DEF,
     <scene004::Scene004 as gob_rules::RuleDecl>::DEF,
+    <scene005::Scene005 as gob_rules::RuleDecl>::DEF,
     <size001::Size001 as gob_rules::RuleDecl>::DEF,
     <slop001::Slop001 as gob_rules::RuleDecl>::DEF,
     <slop003::Slop003 as gob_rules::RuleDecl>::DEF,
@@ -351,6 +354,7 @@ where
     scene002::Scene002: gob_rules::Measured<P>,
     scene003::Scene003: gob_rules::Measured<P>,
     scene004::Scene004: gob_rules::Measured<P>,
+    scene005::Scene005: gob_rules::Measured<P>,
     size001::Size001: gob_rules::Measured<P>,
     slop001::Slop001: gob_rules::RepoRule<P>,
     slop003::Slop003: gob_rules::RepoRule<P>,
@@ -444,6 +448,7 @@ where
     rules.push(gob_rules::BoundRule::measured(scene002::Scene002));
     rules.push(gob_rules::BoundRule::measured(scene003::Scene003));
     rules.push(gob_rules::BoundRule::measured(scene004::Scene004));
+    rules.push(gob_rules::BoundRule::measured(scene005::Scene005));
     rules.push(gob_rules::BoundRule::measured(size001::Size001));
     rules.push(gob_rules::BoundRule::repo(slop001::Slop001));
     rules.push(gob_rules::BoundRule::repo(slop003::Slop003));

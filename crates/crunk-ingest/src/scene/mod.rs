@@ -10,9 +10,14 @@
 
 // frob:ticket 01M4S9HRETE0RW4H034W1H7QCD
 
+mod docs;
 mod model;
 mod solve;
 
+pub use docs::{
+    LoadedSceneDoc, SCENE_DOC_SUFFIX, SceneDocLoad, SceneDocProblem, SceneDocProblemKind,
+    is_scene_doc_path, load_scene_docs,
+};
 pub use model::{
     Dim, NodeKind, Scene, SceneError, SceneNode, SceneStyle, TextRun, Viewport, parse_scene,
 };

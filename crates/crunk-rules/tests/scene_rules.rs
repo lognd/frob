@@ -175,3 +175,24 @@ fn scene004_is_clean_for_media_only() {
     );
     assert!(m.is_empty(), "{m:?}");
 }
+
+// frob:ticket 01M5H30AT7FM2BAXCTTDEGWV6J
+// frob:tests crates/crunk-rules/src/rules/scene005.rs::Scene005
+// frob:tests crates/crunk-rules/src/host.rs::scene_doc_load_subjects
+#[test]
+fn scene005_is_clean_for_a_loadable_scene() {
+    use crunk_rules::rules::scene005::Scene005;
+    let host = support::project(FILE, "<div data-id=\"a\"></div>\n", None);
+    let findings: Vec<Finding> = support::run::<Scene005>(&host);
+    assert!(findings.is_empty(), "{findings:?}");
+    assert_eq!(crunk_rules::host::scene_doc_load_subjects(&host), 1);
+}
+
+// frob:tests crates/crunk-rules/src/rules/scene005.rs::Scene005
+#[test]
+fn scene005_is_quiet_with_no_scenes() {
+    use crunk_rules::rules::scene005::Scene005;
+    let host = support::project("design/other.txt", "x", None);
+    let findings: Vec<Finding> = support::run::<Scene005>(&host);
+    assert!(findings.is_empty());
+}

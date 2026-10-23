@@ -376,6 +376,7 @@
 | [SCENE002](SCENE002.md) | scene-data-id-invalid | error | manual | P+ | true | Every element of a scene carries a stable, unique `data-id`. |
 | [SCENE003](SCENE003.md) | scene-tag-unknown | error | manual | P+ | true | A scene uses only the HTML tags of the scene dialect, plus capitalised component tags. |
 | [SCENE004](SCENE004.md) | scene-at-rule-unsupported | error | manual | P+ | true | A scene stylesheet uses only `@media`. |
+| [SCENE005](SCENE005.md) | scene-document-unloadable | error | manual | P+ | true | Every scene document under `design/scenes` loads, and each scene name is used once. |
 
 ## SCOPE
 
