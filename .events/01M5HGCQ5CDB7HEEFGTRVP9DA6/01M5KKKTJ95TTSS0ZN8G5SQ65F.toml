@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T05:26:48Z"
+digest = "dad5919e9b6a0304e314e2c7c5dfa094e22a52bd978f6e80648b3f58b73c7e7e"
+exit_code = 0
+head = "bb96d18e141f7e25b9167109f774d986779a21cc"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 620e6322-f2c9-49f0-a844-b6b8a5e15f79 with nextest profile: default
+    Starting 1 test across 1 binary (1 test skipped)
+        PASS [   0.010s] gob-check::oracle_live the_real_adapters_answer_every_corpus_case
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --test oracle_live the_real_adapters_answer_every_corpus_case"
+size = 613
+status = "measured"
+test_count = 1
+tests_digest = "b2f62da7be48a127e022f582013056f9ad87fe97cea0fdfc4543cb3cce7ac8e6"
+at = "2026-10-23T05:26:48Z"
+actor = "lognd"
+rev = 1

@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T09:52:03Z"
-updated = "2026-10-23T05:15:17Z"
+updated = "2026-10-23T05:26:48Z"
 scope = ["crates/gob-check/**", "crates/gob-testsupport/**"]
 
 [[acceptance]]
 text = "a test runs the real adapters over the incompleteness oracle corpus and produces the observed answers"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the test fails when the committed observed column differs from the live adapter answers"
