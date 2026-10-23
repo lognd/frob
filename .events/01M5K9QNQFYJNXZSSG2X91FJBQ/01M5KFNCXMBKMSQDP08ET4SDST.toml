@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["TESTQ002 reports nondeterminism in TS, JS and C# tests instead of unresolved", "TESTQ003 reports control flow in TS, JS and C# tests instead of unresolved", "deterministic straight-line tests in those languages stay quiet"]
+moved = []
+at = "2026-10-23T04:17:48Z"
+actor = "lognd"
+rev = 1
