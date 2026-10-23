@@ -2,7 +2,8 @@
 id = "01M3Z714XYJEHXHNWXKVXAYFQJ"
 title = "G19: grimble-serve MCP"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 5
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
