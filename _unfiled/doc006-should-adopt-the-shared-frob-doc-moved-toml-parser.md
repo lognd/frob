@@ -2,12 +2,12 @@
 id = "01M5NFNV4SC3DTH5PMHP4DMPY9"
 title = "DOC006 should adopt the shared frob-doc MOVED.toml parser"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T22:56:31Z"
-updated = "2026-10-23T23:16:11Z"
+updated = "2026-10-23T23:16:27Z"
 scope = ["crates/frob-obligations/src/doc_citation.rs"]
 
 [[acceptance]]
