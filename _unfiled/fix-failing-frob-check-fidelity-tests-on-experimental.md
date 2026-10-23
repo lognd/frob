@@ -2,7 +2,8 @@
 id = "01M5KQCAD16D6T307SXYNP04N0"
 title = "Fix failing frob-check fidelity tests on experimental"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
