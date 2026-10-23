@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-23T04:08:10Z"
+digest = "5637cd7cac78456c6f75a151cae7d2223a7986bc27792e8501b5f03ac083876a"
+exit_code = 0
+head = "69b81869eb4801595bdcc02b5782e02425e7c7a0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5902551f-01fd-4a58-a4d8-a30b60872d19 with nextest profile: default
+    Starting 1 test across 1 binary (10 tests skipped)
+        PASS [   0.005s] grimble-ci::rules unknown_frob_verb_fires
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-ci --test rules unknown_frob_verb_fires"
+size = 530
+status = "measured"
+test_count = 1
+tests_digest = "ff5cfa3a7dbcbff66a1e6762adeee3b8ff5d13a1dd4b9c0c94e78c4fa520e9a8"
+at = "2026-10-23T04:08:10Z"
+actor = "lognd"
+rev = 1
