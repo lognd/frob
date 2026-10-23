@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["grimble check calls grimble_ci::analyze on workflow files and reports its findings", "a zizmor finding and a grimble-ci finding for the same workflow and rule are reported once"]
+moved = []
+at = "2026-10-23T05:10:55Z"
+actor = "lognd"
+rev = 1
