@@ -28,11 +28,7 @@ fn wrong_owner_repo(units: usize) -> tempfile::TempDir {
     write(dir.path(), "a/lib.rs", "pub fn send() {}\n");
     write(dir.path(), "b/lib.rs", "pub fn recv() {}\n");
     for i in 0..units {
-        write(
-            dir.path(),
-            &format!("pkg/f{i}.rs"),
-            "// no symbols\n",
-        );
+        write(dir.path(), &format!("pkg/f{i}.rs"), "// no symbols\n");
     }
     dir
 }
@@ -69,7 +65,11 @@ fn one_unit_keeps_the_per_unit_message_and_the_sample_bound_is_exact() {
     let doc = sibling_document(&run(one.path(), &CheckOptions::default()).unwrap());
     let msgs = messages(&doc, "SYS003");
     assert_eq!(msgs.len(), 1, "{msgs:?}");
-    assert!(msgs[0].contains("owned by `node/a`, not by `node/b`"), "{}", msgs[0]);
+    assert!(
+        msgs[0].contains("owned by `node/a`, not by `node/b`"),
+        "{}",
+        msgs[0]
+    );
 
     let three = wrong_owner_repo(3);
     let doc = sibling_document(&run(three.path(), &CheckOptions::default()).unwrap());

@@ -487,7 +487,10 @@ fn end_owner_findings(
         [(sym, n)] => out.fire(
             "SYS003",
             Severity::Error,
-            format!("end-owner: the {role_name} of {} is `{sym}`, owned by `{n}`, not by `{end}`", flow.anchor),
+            format!(
+                "end-owner: the {role_name} of {} is `{sym}`, owned by `{n}`, not by `{end}`",
+                flow.anchor
+            ),
             &format!("{}/{role_name}|{sym}", flow.anchor),
             site,
         ),
