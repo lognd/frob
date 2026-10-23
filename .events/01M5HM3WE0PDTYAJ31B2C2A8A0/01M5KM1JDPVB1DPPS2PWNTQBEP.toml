@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-23T05:34:20Z"
+digest = "a68e317ae18065af84fe79885648c7ecff8396a507bc856328843c6f190560ca"
+exit_code = 0
+head = "b23d38ae250967e5f45dab8040a84727127fa991"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 67b52db6-5b07-41d7-8c8e-579de373d26a with nextest profile: default
+    Starting 7 tests across 1 binary (4 tests skipped)
+        PASS [   0.056s] crunk-rules::craft_presence_rules components_fire_per_missing_state_and_are_quiet_when_complete
+        PASS [   0.065s] crunk-rules::craft_presence_rules shadows_fire_when_lit_from_another_side_and_are_quiet_when_alike
+        PASS [   0.076s] crunk-rules::craft_presence_rules coverage_fires_on_mostly_literal_styling_and_is_quiet_on_tokens
+        PASS [   0.082s] crunk-rules::craft_presence_rules rows_fire_when_flex_has_no_alignment_and_are_quiet_otherwise
+        PASS [   0.083s] crunk-rules::craft_presence_rules content_fires_on_stand_ins_and_bare_images_and_is_quiet_when_real
+        PASS [   0.084s] crunk-rules::craft_presence_rules fonts_fire_without_a_complete_face_and_are_quiet_for_system_stacks
+        PASS [   0.109s] crunk-rules::craft_presence_rules focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.110s] 7 tests run: 7 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules --test craft_presence_rules quiet"
+size = 1322
+status = "measured"
+test_count = 7
+tests_digest = "596ed8aede44c0b0eea45154d8a3f6439d5bb44f82ff8ae60e7a34fcef96c38c"
+at = "2026-10-23T05:34:20Z"
+actor = "lognd"
+rev = 1
