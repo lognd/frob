@@ -2,7 +2,8 @@
 id = "01M4MGE2XKGBNJEV1AECPBVHQF"
 title = "Declare RES001 unpaired resource acquisition as a rule over grimble_lints::res::scan, with page and corpora"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
