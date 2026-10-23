@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T16:13:12Z"
+digest = "6dc2e4f8835d62309669cace60171b5398954be736c2105c26bdba3e1250b664"
+exit_code = 0
+head = "bce3b99fc20bb6473de7bdb617af2d3c4403ac4c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 23da7c7a-2d7e-4ff8-818c-de7e6a8468e8 with nextest profile: default
+    Starting 1 test across 1 binary (3 tests skipped)
+        PASS [   0.131s] grimble-check::finding_floods check_json_keeps_every_per_unit_binding_row
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.131s] 1 test run: 1 passed, 3 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test finding_floods check_json_keeps_every_per_unit_binding_row"
+size = 560
+status = "measured"
+test_count = 1
+tests_digest = "13e76a1c626aec060b23a313307a4ea6115bacde75625e381ff80500b2ca00e6"
+at = "2026-10-23T16:13:12Z"
+actor = "lognd"
+rev = 1
