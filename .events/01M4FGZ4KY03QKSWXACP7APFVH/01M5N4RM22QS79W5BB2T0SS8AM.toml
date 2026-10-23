@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-23T19:45:47Z"
+digest = "551dc17b43f5b06f51b74d63634e31ee54f404935bfeef63f207a731e05529b8"
+exit_code = 0
+head = "a0a22938fb7bac55956e10b438f4f6e72c6ca4a1"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0293e77c-d46e-49a3-b1db-0b3afc421cb7 with nextest profile: default
+    Starting 1 test across 1 binary (4 tests skipped)
+        PASS [   0.059s] grimble-bind::vmodel_runnables a_wrong_id_in_an_existing_file_names_the_nearest_real_id
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.059s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test vmodel_runnables a_wrong_id"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "a401313ef72c8bec3ce193fba3761f233b1af8cb2cc94c1e094b1295c56569fe"
+at = "2026-10-23T19:45:47Z"
+actor = "lognd"
+rev = 1
