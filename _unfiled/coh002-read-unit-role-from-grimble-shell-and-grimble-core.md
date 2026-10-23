@@ -2,7 +2,8 @@
 id = "01M5HJ078MGFERVXX3DSJT111F"
 title = "COH002: read unit role from grimble:shell and grimble:core directives"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
