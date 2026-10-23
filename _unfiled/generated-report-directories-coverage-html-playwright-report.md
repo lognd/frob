@@ -2,12 +2,12 @@
 id = "01M4GKCSFB13Y0VH1E1DDTA99H"
 title = "Generated report directories (coverage HTML, playwright-report, htmlcov) are walked by crunk and frob rules; exclude them by default"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T15:09:35Z"
-updated = "2026-10-09T15:09:35Z"
+updated = "2026-10-23T12:17:14Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-walk/**", "crates/gob-config/**", "crates/crunk-check/**", "changelog.d/**"]
 
