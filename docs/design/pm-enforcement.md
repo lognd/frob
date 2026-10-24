@@ -129,6 +129,10 @@ require = ["criteria_evidenced", "objective_target_met", "docs_touched_or_except
 
 `changelog_fragment` skips the ticket types in `[pm] changelog_exempt_types`
 (default `epic` and `docs`; `[]` opts every type in).
+`[pm] changelog_tests_only_types` (default `[]`, intended opt-in `["chore"]`) also
+waives the fragment for a listed type when the ticket branch's diff against the base
+touches only test files; an empty diff, any non-test file, or a missing branch does not
+qualify, and a fragment the ticket carries is still validated.
 
 Predicates are named Rust functions registered like rules; a repo
 cannot add arbitrary code but can choose the set. `doable` only lists
