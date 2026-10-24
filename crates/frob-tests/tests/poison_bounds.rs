@@ -219,15 +219,15 @@ fn pc_and_pn_bounds_never_fold_poison_into_a_pass() {
     // Pc: `d` calls `c` through an opaque region that may define `c`, and `c` calls `d`, so a
     // cycle is possible but not certain; `p` calls `q` and nothing calls back (control).
     let mut b = Build::new();
-    let cq = b.call("q");
-    let p = b.function("p", &[cq]);
-    let q = b.function("q", &[]);
-    let cd = b.call("d");
-    let c = b.function("c", &[cd]);
+    let call_q = b.call("q");
+    let fn_p = b.function("p", &[call_q]);
+    let fn_q = b.function("q", &[]);
+    let call_d = b.call("d");
+    let fn_c = b.function("c", &[call_d]);
     let opaque = b.opaque("c");
-    let cc = b.call("c");
-    let d = b.function("d", &[opaque, cc]);
-    let m = b.model(&[p, q, c, d]);
+    let call_c = b.call("c");
+    let fn_d = b.function("d", &[opaque, call_c]);
+    let m = b.model(&[fn_p, fn_q, fn_c, fn_d]);
     let cycle = RuleProgram::new(rule("CYCLE001"), Polarity::Pc)
         .message("call cycle")
         .subjects(fn_units)
