@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T01:03:38Z"
+digest = "9986e8f68f0c1442ecf03058de6619a2483b13750da86118cbccacefe12e50db"
+exit_code = 0
+head = "96ae42d92c207c5e06d953334b79a1855e3ab33d"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 40.55s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b7cf1da7-8381-4c33-8d82-206eab1798e1 with nextest profile: default
+    Starting 1 test across 1 binary (389 tests skipped)
+        PASS [   2.009s] frob-cli::it lease_widen::add_scope_wait_blocks_on_a_held_overlap_and_succeeds_when_it_releases
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.010s] 1 test run: 1 passed, 389 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli --test it add_scope_wait_blocks_on_a_held_overlap"
+size = 1233
+status = "measured"
+test_count = 1
+tests_digest = "d5a97df80e13e8791e97c8c67a97be7a956f1163eee6336c6ca146da3fe5d379"
+at = "2026-10-24T01:03:38Z"
+actor = "lognd"
+rev = 1
