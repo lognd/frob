@@ -384,6 +384,11 @@ fn ticket_fixture() -> (tempfile::TempDir, String) {
 
 /// [`ticket_fixture`] with the ticket scoped to `scope`.
 fn ticket_fixture_scoped(scope: &[&str]) -> (tempfile::TempDir, String) {
+    ticket_fixture_typed(scope, TicketType::Task)
+}
+
+/// [`ticket_fixture_scoped`] with the ticket of type `ty`.
+fn ticket_fixture_typed(scope: &[&str], ty: TicketType) -> (tempfile::TempDir, String) {
     let dir = tempfile::tempdir().expect("tempdir");
     let repo = Repo::init(dir.path()).expect("init");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
@@ -410,7 +415,7 @@ fn ticket_fixture_scoped(scope: &[&str]) -> (tempfile::TempDir, String) {
         LedgerConfig::default(),
         std::sync::Arc::new(gob_time::SystemClock),
     );
-    let mut new = NewTicket::new("Scoped work", TicketType::Task);
+    let mut new = NewTicket::new("Scoped work", ty);
     new.scope = scope.iter().map(|g| (*g).to_owned()).collect();
     let id = ledger.new_ticket(new).expect("ticket").ticket.front.id;
     (dir, id.to_string())
@@ -1148,6 +1153,68 @@ fn rel003_ticket_without_a_fragment_reports_with_the_remedy() {
     assert_eq!(msgs.len(), 1, "{msgs:?}");
     assert!(msgs[0].contains("frob ticket fragment"), "{}", msgs[0]);
     assert!(msgs[0].contains(&id), "{}", msgs[0]);
+}
+
+/// A `ticket/<handle>` branch off `main` holding `files`, checked out, over a chore ticket fixture.
+fn chore_branch(files: &[(&str, &str)]) -> (tempfile::TempDir, String) {
+    let (dir, id) = ticket_fixture_typed(&["src/a/**"], TicketType::Chore);
+    let repo = Repo::discover(dir.path()).expect("discover");
+    let ledger = Ledger::open(
+        Repo::discover(dir.path()).expect("discover"),
+        LedgerConfig::default(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
+    let ticket: frob_ledger::TicketId = id.parse().expect("id");
+    let handle = ledger.show(ticket).expect("show").summary.handle;
+    let branch = format!("ticket/{}", handle.trim_start_matches('~'));
+    let tip = repo.rev_parse("main").expect("main");
+    let reff = repo.git_dir().join("refs/heads").join(&branch);
+    std::fs::create_dir_all(reff.parent().expect("parent")).expect("dirs");
+    std::fs::write(&reff, format!("{tip}\n")).expect("branch");
+    std::fs::write(
+        repo.git_dir().join("HEAD"),
+        format!("ref: refs/heads/{branch}\n"),
+    )
+    .expect("head");
+    let changes: Vec<_> = files
+        .iter()
+        .map(|(p, c)| (RelPath::new(*p).expect("path"), Some(c.as_bytes().to_vec())))
+        .collect();
+    repo.commit_paths(
+        &format!("refs/heads/{branch}"),
+        &changes,
+        "work",
+        &CommitOptions::default(),
+    )
+    .expect("commit");
+    (dir, id)
+}
+
+#[test]
+fn rel003_skips_a_tests_only_branch_of_a_listed_ticket_type() {
+    // frob:ticket 01M5NWA3HFZWBJWZ11VN8JRN7F
+    // frob:tests crates/frob-check/src/product.rs::rel003_missing
+    let toml = "[pm]\ndone_requires = [\"changelog_fragment\"]\nchangelog_tests_only_types = [\"chore\"]\n";
+    let (dir, id) = chore_branch(&[("tests/it/a.rs", "fn t() {}\n")]);
+    write(dir.path(), "frob.toml", toml);
+    let run_rel003 = |dir: &Path| {
+        run(dir, &ticket_opts(&id))
+            .expect("run")
+            .findings
+            .iter()
+            .filter(|f| f.rule.as_str() == "REL003")
+            .count()
+    };
+    assert_eq!(run_rel003(dir.path()), 0, "tests-only diff is exempt");
+    let (dir, id2) = chore_branch(&[("src/a/lib.rs", "pub fn a() {}\n")]);
+    write(dir.path(), "frob.toml", toml);
+    let n = run(dir.path(), &ticket_opts(&id2))
+        .expect("run")
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "REL003")
+        .count();
+    assert_eq!(n, 1, "a source change still needs a fragment");
 }
 
 #[test]
