@@ -20,6 +20,7 @@
 | `rule fmt` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Rewrite rule files to the canonical layout; `--check` only reports and exits 1 on a difference. |
 | `rule new` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold `rules/ID.grl` from the code at `FILE:LINE`; `--print` shows it without writing. |
 | `rule test` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run the examples of rule files; exits 1 when any example fails. |
+| `rule why` | yes | no | 0 ok, 2 usage, 4 internal | Trace rule `ID` at `FILE:LINE`: the candidates there and the first clause that fails. |
 | `shrink` | yes | no | 0 ok, 2 usage, 4 internal | Propose (and with `--apply` perform) removal of grants no detector observes. |
 | `status` | yes | no | 0 ok, 2 usage, 4 internal | Report grant count, breadth per node and the delta since the lock. |
 | `vet` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Vet the locked dependencies: advisories, unvetted additions and duplicate versions. |
