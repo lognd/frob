@@ -2,7 +2,8 @@
 id = "01M4HW9GZT9T70NGGAHAH1CKJF"
 title = "ticket evidence add --provider file accepts a gitignored or untracked path, leaving evidence that exists on no ref"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
