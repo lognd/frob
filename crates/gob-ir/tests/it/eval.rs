@@ -213,6 +213,31 @@ fn a_definite_reach_under_poison_never_yields_clean() {
     assert!(matches!(&r.verdicts[0], Verdict::Unresolved { .. }));
 }
 
+// frob:ticket 01M5P5BX83VZV2GJWS180A1QKV
+// frob:tests crates/gob-ir/src/eval/program.rs::RuleProgram
+#[test]
+fn poison_outside_the_subjects_cone_leaves_a_reach_clean() {
+    let (m, g, user) = opaque_in_cone();
+    // Every subject's check reads `user`'s poisoned cone, then claims no path (hi=false).
+    let p = RuleProgram::new(rule("REACH002"), Polarity::Pc)
+        .message("shared poison")
+        .subjects(fn_units)
+        .check(move |ctx, _s| {
+            let _ = offenders(ctx, user, g);
+            Observation::Reach {
+                lo: false,
+                hi: false,
+                frontier: vec![],
+            }
+        });
+    let out = run(&m, &p);
+    let of = |n| out.results.iter().find(|r| r.subject == n).unwrap();
+    // `g` holds no poisoned node: the poison belongs to `user`, so `g` stays Clean.
+    assert!(matches!(of(g).verdicts[0], Verdict::Clean), "{:?}", of(g));
+    // `user` encloses the poisoned atom: never Clean.
+    assert!(matches!(&of(user).verdicts[0], Verdict::Unresolved { .. }));
+}
+
 #[test]
 fn opaque_subject_reports_one_rolled_up_unresolved_with_the_reason_code() {
     let (m, ..) = opaque_in_cone();
