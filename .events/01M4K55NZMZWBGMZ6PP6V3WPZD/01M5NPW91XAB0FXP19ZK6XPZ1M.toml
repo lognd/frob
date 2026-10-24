@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T00:59:05Z"
+digest = "db382b7e1a2e6a353296a054eab81ae48b3afb497784dbc87ad1dfd692f48211"
+exit_code = 0
+head = "a4523fdc0e04286ad8c891bcce6817d56b891a98"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 19ca6bfd-20f6-4b62-8e95-036bfa5fb779 with nextest profile: default
+    Starting 4 tests across 1 binary
+        PASS [   0.022s] frob-evidence::capture_home capture_never_holds_home_path_in_any_field
+        PASS [   0.022s] frob-evidence::capture_home capture_clears_windows_style_home
+        PASS [   0.022s] frob-evidence::capture_home capture_clears_home_paths_when_home_is_unset
+        PASS [   0.025s] frob-evidence::capture_home capture_keeps_non_ascii_output_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --test capture_home capture_"
+size = 871
+status = "measured"
+test_count = 4
+tests_digest = "4f7385bb95751258ddcb43d8cac7f375c70c99a4bf7415c648a8b0bddb2a1e6f"
+at = "2026-10-24T00:59:05Z"
+actor = "lognd"
+rev = 1

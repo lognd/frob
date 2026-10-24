@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T14:58:45Z"
-updated = "2026-10-24T00:56:00Z"
+updated = "2026-10-24T00:59:05Z"
 scope = ["crates/frob-evidence/**", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "a command-provider evidence record never contains an absolute home path at capture time"
-bound = false
+bound = true
 +++
 
 found while coordinating the drain: ~WXKT9TC cargo run -- doctor evidence tripped TICK004; scrubbed by ticket doctor --fix after the fact.
