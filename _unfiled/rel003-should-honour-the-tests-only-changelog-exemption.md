@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-24T02:37:18Z"
-updated = "2026-10-24T04:25:40Z"
-scope = ["crates/frob-check/src/product.rs"]
+updated = "2026-10-24T04:26:52Z"
+scope = ["crates/frob-check/src/product.rs", "crates/frob-check/tests/it/check.rs"]
 
 [[acceptance]]
 text = "Given a tests-only branch diff and a ticket type listed in pm.changelog_tests_only_types, when frob check --ticket runs, then REL003 does not fire for the missing fragment"
