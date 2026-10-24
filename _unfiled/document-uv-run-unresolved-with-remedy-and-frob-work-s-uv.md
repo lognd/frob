@@ -2,12 +2,12 @@
 id = "01M4KKQZVEMCD4NY1001V8YYHS"
 title = "Document uv-run Unresolved-with-remedy and frob work's uv sync --frozen in tool-stages.md and tool-binding.md"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "Claude"
 created = "2026-10-10T19:13:25Z"
-updated = "2026-10-10T19:13:25Z"
+updated = "2026-10-24T01:15:16Z"
 scope = ["docs/reference/tool-stages.md", "docs/design/tool-binding.md", "changelog.d/**"]
 
 [[links]]
