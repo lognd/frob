@@ -57,7 +57,7 @@ impl LeaseStore {
                 if blocked {
                     tracing::warn!(%ticket, waited = ?start.elapsed(), "wait expired: still blocked");
                 }
-                return Err(first.unwrap_or(err));
+                return Err(if blocked { first.unwrap_or(err) } else { err });
             }
             if last_report.is_none_or(|t| t.elapsed() >= REPORT_EVERY) {
                 tracing::info!(%ticket, blocker = %err, "waiting for an overlapping lease");
