@@ -25,6 +25,7 @@ v1 keeps only a creation date. A ticket ULID carries that date at 00:00:00 UTC p
 | `state` dropped | category `done`, outcome `wont-fix`, drop reason kept as a comment event |
 | `blocked_by`, `parent` | `blocked-by` links, `parent` (mapped through the id map) |
 | `milestone`, `component` | labels `milestone:<v>`, `component:<v>` |
+| `sprint` | label `sprint:<v>` |
 | `origin` | actor of the `create` event and reporter |
 | `acceptance` | acceptance criteria with `bound = false` |
 | `evidence` (`cmd:` lines) | `evidence` events, provider `command`, status measured when exit is 0 |
@@ -41,7 +42,6 @@ v1 keeps only a creation date. A ticket ULID carries that date at 00:00:00 UTC p
 |---|---|---|
 | `worktree` | 30 | per-checkout lease state; v2 leases are local runtime state and worktrees derive from the handle |
 | `branch` | 30 | per-checkout lease state; v2 derives the branch name from the handle |
-| `sprint` | 0 | v2 has no sprint field (cycles arrive in milestone 2) |
 | `due` | 0 | v2 has no due-date field |
 | `rank` | 0 | v2 orders by priority and points; no manual rank |
 | `runs_last` | 0 | v1 scheduling hint; v2 leases replace the run-last queue |
