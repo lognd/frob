@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-10T03:04:21Z"
 updated = "2026-10-24T01:12:54Z"
 labels = ["adoption:logand-app"]
-scope = ["crates/frob/src/ticket/**", "crates/frob-lease/src/**", "changelog.d/**", "crates/frob-lease/tests/**", "crates/frob/src/lease_cmd.rs", "crates/frob/tests/it/lease_widen.rs"]
+scope = ["crates/frob/src/ticket/**", "crates/frob-lease/src/**", "changelog.d/**", "crates/frob-lease/tests/**", "crates/frob/src/lease_cmd.rs", "crates/frob/tests/it/lease_widen.rs", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "Given --add-scope naming a file another lease holds, when run with --wait 600, then it waits (bounded, reporting the holder) and succeeds when the holder releases"
