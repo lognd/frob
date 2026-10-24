@@ -73,7 +73,7 @@ pub const VERBS: &[(&str, &[&str])] = &[
         "release",
         &["changelog", "notes", "status", "bump", "cut", "adopt"],
     ),
-    ("rule", &["test", "check", "catalog", "fmt", "new"]),
+    ("rule", &["test", "check", "catalog", "fmt", "new", "why"]),
     ("explain", &[]),
     ("work", &[]),
     ("requeue", &[]),
