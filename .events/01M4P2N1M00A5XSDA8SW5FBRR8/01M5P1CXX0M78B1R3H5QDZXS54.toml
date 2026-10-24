@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T04:05:31Z"
+digest = "59731ccfdcb8467299ea7ef3dca55fbcfd79f95438c14229bbefbeff2c779886"
+exit_code = 0
+head = "df26d09a49060598c5de040ddb31e3caadcb79b5"
+inline = '''
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 36.96s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fc3d7e0d-ae74-4b87-980b-b60d4d625b40 with nextest profile: default
+    Starting 1 test across 476 binaries (5481 tests skipped)
+        PASS [   0.345s] frob-cli::it agent_brief::brief_names_ticket_scope_worktree_and_rules
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.357s] 1 test run: 1 passed, 5481 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "frob-cli::it agent_brief::brief_names_ticket_scope_worktree_and_rules"
+size = 755
+status = "measured"
+test_count = 1
+tests_digest = "b63a15cc729cdeb0f45623ad20cd67b5ccc34d5a172897d1fcae3daaf453a44a"
+at = "2026-10-24T04:05:31Z"
+actor = "lognd"
+rev = 1
