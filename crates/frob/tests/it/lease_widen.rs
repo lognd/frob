@@ -213,19 +213,72 @@ fn lease_release_frees_the_lease_and_is_idempotent_and_holder_only() {
     assert_eq!(repo.ok(&["lease", "release", &id])["already"], true);
 }
 
-/// Run `frob` with `args` on a thread; the caller releases the blocker meanwhile.
-fn spawn(repo: &Repo, args: &[&str]) -> std::thread::JoinHandle<Output> {
+/// A `frob` child running on a thread, with a signal for when it has reported a blocking holder.
+struct Spawned {
+    /// Fires once the child has printed its `waiting` line, i.e. it is parked on the held overlap.
+    waiting: std::sync::mpsc::Receiver<()>,
+    /// Joins to the child's full output.
+    handle: std::thread::JoinHandle<Output>,
+}
+
+impl Spawned {
+    /// Block until the child is waiting on the holder (condition-based, no sleep).
+    fn wait_until_blocked(&self) {
+        self.waiting
+            .recv_timeout(Duration::from_secs(30))
+            .expect("the child reports the blocking holder");
+    }
+
+    /// Join the child and return its output.
+    fn join(self) -> std::thread::Result<Output> {
+        self.handle.join()
+    }
+}
+
+/// Run a real `frob` process with `args` on a thread (stderr is only observable live from a process); the caller releases the blocker once it reports waiting.
+fn spawn(repo: &Repo, args: &[&str]) -> Spawned {
+    use std::io::{BufRead, BufReader, Read};
+    use std::process::Stdio;
     let dir = repo.path().to_path_buf();
     let args: Vec<String> = args.iter().map(|a| (*a).to_owned()).collect();
-    std::thread::spawn(move || {
-        common::frob_command()
-            .current_dir(dir)
+    let (tx, rx) = std::sync::mpsc::channel();
+    let handle = std::thread::spawn(move || {
+        let mut child = std::process::Command::new(common::process_command().get_program())
+            .env("PATH", common::hermetic_path())
             .env_remove("FROB_LOG")
+            .current_dir(dir)
             .arg("--json")
             .args(args)
-            .output()
-            .expect("run frob")
-    })
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("run frob");
+        let mut out = child.stdout.take().expect("stdout");
+        let stdout_reader = std::thread::spawn(move || {
+            let mut buf = Vec::new();
+            out.read_to_end(&mut buf).expect("read stdout");
+            buf
+        });
+        let mut stderr = Vec::new();
+        let mut lines = BufReader::new(child.stderr.take().expect("stderr"));
+        let mut line = Vec::new();
+        while lines.read_until(b'\n', &mut line).expect("read stderr") > 0 {
+            if line.starts_with(b"waiting") {
+                let _ = tx.send(());
+            }
+            stderr.append(&mut line);
+        }
+        let status = child.wait().expect("wait");
+        Output {
+            status,
+            stdout: stdout_reader.join().expect("stdout thread"),
+            stderr,
+        }
+    });
+    Spawned {
+        waiting: rx,
+        handle,
+    }
 }
 
 // frob:ticket 01M4HW9J243ZJRMVYW51K18GCM
@@ -247,7 +300,7 @@ fn add_scope_wait_blocks_on_a_held_overlap_and_succeeds_when_it_releases() {
             "60",
         ],
     );
-    std::thread::sleep(Duration::from_millis(1500));
+    child.wait_until_blocked();
     repo.store().release(other, None).expect("release");
     let out = child.join().expect("join");
     assert_eq!(code_of(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
@@ -296,7 +349,7 @@ fn lease_widen_wait_succeeds_once_the_holder_releases() {
         &repo,
         &["lease", "widen", &id, "--glob", "b/x.rs", "--wait", "60"],
     );
-    std::thread::sleep(Duration::from_millis(1500));
+    child.wait_until_blocked();
     repo.store().release(other, None).expect("release");
     let out = child.join().expect("join");
     assert_eq!(code_of(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));

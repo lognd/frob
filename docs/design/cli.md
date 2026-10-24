@@ -297,6 +297,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `exceptions audit\|convert\|prune\|budget` | frob | frob-obligations | yes | 0 2 3 4 | 2 | effect: rewrites the exceptions store |
 | `narrative move` | frob | frob-obligations | yes | 0 2 3 4 | 2 | effect: moves narrative text into a ticket |
 | `rule test` (also `grimble rule test`) | frob, grimble | gob-rules | yes, read-only | 0 1 2 4 | 2 | object: the rule noun |
+| `rule why` (also `grimble rule why`) | frob, grimble | gob-rules | yes, read-only | 0 2 | 2 | object: the rule noun |
 | `batch` | frob | frob-ledger | yes, all or nothing | 0 2 3 4 | 2 | effect: applies many ledger writes atomically |
 | `ticket new` | frob | frob-ledger | only with `--idempotency-key` or an identical request | 0 2 3 4 | 1 | effect: creates a ticket |
 | `ticket show [--events] [--format md]`, `ticket list [--tree] [--category C] [--full]` (`--full` adds every row's aliases and events in one pass) | frob | frob-ledger | yes, read-only | 0 2 4 | 1 | object: the ticket noun, read views |
@@ -350,7 +351,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble vet [--hook]` | grimble | grimble-vet | yes; implemented (vet.md); `--hook` not yet | 0 1 2 4 | 2 | policy: the vet gate semantics |
 | `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 | object: the explore noun of grimble |
 | `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 | effect: opens a server session |
-| `agent status\|sync\|uninstall\|brief` (install, inspect and undo the agent integration; `brief` prints a byte-capped session summary) | frob | frob (bin) | yes; `status` and `brief` are read-only | 0 1 2 3 4 | 1 | effect: writes or removes the agent hook and skill files |
+| `agent status\|sync\|uninstall\|brief` (install, inspect and undo the agent integration; the brief verb prints a byte-capped session summary) | frob | frob (bin) | yes; `status` and `brief` are read-only | 0 1 2 3 4 | 1 | effect: writes or removes the agent hook and skill files |
 | `claim hold\|resume\|touch\|evict\|restore` (a remote collaborator's claim on a ticket, distributed lease) | frob | frob-worktree | no for `hold` and `evict`, yes for `resume` and `touch` | 0 2 3 4 | 1 | object: the claim noun, the distributed form of the lease |
 | `cycle list\|show\|unassign` | frob | frob-pm | yes; `list` and `show` are read-only | 0 2 3 4 | 1 | object: the cycle noun |
 | `explain <code>` (also `grimble explain`) | frob, grimble | frob (bin) | yes, read-only | 0 2 4 | 1 | object: the rule and error code catalog |

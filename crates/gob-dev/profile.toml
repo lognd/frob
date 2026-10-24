@@ -670,6 +670,13 @@ skip = "reads the real agent config under the home directory, so it is not repea
 [scenario."frob agent sync"]
 skip = "writes agent settings under the home directory, so it is unsafe to profile against the repo fixture; covered by the agent sync tests in crates/frob"
 
+# frob:ticket 01M5P7R3CQB4M59P384SAYG120
+[scenario."frob agent brief"]
+args = ["agent", "brief"]
+readonly = true
+exit = [0, 2]
+budget_ms = 500
+
 [scenario."frob agent uninstall"]
 skip = "removes agent settings under the home directory, so it is unsafe to profile against the repo fixture; covered by the agent sync tests in crates/frob"
 
