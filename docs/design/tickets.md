@@ -447,6 +447,15 @@ the integrity guards on `done`. Post-actions (`release_lease`,
   `--add-new-scope` on `ticket update`, `--new-glob` on `lease widen`); the
   label is ledger data, so `work` stays quiet on later calls, and the entry is
   an ordinary scope glob everywhere else (lease, overlap, SCOPE001).
+- Waiting for an overlapping lease (~1K18GCM). `ticket update --add-scope`
+  and `lease widen` fail at once with `E-LEASE-HELD` when the widened scope
+  overlaps another ticket's live lease. `--wait SECS` retries the rescope
+  (every 250 ms, each try under the lease lock) for at most SECS seconds,
+  printing the blocking holder on stderr when the wait starts and at most
+  every 10 s after, and succeeds when the holder releases or its lease
+  expires. On expiry the first `E-LEASE-HELD` is returned and neither the
+  ticket nor the lease changed; `--wait 0` (the default) never waits. Only
+  an overlap with another ticket is waited on; other refusals return at once.
 - Worktree garbage collection (~BZXZK29). A worktree outlives its ticket
   unless something removes it, and each one carries its own `target/`
   (15 to 20 GB), so `frob work` and `frob land` run a throttled pass that

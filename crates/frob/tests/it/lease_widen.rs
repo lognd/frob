@@ -212,3 +212,97 @@ fn lease_release_frees_the_lease_and_is_idempotent_and_holder_only() {
     assert!(repo.store().live_lease(t).expect("read").is_none());
     assert_eq!(repo.ok(&["lease", "release", &id])["already"], true);
 }
+
+/// Run `frob` with `args` on a thread; the caller releases the blocker meanwhile.
+fn spawn(repo: &Repo, args: &[&str]) -> std::thread::JoinHandle<Output> {
+    let dir = repo.path().to_path_buf();
+    let args: Vec<String> = args.iter().map(|a| (*a).to_owned()).collect();
+    std::thread::spawn(move || {
+        common::frob_command()
+            .current_dir(dir)
+            .env_remove("FROB_LOG")
+            .arg("--json")
+            .args(args)
+            .output()
+            .expect("run frob")
+    })
+}
+
+// frob:ticket 01M4HW9J243ZJRMVYW51K18GCM
+// frob:tests Update.run
+#[test]
+fn add_scope_wait_blocks_on_a_held_overlap_and_succeeds_when_it_releases() {
+    let repo = Repo::new();
+    let (id, t) = repo.leased("Test User", "a/**");
+    let (_, other) = repo.leased("Someone Else", "b/**");
+    let child = spawn(
+        &repo,
+        &[
+            "ticket",
+            "update",
+            &id,
+            "--add-scope",
+            "b/x.rs",
+            "--wait",
+            "60",
+        ],
+    );
+    std::thread::sleep(Duration::from_millis(1500));
+    repo.store().release(other, None).expect("release");
+    let out = child.join().expect("join");
+    assert_eq!(code_of(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("Someone Else"),
+        "the holder is reported: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(repo.lease_scope(t), ["a/**", "b/x.rs"]);
+    assert_eq!(
+        repo.ticket_scope(&id),
+        serde_json::json!(["a/**", "b/x.rs"])
+    );
+}
+
+// frob:tests Update.run
+#[test]
+fn add_scope_wait_expiry_returns_the_original_held_error_and_leaves_state() {
+    let repo = Repo::new();
+    let (id, t) = repo.leased("Test User", "a/**");
+    repo.leased("Someone Else", "b/**");
+    for wait in ["0", "1"] {
+        let out = repo.frob(&[
+            "ticket",
+            "update",
+            &id,
+            "--add-scope",
+            "b/x.rs",
+            "--wait",
+            wait,
+        ]);
+        assert_eq!(code(&out), 3, "{}", String::from_utf8_lossy(&out.stdout));
+        assert!(String::from_utf8_lossy(&out.stdout).contains("E-LEASE-HELD"));
+    }
+    assert_eq!(repo.ticket_scope(&id), serde_json::json!(["a/**"]));
+    assert_eq!(repo.lease_scope(t), ["a/**"]);
+}
+
+// frob:tests LeaseWiden.run
+#[test]
+fn lease_widen_wait_succeeds_once_the_holder_releases() {
+    let repo = Repo::new();
+    let (id, t) = repo.leased("Test User", "a/**");
+    let (_, other) = repo.leased("Someone Else", "b/**");
+    let child = spawn(
+        &repo,
+        &["lease", "widen", &id, "--glob", "b/x.rs", "--wait", "60"],
+    );
+    std::thread::sleep(Duration::from_millis(1500));
+    repo.store().release(other, None).expect("release");
+    let out = child.join().expect("join");
+    assert_eq!(code_of(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
+    assert_eq!(repo.lease_scope(t), ["a/**", "b/x.rs"]);
+}
+
+fn code_of(out: &std::process::Output) -> i32 {
+    out.status.code().expect("exit code")
+}

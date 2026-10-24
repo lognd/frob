@@ -16,6 +16,7 @@ use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use schemars::JsonSchema;
 use serde::Serialize;
+use std::time::Duration;
 
 use crate::ticket::{ChangeData, TicketArg, cli_err, open, open_lease_store, resolve};
 
@@ -49,6 +50,7 @@ pub(crate) fn update_with_lease(
     ledger: &Ledger,
     id: TicketId,
     patch: &Patch,
+    wait: Duration,
 ) -> Result<(Applied, Vec<String>), CliError> {
     let old = ledger.show(id).map_err(cli_err)?.ticket.front.scope;
     let new = ledger.scope_after(id, patch).map_err(cli_err)?;
@@ -60,7 +62,7 @@ pub(crate) fn update_with_lease(
     let state = match classify(&store, id, &actor)? {
         None => LeaseSide::None,
         Some(l) if l.holder.actor == actor => {
-            store.rescope(id, &l.holder, &new, store.config())?;
+            rescope_waiting(&store, id, &l.holder, &new, wait)?;
             tracing::info!(ticket = %id, "lease rescoped ahead of the ledger commit");
             LeaseSide::Refreshed {
                 old: l.scope,
@@ -99,6 +101,39 @@ pub(crate) fn update_with_lease(
     Ok((applied, warnings))
 }
 
+/// Rescope under the lease lock, waiting up to `wait` and reporting the blocking holder on stderr.
+fn rescope_waiting(
+    store: &LeaseStore,
+    id: TicketId,
+    holder: &Holder,
+    scope: &[String],
+    wait: Duration,
+) -> Result<Lease, LeaseError> {
+    store.rescope_waiting(id, holder, scope, store.config(), wait, |blocker| {
+        eprintln!("waiting (up to {}s): {blocker}", wait.as_secs());
+    })
+}
+
+/// The `--wait` flag shared by `lease widen` and `ticket update`.
+#[derive(Debug, Clone, Copy, Default, clap::Args)]
+#[command(about = None, long_about = None)]
+pub(crate) struct WaitArg {
+    #[arg(
+        long = "wait",
+        value_name = "SECS",
+        default_value_t = 0,
+        help = "When a scope addition overlaps another ticket's lease, wait up to SECS seconds (reporting the holder) for it to release; 0 fails at once"
+    )]
+    pub(crate) secs: u64,
+}
+
+impl WaitArg {
+    /// The wait as a duration.
+    pub(crate) fn duration(self) -> Duration {
+        Duration::from_secs(self.secs)
+    }
+}
+
 /// Output of `lease widen`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct WidenData {
@@ -122,6 +157,7 @@ pub struct LeaseWiden {
     ticket: String,
     globs: Vec<String>,
     new_globs: Vec<String>,
+    wait: Duration,
 }
 
 /// The flags of `lease widen`, declared once.
@@ -142,6 +178,8 @@ struct WidenArgs {
         help = "Like --glob, for files the ticket will create: adds a `creates:` label that silences the zero-match warning (repeatable)"
     )]
     new_globs: Vec<String>,
+    #[command(flatten)]
+    wait: WaitArg,
 }
 
 impl Command for LeaseWiden {
@@ -157,6 +195,7 @@ impl Command for LeaseWiden {
             ticket: a.ticket.ticket,
             globs: a.globs,
             new_globs: a.new_globs,
+            wait: a.wait.duration(),
         })
     }
 
@@ -176,9 +215,9 @@ impl Command for LeaseWiden {
             ..Patch::default()
         };
         let before = lease.scope.clone();
-        let (applied, warnings) = update_with_lease(ctx, &ledger, id, &patch)?;
+        let (applied, warnings) = update_with_lease(ctx, &ledger, id, &patch, self.wait)?;
         let scope = applied.ticket.front.scope.clone();
-        let lease = store.rescope(id, &lease.holder, &scope, store.config())?;
+        let lease = rescope_waiting(&store, id, &lease.holder, &scope, self.wait)?;
         let changed = before != lease.scope;
         tracing::info!(ticket = %id, changed, "lease widen");
         let mut payload = Payload::new(WidenData {

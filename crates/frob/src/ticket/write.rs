@@ -252,6 +252,7 @@ pub struct Update {
     remove_acceptance: Vec<usize>,
     clear_acceptance: bool,
     reason: Option<String>,
+    wait: std::time::Duration,
 }
 
 /// An evidence record whose acceptance criterion an update removed.
@@ -442,6 +443,8 @@ struct UpdateArgs {
         help = "Why (required when changing flavour)"
     )]
     reason: Option<String>,
+    #[command(flatten)]
+    wait: crate::lease_cmd::WaitArg,
 }
 
 impl Command for Update {
@@ -484,6 +487,7 @@ impl Command for Update {
             remove_acceptance: a.remove_acceptance,
             clear_acceptance: a.clear_acceptance,
             reason: a.reason,
+            wait: a.wait.duration(),
         })
     }
 
@@ -529,7 +533,8 @@ impl Command for Update {
             .find(|(name, _)| name == "parent")
             .and_then(|(_, v)| move_target(v.as_ref()))
             .and_then(|new_parent| claim_cover(ctx, &ledger).move_warning(id, new_parent));
-        let (applied, warnings) = crate::lease_cmd::update_with_lease(ctx, &ledger, id, &patch)?;
+        let (applied, warnings) =
+            crate::lease_cmd::update_with_lease(ctx, &ledger, id, &patch, self.wait)?;
         tracing::info!(ticket = %id, already = applied.already, lost = lost.len(), "ticket update");
         // frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
         let reindex_note = reindex_after(ctx, &ledger, id, &applied)?;
