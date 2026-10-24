@@ -2,7 +2,8 @@
 id = "01M5PC8M49F53YSPKKT7XXMDFH"
 title = "CI red on Windows: refresh/sync_policy/init_eol_pin/land/ledger-refresh/csharp snapshot tests fail"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 reporter = "lognd"
