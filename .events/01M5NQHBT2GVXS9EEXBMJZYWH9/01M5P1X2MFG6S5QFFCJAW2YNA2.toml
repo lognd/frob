@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T04:10:18Z"
+digest = "8f218a03baf78eb5ea2d249b670f7628739fb35fba30de4d35a5cc7f18216a52"
+exit_code = 0
+head = "5606166d4d9dc2456d086c6532e2960831e9fd27"
+passed = true
+provider = "nextest"
+ref = "-p gob-cli -p frob-docgen -p grimble-ci -p gob-git"
+size = 24464
+status = "measured"
+test_count = 129
+tests_digest = "675a36bbcceb0499ee8929d3b309beee620f545884d1a5f9cef4306099b82eb2"
+uri = "dir:.git/frob/artifacts/8f218a03baf78eb5ea2d249b670f7628739fb35fba30de4d35a5cc7f18216a52"
+at = "2026-10-24T04:10:18Z"
+actor = "lognd"
+rev = 1
