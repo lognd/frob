@@ -2,7 +2,8 @@
 id = "01M5P7R3CQB4M59P384SAYG120"
 title = "CI red: profile scenario for frob agent brief, verb_admission table, flaky lease_widen wait test"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
