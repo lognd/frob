@@ -25,6 +25,7 @@ fn entry(path: &str, text: &str) -> FileEntry {
     }
 }
 
+// frob:ticket 01M5PC8M49F53YSPKKT7XXMDFH
 /// Every `.cs` file under one fixture root as (repo-relative path, text), sorted.
 fn sources(name: &str) -> Vec<(String, String)> {
     let root = fixture_dir(name);
@@ -38,7 +39,8 @@ fn sources(name: &str) -> Vec<(String, String)> {
             } else if p.extension().is_some_and(|x| x == "cs") {
                 let rel = gob_path::exact_text(p.strip_prefix(&root).expect("under fixture"))
                     .expect("utf8 fixture path")
-                    .to_owned();
+                    // Snapshots are `/`-separated; a Windows host path would use `\\`.
+                    .replace('\\', "/");
                 out.push((rel, std::fs::read_to_string(&p).expect("read")));
             }
         }

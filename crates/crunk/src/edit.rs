@@ -250,9 +250,10 @@ impl Plan {
     }
 }
 
+// frob:ticket 01M5PC8M49F53YSPKKT7XXMDFH
 /// A diff header name: `file` under the `a` or `b` side.
 fn side(side: &str, file: &str) -> String {
-    Path::new(side).join(file).to_string_lossy().into_owned()
+    format!("{side}/{file}")
 }
 
 /// Which design file kind `path` is, from its location and name.

@@ -167,12 +167,14 @@ fn store_path(root: &Path, cwd: &Path, store: Option<&Path>) -> PathBuf {
     store.map_or_else(|| root.join(DEFAULT_STORE), |p| absolute(cwd, p))
 }
 
+// frob:ticket 01M5PC8M49F53YSPKKT7XXMDFH
 /// A path relative to the project root when inside it, as text.
 pub(crate) fn relative(root: &Path, path: &Path) -> String {
+    // Always `/`-separated so it matches the check report's file table on every platform.
     path.strip_prefix(root)
         .unwrap_or(path)
         .to_string_lossy()
-        .into_owned()
+        .replace('\\', "/")
 }
 
 fn report(

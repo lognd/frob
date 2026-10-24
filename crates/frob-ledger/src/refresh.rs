@@ -256,6 +256,7 @@ pub struct RefreshLock {
 }
 
 impl RefreshLock {
+    // frob:ticket 01M5PC8M49F53YSPKKT7XXMDFH
     /// Take the per-clone lock without blocking; `Ok(None)` means another refresh holds it.
     ///
     /// # Errors
@@ -263,7 +264,13 @@ impl RefreshLock {
     pub fn try_acquire(common_dir: &Path) -> io::Result<Option<Self>> {
         let path = lock_path(common_dir);
         fs::create_dir_all(path.parent().unwrap_or(common_dir))?;
-        let file = File::options().create(true).append(true).open(&path)?;
+        // Read+write (not append-only): Windows `LockFileEx` is denied on an append-only handle.
+        let file = File::options()
+            .create(true)
+            .read(true)
+            .write(true)
+            .truncate(false)
+            .open(&path)?;
         match file.try_lock() {
             Ok(()) => Ok(Some(Self { _file: file })),
             Err(TryLockError::WouldBlock) => {

@@ -175,12 +175,16 @@ enum Item {
     Big(Oversized),
 }
 
+// frob:ticket 01M5PC8M49F53YSPKKT7XXMDFH
 /// `path` relative to `root` as `/`-separated text; the lossy display form when it cannot be a `RelPath`.
 fn rel_path(root: &Path, path: &Path) -> String {
     gob_path::RelPath::from_host(root, path).map_or_else(
         |_| {
             let rel = path.strip_prefix(root).unwrap_or(path);
-            gob_path::Shown::with_home(rel, None).to_string()
+            // Keep the `/` contract on Windows too: role and ledger matching split on `/` only.
+            gob_path::Shown::with_home(rel, None)
+                .to_string()
+                .replace('\\', "/")
         },
         |r| r.as_str().to_owned(),
     )

@@ -1,0 +1,1 @@
+Fix the Windows nextest failures: normalize host paths to forward slashes in crunk edits, ledger and walk paths, take the refresh lock on a writable handle, and make the init, land and C# fixture tests portable.

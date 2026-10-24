@@ -25,25 +25,27 @@ const ALLOWED: [(&str, &str); 2] = [
     ),
 ];
 
+// frob:ticket 01M5PC8M49F53YSPKKT7XXMDFH
+/// Every `.rs` file under a crate's `src` as (`/`-separated key, text).
 fn rust_files(crate_name: &str) -> Vec<(String, String)> {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join(crate_name)
         .join("src");
     let mut out = Vec::new();
-    let mut stack = vec![dir];
-    while let Some(d) = stack.pop() {
+    // The display key is built from `/`-joined names, never from the host path, so it is the
+    // same on every platform.
+    let mut stack = vec![(dir, format!("{crate_name}/src"))];
+    while let Some((d, shown)) = stack.pop() {
         for entry in std::fs::read_dir(&d).expect("read_dir") {
             let path = entry.expect("entry").path();
+            // A bare file name holds no separator, so its display form is host-independent.
+            let name = Shown::of(Path::new(path.file_name().expect("file name"))).to_string();
             if path.is_dir() {
-                stack.push(path);
+                stack.push((path, format!("{shown}/{name}")));
             } else if path.extension().is_some_and(|e| e == "rs") {
                 let text = std::fs::read_to_string(&path).expect("read");
-                let shown = Shown::of(&path).to_string();
-                let rel = shown
-                    .split_once(&format!("{crate_name}/src/"))
-                    .map_or(shown.clone(), |(_, r)| format!("{crate_name}/src/{r}"));
-                out.push((rel, text));
+                out.push((format!("{shown}/{name}"), text));
             }
         }
     }

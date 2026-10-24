@@ -360,10 +360,12 @@ const ALL_BELOW: &str = "**";
 /// The git config key whose `true` value rewrites checkouts to CRLF.
 const AUTOCRLF_KEY: &str = "core.autocrlf";
 
+// frob:ticket 01M5PC8M49F53YSPKKT7XXMDFH
 /// The `.gitattributes` line pinning every file under `tickets_dir` to LF endings.
 fn eol_line(tickets_dir: &str) -> String {
-    let glob = Path::new(tickets_dir).join(ALL_BELOW);
-    format!("{} {EOL_ATTRS}", Shown::of(&glob))
+    // Gitattributes globs always use `/`, so never route this through a host `Path` join.
+    let dir = tickets_dir.trim_end_matches(['/', '\\']).replace('\\', "/");
+    format!("{dir}/{ALL_BELOW} {EOL_ATTRS}")
 }
 
 /// True when git is configured to check files out with CRLF endings (`core.autocrlf=true`).

@@ -18,9 +18,17 @@ fn set_autocrlf(dir: &Path, value: &str) {
     assert!(status.success(), "git config core.autocrlf");
 }
 
+// frob:ticket 01M5PC8M49F53YSPKKT7XXMDFH
+/// Run `frob init` with the machine's git config hidden and return its JSON envelope.
 fn init(dir: &Path, extra: &[&str]) -> Value {
+    // Hide the machine's own git config (Windows runners ship `core.autocrlf=true`), so only the
+    // repository-local setting a test makes is visible.
+    let no_global = dir.join(".git").join("no-global-config");
+    std::fs::write(&no_global, "").expect("empty global config");
     let out = common::frob_command()
         .current_dir(dir)
+        .env("GIT_CONFIG_GLOBAL", &no_global)
+        .env("GIT_CONFIG_NOSYSTEM", "1")
         .env_remove("FROB_LOG")
         .arg("init")
         .args(extra)

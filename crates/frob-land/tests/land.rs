@@ -400,11 +400,11 @@ fn land_opens_each_repository_once() {
     let seen = counter.seen.lock().expect("lock").clone();
     // The invoking (primary) checkout is opened once and shared by the workspace, the lease
     // store and gc; the ticket worktree and the ratchet checkout are opened by frob-check.
-    let primary = Shown::with_home(fx.repo().git_dir(), None).to_string();
-    let opens = seen
-        .iter()
-        .filter(|d| d.trim_matches('"') == primary)
-        .count();
+    // The logged value is Debug-escaped (backslashes doubled on Windows) and gix may log either
+    // separator, so compare both sides as `/` text.
+    let norm = |t: &str| t.trim_matches('"').replace("\\\\", "/").replace('\\', "/");
+    let primary = norm(&Shown::with_home(fx.repo().git_dir(), None).to_string());
+    let opens = seen.iter().filter(|d| norm(d) == primary).count();
     assert_eq!(opens, 1, "primary opened {opens} times: {seen:?}");
 }
 
