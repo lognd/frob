@@ -7,10 +7,10 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-11T18:27:55Z"
-updated = "2026-10-24T01:45:26Z"
+updated = "2026-10-24T01:54:20Z"
 scope = ["crates/frob-tests/**"]
 
 [[acceptance]]
 text = "a test fails if Pc/Pn bound evaluation folds a poison value into a passing result"
-bound = false
+bound = true
 +++
