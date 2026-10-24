@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T02:16:50Z"
+digest = "78008ca45b2a231debf92e9a66cda4e426428a17a4e37eae6ea5cb6ecc34cd6f"
+exit_code = 0
+head = "921cf117d10282fb80fdadcabb574cfa179366ea"
+inline = '''
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.64s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c87b87b3-5d67-402b-a88c-a653b8396711 with nextest profile: default
+    Starting 1 test across 1 binary (41 tests skipped)
+        PASS [   0.140s] frob-evidence done::tests::a_listed_type_with_a_tests_only_diff_closes_without_a_fragment
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.140s] 1 test run: 1 passed, 41 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --lib a_listed_type_with_a_tests_only_diff"
+size = 648
+status = "measured"
+test_count = 1
+tests_digest = "ea321352f7206a8843a27cfb031ccebd6341511fd2ca12406163e03e7f0f1116"
+at = "2026-10-24T02:16:50Z"
+actor = "lognd"
+rev = 1
