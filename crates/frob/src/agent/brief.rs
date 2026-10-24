@@ -104,7 +104,7 @@ mod tests {
         }
     }
 
-    // frob:tests crate::agent::brief::lines
+    // frob:tests crates/frob/src/agent/brief.rs::lines
     #[test]
     fn lines_cover_ticket_scope_worktree_and_rules() {
         let text = lines(&input()).join("\n");
@@ -114,7 +114,7 @@ mod tests {
         assert!(text.contains("- stay in scope"));
     }
 
-    // frob:tests crate::agent::brief::lines
+    // frob:tests crates/frob/src/agent/brief.rs::lines
     #[test]
     fn no_lease_says_none() {
         let mut i = input();
@@ -122,7 +122,7 @@ mod tests {
         assert!(lines(&i)[0].starts_with("Active ticket: none"));
     }
 
-    // frob:tests crate::agent::brief::cap
+    // frob:tests crates/frob/src/agent/brief.rs::cap
     #[test]
     fn cap_bounds_output_and_marks_the_cut() {
         let ls = lines(&input());
@@ -138,7 +138,7 @@ mod tests {
         assert!(text.ends_with(TRUNCATION_MARK));
     }
 
-    // frob:tests crate::agent::brief::cap
+    // frob:tests crates/frob/src/agent/brief.rs::cap
     #[test]
     fn cap_never_splits_a_char() {
         let ls = vec!["caf\u{e9}".repeat(40)];

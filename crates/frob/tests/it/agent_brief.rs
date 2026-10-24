@@ -66,7 +66,8 @@ fn leased_repo() -> tempfile::TempDir {
     dir
 }
 
-// frob:tests crate::agent::brief::lines
+// frob:tests crates/frob/src/agent/brief.rs::lines
+// frob:tests crates/frob/src/agent_cmd.rs::AgentBrief
 #[test]
 fn brief_names_ticket_scope_worktree_and_rules() {
     let dir = leased_repo();
@@ -86,7 +87,7 @@ fn brief_names_ticket_scope_worktree_and_rules() {
     assert_eq!(v["data"]["truncated"], false);
 }
 
-// frob:tests crate::agent::brief::cap
+// frob:tests crates/frob/src/agent/brief.rs::cap
 #[test]
 fn brief_is_capped_at_the_byte_budget() {
     let dir = leased_repo();
