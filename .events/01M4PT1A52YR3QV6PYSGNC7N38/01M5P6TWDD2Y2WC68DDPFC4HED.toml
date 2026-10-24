@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T05:41:04Z"
+digest = "add5db506a89adf22634112745d35b43e9300d890030e71a2a8364e0828da393"
+exit_code = 0
+head = "77323017b01df42ac2417a5b333a498894cf3ef8"
+inline = '''
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.79s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4afd48bc-e4ef-4d7c-ad7f-4378e224b260 with nextest profile: default
+    Starting 2 tests across 18 binaries (526 tests skipped)
+        PASS [   0.011s] grimble::rule_verbs rule_why_prints_the_trace_for_a_location_and_exits_zero
+        PASS [   0.118s] frob-cli::it rule_why::rule_why_prints_the_trace_for_a_location_and_exits_zero
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.119s] 2 tests run: 2 passed, 526 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p grimble -E test(rule_why_prints_the_trace_for_a_location_and_exits_zero)"
+size = 789
+status = "measured"
+test_count = 2
+tests_digest = "c338178bff4d225816bd2e0f684408708d75d527539c5e5f7dca74abe4f8789f"
+at = "2026-10-24T05:41:04Z"
+actor = "lognd"
+rev = 1

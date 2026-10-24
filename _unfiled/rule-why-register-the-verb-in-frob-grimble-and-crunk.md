@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T01:01:06Z"
-updated = "2026-10-24T05:40:39Z"
+updated = "2026-10-24T05:41:04Z"
 scope = ["crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-dev/profile.toml", "docs/design/grl-spec.md", "crates/frob/src/product.rs", "crates/grimble/src/lib.rs", "crates/frob/tests/**", "crates/grimble/tests/**", "docs/reference/**", "docs/schemas/**", "docs/guide/**", "crates/grimble-ci/src/verbs.rs"]
 
 [[links]]
@@ -16,7 +16,7 @@ target = "01M3ZX7H8FPEAY1X1WVW1PNXXN"
 
 [[acceptance]]
 text = "Given a rule file and FILE:LINE, when 'rule why ID FILE:LINE' runs in frob and grimble, then it prints the why trace text and exits 0"
-bound = false
+bound = true
 +++
 
 Library gob_plan::verbs::why::why_source exists (ticket W1PNXXN). Wire thin 'rule why ID FILE:LINE' commands in every product (see rule_cmd.rs), add the scenario to crates/gob-dev/profile.toml, regenerate generated pages. Also: check why the 'inside test' kind never matched a TS vitest test() callback in the executor.
