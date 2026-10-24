@@ -2,7 +2,8 @@
 id = "01M4KSQKHN0Q172NYW0JE5JS4A"
 title = "docs/migration/v1-import.md still lists sprint as a dropped v1 field after ~KB92Z06 carries it as a sprint:<v> label"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "Claude"
