@@ -1,0 +1,10 @@
+kind = "create"
+title = "Dedupe RUST_ONLY_RULES lists in crunk parity tests"
+type = "chore"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk/tests/**"]
+body = "found while working ~MJZYWH9: crates/crunk/tests/parity/compare.rs and crates/crunk/tests/query_parity.rs carry duplicated RUST_ONLY_RULES lists; extract one shared constant."
+at = "2026-10-24T04:02:05Z"
+actor = "lognd"
+rev = 1
