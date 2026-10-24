@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T14:58:45Z"
-updated = "2026-10-24T00:59:05Z"
+updated = "2026-10-24T01:08:00Z"
 scope = ["crates/frob-evidence/**", "docs/design/tickets.md"]
 
 [[acceptance]]
