@@ -7,8 +7,8 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-24T07:16:07Z"
-updated = "2026-10-24T07:18:24Z"
-scope = ["crates/crunk-*/**", "crates/frob-evidence/**", "crates/grimble-model/**", "docs/**", "frob.toml", "crates/gob-dev/**", "crates/gob-path/**", "crates/gob-check/**", "crates/frob-check/**", "crates/grimble-lints/**", "crates/gob-fs/**", "tests/crunk-parity/**", "packs/grimble-sysdesign/**", "crates/gob-plan/**"]
+updated = "2026-10-24T07:25:50Z"
+scope = ["crates/crunk-*/**", "crates/frob-evidence/**", "crates/grimble-model/**", "docs/**", "frob.toml", "crates/gob-dev/**", "crates/gob-path/**", "crates/gob-check/**", "crates/frob-check/**", "crates/grimble-lints/**", "crates/gob-fs/**", "tests/crunk-parity/**", "packs/grimble-sysdesign/**", "crates/gob-plan/**", "crates/frob-lease/**"]
 
 [[acceptance]]
 text = "frob check --skip-tools --trust-from origin/experimental reports zero error-severity findings on the Linux CI check step"
