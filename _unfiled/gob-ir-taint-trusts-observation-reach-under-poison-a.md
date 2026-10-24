@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-24T03:21:26Z"
-updated = "2026-10-24T03:22:27Z"
+updated = "2026-10-24T03:27:03Z"
 scope = ["crates/gob-ir/**"]
 
 [[acceptance]]
 text = "a Pc check returning a definite Reach under a poisoned subject never yields Clean; a test proves it"
-bound = false
+bound = true
 +++
 
 Found by the ~T7M99CH implementer: taint in crates/gob-ir/src/eval/program.rs treats Observation::Reach as the check's own statement.
