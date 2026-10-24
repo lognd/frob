@@ -2,12 +2,12 @@
 id = "01M5P621KV0Y3BRPBFQWVRAYZ5"
 title = "kind test never matches TS vitest test() callbacks"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-24T05:27:40Z"
-updated = "2026-10-24T06:45:23Z"
+updated = "2026-10-24T06:45:24Z"
 scope = ["crates/gob-plan/src/exec/core/kind.rs", "crates/gob-symbols/src/typescript/fold.rs"]
 
 [[acceptance]]
