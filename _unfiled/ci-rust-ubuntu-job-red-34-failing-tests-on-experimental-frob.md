@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-24T01:13:53Z"
 updated = "2026-10-24T02:21:29Z"
-scope = ["crates/frob/**", "crates/gob-cli/**", "crates/grimble-ci/**", "docs/design/cli.md", "docs/**", "crates/grimble/**", "crates/gob-git/**", "crates/gob-packs/**", "crates/frob-check/**", "crates/gob-mdtest/**", "crates/frob-docgen/**"]
+scope = ["crates/frob/**", "crates/gob-cli/**", "crates/grimble-ci/**", "docs/design/cli.md", "docs/**", "crates/grimble/**", "crates/gob-git/**", "crates/gob-packs/**", "crates/frob-check/**", "crates/gob-mdtest/**", "crates/frob-docgen/**", "crates/crunk/**"]
 
 [[acceptance]]
 text = "Given experimental at HEAD, when the rust (ubuntu-latest) CI job runs cargo nextest, then none of the tests listed in the ticket body fail"
