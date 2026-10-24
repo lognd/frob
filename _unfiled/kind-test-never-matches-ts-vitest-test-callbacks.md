@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-24T05:27:40Z"
-updated = "2026-10-24T06:53:14Z"
-scope = ["crates/gob-plan/src/exec/core/kind.rs", "crates/gob-symbols/src/typescript/fold.rs"]
+updated = "2026-10-24T07:07:12Z"
+scope = ["crates/gob-plan/src/exec/core/kind.rs", "crates/gob-symbols/src/typescript/fold.rs", "crates/gob-plan/tests/exec_core.rs"]
 
 [[acceptance]]
 text = "A vitest test() callback in a TS file is matched by the test kind and covered by a nextest test"
