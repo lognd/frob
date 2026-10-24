@@ -2,7 +2,8 @@
 id = "01M5NWA3NX5EX9R3VK15W1HW1S"
 title = "Document [pm] changelog_tests_only_types"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
