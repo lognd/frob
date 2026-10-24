@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a tests-only branch diff and a ticket type listed in pm.changelog_tests_only_types, when frob check --ticket runs, then REL003 does not fire for the missing fragment"]
+moved = []
+at = "2026-10-24T04:25:38Z"
+actor = "lognd"
+rev = 1
