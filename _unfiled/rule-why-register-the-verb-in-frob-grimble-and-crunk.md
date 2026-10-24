@@ -2,7 +2,8 @@
 id = "01M4PT1A52YR3QV6PYSGNC7N38"
 title = "rule why: register the verb in frob, grimble and crunk"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
