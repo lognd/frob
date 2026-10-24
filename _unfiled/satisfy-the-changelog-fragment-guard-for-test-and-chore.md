@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T20:49:07Z"
-updated = "2026-10-24T02:16:50Z"
+updated = "2026-10-24T03:08:01Z"
 scope = ["crates/frob-evidence/**", "crates/frob-pm/**", "crates/frob-release/**", "docs/reference/config.md", "docs/schemas/config.json", "changelog.d/**"]
 
 [[acceptance]]
