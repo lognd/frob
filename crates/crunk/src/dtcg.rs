@@ -171,14 +171,7 @@ fn store_path(root: &Path, cwd: &Path, store: Option<&Path>) -> PathBuf {
 /// A path relative to the project root when inside it, as text.
 pub(crate) fn relative(root: &Path, path: &Path) -> String {
     // Always `/`-separated so it matches the check report's file table on every platform.
-    match path.strip_prefix(root) {
-        Ok(rel) => rel
-            .components()
-            .map(|c| c.as_os_str().to_string_lossy())
-            .collect::<Vec<_>>()
-            .join("/"),
-        Err(_) => path.to_string_lossy().into_owned(),
-    }
+    gob_path::forward_slashes(path.strip_prefix(root).unwrap_or(path))
 }
 
 fn report(
