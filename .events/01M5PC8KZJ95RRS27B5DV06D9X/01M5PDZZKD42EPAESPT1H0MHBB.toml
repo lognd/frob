@@ -1,0 +1,207 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T07:44:00Z"
+digest = "8bb310d9fc7b6d9e5f5b26bdcfe11511944f4e64e15278ef5e3eede1a9080f00"
+exit_code = 0
+head = "549b91df05fffc8cae90e1a8069e9e4b757bae27"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling darling_core v0.20.11
+   Compiling regex-automata v0.4.18
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling globset v0.4.20
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling ignore v0.4.33
+   Compiling regex v1.13.1
+   Compiling tree-sitter v0.27.0
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling proptest v1.11.0
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9e51834c-004d-42b4-9754-fd8b3922ff29 with nextest profile: default
+    Starting 162 tests across 18 binaries
+        PASS [   0.007s] gob-path::paths outside_and_dotdot_refused
+        PASS [   0.007s] gob-path::paths forward_slashes_turns_backslashes_into_slashes
+        PASS [   0.007s] gob-path::confinement allow_list_is_sorted
+        PASS [   0.010s] gob-path::paths exact_text_refuses_non_unicode
+        PASS [   0.011s] gob-path::paths exact_text_is_verbatim_or_none
+        PASS [   0.011s] gob-path::paths shown_scrubs_home
+        PASS [   0.012s] grimble-lints err::tests::a_discarded_result_is_certain_when_known_and_unknown_otherwise
+        PASS [   0.008s] grimble-lints err::tests::an_unsupported_language_has_no_sites
+        PASS [   0.008s] grimble-lints neat::tests::contradicted_claims_warn_and_dispatch_is_advisory
+        PASS [   0.008s] grimble-lints neat::tests::rule_ids_follow_rules
+        PASS [   0.011s] grimble-lints neat::tests::atom_words_round_trip
+        PASS [   0.007s] grimble-lints path::tests::host_path_is_advisory_in_tests
+        PASS [   0.014s] grimble-lints path::tests::allowed_literal_is_quiet
+        PASS [   0.008s] grimble-lints path::tests::only_rust_and_python_have_roles
+        PASS [   0.009s] grimble-lints path::tests::rule_ids_follow_kinds
+        PASS [   0.008s] grimble-lints path::tests::test_paths_are_recognised
+        PASS [   0.031s] gob-path::paths prop_invalid_component_refused
+        PASS [   0.013s] grimble-lints res::tests::escaping_or_discarded_handles_are_unknown_and_tests_are_exempt
+        PASS [   0.009s] grimble-lints res::tests::mark_map_set_and_timeout_without_release_each_yield_one_site
+        PASS [   0.008s] grimble-lints res::tests::paired_release_in_scope_is_quiet
+        PASS [   0.007s] grimble-lints res::tests::release_on_another_receiver_or_in_another_scope_does_not_pair
+        PASS [   0.016s] grimble-lints res::tests::javascript_is_scanned_and_other_languages_have_no_sites
+        PASS [   0.014s] grimble-lints res::tests::other_table_rows_fire_unpaired_and_stay_quiet_paired
+        PASS [   0.007s] grimble-lints time::tests::language_without_roles_is_unresolved_not_clean
+        PASS [   0.046s] grimble-lints err::tests::a_silent_catch_all_with_a_body_is_err003
+        PASS [   0.008s] grimble-lints time::tests::rule_ids_follow_kinds
+        PASS [   0.009s] grimble-lints time::tests::only_rust_and_python_have_roles
+        PASS [   0.012s] grimble-lints rules::freshness::rules_index_is_fresh
+        PASS [   0.007s] grimble-lints typing::tests::file_names_classify
+        PASS [   0.007s] grimble-lints typing::tests::check_emits_advisory_findings_for_config_files_only
+        PASS [   0.008s] grimble-lints typing::tests::csproj_needs_nullable_enable
+        PASS [   0.009s] grimble-lints typing::tests::pyproject_flags_lax_mypy_and_pyright_only
+        PASS [   0.009s] grimble-lints::effect cleanup_clearing_a_different_handle_fires
+        PASS [   0.012s] grimble-lints typing::tests::tsconfig_strict_false_or_unset_is_a_site_and_strict_true_is_clean
+        PASS [   0.051s] grimble-lints err::tests::handlers_that_log_rethrow_or_catch_a_specific_type_are_clean
+        PASS [   0.008s] grimble-lints::effect conditional_return_is_unknown
+        PASS [   0.012s] grimble-lints::effect async_effect_fires
+        PASS [   0.009s] grimble-lints::effect cleanup_returned_from_nested_function_does_not_count
+        PASS [   0.011s] grimble-lints::effect effect_interval_without_cleanup_fires
+        PASS [   0.007s] grimble-lints::effect listener_removed_with_different_handler_fires
+        PASS [   0.008s] grimble-lints::effect fetch_with_abort_or_ignore_flag_is_clean
+        PASS [   0.058s] grimble-lints err::tests::each_language_flags_an_empty_catch_all_once
+        PASS [   0.007s] grimble-lints::effect listener_removed_with_same_handler_is_clean
+        PASS [   0.007s] grimble-lints::effect subscription_returned_directly_is_clean
+        PASS [   0.007s] grimble-lints::effect unreadable_returned_cleanup_is_unknown
+        PASS [   0.012s] grimble-lints::effect other_languages_yield_no_sites
+        PASS [   0.013s] grimble-lints::effect returned_cleanup_clearing_interval_is_clean
+        PASS [   0.007s] grimble-lints::neat a_local_callee_contributes_its_effects_transitively
+        PASS [   0.008s] grimble-lints::neat honest_unit_calling_the_clock_is_contradicted
+        PASS [   0.009s] grimble-lints::neat ruff_shape_dispatcher_fires_neat031_and_fix_is_clean
+        PASS [   0.008s] grimble-lints::neat shell_units_and_declared_atoms_are_not_flagged
+        PASS [   0.015s] grimble-lints::err_pass files_the_rules_do_not_judge_make_them_not_applicable
+        PASS [   0.018s] grimble-lints::err_pass an_unknown_callee_is_unresolved
+        PASS [   0.024s] grimble-lints::err_pass an_empty_python_handler_is_a_certain_err001
+        PASS [   0.013s] grimble-lints::pair_pass interval_without_cleanup_fires
+        PASS [   0.014s] grimble-lints::pair_pass cleanup_present_is_clean
+        PASS [   0.016s] grimble-lints::neat unresolved_callee_leaves_the_claim_unverified
+        PASS [   0.015s] grimble-lints::pair_pass nested_closure_return_is_not_the_cleanup
+        PASS [   0.031s] grimble-lints::err_pass a_silent_typescript_catch_all_is_err003
+        PASS [   0.012s] grimble-lints::pair_pass non_unity_csharp_is_not_applicable
+        PASS [   0.019s] grimble-lints::pair_pass non_react_file_is_not_applicable
+        PASS [   0.011s] grimble-lints::pair_pass unity_lambda_subscription_is_unresolved_not_warn
+        PASS [   0.017s] grimble-lints::pair_pass opaque_cleanup_is_unresolved_not_warn
+        PASS [   0.012s] grimble-lints::pair_pass react_and_unity_files_report_together
+        PASS [   0.012s] grimble-lints::pair_pass several_effects_report_each_leak
+        PASS [   0.009s] grimble-lints::pair_pass unity_paired_onenable_ondisable_is_clean
+        PASS [   0.012s] grimble-lints::pair_pass unity_onenable_without_ondisable_is_reported
+        PASS [   0.009s] grimble-lints::pair_pass unity_partial_class_is_unresolved_not_warn
+        PASS [   0.010s] grimble-lints::pair_pass unity_start_paired_with_ondestroy_is_clean
+        PASS [   0.008s] grimble-lints::path newline_escape_in_a_message_is_not_a_separator
+        PASS [   0.008s] grimble-lints::path cwd_compare_fires_path002
+        PASS [   0.009s] grimble-lints::path language_without_path_roles_is_unresolved_not_clean
+        PASS [   0.010s] grimble-lints::pair_pass unity_unsubscribing_a_different_handler_is_reported
+        PASS [   0.011s] grimble-lints::path absolute_fixture_fires_path001
+        PASS [   0.008s] grimble-lints::path python_path_str_startswith_fires_and_fix_is_quiet
+        PASS [   0.011s] grimble-lints::path allowlist_prefix_fires_path002
+        PASS [   0.012s] grimble-lints::path merge_driver_format_fires_path003
+        PASS [   0.011s] grimble-lints::path repo_relative_path_type_with_slash_is_quiet
+        PASS [   0.010s] grimble-lints::res_pass a_paired_release_is_quiet_but_the_file_is_still_a_subject
+        PASS [   0.012s] grimble-lints::res_pass an_escaping_or_discarded_handle_is_unresolved
+        PASS [   0.015s] grimble-lints::res_pass a_release_in_another_function_does_not_pair_and_tests_are_exempt
+        PASS [   0.015s] grimble-lints::res_pass an_unpaired_performance_mark_is_a_certain_warn
+        PASS [   0.125s] gob-path::paths prop_unix_roundtrip
+        PASS [   0.015s] grimble-lints::res_pass unsupported_languages_make_the_rule_not_applicable
+        PASS [   0.016s] grimble-lints::rules empty_walk_makes_the_rules_not_applicable
+        PASS [   0.019s] grimble-lints::rules absolute_path_is_an_error_outside_tests_and_advisory_inside
+        PASS [   0.020s] grimble-lints::rules host_binds_and_converts
+        PASS [   0.141s] gob-path::paths prop_windows_roundtrip
+        PASS [   0.010s] grimble-lints::testq async_and_attribute_variants_are_tests
+        PASS [   0.013s] grimble-lints::testq control_flow_reports_the_outermost_construct_and_is_off_by_default
+        PASS [   0.021s] grimble-lints::rules subjects_count_files_each_rule_can_judge
+        PASS [   0.024s] grimble-lints::rules rust_local_fires_utc_and_system_time_do_not
+        PASS [   0.024s] grimble-lints::rules stored_naive_now_fires_and_displayed_one_stays_quiet
+        PASS [   0.035s] grimble-lints::rules language_without_roles_is_unresolved_for_fidelity
+        PASS [   0.030s] grimble-lints::rules naive_compared_with_aware_fires_time002
+        PASS [   0.027s] grimble-lints::rules tz_kwarg_time_time_and_aliases_are_decided_correctly
+        PASS [   0.030s] grimble-lints::rules time_without_roles_is_unresolved_and_empty_walk_is_not_applicable
+        PASS [   0.009s] grimble-lints::testq language_without_roles_is_unresolved_not_clean
+        PASS [   0.014s] grimble-lints::testq csharp_test_without_assertion_fires_and_variants_are_handled
+        PASS [   0.012s] grimble-lints::testq exempt_tests_are_not_flagged
+        PASS [   0.017s] grimble-lints::testq csharp_assertion_calls_are_classified_not_unresolved
+        PASS [   0.012s] grimble-lints::testq helper_with_unseen_body_is_unresolved_not_a_hit
+        PASS [   0.012s] grimble-lints::testq python_test_files_are_recognised_by_name_and_directory
+        PASS [   0.012s] grimble-lints::testq pinned_sources_are_exempt
+        PASS [   0.008s] grimble-lints::testq rust_test_without_assertion_fires
+        PASS [   0.009s] grimble-lints::testq python_test_without_assertion_fires
+        PASS [   0.010s] grimble-lints::testq same_file_helper_that_asserts_makes_the_test_clean
+        PASS [   0.008s] grimble-lints::testq sleep_in_a_test_body_fires
+        PASS [   0.009s] grimble-lints::testq script_and_csharp_test_files_are_recognised_by_name
+        PASS [   0.014s] grimble-lints::testq rule_ids_follow_kinds
+        PASS [   0.025s] grimble-lints::testq deterministic_ts_js_and_csharp_tests_stay_quiet
+        PASS [   0.013s] grimble-lints::testq ts_and_js_assertion_calls_are_classified_not_unresolved
+        PASS [   0.010s] grimble-lints::testq ts_skipped_grouped_and_callbackless_tests_are_handled
+        PASS [   0.008s] grimble-lints::testq ts_test_without_assertion_fires_and_unknown_helpers_stay_unresolved
+        PASS [   0.009s] grimble-lints::unity unity_arithmetic_plus_equals_is_ignored
+        PASS [   0.010s] grimble-lints::testq wall_clock_and_unseeded_rng_fire
+        PASS [   0.012s] grimble-lints::unity unity_addressables_load_needs_release_of_handle
+        PASS [   0.008s] grimble-lints::unity unity_event_without_unsubscribe_names_both_sites
+        PASS [   0.009s] grimble-lints::unity unity_conditional_unsubscribe_is_unknown
+        PASS [   0.008s] grimble-lints::unity unity_input_action_enable_needs_disable
+        PASS [   0.008s] grimble-lints::unity unity_lambda_subscription_is_unresolved
+        PASS [   0.008s] grimble-lints::unity unity_missing_teardown_is_certain
+        PASS [   0.021s] grimble-lints::testq ts_js_and_csharp_nondeterminism_is_reported_not_unresolved
+        PASS [   0.007s] grimble-lints::unity unity_other_languages_yield_nothing
+        PASS [   0.009s] grimble-lints::unity unity_register_callback_pairs_with_unregister
+        PASS [   0.027s] grimble-lints::testq ts_js_and_csharp_control_flow_is_reported_not_unresolved
+        PASS [   0.011s] grimble-lints::unity unity_unsubscribe_in_ondisable_or_ondestroy_is_clean
+        PASS [   0.011s] grimble-lints::unity_hot lazy_field_caches_are_exempt
+        PASS [   0.011s] grimble-lints::unity_hot get_component_reachable_from_update_fires_and_awake_is_clean
+        PASS [   0.012s] grimble-lints::unity unity_teardown_follows_helper_method
+        PASS [   0.010s] grimble-lints::unity_hot non_hot_code_is_not_scanned
+        PASS [   0.010s] grimble-lints::unity_hot new_list_in_fixed_update_fires_and_value_types_do_not
+        PASS [   0.010s] grimble-lints::unity_hot own_find_helper_is_followed_not_reported
+        PASS [   0.011s] grimble-lints::unity_hot lookup_forms_and_receivers_are_recognised
+        PASS [   0.012s] grimble-lints::unity_hot target_typed_new_is_resolved_from_the_declaration
+        PASS [   0.008s] grimble-lints::unity_input handler_values_parse
+        PASS [   0.010s] grimble-lints::unity_input legacy_guard_branch_is_dead_under_input_system
+        PASS [   0.011s] grimble-lints::unity_input compound_conditions_and_elif_are_evaluated
+        PASS [   0.010s] grimble-lints::unity_input legacy_and_both_handlers_stay_quiet
+        PASS [   0.013s] grimble-lints::unity_input input_system_handler_flags_legacy_get_key
+        PASS [   0.010s] grimble-lints::unity_input qualified_member_reads_and_static_import_are_flagged
+        PASS [   0.010s] grimble-lints::unity_input user_declared_input_is_unknown
+        PASS [   0.011s] grimble-lints::unity_pass allocation_in_update_fires_unity202
+        PASS [   0.015s] grimble-lints::unity_pass cached_lookup_in_awake_and_start_is_clean
+        PASS [   0.014s] grimble-lints::unity_pass csharp_without_unity_is_not_examined
+        PASS [   0.009s] grimble-lints::unity_physics transform_moves_need_a_body_and_no_kinematic
+        PASS [   0.013s] grimble-lints::unity_physics add_force_in_update_fires_and_in_fixed_update_is_clean
+        PASS [   0.014s] grimble-lints::unity_pass lookup_in_update_fires_unity201_as_advisory
+        PASS [   0.011s] grimble-lints::unity_physics one_shot_impulse_under_edge_trigger_is_exempt
+        PASS [   0.012s] grimble-lints::unity_physics helper_called_from_update_is_followed_but_coroutines_are_not
+        PASS [   0.016s] grimble-lints::unity_pass helper_reached_from_update_fires
+        PASS [   0.015s] grimble-lints::unity_pass non_csharp_files_are_ignored
+        PASS [   0.014s] grimble-lints::unity_physics unresolved_receivers_are_unknown_or_skipped
+        PASS [   0.012s] grimble-lints::unity_project_pass default_handlers_report_nothing
+        PASS [   0.010s] grimble-lints::unity_project_pass each_file_follows_its_own_project
+        PASS [   0.008s] grimble-lints::unity_project_pass only_the_project_settings_asset_is_a_settings_file
+        PASS [   0.010s] grimble-lints::unity_project_pass input_system_handler_fires_unity301_as_warn
+        PASS [   0.009s] grimble-lints::unity_project_pass malformed_or_unknown_settings_are_skipped
+        PASS [   0.009s] grimble-lints::unity_project_pass unity302_needs_no_settings_and_skips_plain_csharp
+        PASS [   0.009s] grimble-lints::unity_project_pass missing_settings_make_unity301_not_applicable
+        PASS [   0.226s] gob-path::confinement allow_list_matches_markers
+        PASS [   0.130s] grimble-lints::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.248s] 162 tests run: 162 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-path -p grimble-lints"
+size = 16079
+status = "measured"
+test_count = 162
+tests_digest = "8306006b4f21bcc3db53eabbed3db243eff3a18be9cc6469eea63b19aea707d8"
+at = "2026-10-24T07:44:00Z"
+actor = "lognd"
+rev = 1
