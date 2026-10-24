@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "Claude"
 created = "2026-10-10T20:58:04Z"
-updated = "2026-10-24T00:47:35Z"
+updated = "2026-10-24T00:55:09Z"
 scope = ["docs/migration/v1-import.md", "changelog.d/**"]
 
 [[acceptance]]
