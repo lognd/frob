@@ -5,9 +5,6 @@
 //! edge stays Unresolved. Each case is paired with an unpoisoned control that does pass, so the
 //! test fails both if poison is folded into a pass and if the controls stop being meaningful.
 
-// frob:ticket 01M4P3HCGW50BCT6YD0T7M99CH
-// frob:tests crates/gob-ir/src/eval/program.rs::RuleProgram.evaluate
-
 use gob_ir::{
     Answer, AttrValue, EvalConfig, Location, Model, NodeId, NodeSpec, Observation, Operator,
     Polarity, RuleOutcome, RuleProgram, TermBuilder, ThresholdKind, Verdict, reserved,
