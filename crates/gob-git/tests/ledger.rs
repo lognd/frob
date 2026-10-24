@@ -31,6 +31,8 @@ fn fixture() -> (tempfile::TempDir, Repo) {
     // Point HEAD at main regardless of init.defaultBranch.
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").unwrap();
     set_local_identity(&repo);
+    // Re-open: the config snapshot is taken at open, so the identity written above is only seen by a new handle.
+    let repo = Repo::discover(dir.path()).unwrap();
     repo.commit_paths(MAIN, &[change("README.md", "hello\n")], "root", &opts())
         .unwrap();
     (dir, repo)

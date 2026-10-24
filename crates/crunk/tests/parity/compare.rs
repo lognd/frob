@@ -91,9 +91,18 @@ const RUST_ONLY_RULES: &[&str] = &[
     "TOKEN007",
     "TOKEN008",
     "TOKEN009",
+    "CRAFT001",
+    "CRAFT002",
+    "CRAFT003",
+    "CRAFT004",
+    "CRAFT005",
     "CRAFT006",
+    "CRAFT007",
     "CRAFT008",
+    "CRAFT009",
     "CRAFT010",
+    "CRAFT011",
+    "CRAFT012",
     "CRAFT013",
 ];
 

@@ -26,6 +26,25 @@ pub fn git_repo() -> tempfile::TempDir {
     dir
 }
 
+/// Stage everything and commit it (allowing an empty commit), so `file` evidence written beforehand is tracked at `HEAD`.
+pub fn commit_all(dir: &Path) {
+    for args in [
+        vec!["add", "-A"],
+        vec!["commit", "-q", "--allow-empty", "-m", "fixture"],
+    ] {
+        let out = std::process::Command::new("git")
+            .args(&args)
+            .current_dir(dir)
+            .output()
+            .expect("run git");
+        assert!(
+            out.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+}
+
 /// Rewrite `[pm] done_requires` in `<root>/frob.toml` to `requires`, so a fixture closes only what it means to test.
 pub fn set_done_requires(root: &Path, requires: &[&str]) {
     let path = root.join("frob.toml");

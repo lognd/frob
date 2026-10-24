@@ -288,6 +288,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `audit --online` (open question, cicd.md section 7: the online action-currency and advisory check) | frob | frob-check | yes, read-only | 0 2 3 4 | 2 | object: the audit of action currency and advisories |
 | `config show --effective` | frob | gob-config | yes, read-only | 0 2 4 | 1 | object: the effective configuration |
 | `config sync` | frob | gob-config | yes | 0 2 4 | 2 | effect: writes the detected config knobs |
+| `doc remap` | frob | frob (bin) | yes | 0 2 3 4 | 2 | effect: rewrites doc references to the anchors named in `docs/MOVED.toml` |
 | `schema` | frob | gob-cli | yes, read-only | 0 2 4 | 1 | object: the verb's published JSON schema |
 | `stats [--section velocity\|capacity\|cost\|activity\|flow] [--live]` (one metrics verb, frob-metrics; absorbs `cycle velocity`) | frob | frob-pm | yes, read-only | 0 2 4 | 2 | object: the one metrics noun, each family computed once |
 | `clean` | frob | gob-cache | yes | 0 2 4 | 2 | effect: removes cache directories |

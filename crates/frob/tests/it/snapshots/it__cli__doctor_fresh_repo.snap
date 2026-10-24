@@ -13,7 +13,7 @@ expression: v
       "state": "ok"
     },
     "config": {
-      "missing_knobs": 39,
+      "missing_knobs": 40,
       "path": "[path]",
       "present": false
     },
@@ -386,6 +386,19 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `pm.max_story_points` in frob.toml (default 8); run `frob init` (or `frob config sync`) to write it",
+      "message_origin": "std",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "7ab2b7939bc151c01bcb804c69965e3d815c1b1cb3c28f2562e2a2acbf9f65a4",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `pm.point_scale` in frob.toml (default \"fibonacci\"); run `frob init` (or `frob config sync`) to write it",
       "message_origin": "std",
       "required": null,
       "rule": "CFG001",

@@ -313,6 +313,7 @@ fn a_passing_measured_record_binds_and_show_names_the_evidence() {
     let repo = three();
     assert_eq!(states(&repo), ["unbound", "unbound", "unbound"]);
     std::fs::write(repo.dir.path().join("proof.txt"), "proof").expect("write");
+    common::commit_all(repo.dir.path());
     let out = offer(&repo, "file", "proof.txt", &["2"]);
     assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
     let v = json(&out);
@@ -376,6 +377,7 @@ fn removing_a_criterion_remaps_bound_evidence() {
     // frob:tests crates/frob-evidence/src/verbs.rs::CaptureArgs.from_matches
     let repo = three();
     std::fs::write(repo.dir.path().join("p.txt"), "p").expect("write");
+    common::commit_all(repo.dir.path());
     offer(&repo, "file", "p.txt", &["3"]);
     assert_eq!(states(&repo), ["unbound", "unbound", "bound"]);
     let removed = repo.ok(&["milestone", "criterion", "remove", "0.532.0", "1"]);

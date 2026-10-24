@@ -151,6 +151,7 @@ fn releasable(bound: bool) -> Repo {
         "only",
     ]);
     if bound {
+        common::commit_all(repo.dir.path());
         repo.ok(&[
             "milestone",
             "evidence",

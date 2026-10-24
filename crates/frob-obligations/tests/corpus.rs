@@ -3,8 +3,10 @@
 mod common;
 
 use frob_obligations::InvariantsConfig;
+use gob_check::SubjectStatus;
+use gob_check::applicability::{Applies, derive_cell, temporary_applies};
 use gob_mdtest::Case;
-use gob_rules::RuleReport;
+use gob_rules::{Registry, RuleReport};
 
 // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
 /// The tool stage `EXC017` blocks run against: three tool ids bound to frob rules.
@@ -75,7 +77,30 @@ fn runner(case: &Case) -> RuleReport {
             findings,
         );
     }
+    // A language cell the capability matrix derives as NotApplicable for this rule (markdown holds
+    // no symbols for COV001 and DOC001) is reported so, the same verdict the product gives.
+    if findings.is_empty()
+        && let Some(why) = matrix_not_applicable(case)
+    {
+        tracing::debug!(rule = %case.rule, cell = %case.language, "matrix derives not-applicable");
+        return RuleReport::new(case.rule.clone(), 1, 0, Some(why), findings);
+    }
     RuleReport::new(case.rule.clone(), 1, 1, None, findings)
+}
+
+/// Why the capability matrix makes the case's rule not apply to the case's language cell, if it does.
+fn matrix_not_applicable(case: &Case) -> Option<String> {
+    let meta = Registry::global()
+        .iter()
+        .find(|m| m.id == case.rule.as_str())?;
+    let applies = temporary_applies(meta);
+    if !matches!(applies, Applies::Universal { .. }) {
+        return None;
+    }
+    match derive_cell(&applies, &case.language)? {
+        SubjectStatus::NotApplicable(why) => Some(why),
+        _ => None,
+    }
 }
 
 gob_mdtest::mdtest!(dir = "tests/mdtest", runner = runner);

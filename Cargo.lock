@@ -1140,6 +1140,7 @@ dependencies = [
  "frob-release",
  "frob-tests",
  "gob-cache",
+ "gob-caps",
  "gob-check",
  "gob-cli",
  "gob-config",
