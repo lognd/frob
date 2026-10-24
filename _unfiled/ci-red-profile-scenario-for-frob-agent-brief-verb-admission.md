@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-24T05:57:11Z"
-updated = "2026-10-24T06:05:31Z"
+updated = "2026-10-24T06:09:06Z"
 scope = ["crates/gob-dev/profile.toml", "crates/frob-docgen/**", "crates/frob/tests/**", "docs/**"]
 
 [[acceptance]]
