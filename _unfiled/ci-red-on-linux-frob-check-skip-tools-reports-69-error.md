@@ -2,12 +2,12 @@
 id = "01M5PC8KZJ95RRS27B5DV06D9X"
 title = "CI red on Linux: frob check --skip-tools reports 69 error findings (PATH001/PATH002/GRL016/TICK006/PARSE001/TEST001)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-24T07:16:07Z"
-updated = "2026-10-24T07:16:07Z"
+updated = "2026-10-24T07:16:13Z"
 scope = ["crates/crunk-*/**", "crates/frob-evidence/**", "crates/grimble-model/**", "docs/**", "frob.toml", "crates/gob-dev/**"]
 
 [[acceptance]]
