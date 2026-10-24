@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "Claude"
 created = "2026-10-10T19:13:25Z"
-updated = "2026-10-24T01:16:13Z"
+updated = "2026-10-24T01:16:16Z"
 scope = ["docs/reference/tool-stages.md", "docs/design/tool-binding.md", "changelog.d/**"]
 
 [[links]]
