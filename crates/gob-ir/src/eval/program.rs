@@ -398,7 +398,18 @@ impl RuleProgram {
             .map_or(UnresolvedReason::EdgeUnknown, |p: &Poison| {
                 p.reason.reason()
             });
-        let obs = if poison.is_empty() { obs } else { taint(obs) };
+        let obs = if poison.is_empty() {
+            obs
+        } else {
+            let term = ctx.term();
+            // Poison reaches a subject's `Reach` only through its own subtree: a poisoned node
+            // elsewhere (in another unit of a shared relation) is that other subject's
+            // business, and the check's own `hi` already accounts for poison it can reach.
+            let in_cone = poison
+                .iter()
+                .any(|p| p.node == s || term.ancestors(p.node).contains(&s));
+            taint(obs, in_cone)
+        };
         self.interpret(s, &obs, &reason)
     }
 
@@ -644,8 +655,9 @@ impl RuleProgram {
 
 /// An `Exact` answer computed through poisoned atoms is not exact: downgrade to `Unknown`.
 /// A `Reach` keeps its certain `lo` hit but its `hi` is widened: a "no path" claim cannot be
-/// certified through poison, so a definite `Reach` never yields `Clean`.
-fn taint(obs: Observation) -> Observation {
+/// certified through poison in the subject's own cone (`poison_in_cone`), so a definite `Reach`
+/// there never yields `Clean`. Poison outside the cone leaves the check's `hi` as computed.
+fn taint(obs: Observation, poison_in_cone: bool) -> Observation {
     fn down<T>(a: Answer<T>) -> Answer<T> {
         if a.is_exact() { Answer::Unknown } else { a }
     }
@@ -653,14 +665,18 @@ fn taint(obs: Observation) -> Observation {
         Observation::Set(a) => Observation::Set(down(a)),
         Observation::Pair(l, r) => Observation::Pair(down(l), down(r)),
         Observation::Count(a) => Observation::Count(down(a)),
-        Observation::Reach { lo, frontier, .. } => {
-            debug!(lo, "reach widened to hi=true under poison");
+        Observation::Reach { lo, frontier, .. } if poison_in_cone => {
+            debug!(
+                lo,
+                "reach widened to hi=true under poison in the subject's cone"
+            );
             Observation::Reach {
                 lo,
                 hi: true,
                 frontier,
             }
         }
+        reach @ Observation::Reach { .. } => reach,
     }
 }
 
