@@ -2,12 +2,12 @@
 id = "01M5P5BX83VZV2GJWS180A1QKV"
 title = "poison_bounds control case turns Unresolved after the Reach poison fix"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-24T05:15:35Z"
-updated = "2026-10-24T05:15:35Z"
+updated = "2026-10-24T05:15:39Z"
 scope = ["crates/frob-tests/**", "crates/gob-ir/**"]
 
 [[acceptance]]
