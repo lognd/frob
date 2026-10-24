@@ -2,7 +2,8 @@
 id = "01M5P5BX83VZV2GJWS180A1QKV"
 title = "poison_bounds control case turns Unresolved after the Reach poison fix"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
