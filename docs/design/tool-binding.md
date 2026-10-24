@@ -78,6 +78,18 @@ are found on the project's own path first (`uv run ruff`, the repo's
 pinned version is a later option behind gob-trust (security.md), never
 implicit.
 
+uv projects get their environment in two places. `frob work` runs
+`uv sync --frozen` (`uv sync` without a `uv.lock`) in each new worktree
+when the primary checkout has a `.venv`, pinning `UV_PROJECT_ENVIRONMENT`
+to the worktree's own `.venv` so the worktree imports its own code; it
+tries `--offline` first and is best effort (a failure is logged and the
+worktree is still created). A check stage that runs `uv run` in a
+checkout with no `.venv` syncs first, or reports Unresolved with the
+remedy when the sync fails (see `docs/reference/tool-stages.md`, uv-run
+stages). The check-side sync is skipped when `UV_PROJECT_ENVIRONMENT`
+is already set in the check run's environment; `frob work` does not
+skip on it, it pins its own value.
+
 ## 3. Per ecosystem
 
 | Ecosystem | Default binding | Notes |
