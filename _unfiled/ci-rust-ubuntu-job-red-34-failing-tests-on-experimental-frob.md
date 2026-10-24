@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-24T01:13:53Z"
-updated = "2026-10-24T01:40:58Z"
-scope = ["crates/frob/**"]
+updated = "2026-10-24T01:54:29Z"
+scope = ["crates/frob/**", "crates/gob-cli/**"]
 
 [[acceptance]]
 text = "Given experimental at HEAD, when the rust (ubuntu-latest) CI job runs cargo nextest, then none of the tests listed in the ticket body fail"
