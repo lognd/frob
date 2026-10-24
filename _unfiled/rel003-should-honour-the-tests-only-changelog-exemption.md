@@ -2,12 +2,12 @@
 id = "01M5NWA3HFZWBJWZ11VN8JRN7F"
 title = "REL003 should honour the tests-only changelog exemption"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-24T02:37:18Z"
-updated = "2026-10-24T04:25:38Z"
+updated = "2026-10-24T04:25:40Z"
 scope = ["crates/frob-check/src/product.rs"]
 
 [[acceptance]]
