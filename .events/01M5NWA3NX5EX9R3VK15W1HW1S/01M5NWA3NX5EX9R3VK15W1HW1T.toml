@@ -1,0 +1,10 @@
+kind = "create"
+title = "Document [pm] changelog_tests_only_types"
+type = "docs"
+category = "todo"
+priority = "medium"
+scope = ["docs/design/documentation.md", "docs/design/pm-enforcement.md", "docs/reference/rules/REL003.md", "docs/guides/quickstart.md"]
+body = "found while working ~11PE6E1: mention the new knob in the changelog guard docs."
+at = "2026-10-24T02:37:18Z"
+actor = "lognd"
+rev = 1
