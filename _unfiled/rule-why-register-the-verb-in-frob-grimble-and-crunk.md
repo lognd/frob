@@ -2,12 +2,12 @@
 id = "01M4PT1A52YR3QV6PYSGNC7N38"
 title = "rule why: register the verb in frob, grimble and crunk"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T01:01:06Z"
-updated = "2026-10-12T01:01:06Z"
+updated = "2026-10-24T05:16:16Z"
 scope = ["crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-dev/profile.toml", "docs/design/grl-spec.md"]
 
 [[links]]
