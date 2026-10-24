@@ -2,7 +2,8 @@
 id = "01M5NQHBT2GVXS9EEXBMJZYWH9"
 title = "CI rust (ubuntu) job red: 34 failing tests on experimental (frob-cli it, gob-packs, frob-check, docgen, crunk)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
