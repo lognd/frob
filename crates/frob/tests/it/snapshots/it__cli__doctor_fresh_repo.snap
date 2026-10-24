@@ -13,7 +13,7 @@ expression: v
       "state": "ok"
     },
     "config": {
-      "missing_knobs": 41,
+      "missing_knobs": 44,
       "path": "[path]",
       "present": false
     },
@@ -243,6 +243,45 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `git.cas_retries` in frob.toml (default 5); run `frob init` (or `frob config sync`) to write it",
+      "message_origin": "std",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "a2c09ae3bb71037c9c2a63f05a008896d1ffb9da1c5517b834e436cf74c77928",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `grimble.models` in frob.toml (default [\"design/model.grmb\"]); run `frob init` (or `frob config sync`) to write it",
+      "message_origin": "std",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "ed2057799eb3b848e8e7772416a4dce088fe1284b3aaf2da4a498eedd0eebc41",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `packs.enabled` in frob.toml (default []); run `frob init` (or `frob config sync`) to write it",
+      "message_origin": "std",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "15ce03e866fc9de52d3c6c06657070bb5f5806d8cdd0073a52831f619df20bdf",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `packs.lock` in frob.toml (default \"grimble.packs.lock\"); run `frob init` (or `frob config sync`) to write it",
       "message_origin": "std",
       "required": null,
       "rule": "CFG001",

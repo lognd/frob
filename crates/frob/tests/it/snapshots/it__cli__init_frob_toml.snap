@@ -40,6 +40,17 @@ attesters = ["test@example.com"]
 # Compare-and-swap retries when moving a ledger ref.
 cas_retries = 5
 
+[grimble]
+# Root `.grmb` files, one independent model each; only files reachable from them through
+# `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared).
+models = ["design/model.grmb"]
+
+[packs]
+# Enabled pack ids in load order.
+enabled = []
+# Path of the pack lock, relative to the repository root.
+lock = "grimble.packs.lock"
+
 [pm]
 # Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
 strict = false
