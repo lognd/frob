@@ -2,7 +2,8 @@
 id = "01M5P621KV0Y3BRPBFQWVRAYZ5"
 title = "kind test never matches TS vitest test() callbacks"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
