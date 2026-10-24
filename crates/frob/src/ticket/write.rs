@@ -487,7 +487,7 @@ impl Command for Update {
             remove_acceptance: a.remove_acceptance,
             clear_acceptance: a.clear_acceptance,
             reason: a.reason,
-            wait: a.wait.duration(),
+            wait: crate::lease_cmd::wait_duration(a.wait),
         })
     }
 

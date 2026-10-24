@@ -127,11 +127,9 @@ pub(crate) struct WaitArg {
     pub(crate) secs: u64,
 }
 
-impl WaitArg {
-    /// The wait as a duration.
-    pub(crate) fn duration(self) -> Duration {
-        Duration::from_secs(self.secs)
-    }
+/// The `--wait` argument as a duration.
+pub(crate) fn wait_duration(a: WaitArg) -> Duration {
+    Duration::from_secs(a.secs)
 }
 
 /// Output of `lease widen`.
@@ -195,7 +193,7 @@ impl Command for LeaseWiden {
             ticket: a.ticket.ticket,
             globs: a.globs,
             new_globs: a.new_globs,
-            wait: a.wait.duration(),
+            wait: wait_duration(a.wait),
         })
     }
 
