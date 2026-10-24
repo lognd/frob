@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T14:58:45Z"
-updated = "2026-10-24T00:46:34Z"
-scope = ["crates/frob-evidence/**"]
+updated = "2026-10-24T00:56:00Z"
+scope = ["crates/frob-evidence/**", "docs/design/tickets.md"]
 
 [[acceptance]]
 text = "a command-provider evidence record never contains an absolute home path at capture time"
