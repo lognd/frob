@@ -7,10 +7,10 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T18:27:55Z"
-updated = "2026-10-24T03:45:38Z"
+updated = "2026-10-24T03:47:53Z"
 scope = ["crates/frob-tests/**"]
 
 [[acceptance]]
 text = "a test measures warm frob check median on a fixture and fails above the 15s target"
-bound = false
+bound = true
 +++
