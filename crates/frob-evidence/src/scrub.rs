@@ -38,13 +38,23 @@ pub struct PathScrub {
 }
 
 impl PathScrub {
-    /// A scrub for `worktree` and `repo`, plus the home directory from `HOME` or `USERPROFILE`.
+    // frob:ticket 01M4K55NZMZWBGMZ6PP6V3WPZD
+    /// A capture scrub for `worktree` and `repo`, plus `HOME` or `USERPROFILE`, that also clears every other home root.
+    ///
+    /// Foreign homes are swept even when `HOME` is unset, so a captured record never holds an absolute home path.
     pub fn new(repo: &Path, worktree: &Path) -> Self {
         let home = ["HOME", "USERPROFILE"]
             .iter()
             .find_map(std::env::var_os)
             .map(std::path::PathBuf::from);
-        Self::with_home(repo, worktree, home.as_deref())
+        Self::with_home(repo, worktree, home.as_deref()).sweeping_foreign_homes()
+    }
+
+    /// This scrub, also rewriting any remaining home root (`/home/<name>`, `C:\Users\<name>`) to [`OTHER_HOME`].
+    #[must_use]
+    pub fn sweeping_foreign_homes(mut self) -> Self {
+        self.foreign = true;
+        self
     }
 
     /// A scrub for `worktree`, `repo` and an explicit `home` (none skips the home rule).

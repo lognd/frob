@@ -574,7 +574,7 @@ command transcript, a JSON measurement) may be stored inline in the
 event file after `gob-log` redaction (architecture.md section 5); a
 TICK rule scans events for unredacted secret patterns. Captured text also has the worktree root,
 repository root and home directory rewritten to `<worktree>`, `<repo>` and `~` before the digest is
-computed (the digest covers the stored, scrubbed text), and lease events record the worktree relative
+computed (the digest covers the stored, scrubbed text); any other home root (another user, or when `HOME` is unset) becomes `~other`, in the transcript, test names, failed test names and the ref alike, so a record never needs `ticket doctor --fix`. Lease events record the worktree relative
 to the repository parent, so a pushed ledger never carries the local user name; `TICK004` reports
 committed ledger files that still hold an absolute home path (an Error).
 
