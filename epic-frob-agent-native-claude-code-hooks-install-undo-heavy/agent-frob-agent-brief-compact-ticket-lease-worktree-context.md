@@ -8,8 +8,8 @@ points = 3
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-10-24T04:45:52Z"
-scope = ["crates/frob-cli/**", "crates/frob/**", "frob.toml", "docs/design/cli.md", "crates/grimble-ci/**"]
+updated = "2026-10-24T05:12:53Z"
+scope = ["crates/frob-cli/**", "crates/frob/**", "frob.toml", "docs/design/cli.md", "crates/grimble-ci/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "brief prints a bounded summary of the active ticket, lease scope, worktree and standing rules"
