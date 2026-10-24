@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the docs listed in the ticket scope, when read, then each mentions pm.changelog_tests_only_types with its default and intended opt-in"]
+moved = []
+at = "2026-10-24T04:25:38Z"
+actor = "lognd"
+rev = 1
