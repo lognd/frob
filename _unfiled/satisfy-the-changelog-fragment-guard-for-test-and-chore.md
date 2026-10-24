@@ -2,7 +2,8 @@
 id = "01M4KS76RYYQ9Z3YFQA11PE6E1"
 title = "Satisfy the changelog_fragment guard for test and chore tickets whose diff touches only tests, via a [pm] knob"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "Claude"
