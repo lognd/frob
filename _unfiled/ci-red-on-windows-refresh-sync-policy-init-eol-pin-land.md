@@ -7,8 +7,8 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-24T07:16:07Z"
-updated = "2026-10-24T07:29:25Z"
-scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-ledger/**", "crates/frob-land/**", "crates/crunk/**", "crates/gob-symbols/**"]
+updated = "2026-10-24T07:53:45Z"
+scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-ledger/**", "crates/frob-land/**", "crates/crunk/**", "crates/gob-symbols/**", "crates/gob-walk/**"]
 
 [[acceptance]]
 text = "The nextest step of the rust (windows-latest) CI job passes on experimental"
