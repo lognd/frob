@@ -2,7 +2,8 @@
 id = "01M5NWA3HFZWBJWZ11VN8JRN7F"
 title = "REL003 should honour the tests-only changelog exemption"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
