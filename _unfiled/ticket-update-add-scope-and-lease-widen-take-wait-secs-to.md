@@ -2,12 +2,12 @@
 id = "01M4HW9J243ZJRMVYW51K18GCM"
 title = "ticket update --add-scope (and lease widen) take --wait SECS to wait for an overlapping lease instead of failing"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-10T03:04:21Z"
-updated = "2026-10-10T03:04:21Z"
+updated = "2026-10-24T00:46:29Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/frob/src/ticket/**", "crates/frob-lease/src/**", "changelog.d/**"]
 
