@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T08:30:28Z"
+digest = "46e4970a67c3c0aee059dacf5b67bc71697c06ebbc30ed16ba1ef841f7f5e3ae"
+exit_code = 0
+head = "cd203e6d4a24c3b88827370a5a92c3620c866b1a"
+passed = true
+provider = "nextest"
+ref = "-p crunk -p frob-cli -p frob-ledger -p frob-land -p gob-symbols -p gob-walk"
+size = 151099
+status = "measured"
+test_count = 1531
+tests_digest = "43501560dc6051ca8581d616b301c233524c4cd17cb314aea004e10db0d4317d"
+uri = "dir:.git/frob/artifacts/46e4970a67c3c0aee059dacf5b67bc71697c06ebbc30ed16ba1ef841f7f5e3ae"
+at = "2026-10-24T08:30:28Z"
+actor = "lognd"
+rev = 1
