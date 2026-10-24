@@ -919,6 +919,12 @@ rules are written the same way.
 | `rule fmt` | the canonical layout (one clause per line, examples last) |
 | `explain ID` | the rule page |
 
+`rule why` finds the rule by ID in any `.grl` file under the workspace
+root, takes the language from the extension of FILE, prints the trace
+(candidates, first failing clause, edges and polarity used) and exits 0.
+It exits 2 when the ID is defined in no rule file or the location is
+malformed.
+
 A playground may come later; if it does it runs the same engine
 compiled to WASM, never a second implementation (survey L8: ast-grep's
 playground and CLI disagree).

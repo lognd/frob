@@ -157,3 +157,20 @@ fn rule_new_writes_a_scaffold_whose_only_check_error_is_the_missing_clean_exampl
     let (code, _, err) = grimble(dir.path(), &args);
     assert_eq!(code, 2, "a second run must refuse to overwrite: {err}");
 }
+
+// frob:ticket 01M4PT1A52YR3QV6PYSGNC7N38
+// frob:tests crates/grimble/src/rule_cmd.rs::RuleWhy
+#[test]
+fn rule_why_prints_the_trace_for_a_location_and_exits_zero() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "rules/NOPE001.grl", RULE);
+    write(dir.path(), "a.rs", "fn b() {\n    danger();\n}\n");
+    let (code, out, err) = run_for_test(
+        &grimble::cli(),
+        &["rule", "why", "NOPE001", "a.rs:2", "--text"],
+        dir.path(),
+    );
+    assert_eq!(code, 0, "{out}{err}");
+    assert!(out.contains("NOPE001 polarity"), "{out}");
+    assert!(out.contains("1 candidate at 2:"), "{out}");
+}

@@ -154,6 +154,7 @@ impl Product for GrimbleProduct {
             .register::<rule_cmd::RuleFmt>()
             // frob:ticket 01M3ZX7HCQYMTNB9S8ANCZA04W
             .register::<rule_cmd::RuleNew>()
+            .register::<rule_cmd::RuleWhy>()
     }
 }
 

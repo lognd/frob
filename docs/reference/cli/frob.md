@@ -63,6 +63,7 @@
 | `rule fmt` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Rewrite rule files to the canonical layout; `--check` only reports and exits 1 on a difference. |
 | `rule new` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold `rules/ID.grl` from the code at `FILE:LINE`; `--print` shows it without writing. |
 | `rule test` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run the examples of rule files; exits 1 when any example fails. |
+| `rule why` | yes | no | 0 ok, 2 usage, 4 internal | Trace rule `ID` at `FILE:LINE`: the candidates there and the first clause that fails. |
 | `stats` | yes | no | 0 ok, 2 usage, 3 refused, 4 internal | Show velocity, capacity, points remaining, throughput, cycle and lead times and cost per point; a figure with too little history is Unresolved with its sample count. |
 | `teach` | yes | no | 0 ok, 2 usage, 3 refused, 4 internal | Forget taught rules (`teach reset`) or one rule (`teach reset RULE`) so the next check explains in full again. |
 | `test` | no | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run only the tests that reach the files changed against a base, and record the evidence. |

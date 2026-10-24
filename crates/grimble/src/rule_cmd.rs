@@ -466,3 +466,75 @@ impl Command for RuleNew {
         }))
     }
 }
+
+// frob:ticket 01M4PT1A52YR3QV6PYSGNC7N38
+
+/// Trace rule `ID` at `FILE:LINE`: the candidates there and the first clause that fails.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "rule why",
+    product = "grimble",
+    idempotent = true,
+    exits(ok, usage, internal)
+)]
+pub struct RuleWhy {
+    id: String,
+    location: String,
+}
+
+/// `RuleWhy` flags.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct WhyArgs {
+    #[arg(required = true, value_name = "ID", help = "Rule id, such as NOPE001")]
+    id: String,
+    #[arg(
+        required = true,
+        value_name = "FILE:LINE",
+        help = "The source location to trace the rule at"
+    )]
+    location: String,
+}
+
+impl Command for RuleWhy {
+    type Data = gob_plan::why::Why;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<WhyArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<WhyArgs>(m)?;
+        Ok(Self {
+            id: a.id,
+            location: a.location,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<gob_plan::why::Why> {
+        let (file, line) = gob_plan::verbs::new::parse_location(&self.location)
+            .map_err(|e| CliError::Usage(e.to_string()))?;
+        let line = u32::try_from(line)
+            .map_err(|_| CliError::Usage(format!("line {line} is out of range")))?;
+        let lang = file.rsplit_once('.').map_or("", |(_, ext)| ext);
+        let text = std::fs::read_to_string(ctx.cwd.join(file))
+            .map_err(|e| CliError::Usage(format!("cannot read {file}: {e}")))?;
+        let (base, paths) = rule_files(ctx, &[])?;
+        for path in paths {
+            let src = read_rule(&base, &path)?;
+            match gob_plan::verbs::why::why_source(&path, &src, &self.id, lang, &text, line) {
+                Err(gob_plan::verbs::why::WhyVerbError::NoRule(_)) => {}
+                Err(e) => return Err(CliError::Usage(format!("{path}: {e}"))),
+                Ok(why) => {
+                    tracing::debug!(rule = %self.id, %path, line, "rule why traced");
+                    let rows = why.lines();
+                    return Ok(Payload::new(why).with_rendered(rows));
+                }
+            }
+        }
+        Err(CliError::Usage(format!(
+            "no rule `{}` in any .grl file under the workspace root",
+            self.id
+        )))
+    }
+}

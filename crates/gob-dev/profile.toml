@@ -386,6 +386,13 @@ readonly = true
 exit = [0, 2]
 budget_ms = 500
 
+# frob:ticket 01M4PT1A52YR3QV6PYSGNC7N38
+[scenario."frob rule why"]
+args = ["rule", "why", "PROF001", "Cargo.toml:1"]
+readonly = true
+exit = [0, 2]
+budget_ms = 500
+
 [scenario."frob work"]
 args = ["work", "{ticket}"]
 exit = [0, 2, 3]
@@ -628,6 +635,13 @@ budget_ms = 500
 # frob:ticket 01M3ZX7HCQYMTNB9S8ANCZA04W
 [scenario."grimble rule new"]
 args = ["rule", "new", "PROF001", "--from", "Cargo.toml:1", "--print"]
+readonly = true
+exit = [0, 2]
+budget_ms = 500
+
+# frob:ticket 01M4PT1A52YR3QV6PYSGNC7N38
+[scenario."grimble rule why"]
+args = ["rule", "why", "PROF001", "Cargo.toml:1"]
 readonly = true
 exit = [0, 2]
 budget_ms = 500

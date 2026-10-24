@@ -42,6 +42,7 @@ mod refresh;
 mod release;
 mod release_cut;
 mod release_status;
+mod rule_why;
 mod serve_read_verbs;
 mod shared_files;
 mod sibling_discovery;
