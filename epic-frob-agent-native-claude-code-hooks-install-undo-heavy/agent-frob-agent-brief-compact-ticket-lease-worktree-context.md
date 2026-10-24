@@ -2,7 +2,8 @@
 id = "01M4P2N1M00A5XSDA8SW5FBRR8"
 title = "agent: frob agent brief (compact ticket/lease/worktree context for SessionStart)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
