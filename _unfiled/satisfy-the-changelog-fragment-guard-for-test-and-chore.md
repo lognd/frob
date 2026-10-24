@@ -2,12 +2,12 @@
 id = "01M4KS76RYYQ9Z3YFQA11PE6E1"
 title = "Satisfy the changelog_fragment guard for test and chore tickets whose diff touches only tests, via a [pm] knob"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T20:49:07Z"
-updated = "2026-10-10T20:49:07Z"
+updated = "2026-10-24T01:45:34Z"
 scope = ["crates/frob-evidence/**", "crates/frob-pm/**", "crates/frob-release/**", "docs/reference/config.md", "docs/schemas/config.json", "changelog.d/**"]
 
 [[acceptance]]
