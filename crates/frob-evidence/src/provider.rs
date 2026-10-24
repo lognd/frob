@@ -1170,7 +1170,12 @@ pub fn build_record(
         tests,
         test_count,
         tests_digest,
-        failed_tests: capture.failed_tests.clone(),
+        // frob:ticket 01M4K55NZMZWBGMZ6PP6V3WPZD
+        failed_tests: capture
+            .failed_tests
+            .iter()
+            .map(|t| scrub.apply(t))
+            .collect(),
         non_passing: capture.non_passing.counts(),
         inline,
         size: redacted.len() as u64,
