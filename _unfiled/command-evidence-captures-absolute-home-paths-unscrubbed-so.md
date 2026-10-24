@@ -2,7 +2,8 @@
 id = "01M4K55NZMZWBGMZ6PP6V3WPZD"
 title = "command evidence captures absolute home paths unscrubbed, so frob check fails TICK004 until frob ticket doctor --fix runs"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "Claude"
