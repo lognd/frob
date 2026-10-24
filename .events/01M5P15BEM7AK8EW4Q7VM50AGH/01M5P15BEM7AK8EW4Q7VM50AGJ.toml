@@ -1,0 +1,10 @@
+kind = "create"
+title = "web_conformance test relies on fail_on_unresolved=never because DEAD001 has no entry points"
+type = "chore"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/tests/siblings/**"]
+body = "found while working ~MJZYWH9: the grimble check web fixture has zero DEAD001 subjects (must_measure), so the default gate fails; give the fixture an entry point and drop the override."
+at = "2026-10-24T04:02:05Z"
+actor = "lognd"
+rev = 1
