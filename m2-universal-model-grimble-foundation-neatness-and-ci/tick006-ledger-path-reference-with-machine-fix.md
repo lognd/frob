@@ -23,7 +23,7 @@ kind = "blocked-by"
 target = "01M3ZX82K7HX9D2VKT25KS4MV2"
 
 [[acceptance]]
-text = "Given a doc linking `https://github.com/o/r/blob/frob-tickets/parser-rewrite/x.md`, when check runs, then TICK006 fires and `--fix` rewrites it to the ticket ULID"
+text = "Given a doc linking a GitHub blob URL that points into the ticket branch, when check runs, then TICK006 fires and `--fix` rewrites it to the ticket ULID"
 bound = true
 
 [[acceptance]]
