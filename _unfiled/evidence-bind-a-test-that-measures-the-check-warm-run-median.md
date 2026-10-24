@@ -2,7 +2,8 @@
 id = "01M4P3HCCJG2YN2M39FXJAFC5D"
 title = "evidence: bind a test that measures the check warm-run median (15s target) for the speed cache"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
