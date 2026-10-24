@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-24T05:27:40Z"
-updated = "2026-10-24T07:07:12Z"
+updated = "2026-10-24T07:08:07Z"
 scope = ["crates/gob-plan/src/exec/core/kind.rs", "crates/gob-symbols/src/typescript/fold.rs", "crates/gob-plan/tests/exec_core.rs"]
 
 [[acceptance]]
