@@ -8,7 +8,7 @@ points = 3
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-10-24T04:05:31Z"
+updated = "2026-10-24T04:06:14Z"
 scope = ["crates/frob-cli/**"]
 
 [[acceptance]]
@@ -17,5 +17,5 @@ bound = true
 
 [[acceptance]]
 text = "output is capped at a configured byte budget"
-bound = false
+bound = true
 +++

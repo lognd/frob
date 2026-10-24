@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-24T04:06:14Z"
+digest = "2295b73512055997118732cf6e6a82ccfec11837be18c04e9793fd4e5d1ae84a"
+exit_code = 0
+head = "df26d09a49060598c5de040ddb31e3caadcb79b5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.96s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 545451ac-e993-4dc9-8859-9a6c0fad6200 with nextest profile: default
+    Starting 1 test across 476 binaries (5481 tests skipped)
+        PASS [   0.237s] frob-cli::it agent_brief::brief_is_capped_at_the_byte_budget
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.246s] 1 test run: 1 passed, 5481 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "frob-cli::it agent_brief::brief_is_capped_at_the_byte_budget"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "1429d0c8fee10c684885220a9d585dc8cf9de74a177e61ddcd084969dfb51de1"
+at = "2026-10-24T04:06:14Z"
+actor = "lognd"
+rev = 1
