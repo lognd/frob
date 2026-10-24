@@ -160,6 +160,11 @@ git add -A && git commit -m "docs: changelog fragment"
 frob check --ticket ~Q5FEE2P
 ```
 
+To waive the fragment for test-only chores, opt in with
+`[pm] changelog_tests_only_types = ["chore"]` (default `[]`). A listed ticket
+closes without a fragment only when its branch diff against the base touches
+nothing but test files; any other file in the diff keeps the fragment required.
+
 `check --ticket` limits the report to what this ticket's diff introduced. A
 fresh repository also shows a few advisory or "unresolved" lines (frob's own
 files have no language adapter; `PM033` says the ready queue is short). They do

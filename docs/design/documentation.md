@@ -164,6 +164,12 @@ exemption by file type), recorded as an audited `changelog-exempt` event that sa
 `changelog_fragment` and REL003 for that ticket; `release status` lists the exempted
 tickets of the milestone so a reviewer sees what shipped without a note. Epic and docs tickets need no fragment by default (`[pm] changelog_exempt_types`, ~YYJGRFJ; `[]` opts every type in, and a fragment they do carry is still validated). A refusal on
 `changelog_fragment` names both `frob ticket fragment` and `--no-changelog --reason`.
+`[pm] changelog_tests_only_types` (default `[]`, intended opt-in `["chore"]`) is the one
+file-based waiver: a ticket of a listed type closes without a fragment when its branch diff
+against the base touches only test files (a `tests/` directory, or a Python, TypeScript or C#
+test file). An empty diff, a diff that also touches any other file, or a missing ticket branch
+never qualifies, and a fragment the ticket does carry is still validated. The audited
+`--no-changelog --reason` path stays file-agnostic.
 git-cliff and release-plz are not used:
 commit history is not the user-facing voice.
 
