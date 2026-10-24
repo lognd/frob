@@ -32,6 +32,12 @@ They run in the root of the tree being checked, so a land checkout and a fresh t
 
 A prerequisite that exits nonzero, times out, cannot be found or is refused leaves every stage that needs it Unresolved (`TOOL001`, required), with a message naming the prerequisite and its stderr, and the stage itself is not run. Its failures are never reported as findings of the stage, so they cannot be mistaken for pre-existing ones.
 
+### uv-run stages and a missing environment
+
+A stage whose command is `uv` and whose arguments run a project (the first word that is not a flag is `run`, with no `--no-project`, `--isolated` or `--script`) needs the project's `.venv`. When the checkout has a `pyproject.toml`, has no `.venv/pyvenv.cfg`, and `UV_PROJECT_ENVIRONMENT` is not set in frob's environment, frob runs `uv sync --frozen` (`uv sync` when there is no `uv.lock`) as a prerequisite before the stage, once per check run. A `.venv` without `pyvenv.cfg` counts as missing.
+
+If that sync fails, times out, or `uv` cannot run, the stage is not run and reports Unresolved (`TOOL001`, required). The message names the prerequisite and its stderr and carries the remedy, in the form "run `uv sync` in the repository root and fix its failure, then re-run". It is never a finding of the stage, so a missing environment cannot read as a red verdict. With `UV_PROJECT_ENVIRONMENT` set the sync is skipped and the stage runs as declared, so its own exit status is what is reported.
+
 ## eslint stages
 
 `parser = "eslint-json"` reads `eslint -f json` (exit 1 for lint errors is a normal exit; a message without a rule id, such as a parse error, is skipped). `frob init` in a repository whose `package.json` names eslint adds two stages: `eslint` (the repository config: jsx-a11y, react-hooks, react and syntax-level typescript-eslint rules) and `eslint-typed` (`tier = "train"`, `optional`, its own `eslint.typed.config.mjs` with the type-aware typescript-eslint rules). The type-aware rules cost a type check, so they are a separate stage; every tool stage is timed apart from the `[perf]` budget (`timing.stages` with `budgeted = false`), so the type check never counts against the 2 s budget.
