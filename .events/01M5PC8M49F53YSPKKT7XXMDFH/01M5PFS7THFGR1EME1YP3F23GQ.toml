@@ -1,0 +1,20 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T08:17:36Z"
+digest = "e7e2660e2c2930501746978eedec2ff9f532e16fe1128e19f91c5888b5f73367"
+exit_code = 101
+head = "4e0a5499f2fcc904cd21d988a2bffaf389de3dbd"
+inline = """
+error: package ID specification `frob` did not match any packages
+
+help: a package with a similar name exists: `cobs`
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package crunk --package frob --package frob-ledger --package frob-land --package gob-symbols --package gob-walk` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p crunk -p frob -p frob-ledger -p frob-land -p gob-symbols -p gob-walk"
+size = 404
+status = "measured"
+at = "2026-10-24T08:17:36Z"
+actor = "lognd"
+rev = 1
