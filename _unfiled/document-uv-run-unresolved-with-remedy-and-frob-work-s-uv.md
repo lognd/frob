@@ -2,7 +2,8 @@
 id = "01M4KKQZVEMCD4NY1001V8YYHS"
 title = "Document uv-run Unresolved-with-remedy and frob work's uv sync --frozen in tool-stages.md and tool-binding.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "Claude"
