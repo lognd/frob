@@ -59,6 +59,8 @@ fn grl_paths(snap: &Snapshot<Frob>) -> Vec<&str> {
 
 /// Every rule file's test result; an unreadable file is skipped with a warning.
 fn results(snap: &Snapshot<Frob>) -> Vec<FileTest> {
+    // Examples with a model body need the grimble reader; installing it is idempotent.
+    gob_plan::examples::install_model_reader(grimble_check::example_model::read_example_model);
     grl_paths(snap)
         .into_iter()
         .filter_map(|p| match snap.core.text(p) {

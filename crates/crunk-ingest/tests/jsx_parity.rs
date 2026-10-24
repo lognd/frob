@@ -5,15 +5,9 @@
 //! `jsx` is a corpus of every shape the Python unit tests cover; `hullbreach_jsx` is the
 //! platform's own React tree (7 sheets, 126 utilities).
 
-// frob:ticket 01M43ARYFVG86PAGGM78JGRZY3
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
-
 mod common;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use common::{same_json, scratch};
 use crunk_ingest::{Bucket, Declaration, ProjectStyles, ingest_tree};
@@ -21,12 +15,12 @@ use gob_cache::Cache;
 use serde_json::{Value, json};
 
 fn rel(root: &Path, p: &Path) -> String {
-    p.strip_prefix(root)
-        .unwrap()
-        .components()
-        .map(|c| c.as_os_str().to_string_lossy())
-        .collect::<Vec<_>>()
-        .join("/")
+    gob_path::forward_slashes(
+        &p.strip_prefix(root)
+            .unwrap()
+            .components()
+            .collect::<PathBuf>(),
+    )
 }
 
 fn chars(source: &str, span: (usize, usize)) -> Value {

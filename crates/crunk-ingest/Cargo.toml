@@ -19,6 +19,7 @@ crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
 crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind" }
 crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-directives = { version = "0.532.0", path = "../gob-directives" }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }

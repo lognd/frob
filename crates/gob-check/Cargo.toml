@@ -12,6 +12,7 @@ authors.workspace = true
 blake3 = "1"
 globset = "0.4"
 gob-caps = { version = "0.532.0", path = "../gob-caps" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }

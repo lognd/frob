@@ -92,3 +92,11 @@ fn language_without_path_roles_is_unresolved_not_clean() {
     assert!(r.unresolved.contains(&Kind::StringPathSeparator));
     assert!(r.unresolved.contains(&Kind::PathInCommandLine));
 }
+
+// frob:tests crates/grimble-lints/src/path.rs::scan
+#[test]
+fn newline_escape_in_a_message_is_not_a_separator() {
+    let src = "use std::path::Path;\nfn note(p: &Path) -> String {\n    format!(\"config: {}\\n  done\", p.display())\n}\n";
+    let report = run(Language::Rust, src);
+    assert!(report.sites.is_empty(), "{report:?}");
+}

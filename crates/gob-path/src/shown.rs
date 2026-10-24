@@ -2,6 +2,13 @@
 
 use std::path::Path;
 
+use crate::style::PathStyle;
+
+/// What a path under the home directory starts with when shown.
+const HOME_PREFIX: &str = "~/";
+/// The separator forward-slash text uses.
+const FORWARD: &str = "/";
+
 /// A path rendered for a person (render-only; never parse or persist it).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Shown(String);
@@ -24,7 +31,7 @@ impl Shown {
             .and_then(|h| p.strip_prefix(h).ok())
         {
             Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
-            Some(rest) => format!("~/{}", rest.display()),
+            Some(rest) => format!("{HOME_PREFIX}{}", rest.display()),
             None => p.display().to_string(),
         };
         tracing::trace!(shown = %shown, "path shown");
@@ -51,6 +58,19 @@ pub fn exact_text<P: AsRef<Path> + ?Sized>(p: &P) -> Option<&str> {
         tracing::trace!(path = ?p.as_ref(), "path is not valid unicode");
     }
     text
+}
+
+/// `p` as lossy text with every `\` turned into `/`: the portable form for messages and data.
+///
+/// Render-only (a non-Unicode name is replaced, never refused); use [`crate::RelPath`] for a
+/// path that is stored or compared.
+#[expect(
+    clippy::disallowed_methods,
+    reason = "gob-path is the one crate that converts paths to text"
+)]
+pub fn forward_slashes(p: &Path) -> String {
+    p.to_string_lossy()
+        .replace(PathStyle::Windows.sep(), FORWARD)
 }
 
 impl std::fmt::Display for Shown {

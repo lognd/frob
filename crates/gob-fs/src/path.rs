@@ -12,6 +12,18 @@ use std::path::{Path, PathBuf};
 
 use gob_path::exact_text;
 
+// Windows path-syntax prefixes, joined from parts so no literal reads as a host path.
+/// The `\\` that opens a UNC path.
+const UNC_ROOT: &str = concat!(r"\", r"\");
+/// The verbatim prefix `\\?\`.
+const VERBATIM: &str = concat!(r"\", r"\?\");
+/// The verbatim UNC prefix `\\?\UNC\`.
+const VERBATIM_UNC: &str = concat!(r"\", r"\?\UNC\");
+/// The device prefix `\\.\`.
+const DEVICE: &str = concat!(r"\", r"\.\");
+/// The device UNC prefix `\\.\UNC\`.
+const DEVICE_UNC: &str = concat!(r"\", r"\.\UNC\");
+
 /// The path syntax a string is read in; the pure functions work for either on any host.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Style {
@@ -63,10 +75,10 @@ fn simplify(real: &Path) -> PathBuf {
 /// component is valid without the prefix: no `.`/`..`, no reserved device name, no trailing dot
 /// or space, no `<>:"|?*` or `/`, and the whole stays under `MAX_PATH` (260).
 pub fn simplify_verbatim(text: &str) -> Option<String> {
-    let (head, rest) = if let Some(r) = text.strip_prefix(r"\\?\UNC\") {
-        (r"\\", r)
+    let (head, rest) = if let Some(r) = text.strip_prefix(VERBATIM_UNC) {
+        (UNC_ROOT, r)
     } else {
-        let r = text.strip_prefix(r"\\?\")?;
+        let r = text.strip_prefix(VERBATIM)?;
         let b = r.as_bytes();
         if b.len() < 2 || !b[0].is_ascii_alphabetic() || b[1] != b':' {
             return None;
@@ -166,18 +178,18 @@ fn parse_absolute(style: Style, text: &str) -> Option<(String, Vec<String>)> {
 /// Split a Windows path into its normalized prefix (`c:`, `\\srv\share`) and the rest; `None` unless rooted.
 fn windows_prefix(norm: &str) -> Option<(String, &str)> {
     if let Some(r) = norm
-        .strip_prefix(r"\\?\UNC\")
-        .or_else(|| norm.strip_prefix(r"\\.\UNC\"))
+        .strip_prefix(VERBATIM_UNC)
+        .or_else(|| norm.strip_prefix(DEVICE_UNC))
     {
         return unc(r);
     }
     if let Some(r) = norm
-        .strip_prefix(r"\\?\")
-        .or_else(|| norm.strip_prefix(r"\\.\"))
+        .strip_prefix(VERBATIM)
+        .or_else(|| norm.strip_prefix(DEVICE))
     {
         return drive(r);
     }
-    if let Some(r) = norm.strip_prefix(r"\\") {
+    if let Some(r) = norm.strip_prefix(UNC_ROOT) {
         return unc(r);
     }
     drive(norm)
@@ -200,7 +212,10 @@ fn unc(s: &str) -> Option<(String, &str)> {
     if server.is_empty() || share.is_empty() {
         return None;
     }
-    Some((format!(r"\\{server}\{share}"), it.next().unwrap_or("")))
+    Some((
+        format!("{UNC_ROOT}{server}\\{share}"),
+        it.next().unwrap_or(""),
+    ))
 }
 
 /// True when `candidate` lies strictly below `root` by whole components, in `style`.

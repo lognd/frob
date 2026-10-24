@@ -151,12 +151,7 @@ fn proc001(core: &Core, spawners: &[String], files: &mut FileInterner) -> Vec<Fi
         .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
     let mut out = Vec::new();
     for hit in gob_exec::proc001::scan(&core.root, spawners) {
-        let rel = hit
-            .path
-            .strip_prefix(&core.root)
-            .unwrap_or(&hit.path)
-            .to_string_lossy()
-            .replace('\\', "/");
+        let rel = gob_path::forward_slashes(hit.path.strip_prefix(&core.root).unwrap_or(&hit.path));
         let text = core.text(&rel).unwrap_or_default();
         let start = line_start(&text, hit.line) + hit.col.saturating_sub(1);
         let line_end = line_start(&text, hit.line + 1).min(text.len());

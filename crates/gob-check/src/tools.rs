@@ -338,7 +338,7 @@ fn vet_on(
 /// Repo-relative, forward-slash form of a path a tool printed.
 fn normalize(root: &Path, printed: &str) -> String {
     let unified = printed.replace('\\', "/");
-    let root_text = root.to_string_lossy().replace('\\', "/");
+    let root_text = gob_path::forward_slashes(root);
     let rel = unified
         .strip_prefix(root_text.trim_end_matches('/'))
         .map_or(unified.as_str(), |r| r.trim_start_matches('/'));
@@ -1757,11 +1757,7 @@ mod tests {
         .expect("write");
         let log = ESLINT_SARIF.replace(
             "/work/repo/a.js",
-            &dir.path()
-                .join("a.js")
-                .display()
-                .to_string()
-                .replace('\\', "/"),
+            &gob_path::forward_slashes(&dir.path().join("a.js")),
         );
         std::fs::write(dir.path().join("out.sarif"), log).expect("write");
         let run = run_full(&sarif_stage("cat out.sarif; exit 1"), dir.path());

@@ -20,6 +20,7 @@ frob-pm = { version = "0.532.0", path = "../frob-pm" }
 frob-release = { version = "0.532.0", path = "../frob-release" }
 frob-tests = { version = "0.532.0", path = "../frob-tests" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
@@ -28,6 +29,7 @@ gob-directives = { version = "0.532.0", path = "../gob-directives" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-plan = { version = "0.532.0", path = "../gob-plan" }
+grimble-check = { version = "0.532.0", path = "../grimble-check" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
 gob-packs = { version = "0.532.0", path = "../gob-packs" }

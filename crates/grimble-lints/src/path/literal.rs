@@ -32,7 +32,8 @@ pub(super) fn is_string_literal(language: Language, node: Node<'_>) -> bool {
 }
 
 /// The value of a string literal's source text: quotes and prefix removed, escapes decoded
-/// (`\\` becomes `\`; raw and verbatim literals are taken as written).
+/// (`\\` becomes `\`, `\n` a newline so a line break is never mistaken for a separator; raw
+/// and verbatim literals are taken as written).
 pub(super) fn decode(source: &str) -> Option<String> {
     let open = source.find(['"', '\'', '`'])?;
     let quote = source[open..].chars().next()?;
@@ -57,6 +58,10 @@ pub(super) fn decode(source: &str) -> Option<String> {
         }
         match chars.next() {
             Some(e @ ('\\' | '"' | '\'' | '/')) => out.push(e),
+            Some('n') => out.push('\n'),
+            Some('t') => out.push('\t'),
+            Some('r') => out.push('\r'),
+            Some('0') => out.push('\0'),
             Some(other) => {
                 out.push('\\');
                 out.push(other);
@@ -78,12 +83,9 @@ pub(super) fn is_absolute_host_path(value: &str, allowed: &[String]) -> bool {
     if allowed.iter().any(|a| a == value) {
         return false;
     }
-    if HOST_PREFIXES
-        .iter()
-        .any(|p| value.starts_with(p) && value.len() > p.len())
-        || value == "/root"
-        || value == "/tmp"
-    {
+    if HOST_PREFIXES.iter().any(|p| {
+        (value.starts_with(p) && value.len() > p.len()) || value == p.trim_end_matches('/')
+    }) {
         return true;
     }
     let mut chars = value.chars();

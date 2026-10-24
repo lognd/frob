@@ -17,6 +17,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+NEWLINE = "\n"
+
 _MAX_FILE = 256 * 1024
 _SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", "node_modules", ".venv"}
 
@@ -107,7 +109,7 @@ def _recording_run(args, *a, **kw):
     }
     assert _out is not None
     with (_out / "raw.jsonl").open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(rec, sort_keys=True) + "\n")
+        fh.write(json.dumps(rec, sort_keys=True) + NEWLINE)
     return result
 
 

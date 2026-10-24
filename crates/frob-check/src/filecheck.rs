@@ -72,7 +72,7 @@ pub(crate) fn link_target_digest(ctx: &SharedCtx<'_, Frob>, path: &str, text: &s
         let state = match normalize(base_dir, target) {
             None => "escape".to_owned(),
             Some(p) => {
-                let rel = p.to_string_lossy().replace('\\', "/");
+                let rel = gob_path::forward_slashes(&p);
                 if let Some(d) = ctx.digest_of(&rel) {
                     format!("file:{d}")
                 } else if ctx.has_dir(&rel) {

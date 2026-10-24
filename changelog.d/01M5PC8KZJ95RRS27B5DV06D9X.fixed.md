@@ -1,0 +1,1 @@
+Replace literal path separators and host-path literals with gob-path helpers, teach the path lint real newline escapes, and install the example-model reader in frob check so the Linux check step has fewer error findings.

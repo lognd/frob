@@ -119,3 +119,13 @@ fn exact_text_refuses_non_unicode() {
     let bad = std::ffi::OsStr::from_bytes(b"a/\xff");
     assert_eq!(exact_text(bad), None);
 }
+
+// frob:ticket 01M5PC8KZJ95RRS27B5DV06D9X
+// frob:tests crates/gob-path/src/shown.rs::forward_slashes
+#[test]
+fn forward_slashes_turns_backslashes_into_slashes() {
+    assert_eq!(
+        gob_path::forward_slashes(Path::new("a\\b/c")),
+        "a/b/c".to_owned()
+    );
+}
