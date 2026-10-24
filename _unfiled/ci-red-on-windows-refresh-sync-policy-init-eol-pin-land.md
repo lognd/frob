@@ -2,12 +2,12 @@
 id = "01M5PC8M49F53YSPKKT7XXMDFH"
 title = "CI red on Windows: refresh/sync_policy/init_eol_pin/land/ledger-refresh/csharp snapshot tests fail"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-10-24T07:16:07Z"
-updated = "2026-10-24T07:16:07Z"
+updated = "2026-10-24T07:16:19Z"
 scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-ledger/**", "crates/frob-land/**", "crates/crunk/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
