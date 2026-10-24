@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-24T00:47:35Z"
+digest = "148b09bdeb53fbdc458c3287a1de5d6f2083d506dde61abbdcc1fbb2fc1cab3f"
+head = "3666d66b11a28d85dbbd1e7f87b8d9ce9a75f887"
+provider = "file"
+ref = "docs/migration/v1-import.md"
+size = 4836
+status = "measured"
+at = "2026-10-24T00:47:35Z"
+actor = "lognd"
+rev = 1
