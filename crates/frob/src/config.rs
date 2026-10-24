@@ -33,6 +33,17 @@ pub struct AgentTable {
     /// Hook registrations, each `"NAME:EVENT:MATCHER"` naming a `hook` item.
     #[config(default = Vec::<String>::new())]
     pub hooks: Vec<String>,
+    // frob:ticket 01M4P2N1M00A5XSDA8SW5FBRR8
+    /// Byte budget of `frob agent brief`; longer output is cut and marked.
+    #[config(default = 2048)]
+    pub brief_max_bytes: u64,
+    /// Standing rules `frob agent brief` prints, one line each.
+    #[config(default = vec![
+        "Edit only files inside the lease scope; widen it with `frob lease widen`.".to_owned(),
+        "Verify with `frob check --ticket` before landing.".to_owned(),
+        "Log with tracing, never print; ASCII only.".to_owned(),
+    ])]
+    pub brief_rules: Vec<String>,
 }
 
 /// Every table above, loaded and validated from one `frob.toml`.

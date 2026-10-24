@@ -1,4 +1,4 @@
-//! `frob agent sync`, `frob agent status` and `frob agent uninstall`.
+//! `frob agent sync`, `frob agent status`, `frob agent uninstall` and `frob agent brief`.
 //!
 //! Thin verbs over the agent-neutral engine in [`crate::agent`]: they resolve the repository, the
 //! `[agent]` manifest and the selected emitters (`--agent claude|...|all`), then report per agent. The
@@ -15,6 +15,7 @@ use gob_git::Repo;
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::agent::brief::{self, ActiveTicket, BriefInput};
 use crate::agent::engine::{self, Planned, StatusReport, SyncReport, UninstallReport};
 use crate::agent::{self, AgentError, Emitter, Manifest};
 use crate::config::FrobConfig;
@@ -406,4 +407,128 @@ pub(crate) fn drift_warnings(root: &Path, cfg: &FrobConfig) -> Vec<String> {
         }
     }
     out
+}
+
+/// The flags of `agent brief`.
+#[derive(Debug, Clone, clap::Args)]
+#[command(about = None, long_about = None)]
+struct BriefArgs {
+    #[arg(
+        long,
+        value_name = "BYTES",
+        help = "Cap the brief at this many bytes (default: [agent] brief_max_bytes)"
+    )]
+    max_bytes: Option<usize>,
+}
+
+/// Output of `agent brief`.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct BriefData {
+    /// The facts the brief was rendered from.
+    #[serde(flatten)]
+    pub input: BriefInput,
+    /// The brief as printed, already capped.
+    pub text: String,
+    /// The byte budget applied.
+    pub max_bytes: usize,
+    /// True when the text was cut to fit the budget.
+    pub truncated: bool,
+}
+
+// frob:ticket 01M4P2N1M00A5XSDA8SW5FBRR8
+/// Print a bounded summary of the ticket leased from this worktree, its scope, the worktree and the standing rules.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "agent brief",
+    product = "frob",
+    idempotent = true,
+    read_only,
+    exits(ok, refused, usage, internal)
+)]
+pub struct AgentBrief {
+    max_bytes: Option<usize>,
+}
+
+impl Command for AgentBrief {
+    type Data = BriefData;
+
+    fn configure(cmd: ClapCommand) -> ClapCommand {
+        gob_cli::augment::<BriefArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<BriefArgs>(m)?;
+        Ok(Self {
+            max_bytes: a.max_bytes,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> Outcome<BriefData> {
+        let (_repo, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
+        let max_bytes = self
+            .max_bytes
+            .unwrap_or_else(|| usize::try_from(cfg.agent.brief_max_bytes).unwrap_or(usize::MAX));
+        let mut warnings = Vec::new();
+        let input = gather(ctx, &root, &cfg, &mut warnings)?;
+        let (text, truncated) = brief::cap(&brief::lines(&input), max_bytes);
+        tracing::info!(
+            active = input.ticket.is_some(),
+            bytes = text.len(),
+            truncated,
+            "agent brief"
+        );
+        let rows = text.lines().map(str::to_owned).collect::<Vec<_>>();
+        let mut payload = Payload::new(BriefData {
+            input,
+            text,
+            max_bytes,
+            truncated,
+        })
+        .with_rendered(rows);
+        for w in warnings {
+            payload = payload.with_warning(w);
+        }
+        Ok(payload)
+    }
+}
+
+/// Collect the active ticket (the live lease held from this worktree), scope and rules; a ledger failure degrades to a warning.
+fn gather(
+    ctx: &Context,
+    root: &Path,
+    cfg: &FrobConfig,
+    warnings: &mut Vec<String>,
+) -> Result<BriefInput, CliError> {
+    let want = gob_fs::canonical(root).unwrap_or_else(|_| root.to_path_buf());
+    let (store, _) = frob_lease::open_store(&ctx.cwd, cfg.lease.clone(), ctx.clock.clone())?;
+    let lease = store.list()?.into_iter().find(|l| {
+        gob_fs::canonical(&l.holder.worktree).unwrap_or_else(|_| l.holder.worktree.clone()) == want
+    });
+    let ticket = lease.as_ref().map(|l| {
+        let known = crate::ticket::open(ctx)
+            .and_then(|ledger| ledger.show(l.ticket).map_err(crate::ticket::cli_err));
+        match known {
+            Ok(v) => ActiveTicket {
+                handle: v.summary.handle,
+                title: v.summary.title,
+                category: v.summary.category.to_string(),
+            },
+            Err(e) => {
+                tracing::warn!(ticket = %l.ticket, error = %e, "brief: ticket unreadable");
+                warnings.push(format!("ticket {} could not be read: {e}", l.ticket));
+                ActiveTicket {
+                    handle: l.ticket.to_string(),
+                    title: String::new(),
+                    category: String::new(),
+                }
+            }
+        }
+    });
+    Ok(BriefInput {
+        ticket,
+        scope: lease.map(|l| l.scope).unwrap_or_default(),
+        worktree: Shown::of(&want).to_string(),
+        rules: cfg.agent.brief_rules.clone(),
+    })
 }

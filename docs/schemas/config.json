@@ -582,6 +582,25 @@
       "additionalProperties": false,
       "description": "The agent-neutral manifest `frob agent sync` publishes into each coding agent's home.",
       "properties": {
+        "brief_max_bytes": {
+          "default": 2048,
+          "description": "Byte budget of `frob agent brief`; longer output is cut and marked.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "brief_rules": {
+          "default": [
+            "Edit only files inside the lease scope; widen it with `frob lease widen`.",
+            "Verify with `frob check --ticket` before landing.",
+            "Log with tracing, never print; ASCII only."
+          ],
+          "description": "Standing rules `frob agent brief` prints, one line each.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "hooks": {
           "default": [],
           "description": "Hook registrations, each `\"NAME:EVENT:MATCHER\"` naming a `hook` item.",

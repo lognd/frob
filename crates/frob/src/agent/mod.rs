@@ -8,6 +8,7 @@
 
 // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
 
+pub mod brief;
 pub mod claude;
 pub mod engine;
 pub mod project;

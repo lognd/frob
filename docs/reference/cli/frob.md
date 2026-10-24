@@ -7,6 +7,7 @@
 | Verb | Idempotent | Dry run | Exits | Summary |
 |---|---|---|---|---|
 | `ack` | no | yes | 0 ok, 2 usage, 3 refused, 4 internal | Acknowledge symbols: record their digests in frob.lock and commit it on the current branch. |
+| `agent brief` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print a bounded summary of the ticket leased from this worktree, its scope, the worktree and the standing rules. |
 | `agent status` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Report drift between the repository manifest and each selected agent's home; exits 1 on drift. |
 | `agent sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Publish the manifest into each selected agent's home behind a do-not-edit banner and register its hooks. |
 | `agent uninstall` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Remove only the files and registrations frob installed, leaving user additions alone. |
