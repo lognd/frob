@@ -9,13 +9,14 @@ use std::process::Output;
 use serde_json::Value;
 
 // frob:ticket 01M4D6NRS8BHPBDVD2CEGY0KCD
-const PM_KEYS: [&str; 19] = [
+const PM_KEYS: [&str; 20] = [
     "pm.strict",
     "pm.pull",
     "pm.ready_min",
     "pm.ready_requires",
     "pm.done_requires",
     "pm.changelog_exempt_types",
+    "pm.changelog_tests_only_types",
     "pm.cycle_days",
     "pm.min_history",
     "pm.capacity_k",

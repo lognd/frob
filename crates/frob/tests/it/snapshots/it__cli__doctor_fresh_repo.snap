@@ -13,7 +13,7 @@ expression: v
       "state": "ok"
     },
     "config": {
-      "missing_knobs": 40,
+      "missing_knobs": 41,
       "path": "[path]",
       "present": false
     },
@@ -321,6 +321,19 @@ expression: v
       "fix": null,
       "line": null,
       "message": "missing materialized knob `pm.changelog_exempt_types` in frob.toml (default [\"epic\", \"docs\"]); run `frob init` (or `frob config sync`) to write it",
+      "message_origin": "std",
+      "required": null,
+      "rule": "CFG001",
+      "severity": "error",
+      "slug": "missing-materialized-knob"
+    },
+    {
+      "column": null,
+      "file": null,
+      "fingerprint": "c6a0b0b6133d27ee6a9171a931131fede1c44a45f9926b03bb3ed3c857df6336",
+      "fix": null,
+      "line": null,
+      "message": "missing materialized knob `pm.changelog_tests_only_types` in frob.toml (default []); run `frob init` (or `frob config sync`) to write it",
       "message_origin": "std",
       "required": null,
       "rule": "CFG001",

@@ -350,7 +350,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble vet [--hook]` | grimble | grimble-vet | yes; implemented (vet.md); `--hook` not yet | 0 1 2 4 | 2 | policy: the vet gate semantics |
 | `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 | object: the explore noun of grimble |
 | `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 | effect: opens a server session |
-| `agent status\|sync\|uninstall` (install, inspect and undo the agent integration) | frob | frob (bin) | yes; `status` is read-only | 0 1 2 3 4 | 1 | effect: writes or removes the agent hook and skill files |
+| `agent status\|sync\|uninstall\|brief` (install, inspect and undo the agent integration; `brief` prints a byte-capped session summary) | frob | frob (bin) | yes; `status` and `brief` are read-only | 0 1 2 3 4 | 1 | effect: writes or removes the agent hook and skill files |
 | `claim hold\|resume\|touch\|evict\|restore` (a remote collaborator's claim on a ticket, distributed lease) | frob | frob-worktree | no for `hold` and `evict`, yes for `resume` and `touch` | 0 2 3 4 | 1 | object: the claim noun, the distributed form of the lease |
 | `cycle list\|show\|unassign` | frob | frob-pm | yes; `list` and `show` are read-only | 0 2 3 4 | 1 | object: the cycle noun |
 | `explain <code>` (also `grimble explain`) | frob, grimble | frob (bin) | yes, read-only | 0 2 4 | 1 | object: the rule and error code catalog |
