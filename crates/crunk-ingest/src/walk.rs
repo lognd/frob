@@ -104,10 +104,7 @@ pub fn bucket_for(
 }
 
 pub(crate) fn posix(path: &Path) -> String {
-    path.components()
-        .map(|c| c.as_os_str().to_string_lossy())
-        .collect::<Vec<_>>()
-        .join("/")
+    gob_path::forward_slashes(&path.components().collect::<PathBuf>())
 }
 
 fn component_key(path: &Path) -> Vec<Component<'_>> {
@@ -416,7 +413,7 @@ pub fn ingest_tree(spec: &DesignSpec, cache: &Cache) -> Result<Ingested, IngestE
         ingest.diagnostic(
             &css_root,
             format!(
-                "css root {} does not exist; CSS judgments skipped, jsx/tailwind sources still ingest",
+                "css root {} does not exist; CSS judgments skipped, jsx and tailwind sources still ingest",
                 css_root.display()
             ),
         );

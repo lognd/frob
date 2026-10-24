@@ -1628,6 +1628,13 @@ pub enum UnityHost {
     Linux,
 }
 
+/// The Windows drive Unity Hub installs to by default.
+const WINDOWS_DRIVE: &str = "C:";
+/// The macOS directory Unity Hub installs under by default.
+const MACOS_APPS: &str = "/Applications";
+/// The editor directory below the Hub install root (and below `~` on Linux).
+const HUB_TAIL: &str = "Unity/Hub/Editor";
+
 impl UnityHost {
     /// The family this binary was built for.
     pub fn current() -> Self {
@@ -1645,12 +1652,11 @@ impl UnityHost {
     /// `home` is the user's home directory, needed on Linux only.
     pub fn hub_roots(self, home: Option<&Path>) -> Vec<PathBuf> {
         match self {
-            Self::Windows => vec![PathBuf::from("C:/Program Files/Unity/Hub/Editor")],
-            Self::MacOs => vec![PathBuf::from("/Applications/Unity/Hub/Editor")],
-            Self::Linux => home
-                .map(|h| h.join("Unity/Hub/Editor"))
-                .into_iter()
-                .collect(),
+            Self::Windows => vec![PathBuf::from(format!(
+                "{WINDOWS_DRIVE}/Program Files/{HUB_TAIL}"
+            ))],
+            Self::MacOs => vec![PathBuf::from(format!("{MACOS_APPS}/{HUB_TAIL}"))],
+            Self::Linux => home.map(|h| h.join(HUB_TAIL)).into_iter().collect(),
         }
     }
 

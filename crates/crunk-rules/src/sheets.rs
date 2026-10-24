@@ -12,7 +12,7 @@ use crunk_spec::DesignSpec;
 /// A path outside the root (it should not occur: the walk is rooted there) is returned as given.
 pub fn site_path(spec: &DesignSpec, path: &Path) -> String {
     let rel = path.strip_prefix(&spec.root).unwrap_or(path);
-    rel.to_string_lossy().replace('\\', "/")
+    gob_path::forward_slashes(rel)
 }
 
 /// True for the generated tokens sheet, where the palette literals themselves live.

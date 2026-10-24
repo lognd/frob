@@ -4,15 +4,9 @@
 //! `dump_ingest.py` from the Python `ingest_tree` (CSS part only). Spans are compared as
 //! code-point offsets (the fixtures are ASCII, where they equal byte offsets).
 
-// frob:ticket 01M43ARY91XZ35DN9SCHRHS033
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
-
 mod common;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use common::{scratch, write};
 use crunk_ingest::{Declaration, ProjectStyles, ingest_tree};
@@ -20,12 +14,12 @@ use gob_cache::Cache;
 use serde_json::{Value, json};
 
 fn rel(root: &Path, p: &Path) -> String {
-    p.strip_prefix(root)
-        .unwrap()
-        .components()
-        .map(|c| c.as_os_str().to_string_lossy())
-        .collect::<Vec<_>>()
-        .join("/")
+    gob_path::forward_slashes(
+        &p.strip_prefix(root)
+            .unwrap()
+            .components()
+            .collect::<PathBuf>(),
+    )
 }
 
 /// Python read files with universal newlines, so its offsets and values are in LF-normalized

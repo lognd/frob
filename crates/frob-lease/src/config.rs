@@ -66,7 +66,8 @@ pub struct LeaseConfig {
     /// Milliseconds to wait for the lease lock before refusing with a timeout.
     #[config(default = 5000)]
     pub lock_timeout_ms: u64,
-    /// Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped (frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ).
+    // frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ
+    /// Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped.
     #[config(default = 60)]
     pub waiter_ttl_secs: u64,
     /// Append-shared files exempt from overlap checks; unset means the well-known lockfiles (`Cargo.lock`, `uv.lock`, ...), an explicit list (even `[]`) replaces them.

@@ -1298,7 +1298,7 @@
         },
         "waiter_ttl_secs": {
           "default": 60,
-          "description": "Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped (frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ).",
+          "description": "Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"

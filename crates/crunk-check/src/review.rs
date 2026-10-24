@@ -215,11 +215,8 @@ pub fn subjects(spec: &DesignSpec) -> Result<Vec<Subject>, String> {
         for rel in declared.into_iter().flatten() {
             for file in source_files(&spec.root, rel) {
                 let bytes = std::fs::read(&file).unwrap_or_default();
-                let shown = file
-                    .strip_prefix(&spec.root)
-                    .unwrap_or(&file)
-                    .to_string_lossy()
-                    .replace('\\', "/");
+                let shown =
+                    gob_path::forward_slashes(file.strip_prefix(&spec.root).unwrap_or(&file));
                 shared.insert(format!("source:{shown}"), hex(&bytes));
                 text.push_str(&String::from_utf8_lossy(&bytes));
                 text.push('\n');

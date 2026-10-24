@@ -29,7 +29,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from capture_plugin import _delta, _snapshot  # noqa: E402
+from capture_plugin import NEWLINE, _delta, _snapshot  # noqa: E402
 
 log = logging.getLogger("crunk_parity.regen")
 
@@ -96,7 +96,7 @@ def slug(node: str) -> str:
     name = re.sub(r"[^A-Za-z0-9._-]+", "_", rest.removeprefix("test_")).strip("_")
     if len(name) > 90:
         name = name[:80] + "_" + format(abs(hash_str(name)) % 0xFFFFFF, "06x")
-    return f"{stem}/{name}"
+    return (Path(stem) / name).as_posix()
 
 
 def hash_str(s: str) -> int:
@@ -174,10 +174,10 @@ def capture_suite(args, scratch: Path, src: Path, env: dict, norm: Normalizer) -
             "setup_deleted": rec["setup"]["deleted"],
             "command": "python -m crunk " + " ".join(local(a) for a in rec["argv"]),
         }
-        write_text(fx / f"{n:02d}.step.json", json.dumps(step, indent=2, sort_keys=True) + "\n")
+        write_text(fx / f"{n:02d}.step.json", json.dumps(step, indent=2, sort_keys=True) + NEWLINE)
         write_text(ex / f"{n:02d}.result.json",
                    json.dumps({"exit": rec["exit"], "effects_deleted": rec["effects"]["deleted"]},
-                              indent=2, sort_keys=True) + "\n")
+                              indent=2, sort_keys=True) + NEWLINE)
         write_text(ex / f"{n:02d}.stdout", local(rec["stdout"]))
         write_text(ex / f"{n:02d}.stderr", local(rec["stderr"]))
         write_files(ex / f"{n:02d}.effects", rec["effects"], local)
@@ -227,7 +227,7 @@ def capture_matrix(args, scratch: Path, src: Path, env: dict, norm: Normalizer) 
             meta = {"project": project, "argv": [local(a) for a in argv], "exit": r.returncode,
                     "command": f"python -m crunk {' '.join(local(a) for a in argv)}",
                     "cwd": f"fixtures/static/{project}"}
-            write_text(base.with_suffix(".cmd.json"), json.dumps(meta, indent=2, sort_keys=True) + "\n")
+            write_text(base.with_suffix(".cmd.json"), json.dumps(meta, indent=2, sort_keys=True) + NEWLINE)
             write_text(base.with_suffix(".stdout"), local(r.stdout))
             write_text(base.with_suffix(".stderr"), local(r.stderr))
             write_files(base.with_suffix(".effects"), eff, local)
@@ -317,7 +317,7 @@ def main() -> int:
             e["expected_dirs"] = [f"expected/e2e/{s}" for s in e["scenarios"]]
             if not e["scenarios"]:
                 e["note"] = "library-level test (no CLI subprocess); source named, fixtures inline in the test"
-        write_text(HERE / "index.json", json.dumps(index, indent=2, sort_keys=True) + "\n")
+        write_text(HERE / "index.json", json.dumps(index, indent=2, sort_keys=True) + NEWLINE)
         write_text(HERE / "PROVENANCE", provenance(args, src, py_version, crunk_version, commit, cdate))
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
