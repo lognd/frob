@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T01:01:06Z"
-updated = "2026-10-24T05:17:14Z"
-scope = ["crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-dev/profile.toml", "docs/design/grl-spec.md", "crates/frob/src/product.rs", "crates/grimble/src/lib.rs", "crates/frob/tests/**", "crates/grimble/tests/**", "docs/reference/**"]
+updated = "2026-10-24T05:17:15Z"
+scope = ["crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-dev/profile.toml", "docs/design/grl-spec.md", "crates/frob/src/product.rs", "crates/grimble/src/lib.rs", "crates/frob/tests/**", "crates/grimble/tests/**", "docs/reference/**", "docs/schemas/**"]
 
 [[links]]
 kind = "blocked-by"
