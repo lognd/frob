@@ -13,7 +13,9 @@
 use frob_ledger::TicketId;
 
 use crate::error::LeaseError;
-use crate::overlap::{covers_foreign_fragments, has_wildcard, is_own_fragment, matcher, normalize};
+use crate::overlap::{
+    ScopeMatcher, covers_foreign_fragments, has_wildcard, is_own_fragment, normalize,
+};
 
 /// The label prefix declaring that a scope entry names files the ticket will create.
 pub const CREATES_PREFIX: &str = "creates:";
@@ -85,11 +87,8 @@ pub fn unmatched(
         if covers_foreign_fragments(&g) || is_own_fragment(&g, ticket) {
             continue;
         }
-        let m = matcher(&g)?;
-        let literal_dir = format!("{g}/");
-        let hit = tracked
-            .iter()
-            .any(|t| m.is_match(t) || (!has_wildcard(&g) && t.starts_with(&literal_dir)));
+        let m = ScopeMatcher::new(&g)?;
+        let hit = tracked.iter().any(|t| m.is_match(t));
         if hit {
             continue;
         }
@@ -189,6 +188,31 @@ mod tests {
 
     fn s(v: &[&str]) -> Vec<String> {
         v.iter().map(|x| (*x).to_owned()).collect()
+    }
+
+    // frob:ticket 01M4HW9FXBQ4BMRS0D4KS41FS3
+    // frob:tests unmatched
+    #[test]
+    fn bare_dir_scope_is_covered_and_zero_match_warns_unless_creates() {
+        let tracked = vec!["backend/tests/unit/a.py".to_owned()];
+        let none = |scope: &[&str], labels: &[String]| {
+            unmatched(&s(scope), labels, tid(), &tracked).unwrap().len()
+        };
+        assert_eq!(
+            none(&["backend/tests"], &[]),
+            0,
+            "bare dir covers its files"
+        );
+        assert_eq!(none(&["backend/tests/"], &[]), 0);
+        assert_eq!(none(&["backend/nothing"], &[]), 1, "zero match warns");
+        assert_eq!(
+            none(&["backend/te*"], &[]),
+            1,
+            "glob chars do not gain a subtree"
+        );
+        assert_eq!(none(&[], &[]), 0, "empty scope has nothing to warn about");
+        let labels = vec![creates_label("backend/nothing")];
+        assert_eq!(none(&["backend/nothing"], &labels), 0, "creates: is exempt");
     }
 
     // frob:ticket 01M1T07NWAFVRT2V4RAPVJ9SQM

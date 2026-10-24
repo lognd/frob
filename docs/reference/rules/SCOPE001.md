@@ -24,7 +24,7 @@ A changed path lies outside the globs of the ticket's scope lease.
 
 ## What it does
 
-Every path of the diff against the base must match a glob of the ticket's scope lease. Paths matching `[lease] shared_files` are exempt, and so is the ticket's own changelog fragment (`changelog.d/<its ULID>.<type>.md`); other tickets' fragments are not.
+Every path of the diff against the base must match a glob of the ticket's scope lease. A scope entry with no glob characters names a file or a directory: `backend/tests` covers `backend/tests` and everything below it, exactly like `backend/tests/` or `backend/tests/**`. Paths matching `[lease] shared_files` are exempt, and so is the ticket's own changelog fragment (`changelog.d/<its ULID>.<type>.md`); other tickets' fragments are not.
 
 ## Why it matters
 

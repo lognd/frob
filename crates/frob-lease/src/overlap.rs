@@ -89,6 +89,42 @@ pub fn matcher(glob: &str) -> Result<GlobMatcher, LeaseError> {
     builder(&g).map(|g| g.compile_matcher())
 }
 
+/// How one scope entry covers paths: the glob itself, plus `entry/**` for a bare directory name.
+///
+/// The single place that decides what a scope entry covers, shared by `SCOPE001`, the resolved
+/// file set and the zero-match warning. A wildcard-free entry (`backend/tests`, no trailing
+/// slash) names a directory as often as a file, so it covers the exact path and everything below
+/// it; an entry with glob characters, an escape, or no text at all covers only what it matches.
+// frob:ticket 01M4HW9FXBQ4BMRS0D4KS41FS3
+#[derive(Debug, Clone)]
+pub struct ScopeMatcher {
+    exact: Arc<GlobMatcher>,
+    below: Option<Arc<GlobMatcher>>,
+}
+
+impl ScopeMatcher {
+    /// Compile the entry once (matchers are cached per pattern).
+    ///
+    /// # Errors
+    ///
+    /// [`LeaseError::BadGlob`] when the entry does not parse.
+    pub fn new(entry: &str) -> Result<Self, LeaseError> {
+        let g = normalize(entry);
+        let exact = cached_matcher(&g)?;
+        let below = if g.is_empty() || has_wildcard(&g) {
+            None
+        } else {
+            Some(cached_matcher(&format!("{g}/**"))?)
+        };
+        Ok(Self { exact, below })
+    }
+
+    /// True when `path` is the entry itself or, for a bare name, lies under it.
+    pub fn is_match(&self, path: &str) -> bool {
+        self.exact.is_match(path) || self.below.as_ref().is_some_and(|b| b.is_match(path))
+    }
+}
+
 fn builder(g: &str) -> Result<Glob, LeaseError> {
     GlobBuilder::new(g)
         .literal_separator(true)
@@ -330,7 +366,7 @@ impl Resolver {
             let prefix = literal_prefix(&g);
             let start = all.partition_point(|f| f.as_str() < prefix);
             let run = all[start..].iter().take_while(|f| f.starts_with(prefix));
-            let m = cached_matcher(&g)?;
+            let m = ScopeMatcher::new(&g)?;
             files.extend(run.filter(|f| m.is_match(f.as_str())).cloned());
         }
         self.match_runs.fetch_add(1, Ordering::Relaxed);
@@ -463,6 +499,27 @@ pub fn effective_overlap(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:ticket 01M4HW9FXBQ4BMRS0D4KS41FS3
+    // frob:tests ScopeMatcher.new
+    // frob:tests ScopeMatcher.is_match
+    #[test]
+    fn bare_dir_scope_covers_its_subtree_and_edge_cases_hold() {
+        let covers = |entry: &str, path: &str| ScopeMatcher::new(entry).unwrap().is_match(path);
+        // bare directory, trailing slash, nested directories
+        assert!(covers("backend/tests", "backend/tests/unit/a.py"));
+        assert!(covers("backend/tests/", "backend/tests/unit/a.py"));
+        assert!(!covers("backend/tests", "backend/tests2/a.py"));
+        assert!(!covers("backend/tests", "backend/other/a.py"));
+        // a name that is both a file and a directory covers both
+        assert!(covers("build", "build"));
+        assert!(covers("build", "build/out.txt"));
+        // glob characters keep their own meaning
+        assert!(!covers("src/*.rs", "src/a.rs/b"));
+        assert!(covers("src/*.rs", "src/a.rs"));
+        // an empty entry covers nothing
+        assert!(!covers("", "src/a.rs"));
+    }
 
     #[test]
     fn text_overlap_cases() {
