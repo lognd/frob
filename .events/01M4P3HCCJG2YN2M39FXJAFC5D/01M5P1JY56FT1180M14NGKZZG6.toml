@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "38ec57a288dd12eca333fa2279d1f7b5bd2af2d4"
+branch = "ticket/XJAFC5D"
+pushed = false
+at = "2026-10-24T04:02:05Z"
+actor = "lognd"
+rev = 1
