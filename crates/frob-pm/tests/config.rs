@@ -129,3 +129,17 @@ fn changelog_exempt_types_default_to_epic_and_docs_and_reject_unknown_names() {
     let err = load("[pm]\nchangelog_exempt_types = [\"doc\"]\n").expect_err("unknown type");
     assert!(err.to_string().contains("doc"), "{err}");
 }
+
+// frob:ticket 01M4KS76RYYQ9Z3YFQA11PE6E1
+// frob:tests crates/frob-pm/src/config.rs::PmTable.changelog_tests_only
+#[test]
+fn changelog_tests_only_types_default_off_and_reject_unknown_names() {
+    use frob_ledger::model::TicketType;
+    let cfg = load("").expect("defaults");
+    assert!(!cfg.pm.changelog_tests_only(TicketType::Chore));
+    let on = load("[pm]\nchangelog_tests_only_types = [\"chore\"]\n").expect("chore");
+    assert!(on.pm.changelog_tests_only(TicketType::Chore));
+    assert!(!on.pm.changelog_tests_only(TicketType::Task));
+    let err = load("[pm]\nchangelog_tests_only_types = [\"test\"]\n").expect_err("no test type");
+    assert!(err.to_string().contains("test"), "{err}");
+}

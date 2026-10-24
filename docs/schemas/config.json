@@ -1391,6 +1391,14 @@
           },
           "type": "array"
         },
+        "changelog_tests_only_types": {
+          "default": [],
+          "description": "Ticket types whose `changelog_fragment` requirement is satisfied without a fragment when the ticket branch's diff against the base touches only test files (a `tests/` directory, or a Python, TypeScript or C# test file); the default `[]` asks every such ticket for a fragment, `[\"chore\"]` waives it for test-only chores. An empty diff, a diff that also touches any other file, or a missing ticket branch never qualifies, and a fragment the ticket does carry is still validated.",
+          "items": {
+            "$ref": "#/$defs/TicketType"
+          },
+          "type": "array"
+        },
         "classes": {
           "additionalProperties": false,
           "description": "Classes of service (`[pm.classes]`).",

@@ -150,6 +150,9 @@ pub struct PmTable {
     /// Ticket types the `changelog_fragment` requirement (close guard and REL003) does not ask for a fragment: an epic is closed by its children and a docs change rarely has a user-visible effect, so both default to exempt; list `[]` to require a fragment for every type, and a ticket of an exempt type that carries a fragment still has it validated.
     #[config(default = vec![TicketType::Epic, TicketType::Docs], enforcement)]
     pub changelog_exempt_types: Vec<TicketType>,
+    /// Ticket types whose `changelog_fragment` requirement is satisfied without a fragment when the ticket branch's diff against the base touches only test files (a `tests/` directory, or a Python, TypeScript or C# test file); the default `[]` asks every such ticket for a fragment, `["chore"]` waives it for test-only chores. An empty diff, a diff that also touches any other file, or a missing ticket branch never qualifies, and a fragment the ticket does carry is still validated.
+    #[config(default = Vec::<TicketType>::new(), enforcement)]
+    pub changelog_tests_only_types: Vec<TicketType>,
     /// Days per cycle when a cycle is created without an explicit end; one week is the usual scrumban review cadence.
     #[config(default = 7, enforcement)]
     pub cycle_days: u32,
@@ -171,6 +174,13 @@ pub struct PmTable {
 }
 
 impl PmTable {
+    // frob:ticket 01M4KS76RYYQ9Z3YFQA11PE6E1
+    /// Whether tickets of `ty` skip `changelog_fragment` when their diff touches only tests (`[pm] changelog_tests_only_types`).
+    #[must_use]
+    pub fn changelog_tests_only(&self, ty: TicketType) -> bool {
+        self.changelog_tests_only_types.contains(&ty)
+    }
+
     /// Whether tickets of `ty` are exempt from `changelog_fragment` (`[pm] changelog_exempt_types`).
     #[must_use]
     pub fn changelog_exempt(&self, ty: TicketType) -> bool {
