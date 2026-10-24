@@ -382,3 +382,20 @@ fn a_function_is_not_a_key_and_keeps_the_file_path() {
     let (model, _) = d.root(&[f]);
     assert!(key_paths(&model, None).is_empty());
 }
+
+// frob:ticket 01M5P621KV0Y3BRPBFQWVRAYZ5
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run
+#[test]
+fn the_test_kind_matches_a_typescript_vitest_callback() {
+    let src = "import { test } from \"vitest\";\ntest(\"adds\", () => {});\nfunction helper() {}\n";
+    let model = gob_symbols::model_of_source("typescript", src).unwrap();
+    let mut b = PlanBuilder::new("TSTEST001", Polarity::Pplus);
+    let t = b.find("test");
+    b.report(None, t, "a test");
+    let out = rows(&b.build(), &model);
+    assert_eq!(
+        out.len(),
+        1,
+        "exactly the vitest callback is a test: {out:?}"
+    );
+}

@@ -53,7 +53,7 @@ pub(crate) enum KindTest {
     Unit,
     /// A `unit` whose kind is one of the listed spellings.
     UnitKind(&'static [&'static str]),
-    /// A `unit` carrying the boolean attribute `test`.
+    /// A `unit` carrying the boolean attribute `test`, or an `attr(test)` child (TS runner callbacks).
     Test,
     /// An `apply` of the given kind.
     Apply(&'static str),
@@ -145,7 +145,7 @@ impl KindTest {
             },
             Self::Test => match universal {
                 Some(Universal::Unit { .. }) if is_canonical_unit(model, node) => {
-                    yes(matches!(n.attrs().get("test"), Some(AttrValue::Bool(true))))
+                    yes(is_test_unit(model, node))
                 }
                 _ => None,
             },
@@ -300,6 +300,20 @@ pub(crate) fn is_canonical_unit(model: &Model, node: NodeId) -> bool {
     let n = model.term().node(node);
     matches!(n.op(), Operator::Universal(Universal::Unit { .. }))
         && n.attrs().get_str(gob_ir::reserved::FACET) != Some("sig")
+}
+
+/// Whether the canonical unit `node` is a test: a boolean `test` attribute (Rust, Python) or an
+/// `attr(test)` child node (the TypeScript fold of a `test()` / `it()` runner callback).
+// frob:ticket 01M5P621KV0Y3BRPBFQWVRAYZ5
+fn is_test_unit(model: &Model, node: NodeId) -> bool {
+    let term = model.term();
+    let n = term.node(node);
+    let by_attr = matches!(n.attrs().get("test"), Some(AttrValue::Bool(true)));
+    let by_child = n.children().iter().any(|&c| {
+        matches!(term.node(c).op(), Operator::Universal(Universal::Attr { name }) if name == "test")
+    });
+    tracing::trace!(by_attr, by_child, "test unit probe");
+    by_attr || by_child
 }
 
 /// Whether `node` stands for an external ambient unit: a `ref` that resolves to nothing in the
