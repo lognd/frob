@@ -351,7 +351,7 @@ fn good_first_pool_findings(inputs: &FrobInputs, lease_cfg: Option<&LeaseConfig>
 // frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
 fn lease_check(
     inputs: &FrobInputs,
-    state: &snapshot::LedgerState,
+    state: &crate::snapshot::LedgerState,
     lease_cfg: Option<&LeaseConfig>,
     rule: &str,
 ) -> Box<dyn LeaseCheck> {
@@ -550,7 +550,7 @@ impl Product for Frob {
             .diff
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner) = diff;
-        findings.extend(rel003_missing(snap, scope));
+        findings.extend(rel003_missing(snap, scope, &base));
         let subjects = snap
             .inputs
             .ledger
@@ -673,8 +673,9 @@ pub(crate) fn ledger_rule_applicable(
 }
 
 // frob:ticket 01M4069WD4P8ZZ5HGQ5HE2EX99
-/// `REL003` for the checked ticket when it is still open, fragments are required and it has none.
-fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope) -> Option<Finding> {
+// frob:ticket 01M5NWA3HFZWBJWZ11VN8JRN7F
+/// `REL003` for the checked ticket when it is still open, fragments are required and it has none; a tests-only branch diff (against `base`) of a `changelog_tests_only_types` ticket is exempt.
+fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope, base: &str) -> Option<Finding> {
     let state = snap.inputs.ledger.as_ref()?;
     if !frob_release::rel003::fragment_required(&snap.core.root) {
         tracing::debug!("REL003: changelog_fragment not required; no per-ticket check");
@@ -688,6 +689,10 @@ fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope) -> Option<Finding>
     }
     if frob_release::rel003::type_exempt(&snap.core.root, view.summary.ty) {
         tracing::debug!(handle = %scope.handle, ty = view.summary.ty.as_str(), "REL003: ticket type is exempt");
+        return None;
+    }
+    if tests_only_exempt(snap, state, scope, view.summary.ty, base) {
+        tracing::info!(handle = %scope.handle, "REL003: tests-only branch of a listed ticket type");
         return None;
     }
     if snap.inputs.changelog_exempt {
@@ -704,6 +709,31 @@ fn rel003_missing(snap: &Snapshot<Frob>, scope: &TicketScope) -> Option<Finding>
         return None;
     }
     frob_release::rel003::missing(&snap.core.root, &id.to_string(), &scope.handle)
+}
+
+// frob:ticket 01M5NWA3HFZWBJWZ11VN8JRN7F
+/// Whether `ty` is listed in `[pm] changelog_tests_only_types` and the ticket branch differs from `base` in test files only; an unreadable `[pm]` table exempts nothing.
+fn tests_only_exempt(
+    snap: &Snapshot<Frob>,
+    state: &crate::snapshot::LedgerState,
+    scope: &TicketScope,
+    ty: frob_ledger::model::TicketType,
+    base: &str,
+) -> bool {
+    match frob_pm::PmConfig::load(&snap.core.root) {
+        Ok(pm) => {
+            pm.pm.changelog_tests_only(ty)
+                && frob_evidence::done::branch_is_tests_only(
+                    state.ledger.repo(),
+                    base,
+                    &scope.handle,
+                )
+        }
+        Err(err) => {
+            tracing::warn!(%err, "REL003: [pm] unreadable; assuming no tests-only exemption");
+            false
+        }
+    }
 }
 
 /// Bytes that change when COV004's inputs do: the `[coverage]` table and the lcov report it names.
