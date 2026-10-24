@@ -2,7 +2,8 @@
 id = "01M4HW9J243ZJRMVYW51K18GCM"
 title = "ticket update --add-scope (and lease widen) take --wait SECS to wait for an overlapping lease instead of failing"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
