@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/**", "crates/gob-cli/**", "crates/grimble-ci/**", "docs/design/cli.md", "docs/**", "crates/grimble/**", "crates/gob-git/**", "crates/gob-packs/**", "crates/frob-check/**", "crates/gob-mdtest/**", "crates/frob-docgen/**", "crates/crunk/**", "crates/crunk-ingest/**", "crates/grimble-check/**", "crates/frob-obligations/tests/mdtest/**"]
+new = ["crates/frob/**", "crates/gob-cli/**", "crates/grimble-ci/**", "docs/design/cli.md", "docs/**", "crates/grimble/**", "crates/gob-git/**", "crates/gob-packs/**", "crates/frob-check/**", "crates/gob-mdtest/**", "crates/frob-docgen/**", "crates/crunk/**", "crates/crunk-ingest/**", "crates/grimble-check/**", "crates/frob-obligations/tests/mdtest/**", "Cargo.lock"]
+at = "2026-10-24T03:08:31Z"
+actor = "lognd"
+rev = 1
