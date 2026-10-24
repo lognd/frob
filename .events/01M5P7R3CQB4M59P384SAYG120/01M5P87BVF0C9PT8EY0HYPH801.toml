@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-24T06:05:31Z"
+digest = "0f6bfc111fe88a0a3d416943e58856162cc7830e6f1b6ce84ceb052781719713"
+exit_code = 0
+head = "28be0cd93e5cd0fe2b7837cd4809c020cb6bb05c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2e640d7c-232d-47ef-a498-c83ead92af92 with nextest profile: default
+    Starting 1 test across 7 binaries (33 tests skipped)
+        PASS [   0.014s] frob-docgen::verb_admission the_shipped_verb_table_matches_the_registry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 33 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen the_shipped_verb_table_matches_the_registry"
+size = 562
+status = "measured"
+test_count = 1
+tests_digest = "33f4200048adf574b264c546786425cc9b76105251adf7bcfb6b0e550570ba81"
+at = "2026-10-24T06:05:31Z"
+actor = "lognd"
+rev = 1

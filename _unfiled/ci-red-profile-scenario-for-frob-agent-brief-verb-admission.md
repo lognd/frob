@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-24T05:57:11Z"
-updated = "2026-10-24T06:05:30Z"
+updated = "2026-10-24T06:05:31Z"
 scope = ["crates/gob-dev/profile.toml", "crates/frob-docgen/**", "crates/frob/tests/**", "docs/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "frob-docgen verb_admission and profile_coverage tests pass"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "lease_widen add_scope_wait test is deterministic (no timing flake)"
