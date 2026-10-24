@@ -2,12 +2,12 @@
 id = "01M5P7R3CQB4M59P384SAYG120"
 title = "CI red: profile scenario for frob agent brief, verb_admission table, flaky lease_widen wait test"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-24T05:57:11Z"
-updated = "2026-10-24T05:57:11Z"
+updated = "2026-10-24T05:57:15Z"
 scope = ["crates/gob-dev/profile.toml", "crates/frob-docgen/**", "crates/frob/tests/**", "docs/**"]
 
 [[acceptance]]
