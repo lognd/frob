@@ -15,6 +15,20 @@ fn crates_dir() -> std::path::PathBuf {
     workspace_root().expect("workspace root").join("crates")
 }
 
+/// Recursively copy `from` into `to`, creating directories as needed.
+fn copy_tree(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).expect("mkdir");
+    for entry in std::fs::read_dir(from).expect("read dir") {
+        let path = entry.expect("entry").path();
+        let dest = to.join(path.file_name().expect("name"));
+        if path.is_dir() {
+            copy_tree(&path, &dest);
+        } else {
+            std::fs::copy(&path, &dest).expect("copy");
+        }
+    }
+}
+
 fn tree(root: &Path) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let mut stack = vec![root.to_path_buf()];
@@ -243,6 +257,11 @@ fn check_prints_a_capped_diff_for_a_hand_edited_page() {
 fn check_reports_missing_markers_unknown_commands_and_orphans() {
     let dir = tempfile::tempdir().expect("tmp");
     let files = generate(Kind::All, &crates_dir()).expect("generate");
+    // Generated pages link to hand-written ones (GEN001), so seed the scratch root with the real docs tree.
+    copy_tree(
+        &workspace_root().expect("workspace root").join("docs"),
+        &dir.path().join("docs"),
+    );
     apply(dir.path(), &files, Mode::Write).expect("write");
     let clean = apply(dir.path(), &files, Mode::Check).expect("check");
     assert_eq!((clean.differing, clean.marker_problems), (0, 0));

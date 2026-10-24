@@ -6,8 +6,10 @@
 use frob_check as _;
 
 use frob_check::{CheckOptions, run};
+use gob_caps::{Fidelity, Lang};
 use gob_check::SubjectStatus;
-use gob_check::applicability::{Applies, derive_cell, temporary_applies};
+use gob_check::applicability::{Applies, FileFacts, derive_cell, resolve, temporary_applies};
+use gob_symbols::ParseStatus;
 
 use gob_mdtest::garbage::check_garbage;
 use gob_mdtest::matrix::Derived;
@@ -28,6 +30,23 @@ fn universal_rules() -> Vec<String> {
 fn derive(rule: &str, cell: &str) -> Option<Derived> {
     let meta = Registry::global().iter().find(|m| m.id == rule)?;
     Some(match derive_cell(&temporary_applies(meta), cell)? {
+        SubjectStatus::Examine => Derived::Examine,
+        SubjectStatus::Unresolved(_) => Derived::Unresolved,
+        SubjectStatus::NotApplicable(_) => Derived::NotApplicable,
+    })
+}
+
+/// The derived class of `rule` for a complete HTML file, from the capability matrix's HTML row.
+fn html_derived(rule: &str) -> Option<Derived> {
+    let meta = Registry::global().iter().find(|m| m.id == rule)?;
+    let facts = FileFacts {
+        lang: Some(Lang::Html),
+        opaque: false,
+        scanned: false,
+        fidelity: Fidelity::F1,
+        parse: &ParseStatus::Complete,
+    };
+    Some(match resolve(&temporary_applies(meta), &facts) {
         SubjectStatus::Examine => Derived::Examine,
         SubjectStatus::Unresolved(_) => Derived::Unresolved,
         SubjectStatus::NotApplicable(_) => Derived::NotApplicable,
@@ -60,17 +79,15 @@ fn garbage_runner(case: &Case) -> RuleReport {
         .into_iter()
         .filter(|f| f.rule.as_str() == case.rule.as_str())
         .collect();
-    let cell = if case.language == "html" {
-        "island"
+    // HTML is a first-class language with its own capability row; every other probe is a matrix cell.
+    let cell = case.language.as_str();
+    let derived = if cell == "html" {
+        html_derived(case.rule.as_str())
     } else {
-        case.language.as_str()
+        derive(case.rule.as_str(), cell)
     };
-    let not_applicable = (findings.is_empty()
-        && matches!(
-            derive(case.rule.as_str(), cell),
-            Some(Derived::NotApplicable)
-        ))
-    .then(|| format!("{} does not apply to {cell} by construction", case.rule));
+    let not_applicable = (findings.is_empty() && matches!(derived, Some(Derived::NotApplicable)))
+        .then(|| format!("{} does not apply to {cell} by construction", case.rule));
     tracing::debug!(rule = %case.rule, cell, findings = findings.len(), "garbage probe");
     RuleReport::new(case.rule.clone(), 0, 0, not_applicable, findings)
 }

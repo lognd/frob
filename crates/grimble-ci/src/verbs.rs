@@ -17,6 +17,7 @@ pub const VERBS: &[(&str, &[&str])] = &[
     ("serve", &[]),
     ("check", &[]),
     ("doctor", &[]),
+    ("doc", &["remap"]),
     ("init", &[]),
     ("config", &["show", "sync"]),
     ("agent", &["sync", "status", "uninstall"]),

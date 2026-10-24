@@ -375,6 +375,7 @@ fn removing_a_criterion_reports_the_evidence_it_loses() {
     // frob:tests crates/frob/src/milestone_evidence_cmd.rs::CriterionRemove
     let repo = Repo::new();
     std::fs::write(repo.dir.path().join("proof.txt"), "proof").expect("write");
+    common::commit_all(repo.dir.path());
     for n in ["1", "2"] {
         let out = repo.frob(&[
             "milestone",

@@ -27,7 +27,7 @@ mod workspace;
 
 use std::path::Path;
 
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{Cli, Context, Outcome};
 use gob_product::{CheckOptions, Product, ProductRun};
 use serde_json::Value;
@@ -35,8 +35,13 @@ use serde_json::Value;
 /// Product name, also the config file stem (`grimble.toml`).
 pub const PRODUCT: &str = "grimble";
 
-/// The `check --summary` flag id and spelling.
-const SUMMARY_FLAG: &str = "summary";
+/// The grimble-only flags of `check`, declared once so no verb reads a flag by string name.
+#[derive(Debug, Clone, Copy, clap::Args)]
+struct CheckFlags {
+    /// Print a compact summary (under 64 KB) instead of the whole document, in text and JSON mode alike.
+    #[arg(long)]
+    summary: bool,
+}
 
 /// Replace the data of a finished `check` with `summary` when one was asked for.
 ///
@@ -85,7 +90,7 @@ impl Product for GrimbleProduct {
         matches: &ArgMatches,
     ) -> Outcome<Value> {
         // frob:ticket 01M4HEMDB8A1X1RQFNVJB1G32M
-        let summarize = matches.get_flag(SUMMARY_FLAG);
+        let summarize = gob_cli::parse::<CheckFlags>(matches)?.summary;
         let run = grimble_check::run(
             root,
             &grimble_check::CheckOptions {
@@ -120,12 +125,7 @@ impl Product for GrimbleProduct {
     }
 
     fn configure_check(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-        gob_product::shared_flags(cmd).arg(
-            Arg::new(SUMMARY_FLAG)
-                .long(SUMMARY_FLAG)
-                .action(ArgAction::SetTrue)
-                .help("Print a compact summary (under 64 KB) instead of the whole document, in text and JSON mode alike"),
-        )
+        gob_cli::augment::<CheckFlags>(gob_product::shared_flags(cmd))
     }
 
     fn doctor(_ctx: &Context, root: &Path, _matches: &ArgMatches) -> Outcome<doctor::DoctorData> {

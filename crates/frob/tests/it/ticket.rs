@@ -446,6 +446,7 @@ fn criteria(repo: &Repo, id: &str) -> Vec<String> {
 /// Record file evidence on ticket `id` for the 1-based criteria `accepts`; returns the event id.
 fn offer(repo: &Repo, id: &str, name: &str, accepts: &[&str]) -> String {
     std::fs::write(repo.path().join(name), name).expect("write evidence file");
+    common::commit_all(repo.path());
     let mut args = vec![
         "ticket",
         "evidence",

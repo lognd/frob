@@ -510,18 +510,19 @@ fn usage_parts(
         _ => rendered_summary(e),
     };
     // A suggested verb is itself the remedy: the exact command to run instead.
+    // clap lists suggestions by ascending similarity, so the closest one is last.
     let subs = context_strings(e, ContextKind::SuggestedSubcommand);
-    if let Some(s) = subs.first() {
+    if let Some(s) = subs.last() {
         let command = gob_diagnostics::RemedyCommand::new(product, s);
         return (message, Some(command.render()), Some(command));
     }
     let mut hints = Vec::new();
     let args = context_strings(e, ContextKind::SuggestedArg);
-    if let Some(s) = args.first() {
+    if let Some(s) = args.last() {
         hints.push(format!("did you mean `{s}`?"));
     }
     let vals = context_strings(e, ContextKind::SuggestedValue);
-    if let Some(s) = vals.first() {
+    if let Some(s) = vals.last() {
         hints.push(format!("did you mean `{s}`?"));
     }
     let mut usage = context_strings(e, ContextKind::Usage);

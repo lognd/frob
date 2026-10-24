@@ -1,0 +1,1 @@
+Repaired the 34 tests that failed in the Linux CI job: committed file evidence in the ticket tests, the doc remap verb tables, clap suggestion order, the grimble --summary flag declaration, the crunk parity rule list and the markdown matrix cells.

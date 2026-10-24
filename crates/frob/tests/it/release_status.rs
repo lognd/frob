@@ -157,6 +157,7 @@ fn an_unevidenced_criterion_is_listed_and_the_exit_is_zero() {
     let repo = Repo::new();
     milestone(&repo, &["first", "second"]);
     std::fs::write(repo.dir.path().join("proof.txt"), "proof").expect("write");
+    common::commit_all(repo.dir.path());
     repo.ok(&[
         "milestone",
         "evidence",
@@ -196,6 +197,7 @@ fn everything_ready_prints_ready_and_the_changelog_preview() {
     let repo = Repo::new();
     milestone(&repo, &["only"]);
     std::fs::write(repo.dir.path().join("proof.txt"), "proof").expect("write");
+    common::commit_all(repo.dir.path());
     repo.ok(&[
         "milestone",
         "evidence",

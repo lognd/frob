@@ -42,7 +42,7 @@ fn repo(siblings: Option<&str>) -> tempfile::TempDir {
         write(
             dir.path(),
             "grimble.toml",
-            "[grimble]\nmodels = [\"design/web.grmb\"]\n",
+            "[grimble]\nmodels = [\"design/web.grmb\"]\n\n[check]\n# DEAD001 is must-measure and the fixture has no entry points; the gate is not under test.\nfail_on_unresolved = \"never\"\n",
         );
         write(dir.path(), "design/web.grmb", model);
     }

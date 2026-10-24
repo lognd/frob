@@ -282,13 +282,24 @@ fn create_element_computed_shapes_are_dynamic_not_guessed() {
 // frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
 #[test]
 fn create_element_ambiguous_shorthand_is_never_guessed() {
-    // Two candidate constants (the adapter scopes at function level): neither is taken, and the
-    // site is flagged instead of dropped silently.
+    // A binding reassigned on one branch has two possible values: neither is taken, and the
+    // site is flagged instead of dropped silently. (A `const` in a nested block does not shadow
+    // the outer one, so that shape is unambiguous and is read as the outer constant.)
     let p = ts(
-        "const className = 'text-accent'\nif (x) { const className = 'other-token' }\ncreateElement('span', { className }, label)\n",
+        "let className = 'text-accent'\nif (x) { className = 'other-token' }\ncreateElement('span', { className }, label)\n",
     );
     assert!(p.utilities.is_empty(), "{:?}", p.utilities);
     assert_eq!(p.dynamic_classes.len(), 1);
+
+    let p = ts(
+        "const className = 'text-accent'\nif (x) { const className = 'other-token' }\ncreateElement('span', { className }, label)\n",
+    );
+    assert_eq!(
+        p.utilities.len(),
+        1,
+        "the outer constant is the only binding in scope"
+    );
+    assert!(p.dynamic_classes.is_empty());
 }
 
 // frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_attributes
