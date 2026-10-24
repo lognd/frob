@@ -7,12 +7,12 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-24T05:57:11Z"
-updated = "2026-10-24T06:05:18Z"
+updated = "2026-10-24T06:05:30Z"
 scope = ["crates/gob-dev/profile.toml", "crates/frob-docgen/**", "crates/frob/tests/**", "docs/**"]
 
 [[acceptance]]
 text = "gob-dev profile passes: every leaf command including frob agent brief has a scenario or skip reason"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob-docgen verb_admission and profile_coverage tests pass"
