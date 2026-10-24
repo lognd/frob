@@ -92,6 +92,8 @@ pub struct DoneGuard {
     fragment: FragmentState,
     /// Ticket types `[pm] changelog_exempt_types` does not ask for a fragment.
     exempt_types: Vec<TicketType>,
+    /// The ticket's type is in `[pm] changelog_tests_only_types` and its branch diff touches only tests (~11PE6E1).
+    tests_only: bool,
     bypass: Option<String>,
     /// A `changelog-exempt` event already on the ticket.
     recorded_exemption: bool,
@@ -131,6 +133,13 @@ impl DoneGuard {
         let fragment = fragment_state(root, id, &view.summary.handle);
         let recorded_exemption =
             frob_ledger::event::changelog_exemption(&ledger.events(id)?).is_some();
+        let ty = view.summary.ty;
+        let tests_only =
+            matches!(fragment, FragmentState::Missing) && pm.pm.changelog_tests_only(ty) && {
+                let base = ledger.config().ref_name.clone();
+                let base = base.strip_prefix("refs/heads/").unwrap_or(&base);
+                branch_is_tests_only(ledger.repo(), base, &view.summary.handle)
+            };
         tracing::debug!(requires = ?pm.pm.done_requires, exempt = ?pm.pm.changelog_exempt_types, ?fragment, recorded_exemption, "done guard loaded");
         Ok(Self {
             requires: pm.pm.done_requires,
@@ -138,6 +147,7 @@ impl DoneGuard {
             open_blockers,
             fragment,
             exempt_types: pm.pm.changelog_exempt_types,
+            tests_only,
             bypass: None,
             recorded_exemption,
             no_changelog: None,
@@ -326,6 +336,11 @@ impl DoneGuard {
                 tracing::info!(handle = %cx.handle, ty = ty.as_str(), "changelog_fragment: type is exempt, no fragment asked");
                 Ok(())
             }
+            // frob:ticket 01M4KS76RYYQ9Z3YFQA11PE6E1
+            FragmentState::Missing if self.tests_only => {
+                tracing::info!(handle = %cx.handle, ty = ty.as_str(), "changelog_fragment: diff touches only tests, no fragment asked");
+                Ok(())
+            }
             FragmentState::Missing => Err(GuardFailure {
                 code: CODE_FRAGMENT.to_owned(),
                 message: format!(
@@ -417,6 +432,59 @@ impl CloseGuard for DoneGuard {
         }
         Ok(())
     }
+}
+
+// frob:ticket 01M4KS76RYYQ9Z3YFQA11PE6E1
+/// Whether `path` is a test file for the `changelog_tests_only_types` knob: under a `tests/` directory, or a Python, TypeScript or C# test file.
+pub fn is_test_path(path: &str) -> bool {
+    path.starts_with("tests/")
+        || path.contains("/tests/")
+        || gob_symbols::is_python_test_file(path)
+        || gob_symbols::is_typescript_test_file(path)
+        || gob_symbols::is_csharp_test_file(path)
+}
+
+// frob:ticket 01M4KS76RYYQ9Z3YFQA11PE6E1
+/// Whether every path in `paths` is a test file; an empty list is not tests-only, so a no-op diff never earns the exemption.
+pub fn paths_are_tests_only(paths: &[&str]) -> bool {
+    !paths.is_empty() && paths.iter().all(|p| is_test_path(p))
+}
+
+// frob:ticket 01M4KS76RYYQ9Z3YFQA11PE6E1
+/// Whether the branch of ticket `handle` differs from `base` (since their merge base) in test files only.
+///
+/// Conservative: a missing branch, an unresolvable base, no merge base, a git failure, an empty diff or any non-test path answers `false`.
+pub fn branch_is_tests_only(repo: &gob_git::Repo, base: &str, handle: &str) -> bool {
+    let branch = format!("refs/heads/{}", ticket_branch(handle));
+    if repo.rev_parse(&branch).is_err() {
+        tracing::debug!(%branch, "tests-only: ticket branch is absent");
+        return false;
+    }
+    let mb = match repo.merge_base(base, &branch) {
+        Ok(Some(oid)) => oid,
+        Ok(None) => {
+            tracing::debug!(%branch, base, "tests-only: no merge base");
+            return false;
+        }
+        Err(err) => {
+            tracing::warn!(%err, base, "tests-only: base does not resolve");
+            return false;
+        }
+    };
+    let changed = match repo.diff_names(
+        &gob_git::TreeRef::Oid(mb),
+        &gob_git::TreeRef::Ref(branch.clone()),
+    ) {
+        Ok(c) => c,
+        Err(err) => {
+            tracing::warn!(%err, %branch, "tests-only: diff failed");
+            return false;
+        }
+    };
+    let paths: Vec<&str> = changed.iter().map(|c| c.path.as_str()).collect();
+    let only = paths_are_tests_only(&paths);
+    tracing::debug!(%branch, files = paths.len(), only, "tests-only classification");
+    only
 }
 
 // frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3
@@ -713,6 +781,106 @@ mod tests {
         let bad = fragment_verdict(FRAGMENT_ONLY, TicketType::Docs, Some("caf\u{e9}\n"));
         assert_eq!(bad.expect_err("invalid").code, CODE_FRAGMENT);
         assert!(fragment_verdict(FRAGMENT_ONLY, TicketType::Docs, Some("Fine.\n")).is_ok());
+    }
+
+    /// The `changelog_fragment` verdict for a ticket of `ty` whose branch `ticket/<handle>` commits `files` (relative paths) on top of `main`, under `toml`.
+    fn tests_only_verdict(
+        toml: &str,
+        ty: TicketType,
+        files: &[&str],
+        branch: bool,
+    ) -> Result<(), GuardFailure> {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let p = dir.path();
+        let (ledger, made) = repo_with(p, toml, ty);
+        if branch {
+            git(p, &["checkout", "-q", "-b", &ticket_branch(&made.handle)]);
+            for f in files {
+                let path = p.join(f);
+                std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+                std::fs::write(&path, "x\n").expect("write");
+                git(p, &["add", f]);
+            }
+            git(p, &["commit", "-q", "--allow-empty", "-m", "work"]);
+            git(p, &["checkout", "-q", "main"]);
+        }
+        let guard = DoneGuard::for_ticket(&ledger, made.ticket.front.id, p).expect("guard");
+        let cx = CloseContext {
+            ticket: &made.ticket,
+            handle: &made.handle,
+            outcome: Some(Outcome::Done),
+        };
+        guard.fragment(&cx)
+    }
+
+    const TESTS_ONLY: &str = "[pm]\ndone_requires = [\"changelog_fragment\"]\nchangelog_tests_only_types = [\"chore\"]\n";
+
+    // frob:ticket 01M4KS76RYYQ9Z3YFQA11PE6E1
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+    #[test]
+    fn a_listed_type_with_a_tests_only_diff_closes_without_a_fragment() {
+        let ok = tests_only_verdict(
+            TESTS_ONLY,
+            TicketType::Chore,
+            &[
+                "crates/x/tests/a.rs",
+                "tests/common/mod.rs",
+                "pkg/test_a.py",
+            ],
+            true,
+        );
+        assert!(ok.is_ok(), "{ok:?}");
+    }
+
+    // frob:ticket 01M4KS76RYYQ9Z3YFQA11PE6E1
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+    #[test]
+    fn the_tests_only_exemption_stays_closed_for_mixed_empty_unlisted_absent_and_off() {
+        let strict = |toml, ty, files: &[&str], branch| {
+            tests_only_verdict(toml, ty, files, branch)
+                .expect_err("refused")
+                .code
+        };
+        // Mixed: one non-test file spoils it.
+        let mixed = ["crates/x/tests/a.rs", "crates/x/src/lib.rs"];
+        assert_eq!(
+            strict(TESTS_ONLY, TicketType::Chore, &mixed, true),
+            CODE_FRAGMENT
+        );
+        // Empty diff never qualifies.
+        assert_eq!(
+            strict(TESTS_ONLY, TicketType::Chore, &[], true),
+            CODE_FRAGMENT
+        );
+        // Type not listed.
+        let t = ["tests/a.rs"];
+        assert_eq!(
+            strict(TESTS_ONLY, TicketType::Task, &t, true),
+            CODE_FRAGMENT
+        );
+        // No ticket branch.
+        assert_eq!(
+            strict(TESTS_ONLY, TicketType::Chore, &t, false),
+            CODE_FRAGMENT
+        );
+        // Knob off (the default).
+        assert_eq!(
+            strict(FRAGMENT_ONLY, TicketType::Chore, &t, true),
+            CODE_FRAGMENT
+        );
+    }
+
+    // frob:ticket 01M4KS76RYYQ9Z3YFQA11PE6E1
+    // frob:tests crates/frob-evidence/src/done.rs::paths_are_tests_only
+    #[test]
+    fn test_paths_are_classified_conservatively() {
+        assert!(paths_are_tests_only(&[
+            "tests/a.rs",
+            "crates/x/tests/it/b.rs"
+        ]));
+        assert!(!paths_are_tests_only(&[]));
+        assert!(!paths_are_tests_only(&["tests/a.rs", "README.md"]));
+        assert!(!paths_are_tests_only(&["src/tests.rs"]));
     }
 
     // frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ

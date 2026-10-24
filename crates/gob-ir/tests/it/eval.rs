@@ -185,6 +185,34 @@ fn an_exact_answer_computed_through_poison_is_downgraded_to_unknown() {
     );
 }
 
+// frob:ticket 01M5NYTXARKJTMT6G33G2WTCQG
+// frob:tests crates/gob-ir/src/eval/program.rs::RuleProgram
+#[test]
+fn a_definite_reach_under_poison_never_yields_clean() {
+    let (m, g, user) = opaque_in_cone();
+    // A careless Pc check: claims no path at all (lo=false, hi=false) despite poison.
+    let p = RuleProgram::new(rule("REACH001"), Polarity::Pc)
+        .message("careless reach")
+        .subjects(fn_units)
+        .check(move |ctx, s| {
+            // Reading the poisoned cone is what poisons the subject.
+            let _ = offenders(ctx, s, g);
+            Observation::Reach {
+                lo: false,
+                hi: false,
+                frontier: vec![],
+            }
+        });
+    let out = run(&m, &p);
+    let r = out.results.iter().find(|r| r.subject == user).unwrap();
+    assert!(
+        r.verdicts.iter().all(|v| !matches!(v, Verdict::Clean)),
+        "{:?}",
+        r.verdicts
+    );
+    assert!(matches!(&r.verdicts[0], Verdict::Unresolved { .. }));
+}
+
 #[test]
 fn opaque_subject_reports_one_rolled_up_unresolved_with_the_reason_code() {
     let (m, ..) = opaque_in_cone();

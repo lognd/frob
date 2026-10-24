@@ -643,7 +643,8 @@ impl RuleProgram {
 }
 
 /// An `Exact` answer computed through poisoned atoms is not exact: downgrade to `Unknown`.
-/// Explicit `Bounds` and `Reach` are the check's own statement and are trusted.
+/// A `Reach` keeps its certain `lo` hit but its `hi` is widened: a "no path" claim cannot be
+/// certified through poison, so a definite `Reach` never yields `Clean`.
 fn taint(obs: Observation) -> Observation {
     fn down<T>(a: Answer<T>) -> Answer<T> {
         if a.is_exact() { Answer::Unknown } else { a }
@@ -652,7 +653,14 @@ fn taint(obs: Observation) -> Observation {
         Observation::Set(a) => Observation::Set(down(a)),
         Observation::Pair(l, r) => Observation::Pair(down(l), down(r)),
         Observation::Count(a) => Observation::Count(down(a)),
-        reach @ Observation::Reach { .. } => reach,
+        Observation::Reach { lo, frontier, .. } => {
+            debug!(lo, "reach widened to hi=true under poison");
+            Observation::Reach {
+                lo,
+                hi: true,
+                frontier,
+            }
+        }
     }
 }
 
