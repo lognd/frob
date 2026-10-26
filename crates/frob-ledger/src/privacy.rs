@@ -24,7 +24,7 @@ const USERS_KIND: &str = concat!("/", "Users", "/<name>/");
 /// Hit label for a `C:\Users\<name>\` path.
 const WIN_KIND: &str = concat!("C:", r"\", "Users", r"\", "<name>", r"\");
 /// Hit label for a `C:/Users/<name>/` path.
-const FWD_KIND: &str = concat!("C:/", "Users", "/<name>/");
+const FWD_KIND: &str = concat!("C:", "/", "Users", "/", "<name>", "/");
 /// Hit label for an escaped `C:\\Users\\<name>\\` path.
 const ESC_KIND: &str = concat!("C:", r"\\", "Users", r"\\", "<name>", r"\\");
 /// Lead bytes of an escaped Windows users root, after the drive colon.
