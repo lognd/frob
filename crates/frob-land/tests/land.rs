@@ -110,7 +110,7 @@ impl Fixture {
                 (
                     RelPath::new("frob.toml").expect("path"),
                     Some(
-                        format!("[pm]\ndone_requires = [\"{requirement}\"]\n{extra}").into_bytes(),
+                        format!("[rules]\nramp = false\n[pm]\ndone_requires = [\"{requirement}\"]\n{extra}").into_bytes(),
                     ),
                 ),
                 (
@@ -1515,7 +1515,7 @@ fn a_release_finding_the_ticket_introduces_refuses() {
     commit_on_main(
         &fx,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"v{version}\"\n",
+        "[rules]\nramp = false\n[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"v{version}\"\n",
     );
     stray_tag(&fx, "v0.1.0");
     stray_tag(&fx, "app-v0.2.0");
@@ -1523,7 +1523,7 @@ fn a_release_finding_the_ticket_introduces_refuses() {
     Fixture::commit_in(
         &s.wt,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"{product}-v{version}\"\nproducts = [\"app\"]\n",
+        "[rules]\nramp = false\n[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"{product}-v{version}\"\nproducts = [\"app\"]\n",
     );
     Fixture::evidence(&s, "frob.toml");
     let before = fx.main_tip();

@@ -52,6 +52,13 @@ impl Repo {
                 .replace("products = []", "products = [\"frob\", \"grimble\"]"),
         )
         .expect("write frob.toml");
+        // ~AG0CHE0: opt the fixture out of the release severity ramp so rules new this release keep their error severity.
+        {
+            let toml = repo.dir.path().join("frob.toml");
+            let mut text = std::fs::read_to_string(&toml).expect("frob.toml");
+            text.push_str("\n[rules]\nramp = false\n");
+            std::fs::write(&toml, text).expect("write frob.toml");
+        }
         git(repo.dir.path(), &["add", "-A"]);
         git(repo.dir.path(), &["commit", "-q", "-m", "base"]);
         repo

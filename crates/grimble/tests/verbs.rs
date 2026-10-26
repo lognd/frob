@@ -109,7 +109,7 @@ fn a_model_error_exits_one_and_the_finding_is_in_the_document() {
     write(
         dir.path(),
         "grimble.toml",
-        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+        "[rules]\nramp = false\n[grimble]\nmodels = [\"design/m.grmb\"]\n",
     );
     write(
         dir.path(),

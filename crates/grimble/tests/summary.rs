@@ -19,7 +19,7 @@ fn large_model(dir: &Path, nodes: usize) {
     write(
         dir,
         "grimble.toml",
-        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+        "[rules]\nramp = false\n[grimble]\nmodels = [\"design/m.grmb\"]\n",
     );
     let mut model = String::from("grimble = \"2\";\nmodule m;\n");
     for i in 0..nodes {

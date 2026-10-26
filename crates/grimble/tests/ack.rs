@@ -39,7 +39,7 @@ fn fixture(dir: &Path) {
     write(
         dir,
         "grimble.toml",
-        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+        "[rules]\nramp = false\n[grimble]\nmodels = [\"design/m.grmb\"]\n",
     );
     write(dir, "design/m.grmb", MODEL);
     write(

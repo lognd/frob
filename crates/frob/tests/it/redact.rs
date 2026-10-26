@@ -32,6 +32,13 @@ impl Repo {
             config: tempfile::tempdir().expect("config dir"),
         };
         assert_eq!(code(&repo.frob(&["init"])), 0);
+        // ~AG0CHE0: opt the fixture out of the release severity ramp so rules new this release keep their error severity.
+        {
+            let toml = repo.path().join("frob.toml");
+            let mut text = std::fs::read_to_string(&toml).expect("frob.toml");
+            text.push_str("\n[rules]\nramp = false\n");
+            std::fs::write(&toml, text).expect("write frob.toml");
+        }
         git(repo.path(), &["add", "-A"]);
         git(repo.path(), &["commit", "-q", "-m", "base"]);
         repo
