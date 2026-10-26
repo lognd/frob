@@ -88,5 +88,19 @@ fn copy_tree(from: &Path, to: &Path) {
 pub fn work_copy(parent: &Path) -> PathBuf {
     let work = parent.join("work");
     copy_tree(&parity_root().join("fixtures/static"), &work);
+    for project in PROJECTS {
+        disable_ramp(&work.join(project));
+    }
     work
+}
+
+/// Opt the `crunk.toml` in `dir` out of the severity ramp; a no-op when absent or already set.
+fn disable_ramp(dir: &Path) {
+    let path = dir.join("crunk.toml");
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return;
+    };
+    if !text.contains("[rules]") {
+        std::fs::write(&path, format!("{text}\n[rules]\nramp = false\n")).expect("write");
+    }
 }

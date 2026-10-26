@@ -54,6 +54,19 @@ fn overlay(from: &Path, to: &Path) {
     }
 }
 
+/// Opt the replayed `crunk.toml` out of the severity ramp so rules report at their full severity.
+fn disable_ramp(work: &Path) {
+    let path = work.join("crunk.toml");
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return;
+    };
+    if text.contains("[rules]") {
+        return;
+    }
+    tracing::debug!(path = %path.display(), "replay: appending [rules] ramp = false");
+    std::fs::write(&path, format!("{text}\n[rules]\nramp = false\n")).expect("write crunk.toml");
+}
+
 /// Every file under `dir`, relative to it, with `/` separators.
 fn files_under(dir: &Path) -> BTreeSet<String> {
     fn walk(dir: &Path, prefix: &str, out: &mut BTreeSet<String>) {
@@ -149,6 +162,7 @@ pub fn replay(scenario: &str) -> Vec<Diff> {
         let setup = fixture.join(format!("{num}.setup"));
         if setup.is_dir() {
             overlay(&setup, &work);
+            disable_ramp(&work);
         }
         let step = read_json(&fixture.join(format!("{num}.step.json")));
         for gone in step["setup_deleted"].as_array().into_iter().flatten() {

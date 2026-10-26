@@ -26,9 +26,39 @@ fn project(css: &str) -> tempfile::TempDir {
             "[lint]",
             "[lint]\nTOKENS001 = \"off\"\nEXPORT001 = \"off\"\nORG001 = \"off\"",
         );
-    write(dir.path(), "crunk.toml", &spec);
+    write(
+        dir.path(),
+        "crunk.toml",
+        &format!("{spec}\n[rules]\nramp = false\n"),
+    );
     write(dir.path(), "styles/a.css", css);
     dir
+}
+
+/// A project with the default severity ramp left on.
+fn ramped_project(css: &str) -> tempfile::TempDir {
+    let dir = project(css);
+    let spec = std::fs::read_to_string(dir.path().join("crunk.toml")).expect("read");
+    write(
+        dir.path(),
+        "crunk.toml",
+        &spec.replace("ramp = false", "ramp = true"),
+    );
+    dir
+}
+
+// frob:tests crates/gob-product/src/check.rs::Check
+#[test]
+fn the_default_ramp_downgrades_a_new_rule_so_check_exits_zero() {
+    let dir = ramped_project(".a { color: #ff0000; }\n");
+    let (code, env) = crunk(dir.path(), &["check", "--json"]);
+    assert_eq!(code, 0, "{env}");
+    let findings = env["data"]["findings"].as_array().expect("findings");
+    let hit = findings
+        .iter()
+        .find(|f| f["rule"] == "COLOR001")
+        .expect("COLOR001");
+    assert_eq!(hit["severity"], "warning", "{hit}");
 }
 
 // frob:tests crates/gob-product/src/check.rs::Check
