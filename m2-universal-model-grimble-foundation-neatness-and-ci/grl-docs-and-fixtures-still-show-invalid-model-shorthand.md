@@ -8,12 +8,12 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T22:55:22Z"
-updated = "2026-10-26T04:18:53Z"
+updated = "2026-10-26T04:29:39Z"
 scope = ["docs/design/grl-spec.md", "crates/gob-plan/src/grl/**"]
 
 [[acceptance]]
 text = 'grl-spec.md and the CAP001 and SYS001 fixtures use only the model syntax grmb parses (node app { owns ".."; } and excuses ATOM because="..")'
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the CAP001 hint text no longer mentions because"
