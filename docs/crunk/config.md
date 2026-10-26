@@ -298,6 +298,15 @@ One `[[review.reviewers]]` entry: who may ack, and the signing keys their acks m
 | `id` | string | yes | `-` | The reviewer identity, matched against the git `user.email` (or `user.name`) at ack time. |
 | `keys` | array of string | no | `[]` | Signing key ids or fingerprints the reviewer's signed commits may carry. |
 
+## `[rules]`
+
+Rule settings read by `gob_rules::RuleSettings` (`ramp`, `[rules.<ID>]`); optional.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| `ramp` | boolean | no | `true` | Report a rule new in this release line as warn until its ramp ends; false reports it at its declared severity at once. |
+| any other key | table | no | - | user-named entry |
+
 ## `[scales]`
 
 Allowed px scales. Required.

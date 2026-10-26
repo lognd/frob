@@ -208,3 +208,13 @@ fn a_rule_new_in_this_release_line_is_ramped_to_warn() {
         ramped[0].message
     );
 }
+
+// frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+// frob:tests crates/crunk-check/src/product.rs::Crunk
+#[test]
+fn rules_ramp_false_leaves_a_new_rule_at_error() {
+    let spec_text = format!("{}\n[rules]\nramp = false\n", spec());
+    let f = findings_of(&spec_text, "styles/a.css", ".a { color: #1b1b1b; }\n");
+    assert_eq!(f.len(), 1, "{f:?}");
+    assert_eq!(f[0].severity, gob_rules::Severity::Error, "{f:?}");
+}

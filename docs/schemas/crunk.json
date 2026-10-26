@@ -1873,6 +1873,33 @@
       ],
       "description": "Human review lock policy; optional."
     },
+    "rules": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "disabled": {
+            "type": "boolean"
+          },
+          "severity": {
+            "enum": [
+              "advisory",
+              "warn",
+              "error"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "description": "Rule settings read by `gob_rules::RuleSettings` (`ramp`, `[rules.<ID>]`); optional.",
+      "properties": {
+        "ramp": {
+          "default": true,
+          "description": "Report a rule new in this release line as warn until its ramp ends; false reports it at its declared severity at once.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "scales": {
       "additionalProperties": false,
       "description": "Allowed px scales. Required.",
@@ -2006,7 +2033,8 @@
     "org",
     "lint",
     "breakpoints",
-    "decisions"
+    "decisions",
+    "rules"
   ],
   "title": "crunk.toml",
   "type": "object"

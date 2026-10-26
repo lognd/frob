@@ -32,6 +32,7 @@ pub const OWN_TABLES: &[&str] = &[
     "packs",
     "game",
     "decisions",
+    "rules",
 ];
 
 // test_ok spec_required_sections

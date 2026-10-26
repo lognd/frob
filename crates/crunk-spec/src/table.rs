@@ -820,6 +820,30 @@ pub struct RawSpec {
     /// unchosen default; optional.
     #[schemars(schema_with = "decisions_schema")]
     pub decisions: Option<IndexMap<String, String>>,
+    // frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+    /// Rule settings read by `gob_rules::RuleSettings` (`ramp`, `[rules.<ID>]`); optional.
+    #[schemars(schema_with = "rules_schema")]
+    pub rules: Option<IndexMap<String, serde_json::Value>>,
+}
+
+// frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+/// Schema of `[rules]`: the `ramp` switch plus a `[rules.<ID>]` table per rule.
+fn rules_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+    schemars::json_schema!({
+        "type": "object",
+        "description": "Rule settings. `ramp = false` turns off the new-rule release ramp; `[rules.<ID>]` sets `severity` (advisory, warn, error) or `disabled = true` for one rule.",
+        "properties": {
+            "ramp": {"type": "boolean", "default": true, "description": "Report a rule new in this release line as warn until its ramp ends; false reports it at its declared severity at once."}
+        },
+        "additionalProperties": {
+            "type": "object",
+            "properties": {
+                "severity": {"enum": ["advisory", "warn", "error"]},
+                "disabled": {"type": "boolean"}
+            },
+            "additionalProperties": false
+        }
+    })
 }
 
 // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
