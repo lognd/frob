@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-24T07:46:34Z"
-updated = "2026-10-26T03:46:01Z"
+updated = "2026-10-26T04:11:39Z"
 scope = ["crates/frob/**", "crates/crunk/**", "crates/frob-ledger/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "frob check reports no PATH001, PATH002, TICK006, PARSE001 or TEST001 findings in the four crates"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "TICK001 drift on the two named tickets is cleared"
