@@ -2,7 +2,8 @@
 id = "01M5PE0CWQSF8EX5Z48Q47G9ZW"
 title = "Clear remaining Linux check errors in frob, crunk, frob-ledger and gob-symbols"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
