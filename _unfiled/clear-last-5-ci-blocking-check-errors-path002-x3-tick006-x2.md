@@ -2,7 +2,8 @@
 id = "01M5V7YGQV7T97D8H8WASZTGHT"
 title = "Clear last 5 CI-blocking check errors (PATH002 x3, TICK006 x2)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
