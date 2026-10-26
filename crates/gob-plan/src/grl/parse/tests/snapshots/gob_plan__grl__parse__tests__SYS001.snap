@@ -354,40 +354,40 @@ examples: [
         Spanned {
            node: Model(
             BlockLit {
-               value: "node app owns \"src/app/**\";",
-              body: @341..368,
-              span: @338..371 
+               value: "node app { owns \"src/app/**\"; }",
+              body: @341..372,
+              span: @338..375 
             }
           ),
-          span: @332..371 
+          span: @332..375 
         },
         Spanned {
            node: File {
              path: StrLit {
                value: "scripts/legacy.py",
-              span: @381..400 
+              span: @385..404 
             },
             text: BlockLit {
                value: "def f(): pass                  #~ warn",
-              body: @404..454,
-              span: @401..457 
+              body: @408..458,
+              span: @405..461 
             } 
           },
-          span: @376..457 
+          span: @380..461 
         }
       ]
     ),
-    span: @306..461 
+    span: @306..465 
   },
   Example {
      expect: Expect {
        kind: Clean,
-      span: @472..477 
+      span: @476..481 
     },
     lang: Some(
       Word {
          text: "python",
-        span: @478..484 
+        span: @482..488 
       }
     ),
     name: None,
@@ -396,43 +396,43 @@ examples: [
         Spanned {
            node: Model(
             BlockLit {
-               value: "node app owns \"src/app/**\";",
-              body: @500..527,
-              span: @497..530 
+               value: "node app { owns \"src/app/**\"; }",
+              body: @504..535,
+              span: @501..538 
             }
           ),
-          span: @491..530 
+          span: @495..538 
         },
         Spanned {
            node: File {
              path: StrLit {
                value: "src/app/a.py",
-              span: @540..554 
+              span: @548..562 
             },
             text: BlockLit {
                value: "def f(): pass",
-              body: @558..583,
-              span: @555..586 
+              body: @566..591,
+              span: @563..594 
             } 
           },
-          span: @535..586 
+          span: @543..594 
         }
       ]
     ),
-    span: @464..590 
+    span: @468..598 
   }
 ],
 explain: Some(
   Explain {
      text: BlockLit {
        value: "Every file should belong to a design node.\n## Remedy\nAdd an `owns` selector to a node, or exclude the path in grimble.toml.",
-      body: @604..743,
-      span: @601..746 
+      body: @612..751,
+      span: @609..754 
     },
-    span: @593..746 
+    span: @601..754 
   }
 ),
-span: @0..748 
+span: @0..756 
 }
 ] 
 }

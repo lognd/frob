@@ -1137,13 +1137,13 @@ rule SYS001 "unowned" {
   report a "no node owns any part of {a.path}"
 
   example fire python {
-    model """node app owns "src/app/**";"""
+    model """node app { owns "src/app/**"; }"""
     file "scripts/legacy.py" """
       def f(): pass                  #~ warn
     """
   }
   example clean python {
-    model """node app owns "src/app/**";"""
+    model """node app { owns "src/app/**"; }"""
     file "src/app/a.py" """
       def f(): pass
     """
@@ -1173,13 +1173,13 @@ rule CAP001 "undeclared-capability" {
   fix host add_grant(c.node, c.atom) [has-placeholders]
 
   example fire rust {
-    model """node frob owns "src/**";"""
+    model """node frob { owns "src/**"; }"""
     file "src/a.rs" """
       fn serve() { std::net::TcpListener::bind("0.0.0.0:0"); }   //~ error
     """
   }
   example clean rust {
-    model """node frob owns "src/**" { may net.listen because="the server"; }"""
+    model """node frob { owns "src/**"; may net.listen; }"""
     file "src/a.rs" """
       fn serve() { std::net::TcpListener::bind("0.0.0.0:0"); }
     """
@@ -1187,7 +1187,7 @@ rule CAP001 "undeclared-capability" {
   explain """
     Capabilities are denied unless granted (D75).
     ## Remedy
-    Add `may ATOM because="..."` to the node, or remove the use.
+    Add `may ATOM;` to the node, or remove the use.
   """
 }
 ```

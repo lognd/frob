@@ -8,13 +8,13 @@ rule CAP001 "undeclared-capability" {
   fix host add_grant(c.node, c.atom) [has-placeholders]
 
   example fire rust {
-    model """node frob owns "src/**";"""
+    model """node frob { owns "src/**"; }"""
     file "src/a.rs" """
       fn serve() { std::net::TcpListener::bind("0.0.0.0:0"); }   //~ error
     """
   }
   example clean rust {
-    model """node frob owns "src/**" { may net.listen because="the server"; }"""
+    model """node frob { owns "src/**"; may net.listen; }"""
     file "src/a.rs" """
       fn serve() { std::net::TcpListener::bind("0.0.0.0:0"); }
     """
@@ -22,6 +22,6 @@ rule CAP001 "undeclared-capability" {
   explain """
     Capabilities are denied unless granted (D75).
     ## Remedy
-    Add `may ATOM because="..."` to the node, or remove the use.
+    Add `may ATOM;` to the node, or remove the use.
   """
 }
