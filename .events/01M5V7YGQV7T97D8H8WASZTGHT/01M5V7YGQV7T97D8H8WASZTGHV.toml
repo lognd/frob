@@ -1,0 +1,12 @@
+kind = "create"
+title = "Clear last 5 CI-blocking check errors (PATH002 x3, TICK006 x2)"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 3
+scope = ["crates/crunk-ingest/tests/**", "crates/crunk-tailwind/src/runtime/**", "crates/frob-check/tests/it/**", "crates/frob-check/src/**", "docs/**"]
+acceptance = ["frob check reports zero error findings on Linux (PATH002 in crunk-ingest ingest.rs, crunk-tailwind notice.rs, frob-check sibling.rs fixed with Path ops)", "TICK006 on the two ticket bodies (_unfiled dsl001 and m2 tick006) cleared without rewriting history, or rule corrected if false positive"]
+body = "CI run on 015d826e2b failed at frob check with 22 errors; Q47G9ZW cleared 17, these 5 remain (verified locally). Exit criterion 6."
+at = "2026-10-26T04:36:54Z"
+actor = "lognd"
+rev = 1
