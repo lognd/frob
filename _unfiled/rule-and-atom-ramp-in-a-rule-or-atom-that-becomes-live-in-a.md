@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T22:53:18Z"
-updated = "2026-10-26T14:27:32Z"
+updated = "2026-10-26T14:34:35Z"
 labels = ["adoption:logand-app"]
-scope = ["crates/gob-rules/**", "crates/frob-release/**", "changelog.d/**"]
+scope = ["crates/gob-rules/**", "crates/frob-release/**", "changelog.d/**", "docs/design/rules.md"]
 
 [[acceptance]]
 text = "Given a rule or capability atom first shipped in release N, when a repository checks with release N, then its findings are Warn with a note naming the release where they become their declared severity (N+1), unless [rules] ramp = false"
