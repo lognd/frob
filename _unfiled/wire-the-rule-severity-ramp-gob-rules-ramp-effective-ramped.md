@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-26T14:43:31Z"
 updated = "2026-10-26T16:39:42Z"
-scope = ["crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**", "crates/gob-rules/**", "docs/**"]
+scope = ["crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**", "crates/gob-rules/**", "docs/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "Each product's check pipeline lowers a new-in-release rule from Error to Warn through the release line via RuleSettings::effective_ramped, with the note naming N+1, and a test per product proves it"
