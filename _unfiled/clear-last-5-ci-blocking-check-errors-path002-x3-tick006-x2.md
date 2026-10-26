@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T04:36:54Z"
-updated = "2026-10-26T04:48:54Z"
+updated = "2026-10-26T04:49:02Z"
 scope = ["crates/crunk-ingest/tests/**", "crates/crunk-tailwind/src/runtime/**", "crates/frob-check/tests/it/**", "crates/frob-check/src/**", "docs/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "TICK006 on the two ticket bodies (_unfiled dsl001 and m2 tick006) cleared without rewriting history, or rule corrected if false positive"
-bound = false
+bound = true
 +++
 
 CI run on 015d826e2b failed at frob check with 22 errors; Q47G9ZW cleared 17, these 5 remain (verified locally). Exit criterion 6.
