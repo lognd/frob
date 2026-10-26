@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob check reports no PATH001, PATH002, TICK006, PARSE001 or TEST001 findings in the four crates", "TICK001 drift on the two named tickets is cleared"]
+moved = []
+at = "2026-10-26T03:45:17Z"
+actor = "lognd"
+rev = 1
