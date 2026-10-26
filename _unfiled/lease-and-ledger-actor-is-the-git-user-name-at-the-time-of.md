@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T23:26:32Z"
-updated = "2026-10-26T13:12:15Z"
+updated = "2026-10-26T13:17:59Z"
 scope = ["crates/frob-lease/**"]
 
 [[acceptance]]
 text = "a lease held by actor A can be released by the same clone after the git identity changes, or the refusal names the identity mismatch and the verb to fix it, covered by a test"
-bound = false
+bound = true
 +++
 
 found while draining tickets: after git user.name changed from Claude to lognd, frob requeue of a lease held by Claude was refused with E-LEASE-HELD; releasing required running under the old identity.
