@@ -443,11 +443,11 @@ fn a_v1_sibling_is_probed_and_never_sent_v2_flags() {
     let bin = tempfile::tempdir().expect("tempdir");
     let script = bin.path().join("grimble");
     let called = bin.path().join("check-was-called");
+    let called_arg = called.to_string_lossy();
     std::fs::write(
         &script,
         format!(
-            "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'grimble 0.1.1'; exit 0; fi\ntouch '{}'\necho 'unrecognized arguments: --base' >&2\nexit 2\n",
-            called.display()
+            "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'grimble 0.1.1'; exit 0; fi\ntouch '{called_arg}'\necho 'unrecognized arguments: --base' >&2\nexit 2\n"
         ),
     )
     .expect("write script");

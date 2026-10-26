@@ -50,12 +50,12 @@ pub fn state_base_from(
 
 /// The notice text for running `config_path` with `node_binary`.
 pub fn notice_text(config_path: &Path, node_binary: &str) -> String {
+    let config = config_path.to_string_lossy();
     format!(
         "crunk: running this project's Tailwind config and plugins with node\n  \
-         config: {}\n  node:   {node_binary}\n  \
+         config: {config}\n  node:   {node_binary}\n  \
          opt out with --static or `[tailwind] engine = \"static\"`\n  \
-         see the security notes before running crunk check on an untrusted repository",
-        config_path.display()
+         see the security notes before running crunk check on an untrusted repository"
     )
 }
 
