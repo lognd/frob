@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T15:08:39Z"
-updated = "2026-10-26T15:25:44Z"
+updated = "2026-10-26T15:29:41Z"
 scope = ["crates/frob-worktree/**"]
 
 [[acceptance]]
