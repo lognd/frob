@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-26T23:00:13Z"
+digest = "f01d9a7f483a2ba35e1fe01d85f10c5f949e558ea147423c40849b7cb557afe8"
+exit_code = 0
+head = "e8a29129bc5c63f504922be7c1884447f31c81a9"
+inline = '''
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6ce7b90f-484b-4217-a636-fe89e274bf27 with nextest profile: default
+    Starting 10 tests across 21 binaries (668 tests skipped)
+        PASS [   0.324s] grimble::summary summary_without_json_still_runs
+        PASS [   0.329s] grimble::summary small_model_lists_each_node
+        PASS [   0.410s] grimble::ack ack_writes_the_lock_and_check_reports_contract_skew_after_a_producer_edit
+        PASS [   0.436s] grimble::verbs a_model_error_exits_one_and_the_finding_is_in_the_document
+        PASS [   0.670s] frob-land::land a_release_finding_the_ticket_introduces_refuses
+        PASS [   0.719s] frob-land::land a_repository_level_finding_on_the_base_does_not_block_an_unrelated_ticket
+        PASS [   1.220s] frob-cli::it redact::check_flags_and_doctor_fix_repairs
+        PASS [   1.280s] frob-cli::it release_cut::adopt_records_hand_made_tags_as_an_adopted_cut_and_clears_rel001
+        PASS [   1.315s] frob-cli::it milestone::pm_strict_escalates_pm001_to_error
+        PASS [   3.653s] grimble::summary summary_of_a_large_model_is_compact
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.655s] 10 tests run: 10 passed, 668 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -p frob-land -p frob-cli -E test(/pm_strict_escalates_pm001_to_error|check_flags_and_doctor_fix_repairs|adopt_records_hand_made_tags|a_release_finding_the_ticket_introduces_refuses|a_repository_level_finding_on_the_base|ack_writes_the_lock_and_check_reports|small_model_lists_each_node|summary_without_json_still_runs|summary_of_a_large_model_is_compact|a_model_error_exits_one/)"
+size = 1632
+status = "measured"
+test_count = 10
+tests_digest = "1a1333822820a2323af3eef9831f5076fbcfd618e017d51f66a7de90c1a75d37"
+at = "2026-10-26T23:00:13Z"
+actor = "lognd"
+rev = 1
