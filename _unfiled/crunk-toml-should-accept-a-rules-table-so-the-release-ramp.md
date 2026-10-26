@@ -2,12 +2,12 @@
 id = "01M5WJKHJK4DD8NP1FTYWF1B8K"
 title = "crunk.toml should accept a [rules] table so the release ramp can be turned off"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-26T17:02:23Z"
-updated = "2026-10-26T21:21:11Z"
+updated = "2026-10-26T21:21:12Z"
 scope = ["crates/crunk-spec/**", "crates/crunk-check/**"]
 
 [[acceptance]]
