@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-26T21:52:44Z"
+digest = "4598332dbfc112d7ac8decb6a789e0e784297369d099467d82e9f8414fecef0b"
+exit_code = 0
+head = "92a146815ef565dfcd95ca9fe173b4185636b518"
+passed = true
+provider = "nextest"
+ref = "-p crunk"
+size = 23776
+status = "measured"
+test_count = 260
+tests_digest = "5e96cb16e8a73d3980cb7d113e987a92ae69cfa34cdc6360d7081baa5ac611cd"
+uri = "dir:.git/frob/artifacts/4598332dbfc112d7ac8decb6a789e0e784297369d099467d82e9f8414fecef0b"
+at = "2026-10-26T21:52:44Z"
+actor = "lognd"
+rev = 1
