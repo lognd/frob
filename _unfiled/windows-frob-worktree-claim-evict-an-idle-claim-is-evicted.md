@@ -2,12 +2,12 @@
 id = "01M5WC3A43GMH7PY1BQW0EH8KJ"
 title = "Windows: frob-worktree claim_evict an_idle_claim_is_evicted_with_the_rate_reported_and_a_repeat_needs_yes asserts rate_left 4 vs 3"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T15:08:39Z"
-updated = "2026-10-26T15:08:39Z"
+updated = "2026-10-26T15:24:09Z"
 scope = ["crates/frob-worktree/**"]
 
 [[acceptance]]
