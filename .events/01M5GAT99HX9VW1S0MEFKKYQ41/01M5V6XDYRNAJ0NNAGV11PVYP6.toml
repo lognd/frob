@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ['grl-spec.md and the CAP001 and SYS001 fixtures use only the model syntax grmb parses (node app { owns ".."; } and excuses ATOM because="..")', "the CAP001 hint text no longer mentions because"]
+moved = []
+at = "2026-10-26T04:18:49Z"
+actor = "lognd"
+rev = 1
