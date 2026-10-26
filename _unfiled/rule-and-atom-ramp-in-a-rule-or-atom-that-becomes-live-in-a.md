@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T22:53:18Z"
-updated = "2026-10-26T14:34:46Z"
+updated = "2026-10-26T14:34:47Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-rules/**", "crates/frob-release/**", "changelog.d/**", "docs/design/rules.md"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a release or dev build, when its notes are generated, then newly live rules and atoms are listed in a dedicated section"
-bound = false
+bound = true
 +++
 
 logand.app-v2 F-573 wish 1. R1 synthesis C35 already recommends new rules ship Advisory and graduate by ratchet.

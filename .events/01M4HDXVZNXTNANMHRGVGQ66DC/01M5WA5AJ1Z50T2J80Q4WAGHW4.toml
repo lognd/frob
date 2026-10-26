@@ -1,0 +1,173 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-26T14:34:47Z"
+digest = "745bbb9772ca84ab6a08ded47d1fefae4d36a6e58defe8e5df13192f745673a2"
+exit_code = 0
+head = "f5f0da2856436ec20abdd292725dc76c9a174a87"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 21aa8858-38f0-404d-a1c6-81e14f736521 with nextest profile: default
+    Starting 149 tests across 2 binaries
+        PASS [   0.008s] frob-release ci::tests::no_origin_is_unknown
+        PASS [   0.009s] frob-release ci::tests::a_non_github_remote_is_unknown_without_spawning_gh
+        PASS [   0.009s] frob-release ci::tests::gh_missing_is_unknown_with_the_install_remedy
+        PASS [   0.012s] frob-release changelog::tests::section_body_is_exactly_one_versions_body_without_heading_or_marker
+        PASS [   0.048s] frob-release ci::tests::a_cancelled_check_is_pending_never_red_or_green
+        PASS [   0.047s] frob-release ci::tests::gh_unauthenticated_reports_exit_code_stderr_and_the_login_remedy
+        PASS [   0.048s] frob-release ci::tests::an_unpushed_commit_says_to_push
+        PASS [   0.050s] frob-release ci::tests::no_network_is_unknown_with_the_exit_code
+        PASS [   0.051s] frob-release ci::tests::green_when_every_check_succeeded_or_was_skipped
+        PASS [   0.056s] frob-release ci::tests::an_unrecognised_conclusion_is_red_never_green
+        PASS [   0.059s] frob-release ci::tests::a_failing_legacy_status_is_red_too
+        PASS [   0.008s] frob-release culprit::tests::names_the_land_commits_after_the_last_green_up_to_the_first_red
+        PASS [   0.012s] frob-release ci::tests::remote_urls_of_every_github_form_parse
+        PASS [   0.008s] frob-release rules::freshness::rules_index_is_fresh
+        PASS [   0.011s] frob-release culprit::tests::a_green_tip_names_no_culprit
+        PASS [   0.008s] frob-release status::tests::a_stale_human_review_is_a_release_tier_blocker_and_an_unreadable_gate_is_unresolved
+        PASS [   0.008s] frob-release status::tests::all_bound_is_ready_with_preview_and_unresolved_lines
+        PASS [   0.007s] frob-release status::tests::open_tickets_group_by_category_in_workflow_order
+        PASS [   0.008s] frob-release status::tests::an_unbound_criterion_is_one_typed_blocker
+        PASS [   0.008s] frob-release status::tests::exempt_tickets_are_listed_in_the_report_and_never_block
+        PASS [   0.068s] frob-release ci::tests::no_checks_at_all_is_unknown
+        PASS [   0.061s] frob-release ci::tests::paginated_output_is_read_page_by_page
+        PASS [   0.061s] frob-release ci::tests::pending_when_a_check_has_not_finished_and_nothing_failed
+        PASS [   0.060s] frob-release ci::tests::red_names_every_failing_check_with_its_link
+        PASS [   0.007s] frob-release status::tests::pending_ci_blocks_even_when_not_required
+        PASS [   0.012s] frob-release status::tests::missing_milestone_and_bad_fragments_are_blockers_not_failures
+        PASS [   0.009s] frob-release status::tests::unknown_ci_blocks_when_required_and_only_warns_when_not
+        PASS [   0.009s] frob-release status::tests::status_has_no_registry_setup_item_without_the_config
+        PASS [   0.009s] frob-release status::tests::registry_setup_names_an_existing_guide_section
+        PASS [   0.014s] frob-release status::tests::red_ci_is_one_blocker_naming_checks_and_links
+        PASS [   0.013s] frob-release::it adopt::a_bad_version_is_refused
+        PASS [   0.070s] frob-release ci::tests::red_wins_over_pending
+        PASS [   0.023s] frob-release::it adopt::a_missing_tag_is_refused_naming_every_missing_tag
+        PASS [   0.016s] frob-release::it bump::invalid_version_is_refused
+        PASS [   0.016s] frob-release::it bump::python_project_bump_edits_pyproject_and_creates_no_cargo_file
+        PASS [   0.016s] frob-release::it bump::dry_run_reports_files_and_diffs_but_writes_nothing
+        PASS [   0.013s] frob-release::it changelog::a_notice_leads_the_section_above_the_product_and_type_groups
+        PASS [   0.014s] frob-release::it changelog::a_hand_written_changelog_is_adopted_above_its_first_version_heading
+        PASS [   0.050s] frob-release ci::tests::workflow_runs_become_verdict_records
+        PASS [   0.030s] frob-release::it adopt::hand_made_annotated_and_lightweight_tags_resolve_to_the_cut_they_would_have_recorded
+        PASS [   0.009s] frob-release::it changelog::bad_version_and_non_ascii_are_refused
+        PASS [   0.013s] frob-release::it changelog::a_single_product_has_no_product_heading_and_no_v1_link
+        PASS [   0.015s] frob-release::it changelog::a_second_notice_is_refused_naming_both_files
+        PASS [   0.014s] frob-release::it changelog::check_detects_a_hand_edit_of_an_older_section
+        PASS [   0.016s] frob-release::it changelog::an_adopted_changelog_without_version_headings_gets_the_section_appended
+        PASS [   0.011s] frob-release::it changelog::fragments_survive_a_failed_write
+        PASS [   0.013s] frob-release::it changelog::existing_version_is_refused
+        PASS [   0.015s] frob-release::it changelog::empty_changelog_d_adds_nothing
+        PASS [   0.017s] frob-release::it changelog::dry_run_touches_nothing
+        PASS [   0.010s] frob-release::it changelog::invalid_names_are_refused_with_the_remedy
+        PASS [   0.012s] frob-release::it changelog::rules_first_shipped_in_a_release_are_listed_in_its_notes_only
+        PASS [   0.009s] frob-release::it changelog::the_v2_notice_fragment_is_a_lead_notice
+        PASS [   0.009s] frob-release::it changelog::same_type_entries_sort_by_ulid
+        PASS [   0.017s] frob-release::it changelog::groups_by_product_type_then_ulid_and_removes_fragments
+        PASS [   0.016s] frob-release::it changelog::near_miss_product_prefix_is_refused_with_a_suggestion_but_plain_words_pass
+        PASS [   0.013s] frob-release::it changelog::ulid_without_a_ticket_is_refused_naming_the_file
+        PASS [   0.015s] frob-release::it changelog::second_release_goes_above_the_first
+        PASS [   0.012s] frob-release::it ci_pins::ci_actionlint_pin_matches_frob_toml
+        PASS [   0.009s] frob-release::it ci_pins::ci_installs_no_unpinned_cargo_tools_beyond_nextest
+        PASS [   0.010s] frob-release::it ci_pins::dist_pin_matches_dist_workspace
+        PASS [   0.012s] frob-release::it ci_pins::ci_rust_toolchain_comes_from_rust_toolchain_toml
+        PASS [   0.012s] frob-release::it ci_pins::ci_zizmor_pin_matches_frob_toml
+        PASS [   0.024s] frob-release::it cut::a_dirty_tree_is_refused
+        PASS [   0.037s] frob-release::it cut::an_existing_tag_is_refused_and_never_moved
+        PASS [   0.024s] frob-release::it cut::not_ready_refuses_and_leaves_the_tree_and_refs_alone
+        PASS [   0.014s] frob-release::it cut::several_products_with_a_pattern_lacking_the_product_placeholder_are_refused
+        PASS [   0.018s] frob-release::it dev_workflow::assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones
+        PASS [   0.022s] frob-release::it dev_workflow::both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha
+        PASS [   0.160s] frob-release::it bump::bump_sets_every_crate_pin_wheel_and_lock
+        PASS [   0.014s] frob-release::it dev_workflow::dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job
+        PASS [   0.017s] frob-release::it dev_workflow::every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permissions
+        PASS [   0.013s] frob-release::it dev_workflow::nothing_is_published_to_pypi_or_crates_io
+        PASS [   0.006s] frob-release::it products::crunk_is_a_preview_release_product_whose_wheel_is_uploaded
+        PASS [   0.185s] frob-release::it bump::comments_and_layout_survive_and_the_workspace_version_is_added_when_absent
+        PASS [   0.006s] frob-release::it products::frob_depends_on_grimble_at_the_same_version_and_grimble_and_crunk_on_nothing
+        PASS [   0.006s] frob-release::it products::publish_jobs_accept_only_product_archives
+        PASS [   0.223s] frob-release::it bump::repeat_changes_nothing
+        PASS [   0.009s] frob-release::it products::the_pypi_product_list_is_the_product_list
+        PASS [   0.009s] frob-release::it products::the_smoke_steps_name_each_product_archive_and_run_each_binary
+        PASS [   0.009s] frob-release::it products::the_wheel_smoke_installs_from_local_wheels_only_in_four_scenarios
+        PASS [   0.205s] frob-release::it cut::a_cut_interrupted_before_the_record_resumes_and_records_only
+        PASS [   0.008s] frob-release::it products::the_workflows_count_wheels_for_every_pypi_product
+        PASS [   0.088s] frob-release::it products::dist_distributes_exactly_the_product_packages
+        PASS [   0.218s] frob-release::it cut::a_preview_product_tag_message_says_preview_and_the_others_do_not
+        PASS [   0.089s] frob-release::it products::published_packages_declare_only_product_binaries
+        PASS [   0.019s] frob-release::it rel001::a_matching_recorded_cut_is_silent
+        PASS [   0.090s] frob-release::it products::the_fake_sibling_helper_lives_in_an_unpublished_crate
+        PASS [   0.231s] frob-release::it cut::a_cut_interrupted_between_commit_and_tag_resumes_without_a_second_commit
+        PASS [   0.023s] frob-release::it rel001::a_moved_tag_fires_naming_the_recorded_commit
+        PASS [   0.234s] frob-release::it cut::configured_tag_and_products_make_one_tag_per_product_following_the_pattern
+        PASS [   0.023s] frob-release::it rel001::a_version_mismatch_at_the_tagged_commit_fires
+        PASS [   0.023s] frob-release::it rel001::annotated_tags_recorded_in_the_real_event_shape_are_silent
+        PASS [   0.245s] frob-release::it cut::a_failure_before_the_commit_restores_the_tree
+        PASS [   0.018s] frob-release::it rel001::tags_outside_the_product_prefixes_are_ignored
+        PASS [   0.026s] frob-release::it rel001::no_tags_and_no_cuts_is_not_applicable_with_a_reason
+        PASS [   0.037s] frob-release::it rel001::a_tag_made_by_plain_tag_creation_fires
+        PASS [   0.023s] frob-release::it rel001::the_configured_tag_pattern_decides_which_tags_are_product_tags
+        PASS [   0.010s] frob-release::it rel002::an_unparseable_member_manifest_is_unresolved_with_the_reason
+        PASS [   0.011s] frob-release::it rel002::inherited_versions_count_as_equal
+        PASS [   0.014s] frob-release::it rel002::all_equal_is_silent
+        PASS [   0.022s] frob-release::it rel001::the_stray_tag_remedy_names_adopt_before_deletion
+        PASS [   0.022s] frob-release::it rel001::this_repository_is_clean_or_not_applicable
+        PASS [   0.322s] frob-release::it bump::downgrade_is_refused_with_a_remedy_unless_allowed
+        PASS [   0.011s] frob-release::it rel002::one_crate_with_a_different_version_fires_naming_it
+        PASS [   0.026s] frob-release::it rel001::the_version_is_read_from_the_commit_not_the_working_tree
+        PASS [   0.009s] frob-release::it rel002::wheel_metadata_absent_is_fine_and_present_is_compared
+        PASS [   0.013s] frob-release::it rel002::wheel_finding_names_the_pyproject_package_and_python_only_is_not_applicable
+        PASS [   0.010s] frob-release::it rel003::a_ticket_without_a_fragment_is_named_with_the_remedy
+        PASS [   0.269s] frob-release::it cut::a_ready_cut_is_one_commit_with_bump_and_changelog_and_both_tags
+        PASS [   0.009s] frob-release::it rel003::any_file_of_the_ticket_counts_as_present_and_case_is_ignored
+        PASS [   0.018s] frob-release::it rel002::this_repository_is_clean
+        PASS [   0.008s] frob-release::it rel003::no_directory_is_an_empty_evaluation
+        PASS [   0.009s] frob-release::it rel003::validate_ticket_distinguishes_missing_valid_and_invalid
+        PASS [   0.012s] frob-release::it rel003::type_exempt_follows_the_pm_changelog_exempt_types_table
+        PASS [   0.017s] frob-release::it rel003::invalid_fragments_report_the_validation_message
+        PASS [   0.022s] frob-release::it rel003::fragment_required_follows_the_pm_done_requires_table
+        PASS [   0.019s] frob-release::it rel003::not_applicable_only_when_unrequired_and_no_directory
+        PASS [   0.017s] frob-release::it release_workflow::crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke
+        PASS [   0.017s] frob-release::it release_workflow::every_job_has_a_timeout_and_the_failure_names_the_job
+        PASS [   0.017s] frob-release::it release_workflow::every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archive
+        PASS [   0.050s] frob-release::it rel002::mdtest_corpus
+        PASS [   0.019s] frob-release::it release_workflow::linux_wheels_build_in_digest_pinned_manylinux_2_28_images_and_others_natively
+        PASS [   0.020s] frob-release::it release_workflow::every_publishing_job_runs_only_on_a_tag_push_so_a_dispatch_publishes_nowhere
+        PASS [   0.013s] frob-release::it release_workflow::maturin_is_installed_only_from_a_hash_pinned_requirements_file
+        PASS [   0.023s] frob-release::it release_workflow::every_publishing_job_needs_smoke
+        PASS [   0.010s] frob-release::it release_workflow::pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_only_other_id_token
+        PASS [   0.020s] frob-release::it release_workflow::maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
+        PASS [   0.010s] frob-release::it release_workflow::release_notes_come_from_the_verb_output_not_generated_or_inline_text
+        PASS [   0.034s] frob-release::it release_workflow::every_job_that_compiles_rust_on_linux_installs_the_linker_first
+        PASS [   0.024s] frob-release::it release_workflow::macos_x86_64_is_cross_built_on_macos_latest_and_nothing_else_is_cross
+        PASS [   0.008s] frob-release::it release_workflow::retired_runner_and_manylinux_auto_never_appear
+        PASS [   0.014s] frob-release::it release_workflow::the_linker_check_rejects_a_linux_job_that_compiles_without_it
+        PASS [   0.008s] frob-release::it release_workflow::the_unhashed_install_checks_reject_a_stripped_pin
+        PASS [   0.028s] frob-release::it release_workflow::only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit
+        PASS [   0.008s] frob-release::it skeleton::an_invalid_text_writes_nothing
+        PASS [   0.022s] frob-release::it release_workflow::smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemption
+        PASS [   0.025s] frob-release::it release_workflow::the_matrix_is_exactly_the_five_wheel_targets
+        PASS [   0.016s] frob-release::it release_workflow::wheels_are_uploaded_as_artifacts_and_the_wheel_job_never_publishes
+        PASS [   0.009s] frob-release::it skeleton::refuses_when_one_exists_and_force_replaces_it
+        PASS [   0.020s] frob-release::it release_workflow::the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_pin
+        PASS [   0.018s] frob-release::it release_workflow::triggers_are_tag_only_and_every_action_is_sha_pinned
+        PASS [   0.284s] frob-release::it cut::without_release_products_one_tag_named_by_the_default_pattern_is_created
+        PASS [   0.013s] frob-release::it skeleton::a_configured_prefix_starts_the_skeleton_and_still_passes_the_check
+        PASS [   0.030s] frob-release::it release_workflow::rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs
+        PASS [   0.007s] frob-release::it skeleton::ticket_types_map_to_documented_fragment_types
+        PASS [   0.008s] frob-release::it skeleton::skeleton_text_adds_a_period_only_when_missing
+        PASS [   0.025s] frob-release::it release_workflow::the_pypi_job_checks_each_products_wheel_count_before_uploading_both
+        PASS [   0.007s] frob-release::it skeleton::writes_a_valid_fragment_from_the_title_that_passes_the_changelog_check
+        PASS [   0.125s] frob-release::it rel001::tags_made_by_release_cut_itself_are_silent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.479s] 149 tests run: 149 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release"
+size = 15988
+status = "measured"
+test_count = 149
+tests_digest = "00faf87726a4b208a3407ddeb3ad31662223d0ca08ed3bd6865937c574da4bb8"
+at = "2026-10-26T14:34:47Z"
+actor = "lognd"
+rev = 1
