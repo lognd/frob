@@ -38,9 +38,12 @@ fn a_stale_tokens_file_is_a_finding_that_lint_can_silence() {
         .filter(|f| f.rule.as_str() == "TOKENS001")
         .collect();
     assert_eq!(drift.len(), 1, "{:?}", report.findings);
-    assert_eq!(
-        drift[0].message,
-        "tokens file drifted; run `crunk tokens` to regenerate"
+    assert!(
+        drift[0]
+            .message
+            .starts_with("tokens file drifted; run `crunk tokens` to regenerate"),
+        "{}",
+        drift[0].message
     );
     let off = project(&spec().replace("[lint]", "[lint]\nTOKENS001 = \"off\""));
     let report = run(off.path(), &CheckOptions::default())

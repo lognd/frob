@@ -96,6 +96,18 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CrunkRun, CheckError> {
         ..gob_check::RunOptions::default()
     };
     let mut report = gob_check::run(&Crunk, root, &run_opts)?;
+    // frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+    // Ramp first so a release gate that raises a finding to error is not undone by the ramp.
+    gob_rules::ramp_product_findings(
+        root,
+        PRODUCT,
+        gob_rules::Registry::global(),
+        &gob_check::Product::rule_set(&Crunk)
+            .defs()
+            .collect::<Vec<_>>(),
+        &mut report.findings,
+        env!("CARGO_PKG_VERSION"),
+    );
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     crunk_rules::family::apply_gate(&mut report.findings, opts.gate);
     let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);

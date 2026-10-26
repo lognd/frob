@@ -589,6 +589,14 @@ severity for the rule is never ramped. `gob_rules::ramp` holds the window
 and `RuleSettings::effective_ramped` applies it; `frob release changelog`
 lists rules in their window under "Newly live rules" in the section.
 
+Each product applies the ramp to its findings through the shared
+`gob_rules::ramp_product_findings`, called at the end of `frob-check`,
+`grimble-check` and `crunk-check` runs. It reads `[rules] ramp` and the
+`[rules.<ID>]` severities from `<product>.toml` and appends the note to the
+finding message. In `crunk-check` the ramp runs before the release gate, so
+a gate that raises a rule to Error is not undone. `crunk.toml` does not yet
+accept a `[rules]` table, so crunk cannot turn the ramp off.
+
 ## 8. Crate layout for this layer
 
 ```

@@ -218,6 +218,10 @@ impl RuleOverrides {
             return Err(invalid("expected a table of `[rules.<id>]`".to_owned()));
         };
         for (id, entry) in rules {
+            if id == "ramp" {
+                // `[rules] ramp = bool` is the ramp-in switch (gob-rules), not a rule.
+                continue;
+            }
             let toml::Value::Table(entry) = entry else {
                 return Err(invalid(format!("`{id}` must be a table `[rules.{id}]`")));
             };

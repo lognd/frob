@@ -139,6 +139,17 @@ pub fn run_with_cone(
     if let Some(spec) = run_opts.trust_from.as_mut() {
         spec.packs = packs::live_packs(root);
     }
-    let report = gob_check::run(&product, root, &run_opts)?;
+    let mut report = gob_check::run(&product, root, &run_opts)?;
+    // frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+    gob_rules::ramp_product_findings(
+        root,
+        snapshot::PRODUCT,
+        gob_rules::Registry::global(),
+        &gob_check::Product::rule_set(&product)
+            .defs()
+            .collect::<Vec<_>>(),
+        &mut report.findings,
+        env!("CARGO_PKG_VERSION"),
+    );
     Ok((report, product.diff_paths(), product.cone_paths()))
 }

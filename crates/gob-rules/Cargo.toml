@@ -17,6 +17,7 @@ inventory = "0.3"
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
+toml = "1"
 tracing = "0.1"
 
 [dev-dependencies]

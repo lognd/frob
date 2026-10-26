@@ -144,7 +144,16 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         fail_on: opts.fail_on,
         ..gob_check::RunOptions::default()
     };
-    let report = gob_check::run(&product, root, &run_opts)?;
+    let mut report = gob_check::run(&product, root, &run_opts)?;
+    // frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+    gob_rules::ramp_product_findings(
+        root,
+        PRODUCT,
+        product::registry(),
+        &[],
+        &mut report.findings,
+        env!("CARGO_PKG_VERSION"),
+    );
     let trace = product
         .trace
         .into_inner()

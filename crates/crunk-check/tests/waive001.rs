@@ -79,7 +79,11 @@ fn a_waiver_without_a_reason_fires_waive001_and_does_not_suppress() {
         .iter()
         .find(|f| f.rule.as_str() == "WAIVE001")
         .expect("WAIVE001");
-    assert_eq!(w.message, "waiver for COLOR001 has no reason");
+    assert!(
+        w.message.starts_with("waiver for COLOR001 has no reason"),
+        "{}",
+        w.message
+    );
     assert_eq!(w.severity, Severity::Error);
 }
 

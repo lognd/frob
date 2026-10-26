@@ -135,3 +135,55 @@ fn fingerprint_ignores_numbers_and_whitespace_but_not_anchor() {
     assert_ne!(a.fingerprint, c.fingerprint);
     assert_eq!(a.fingerprint.to_hex().len(), 64);
 }
+
+fn demo_finding(id: &str, severity: Severity) -> gob_rules::Finding {
+    gob_rules::Finding::new(id.parse().unwrap(), severity, None, "msg", "anchor")
+}
+
+// frob:tests crates/gob-rules/src/ramp.rs::RuleSettings.ramp_findings
+#[test]
+fn ramp_findings_caps_new_error_rules_and_honours_settings() {
+    let since = |id: &str| Registry::global().by_id(id).map(|m| m.since);
+    // DEM001 is an Error rule that first shipped in 2.0.0.
+    let mut f = [
+        demo_finding("DEM001", Severity::Error),
+        demo_finding("DEM002", Severity::Warn),
+    ];
+    let on = gob_rules::RuleSettings::default();
+    assert_eq!(on.ramp_findings(&mut f, &since, "2.0.1"), 1);
+    assert_eq!(f[0].severity, Severity::Warn);
+    assert!(f[0].message.contains("2.1.0"), "{}", f[0].message);
+    assert_eq!(f[1].severity, Severity::Warn);
+    assert_eq!(f[1].message, "msg");
+
+    let mut out_of_window = [demo_finding("DEM001", Severity::Error)];
+    assert_eq!(on.ramp_findings(&mut out_of_window, &since, "2.1.0"), 0);
+    assert_eq!(out_of_window[0].severity, Severity::Error);
+
+    let off = gob_rules::RuleSettings::from_toml("[rules]\nramp = false\n").unwrap();
+    let mut f = [demo_finding("DEM001", Severity::Error)];
+    assert_eq!(off.ramp_findings(&mut f, &since, "2.0.1"), 0);
+    assert_eq!(f[0].severity, Severity::Error);
+
+    let pinned =
+        gob_rules::RuleSettings::from_toml("[rules.DEM001]\nseverity = \"error\"\n").unwrap();
+    let mut f = [demo_finding("DEM001", Severity::Error)];
+    assert_eq!(pinned.ramp_findings(&mut f, &since, "2.0.1"), 0);
+}
+
+// frob:tests crates/gob-rules/src/ramp.rs::RuleSettings.from_toml
+#[test]
+fn from_toml_reads_ramp_severity_and_disabled_and_rejects_a_bad_ramp() {
+    let s = gob_rules::RuleSettings::from_toml(
+        "[rules]\nramp = false\n[rules.A001]\nseverity = \"warn\"\n[rules.B001]\ndisabled = true\n",
+    )
+    .unwrap();
+    assert!(!s.ramp);
+    assert_eq!(s.severity["A001"], Severity::Warn);
+    assert!(s.disabled.contains("B001"));
+    assert_eq!(
+        gob_rules::RuleSettings::from_toml("name = 1\n").unwrap(),
+        gob_rules::RuleSettings::default()
+    );
+    assert!(gob_rules::RuleSettings::from_toml("[rules]\nramp = 3\n").is_err());
+}

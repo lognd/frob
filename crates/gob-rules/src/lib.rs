@@ -51,7 +51,7 @@ pub use meta::{
     Applicability, FixKind, Needs, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier,
 };
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
-pub use ramp::{Ramped, in_ramp, ramp, ramp_end};
+pub use ramp::{Ramped, in_ramp, ramp, ramp_end, ramp_product_findings};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError, RuleRow, RuleSettings};
 pub use required::{PackFailure, RequiredReason};
