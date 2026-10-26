@@ -2,7 +2,8 @@
 id = "01M4K8HPCVY5Q40KWRW70G51Q4"
 title = "gob-exec: Windows timeout kill uses taskkill /T, untested; replace with a job object or cover it with a windows-gated test"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "Claude"
