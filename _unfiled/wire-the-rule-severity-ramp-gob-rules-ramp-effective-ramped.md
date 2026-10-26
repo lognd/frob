@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T14:43:31Z"
-updated = "2026-10-26T17:10:35Z"
+updated = "2026-10-26T20:55:24Z"
 scope = ["crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**", "crates/gob-rules/**", "docs/**", "Cargo.lock"]
 
 [[acceptance]]
