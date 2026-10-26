@@ -29,6 +29,19 @@ pub enum LeaseError {
         /// The globs or files that collide, comma separated.
         overlap: String,
     },
+    /// A live lease is held by a different actor name than the caller's (for example after the git identity changed).
+    #[error(
+        "E-LEASE-ACTOR: ticket {ticket} is leased by actor `{}` but you are `{actor}` (identity mismatch, e.g. git user.name changed since the lease was taken); lease: {holder}",
+        holder.actor
+    )]
+    ActorMismatch {
+        /// The ticket whose lease was refused.
+        ticket: TicketId,
+        /// The recorded holder of the lease.
+        holder: Holder,
+        /// The caller's current actor name.
+        actor: String,
+    },
     /// An earlier waiter is queued for an overlapping scope; the caller must not jump the queue.
     #[error(
         "E-LEASE-QUEUED: ticket {waiter} ({holder}) has waited {age_secs}s for an overlapping scope; overlap: {overlap}"
@@ -124,6 +137,7 @@ impl LeaseError {
         use RefusalClass::{GuardNeedsAction, GuardRetryByWaiting, Timeout};
         let code = match self {
             Self::Held { .. } => ("E-LEASE-HELD", GuardRetryByWaiting),
+            Self::ActorMismatch { .. } => ("E-LEASE-ACTOR", GuardNeedsAction),
             Self::Queued { .. } => ("E-LEASE-QUEUED", GuardRetryByWaiting),
             Self::WipLimit { .. } => ("E-LEASE-WIP", GuardNeedsAction),
             Self::NotHeld { .. } => ("E-LEASE-NONE", GuardNeedsAction),

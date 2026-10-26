@@ -272,7 +272,7 @@ fn disjoint_scopes_coexist_and_release_frees() {
         .expect("b");
     assert!(matches!(
         store.release(a, Some("mallory")),
-        Err(LeaseError::Held { .. })
+        Err(LeaseError::ActorMismatch { .. })
     ));
     assert!(store.release(a, Some("a")).expect("release").is_some());
     assert!(store.release(a, Some("a")).expect("again").is_none());
@@ -1336,4 +1336,27 @@ fn agent_claim_touch_and_rekind() {
         store.rekind(TicketId::mint(), &holder("a"), None),
         Err(LeaseError::NotHeld { .. })
     ));
+}
+
+// frob:ticket 01M4M27EPRF0RAN4YBEA2J8C05
+#[test]
+fn release_after_identity_change_names_mismatch_and_steal_fixes_it() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let a = TicketId::mint();
+    store
+        .acquire(a, &holder("Claude"), &scope(&["crates/x/**"]))
+        .expect("acquire");
+    let err = store.release(a, Some("lognd")).expect_err("mismatch");
+    let text = err.to_string();
+    assert!(
+        text.contains("Claude") && text.contains("lognd") && text.contains("identity mismatch")
+    );
+    let refusal = err.to_refusal().expect("refusal");
+    assert_eq!(refusal.code, "E-LEASE-ACTOR");
+    // The fix verb: steal under the new identity, then release succeeds.
+    store
+        .steal(a, &holder("lognd"), "identity changed")
+        .expect("steal");
+    assert!(store.release(a, Some("lognd")).expect("release").is_some());
 }

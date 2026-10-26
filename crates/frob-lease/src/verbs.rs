@@ -38,6 +38,18 @@ impl From<LeaseError> for CliError {
                             .arg(ticket.to_string())
                             .flag("reason", "<why>"),
                     ),
+                    // frob:ticket 01M4M27EPRF0RAN4YBEA2J8C05
+                    LeaseError::ActorMismatch { ticket, holder, .. } => r
+                        .with_remedy(format!(
+                            "the lease was taken as `{}`; retake it under your current identity with the command below, then release it, or restore the old git user.name",
+                            holder.actor
+                        ))
+                        .with_command(
+                            RemedyCommand::new("frob", "work")
+                                .arg(ticket.to_string())
+                                .switch("steal")
+                                .flag("reason", "<why>"),
+                        ),
                     LeaseError::Queued { waiter, .. } => r.with_remedy(format!(
                         "ticket {waiter} is queued first for this scope; wait for it, or queue yourself with `--wait <secs>`"
                     )),

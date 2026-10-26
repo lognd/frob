@@ -994,11 +994,11 @@ impl LeaseStore {
     /// Release the lease on `ticket`; `None` when there was none.
     ///
     /// With `as_actor`, a live lease held by a different actor is refused
-    /// ([`LeaseError::Held`]); an expired one is removed regardless.
+    /// ([`LeaseError::ActorMismatch`], naming both identities); an expired one is removed regardless.
     ///
     /// # Errors
     ///
-    /// [`LeaseError::Held`], lock and I/O failures.
+    /// [`LeaseError::ActorMismatch`], lock and I/O failures.
     pub fn release(
         &self,
         ticket: TicketId,
@@ -1014,7 +1014,12 @@ impl LeaseStore {
             && lease.is_live(now)
             && lease.holder.actor != actor
         {
-            return Err(held_by(&lease, SAME_TICKET));
+            tracing::warn!(%ticket, holder = %lease.holder, actor, "release refused: actor mismatch");
+            return Err(LeaseError::ActorMismatch {
+                ticket,
+                holder: lease.holder.clone(),
+                actor: actor.to_owned(),
+            });
         }
         let path = self.lease_path(ticket);
         fs::remove_file(&path)
