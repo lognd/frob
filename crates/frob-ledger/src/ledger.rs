@@ -20,6 +20,71 @@ use crate::layout::{self, Layout};
 use crate::model::Ticket;
 use crate::redact::{RedactError, RuleSet};
 
+/// Event batches smaller than this are parsed on the calling thread; thread start-up would cost more.
+const PARALLEL_MIN_EVENTS: usize = 256;
+/// Upper bound on parser threads for a bulk event read.
+const MAX_PARSE_THREADS: usize = 8;
+
+/// Decode and parse one event file; `path` labels a UTF-8 failure.
+fn parse_event_file(eid: EventId, path: &str, bytes: Vec<u8>) -> Result<Event> {
+    let text =
+        String::from_utf8(bytes).map_err(|_| LedgerError::malformed(path, "not valid UTF-8"))?;
+    Event::parse(eid, &text)
+}
+
+// frob:ticket 01M4H6C8C673JAX10ZMJD1T9DP
+/// Parse `(id, path, bytes)` triples in order, spreading large batches over several threads.
+///
+/// Returns the events in input order; the first failure in input order wins, as in a serial loop.
+fn parse_events_batch(items: Vec<(EventId, String, Vec<u8>)>) -> Result<Vec<Event>> {
+    let workers = if items.len() < PARALLEL_MIN_EVENTS {
+        1
+    } else {
+        std::thread::available_parallelism()
+            .map_or(1, std::num::NonZero::get)
+            .min(MAX_PARSE_THREADS)
+    };
+    if workers <= 1 {
+        return items
+            .into_iter()
+            .map(|(eid, path, bytes)| parse_event_file(eid, &path, bytes))
+            .collect();
+    }
+    let chunk = items.len().div_ceil(workers);
+    let mut rest = items;
+    let mut parts = Vec::with_capacity(workers);
+    while !rest.is_empty() {
+        let tail = rest.split_off(chunk.min(rest.len()));
+        parts.push(std::mem::replace(&mut rest, tail));
+    }
+    let results: Vec<Result<Vec<Event>>> = std::thread::scope(|scope| {
+        let handles: Vec<_> = parts
+            .into_iter()
+            .map(|part| {
+                scope.spawn(move || {
+                    part.into_iter()
+                        .map(|(eid, path, bytes)| parse_event_file(eid, &path, bytes))
+                        .collect::<Result<Vec<Event>>>()
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .map(|h| h.join().unwrap_or_else(|p| std::panic::resume_unwind(p)))
+            .collect()
+    });
+    let mut out = Vec::new();
+    for part in results {
+        out.extend(part?);
+    }
+    tracing::debug!(
+        count = out.len(),
+        workers,
+        "events parsed in one parallel batch"
+    );
+    Ok(out)
+}
+
 const EMPTY_TREE: &str = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 pub(crate) const MAX_RECONCILE: u32 = 3;
 
@@ -649,15 +714,15 @@ impl Ledger {
         };
         let mut out: BTreeMap<TicketId, Vec<Event>> =
             ids.iter().map(|id| (*id, Vec::new())).collect();
-        // Blobs are read by id from the one walk, so no per-file path or revision lookup happens.
-        let mut files = 0_usize;
+        // Select the wanted event files from the one walk, then inflate them in one batch.
+        let mut picked: Vec<(TicketId, EventId, String, Oid)> = Vec::new();
         for (path, oid) in self.list_blobs(&spec)? {
             let Some((id, name)) = self.event_path_parts(&path) else {
                 continue;
             };
-            let Some(events) = out.get_mut(&id) else {
+            if !out.contains_key(&id) {
                 continue;
-            };
+            }
             let Some(stem) = name.strip_suffix(".toml") else {
                 continue;
             };
@@ -665,9 +730,21 @@ impl Ledger {
                 tracing::warn!(ticket = %id, file = %name, "ignoring non-ULID file in events/");
                 continue;
             };
-            let text = self.text_of(&path, &oid)?;
-            events.push(Event::parse(eid, &text)?);
-            files += 1;
+            picked.push((id, eid, path, oid));
+        }
+        let oids: Vec<Oid> = picked.iter().map(|(_, _, _, oid)| *oid).collect();
+        let files = picked.len();
+        let blobs = self.repo.read_blobs(&oids)?;
+        let owners: Vec<TicketId> = picked.iter().map(|(id, ..)| *id).collect();
+        let items = picked
+            .into_iter()
+            .zip(blobs)
+            .map(|((_, eid, path, _), bytes)| (eid, path, bytes))
+            .collect();
+        for (id, event) in owners.into_iter().zip(parse_events_batch(items)?) {
+            if let Some(events) = out.get_mut(&id) {
+                events.push(event);
+            }
         }
         for events in out.values_mut() {
             crate::event::sort_events(events);
@@ -1216,5 +1293,55 @@ impl Ledger {
             }
         }
         Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn items(n: usize) -> Vec<(EventId, String, Vec<u8>)> {
+        (0..n)
+            .map(|i| {
+                let text = format!(
+                    "kind = \"future-kind\"\nat = \"2026-10-02T14:03:11Z\"\nactor = \"a\"\nrev = {i}\n"
+                );
+                (EventId::mint(), format!("e{i}.toml"), text.into_bytes())
+            })
+            .collect()
+    }
+
+    // frob:tests parse_events_batch
+    #[test]
+    fn a_parallel_batch_keeps_input_order() {
+        let input = items(PARALLEL_MIN_EVENTS * 3 + 7);
+        let ids: Vec<EventId> = input.iter().map(|(id, ..)| *id).collect();
+        let got = parse_events_batch(input).expect("parse");
+        assert_eq!(got.iter().map(|e| e.id).collect::<Vec<_>>(), ids);
+    }
+
+    // frob:tests parse_events_batch
+    #[test]
+    fn the_first_failure_in_input_order_is_reported() {
+        let mut input = items(PARALLEL_MIN_EVENTS * 2);
+        input[10].2 = b"kind = \"x\"\n".to_vec();
+        input[PARALLEL_MIN_EVENTS + 5].2 = vec![0xff];
+        let err = parse_events_batch(input).expect_err("bad file");
+        assert!(err.to_string().contains("events/"), "{err}");
+    }
+
+    // frob:tests parse_events_batch
+    #[test]
+    fn a_small_batch_and_an_empty_batch_parse_serially() {
+        assert_eq!(parse_events_batch(items(3)).expect("parse").len(), 3);
+        assert!(parse_events_batch(Vec::new()).expect("parse").is_empty());
+    }
+
+    // frob:tests parse_events_batch
+    #[test]
+    fn invalid_utf8_names_the_path() {
+        let err = parse_events_batch(vec![(EventId::mint(), "bad.toml".to_owned(), vec![0xff])])
+            .expect_err("utf8");
+        assert!(err.to_string().contains("bad.toml"), "{err}");
     }
 }
