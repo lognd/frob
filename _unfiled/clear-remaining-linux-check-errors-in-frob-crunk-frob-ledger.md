@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-24T07:46:34Z"
-updated = "2026-10-26T04:11:39Z"
+updated = "2026-10-26T04:12:28Z"
 scope = ["crates/frob/**", "crates/crunk/**", "crates/frob-ledger/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "TICK001 drift on the two named tickets is cleared"
-bound = false
+bound = true
 +++
 
 Found while working ~DV06D9X; blocked by the lease on 7XXMDFH. Remaining: PATH001 in frob-ledger privacy.rs (50,133,138,146,148,150,152) and frob init.rs (592,593,595): build the home-root strings from parts as gob-fs does. TICK006 in frob tests ticket_path_refs.rs:69 and ticket_url.rs:62,76: reword the blob/frob-tickets URLs. PATH002 in crunk init/scaffold.rs:97 and tokens.rs:164: use gob_path::forward_slashes. PARSE001 in gob-symbols dockerfile.rs:315,324 (directives not on an item). TEST001 in gob-symbols tests/it/cicd.rs:117 (symref DockerfileAdapter names no symbol). Also TICK001 frontmatter drift on 01M3ZX86MA30ABW915Z943BQYB and 01M43KP0RXKB1DJA8KGJTV288R.
