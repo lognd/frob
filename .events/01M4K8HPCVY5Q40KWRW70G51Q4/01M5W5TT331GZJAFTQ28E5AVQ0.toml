@@ -1,0 +1,78 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-26T13:18:14Z"
+digest = "04a2ca51ab88588e84e51beefcda62db725a580d6221243c278913e2456d35c4"
+exit_code = 0
+head = "40c37ef9c87325e900e167b716d62a7480986250"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 53.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 611f6f86-ed3b-4e6c-a82a-44c5224ac39a with nextest profile: default
+    Starting 53 tests across 6 binaries
+        PASS [   0.009s] gob-exec env::tests::a_secret_shaped_name_on_the_allowlist_is_still_dropped
+        PASS [   0.009s] gob-exec env::tests::scrubbed_adds_the_baseline
+        PASS [   0.009s] gob-exec env::tests::secret_shapes_follow_the_security_design
+        PASS [   0.010s] gob-exec pack::tests::a_path_entry_inside_the_work_tree_is_refused
+        PASS [   0.009s] gob-exec pack::tests::a_changed_binary_fails_verification
+        PASS [   0.010s] gob-exec pack::tests::a_path_like_name_is_not_allowed
+        PASS [   0.012s] gob-exec pack::tests::a_swapped_binary_is_not_run
+        PASS [   0.012s] gob-exec prereq::tests::require_sh_agrees_with_sh_available
+        PASS [   0.012s] gob-exec env::tests::inherit_does_not_clear
+        PASS [   0.012s] gob-exec env::tests::scrub_keeps_only_allowlisted_names
+        PASS [   0.012s] gob-exec pack::tests::a_program_outside_the_work_tree_resolves_with_its_digest
+        PASS [   0.007s] gob-exec runner::tests::taskkill_exit_codes_are_classified
+        PASS [   0.008s] gob-exec proc001::tests::exit_code_and_exit_are_not_spawns
+        PASS [   0.007s] gob-exec proc001::tests::scan_fires_outside_spawner_crates
+        PASS [   0.008s] gob-exec runner::tests::taskkill_args_force_the_whole_tree
+        PASS [   0.008s] gob-exec proc001::tests::grouped_and_multiline_imports_match_spawn_names
+        PASS [   0.007s] gob-exec::cmdline known_lines_for_the_merge_driver
+        PASS [   0.016s] gob-exec proc001::tests::flags_code_and_skips_comments
+        PASS [   0.009s] gob-exec::discover beside_dirs_resolve_symlinks_to_the_real_directory_first
+        PASS [   0.010s] gob-exec::discover a_windows_uv_tool_copy_in_the_bin_dir_finds_the_tool_environment_scripts
+        PASS [   0.012s] gob-exec::discover a_directory_that_is_not_a_venv_or_lacks_the_tool_is_never_searched
+        PASS [   0.017s] gob-exec::cmdline arg_new_wraps_an_os_string_and_exposes_it
+        PASS [   0.015s] gob-exec::discover a_windows_scripts_dir_copy_beats_path_and_both_are_reported
+        PASS [   0.014s] gob-exec::discover find_sibling_refuses_path_like_names_and_reports_absence
+        PASS [   0.009s] gob-exec::discover path_dirs_are_searched_in_order_and_a_missing_beside_falls_back_to_path
+        PASS [   0.007s] gob-exec::discover windows_does_not_match_a_suffixless_file_and_unix_does_not_add_exe
+        PASS [   0.009s] gob-exec::discover windows_names_take_exe_ignoring_case_and_unix_names_are_bare
+        PASS [   0.013s] gob-exec::discover tool_roots_follow_the_installers_precedence_and_only_apply_on_windows
+        PASS [   0.007s] gob-exec::env secret_probe
+        PASS [   0.064s] gob-exec pack::tests::a_pack_runs_with_a_scrubbed_environment_and_closed_stdin
+        PASS [   0.025s] gob-exec::runner a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error
+        PASS [   0.048s] gob-exec::env a_secret_looking_parent_variable_never_reaches_a_scrubbed_child
+        PASS [   0.007s] gob-exec::runner missing_tool_is_not_found
+        PASS [   0.048s] gob-exec::runner a_secret_looking_stdout_payload_is_intact_while_the_transcript_stdout_and_stderr_are_redacted
+        PASS [   0.056s] gob-exec::env inherit_keeps_the_parent_environment
+        PASS [   0.060s] gob-exec::env an_explicit_addition_may_carry_a_secret_shaped_name
+        PASS [   0.008s] gob-exec::runner spawn_detached_refuses_a_tool_off_the_allowlist_and_a_missing_hook
+        PASS [   0.067s] gob-exec::env the_child_prints_only_allowlisted_and_added_variables
+        PASS [   0.051s] gob-exec::runner captured_output_is_redacted_and_env_added
+        PASS [   0.040s] gob-exec::runner output_under_the_cap_is_returned_whole
+        PASS [   0.046s] gob-exec::runner spawn_counter_counts_only_real_spawns
+        PASS [   0.005s] gob-exec::runner unlisted_program_is_not_allowed
+        PASS [   0.186s] gob-exec::cmdline cmd_round_trips
+        PASS [   0.204s] gob-exec::cmdline git_for_windows_sh_round_trips
+        PASS [   0.203s] gob-exec::cmdline powershell_round_trips
+        PASS [   0.211s] gob-exec::cmdline posix_round_trips
+        PASS [   0.234s] gob-exec::runner timeout_kills_group
+        PASS [   0.328s] gob-exec::runner spawn_detached_returns_at_once_and_the_child_finishes_on_its_own
+        PASS [   0.439s] gob-exec::runner concurrency_is_bounded_by_jobs
+        PASS [   0.433s] gob-exec::runner timeout_kills_setsid_grandchild_and_returns_promptly
+        PASS [   0.432s] gob-exec::runner timeout_leaves_no_grandchild
+        PASS [   1.035s] gob-exec::runner normal_exit_does_not_block_on_pipe_held_by_background_child
+        PASS [   1.224s] gob-exec::proc001_self workspace_has_no_forbidden_process_references
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.265s] 53 tests run: 53 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-exec"
+size = 5210
+status = "measured"
+test_count = 53
+tests_digest = "d9ef58d55acc2f2a0b48c5d9badbe07bde73f47e4cf4e6b7a6b2a8fd6c6ef3b2"
+at = "2026-10-26T13:18:14Z"
+actor = "lognd"
+rev = 1

@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T15:57:45Z"
-updated = "2026-10-26T13:12:22Z"
+updated = "2026-10-26T13:18:14Z"
 scope = ["crates/gob-exec/**"]
 
 [[acceptance]]
 text = "a Windows test proves a timed-out child's descendants are killed"
-bound = false
+bound = true
 +++
 
 found while coordinating: ~PYFAH0T landed unix process-tree kill; the Windows half is taskkill /PID /T /F because windows-sys is not a dependency; it is untested.
