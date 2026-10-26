@@ -2,12 +2,12 @@
 id = "01M4H6C8C673JAX10ZMJD1T9DP"
 title = "Bulk event reads cost 215 us per blob: ticket doctor 1.3 s and cycle velocity 1.06 s stay above 0.5 s"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T20:41:20Z"
-updated = "2026-10-09T20:41:20Z"
+updated = "2026-10-26T14:27:08Z"
 labels = ["area:pm"]
 scope = ["crates/gob-git/src/read.rs", "crates/frob-ledger/src/ledger.rs"]
 
