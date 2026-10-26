@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T15:57:45Z"
-updated = "2026-10-26T13:18:14Z"
+updated = "2026-10-26T13:23:19Z"
 scope = ["crates/gob-exec/**"]
 
 [[acceptance]]
