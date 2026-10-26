@@ -2,7 +2,8 @@
 id = "01M4M27EJ698NR069HHC939TGD"
 title = "TOOL001 compile errors from stale artifacts in a target dir shared by several worktrees (missing export of an item that exists in the source)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
