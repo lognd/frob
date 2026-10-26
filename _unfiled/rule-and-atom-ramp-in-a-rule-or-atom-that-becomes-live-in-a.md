@@ -2,12 +2,12 @@
 id = "01M4HDXVZNXTNANMHRGVGQ66DC"
 title = "Rule and atom ramp-in: a rule or atom that becomes live in a new release enters at Warn for one release (configurable), and each release and global refresh lists newly live rules and atoms"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T22:53:18Z"
-updated = "2026-10-09T22:53:18Z"
+updated = "2026-10-26T14:27:32Z"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-rules/**", "crates/frob-release/**", "changelog.d/**"]
 
