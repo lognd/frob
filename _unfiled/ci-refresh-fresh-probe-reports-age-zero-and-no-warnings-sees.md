@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-26T15:50:52Z"
-updated = "2026-10-26T16:13:55Z"
+updated = "2026-10-26T16:14:45Z"
 scope = ["crates/frob/tests/it/refresh.rs", "crates/frob/src/refresh_cmd.rs"]
 
 [[acceptance]]
 text = "The test passes deterministically on CI (fixture no longer diverges, or the divergence report is corrected) with root cause explained"
-bound = false
+bound = true
 +++
 
 Run on bd2db3cfa9 ubuntu nextest: refresh.rs:215 warnings len 1 vs 0; data.base_sync=diverged, W-SYNC-DIVERGED. Passes locally. Suspect the clone_with_origin fixture depends on default branch name or git config, or a race with the ledger branch.

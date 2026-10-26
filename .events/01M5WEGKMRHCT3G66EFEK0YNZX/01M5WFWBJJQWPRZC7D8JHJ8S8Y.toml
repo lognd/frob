@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-26T16:14:45Z"
+digest = "f3405f62db5c80860bb6a07829b75eb6ffa1cae93c16a15351475c7cca280dbd"
+exit_code = 0
+head = "97b83740a391d10f7e3c740fac0b57e4cfa31970"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5e3bc20a-b97d-445f-9ed1-18081e4afc76 with nextest profile: default
+    Starting 9 tests across 4 binaries (461 tests skipped)
+        PASS [   0.061s] frob-cli::it refresh::status_reports_age_and_ranked_stale_notices
+        PASS [   0.071s] frob-cli::it refresh::no_remote_is_local_only_without_warnings
+        PASS [   0.083s] frob-cli::it refresh::unreachable_remote_exits_three
+        PASS [   0.105s] frob-cli::it refresh::missing_base_exits_one_with_e_sync_no_base
+        PASS [   0.115s] frob-cli::it refresh::refresh_reports_an_ahead_base_without_failing
+        PASS [   0.122s] frob-cli::it refresh::fresh_probe_reports_age_zero_and_no_warnings
+        PASS [   0.134s] frob-cli::it refresh::refresh_probes_then_status_reads_the_cache
+        PASS [   0.135s] frob-cli::it refresh::background_returns_at_once_and_quiet_prints_nothing
+        PASS [   0.136s] frob-cli::it refresh::refresh_fast_forwards_a_behind_base
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.137s] 9 tests run: 9 passed, 461 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(refresh::)"
+size = 1273
+status = "measured"
+test_count = 9
+tests_digest = "480b86c41eff3428b7370ac0e99a74f247bfe51f4bf0b2bd8b398373c55f86ca"
+at = "2026-10-26T16:14:45Z"
+actor = "lognd"
+rev = 1
