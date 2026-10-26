@@ -1017,7 +1017,7 @@ impl LeaseStore {
             tracing::warn!(%ticket, holder = %lease.holder, actor, "release refused: actor mismatch");
             return Err(LeaseError::ActorMismatch {
                 ticket,
-                holder: lease.holder.clone(),
+                holder: Box::new(lease.holder.clone()),
                 actor: actor.to_owned(),
             });
         }

@@ -37,8 +37,8 @@ pub enum LeaseError {
     ActorMismatch {
         /// The ticket whose lease was refused.
         ticket: TicketId,
-        /// The recorded holder of the lease.
-        holder: Holder,
+        /// The recorded holder of the lease (boxed to keep `LeaseError` small for clippy).
+        holder: Box<Holder>,
         /// The caller's current actor name.
         actor: String,
     },
