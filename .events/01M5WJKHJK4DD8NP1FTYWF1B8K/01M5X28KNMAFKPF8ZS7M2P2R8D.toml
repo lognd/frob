@@ -1,0 +1,168 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-26T21:33:45Z"
+digest = "3dffa56177aae55a664ace1ac761f5c3e71beeb33595606ad57517fd9c1d4a89"
+exit_code = 0
+head = "37a9c7b6e4d61c97e83860325f287909932baecd"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a759852a-c318-4c02-a16d-91b4ed0e4b42 with nextest profile: default
+    Starting 144 tests across 22 binaries
+        PASS [   0.081s] crunk-check::color001 an_unusable_spec_refuses_the_run_instead_of_passing_it
+        PASS [   0.107s] crunk-check::color001 a_spec_only_project_gets_a_required_unresolved_from_color001
+        PASS [   0.114s] crunk-check::color001 a_jsx_style_prop_is_ingested_when_jsx_globs_are_set
+        PASS [   0.007s] crunk-check::crunk_web_pack a11y_rules_fire_with_teaching_text_on_a_violation
+        PASS [   0.006s] crunk-check::crunk_web_pack a_drifted_tree_is_refused
+        PASS [   0.006s] crunk-check::crunk_web_pack a_rule_without_examples_does_not_compile
+        PASS [   0.123s] crunk-check::color001 the_message_names_the_nearest_palette_token_and_the_distance
+        PASS [   0.124s] crunk-check::color001 a_rule_new_in_this_release_line_is_ramped_to_warn
+        PASS [   0.124s] crunk-check::color001 off_in_lint_silences_the_rule
+        PASS [   0.007s] crunk-check::crunk_web_pack catalog_is_empty_when_the_switch_is_off
+        PASS [   0.128s] crunk-check::color001 rules_ramp_false_leaves_a_new_rule_at_error
+        PASS [   0.129s] crunk-check::color001 a_failing_role_pair_is_reported_at_the_spec
+        PASS [   0.131s] crunk-check::color001 a_contrast_failure_only_in_the_cb_safe_mode_names_the_mode
+        PASS [   0.133s] crunk-check::craft010 a_project_that_deleted_its_motion_reports_the_missing_motion_policy
+        PASS [   0.017s] crunk-check::crunk_web_pack catalog_lists_the_pack_rules_when_on
+        PASS [   0.014s] crunk-check::crunk_web_pack every_a11y_rule_passes_its_examples
+        PASS [   0.011s] crunk-check::crunk_web_pack launch_rules_carry_teaching_text_and_a_remedy
+        PASS [   0.015s] crunk-check::crunk_web_pack every_seo_rule_passes_its_examples
+        PASS [   0.012s] crunk-check::crunk_web_pack the_lock_digest_matches_the_pack_tree
+        PASS [   0.018s] crunk-check::crunk_web_pack every_launch_rule_passes_its_examples
+        PASS [   0.014s] crunk-check::crunk_web_pack seo_rules_carry_teaching_text_and_a_remedy
+        PASS [   0.009s] crunk-check::crunk_web_pack webperf_assets_rules_are_not_applicable_without_an_adapter
+        PASS [   0.019s] crunk-check::crunk_web_pack webperf_assets_clean_and_firing_examples_pass
+        PASS [   0.013s] crunk-check::crunk_web_pack webperf_assets_rules_carry_teaching_text_and_a_remedy
+        PASS [   0.197s] crunk-check::color001 an_undefined_token_with_the_generated_sheet_present_fires_and_without_it_is_unresolved
+        PASS [   0.123s] crunk-check::craft010 motion_with_a_reduced_motion_twin_is_clean
+        PASS [   0.214s] crunk-check::color001 the_finding_is_located_at_the_literal_and_a_waiver_silences_it
+        PASS [   0.007s] crunk-check::has_config only_a_crunk_toml_marks_a_project
+        PASS [   0.113s] crunk-check::gx014 a_waiver_with_a_reason_silences_it
+        PASS [   0.129s] crunk-check::gx014 a_color_literal_asks_for_the_generated_token_constant
+        PASS [   0.009s] crunk-check::review an_ack_by_an_unlisted_person_or_a_rejection_without_a_note_is_refused
+        PASS [   0.007s] crunk-check::review git_signature_status_letters_map_to_good_or_unsigned
+        PASS [   0.057s] crunk-check::review git_signatures_find_the_commit_that_added_the_digest
+        PASS [   0.012s] crunk-check::review require_signed_judges_the_commit_that_introduced_the_ack
+        PASS [   0.215s] crunk-check::gx014 named_literal_arguments_fire_instead_of_going_unresolved
+        PASS [   0.221s] crunk-check::gx014 generated_token_files_and_non_generators_are_exempt
+        PASS [   0.127s] crunk-check::review a_token_the_screen_does_not_use_does_not_make_it_stale
+        PASS [   0.037s] crunk-check::rule_coverage every_crunk_rule_has_a_corpus
+        PASS [   0.319s] crunk-check::gx014 named_colors_hex_strings_and_font_sizes_are_literals
+        PASS [   0.311s] crunk-check::gx014 prefab_color_and_font_size_literals_are_audited
+        PASS [   0.125s] crunk-check::scene_docs a_non_utf8_nested_scene_is_a_finding_not_a_panic
+        PASS [   0.141s] crunk-check::review the_release_gate_raises_a_stale_review_to_an_error_that_fails_the_run
+        PASS [   0.008s] crunk-check::spec_errors malformed_toml_fails_the_load
+        PASS [   0.122s] crunk-check::scene_docs well_formed_scenes_raise_no_scene005
+        PASS [   0.106s] crunk-check::spec_errors a_repository_without_crunk_toml_still_runs
+        PASS [   0.097s] crunk-check::spec_errors an_unknown_key_in_a_known_table_fails_naming_table_and_key
+        PASS [   0.101s] crunk-check::spec_errors an_unknown_table_fails_the_load_naming_it
+        PASS [   0.344s] crunk-check::review a_changed_token_makes_human001_name_the_screen_and_token_until_acked_again
+        PASS [   0.439s] crunk-check::gx014 computed_color_methods_are_unresolved_and_clear_stays_clean
+        PASS [   0.096s] crunk-check::spec_errors v1_shaped_layers_content_fails_the_load
+        PASS [   0.124s] crunk-check::telemetry a_crunk_check_leaves_no_state_directory_in_the_worktree
+        PASS [   0.449s] crunk-check::gx014 token_constants_comments_and_strings_are_clean
+        PASS [   0.152s] crunk-check::stylelint a_stylelint_stage_yields_advisory_findings_under_crunk_ids
+        PASS [   0.018s] crunk-check::waive001 the_committed_registry_page_is_fresh
+        PASS [   0.006s] crunk-spec component_file::tests::minimal_component_needs_only_a_name
+        PASS [   0.118s] crunk-check::tokens001 utilities_are_judged_over_the_collected_tailwind_facts
+        PASS [   0.006s] crunk-spec component_file::tests::parses_a_full_component
+        PASS [   0.006s] crunk-spec component_file::tests::rejects_bad_toml_missing_name_and_unknown_keys
+        PASS [   0.120s] crunk-check::waive001 a_leading_waiver_suppresses_the_next_declaration
+        PASS [   0.007s] crunk-spec component_file::tests::unicode_names_and_duplicates_load
+        PASS [   0.122s] crunk-check::waive001 a_waiver_with_a_reason_suppresses_its_rule_only
+        PASS [   0.007s] crunk-spec content_file::tests::parses_keys_with_locale_and_budget
+        PASS [   0.006s] crunk-spec content_file::tests::rejects_empty_duplicate_and_unknown
+        PASS [   0.006s] crunk-spec flow_file::tests::bad_flows_get_a_code_and_a_location
+        PASS [   0.007s] crunk-spec flow_file::tests::valid_flow_passes_including_cycles_and_the_skeleton
+        PASS [   0.006s] crunk-spec screen_file::tests::screen_file_parses_extended_fields
+        PASS [   0.006s] crunk-spec screen_file::tests::old_screen_tables_serialize_without_new_fields
+        PASS [   0.006s] crunk-spec screen_file::tests::screen_file_rejects_bad_states
+        PASS [   0.007s] crunk-spec tells::tests::bad_day_and_empty_source_are_rejected
+        PASS [   0.007s] crunk-spec tells::tests::bundled_slop060_parses_with_dates_and_sources
+        PASS [   0.007s] crunk-spec tells::tests::project_file_overrides_bundled
+        PASS [   0.006s] crunk-spec tells::tests::provenance_prints_date_and_source
+        PASS [   0.128s] crunk-check::waive001 a_waiver_without_a_reason_fires_waive001_and_does_not_suppress
+        PASS [   0.006s] crunk-spec::naming empty_color_prefix_drops_the_prefix_segment
+        PASS [   0.007s] crunk-spec::naming namespaces_default_and_collapse
+        PASS [   0.009s] crunk-spec::naming naming_scheme_edge_cases
+        PASS [   0.007s] crunk-spec::naming size_tokens_honor_the_configured_prefix
+        PASS [   0.007s] crunk-spec::naming stack_tokens_honor_the_prefix
+        PASS [   0.008s] crunk-spec::parity corpus_covers_every_section
+        PASS [   0.136s] crunk-check::waive001 findings_from_several_files_are_ordered_by_path_line_rule
+        PASS [   0.011s] crunk-spec::spec a_rules_table_loads_without_error
+        PASS [   0.014s] crunk-spec::schema schema_describes_every_table_and_rejects_unknown_keys
+        PASS [   0.008s] crunk-spec::spec bad_toml_syntax_is_malformed_with_a_line
+        PASS [   0.009s] crunk-spec::spec actions_round_trip_with_their_kind
+        PASS [   0.034s] crunk-spec::schema reference_page_has_a_section_per_table_and_a_row_per_key
+        PASS [   0.036s] crunk-spec::parity every_fixture_equals_the_python_spec_dump
+        PASS [   0.009s] crunk-spec::spec catalog_rows
+        PASS [   0.012s] crunk-spec::spec breakpoints_precedence
+        PASS [   0.261s] crunk-check::tokens001 a_stale_tokens_file_is_a_finding_that_lint_can_silence
+        PASS [   0.009s] crunk-spec::spec dangling_role_reference_is_invalid
+        PASS [   0.011s] crunk-spec::spec decisions_table_declares_known_decisions_with_reasons
+        PASS [   0.009s] crunk-spec::spec default_preset_declares_the_state_roles
+        PASS [   0.015s] crunk-spec::spec empty_palette_is_legal
+        PASS [   0.630s] crunk-check::gx014 non_literal_color_arguments_are_unresolved
+        PASS [   0.011s] crunk-spec::spec error_display_names_file_line_and_column
+        PASS [   0.011s] crunk-spec::spec empty_required_scale_is_rejected
+        PASS [   0.010s] crunk-spec::spec full_example_loads_every_field
+        PASS [   0.010s] crunk-spec::spec game_profiles_actions_and_subtitles_load_and_validate
+        PASS [   0.009s] crunk-spec::spec lint_absent_defaults
+        PASS [   0.008s] crunk-spec::spec lint_catalog_and_overrides
+        PASS [   0.009s] crunk-spec::spec layers_are_optional_ints
+        PASS [   0.009s] crunk-spec::spec jsx_and_tailwind_defaults_and_values
+        PASS [   0.013s] crunk-spec::spec game_table_loads_reports_missing_keys_and_rejects_unknown_or_duplicate_keys
+        PASS [   0.011s] crunk-spec::spec lint_errors_are_located
+        PASS [   0.007s] crunk-spec::spec missing_file_is_missing_with_exit_3
+        PASS [   0.008s] crunk-spec::spec missing_required_section_is_named
+        PASS [   0.009s] crunk-spec::spec load_spec_reads_the_file_at_root
+        PASS [   0.012s] crunk-spec::spec malformed_roles_name_the_role
+        PASS [   0.009s] crunk-spec::spec mono_preset_declares_the_state_roles_too
+        PASS [   0.010s] crunk-spec::spec org_values_and_defaults
+        PASS [   0.008s] crunk-spec::spec palette_value_must_be_a_string
+        PASS [   0.009s] crunk-spec::spec palette_modes_overlay_declared_names_and_reject_unknown_ones
+        PASS [   0.010s] crunk-spec::spec packs_table_defaults_off_and_switches_crunk_web
+        PASS [   0.009s] crunk-spec::spec paths_collapse_dot_segments_lexically
+        PASS [   0.009s] crunk-spec::spec path_base_law_project_file_keys_resolve_against_css_root_others_against_root
+        PASS [   0.009s] crunk-spec::spec preset_comments_state_the_path_base_rule
+        PASS [   0.013s] crunk-spec::spec platform_errors_are_named_and_located
+        PASS [   0.010s] crunk-spec::spec review_table_and_screen_review_fields_load_and_validate
+        PASS [   0.013s] crunk-spec::spec platform_numeric_params_are_range_checked
+        PASS [   0.008s] crunk-spec::spec roles_must_be_a_table
+        PASS [   0.014s] crunk-spec::spec role_pair_floor_defaults_and_extended_form
+        PASS [   0.009s] crunk-spec::spec screens_and_platforms_absent_default_empty
+        PASS [   0.010s] crunk-spec::spec rosters_and_duplicate_ids
+        PASS [   0.012s] crunk-spec::spec section_of_the_wrong_shape_is_invalid
+        PASS [   0.019s] crunk-spec::spec screens_resolve_tags_and_report_dangling_references
+        PASS [   0.015s] crunk-spec::spec sizes_and_radii_validate_only_when_declared
+        PASS [   0.010s] crunk-spec::spec tables_owned_by_other_crates_are_left_to_their_owners
+        PASS [   0.010s] crunk-spec::spec stacks_default_empty_match_case_insensitively_and_reject_strangers
+        PASS [   0.017s] crunk-spec::spec tokens_defaults_and_prefix_rules
+        PASS [   0.011s] crunk-spec::spec tokens_header_and_json_file
+        PASS [   0.008s] crunk-spec::spec unknown_key_in_a_section_names_key_line_and_suggestion
+        PASS [   0.008s] crunk-spec::spec typography_validation
+        PASS [   0.008s] crunk-spec::spec unknown_key_without_a_close_match_has_no_suggestion
+        PASS [   0.012s] crunk-spec::spec unknown_key_inside_every_fixed_table_is_rejected
+        PASS [   0.008s] crunk-spec::spec unknown_top_level_key_names_key_line_and_suggestion
+        PASS [   0.008s] crunk-spec::spec unparseable_palette_color_names_the_key
+        PASS [   0.009s] crunk-spec::spec web_and_command_platforms_resolve_defaults
+        PASS [   0.009s] crunk-spec::spec unsorted_scale_names_the_offender
+        PASS [   0.201s] crunk-check::warm_cache the_second_run_reuses_cached_ingest_and_reports_the_same_findings
+        PASS [   0.254s] crunk-check::waive001 lint_warn_changes_the_severity_and_off_drops_the_finding
+        PASS [   0.740s] crunk-check::gx014 prefab_non_literal_or_malformed_values_are_unresolved_not_findings
+        PASS [   0.190s] crunk-spec::inline ok_cases_parse_cleanly
+        PASS [   0.191s] crunk-spec::inline err_cases_report_errors
+        PASS [   1.524s] crunk-check::gx_corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.730s] 144 tests run: 144 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec -p crunk-check"
+size = 13409
+status = "measured"
+test_count = 144
+tests_digest = "98753d866c75302894f7432809d986fb3f664a8c6ae37d6815aa9a59f5ce2687"
+at = "2026-10-26T21:33:45Z"
+actor = "lognd"
+rev = 1
