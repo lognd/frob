@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T04:22:25Z"
-updated = "2026-10-26T04:22:25Z"
-scope = ["crates/grimble-capabilities/**"]
+updated = "2026-10-26T04:22:32Z"
+scope = ["crates/gob-plan/src/examples/cells.rs"]
 
 [[acceptance]]
 text = "a may ... at grant only grants cells inside its selector, with a test"
