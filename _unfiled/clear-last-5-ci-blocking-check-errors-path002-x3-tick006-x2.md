@@ -2,12 +2,12 @@
 id = "01M5V7YGQV7T97D8H8WASZTGHT"
 title = "Clear last 5 CI-blocking check errors (PATH002 x3, TICK006 x2)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T04:36:54Z"
-updated = "2026-10-26T04:36:54Z"
+updated = "2026-10-26T04:36:56Z"
 scope = ["crates/crunk-ingest/tests/**", "crates/crunk-tailwind/src/runtime/**", "crates/frob-check/tests/it/**", "crates/frob-check/src/**", "docs/**"]
 
 [[acceptance]]
