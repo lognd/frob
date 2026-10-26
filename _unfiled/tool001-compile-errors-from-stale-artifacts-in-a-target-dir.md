@@ -2,12 +2,12 @@
 id = "01M4M27EJ698NR069HHC939TGD"
 title = "TOOL001 compile errors from stale artifacts in a target dir shared by several worktrees (missing export of an item that exists in the source)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T23:26:32Z"
-updated = "2026-10-10T23:26:32Z"
+updated = "2026-10-26T12:51:49Z"
 scope = ["crates/gob-check/src/tools.rs"]
 
 [[acceptance]]
