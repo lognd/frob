@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-26T04:45:10Z"
+digest = "61a0c470893b983ea3f7cd10955423560e9a8482585d03f19c0c27b57f536137"
+exit_code = 0
+head = "f158d475938147ef8b063c8293ea78634e06a0be"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bab2ca40-c851-4a35-9202-3d853629e91c with nextest profile: default
+    Starting 1 test across 4 binaries (469 tests skipped)
+        PASS [   0.324s] frob-cli::it ticket_path_refs::a_ticket_branch_url_and_a_bare_ticket_path_fire_and_fix_rewrites_both_to_the_ulid
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.325s] 1 test run: 1 passed, 469 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(/a_ticket_branch_url_and_a_bare_ticket_path_fire/)'"
+size = 605
+status = "measured"
+test_count = 1
+tests_digest = "eb1df69572e3ee59dc16c147204e27a033b691a0642bba83bc353176de6a3402"
+at = "2026-10-26T04:45:10Z"
+actor = "lognd"
+rev = 1
