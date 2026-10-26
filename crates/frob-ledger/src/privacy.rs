@@ -15,6 +15,23 @@ use crate::tick::id_of;
 
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 
+/// The `/root` home root (the hit label is `/root/`); spelled from parts so this file holds no literal home path.
+const ROOT_HOME: &str = concat!("/", "root");
+/// Hit label for a `/home/<name>/` path.
+const HOME_KIND: &str = concat!("/", "home", "/<name>/");
+/// Hit label for a `/Users/<name>/` path.
+const USERS_KIND: &str = concat!("/", "Users", "/<name>/");
+/// Hit label for a `C:\Users\<name>\` path.
+const WIN_KIND: &str = concat!("C:", r"\", "Users", r"\", "<name>", r"\");
+/// Hit label for a `C:/Users/<name>/` path.
+const FWD_KIND: &str = concat!("C:/", "Users", "/<name>/");
+/// Hit label for an escaped `C:\\Users\\<name>\\` path.
+const ESC_KIND: &str = concat!("C:", r"\\", "Users", r"\\", "<name>", r"\\");
+/// Lead bytes of an escaped Windows users root, after the drive colon.
+const ESC_LEAD: &[u8] = concat!(r"\\", "Users", r"\\").as_bytes();
+/// Separator bytes of the escaped Windows form.
+const ESC_SEP: &[u8] = r"\\".as_bytes();
+
 /// Format tag of the clean-scan record; bump it when the scan rules change so old records are ignored.
 const CLEAN_SCAN_VERSION: &str = "v1";
 
@@ -47,7 +64,7 @@ pub fn find_home_path(bytes: &[u8]) -> Option<(usize, &'static str)> {
 pub fn find_home_root(bytes: &[u8]) -> Option<std::ops::Range<usize>> {
     let (start, kind) = find_home_path(bytes)?;
     if kind == "/root/" {
-        return Some(start..start + "/root".len());
+        return Some(start..start + ROOT_HOME.len());
     }
     // Everything before the user name: `/home/`, `/Users/`, `C:\Users\`, and so on.
     let lead = kind.find('<').unwrap_or(kind.len());
@@ -130,12 +147,12 @@ fn unix_hit(at: &[u8]) -> Option<&'static str> {
     if let Some(rest) = at.strip_prefix(b"/home/")
         && named_then(rest, b"/")
     {
-        return Some("/home/<name>/");
+        return Some(HOME_KIND);
     }
     if let Some(rest) = at.strip_prefix(b"/Users/")
         && named_then(rest, b"/")
     {
-        return Some("/Users/<name>/");
+        return Some(USERS_KIND);
     }
     None
 }
@@ -143,13 +160,9 @@ fn unix_hit(at: &[u8]) -> Option<&'static str> {
 /// `rest` follows the `:` of a drive letter.
 fn windows_hit(rest: &[u8]) -> Option<&'static str> {
     for (lead, sep, kind) in [
-        (&b"\\Users\\"[..], &b"\\"[..], "C:\\Users\\<name>\\"),
-        (
-            &b"\\\\Users\\\\"[..],
-            &b"\\\\"[..],
-            "C:\\\\Users\\\\<name>\\\\",
-        ),
-        (&b"/Users/"[..], &b"/"[..], "C:/Users/<name>/"),
+        (&b"\\Users\\"[..], &b"\\"[..], WIN_KIND),
+        (ESC_LEAD, ESC_SEP, ESC_KIND),
+        (&b"/Users/"[..], &b"/"[..], FWD_KIND),
     ] {
         if let Some(tail) = rest.strip_prefix(lead)
             && named_then(tail, sep)

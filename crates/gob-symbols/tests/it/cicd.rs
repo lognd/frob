@@ -114,7 +114,7 @@ FROM rust@sha256:abcdef AS pinned\nFROM debian:latest AS rt\n\
 COPY --from=build /out /out\nCOPY --from=0 /a /a\nCOPY --from=ghcr.io/x/y:2 /b /b\n\
 FROM rt AS final\nFROM scratch\n";
 
-// frob:tests crates/gob-symbols/src/dockerfile.rs::DockerfileAdapter
+// frob:tests crates/gob-symbols/src/docker_image.rs::DockerfileAdapter
 #[test]
 fn dockerfile_stages_from_and_copy_edges() {
     let g = graph_of("Dockerfile", DOCKERFILE);

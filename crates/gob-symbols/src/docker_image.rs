@@ -312,7 +312,7 @@ fn refs_of(path: &str, insts: &[Instruction], stages: &[Stage]) -> Vec<RefSite> 
 mod tests {
     use super::*;
 
-    // frob:tests is_dockerfile_path
+    // frob:tests crates/gob-symbols/src/docker_image.rs::is_dockerfile_path
     #[test]
     fn recognises_dockerfile_paths() {
         assert!(is_dockerfile_path("Dockerfile"));
@@ -321,7 +321,7 @@ mod tests {
         assert!(!is_dockerfile_path("docker-compose.yml"));
     }
 
-    // frob:tests instructions
+    // frob:tests crates/gob-symbols/src/docker_image.rs::instructions
     #[test]
     fn joins_continuations() {
         let i = instructions("FROM a AS b\nRUN x \\\n  && y\n# c\nCOPY . .\n");

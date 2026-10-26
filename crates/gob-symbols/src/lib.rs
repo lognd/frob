@@ -72,7 +72,7 @@ mod opaque;
 mod paths;
 // frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
 mod actions;
-mod dockerfile;
+mod docker_image;
 mod pin;
 mod pipeline;
 mod python;
@@ -104,7 +104,7 @@ pub use csharp::{
 };
 pub use css::{CssAdapter, is_css_path};
 pub use def_use::{PYTHON_SYNTAX, RUST_SYNTAX, TYPESCRIPT_SYNTAX, def_use_of, syntax_for};
-pub use dockerfile::{DockerfileAdapter, is_dockerfile_path};
+pub use docker_image::{DockerfileAdapter, is_dockerfile_path};
 pub use docstatus::{DocHeader, DocStatus, StatusProblem, is_generated, parse_header};
 pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,

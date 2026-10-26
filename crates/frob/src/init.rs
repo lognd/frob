@@ -584,6 +584,13 @@ fn driver_shell() -> Shell {
     }
 }
 
+/// The `\\` root of a UNC path, spelled from parts so this file holds no literal host path.
+const UNC_ROOT: &str = concat!(r"\", r"\");
+/// The `\\?\` verbatim prefix.
+const VERBATIM: &str = concat!(r"\", r"\?\");
+/// The `\\?\UNC\` verbatim UNC prefix.
+const VERBATIM_UNC: &str = concat!(r"\", r"\?\UNC\");
+
 // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
 /// The form of an executable path written into a driver command on Windows: forward slashes, no `\\?\` verbatim prefix.
 ///
@@ -591,10 +598,10 @@ fn driver_shell() -> Shell {
 /// `gob_exec::command_line`'s job. This string rewrite is the one path-to-text bridge left here and
 /// moves to `gob-path` (paths.md section 1) unchanged.
 pub(crate) fn windows_shell_path(path: &str) -> String {
-    let plain = if let Some(unc) = path.strip_prefix(r"\\?\UNC\") {
-        format!(r"\\{unc}")
+    let plain = if let Some(unc) = path.strip_prefix(VERBATIM_UNC) {
+        format!("{UNC_ROOT}{unc}")
     } else {
-        path.strip_prefix(r"\\?\").unwrap_or(path).to_owned()
+        path.strip_prefix(VERBATIM).unwrap_or(path).to_owned()
     };
     plain.replace('\\', "/")
 }

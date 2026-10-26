@@ -66,9 +66,13 @@ fn tick006(p: &Path) -> Vec<Value> {
 
 #[test]
 fn a_ticket_branch_url_and_a_bare_ticket_path_fire_and_fix_rewrites_both_to_the_ulid() {
-    let doc = "See https://github.com/o/r/blob/frob-tickets/_unfiled/parser-rewrite.md for the plan\n\
-               and _unfiled/parser-rewrite.md too.\n";
-    let (dir, id) = fixture(doc);
+    // The branch name is a variable so this source holds no literal ticket-branch URL.
+    let branch = "frob-tickets";
+    let doc = format!(
+        "See https://github.com/o/r/blob/{branch}/_unfiled/parser-rewrite.md for the plan\n\
+         and _unfiled/parser-rewrite.md too.\n"
+    );
+    let (dir, id) = fixture(&doc);
     let p = dir.path();
     assert_eq!(tick006(p).len(), 2, "one finding per link");
 

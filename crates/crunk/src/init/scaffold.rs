@@ -93,12 +93,7 @@ pub fn scaffold(root: &Path, preset: &str, force: bool) -> Result<InitData, Init
 
     let mut written: Vec<String> = written
         .iter()
-        .map(|p| {
-            p.strip_prefix(root)
-                .unwrap_or(p)
-                .to_string_lossy()
-                .replace('\\', "/")
-        })
+        .map(|p| gob_path::forward_slashes(p.strip_prefix(root).unwrap_or(p)))
         .collect();
     written.sort();
     written.dedup();

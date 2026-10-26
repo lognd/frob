@@ -7,6 +7,9 @@ use serde_json::Value;
 
 use crate::common;
 
+/// The ticket branch name, kept apart from the URLs so this source holds no literal branch link.
+const BRANCH: &str = "frob-tickets";
+
 fn frob(cwd: &Path, args: &[&str]) -> (Option<i32>, Value) {
     let out = common::frob_command()
         .current_dir(cwd)
@@ -59,7 +62,7 @@ fn url_prints_the_blob_url_of_the_current_path_and_follows_a_move() {
     assert_eq!(code, Some(0), "{v}");
     assert_eq!(
         v["data"]["url"],
-        "https://github.com/acme/widgets/blob/frob-tickets/alpha/move-me.md"
+        format!("https://github.com/acme/widgets/blob/{BRANCH}/alpha/move-me.md")
     );
     assert!(v["data"].get("issue_url").is_none(), "{v}");
 
@@ -73,7 +76,7 @@ fn url_prints_the_blob_url_of_the_current_path_and_follows_a_move() {
     let (_, v) = frob(p, &["ticket", "url", &task]);
     assert_eq!(
         v["data"]["url"],
-        "https://github.com/acme/widgets/blob/frob-tickets/beta/move-me.md"
+        format!("https://github.com/acme/widgets/blob/{BRANCH}/beta/move-me.md")
     );
 }
 

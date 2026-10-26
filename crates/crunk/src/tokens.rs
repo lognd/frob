@@ -161,10 +161,7 @@ fn export_error(err: ExportError) -> CliError {
 }
 
 fn relative(root: &Path, path: &Path) -> String {
-    path.strip_prefix(root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
+    gob_path::forward_slashes(path.strip_prefix(root).unwrap_or(path))
 }
 
 fn collision_rows(found: &[crunk_tokens::ThemeCollision]) -> Vec<CollisionRow> {

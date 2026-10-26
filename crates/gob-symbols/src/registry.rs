@@ -16,7 +16,7 @@ use crate::actions::{ActionsAdapter, is_workflow_path};
 use crate::adapter::{Adapter, Capability, Fidelity, Precision};
 use crate::csharp::CSharpAdapter;
 use crate::css::{CssAdapter, EXTENSIONS as CSS_EXTENSIONS};
-use crate::dockerfile::{DockerfileAdapter, is_dockerfile_path};
+use crate::docker_image::{DockerfileAdapter, is_dockerfile_path};
 use crate::html::{EXTENSIONS as HTML_EXTENSIONS, HtmlAdapter};
 use crate::markdown::MarkdownAdapter;
 use crate::opaque::OpaqueAdapter;
