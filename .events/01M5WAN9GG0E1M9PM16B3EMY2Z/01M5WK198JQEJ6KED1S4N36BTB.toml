@@ -1,0 +1,144 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-26T17:09:08Z"
+digest = "774c08d8797aff3eddbbde9ff8648f7f45d0ebc1d4af229e423819c4d3accb94"
+exit_code = 100
+failed_tests = ["a_waiver_without_a_reason_fires_waive001_and_does_not_suppress"]
+head = "1b360e87fc555cc24ad836c4a922f7d142708deb"
+inline = '''
+   Compiling serde v1.0.229
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling schemars v1.2.2
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling tracing-serde v0.2.0
+   Compiling postcard v1.1.3
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 41.90s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d141b503-d25b-4fd0-b1a3-326f1dff1afc with nextest profile: default
+    Starting 64 tests across 16 binaries
+        PASS [   0.091s] crunk-check::color001 an_unusable_spec_refuses_the_run_instead_of_passing_it
+        PASS [   0.013s] crunk-check::crunk_web_pack a11y_rules_fire_with_teaching_text_on_a_violation
+        PASS [   0.010s] crunk-check::crunk_web_pack a_drifted_tree_is_refused
+        PASS [   0.008s] crunk-check::crunk_web_pack a_rule_without_examples_does_not_compile
+        PASS [   0.008s] crunk-check::crunk_web_pack catalog_is_empty_when_the_switch_is_off
+        PASS [   0.010s] crunk-check::crunk_web_pack catalog_lists_the_pack_rules_when_on
+        PASS [   0.009s] crunk-check::crunk_web_pack every_a11y_rule_passes_its_examples
+        PASS [   0.010s] crunk-check::crunk_web_pack every_launch_rule_passes_its_examples
+        PASS [   0.009s] crunk-check::crunk_web_pack every_seo_rule_passes_its_examples
+        PASS [   0.170s] crunk-check::color001 a_spec_only_project_gets_a_required_unresolved_from_color001
+        PASS [   0.009s] crunk-check::crunk_web_pack launch_rules_carry_teaching_text_and_a_remedy
+        PASS [   0.008s] crunk-check::crunk_web_pack seo_rules_carry_teaching_text_and_a_remedy
+        PASS [   0.008s] crunk-check::crunk_web_pack the_lock_digest_matches_the_pack_tree
+        PASS [   0.011s] crunk-check::crunk_web_pack webperf_assets_clean_and_firing_examples_pass
+        PASS [   0.006s] crunk-check::crunk_web_pack webperf_assets_rules_are_not_applicable_without_an_adapter
+        PASS [   0.195s] crunk-check::color001 a_jsx_style_prop_is_ingested_when_jsx_globs_are_set
+        PASS [   0.196s] crunk-check::craft010 a_project_that_deleted_its_motion_reports_the_missing_motion_policy
+        PASS [   0.197s] crunk-check::color001 a_failing_role_pair_is_reported_at_the_spec
+        PASS [   0.198s] crunk-check::color001 a_contrast_failure_only_in_the_cb_safe_mode_names_the_mode
+        PASS [   0.199s] crunk-check::color001 the_message_names_the_nearest_palette_token_and_the_distance
+        PASS [   0.199s] crunk-check::craft010 motion_with_a_reduced_motion_twin_is_clean
+        PASS [   0.200s] crunk-check::color001 a_rule_new_in_this_release_line_is_ramped_to_warn
+        PASS [   0.013s] crunk-check::crunk_web_pack webperf_assets_rules_carry_teaching_text_and_a_remedy
+        PASS [   0.209s] crunk-check::color001 off_in_lint_silences_the_rule
+        PASS [   0.259s] crunk-check::color001 an_undefined_token_with_the_generated_sheet_present_fires_and_without_it_is_unresolved
+        PASS [   0.138s] crunk-check::gx014 a_color_literal_asks_for_the_generated_token_constant
+        PASS [   0.333s] crunk-check::color001 the_finding_is_located_at_the_literal_and_a_waiver_silences_it
+        PASS [   0.140s] crunk-check::gx014 a_waiver_with_a_reason_silences_it
+        PASS [   0.007s] crunk-check::has_config only_a_crunk_toml_marks_a_project
+        PASS [   0.011s] crunk-check::review an_ack_by_an_unlisted_person_or_a_rejection_without_a_note_is_refused
+        PASS [   0.006s] crunk-check::review git_signature_status_letters_map_to_good_or_unsigned
+        PASS [   0.087s] crunk-check::review git_signatures_find_the_commit_that_added_the_digest
+        PASS [   0.010s] crunk-check::review require_signed_judges_the_commit_that_introduced_the_ack
+        PASS [   0.260s] crunk-check::gx014 named_literal_arguments_fire_instead_of_going_unresolved
+        PASS [   0.270s] crunk-check::gx014 generated_token_files_and_non_generators_are_exempt
+        PASS [   0.143s] crunk-check::review a_token_the_screen_does_not_use_does_not_make_it_stale
+        PASS [   0.036s] crunk-check::rule_coverage every_crunk_rule_has_a_corpus
+        PASS [   0.368s] crunk-check::gx014 prefab_color_and_font_size_literals_are_audited
+        PASS [   0.389s] crunk-check::gx014 named_colors_hex_strings_and_font_sizes_are_literals
+        PASS [   0.137s] crunk-check::scene_docs a_non_utf8_nested_scene_is_a_finding_not_a_panic
+        PASS [   0.125s] crunk-check::scene_docs well_formed_scenes_raise_no_scene005
+        PASS [   0.010s] crunk-check::spec_errors malformed_toml_fails_the_load
+        PASS [   0.161s] crunk-check::review the_release_gate_raises_a_stale_review_to_an_error_that_fails_the_run
+        PASS [   0.131s] crunk-check::spec_errors a_repository_without_crunk_toml_still_runs
+        PASS [   0.093s] crunk-check::spec_errors an_unknown_key_in_a_known_table_fails_naming_table_and_key
+        PASS [   0.104s] crunk-check::spec_errors v1_shaped_layers_content_fails_the_load
+        PASS [   0.123s] crunk-check::spec_errors an_unknown_table_fails_the_load_naming_it
+        PASS [   0.515s] crunk-check::gx014 computed_color_methods_are_unresolved_and_clear_stays_clean
+        PASS [   0.506s] crunk-check::gx014 token_constants_comments_and_strings_are_clean
+        PASS [   0.393s] crunk-check::review a_changed_token_makes_human001_name_the_screen_and_token_until_acked_again
+        PASS [   0.117s] crunk-check::telemetry a_crunk_check_leaves_no_state_directory_in_the_worktree
+        PASS [   0.019s] crunk-check::waive001 the_committed_registry_page_is_fresh
+        PASS [   0.162s] crunk-check::stylelint a_stylelint_stage_yields_advisory_findings_under_crunk_ids
+        PASS [   0.164s] crunk-check::tokens001 utilities_are_judged_over_the_collected_tailwind_facts
+        PASS [   0.153s] crunk-check::waive001 a_waiver_with_a_reason_suppresses_its_rule_only
+        PASS [   0.161s] crunk-check::waive001 a_leading_waiver_suppresses_the_next_declaration
+        PASS [   0.162s] crunk-check::waive001 findings_from_several_files_are_ordered_by_path_line_rule
+        FAIL [   0.167s] crunk-check::waive001 a_waiver_without_a_reason_fires_waive001_and_does_not_suppress
+  output \u{2500}\u{2500}\u{2500}
+
+    running 1 test
+
+    thread 'a_waiver_without_a_reason_fires_waive001_and_does_not_suppress' (2257109) panicked at crates/crunk-check/tests/waive001.rs:87:5:
+    assertion `left == right` failed
+      left: Warn
+     right: Error
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+    test a_waiver_without_a_reason_fires_waive001_and_does_not_suppress ... FAILED
+
+    failures:
+
+    failures:
+        a_waiver_without_a_reason_fires_waive001_and_does_not_suppress
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.16s
+
+
+        PASS [   0.156s] crunk-check::warm_cache the_second_run_reuses_cached_ingest_and_reports_the_same_findings
+        PASS [   0.285s] crunk-check::tokens001 a_stale_tokens_file_is_a_finding_that_lint_can_silence
+        PASS [   0.739s] crunk-check::gx014 non_literal_color_arguments_are_unresolved
+        PASS [   0.239s] crunk-check::waive001 lint_warn_changes_the_severity_and_off_drops_the_finding
+        PASS [   0.836s] crunk-check::gx014 prefab_non_literal_or_malformed_values_are_unresolved_not_findings
+        PASS [   1.650s] crunk-check::gx_corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.911s] 64 tests run: 63 passed, 1 failed, 0 skipped
+        FAIL [   0.167s] crunk-check::waive001 a_waiver_without_a_reason_fires_waive001_and_does_not_suppress
+error: test run failed
+'''
+passed = false
+provider = "nextest"
+ref = "-p crunk-check"
+size = 9531
+status = "measured"
+test_count = 64
+tests_digest = "13a0cba70266240548ac754d46f8b415e0b406ece8b1d46da0752e5889a9be32"
+at = "2026-10-26T17:09:08Z"
+actor = "lognd"
+rev = 1
