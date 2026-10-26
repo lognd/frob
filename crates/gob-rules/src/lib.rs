@@ -24,6 +24,7 @@ mod index;
 pub mod indexgen;
 mod meta;
 mod precision;
+mod ramp;
 mod reason;
 mod registry;
 mod required;
@@ -50,6 +51,7 @@ pub use meta::{
     Applicability, FixKind, Needs, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier,
 };
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
+pub use ramp::{Ramped, in_ramp, ramp, ramp_end};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError, RuleRow, RuleSettings};
 pub use required::{PackFailure, RequiredReason};

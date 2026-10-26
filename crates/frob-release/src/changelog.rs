@@ -56,6 +56,32 @@ pub fn split_adopted(text: &str) -> (&str, &str) {
     (text, "")
 }
 
+/// A rule that becomes live in the release being written, listed in its notes.
+// frob:ticket ~VGQ66DC
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LiveRule {
+    /// Rule id.
+    pub id: String,
+    /// Rule slug.
+    pub slug: String,
+    /// One-line summary.
+    pub summary: String,
+}
+
+/// The rules in `registry` first shipped in the ramp window of `version`, in id order: those that are new in this release and run at warn until the next.
+#[must_use]
+pub fn newly_live(registry: &gob_rules::Registry, version: &str) -> Vec<LiveRule> {
+    registry
+        .iter()
+        .filter(|m| gob_rules::in_ramp(m.since, version))
+        .map(|m| LiveRule {
+            id: m.id.to_owned(),
+            slug: m.slug.to_owned(),
+            summary: m.summary.to_owned(),
+        })
+        .collect()
+}
+
 /// Render the section for `version`: the lead notice first, then with several products grouped under product headings (configured products first), then by type, entries by ULID, closed by its hash.
 ///
 /// With one product there is no product heading and every fragment is listed.
@@ -64,6 +90,7 @@ pub fn render_section(
     date: &str,
     fragments: &[Fragment],
     products: &ProductTags,
+    live: &[LiveRule],
 ) -> String {
     let mut out = format!("## {version} - {date}\n\n");
     // The lead notice (at most one, enforced when fragments are read) sits above every group.
@@ -115,6 +142,13 @@ pub fn render_section(
             }
             out.push('\n');
         }
+    }
+    if !live.is_empty() {
+        let _ = write!(out, "#### Newly live rules\n\n");
+        for r in live {
+            let _ = writeln!(out, "- {} {}: {}", r.id, r.slug, r.summary);
+        }
+        out.push('\n');
     }
     let hash = digest(&out);
     let _ = writeln!(out, "{MARKER}{version} blake3:{hash} -->");

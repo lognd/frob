@@ -581,6 +581,14 @@ all its rules (HUMAN001 and HUMAN002 do: Advisory under the default
 `check` gate, Error under `release`). `gate_severity` and `apply_gate`
 use the rule's own value first and the family's as the fallback.
 
+Ramp-in is the last step. A rule whose `since` is the running release's
+minor line (`0.532.x` for `since = "0.532.0"`) and whose severity is Error
+reports as Warn, with a note naming the release where it becomes Error
+(`0.533.0`). `[rules] ramp = false` turns it off, and an explicit `[rules]`
+severity for the rule is never ramped. `gob_rules::ramp` holds the window
+and `RuleSettings::effective_ramped` applies it; `frob release changelog`
+lists rules in their window under "Newly live rules" in the section.
+
 ## 8. Crate layout for this layer
 
 ```
