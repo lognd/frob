@@ -391,3 +391,44 @@ fn spawn_detached_refuses_a_tool_off_the_allowlist_and_a_missing_hook() {
     assert!(matches!(missing, Err(ExecError::NotFound { .. })));
     assert_eq!(runner.spawn_count(), SpawnCount(0));
 }
+
+/// True when `tasklist` still lists `pid` (Windows only).
+#[cfg(windows)]
+fn windows_pid_alive(pid: &str) -> bool {
+    let out = std::process::Command::new("tasklist")
+        .args(["/FI", &format!("PID eq {pid}"), "/NH"])
+        .output()
+        .expect("tasklist runs");
+    String::from_utf8_lossy(&out.stdout)
+        .split_whitespace()
+        .any(|w| w == pid)
+}
+
+// frob:ticket 01M4K8HPCVY5Q40KWRW70G51Q4
+#[cfg(windows)]
+#[test]
+fn windows_timeout_kills_descendants() {
+    let runner = Runner::new(Limits { jobs: 1 });
+    // PowerShell starts a grandchild that sleeps 30 s, prints its pid, then waits itself.
+    let script = "$p = Start-Process ping -ArgumentList '-n','30','127.0.0.1' -PassThru \
+                  -WindowStyle Hidden; $p.Id; Start-Sleep 30";
+    let spec = Spec {
+        program: Program::Tool {
+            name: "powershell".into(),
+        },
+        args: vec!["-NoProfile".into(), "-Command".into(), script.into()],
+        cwd: None,
+        env: vec![],
+        timeout: Duration::from_secs(6),
+        capture: true,
+    };
+    let out = runner.run(&spec).unwrap();
+    assert_eq!(out.status, Outcome::TimedOut);
+    let pid = out.stdout.trim().lines().next().unwrap_or("").trim();
+    assert!(!pid.is_empty(), "grandchild pid should have been captured");
+    std::thread::sleep(Duration::from_millis(500));
+    assert!(
+        !windows_pid_alive(pid),
+        "descendant {pid} survived the timeout"
+    );
+}

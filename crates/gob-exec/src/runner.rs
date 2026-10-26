@@ -455,16 +455,92 @@ fn descendants(_root: i32) -> Vec<i32> {
 }
 
 /// Kill the child and its descendants with `taskkill /T` (Windows has no process groups).
+///
+/// A job object would be sturdier but needs `unsafe` FFI, which the workspace forbids; see
+/// [`taskkill`] for how the outcome is read.
+// frob:ticket 01M4K8HPCVY5Q40KWRW70G51Q4
 #[cfg(not(unix))]
 fn kill_group(child: &mut Child) {
-    let tree = Command::new("taskkill")
-        .args(["/PID", &child.id().to_string(), "/T", "/F"])
+    let pid = child.id();
+    let status = Command::new(taskkill::program())
+        .args(taskkill::args(pid))
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status();
-    if !tree.is_ok_and(|s| s.success()) {
-        warn!("taskkill failed; killing child only");
+    match status.as_ref().map(|s| taskkill::classify(s.code())) {
+        Ok(taskkill::Kill::Killed) => debug!(pid, "taskkill ended the process tree"),
+        Ok(taskkill::Kill::AlreadyGone) => debug!(pid, "taskkill: process already exited"),
+        Ok(taskkill::Kill::Failed(code)) => {
+            warn!(pid, ?code, "taskkill failed; killing child only");
+        }
+        Err(e) => warn!(pid, error = %e, "taskkill could not run; killing child only"),
     }
+    // Harmless when taskkill already reaped it; covers the case where it did not run.
     let _ = child.kill();
+}
+
+/// Pure pieces of the Windows tree kill, compiled on every host so they are unit-tested on Linux.
+#[cfg(any(not(unix), test))]
+mod taskkill {
+    #[cfg(not(unix))]
+    use std::ffi::OsString;
+
+    /// What a `taskkill` exit code means for the kill.
+    #[derive(Debug, PartialEq, Eq)]
+    pub(super) enum Kill {
+        /// The tree was terminated.
+        Killed,
+        /// The process no longer existed (exit code 128), which is fine for a kill.
+        AlreadyGone,
+        /// Any other failure, with the exit code when there was one.
+        Failed(Option<i32>),
+    }
+
+    /// Arguments that kill `pid` and every descendant, forcibly.
+    pub(super) fn args(pid: u32) -> Vec<String> {
+        vec!["/PID".into(), pid.to_string(), "/T".into(), "/F".into()]
+    }
+
+    /// Interpret a `taskkill` exit code (`None` when it was killed by a signal-like event).
+    pub(super) fn classify(code: Option<i32>) -> Kill {
+        match code {
+            Some(0) => Kill::Killed,
+            Some(128) => Kill::AlreadyGone,
+            other => Kill::Failed(other),
+        }
+    }
+
+    /// The `taskkill` to run: the System32 copy when `SystemRoot` is known, so a `PATH` entry
+    /// cannot substitute another program, else the bare name.
+    #[cfg(not(unix))]
+    pub(super) fn program() -> OsString {
+        match std::env::var_os("SystemRoot") {
+            Some(root) => {
+                let mut p = std::path::PathBuf::from(root);
+                p.push("System32");
+                p.push("taskkill.exe");
+                p.into_os_string()
+            }
+            None => OsString::from("taskkill"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::taskkill::{Kill, args, classify};
+
+    #[test]
+    fn taskkill_args_force_the_whole_tree() {
+        assert_eq!(args(4242), ["/PID", "4242", "/T", "/F"]);
+    }
+
+    #[test]
+    fn taskkill_exit_codes_are_classified() {
+        assert_eq!(classify(Some(0)), Kill::Killed);
+        assert_eq!(classify(Some(128)), Kill::AlreadyGone);
+        assert_eq!(classify(Some(1)), Kill::Failed(Some(1)));
+        assert_eq!(classify(None), Kill::Failed(None));
+    }
 }
