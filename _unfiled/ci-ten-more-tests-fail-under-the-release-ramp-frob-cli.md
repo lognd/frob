@@ -2,7 +2,8 @@
 id = "01M5X65SGY3D8E9FKHZAG0CHE0"
 title = "CI: ten more tests fail under the release ramp (frob-cli milestone/redact/release_cut, frob-land, grimble summary/verbs/ack)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
