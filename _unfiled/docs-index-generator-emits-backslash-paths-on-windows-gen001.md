@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-26T12:33:54Z"
-updated = "2026-10-26T12:43:53Z"
+updated = "2026-10-26T12:46:58Z"
 scope = ["crates/gob-dev/src/render/**", "crates/gob-dev/tests/**", "docs/**"]
 
 [[acceptance]]
