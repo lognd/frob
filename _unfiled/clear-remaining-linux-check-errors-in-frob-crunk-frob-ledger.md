@@ -2,12 +2,12 @@
 id = "01M5PE0CWQSF8EX5Z48Q47G9ZW"
 title = "Clear remaining Linux check errors in frob, crunk, frob-ledger and gob-symbols"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-24T07:46:34Z"
-updated = "2026-10-26T03:45:17Z"
+updated = "2026-10-26T03:46:01Z"
 scope = ["crates/frob/**", "crates/crunk/**", "crates/frob-ledger/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
