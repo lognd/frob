@@ -2,7 +2,8 @@
 id = "01M5WC3A43GMH7PY1BQW0EH8KJ"
 title = "Windows: frob-worktree claim_evict an_idle_claim_is_evicted_with_the_rate_reported_and_a_repeat_needs_yes asserts rate_left 4 vs 3"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
