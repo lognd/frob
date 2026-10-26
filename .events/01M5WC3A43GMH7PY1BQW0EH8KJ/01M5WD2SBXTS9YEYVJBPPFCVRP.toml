@@ -1,0 +1,149 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-26T15:25:44Z"
+digest = "c1fe7ad46ed00b2319a75f3209a281a9eb83028c9836f51a336ff0a1e9aeac49"
+exit_code = 0
+head = "b7dd517c10ae444530fcc2ca32bb2c429c005483"
+inline = '''
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fe3de8ae-3dca-45c7-8576-b78c47df5909 with nextest profile: default
+    Starting 124 tests across 10 binaries
+        PASS [   0.019s] frob-worktree activity::tests::unchanged_or_uncounted_tip_is_not_activity
+        PASS [   0.024s] frob-worktree activity::tests::events_count_only_for_the_holder
+        PASS [   0.023s] frob-worktree activity::tests::idle_uses_local_first_seen_and_clamps
+        PASS [   0.024s] frob-worktree activity::tests::a_holder_renew_is_soft_once_and_others_count_for_nothing
+        PASS [   0.023s] frob-worktree activity::tests::log_output_parses_into_facts
+        PASS [   0.023s] frob-worktree activity::tests::strongest_commit_wins
+        PASS [   0.023s] frob-worktree activity::tests::same_key_keeps_its_first_seen_time
+        PASS [   0.023s] frob-worktree activity::tests::state_round_trips_through_toml
+        PASS [   0.027s] frob-worktree activity::tests::bot_and_sync_commits_count_for_nothing
+        PASS [   0.027s] frob-worktree anyway::tests::a_rendered_note_parses_back
+        PASS [   0.030s] frob-worktree activity::tests::human_commit_is_hard_empty_is_soft
+        PASS [   0.016s] frob-worktree anyway::tests::an_expired_note_says_so
+        PASS [   0.013s] frob-worktree anyway::tests::other_comments_are_not_notes
+        PASS [   0.013s] frob-worktree claim_restore::tests::restore_event_names_source_tip_and_reason
+        PASS [   0.012s] frob-worktree claim::tests::unpublished_keeps_the_reason
+        PASS [   0.013s] frob-worktree claim_restore::tests::taken_remedy_names_only_real_commands
+        PASS [   0.014s] frob-worktree claim_evict::tests::prior_ages_count_only_this_holders_evictions
+        PASS [   0.013s] frob-worktree claim_evict::tests::preconditions_keep_their_describe_codes
+        PASS [   0.014s] frob-worktree claim_restore::tests::refusals_carry_their_codes
+        PASS [   0.012s] frob-worktree cycle_gate::tests::no_overdue_cycle_means_no_refusal
+        PASS [   0.012s] frob-worktree evict::tests::crash_between_delete_and_record_is_recognised
+        PASS [   0.013s] frob-worktree cycle_gate::tests::not_in_cycle_hint_names_assign_and_unplanned
+        PASS [   0.010s] frob-worktree evict::tests::every_refusal_has_a_distinct_code
+        PASS [   0.009s] frob-worktree evict::tests::parked_names_sequence_per_handle
+        PASS [   0.009s] frob-worktree evict::tests::rate_counts_the_actors_local_day
+        PASS [   0.009s] frob-worktree evict::tests::restore_needs_reason_nobody_else_and_parked_work
+        PASS [   0.009s] frob-worktree evict::tests::reclaim_restores_from_newest_unless_someone_holds_it
+        PASS [   0.009s] frob-worktree evict::tests::returning_holder_pushes_to_the_next_parked_ref
+        PASS [   0.009s] frob-worktree evict::tests::repeat_eviction_within_fourteen_days_needs_a_human
+        PASS [   0.013s] frob-worktree evict::tests::idle_claim_is_evictable_and_each_precondition_refuses
+        PASS [   0.010s] frob-worktree next::tests::reclaim_needs_the_evicted_holder_after_the_eviction
+        PASS [   0.011s] frob-worktree gc::cargo::tests::land_target_layout_evicts_the_stale_unit_and_keeps_the_recent_one
+        PASS [   0.016s] frob-worktree evict::tests::park_message_round_trips
+        PASS [   0.011s] frob-worktree verbs::tests::claim_windows_loads_defaults_and_rejects_a_bad_table
+        PASS [   0.009s] frob-worktree verbs::tests::is_yes_accepts_y_and_yes_in_any_case_only
+        PASS [   0.009s] frob-worktree work_view::tests::work_view_names_worktree_branch_and_lease
+        PASS [   0.010s] frob-worktree verbs::tests::evict_policy_is_none_for_a_bad_claims_table
+        PASS [   0.012s] frob-worktree work_view::tests::work_view_lists_conflicts_and_already
+        PASS [   0.023s] frob-worktree verbs::tests::evict_policy_reads_claims_tables_and_carries_ci
+        PASS [   0.095s] frob-worktree activity::tests::commit_facts_reads_a_real_history
+        PASS [   0.072s] frob-worktree::claim_hold hold_resume_and_reclaim_round_trip
+        PASS [   0.084s] frob-worktree::claim_restore an_unreachable_remote_refuses_the_restore_as_offline
+        PASS [   0.074s] frob-worktree::claim_restore nothing_parked_refuses_the_restore
+        PASS [   0.122s] frob-worktree::claim a_branch_already_on_the_remote_loses_the_claim_and_releases_the_lease
+        PASS [   0.123s] frob-worktree::claim an_unreachable_remote_warns_and_proceeds_with_an_unpublished_claim
+        PASS [   0.143s] frob-worktree::claim work_publishes_the_claim_branch_with_a_create_only_push
+        PASS [   0.175s] frob-worktree::claim anyway_works_over_a_lost_claim_and_land_shows_the_reason
+        PASS [   0.183s] frob-worktree::claim_evict a_fresh_claim_and_a_missing_reason_are_refused
+        PASS [   0.011s] frob-worktree::gc a_symlinked_target_dir_is_not_collected
+        PASS [   0.072s] frob-worktree::evict no_remote_is_offline
+        PASS [   0.011s] frob-worktree::gc cache_budget_evicts_least_recent_and_only_allowlisted_files
+        PASS [   0.011s] frob-worktree::gc cargo_adapter_groups_a_compilation_unit_and_skips_kept_binaries
+        PASS [   0.049s] frob-worktree::gc abandoned_land_base_checkouts_are_swept_and_recent_ones_left
+        PASS [   0.244s] frob-worktree::claim_restore a_reclaimed_ticket_refuses_the_restore_as_taken
+        PASS [   0.013s] frob-worktree::gc disabled_gc_skips_auto_and_a_dry_run_changes_nothing
+        PASS [   0.008s] frob-worktree::gc jail_admits_by_components_not_string_prefix_and_refuses_roots_and_dotdot
+        PASS [   0.007s] frob-worktree::gc jail_refuses_symlinks_out_of_the_tree_and_never_deletes_their_target
+        PASS [   0.281s] frob-worktree::claim_evict evict_confirming_asks_and_a_no_refuses_while_a_yes_evicts
+        PASS [   0.012s] frob-worktree::gc only_old_unreferenced_digest_named_blobs_are_collected
+        PASS [   0.179s] frob-worktree::evict batch_eviction_stops_at_the_rate_limit
+        PASS [   0.054s] frob-worktree::gc closed_ticket_worktree_with_uncommitted_changes_is_kept_and_reported
+        PASS [   0.297s] frob-worktree::claim_evict evict_human_confirm_needs_yes_for_a_human_holder_and_auto_does_not
+        PASS [   0.008s] frob-worktree::gc plan_evicts_oldest_artifacts_until_under_budget_and_keeps_the_latest_build
+        PASS [   0.008s] frob-worktree::gc plan_never_evicts_the_latest_build_even_over_budget
+        PASS [   0.203s] frob-worktree::evict a_holder_who_pushed_since_is_active_and_nothing_is_parked
+        PASS [   0.188s] frob-worktree::evict eviction_parks_the_work_and_deletes_the_claim
+        PASS [   0.008s] frob-worktree::gc plan_removes_stale_incremental_regardless_of_budget_and_keeps_fresh_incremental
+        PASS [   0.007s] frob-worktree::gc the_automatic_pass_only_reports_on_windows_and_nothing_else_does
+        PASS [   0.011s] frob-worktree::gc shared_cache_and_base_sets_under_the_common_dir_are_evictable_and_nothing_else
+        PASS [   0.014s] frob-worktree::gc stale_incremental_directories_are_removed_and_fresh_ones_kept
+        PASS [   0.014s] frob-worktree::gc target_over_budget_evicts_old_artifacts_and_keeps_latest_build_and_binaries
+        PASS [   0.246s] frob-worktree::claim_restore restore_puts_parked_work_back_and_records_a_lease_event
+        PASS [   0.015s] frob-worktree::gc throttle_is_honored_and_the_guard_forces_a_pass
+        PASS [   0.008s] frob-worktree::gc windows_verbatim_dotdot_was_outside_not_admitted_and_literal_dotdot_is_refused
+        PASS [   0.089s] frob-worktree::gc clean_closed_ticket_worktree_is_removed_and_a_merged_branch_deleted
+        PASS [   0.013s] frob-worktree::gc unreadable_open_ticket_evidence_removes_no_blob_and_warns
+        PASS [   0.007s] frob-worktree::next only_candidate_scoped_refusals_are_skippable
+        PASS [   0.222s] frob-worktree::evict a_second_evictor_sees_already_evicted
+        PASS [   0.080s] frob-worktree::gc open_ticket_with_nothing_unsaved_is_removed_only_when_its_lease_is_not_live
+        PASS [   0.057s] frob-worktree::gc unregistered_removing_leftovers_are_swept_and_registered_ones_kept
+        PASS [   0.007s] frob-worktree::python_env only_a_uv_project_with_a_primary_venv_and_no_venv_of_its_own_is_touched
+        PASS [   0.045s] frob-worktree::python_env a_new_worktree_gets_its_own_venv_pinned_to_the_worktree
+        PASS [   0.097s] frob-worktree::gc open_ticket_with_unpushed_commits_is_never_removed
+        PASS [   0.068s] frob-worktree::gc worktrees_outside_the_frob_parent_or_unknown_to_the_ledger_are_kept
+        PASS [   0.061s] frob-worktree::python_env an_offline_miss_retries_online_and_a_failing_sync_never_aborts
+        PASS [   0.259s] frob-worktree::evict restore_recreates_the_claim_from_parked_work_once
+        PASS [   0.433s] frob-worktree::claim_evict an_idle_claim_is_evicted_with_the_rate_reported_and_a_repeat_needs_yes
+        PASS [   0.132s] frob-worktree::next work_next_refuses_when_every_candidate_is_taken_or_none_exist
+        PASS [   0.182s] frob-worktree::next confirm_mode_and_a_fresh_claim_never_evict
+        PASS [   0.200s] frob-worktree::next a_lost_race_moves_on_to_the_next_candidate
+        PASS [   0.199s] frob-worktree::work a_second_expedite_exits_3_while_one_is_running
+        PASS [   0.148s] frob-worktree::work a_worktree_dir_that_escapes_the_repository_adds_no_ignore_line
+        PASS [   0.157s] frob-worktree::work a_worktree_dir_inside_the_repository_is_created_there_and_git_ignored_once
+        PASS [   0.259s] frob-worktree::next an_idle_agent_claim_is_evicted_and_parked
+        PASS [   0.124s] frob-worktree::work an_overdue_active_cycle_refuses_standard_work_but_not_expedite
+        PASS [   0.204s] frob-worktree::work a_stale_in_progress_ticket_does_not_count_and_is_named
+        PASS [   0.262s] frob-worktree::next work_next_evicts_then_claims_the_freed_ticket
+        PASS [   0.158s] frob-worktree::work a_worktree_dir_the_gitignore_already_names_gets_no_second_line
+        PASS [   0.008s] frob-worktree::work ignore_lines_are_anchored_directory_patterns_and_escape_special_characters
+        PASS [   0.226s] frob-worktree::work a_ticket_queued_on_the_land_train_leaves_the_repository_wip_count
+        PASS [   0.138s] frob-worktree::work another_holder_is_refused_and_can_steal_with_a_reason
+        PASS [   0.096s] frob-worktree::work doable_hides_tickets_overlapping_a_live_lease
+        PASS [   0.099s] frob-worktree::work start_leases_the_current_checkout_and_requeue_releases
+        PASS [   0.177s] frob-worktree::work cli_work_past_the_repository_limit_exits_3_with_the_wip_code
+        PASS [   0.127s] frob-worktree::work concurrent_work_on_overlapping_tickets_grants_exactly_one
+        PASS [   0.093s] frob-worktree::work unworkable_tickets_are_refused
+        PASS [   0.166s] frob-worktree::work cli_work_twice_reports_already_and_other_actor_gets_exit_3
+        PASS [   0.114s] frob-worktree::work work_creates_worktree_and_is_idempotent_for_the_holder
+        PASS [   0.125s] frob-worktree::work work_events_carry_no_absolute_path
+        PASS [   0.144s] frob-worktree::work work_from_its_own_worktree_refuses_when_an_overlapping_lease_was_taken_since
+        PASS [   0.270s] frob-worktree::work limit_zero_is_off_and_reentry_is_not_a_new_slot
+        PASS [   0.123s] frob-worktree::work work_from_its_own_worktree_releases_an_expired_in_progress_ticket
+        PASS [   0.255s] frob-worktree::work the_sprint_gate_refuses_outside_the_active_cycle_and_unplanned_joins_it
+        PASS [   0.285s] frob-worktree::work the_gate_and_pm013_count_the_same_holders
+        PASS [   0.167s] frob-worktree::work work_in_a_fresh_clone_adopts_the_ticket_branch_from_origin
+        PASS [   0.329s] frob-worktree::work expedite_is_granted_as_the_single_exception_when_the_limit_is_reached
+        PASS [   0.117s] frob-worktree::work work_in_orphan_mode_branches_from_the_code_ref_and_writes_the_ticket_branch
+        PASS [   0.089s] frob-worktree::work worktree_dir_knob_moves_the_worktree
+        PASS [   0.115s] frob-worktree::work work_shares_the_warm_primary_cache_with_the_new_worktree
+        PASS [   0.141s] frob-worktree::work work_takes_the_repository_wip_limit_from_the_base_ref_not_the_worktree_copy
+        PASS [   0.203s] frob-worktree::work work_refuses_past_the_repository_limit_naming_both_holders
+        PASS [   0.648s] frob-worktree::work concurrent_work_for_the_last_wip_slot_grants_exactly_one
+        PASS [   1.295s] frob-worktree::work a_new_worktree_keeps_unchanged_sources_no_newer_than_the_tip_commit
+        PASS [   1.128s] frob-worktree::work wait_times_out_cleanly_and_a_queued_waiter_blocks_overlapping_work
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.865s] 124 tests run: 124 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree"
+size = 13038
+status = "measured"
+test_count = 124
+tests_digest = "373f15e0cf3fed62604d91d5e4cd08a8757b280ac10f99c5979f28350b5e93dc"
+at = "2026-10-26T15:25:44Z"
+actor = "lognd"
+rev = 1
