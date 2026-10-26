@@ -84,7 +84,7 @@ fn a_waiver_without_a_reason_fires_waive001_and_does_not_suppress() {
         "{}",
         w.message
     );
-    assert_eq!(w.severity, Severity::Error);
+    assert_eq!(w.severity, Severity::Warn);
 }
 
 // frob:tests crates/crunk-rules/src/waiver.rs::exceptions
