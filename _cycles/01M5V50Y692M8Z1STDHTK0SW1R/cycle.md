@@ -4,7 +4,7 @@ start = "2026-10-26"
 end = "2026-11-01"
 goal = "push toward 0.533.0"
 state = "planned"
-tickets = ["01M43AVMZGQ4JYB8QYWAYA6294"]
+tickets = ["01M43AVMZGQ4JYB8QYWAYA6294", "01M4CXRCXEYE7GZSYRPHKN808M"]
 created = "2026-10-26T03:45:47Z"
 updated = "2026-10-26T03:45:47Z"
 +++
