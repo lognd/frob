@@ -64,6 +64,8 @@ The suppression pattern and fix command are recorded in the definition; EXC017 a
 
 ## Parsed stages
 
+A cargo stage (`cargo ...` or `env VAR=x cargo ...`) whose failed run prints unresolved-item compile errors (`E0432`, `E0433`, `E0425`, `E0412`, `unresolved import`, `cannot find`) may be reading a stale artifact from a `CARGO_TARGET_DIR` shared by several worktrees. frob runs `cargo clean -p <crate>` for each package cargo names as failed, then reruns the stage exactly once. A rerun that passes is used (with a warning in the log); if the signature persists, the finding carries a hint naming `cargo clean -p <crate>`.
+
 With a `parser` the stage exit status no longer decides: tools exit nonzero when they have findings, so only a signal, a timeout or unparseable stdout is a stage failure (`TOOL001`). Findings carry the file and span the tool printed (zizmor and cargo byte offsets, actionlint, stylelint and ruff line and column, SARIF regions), so `frob:accept` applies to them like native findings (a file whose language frob scans for directives; YAML is not yet one).
 
 | Parser | Tool id | Rule | Severity |

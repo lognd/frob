@@ -652,6 +652,126 @@ fn ensure_prereqs(
     prereqs.ensure(runner, root, &with_sync, trust)
 }
 
+/// Rustc error codes and phrases that a stale artifact in a shared target dir produces for code that compiles.
+const STALE_CODES: &[&str] = &["E0432", "E0433", "E0425", "E0412"];
+const STALE_PHRASES: &[&str] = &["unresolved import", "cannot find", "failed to resolve"];
+
+/// Whether `text` carries the unresolved-item compile-error signature of a stale shared-target artifact.
+fn stale_signature(text: &str) -> bool {
+    STALE_CODES.iter().any(|c| text.contains(c)) || STALE_PHRASES.iter().any(|p| text.contains(p))
+}
+
+/// The package names cargo reports as "could not compile `name`" in `text`, deduplicated in order.
+fn failed_crates(text: &str) -> Vec<String> {
+    let mut names: Vec<String> = Vec::new();
+    for rest in text.split("could not compile `").skip(1) {
+        if let Some(name) = rest.split('`').next()
+            && !name.is_empty()
+            && !names.iter().any(|n| n == name)
+        {
+            names.push(name.to_owned());
+        }
+    }
+    names
+}
+
+/// The hint a finding carries when a rerun did not clear a stale-signature compile failure.
+fn stale_hint(crates: &[String]) -> String {
+    let clean = if crates.is_empty() {
+        "cargo clean -p <crate>".to_owned()
+    } else {
+        crates
+            .iter()
+            .map(|c| format!("cargo clean -p {c}"))
+            .collect::<Vec<_>>()
+            .join("; ")
+    };
+    format!(
+        "(hint: unresolved-item errors can come from a stale artifact in a CARGO_TARGET_DIR shared by several worktrees; try `{clean}`)"
+    )
+}
+
+/// The `cargo clean -p <krate>` argument list for a cargo stage, keeping an `env VAR=x cargo` wrapper's prefix.
+fn clean_args(stage: &ToolStage, krate: &str) -> Option<Vec<String>> {
+    let tail = ["clean", "-p", krate].map(str::to_owned);
+    if stage.command == "cargo" {
+        return Some(tail.to_vec());
+    }
+    if stage.command == "env" {
+        let at = stage.args.iter().position(|a| a == "cargo")?;
+        let mut args = stage.args[..=at].to_vec();
+        args.extend(tail);
+        return Some(args);
+    }
+    None
+}
+
+/// Whether `stage` invokes cargo directly or through an `env` wrapper.
+fn is_cargo_stage(stage: &ToolStage) -> bool {
+    stage.command == "cargo" || (stage.command == "env" && stage.args.iter().any(|a| a == "cargo"))
+}
+
+/// How a stale-artifact check ended for one stage run.
+#[derive(Debug, PartialEq, Eq)]
+enum Stale {
+    /// No stale signature, or the rerun cleared it.
+    Clear,
+    /// The failure still carries the signature after one rerun; the hint names the packages to clean.
+    Persists(Vec<String>),
+}
+
+/// Rerun a failed compile at most once when its output has the stale-artifact signature.
+///
+/// `clean` is told the failed package names before the single `rerun`; a rerun that still shows the
+/// signature yields [`Stale::Persists`] so the caller can add the hint to its finding.
+fn retry_stale(
+    stage_name: &str,
+    first: Output,
+    clean: impl FnOnce(&[String]),
+    rerun: impl FnOnce() -> Result<Output, ExecError>,
+) -> (Result<Output, ExecError>, Stale) {
+    let text = |o: &Output| format!("{}\n{}", o.stdout_raw, o.stderr);
+    if first.status == Outcome::Exited(0) || !stale_signature(&text(&first)) {
+        return (Ok(first), Stale::Clear);
+    }
+    let crates = failed_crates(&text(&first));
+    tracing::warn!(stage = %stage_name, ?crates, "unresolved-item compile errors; cleaning and rerunning once");
+    clean(&crates);
+    match rerun() {
+        Ok(second) if !stale_signature(&text(&second)) || second.status == Outcome::Exited(0) => {
+            tracing::warn!(stage = %stage_name, "stale-artifact signature cleared by the rerun");
+            (Ok(second), Stale::Clear)
+        }
+        Ok(second) => {
+            let again = failed_crates(&text(&second));
+            let crates = if again.is_empty() { crates } else { again };
+            tracing::warn!(stage = %stage_name, ?crates, "stale-artifact signature persists after the rerun");
+            (Ok(second), Stale::Persists(crates))
+        }
+        Err(err) => {
+            tracing::error!(stage = %stage_name, %err, "stale-artifact rerun could not run");
+            (Err(err), Stale::Clear)
+        }
+    }
+}
+
+/// Append the stale-artifact `hint` to a stage result's message(s).
+fn hinted(result: StageResult, hint: &str) -> StageResult {
+    match result {
+        StageResult::Failed(m) => StageResult::Failed(format!("{m} {hint}")),
+        StageResult::Problem(m) => StageResult::Problem(format!("{m} {hint}")),
+        StageResult::Done(mut raws) => {
+            for raw in &mut raws {
+                if stale_signature(&raw.message) || stale_signature(&raw.tool_id) {
+                    raw.message = format!("{} {hint}", raw.message);
+                }
+            }
+            StageResult::Done(raws)
+        }
+        other => other,
+    }
+}
+
 fn execute(
     runner: &Runner,
     root: &Path,
@@ -687,7 +807,43 @@ fn execute(
             }
         }
     }
-    let output = match launch(runner, root, stage, pack, stage.args.clone()) {
+    let mut artifact = Stale::Clear;
+    let first = launch(runner, root, stage, pack, stage.args.clone());
+    let launched = match first {
+        Ok(o) if is_cargo_stage(stage) => {
+            let (second, verdict) = retry_stale(
+                &stage.name,
+                o,
+                |crates| {
+                    for krate in crates {
+                        if let Some(args) = clean_args(stage, krate) {
+                            let cleaned = launch(runner, root, stage, pack, args);
+                            tracing::info!(stage = %stage.name, krate, ok = cleaned.is_ok(), "cleaned package before rerun");
+                        }
+                    }
+                },
+                || launch(runner, root, stage, pack, stage.args.clone()),
+            );
+            artifact = verdict;
+            second
+        }
+        other => other,
+    };
+    let result = run_stage_output(root, stage, launched);
+    match artifact {
+        Stale::Persists(crates) => hinted(result, &stale_hint(&crates)),
+        Stale::Clear => result,
+    }
+}
+
+/// Turn a finished (or failed) launch of `stage` into its [`StageResult`].
+fn run_stage_output(
+    root: &Path,
+    stage: &ToolStage,
+    launched: Result<Output, ExecError>,
+) -> StageResult {
+    let parsed = stage.parser != ToolParser::None;
+    let output = match launched {
         Ok(o) => o,
         Err(err @ ExecError::NotFound { .. }) => {
             return StageResult::Missing(format!("could not run: {err}"));
@@ -1511,6 +1667,102 @@ mod tests {
         for needle in needles {
             assert!(f.message.contains(needle), "{needle} not in {}", f.message);
         }
+    }
+
+    fn fake_output(code: i32, stdout: &str, stderr: &str) -> Output {
+        Output {
+            status: Outcome::Exited(code),
+            stdout: stdout.to_owned(),
+            stdout_raw: stdout.to_owned(),
+            stderr: stderr.to_owned(),
+            started: Instant::now(),
+            duration: Duration::ZERO,
+        }
+    }
+
+    const STALE_ERR: &str = "error[E0432]: unresolved import `x::failure_cause`\nerror: could not compile `gob-check` (lib) due to 1 previous error";
+
+    // frob:ticket 01M4M27EJ698NR069HHC939TGD
+    // frob:tests crates/gob-check/src/tools.rs::retry_stale
+    #[test]
+    fn a_stale_signature_is_cleaned_and_rerun_once_and_a_passing_rerun_is_clear() {
+        let mut cleaned = Vec::new();
+        let mut reruns = 0;
+        let (out, verdict) = retry_stale(
+            "clippy",
+            fake_output(101, "", STALE_ERR),
+            |c| cleaned.extend(c.iter().cloned()),
+            || {
+                reruns += 1;
+                Ok(fake_output(0, "", ""))
+            },
+        );
+        assert_eq!(verdict, Stale::Clear);
+        assert_eq!(out.expect("ran").status, Outcome::Exited(0));
+        assert_eq!(cleaned, vec!["gob-check".to_owned()]);
+        assert_eq!(reruns, 1);
+    }
+
+    // frob:ticket 01M4M27EJ698NR069HHC939TGD
+    // frob:tests crates/gob-check/src/tools.rs::retry_stale
+    #[test]
+    fn a_persisting_stale_signature_reruns_exactly_once_and_names_the_clean_command() {
+        let mut reruns = 0;
+        let (_, verdict) = retry_stale(
+            "clippy",
+            fake_output(101, "", STALE_ERR),
+            |_| {},
+            || {
+                reruns += 1;
+                Ok(fake_output(101, "", STALE_ERR))
+            },
+        );
+        assert_eq!(reruns, 1);
+        let Stale::Persists(crates) = verdict else {
+            panic!("expected Persists");
+        };
+        assert!(stale_hint(&crates).contains("cargo clean -p gob-check"));
+        let hinted = hinted(StageResult::Failed("boom".to_owned()), &stale_hint(&crates));
+        assert!(
+            matches!(hinted, StageResult::Failed(m) if m.contains("shared by several worktrees"))
+        );
+    }
+
+    // frob:ticket 01M4M27EJ698NR069HHC939TGD
+    // frob:tests crates/gob-check/src/tools.rs::retry_stale
+    #[test]
+    fn unrelated_failures_and_successes_are_not_rerun() {
+        for out in [
+            fake_output(0, "", STALE_ERR),
+            fake_output(101, "", "error[E0308]: mismatched types"),
+        ] {
+            let (_, verdict) =
+                retry_stale("clippy", out, |_| panic!("no clean"), || panic!("no rerun"));
+            assert_eq!(verdict, Stale::Clear);
+        }
+    }
+
+    // frob:ticket 01M4M27EJ698NR069HHC939TGD
+    // frob:tests crates/gob-check/src/tools.rs::clean_args
+    #[test]
+    fn clean_args_keep_an_env_wrapper_and_skip_non_cargo_stages() {
+        let mut stage = sh_stage("lint", ToolParser::None, "true", VERSION_OK);
+        assert_eq!(clean_args(&stage, "k"), None);
+        stage.command = "cargo".to_owned();
+        assert_eq!(
+            clean_args(&stage, "k").expect("cargo"),
+            ["clean", "-p", "k"]
+        );
+        stage.command = "env".to_owned();
+        stage.args = vec![
+            "RUSTDOCFLAGS=x".to_owned(),
+            "cargo".to_owned(),
+            "doc".to_owned(),
+        ];
+        assert_eq!(
+            clean_args(&stage, "k").expect("env"),
+            ["RUSTDOCFLAGS=x", "cargo", "clean", "-p", "k"]
+        );
     }
 
     const VERSION_OK: &str = "echo actionlint 1.7.12";
