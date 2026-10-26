@@ -57,7 +57,7 @@ pub fn split_adopted(text: &str) -> (&str, &str) {
 }
 
 /// A rule that becomes live in the release being written, listed in its notes.
-// frob:ticket ~VGQ66DC
+// frob:ticket 01M4HDXVZNXTNANMHRGVGQ66DC
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LiveRule {
     /// Rule id.

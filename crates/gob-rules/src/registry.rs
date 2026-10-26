@@ -96,7 +96,7 @@ impl Default for RuleSettings {
 }
 
 impl RuleSettings {
-    // frob:ticket ~VGQ66DC
+    // frob:ticket 01M4HDXVZNXTNANMHRGVGQ66DC
     /// The severity a rule runs at in release `current` with the note explaining a ramp, or `None` when disabled; an explicit `[rules]` severity is never ramped.
     #[must_use]
     pub fn effective_ramped(

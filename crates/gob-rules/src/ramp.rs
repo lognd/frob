@@ -4,7 +4,7 @@
 //! ends it is the next minor, `0.533.0`. Pre-release suffixes (`-dev`) are ignored, so a dev build
 //! of the next release is already past the window.
 
-// frob:ticket ~VGQ66DC
+// frob:ticket 01M4HDXVZNXTNANMHRGVGQ66DC
 use crate::meta::Severity;
 
 /// A parsed `major.minor.patch` triple; a pre-release or build suffix is dropped.
