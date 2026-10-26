@@ -19,4 +19,4 @@ text = "Text under the ledger directory is never a live directive: one FileRole 
 bound = true
 +++
 
-found while working ~41MBK6Q: frob check on experimental reports error DSL001 unknown directive frob:waive at the v1 ticket bodies (for example the first lines of ticket 01M1QDTYQEEAFC68ACF76TH9AC), 95 errors; the v1 import quoted v1 waive comments. Either register waive or make imported text inert.
+found while working ~41MBK6Q: frob check on experimental reports error DSL001 unknown directive frob:waive at tickets/*/ticket.md (for example the first lines of tickets/01M1QDTYQEEAFC68ACF76TH9AC/ticket.md), 95 errors; the v1 import quoted v1 waive comments. Either register waive or make imported text inert.
