@@ -8,7 +8,7 @@ points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T22:55:22Z"
-updated = "2026-10-26T04:29:39Z"
+updated = "2026-10-26T04:29:43Z"
 scope = ["docs/design/grl-spec.md", "crates/gob-plan/src/grl/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "the CAP001 hint text no longer mentions because"
-bound = false
+bound = true
 +++
 
 Found while working ~WHEVEHY. docs/design/grl-spec.md and crates/gob-plan/src/grl/parse/tests/fixtures/{CAP001,SYS001}.grl show 'node app owns ".."' and 'may ... because=', which grmb does not parse; use 'node app { owns ".."; }' and 'excuses ATOM because=".."'. CAP001.grl hint text mentions because. Also: examples/cells.rs names_callee duplicates grimble-bind; scoped (may ... at) grants are ignored.
