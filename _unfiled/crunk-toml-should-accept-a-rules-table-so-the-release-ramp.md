@@ -2,7 +2,8 @@
 id = "01M5WJKHJK4DD8NP1FTYWF1B8K"
 title = "crunk.toml should accept a [rules] table so the release ramp can be turned off"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
