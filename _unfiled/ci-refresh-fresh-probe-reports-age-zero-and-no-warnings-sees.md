@@ -2,7 +2,8 @@
 id = "01M5WEGKMRHCT3G66EFEK0YNZX"
 title = "CI: refresh::fresh_probe_reports_age_zero_and_no_warnings sees base_sync diverged (W-SYNC-DIVERGED) on ubuntu nextest"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
