@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-26T12:33:54Z"
-updated = "2026-10-26T12:41:33Z"
+updated = "2026-10-26T12:43:53Z"
 scope = ["crates/gob-dev/src/render/**", "crates/gob-dev/tests/**", "docs/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "gen all --check is clean on Windows CI: no backslashes in docs/README index tables"
-bound = false
+bound = true
 +++
 
 CI run on e09941d9e8: windows GEN001 failed, docs index tables had crunk\README.md style links. Ubuntu passed. Exit criterion 6.
