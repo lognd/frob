@@ -2,12 +2,12 @@
 id = "01M5WEGKMRHCT3G66EFEK0YNZX"
 title = "CI: refresh::fresh_probe_reports_age_zero_and_no_warnings sees base_sync diverged (W-SYNC-DIVERGED) on ubuntu nextest"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-10-26T15:50:52Z"
-updated = "2026-10-26T15:50:52Z"
+updated = "2026-10-26T15:50:59Z"
 scope = ["crates/frob/tests/it/refresh.rs", "crates/frob/src/refresh_cmd.rs"]
 
 [[acceptance]]
