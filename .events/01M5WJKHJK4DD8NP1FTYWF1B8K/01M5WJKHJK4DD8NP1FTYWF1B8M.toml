@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk.toml should accept a [rules] table so the release ramp can be turned off"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-spec/**"]
+body = "found while working ~B3EMY2Z: crunk.toml rejects [rules] (OWN_TABLES in crunk-spec load.rs), so [rules] ramp = false has no effect for crunk."
+at = "2026-10-26T17:02:23Z"
+actor = "lognd"
+rev = 1
