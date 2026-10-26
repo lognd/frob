@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T23:26:32Z"
-updated = "2026-10-26T13:03:13Z"
+updated = "2026-10-26T13:05:58Z"
 scope = ["crates/gob-check/src/tools.rs", "docs/reference/tool-stages.md", "changelog.d/*C939TGD*"]
 
 [[acceptance]]
