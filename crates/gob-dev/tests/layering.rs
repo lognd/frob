@@ -20,6 +20,7 @@ const ALLOWED: &[(&str, &str, &str)] = &[
     ("gob-dev", "grimble", "~M8WETW7"),
     ("frob-docgen", "crunk-check", "~M8WETW7"),
     ("frob-docgen", "grimble-check", "~M8WETW7"),
+    ("frob-check", "grimble-check", "~M8WETW7"),
 ];
 
 /// Crates the table lists ahead of their code (boundaries.md: Milestone 2 or later, D36); each

@@ -126,6 +126,13 @@ fn doctor_outside_a_repo_still_succeeds() {
 #[test]
 fn init_twice_second_is_already_and_changes_nothing() {
     let dir = repo();
+    // Windows runners default to autocrlf=true, which adds the eol pin line this test does not expect.
+    let status = std::process::Command::new("git")
+        .args(["config", "core.autocrlf", "false"])
+        .current_dir(dir.path())
+        .status()
+        .expect("run git config");
+    assert!(status.success());
     let first = frob(dir.path(), &["init"]);
     assert_eq!(
         code(&first),
