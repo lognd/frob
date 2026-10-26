@@ -2,7 +2,8 @@
 id = "01M4M27EPRF0RAN4YBEA2J8C05"
 title = "Lease and ledger actor is the git user.name at the time of the call, so changing the git identity strands a held lease (requeue refused with E-LEASE-HELD for the same worker)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
