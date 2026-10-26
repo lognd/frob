@@ -2,7 +2,8 @@
 id = "01M5GAT99HX9VW1S0MEFKKYQ41"
 title = "GRL docs and fixtures still show invalid model shorthand (node app owns, may because=)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
