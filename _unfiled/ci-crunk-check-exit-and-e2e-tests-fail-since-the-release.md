@@ -2,12 +2,12 @@
 id = "01M5X2XDTA4WAYXGS19F3D43SD"
 title = "CI: crunk check_exit and e2e tests fail since the release ramp downgrades new rules to warn"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T21:47:24Z"
-updated = "2026-10-26T21:47:24Z"
+updated = "2026-10-26T21:47:29Z"
 scope = ["crates/crunk/**"]
 
 [[acceptance]]
