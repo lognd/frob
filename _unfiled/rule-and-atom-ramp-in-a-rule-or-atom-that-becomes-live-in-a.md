@@ -2,7 +2,8 @@
 id = "01M4HDXVZNXTNANMHRGVGQ66DC"
 title = "Rule and atom ramp-in: a rule or atom that becomes live in a new release enters at Warn for one release (configurable), and each release and global refresh lists newly live rules and atoms"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
