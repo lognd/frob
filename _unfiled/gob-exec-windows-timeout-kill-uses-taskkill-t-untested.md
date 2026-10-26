@@ -2,12 +2,12 @@
 id = "01M4K8HPCVY5Q40KWRW70G51Q4"
 title = "gob-exec: Windows timeout kill uses taskkill /T, untested; replace with a job object or cover it with a windows-gated test"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T15:57:45Z"
-updated = "2026-10-10T15:57:45Z"
+updated = "2026-10-26T13:12:22Z"
 scope = ["crates/gob-exec/**"]
 
 [[acceptance]]
