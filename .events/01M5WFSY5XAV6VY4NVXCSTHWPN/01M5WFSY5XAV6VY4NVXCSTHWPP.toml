@@ -1,0 +1,10 @@
+kind = "create"
+title = "sync_policy.rs clone_with_origin makes independent root commits (timing flake)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/tests/it/sync_policy.rs"]
+body = "Same fixture flaw as ~EK0YNZX: origin and clone each commit an empty c1; hashes differ across a second boundary. Use git clone."
+at = "2026-10-26T16:13:26Z"
+actor = "lognd"
+rev = 1
