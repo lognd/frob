@@ -2,12 +2,12 @@
 id = "01M5X65SGY3D8E9FKHZAG0CHE0"
 title = "CI: ten more tests fail under the release ramp (frob-cli milestone/redact/release_cut, frob-land, grimble summary/verbs/ack)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T22:44:24Z"
-updated = "2026-10-26T22:44:24Z"
+updated = "2026-10-26T22:44:25Z"
 scope = ["crates/grimble/tests/**", "crates/frob-land/tests/**", "crates/frob/tests/**"]
 
 [[acceptance]]
