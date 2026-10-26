@@ -103,6 +103,16 @@ fn new_ticket(ledger: &Ledger) -> (String, String) {
 }
 
 fn evict_policy(auto: bool) -> frob_worktree::next::EvictPolicy {
+    evict_policy_at(auto, 0)
+}
+
+/// Local-day offset (seconds east of UTC) that puts `secs_ahead` from now at local noon, so a test spanning a few hours never straddles midnight.
+fn noon_offset(secs_ahead: i64) -> i64 {
+    let at = gob_time::SystemClock.now().unix() + secs_ahead;
+    (12 * 3600 - at.rem_euclid(86_400)).rem_euclid(86_400)
+}
+
+fn evict_policy_at(auto: bool, utc_offset_secs: i64) -> frob_worktree::next::EvictPolicy {
     let claims = frob_ledger::claim_window::ClaimsTable {
         evict_agent: if auto {
             frob_ledger::claim_window::EvictKnob::Auto
@@ -115,7 +125,7 @@ fn evict_policy(auto: bool) -> frob_worktree::next::EvictPolicy {
     frob_worktree::next::EvictPolicy {
         windows: frob_ledger::claim_window::ClaimWindows::from_tables(&claims, &class)
             .expect("windows"),
-        utc_offset_secs: 0,
+        utc_offset_secs,
         in_ci: false,
     }
 }
@@ -207,7 +217,9 @@ fn an_idle_claim_is_evicted_with_the_rate_reported_and_a_repeat_needs_yes() {
     let leases = fx.leases().with_agent(Some("claude".to_owned()));
     let (_, handle) = new_ticket(&fx.ledger());
     let cfg = WorktreeConfig::load(&fx.root).expect("config");
-    let policy = evict_policy(true);
+    // The rate counts the local day; centre the 5h..10h span on local noon so the
+    // test does not depend on the time of day it runs at (it failed after 14:00 UTC).
+    let policy = evict_policy_at(true, noon_offset(7 * 3600 + 1800));
     let rate = policy.windows.evict_rate();
     agent_claim(&fx, &leases, &handle);
     let ledger = ledger_ahead(&fx, 5 * 3600);
