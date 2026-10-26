@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a doc linking `https://github.com/o/r/blob/frob-tickets/parser-rewrite/x.md`, when check runs, then TICK006 fires and `--fix` rewrites it to the ticket ULID", "Given generated pages that use relative paths, when check runs, then TICK006 does not fire"]
+new = ["Given generated pages that use relative paths, when check runs, then TICK006 does not fire", "Given a doc linking a blob URL on the frob-tickets branch (org/repo/blob/frob-tickets/ then an epic-slug path ending in .md), when check runs, then TICK006 fires and `--fix` rewrites it to the ticket ULID"]
+reason = "reword quoted ticket-branch URL (TICK006 self-match)"
+moved = [0, 1]
+at = "2026-10-26T04:43:56Z"
+actor = "lognd"
+rev = 1
