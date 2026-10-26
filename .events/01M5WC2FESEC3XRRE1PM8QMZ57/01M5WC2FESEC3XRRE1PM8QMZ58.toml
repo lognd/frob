@@ -1,0 +1,12 @@
+kind = "create"
+title = "Startup and ledger-sync cost: ticket doctor 0.87s and cycle velocity 2.1s still exceed the 0.5s target"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+scope = ["crates/frob-ledger/**", "crates/frob-pm/**", "crates/frob-cli/**"]
+acceptance = ["frob ticket doctor and frob cycle velocity each complete in under 0.5s on this repository, measured by a recorded benchmark"]
+body = "Follow-up of JD1T9DP: bulk event reads are now parallel (doctor 1.8s to 0.87s, velocity 3.8s to 2.1s). Remaining: 0.51s fixed startup/ledger sync in frob ticket doable, non-event work in cycle velocity, and the option of caching parsed done-transition facts in the index."
+at = "2026-10-26T15:08:12Z"
+actor = "lognd"
+rev = 1
