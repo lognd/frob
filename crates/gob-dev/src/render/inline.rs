@@ -276,17 +276,7 @@ pub fn generate(root: &Path) -> Result<Vec<GenFile>, InlineError> {
             let rel = path
                 .strip_prefix(root)
                 .map_or_else(|_| path.clone(), Path::to_path_buf);
-            let mut rel_str = String::new();
-            for comp in rel.components() {
-                if !rel_str.is_empty() {
-                    rel_str.push(std::path::MAIN_SEPARATOR);
-                }
-                rel_str.push_str(
-                    &gob_path::Shown::with_home(std::path::Path::new(&comp.as_os_str()), None)
-                        .to_string(),
-                );
-            }
-            let rel = rel_str;
+            let rel = gob_path::forward_slashes(&rel);
             let text = std::fs::read_to_string(&path).map_err(|source| InlineError::Io {
                 path: path.clone(),
                 source,

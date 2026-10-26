@@ -92,26 +92,19 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) -> Result<(), DocsIndexError> {
     Ok(())
 }
 
-/// `path` below `base` as a forward-slash string.
+/// `path` below `base` as a forward-slash string on every platform (the committed index form).
 fn relative(base: &Path, path: &Path) -> String {
-    let rel = path.strip_prefix(base).unwrap_or(path);
-    let parts: Vec<String> = rel
-        .components()
-        .map(|c| gob_path::Shown::with_home(Path::new(&c.as_os_str()), None).to_string())
-        .collect();
-    parts.join(std::path::MAIN_SEPARATOR_STR)
+    gob_path::forward_slashes(path.strip_prefix(base).unwrap_or(path))
 }
 
 /// The directory part of the relative path `rel` (empty at the top).
 fn dir_of(rel: &str) -> &str {
-    rel.rsplit_once(std::path::MAIN_SEPARATOR)
-        .map_or("", |(dir, _)| dir)
+    rel.rsplit_once('/').map_or("", |(dir, _)| dir)
 }
 
 /// The section a document sorts under: its first path component, or the top level.
 fn section_of(rel: &str) -> &str {
-    rel.split_once(std::path::MAIN_SEPARATOR)
-        .map_or("", |(first, _)| first)
+    rel.split_once('/').map_or("", |(first, _)| first)
 }
 
 /// The documents and the non-markdown files below `docs_dir`, apart from the index itself.
@@ -157,7 +150,7 @@ fn collapse(docs: Vec<Doc>) -> Vec<Doc> {
     let mut out: Vec<Doc> = docs.into_iter().filter(|d| !big(d)).collect();
     for (dir, n) in counts.into_iter().filter(|(_, n)| *n > COLLAPSE_OVER) {
         out.push(Doc {
-            rel: format!("{dir}{}", std::path::MAIN_SEPARATOR),
+            rel: format!("{dir}/"),
             title: format!("One page per entry ({n} pages)"),
             status: "generated".to_owned(),
             owner: "-".to_owned(),
@@ -178,7 +171,7 @@ fn render(docs: Vec<Doc>, others: &BTreeMap<String, usize>) -> String {
     let mut sections: BTreeMap<String, Vec<Doc>> = BTreeMap::new();
     for d in collapse(docs) {
         sections
-            .entry(section_of(d.rel.trim_end_matches(std::path::MAIN_SEPARATOR)).to_owned())
+            .entry(section_of(d.rel.trim_end_matches('/')).to_owned())
             .or_default()
             .push(d);
     }
@@ -206,7 +199,7 @@ fn render(docs: Vec<Doc>, others: &BTreeMap<String, usize>) -> String {
     if !others.is_empty() {
         out.push_str("\n## Supporting files\n\n");
         for (dir, n) in others {
-            let dir = format!("{dir}{}", std::path::MAIN_SEPARATOR);
+            let dir = format!("{dir}/");
             let _ = writeln!(out, "- [{dir}]({dir}): {n} files that are not documents.");
         }
     }
@@ -246,5 +239,14 @@ mod tests {
         assert!(text.contains("| Alpha | draft | frob |"), "{text}");
         assert!(text.contains("| Beta | invalid | - |"), "{text}");
         assert_eq!(crate::files::marker_problem(text), None);
+    }
+
+    #[test]
+    // frob:tests crates/gob-dev/src/render/docs_index.rs::relative
+    fn relative_uses_forward_slashes_even_for_backslash_separators() {
+        let rel = relative(Path::new("docs"), Path::new("docs/crunk\\README.md"));
+        assert_eq!(rel, "crunk/README.md");
+        assert_eq!(dir_of(&rel), "crunk");
+        assert_eq!(section_of(&rel), "crunk");
     }
 }

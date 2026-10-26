@@ -119,9 +119,7 @@ pub fn generate(crates_dir: &Path) -> Result<Vec<GenFile>, RulesIndexError> {
             .join("mod.rs");
         tracing::debug!(crate_dir = ?dir, rules = rules.len(), "rules index generated");
         files.push(GenFile {
-            path: gob_path::Shown::with_home(&rel, None)
-                .to_string()
-                .replace('\\', "/"),
+            path: gob_path::forward_slashes(&rel),
             content,
         });
     }
