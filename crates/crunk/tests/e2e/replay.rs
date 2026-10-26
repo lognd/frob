@@ -63,7 +63,7 @@ fn disable_ramp(work: &Path) {
     if text.contains("[rules]") {
         return;
     }
-    tracing::debug!(path = %path.display(), "replay: appending [rules] ramp = false");
+    tracing::debug!("replay: appending [rules] ramp = false");
     std::fs::write(&path, format!("{text}\n[rules]\nramp = false\n")).expect("write crunk.toml");
 }
 
