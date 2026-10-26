@@ -1,0 +1,12 @@
+kind = "create"
+title = "Scoped capability grants (may ... at) are ignored"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/grimble-capabilities/**"]
+acceptance = ["a may ... at grant only grants cells inside its selector, with a test"]
+body = "Found while working ~FKKYQ41. Scoped grants (may ATOM at SELECTOR) are ignored when computing granted cells; they should only grant within the selected symbols."
+at = "2026-10-26T04:22:25Z"
+actor = "lognd"
+rev = 1
