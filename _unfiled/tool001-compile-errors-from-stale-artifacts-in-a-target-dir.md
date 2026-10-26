@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T23:26:32Z"
-updated = "2026-10-26T13:03:12Z"
-scope = ["crates/gob-check/src/tools.rs", "docs/reference/tool-stages.md"]
+updated = "2026-10-26T13:03:13Z"
+scope = ["crates/gob-check/src/tools.rs", "docs/reference/tool-stages.md", "changelog.d/*C939TGD*"]
 
 [[acceptance]]
 text = "a tool stage that fails to compile because a shared target dir holds an artifact older than the sources is detected and rerun once, or the finding names the stale artifact, covered by a test"
