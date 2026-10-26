@@ -1,0 +1,12 @@
+kind = "create"
+title = "gob-caps capabilities (atoms) need a since field so the changelog lists newly live atoms"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/gob-caps/**", "crates/frob-release/**"]
+acceptance = ["A capability atom carries a since version, and frob release changelog lists atoms newly live in the release alongside rules"]
+body = "Follow-up of VGQ66DC acceptance 2: only rules are covered today."
+at = "2026-10-26T14:43:32Z"
+actor = "lognd"
+rev = 1
