@@ -2,7 +2,8 @@
 id = "01M5WAN9GG0E1M9PM16B3EMY2Z"
 title = "Wire the rule severity ramp (gob_rules::ramp effective_ramped) into each product's check pipeline"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
