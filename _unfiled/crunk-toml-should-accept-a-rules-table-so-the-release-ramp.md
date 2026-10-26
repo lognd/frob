@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-26T17:02:23Z"
-updated = "2026-10-26T21:39:39Z"
-scope = ["crates/crunk-spec/**", "crates/crunk-check/**", "docs/crunk/config.md", "docs/design/rules.md"]
+updated = "2026-10-26T21:39:40Z"
+scope = ["crates/crunk-spec/**", "crates/crunk-check/**", "docs/crunk/config.md", "docs/design/rules.md", "docs/schemas/crunk.json"]
 
 [[acceptance]]
 text = "Given crunk.toml with [rules] ramp = false, when crunk check runs, then new-in-release rules are not downgraded to warn; a [rules] table loads without error"
