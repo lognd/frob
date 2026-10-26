@@ -2,7 +2,8 @@
 id = "01M5X2XDTA4WAYXGS19F3D43SD"
 title = "CI: crunk check_exit and e2e tests fail since the release ramp downgrades new rules to warn"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
