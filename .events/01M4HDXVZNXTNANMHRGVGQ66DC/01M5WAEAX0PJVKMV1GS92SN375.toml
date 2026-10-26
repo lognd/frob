@@ -1,0 +1,75 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-26T14:39:39Z"
+digest = "abc675f28e7044b62a0bd726aaa0e57701a7d5488a493757fc49713c1b81c20e"
+exit_code = 0
+head = "bd2db3cfa918396f6d9c3ddea8eb7b9997b179d7"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6309cfc3-367a-4ae1-a3e8-021be5e950fc with nextest profile: default
+    Starting 50 tests across 6 binaries
+        PASS [   0.006s] gob-rules index::tests::a_renamed_old_id_may_not_be_reused
+        PASS [   0.007s] gob-rules exception::tests::covered_findings_are_suppressed_and_the_rest_stand
+        PASS [   0.007s] gob-rules index::tests::a_duplicate_id_inside_one_crate_panics
+        PASS [   0.007s] gob-rules index::tests::the_message_names_the_second_declaration_with_its_line
+        PASS [   0.007s] gob-rules id::tests::families_may_carry_digits_after_the_first_letter
+        PASS [   0.008s] gob-rules id::tests::long_families_up_to_the_cap_are_accepted
+        PASS [   0.010s] gob-rules index::tests::a_duplicate_slug_across_crates_of_a_product_names_both
+        PASS [   0.008s] gob-rules index::tests::the_same_text_as_slug_and_as_retired_id_is_not_a_clash
+        PASS [   0.010s] gob-rules exception::tests::the_tightest_binding_wins_and_a_file_binding_covers_everything
+        PASS [   0.011s] gob-rules index::tests::distinct_names_pass_in_one_group_and_across_groups
+        PASS [   0.012s] gob-rules index::tests::a_duplicate_across_products_panics
+        PASS [   0.008s] gob-rules indexgen::tests::a_relay_repo_rule_binds_through_relay_rule
+        PASS [   0.008s] gob-rules indexgen::tests::a_non_unit_rule_struct_is_rejected
+        PASS [   0.008s] gob-rules indexgen::tests::a_new_unindexed_rule_file_makes_the_index_stale
+        PASS [   0.008s] gob-rules indexgen::tests::a_must_measure_repo_rule_binds_through_measured
+        PASS [   0.007s] gob-rules indexgen::tests::legacy_derive_files_and_mod_rs_are_skipped
+        PASS [   0.017s] gob-rules index::tests::a_retired_id_may_not_be_reused_in_another_crate
+        PASS [   0.006s] gob-rules indexgen::tests::scan_finds_attribute_rules_sorted_by_stem
+        PASS [   0.006s] gob-rules precision::tests::a_run_counts_accepts_waives_and_open_findings_per_rule
+        PASS [   0.008s] gob-rules indexgen::tests::render_lists_mods_metas_bind_and_the_freshness_test
+        PASS [   0.013s] gob-rules indexgen::tests::freshness_follows_the_committed_file
+        PASS [   0.009s] gob-rules precision::tests::only_rules_over_the_ceiling_with_enough_samples_are_demoted
+        PASS [   0.006s] gob-rules precision::tests::the_rate_counts_accepts_and_dismissals_over_decided_findings
+        PASS [   0.006s] gob-rules registry::tests::a_new_error_rule_ramps_to_warn_unless_ramp_is_off_or_overridden
+        PASS [   0.007s] gob-rules required::tests::required_pack_failure_maps_to_matching_variant
+        PASS [   0.018s] gob-rules indexgen::tests::a_file_stem_that_is_not_the_lowercase_id_is_rejected
+        PASS [   0.007s] gob-rules registry::tests::registry_rows_differ_only_in_provenance
+        PASS [   0.007s] gob-rules required::tests::unmarked_pack_failure_is_not_required
+        PASS [   0.007s] gob-rules ramp::tests::an_error_rule_is_warn_through_its_release_line_then_error
+        PASS [   0.008s] gob-rules ramp::tests::lower_severities_and_bad_versions_are_never_ramped
+        PASS [   0.006s] gob-rules::derive duplicate_ids_are_reported_with_both_modules
+        PASS [   0.006s] gob-rules::derive fingerprint_ignores_numbers_and_whitespace_but_not_anchor
+        PASS [   0.011s] gob-rules registry::tests::rules_settings_apply_identically
+        PASS [   0.006s] gob-rules::derive polarity_defaults_to_pplus_and_must_measure_to_false
+        PASS [   0.008s] gob-rules::derive registry_lists_derived_rules_by_id_and_slug
+        PASS [   0.006s] gob-rules::located a_located_emission_becomes_a_finding_in_its_file
+        PASS [   0.006s] gob-rules::rule_attr doc_is_the_colocated_page
+        PASS [   0.008s] gob-rules::rule_attr def_carries_every_declared_field
+        PASS [   0.007s] gob-rules::rule_attr rule_evaluates_through_a_trait_object_host
+        PASS [   0.009s] gob-rules::rule_attr fires_on_bare_marker_and_stamps_its_id
+        PASS [   0.010s] gob-rules::located located_emissions_carry_their_path_and_plain_ones_do_not
+        PASS [   0.006s] gob-rules::unresolved a_finding_carries_its_reason_without_reading_the_message
+        PASS [   0.013s] gob-rules::derive reasons_are_vetted
+        PASS [   0.011s] gob-rules::rule_attr def_records_file_and_line
+        PASS [   0.006s] gob-rules::unresolved a_rule_report_is_clean_only_when_applied_examined_and_silent
+        PASS [   0.012s] gob-rules::rule_attr clean_when_owned_by_directive
+        PASS [   0.007s] gob-rules::unresolved an_unlisted_code_is_opaque_and_keeps_its_code
+        PASS [   0.007s] gob-rules::unresolved every_code_round_trips_through_the_typed_reason_and_its_json_string
+        PASS [   0.005s] gob-rules::unresolved type_reasons_round_trip_and_carry_class_and_remedy
+        PASS [   2.450s] gob-rules::ui fix_without_applicability_does_not_compile
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.478s] 50 tests run: 50 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules"
+size = 5271
+status = "measured"
+test_count = 50
+tests_digest = "034f2c69b80d6bcc7b472da095eabed93ee87e698499ee3c039b87c1832870c7"
+at = "2026-10-26T14:39:39Z"
+actor = "lognd"
+rev = 1
