@@ -2,13 +2,13 @@
 id = "01M5GAT99HX9VW1S0MEFKKYQ41"
 title = "GRL docs and fixtures still show invalid model shorthand (node app owns, may because=)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M3ZWPE0CNFWB4PTW3D05GDWP"
 reporter = "lognd"
 created = "2026-10-21T22:55:22Z"
-updated = "2026-10-26T04:18:52Z"
+updated = "2026-10-26T04:18:53Z"
 scope = ["docs/design/grl-spec.md", "crates/gob-plan/src/grl/**"]
 
 [[acceptance]]
