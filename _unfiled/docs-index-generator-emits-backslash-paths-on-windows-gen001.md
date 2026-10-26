@@ -2,7 +2,8 @@
 id = "01M5W37Y1PAH12PCD44W3VRH2G"
 title = "docs index generator emits backslash paths on Windows (GEN001 red on windows CI)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
