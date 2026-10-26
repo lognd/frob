@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T23:26:32Z"
-updated = "2026-10-26T12:51:49Z"
+updated = "2026-10-26T12:59:37Z"
 scope = ["crates/gob-check/src/tools.rs"]
 
 [[acceptance]]
 text = "a tool stage that fails to compile because a shared target dir holds an artifact older than the sources is detected and rerun once, or the finding names the stale artifact, covered by a test"
-bound = false
+bound = true
 +++
 
 found while draining tickets: with several worktrees sharing CARGO_TARGET_DIR, the clippy stage reported 'no failure_cause in the root' for code that compiled by hand; touching the crate sources fixed it. Cargo fingerprints by path, so worktrees at different commits can leave a stale artifact.
