@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T04:36:54Z"
-updated = "2026-10-26T04:49:02Z"
+updated = "2026-10-26T04:53:03Z"
 scope = ["crates/crunk-ingest/tests/**", "crates/crunk-tailwind/src/runtime/**", "crates/frob-check/tests/it/**", "crates/frob-check/src/**", "docs/**"]
 
 [[acceptance]]
