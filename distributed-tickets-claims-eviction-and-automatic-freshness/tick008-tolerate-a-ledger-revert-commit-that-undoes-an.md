@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-27T01:23:56Z"
-updated = "2026-10-27T01:34:35Z"
+updated = "2026-10-27T01:35:18Z"
 scope = ["crates/frob-check/**", "docs/reference/rules/TICK008.md", "crates/frob-ledger/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "A genuine non-reindex move or edit of an event still fires TICK008"
-bound = false
+bound = true
 +++
 
 Revert e958528049 on frob-tickets (chore(tickets): revert duplicate crunk import) touches 427 event files and makes TICK008 report an error on every ticket check and land (currently shown as pre-existing). Find the rule implementation (grep TICK008 under crates/) and fix; scope above is a guess, widen the lease as needed.

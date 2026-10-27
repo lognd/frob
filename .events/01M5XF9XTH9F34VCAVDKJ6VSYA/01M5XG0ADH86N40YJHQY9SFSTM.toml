@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-27T01:35:18Z"
+digest = "8f199273787cdd9fc72225f743c411356794d9a65577ec5742db3fd5e657d522"
+exit_code = 0
+head = "c2dc3b583284463080fc96dabb59d86e0bcaf513"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8b921150-8ca2-4664-8bd3-0481206c58c1 with nextest profile: default
+    Starting 5 tests across 4 binaries (470 tests skipped)
+        PASS [   0.332s] frob-cli::it ticket_moves::a_revert_of_an_earlier_ledger_commit_does_not_fire
+        PASS [   0.332s] frob-cli::it ticket_moves::a_commit_without_the_trailer_that_renames_a_ticket_file_fires_tick008
+        PASS [   0.341s] frob-cli::it ticket_moves::an_allow_move_trailer_exempts_a_commit
+        PASS [   0.367s] frob-cli::it ticket_moves::a_commit_that_only_adds_events_and_edits_frontmatter_does_not_fire
+        PASS [   0.395s] frob-cli::it ticket_moves::a_genuine_reindex_move_does_not_fire
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.397s] 5 tests run: 5 passed, 470 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(/ticket_moves/)"
+size = 1288
+status = "measured"
+test_count = 5
+tests_digest = "14bdf3d0e6064f8766a1948ea3f5b327eb13c8fdcee82aed47ea148bdf72a03b"
+at = "2026-10-27T01:35:18Z"
+actor = "lognd"
+rev = 1
