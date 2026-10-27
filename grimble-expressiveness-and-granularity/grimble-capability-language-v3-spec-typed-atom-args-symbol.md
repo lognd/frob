@@ -2,7 +2,8 @@
 id = "01M5XNNH09MD5Q6ZVH1T35301F"
 title = "Grimble capability language v3 spec: typed atom args, symbol-scoped grants, never-claims, taint, expiry, environments"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
