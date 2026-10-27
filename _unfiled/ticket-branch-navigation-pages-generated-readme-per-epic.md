@@ -2,12 +2,12 @@
 id = "01M4HQ2TRBB71KW33TSCHJYNT6"
 title = "Ticket branch navigation pages: generated README, per-epic indexes and TOUR on frob-tickets (placeholders today); navigation.md 2.3 says storage = branch but the knob is ref_mode = orphan"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T01:33:17Z"
-updated = "2026-10-10T01:33:17Z"
+updated = "2026-10-27T00:03:14Z"
 scope = ["crates/frob-ledger/src/**", "docs/design/navigation.md", "changelog.d/**"]
 
 [[acceptance]]
