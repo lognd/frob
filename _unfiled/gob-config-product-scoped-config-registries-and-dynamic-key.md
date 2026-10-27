@@ -4,9 +4,10 @@ title = "gob-config: product-scoped config registries and dynamic-key tables; mi
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-04T14:22:14Z"
-updated = "2026-10-04T14:22:14Z"
+updated = "2026-10-27T02:58:09Z"
 
 [[acceptance]]
 text = "Given frob and crunk config tables, when gen runs, then each product gets its own reference page and schema and neither contains the other's keys"
