@@ -4,9 +4,10 @@ title = "gob-symbols: lift the 160 depth cap in the python, csharp and typescrip
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-14T00:28:59Z"
-updated = "2026-10-14T00:28:59Z"
+updated = "2026-10-27T02:58:19Z"
 scope = ["crates/gob-symbols/**"]
 +++
 
