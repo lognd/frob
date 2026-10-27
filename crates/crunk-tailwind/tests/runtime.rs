@@ -17,6 +17,10 @@ use crunk_tailwind::runtime::{
 };
 use gob_cache::Cache;
 
+#[allow(
+    clippy::print_stderr,
+    reason = "a named skip must be visible in the test log"
+)]
 fn node_present() -> bool {
     let found = gob_exec::Program::Tool {
         name: "node".into(),

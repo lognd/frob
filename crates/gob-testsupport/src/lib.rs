@@ -151,7 +151,7 @@ pub fn python_test_prerequisites(test: &str) -> bool {
             std::env::var_os(REQUIRE_PYTHON_TESTS).is_none(),
             "{REQUIRE_PYTHON_TESTS} is set but {reason}"
         );
-        eprintln!("skipped: {reason}");
+        tracing::warn!(%reason, "skipped: prerequisite missing");
         return false;
     }
     true
@@ -181,7 +181,7 @@ pub fn node_test_prerequisites(test: &str, tools: &[&str]) -> bool {
             std::env::var_os(REQUIRE_NODE_TESTS).is_none(),
             "{REQUIRE_NODE_TESTS} is set but {reason}"
         );
-        eprintln!("skipped: {reason}");
+        tracing::warn!(%reason, "skipped: prerequisite missing");
         return false;
     }
     true

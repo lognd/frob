@@ -5,6 +5,12 @@
 //! (no such file means no report, as when a filter matches nothing), echoes its argument vector to
 //! stdout and exits with the number in `fake-dotnet.exit` (0 when that file is absent).
 
+#![allow(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "a fake CLI fixture: stdout/stderr is the protocol under test"
+)]
+
 use std::path::PathBuf;
 use std::process::ExitCode;
 

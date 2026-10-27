@@ -26,7 +26,7 @@ log and dispatch tables of the milestone-1 build are gone; the history is in the
 
 - Deny `missing_docs` and the clippy doc lints; one-line docstring on every public symbol.
 - Fallible operations return `Result` with typed error sets; `tracing`, not `println!`, outside
-  renderers; no `std::process` outside `gob-git` and `gob-exec`.
+  renderers (clippy denies `print_stdout`, `print_stderr`, `dbg_macro`); no `std::process` outside `gob-git` and `gob-exec`.
 - Test with `cargo nextest`; `insta` snapshots; markdown corpora through `gob-mdtest`.
 
 ## Commits and files

@@ -102,7 +102,10 @@ signature or doc drift is reported; `frob ack --help` lists the forms.
   clippy pedantic and rustdoc lints are errors in CI.
 - Fallible operations return typed `Result`s; panics are for programmer
   bugs. No `std::process` outside `gob-exec` and `gob-git` (PROC001).
-  Log through `tracing`, never `println!`, outside renderers.
+  Log through `tracing`, never `println!`, outside renderers; the workspace
+  clippy lints deny `print_stdout`, `print_stderr` and `dbg_macro` (tests are
+  exempt via `clippy.toml`; build scripts, benches and fake CLI fixtures carry a
+  crate-level `allow` with a reason).
 - Update `docs/` in the same change as the code it describes.
 - No new dependencies without discussion; open an issue first.
 - Never read or write `.env` files or private keys.
