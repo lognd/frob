@@ -17,6 +17,7 @@
 //! language has tests and `[coverage] require_reports` is true.
 
 pub mod lcov;
+pub mod rust;
 
 use std::path::{Path, PathBuf};
 
@@ -97,7 +98,7 @@ pub trait CoverageProvider: Send + Sync {
 
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
 /// Every registered language; each language ticket adds one entry here.
-pub const PROVIDERS: &[&dyn CoverageProvider] = &[];
+pub const PROVIDERS: &[&dyn CoverageProvider] = &[&rust::RustCoverage];
 
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
 /// The registered coverage provider for test provider `provider`, if any.

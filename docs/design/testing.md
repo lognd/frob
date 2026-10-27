@@ -157,3 +157,16 @@ that no adapter parses is an error, not a verdict, so a flaky parse never
 flips the column). Regenerate the column deliberately with
 `FROB_BLESS_ORACLE=1 cargo test -p gob-check --test oracle_live`, then review
 the diff and refresh `baseline.toml` by hand if a rate moved.
+
+## 9. Native coverage providers
+
+`frob ticket evidence add --provider nextest --coverage` measures coverage
+through the language's `CoverageProvider` (`frob_evidence::coverage`). Rust is
+`coverage::rust::RustCoverage`: it runs
+`cargo llvm-cov nextest [--profile <p>] --lcov --output-path <raw> <filter args>`
+at the repository root, the shared normaliser rewrites the lcov to
+repo-relative paths into `.frob/coverage/rust.info`, and every language file
+is merged into the `[coverage] report` that COV004 reads. A missing
+`cargo-llvm-cov` is recorded as not run, never as a pass; a run that leaves no
+report is a missing report, which COV004 flags when `[coverage] require_reports`
+is true and the repository has Rust tests.
