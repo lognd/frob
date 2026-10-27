@@ -1,0 +1,7 @@
+# Hullbreach palette as authored design tokens. stress-fail is the web alert colour that the
+# HUD's ThrustRed (crunk.toml [palette]) is supposed to mirror.
+[color.hull]
+navy = "#0b1e3a"
+
+[color]
+stress-fail = "#ff4d4f"
