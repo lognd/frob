@@ -1,0 +1,12 @@
+kind = "create"
+title = "Remove stale tickets/ tree and fix docs that still describe the in-tree ledger"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+scope = ["tickets/**", ".gitattributes", "README.md", "CONTRIBUTING.md", "docs/**"]
+acceptance = ["tickets/ is removed from experimental and .gitattributes no longer references it", "README, CONTRIBUTING and docs guides/design/migration pages describe the frob-tickets orphan ledger (.events layout), keeping tickets/ only where describing v1 or legacy migration"]
+body = "Owner approved removal. Verified ticket verbs work without tickets/ (list, doable). Run full frob check in a scratch worktree first."
+at = "2026-10-27T01:10:50Z"
+actor = "lognd"
+rev = 1
