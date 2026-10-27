@@ -4,8 +4,9 @@ title = "grimble-serve: add the explore tool"
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "lognd"
 created = "2026-10-23T10:52:29Z"
-updated = "2026-10-23T10:52:29Z"
+updated = "2026-10-27T02:58:41Z"
 scope = ["crates/grimble-serve/**"]
 +++
