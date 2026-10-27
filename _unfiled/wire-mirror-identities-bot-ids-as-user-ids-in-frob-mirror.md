@@ -4,9 +4,10 @@ title = "Wire mirror identities: bot_ids as user ids in frob mirror recreate, tr
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-20T05:55:34Z"
-updated = "2026-10-20T05:55:34Z"
+updated = "2026-10-27T02:58:27Z"
 scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/mirror_cmd.rs"]
 +++
 
