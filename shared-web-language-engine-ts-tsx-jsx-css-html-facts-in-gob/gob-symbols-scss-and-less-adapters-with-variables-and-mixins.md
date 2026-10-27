@@ -4,10 +4,11 @@ title = "gob-symbols: SCSS and Less adapters with variables and mixins as phase"
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T09:05:18Z"
-updated = "2026-10-06T09:05:18Z"
+updated = "2026-10-27T02:58:11Z"
 labels = ["creates:crates/gob-symbols/src/scss/**"]
 scope = ["crates/gob-symbols/src/scss/**"]
 +++
