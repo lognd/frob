@@ -4,10 +4,11 @@ title = "data tier and operations (SYSDESIGN501+)"
 type = "story"
 category = "todo"
 priority = "low"
+points = 5
 parent = "01M3AXSDACKS00T3E853M1J0DR"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T22:22:25Z"
+updated = "2026-10-27T02:57:58Z"
 aliases = ["T-6429"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
