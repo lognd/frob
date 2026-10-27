@@ -894,7 +894,7 @@ file and is not repeated. Language ids are those of the adapter registry:
 ### 8.1 core-effects
 
 Licence MIT; basis CWE-22, CWE-73, CWE-78, CWE-119, CWE-338, CWE-526,
-CWE-668, CWE-918. 18 atoms (13 leaves, 5 parents), 37 vocabularies, 91
+CWE-668, CWE-918. Today 18 atoms (13 leaves, 5 parents); the v3 vocabulary (grimble-capabilities-v3.md section 3) extends this table with `fs.exec`, `fs.temp`, `net.resolve`, `net.tls`, `env.cwd`, `process.signal`, `thread`, `ffi`, `eval`, `deserialize`, `reflect`, `db`, `ipc`, `log` and `secret`, and the pack is versioned (v3 section 12), 37 vocabularies, 91
 detector items (39 in the three source languages, 52 `impossible`),
 146 lock items.
 
@@ -907,16 +907,18 @@ incidental atom is a Warn, not an Error, so adoption is not a wall of
 Errors (the model lists them where they are used); the repository raises
 any of them with `[packs.severity]` (open question 11.10).
 
+The `args` column names the atom's argument slots; their types, the extraction rule and the Unresolved verdict for each live in grimble-capabilities-v3.md section 3, which is the normative schema (`path` is a repo-relative or rooted path glob plus an operation set, `host` a host glob with port, scheme and address class, `name` an environment variable glob for `env.*` and a binary with argv shape and `shell` for `process.spawn`).
+
 | Atom | Parent | `args` | CAP001 | CAP002 | cwe | Meaning |
 |---|---|---|---|---|---|---|
 | `fs` | | none | | | | any filesystem access (grouping atom) |
-| `fs.read` | `fs` | path | error | warn | CWE-22 | reads file content or directory listings or metadata |
-| `fs.write` | `fs` | path | error | warn | CWE-73 | creates, modifies, renames or removes files and directories |
+| `fs.read` | `fs` | path, ops | error | warn | CWE-22 | reads file content or directory listings or metadata |
+| `fs.write` | `fs` | path, ops | error | warn | CWE-73 | creates, modifies, renames or removes files and directories |
 | `net` | | none | | | | any network access (grouping atom) |
-| `net.connect` | `net` | host | error | warn | CWE-918 | opens an outbound connection or sends a request |
-| `net.listen` | `net` | host | error | warn | CWE-668 | binds a socket or starts a server |
+| `net.connect` | `net` | host, port, scheme, class | error | warn | CWE-918 | opens an outbound connection or sends a request |
+| `net.listen` | `net` | bind, port, class | error | warn | CWE-668 | binds a socket or starts a server |
 | `env` | | none | | | | process environment (grouping atom) |
-| `env.read` | `env` | name | warn | warn | CWE-526 | reads environment variables, the working directory or the executable path |
+| `env.read` | `env` | name | warn | warn | CWE-526 | reads environment variables (the working directory and executable path move to `env.cwd` in v3) |
 | `env.write` | `env` | name | error | warn | CWE-454 | sets or removes environment variables or changes the working directory |
 | `clock` | | none | warn | warn | | reads wall or monotonic time, or sleeps |
 | `rng` | | none | warn | warn | CWE-338 | draws randomness |
@@ -925,7 +927,7 @@ any of them with `[packs.severity]` (open question 11.10).
 | `stdio.write` | `stdio` | none | warn | warn | | writes standard output or error |
 | `exit` | | none | warn | warn | | terminates the process |
 | `process` | | none | | | | process control (grouping atom) |
-| `process.spawn` | `process` | name | error | warn | CWE-78 | starts another program or a shell command (alias `exec`) |
+| `process.spawn` | `process` | bin, argv, shell, env | error | warn | CWE-78 | starts another program or a shell command (alias `exec`) |
 | `unsafe` | | none | error | warn | CWE-119 | bypasses the language's memory or type safety |
 
 Detectors, Rust (13 rows, kind `callee` with a typed match unless noted;

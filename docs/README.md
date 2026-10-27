@@ -55,6 +55,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/exceptions.md](design/exceptions.md) | Exceptions: waivers, debt, quick fixes, and permanent decisions | current | gob |
 | [design/git-io.md](design/git-io.md) | Git and GitHub without subprocess storms | current | gob |
 | [design/goals.md](design/goals.md) | frob v2: goals and principles | current | gob |
+| [design/grimble-capabilities-v3.md](design/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
 | [design/grimble-model.md](design/grimble-model.md) | grimble: the system-design model and its code binding | draft | grimble |
 | [design/grl-examples-model.md](design/grl-examples-model.md) | GRL examples: model inputs, node, cell and owned by | current | grimble |
 | [design/grl-spec.md](design/grl-spec.md) | GRL: the grimble rule language | draft | grimble |

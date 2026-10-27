@@ -27,6 +27,7 @@ ACCEPTED and further changes go through tickets.
 | rules.md | rule derive, families, check pipeline, waivers, ratchet |
 | grimble-model.md | grimble (.grmb) model grammar, kernel, binding, drift findings, data packs |
 | build-test-ci.md | build locality, test kinds, generated artifacts, CI budget |
+| grimble-capabilities-v3.md | v3 capability language: typed atom arguments, symbol-scoped grants and providers, effect transitivity, never-claims, taint, expiring exceptions, profiles, vocabulary versioning |
 | monorepo.md | frob, grimble and crunk in one workspace; publishing |
 | migration.md | v1 import, rule id map, rollout |
 | products.md | frob / grimble (design goblin) / crunk split |

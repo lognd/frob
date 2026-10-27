@@ -7,6 +7,12 @@
 //! no results, as when a filter matches nothing); `fake-unity.exit` is the exit code (0 when absent).
 //! Its argument vector is echoed to stdout first.
 
+#![allow(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "a fake CLI fixture: stdout/stderr is the protocol under test"
+)]
+
 use std::path::PathBuf;
 use std::process::ExitCode;
 

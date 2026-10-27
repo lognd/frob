@@ -4,6 +4,11 @@
 //! (scheduled)"); the `perf` test covers the same contract on a fixture. Run in release:
 //! `cargo bench -p frob-check --bench full_check`.
 #![allow(missing_docs, reason = "criterion_group! generates undocumented items")]
+#![allow(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "a benchmark binary reports its results on stdout/stderr"
+)]
 
 use std::path::{Path, PathBuf};
 

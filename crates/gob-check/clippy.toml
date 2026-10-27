@@ -1,6 +1,9 @@
 # Per-crate copy of the workspace clippy.toml (clippy reads only the nearest file) plus the rule-code
 # read ban of audit M7. Keep the entries above the "Rules read" comment identical to ../../clippy.toml.
 msrv = "1.98"
+# Tests may print (libtest captures it); everything else is denied by the workspace print lints.
+allow-print-in-tests = true
+allow-dbg-in-tests = true
 doc-valid-idents = ["GitHub", "GitLab", "SQLite", "TypeScript", "JavaScript", "OAuth", "gob", "frob", "grimble", "crunk", ".."]
 
 # One canonicalization function (docs/design/paths.md section 3): std's returns verbatim

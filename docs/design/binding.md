@@ -1039,9 +1039,12 @@ For node n and atom a:
 - `M(n)`: identities with `owner(i) = Exact(Some(n))` (Must-owned).
 - `Y(n)`: identities with n in `hi(owner(i))` but not `lo` (May-owned).
 - `H(n)`: the hidden placeholders of n's `owns` clauses (unseen remainder).
-- `Grants(n, a)`: the identities in the scope of every `may A' at SEL` clause of
-  n with A' covering a (hierarchy: `fs` covers `fs.read`), through `sel`; the
-  default scope is `M(n)`.
+- `Grants(n, a)`: the identities in the scope of every `may A'(args) at SEL` clause of
+  n with A' covering a (hierarchy: `fs` covers `fs.read`), through `sel` at
+  symbol granularity (`FILE::SYMBOL` is not collapsed to its file); the
+  default scope is `M(n)`. Scope alone does not cover a use: the grant's typed
+  arguments, `via`, `profile` and `until` must also hold for that use
+  (grimble-capabilities-v3.md sections 3-5, 11).
 - `Det(i, a) = detectors(L(i), a)`: NotApplicable | None | Some(precision).
 - `Use(i, a) = effects(i)` restricted to a: an Answer over EffectSites; `Use_lo`
   Must uses, `Use_hi` possible uses.
@@ -1060,7 +1063,13 @@ The cell of `(n, a)` is computed, in this order:
 2. Applicability. Partition `M(n) U Y(n)` by language. If `Det(L, a)` is
    NotApplicable for every language present: `not-applicable`. Identities of a
    language with NotApplicable leave the subject set for the rest.
-3. Observed uses, BEFORE any excuse. Let `E(n, a)` be the identities of the
+3. Observed uses, BEFORE any excuse. Each use is judged on its own against the
+   verdicts of grimble-capabilities-v3.md 4.4 (allowed, denied, unresolved,
+   deferred); a covered use never masks an uncovered use of the same atom, and
+   `covered by a grant` below means the atom, every constrained argument slot,
+   `via`, profile and expiry all match with Must values. An argument that cannot
+   be extracted makes the use unresolved (CAP006), which sets the cell `unknown`
+   exactly as item 4 does, never `uses`-clean. Let `E(n, a)` be the identities of the
    remaining subject set covered by a template excuse for a' covering a
    (grmb-spec 4.7, packs.md 6.7); it is empty when no template applies. If
    some `i` in `M(n)` has `Use_lo(i, a)` non-empty:
@@ -1101,6 +1110,10 @@ of n and not in `Use_lo`: it can prevent `declared-unused` (a use might
 exist), make `undeclared` Unresolved (not fired) and never create `uses`.
 Over-approximated ownership is thus legal for P- cells and illegal as the sole
 basis of a P+ finding, exactly the table of universal-model.md 4.2.
+
+Transitive effects (v3 section 6) enter `Use` through per-symbol effect
+summaries: a use reached through a wrapper counts for the caller as well as the
+callee unless the callee is a declared `provides` boundary.
 
 Unresolved accounting. The summary carries one Unresolved per node for its
 `unknown` cells (not per cell), reason `no-detector` or `fidelity`, so an

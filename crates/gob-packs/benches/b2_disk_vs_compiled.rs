@@ -5,6 +5,11 @@
 //! plan cache warm and the disk-over-compiled ratio is held to 1.3x. Exits non-zero when a ratio
 //! is over budget or the JSON differs.
 #![allow(missing_docs, reason = "bench harness")]
+#![allow(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "a benchmark binary reports its results on stdout/stderr"
+)]
 
 mod b2;
 
