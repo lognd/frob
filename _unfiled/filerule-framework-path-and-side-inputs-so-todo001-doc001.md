@@ -4,9 +4,10 @@ title = "FileRule framework: path and side inputs so TODO001, DOC001, DOC002 and
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-17T21:05:14Z"
-updated = "2026-10-17T21:05:14Z"
+updated = "2026-10-27T02:58:21Z"
 scope = ["crates/gob-rules/**", "crates/gob-check/**"]
 +++
 
