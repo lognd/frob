@@ -2255,6 +2255,7 @@ fn the_base_ci_gate_falls_back_to_the_local_tip_without_a_remote_tracking_ref() 
 }
 
 /// Whether a directory the probe logged names `wt`, ignoring slash style, verbatim prefix and case.
+// frob:accept PATH001 because="verbatim prefix stripping is tested on a literal Windows verbatim marker"
 fn same_dir(logged: &str, wt: &Path) -> bool {
     let norm = |s: &str| {
         s.trim()

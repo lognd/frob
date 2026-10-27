@@ -1390,6 +1390,7 @@ both_layouts!(triage_list_and_accept_work_in_both_layouts);
 /// Scrub rewrites a home path in a ticket and keeps the fold, in both layouts, idempotently.
 // frob:ticket 01M4HQ2T0QV27JHJP0DRF7ZZHA
 // frob:tests crates/frob-ledger/src/scrub.rs::Ledger.scrub
+// frob:accept PATH001 because="the ledger rewrite hook is tested with a literal home path as input"
 fn scrub_works_in_both_layouts(layout: Layout) {
     let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let mut req = NewTicket::new("Dirty", TicketType::Task);

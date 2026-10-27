@@ -69,6 +69,7 @@ fn env_key_parsing() {
 }
 
 #[test]
+// frob:accept PATH001 because="key path resolution is tested with a synthetic HOME value"
 fn path_resolution() {
     // `/x/cfg` is not absolute on Windows (no drive), so build the base from a real absolute path.
     let base = std::env::temp_dir().join("cfg");

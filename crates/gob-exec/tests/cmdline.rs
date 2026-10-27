@@ -141,6 +141,7 @@ fn args(argv: &[String]) -> Vec<Arg> {
 }
 
 /// Awkward fragments proptest mixes: spaces, quotes, backslashes, drive letters, `$`, `%`, non-ASCII.
+// frob:accept PATH001 because="Windows command-line quoting is tested on literal Windows paths with spaces"
 fn word() -> impl Strategy<Value = String> {
     let frag = prop_oneof![
         Just(" ".to_owned()),
@@ -187,6 +188,7 @@ proptest! {
 }
 
 #[test]
+// frob:accept PATH001 because="Windows command-line quoting is tested on literal Windows paths with spaces"
 fn known_lines_for_the_merge_driver() {
     let argv: Vec<Arg> = [
         r"C:\Program Files\frob\frob.exe",

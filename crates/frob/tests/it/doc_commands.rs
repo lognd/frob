@@ -39,6 +39,7 @@ fn rel(days: i64) -> String {
 }
 
 /// Rewrite a guide script for execution: current dates for the cycle, the ticket handle captured from `ticket new`.
+// frob:accept PATH001 because="false positive: the literal is a backslash-newline line continuation, not a path"
 fn prepare(script: &str) -> String {
     let joined = script
         .replace("\\\n", "")
