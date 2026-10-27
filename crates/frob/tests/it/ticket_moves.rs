@@ -134,7 +134,7 @@ fn a_commit_without_the_trailer_that_renames_a_ticket_file_fires_tick008() {
     );
 }
 
-// frob:tests frob_ledger::Ledger::move_outside_reindex_findings
+// frob:tests frob_ledger::moves::Ledger::move_outside_reindex_findings
 #[test]
 fn an_allow_move_trailer_exempts_a_commit() {
     let dir = fixture();
@@ -148,7 +148,7 @@ fn an_allow_move_trailer_exempts_a_commit() {
     assert!(tick008(p).is_empty());
 }
 
-// frob:tests frob_ledger::Ledger::move_outside_reindex_findings
+// frob:tests frob_ledger::moves::Ledger::move_outside_reindex_findings
 #[test]
 fn a_revert_of_an_earlier_ledger_commit_does_not_fire() {
     let dir = fixture();
