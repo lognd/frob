@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T02:38:01Z"
+digest = "a90e77a1d285c25a2bbadf0e4b21b6dd461a30fd78dca4e1382289b045e6cd7d"
+exit_code = 0
+head = "d9cbef32f89f4dd5eeaa24b360e271486b98ba63"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c7cae4e7-afd1-48d4-8e01-d976aa63dfc7 with nextest profile: default
+    Starting 5 tests across 13 binaries (146 tests skipped)
+        PASS [   0.007s] frob-evidence::coverage_rust rust_is_registered_under_nextest
+        PASS [   0.008s] frob-evidence::coverage_rust has_tests_needs_a_manifest_and_a_test
+        PASS [   0.010s] frob-evidence::coverage_rust to_lcov_reads_the_report_and_reports_absence
+        PASS [   0.010s] frob-evidence::coverage_rust plan_runs_llvm_cov_nextest_with_the_filter_and_profile
+        PASS [   0.012s] frob-evidence::coverage_rust plan_rejects_an_unterminated_filter
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 5 tests run: 5 passed, 146 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E test(/plan_runs|to_lcov_reads|rust_is_registered|has_tests_needs|plan_rejects/)"
+size = 2094
+status = "measured"
+test_count = 5
+tests_digest = "e9b9436c9f5f46c6be13e1f7f291ea33307ef88ab8606f42fa46363616c3323f"
+at = "2026-10-27T02:38:01Z"
+actor = "lognd"
+rev = 1
