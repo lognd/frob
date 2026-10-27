@@ -76,7 +76,7 @@ struct GateArgs {
         help = "Add a named report to the document; slop lists every signal with its evidence and tier"
     )]
     report: Option<String>,
-    // frob:ticket ~NGXAEYS
+    // frob:ticket 01M5XDC5WFWYYNXBCXRNGXAEYS
     #[arg(
         long,
         value_name = "TIER",
@@ -230,7 +230,7 @@ mod tier_tests {
         )
     }
 
-    // frob:tests crates/crunk/src/lib.rs::CrunkProduct
+    // frob:tests crates/crunk/src/lib.rs::cli
     #[test]
     fn tier_defaults_to_t1() {
         let dir = project();
@@ -238,7 +238,7 @@ mod tier_tests {
         assert_eq!(env["data"]["not_run"]["tier"], "T1", "{env}");
     }
 
-    // frob:tests crates/crunk/src/lib.rs::CrunkProduct
+    // frob:tests crates/crunk/src/lib.rs::cli
     #[test]
     fn a_valid_tier_is_passed_through() {
         let dir = project();
@@ -246,7 +246,7 @@ mod tier_tests {
         assert_eq!(env["data"]["not_run"]["tier"], "T0", "{env}");
     }
 
-    // frob:tests crates/crunk/src/lib.rs::CrunkProduct
+    // frob:tests crates/crunk/src/lib.rs::cli
     #[test]
     fn an_invalid_tier_exits_two_listing_the_choices() {
         let dir = project();
