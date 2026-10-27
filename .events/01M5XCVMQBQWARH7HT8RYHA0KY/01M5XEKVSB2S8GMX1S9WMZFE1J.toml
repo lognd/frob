@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T01:11:52Z"
+digest = "a3d921ee430bd9e6eab1976ffdc13c5cfc2780e240f185a74e14793eabcd7d20"
+exit_code = 0
+head = "ee56e4d9e00d03c47c21c92be67dd6f95be880ec"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b02f02e8-fc9f-4511-8f5a-929f7d43ea88 with nextest profile: default
+    Starting 3 tests across 27 binaries (260 tests skipped)
+        PASS [   0.013s] crunk::export_verb an_unknown_target_exits_two_naming_the_valid_targets
+        PASS [   0.018s] crunk::export_verb export_uss_prints_the_sheet_and_exits_zero
+        PASS [   0.021s] crunk::export_verb every_target_verb_renders_and_out_writes_the_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 3 tests run: 3 passed, 260 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(/export_uss_prints|every_target_verb|an_unknown_target_exits_two/)"
+size = 748
+status = "measured"
+test_count = 3
+tests_digest = "dd93e45166b3fe501a34e13aa73b3e09af85093f3330ea37d2db5bbe3a15ed7a"
+at = "2026-10-27T01:11:52Z"
+actor = "lognd"
+rev = 1
