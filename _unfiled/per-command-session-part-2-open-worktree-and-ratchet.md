@@ -4,9 +4,10 @@ title = "Per-command Session part 2: open worktree and ratchet checkout once in 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-18T04:27:10Z"
-updated = "2026-10-18T04:27:10Z"
+updated = "2026-10-27T02:58:22Z"
 scope = ["crates/frob-check/**", "crates/gob-git/**", "crates/frob/**", "crates/frob-evidence/**", "crates/frob-worktree/**"]
 +++
 
