@@ -4,9 +4,10 @@ title = "decide and document the no-[[test.runner]]-declared fallback policy"
 type = "bug"
 category = "todo"
 priority = "low"
+points = 2
 reporter = "human"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T22:22:22Z"
+updated = "2026-10-27T02:57:47Z"
 aliases = ["T-4149"]
 labels = ["v1-cluster:C4a", "triage:accepted"]
 +++
