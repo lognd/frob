@@ -4,10 +4,11 @@ title = "STORE3xx declared-vs-observed via strata"
 type = "story"
 category = "todo"
 priority = "low"
+points = 5
 parent = "01M38BCP8YSPMT8SG9Y3VM7F8C"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T22:22:26Z"
+updated = "2026-10-27T02:58:07Z"
 aliases = ["T-6508"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 +++
