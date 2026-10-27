@@ -1,0 +1,12 @@
+kind = "create"
+title = "Stage timing events from land and check feeding the presenter and a profile report"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
+scope = ["crates/frob-land/**"]
+acceptance = ["frob land and frob check emit per-stage start/finish events with durations to the presenter; a --profile or stats view reports per-command stage timings"]
+at = "2026-10-27T02:57:31Z"
+actor = "lognd"
+rev = 1
