@@ -4,9 +4,10 @@ title = "sync_policy.rs clone_with_origin makes independent root commits (timing
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-26T16:13:26Z"
-updated = "2026-10-26T16:13:26Z"
+updated = "2026-10-27T02:58:43Z"
 scope = ["crates/frob/tests/it/sync_policy.rs"]
 +++
 
