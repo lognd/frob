@@ -210,6 +210,14 @@ CI) and reports anything above it as not run, never as clean
 | T3 live | a browser or the Unity editor | axe-core, real keyboard and gamepad focus, real fonts |
 | T4 human | a person | taste, soul, usability observation; a person's ack is recorded in `crunk.lock` against the subject's content hash (section 4.1); a subject changed since its ack is Advisory in check and CI and blocks only the release gate |
 
+`--tier` takes `T0` to `T4` (default `T1`); clap exits 2 and lists the
+choices for any other value. The check document's section 4 is
+`not_run`: `{"tier": <the tier the run went up to>, "rules": [...]}`.
+Each entry has `rule`, `family`, `tier` (the tier the rule declares),
+`ran_to`, `status` (`not_run`, or `unresolved` for a `must_measure`
+rule) and a one-line `reason`. Findings of rules above the tier are
+dropped, so a green T1 run says nothing about T2 to T4 rules.
+
 <!-- frob:ticket 01M4DYPH29YAN8DBKAKKCDWQGX -->
 A rule flagged `must_measure` that examines zero subjects is never silent.
 A spec-only project (a valid `crunk.toml`, no stylesheet, JSX or HTML to

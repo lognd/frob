@@ -76,6 +76,20 @@ struct GateArgs {
         help = "Add a named report to the document; slop lists every signal with its evidence and tier"
     )]
     report: Option<String>,
+    // frob:ticket ~NGXAEYS
+    #[arg(
+        long,
+        value_name = "TIER",
+        value_parser = ["T0", "T1", "T2", "T3", "T4"],
+        default_value = "T1",
+        help = "Run rules up to this tier; rules above it are listed under not_run, never clean"
+    )]
+    tier: String,
+}
+
+/// The `--tier` choice as a [`crunk_check::Tier`]; the value parser has already vetted it.
+fn parse_tier(args: Option<&GateArgs>) -> crunk_check::Tier {
+    args.and_then(|a| a.tier.parse().ok()).unwrap_or_default()
 }
 
 impl Product for CrunkProduct {
@@ -100,16 +114,19 @@ impl Product for CrunkProduct {
         matches: &ArgMatches,
     ) -> Outcome<Value> {
         // frob:ticket 01M4CXTBPEVSYD93X6S90ZRDZ9
-        let slop = gob_cli::parse::<GateArgs>(matches)
-            .ok()
-            .and_then(|a| a.report)
+        let gate_args = gob_cli::parse::<GateArgs>(matches).ok();
+        let tier = parse_tier(gate_args.as_ref());
+        tracing::debug!(%tier, "crunk check tier");
+        let slop = gate_args
+            .as_ref()
+            .and_then(|a| a.report.as_deref())
             .is_some_and(|r| r == "slop");
         let only = if slop {
             vec![slop_report::FAMILY.to_owned()]
         } else {
             opts.only.clone()
         };
-        let run = crunk_check::run(
+        let run = crunk_check::run_to_tier(
             root,
             &crunk_check::CheckOptions {
                 only,
@@ -126,6 +143,7 @@ impl Product for CrunkProduct {
                     _ => crunk_rules::family::Gate::Check,
                 },
             },
+            tier,
         )
         .map(|run| {
             let mut document = crunk_check::sibling_document(&run);
@@ -184,4 +202,56 @@ impl Product for CrunkProduct {
 /// The fully registered `crunk` command-line root.
 pub fn cli() -> Cli {
     gob_product::cli::<CrunkProduct>()
+}
+
+#[cfg(test)]
+mod tier_tests {
+    use super::cli;
+    use gob_cli::run_for_test;
+    use serde_json::Value;
+    use std::path::Path;
+
+    fn project() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let spec = crunk_spec::presets::preset("default").expect("default preset");
+        std::fs::write(dir.path().join("crunk.toml"), spec).expect("write config");
+        dir
+    }
+
+    /// Exit code, parsed stdout and stdout plus stderr text.
+    fn check(dir: &Path, extra: &[&str]) -> (i32, Value, String) {
+        let mut args = vec!["check", "--json"];
+        args.extend_from_slice(extra);
+        let (code, out, err) = run_for_test(&cli(), &args, dir);
+        (
+            code,
+            serde_json::from_str(&out).unwrap_or(Value::Null),
+            format!("{out}{err}"),
+        )
+    }
+
+    // frob:tests crates/crunk/src/lib.rs::CrunkProduct
+    #[test]
+    fn tier_defaults_to_t1() {
+        let dir = project();
+        let (_, env, _) = check(dir.path(), &[]);
+        assert_eq!(env["data"]["not_run"]["tier"], "T1", "{env}");
+    }
+
+    // frob:tests crates/crunk/src/lib.rs::CrunkProduct
+    #[test]
+    fn a_valid_tier_is_passed_through() {
+        let dir = project();
+        let (_, env, _) = check(dir.path(), &["--tier", "T0"]);
+        assert_eq!(env["data"]["not_run"]["tier"], "T0", "{env}");
+    }
+
+    // frob:tests crates/crunk/src/lib.rs::CrunkProduct
+    #[test]
+    fn an_invalid_tier_exits_two_listing_the_choices() {
+        let dir = project();
+        let (code, _, err) = check(dir.path(), &["--tier", "T9"]);
+        assert_eq!(code, 2, "{err}");
+        assert!(err.contains("T0") && err.contains("T4"), "{err}");
+    }
 }
