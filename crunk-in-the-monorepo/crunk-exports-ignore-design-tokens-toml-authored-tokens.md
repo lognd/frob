@@ -4,10 +4,11 @@ title = "crunk exports ignore design/tokens/*.toml: authored tokens never reach 
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T02:29:00Z"
-updated = "2026-10-27T02:29:00Z"
+updated = "2026-10-27T02:58:43Z"
 scope = ["crates/crunk-tokens/src/**,crates/crunk/src/tokens.rs,crates/crunk/src/export.rs"]
 +++
 
