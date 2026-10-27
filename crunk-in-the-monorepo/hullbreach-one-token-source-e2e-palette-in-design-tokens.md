@@ -12,6 +12,10 @@ updated = "2026-10-27T00:41:22Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk/tests/e2e_tokens_hullbreach.rs, crates/crunk/tests/fixtures/hullbreach_tokens/**"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M5XCVMQBQWARH7HT8RYHA0KY"
+
 [[acceptance]]
 text = "Given a fixture with the hullbreach palette under design/tokens and a stress-fail literal differing from ThrustRed, when crunk tokens --check runs, then Tailwind, CSS, USS and C# outputs exist and the drift finding names ThrustRed and exits 1; given the literal reconciled, then it exits 0"
 bound = false
