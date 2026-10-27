@@ -1,0 +1,13 @@
+kind = "create"
+title = "Heuristic rule nature and the waivable-error message contract"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
+scope = ["crates/gob-rules/**"]
+acceptance = ["Finding messages for nature=Heuristic rules state heuristic/smell, why it fired, and the exact frob:waive line with reason", "Agent output says obey and do not waive and omits the waive line; human output shows it; reasonless waiver stays an Error"]
+body = "Implements docs/design/rules.md section 6.1 (rules.md 6.1.4). Filed from ~ZHW5Y2M."
+at = "2026-10-27T02:56:02Z"
+actor = "lognd"
+rev = 1
