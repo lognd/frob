@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:02Z"
+updated = "2026-10-27T00:53:31Z"
 aliases = ["crunk:T-0037"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/cache/**", "src/crunk/app/**", "src/crunk/__main__.py", "src/crunk/scaffold/write.py", "invariants/INV-009.md", "tests/unit/test_cache.py", "tests/unit/test_app.py", "tests/unit/test_scaffold.py", "tests/unit/test_main.py", "tests/integration/test_int_09_cache.py", "tests/system/test_e2e_17_cache.py", "docs/design/subsystems/cache.md", "docs/design/subsystems/shell.md", "docs/commands/*.md", "README.md", "docs/index.md"]
 
 [[links]]
