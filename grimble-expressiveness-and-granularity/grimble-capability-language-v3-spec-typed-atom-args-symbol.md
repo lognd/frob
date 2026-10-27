@@ -2,13 +2,13 @@
 id = "01M5XNNH09MD5Q6ZVH1T35301F"
 title = "Grimble capability language v3 spec: typed atom args, symbol-scoped grants, never-claims, taint, expiry, environments"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-27T03:15:08Z"
+updated = "2026-10-27T03:42:09Z"
 idempotency_key = "grimble-expr-spec-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "creates:docs/design/grimble-capabilities-v3.md"]
 scope = ["docs/design/grmb-spec.md", "docs/design/binding.md", "docs/design/packs.md", "docs/design/grimble-model.md", "docs/design/grimble-capabilities-v3.md"]
