@@ -7,9 +7,9 @@ outcome = "done"
 priority = "high"
 reporter = "agent"
 created = "2026-09-03T00:00:00Z"
-updated = "2026-09-03T00:00:02Z"
+updated = "2026-10-27T00:53:30Z"
 aliases = ["crunk:T-0027"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["invariants/INV-001.md", "invariants/INV-002.md", "invariants/INV-003.md", "invariants/INV-004.md", "invariants/INV-005.md", "invariants/INV-006.md", "invariants/INV-007.md", "invariants/INV-008.md", "invariants/*.md", "frob-coverage.lock.json", "coverage.xml", "src/crunk/values/color.py", "src/crunk/values/length.py", "src/crunk/spec/models.py", "src/crunk/ingest/parse.py", "src/crunk/rules/engine.py", "src/crunk/tokens/render.py", "src/crunk/fixes/plan.py", "tests/integration/test_int_05_fixes_pipeline.py", "tests/unit/test_invariants.py", "tests/unit/test_values.py", "tests/unit/test_spec.py", "tests/unit/test_ingest.py", "tests/unit/test_rules_engine.py", "tests/unit/test_fixes.py"]
 +++
 
