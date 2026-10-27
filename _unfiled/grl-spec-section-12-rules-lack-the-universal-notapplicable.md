@@ -4,9 +4,10 @@ title = "grl-spec section 12 rules lack the universal notapplicable or unresolve
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-08T12:10:51Z"
-updated = "2026-10-08T12:10:51Z"
+updated = "2026-10-27T02:58:15Z"
 scope = ["crates/gob-plan/src/grl/parse/tests/fixtures/**", "docs/design/grl-spec.md"]
 +++
 
