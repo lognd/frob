@@ -16,6 +16,10 @@ scope = ["crates/crunk-layout/src/solve/**, crates/crunk-layout/tests/solve*.rs"
 kind = "blocked-by"
 target = "01M5XCWXYNXW0RW8VRDQPY31M6"
 
+[[links]]
+kind = "blocked-by"
+target = "01M5XCWY267M72G3GPYE2ZAPQ5"
+
 [[acceptance]]
 text = "Given a scene, when solved twice, then the outputs are byte-identical. Edge cases: a scene with a duplicate or missing data-id is refused with SCENE002 context not solved; an unknown component tag lays out as an empty block with a note; a viewport of 0x0 returns zero-size boxes without panic; a root taller than the viewport reports page overflow; deeply nested trees (depth 200) do not overflow the stack; two viewports (breakpoints) of one scene are solved independently; nodes with identical positions keep document order; solve of an unchanged scene after a token edit that does not touch it is unchanged"
 bound = false
