@@ -2,7 +2,8 @@
 id = "01M4HQ2TRBB71KW33TSCHJYNT6"
 title = "Ticket branch navigation pages: generated README, per-epic indexes and TOUR on frob-tickets (placeholders today); navigation.md 2.3 says storage = branch but the knob is ref_mode = orphan"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
