@@ -4,9 +4,10 @@ title = "crunk rules: attach Tier A Fix payloads (COLOR001, SPACE001, TYPE001, R
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-17T08:54:10Z"
-updated = "2026-10-17T08:54:10Z"
+updated = "2026-10-27T02:58:20Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/**"]
 
