@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk-layout style: unmapped properties (grid-area, grid-template-areas, order, place-*, named lines, min/max/fit-content, em)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-layout/src/style/**"]
+body = "Currently reported as UnmappedProperty findings or BadValue. Found while working QPY31M6."
+at = "2026-10-27T00:55:09Z"
+actor = "lognd"
+rev = 1
