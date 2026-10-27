@@ -52,6 +52,8 @@ node crunk : trusted {
   may exec at "crates/crunk*/tests/**";
   may net.listen at "crates/crunk-gallery/src/triage/**";
   may net.listen at "crates/crunk/tests/gallery.rs";
+  may net.connect at "crates/crunk/tests/gallery.rs";
+  may net.connect at "crates/crunk-gallery/tests/triage.rs";
 }
 
 /// The std rules compiled to Rust by `cargo dev gen std-rules`: no grants, so any ambient effect in them is CAP001.
