@@ -15,6 +15,10 @@ scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**"]
 kind = "blocked-by"
 target = "01M5XCZ0XPCPA1DT2QB5VGHDZC"
 
+[[links]]
+kind = "blocked-by"
+target = "01M5XCZ119D08JHJJZ8TTR3HMR"
+
 [[acceptance]]
 text = "Given a sitemap route without a screen or a flow dead end, when checked, then UX findings fire"
 bound = false
