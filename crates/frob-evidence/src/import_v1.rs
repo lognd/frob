@@ -630,6 +630,7 @@ fn evidence_events(
             size: 0,
             attestation: None,
             head: None,
+            coverage: None,
         };
         out.push(evidence_text(id, at, &record)?);
     }

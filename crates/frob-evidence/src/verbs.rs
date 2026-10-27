@@ -10,7 +10,7 @@ use crate::attestation::{self, Presence, Request};
 use crate::error::EvidenceError;
 use crate::events::{self, StoredEvidence};
 use crate::provider;
-use crate::record::{EvidenceRecord, Provider, Status};
+use crate::record::{CoverageStatus, EvidenceRecord, Provider, Status};
 use crate::store::Fetched;
 use crate::workspace::Workspace;
 
@@ -99,6 +99,23 @@ pub fn with_record_warnings<T>(mut payload: Payload<T>, record: &EvidenceRecord)
     }
     if record.status == Status::Unmeasured {
         payload = payload.with_warning("the measurement could not be taken (timeout or signal)");
+    }
+    // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+    if let Some(cov) = &record.coverage {
+        let why = cov.reason.as_deref().unwrap_or("no reason given");
+        match cov.status {
+            CoverageStatus::Measured => {}
+            CoverageStatus::NotRun => {
+                payload =
+                    payload.with_warning(format!("coverage not run for {}: {why}", cov.language));
+            }
+            CoverageStatus::MissingReport => {
+                payload = payload.with_warning(format!(
+                    "coverage report missing for {}: {why}; COV004 will flag it",
+                    cov.language
+                ));
+            }
+        }
     }
     payload
 }
@@ -329,6 +346,12 @@ pub struct CaptureFlags {
         help = "1-based acceptance criterion this evidence is offered for (repeatable)"
     )]
     accepts: Vec<usize>,
+    // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+    #[arg(
+        long,
+        help = "Also measure coverage with the language's coverage tool and merge it into the [coverage] report (test providers only)"
+    )]
+    coverage: bool,
 }
 
 /// The `--provider`, `--ref` and `--accepts` flags every evidence-capturing verb shares.
@@ -349,6 +372,9 @@ pub struct CaptureArgs {
     pub statement: Option<String>,
     /// The attestation facts (attestation only).
     pub facts: Vec<String>,
+    // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+    /// Measure coverage alongside the tests (test-runner providers only).
+    pub coverage: bool,
 }
 
 impl CaptureArgs {
@@ -376,8 +402,20 @@ impl CaptureArgs {
             statement,
             facts,
             accepts,
+            coverage,
             ..
         } = flags;
+        // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+        if coverage
+            && matches!(
+                provider,
+                Provider::File | Provider::Attestation | Provider::Command
+            )
+        {
+            return Err(CliError::Usage(
+                "--coverage belongs to a test provider (nextest, pytest, vitest, jest, dotnet, unity)".to_owned(),
+            ));
+        }
         let attesting = provider == Provider::Attestation;
         if attesting && reference.is_some() {
             return Err(CliError::Usage(
@@ -398,6 +436,7 @@ impl CaptureArgs {
             accepts,
             statement,
             facts,
+            coverage,
         })
     }
 
@@ -425,7 +464,13 @@ impl CaptureArgs {
             record.head = crate::guard::head_of(ws.ledger.repo());
             return Ok(record);
         }
-        provider::capture(ws, self.provider, &self.reference, &self.accepts)
+        provider::capture_with(
+            ws,
+            self.provider,
+            &self.reference,
+            &self.accepts,
+            self.coverage,
+        )
     }
 }
 

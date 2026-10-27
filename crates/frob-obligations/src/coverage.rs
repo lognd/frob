@@ -5,8 +5,9 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
+use frob_evidence::coverage::lcov::{FileCov, Lcov};
+use frob_evidence::coverage::{CoverageProvider, PROVIDERS, language_report};
 use globset::{Glob, GlobSet, GlobSetBuilder};
-use gob_path::RelPath;
 use gob_rules::{Finding, RuleDecl as _, Severity};
 use gob_text::{FileInterner, Span};
 
@@ -20,15 +21,6 @@ const CONFIG_FILE: &str = "frob.toml";
 
 /// The header of one threshold entry.
 const ENTRY_HEADER: &str = "[[coverage.threshold]]";
-
-/// Hit and found counts of one file.
-#[derive(Debug, Default)]
-struct FileCov {
-    /// Highest hit count per line number.
-    lines: BTreeMap<u64, u64>,
-    /// Whether each (line, block, branch) was taken at least once.
-    branches: BTreeMap<(u64, u64, u64), bool>,
-}
 
 /// Hit and found counts of a scope.
 #[derive(Debug, Default, Clone, Copy)]
@@ -45,90 +37,6 @@ impl Tally {
     fn percent(self) -> Option<f64> {
         (self.found > 0).then(|| self.hit as f64 * 100.0 / self.found as f64)
     }
-}
-
-/// The path `sf` as the repo-relative, forward-slash path the globs match.
-fn normalize(sf: &str, root: &Path) -> String {
-    let flat = sf.replace('\\', "/");
-    let path = Path::new(&flat);
-    let rebased = if path.is_absolute() {
-        RelPath::from_host(root, path)
-            .ok()
-            .map(|r| r.as_str().to_owned())
-    } else {
-        None
-    };
-    let rel = rebased.unwrap_or(flat);
-    rel.strip_prefix('.')
-        .and_then(|r| r.strip_prefix('/'))
-        .unwrap_or(&rel)
-        .to_owned()
-}
-
-/// Parse the `DA:<line>,<hits>[,<checksum>]` payload into `(line, hits)`.
-fn parse_da(payload: &str) -> Option<(u64, u64)> {
-    let mut it = payload.split(',');
-    let line = it.next()?.trim().parse().ok()?;
-    let hits = it.next()?.trim().parse().ok()?;
-    Some((line, hits))
-}
-
-/// Parse the `BRDA:<line>,<block>,<branch>,<taken>` payload into its key and whether it was taken.
-fn parse_brda(payload: &str) -> Option<((u64, u64, u64), bool)> {
-    let f: Vec<&str> = payload.split(',').map(str::trim).collect();
-    let [line, block, branch, taken] = f.as_slice() else {
-        return None;
-    };
-    let key = (
-        line.parse().ok()?,
-        block.parse().ok()?,
-        branch.parse().ok()?,
-    );
-    Some((key, taken.parse::<u64>().is_ok_and(|t| t > 0)))
-}
-
-/// Parse an lcov `text` into per-file coverage; unrecognised or malformed records are skipped.
-fn parse_lcov(text: &str, root: &Path) -> BTreeMap<String, FileCov> {
-    let mut out: BTreeMap<String, FileCov> = BTreeMap::new();
-    let mut current: Option<String> = None;
-    for raw in text.lines() {
-        let line = raw.trim();
-        if let Some(sf) = line.strip_prefix("SF:") {
-            current = Some(normalize(sf, root));
-            continue;
-        }
-        if line == "end_of_record" {
-            current = None;
-            continue;
-        }
-        let Some(file) = current.as_ref() else {
-            continue;
-        };
-        if let Some(da) = line.strip_prefix("DA:") {
-            if let Some((n, hits)) = parse_da(da) {
-                let slot = out
-                    .entry(file.clone())
-                    .or_default()
-                    .lines
-                    .entry(n)
-                    .or_default();
-                *slot = (*slot).max(hits);
-            } else {
-                tracing::debug!(record = line, "skipping malformed DA record");
-            }
-        } else if let Some(br) = line.strip_prefix("BRDA:") {
-            if let Some((key, hit)) = parse_brda(br) {
-                *out.entry(file.clone())
-                    .or_default()
-                    .branches
-                    .entry(key)
-                    .or_default() |= hit;
-            } else {
-                tracing::debug!(record = line, "skipping malformed BRDA record");
-            }
-        }
-    }
-    out
 }
 
 /// A matcher for `scope`: the glob itself, plus everything below it when it has no glob characters.
@@ -205,6 +113,16 @@ fn valid_percent(pct: f64) -> bool {
 
 /// COV004 over the repo: every `[[coverage.threshold]]` entry against the lcov report.
 pub(crate) fn cov004(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
+    cov004_with(root, files, PROVIDERS)
+}
+
+// frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+/// [`cov004`] over an explicit provider registry: report presence per language, then the thresholds.
+pub(crate) fn cov004_with(
+    root: &Path,
+    files: &mut FileInterner,
+    providers: &[&dyn CoverageProvider],
+) -> Vec<Finding> {
     let config = match CoverageConfig::load(root) {
         Ok(c) => c,
         Err(err) => {
@@ -218,13 +136,17 @@ pub(crate) fn cov004(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
             )];
         }
     };
+    let mut out = if config.require_reports {
+        missing_reports(root, providers)
+    } else {
+        Vec::new()
+    };
     if config.threshold.is_empty() {
-        return Vec::new();
+        return out;
     }
     let report = std::fs::read_to_string(root.join(&config.report))
-        .map(|t| parse_lcov(&t, root))
+        .map(|t| Lcov::parse(&t, root).files)
         .map_err(|e| format!("report `{}` is unreadable ({e})", config.report));
-    let mut out = Vec::new();
     for (i, t) in config.threshold.iter().enumerate() {
         check_entry(root, i, t, &report, files, &mut out);
     }
@@ -306,5 +228,128 @@ fn check_entry(
         } else {
             tracing::debug!(scope = %t.scope, metric, measured, required, "coverage meets threshold");
         }
+    }
+}
+
+// frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+/// One finding per language that has tests but no coverage report: a missing tool is unresolved ("not run"), anything else an error.
+fn missing_reports(root: &Path, providers: &[&dyn CoverageProvider]) -> Vec<Finding> {
+    let mut out = Vec::new();
+    for p in providers {
+        let language = p.language();
+        if !p.has_tests(root) || language_report(root, language).is_file() {
+            continue;
+        }
+        let key = format!("coverage-report:{language}");
+        if which::which(p.required_tool()).is_err() {
+            tracing::info!(
+                language,
+                tool = p.required_tool(),
+                "coverage not run: tool missing"
+            );
+            out.push(Finding::new(
+                def_id(Cov004::DEF),
+                Severity::Unresolved,
+                None,
+                format!(
+                    "{language} coverage not run: `{}` is not installed",
+                    p.required_tool()
+                ),
+                &key,
+            ));
+        } else {
+            tracing::warn!(language, "language has tests but no coverage report");
+            out.push(finding_def(
+                Cov004::DEF,
+                None,
+                format!(
+                    "{language} has tests but no coverage report; run `frob ticket evidence add --coverage` for its test provider"
+                ),
+                &key,
+            ));
+        }
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use frob_evidence::Workspace;
+    use frob_evidence::coverage::{CoverageError, CoveragePlan};
+    use frob_evidence::record::Provider;
+
+    /// A provider whose tests and tool are set by the test.
+    struct Fake(&'static str, &'static str);
+
+    impl CoverageProvider for Fake {
+        fn provider(&self) -> Provider {
+            Provider::Nextest
+        }
+        fn language(&self) -> &'static str {
+            self.0
+        }
+        fn required_tool(&self) -> &'static str {
+            self.1
+        }
+        fn has_tests(&self, _root: &Path) -> bool {
+            true
+        }
+        fn plan(&self, _: &Workspace, _: &str, _: &Path) -> Result<CoveragePlan, CoverageError> {
+            Err(CoverageError::ToolMissing(self.1.to_owned()))
+        }
+        fn to_lcov(&self, _: &Workspace, _: &CoveragePlan) -> Result<String, CoverageError> {
+            Err(CoverageError::Unparseable(String::new()))
+        }
+    }
+
+    fn run(root: &Path, providers: &[&dyn CoverageProvider]) -> Vec<Finding> {
+        cov004_with(root, &mut FileInterner::default(), providers)
+    }
+
+    // frob:tests cov004_with
+    #[test]
+    fn a_tested_language_without_a_report_is_a_finding() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let found = run(dir.path(), &[&Fake("alpha", "sh")]);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].severity, Severity::Error);
+        assert!(
+            found[0]
+                .message
+                .contains("alpha has tests but no coverage report")
+        );
+    }
+
+    // frob:tests cov004_with
+    #[test]
+    fn a_missing_tool_is_not_run_not_a_failure() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let found = run(dir.path(), &[&Fake("beta", "frob-no-such-coverage-tool")]);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].severity, Severity::Unresolved);
+        assert!(found[0].message.contains("not run"));
+    }
+
+    // frob:tests cov004_with
+    #[test]
+    fn a_present_report_or_disabled_requirement_is_clean() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let report = language_report(dir.path(), "alpha");
+        std::fs::create_dir_all(report.parent().expect("parent")).expect("mkdir");
+        std::fs::write(&report, "").expect("write");
+        assert!(run(dir.path(), &[&Fake("alpha", "sh")]).is_empty());
+        std::fs::write(
+            dir.path().join("frob.toml"),
+            "[coverage]\nrequire_reports = false\n",
+        )
+        .expect("toml");
+        let bare = tempfile::tempdir().expect("tempdir");
+        std::fs::write(
+            bare.path().join("frob.toml"),
+            "[coverage]\nrequire_reports = false\n",
+        )
+        .expect("toml");
+        assert!(run(bare.path(), &[&Fake("gamma", "sh")]).is_empty());
     }
 }

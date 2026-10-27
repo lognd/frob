@@ -1,6 +1,10 @@
 //! The `[evidence]` table of `frob.toml`.
 
-use gob_config::ConfigTable;
+use std::path::Path;
+
+use gob_config::{ConfigError, ConfigTable};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 /// Default `[evidence] store`: the local, non-authoritative artifact directory.
 pub const DEFAULT_STORE: &str = "dir:.git/frob/artifacts";
@@ -65,4 +69,46 @@ pub struct TestsTable {
     /// Non-passing pytest outcomes (`skipped`, `xfailed`, `xpassed`) that count as executed tests and so may satisfy evidence; empty (the default) lets none, and they are counted apart either way.
     #[config(default = Vec::<String>::new())]
     pub non_passing_counts: Vec<String>,
+}
+
+// frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+/// One coverage minimum: the files matching `scope` must reach `line` and `branch` percent.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CoverageThreshold {
+    /// A path glob over the covered files, or a directory prefix (no glob characters).
+    pub scope: String,
+    /// Minimum line coverage in percent (0 to 100); omit to leave lines unchecked.
+    #[serde(default)]
+    pub line: Option<f64>,
+    /// Minimum branch coverage in percent (0 to 100); omit to leave branches unchecked.
+    #[serde(default)]
+    pub branch: Option<f64>,
+}
+
+// frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+/// Coverage minimums per scope, measured from an lcov report (COV004), and whether a tested language must have measured coverage.
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "coverage", materialize)]
+pub struct CoverageConfig {
+    /// The merged lcov report COV004 reads, relative to the repository root; `--coverage` evidence capture writes it.
+    #[config(default = "lcov.info".to_owned())]
+    pub report: String,
+    /// Minimums per scope, written as `[[coverage.threshold]]` entries.
+    #[config(default = Vec::new())]
+    pub threshold: Vec<CoverageThreshold>,
+    /// When true, a language that has tests but no coverage report is a COV004 finding (a missing coverage tool is reported as not run instead).
+    #[config(default = true, enforcement)]
+    pub require_reports: bool,
+}
+
+impl CoverageConfig {
+    /// Load `[coverage]` from `<root>/frob.toml` (a missing file means defaults).
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load(root: &Path) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, crate::workspace::PRODUCT)?.value)
+    }
 }

@@ -118,13 +118,14 @@ Materialized: yes.
 
 ## `[coverage]`
 
-Coverage minimums per scope, measured from an lcov report (COV004).
+Coverage minimums per scope, measured from an lcov report (COV004), and whether a tested language must have measured coverage.
 
-Materialized: no.
+Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
-| `report` | `String` | `"lcov.info"` | no | The lcov report to read, relative to the repository root. |
+| `report` | `String` | `"lcov.info"` | no | The merged lcov report COV004 reads, relative to the repository root; `--coverage` evidence capture writes it. |
+| `require_reports` | `bool` | `true` | yes | When true, a language that has tests but no coverage report is a COV004 finding (a missing coverage tool is reported as not run instead). |
 | `threshold` | `Vec<CoverageThreshold>` | `[]` | no | Minimums per scope, written as `[[coverage.threshold]]` entries. |
 
 ## `[directives]`

@@ -12,9 +12,11 @@ authors.workspace = true
 frob-ack = { version = "0.532.0", path = "../frob-ack" }
 frob-doc = { version = "0.532.0", path = "../frob-doc" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
+frob-evidence = { version = "0.532.0", path = "../frob-evidence" }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-tests = { version = "0.532.0", path = "../frob-tests" }
 globset = "0.4"
+which = "8"
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-directives = { version = "0.532.0", path = "../gob-directives" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }

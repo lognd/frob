@@ -24,6 +24,7 @@
 
 pub mod attestation;
 pub mod config;
+pub mod coverage;
 pub mod done;
 pub mod error;
 pub mod events;
@@ -38,12 +39,16 @@ pub mod store;
 pub mod verbs;
 pub mod workspace;
 
-pub use config::{DotnetTable, EvidenceTable, TestsTable, UnityTable};
+pub use config::{
+    CoverageConfig, CoverageThreshold, DotnetTable, EvidenceTable, TestsTable, UnityTable,
+};
 pub use done::DoneGuard;
 pub use error::{EvidenceError, Result};
 pub use guard::EvidenceGuard;
 pub use provider::NonPassing;
-pub use record::{EvidenceRecord, NonPassingCounts, Provider, Status};
+pub use record::{
+    CoverageStatus, CoverageSummary, EvidenceRecord, NonPassingCounts, Provider, Status,
+};
 pub use store::{BlobStore, Fetched, Stored};
 pub use workspace::Workspace;
 

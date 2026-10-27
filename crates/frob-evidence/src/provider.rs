@@ -1181,6 +1181,7 @@ pub fn build_record(
         size: redacted.len() as u64,
         attestation: None,
         head: None,
+        coverage: None,
     })
 }
 
@@ -1257,6 +1258,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Resul
         size: bytes.len() as u64,
         attestation: None,
         head: None,
+        coverage: None,
     })
 }
 
@@ -2131,7 +2133,26 @@ pub fn capture(
     reference: &str,
     accepts: &[usize],
 ) -> Result<EvidenceRecord> {
+    capture_with(ws, provider, reference, accepts, false)
+}
+
+// frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+/// [`capture`], additionally measuring coverage (`--coverage`) for a test-runner provider and recording the summary.
+///
+/// # Errors
+///
+/// Whatever [`capture`] returns; a coverage failure never fails the capture, it is recorded on the record.
+pub fn capture_with(
+    ws: &Workspace,
+    provider: Provider,
+    reference: &str,
+    accepts: &[usize],
+    coverage: bool,
+) -> Result<EvidenceRecord> {
     let mut record = capture_unstamped(ws, provider, reference, accepts)?;
+    if coverage {
+        record.coverage = Some(crate::coverage::run_coverage(ws, provider, reference));
+    }
     // frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
     record.head = crate::guard::head_of(ws.ledger.repo());
     Ok(record)

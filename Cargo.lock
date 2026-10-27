@@ -1429,6 +1429,7 @@ version = "0.532.0"
 dependencies = [
  "frob-ack",
  "frob-doc",
+ "frob-evidence",
  "frob-ledger",
  "frob-tests",
  "globset",
@@ -1456,6 +1457,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tracing",
+ "which",
 ]
 
 [[package]]

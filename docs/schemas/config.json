@@ -899,12 +899,17 @@
     },
     "coverage": {
       "additionalProperties": false,
-      "description": "Coverage minimums per scope, measured from an lcov report (COV004).",
+      "description": "Coverage minimums per scope, measured from an lcov report (COV004), and whether a tested language must have measured coverage.",
       "properties": {
         "report": {
           "default": "lcov.info",
-          "description": "The lcov report to read, relative to the repository root.",
+          "description": "The merged lcov report COV004 reads, relative to the repository root; `--coverage` evidence capture writes it.",
           "type": "string"
+        },
+        "require_reports": {
+          "default": true,
+          "description": "When true, a language that has tests but no coverage report is a COV004 finding (a missing coverage tool is reported as not run instead).",
+          "type": "boolean"
         },
         "threshold": {
           "default": [],
