@@ -2,7 +2,8 @@
 id = "01M5XD3T31J311PC2KD9Q1N24Q"
 title = "Coverage plumbing: shared lcov normaliser, evidence field, --coverage flag, [coverage] materialised and enforced"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
