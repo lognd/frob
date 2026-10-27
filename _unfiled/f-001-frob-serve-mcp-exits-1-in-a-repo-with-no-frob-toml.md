@@ -4,9 +4,10 @@ title = "F-001: frob serve (MCP) exits 1 in a repo with no frob.toml -- give a c
 type = "bug"
 category = "todo"
 priority = "low"
+points = 2
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-04T22:22:21Z"
+updated = "2026-10-27T02:57:39Z"
 aliases = ["T-3803"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 +++
