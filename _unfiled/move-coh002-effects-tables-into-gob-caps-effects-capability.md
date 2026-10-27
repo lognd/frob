@@ -4,9 +4,10 @@ title = "Move COH002 effects tables into gob-caps Effects capability"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-23T09:06:18Z"
-updated = "2026-10-23T09:06:18Z"
+updated = "2026-10-27T02:58:41Z"
 scope = ["crates/gob-caps/**"]
 +++
 
