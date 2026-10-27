@@ -4,9 +4,10 @@ title = "cycle plan --apply: call PmStore::assign_many once instead of assign_on
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-13T22:25:24Z"
-updated = "2026-10-13T22:25:24Z"
+updated = "2026-10-27T02:58:19Z"
 scope = ["crates/frob/**"]
 
 [[links]]
