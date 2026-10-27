@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T01:33:17Z"
-updated = "2026-10-27T00:23:12Z"
+updated = "2026-10-27T00:35:08Z"
 scope = ["crates/frob-ledger/src/**", "docs/design/navigation.md", "changelog.d/**", "crates/frob/src/ticket/migrate_cmd.rs", "crates/frob/tests/it/ticket_migrate.rs"]
 
 [[acceptance]]
