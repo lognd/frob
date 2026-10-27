@@ -4,9 +4,10 @@ title = "frob-worktree: concurrent_work_on_overlapping_tickets_grants_exactly_on
 type = "bug"
 category = "todo"
 priority = "low"
+points = 2
 reporter = "lognd"
 created = "2026-10-08T12:50:47Z"
-updated = "2026-10-08T12:50:47Z"
+updated = "2026-10-27T02:58:15Z"
 labels = ["area:frob"]
 scope = ["crates/frob-worktree/tests/work.rs"]
 +++
