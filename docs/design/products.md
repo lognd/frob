@@ -14,7 +14,7 @@ design model belong together.
 
 | Product | One-line job | Owns | Never does |
 |---|---|---|---|
-| frob (ticket goblin) | accounts for WORK: tickets, scope leases, worktrees, evidence, landing, releases, the obligation gates that tie code to tickets, docs, and tests | tickets/, frob.lock acks, frob-ratchet, invariants/, decisions/, land, release, fleet, MCP for agents | parse CSS semantics, judge architecture, lint code style |
+| frob (ticket goblin) | accounts for WORK: tickets, scope leases, worktrees, evidence, landing, releases, the obligation gates that tie code to tickets, docs, and tests | the frob-tickets ledger branch, frob.lock acks, frob-ratchet, invariants/, decisions/, land, release, fleet, MCP for agents | parse CSS semantics, judge architecture, lint code style |
 | grimble (the design goblin) | judges STRUCTURE: the architecture model (what v1 called strata), symbol binding, capability matrix, universal and language-specific structural lints, neatness (NEAT), CI and Dockerfile policy (CI, DK), cycles, dup, dead code, arch metrics, security patterns | design/*.grmb, `grimble.lock`, packs/, rule packs for code structure | know what a ticket is (it parses `ticket=` in an exception as an opaque string), land anything |
 | crunk (front-end design-system goblin) | judges front-end DESIGN TOKENS: palette, scales, organization, Tailwind, contrast, token export, gallery; and, as a rule pack (D88/D89), front-end web lint (accessibility, SEO, launch readiness, markup and asset performance) | crunk.toml, tokens, CSS/TSX ingest, gallery | know what a ticket is (same opaque `ticket=` rule), model architecture |
 

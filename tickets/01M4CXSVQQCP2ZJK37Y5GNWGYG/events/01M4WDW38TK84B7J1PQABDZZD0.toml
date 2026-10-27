@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "stale in-progress: no lease, worktree or branch; returning to todo for 0.533.0 drain"
-at = "2026-10-14T05:23:58Z"
-actor = "Claude"
-rev = 1

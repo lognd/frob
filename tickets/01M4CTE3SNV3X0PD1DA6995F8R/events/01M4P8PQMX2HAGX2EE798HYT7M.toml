@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["Given cargo dev publish --dry-run, when it runs, then the unconsumed crates are skipped and the rest publish in order"]
-new = ["Given the publish plan of this workspace, when it is computed, then gob-frameworks, gob-trust, gob-packs and frob-gh are absent and no planned crate has a normal or build dependency on a publish = false crate"]
-moved = [0]
-at = "2026-10-11T19:58:13Z"
-actor = "lognd"
-rev = 1

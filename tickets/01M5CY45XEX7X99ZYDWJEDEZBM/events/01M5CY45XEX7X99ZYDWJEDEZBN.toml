@@ -1,9 +1,0 @@
-kind = "create"
-title = "Ticket scrub and doctor --fix scrub unsupported on branch layout"
-type = "task"
-category = "todo"
-priority = "medium"
-body = "found while working ~P418XYE"
-at = "2026-10-20T15:15:51Z"
-actor = "lognd"
-rev = 1

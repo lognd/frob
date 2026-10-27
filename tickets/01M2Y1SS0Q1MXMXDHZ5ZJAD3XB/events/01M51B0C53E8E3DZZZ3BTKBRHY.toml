@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "decision"
-body = "D122 sweep (~6ZBSBCW): stays native. Config, header and supply-chain checks (CSP/HSTS/CORS set, source maps, public buckets, Actions SHA pinning) are cross-file config reads; none is in the bind list of lint-catalogue-2026-10-08.md. Only the Dockerfile-root item may bind hadolint later (not yet in the bind list); no change."
-at = "2026-10-16T03:10:05Z"
-actor = "lognd"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob/src/config_cmd.rs", "crates/grimble/src/config_diff.rs", "crates/grimble/src/config_for.rs", "crates/grimble/src/lib.rs"]
-new = ["crates/frob/src/config_cmd.rs", "crates/grimble/src/config_diff.rs", "crates/grimble/src/config_for.rs", "crates/grimble/src/lib.rs", "crates/grimble/src/init.rs"]
-at = "2026-10-19T07:16:58Z"
-actor = "lognd"
-rev = 1

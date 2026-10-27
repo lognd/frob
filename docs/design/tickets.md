@@ -24,8 +24,8 @@ on top of it.
 Layout note (D79, D81): the ledger moves to the orphan branch
 `frob-tickets` with a human layout, `<top-epic-slug>/<ticket-slug>.md`
 for tickets and `.events/<ULID>/` for event logs (mirror.md 1,
-navigation.md 2). The `tickets/<id>/` layout below is the milestone-1
-machine layout still in use until that migration lands; everything else
+navigation.md 2). The `tickets/<id>/` layout below is the legacy
+milestone-1 machine layout (this repository has migrated off it and no longer has a `tickets/` directory); everything else
 in this section (ULID identity, handles, aliases, events) holds for
 both. In either layout a path is presentation and never a reference
 (navigation.md 1).
@@ -213,7 +213,7 @@ Acks are not events: they live in the ack log of the product lock file.
   updated by compare-and-swap with up to `[git] cas_retries`
   retries (re-read the tip, rebuild the tree, retry); exhausting them
   is exit 3 retryable. When some checkout has the ledger ref checked
-  out, frob updates that checkout's index and worktree for `tickets/`
+  out, frob updates that checkout's index and worktree for the ledger paths
   only, and refuses with a remedy if those paths have local edits.
   `[tickets] ref_mode = "branch"` puts ledger commits on the current
   branch instead, for protected-trunk and fork flows (`ref_mode =

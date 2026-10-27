@@ -1,9 +1,0 @@
-kind = "create"
-title = "opt-in for xfail/skip/xpass to satisfy pytest evidence, counted as a distinct state"
-type = "task"
-category = "todo"
-priority = "medium"
-body = "follow-up of ~QMPSRAV: default exclusion and separate Capture.non_passing counts landed; no config opt-in exists yet to let non-passing outcomes satisfy evidence, nor are non_passing counts surfaced in the evidence record or frob test output. Also vitest/jest skipped are still only dropped, not counted."
-at = "2026-10-19T21:49:53Z"
-actor = "lognd"
-rev = 1

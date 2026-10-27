@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-trust/src/effects/**"]
-new = ["crates/gob-trust/src/effects/**", "crates/gob-trust/src/lib.rs", "crates/gob-trust/tests/effects.rs"]
-at = "2026-10-13T04:40:13Z"
-actor = "lognd"
-rev = 1

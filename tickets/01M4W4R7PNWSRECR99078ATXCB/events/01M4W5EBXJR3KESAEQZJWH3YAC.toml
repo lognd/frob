@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "note"
-body = 'Second root cause found 2026-10-13 22:56: a queued land (not holding land.lock) ran its own cargo doc stage in the shared land-target while the lock holder ran its cargo doc there; the holder blocked ~10 min on .cargo-build-lock (locks_lock_inode_wait) held by the waiter. Fix: no land stage may run before the land lock is held, or per-land target dirs; and the stage wait on a cargo lock must be visible in --status as "blocked on cargo lock held by pid N".'
-at = "2026-10-14T02:56:40Z"
-actor = "lognd"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "field"
-field = "title"
-old = "Land train: adaptive batch size controller (grow on green, halve on red, RAM cap)"
-new = "Land train: adaptive batch size controller (grow on green, halve on red, train_max cap)"
-at = "2026-10-15T20:51:27Z"
-actor = "lognd"
-rev = 1

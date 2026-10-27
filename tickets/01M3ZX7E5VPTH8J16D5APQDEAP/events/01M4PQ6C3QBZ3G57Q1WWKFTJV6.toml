@@ -1,7 +1,0 @@
-kind = "field"
-field = "title"
-old = "GRL snippets over gob-pattern: GRL002, as KIND, as roles, GRL006-GRL008"
-new = "GRL snippet checks that need no parser: GRL006 and GRL008"
-at = "2026-10-12T00:11:26Z"
-actor = "lognd"
-rev = 1

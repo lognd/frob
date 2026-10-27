@@ -1,8 +1,0 @@
-kind = "create"
-title = "Wire gob-config nested_config_dirs into the grimble config loader"
-type = "task"
-category = "todo"
-priority = "medium"
-at = "2026-10-19T13:21:52Z"
-actor = "lognd"
-rev = 1

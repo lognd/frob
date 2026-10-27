@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["docs/design/git-io.md records the release walk-stage timing and budget share"]
-moved = []
-at = "2026-10-16T20:31:06Z"
-actor = "lognd"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["ticket branch init adopts origin's frob-tickets instead of refusing, including a shallow single-branch clone", "frob init in orphan mode creates the local ticket branch from origin", "ticket doctor --fix creates the missing ticket branch and plain doctor refuses with E-DOCTOR-TICKET-BRANCH-MISSING"]
-moved = []
-at = "2026-10-20T15:01:54Z"
-actor = "lognd"
-rev = 1

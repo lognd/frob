@@ -24,7 +24,7 @@ from this tree (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## What frob gives you
 
-- **A ticket ledger in git.** Tickets live under `tickets/` as append-only
+- **A ticket ledger in git.** Tickets live on the orphan branch `frob-tickets` as append-only
   event files, so concurrent branches merge instead of conflict. Tickets have
   types, priorities, story points, acceptance criteria and typed links.
 - **Scope leases.** `frob work` leases a ticket's file globs and creates a

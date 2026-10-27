@@ -19,7 +19,7 @@ removed or archived one maps to its archive path or a reason.
 ## Remapping
 
 `frob doc remap` rewrites markdown links, `frob:doc` and `frob:describes` targets, `.grmb` refs and
-`x.md section N` citations under `crates/` and `docs/`. Nothing under `tickets/` or `notes/` changes.
+`x.md section N` citations under `crates/` and `docs/`. Nothing under `notes/` changes.
 Pass `--dry-run` to list the files without writing.
 
 Every row's target must be a heading of the new file at HEAD. Otherwise the command refuses with exit 3,

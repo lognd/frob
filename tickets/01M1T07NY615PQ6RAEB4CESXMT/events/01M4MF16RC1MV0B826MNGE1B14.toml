@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["given a design note settling the acquire/release pair table shape and whether the existing release-postdominance logic in _protocol_summary.py is reused, when this ticket's design step completes, then the note is attached before implementation", "given a scope containing performance.mark(), Map.set(), or setTimeout() with no reachable paired release call in the same scope, when frob check runs, then the new rule fires", "given a properly paired acquire/release call, when frob check runs, then the rule stays quiet"]
-new = ["Given the design note comment on this ticket settling the acquire/release pair table shape (and that the v1 _protocol_summary.py logic is not reusable: it no longer exists in this tree), when implementation starts, then the note is attached to the ticket", "Given TypeScript or JavaScript source with performance.mark(), a Map.set() on a receiver built by new Map, or a bound setTimeout() and no paired release in the scope, when grimble_lints::res::scan runs, then one site per acquire with the pair id and Certainty::Certain", "Given the same acquires with the paired release (clearMarks, delete, clearTimeout) in scope, when scanned, then no site", "Given the table rows for addEventListener, setInterval, URL.createObjectURL and new AbortController, when scanned without and with the paired release, then a site and no site; adding a row is a data change to the PAIRS table"]
-moved = [0, 0, 0]
-at = "2026-10-11T03:10:18Z"
-actor = "lognd"
-rev = 1

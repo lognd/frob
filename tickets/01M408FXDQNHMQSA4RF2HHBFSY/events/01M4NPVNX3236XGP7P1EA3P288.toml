@@ -1,9 +1,0 @@
-kind = "field"
-field = "body"
-old = """
-Follow-up of ~APQCEPT. ## Start here
-RequiredReason gained ToolFailed { stage } (crates/gob-rules/src/required.rs). docs/design/universal-model.md (around line 293, 'one of the three required cases') and cli.md still say three: update both to list sibling_missing, annotation_required, zero_subjects and tool_failed, with one line on tool_failed (a configured tool stage that could not run, exited abnormally, or printed output its parser cannot read). Test: frob check --ticket passes. Ask the coordinator if unsure."""
-new = "x"
-at = "2026-10-11T14:46:21Z"
-actor = "lognd"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["Given `const y = ;` in a .ts file, when crunk ingests it, then a 'jsx syntax error at line 1' error is reported"]
-moved = []
-at = "2026-10-12T02:26:13Z"
-actor = "lognd"
-rev = 1

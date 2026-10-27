@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-rules/tests/ui.rs", "crates/gob-rules/tests/ui/fix_missing_applicability.rs", "crates/gob-rules/Cargo.toml", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/frob-check/tests/check.rs", "crates/frob-obligations/src/tick_paths.rs", "crates/gob-directives/src/compat.rs", "crates/gob-check/src/fix.rs", "crates/gob-check/src/store.rs", "crates/gob-rules/src/lib.rs"]
-new = ["crates/gob-rules/src/finding.rs", "crates/gob-rules/src/meta.rs", "crates/gob-diagnostics/src/record.rs", "crates/gob-rules/tests/ui.rs", "crates/gob-rules/tests/ui/fix_missing_applicability.rs", "crates/gob-rules/Cargo.toml", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/frob-check/tests/check.rs", "crates/frob-obligations/src/tick_paths.rs", "crates/gob-directives/src/compat.rs", "crates/gob-check/src/fix.rs", "crates/gob-check/src/store.rs", "crates/gob-rules/src/lib.rs", "crates/gob-diagnostics/tests/snapshots/contract__json_success_snapshot.snap"]
-at = "2026-10-11T21:57:58Z"
-actor = "lognd"
-rev = 1

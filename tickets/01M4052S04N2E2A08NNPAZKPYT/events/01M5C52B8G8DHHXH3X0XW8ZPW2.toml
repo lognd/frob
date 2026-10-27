@@ -1,8 +1,0 @@
-kind = "land"
-base_ref = "refs/heads/experimental"
-commit = "7c22e7eded133314d051ba9cc4b604c3b10c9031"
-branch = "ticket/PAZKPYT"
-pushed = false
-at = "2026-10-20T07:54:13Z"
-actor = "lognd"
-rev = 1

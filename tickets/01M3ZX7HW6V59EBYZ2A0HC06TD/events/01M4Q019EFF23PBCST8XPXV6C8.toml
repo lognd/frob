@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "blocked by unfinished dependencies; coordinator release"
-at = "2026-10-12T02:45:56Z"
-actor = "lognd"
-rev = 1

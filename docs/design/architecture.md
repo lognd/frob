@@ -140,8 +140,8 @@ crate measures the fresh-process case.
 
 | Artifact | Location | Tracked |
 |---|---|---|
-| tickets | `tickets/<ulid>/ticket.md` (TOML frontmatter + markdown) | yes |
-| ticket events (comments are events) | `tickets/<ulid>/events/<ulid>.toml` | yes |
+| tickets | `<epic-slug>/<slug>.md` on the `frob-tickets` branch (TOML frontmatter + markdown) | yes |
+| ticket events (comments are events) | `.events/<ulid>/<ulid>.toml` on the `frob-tickets` branch | yes |
 | non-ticket events (budget raises, audits, reviews of exceptions) | `events/<ulid>.toml` at the repo root | yes |
 | acks | `frob.lock`, `grimble.lock` (one lock file per product, `gob-lock`) | yes |
 | exceptions | `exceptions.toml` (one array per product: `[[frob.exception]]`, `[[grimble.exception]]`, `[[crunk.exception]]`; the accept digest lives in the lock, exceptions.md section 2) | yes |
@@ -241,7 +241,7 @@ Redaction: `gob-log` owns one redactor (token-shaped strings, URLs with
 credentials, values of environment variables named like secrets).
 `gob-exec` applies it to every captured command output before that
 output is stored as evidence or logged, and telemetry applies it to
-the args shape. A TICK rule scans `tickets/**/events/*.toml` for the
+the args shape. A TICK rule scans the ledger event files (`.events/*/*.toml`) for the
 same patterns so a transcript that bypassed capture is still caught.
 
 No `println!` outside the renderer crate; clippy `print_stdout` denied

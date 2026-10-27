@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob-obligations/src/mir.rs", "crates/frob-obligations/src/lib.rs"]
-new = ["crates/frob-obligations/src/mir.rs", "crates/frob-obligations/src/lib.rs", "changelog.d/01M4052VTX4T6W688PQXVTQV56.added.md"]
-at = "2026-10-19T08:47:54Z"
-actor = "lognd"
-rev = 1

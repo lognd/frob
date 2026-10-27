@@ -20,7 +20,8 @@ reference in `docs/reference/`.
 
 ## Ticket workflow
 
-Tickets live in `tickets/<ulid>/` (a `ticket.md` plus one file per event)
+Tickets live on the orphan branch `frob-tickets` (a `<slug>.md` per ticket plus
+one file per event under `.events/<ulid>/`)
 and are written only through `frob ticket ...`, never by hand. Every
 ticket has a 26-character ULID id; humans use the shortest unique suffix
 as a `~handle`, and any lookup also accepts a v1 alias such as `T-0003`.

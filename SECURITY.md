@@ -54,8 +54,8 @@ its subcommands, run against a repository:
   `frob.toml` value reaching a shell rather than an argv list -- is
   in scope and treated as high severity.
 - **Read and write the repository it runs in.** frob reads source files,
-  the `tickets/` directory, `frob.toml`, and `docs/`, and writes back to
-  ticket files under `tickets/`, `.frob/` derived state, and (via `frob
+  the ticket ledger (the `frob-tickets` branch), `frob.toml`, and `docs/`, and writes back to
+  ticket files on the ledger branch, `.frob/` derived state, and (via `frob
   format`/`frob ticket land`/`frob release`) source files and git history
   itself. A
   report claiming frob can be made to write outside the repository root

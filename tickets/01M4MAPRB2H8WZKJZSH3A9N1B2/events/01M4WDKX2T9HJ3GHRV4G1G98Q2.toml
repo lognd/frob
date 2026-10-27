@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "scope too narrow: new IR ops need crates/gob-plan/src/exec/**"
-at = "2026-10-14T05:19:30Z"
-actor = "Claude"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob/src/mirror_recreate_cmd.rs"]
-new = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/lib.rs"]
-at = "2026-10-19T18:52:22Z"
-actor = "lognd"
-rev = 1

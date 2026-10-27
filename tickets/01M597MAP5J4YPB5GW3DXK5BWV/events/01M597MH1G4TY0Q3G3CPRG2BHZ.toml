@@ -1,6 +1,0 @@
-kind = "field"
-field = "scope"
-new = [".github/workflows/ci.yml", "crates/gob-dev/tests/layering.rs", "crates/gob-dev/profile.toml", "crates/gob-dev/src/**"]
-at = "2026-10-19T04:45:06Z"
-actor = "lognd"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["Lease-held and worktree-exists refusals carry a structured RemedyCommand (partial migration; remaining sites filed as follow-ups)"]
-moved = []
-at = "2026-10-20T14:33:46Z"
-actor = "lognd"
-rev = 1

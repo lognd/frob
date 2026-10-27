@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["Reachability through the cached closure keeps may-edge and frontier verdicts", "The Fx-hashed map used by executor caches round-trips keys", "Executor core results are unchanged by the domain, operand and index caches"]
-moved = []
-at = "2026-10-20T10:16:15Z"
-actor = "lognd"
-rev = 1
