@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-27T04:12:18Z"
+digest = "a9ff725ab0102108c0b145e743338641b9f81fd077d6a2b1a03956681a3c6d3d"
+exit_code = 0
+head = "3088a1894c26c88b2e43b6ca4b550b60c63d2834"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b7ed1e0e-8ee0-4e0e-9e8f-d7fdba4f0f93 with nextest profile: default
+    Starting 1 test across 487 binaries (5582 tests skipped)
+        PASS [   0.006s] gob-testsupport::print_ban clippy_toml_only_exempts_tests
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 1 test run: 1 passed, 5582 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "clippy_toml_only_exempts_tests"
+size = 554
+status = "measured"
+test_count = 1
+tests_digest = "13e298707fe27d714270eb9e234763e0948512dffb4899b7ad3dcc13560f7748"
+at = "2026-10-27T04:12:18Z"
+actor = "lognd"
+rev = 1
