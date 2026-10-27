@@ -1,0 +1,10 @@
+kind = "create"
+title = "Document the shared coverage provider trait in docs/design/testing.md"
+type = "chore"
+category = "todo"
+priority = "medium"
+scope = ["docs/design/testing.md"]
+body = "found while working ~9Q1N24Q: describe CoverageProvider, the PROVIDERS registry, the --coverage flag and the [coverage] require_reports knob (see crates/frob-evidence/src/coverage/mod.rs module docs)."
+at = "2026-10-27T01:15:06Z"
+actor = "lognd"
+rev = 1
