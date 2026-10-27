@@ -4,9 +4,10 @@ title = "RuleId families reject digits so A11Y001 cannot be a rule id"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-13T14:30:58Z"
-updated = "2026-10-13T14:30:58Z"
+updated = "2026-10-27T02:58:18Z"
 scope = ["crates/gob-rules/**"]
 +++
 
