@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T00:24:03Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "e01c5857e0038baf51db4c901e591dc6447256e1"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c "import os,sys;r=lambda p:open(p).read();ok=all(os.path.exists(p) for p in ['notes/review/audit-design.md','notes/review/design-consistency.md']) and not any(os.path.exists(p) for p in ['notes/audit-resolution.md','notes/review/design-consistency-resolution.md','notes/review/design-consistency-2.md']) and '## Resolution' in r('notes/review/audit-design.md') and '## Pass 2' in r('notes/review/design-consistency.md');sys.exit(0 if ok else 1)""""
+size = 0
+status = "measured"
+at = "2026-10-27T00:24:03Z"
+actor = "lognd"
+rev = 1

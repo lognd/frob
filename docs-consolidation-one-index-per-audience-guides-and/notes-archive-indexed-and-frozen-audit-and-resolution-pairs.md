@@ -8,7 +8,7 @@ points = 3
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:52Z"
-updated = "2026-10-27T00:23:42Z"
+updated = "2026-10-27T00:24:03Z"
 idempotency_key = "docs-consolidation-2026-10-09-p7"
 labels = ["creates:docs/guides/agents.md"]
 scope = ["notes/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/agents.md", "docs/migration/v1-selection.toml", "docs/guides/moving-docs.md", "docs/design/README.md", "docs/design/architecture.md", "docs/design/boundaries.md", "docs/design/build-test-ci.md", "docs/design/cli.md", "docs/design/code-model.md", "docs/design/crunk.md", "docs/design/documentation.md", "docs/design/exceptions.md", "docs/design/language-engines.md", "docs/design/migration.md", "docs/design/monorepo.md", "docs/design/tickets.md"]
@@ -27,7 +27,7 @@ target = "01M4H0WZ6Z1MDH6G815EE8MASY"
 
 [[acceptance]]
 text = "Given notes/audit-design.md with audit-resolution.md, and design-consistency.md with its resolution and pass 2, when phase 7 lands, then each set is one file under notes/review/ with finding then resolution"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given notes/coordinator.md, when phase 7 lands, then it is deleted and its still-valid agent ground rules are a short docs/guides/agents.md listed in docs/README.md"
