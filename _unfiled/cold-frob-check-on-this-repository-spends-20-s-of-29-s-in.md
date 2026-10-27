@@ -4,9 +4,10 @@ title = "Cold frob check on this repository spends 20 s of 29 s in file-rules (r
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-03T23:53:38Z"
-updated = "2026-10-03T23:53:38Z"
+updated = "2026-10-27T02:58:08Z"
 scope = ["crates/gob-check/src/**", "crates/frob-check/src/**"]
 +++
 
