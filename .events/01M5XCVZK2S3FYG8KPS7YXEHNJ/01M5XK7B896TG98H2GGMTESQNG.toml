@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk/tests/e2e_tokens_hullbreach.rs, crates/crunk/tests/fixtures/hullbreach_tokens/**"]
+new = ["crates/crunk/tests/e2e_tokens_hullbreach.rs, crates/crunk/tests/fixtures/hullbreach_tokens/**", "crates/crunk/tests/e2e_tokens_hullbreach.rs", "crates/crunk/tests/fixtures/hullbreach_tokens/**"]
+at = "2026-10-27T02:32:26Z"
+actor = "lognd"
+rev = 1
