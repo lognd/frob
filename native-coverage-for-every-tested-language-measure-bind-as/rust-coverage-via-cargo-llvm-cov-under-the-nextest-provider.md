@@ -2,13 +2,13 @@
 id = "01M5XD3SGEGXC7MSTTQJRW4R9E"
 title = "Rust coverage via cargo-llvm-cov under the nextest provider"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:38Z"
-updated = "2026-10-27T00:47:18Z"
+updated = "2026-10-27T02:12:47Z"
 scope = ["crates/frob-evidence/src/coverage/rust.rs", "crates/frob-evidence/tests/coverage_rust.rs"]
 
 [[links]]
