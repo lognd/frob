@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:04Z"
+updated = "2026-10-27T00:53:41Z"
 aliases = ["crunk:T-0122"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["frob-coverage.lock.json"]
 
 [[acceptance]]
