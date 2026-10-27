@@ -4,9 +4,10 @@ title = "Sibling document packs[] entries carry source provenance (repo:packs/NA
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "lognd"
 created = "2026-10-09T19:05:33Z"
-updated = "2026-10-09T19:05:33Z"
+updated = "2026-10-27T02:58:16Z"
 scope = ["crates/gob-check/src/sibling_doc.rs", "crates/gob-check/src/sibling.rs"]
 
 [[links]]
