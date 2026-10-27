@@ -2,7 +2,8 @@
 id = "01M5XMN8GHBCJH7WVMYVXR58J9"
 title = "Presenter crate: colour palette, TTY detection and stage progress bar/throbber"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
