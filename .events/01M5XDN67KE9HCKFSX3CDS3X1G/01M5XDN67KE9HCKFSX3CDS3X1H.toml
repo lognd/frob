@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk-scene: expose selector-to-element association for style rules and @media"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-scene/**"]
+body = "Style mapping currently uses inline style only; <style> rules yield StylesheetNotApplied findings. Found while working QPY31M6."
+at = "2026-10-27T00:55:08Z"
+actor = "lognd"
+rev = 1
