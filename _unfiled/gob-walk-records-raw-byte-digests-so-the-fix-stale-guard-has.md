@@ -4,9 +4,10 @@ title = "gob-walk records raw-byte digests so the --fix stale guard has no windo
 type = "bug"
 category = "todo"
 priority = "low"
+points = 2
 reporter = "lognd"
 created = "2026-10-04T13:47:01Z"
-updated = "2026-10-04T13:47:01Z"
+updated = "2026-10-27T02:58:09Z"
 
 [[acceptance]]
 text = "Given a file whose line endings change after it was read for analysis, when check --fix applies, then it refuses with E-FIX-STALE"
