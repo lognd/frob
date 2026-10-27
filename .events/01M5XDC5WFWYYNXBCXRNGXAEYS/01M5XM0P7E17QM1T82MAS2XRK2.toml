@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T02:46:02Z"
+digest = "eba6a1743506d3b018b772c59e244e79b39c9ee66d8ea33d34e0bc7fc021fb0a"
+exit_code = 0
+head = "04cfab2f5b3a889055d333ee45ceb2b899085df7"
+inline = '''
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.99s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 52668a2b-a612-48fc-af61-e6f824dbd4c6 with nextest profile: default
+    Starting 3 tests across 27 binaries (263 tests skipped)
+        PASS [   0.014s] crunk tier_tests::an_invalid_tier_exits_two_listing_the_choices
+        PASS [   0.103s] crunk tier_tests::tier_defaults_to_t1
+        PASS [   0.105s] crunk tier_tests::a_valid_tier_is_passed_through
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.107s] 3 tests run: 3 passed, 263 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(/tier_defaults_to_t1|a_valid_tier_is_passed_through|an_invalid_tier_exits_two/)"
+size = 751
+status = "measured"
+test_count = 3
+tests_digest = "48935c364d3eb2c72e1d48c151371cf1b102f21a47aea8daca060fbdab217962"
+at = "2026-10-27T02:46:02Z"
+actor = "lognd"
+rev = 1
