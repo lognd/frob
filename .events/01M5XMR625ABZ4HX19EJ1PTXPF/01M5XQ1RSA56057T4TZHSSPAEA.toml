@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-27T03:38:16Z"
+digest = "514bb5486b098930dd887ed91f9a3736867cbcefdf197f1f505c969cccb3a872"
+exit_code = 0
+head = "3a8be7955f4d71cc543851365aae2cfd42b93129"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 59.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b134a5b7-a541-46ea-97ef-5da2d4928cd5 with nextest profile: default
+    Starting 2 tests across 2 binaries (2 tests skipped)
+        PASS [   0.004s] gob-testsupport::print_ban workspace_denies_print_and_dbg_lints
+        PASS [   0.004s] gob-testsupport::print_ban clippy_toml_only_exempts_tests
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 2 tests run: 2 passed, 2 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-testsupport -E test(/workspace_denies_print_and_dbg_lints|clippy_toml_only_exempts_tests/)"
+size = 892
+status = "measured"
+test_count = 2
+tests_digest = "fd323f39371cbacb03ccc3f56ba5435d0b88b6c245c7dab226672e1d4ec94152"
+at = "2026-10-27T03:38:16Z"
+actor = "lognd"
+rev = 1
