@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:02Z"
+updated = "2026-10-27T00:53:34Z"
 aliases = ["crunk:T-0060"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/spec/models.py", "src/crunk/spec/load.py", "src/crunk/spec/__init__.py", "src/crunk/ingest/**", "tests/unit/test_spec.py", "tests/unit/test_ingest.py", "tests/integration/test_int_11_jsx.py", "docs/design/subsystems/ingest.md", "docs/design/subsystems/spec.md", "frob.lock"]
 
 [[acceptance]]
