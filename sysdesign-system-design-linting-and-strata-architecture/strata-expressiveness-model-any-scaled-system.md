@@ -4,10 +4,11 @@ title = "strata expressiveness: model any scaled system"
 type = "story"
 category = "todo"
 priority = "low"
+points = 8
 parent = "01M3AXSDACKS00T3E853M1J0DR"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T22:22:26Z"
+updated = "2026-10-27T02:58:07Z"
 aliases = ["T-6510"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
