@@ -2,12 +2,12 @@
 id = "01M5XDC5WFWYYNXBCXRNGXAEYS"
 title = "Wire crunk check --tier flag and document check tiers"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-27T00:50:13Z"
-updated = "2026-10-27T02:33:24Z"
+updated = "2026-10-27T02:33:26Z"
 scope = ["crates/crunk/src/lib.rs", "docs/design/crunk.md"]
 
 [[acceptance]]
