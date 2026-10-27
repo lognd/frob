@@ -12,6 +12,10 @@ updated = "2026-10-27T00:42:24Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk-gallery/src/rendered_contrast.rs, crates/crunk-gallery/tests/rendered_contrast.rs"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M5XCXV74XZTCK4N56B46PAY4"
+
 [[acceptance]]
 text = "Given a rendered PNG with text over a gradient, when checked, then CONTRAST finds the worst-case text/background pair by sampling and reports it with the pixel region. Edge cases: text over a fully transparent area falls back to the page background; text bounding box smaller than 1 px is skipped with a note; an image with alpha is composited over the declared surface; a uniform background reports exactly the declared ratio; large text uses the 3:1 threshold; missing PNG is Unresolved not run"
 bound = false
