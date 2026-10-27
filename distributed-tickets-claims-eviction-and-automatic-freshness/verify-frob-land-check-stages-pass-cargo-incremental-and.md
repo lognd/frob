@@ -4,10 +4,11 @@ title = "Verify frob land check stages pass CARGO_INCREMENTAL and CARGO_PROFILE_
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T06:07:22Z"
-updated = "2026-10-21T06:07:22Z"
+updated = "2026-10-27T02:58:35Z"
 scope = ["crates/frob-land/**"]
 +++
 
