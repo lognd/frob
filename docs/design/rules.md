@@ -34,7 +34,9 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
   by the engine fingerprint, so another build never reuses it. Any change
   to a walked file, the lock or a knob is a miss. `grimble ack` still
   builds the full binding.
-- Severity enum `Error | Warn | Advisory | Unresolved` kept; the exit
+- Severity enum is `Error | Unresolved` (Warn and Advisory are removed,
+  section 6.1; text below describing them is the running code until
+  ~BA6CSGY lands); the exit
   code follows the table in cli.md section 2 (findings alone never fail
   a run; `--fail-on` does, and a required Unresolved does under
   `[check] fail_on_unresolved`, the one mechanism in cli.md section 2);
@@ -48,9 +50,10 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
   leases, the grimble model, hot roots). Type-aware linters (typescript-eslint
   with type information, pyright, `dotnet build` analyzers) run as a separate
   stage outside the 2 s budget and are timed separately.
-- Precision before Warn. A new rule ships Advisory (or `default = off` when
-  its evidence row is contested) until the precision ledger (N16) shows its
-  not-useful rate under the ceiling; only then may its default rise to Warn.
+- Precision before on (section 6.1.3). A new rule ships as an Error with its
+  existing findings baselined, or `default = off` when its evidence row is
+  contested, until the precision ledger (N16) shows its not-useful rate
+  under the ceiling.
 - Exceptions (exceptions.md), ratchet pools and fix tiers A/B/C are
   kept; quarantine is Milestone 2 or later (D36). Profiles collapse to
   two knobs (section 7).
@@ -551,6 +554,215 @@ section, never dropped.
   added it needs a CI-result ingestion path (frob-gh), a tracked store
   (`frob-quarantine.json`, never `.frob/`) and a disposition verb
   (file a ticket or dismiss with reason).
+
+### 6.1 No warnings: Error-only severity, the baseline, gate scopes (~BA6CSGY)
+
+Owner policy (2026-10-26): there is no warn severity, only errors. Existing
+debt is burned down slowly and visibly. This section supersedes the
+Warn/Advisory parts of sections 1, 6 and 7 once the implementation tickets
+below land; until then the old text describes the running code.
+
+**6.1.1 Severity.** The enum becomes `Error | Unresolved`, plus `off` as a
+configuration value (not a finding severity). `Warn` and `Advisory` are
+removed from `Severity`, from `#[rule(default = ...)]`, from `[rules.<id>]`
+and `[check] fail_on`. Unresolved stays: it means the rule could not decide,
+is never a failure by itself, and fails a run only under the existing
+`fail_on_unresolved` mechanism (cli.md section 2). A rule is either on
+(Error), off (with a recorded reason in its derive or the repo's
+`[rules.<id>]`), or Unresolved for a site it cannot decide. "Unmeasured is
+not zero" is unchanged. A config that names `warn` or `advisory` is a
+config error with a message naming the replacement (`error` plus a
+baseline, or `off`), never a silent mapping. Findings that would be Warn
+today are Errors that are baselined (6.1.2), waived (6.1.4) or fixed.
+
+**6.1.2 The baseline (replaces ratchet-as-Warn and the ramp-in).**
+
+- File: `frob-baseline.toml` at the repo root, tracked, one per repo (per
+  product repo for grimble and crunk, which read the same file under their
+  own rule-id namespaces). It supersedes `frob-ratchet.lock.json`;
+  `frob migrate` converts the old file once, keeping its keys.
+- Format: sorted, one table per rule, so diffs are minimal and merges are
+  line-local:
+
+  ```toml
+  version = 1
+
+  [rules.PM009]
+  reason = "adopting the rule: 438 ready tickets unsized, burn-down ~61BXXNJ"
+  ticket = "~61BXXNJ"
+  findings = [
+    "3f9a1c0d5be2a7aa",
+    "9b02e4417c6d10f3",
+  ]
+  ```
+
+  `reason` and `ticket` (the burn-down ticket) are required per rule table.
+  A key is the existing finding fingerprint (`Finding::fingerprint`: rule
+  id, symref or file path, hash of the normalized message; digits and
+  whitespace are normalized away, never a line number), so an edit above a
+  baselined finding does not make it new. No second hashing scheme exists.
+- Matching: a finding whose fingerprint is in its rule's list is reported
+  in the `baselined` section of the envelope (like `excepted`, never
+  dropped) and does not fail the run. Every other Error fails it. There is
+  no "baselined is Warn": baselined findings are muted, counted, and shown
+  as a per-rule remaining total.
+- Shrinking: a key whose finding no longer occurs is removed
+  automatically by `frob baseline prune` (run by `frob land` on the
+  merge commit's tree so the removal lands with the fix, and by
+  `frob check --fix`). Pruning only happens on a full, unscoped run where
+  the rule evaluated the key's site (the stale-evaluation rules of
+  exceptions.md section 3 apply: a skipped rule, version bump or an
+  Unresolved site is not stale). A rule table with an empty list is
+  deleted.
+- Never growing: the only writer that adds keys is `frob baseline adopt
+  <RULE> --reason R --ticket T`, which creates a table for a rule that has
+  no table and refuses when one exists. It is the single legitimate
+  creation event ("tightening a rule creates a new pool"). `check`,
+  `land` and `prune` never add. EXC-family rule BASE001 (new) fails a
+  check or land when, compared with the base tip, any table gained a key
+  or changed `ticket` without `adopt`; a key may be removed with a reason
+  by hand, never added. Because land already compares fingerprints
+  against the base tip (section 6), a new finding is an Error with no
+  baseline needed to catch it.
+- Budgets: a table without a live `ticket` (closed, or `dropped` without
+  a successor) is BASE002 Error, so debt cannot outlive its plan.
+- Merge conflicts: the format is sorted and one key per line, so two
+  branches that each remove keys merge cleanly. Two branches that each
+  `adopt` the same new rule conflict on the table header; resolution is to
+  take either side and rerun `prune` (a union of identical-rule keys is
+  legal only if BASE001 sees no net growth over the base tip). A
+  conflicted file (markers) is a hard parse error, never treated as empty.
+- Concurrent lands: land is serialized per repo (section 4.1 lock) and
+  prunes against the base tip it merges onto. A fix that lands after
+  another ticket's prune finds its keys already gone and has nothing to
+  remove; a landing branch that still lists a key the base already
+  pruned is dropped silently (shrinking is monotone). A branch that adds
+  a finding of a baselined rule gets a fresh fingerprint absent from the
+  base, so it fails as new even though its rule has a table.
+
+**6.1.3 Ramp-in is retired.** `new_rule_warn_releases`, `[rules] ramp`,
+`since`-window reporting as Warn, `gob_rules::ramp` and
+`ramp_product_findings` are removed; so are `RuleSettings::effective_ramped`
+and the `strictness = "warn-new-rules"` value. A new rule ships as an Error.
+If it has findings on this repo or a consumer, its author runs `baseline
+adopt` in the same change, with a burn-down ticket; "Precision before Warn"
+becomes "precision before on": a contested rule ships `default = off`, and
+is switched on (and adopted) only when the precision ledger rate is under
+the ceiling. `frob release changelog` still lists newly live rules, now
+from `since` alone. Consumers upgrading to a release that adds a rule get
+the rule's findings as Errors on `frob check`; the release notes list the
+`frob baseline adopt` command per new rule, and `frob migrate` prints it.
+`strictness` collapses to `strict` (the old value is accepted and ignored
+with a deprecation note for one release).
+
+**6.1.4 Heuristic and smell rules are waivable Errors.** Rules that make
+a judgment call (families CRAFT, SLOP, COH, DUP, VIS, UNITY; the rule
+derive carries `nature = Exact | Heuristic`, default Exact) are Errors a
+human may waive. A Heuristic finding message has three parts, always, in
+this order:
+
+1. what it is: "HEURISTIC: this is a smell check, not a proven defect.";
+2. why it fired: the evidence in one line (what was measured against
+   what threshold, or which two sites are similar);
+3. the exact suppression, copy-pasteable, at the site:
+   `frob:waive COH003 reason="<why this is fine>"`.
+
+Output is audience-specific, chosen by the existing agent-detection used
+for hooks (`CLAUDECODE`/`--agent`, never guessed from a tty):
+
+- agent-facing: part 3 is replaced by "Fix the code. Do NOT waive this:
+  waiving a heuristic is a human decision." No `frob:waive` text appears
+  in agent output for a Heuristic rule, so there is nothing to paste. The
+  JSON envelope carries `waivable_by = "human"` and `nature =
+  "heuristic"`.
+- human-facing: the full three parts, including the waive line.
+
+A waiver is an exception that must carry a reason that passes the
+reason-quality checker (exceptions.md section 2); `frob:waive RULE` with no
+reason, an empty one, or one the checker rejects is itself an Error (EXC
+family, existing reason rule) and the waived finding stays live. An agent
+authoring a waiver for a Heuristic rule is flagged by the same hook that
+detects agent authorship (a human-only waiver is a policy, enforced as
+`waivable_by = human` in the envelope and a hook, not by cryptography).
+Exact rules are not waivable by default (`waivable = false` unchanged);
+they are baselined, fixed or off. Waivers appear in `excepted` and count
+against the budgets of exceptions.md section 4.
+
+**6.1.5 Gate scopes (replace `release_severity`).** A rule declares
+`gates = [...]` with a subset of `local | ci | release` (default all
+three). A rule runs and can fail only at gates it lists; the gate is
+chosen by `frob check --gate <g>` (default `local`; CI invocations pass
+`--gate ci`, auto-detected from `CI=true` when unset; `crunk check --gate
+release` and `frob release status` use `release`). HUMAN001 and HUMAN002
+declare `gates = [release]`: at `local` and `ci` they do not run (their
+absence is reported as "not in this gate", not as Unresolved or clean), at
+`release` they are plain Errors that block the release (CD) step. The
+severity is the same Error everywhere; only scope differs. A repo may
+narrow or widen with `[rules.<id>] gates = [...]`; widening a rule to
+`local` is allowed, narrowing an Exact rule below `ci` is refused (CI must
+see everything that is not human sign-off). `release_severity` is removed
+from `#[rule]`, `RuleDef`, `gate_severity` and `apply_gate`, replaced by
+`rule_in_gate(def, settings, gate)`; family rows carry `gates` as the
+fallback in the same precedence order the old severity used (rule value,
+then family). The baseline applies at every gate; a rule scoped to
+`release` that has baselined findings does not need them to run locally.
+
+**6.1.6 Edge cases.**
+
+- Other products: grimble and crunk use the same `Severity`, baseline file
+  (rule ids are namespaced, so tables never collide), `gates` field and
+  heuristic contract; their per-product ramp calls are deleted. A crunk
+  release-gate rule that today raises severity at release becomes a
+  `gates = [release]` rule or a plain Error.
+- Per-repo severity config: `[rules.<id>] severity = "warn"|"advisory"` is a
+  config error (6.1.1); `"error"` is a no-op; `"off"` stays and needs a
+  `reason`. `[pm] strict` and `[grimble] strict` knobs that select Warn vs
+  Error become no-ops (PM and SYS rules are Errors) and are removed after
+  one deprecation release. The effective-severity order in section 7 is
+  therefore: default, product knob (on/off only), `[rules.<id>]` override.
+- Rules with `release_severity` today (HUMAN001/002, family rows): become
+  `gates = [release]` (above); their prior "Advisory under check" meaning
+  is intentionally dropped, not baselined.
+- Unresolved: never baselined (a key is only minted for a decided Error,
+  as with EXC016), never waived by a heuristic waiver, and `COV001`-style
+  Unresolved burn-down is by measuring (providing the report), not by
+  adopt. If a baselined site turns Unresolved it is not pruned.
+- Write-time verbs (section 7) refuse when a finding is an Error, which
+  is now every finding; a baselined or waived finding does not refuse.
+- Exit codes: any non-baselined, non-waived Error fails (exit 1); the
+  `fail_on` knob keeps only `error` and `unresolved`.
+- Tool-stage findings (`[[check.tool]]`): the id map target severity
+  becomes Error or the stage is off; warnings from bound tools are
+  baselined through the same fingerprint like any rule.
+
+**6.1.7 Migration order.** Each step is a child of ~BA6CSGY and lands
+independently once the mechanism (implementation tickets below) exists.
+
+1. Mechanism first: severity collapse, baseline file and verbs, gates,
+   heuristic contract (no rule changes severity until all four exist).
+2. Zero-finding rules: every Warn/Advisory rule with no findings on this
+   repo (from a full `frob check` per-rule count) becomes Error with no
+   baseline. Free, and it stops regressions.
+3. Exact rules next, with a small, mechanical fix set: CI010, PM010, PM033,
+   SYS008. Fix, then promote.
+4. Burn-down per rule, `adopt` then shrink: ~61BXXNJ (PM009, 438),
+   ~339DX5F (PM007, PM003/PM005/PM008), ~ZX7DH32 (PATH001, 194),
+   ~B755NCR (DOC006, DOC001, EXC005, MDL019, MDL005), ~ECWJCJ4 (DEAD001,
+   COV001), ~ZYB1K0K (SYS001, 1296). Each rule's table carries its
+   burn-down ticket (BASE002).
+5. Heuristic families get `nature = Heuristic` and the message contract
+   in the same step they become Errors; their findings are fixed or
+   human-waived, not baselined unless the count is large (then both).
+6. Last: delete `Warn`/`Advisory` and the ramp code once no rule or config
+   uses them (the compiler enforces it).
+
+**6.1.8 Implementation tickets** (all under ~BA6CSGY): ~1G4B9C1 severity
+enum collapse and config errors; ~7FDF275 `frob-baseline.toml` store with
+adopt/prune/BASE001/BASE002 and the ratchet migration; ~MBFZHZD remove ramp-in
+and `strictness`; ~RC646Y4 gate scopes and `release_severity` removal;
+~291TPEB heuristic nature, message contract and agent/human rendering (the
+reason-required waiver check is the existing EXC reason rule); ~BZF44PC
+grimble and crunk adoption; ~XK1MB0D promote zero-finding and exact rules.
 
 ## 7. Profiles
 
