@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T03:07:27Z"
+digest = "013aef63ac4d4dfa3a3c9bb989034273fee74373172e6bad7145568656f24993"
+exit_code = 0
+head = "d29d0e9d0753af3a2dfee9d970ff8dd75cffa4c2"
+passed = true
+provider = "command"
+ref = "~/projects/frob/target/release/frob ticket list --category todo --json"
+size = 254599
+status = "measured"
+uri = "dir:.git/frob/artifacts/013aef63ac4d4dfa3a3c9bb989034273fee74373172e6bad7145568656f24993"
+at = "2026-10-27T03:07:27Z"
+actor = "lognd"
+rev = 1
