@@ -12,6 +12,10 @@ updated = "2026-10-27T00:41:54Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk-layout/src/text/**, crates/crunk-layout/tests/text*.rs, crates/crunk-layout/fonts/**"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M4CXRCXEYE7GZSYRPHKN808M"
+
 [[acceptance]]
 text = "Given a string, font and available width, when measured, then width and line count are identical across 100 runs and across machines. Edge cases: empty string measures zero width and zero lines; a single word longer than the available width overflows on one line and never loops; embedded newlines force breaks; white-space:nowrap never wraps; a missing glyph falls back to the bundled fallback font and records a missing_glyph note; right-to-left and mixed-direction text measures without panic; available width zero or max-content/min-content queries return min-content and max-content widths; letter-spacing and line-height multipliers applied; font not in the bundle is a typed error naming it"
 bound = false
