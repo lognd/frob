@@ -4,10 +4,11 @@ title = "C#: #if/#elif/#else branches leave a parse hole (PARSE partial)"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T10:53:31Z"
-updated = "2026-10-21T10:53:31Z"
+updated = "2026-10-27T02:58:36Z"
 scope = ["crates/gob-symbols/src/csharp.rs"]
 
 [[acceptance]]
