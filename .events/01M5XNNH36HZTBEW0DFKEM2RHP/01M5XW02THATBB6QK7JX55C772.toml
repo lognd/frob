@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-27T05:04:48Z"
+digest = "12b6f2778d64465a099d2b4bcde70e24d985ed961bc42ff4522a76cf80bf1d37"
+exit_code = 0
+head = "46491dd952ad4a981e756bba858c244f3875be54"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 54.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 54c3320c-e2f6-4dd5-9a9e-42a4a26bf1fa with nextest profile: default
+    Starting 1 test across 489 binaries (5608 tests skipped)
+        PASS [   0.114s] grimble-bind::caps listener_calls_map_only_to_net_listen
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.125s] 1 test run: 1 passed, 5608 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "listener_calls_map_only_to_net_listen"
+size = 608
+status = "measured"
+test_count = 1
+tests_digest = "3732984fbb47c0d52e493273a078285f2801dbda95b44adfdd30ffe12e673fb8"
+at = "2026-10-27T05:04:48Z"
+actor = "lognd"
+rev = 1
