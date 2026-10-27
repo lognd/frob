@@ -4,9 +4,10 @@ title = "Envelope-wide freshness field and E-SYNC-STALE refusal in doable/work/l
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T18:37:37Z"
-updated = "2026-10-20T18:37:37Z"
+updated = "2026-10-27T02:58:30Z"
 scope = ["crates/gob-diagnostics/src/envelope.rs", "crates/frob/src/ticket/mod.rs"]
 +++
 
