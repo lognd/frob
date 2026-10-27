@@ -1,0 +1,14 @@
+kind = "create"
+title = "Information architecture: design/ia/sitemap.toml and content-model.toml with route/screen, depth, label and reachability rules"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4CXSAG0YPF18FX3KAPVX45C"
+labels = ["area:crunk"]
+scope = ["crates/crunk-spec/src/ia.rs, crates/crunk-rules/src/ux/ia.rs, crates/crunk-rules/tests/ux_ia.rs"]
+acceptance = ["Given a sitemap route with no screen, or a screen with no route, when checked, then a UX finding names it; given routes in code (gob-frameworks) absent from the sitemap, then a finding names the route. Edge cases: depth beyond the configured max fires once per deepest path; duplicate sibling labels differ only by case still collide; a cycle in parent links is a schema error; a page unreachable from home is named; a dynamic route segment matches a screen declared with the same param shape; absent sitemap with the pack on is silent"]
+body = "Design crunk.md section 8 IA row. Route discovery reuses gob-frameworks; if unavailable for a project, route/code comparison is Unresolved, not clean."
+at = "2026-10-27T00:43:02Z"
+actor = "lognd"
+rev = 1
