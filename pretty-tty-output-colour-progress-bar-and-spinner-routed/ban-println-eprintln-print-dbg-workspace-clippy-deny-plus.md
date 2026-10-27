@@ -2,13 +2,13 @@
 id = "01M5XMR625ABZ4HX19EJ1PTXPF"
 title = "Ban println/eprintln/print/dbg: workspace clippy deny plus remove current call sites"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:59:06Z"
-updated = "2026-10-27T02:59:06Z"
+updated = "2026-10-27T03:16:14Z"
 scope = ["Cargo.toml", "clippy.toml", "crates/frob/src/lease_cmd.rs", "crates/gob-exec/src/prereq.rs", "crates/gob-plan/**", "crates/gob-testsupport/**"]
 
 [[acceptance]]
