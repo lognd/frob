@@ -15,6 +15,8 @@ use crate::replay::reindex_trailer;
 
 /// How many of the newest first-parent commits one check inspects.
 const SCAN_LIMIT: usize = 100;
+/// Trailer key that lets one ledger commit move or edit files outside a reindex; its value is the reason.
+const ALLOW_TRAILER: &str = "Frob-Allow-Move:";
 /// Subjects of commits that rewrite or relocate ledger files by design.
 const EXEMPT_SUBJECTS: &[&str] = &[
     "tickets(scrub)",
@@ -23,7 +25,55 @@ const EXEMPT_SUBJECTS: &[&str] = &[
     "tickets(reconcile)",
 ];
 
+/// Whether a commit message carries a non-empty `Frob-Allow-Move:` trailer.
+fn allow_trailer(message: &str) -> bool {
+    message
+        .lines()
+        .rev()
+        .find_map(|l| l.strip_prefix(ALLOW_TRAILER))
+        .is_some_and(|v| !v.trim().is_empty())
+}
+
+/// Paths whose blob differs between two trees (added, removed or changed).
+fn changed_paths(before: &BTreeMap<String, Oid>, after: &BTreeMap<String, Oid>) -> Vec<String> {
+    before
+        .keys()
+        .chain(after.keys())
+        .filter(|p| before.get(*p) != after.get(*p))
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect()
+}
+
 impl Ledger {
+    /// Whether `after` (a commit's tree) restores, on every path it changed, the state before an earlier commit.
+    fn reverts_earlier(
+        &self,
+        before: &BTreeMap<String, Oid>,
+        after: &BTreeMap<String, Oid>,
+        older: &[gob_git::CommitInfo],
+    ) -> Result<bool> {
+        let mine = changed_paths(before, after);
+        if mine.is_empty() {
+            return Ok(false);
+        }
+        for r in older {
+            let [rp] = r.parents.as_slice() else {
+                continue;
+            };
+            let (r_before, r_after) = (self.blob_ids_at(rp)?, self.blob_ids_at(&r.id)?);
+            let theirs = changed_paths(&r_before, &r_after);
+            if mine
+                .iter()
+                .all(|p| theirs.contains(p) && after.get(p) == r_before.get(p))
+            {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
     fn blob_ids_at(&self, commit: &Oid) -> Result<BTreeMap<String, Oid>> {
         Ok(self
             .list_blobs(&format!("{commit}^{{tree}}"))?
@@ -49,13 +99,14 @@ impl Ledger {
             .repo()
             .first_parent_commits(&tip.to_string(), SCAN_LIMIT)?;
         let mut out = Vec::new();
-        for c in &commits {
+        for (i, c) in commits.iter().enumerate() {
             let subject = c.message.lines().next().unwrap_or_default();
             // A merge or root commit has no single parent to diff against.
             let [parent] = c.parents.as_slice() else {
                 continue;
             };
             if reindex_trailer(&c.message).is_some()
+                || allow_trailer(&c.message)
                 || EXEMPT_SUBJECTS.iter().any(|s| subject.starts_with(s))
             {
                 continue;
@@ -81,6 +132,10 @@ impl Ledger {
                 }
             }
             if bad.is_empty() {
+                continue;
+            }
+            if self.reverts_earlier(&before, &after, &commits[i + 1..])? {
+                tracing::info!(commit = %c.id, "ledger revert of an earlier commit tolerated");
                 continue;
             }
             let at = format!("ledger commit {}", c.id.to_hex_with_len(12));
