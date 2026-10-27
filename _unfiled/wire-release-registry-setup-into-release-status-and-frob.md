@@ -4,9 +4,10 @@ title = "Wire [release] registry_setup into release status and frob.toml"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-13T03:27:58Z"
-updated = "2026-10-13T03:27:58Z"
+updated = "2026-10-27T02:58:18Z"
 scope = ["crates/frob/src/release_cmd.rs", "frob.toml"]
 +++
 
