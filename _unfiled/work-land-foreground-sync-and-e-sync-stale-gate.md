@@ -4,9 +4,10 @@ title = "work/land foreground sync and E-SYNC-STALE gate"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T17:28:28Z"
-updated = "2026-10-20T17:28:28Z"
+updated = "2026-10-27T02:58:29Z"
 scope = ["crates/frob-worktree/src/verbs.rs,crates/frob-land/src/verb.rs"]
 +++
 
