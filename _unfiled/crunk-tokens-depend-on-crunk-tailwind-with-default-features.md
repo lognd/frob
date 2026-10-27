@@ -4,9 +4,10 @@ title = "crunk-tokens: depend on crunk-tailwind with default-features = false so
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:32Z"
-updated = "2026-10-08T13:40:32Z"
+updated = "2026-10-27T02:58:15Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk-tokens/Cargo.toml"]
 +++
