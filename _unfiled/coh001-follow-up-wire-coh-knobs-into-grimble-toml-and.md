@@ -4,8 +4,9 @@ title = "COH001 follow-up: wire [coh] knobs into grimble.toml and register COH00
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-13T14:42:48Z"
-updated = "2026-10-13T14:42:48Z"
+updated = "2026-10-27T02:58:18Z"
 idempotency_key = "coh001-followup"
 +++
