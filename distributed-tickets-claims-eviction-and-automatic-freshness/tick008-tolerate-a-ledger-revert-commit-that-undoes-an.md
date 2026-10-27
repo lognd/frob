@@ -8,12 +8,12 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-27T01:23:56Z"
-updated = "2026-10-27T01:24:04Z"
+updated = "2026-10-27T01:34:35Z"
 scope = ["crates/frob-check/**", "docs/reference/rules/TICK008.md", "crates/frob-ledger/**"]
 
 [[acceptance]]
 text = "TICK008 does not report a ledger commit that is a git revert of an earlier ledger commit (or carries an explicit allowed-commit trailer), proven by a test using the e958528049 shape"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A genuine non-reindex move or edit of an event still fires TICK008"

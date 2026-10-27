@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T01:34:35Z"
+digest = "a1b9f92b945a66f25958dc241a73e9a32a003a184766a23c8f9d6db5858b2c60"
+exit_code = 0
+head = "c2dc3b583284463080fc96dabb59d86e0bcaf513"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 40.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ce5a5cf3-3812-4f16-b0b6-0222d8553166 with nextest profile: default
+    Starting 5 tests across 4 binaries (470 tests skipped)
+        PASS [   0.268s] frob-cli::it ticket_moves::a_commit_without_the_trailer_that_renames_a_ticket_file_fires_tick008
+        PASS [   0.270s] frob-cli::it ticket_moves::an_allow_move_trailer_exempts_a_commit
+        PASS [   0.271s] frob-cli::it ticket_moves::a_revert_of_an_earlier_ledger_commit_does_not_fire
+        PASS [   0.338s] frob-cli::it ticket_moves::a_commit_that_only_adds_events_and_edits_frontmatter_does_not_fire
+        PASS [   0.365s] frob-cli::it ticket_moves::a_genuine_reindex_move_does_not_fire
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.367s] 5 tests run: 5 passed, 470 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(/ticket_moves/)"
+size = 1048
+status = "measured"
+test_count = 5
+tests_digest = "907525549b4693405398ae5fdc64e612551ec76f7df2516f9e2fd28dae4d22f4"
+at = "2026-10-27T01:34:35Z"
+actor = "lognd"
+rev = 1
