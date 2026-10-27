@@ -4,9 +4,10 @@ title = "tickets.md section 10 still cites a [land] push key"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-20T14:44:36Z"
-updated = "2026-10-20T14:44:36Z"
+updated = "2026-10-27T02:58:29Z"
 scope = ["docs/design/tickets.md"]
 
 [[acceptance]]
