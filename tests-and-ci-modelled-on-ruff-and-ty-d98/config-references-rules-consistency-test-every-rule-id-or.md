@@ -4,10 +4,11 @@ title = "Config-references-rules consistency test: every rule id or slug named i
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:14:26Z"
-updated = "2026-10-06T13:56:19Z"
+updated = "2026-10-27T02:58:12Z"
 scope = ["crates/gob-config/**", "crates/gob-rules/**", "crates/frob/**"]
 
 [[acceptance]]
