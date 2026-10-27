@@ -4,9 +4,10 @@ title = "gob-check tool stages and gh spawns: run with EnvPolicy::Scrub (securit
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:34Z"
-updated = "2026-10-08T13:40:34Z"
+updated = "2026-10-27T02:58:15Z"
 labels = ["area:crunk"]
 scope = ["crates/gob-check/src/tools.rs,crates/frob-gh/**"]
 +++
