@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["notes/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/agents.md", "docs/migration/v1-selection.toml", "docs/guides/moving-docs.md", "docs/design/README.md", "docs/design/architecture.md"]
+new = ["notes/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/agents.md", "docs/migration/v1-selection.toml", "docs/guides/moving-docs.md", "docs/design/README.md", "docs/design/architecture.md", "docs/design/boundaries.md"]
+at = "2026-10-27T00:04:40Z"
+actor = "lognd"
+rev = 1
