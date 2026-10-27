@@ -4,9 +4,10 @@ title = "frob bundle feature: wire grimble and crunk-check in-process dependenci
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-04T20:55:10Z"
-updated = "2026-10-04T20:55:10Z"
+updated = "2026-10-27T02:58:09Z"
 scope = ["crates/frob/Cargo.toml"]
 +++
 
