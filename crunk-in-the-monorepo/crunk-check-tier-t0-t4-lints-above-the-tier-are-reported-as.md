@@ -2,13 +2,13 @@
 id = "01M5XCXV02ZVYV71DFY08R5Y3H"
 title = "crunk check --tier T0..T4: lints above the tier are reported as not run, never clean"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:23Z"
-updated = "2026-10-27T00:42:23Z"
+updated = "2026-10-27T00:43:48Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk-check/src/tier.rs, crates/crunk-check/tests/tier.rs"]
 
