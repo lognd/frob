@@ -4,9 +4,10 @@ title = "Docs: drop stale frob-gh references after crate removal"
 type = "docs"
 category = "todo"
 priority = "low"
+points = 1
 reporter = "lognd"
 created = "2026-10-13T18:47:19Z"
-updated = "2026-10-13T18:47:19Z"
+updated = "2026-10-27T02:58:18Z"
 scope = ["docs/design/**", "crates/frob-release/src/culprit.rs", "crates/gob-dev/src/publish.rs"]
 +++
 
