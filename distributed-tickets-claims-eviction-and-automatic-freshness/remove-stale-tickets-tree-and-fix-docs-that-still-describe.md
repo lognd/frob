@@ -2,7 +2,8 @@
 id = "01M5XEHYB2ZF4C9CP6ME38P5GG"
 title = "Remove stale tickets/ tree and fix docs that still describe the in-tree ledger"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
