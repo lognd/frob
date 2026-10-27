@@ -1,0 +1,12 @@
+kind = "create"
+title = "Burn down DEAD001 and COV001 (warn and unresolved)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
+scope = ["docs/design/coverage.md"]
+acceptance = ["frob check reports zero DEAD001 and COV001 findings; each is deleted, tested, bound or waived with a reason"]
+at = "2026-10-27T02:54:09Z"
+actor = "lognd"
+rev = 1
