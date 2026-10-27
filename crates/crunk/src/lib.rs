@@ -19,6 +19,7 @@ pub mod doctor;
 pub mod dtcg;
 pub mod edit;
 pub mod explain;
+pub mod export;
 pub mod extract;
 pub mod fix;
 pub mod gallery;
@@ -169,6 +170,10 @@ impl Product for CrunkProduct {
             .register::<gallery::GalleryTriage>()
             .register::<dtcg::ImportDtcg>()
             .register::<dtcg::ExportDtcg>()
+            .register::<export::ExportCss>()
+            .register::<export::ExportTailwind>()
+            .register::<export::ExportUss>()
+            .register::<export::ExportCsharp>()
             .register::<rename::Rename>()
             .register::<edit::Edit>()
             .register::<new::New>()
