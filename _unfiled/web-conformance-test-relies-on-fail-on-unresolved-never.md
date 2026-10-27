@@ -4,9 +4,10 @@ title = "web_conformance test relies on fail_on_unresolved=never because DEAD001
 type = "chore"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-10-24T04:02:05Z"
-updated = "2026-10-24T04:02:05Z"
+updated = "2026-10-27T02:58:42Z"
 scope = ["crates/frob/tests/siblings/**"]
 +++
 
