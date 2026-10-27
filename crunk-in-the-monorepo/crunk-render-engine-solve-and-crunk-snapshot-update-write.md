@@ -12,6 +12,10 @@ updated = "2026-10-27T00:41:54Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk/src/render.rs, crates/crunk/src/snapshot.rs, crates/crunk/tests/render_solve.rs"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M5XCWYB9M2YSJ5EGABMREX1B"
+
 [[acceptance]]
 text = "Given a scene corpus, when crunk render --engine solve runs, then one layout-solve JSON per screen/state/platform is written. Edge cases: a screen with no scene file exits 2 naming it; --engine browser without the gallery feature reports not built in with the remedy; snapshot without --update on a missing baseline fails and names the path; snapshot --update rewrites only changed baselines; baselines differ only by a changed node and diff lists node id and delta; output order is deterministic across --jobs values"
 bound = false
