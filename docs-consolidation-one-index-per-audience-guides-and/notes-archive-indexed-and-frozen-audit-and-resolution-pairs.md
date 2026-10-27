@@ -2,13 +2,13 @@
 id = "01M4H0XENVPCNJ3BQ9GQTBW07T"
 title = "Notes archive: indexed and frozen; audit and resolution pairs merged; crunk research merged; v1-gap under v1/; root strays sorted; coordinator.md deleted with its agent rules moved to docs/guides/agents.md"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:52Z"
-updated = "2026-10-09T19:05:52Z"
+updated = "2026-10-27T00:03:24Z"
 idempotency_key = "docs-consolidation-2026-10-09-p7"
 labels = ["creates:docs/guides/agents.md"]
 scope = ["notes/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/agents.md"]
