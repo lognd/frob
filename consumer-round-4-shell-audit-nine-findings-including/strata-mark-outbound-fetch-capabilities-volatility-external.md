@@ -4,10 +4,11 @@ title = "strata: mark outbound fetch capabilities volatility=external; a volatil
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 parent = "01M1WJMD26NR9SKQCEFEHS7ENJ"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-04T22:22:23Z"
+updated = "2026-10-27T02:57:49Z"
 aliases = ["T-4222"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 scope = ["src/frob/strata"]
