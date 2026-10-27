@@ -4,9 +4,10 @@ title = "gob-rules Out: range-capable emission so COV001 and TODO002 can migrate
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-17T21:05:13Z"
-updated = "2026-10-17T21:05:13Z"
+updated = "2026-10-27T02:58:21Z"
 scope = ["crates/gob-rules/**"]
 +++
 
