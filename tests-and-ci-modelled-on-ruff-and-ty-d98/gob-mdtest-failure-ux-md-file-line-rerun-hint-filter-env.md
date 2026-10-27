@@ -4,10 +4,11 @@ title = "gob-mdtest: failure UX: md file:line, rerun hint, filter env, GitHub an
 type = "story"
 category = "todo"
 priority = "low"
+points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-06T13:41:10Z"
+updated = "2026-10-27T02:58:12Z"
 scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
