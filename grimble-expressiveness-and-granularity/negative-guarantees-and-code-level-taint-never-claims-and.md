@@ -1,0 +1,25 @@
++++
+id = "01M5XNNJQN463MG3PT8NBEC70D"
+title = "Negative guarantees and code-level taint: never-claims and secret-to-sink flows checked against code"
+type = "security"
+category = "todo"
+priority = "medium"
+points = 8
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+reporter = "lognd"
+created = "2026-10-27T03:15:10Z"
+updated = "2026-10-27T03:15:10Z"
+idempotency_key = "grimble-expr-never-2026-10-26"
+labels = ["grimble", "audit:grimble-expressiveness"]
+scope = ["crates/grimble-bind/src/**", "crates/grimble-model/src/claim.rs", "crates/grimble-model/src/kernel.rs"]
+
+[[acceptance]]
+text = "claim never ... uses net.connect is REFUTED with the call path when any owned code (directly or transitively) connects"
+bound = false
+
+[[acceptance]]
+text = "a fixture where a secret env var flows into print/log/HTTP fires a taint finding; routing it through a declared declassify symbol is clean"
+bound = false
++++
+
+Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. claim noflow/reach are refuted only against DECLARED flows (grmb-spec 4.4); there is no 'node X never uses net' claim and no code-level data-flow: labels live on declared flows only, so a Secret read from env reaching println! or an HTTP body is unseen. Add `claim never <node|selector> uses <atom>[(args)]` evaluated against observed (and transitive) uses, and taint rules: sources (env.read of secret-class names, fs.read of secret-shaped paths per gob-trust is_secret_path, declared Secret flows) must not reach sink atoms (stdio.write, log, net.connect, fs.write outside declared stores) without a declassify boundary symbol. Depends on the transitive-summaries ticket for the never-claim and on the v3 spec.
