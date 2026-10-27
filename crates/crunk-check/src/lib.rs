@@ -27,6 +27,7 @@ pub mod product_rules;
 pub mod review;
 pub mod sibling;
 mod tailwind;
+pub mod tier;
 pub mod ugui;
 
 use std::path::{Path, PathBuf};
@@ -35,6 +36,7 @@ use std::time::Instant;
 pub use gob_check::{CheckError, CheckReport, FailOn};
 pub use product::{Crunk, CrunkInputs, CrunkShared};
 pub use sibling::{SCHEMA_VERSION, sibling_document};
+pub use tier::{NotRun, Tier};
 
 use gob_config::ComputeTable;
 
@@ -55,6 +57,9 @@ pub struct CheckOptions {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// The gate the run is for; `Release` raises families with a release severity.
     pub gate: crunk_rules::family::Gate,
+    // frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
+    /// `--tier`: rules declared above it are listed as not run (default `T1`).
+    pub tier: Tier,
 }
 
 /// Everything one run produced, enough to build the document and the verbs' views.
@@ -73,6 +78,10 @@ pub struct CrunkRun {
     pub elapsed_ms: u64,
     /// Non-fatal notes from the pipeline.
     pub warnings: Vec<String>,
+    /// The tier the run went up to.
+    pub tier: Tier,
+    /// Rules above `tier`, listed as not run and never clean.
+    pub not_run: Vec<NotRun>,
 }
 
 /// True when `<root>/crunk.toml` exists (the one file that marks a crunk project).
@@ -110,6 +119,13 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CrunkRun, CheckError> {
     );
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     crunk_rules::family::apply_gate(&mut report.findings, opts.gate);
+    // frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
+    let not_run = tier::not_run(
+        gob_check::Product::rule_set(&Crunk).defs(),
+        opts.tier,
+        &opts.only,
+    );
+    tier::retain_decided(&mut report.findings, &not_run);
     let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
     tracing::info!(
         findings = report.findings.len(),
@@ -122,6 +138,8 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CrunkRun, CheckError> {
         warnings: report.warnings.clone(),
         report,
         compute,
+        tier: opts.tier,
+        not_run,
         ticket_scope: opts.ticket_scope.clone(),
         base: opts.base.clone(),
         elapsed_ms,
