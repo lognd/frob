@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:02Z"
+updated = "2026-10-27T00:53:31Z"
 aliases = ["crunk:T-0033"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/app/**", "src/crunk/__main__.py", "src/crunk/report/**", "tests/unit/test_app.py", "tests/unit/test_main.py", "tests/unit/test_report.py", "tests/system/test_e2e_15_output.py", "docs/commands/check.md", "docs/design/subsystems/report.md", "docs/design/subsystems/shell.md", "README.md", "docs/commands/fix.md", "docs/commands/init.md", "docs/commands/map.md", "docs/commands/tokens.md", "docs/index.md", "src/crunk/scaffold/presets.py", "src/crunk/scaffold/write.py", "tests/integration/test_int_07_shell_wiring.py", "docs/design/02-specification.md", "src/crunk/rules/_contrast.py", "tickets/T-0042/ticket.md"]
 
 [[acceptance]]
