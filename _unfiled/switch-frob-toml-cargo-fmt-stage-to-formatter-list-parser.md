@@ -4,9 +4,10 @@ title = "Switch frob.toml cargo fmt stage to formatter-list parser"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-22T13:26:16Z"
-updated = "2026-10-22T13:26:16Z"
+updated = "2026-10-27T02:58:40Z"
 scope = ["frob.toml"]
 +++
 
