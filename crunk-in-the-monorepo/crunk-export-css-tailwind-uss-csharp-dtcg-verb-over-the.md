@@ -2,7 +2,8 @@
 id = "01M5XCVMQBQWARH7HT8RYHA0KY"
 title = "crunk export css|tailwind|uss|csharp|dtcg verb over the token exporters"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
