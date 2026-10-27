@@ -2,13 +2,13 @@
 id = "01M5XCWXYNXW0RW8VRDQPY31M6"
 title = "Solver style mapping: resolved scene CSS to taffy styles (block, flex wrap both ways, grid tracks and spans, absolute, gap, padding, min/max, aspect-ratio) with token var() resolution"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:53Z"
-updated = "2026-10-27T00:41:53Z"
+updated = "2026-10-27T00:43:35Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk-layout/src/style/**, crates/crunk-layout/tests/style*.rs"]
 
