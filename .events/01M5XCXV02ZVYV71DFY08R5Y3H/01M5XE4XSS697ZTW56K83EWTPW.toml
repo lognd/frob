@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T01:03:11Z"
+digest = "f220586a56462e602f6af26103445cabba467a56379c06f31615b9499f58d284"
+exit_code = 0
+head = "e6711f927fe40458e97af86c3d4cd0b2feeb26ff"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8804914e-4715-4f25-965b-21040d9bc59a with nextest profile: default
+    Starting 3 tests across 17 binaries (68 tests skipped)
+        PASS [   0.008s] crunk-check::tier tier_default_is_t1_and_unknown_lists_all
+        PASS [   0.427s] crunk-check::tier must_measure_above_tier_is_unresolved_and_unknown_family_is_t0
+        PASS [   0.434s] crunk-check::tier default_tier_lists_nothing_it_decides
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.435s] 3 tests run: 3 passed, 68 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E test(/tier/)"
+size = 794
+status = "measured"
+test_count = 3
+tests_digest = "7b796995ab6e7f1a958604e22ff418e17cc4f88af6352ac6d339ec9c42c7277a"
+at = "2026-10-27T01:03:11Z"
+actor = "lognd"
+rev = 1
