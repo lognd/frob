@@ -8,8 +8,8 @@ points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:39Z"
-updated = "2026-10-27T00:50:13Z"
-scope = ["crates/frob-evidence/src/coverage/mod.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-obligations/src/coverage.rs", "crates/frob-evidence/src/coverage/**", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/lib.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/src/workspace.rs", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/import_v1.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/tests/**", "crates/frob-obligations/Cargo.toml", "crates/frob-obligations/src/config.rs"]
+updated = "2026-10-27T00:50:14Z"
+scope = ["crates/frob-evidence/src/coverage/mod.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-obligations/src/coverage.rs", "crates/frob-evidence/src/coverage/**", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/lib.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/src/workspace.rs", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/import_v1.rs", "crates/frob-evidence/Cargo.toml", "crates/frob-evidence/tests/**", "crates/frob-obligations/Cargo.toml", "crates/frob-obligations/src/config.rs", "crates/frob-obligations/src/lib.rs"]
 
 [[acceptance]]
 text = "Given any provider run with --coverage, when it finishes, then the shared normaliser merges per-language reports into one lcov file COV004 reads"
