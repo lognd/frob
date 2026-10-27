@@ -2,7 +2,8 @@
 id = "01M5XMN8N235JFVMJW9MCY59H4"
 title = "Stage timing events from land and check feeding the presenter and a profile report"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
