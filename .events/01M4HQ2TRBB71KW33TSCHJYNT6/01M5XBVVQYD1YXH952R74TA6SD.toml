@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T00:23:12Z"
+digest = "b63df4d1705b89abfaa5ab8a16c158d506963f102ce82828f852a58f0260ddf8"
+exit_code = 0
+head = "57d27df15478393affd2bc564769033f054e24ba"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.70s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4bee248e-7e0d-4a92-965d-f9b01a525542 with nextest profile: default
+    Starting 5 tests across 4 binaries (468 tests skipped)
+        PASS [   0.206s] frob-cli::it ticket_migrate::an_empty_ledger_migrates_with_pages_and_stays_current
+        PASS [   0.637s] frob-cli::it ticket_migrate::dry_run_reports_pages_without_writing
+        PASS [   0.728s] frob-cli::it ticket_migrate::rerunning_before_the_config_switch_changes_nothing
+        PASS [   0.766s] frob-cli::it ticket_migrate::migration_commit_carries_the_generated_pages_and_reindex_is_a_no_op
+        PASS [   0.979s] frob-cli::it ticket_migrate::migration_keeps_every_ticket_identical_and_is_repeatable
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.980s] 5 tests run: 5 passed, 468 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(/ticket_migrate/)"
+size = 2032
+status = "measured"
+test_count = 5
+tests_digest = "6c6359765365e50e54be3ce07ff9bddaa09ab74e75f56c39fd5d086db2ff03e1"
+at = "2026-10-27T00:23:12Z"
+actor = "lognd"
+rev = 1
