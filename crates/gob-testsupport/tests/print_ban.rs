@@ -1,5 +1,5 @@
 //! Proves the workspace print/dbg clippy ban (~J1PTXPF) is configured and stays configured.
-// frob:ticket ~J1PTXPF
+// frob:ticket 01M5XMR625ABZ4HX19EJ1PTXPF
 
 use std::path::Path;
 
