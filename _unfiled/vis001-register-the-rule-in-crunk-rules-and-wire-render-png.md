@@ -4,9 +4,10 @@ title = "VIS001: register the rule in crunk-rules and wire render/PNG decode and
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-22T08:27:26Z"
-updated = "2026-10-22T08:27:26Z"
+updated = "2026-10-27T02:58:39Z"
 scope = ["crates/crunk-rules/**", "crates/crunk-gallery/**", "docs/reference/rules/**", "docs/crunk/rules/**"]
 +++
 
