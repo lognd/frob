@@ -4,9 +4,10 @@ title = "grimble status: list manual tests with their reason"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-23T20:09:35Z"
-updated = "2026-10-23T20:09:35Z"
+updated = "2026-10-27T02:58:41Z"
 scope = ["crates/grimble/**"]
 +++
 
