@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T01:33:17Z"
-updated = "2026-10-27T00:03:14Z"
-scope = ["crates/frob-ledger/src/**", "docs/design/navigation.md", "changelog.d/**"]
+updated = "2026-10-27T00:05:10Z"
+scope = ["crates/frob-ledger/src/**", "docs/design/navigation.md", "changelog.d/**", "crates/frob/src/ticket/migrate_cmd.rs"]
 
 [[acceptance]]
 text = "Given a migrated frob-tickets branch, when the ledger writes, then README, per-epic index pages and TOUR are regenerated and navigable on GitHub; navigation.md names ref_mode = orphan"
