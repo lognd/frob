@@ -2,7 +2,8 @@
 id = "01M5XMF3QY5QD8KRPNPZX7DH32"
 title = "Burn down PATH001 advisories (194)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
