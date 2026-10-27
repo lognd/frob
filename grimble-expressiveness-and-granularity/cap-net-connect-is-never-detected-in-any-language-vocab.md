@@ -2,13 +2,13 @@
 id = "01M5XNNH36HZTBEW0DFKEM2RHP"
 title = "CAP: net.connect is never detected in any language (vocab class net vs atom-name lookup)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-27T03:15:08Z"
+updated = "2026-10-27T04:33:07Z"
 idempotency_key = "grimble-expr-netconnect-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/tests/**"]
