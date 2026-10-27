@@ -20,6 +20,10 @@ target = "01M4CXRWBYR6P0WFRW5GBBJGEY"
 kind = "blocked-by"
 target = "01M5XCXV02ZVYV71DFY08R5Y3H"
 
+[[links]]
+kind = "blocked-by"
+target = "01M5XCXVAR2WSR1H6X5X7ETR1R"
+
 [[acceptance]]
 text = "Given the corpus, when both engines render in the optional playwright job, then parity, VIS and axe findings appear in one report; given playwright absent, then those findings are not run, not green, and the job is skipped with a notice"
 bound = false
