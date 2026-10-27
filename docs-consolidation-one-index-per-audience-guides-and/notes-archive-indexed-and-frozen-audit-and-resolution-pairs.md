@@ -8,7 +8,7 @@ points = 3
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:52Z"
-updated = "2026-10-27T00:04:46Z"
+updated = "2026-10-27T00:23:42Z"
 idempotency_key = "docs-consolidation-2026-10-09-p7"
 labels = ["creates:docs/guides/agents.md"]
 scope = ["notes/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/agents.md", "docs/migration/v1-selection.toml", "docs/guides/moving-docs.md", "docs/design/README.md", "docs/design/architecture.md", "docs/design/boundaries.md", "docs/design/build-test-ci.md", "docs/design/cli.md", "docs/design/code-model.md", "docs/design/crunk.md", "docs/design/documentation.md", "docs/design/exceptions.md", "docs/design/language-engines.md", "docs/design/migration.md", "docs/design/monorepo.md", "docs/design/tickets.md"]
@@ -35,7 +35,7 @@ bound = false
 
 [[acceptance]]
 text = "Given notes/, when phase 7 lands, then no note sits at the notes/ root except README.md, every note has an index row, and frob check reports zero DOC002 and zero DRIFT002 findings, and `cargo dev gen --check` is clean"
-bound = false
+bound = true
 +++
 
 Phase 7 of notes/review/docs-consolidation-2026-10-09.md (sections 2.6, 3.1, 3.2, owner decision 4).
