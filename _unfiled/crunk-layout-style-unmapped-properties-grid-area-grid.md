@@ -4,9 +4,10 @@ title = "crunk-layout style: unmapped properties (grid-area, grid-template-areas
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-27T00:55:09Z"
-updated = "2026-10-27T00:55:09Z"
+updated = "2026-10-27T02:58:43Z"
 scope = ["crates/crunk-layout/src/style/**"]
 +++
 
