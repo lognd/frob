@@ -4,10 +4,11 @@ title = "frob:tests kind=a11y obligation"
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 parent = "01M1T07NXSGQEK1JQ4XKQSJFAK"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-04T22:22:22Z"
+updated = "2026-10-27T02:57:44Z"
 aliases = ["T-4034"]
 labels = ["v1-cluster:B2", "area:crunk", "triage:accepted", "milestone:0.538.0"]
 scope = ["src/frob/graph/dsl.py"]
