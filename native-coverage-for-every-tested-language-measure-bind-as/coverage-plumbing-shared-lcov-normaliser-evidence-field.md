@@ -8,8 +8,8 @@ points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:39Z"
-updated = "2026-10-27T00:50:05Z"
-scope = ["crates/frob-evidence/src/coverage/mod.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-obligations/src/coverage.rs", "crates/frob-evidence/src/coverage/**"]
+updated = "2026-10-27T00:50:06Z"
+scope = ["crates/frob-evidence/src/coverage/mod.rs", "crates/frob-evidence/src/provider.rs", "crates/frob-obligations/src/coverage.rs", "crates/frob-evidence/src/coverage/**", "crates/frob-evidence/src/config.rs"]
 
 [[acceptance]]
 text = "Given any provider run with --coverage, when it finishes, then the shared normaliser merges per-language reports into one lcov file COV004 reads"
