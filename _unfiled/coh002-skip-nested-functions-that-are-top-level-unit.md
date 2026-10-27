@@ -4,9 +4,10 @@ title = "COH002: skip nested functions that are top-level unit statements"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-22T10:27:39Z"
-updated = "2026-10-22T10:27:39Z"
+updated = "2026-10-27T02:58:39Z"
 scope = ["crates/grimble-check/**", "docs/**"]
 +++
 
