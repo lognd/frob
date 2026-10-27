@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/RYHA0KY; scope: crates/crunk/src/export.rs, crates/crunk/src/lib.rs, crates/crunk/tests/export_verb.rs; ttl 7200s"
+at = "2026-10-27T00:43:42Z"
+actor = "lognd"
+rev = 1
