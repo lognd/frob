@@ -56,7 +56,7 @@ with bounded blast radius. LOW = naming, numbering, stale wording.
 
 ### H5. Exit-code contract contradicts itself across files and leaves 1 vs 3 undefined for common refusals
 
-- Where: cli.md section 2 lines 42-48 (0 for findings; 1 only when asked via `--fail-on`, "the default in CI via FROB_CI"); rules.md section 4 line 175 ("8. Exit 1 on any Error") and section 1 line 25 ("exit code is errors only"); cli.md line 100 and notes/crunk.md section 1 (crunk "unchanged verb set", crunk check exits 1 on error violations); architecture.md lines 51-53; cli.md line 35 (`retry_after_ms`) vs architecture.md line 148 (`retry_after`).
+- Where: cli.md section 2 lines 42-48 (0 for findings; 1 only when asked via `--fail-on`, "the default in CI via FROB_CI"); rules.md section 4 line 175 ("8. Exit 1 on any Error") and section 1 line 25 ("exit code is errors only"); cli.md line 100 and notes/v1/crunk.md section 1 (crunk "unchanged verb set", crunk check exits 1 on error violations); architecture.md lines 51-53; cli.md line 35 (`retry_after_ms`) vs architecture.md line 148 (`retry_after`).
 - Finding: (a) rules.md still says `frob check` exits 1 on any Error, contradicting the D13 contract; crunk keeps its 0/1/2 contract while `frob check` merges crunk under gob-diagnostics' contract. (b) `FROB_CI` silently changes the exit contract from an environment variable, violating the "no invisible variables" principle (goals.md lines 86-89). (c) Undefined: is `ticket close` refused for missing evidence exit 1 (negative domain answer) or exit 3 (guard)? Is `retryable` true for it (retrying without changes never helps)? What does `--wait <secs>` return on timeout? What does `job wait` return when the land job failed its check (1, 3 or 4)? What does `cycle assign` over capacity return?
 - Why it matters: agents branch on the code, not prose (cli.md line 48); the v1 data shows overloaded exit codes caused blind retries (56 percent of failures).
 - Suggested fix: add one exit-code table in cli.md with a row per refusal class (guard-retryable-by-waiting, guard-needs-action, domain-negative, timeout, job-failed), define `retryable` as "same argv may succeed later without other action", fix rules.md step 8, state crunk adopts the shared contract, and replace `FROB_CI` with a materialized `[check] fail_on` knob plus explicit `--fail-on`.
@@ -84,7 +84,7 @@ with bounded blast radius. LOW = naming, numbering, stale wording.
 
 ### H9. The #1 goal (warm full check < 2 s, ticket reads < 50 ms) has no mechanism for a fresh CLI process
 
-- Where: goals.md goal 1 lines 33-35; architecture.md section 2 lines 41-48 and table lines 58-65; rules.md section 1 lines 20-23 (findings "memoized on (file digest, rule set version, side-input digests)"); git-io.md section 6 (daemon optional); notes/rust-ecosystem.md line 359 and line 434 ("Persisting salsa memos is not supported"; "Memos are in-memory only").
+- Where: goals.md goal 1 lines 33-35; architecture.md section 2 lines 41-48 and table lines 58-65; rules.md section 1 lines 20-23 (findings "memoized on (file digest, rule set version, side-input digests)"); git-io.md section 6 (daemon optional); notes/research/rust-ecosystem.md line 359 and line 434 ("Persisting salsa memos is not supported"; "Memos are in-memory only").
 - Finding: salsa memos die with the process and only parse artifacts are persisted to SQLite. A warm CLI `frob check` therefore re-runs every rule on 100k lines, plus repo-scope rules (cycles, dup R1-R5, dead code), plus test collection, plus `[[check.tool]]` and the documentation gates that documentation.md section 8 puts "all inside frob check" (cargo doc, mdbook, lychee, typos, clippy). No persisted findings cache, no invalidation key for repo rules, and no budget for tool stages is designed; "warm" is never defined (daemon-warm vs cache-warm).
 - Why it matters: speed is the ranked first goal and the reason for the rewrite; without a mechanism the target will be quietly missed and the v1 `--budget` chunking will come back (rules.md line 181).
 - Suggested fix: define "warm" (fresh process with populated `.frob/` cache), add a persisted per-file findings table keyed by (file digest, rule id, rule version, side-input digest) and a repo-rule key (graph digest), exclude external tool stages and doc gates from the 2 s budget explicitly, and make the bench crate measure the fresh-process case.
@@ -153,7 +153,7 @@ with bounded blast radius. LOW = naming, numbering, stale wording.
 - Suggested fix: state the location (recommend parse cache per worktree plus a ticket index keyed to the primary ledger tree id), set `busy_timeout` and make cache writes best-effort with a logged miss, and persist from the command layer after queries return.
 
 ### M11. salsa plus rayon plus a watcher-driven server: API and cancellation assumptions unverified
-- Where: architecture.md section 9 line 171 (salsa "`Snapshot`/`par_map`"), line 175 ("no locks around the derived state (v1's deadlock class)"); gui.md line 25-27 (watcher invalidates inputs); notes/rust-ecosystem.md line 439 ("keep salsa queries single-threaded per db or use salsa's parallel support").
+- Where: architecture.md section 9 line 171 (salsa "`Snapshot`/`par_map`"), line 175 ("no locks around the derived state (v1's deadlock class)"); gui.md line 25-27 (watcher invalidates inputs); notes/research/rust-ecosystem.md line 439 ("keep salsa queries single-threaded per db or use salsa's parallel support").
 - Finding: current salsa (0.2x) removed `Snapshot` in favour of cloned database handles; setting an input cancels in-flight queries on every other handle and blocks until they unwind. In `frob serve`, every file-watch event during a long `check` cancels it; with an active editor the check may never finish. salsa also blocks threads waiting on queries in flight on other threads, so "no locks" is not true of the derived state.
 - Why it matters: D16 and the daemon option rely on this interaction.
 - Suggested fix: add a short "concurrency model" subsection: handle cloning per request, cancellation catching and retry policy, debounce of watcher input writes, and a spike ticket that validates salsa par_map on rayon before committing to it.
@@ -230,7 +230,7 @@ with bounded blast radius. LOW = naming, numbering, stale wording.
 - Suggested fix: say plainly this is an audit trail, not an authorization control, or require review evidence that is externally attested (signed commit by a listed key, or a GitHub review fetched by frob-gh); define "owner" in config.
 
 ### M26. ast-grep-core adopted for POL at grammar and IR level without resolving the noted risks
-- Where: rules.md section 3 lines 144-146 ("Engine: `ast-grep-core` ... IR level implemented on the same matcher trait"); code-model.md line 178-179 (still "tentative"); notes/rust-ecosystem.md lines 435-436 and 779 (ast-grep ties its own tree-sitter version, "check before adopting"); architecture.md line 155 pins tree-sitter 0.27.
+- Where: rules.md section 3 lines 144-146 ("Engine: `ast-grep-core` ... IR level implemented on the same matcher trait"); code-model.md line 178-179 (still "tentative"); notes/research/rust-ecosystem.md lines 435-436 and 779 (ast-grep ties its own tree-sitter version, "check before adopting"); architecture.md line 155 pins tree-sitter 0.27.
 - Finding: if ast-grep-core resolves a different tree-sitter version, its patterns cannot run on gob-languages trees (two distinct `Tree` types); ast-grep's matcher is generic over its own `Doc`/`Node` traits, and an IR backend is an assumption, not a known extension point.
 - Suggested fix: record a spike ticket (tree-sitter version unification, IR adapter for ast-grep's Doc trait) as a precondition and keep code-model.md and rules.md consistent ("decided pending spike").
 
@@ -292,7 +292,7 @@ with bounded blast radius. LOW = naming, numbering, stale wording.
 - Suggested fix: search-and-replace pass; reserve `gob-symbols`/`gob-ir` instead of `gob-syntax`.
 
 ### L2. Numbered references, stale placeholders and ordering
-- Where: boundaries.md line 35 ("docs 01 to 13"); goals.md line 4 ("its own numbered file"); tickets.md lines 5-6 ("Sections 7 and 8 are placeholders until notes/jira.md and notes/v1/agent-usage.md land": both exist and the sections are written); code-model.md lines 4-5 and 179 ("tentative ... await notes/rust-ecosystem.md"); v1 ticket ids as rationale: code-model.md lines 57 (T-0556), 247 (T-4484), build-test-ci.md line 89 (T-4338); `T-...` placeholders in grimble-model.md lines 55, 155; goals.md list numbered 1-6, 8, 7 (lines 57-60); products.md sections ordered 1, 2, 3, 4, 6, 5; monorepo.md lines 75-76 (garbled "gob-* tickets are likewise").
+- Where: boundaries.md line 35 ("docs 01 to 13"); goals.md line 4 ("its own numbered file"); tickets.md lines 5-6 ("Sections 7 and 8 are placeholders until notes/research/jira.md and notes/v1/agent-usage.md land": both exist and the sections are written); code-model.md lines 4-5 and 179 ("tentative ... await notes/research/rust-ecosystem.md"); v1 ticket ids as rationale: code-model.md lines 57 (T-0556), 247 (T-4484), build-test-ci.md line 89 (T-4338); `T-...` placeholders in grimble-model.md lines 55, 155; goals.md list numbered 1-6, 8, 7 (lines 57-60); products.md sections ordered 1, 2, 3, 4, 6, 5; monorepo.md lines 75-76 (garbled "gob-* tickets are likewise").
 - Suggested fix: replace numbered refs with file:section names, remove placeholder notes, renumber lists and sections.
 
 ### L3. Generated-artifact paths and generator command names disagree
@@ -308,7 +308,7 @@ with bounded blast radius. LOW = naming, numbering, stale wording.
 - Suggested fix: separate `tier` (universal/lang) from `scope` (file/repo) and map fix enum to A/B/C explicitly.
 
 ### L6. MCP flag spelling and tokio placement
-- Where: cli.md line 99 (`grimble ... serve --mcp`) vs boundaries.md line 27 and architecture.md line 147 (`--mcp`); boundaries.md lines 203-204 (`grimble-check --mcp` uses tokio) vs architecture.md line 174 and build-test-ci.md line 11 (tokio only in serve and gh crates); crunk has no MCP in notes/crunk.md section 1 though boundaries.md line 27 gives every product `--mcp`.
+- Where: cli.md line 99 (`grimble ... serve --mcp`) vs boundaries.md line 27 and architecture.md line 147 (`--mcp`); boundaries.md lines 203-204 (`grimble-check --mcp` uses tokio) vs architecture.md line 174 and build-test-ci.md line 11 (tokio only in serve and gh crates); crunk has no MCP in notes/v1/crunk.md section 1 though boundaries.md line 27 gives every product `--mcp`.
 - Suggested fix: one spelling (`serve --mcp`), put grimble MCP in a `grimble-serve` crate on gob-serve so grimble-check stays sync.
 
 ### L7. Goals and later files disagree on features
@@ -395,9 +395,9 @@ Checked and found consistent (no finding):
 - gix capability claims for reads (discover, status, diff, merge_base, rev_parse, blame, refs transactions, commit) are plausible and the design already keeps git fallbacks for worktree add, merge conflicts and push.
 
 Skimmed or not verified:
-- notes/jira.md, notes/documentation.md and notes/v1/gates-and-rules.md were used only for cross-reference spot checks (KEEP/MERGE tables), not read line by line; the 145 KEEP rule ids were not individually mapped to families.
+- notes/research/jira.md, notes/research/documentation.md and notes/v1/gates-and-rules.md were used only for cross-reference spot checks (KEEP/MERGE tables), not read line by line; the 145 KEEP rule ids were not individually mapped to families.
 - Crate versions (salsa, gix, tree-sitter, ast-grep, rmcp) were not checked against crates.io; M11 and M26 flag the API assumptions to verify in spikes.
-- notes/rust-ecosystem.md itself disagrees on gix (0.81 at line 6, 0.88 at line 437) and tree-sitter (0.25.10 vs 0.27); not a design-file finding.
+- notes/research/rust-ecosystem.md itself disagrees on gix (0.81 at line 6, 0.88 at line 437) and tree-sitter (0.25.10 vs 0.27); not a design-file finding.
 
 ---
 
@@ -444,3 +444,103 @@ custom fields), external evidence stores, every grimble crate, every
 crunk crate, the `bundle` feature, migration tooling for consumer
 repos (only this repo's own tickets are needed, and they can be
 re-filed or imported by a one-off script).
+
+
+---
+
+## Resolution: how each finding above was closed
+
+Pass over docs/design/*.md on 2026-10-02 that propagates the audit
+(notes/review/audit-design.md, 67 findings) and decision-log rows D23 to D37
+(docs/design/README.md) into the design files. Where the audit's
+suggested fix and a D-row differ, the D-row won. "applied" means the
+audit's suggested fix (first alternative where it offered several) was
+written into the named files; "decided Dnn" means the README decision
+row is the authority and the files now state it.
+
+## Resolution table
+
+| Id | Severity | Resolution | Files touched |
+|---|---|---|---|
+| H1 | HIGH | decided D23 (ledger ref, tree built from ref tip, CAS retry, `ref = "branch"`, TICK absent-from-base, new CI/fork/offline section 2b) | tickets.md, git-io.md, architecture.md |
+| H2 | HIGH | decided D24 (full ULID persisted, `~handle` from random suffix, fixer plus TICK rule) | tickets.md, goals.md, migration.md, code-model.md, documentation.md, cli.md |
+| H3 | HIGH | decided D25 (synchronous land, no jobs, `--wait <secs>` bounds lock acquisition) | cli.md, tickets.md, boundaries.md, gui.md, architecture.md |
+| H4 | HIGH | decided D26 (same-holder idempotency, `E-LEASE-HELD`, one lock file) | tickets.md, cli.md, pm-enforcement.md |
+| H5 | HIGH | decided D27 (exit-code table in cli.md, `retryable` defined, `[check] fail_on` replaces the environment switch, crunk adopts contract, rules.md step 8) | cli.md, rules.md, architecture.md, boundaries.md, goals.md |
+| H6 | HIGH | decided D28 (ticket-bound exits evaluated by frob from sibling `--json`, `ticket=` opaque, Unresolved standalone, `.grmb` waive becomes the four kinds) | exceptions.md, boundaries.md, grimble-model.md, products.md, code-model.md |
+| H7 | HIGH | decided D28 (`gob-lock`, `grimble.lock`, `grimble ack`) | grimble-model.md, boundaries.md, products.md, cli.md, exceptions.md |
+| H8 | HIGH | decided D29 (read-write server, mandatory per-launch token, Origin and Host checks, JSON content type) | gui.md, goals.md |
+| H9 | HIGH | decided D30 (warm defined, persisted findings keys, tool stages outside budget, bench measures fresh process) | architecture.md, rules.md, goals.md, code-model.md, boundaries.md |
+| M1 | MEDIUM | decided D31 (imports and call graph in gob-symbols, gob-ir structural IR only, gob-db milestone 2) | boundaries.md, code-model.md, monorepo.md, architecture.md |
+| M2 | MEDIUM | applied (`bundle` exception stated, Unresolved per missing sibling, `schema_version` check) | boundaries.md, products.md, architecture.md |
+| M3 | MEDIUM | decided D32 (EXC replaces the v1 waiver and debt families; Directive derive example is `defer`; migrate subverb is `exceptions`) | code-model.md, rules.md, products.md, boundaries.md, grimble-model.md, migration.md, cli.md, exceptions.md |
+| M4 | MEDIUM | decided D32 (one family-to-crate table, boundaries.md 2.5; GPOL vs POL; one policy file location each) | boundaries.md, rules.md, grimble-model.md, documentation.md |
+| M5 | MEDIUM | decided D32 (FAMILYNNN with slug alias; grimble ids rewritten as one table; many-to-one migration stated) | grimble-model.md, code-model.md, rules.md |
+| M6 | MEDIUM | decided D34 (config inventory table in architecture.md section 6; constants became knobs; grimble knobs in grimble.toml; exceptions.toml in storage table) | architecture.md, grimble-model.md, exceptions.md, tickets.md, cli.md, rules.md, pm-enforcement.md, goals.md, monorepo.md |
+| M7 | MEDIUM | decided D33 (categories plus close guards, `outcome`, priority enum, derived `blocked`, milestone is a release object, `cycle`, one canonical link table) | tickets.md, pm-enforcement.md, migration.md, cli.md |
+| M8 | MEDIUM | decided D33 (event-kind table, root `events/`, frontmatter equals fold of events) | tickets.md, pm-enforcement.md, exceptions.md, migration.md, architecture.md |
+| M9 | MEDIUM | decided D26 (glob intersection OR resolved sets, TTL knob, single-clone, WIP off, non-symbol regions are file scope) | tickets.md, pm-enforcement.md, architecture.md |
+| M10 | MEDIUM | decided D30 (per-worktree SQLite, `busy_timeout`, best-effort writes from the command layer) | architecture.md, boundaries.md, code-model.md, git-io.md |
+| M11 | MEDIUM | applied (concurrency model subsection: handle cloning, cancellation retry, debounce, spike precondition) | architecture.md, gui.md, git-io.md |
+| M12 | MEDIUM | applied (capacity unenforced until `min_history`, forecast Unresolved with sample count, pooled throughput) | pm-enforcement.md |
+| M13 | MEDIUM | applied (drivers resolved at transition and recorded, tracked baselines instead of telemetry files) | pm-enforcement.md |
+| M14 | MEDIUM | decided D28 (PM026 uses gob-symbols public-API graph only; `close` and `land` outside the 100 ms budget with a measurer timeout knob) | pm-enforcement.md, boundaries.md, architecture.md |
+| M15 | MEDIUM | applied (attested digest in `exceptions.toml`, STALE only from a fresh full evaluation, fingerprints without line numbers, REATTEST clock from the change commit date) | exceptions.md, rules.md |
+| M16 | MEDIUM | applied (`n/a` reported as one Unresolved per node, CAP003 Advisory for one release, SYS003 opt-in via `[grimble] modeled`) | code-model.md, grimble-model.md |
+| M17 | MEDIUM | decided D28 (frob consumes grimble entities and `binds` only through `grimble --json`; census verb is grimble's) | grimble-model.md, tickets.md, boundaries.md, code-model.md, products.md |
+| M18 | MEDIUM | applied (`frob hook pre-tool` invokes `grimble vet --hook` as a listed sibling spawn) | boundaries.md, git-io.md |
+| M19 | MEDIUM | decided D35 (crates.io receives the full crate set in lockstep; binaries via cargo-dist and PyPI) | monorepo.md, products.md, build-test-ci.md |
+| M20 | MEDIUM | applied (source-namespaced aliases, ULIDs from v1 created dates, only current acks carried, `aliases` field, goals non-goal updated) | migration.md, tickets.md, monorepo.md, goals.md |
+| M21 | MEDIUM | applied (doc gates and GEN001 are `[[check.tool]]` stages of this repo; changelog compilation owned by frob-release, called by gob-dev) | documentation.md, build-test-ci.md, boundaries.md |
+| M22 | MEDIUM | applied (quarantine to a tracked file and deferred to milestone 2, local artifacts to `.git/frob/artifacts`, principle lists the deliberate non-git state) | rules.md, tickets.md, architecture.md, goals.md, cli.md |
+| M23 | MEDIUM | decided D34 (`--idempotency-key`, `batch` ledger-only and all or nothing, plan tokens as recomputed digests) | cli.md |
+| M24 | MEDIUM | applied (redactor in gob-log, applied by gob-exec capture; the ledger scan is a TICK rule rather than SEC because frob cannot depend on grimble-security) | architecture.md, tickets.md, boundaries.md |
+| M25 | MEDIUM | applied (review stated as an audit trail, `[exceptions] owners` defined) | exceptions.md, gui.md, tickets.md, architecture.md |
+| M26 | MEDIUM | applied (ast-grep-core decided pending a spike; both files say so) | code-model.md, rules.md |
+| M27 | MEDIUM | applied earlier by the coordinator (README rewritten before this pass; not touched here) | README.md |
+| M28 | MEDIUM | applied (verb table regenerated: verb, product, crate, idempotent, exit codes, milestone; `status` and `migrate` resolved; hidden `merge-driver` kept) | cli.md, tickets.md, boundaries.md, migration.md |
+| M29 | MEDIUM | decided D33 (driver unions events and re-folds; init or doctor installs it; TICK re-fold in CI) | tickets.md |
+| M30 | MEDIUM | applied (version and schema handshake, daemon re-stat, Windows named pipe or in-process) | git-io.md |
+| M31 | MEDIUM | applied (`verify = "ci"` and quarantine deferred with the requirements they need) | rules.md, tickets.md, architecture.md, boundaries.md |
+| M32 | MEDIUM | applied (boundaries.md 2.6 gives each KEEP item an owner or a dropped reason) | boundaries.md, cli.md, tickets.md |
+| M33 | MEDIUM | applied (write-time refusal follows rule severity; composition of the three strictness knobs) | rules.md, pm-enforcement.md |
+| M34 | MEDIUM | decided D36 (self-hosting is frob-only in milestone 1) | build-test-ci.md, monorepo.md |
+| M35 | MEDIUM | applied (milestone 1 supports `dir:` and https; retention and Unmeasured stated) | tickets.md |
+| M36 | MEDIUM | applied (ADR files named `<date>-<slug>.md` with generated display numbers; NARR id pattern defined; fragments by full ULID) | documentation.md, exceptions.md, grimble-model.md |
+| L1 | LOW | applied (search-and-replace of old names; gob-symbols and gob-ir replace the retired syntax-crate name; section 2.1 completed) | grimble-model.md, code-model.md, goals.md, architecture.md, rules.md, boundaries.md, monorepo.md, products.md |
+| L2 | LOW | applied (numbered refs, placeholders, v1 ticket ids, list and section order) | boundaries.md, goals.md, tickets.md, code-model.md, build-test-ci.md, grimble-model.md, products.md, monorepo.md |
+| L3 | LOW | applied (one path table in documentation.md section 3; others link to it) | documentation.md, build-test-ci.md, rules.md, code-model.md, architecture.md, goals.md, boundaries.md, exceptions.md, gui.md, monorepo.md |
+| L4 | LOW | applied (real substrate DAG, gob-dev marked as the one binary) | architecture.md, boundaries.md |
+| L5 | LOW | applied (`tier` split from `scope`, fix enum mapped to A/B/C, TOML severity spelling stated) | rules.md |
+| L6 | LOW | applied (`serve --mcp` everywhere, `grimble-serve` crate, crunk has no MCP, tokio list updated) | cli.md, boundaries.md, architecture.md |
+| L7 | LOW | applied (watchers removed from goals; LSP, SCIP and PyO3 listed as deferred) | goals.md, boundaries.md |
+| L8 | LOW | applied (environment tokens only) | git-io.md |
+| L9 | LOW | applied (all spawn classes listed; only gob-exec references `std::process`) | git-io.md, boundaries.md |
+| L10 | LOW | applied (one definition of which types count) | pm-enforcement.md, tickets.md |
+| L11 | LOW | applied (section 6 describes inference first) | code-model.md |
+| L12 | LOW | applied (fold order by ULID time, `at`, file name; ties concurrent) | tickets.md |
+| L13 | LOW | applied (display prefix is output-only; directives take full ULIDs) | tickets.md |
+| L14 | LOW | applied (every Status line notes T-0001 is a v1-format id with an alias) | all design files except README.md |
+| L15 | LOW | applied (REL003 is the only fragment-present rule) | documentation.md, pm-enforcement.md, rules.md, tickets.md |
+| L16 | LOW | applied (census verb is `grimble check --census`) | code-model.md, boundaries.md |
+| L17 | LOW | applied (size cap, parse timeout, 2-line binding rule, `frob:tests` reorientation stated as unchanged) | code-model.md |
+| L18 | LOW | applied (generated mdtest with a firing and a non-firing case per rule) | rules.md |
+| L19 | LOW | applied (JUnit added to gob-diagnostics, milestone 2) | boundaries.md |
+| L20 | LOW | applied (single `--ticket` definition with `[check] ticket_hops`) | rules.md, cli.md |
+| L21 | LOW | applied (worktree path convention and reuse rule) | cli.md |
+| L22 | LOW | decided D36 (deferred designs kept and marked "Milestone 2 or later (D36)") | build-test-ci.md, monorepo.md, goals.md, gui.md, pm-enforcement.md, tickets.md, code-model.md, rules.md, grimble-model.md, boundaries.md, git-io.md, exceptions.md, migration.md, architecture.md |
+
+## Judgement calls worth a second look
+
+- Defaults in the architecture.md config inventory (TTL 120 minutes,
+  `mega_glob_files` 500, `max_age_days` 60, `cas_retries` 5,
+  `measurer_timeout_secs` 600, `capacity min_history` 3) are proposed
+  initial values, not measured ones.
+- The EXC004 clock starts at the commit date of the change that made the
+  digest differ, so nothing extra is stored; the audit offered a stored
+  detection time instead.
+- Spike tickets (salsa on rayon, ast-grep-core tree-sitter unification)
+  are named as preconditions in the files but not filed; no ticket
+  tooling was run in this pass.
+- The `ticket migrate` verb listed in tickets.md was dropped in favour of
+  `frob migrate tickets`, so there is one migration verb group.

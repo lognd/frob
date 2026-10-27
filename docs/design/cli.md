@@ -372,7 +372,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `tour` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: scaffolds the guided tour files |
 | `trust` | frob | frob (bin) | no | 0 2 3 4 | 1 | effect: records trust in the repository |
 | `gallery check\|enumerate\|render\|triage` | crunk | crunk | per crunk | 0 1 2 3 4 | 1 | object: the gallery noun |
-| crunk verbs (notes/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 | object: the crunk product's own nouns |
+| crunk verbs (notes/v1/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 | object: the crunk product's own nouns |
 
 `frob check` merges sibling findings when they are installed or linked
 (products.md section 1, boundaries.md section 1). `status` exists in

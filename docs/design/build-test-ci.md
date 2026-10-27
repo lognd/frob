@@ -5,7 +5,7 @@ Owner: frob
 Decisions: D102
 Audience: contributor
 
-Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/rust-ecosystem.md sections 1 and
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/research/rust-ecosystem.md sections 1 and
 5, notes/v1/ops-and-integrations.md section 8 (v1 CI: 7 green of the
 last 100 runs, green median 123 minutes).
 
@@ -19,7 +19,7 @@ means frob alone: the self check does not merge sibling findings, and
 the CI jobs below that mention grimble, crunk, bundling, macOS and
 Windows packaging, benches and release are Milestone 2 or later (D36)
 unless they say otherwise. The crate cut, with the verbs and rules each
-crate brings, is the table at the end of notes/audit-design.md.
+crate brings, is the table at the end of notes/review/audit-design.md.
 
 Status: the crates under `crates/` are `frob` (the binary, package
 `frob-cli`), `frob-ack`, `frob-evidence`, `frob-lease`, `frob-ledger`,

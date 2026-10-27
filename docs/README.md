@@ -97,6 +97,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 
 | Document | Title | Status | Owner |
 |---|---|---|---|
+| [guides/agents.md](guides/agents.md) | Agent ground rules | current | frob |
 | [guides/claude-hooks.md](guides/claude-hooks.md) | Claude Code hooks | current | frob |
 | [guides/freshness-hooks.md](guides/freshness-hooks.md) | Freshness hooks | current | frob |
 | [guides/grimble.md](guides/grimble.md) | grimble user guide: model files, check, fmt and the first rules | current | grimble |
