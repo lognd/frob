@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs", "crates/frob-worktree/tests/work.rs"]
-new = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs", "crates/frob-worktree/tests/work.rs", "crates/frob-worktree/src/gc/config.rs", "docs/reference/config.md", "docs/schemas/config.json"]
-at = "2026-10-13T00:11:37Z"
-actor = "lognd"
-rev = 1

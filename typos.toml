@@ -1,8 +1,6 @@
 # typos configuration (build-test-ci.md section 4, D98). Every exclusion and word carries a reason.
 [files]
 extend-exclude = [
-  # The ticket ledger is generated event data (ULIDs, hashes, test lists), not prose we edit.
-  "tickets/",
   # Working notes and imported v1 history are kept verbatim (deliberate shorthand such as Pn, ANF,
   # FO); no history rewrite.
   "notes/",

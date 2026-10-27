@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-plan/benches/**", "crates/gob-plan/Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md"]
-new = ["crates/gob-plan/benches/**", "crates/gob-plan/Cargo.toml", "Cargo.lock", "docs/design/build-test-ci.md", "docs/reference/rules/TICK011.md"]
-at = "2026-10-20T08:45:13Z"
-actor = "lognd"
-rev = 1

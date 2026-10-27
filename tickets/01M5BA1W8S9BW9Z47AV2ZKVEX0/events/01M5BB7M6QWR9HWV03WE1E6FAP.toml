@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["frob mirror recreate reads repo, kid and bot_ids from the [mirror] table of frob.toml (FrobConfig) instead of FROB_MIRROR_KID"]
-moved = []
-at = "2026-10-20T00:26:27Z"
-actor = "lognd"
-rev = 1

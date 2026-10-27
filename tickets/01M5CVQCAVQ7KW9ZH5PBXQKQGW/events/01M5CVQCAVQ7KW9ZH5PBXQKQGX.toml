@@ -1,9 +1,0 @@
-kind = "create"
-title = "Migrate with_remedy sites to structured with_command: frob binary crate cmd modules (cycle, release, milestone, agent, etc)"
-type = "task"
-category = "todo"
-priority = "medium"
-scope = ["crates/frob/src/**"]
-at = "2026-10-20T14:33:55Z"
-actor = "lognd"
-rev = 1

@@ -53,7 +53,7 @@ never a deadline). The guarantee is that no accepted commit is lost and
 that racing writers as a whole always make progress; it is not that
 every racer wins, so a writer that loses `cas_retries + 1` times in a
 row gets `E-GIT-CAS-EXHAUSTED`. When a checkout has the ledger ref
-checked out, its index entries and worktree files for `tickets/` are
+checked out, its index entries and worktree files for the ledger paths are
 updated to match (refused with a remedy if those paths have local
 edits). No `git add`, no `git commit`, no hooks unless the repo asks for
 them (`[git] run_hooks = true` executes `pre-commit` once via one

@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob-obligations/src/tick_reindex.rs", "crates/frob-ledger/src/replay.rs", "crates/frob/tests/ticket_replay.rs", "crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-git/src/tag.rs", "crates/gob-git/src/lib.rs", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/reindex.rs", "crates/frob-check/src/product.rs"]
-new = ["crates/frob-obligations/src/tick_reindex.rs", "crates/frob-ledger/src/replay.rs", "crates/frob/tests/ticket_replay.rs", "crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-git/src/tag.rs", "crates/gob-git/src/lib.rs", "crates/frob-ledger/src/rules.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/reindex.rs", "crates/frob-check/src/product.rs", "docs/reference/rules/TICK007.md"]
-at = "2026-10-11T19:09:03Z"
-actor = "lognd"
-rev = 1

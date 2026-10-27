@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["Given a batch of 12 with 1 failing and a fake runner, then the 11 good tickets are landable and the culprit is isolated in at most 2*ceil(log2 12) checks", "Given a batch of 12 with 2 failing, then both culprits are isolated within ceil(log2 12)*2+2 checks", "Given an all-green batch, then exactly one check runs", "Given a red parent whose halves are both green, then the planner reports an interaction and does not loop"]
-new = ["Given a batch of 12 with 1 failing and a fake runner, then the 11 good tickets are landable and the culprit is isolated in at most 8 checks", "Given a batch of 12 with 2 failing, then both culprits are isolated within 12 checks", "Given an all-green batch, then exactly one check runs", "Given a red parent whose parts are all green, then the planner reports an interaction, blames nobody and does not loop", "Given an A+C interaction plus an independent culprit D, then the landable set is a set that was checked whole", "Given a runner fault, then it is retried once and a second fault blames no ticket and reports the rest as unchecked"]
-moved = [0, 0, 0, 0]
-at = "2026-10-15T09:11:53Z"
-actor = "lognd"
-rev = 1

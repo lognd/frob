@@ -1,7 +1,0 @@
-kind = "field"
-field = "labels"
-old = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/misfiled.rs", "creates:crates/frob/tests/ticket_misfiled.rs", "creates:crates/gob-mdtest/coverage-allowlist.toml", "creates:crates/frob-ledger/src/rules.rs", "creates:crates/frob-ledger/src/lib.rs", "creates:crates/frob-check/src/product.rs"]
-new = ["milestone:2", "area:navigation", "creates:crates/frob-ledger/src/misfiled.rs", "creates:crates/frob/tests/ticket_misfiled.rs", "creates:crates/gob-mdtest/coverage-allowlist.toml", "creates:crates/frob-ledger/src/rules.rs", "creates:crates/frob-ledger/src/lib.rs", "creates:crates/frob-check/src/product.rs", "creates:docs/reference/rules/TICK009.md"]
-at = "2026-10-11T19:38:59Z"
-actor = "lognd"
-rev = 1

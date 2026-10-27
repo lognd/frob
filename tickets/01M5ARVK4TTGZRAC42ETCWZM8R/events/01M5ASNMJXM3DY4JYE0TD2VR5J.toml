@@ -1,8 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "done"
-outcome = "wont-fix"
-reason = "fixed by regenerate step in land; gen all --check is clean"
-at = "2026-10-19T19:19:32Z"
-actor = "lognd"
-rev = 1

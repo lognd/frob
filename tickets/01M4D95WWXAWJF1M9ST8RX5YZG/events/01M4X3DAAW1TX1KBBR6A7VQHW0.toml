@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: Claude in frob-wt/8RX5YZG; scope: changelog.d/**, crates/crunk-spec/**, crates/crunk-check/**, crates/crunk-rules/**, docs/crunk/**; ttl 7200s"
-at = "2026-10-14T11:40:22Z"
-actor = "Claude"
-rev = 1

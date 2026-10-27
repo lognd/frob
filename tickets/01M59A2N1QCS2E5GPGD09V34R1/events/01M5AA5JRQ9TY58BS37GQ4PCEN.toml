@@ -1,6 +1,0 @@
-kind = "field"
-field = "scope"
-new = ["docs/reference/rules/PATH*.md"]
-at = "2026-10-19T14:48:37Z"
-actor = "lognd"
-rev = 1

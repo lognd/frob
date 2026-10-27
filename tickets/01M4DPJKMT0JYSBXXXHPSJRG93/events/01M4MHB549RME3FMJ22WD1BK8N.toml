@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["Given a leased ticket worktree, when frob test runs, then it records evidence for that ticket"]
-new = ["Given a linked ticket worktree holding a lease, when frob-tests looks up the lease for that worktree from the repository common dir, then it returns the leased ticket (test a_linked_worktree_finds_the_lease_it_holds); a real frob test run in a leased worktree recorded evidence for the ticket (no 'not in a lease-holding worktree' warning)"]
-moved = [0]
-at = "2026-10-11T03:50:42Z"
-actor = "lognd"
-rev = 1

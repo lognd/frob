@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["Given an empty or model-only repository, when grimble check runs, then the arch rules are not applicable and the grimble verbs tests pass"]
-moved = []
-at = "2026-10-19T14:29:39Z"
-actor = "lognd"
-rev = 1

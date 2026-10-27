@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["A lexical rule (needs = Lexical) is required by the coverage meta-test to carry an opaque_fire case (expect=fire cell=island)"]
-moved = []
-at = "2026-10-20T02:26:57Z"
-actor = "lognd"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "blocked on ~PHFBHDJ and a GRL compile entry point; follow-ups filed"
-at = "2026-10-11T00:22:00Z"
-actor = "lognd"
-rev = 1

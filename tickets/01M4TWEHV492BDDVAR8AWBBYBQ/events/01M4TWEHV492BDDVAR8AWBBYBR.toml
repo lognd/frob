@@ -1,9 +1,0 @@
-kind = "create"
-title = "gob-mdtest: marker position must come from the hit, not the first comment token (CI red on corpora)"
-type = "task"
-category = "todo"
-priority = "medium"
-idempotency_key = "mdtest-marker-at"
-at = "2026-10-13T15:00:14Z"
-actor = "lognd"
-rev = 1

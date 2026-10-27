@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["sync installs the manifest into an empty home, is idempotent, and uninstall preserves user additions", "status reports drift (exit 1) and is surfaced by doctor"]
-moved = []
-at = "2026-10-20T02:50:14Z"
-actor = "lognd"
-rev = 1

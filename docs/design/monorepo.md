@@ -42,7 +42,7 @@ docs/
   design/           this set
   frob/ grimble/ crunk/   per-product docs (generated rule and CLI pages inside)
 packs/              grimble data packs
-tickets/            one ledger, `component` field distinguishes products
+(frob-tickets)      one ledger on the orphan branch, `component` field distinguishes products
 ```
 
 Shared crates carry the `gob-` prefix (not `frob-`) so grimble and

@@ -1,7 +1,0 @@
-kind = "field"
-field = "points"
-old = 3
-new = 5
-at = "2026-10-20T13:51:52Z"
-actor = "lognd"
-rev = 1

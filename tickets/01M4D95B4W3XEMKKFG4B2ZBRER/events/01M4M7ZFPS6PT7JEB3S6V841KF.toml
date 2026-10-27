@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["Given exceptions and fixes recorded for a rule over a window, when frob check --json runs, then the rule reports its counts and not-useful rate", "Given a rule above the configured not-useful ceiling, when frob doctor runs, then it recommends demotion with the numbers"]
-new = ["Given exceptions recorded for a rule in a run, when the report builds its precision ledger, then the rule has its accepted and waived counts, open findings and a not-useful rate, and the rate is absent below the minimum sample size", "Given a ledger where a rule's not-useful rate is above a ceiling with enough samples, when demotions are asked for, then that rule is returned with its numbers and the rules at or below the ceiling are not", "Given exceptions in the tree, when frob check --json runs, then data.precision lists each rule with its counts and not-useful rate"]
-moved = [0, 0]
-at = "2026-10-11T01:07:01Z"
-actor = "lognd"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "field"
-field = "title"
-old = "TICK004 ledger-path-reference with machine fix"
-new = "TICK006 ledger-path-reference with machine fix"
-at = "2026-10-11T17:08:29Z"
-actor = "lognd"
-rev = 1

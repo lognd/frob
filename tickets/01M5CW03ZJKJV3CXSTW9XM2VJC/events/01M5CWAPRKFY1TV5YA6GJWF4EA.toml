@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["docs/design/tickets.md section 2b no longer cites a [land] push key and describes the doctor accurately (no unpushed-commit listing); each claim is checked against crates/frob-land/src/base_ci.rs (LandConfig) and crates/frob-ledger/src/doctor.rs"]
-moved = []
-at = "2026-10-20T14:44:28Z"
-actor = "lognd"
-rev = 1

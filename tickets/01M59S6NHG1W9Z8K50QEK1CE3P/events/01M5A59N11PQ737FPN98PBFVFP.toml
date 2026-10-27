@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["docs/design/mirror.md"]
-new = ["docs/design/mirror.md", "changelog.d/01M59S6NHG1W9Z8K50QEK1CE3P.changed.md"]
-at = "2026-10-19T13:23:27Z"
-actor = "lognd"
-rev = 1

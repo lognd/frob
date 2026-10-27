@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-rules/**", "crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-dev/src/render/rules.rs", "docs/reference/rules/**"]
-new = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-rules/**", "crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-dev/src/render/rules.rs", "docs/reference/rules/**", "crates/gob-check/src/sibling.rs"]
-at = "2026-10-17T20:52:33Z"
-actor = "lognd"
-rev = 1

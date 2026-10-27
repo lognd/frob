@@ -33,11 +33,11 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   `ticket migrate --to-branch`, the doc-tested guide
   docs/guides/ticket-branch.md, and the merge-driver test
   crates/frob/tests/it/merge_driver_branch.rs. It is opt-in, not default.
-- VERIFIED. This repository is NOT on it: frob.toml:112-119 sets
-  `ref = "refs/heads/experimental"`, `ref_mode = "trunk"`; no
-  `frob-tickets` ref exists locally or on origin; 2070 ticket
-  directories sit under `tickets/<ULID>/`. That is why every ledger verb
-  makes a `tickets(<verb>): ~ID` commit on `experimental`.
+- VERIFIED AT AUDIT TIME (since superseded). This repository was NOT on it: frob.toml then set
+  `ref_mode = "trunk"`, no `frob-tickets` ref existed, and 2070 ticket
+  directories sat under `tickets/<ULID>/`, so every ledger verb
+  made a `tickets(<verb>): ~ID` commit on `experimental`. The ledger has
+  since moved to the orphan `frob-tickets` branch and `tickets/` is removed.
 - VERIFIED. Ticket 01M3ZX82YQ43A8SWS4F128J4NT ("Migrate this
   repository's tickets ... to the ticket branch") closed `done` on
   2026-10-10 when the migrate VERB landed; the flip itself never ran.

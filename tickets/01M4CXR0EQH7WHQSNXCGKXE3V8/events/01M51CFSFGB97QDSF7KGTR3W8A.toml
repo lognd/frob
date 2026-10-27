@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-tokens/**"]
-new = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-tokens/**", "crates/crunk-rules/**"]
-at = "2026-10-16T03:35:58Z"
-actor = "lognd"
-rev = 1

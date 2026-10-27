@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["Given the ungoverned scan, when run, then no file is hashed or read through the content source (gob_walk::walk_paths lists paths and sizes only)", "Given many CSS files, when ingested, then they are parsed in parallel and sheets, diagnostics and stats are identical to the sequential order"]
-new = ["Given the ungoverned scan, when run, then no file is hashed or read through the content source (gob_walk::walk_paths lists paths and sizes only)", "Given many CSS files plus an unreadable one, when ingested via the parallel load-then-place path, then sheets and diagnostics keep path order and stats are exact (ordering and determinism only; parallel speed-up is not asserted)"]
-moved = [1, 0]
-at = "2026-10-11T04:27:11Z"
-actor = "lognd"
-rev = 1

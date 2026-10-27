@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: lognd in frob-wt/QQSAJAT; scope: docs/guides/**, changelog.d/**; ttl 7200s"
-at = "2026-10-20T05:45:41Z"
-actor = "lognd"
-rev = 1

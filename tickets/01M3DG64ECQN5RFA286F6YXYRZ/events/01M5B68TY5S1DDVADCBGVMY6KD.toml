@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["A second concurrent full check in a worktree is refused naming the live holder pid; a dead holder's lock is reclaimed; --allow-concurrent overrides"]
-moved = []
-at = "2026-10-19T22:59:44Z"
-actor = "lognd"
-rev = 1

@@ -1,9 +1,0 @@
-kind = "cycle"
-op = "over-commit"
-ticket = "01M5D17PG2S8RMQ3GJDHP76EES"
-committed = 999
-text = "orphan flip, DT04 prerequisite"
-capacity = 137
-at = "2026-10-20T16:53:03Z"
-actor = "lognd"
-rev = 1

@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "note"
-body = "Measured on this repo (--ticket ~3K1MDJD, debug build): tool stages 46.7 s (fmt 1.1 + clippy 30.2 + gen 15.5) -> 0 ms on an unchanged second run (all 3 cargo stages '(cached)', zero spawns); baseline whole check 134 s incl. lock wait. Speculative post-commit trigger split to a new ticket."
-at = "2026-10-11T16:36:28Z"
-actor = "lognd"
-rev = 1

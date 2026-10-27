@@ -129,7 +129,7 @@ In GitHub Actions put `frob init` right after `actions/checkout`, before
 
 ## Moving an existing ledger
 
-A repository with tickets under `tickets/` on the code branch moves them with
+A repository that still has a legacy `tickets/` directory on the code branch moves them with
 `frob ticket migrate --to-branch` (see
 [../design/navigation.md](../design/navigation.md) section 2.3). The migration
 is a one-shot, verified copy that keeps every ULID and event id.

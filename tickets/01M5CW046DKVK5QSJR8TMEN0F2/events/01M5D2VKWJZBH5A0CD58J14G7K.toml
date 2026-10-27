@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/refresh.rs", "crates/frob/src/config.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob/tests/it/main.rs", "crates/frob/tests/it/refresh.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/src/remote.rs", "crates/gob-git/src/spawn.rs", "docs/design/git-io.md", "docs/reference/cli/frob.md", "docs/reference/config.md"]
-new = ["crates/frob-ledger/src/config.rs", "crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/refresh.rs", "crates/frob/src/config.rs", "crates/frob/src/lib.rs", "crates/frob/src/product.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob/tests/it/main.rs", "crates/frob/tests/it/refresh.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/src/remote.rs", "crates/gob-git/src/spawn.rs", "docs/design/git-io.md", "docs/reference/cli/frob.md", "docs/reference/config.md", "docs/schemas/config.json"]
-at = "2026-10-20T16:38:33Z"
-actor = "lognd"
-rev = 1

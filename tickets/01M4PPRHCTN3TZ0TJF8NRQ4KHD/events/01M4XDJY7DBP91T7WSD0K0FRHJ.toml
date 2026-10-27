@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "note"
-body = "Landed: grammar-level patterns with $X/$$$ARGS, fix templates, find_source/apply (PatternUnavailable removed). Split to ~KFEK2T8 (follows/precedes/regex + metavar constraints) and ~9VJZ6EE (GPOL id generation + embedded tests)."
-at = "2026-10-14T14:38:13Z"
-actor = "lognd"
-rev = 1
