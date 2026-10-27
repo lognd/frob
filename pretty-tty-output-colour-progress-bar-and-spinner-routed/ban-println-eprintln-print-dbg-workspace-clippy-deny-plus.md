@@ -2,7 +2,8 @@
 id = "01M5XMR625ABZ4HX19EJ1PTXPF"
 title = "Ban println/eprintln/print/dbg: workspace clippy deny plus remove current call sites"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
