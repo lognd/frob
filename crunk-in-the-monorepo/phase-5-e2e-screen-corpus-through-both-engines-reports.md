@@ -12,6 +12,10 @@ updated = "2026-10-27T00:42:24Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk/tests/e2e_render_tiers.rs, crates/crunk/tests/fixtures/render_corpus/**"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M4CXRWBYR6P0WFRW5GBBJGEY"
+
 [[acceptance]]
 text = "Given the corpus, when both engines render in the optional playwright job, then parity, VIS and axe findings appear in one report; given playwright absent, then those findings are not run, not green, and the job is skipped with a notice"
 bound = false
