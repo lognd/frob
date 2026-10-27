@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:57:31Z"
-updated = "2026-10-27T03:59:41Z"
+updated = "2026-10-27T04:33:26Z"
 scope = ["crates/frob-present/**", "Cargo.lock", "docs/design/output.md", "changelog.d/01M5XMN8GHBCJH7WVMYVXR58J9.changed.md"]
 
 [[acceptance]]
