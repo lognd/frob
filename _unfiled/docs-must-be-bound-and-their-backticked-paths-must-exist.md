@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-27T01:10:47Z"
-updated = "2026-10-27T01:13:11Z"
-scope = ["crates/frob-check/**", "docs/design/**", "crates/frob-rules/**", "README.md", "CONTRIBUTING.md", "docs/**"]
+updated = "2026-10-27T01:14:26Z"
+scope = ["crates/frob-check/**", "docs/design/**", "crates/frob-rules/**", "README.md", "CONTRIBUTING.md", "docs/**", "**/*.md"]
 
 [[acceptance]]
 text = "a rule or binding flags docs that name a path the repo no longer has or that contradicts [tickets] ref_mode"
@@ -24,6 +24,14 @@ bound = false
 
 [[acceptance]]
 text = "The ledger docs (README, quickstart, ticket-branch, CONTRIBUTING) are bound to the [tickets] config and crates/frob-ledger code"
+bound = false
+
+[[acceptance]]
+text = "Both rules cover every markdown file in the repo (not only docs/, README, CONTRIBUTING) and documentation comments in all supported languages (rustdoc, docstrings, JSDoc, XML doc), via the same binding and path checks"
+bound = false
+
+[[acceptance]]
+text = "Both rules can be waived per site with frob:waive and a reason; a waiver without a reason is itself an error"
 bound = false
 +++
 
