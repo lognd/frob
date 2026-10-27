@@ -1,0 +1,9 @@
+kind = "create"
+title = "No warnings: every rule is an error, existing debt burned down via a baseline"
+type = "epic"
+category = "todo"
+priority = "high"
+body = "Owner policy (2026-10-26): no warn severity; only errors. Burn existing warnings down slowly. Design questions: (1) the new-rule ramp-in (docs/design/rules.md section 6) deliberately reports Error rules as Warn for one release, and Advisory/release_severity exist; each needs a decision (replace ramp with a per-repo baseline of known findings that only shrinks). (2) 74 of 242 rules are warn-severity today; a full frob check gives per-rule counts. (3) Promote zero-finding rules first."
+at = "2026-10-27T01:15:34Z"
+actor = "lognd"
+rev = 1
