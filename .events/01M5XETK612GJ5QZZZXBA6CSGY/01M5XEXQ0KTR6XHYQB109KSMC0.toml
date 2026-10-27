@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Severity collapses to Error (and off); Warn and Advisory are removed; Unresolved stays for cannot-decide results", "Gate scoping replaces severity for human-sign-off rules: HUMAN001/HUMAN002 do not block local runs or CI but block at the release (CD) gate, expressed as a gate scope, not a lower severity", "The 36 Advisory rules each become Error with findings baselined, or are turned off with a recorded reason"]
+moved = []
+at = "2026-10-27T01:17:16Z"
+actor = "lognd"
+rev = 1
