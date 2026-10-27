@@ -4,9 +4,10 @@ title = "Move DIGEST_SCHEME to gob-caps; gob-lock and gob-ir duplicate the liter
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-17T21:11:58Z"
-updated = "2026-10-17T21:11:58Z"
+updated = "2026-10-27T02:58:21Z"
 scope = ["crates/gob-lock/**"]
 +++
 
