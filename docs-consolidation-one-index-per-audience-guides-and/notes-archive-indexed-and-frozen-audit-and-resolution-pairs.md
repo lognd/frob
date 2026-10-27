@@ -8,10 +8,10 @@ points = 3
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:52Z"
-updated = "2026-10-27T00:04:31Z"
+updated = "2026-10-27T00:04:38Z"
 idempotency_key = "docs-consolidation-2026-10-09-p7"
 labels = ["creates:docs/guides/agents.md"]
-scope = ["notes/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/agents.md", "docs/migration/v1-selection.toml", "docs/guides/moving-docs.md"]
+scope = ["notes/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/agents.md", "docs/migration/v1-selection.toml", "docs/guides/moving-docs.md", "docs/design/README.md"]
 
 [[links]]
 kind = "blocked-by"
