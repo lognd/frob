@@ -4,10 +4,11 @@ title = "TIME003: test date literal against code that reads the wall clock"
 type = "story"
 category = "todo"
 priority = "low"
+points = 5
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:19Z"
-updated = "2026-10-05T00:42:32Z"
+updated = "2026-10-27T02:58:11Z"
 
 [[links]]
 kind = "blocked-by"
