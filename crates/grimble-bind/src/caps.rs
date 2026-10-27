@@ -534,10 +534,11 @@ fn list(uses: &[&Use]) -> String {
     s
 }
 
-/// The `(node anchor, atom)` pairs the capability matrix marks `undeclared` (or `unknown`: the
-/// callee vocabulary matched but no registry detector row exists, e.g. a pack atom) from the
-/// certain uses in Must-owned code. A use counts as granted when a grant covers it at its file.
-fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String)> {
+/// The `(node anchor, atom, file)` triples the capability matrix marks `undeclared` (or `unknown`:
+/// the callee vocabulary matched but no registry detector row exists, e.g. a pack atom) from the
+/// certain uses in Must-owned code. Coverage is decided per use site (binding.md 7.2 item 3): a
+/// grant that covers the atom at one file never masks the same atom used at another file.
+fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String, String)> {
     let mut out = BTreeSet::new();
     for e in cx
         .model
@@ -548,29 +549,32 @@ fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String)> {
         let Some(found) = uses.lo.get(&e.anchor) else {
             continue;
         };
-        // One matrix input per language of the node's used code.
-        let mut inputs: BTreeMap<&str, NodeInput> = BTreeMap::new();
+        // One matrix input per (file, language) of the node's used code, so each use is judged
+        // against the grants that cover it at its own file.
+        let mut inputs: BTreeMap<(&str, &str), NodeInput> = BTreeMap::new();
         for u in found.iter().filter(|u| u.certain) {
             let Some(lang) = cx.code.file(&u.file).map(|c| c.language.as_str()) else {
                 continue;
             };
-            let input = inputs.entry(lang).or_insert_with(|| NodeInput {
-                node: e.anchor.clone(),
-                lang: lang.to_owned(),
-                ..NodeInput::default()
-            });
+            let input = inputs
+                .entry((u.file.as_str(), lang))
+                .or_insert_with(|| NodeInput {
+                    node: e.anchor.clone(),
+                    lang: lang.to_owned(),
+                    ..NodeInput::default()
+                });
             input.uses.insert(u.atom.clone());
             if e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file)) {
                 input.grants.insert(u.atom.clone());
             }
         }
-        for input in inputs.into_values() {
+        for ((file, _), input) in inputs {
             let atoms: Vec<String> = input.uses.iter().cloned().collect();
             let atoms: Vec<&str> = atoms.iter().map(String::as_str).collect();
             let matrix = grimble_capabilities::build(&[input], &atoms);
             for (atom, cell) in matrix.cells.values().flatten() {
                 if matches!(cell, Cell::Undeclared | Cell::Unknown) {
-                    out.insert((e.anchor.clone(), atom.clone()));
+                    out.insert((e.anchor.clone(), atom.clone(), file.to_owned()));
                 }
             }
         }
@@ -597,7 +601,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             let mut by_atom: BTreeMap<(&str, bool), Vec<&Use>> = BTreeMap::new();
             for u in found {
                 let flagged = if must && u.certain {
-                    undeclared.contains(&(e.anchor.clone(), u.atom.clone()))
+                    undeclared.contains(&(e.anchor.clone(), u.atom.clone(), u.file.clone()))
                         && !e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file))
                 } else {
                     !e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file))

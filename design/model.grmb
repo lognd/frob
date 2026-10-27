@@ -13,6 +13,7 @@ node frob : trusted {
   may exec at "crates/frob*/tests/**";
   may net.listen at "crates/frob-mirror/**";
   may exec at "crates/frob/build.rs";
+  may exec at "crates/frob-ledger/src/refresh.rs";
 }
 
 /// The shared substrate.
