@@ -4,9 +4,10 @@ title = "CAP004 rule emission: template excuses from Cx into grimble_capabilitie
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T13:56:04Z"
-updated = "2026-10-19T13:56:04Z"
+updated = "2026-10-27T02:58:24Z"
 scope = ["crates/grimble-bind/src/**"]
 +++
 
