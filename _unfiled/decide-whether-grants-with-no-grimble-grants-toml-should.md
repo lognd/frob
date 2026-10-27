@@ -4,9 +4,10 @@ title = "Decide whether grants with no grimble.grants.toml should raise CAP005"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-23T21:02:04Z"
-updated = "2026-10-23T21:02:04Z"
+updated = "2026-10-27T02:58:42Z"
 scope = ["crates/grimble-bind/**"]
 +++
 
