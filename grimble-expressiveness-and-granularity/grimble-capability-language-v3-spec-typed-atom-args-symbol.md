@@ -8,10 +8,10 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-27T03:47:32Z"
+updated = "2026-10-27T03:50:37Z"
 idempotency_key = "grimble-expr-spec-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "creates:docs/design/grimble-capabilities-v3.md"]
-scope = ["docs/design/grmb-spec.md", "docs/design/binding.md", "docs/design/packs.md", "docs/design/grimble-model.md", "docs/design/grimble-capabilities-v3.md", "docs/design/README.md"]
+scope = ["docs/design/grmb-spec.md", "docs/design/binding.md", "docs/design/packs.md", "docs/design/grimble-model.md", "docs/design/grimble-capabilities-v3.md", "docs/design/README.md", "docs/README.md"]
 
 [[acceptance]]
 text = "docs/design/grimble-capabilities-v3.md exists with a grammar for typed may arguments, symbol-scoped grants, never-claims, taint rules, expiring exceptions and environment profiles, each with at least one worked example"
