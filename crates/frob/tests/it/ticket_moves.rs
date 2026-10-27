@@ -54,6 +54,11 @@ fn fixture() -> tempfile::TempDir {
 
 /// Commit on the ticket branch a tree where `path` is renamed to `to` (no trailer).
 fn rename_commit(p: &Path, path: &str, to: &str) {
+    rename_commit_with(p, path, to, "tickets(hand): rename");
+}
+
+/// Like `rename_commit` with an explicit commit message.
+fn rename_commit_with(p: &Path, path: &str, to: &str, message: &str) {
     let index = p.join(".git/moves-index");
     git(p, Some(&index), &["read-tree", "frob-tickets"]);
     let blob = git(p, None, &["rev-parse", &format!("frob-tickets:{path}")]);
@@ -68,14 +73,7 @@ fn rename_commit(p: &Path, path: &str, to: &str) {
     let commit = git(
         p,
         None,
-        &[
-            "commit-tree",
-            &tree,
-            "-p",
-            "frob-tickets",
-            "-m",
-            "tickets(hand): rename",
-        ],
+        &["commit-tree", &tree, "-p", "frob-tickets", "-m", message],
     );
     git(p, None, &["update-ref", "refs/heads/frob-tickets", &commit]);
 }
@@ -134,4 +132,46 @@ fn a_commit_without_the_trailer_that_renames_a_ticket_file_fires_tick008() {
             .contains("_unfiled/parser-rewrite.md"),
         "{found:?}"
     );
+}
+
+// frob:tests frob_ledger::Ledger::move_outside_reindex_findings
+#[test]
+fn an_allow_move_trailer_exempts_a_commit() {
+    let dir = fixture();
+    let p = dir.path();
+    rename_commit_with(
+        p,
+        "_unfiled/parser-rewrite.md",
+        "_unfiled/renamed.md",
+        "tickets(hand): rename\n\nFrob-Allow-Move: one-off cleanup",
+    );
+    assert!(tick008(p).is_empty());
+}
+
+// frob:tests frob_ledger::Ledger::move_outside_reindex_findings
+#[test]
+fn a_revert_of_an_earlier_ledger_commit_does_not_fire() {
+    let dir = fixture();
+    let p = dir.path();
+    let original = git(p, None, &["rev-parse", "frob-tickets^{tree}"]);
+    rename_commit_with(
+        p,
+        "_unfiled/parser-rewrite.md",
+        "_unfiled/renamed.md",
+        "tickets(hand): import\n\nFrob-Allow-Move: import",
+    );
+    let commit = git(
+        p,
+        None,
+        &[
+            "commit-tree",
+            &original,
+            "-p",
+            "frob-tickets",
+            "-m",
+            "chore(tickets): revert duplicate import",
+        ],
+    );
+    git(p, None, &["update-ref", "refs/heads/frob-tickets", &commit]);
+    assert!(tick008(p).is_empty(), "{:?}", tick008(p));
 }
