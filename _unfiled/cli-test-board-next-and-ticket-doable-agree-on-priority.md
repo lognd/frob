@@ -4,9 +4,10 @@ title = "CLI test: board NEXT and ticket doable agree on priority order"
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "lognd"
 created = "2026-10-07T02:56:45Z"
-updated = "2026-10-07T02:56:45Z"
+updated = "2026-10-27T02:58:14Z"
 scope = ["crates/frob/tests/board.rs"]
 +++
 
