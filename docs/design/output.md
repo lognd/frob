@@ -162,6 +162,14 @@ included in the envelope under `data.profile` only when requested (an
 additive field, so the default envelope is unchanged), and is always
 written to the telemetry file when that is enabled.
 
+Producers: `frob land` emits `land.<stage>` (`land.lock-wait`, `land.merge`,
+`land.check`, `land.scoped`, `land.head`, `land.base-findings`,
+`land.publish`) live (start and end) and `frob check` emits one
+`check.<stage>` end event per pipeline stage (`check.graph`,
+`check.tool.clippy`, ...), all through `frob_present::events`.
+`--profile` on either verb adds `profile` (total and per-stage ms, share,
+outcome, `slow`) to the data; without it the field is absent.
+
 Elapsed time comes from the injected `Clock` (time.md); the presenter
 never reads the wall clock.
 
