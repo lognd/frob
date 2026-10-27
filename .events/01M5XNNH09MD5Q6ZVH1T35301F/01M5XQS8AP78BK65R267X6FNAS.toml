@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T03:52:07Z"
+digest = "14b6900fdb96eee91e51390e6466fabd4a4e61ce610f70e763b677cb8b647ae3"
+head = "c5fa797ea875b19e300ff313d825e35ff7de9c23"
+provider = "file"
+ref = "docs/design/grimble-capabilities-v3.md"
+size = 38773
+status = "measured"
+at = "2026-10-27T03:52:07Z"
+actor = "lognd"
+rev = 1
