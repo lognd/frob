@@ -4,9 +4,10 @@ title = "Expose full capability matrix to grimble check --summary"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-23T12:52:06Z"
-updated = "2026-10-23T12:52:06Z"
+updated = "2026-10-27T02:58:41Z"
 scope = ["crates/grimble-bind/src/**"]
 +++
 
