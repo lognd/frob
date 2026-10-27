@@ -4,7 +4,8 @@ title = "Decide publish status of gob-plan and crunk-tailwind: published crates 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-11T19:58:20Z"
-updated = "2026-10-11T19:58:20Z"
+updated = "2026-10-27T02:58:17Z"
 +++
