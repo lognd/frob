@@ -1,0 +1,12 @@
+kind = "create"
+title = "Pretty human formatting for every verb on a TTY (tables, status, errors)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 8
+parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
+scope = ["crates/frob/src/**"]
+acceptance = ["every verb has coloured, aligned TTY output via the presenter; --text and non-TTY output unchanged; a test per verb family covers it"]
+at = "2026-10-27T02:57:31Z"
+actor = "lognd"
+rev = 1
