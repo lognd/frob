@@ -4,9 +4,10 @@ title = "Min unit case count thresholds per scope as COV rule"
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-22T12:42:45Z"
-updated = "2026-10-22T12:42:45Z"
+updated = "2026-10-27T02:58:40Z"
 scope = ["crates/frob-obligations/**"]
 +++
 
