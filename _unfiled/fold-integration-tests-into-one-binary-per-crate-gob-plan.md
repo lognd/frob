@@ -4,9 +4,10 @@ title = "Fold integration tests into one binary per crate: gob-plan, frob-ledger
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-19T16:50:57Z"
-updated = "2026-10-19T16:50:57Z"
+updated = "2026-10-27T02:58:26Z"
 scope = ["crates/gob-plan/tests/**", "crates/frob-ledger/tests/**", "crates/crunk/tests/**", "crates/crunk-rules/tests/**", "crates/crunk-check/tests/**"]
 +++
 
