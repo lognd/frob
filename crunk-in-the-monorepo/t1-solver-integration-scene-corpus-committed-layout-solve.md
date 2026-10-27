@@ -15,6 +15,10 @@ scope = ["changelog.d/**", "crates/crunk-layout/**"]
 kind = "blocked-by"
 target = "01M5XCWYB9M2YSJ5EGABMREX1B"
 
+[[links]]
+kind = "blocked-by"
+target = "01M5XCWYMSEMEQPNZ7EFHHY9Z7"
+
 [[acceptance]]
 text = "Given the scene corpus, when solved twice, then outputs are byte-identical and match committed baselines"
 bound = false
