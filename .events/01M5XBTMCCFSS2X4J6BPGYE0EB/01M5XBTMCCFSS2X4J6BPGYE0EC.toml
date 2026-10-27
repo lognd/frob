@@ -1,0 +1,10 @@
+kind = "create"
+title = "Guide gitattributes template lacks merge-driver patterns and LF pin, so reindex fights branch init"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-ledger/templates/**", "crates/frob-ledger/src/gen/guide.rs"]
+body = "found while working ~CHJYNT6: the guide generator .gitattributes differs from branch_gitattributes/pin_eol, so the first reindex after migration rewrites it."
+at = "2026-10-27T00:23:09Z"
+actor = "lognd"
+rev = 1
