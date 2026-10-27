@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:38Z"
-updated = "2026-10-27T02:38:01Z"
+updated = "2026-10-27T02:39:23Z"
 scope = ["crates/frob-evidence/src/coverage/rust.rs", "crates/frob-evidence/tests/coverage_rust.rs", "crates/frob-evidence/src/coverage/mod.rs", "docs/design/testing.md"]
 
 [[links]]
@@ -21,5 +21,5 @@ bound = true
 
 [[acceptance]]
 text = "Given a [[coverage.threshold]] scope below its minimum for this language, when frob check runs, then COV004 reports it, and a tool that is missing is reported as not run rather than passing"
-bound = false
+bound = true
 +++

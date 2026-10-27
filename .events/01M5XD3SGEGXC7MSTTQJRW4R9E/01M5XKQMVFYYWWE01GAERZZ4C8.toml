@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-27T02:39:23Z"
+digest = "ee3209030eb3c3e4beacbd6bce7cde7dccefdab8e5821c016185a9a87fd4b2bc"
+exit_code = 0
+head = "d9cbef32f89f4dd5eeaa24b360e271486b98ba63"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 55s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cd8afc56-16ce-4b41-a5e1-04925a6e39a3 with nextest profile: default
+    Starting 2 tests across 13 binaries (149 tests skipped)
+        PASS [   0.009s] frob-evidence::coverage_rust a_missing_llvm_cov_is_not_run_never_measured
+        PASS [   0.013s] frob-evidence::coverage a_missing_tool_is_not_run
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 2 tests run: 2 passed, 149 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E test(/a_missing_llvm_cov|a_missing_tool_is_not_run/)"
+size = 699
+status = "measured"
+test_count = 2
+tests_digest = "dc439ef9eb6d12cde28add01524838bffd352d9dff2786e3b56254e53d1ef0e7"
+at = "2026-10-27T02:39:23Z"
+actor = "lognd"
+rev = 1
