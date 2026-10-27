@@ -1,6 +1,6 @@
 +++
 id = "01M4CXREV41PNTSYVFFG2AXW7M"
-title = "T1 solver: taffy over resolved scenes with shaped text, layout-solve JSON (boxes, overflow, focus order) and committed baselines"
+title = "T1 solver integration: scene corpus, committed layout-solve baselines, T1 rules run from the solver output in CI"
 type = "task"
 category = "todo"
 priority = "medium"
@@ -13,6 +13,10 @@ scope = ["changelog.d/**", "crates/crunk-layout/**"]
 
 [[acceptance]]
 text = "Given the scene corpus, when solved twice, then outputs are byte-identical and match committed baselines"
+bound = false
+
+[[acceptance]]
+text = "Given the corpus, when LAYOUT, RESP and GX focus rules run at T1 in CI with no browser, then findings come from solver output and match committed baselines"
 bound = false
 +++
 

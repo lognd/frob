@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the scene corpus, when solved twice, then outputs are byte-identical and match committed baselines"]
+new = ["Given the scene corpus, when solved twice, then outputs are byte-identical and match committed baselines", "Given the corpus, when LAYOUT, RESP and GX focus rules run at T1 in CI with no browser, then findings come from solver output and match committed baselines"]
+moved = [1]
+at = "2026-10-27T00:41:54Z"
+actor = "lognd"
+rev = 1

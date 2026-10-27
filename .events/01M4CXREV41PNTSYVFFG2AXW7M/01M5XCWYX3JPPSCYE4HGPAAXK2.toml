@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "T1 solver: taffy over resolved scenes with shaped text, layout-solve JSON (boxes, overflow, focus order) and committed baselines"
+new = "T1 solver integration: scene corpus, committed layout-solve baselines, T1 rules run from the solver output in CI"
+at = "2026-10-27T00:41:54Z"
+actor = "lognd"
+rev = 1
