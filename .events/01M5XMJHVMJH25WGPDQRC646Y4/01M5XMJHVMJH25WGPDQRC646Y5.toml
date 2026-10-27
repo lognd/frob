@@ -1,0 +1,13 @@
+kind = "create"
+title = "Gate scopes: gates field replaces release_severity"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
+scope = ["crates/gob-rules/**"]
+acceptance = ["rules declare gates subset of local|ci|release; HUMAN001/HUMAN002 are release-only Errors and not run at local or ci", "release_severity removed from RuleDef, gate_severity and apply_gate; check --gate selects the gate, CI auto-detected"]
+body = "Implements docs/design/rules.md section 6.1 (rules.md 6.1.5). Filed from ~ZHW5Y2M."
+at = "2026-10-27T02:56:02Z"
+actor = "lognd"
+rev = 1
