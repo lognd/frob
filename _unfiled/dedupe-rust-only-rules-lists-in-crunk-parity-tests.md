@@ -4,9 +4,10 @@ title = "Dedupe RUST_ONLY_RULES lists in crunk parity tests"
 type = "chore"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-10-24T04:02:05Z"
-updated = "2026-10-24T04:02:05Z"
+updated = "2026-10-27T02:58:42Z"
 scope = ["crates/crunk/tests/**"]
 +++
 
