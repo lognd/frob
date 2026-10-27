@@ -4,9 +4,10 @@ title = "frob lease widen grows the lease scope to diff files no other lease hol
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "Claude"
 created = "2026-10-10T21:39:25Z"
-updated = "2026-10-10T21:39:25Z"
+updated = "2026-10-27T02:58:16Z"
 scope = ["crates/frob/src/lease_cmd.rs", "crates/frob-lease/**", "crates/frob-check/**", "changelog.d/**"]
 
 [[acceptance]]
