@@ -10,7 +10,12 @@ authors.workspace = true
 
 [dependencies]
 anstyle = "1"
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
 tracing = "0.1"
+
+[dev-dependencies]
+tracing-subscriber = "0.3"
 
 [lints]
 workspace = true

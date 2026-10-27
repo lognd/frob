@@ -75,6 +75,8 @@ struct LandArgs {
     status: bool,
     #[arg(long, help = "Keep the worktree and branch after landing")]
     keep_worktree: bool,
+    #[arg(long, help = "Report per-stage timings with the slowest stage flagged")]
+    profile: bool,
     #[arg(
         long,
         help = "Close without measured evidence; needs --reason and is audited"
@@ -166,6 +168,7 @@ impl Command for Land {
                 push: a.push,
                 wait_secs: a.wait.unwrap_or(0),
                 keep_worktree: a.keep_worktree,
+                profile: a.profile,
                 no_evidence_reason,
                 no_changelog_reason,
                 reason: if claims { None } else { reason.clone() },
@@ -197,6 +200,7 @@ impl Command for Land {
         } else {
             land(&ctx.cwd, &opts, &ctx.clock)?
         };
+        let out = with_profile(out, self.opts.profile);
         let already = out.already;
         let mut warnings = out.warnings.clone();
         warnings.extend(out.pre_existing.iter().map(|n| {
@@ -225,6 +229,22 @@ impl Command for Land {
         }
         Ok(p)
     }
+}
+
+/// `out` with its `profile` filled from its stage timings when `on` (`--profile`).
+fn with_profile(mut out: LandOutcome, on: bool) -> LandOutcome {
+    if on {
+        let mut report = frob_present::ProfileReport::default();
+        for s in &out.stages {
+            report.push(
+                frob_present::StageId::new(format!("land.{}", s.name.replace(':', "."))),
+                std::time::Duration::from_millis(s.ms),
+                frob_present::Outcome::Ok,
+            );
+        }
+        out.profile = Some(report.view(frob_present::SLOW_SHARE));
+    }
+    out
 }
 
 /// The result of `land`: one ticket's outcome, or every ticket's outcome of a batch.
@@ -553,5 +573,36 @@ impl Command for TrainDrop {
             &self.reason,
             &ctx.clock,
         )?))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::plan::StageTiming;
+
+    fn outcome() -> LandOutcome {
+        let opts = LandOptions::default();
+        let mut o = crate::land::blank_outcome(
+            "01M5EFE44WSM03AW4771Y53GFT".parse().unwrap(),
+            "~1Y53GFT",
+            "main",
+            &opts,
+        );
+        o.stages = vec![
+            StageTiming::new("merge", std::time::Duration::from_millis(100)),
+            StageTiming::new("check:tool:clippy", std::time::Duration::from_millis(900)),
+        ];
+        o
+    }
+
+    // frob:tests crates/frob-land/src/verb.rs::with_profile
+    #[test]
+    fn land_profile_is_present_only_with_the_flag() {
+        assert!(with_profile(outcome(), false).profile.is_none());
+        let view = with_profile(outcome(), true).profile.unwrap();
+        assert_eq!(view.stages[0].stage, "land.merge");
+        assert_eq!(view.stages[1].stage, "land.check.tool.clippy");
+        assert!(view.stages[1].slow);
     }
 }

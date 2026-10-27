@@ -10,6 +10,7 @@
 
 mod caps;
 mod error;
+pub mod events;
 mod palette;
 mod presenter;
 mod stage;
@@ -19,5 +20,7 @@ pub use caps::{Capabilities, EnvSnapshot, StreamCaps, StreamFacts};
 pub use error::PresentError;
 pub use palette::{Glyphs, Palette, Role};
 pub use presenter::{Kind, Live, Plain, Presenter, Quiet, build, select};
-pub use stage::{Outcome, ProfileReport, StageId, StageTiming};
+pub use stage::{
+    Outcome, ProfileReport, ProfileRow, ProfileView, SLOW_SHARE, StageId, StageTiming,
+};
 pub use widget::{bar, fmt_elapsed, status_line};

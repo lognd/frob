@@ -66,6 +66,8 @@ pub struct LandOptions {
     pub wait_secs: u64,
     /// Keep the worktree and branch after landing.
     pub keep_worktree: bool,
+    /// Report the per-stage profile in the outcome (`--profile`).
+    pub profile: bool,
     /// Close without measured evidence, saying why (`--no-evidence --reason`).
     pub no_evidence_reason: Option<String>,
     /// Close without a changelog fragment, saying why (`--no-changelog --reason`).
@@ -94,6 +96,7 @@ impl Default for LandOptions {
             push: false,
             wait_secs: 0,
             keep_worktree: false,
+            profile: false,
             no_evidence_reason: None,
             no_changelog_reason: None,
             reason: None,
@@ -181,6 +184,9 @@ pub struct LandOutcome {
     /// Wall time per stage, in execution order: lock wait, merge, each check stage, retries, publish.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stages: Vec<StageTiming>,
+    /// Per-stage share of the total with the slowest flagged; only with `--profile`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile: Option<frob_present::ProfileView>,
     /// The land lock's state (`frob land --status` only).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lock: Option<crate::lock::LockStatus>,

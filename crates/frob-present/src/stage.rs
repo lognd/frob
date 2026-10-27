@@ -96,3 +96,84 @@ impl ProfileReport {
             .filter(|s| s.elapsed.as_secs_f64() / total > threshold)
     }
 }
+
+/// One row of a [`ProfileView`].
+#[derive(Debug, Clone, PartialEq, serde::Serialize, schemars::JsonSchema)]
+pub struct ProfileRow {
+    /// Dotted stage name.
+    pub stage: String,
+    /// Elapsed milliseconds.
+    pub ms: u64,
+    /// Share of the total, 0.0 to 1.0.
+    pub share: f64,
+    /// Outcome label.
+    pub outcome: String,
+    /// True for the slowest stage when it exceeds the warn share.
+    pub slow: bool,
+}
+
+/// Serializable [`ProfileReport`] for the envelope's `profile` field (only with `--profile`).
+#[derive(Debug, Clone, PartialEq, serde::Serialize, schemars::JsonSchema)]
+pub struct ProfileView {
+    /// Sum of the stage durations in milliseconds.
+    pub total_ms: u64,
+    /// Stages in completion order.
+    pub stages: Vec<ProfileRow>,
+}
+
+/// Share of the total above which the slowest stage is flagged `slow`.
+pub const SLOW_SHARE: f64 = 0.5;
+
+impl ProfileReport {
+    /// The serializable view, flagging the slowest stage above `slow_share`.
+    pub fn view(&self, slow_share: f64) -> ProfileView {
+        let total = self.total();
+        let denom = total.as_secs_f64();
+        let slow = self.slowest_above(slow_share).map(|s| s.stage.clone());
+        let stages = self
+            .stages
+            .iter()
+            .map(|s| ProfileRow {
+                stage: s.stage.as_str().to_owned(),
+                ms: u64::try_from(s.elapsed.as_millis()).unwrap_or(u64::MAX),
+                share: if denom > 0.0 {
+                    s.elapsed.as_secs_f64() / denom
+                } else {
+                    0.0
+                },
+                outcome: s.outcome.label().to_owned(),
+                slow: slow.as_ref() == Some(&s.stage),
+            })
+            .collect();
+        ProfileView {
+            total_ms: u64::try_from(total.as_millis()).unwrap_or(u64::MAX),
+            stages,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/frob-present/src/stage.rs::view
+    #[test]
+    fn profile_view_flags_the_slowest_stage_and_sums_shares() {
+        let mut r = ProfileReport::default();
+        r.push(
+            StageId::new("land.merge"),
+            Duration::from_millis(100),
+            Outcome::Ok,
+        );
+        r.push(
+            StageId::new("land.check"),
+            Duration::from_millis(900),
+            Outcome::Ok,
+        );
+        let v = r.view(SLOW_SHARE);
+        assert_eq!(v.total_ms, 1000);
+        assert!(!v.stages[0].slow);
+        assert!(v.stages[1].slow);
+        assert!((v.stages[1].share - 0.9).abs() < 1e-9);
+    }
+}
