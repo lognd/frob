@@ -124,6 +124,7 @@ mod tests {
     use gob_path::Shown;
     use std::path::Path;
 
+    // frob:accept PATH001 because="environment resolution is tested with a synthetic HOME value"
     fn parent() -> Vec<(OsString, OsString)> {
         [
             ("PATH", "/bin"),

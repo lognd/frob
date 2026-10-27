@@ -245,6 +245,7 @@ mod tests {
 
     // frob:tests crates/gob-fs/src/path.rs::simplify_verbatim
     #[test]
+    // frob:accept PATH001 because="the Windows style path rules are pure text functions tested on literal Windows paths from Linux"
     fn verbatim_prefixes_strip_only_when_safe() {
         assert_eq!(
             simplify_verbatim(r"\\?\C:\Users\a\b").as_deref(),
@@ -267,6 +268,7 @@ mod tests {
 
     // frob:tests crates/gob-fs/src/path.rs::has_dot_component
     #[test]
+    // frob:accept PATH001 because="the Windows style path rules are pure text functions tested on literal Windows paths from Linux"
     fn dot_components_are_found_in_every_style() {
         for bad in [
             "/a/../b",
@@ -287,6 +289,7 @@ mod tests {
 
     // frob:tests crates/gob-fs/src/path.rs::strictly_inside
     #[test]
+    // frob:accept PATH001 because="the Windows style path rules are pure text functions tested on literal Windows paths from Linux"
     fn windows_style_inputs_are_contained_by_components() {
         let root = r"C:\Work\target";
         for inside in [
@@ -352,6 +355,7 @@ mod tests {
         // frob:tests crates/gob-fs/src/path.rs::strictly_inside
         /// Whatever Windows-style spelling a candidate takes, one admitted is below the root and has no dot component.
         #[test]
+        // frob:accept PATH001 because="the Windows style path rules are pure text functions tested on literal Windows paths from Linux"
         fn no_admitted_windows_path_escapes_the_root(
             root_parts in proptest::collection::vec("[A-Za-z0-9_-]{1,6}", 1..4),
             cand in proptest::collection::vec("[A-Za-z0-9_.-]{0,6}|\\.\\.|\\.", 0..7),

@@ -46,6 +46,7 @@ fn well_formed_refs_are_quiet() {
 
 #[test]
 // frob:tests crates/grimble-model/src/refspec.rs::malformed_ref
+// frob:accept PATH001 because="drive-letter reference rejection is tested on literal Windows drive paths"
 fn other_malformed_spellings_are_reported() {
     for bad in [
         "docs/r.md#",

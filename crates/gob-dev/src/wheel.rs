@@ -526,6 +526,7 @@ mod tests {
         .unwrap()
     }
 
+    // frob:accept PATH001 because="wheel path mapping is tested on a literal Windows repo root"
     fn opts(host: HostOs, triple: Option<&str>) -> BuildOptions {
         let (root, target) = if host == HostOs::Windows {
             ("C:/w/repo", "C:/w/repo/target")
