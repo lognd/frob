@@ -1,0 +1,49 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+A-055: zIndex theme values were bare integer strings in _theme_sections
+(the shared home render_tailwind/theme_mapping both consume), unlike every
+other category (colors/spacing/fontSize/borderRadius), which are var()-
+wrapped. utility_token_map only links a utility to a token when the theme
+value contains a var(--x) reference, so z-<name> utilities could never
+resolve to --layer-<name> -- structurally unused/blind forever.
+
+Fix (option 1, per the ticket): _theme_sections now emits zIndex values as
+var(--layer-<name>) via spec.naming.layer_token, honoring the configured
+layer prefix, matching every other category. theme_mapping picks this up
+automatically since it is built from the same _theme_sections call --
+no separate change needed there, verified by test.
+
+Added a custom-layer-prefix unit test (render_tailwind + theme_mapping),
+a utility_token_map unit test resolving z-base -> --layer-base, and
+extended the both-knobs E2E selfmap test with a z-base utility asserting
+explain lists the site+utility and check's unused_tokens excludes it
+while still flagging the genuinely-dead layer token.
+
+docs/design/subsystems/tokens.md's zIndex sentence still describes the old
+bare-int behavior; that doc edit is out of scope here per the ticket --
+waived AFFECT001 pointing at T-0024 for the coordinator to pick up at
+review.
+
+### Changed
+```
+ tickets/T-0114/ticket.md | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_e2e_45_selfmap.py::test_e2e_45_selfmap_both_knobs_explain_and_unused` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_render_tailwind_zindex_honors_custom_layer_prefix` (pytest node id, verified passing when recorded)
+- `tests/unit/test_query.py::test_utility_token_map_resolves_zindex_layer_var` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 387 warning(s), 6 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-06T00:00:01Z"
+actor = "import"
+rev = 1

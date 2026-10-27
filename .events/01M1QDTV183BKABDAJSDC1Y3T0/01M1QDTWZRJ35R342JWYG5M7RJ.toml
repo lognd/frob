@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Recommitted the r4 design files a stderr-suppressed git add silently dropped: 01/03/05, ingest.md, values.md, .gitignore in bed41ff, plus second inbound refs for cache.md/query.md and a DOC006 reword in T-0038's generated body. The five docs leased by in-progress T-0032/T-0033 are stashed as 'r4 docs held for wave-1 lease reconciliation' and land right after wave 1.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `cmd:git log --oneline -2 -- docs/design/01-customer-requirements.md docs/design/03-system-design.md exit=0 sha256=373f4c55d6dc` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 4 error(s), 60 warning(s), 2 waived
+- error-findings: DOC006@tickets/T-0032/ticket.md, DOC006@tickets/T-0041/ticket.md, PRE001@tickets/T-0040, TICK002@tickets.md"""
+at = "2026-09-05T00:00:02Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+The remainder message now prints in both branches: no-plans (T-0052's case) and plans-applied (this residual). _print_fix_plans/_print_unfixable_remainder extracted to stay under ARCH001. Full suite green, scoped gate 0 errors.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_20_21_ux.py::test_fix_with_applied_fixes_still_names_unfixable_remainder` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 131 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

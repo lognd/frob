@@ -1,0 +1,87 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Changed:
+src/crunk/rules/__init__.py::run_rules,Violation,FixPayload,RULE_IDS,DEFAULT_SEVERITY
+src/crunk/rules/models.py::Violation,FixPayload
+src/crunk/rules/engine.py::run_rules,_RULES
+src/crunk/rules/_color.py::color001,color002
+src/crunk/rules/_scales.py::space001,type001,radius001,_off_scale
+src/crunk/rules/_typography.py::type002,type003
+src/crunk/rules/_layers.py::layer001
+src/crunk/rules/_contrast.py::contrast001
+src/crunk/rules/_org.py::org001,org002,org003,org004
+src/crunk/rules/_waive.py::waive001,waiver_for
+src/crunk/spec/models.py (R3 marker removed, catalog stays canonical here)
+docs/design/subsystems/rules.md (waivers section, alpha/off-scale/BEM/LAYER001 docs)
+docs/design/05-components.md (added rules/_layers.py to module layout)
+
+Implemented the full rules subsystem per docs/design/subsystems/rules.md
+and the 02-specification.md catalog table: run_rules engine with a
+14-rule registry (TOKENS001 intentionally absent, drift lives in
+tokens/), waiver honoring restricted to declaration-level rules,
+INV-VIO-01 deterministic (path, line, rule) sort. Resolved the R3
+leftover marker in spec/models.py (catalog stays canonical there;
+rules/models.py imports and re-exports). Added rules/_layers.py for
+LAYER001, which the original rules.md/05-components.md split omitted
+despite being in the catalog -- documented as a T-0008 addition in both
+docs.
+
+Evidence: 18 representative pytest node ids (full suite is 50 tests
+across test_rules_color/scales/typography/contrast/org/engine.py, all
+green): see `frob ticket show T-0008`.
+
+Filed: none (no out-of-scope work discovered beyond the LAYER001 module
+gap, which was fixed in-scope per the ticket's own catalog).
+
+Gates: frob check --ticket T-0008 is clean except gate:GATERULE
+(GATERULE001, 13 errors) -- a documented frob defect, not an crunk
+defect: GATERULE001 scans src/ for any PREFIX### string literal and
+demands it be registered in frob's OWN _KNOWN_GATE_RULES registry
+(frob.gates._waive), assuming every scanned repo is frob itself.
+crunk's rule catalog (COLOR001, SPACE001, ...) legitimately shares
+that shape by convention but names crunk's own domain, not frob's.
+Confirmed unwaivable (frob:waive GATERULE001 tried directly above a
+flagged line; gate still fires -- T-2448 documents it as a mandatory
+"STANDING gate", not opt-out). No in-scope fix exists: registering in
+src/frob/gates/_waive.py is out of T-0008's scope and would be
+semantically wrong. Logged in this worktree's untracked FROBLEMS.md
+(2026-09-03 entry) with full detail. Every other gate family (WIRE,
+COV, DRIFT, LANDPARITY, PRE, TEST, SCOPE, TICK, PERF, ROOT, ty,
+ruff-check, ruff-format) is clean or waived through the normal
+frob:waive mechanism.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_rules_color.py::test_color001_flags_off_palette_literal` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_color.py::test_color001_alpha_variant_of_palette_color_still_flagged` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_color.py::test_color002_flags_undefined_token` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_scales.py::test_off_scale_step_zero_uses_absolute_allowance` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_scales.py::test_space001_flags_off_scale_padding` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_scales.py::test_space001_fix_span_matches_source_literal` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_scales.py::test_type001_flags_off_scale_font_size` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_scales.py::test_layer001_flags_undeclared_z_index` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_typography.py::test_type002_flags_non_prefix_stack` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_typography.py::test_type003_flags_undeclared_weight` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_contrast.py::test_contrast001_flags_low_ratio_pair` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_org.py::test_org002_bem_separators_stripped_before_case_check` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_org.py::test_org003_flags_missing_component_prefix` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_engine.py::test_registry_ids_are_all_in_catalog` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_engine.py::test_waiver_silences_matching_rule_only` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_engine.py::test_waive001_missing_reason` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_engine.py::test_fix_payload_spans_match_source_text` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_engine.py::test_run_rules_sorted_deterministic` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 18 passed (from 18 evidence id(s))
+- gates: 0 error(s), 44 warning(s), 0 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-03T00:00:01Z"
+actor = "import"
+rev = 1

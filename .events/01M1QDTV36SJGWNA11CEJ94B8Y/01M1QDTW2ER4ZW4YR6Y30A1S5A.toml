@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-05: duplicate of T-0101 (created during a cwd mixup; T-0101 is the live r11 design ticket)"
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

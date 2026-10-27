@@ -1,0 +1,63 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Implemented [tokens].header passthrough and quoted multi-word family
+values per r5 A-016.
+
+Changed:
+src/crunk/spec/models.py::TokensConfig (header field + _valid_header validator)
+src/crunk/spec/models.py::_validate_header
+src/crunk/spec/load.py::_build_tokens
+src/crunk/tokens/render.py::_quote_family
+src/crunk/tokens/render.py::entries
+src/crunk/tokens/render.py::render_css
+
+Evidence: tests/system/test_e2e_23_header.py::test_configured_header_verbatim_and_family_quoted
+(accepts index 1), plus 9 supporting unit nodes across test_spec.py and
+test_tokens.py (header validation, header-first + byte-stable render,
+whitespace-family quoting in both css and json values).
+
+Filed: none (no out-of-scope work discovered).
+
+Gates: frob check --ticket T-0053 clean for all diff-scoped/ticket-scoped
+gates (SCOPE, PREWORK, AFFECT, FMT) after adding two new in-code
+AFFECT001 waivers on tokens/render.py::entries and ::render_css
+(follow_up=T-0024, tokens.md#public-api already documents A-016
+verbatim). Full pytest run is green (414 passed,
+FROB_SUGGEST_ACK=1 uv run pytest tests/ -n 2). gate:TEST fails
+repo-wide only on pre-existing TEST006 (missing coverage stamp) --
+frob coverage --full itself errors with a pytest exit-4 usage error
+inside frob's own subprocess invocation, while running the identical
+pytest command by hand passes clean (414 passed); this reproduces
+before and after this ticket's diff and is unrelated to the touched
+files, so it is reported as frob/environment misbehavior rather than
+fixed in scope. The repo-wide ruff-format tool-summary FAIL (13
+files) is entirely pre-existing files outside this ticket's diff (own
+files verified ruff format --check clean).
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_23_header.py::test_configured_header_verbatim_and_family_quoted` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_tokens_header_default_empty` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_tokens_header_valid_comment_accepted` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_tokens_header_bare_string_rejected` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_tokens_header_interior_close_rejected` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_header_first_and_byte_stable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_header_absent_by_default` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_header_not_emitted_in_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_whitespace_family_quoted_in_css_value` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_whitespace_family_quoted_in_json_value` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 10 passed (from 10 evidence id(s))
+- gates: 0 error(s), 122 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

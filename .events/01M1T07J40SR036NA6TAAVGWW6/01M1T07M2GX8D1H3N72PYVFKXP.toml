@@ -1,0 +1,30 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+r15 design from the engine-branch trial (A-072): an absent css root under a borrowed spec aborted the entire run with an unlocated OS-failure message, blocking the jsx and tailwind judgments that would legitimately apply. The revision degrades the absent case to a located, always-visible diagnostic with the walk proceeding on zero sheets, keeps genuine OS failures as errors now rendered with the resolved path by the shell, and adds a real --version flag while the short -v stays verbose. CT-53/E2E-53 bind the borrower-with-TSX shape.
+
+### Changed
+```
+ docs/design/01-customer-requirements.md |  4 ++++
+ docs/design/02-specification.md         | 15 +++++++++++++++
+ docs/design/subsystems/ingest.md        | 16 ++++++++++++++--
+ docs/design/subsystems/shell.md         |  6 ++++++
+ frob-coverage.lock.json                 |  2 +-
+ tickets/T-0128/ticket.md                |  9 +++++++--
+ 6 files changed, 47 insertions(+), 5 deletions(-)
+```
+
+### Evidence
+- `cmd:grep -c 'A-072' docs/design/subsystems/ingest.md docs/design/subsystems/shell.md docs/design/02-specification.md exit=0 sha256=97d4642e52c1` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 1 error(s), 246 warning(s), 5 waived
+- error-findings: PRE001@tickets/T-0128"""
+at = "2026-09-06T00:00:02Z"
+actor = "import"
+rev = 1

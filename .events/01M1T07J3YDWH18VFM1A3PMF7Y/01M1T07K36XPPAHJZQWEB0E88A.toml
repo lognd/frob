@@ -1,0 +1,13 @@
+kind = "evidence"
+at = "2026-09-06T00:00:01Z"
+actor = "import"
+rev = 1
+provider = "command"
+ref = "grep -c 'A-070' docs/design/02-specification.md docs/design/subsystems/shell.md docs/design/01-customer-requirements.md"
+digest = "7c00af0f6f72"
+status = "measured"
+captured_at = "2026-09-06T00:00:01Z"
+accepts = [1]
+passed = true
+exit_code = 0
+size = 0

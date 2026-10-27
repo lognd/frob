@@ -1,0 +1,33 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+r8/A-030: write and check now warn (WARNING-level log, routed to stderr) when a same-basename generated file exists at the resolution base a *_file key does NOT use, catching a config moved between [project]/[tailwind]/[tokens] tables that orphaned a stale committed copy; scaffold preset comments and docs/commands/tokens.md state the path-base rule directly.
+
+### Changed
+```
+ tickets/T-0087/ticket.md | 23 +++++++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_e2e_33_orphan.py::test_e2e_33_orphan_warning_on_write` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_33_orphan.py::test_e2e_33_orphan_warning_on_check` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_33_orphan.py::test_e2e_33_scaffold_states_path_base_rule` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_33_orphan.py::test_e2e_33_no_warning_without_stale_copy` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_write_warns_on_orphan_copy_at_other_base` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_check_warns_on_orphan_copy_at_other_base` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_no_warning_when_no_stale_copy` (pytest node id, verified passing when recorded)
+- `tests/unit/test_tokens.py::test_no_warning_when_same_path` (pytest node id, verified passing when recorded)
+- `tests/unit/test_scaffold.py::test_preset_comments_state_path_base_rule` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: 1 error(s), 345 warning(s), 8 waived
+- error-findings: DOC006@tickets/T-0086/ticket.md"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

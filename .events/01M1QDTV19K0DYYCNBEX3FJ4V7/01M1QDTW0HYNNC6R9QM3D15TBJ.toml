@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+reset.css token names now come from spec.naming (color_token, font_family_token); the private sanitize_ident copy is deleted. Regression test pins the empty-prefix case; full suite green, scoped gate 0 errors.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_scaffold.py::test_reset_css_honors_configured_token_prefixes` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 81 warning(s), 2 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

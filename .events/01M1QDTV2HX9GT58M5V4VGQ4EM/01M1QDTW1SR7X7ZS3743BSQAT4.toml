@@ -1,0 +1,69 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Changed:
+src/crunk/rules/models.py::Violation
+src/crunk/rules/_color.py::color001
+src/crunk/rules/_scales.py::_scale_violations
+src/crunk/rules/_scales.py::space001
+src/crunk/rules/_scales.py::type001
+src/crunk/rules/_scales.py::radius001
+src/crunk/rules/_tailwind.py::_tw001_color_violation
+src/crunk/rules/_tailwind.py::_tw001_length_violation
+src/crunk/report/json_out.py::_violation_payloads
+
+Evidence:
+tests/system/test_e2e_30_suggested.py::test_check_json_carries_suggested_tokens
+tests/system/test_e2e_30_suggested.py::test_report_json_carries_suggested_tokens
+tests/unit/test_rules_color.py::test_color001_far_from_palette_is_not_fixable
+tests/unit/test_rules_color.py::test_color001_suggested_token_is_nearest_palette_token
+tests/unit/test_rules_color.py::test_color001_waived_site_has_no_fix
+tests/unit/test_rules_color.py::test_color002_flags_undefined_token
+tests/unit/test_rules_scales.py::test_space001_flags_off_scale_padding
+tests/unit/test_rules_scales.py::test_space001_far_from_scale_is_not_fixable
+tests/unit/test_rules_scales.py::test_type001_flags_off_scale_font_size
+tests/unit/test_rules_scales.py::test_radius001_flags_off_scale_radius
+tests/unit/test_rules_tailwind.py::test_tw001_color_nearest_naming
+tests/unit/test_rules_tailwind.py::test_tw001_arbitrary_length_off_spacing_scale
+tests/unit/test_rules_tailwind.py::test_tw002_flags_undefined_mapping
+tests/unit/test_report.py::test_render_check_json_schema
+tests/unit/test_report.py::test_render_report_json_schema
+
+Filed: none
+
+Gates: frob check --ticket T-0081 clean (gate-summary 0 errors, 7 waived).
+AFFECT001 waived x4 (rules.md already documents suggested_token; doc edits
+out of scope, follow_up T-0024). ruff-format and gate:FLAGCOV pre-existing
+repo-wide, unrelated to this diff.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_30_suggested.py::test_check_json_carries_suggested_tokens` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_30_suggested.py::test_report_json_carries_suggested_tokens` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_color.py::test_color001_far_from_palette_is_not_fixable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_color.py::test_color001_suggested_token_is_nearest_palette_token` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_color.py::test_color001_waived_site_has_no_fix` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_color.py::test_color002_flags_undefined_token` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_scales.py::test_space001_flags_off_scale_padding` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_scales.py::test_space001_far_from_scale_is_not_fixable` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_scales.py::test_type001_flags_off_scale_font_size` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_scales.py::test_radius001_flags_off_scale_radius` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_tailwind.py::test_tw001_color_nearest_naming` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_tailwind.py::test_tw001_arbitrary_length_off_spacing_scale` (pytest node id, verified passing when recorded)
+- `tests/unit/test_rules_tailwind.py::test_tw002_flags_undefined_mapping` (pytest node id, verified passing when recorded)
+- `tests/unit/test_report.py::test_render_check_json_schema` (pytest node id, verified passing when recorded)
+- `tests/unit/test_report.py::test_render_report_json_schema` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 15 passed (from 15 evidence id(s))
+- gates: 1 error(s), 188 warning(s), 4 waived
+- error-findings: TEST006@.frob/coverage-stamp"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

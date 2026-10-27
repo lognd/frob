@@ -1,0 +1,13 @@
+kind = "create"
+title = "post-r11-final coverage stamp refresh"
+type = "docs"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0113"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["frob-coverage.lock.json"]
+acceptance = ["gate clean"]
+body = "Attribution ceremony, same shape as T-0108."
+at = "2026-09-06T00:00:00Z"
+actor = "human"
+rev = 1

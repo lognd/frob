@@ -1,0 +1,46 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Implemented crunk preview/crunk diff (r7, CT-31): load_spec_file in spec/load.py (load_spec now delegates), preview_out.py's render_preview/render_diff reusing terminal.py's ANSI helpers, shell wiring (AppConfig.diff_other, __main__ subparsers, App._run_preview/_run_diff), docs/commands/preview.md, README/docs/index rows, and unit+e2e coverage (UT-REP-08, E2E-31).
+
+### Changed
+```
+ README.md                                |   9 +-
+ docs/commands/preview.md                 |  59 ++++++++++++
+ docs/index.md                            |   3 +-
+ frob-coverage.lock.json                  | 107 ++++++++++-----------
+ src/crunk/__main__.py                   |  16 +++-
+ src/crunk/app/app.py                    |  71 ++++++++++++++
+ src/crunk/app/config.py                 |   8 ++
+ src/crunk/report/__init__.py            |  10 +-
+ src/crunk/report/preview_out.py         | 159 +++++++++++++++++++++++++++++++
+ src/crunk/spec/__init__.py              |   3 +-
+ src/crunk/spec/load.py                  |  21 +++-
+ tests/system/test_e2e_31_preview_diff.py |  64 +++++++++++++
+ tests/unit/test_app.py                   |  59 ++++++++++++
+ tests/unit/test_report_preview.py        | 128 +++++++++++++++++++++++++
+ tests/unit/test_spec.py                  |  44 +++++++++
+ tickets/T-0083/ticket.md                 |  13 ++-
+ 16 files changed, 707 insertions(+), 67 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_e2e_31_preview_diff.py::test_e2e_31_preview_every_entry_and_step_deterministic` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_31_preview_diff.py::test_e2e_31_diff_shows_exactly_the_edited_delta` (pytest node id, verified passing when recorded)
+- `tests/unit/test_report_preview.py::test_render_preview_golden_color_off` (pytest node id, verified passing when recorded)
+- `tests/unit/test_report_preview.py::test_render_diff_add_remove_change` (pytest node id, verified passing when recorded)
+- `tests/unit/test_spec.py::test_load_spec_file_path` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_preview_exit_codes` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_diff_directory_and_file_other` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 7 passed (from 7 evidence id(s))
+- gates: 0 error(s), 361 warning(s), 9 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

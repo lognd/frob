@@ -1,0 +1,25 @@
+kind = "create"
+title = "org entry files + @layer ingestion (CR-13, A-005)"
+type = "task"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0038"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/spec/models.py", "src/crunk/spec/load.py", "src/crunk/ingest/**", "src/crunk/report/terminal.py", "src/crunk/report/json_out.py", "tests/unit/test_spec.py", "tests/unit/test_ingest.py", "tests/unit/test_report.py", "tests/system/test_e2e_14_entry.py", "docs/design/subsystems/ingest.md", "docs/design/subsystems/report.md", "docs/design/subsystems/spec.md", "tests/integration/test_int_07_shell_wiring.py", "tests/system/test_e2e_09_map.py", "crunk-cli"]
+acceptance = ["given an entry glob naming tailwind.css with @tailwind directives and @layer blocks, when check runs, then no ORG001 for the entry file and a planted violation inside @layer components is found at its true line (E2E-14)"]
+body = "Per r4: OrgConfig.entry (css_root-relative globs); Bucket.ENTRY; _bucket_for matches entry before stray; parse recurses into @layer blocks (media/supports list), statement at-rules and @apply skipped silently; map renders entry between utilities and tokens, map JSON gains the entry key (six keys). UT-ING-07, UT-SPEC-07 (entry bit), UT-REP shape update, E2E-14."
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV116JR0JMV0HQ79VYVA"
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV13DCDDE9WQ8KB8GQWW"
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV14MKB8GFDXR1VQA5J7"

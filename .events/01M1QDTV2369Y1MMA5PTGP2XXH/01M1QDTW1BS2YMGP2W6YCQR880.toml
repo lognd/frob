@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+OPAQUE001 (dynamic getattr on scales) resolved by a match-based _scale_and_token resolver -- which also fixed the worse latent sibling the review found: hardcoded var prefixes in TW001 messages bypassing spec.naming under [tokens.prefixes]. Regression test pins the custom-prefix message; full suite green; scoped gate 0 errors.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_rules_tailwind.py::test_tw001_length_message_honors_configured_prefix` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 1 passed (from 1 evidence id(s))
+- gates: 0 error(s), 153 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

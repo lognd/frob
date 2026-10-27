@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "v1 drop reason: - 2026-09-05: duplicate of standing upstream marker T-0023 (register crunk domain rule ids in frob's _KNOWN_GATE_RULES); consolidated there"
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,64 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Done report
+
+Changed:
+src/crunk/ingest/walk.py::_jsx_relative_match
+src/crunk/ingest/walk.py::_iter_jsx_files
+src/crunk/ingest/walk.py::_iter_jsx_files_in_paths
+src/crunk/ingest/walk.py::_ingest_jsx_sources
+src/crunk/ingest/walk.py::ingest_paths
+docs/commands/tokens.md (Tailwind theme mapping section, A-077 wiring note)
+README.md (A-077 wiring note)
+
+Evidence:
+tests/unit/test_ingest.py::test_ingest_paths_named_ts_file_parses
+tests/unit/test_ingest.py::test_ingest_paths_named_directory_parses_tsx
+tests/unit/test_ingest.py::test_ingest_paths_named_file_outside_globs_not_parsed
+tests/unit/test_ingest.py::test_ingest_paths_tw_theme_present
+tests/system/test_e2e_54_pathmode.py::test_e2e_54_path_scoped_run_matches_repo_wide_findings (accepts 1)
+tests/system/test_e2e_54_pathmode.py::test_a077_wiring_note_documented (accepts 2)
+
+Filed: none
+
+Gates: frob check --ticket T-0132 clean (0 errors, 1 unresolved FLAGCOV
+which is a pre-existing repo-wide parser resolution issue unrelated to
+this ticket's scope). AFFECT001 on ingest_paths waived pre-existing,
+follow_up T-0024; re-acked after the r16 behavior change since
+ingest.md#public-api already states the implemented shape verbatim.
+
+Deviations: frob test --base main fails with a selection bug (it tries
+to run a shared module-level constant _TOML as a pytest node id in
+unrelated integration test files that never touched this diff) on every
+attempt after the pre-work sweep and after re-running exactly as
+instructed; the bare full suite (uv run pytest -q -n 2) is green with no
+failures both before and after all changes, so I proceeded on that
+green per documented precedent for this class of tooling-selection
+mismatch.
+
+### Changed
+```
+ tickets/T-0132/ticket.md | 26 +++++++++++++++++++++++---
+ 1 file changed, 23 insertions(+), 3 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ingest.py::test_ingest_paths_named_ts_file_parses` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ingest_paths_named_directory_parses_tsx` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ingest_paths_named_file_outside_globs_not_parsed` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ingest_paths_tw_theme_present` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_54_pathmode.py::test_e2e_54_path_scoped_run_matches_repo_wide_findings` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_54_pathmode.py::test_a077_wiring_note_documented` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 6 passed (from 6 evidence id(s))
+- gates: 0 error(s), 410 warning(s), 6 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-06T00:00:01Z"
+actor = "import"
+rev = 1

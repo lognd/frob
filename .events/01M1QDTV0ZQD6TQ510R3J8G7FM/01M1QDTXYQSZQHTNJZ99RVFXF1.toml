@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+r4 design revision complete: APROBLEMS findings A-001..A-008 and the queryability/caching requirements are now CR-09..CR-16 with CT-10..17, propagated through 02 (CLI/query surface, schema additions, ORG005 + alpha catalog semantics, cache contract, E2E-10..17), 03 (query+cache subsystems, dependency map, INT-09/10, r4 log), all eight touched subsystem contracts, two new contracts (query.md, cache.md), and 05's r4 wave build order. Scoped frob gate exits 0.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `cmd:frob check --ticket T-0031 exit=0 sha256=ac395d7acfd4` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 86 warning(s), 2 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:03Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Stamp refreshed over post-land main; ticket exists purely to attribute the ceremonial lockfile commit the r7 land squashes necessitated.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `cmd:frob check --ticket T-0084 exit=0 sha256=e5b6495c5639` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 186 warning(s), 4 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:02Z"
+actor = "import"
+rev = 1

@@ -1,0 +1,13 @@
+kind = "create"
+title = "r16: path-scoped check judges jsx/ts files too (A-076); size-utility wiring note (A-077)"
+type = "docs"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0131"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["docs/design/02-specification.md", "docs/design/subsystems/ingest.md", "docs/design/01-customer-requirements.md"]
+acceptance = ["given the three docs, when read, then path-mode jsx judgment semantics, the full-scan-only boundary, the wiring-note obligation, and CT/E2E ids are stated"]
+body = "Path-scoped check silently drops named tsx/ts files entirely, so an agent trusted a false clean on a file the repo-wide run flags. r16: ingest_paths mirrors the tree walk's jsx and tailwind side for named paths (files matching the jsx globs parse; the self-derived theme always builds), so the per-file TW judgments run in path mode; project-scope rules stay full-scan-only and that boundary is stated. Also records the A-077 doc obligation: document the recommended wiring that exposes a sizes scale as real utility classes."
+at = "2026-09-06T00:00:00Z"
+actor = "human"
+rev = 1

@@ -1,0 +1,33 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Implemented r12 (A-060): className-expression fragment scanning generalizes _parse_class_names to scan every string literal and template-literal static segment inside className={ expr }, dropping tokens that touch an interpolation boundary (never fabricating a half-token); _parse_ts_class_constants now splits interpolated .ts template constants into static segments and tests each independently against the existing class-list heuristic. Shared fragment-scanning helpers (_static_segments, _tokenize_fragment, _literal_fragments, _utilities_from_fragments) give both callers one home for the token-split logic, replacing the old wholesale-skip branches. Updated the two now-superseded unit tests (test_classname_interpolated_skipped, test_ts_interpolated_template_ignored) to assert the new, correct behavior, added five new UT-ING-12 unit tests, extended the e2e-45 both-knobs system test's Modal.tsx fixture to carry the governed z-base utility inside an interpolated template literal, and fixed a stale assertion in the pre-existing integration fixture test (test_int_11_jsx.py) that directly exercises parse_jsx_source and therefore also changed shape under the new rule; added that file to T-0118's scope with a --reason since fixing it was required to keep the full suite green.
+
+### Changed
+```
+ tickets/T-0118/ticket.md           | 32 ++++++++++++++++++++++++++++++--
+ tickets/T-draft-a69a27b4/ticket.md | 35 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 65 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/unit/test_ingest.py::test_ut_ing_12_template_boundary_tokens_dropped` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ut_ing_12_string_literals_in_clsx_call_scanned` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ut_ing_12_ternary_in_classname_expr_scanned` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ut_ing_12_nested_braces_in_interpolation_not_truncated` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ut_ing_12_ts_interpolated_segment_qualifies_independently` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_classname_interpolated_skipped` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ts_interpolated_template_ignored` (pytest node id, verified passing when recorded)
+- `tests/system/test_e2e_45_selfmap.py::test_e2e_45_selfmap_both_knobs_explain_and_unused` (pytest node id, verified passing when recorded)
+- `tests/integration/test_int_11_jsx.py::test_jsx_fixture_corpus` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 9 passed (from 9 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)"""
+at = "2026-09-06T00:00:01Z"
+actor = "import"
+rev = 1

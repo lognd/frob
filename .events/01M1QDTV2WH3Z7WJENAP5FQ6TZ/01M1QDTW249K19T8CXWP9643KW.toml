@@ -1,0 +1,43 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Changed: src/crunk/ingest/jsx.py::_is_utility_shaped, _is_utility_class_list,
+_parse_ts_class_constants, parse_ts_source; src/crunk/ingest/walk.py::
+_parse_one_jsx_file (routes .ts through parse_ts_source, bucket=JSX,
+component=file stem, no declarations)
+Evidence: tests/system/test_e2e_38_ts_constants.py::test_ts_class_constant_e2e
+(E2E-38: TW001 fires at the .ts line, explain lists the .ts site, unused
+excludes the mapped token); tests/unit/test_ingest.py::
+test_ts_utility_list_constant_extracted, test_ts_ordinary_string_ignored,
+test_ts_interpolated_template_ignored, test_ts_single_arbitrary_value_accepted
+Filed: none -- src/crunk/scaffold/presets.py carries no [jsx] scaffold
+comment surface at all (grepped, no hits), so it is left untouched per the
+ticket's own instruction; docs/design already carries the .ts scanning
+recommendation (02-specification.md line 323-326)
+Gates: frob check --ticket T-0092 clean (0 errors, 5 waived, 1 unresolved
+pre-existing FLAGCOV001 repo-wide issue unrelated to this ticket's scope);
+frob coverage --full --fail-on-degraded clean; full suite 570 passed
+
+### Changed
+```
+ tickets/T-0092/ticket.md | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+```
+
+### Evidence
+- `tests/system/test_e2e_38_ts_constants.py::test_ts_class_constant_e2e` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ts_utility_list_constant_extracted` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ts_ordinary_string_ignored` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ts_interpolated_template_ignored` (pytest node id, verified passing when recorded)
+- `tests/unit/test_ingest.py::test_ts_single_arbitrary_value_accepted` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 5 passed (from 5 evidence id(s))
+- gates: unmeasured (no parsable gate-summary from a fresh check)"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

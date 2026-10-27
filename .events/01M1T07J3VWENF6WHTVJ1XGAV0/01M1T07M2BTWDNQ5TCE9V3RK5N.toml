@@ -1,0 +1,31 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+r14 design from the T-0212 drain findings (A-066): the sizes scale was declared-but-unconsumable (naming-only since r10; no export, no theme categories, so no utility could ever be ON it) and TW005 omitted the five size prefixes TW001 already governs, so bare w-64 passed while w-[256px] failed on the same element. r14 makes sizes a real emitted scale (size tokens after radii, six sizing theme categories, spacing default-key table for collisions), extends TW005 to the size prefixes with named keys exempt, and adds suggested_token to TW001 off-scale lengths so single-element scales still nudge. CT-51/E2E-51 bind the drain's exact shape.
+
+### Changed
+```
+ docs/design/01-customer-requirements.md |  7 ++++++
+ docs/design/02-specification.md         | 41 ++++++++++++++++++++++++++++-----
+ docs/design/05-components.md            |  7 ++++++
+ docs/design/subsystems/rules.md         |  9 +++++++-
+ docs/design/subsystems/tokens.md        | 10 ++++++--
+ frob-coverage.lock.json                 |  2 +-
+ tickets/T-0123/ticket.md                |  9 ++++++--
+ 7 files changed, 73 insertions(+), 12 deletions(-)
+```
+
+### Evidence
+- `cmd:grep -c 'A-066' docs/design/02-specification.md docs/design/subsystems/tokens.md docs/design/subsystems/rules.md exit=0 sha256=b9a9d1357d0a` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 1 error(s), 243 warning(s), 4 waived
+- error-findings: PRE001@tickets/T-0123"""
+at = "2026-09-06T00:00:02Z"
+actor = "import"
+rev = 1

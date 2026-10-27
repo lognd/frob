@@ -1,0 +1,28 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+r12 design revision for A-060: the peer's Shell.tsx mobile-nav z-footer consumer lives in an interpolated template-literal className, which the scanner skipped wholesale, so unused_tokens reported the live footer layer dead. The revision states one rule that also covers clsx/cn calls and ternaries: every string-literal fragment and template static segment inside a className expression is a class-list candidate; tokens touching an interpolation boundary are dropped so half-tokens are never fabricated; .ts template constants get the same per-segment scan. UT-ING-12 added to the ingest test plan; implementation follows as its own ticket.
+
+### Changed
+```
+ docs/design/02-specification.md  |  8 ++++++++
+ docs/design/subsystems/ingest.md | 36 ++++++++++++++++++++++++++++++------
+ frob-coverage.lock.json          |  2 +-
+ tickets/T-0117/ticket.md         |  9 +++++++--
+ 4 files changed, 46 insertions(+), 9 deletions(-)
+```
+
+### Evidence
+- `cmd:grep -c 'A-060' docs/design/subsystems/ingest.md docs/design/02-specification.md exit=0 sha256=2b39a992a183` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 1 error(s), 223 warning(s), 4 waived
+- error-findings: PRE001@tickets/T-0117"""
+at = "2026-09-06T00:00:02Z"
+actor = "import"
+rev = 1

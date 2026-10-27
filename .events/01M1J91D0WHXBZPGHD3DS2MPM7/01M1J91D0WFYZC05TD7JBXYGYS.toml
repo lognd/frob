@@ -1,0 +1,13 @@
+kind = "create"
+title = "Triage T-0015 land: used-by declarations on invariant files"
+type = "bug"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0028"]
+labels = ["component:crunk", "source:crunk"]
+body = """
+## Drop reason
+- 2026-09-03: duplicate of auto-filed T-0027, filed in a race with the post-land sweep"""
+at = "2026-09-03T00:00:00Z"
+actor = "agent"
+rev = 1

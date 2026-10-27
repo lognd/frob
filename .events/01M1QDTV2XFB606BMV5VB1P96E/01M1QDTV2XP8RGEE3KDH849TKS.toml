@@ -1,0 +1,17 @@
+kind = "create"
+title = "alpha_channels emission + TW003 silent-alpha lint (A-035)"
+type = "task"
+category = "todo"
+priority = "medium"
+aliases = ["crunk:T-0093"]
+labels = ["component:crunk", "source:crunk"]
+scope = ["src/crunk/tokens/render.py", "src/crunk/rules/_tailwind.py", "src/crunk/rules/engine.py", "src/crunk/spec/models.py", "tests/unit/test_tokens.py", "tests/unit/test_rules_tailwind.py", "tests/system/test_e2e_37_alpha_channels.py", "docs/commands/tokens.md"]
+acceptance = ["given alpha_channels = true, when tokens runs, then tokens.css carries -rgb triplets and the theme maps colors in the alpha-capable form; a bg-x/50 utility against non-alpha emission yields TW003 and against alpha emission does not (E2E-37)"]
+body = "Per r9 tokens.md (alpha_channels bullet) and rules.md (TW003): render_css emits --<color token>-rgb R G B triplets per palette entry when the knob is on (export set/drift automatically covered); render_tailwind maps colors as rgb(var(<token>-rgb) / <alpha-value>); catalog gains (TW,3,warn); tw003 per rules.md (utility name containing / with numeric suffix, value-part maps to a theme color entry lacking the <alpha-value> placeholder). The knob field landed with T-0091."
+at = "2026-09-05T00:00:00Z"
+actor = "human"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M1QDTV2VBJRRWW2GFT9DF3RX"

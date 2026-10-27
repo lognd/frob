@@ -1,0 +1,71 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+Changed:
+- src/crunk/query/models.py::ExplainAnswer
+- src/crunk/query/models.py::QueryAnswer
+- src/crunk/query/models.py::QueryError (UnknownToken)
+- src/crunk/query/engine.py::explain
+- src/crunk/query/engine.py::closest_tokens
+- src/crunk/query/engine.py::_token_groups
+- src/crunk/query/__init__.py (export explain, closest_tokens, ExplainAnswer)
+- src/crunk/report/query_out.py::render_query (explain case)
+- src/crunk/report/query_out.py::_explain_rows
+- src/crunk/report/query_out.py::render_query_json (explain case)
+- src/crunk/app/config.py::AppConfig (explain_name, explain_json, FORWARDED_FIELD_NAMES)
+- src/crunk/app/app.py::App._run_explain
+- src/crunk/app/app.py::App._relativize_answer (explain case)
+- src/crunk/app/app.py::App._emit_query (json_flag param, now shared with explain)
+- src/crunk/__main__.py::_build_parser (explain subparser)
+- src/crunk/__main__.py::_extract_paths (explain_name positional)
+- docs/commands/query.md (explain documented as sibling top-level command)
+
+Evidence: tests/system/test_e2e_32_explain.py::test_e2e_32_explain_prints_value_group_defined_in_and_sites
+(accepts 1), plus tests/unit/test_query.py::test_explain_resolves_and_lists_sites,
+tests/unit/test_query.py::test_explain_unknown_token_names_close_matches,
+tests/unit/test_report_query.py::test_render_query_explain_human,
+tests/unit/test_report_query.py::test_render_query_json_explain,
+tests/unit/test_main.py::test_explain_flags_round_trip,
+tests/unit/test_app.py::test_run_explain,
+tests/unit/test_app.py::test_run_explain_leading_dashes_optional,
+tests/unit/test_app.py::test_run_explain_json,
+tests/unit/test_app.py::test_run_explain_unknown_token_exits_2,
+tests/unit/test_app.py::test_run_explain_corrupt_spec_exits_2
+
+Filed: none
+
+Gates: frob check --ticket T-0082 clean (0 errors, 352 warnings; gate:FLAGCOV
+pre-existing unresolved -- "could not resolve crunk.__main__:_build_parser",
+same failure present before this change, unrelated to explain). Waived
+LARGE001 at src/crunk/app/app.py:1 (App already large pre-T-0082; explain's
+dispatch/render wiring pushed it over threshold; SRP split is out of scope,
+follow_up=T-0023). Full suite: FROB_SUGGEST_ACK=1 uv run pytest tests/ -q -n 2
+green, 536 passed.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/system/test_e2e_32_explain.py::test_e2e_32_explain_prints_value_group_defined_in_and_sites` (pytest node id, verified passing when recorded)
+- `tests/unit/test_query.py::test_explain_resolves_and_lists_sites` (pytest node id, verified passing when recorded)
+- `tests/unit/test_query.py::test_explain_unknown_token_names_close_matches` (pytest node id, verified passing when recorded)
+- `tests/unit/test_report_query.py::test_render_query_explain_human` (pytest node id, verified passing when recorded)
+- `tests/unit/test_report_query.py::test_render_query_json_explain` (pytest node id, verified passing when recorded)
+- `tests/unit/test_main.py::test_explain_flags_round_trip` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_explain` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_explain_leading_dashes_optional` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_explain_json` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_explain_unknown_token_exits_2` (pytest node id, verified passing when recorded)
+- `tests/unit/test_app.py::test_run_explain_corrupt_spec_exits_2` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 11 passed (from 11 evidence id(s))
+- gates: 1 error(s), 200 warning(s), 4 waived
+- error-findings: TEST006@.frob/coverage-stamp"""
+at = "2026-09-05T00:00:01Z"
+actor = "import"
+rev = 1

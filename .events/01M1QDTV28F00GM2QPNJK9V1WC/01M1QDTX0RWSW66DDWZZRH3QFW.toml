@@ -1,0 +1,22 @@
+kind = "comment"
+subtype = "decision"
+body = """
+# v1 done-report
+
+## Done report
+
+A-027 triaged: three build-now refinements fully contracted through layers 1-5 (no new CR; they complete CR-20 and CR-01/15); seven roadmap items recorded in 01 with the OKLab/OKLCH derivation constraint Logan relayed; queued roadmap tickets follow this close.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `cmd:frob check --ticket T-0072 exit=0 sha256=a415fa98272e` (cmd evidence, exit=0)
+
+### Captured claims
+- tests: 0 passed (from 0 evidence id(s))
+- gates: 0 error(s), 196 warning(s), 3 waived
+- error-findings: none (measured, zero errors)"""
+at = "2026-09-05T00:00:02Z"
+actor = "import"
+rev = 1
