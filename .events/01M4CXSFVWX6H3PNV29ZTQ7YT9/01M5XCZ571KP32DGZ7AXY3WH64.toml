@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "Design-cycle artifacts pack: research, IA, flows, QA heuristics, handoff ready gate, metrics and experiments (UX and PROC families)"
+new = "Design-cycle pack integration: opt-in pack registration, docs and end-to-end UX findings (sitemap route without screen, flow dead end)"
+at = "2026-10-27T00:43:06Z"
+actor = "lognd"
+rev = 1
