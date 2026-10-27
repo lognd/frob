@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["v1-cluster:C1", "area:crunk", "component:crunk", "source:crunk"]
+new = ["v1-cluster:C1", "area:crunk", "component:crunk", "source:crunk", "imported:crunk"]
+at = "2026-10-27T00:53:40Z"
+actor = "lognd"
+rev = 1
