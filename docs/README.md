@@ -68,6 +68,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/monorepo.md](design/monorepo.md) | Monorepo: frob, grimble and crunk in one workspace | current | gob |
 | [design/navigation.md](design/navigation.md) | Navigation: canonical ids, a verifiable reindex, generated docs, profiles and a tour | current | frob |
 | [design/neatness.md](design/neatness.md) | Neatness: the NEAT rule family | draft | grimble |
+| [design/output.md](design/output.md) | Output: pretty TTY presentation, stage events and logging | draft | frob |
 | [design/packs.md](design/packs.md) | Data packs and the registry drift-lock (G04) | draft | grimble |
 | [design/paths.md](design/paths.md) | Paths: one discipline from type to lint (D86) | draft | gob |
 | [design/plugins.md](design/plugins.md) | Plugins: one mechanism for the standard library and third parties | draft | gob |
