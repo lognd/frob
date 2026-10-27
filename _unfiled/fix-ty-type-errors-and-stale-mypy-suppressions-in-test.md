@@ -7,9 +7,9 @@ outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-03T00:00:00Z"
-updated = "2026-09-03T00:00:02Z"
+updated = "2026-10-27T00:53:30Z"
 aliases = ["crunk:T-0029"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["tests/unit/test_report.py", "tests/unit/test_spec.py"]
 +++
 
