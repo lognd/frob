@@ -8,12 +8,12 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-27T01:10:50Z"
-updated = "2026-10-27T02:12:37Z"
+updated = "2026-10-27T02:21:48Z"
 scope = ["tickets/**", ".gitattributes", "README.md", "CONTRIBUTING.md", "docs/**"]
 
 [[acceptance]]
 text = "tickets/ is removed from experimental and .gitattributes no longer references it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "README, CONTRIBUTING and docs guides/design/migration pages describe the frob-tickets orphan ledger (.events layout), keeping tickets/ only where describing v1 or legacy migration"
