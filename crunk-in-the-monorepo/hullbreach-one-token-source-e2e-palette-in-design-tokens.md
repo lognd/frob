@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:22Z"
-updated = "2026-10-27T02:32:26Z"
+updated = "2026-10-27T02:41:53Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk/tests/e2e_tokens_hullbreach.rs, crates/crunk/tests/fixtures/hullbreach_tokens/**", "crates/crunk/tests/e2e_tokens_hullbreach.rs", "crates/crunk/tests/fixtures/hullbreach_tokens/**"]
 
