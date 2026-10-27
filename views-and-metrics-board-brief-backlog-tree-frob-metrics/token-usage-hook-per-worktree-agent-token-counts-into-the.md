@@ -4,10 +4,11 @@ title = "Token usage hook: per-worktree agent token counts into the activity jou
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
-updated = "2026-10-06T13:39:53Z"
+updated = "2026-10-27T02:58:13Z"
 scope = ["crates/frob-metrics/**", "docs/**"]
 
 [[links]]
