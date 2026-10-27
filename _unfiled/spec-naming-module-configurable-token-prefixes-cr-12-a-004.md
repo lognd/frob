@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:02Z"
+updated = "2026-10-27T00:53:30Z"
 aliases = ["crunk:T-0032"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/spec/**", "src/crunk/tokens/render.py", "src/crunk/tokens/__init__.py", "src/crunk/rules/_color.py", "tests/unit/test_spec.py", "tests/unit/test_tokens.py", "tests/unit/test_rules_color.py", "tests/system/test_e2e_13_prefixes.py", "docs/design/subsystems/spec.md", "docs/design/subsystems/tokens.md", "docs/design/subsystems/rules.md"]
 
 [[acceptance]]
