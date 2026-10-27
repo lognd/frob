@@ -4,9 +4,10 @@ title = "Read dotfile templates (.env.example) as key=value text instead of opaq
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "Claude"
 created = "2026-10-10T18:32:35Z"
-updated = "2026-10-10T18:32:35Z"
+updated = "2026-10-27T02:58:16Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/frob-check/**"]
 
 [[acceptance]]
