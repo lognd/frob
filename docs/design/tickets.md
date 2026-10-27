@@ -323,6 +323,10 @@ the integrity guards on `done`. Post-actions (`release_lease`,
 `record_land`) are fixed behaviour. `fail` is not a state: it is an
 `attempt` event plus a `requeue` back to `ready`.
 
+Size a ticket when you create it (`frob ticket new --points N`, or `frob ticket update --points N`
+later): PM009 warns on every ready, non-epic ticket without points, and an unsized ready queue cannot
+be planned into a cycle. Epics are not sized; their children are.
+
 - Scope is a write lease taken at `start`, stored in
   `<common_dir>/frob/leases/<id>.toml` (single clone: shared by its worktrees,
   invisible to other clones and machines; cross-clone safety is the
