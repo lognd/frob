@@ -2,7 +2,8 @@
 id = "01M5XCXV02ZVYV71DFY08R5Y3H"
 title = "crunk check --tier T0..T4: lints above the tier are reported as not run, never clean"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
