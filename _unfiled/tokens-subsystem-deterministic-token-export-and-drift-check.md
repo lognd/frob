@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-03T00:00:00Z"
-updated = "2026-09-03T00:00:02Z"
+updated = "2026-10-27T00:53:27Z"
 aliases = ["crunk:T-0007"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/tokens/*.py", "tests/unit/test_tokens.py", "docs/design/subsystems/tokens.md"]
 
 [[links]]
