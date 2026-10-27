@@ -4,9 +4,10 @@ title = "Rust test provider: configurable crate exclusion ([tests] rust_exclude)
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-14T03:34:25Z"
-updated = "2026-10-14T03:34:25Z"
+updated = "2026-10-27T02:58:19Z"
 idempotency_key = "tests-rust-exclude-20261013"
 scope = ["crates/frob/**"]
 
