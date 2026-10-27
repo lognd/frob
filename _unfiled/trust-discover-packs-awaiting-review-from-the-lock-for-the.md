@@ -4,9 +4,10 @@ title = "trust: discover packs awaiting review from the lock for the trust verb"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T08:05:36Z"
-updated = "2026-10-19T08:05:36Z"
+updated = "2026-10-27T02:58:22Z"
 scope = ["crates/frob/src/trust_cmd.rs"]
 +++
 
