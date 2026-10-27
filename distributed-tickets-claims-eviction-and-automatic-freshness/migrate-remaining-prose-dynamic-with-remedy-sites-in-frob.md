@@ -4,10 +4,11 @@ title = "Migrate remaining prose/dynamic with_remedy sites in frob binary crate 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T21:59:26Z"
-updated = "2026-10-20T21:59:26Z"
+updated = "2026-10-27T02:58:34Z"
 scope = ["crates/frob/src/**"]
 +++
 
