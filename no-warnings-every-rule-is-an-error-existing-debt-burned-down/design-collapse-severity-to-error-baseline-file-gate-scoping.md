@@ -2,7 +2,8 @@
 id = "01M5XMF3GKFX1EGWP8EZHW5Y2M"
 title = "Design: collapse severity to Error, baseline file, gate scoping"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
