@@ -4,9 +4,10 @@ title = "docs/crunk/README.md: document the tokens verb, the token exports and t
 type = "task"
 category = "todo"
 priority = "low"
+points = 1
 reporter = "lognd"
 created = "2026-10-08T13:40:25Z"
-updated = "2026-10-08T13:40:25Z"
+updated = "2026-10-27T02:58:15Z"
 labels = ["area:crunk"]
 scope = ["docs/crunk/README.md"]
 +++
