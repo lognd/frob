@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/tests/**", "design/model.grmb"]
+new = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/tests/**", "design/model.grmb", "crates/gob-ir/tests/it/queries.rs"]
+at = "2026-10-27T05:09:08Z"
+actor = "lognd"
+rev = 1
