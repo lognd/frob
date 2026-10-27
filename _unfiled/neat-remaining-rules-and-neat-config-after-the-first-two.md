@@ -4,9 +4,10 @@ title = "NEAT remaining rules and [neat] config after the first two"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-19T09:24:08Z"
-updated = "2026-10-19T09:24:08Z"
+updated = "2026-10-27T02:58:22Z"
 scope = ["crates/grimble-lints/**", "crates/gob-ir/**"]
 
 [[acceptance]]
