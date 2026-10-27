@@ -4,9 +4,10 @@ title = "Reproduce the dev tag-move 403 on a throwaway ref"
 type = "task"
 category = "todo"
 priority = "low"
+points = 5
 reporter = "lognd"
 created = "2026-10-13T18:50:13Z"
-updated = "2026-10-13T18:50:13Z"
+updated = "2026-10-27T02:58:19Z"
 scope = ["docs/design/build-test-ci.md"]
 +++
 
