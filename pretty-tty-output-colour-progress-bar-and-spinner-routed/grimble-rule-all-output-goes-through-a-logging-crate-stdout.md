@@ -1,0 +1,27 @@
++++
+id = "01M5XMR67K19SFAWNTDJKKJPTT"
+title = "Grimble rule: all output goes through a logging crate (stdout, stderr and file sinks), per language"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
+reporter = "lognd"
+created = "2026-10-27T02:59:07Z"
+updated = "2026-10-27T02:59:07Z"
+scope = ["crates/grimble-check/**", "crates/grimble-capabilities/**"]
+
+[[acceptance]]
+text = "a grimble rule reports direct output calls (Rust println!/eprintln!/print!/dbg!, Python print, JS console.*, C# Console.Write*) outside a configured logging module, as a waivable error with a required reason"
+bound = false
+
+[[acceptance]]
+text = "the rule requires that a program that emits output (stdout, stderr or files) has a logging crate configured; the sink may be file, stdout or stderr but must be reached through the logging layer"
+bound = false
+
+[[acceptance]]
+text = "the finding message tells agents to obey and humans how to waive with frob:waive"
+bound = false
++++
+
+Owner request 2026-10-26: every sink must route through a logging crate; grimble should enforce it for all supported languages. Complements the frob-side clippy ban.
