@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "6fbf307d1c180d12cc311db1a37c8decf196faa2"
+branch = "ticket/BAYVPRM"
+pushed = false
+at = "2026-10-27T03:28:15Z"
+actor = "lognd"
+rev = 1
