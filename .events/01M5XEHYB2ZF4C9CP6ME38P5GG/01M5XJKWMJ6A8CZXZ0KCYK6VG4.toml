@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-27T02:21:49Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "62881656abea3bdc476a05adfccc512a72dde1b1"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c "import pathlib,sys; sys.exit(int(any('tickets/' in pathlib.Path(p).read_text() for p in ['README.md','CONTRIBUTING.md','docs/guides/quickstart.md','docs/guides/agents.md'])))""""
+size = 0
+status = "measured"
+at = "2026-10-27T02:21:49Z"
+actor = "lognd"
+rev = 1

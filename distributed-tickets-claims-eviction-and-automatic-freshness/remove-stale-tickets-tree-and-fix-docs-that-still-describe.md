@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-27T01:10:50Z"
-updated = "2026-10-27T02:21:48Z"
+updated = "2026-10-27T02:21:49Z"
 scope = ["tickets/**", ".gitattributes", "README.md", "CONTRIBUTING.md", "docs/**"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "README, CONTRIBUTING and docs guides/design/migration pages describe the frob-tickets orphan ledger (.events layout), keeping tickets/ only where describing v1 or legacy migration"
-bound = false
+bound = true
 +++
 
 Owner approved removal. Verified ticket verbs work without tickets/ (list, doable). Run full frob check in a scratch worktree first.
