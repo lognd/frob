@@ -4,10 +4,11 @@ title = "close the 13 authority gaps in db-paradigm-research.md with primary sou
 type = "task"
 category = "todo"
 priority = "low"
+points = 5
 parent = "01M3AXSD9Z2T54HFHNCZ91W3YV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-04T22:22:24Z"
+updated = "2026-10-27T02:57:56Z"
 aliases = ["T-6414"]
 labels = ["milestone:0.538.0", "v1-cluster:B1", "area:grimble", "triage:accepted"]
 +++
