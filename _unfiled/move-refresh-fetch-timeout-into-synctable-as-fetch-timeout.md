@@ -4,9 +4,10 @@ title = "Move refresh FETCH_TIMEOUT into SyncTable as fetch_timeout_ms (scope cr
 type = "chore"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-10-20T17:49:27Z"
-updated = "2026-10-20T17:49:27Z"
+updated = "2026-10-27T02:58:29Z"
 +++
 
 found while working ~QD7BPB3: constant 10 s used because config.rs was leased by ~EV5KK0X.
