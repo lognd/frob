@@ -4,9 +4,10 @@ title = "doable per-row may-be-taken past stale_error; read-verb freshness foote
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T17:28:28Z"
-updated = "2026-10-20T17:28:28Z"
+updated = "2026-10-27T02:58:29Z"
 scope = ["crates/frob/src/ticket/**"]
 +++
 
