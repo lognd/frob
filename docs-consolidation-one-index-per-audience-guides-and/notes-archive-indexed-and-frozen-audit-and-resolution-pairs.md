@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given notes/coordinator.md, when phase 7 lands, then it is deleted and its still-valid agent ground rules are a short docs/guides/agents.md listed in docs/README.md"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given notes/, when phase 7 lands, then no note sits at the notes/ root except README.md, every note has an index row, and frob check reports zero DOC002 and zero DRIFT002 findings, and `cargo dev gen --check` is clean"
