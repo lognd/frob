@@ -2,7 +2,8 @@
 id = "01M5XCWXYNXW0RW8VRDQPY31M6"
 title = "Solver style mapping: resolved scene CSS to taffy styles (block, flex wrap both ways, grid tracks and spans, absolute, gap, padding, min/max, aspect-ratio) with token var() resolution"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
