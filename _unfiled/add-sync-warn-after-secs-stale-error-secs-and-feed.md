@@ -4,9 +4,10 @@ title = "Add [sync] warn_after_secs/stale_error_secs and feed Thresholds"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T18:37:37Z"
-updated = "2026-10-20T18:37:37Z"
+updated = "2026-10-27T02:58:30Z"
 scope = ["crates/frob-ledger/src/config.rs", "docs/schemas/config.json", "docs/reference/config.md", "crates/frob/src/refresh_cmd.rs"]
 +++
 
