@@ -2,13 +2,13 @@
 id = "01M5XF9XTH9F34VCAVDKJ6VSYA"
 title = "TICK008: tolerate a ledger revert commit that undoes an import (or record it as an allowed commit)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-27T01:23:56Z"
-updated = "2026-10-27T01:24:02Z"
+updated = "2026-10-27T01:24:04Z"
 scope = ["crates/frob-check/**", "docs/reference/rules/TICK008.md", "crates/frob-ledger/**"]
 
 [[acceptance]]
