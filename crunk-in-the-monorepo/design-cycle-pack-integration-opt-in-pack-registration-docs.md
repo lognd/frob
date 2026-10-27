@@ -13,6 +13,10 @@ scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**"]
 
 [[links]]
 kind = "blocked-by"
+target = "01M5XCYCSXSPQP9A4DZKNX5RGS"
+
+[[links]]
+kind = "blocked-by"
 target = "01M5XCZ0XPCPA1DT2QB5VGHDZC"
 
 [[links]]
