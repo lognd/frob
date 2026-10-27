@@ -4,9 +4,10 @@ title = "B1 DOC002: plan executor per-file ratio 6.57x versus 1.3x target"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T10:16:09Z"
-updated = "2026-10-20T10:16:09Z"
+updated = "2026-10-27T02:58:28Z"
 scope = ["crates/gob-plan/src/exec/**"]
 +++
 
