@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-27T01:23:56Z"
-updated = "2026-10-27T01:53:39Z"
+updated = "2026-10-27T01:53:57Z"
 scope = ["crates/frob-check/**", "docs/reference/rules/TICK008.md", "crates/frob-ledger/**", "crates/frob/tests/it/ticket_moves.rs"]
 
 [[acceptance]]
