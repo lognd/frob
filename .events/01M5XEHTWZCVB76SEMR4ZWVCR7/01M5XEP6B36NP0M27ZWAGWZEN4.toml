@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a rule or binding flags docs that name a path the repo no longer has or that contradicts [tickets] ref_mode"]
+new = ["a rule or binding flags docs that name a path the repo no longer has or that contradicts [tickets] ref_mode", "A DOC rule at severity error flags any docs/ page, README or CONTRIBUTING with no frob:describes or frob:doc binding; existing unbound pages are bound in the same change", "A DOC rule at severity error flags backticked repo paths in docs that do not exist, mirroring the existing flag and command check; a frob:legacy marker exempts deliberate legacy descriptions", "The ledger docs (README, quickstart, ticket-branch, CONTRIBUTING) are bound to the [tickets] config and crates/frob-ledger code"]
+moved = [1]
+at = "2026-10-27T01:13:10Z"
+actor = "lognd"
+rev = 1

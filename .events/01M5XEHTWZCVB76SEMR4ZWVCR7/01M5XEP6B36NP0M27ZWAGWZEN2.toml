@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "Doc drift misses prose claims about where the ledger lives (no binding from README/guides to ledger code)"
+new = "Docs must be bound and their backticked paths must exist (error rules)"
+at = "2026-10-27T01:13:10Z"
+actor = "lognd"
+rev = 1
