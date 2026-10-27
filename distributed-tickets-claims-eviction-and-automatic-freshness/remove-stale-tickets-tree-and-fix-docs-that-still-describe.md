@@ -8,8 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-27T01:10:50Z"
-updated = "2026-10-27T02:21:49Z"
-scope = ["tickets/**", ".gitattributes", "README.md", "CONTRIBUTING.md", "docs/**"]
+updated = "2026-10-27T02:23:07Z"
+scope = ["tickets/**", ".gitattributes", "README.md", "CONTRIBUTING.md", "docs/**", "SECURITY.md", "typos.toml"]
 
 [[acceptance]]
 text = "tickets/ is removed from experimental and .gitattributes no longer references it"

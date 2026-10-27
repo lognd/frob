@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["tickets/**", ".gitattributes", "README.md", "CONTRIBUTING.md", "docs/**"]
+new = ["tickets/**", ".gitattributes", "README.md", "CONTRIBUTING.md", "docs/**", "SECURITY.md", "typos.toml"]
+at = "2026-10-27T02:23:07Z"
+actor = "lognd"
+rev = 1
