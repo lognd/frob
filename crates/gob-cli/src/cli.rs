@@ -432,12 +432,35 @@ impl Cli {
         })
     }
 
+    // frob:ticket 01M5XCVMQBQWARH7HT8RYHA0KY
+    /// The subcommands of the verb group an unrecognized word was typed under (clap omits them).
+    fn group_subcommands(&self, e: &clap::Error, argv: &[OsString]) -> Vec<String> {
+        if e.kind() != ErrorKind::InvalidSubcommand {
+            return Vec::new();
+        }
+        let root = self.build(false);
+        let mut group = &root;
+        for word in argv.iter().skip(1).filter_map(gob_path::exact_text) {
+            match group.find_subcommand(word) {
+                Some(next) => group = next,
+                None if word.starts_with('-') => {}
+                None => break,
+            }
+        }
+        group
+            .get_subcommands()
+            .filter(|c| !c.is_hide_set())
+            .map(|c| c.get_name().to_owned())
+            .collect()
+    }
+
     /// Map a clap parse error: help/version succeed, everything else is usage.
     fn parse_failure(&self, e: &clap::Error, argv: &[OsString]) -> Execution {
         if matches!(e.kind(), ErrorKind::DisplayHelp | ErrorKind::DisplayVersion) {
             return Execution::out(e.to_string());
         }
-        let (message, remedy, command) = usage_parts(e, self.product);
+        let (message, remedy, command) =
+            usage_parts(e, self.product, &self.group_subcommands(e, argv));
         tracing::debug!(kind = ?e.kind(), "usage error");
         let mut err = gob_diagnostics::Refusal::new(
             "E-USAGE",
@@ -476,6 +499,7 @@ fn quoted(names: &[String]) -> String {
 fn usage_parts(
     e: &clap::Error,
     product: &str,
+    group_subs: &[String],
 ) -> (
     String,
     Option<String>,
@@ -539,7 +563,10 @@ fn usage_parts(
         let first = line.lines().next().unwrap_or(line).trim();
         hints.push(format!("usage: {first}"));
     }
-    let subcommands = context_strings(e, ContextKind::ValidSubcommand);
+    let mut subcommands = context_strings(e, ContextKind::ValidSubcommand);
+    if subcommands.is_empty() {
+        subcommands = group_subs.to_vec();
+    }
     if !subcommands.is_empty() {
         hints.push(format!("subcommands: {}", subcommands.join(", ")));
     }
