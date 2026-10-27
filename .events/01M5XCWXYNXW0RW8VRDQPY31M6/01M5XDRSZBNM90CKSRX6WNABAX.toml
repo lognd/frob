@@ -1,0 +1,55 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T00:55:13Z"
+digest = "7a2c0d7b1d611d7f067884e9d797538d4e0dec1eba545b59c6b4dbef5a0d2062"
+exit_code = 0
+head = "7c01ae0f1e06e04bfd0454bf077eefa371e56351"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 53s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3158091d-114e-45df-882c-29aafff5164a with nextest profile: default
+    Starting 30 tests across 4 binaries (10 tests skipped)
+        PASS [   0.007s] crunk-layout::style edge_aspect_ratio_ignored_with_width_and_height
+        PASS [   0.007s] crunk-layout::style edge_min_above_max_resolves_to_min
+        PASS [   0.008s] crunk-layout::style edge_percent_height_needs_definite_parent_height
+        PASS [   0.008s] crunk-layout::style prop_display_and_defaults
+        PASS [   0.008s] crunk-layout::style edge_negative_padding_and_gap_are_findings
+        PASS [   0.008s] crunk-layout::style prop_aspect_ratio
+        PASS [   0.008s] crunk-layout::style edge_percent_under_indefinite_parent_is_auto
+        PASS [   0.008s] crunk-layout::style edge_undefined_token_names_element_and_line
+        PASS [   0.008s] crunk-layout::style prop_flex_both_wrap_directions
+        PASS [   0.009s] crunk-layout::style prop_alignment
+        PASS [   0.012s] crunk-layout::style display_none_sets_hidden
+        PASS [   0.012s] crunk-layout::style bad_values_are_typed_errors_not_panics
+        PASS [   0.005s] crunk-layout::style tokens_cycle_is_an_error
+        PASS [   0.006s] crunk-layout::style prop_grid_spans_and_lines
+        PASS [   0.006s] crunk-layout::style prop_margin_padding_border
+        PASS [   0.010s] crunk-layout::style prop_grid_tracks_and_flow
+        PASS [   0.011s] crunk-layout::style prop_gap_forms
+        PASS [   0.010s] crunk-layout::style prop_position_and_insets
+        PASS [   0.009s] crunk-layout::style tokens_resolve_nested_and_fallback
+        PASS [   0.010s] crunk-layout::style prop_sizes_min_max
+        PASS [   0.008s] crunk-layout::style unmapped_layout_property_is_a_finding
+        PASS [   0.011s] crunk-layout::style prop_flex_shorthand
+        PASS [   0.007s] crunk-layout::style_tree display_none_is_hidden_but_keeps_its_id
+        PASS [   0.007s] crunk-layout::style_tree absolute_opposing_insets_without_size_stretch
+        PASS [   0.007s] crunk-layout::style_tree duplicate_data_id_is_an_error
+        PASS [   0.008s] crunk-layout::style_tree flex_wrap_reverse_on_column_lays_out
+        PASS [   0.006s] crunk-layout::style_tree scaffold_and_idless_elements_are_skipped_transparently
+        PASS [   0.006s] crunk-layout::style_tree undefined_token_in_scene_names_element_and_line
+        PASS [   0.006s] crunk-layout::style_tree tokens_resolve_through_the_scene
+        PASS [   0.007s] crunk-layout::style_tree grid_span_past_explicit_tracks_creates_implicit_tracks
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 30 tests run: 30 passed, 10 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-layout -E test(/^(prop_|edge_|tokens_|bad_values|unmapped|display_none|undefined_token|duplicate|scaffold|grid_span|absolute_|flex_wrap)/)"
+size = 2933
+status = "measured"
+test_count = 30
+tests_digest = "0a86eb1ea574a74eb9b14beab5378d34bed5104ca179225cdf3de2d3c76d871e"
+at = "2026-10-27T00:55:13Z"
+actor = "lognd"
+rev = 1
