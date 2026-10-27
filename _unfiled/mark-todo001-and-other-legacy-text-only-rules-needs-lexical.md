@@ -4,9 +4,10 @@ title = "Mark TODO001 and other legacy text-only rules needs = Lexical with isla
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T02:49:53Z"
-updated = "2026-10-20T02:49:53Z"
+updated = "2026-10-27T02:58:26Z"
 scope = ["crates/frob-obligations/src/legacy.rs", "crates/frob-obligations/tests/mdtest/todo001.md", "crates/gob-mdtest/coverage-allowlist.toml"]
 +++
 
