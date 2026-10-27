@@ -2,13 +2,13 @@
 id = "01M5XMN8GHBCJH7WVMYVXR58J9"
 title = "Presenter crate: colour palette, TTY detection and stage progress bar/throbber"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:57:31Z"
-updated = "2026-10-27T02:57:31Z"
+updated = "2026-10-27T03:42:16Z"
 scope = ["crates/frob-present/**"]
 
 [[acceptance]]
