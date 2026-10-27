@@ -57,9 +57,6 @@ pub struct CheckOptions {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// The gate the run is for; `Release` raises families with a release severity.
     pub gate: crunk_rules::family::Gate,
-    // frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
-    /// `--tier`: rules declared above it are listed as not run (default `T1`).
-    pub tier: Tier,
 }
 
 /// Everything one run produced, enough to build the document and the verbs' views.
@@ -96,6 +93,16 @@ pub fn has_config(root: &Path) -> bool {
 /// [`CheckError`] for a bad `crunk.toml` or `frob.toml` table, a failed walk or an unknown
 /// `--only` name. Findings are never errors.
 pub fn run(root: &Path, opts: &CheckOptions) -> Result<CrunkRun, CheckError> {
+    run_to_tier(root, opts, Tier::default())
+}
+
+// frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
+/// Run `crunk check` up to `tier`; rules declared above it are listed in [`CrunkRun::not_run`].
+///
+/// # Errors
+///
+/// As [`run`].
+pub fn run_to_tier(root: &Path, opts: &CheckOptions, tier: Tier) -> Result<CrunkRun, CheckError> {
     let started = Instant::now();
     let (compute, source) = ComputeTable::load_for_product(root, PRODUCT)?;
     tracing::debug!(source, "crunk compute knobs resolved");
@@ -122,7 +129,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CrunkRun, CheckError> {
     // frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
     let not_run = tier::not_run(
         gob_check::Product::rule_set(&Crunk).defs(),
-        opts.tier,
+        tier,
         &opts.only,
     );
     tier::retain_decided(&mut report.findings, &not_run);
@@ -138,7 +145,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CrunkRun, CheckError> {
         warnings: report.warnings.clone(),
         report,
         compute,
-        tier: opts.tier,
+        tier,
         not_run,
         ticket_scope: opts.ticket_scope.clone(),
         base: opts.base.clone(),

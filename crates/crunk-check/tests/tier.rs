@@ -3,7 +3,7 @@
 // frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
 
 use crunk_check::tier::{NotRunStatus, rule_tier};
-use crunk_check::{CheckOptions, Crunk, Tier, run, sibling_document};
+use crunk_check::{CheckOptions, Crunk, Tier, run_to_tier, sibling_document};
 
 fn project() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -18,17 +18,18 @@ fn project() -> tempfile::TempDir {
 fn run_to(tier: Tier, only: &[&str]) -> crunk_check::CrunkRun {
     let dir = project();
     let opts = CheckOptions {
-        tier,
         only: only.iter().map(|s| (*s).to_owned()).collect(),
         ..CheckOptions::default()
     };
-    run(dir.path(), &opts).expect("run")
+    run_to_tier(dir.path(), &opts, tier).expect("run")
 }
 
 // frob:tests crates/crunk-check/src/tier.rs::Tier
+// frob:tests crates/crunk-check/src/tier.rs::Tier.as_str
 #[test]
 fn tier_default_is_t1_and_unknown_lists_all() {
     assert_eq!(Tier::default(), Tier::T1);
+    assert_eq!(Tier::T4.as_str(), "T4");
     assert_eq!("t3".parse::<Tier>(), Ok(Tier::T3));
     let err = "T9".parse::<Tier>().expect_err("unknown tier");
     assert!(err.to_string().contains("T0, T1, T2, T3, T4"), "{err}");
