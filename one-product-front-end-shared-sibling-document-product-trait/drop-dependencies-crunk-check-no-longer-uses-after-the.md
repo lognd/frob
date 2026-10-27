@@ -4,10 +4,11 @@ title = "Drop dependencies crunk-check no longer uses after the sibling move"
 type = "chore"
 category = "todo"
 priority = "low"
+points = 1
 parent = "01M47QSB9W3BVYZ4NPRVX11TG4"
 reporter = "lognd"
 created = "2026-10-06T07:54:09Z"
-updated = "2026-10-06T10:21:34Z"
+updated = "2026-10-27T02:58:11Z"
 scope = ["crates/crunk-check/Cargo.toml", "Cargo.lock"]
 +++
 
