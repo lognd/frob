@@ -1,0 +1,13 @@
+kind = "create"
+title = "Collapse Severity to Error and Unresolved; reject warn/advisory config"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
+scope = ["crates/gob-rules/src/**"]
+acceptance = ["Severity has only Error and Unresolved; Warn and Advisory removed from derive, [rules], fail_on", "A config naming warn or advisory is a config error naming error-plus-baseline or off"]
+body = "Implements docs/design/rules.md section 6.1 (rules.md 6.1.1). Filed from ~ZHW5Y2M."
+at = "2026-10-27T02:56:01Z"
+actor = "lognd"
+rev = 1
