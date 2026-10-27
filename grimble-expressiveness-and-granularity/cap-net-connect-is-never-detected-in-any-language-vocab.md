@@ -8,10 +8,10 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-27T04:33:07Z"
+updated = "2026-10-27T04:50:32Z"
 idempotency_key = "grimble-expr-netconnect-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/tests/**"]
+scope = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/tests/**", "design/model.grmb"]
 
 [[acceptance]]
 text = "a fixture repo using std::net::TcpStream::connect (Rust) and socket.create_connection / requests.get (Python) with no grant fires CAP001 net.connect"
