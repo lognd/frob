@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T02:43:02Z"
+digest = "d217afa4cf05d2bd20c6f69270a6bbf05eda3f11d384987bafd9c7bb37f41c21"
+exit_code = 0
+head = "38bbf11254e3f36f8e5bfd9ebf056d3513da1e00"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 288b5188-ef71-4bca-a786-1ceaac040b28 with nextest profile: default
+    Starting 3 tests across 27 binaries (263 tests skipped)
+        PASS [   0.010s] crunk tier_tests::an_invalid_tier_exits_two_listing_the_choices
+        PASS [   0.183s] crunk tier_tests::a_valid_tier_is_passed_through
+        PASS [   0.200s] crunk tier_tests::tier_defaults_to_t1
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.202s] 3 tests run: 3 passed, 263 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(/tier_defaults_to_t1|a_valid_tier_is_passed_through|an_invalid_tier_exits_two/)"
+size = 805
+status = "measured"
+test_count = 3
+tests_digest = "93d13d1a1f0b38c168b89965006afe8dafafe723006180ec35cb8f57e1075eb3"
+at = "2026-10-27T02:43:02Z"
+actor = "lognd"
+rev = 1

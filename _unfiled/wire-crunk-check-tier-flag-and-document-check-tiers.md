@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-27T00:50:13Z"
-updated = "2026-10-27T02:33:26Z"
+updated = "2026-10-27T02:43:02Z"
 scope = ["crates/crunk/src/lib.rs", "docs/design/crunk.md"]
 
 [[acceptance]]
 text = "crunk check accepts --tier T0..T4 (default T1), rejects other values with exit 2 listing them, and passes it to CheckOptions.tier"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "docs/design/crunk.md documents the not_run section of the check document"
