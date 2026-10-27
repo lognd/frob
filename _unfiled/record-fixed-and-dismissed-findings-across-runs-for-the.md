@@ -4,9 +4,10 @@ title = "Record fixed and dismissed findings across runs for the precision ledge
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-11T01:15:17Z"
-updated = "2026-10-11T01:15:17Z"
+updated = "2026-10-27T02:58:17Z"
 scope = ["crates/gob-rules/**", "crates/gob-check/**"]
 +++
 
