@@ -6,7 +6,7 @@ category = "todo"
 priority = "high"
 reporter = "lognd"
 created = "2026-10-27T01:15:34Z"
-updated = "2026-10-27T01:17:16Z"
+updated = "2026-10-27T01:20:17Z"
 
 [[acceptance]]
 text = "Severity collapses to Error (and off); Warn and Advisory are removed; Unresolved stays for cannot-decide results"
@@ -18,6 +18,14 @@ bound = false
 
 [[acceptance]]
 text = "The 36 Advisory rules each become Error with findings baselined, or are turned off with a recorded reason"
+bound = false
+
+[[acceptance]]
+text = "Heuristic or smell rules (judgment calls such as CRAFT, SLOP, COH, DUP, VIS, UNITY) are errors that a human can waive: each finding message states that the rule is a heuristic or smell, why it fired, and the exact frob:waive line (with a required reason) to suppress it"
+bound = false
+
+[[acceptance]]
+text = "Agent-facing output tells agents to obey a heuristic finding and not to waive it; waiving is a human decision, so the message says so explicitly while still showing humans exactly how to waive"
 bound = false
 +++
 
