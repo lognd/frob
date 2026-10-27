@@ -4,10 +4,11 @@ title = "DOC001 flags undocumented C# namespaces"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T10:53:32Z"
-updated = "2026-10-21T10:53:32Z"
+updated = "2026-10-27T02:58:36Z"
 scope = ["crates/frob-obligations/src/doc.rs"]
 
 [[acceptance]]
