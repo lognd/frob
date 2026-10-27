@@ -4,9 +4,10 @@ title = "gob-dev profile.toml has no scenario or skip reason for frob ticket clo
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "Claude"
 created = "2026-10-10T21:53:08Z"
-updated = "2026-10-10T21:53:08Z"
+updated = "2026-10-27T02:58:16Z"
 scope = ["crates/gob-dev/**"]
 
 [[acceptance]]
