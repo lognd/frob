@@ -4,9 +4,10 @@ title = "Share one pid_alive probe between frob-land lock and frob-check concurr
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-19T23:07:53Z"
-updated = "2026-10-19T23:07:53Z"
+updated = "2026-10-27T02:58:26Z"
 scope = ["crates/frob-land/**"]
 +++
 
