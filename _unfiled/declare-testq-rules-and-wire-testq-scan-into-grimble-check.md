@@ -4,9 +4,10 @@ title = "Declare TESTQ rules and wire testq::scan into grimble-check"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-22T10:31:46Z"
-updated = "2026-10-22T10:31:46Z"
+updated = "2026-10-27T02:58:39Z"
 scope = ["crates/grimble-lints/src/rules/**", "crates/grimble-check/**"]
 +++
 
