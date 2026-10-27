@@ -7,9 +7,9 @@ outcome = "wont-fix"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-03T00:00:00Z"
-updated = "2026-09-03T00:00:02Z"
+updated = "2026-10-27T00:53:30Z"
 aliases = ["crunk:T-0028"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 +++
 
 ## Drop reason
