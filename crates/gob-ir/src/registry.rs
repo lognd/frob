@@ -130,6 +130,16 @@ pub fn callee_vocab(lang: &str, class: &str) -> Answer<BTreeSet<&'static str>> {
     }
 }
 
+/// Every vocabulary class registered for any language (static and runtime entries).
+pub fn vocab_classes() -> BTreeSet<&'static str> {
+    let mut out: BTreeSet<&'static str> = inventory::iter::<VocabEntry>
+        .into_iter()
+        .map(|v| v.kind)
+        .collect();
+    out.extend(runtime().vocabs.iter().map(|v| v.kind));
+    out
+}
+
 /// A matrix-build excuse template contributed by a pack (packs.md 6.7).
 #[derive(Debug)]
 pub struct TemplateEntry {
@@ -290,11 +300,11 @@ inventory::submit! {
 inventory::submit! {
     VocabEntry {
         lang: "rust",
-        kind: "net",
-        names: &["TcpStream::connect", "UdpSocket::bind", "TcpListener::bind"],
+        kind: "net.connect",
+        names: &["TcpStream::connect", "UdpSocket::connect"],
     }
 }
 
 inventory::submit! {
-    VocabEntry { lang: "python", kind: "net", names: &["socket.socket", "requests.get", "urllib.request.urlopen"] }
+    VocabEntry { lang: "python", kind: "net.connect", names: &["socket.create_connection", ".connect", "requests.get", "requests.post", "requests.put", "requests.delete", "requests.request", "urllib.request.urlopen"] }
 }

@@ -130,5 +130,5 @@ inventory::submit! {
 }
 
 inventory::submit! {
-    VocabEntry { lang: "rust", kind: "net.listen", names: &["TcpListener::bind", "UnixListener::bind"] }
+    VocabEntry { lang: "rust", kind: "net.listen", names: &["TcpListener::bind", "UdpSocket::bind", "UnixListener::bind"] }
 }

@@ -46,8 +46,10 @@ const EXAMPLES: usize = 3;
 
 /// A method-name vocabulary entry (`.listen`) counts only in a file that also calls the gate
 /// callee: `(atom, language, method, companion callee)`.
-const METHOD_GATES: [(&str, &str, &str, &str); 1] =
-    [("net.listen", "python", "listen", "socket.socket")];
+const METHOD_GATES: [(&str, &str, &str, &str); 2] = [
+    ("net.listen", "python", "listen", "socket.socket"),
+    ("net.connect", "python", "connect", "socket.socket"),
+];
 
 /// One observed use of an atom.
 #[derive(Clone, Debug)]

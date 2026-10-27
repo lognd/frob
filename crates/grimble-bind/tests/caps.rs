@@ -310,3 +310,45 @@ fn shrink_leaves_a_used_model_alone() {
     let plan = grimble_bind::shrink::plan(&b.findings, &mut read);
     assert!(plan.removals.is_empty() && plan.diff.is_empty() && plan.edited.is_empty());
 }
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn ungranted_rust_and_python_connects_are_cap001_net_connect() {
+    let rs = "use std::net::TcpStream;\nfn go() {\n    let _ = TcpStream::connect(\"127.0.0.1:1\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "");
+    let a: Vec<_> = of(&b, "CAP001").iter().map(|f| f.anchor.clone()).collect();
+    assert_eq!(a, ["cap/node/a/net.connect"], "{:?}", b.findings);
+    for py in [
+        "import socket\n\ndef go():\n    socket.create_connection((\"h\", 1))\n",
+        "import requests\n\ndef go():\n    requests.get(\"http://h\")\n",
+        "import socket\n\ndef go():\n    s = socket.socket()\n    s.connect((\"h\", 1))\n",
+    ] {
+        let b = bind_py(py, "");
+        let a: Vec<_> = of(&b, "CAP001").iter().map(|f| f.anchor.clone()).collect();
+        assert_eq!(a, ["cap/node/a/net.connect"], "{py}: {:?}", b.findings);
+    }
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn listener_calls_map_only_to_net_listen() {
+    let rs = "use std::net::{TcpListener, UdpSocket};\nfn go() {\n    let _ = TcpListener::bind(\"0:1\");\n    let _ = UdpSocket::bind(\"0:2\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "");
+    let a: Vec<_> = of(&b, "CAP001").iter().map(|f| f.anchor.clone()).collect();
+    assert_eq!(a, ["cap/node/a/net.listen"], "{:?}", b.findings);
+}
+
+// frob:tests crates/gob-ir/src/registry.rs::vocab_classes
+#[test]
+fn every_vocabulary_class_names_a_registered_atom() {
+    let atoms: std::collections::BTreeSet<_> =
+        gob_ir::registry::atoms().iter().map(|a| a.name).collect();
+    // The ambient-effect vocabularies (gob-symbols) are effect classes, not capability atoms.
+    let ambient = ["clock", "env", "exit", "rng", "stdio"];
+    for class in gob_ir::registry::vocab_classes() {
+        if ambient.contains(&class) {
+            continue;
+        }
+        assert!(atoms.contains(class), "vocab class {class} has no atom");
+    }
+}
