@@ -4,10 +4,11 @@ title = "Generated artifacts: one cargo dev gen kind per artifact with --mode ch
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:21Z"
-updated = "2026-10-06T13:56:19Z"
+updated = "2026-10-27T02:58:12Z"
 scope = ["crates/gob-dev/**", "crates/gob-symbols/src/languages_page.rs", "docs/reference/**"]
 
 [[acceptance]]
