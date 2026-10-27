@@ -8,8 +8,12 @@ points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:39Z"
-updated = "2026-10-27T00:45:39Z"
+updated = "2026-10-27T00:47:18Z"
 scope = ["crates/frob-evidence/src/coverage/csharp.rs", "crates/frob-evidence/tests/coverage_csharp.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M5XD3T31J311PC2KD9Q1N24Q"
 
 [[acceptance]]
 text = "Given a test run through the provider with coverage enabled, when it finishes, then a normalised lcov report is written under .git/frob and the coverage figure is recorded on the evidence record"
