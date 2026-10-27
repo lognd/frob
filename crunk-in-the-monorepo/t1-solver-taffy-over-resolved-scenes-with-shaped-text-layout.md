@@ -4,11 +4,11 @@ title = "T1 solver: taffy over resolved scenes with shaped text, layout-solve JS
 type = "task"
 category = "todo"
 priority = "medium"
-points = 8
+points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:45Z"
-updated = "2026-10-08T04:53:45Z"
+updated = "2026-10-27T00:41:54Z"
 scope = ["changelog.d/**", "crates/crunk-layout/**"]
 
 [[acceptance]]
