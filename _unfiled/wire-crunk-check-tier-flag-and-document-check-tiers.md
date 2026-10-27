@@ -2,7 +2,8 @@
 id = "01M5XDC5WFWYYNXBCXRNGXAEYS"
 title = "Wire crunk check --tier flag and document check tiers"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
