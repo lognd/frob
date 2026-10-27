@@ -1,0 +1,13 @@
+kind = "create"
+title = "Promote zero-finding and exact rules (CI010, PM010, PM033, SYS008) to Error"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
+scope = ["crates/*/src/**/rules*"]
+acceptance = ["Every zero-finding Warn/Advisory rule is Error with no baseline; CI010, PM010, PM033, SYS008 fixed then Error", "Per-rule counts from a full frob check recorded in the ticket"]
+body = "Implements docs/design/rules.md section 6.1 (rules.md 6.1.7 steps 2-3). Filed from ~ZHW5Y2M."
+at = "2026-10-27T02:56:03Z"
+actor = "lognd"
+rev = 1
