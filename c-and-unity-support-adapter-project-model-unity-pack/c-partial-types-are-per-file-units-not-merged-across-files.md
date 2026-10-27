@@ -4,10 +4,11 @@ title = "C#: partial types are per-file units, not merged across files"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T10:53:32Z"
-updated = "2026-10-21T10:53:32Z"
+updated = "2026-10-27T02:58:36Z"
 scope = ["crates/gob-symbols/src/csharp.rs"]
 
 [[acceptance]]
