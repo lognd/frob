@@ -4,9 +4,10 @@ title = "Land check: offload tool stages to a helper and narrow tool-memo inputs
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-14T04:14:59Z"
-updated = "2026-10-14T04:14:59Z"
+updated = "2026-10-27T02:58:19Z"
 scope = ["crates/frob-land/**", "crates/gob-check/**", "crates/frob-check/**"]
 
 [[acceptance]]
