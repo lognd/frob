@@ -74,8 +74,10 @@ Changes from v1 grammar:
   not), optional `::qualname-glob`, optional kind filter. Most specific
   selector wins; equal specificity on one symbol is an error; unclaimed
   symbols are FOREIGN.
-- `may` scopes are selectors (`at`), and argument constraints (`of`)
-  are resolved from the call AST, not the first string on the line.
+- `may` scopes are selectors (`at`, enforced per symbol), and typed argument
+  constraints (`may ATOM(args)`, replacing `of`) are resolved from the call AST,
+  not the first string on the line; an argument that cannot be resolved is
+  Unresolved, never a pass (grimble-capabilities-v3.md sections 3 and 4).
 - Capabilities are denied by default (D75): a node has `may` grants and nothing else; an ungranted atom is denied and its observed use is CAP001. The v1-era node clause `excuses ATOM because "..."` is removed (MDL018); excuses exist only in matrix-build templates (grmb-spec 4.7, packs.md 6.7).
 - `surface` replaces `attr interface=[...]` lists.
 - `flow ... via producer/consumer/contract` gives flows symbol-level
@@ -120,7 +122,7 @@ attestations; neither side is ever auto-regenerated to match the other
 | Declared | Where | Resolves to |
 |---|---|---|
 | `owns SELECTOR` | node, store | set of symbols (code-model.md section 2 addresses) |
-| `may ATOM at SELECTOR of CONSTRAINT` | node | capability grant scoped to symbols |
+| `may ATOM[(ARGS)] [at SELECTOR] [via SELECTOR]` | node | capability grant with typed arguments scoped to symbols (grimble-capabilities-v3.md; `of CONSTRAINT` is the v1 spelling) |
 | `excuse ATOM for SELECTOR because` | matrix-build template (pack or `template` entity), never a node | matrix cell `excused`; a use in covered code is CAP004 |
 | `surface SELECTOR` | node | intended public symbols |
 | `flow via producer/consumer/contract` | flow | three symbols, any languages |
