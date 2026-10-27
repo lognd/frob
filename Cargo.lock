@@ -632,6 +632,8 @@ name = "crunk-layout"
 version = "0.532.0"
 dependencies = [
  "crunk-scene",
+ "taffy",
+ "thiserror",
  "tracing",
 ]
 
@@ -4626,6 +4628,7 @@ checksum = "3c8480887e8803986d96a7173729565520d4bbb721ad6b7ad6941a22897207aa"
 dependencies = [
  "serde",
  "slotmap",
+ "smallvec",
 ]
 
 [[package]]
