@@ -4,10 +4,11 @@ title = "frob-gh: persist the ETag cache under .frob/ across runs"
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-06T07:54:09Z"
-updated = "2026-10-06T07:54:09Z"
+updated = "2026-10-27T02:58:11Z"
 scope = ["crates/frob-gh/**"]
 
 [[acceptance]]
