@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-27T01:58:51Z"
+digest = "a6d44a833ac5cd5b4cf6041e22b1b53c45173980dc29e796771987be8a669a00"
+exit_code = 0
+head = "efc1cb1093eaa286c2343b66cf81d6d0766792c0"
+inline = '''
+   Compiling ring v0.17.14
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8a4cf128-cd18-434c-b35e-c860cb9cd069 with nextest profile: default
+    Starting 5 tests across 4 binaries (470 tests skipped)
+        PASS [   0.216s] frob-cli::it ticket_moves::a_commit_without_the_trailer_that_renames_a_ticket_file_fires_tick008
+        PASS [   0.217s] frob-cli::it ticket_moves::a_revert_of_an_earlier_ledger_commit_does_not_fire
+        PASS [   0.217s] frob-cli::it ticket_moves::an_allow_move_trailer_exempts_a_commit
+        PASS [   0.256s] frob-cli::it ticket_moves::a_commit_that_only_adds_events_and_edits_frontmatter_does_not_fire
+        PASS [   0.269s] frob-cli::it ticket_moves::a_genuine_reindex_move_does_not_fire
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.270s] 5 tests run: 5 passed, 470 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(/ticket_moves/)"
+size = 1233
+status = "measured"
+test_count = 5
+tests_digest = "936bf400a5c3943254d15c4b1ec5c55aa071bb2ad8a45abc774ff37850f04cda"
+at = "2026-10-27T01:58:51Z"
+actor = "lognd"
+rev = 1
