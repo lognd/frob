@@ -4,9 +4,10 @@ title = "Guide gitattributes template lacks merge-driver patterns and LF pin, so
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-27T00:23:09Z"
-updated = "2026-10-27T00:23:09Z"
+updated = "2026-10-27T02:58:43Z"
 scope = ["crates/frob-ledger/templates/**", "crates/frob-ledger/src/gen/guide.rs"]
 +++
 
