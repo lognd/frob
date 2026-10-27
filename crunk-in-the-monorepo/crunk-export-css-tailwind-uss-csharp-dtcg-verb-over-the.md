@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:11Z"
-updated = "2026-10-27T01:11:52Z"
+updated = "2026-10-27T01:41:27Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk/src/export.rs", "crates/crunk/src/lib.rs", "crates/crunk/tests/export_verb.rs", "crates/crunk/src/tokens.rs", "docs/**", "crates/gob-cli/src/cli.rs"]
 
