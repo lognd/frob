@@ -4,9 +4,10 @@ title = "Retry an unpublished claim branch or missing ledger push on sync"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:58Z"
-updated = "2026-10-20T19:15:58Z"
+updated = "2026-10-27T02:58:31Z"
 +++
 
 found while working ~46BECG2. W-CLAIM-UNPUBLISHED is emitted by work; sync (refresh) must retry the create-only push and ledger push.
