@@ -7,9 +7,9 @@ outcome = "wont-fix"
 priority = "high"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:01Z"
+updated = "2026-10-27T00:53:40Z"
 aliases = ["crunk:T-0121"]
-labels = ["v1-cluster:C3", "component:crunk", "source:crunk"]
+labels = ["v1-cluster:C3", "component:crunk", "source:crunk", "imported:crunk"]
 scope = [".frob/coverage-stamp"]
 +++
 
