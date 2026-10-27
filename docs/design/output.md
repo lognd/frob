@@ -52,6 +52,15 @@ stderr fmt layer and `FROB_LOG` filtering, so logging and presentation
 do not fight over the terminal: while a bar is active the fmt layer
 writes through the presenter's `suspend` so lines scroll above the bar.
 
+Implementation note (~VXR58J9): the first cut depends only on `anstyle`
+and `tracing`. `Live` draws with plain ANSI (`\r` + erase-line) through
+an injected writer rather than a ratatui inline viewport, `gob-log` and
+`gob-diagnostics` are not yet linked (the `PresentLayer` lands with
+~MCY59H4), and width comes from the caller or `COLUMNS` (no `crossterm`
+probe). `Presenter` methods return `Result<(), PresentError>` so a failing
+writer is reported, not swallowed. Windows legacy-console colour is not
+handled yet.
+
 ## 3. Detection
 
 `Capabilities::detect(env, streams)` is a pure function over an injected

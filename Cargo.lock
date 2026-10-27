@@ -1484,6 +1484,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "frob-present"
+version = "0.532.0"
+dependencies = [
+ "anstyle",
+ "tracing",
+]
+
+[[package]]
 name = "frob-release"
 version = "0.532.0"
 dependencies = [
