@@ -2,13 +2,13 @@
 id = "01M5XNNH8ZMXDQJWNZBDK5702P"
 title = "CAP001: one in-scope use masks every out-of-scope use of the same atom in a node"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-27T03:15:08Z"
+updated = "2026-10-27T05:12:28Z"
 idempotency_key = "grimble-expr-mask-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-capabilities/src/lib.rs", "crates/grimble-bind/tests/**"]
