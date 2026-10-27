@@ -4,10 +4,11 @@ title = "gob-mdtest: unknown directives and attribute keys are parse errors"
 type = "story"
 category = "todo"
 priority = "low"
+points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:42Z"
-updated = "2026-10-06T13:41:08Z"
+updated = "2026-10-27T02:58:12Z"
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
 [[links]]
