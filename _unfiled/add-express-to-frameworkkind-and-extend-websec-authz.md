@@ -4,9 +4,10 @@ title = "Add EXPRESS to FrameworkKind and extend WEBSEC authz substrate to Expre
 type = "task"
 category = "todo"
 priority = "low"
+points = 2
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-10-04T22:22:23Z"
+updated = "2026-10-27T02:57:52Z"
 aliases = ["T-5402"]
 labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
