@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-27T01:10:47Z"
-updated = "2026-10-27T01:13:10Z"
-scope = ["crates/frob-check/**", "docs/design/**"]
+updated = "2026-10-27T01:13:11Z"
+scope = ["crates/frob-check/**", "docs/design/**", "crates/frob-rules/**", "README.md", "CONTRIBUTING.md", "docs/**"]
 
 [[acceptance]]
 text = "a rule or binding flags docs that name a path the repo no longer has or that contradicts [tickets] ref_mode"
