@@ -4,9 +4,10 @@ title = "crunk-ingest: auto-detect the Tailwind v4 CSS entry below the root (web
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:35Z"
-updated = "2026-10-08T13:40:35Z"
+updated = "2026-10-27T02:58:15Z"
 labels = ["area:crunk"]
 scope = ["crates/crunk-ingest/src/tailwind/**"]
 +++
