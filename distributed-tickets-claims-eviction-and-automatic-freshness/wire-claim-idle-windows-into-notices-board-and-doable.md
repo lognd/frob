@@ -4,10 +4,11 @@ title = "Wire claim idle windows into notices, board and doable"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T19:35:13Z"
-updated = "2026-10-20T19:35:13Z"
+updated = "2026-10-27T02:58:33Z"
 
 [[links]]
 kind = "blocked-by"
