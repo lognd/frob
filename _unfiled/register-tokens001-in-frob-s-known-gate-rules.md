@@ -7,9 +7,9 @@ outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-03T00:00:00Z"
-updated = "2026-09-03T00:00:01Z"
+updated = "2026-10-27T00:53:28Z"
 aliases = ["crunk:T-0023"]
-labels = ["v1-cluster:C3", "component:crunk", "source:crunk"]
+labels = ["v1-cluster:C3", "component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/app/app.py"]
 +++
 
