@@ -2,7 +2,8 @@
 id = "01M5XNNH36HZTBEW0DFKEM2RHP"
 title = "CAP: net.connect is never detected in any language (vocab class net vs atom-name lookup)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
