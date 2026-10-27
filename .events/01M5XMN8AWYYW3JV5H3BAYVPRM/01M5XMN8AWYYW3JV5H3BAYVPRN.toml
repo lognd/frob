@@ -1,0 +1,12 @@
+kind = "create"
+title = "Design: TTY presentation layer (colour, progress, logging routing)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
+scope = ["docs/design/output.md"]
+acceptance = ["docs/design/output.md specifies the presenter trait, TTY/NO_COLOR/CI detection, stage-event model, palette, and that all human output goes through logging; JSON envelope on pipes is unchanged"]
+at = "2026-10-27T02:57:30Z"
+actor = "lognd"
+rev = 1
