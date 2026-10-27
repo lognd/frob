@@ -4,9 +4,10 @@ title = "Share one cargo target dir across ticket worktrees and land checkouts (
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-10-14T20:51:09Z"
-updated = "2026-10-14T20:51:09Z"
+updated = "2026-10-27T02:58:20Z"
 scope = ["crates/frob-worktree/**"]
 +++
 
