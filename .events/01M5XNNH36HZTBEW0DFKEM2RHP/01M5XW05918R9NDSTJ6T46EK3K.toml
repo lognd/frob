@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-27T05:05:45Z"
+digest = "453f5e1790d3fa59fadf66fc13fb678c3e45559b8a66c523f4755278af557d9a"
+exit_code = 0
+head = "46491dd952ad4a981e756bba858c244f3875be54"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 929a0274-f27a-4a61-82d0-2885b89de710 with nextest profile: default
+    Starting 1 test across 489 binaries (5608 tests skipped)
+        PASS [   0.006s] grimble-bind::caps every_vocabulary_class_names_a_registered_atom
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 5608 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "every_vocabulary_class_names_a_registered_atom"
+size = 614
+status = "measured"
+test_count = 1
+tests_digest = "d22097b28d919b94bcd78b9c2f660b1703a64012726ea72e39f87830ddac0941"
+at = "2026-10-27T05:05:45Z"
+actor = "lognd"
+rev = 1
