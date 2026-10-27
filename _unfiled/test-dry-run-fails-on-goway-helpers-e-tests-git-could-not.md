@@ -4,9 +4,10 @@ title = "test-dry-run fails on goway helpers: E-TESTS-GIT Could not create index
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-06T23:48:25Z"
-updated = "2026-10-06T23:48:25Z"
+updated = "2026-10-27T02:58:14Z"
 scope = ["crates/frob-tests/**", "crates/gob-git/**"]
 
 [[acceptance]]
