@@ -4,9 +4,10 @@ title = "gob-macros: raise rule id family cap from 8 to 12 letters"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-21T11:04:41Z"
-updated = "2026-10-21T11:04:41Z"
+updated = "2026-10-27T02:58:36Z"
 scope = ["crates/gob-macros/**"]
 +++
