@@ -6,7 +6,7 @@ Decisions: none
 Audience: contributor
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias).
-Inputs: notes/rust-ecosystem.md, notes/v1/ops-and-integrations.md
+Inputs: notes/research/rust-ecosystem.md, notes/v1/ops-and-integrations.md
 (telemetry), notes/v1/gates-and-rules.md.
 
 ## 1. Shape
@@ -205,7 +205,7 @@ the units is shared.
 Library crates return `Result<T, E>` with per-crate error sets. The
 house idiom is typani's ErrorSet; in Rust that is `error_set!` (crate
 `error_set`), trialled first in `frob-ledger` (decided 2026-10-02;
-notes/rust-ecosystem.md flags its miette interop as unverified); if its miette interop
+notes/research/rust-ecosystem.md flags its miette interop as unverified); if its miette interop
 disappoints, fall back to `thiserror` enums with a shared `Code` trait.
 Trial outcome (milestone 1): `error_set` is kept in `frob-ledger`; the
 other crates written so far (for example `gob-exec`) use `thiserror`
@@ -364,7 +364,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[packs.severity]` | grimble.toml | no (only when it differs) | empty (repository override per atom and rule, wins over the pack; equal to the pack value is PACK008; packs.md 3.6 and 5) | grimble-capabilities |
 | `[neat.effects.exclude.<lang>]` | grimble.toml | no | empty (names removed from the effect vocabulary, each with a `because`; packs.md 3.6) | grimble-capabilities |
 | `[[policy]]`, `rules/*.grl.toml` (code) | grimble.toml and next to it | no | none | grimble-lints |
-| crunk tables | crunk.toml | per notes/crunk.md section 4 | per crunk | crunk crates |
+| crunk tables | crunk.toml | per notes/v1/crunk.md section 4 | per crunk | crunk crates |
 
 `[compute]` is a substrate table with one home: `frob.toml`, read
 identically by every product (a standalone grimble with no `frob.toml`
@@ -427,7 +427,7 @@ and ledger writes; git CLI only per git-io.md), rayon, blake3, serde/toml/toml_e
 ignore/globset, pulldown-cmark, miette (bin only) or annotate-snippets,
 tracing, inventory, schemars, rmcp (serve crates only), insta, rstest,
 datatest-stable, trybuild, cargo-nextest. Full table with versions and
-alternatives: notes/rust-ecosystem.md section 2.
+alternatives: notes/research/rust-ecosystem.md section 2.
 
 ## 9. Parallelism from day one
 

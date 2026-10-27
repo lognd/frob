@@ -5,8 +5,8 @@ Owner: gob
 Decisions: none
 Audience: contributor
 
-Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/crunk.md (crunk survey and its
-FROBLEMS.md complaints), notes/rust-ecosystem.md section 1 (ruff/ty
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/v1/crunk.md (crunk survey and its
+FROBLEMS.md complaints), notes/research/rust-ecosystem.md section 1 (ruff/ty
 layout).
 
 ## 1. Decision
@@ -91,7 +91,7 @@ crunk are not second-class citizens in their own code.
 
 Milestone 1 (D36): frob checks and lands in this repository with the
 Rust, markdown and TOML adapters only; the crate cut is the table at the
-end of notes/audit-design.md. Steps 2 to 4 below, and everything about
+end of notes/review/audit-design.md. Steps 2 to 4 below, and everything about
 grimble and crunk, are Milestone 2 or later (D36); the milestone-2
 order is the one statement in build-test-ci.md (Milestone 2). Status:
 the `frob` binary and the substrate and product crates listed in

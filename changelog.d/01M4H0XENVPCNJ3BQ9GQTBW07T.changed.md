@@ -1,0 +1,1 @@
+The notes archive is reorganised: audit and resolution pairs are merged, crunk research is one file, v1 gap analysis lives under notes/v1/gap, root notes moved into subdirectories, and coordinator.md is replaced by docs/guides/agents.md.

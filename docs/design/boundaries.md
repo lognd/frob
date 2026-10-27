@@ -128,7 +128,7 @@ third-party code; frob's land consumes its findings like any gate.
 
 Every crunk crate is Milestone 2 or later (D36).
 
-Unchanged from notes/crunk.md section 4: crunk-values, crunk-spec,
+Unchanged from notes/v1/crunk.md section 4: crunk-values, crunk-spec,
 crunk-ingest, crunk-tailwind, crunk-rules, crunk-tokens, crunk-query,
 crunk-gallery, crunk-adapters, crunk (bin). Its TS/TSX and CSS parsing
 move to gob-languages and gob-symbols; its byte-range fixes move to
@@ -175,7 +175,7 @@ namespaces families by product so a foreign family is never unknown.
 | NAME, LINT | grimble | grimble-lints (registry), parsers in gob-check | bound only: LINT 0xx idiom, 1xx perf idiom, 2xx correctness, 3xx concurrency, 5xx leftover debug; bound perf is LINT1xx because PERF001 is engine timing |
 | REACT | grimble | grimble web pack (id map is pack content) | bound only: react-hooks and eslint-plugin-react |
 | UNITY | grimble | unity pack; own rules in grimble-lints | UNITY0xx .meta/GUID, UNITY1xx bound Unity analyzers, UNITY2xx hot-context, UNITY3xx input and physics (dotnet-unity.md) |
-| COLOR, SPACE, TYPE, RADIUS, SIZE, LAYER, CONTRAST, ORG, TW, BP | crunk | crunk-rules | notes/crunk.md section 4 |
+| COLOR, SPACE, TYPE, RADIUS, SIZE, LAYER, CONTRAST, ORG, TW, BP | crunk | crunk-rules | notes/v1/crunk.md section 4 |
 | A11Y, SEO, LAUNCH, WEBPERF (markup and assets) | crunk | crunk pack crunk-web | D88/D89: front-end web lint moved from v1 frob; v1 catalog in notes/v1/gates-and-rules.md section 11 |
 | WEBSEC (into SEC), SQL, COMPLY (with PII), ROUTE, WEBPERF (server); STORE, SYSDESIGN, GRAMMAR | grimble | grimble packs grimble-websec and grimble-sysdesign | D89: code, data and system-design lint moved from v1 frob; v1 catalog section 11 and v1 backlog clusters B1-B2 |
 | GALLERY | crunk | crunk-gallery | gallery checks |

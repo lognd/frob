@@ -11,7 +11,7 @@ delegation; owner prompt: "Make sure the language engines make sense
 for grimble as well?). We want both universal capabilities and
 whatnot." Extends code-model.md section 3, universal-model.md sections
 4.4 and 5, and monorepo.md section 3; supersedes the crunk-local
-placement of JSX extraction and framework discovery in notes/crunk.md
+placement of JSX extraction and framework discovery in notes/v1/crunk.md
 section 4.
 
 ## 1. The placement rule

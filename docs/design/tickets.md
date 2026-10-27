@@ -7,8 +7,8 @@ Audience: contributor
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 Inputs: notes/v1/tickets.md (data model, 25 incident classes, Jira gap
-list), notes/rust-ecosystem.md section 3, notes/v1/ops-and-integrations.md
-(telemetry), notes/jira.md and notes/v1/agent-usage.md (sections 7 and 8).
+list), notes/research/rust-ecosystem.md section 3, notes/v1/ops-and-integrations.md
+(telemetry), notes/research/jira.md and notes/v1/agent-usage.md (sections 7 and 8).
 
 ## 1. Thesis
 
@@ -489,7 +489,7 @@ the integrity guards on `done`. Post-actions (`release_lease`,
 
 ## 7. Jira mapping and pinch points
 
-Source: notes/jira.md (data model, 22 pinch points with evidence, 27
+Source: notes/research/jira.md (data model, 22 pinch points with evidence, 27
 competitor concepts). Rule: keep every Jira concept a user would look
 for, change the mechanism where Jira's mechanism is the pinch.
 

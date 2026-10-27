@@ -12,7 +12,7 @@ section 5 is now a pointer to universal-model.md (`gob-ir`), and
 sections 6-7 (binds, capability matrix) are grimble crates
 (boundaries.md); all of them are Milestone 2 or later (D36). Inputs:
 notes/v1/graph-lang-dsl.md, the universal-binding requirement in
-goals.md, notes/rust-ecosystem.md.
+goals.md, notes/research/rust-ecosystem.md.
 
 ## 1. What this layer owns
 

@@ -1,4 +1,4 @@
-# Selection for the v1 ticket import (~TM4E1PN), generated from notes/review/v1-gap/B-backlog.md.
+# Selection for the v1 ticket import (~TM4E1PN), generated from notes/v1/gap/B-backlog.md.
 #
 # Data, not code: the importer reads this file. Every open v1 ticket must be named here
 # (by cluster membership or an override); an unmapped open ticket stops the run.

@@ -10,7 +10,7 @@ mirror modern graphic design tools like Figma, but in a manner easy to
 use for an agent, and every design/user interface needs to be
 batch-checkable and lintable"; "not just Figma, the modern UX/UI/GX
 design cycle". Evidence: notes/research/crunk-design-2026-10-08.md and its sourcing
-pass notes/research/crunk-sources-2026-10-08.md (391 fetched sources;
+pass notes/research/crunk-design-2026-10-08.md (391 fetched sources;
 11 corrections applied here)
 (Figma inventory of 78 capabilities, 30 comparable tools and specs, the
 Python crunk port matrix, the hullbreach consumer, the design cycle and
