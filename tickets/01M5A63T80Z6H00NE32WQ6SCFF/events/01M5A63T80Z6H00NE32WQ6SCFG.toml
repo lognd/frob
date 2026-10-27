@@ -1,9 +1,0 @@
-kind = "create"
-title = "grimble vet: source and refresh the RustSec advisory snapshot"
-type = "task"
-category = "todo"
-priority = "medium"
-scope = ["crates/grimble-vet/**"]
-at = "2026-10-19T13:37:45Z"
-actor = "lognd"
-rev = 1

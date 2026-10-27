@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob-obligations/src/tick_reindex.rs"]
-new = ["crates/frob-obligations/src/tick_reindex.rs", "crates/frob-ledger/src/replay.rs"]
-at = "2026-10-11T19:09:00Z"
-actor = "lognd"
-rev = 1

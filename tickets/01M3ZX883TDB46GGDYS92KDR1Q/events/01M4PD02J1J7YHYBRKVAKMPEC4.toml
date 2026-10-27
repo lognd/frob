@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob/src/ticket/write.rs"]
-new = ["crates/frob/src/ticket/write.rs", "crates/frob-pm/src/rules/good_first.rs"]
-at = "2026-10-11T21:13:13Z"
-actor = "lognd"
-rev = 1

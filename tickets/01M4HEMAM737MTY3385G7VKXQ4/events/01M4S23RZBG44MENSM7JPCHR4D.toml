@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/grimble-check/src/packs.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "changelog.d/**", "crates/grimble-model/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/rules.rs", "crates/grimble-bind/tests/**", "crates/grimble-check/tests/**", "crates/grimble-model/tests/corpus.rs", "docs/design/packs.md"]
-new = ["crates/grimble-check/src/packs.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "changelog.d/**", "crates/grimble-model/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/rules.rs", "crates/grimble-bind/tests/**", "crates/grimble-check/tests/**", "crates/grimble-model/tests/corpus.rs", "docs/design/packs.md", "crates/grimble-model/src/lib.rs"]
-at = "2026-10-12T22:00:42Z"
-actor = "lognd"
-rev = 1

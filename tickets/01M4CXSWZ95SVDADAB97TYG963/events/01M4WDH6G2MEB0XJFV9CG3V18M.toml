@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: Claude in frob-wt/7TYG963; scope: changelog.d/**, crates/gob-symbols/**, crates/gob-check/**, crates/gob-exec/**; ttl 7200s"
-at = "2026-10-14T05:17:58Z"
-actor = "Claude"
-rev = 1

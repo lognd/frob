@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/grimble-kernel/**"]
-new = ["crates/grimble-kernel/**", "crates/grimble-model/**"]
-at = "2026-10-19T12:53:52Z"
-actor = "lognd"
-rev = 1

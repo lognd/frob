@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["in a worktree created after a build of the same commit, cargo build of an already built package reports zero Compiling lines, covered by a test", "a file edited in the worktree is still rebuilt (mtime newer than the build), covered by a test"]
-new = ["a worktree created after the tip commit leaves unchanged tracked files with mtime <= the tip commit time (so cargo sees them fresh against any build of that tip), covered by a test", "a file edited in the worktree after creation has mtime newer than the tip commit time, so it is still rebuilt, covered by a test"]
-moved = [0, 0]
-at = "2026-10-11T15:57:50Z"
-actor = "lognd"
-rev = 1

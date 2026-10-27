@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-cli/**", "crates/gob-diagnostics/**"]
-new = ["crates/gob-cli/**", "crates/gob-diagnostics/**", "docs/schemas/envelope.json"]
-at = "2026-10-16T16:31:45Z"
-actor = "lognd"
-rev = 1

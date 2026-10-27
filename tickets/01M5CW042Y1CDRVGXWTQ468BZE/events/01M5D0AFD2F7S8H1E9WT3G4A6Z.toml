@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "blocked on ~X2S3S24: work/CI/goway must handle ticket branch before flipping"
-at = "2026-10-20T15:54:15Z"
-actor = "lognd"
-rev = 1

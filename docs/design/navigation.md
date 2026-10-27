@@ -104,7 +104,7 @@ pins the frob version, so CI always decides it.
 
 ### 2.3 Moving an existing ledger onto the ticket branch
 
-Milestone 1 repositories (this one included) keep tickets at
+Milestone 1 repositories (this one before its migration) kept tickets at
 `tickets/<id>/` on the code branch. `frob ticket migrate --to-branch`
 is a one-shot, verifiable move:
 

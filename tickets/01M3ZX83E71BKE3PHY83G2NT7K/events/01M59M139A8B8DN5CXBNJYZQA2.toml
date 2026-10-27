@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob-mirror/src/mapping.rs", "crates/frob-mirror/src/config.rs", "crates/frob-mirror/src/lib.rs"]
-new = ["crates/frob-mirror/src/mapping.rs", "crates/frob-mirror/src/config.rs", "crates/frob-mirror/src/lib.rs", "docs/design/mirror.md"]
-at = "2026-10-19T08:21:41Z"
-actor = "lognd"
-rev = 1

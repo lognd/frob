@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["gob-dev tests ci_plan, layering, profile_coverage pass; cargo dev profile has a crunk fix scenario or skip reason"]
-moved = []
-at = "2026-10-19T04:45:06Z"
-actor = "lognd"
-rev = 1

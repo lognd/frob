@@ -1,8 +1,0 @@
-kind = "field"
-field = "title"
-old = "frob claude: sync tracked hooks/agents/skills into ~/.claude (sync, status, uninstall)"
-new = "frob agent: agent-neutral sync/status/uninstall of tracked agent config (claude emitter first)"
-reason = "design change: agent-neutral"
-at = "2026-10-20T03:06:49Z"
-actor = "lognd"
-rev = 1

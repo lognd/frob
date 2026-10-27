@@ -1,7 +1,0 @@
-kind = "field"
-field = "title"
-old = "GRL examples: rust/python adapters emit test attr and tests edges so COV001 examples 1 and 2 pass"
-new = "GRL examples: rust/python adapters emit the test attr (subset of COV001 examples 1 and 2)"
-at = "2026-10-16T21:53:15Z"
-actor = "lognd"
-rev = 1

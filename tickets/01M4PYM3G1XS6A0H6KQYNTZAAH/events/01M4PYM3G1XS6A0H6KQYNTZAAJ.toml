@@ -1,9 +1,0 @@
-kind = "create"
-title = "Docs say four required cases; code has five (EvaluationFailed)"
-type = "task"
-category = "todo"
-priority = "low"
-points = 1
-at = "2026-10-12T02:21:16Z"
-actor = "lognd"
-rev = 1

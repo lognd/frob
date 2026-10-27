@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-cli/src/render.rs", "crates/gob-diagnostics/src/envelope.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/src/refusal.rs", "crates/gob-diagnostics/tests/contract.rs"]
-new = ["crates/gob-cli/src/render.rs", "crates/gob-diagnostics/src/envelope.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-diagnostics/src/refusal.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/gob-diagnostics/tests/snapshots/contract__json_refusal_snapshot.snap"]
-at = "2026-10-12T23:55:21Z"
-actor = "lognd"
-rev = 1

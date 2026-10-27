@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob/src/ticket/url_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket_url.rs", "crates/gob-dev/profile.toml"]
-new = ["crates/frob/src/ticket/url_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/tests/ticket_url.rs", "crates/gob-dev/profile.toml", "docs/guides/ticket-branch.md"]
-at = "2026-10-11T20:32:05Z"
-actor = "lognd"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "scope lacks crates/crunk-rules/** where GX rules live; needs scope widened after NYZRW0D lands"
-at = "2026-10-14T05:19:03Z"
-actor = "Claude"
-rev = 1

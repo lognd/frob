@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "scope widen"
-at = "2026-10-14T12:27:55Z"
-actor = "Claude"
-rev = 1

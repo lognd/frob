@@ -1,7 +1,0 @@
-kind = "cycle"
-op = "carried"
-ticket = "01M4GKCSFB13Y0VH1E1DDTA99H"
-to = "01M4P1YV8GX4S1Z1A50BHC9C27"
-at = "2026-10-11T19:56:56Z"
-actor = "lognd"
-rev = 1

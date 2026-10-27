@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["The remote probe never prompts: ls-remote runs with terminal prompts off and ssh BatchMode", "Probe results are cached in refresh.toml and failures back off exponentially", "A held refresh lock yields the cached state instead of a second probe", "frob refresh --status reads only the cache and takes under 10 ms", "A missing base on the remote exits 1 with E-SYNC-NO-BASE naming the remote HEAD", "An unreachable remote exits 3 with a W-SYNC warning class"]
-moved = []
-at = "2026-10-20T16:37:44Z"
-actor = "lognd"
-rev = 1

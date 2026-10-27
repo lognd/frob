@@ -46,7 +46,7 @@ node cli : trusted {
   attr timeout = 30 s;                    // typed attrs: number+unit | ident | string
 }
 
-store ledger : trusted { engine git_tracked; append_only; owns "tickets/**"; }
+store ledger : trusted { engine git_tracked; append_only; owns ".events/**"; }
 
 flow f_parse : cli -> symbols {
   label Internal; rate 100 req/s;

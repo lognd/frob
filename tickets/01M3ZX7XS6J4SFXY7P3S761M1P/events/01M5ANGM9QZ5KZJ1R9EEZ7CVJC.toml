@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "decision"
-body = "land overrode a red base CI at 5e7d621a4edf (rust (windows-latest) (failure) https://github.com/lognd/frob/actions/runs/39296130182/job/118209155546; rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/39296130182/job/118209154503; profile (command budgets) (failure) https://github.com/lognd/frob/actions/runs/39296130182/job/118209154331): base CI red on unrelated jobs; user pre-authorized"
-at = "2026-10-19T18:01:48Z"
-actor = "lognd"
-rev = 1

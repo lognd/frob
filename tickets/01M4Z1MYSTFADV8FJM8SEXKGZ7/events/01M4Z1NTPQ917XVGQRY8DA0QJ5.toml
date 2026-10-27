@@ -1,7 +1,0 @@
-kind = "field"
-field = "labels"
-old = ["area:land"]
-new = ["area:land", "creates:crates/frob-land/src/train_state.rs"]
-at = "2026-10-15T05:48:33Z"
-actor = "lognd"
-rev = 1

@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock", "crates/frob/src/main.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/tests/layering.rs", "crates/grimble/src/main.rs", "crates/frob-check/**", "crates/frob-ack/**", "crates/frob-lease/**", "crates/frob-obligations/**", "crates/grimble-check/**"]
-new = ["changelog.d/**", "crates/gob-walk/**", "crates/gob-git/**", "crates/gob-lock/**", "crates/gob-cache/**", "crates/gob-ir/**", "crates/gob-exec/**", "Cargo.lock", "crates/frob/src/main.rs", "crates/gob-dev/src/main.rs", "crates/gob-dev/tests/layering.rs", "crates/grimble/src/main.rs", "crates/frob-check/**", "crates/frob-ack/**", "crates/frob-lease/**", "crates/frob-obligations/**", "crates/grimble-check/**", "crates/gob-config/**"]
-at = "2026-10-12T18:28:25Z"
-actor = "lognd"
-rev = 1

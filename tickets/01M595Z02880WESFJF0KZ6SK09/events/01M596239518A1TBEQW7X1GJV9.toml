@@ -1,5 +1,0 @@
-kind = "evidence-bypass"
-reason = "Fixed by the ~Y8CNED9 landing, which regenerated docs/reference/grl/catalog.md"
-at = "2026-10-19T04:17:34Z"
-actor = "lognd"
-rev = 1

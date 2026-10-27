@@ -7,9 +7,6 @@
 *.woff2 binary
 *.pdf binary
 Cargo.lock linguist-generated=true
-tickets/**/ticket.md merge=frob-ledger
-tickets/_milestones/*/milestone.md merge=frob-ledger
-tickets/_cycles/*/cycle.md merge=frob-ledger
 
 # Generated pages are collapsed in diffs and excluded from language statistics.
 docs/reference/** linguist-generated=true

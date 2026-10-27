@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/frob-obligations/src/tick_misfiled.rs"]
-new = ["crates/frob-obligations/src/tick_misfiled.rs", "crates/frob-ledger/src/misfiled.rs"]
-at = "2026-10-11T19:38:56Z"
-actor = "lognd"
-rev = 1

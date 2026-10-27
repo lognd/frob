@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["frob:doc in a no-grammar file is collected by frob-ack"]
-moved = []
-at = "2026-10-19T22:56:31Z"
-actor = "lognd"
-rev = 1

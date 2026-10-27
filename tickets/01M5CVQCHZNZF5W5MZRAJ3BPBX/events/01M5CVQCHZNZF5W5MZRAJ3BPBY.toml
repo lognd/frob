@@ -1,9 +1,0 @@
-kind = "create"
-title = "Drop the remedies.rs text scan once no text-only with_remedy command sites remain"
-type = "task"
-category = "todo"
-priority = "medium"
-scope = ["crates/frob/tests/siblings/remedies.rs"]
-at = "2026-10-20T14:33:55Z"
-actor = "lognd"
-rev = 1

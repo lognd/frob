@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-packs/src/tier1/**", "crates/gob-ir/src/registry.rs", "crates/gob-packs/tests/tier1.rs"]
-new = ["crates/gob-packs/src/tier1/**", "crates/gob-ir/src/registry.rs", "crates/gob-packs/tests/tier1.rs", "crates/gob-packs/Cargo.toml", "crates/gob-packs/src/lib.rs", "Cargo.lock"]
-at = "2026-10-13T05:18:45Z"
-actor = "lognd"
-rev = 1

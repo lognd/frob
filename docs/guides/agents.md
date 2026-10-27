@@ -12,7 +12,7 @@ log and dispatch tables of the milestone-1 build are gone; the history is in the
 ## Workflow
 
 - Tickets are driven by the `frob` binary (`frob ticket ...`, `frob work`, `frob land`); never
-  hand-edit `tickets/`. Ticket handles are `~` plus the unique suffix of the ULID.
+  hand-edit the ledger (the `frob-tickets` branch). Ticket handles are `~` plus the unique suffix of the ULID.
 - One worktree per ticket: `frob work <handle>` takes the lease and creates `../frob-wt/<id>` on
   branch `ticket/<id>`. Work only inside it and only inside the lease scope; widen with
   `frob lease widen <handle> --glob <path>` when SCOPE001 fires.

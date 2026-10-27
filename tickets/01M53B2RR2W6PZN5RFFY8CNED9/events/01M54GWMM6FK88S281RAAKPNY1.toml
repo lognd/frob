@@ -1,9 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["Given the GRL rules, when the std pack builds, then findings equal the removed Rust rules on the corpus", "Given the conformance test, when it runs, then compiled and plan findings are byte identical"]
-new = ["Given a css rule with class selectors, when the file is lowered, then each class is a class_selector node named without its dot, queryable via the GRL class_selector kind"]
-reason = "narrowed to the class-selector subset; remainder filed as follow-up"
-moved = [0, 0]
-at = "2026-10-17T08:50:37Z"
-actor = "lognd"
-rev = 1
