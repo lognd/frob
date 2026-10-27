@@ -2,7 +2,8 @@
 id = "01M5XF9XTH9F34VCAVDKJ6VSYA"
 title = "TICK008: tolerate a ledger revert commit that undoes an import (or record it as an allowed commit)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
