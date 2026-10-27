@@ -4,9 +4,10 @@ title = "CAP: open(path, 'w') counts only as fs.read; mode-aware detection and R
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-10T03:43:31Z"
-updated = "2026-10-10T03:43:31Z"
+updated = "2026-10-27T02:58:16Z"
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs"]
 
 [[acceptance]]
