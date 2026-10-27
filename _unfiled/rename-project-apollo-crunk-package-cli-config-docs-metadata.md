@@ -7,9 +7,9 @@ outcome = "wont-fix"
 priority = "medium"
 reporter = "human"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-09-07T00:00:01Z"
+updated = "2026-10-27T00:53:43Z"
 aliases = ["crunk:T-0141"]
-labels = ["v1-cluster:C4", "component:crunk", "source:crunk"]
+labels = ["v1-cluster:C4", "component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk", "tests", "docs", "invariants", "pyproject.toml", "Makefile", "frob.toml", "README.md", ".github", "tickets/**", "CHANGELOG.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "LICENSE", "SECURITY.md", ".github/**", "uv.lock"]
 
 [[acceptance]]
