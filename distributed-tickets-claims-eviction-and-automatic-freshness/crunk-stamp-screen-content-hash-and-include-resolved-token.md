@@ -4,10 +4,11 @@ title = "crunk: stamp screen content_hash and include resolved token values"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:32:16Z"
-updated = "2026-10-21T05:32:16Z"
+updated = "2026-10-27T02:58:35Z"
 scope = ["crates/crunk-cli/**"]
 
 [[acceptance]]
