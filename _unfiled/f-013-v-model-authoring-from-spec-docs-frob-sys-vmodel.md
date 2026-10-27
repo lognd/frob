@@ -4,9 +4,10 @@ title = "F-013: V-model authoring from spec docs (frob sys vmodel import docs/sp
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-04T22:22:21Z"
+updated = "2026-10-27T02:57:39Z"
 aliases = ["T-3815"]
 labels = ["v1-cluster:B3d", "triage:accepted"]
 +++
