@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-27T02:43:29Z"
+digest = "c46f271f97b0d2ba423edab347769072527b843919a4200e86bc1fdcdea4c1e4"
+exit_code = 0
+head = "38bbf11254e3f36f8e5bfd9ebf056d3513da1e00"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 33.58s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 20cd4b22-e121-4fce-b457-0e6746d4a415 with nextest profile: default
+    Starting 1 test across 27 binaries (265 tests skipped)
+        PASS [   0.105s] crunk tier_tests::tier_defaults_to_t1
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.106s] 1 test run: 1 passed, 265 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(/tier_defaults_to_t1/)"
+size = 690
+status = "measured"
+test_count = 1
+tests_digest = "4c9546596cb610651015fc0cdbbc983cbdafcc70ec101d4c80ccde33b7827836"
+at = "2026-10-27T02:43:29Z"
+actor = "lognd"
+rev = 1
