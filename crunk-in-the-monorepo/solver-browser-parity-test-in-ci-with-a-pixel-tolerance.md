@@ -13,6 +13,10 @@ scope = ["changelog.d/**", "crates/crunk-gallery/**", ".github/workflows/**"]
 
 [[links]]
 kind = "blocked-by"
+target = "01M5XCWYB9M2YSJ5EGABMREX1B"
+
+[[links]]
+kind = "blocked-by"
 target = "01M5XCXV74XZTCK4N56B46PAY4"
 
 [[acceptance]]
