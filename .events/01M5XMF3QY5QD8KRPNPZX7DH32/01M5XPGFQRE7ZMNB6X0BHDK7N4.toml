@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/paths.md", "crates/frob-evidence/src/scrub.rs", "crates/frob-evidence/tests/capture_home.rs", "crates/frob-evidence/tests/evidence.rs", "crates/frob-evidence/tests/import_v1.rs", "crates/frob-evidence/tests/unity.rs", "crates/frob-land/tests/land.rs", "crates/frob-ledger/tests/ledger.rs"]
+new = ["docs/design/paths.md", "crates/frob-evidence/src/scrub.rs", "crates/frob-evidence/tests/capture_home.rs", "crates/frob-evidence/tests/evidence.rs", "crates/frob-evidence/tests/import_v1.rs", "crates/frob-evidence/tests/unity.rs", "crates/frob-land/tests/land.rs", "crates/frob-ledger/tests/ledger.rs", "crates/frob-ledger/tests/privacy.rs"]
+at = "2026-10-27T03:29:51Z"
+actor = "lognd"
+rev = 1
