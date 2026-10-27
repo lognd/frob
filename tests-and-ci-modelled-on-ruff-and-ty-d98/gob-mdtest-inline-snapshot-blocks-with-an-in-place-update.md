@@ -4,10 +4,11 @@ title = "gob-mdtest: inline snapshot blocks with an in-place update env"
 type = "story"
 category = "todo"
 priority = "medium"
+points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-06T13:41:06Z"
+updated = "2026-10-27T02:58:12Z"
 scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
 
 [[links]]
