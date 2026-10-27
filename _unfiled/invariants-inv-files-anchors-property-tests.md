@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "agent"
 created = "2026-09-03T00:00:00Z"
-updated = "2026-09-03T00:00:02Z"
+updated = "2026-10-27T00:53:28Z"
 aliases = ["crunk:T-0015"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["invariants/*", "tests/unit/test_invariants.py", "src/crunk/fixes/plan.py", "src/crunk/tokens/render.py", "src/crunk/values/color.py", "src/crunk/values/length.py", "src/crunk/rules/engine.py", "src/crunk/ingest/parse.py", "src/crunk/spec/models.py", "tests/integration/test_int_05_fixes_pipeline.py", "tests/unit/test_ingest.py", "tests/unit/test_fixes.py"]
 
 [[links]]
