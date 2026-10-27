@@ -4,9 +4,10 @@ title = "Document grimble check --summary in sibling-contract.md"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-10-23T12:52:06Z"
-updated = "2026-10-23T12:52:06Z"
+updated = "2026-10-27T02:58:41Z"
 scope = ["docs/design/sibling-contract.md"]
 +++
 
