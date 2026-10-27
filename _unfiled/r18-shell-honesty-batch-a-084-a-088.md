@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-09-06T00:00:03Z"
+updated = "2026-10-27T00:53:42Z"
 aliases = ["crunk:T-0135"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["docs/design/02-specification.md", "docs/design/subsystems/cache.md", "docs/design/subsystems/shell.md", "docs/design/subsystems/query.md", "docs/design/subsystems/report.md", "docs/design/01-customer-requirements.md"]
 
 [[acceptance]]
