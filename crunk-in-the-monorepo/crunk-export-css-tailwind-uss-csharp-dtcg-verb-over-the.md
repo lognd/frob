@@ -8,9 +8,9 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:11Z"
-updated = "2026-10-27T00:43:42Z"
+updated = "2026-10-27T00:44:23Z"
 labels = ["area:crunk"]
-scope = ["crates/crunk/src/export.rs", "crates/crunk/src/lib.rs", "crates/crunk/tests/export_verb.rs"]
+scope = ["crates/crunk/src/export.rs", "crates/crunk/src/lib.rs", "crates/crunk/tests/export_verb.rs", "crates/crunk/src/tokens.rs"]
 
 [[acceptance]]
 text = "Given a token source, when crunk export uss runs, then the USS sheet is printed or written and the verb exits 0; given an unknown target, then it exits 2 naming the valid targets"
