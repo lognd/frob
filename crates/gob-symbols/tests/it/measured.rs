@@ -268,6 +268,7 @@ fn corpus_cases_on_disk_match_the_claimed_operators() {
 }
 
 /// Per-adapter probe inputs: (language, path, a truncated source, garbage source).
+// frob:accept PATH001 because="false positive: the literal is YAML with a backslash-n escape, not a drive path"
 const PROBES: [(&str, &str, &str, &str); 10] = [
     (
         "rust",

@@ -33,6 +33,9 @@ doc_markdown = "deny"
 disallowed_methods = "deny"  # clippy.toml confines wall-clock and local-zone reads to gob-time (D93)
 missing_errors_doc = "deny"
 missing_panics_doc = "deny"
+print_stdout = "deny"   # human output goes through the renderer, diagnostics through tracing (gob-log)
+print_stderr = "deny"   # same; fixtures/benches/build scripts opt out with a crate-level allow and reason
+dbg_macro = "deny"      # leftover debugging; log with tracing if the value matters
 # Allowed pedantic lints (one-line reason each):
 module_name_repetitions = "allow"  # crate-prefixed type names read better at call sites
 must_use_candidate = "allow"       # blanket #[must_use] on every getter is noise

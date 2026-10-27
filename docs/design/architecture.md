@@ -244,8 +244,10 @@ output is stored as evidence or logged, and telemetry applies it to
 the args shape. A TICK rule scans the ledger event files (`.events/*/*.toml`) for the
 same patterns so a transcript that bypassed capture is still caught.
 
-No `println!` outside the renderer crate; clippy `print_stdout` denied
-elsewhere.
+No `println!` outside the renderer crate; the workspace denies clippy
+`print_stdout`, `print_stderr` and `dbg_macro` (`Cargo.toml`), with tests exempt
+in `clippy.toml` and build scripts, benches and fake CLI fixtures allowing them
+at crate level with a stated reason.
 
 ## 6. Configuration
 

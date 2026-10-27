@@ -110,7 +110,7 @@ fn rescope_waiting(
     wait: Duration,
 ) -> Result<Lease, LeaseError> {
     store.rescope_waiting(id, holder, scope, store.config(), wait, |blocker| {
-        eprintln!("waiting (up to {}s): {blocker}", wait.as_secs());
+        tracing::warn!(ticket = %id, wait_secs = wait.as_secs(), %blocker, "waiting for the blocking lease holder");
     })
 }
 

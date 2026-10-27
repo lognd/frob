@@ -25,6 +25,7 @@ fn windows_names_take_exe_ignoring_case_and_unix_names_are_bare() {
 
 // frob:tests crates/gob-exec/src/discover.rs::plan
 #[test]
+// frob:accept PATH001 because="tool discovery is tested on literal Windows paths not creatable on this Linux host"
 fn a_windows_scripts_dir_copy_beats_path_and_both_are_reported() {
     let scripts = PathBuf::from("C:\\tools\\frob\\Scripts");
     let on_path = PathBuf::from("C:\\bin");
@@ -43,6 +44,7 @@ fn a_windows_scripts_dir_copy_beats_path_and_both_are_reported() {
 
 // frob:tests crates/gob-exec/src/discover.rs::plan
 #[test]
+// frob:accept PATH001 because="tool discovery is tested on literal Windows paths not creatable on this Linux host"
 fn windows_does_not_match_a_suffixless_file_and_unix_does_not_add_exe() {
     let dir = PathBuf::from("C:\\x");
     let bare = dir.join("grimble");
@@ -119,6 +121,7 @@ fn vars(pairs: &[(&str, &str)]) -> impl Fn(&str) -> Option<std::ffi::OsString> +
 // frob:ticket 01M452Q6THBSZGVHRAYHA1TTRM
 // frob:tests crates/gob-exec/src/discover.rs::tool_env_dirs
 #[test]
+// frob:accept PATH001 because="tool discovery is tested on literal Windows paths not creatable on this Linux host"
 fn a_windows_uv_tool_copy_in_the_bin_dir_finds_the_tool_environment_scripts() {
     // uv copies Scripts\frob.exe into the bin dir; grimble stays in the environment.
     let exe = PathBuf::from("C:/u/.local/bin/frob.exe");
@@ -150,6 +153,7 @@ fn a_windows_uv_tool_copy_in_the_bin_dir_finds_the_tool_environment_scripts() {
 
 // frob:tests crates/gob-exec/src/discover.rs::tool_env_roots
 #[test]
+// frob:accept PATH001 because="tool discovery is tested on literal Windows paths not creatable on this Linux host"
 fn tool_roots_follow_the_installers_precedence_and_only_apply_on_windows() {
     let env = vars(&[
         ("UV_TOOL_DIR", "D:/tools"),
@@ -171,6 +175,7 @@ fn tool_roots_follow_the_installers_precedence_and_only_apply_on_windows() {
 
 // frob:tests crates/gob-exec/src/discover.rs::tool_env_dirs
 #[test]
+// frob:accept PATH001 because="tool discovery is tested on literal Windows paths not creatable on this Linux host"
 fn a_directory_that_is_not_a_venv_or_lacks_the_tool_is_never_searched() {
     let exe = PathBuf::from("C:/u/bin/frob.exe");
     let env = vars(&[("UV_TOOL_DIR", "D:/tools")]);

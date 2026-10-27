@@ -17,6 +17,7 @@ fn digest(b: &[u8]) -> String {
     )
 }
 
+// frob:accept PATH001 because="imported ticket scrubbing is tested with literal home paths and asserts none survive"
 fn rewrite(t: &str) -> String {
     t.replace("/home/ann", "~")
 }
@@ -133,6 +134,7 @@ fn fixture() -> Fixture {
 /// One commit scrubs the files, every digest still covers its text, the fold is the same but for the text, and TICK004 is silent.
 // frob:tests crates/frob-ledger/src/scrub.rs::Ledger.scrub
 #[test]
+// frob:accept PATH001 because="imported ticket scrubbing is tested with literal home paths and asserts none survive"
 fn one_commit_scrubs_and_the_ledger_still_folds() {
     let f = fixture();
     let before_tip = tip(&f.ledger);
