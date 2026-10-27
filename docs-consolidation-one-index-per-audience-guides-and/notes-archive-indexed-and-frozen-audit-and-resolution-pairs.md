@@ -2,7 +2,8 @@
 id = "01M4H0XENVPCNJ3BQ9GQTBW07T"
 title = "Notes archive: indexed and frozen; audit and resolution pairs merged; crunk research merged; v1-gap under v1/; root strays sorted; coordinator.md deleted with its agent rules moved to docs/guides/agents.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
