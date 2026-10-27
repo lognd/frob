@@ -7,9 +7,9 @@ outcome = "done"
 priority = "high"
 reporter = "agent"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:02Z"
+updated = "2026-10-27T00:53:32Z"
 aliases = ["crunk:T-0044"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["tests/system/test_e2e_15_output.py"]
 +++
 
