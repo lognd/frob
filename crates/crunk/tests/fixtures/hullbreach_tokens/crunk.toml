@@ -1,0 +1,29 @@
+# Hullbreach one-token-source fixture: the palette below drives every export.
+[project]
+css_root = "styles"
+tokens_file = "tokens.css"
+root_font_size = 16
+
+[palette]
+ThrustRed = "#e63326"
+HullNavy = "#0b1e3a"
+BulkheadGrey = "#8a94a6"
+
+[scales]
+spacing = [0, 4, 8]
+font_sizes = [14, 16]
+radii = [0, 4]
+
+[typography]
+families = ["Inter"]
+weights = [400]
+
+[org]
+buckets = ["base"]
+
+[tokens]
+json_file = "tokens.json"
+
+[tailwind]
+tokens_file = "tailwind.tokens.json"
+namespace_keys = true
