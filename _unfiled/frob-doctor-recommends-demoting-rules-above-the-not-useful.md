@@ -4,9 +4,10 @@ title = "frob doctor recommends demoting rules above the not-useful ceiling"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-11T01:15:17Z"
-updated = "2026-10-11T01:15:17Z"
+updated = "2026-10-27T02:58:17Z"
 scope = ["crates/frob/src/doctor.rs", "crates/gob-check/src/config.rs"]
 +++
 
