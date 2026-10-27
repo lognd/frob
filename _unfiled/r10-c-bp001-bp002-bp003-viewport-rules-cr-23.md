@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:02Z"
+updated = "2026-10-27T00:53:38Z"
 aliases = ["crunk:T-0100"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/rules/_breakpoints.py", "tests/unit/test_rules_breakpoints.py", "tests/system/test_e2e_42_43_44_viewport.py", "crunk-cli"]
 
 [[links]]
