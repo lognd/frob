@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:59:06Z"
-updated = "2026-10-27T03:26:59Z"
-scope = ["Cargo.toml", "clippy.toml", "crates/frob/src/lease_cmd.rs", "crates/gob-exec/src/prereq.rs", "crates/gob-plan/**", "crates/gob-testsupport/**", "crates/frob-check/benches/full_check.rs", "crates/gob-packs/benches/b2_disk_vs_compiled.rs"]
+updated = "2026-10-27T03:28:01Z"
+scope = ["Cargo.toml", "clippy.toml", "crates/frob/src/lease_cmd.rs", "crates/gob-exec/src/prereq.rs", "crates/gob-plan/**", "crates/gob-testsupport/**", "crates/frob-check/benches/full_check.rs", "crates/gob-packs/benches/b2_disk_vs_compiled.rs", "crates/crunk-check/clippy.toml"]
 
 [[acceptance]]
 text = "workspace lints deny clippy::print_stdout, print_stderr and dbg_macro; build scripts, benches and tests are explicitly allowed; lease_cmd.rs and prereq.rs log through gob-log instead"
