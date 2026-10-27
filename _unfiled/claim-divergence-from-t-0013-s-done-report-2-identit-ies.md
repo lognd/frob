@@ -7,9 +7,9 @@ outcome = "wont-fix"
 priority = "high"
 reporter = "agent"
 created = "2026-09-03T00:00:00Z"
-updated = "2026-09-03T00:00:02Z"
+updated = "2026-10-27T00:53:30Z"
 aliases = ["crunk:T-0025"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["tests/integration/test_int_05_fixes_pipeline.py", "tests/integration/test_int_06_report.py"]
 +++
 
