@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "note"
-body = "v1 drop reason: - 2026-09-05: duplicate of auto-filed T-0067, which holds the _tailwind.py lease; fix lands under T-0067 with the same acceptance (spec.naming message tokens + static scales access)"
-at = "2026-09-05T00:00:01Z"
-actor = "import"
-rev = 1

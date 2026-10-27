@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "note"
-body = "v1 drop reason: - 2026-09-03: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (GATERULE001 src/crunk/rules/_color.py, GATERULE001 src/crunk/rules/_contrast.py, GATERULE001 src/crunk/rules/_layers.py, GATERULE001 src/crunk/rules/_org.py, GATERULE001 src/crunk/rules/_scales.py, GATERULE001 src/crunk/rules/_typography.py) is absent from a direct re-check of exactly the 6 named (rule, file) identit(ies) (not a full sweep) that completed with no failed/silent tool stage at doable's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached."
-at = "2026-09-03T00:00:01Z"
-actor = "import"
-rev = 1

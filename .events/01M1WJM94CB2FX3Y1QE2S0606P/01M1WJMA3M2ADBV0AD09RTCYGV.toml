@@ -1,8 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "done"
-outcome = "wont-fix"
-reason = "imported from v1 state `in-progress` as history only, not open work: v1 cluster C4 (OPEN): crunk repository housekeeping that retires with the repo (README, rename)"
-at = "2026-09-07T00:00:01Z"
-actor = "import"
-rev = 1

@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "note"
-body = "v1 drop reason: - 2026-09-03: duplicate of auto-filed T-0027, filed in a race with the post-land sweep"
-at = "2026-09-03T00:00:01Z"
-actor = "import"
-rev = 1
