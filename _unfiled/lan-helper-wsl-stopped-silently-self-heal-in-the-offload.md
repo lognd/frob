@@ -4,9 +4,10 @@ title = "LAN helper WSL stopped silently: self-heal in the offload tooling and h
 type = "task"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-10-14T02:44:35Z"
-updated = "2026-10-14T02:44:35Z"
+updated = "2026-10-27T02:58:19Z"
 idempotency_key = "helper-wsl-selfheal-20261013"
 scope = ["docs/**"]
 
