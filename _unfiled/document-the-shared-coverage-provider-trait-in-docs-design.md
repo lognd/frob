@@ -4,9 +4,10 @@ title = "Document the shared coverage provider trait in docs/design/testing.md"
 type = "chore"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-10-27T01:15:06Z"
-updated = "2026-10-27T01:15:06Z"
+updated = "2026-10-27T02:58:43Z"
 scope = ["docs/design/testing.md"]
 +++
 
