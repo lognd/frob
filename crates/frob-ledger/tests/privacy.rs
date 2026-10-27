@@ -9,6 +9,7 @@ use gob_git::{CommitOptions, RelPath, Repo};
 
 /// Every documented spelling is found; relative lookalikes are not.
 #[test]
+// frob:accept PATH001 because="the ledger privacy detector is tested on host-path text in every platform style"
 fn spellings_and_lookalikes() {
     let hits: &[(&str, &str)] = &[
         ("at /home/name/projects", "/home/<name>/"),
@@ -128,6 +129,7 @@ fn tick004_is_an_error_naming_the_repair() {
 /// The root range covers `/home/<name>` and its Windows and `/root` spellings, not the rest of the path.
 // frob:tests crates/frob-ledger/src/privacy.rs::find_home_root
 #[test]
+// frob:accept PATH001 because="the ledger privacy detector is tested on host-path text in every platform style"
 fn home_root_range_stops_after_the_user_name() {
     for (text, root) in [
         ("at /home/ann/projects/x", "/home/ann"),
@@ -149,6 +151,7 @@ fn home_root_range_stops_after_the_user_name() {
 // frob:ticket 01M41VT71KGG1AXT491SKCPWMA
 /// Angle-bracket placeholders in both styles, and a bare `/root/`, are documentation, not home paths.
 #[test]
+// frob:accept PATH001 because="the ledger privacy detector is tested on host-path text in every platform style"
 fn placeholder_account_names_are_not_hits() {
     for clean in [
         "/home/<n>/x",
@@ -166,6 +169,7 @@ fn placeholder_account_names_are_not_hits() {
 
 /// A sibling worktree directory is found in either style, with mixed or doubled separators, and only at a boundary.
 #[test]
+// frob:accept PATH001 because="the ledger privacy detector is tested on host-path text in every platform style"
 fn worktree_dir_matches_both_styles() {
     use frob_ledger::privacy::find_worktree_dir;
     let cases: &[(&str, Option<&str>)] = &[

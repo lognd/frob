@@ -65,6 +65,7 @@ impl Repo {
         self.dir.path()
     }
 
+    // frob:accept PATH001 because="ticket scrubbing is tested end to end with a literal HOME and asserts none survives"
     fn frob(&self, args: &[&str]) -> Output {
         common::frob_command()
             .current_dir(self.path())
@@ -174,6 +175,7 @@ fn dirty() -> (Repo, String, PathBuf) {
 /// With `--fix` one commit scrubs the ledger, every ticket shows the same state and evidence binding, and a second run does nothing.
 // frob:tests crates/frob/src/ticket/doctor_cmd.rs::scrub_ledger
 #[test]
+// frob:accept PATH001 because="ticket scrubbing is tested end to end with a literal HOME and asserts none survives"
 fn doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same() {
     let (repo, id, _parent) = dirty();
     let (_, plain) = repo.json(&["ticket", "doctor"]);
@@ -241,6 +243,7 @@ fn doctor_fix_scrubs_in_one_commit_and_the_ticket_shows_the_same() {
 /// Sibling worktrees become the form relative to the repository parent, other homes `~other`, and the repo root `<repo>`.
 // frob:tests crates/frob-evidence/src/scrub.rs::PathScrub.for_repair
 #[test]
+// frob:accept PATH001 because="ticket scrubbing is tested end to end with a literal HOME and asserts none survives"
 fn placeholders_follow_the_repair_rules() {
     let (repo, id, _parent) = dirty();
     let name = Shown::with_home(

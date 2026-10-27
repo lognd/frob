@@ -137,6 +137,7 @@ mod tests {
 
     // frob:tests project_private
     #[test]
+    // frob:accept PATH001 because="asserts a worktree path never reaches the mirror; the literal is the leak probe"
     fn worktree_path_never_appears() {
         let wt = "/home/logan/projects/frob-wt/NWMYK7M";
         let s = Sensitive {

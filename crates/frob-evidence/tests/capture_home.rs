@@ -73,6 +73,7 @@ fn scrub(home: Option<&str>) -> PathScrub {
 // frob:tests crates/frob-evidence/src/scrub.rs::PathScrub.new
 // frob:tests crates/frob-evidence/src/provider.rs::build_record
 #[test]
+// frob:accept PATH001 because="home-directory scrubbing in captured output is tested with literal home paths as input"
 fn capture_never_holds_home_path_in_any_field() {
     let text = "ran /home/logan/bin/x then /home/logan/y and /home/logan2/z; err C:\\Users\\bo\\p";
     let rec = record(&scrub(Some("/home/logan/")), text);
@@ -93,6 +94,7 @@ fn capture_clears_home_paths_when_home_is_unset() {
 }
 
 #[test]
+// frob:accept PATH001 because="home-directory scrubbing in captured output is tested with literal home paths as input"
 fn capture_clears_windows_style_home() {
     let rec = record(
         &scrub(Some("C:\\Users\\bo")),
@@ -102,6 +104,7 @@ fn capture_clears_windows_style_home() {
 }
 
 #[test]
+// frob:accept PATH001 because="home-directory scrubbing in captured output is tested with literal home paths as input"
 fn capture_keeps_non_ascii_output_clean() {
     let rec = record(
         &scrub(Some("/home/logan")),
