@@ -4,9 +4,10 @@ title = "Share citation parser and MOVED.toml format with frob doc remap"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-23T22:04:01Z"
-updated = "2026-10-23T22:04:01Z"
+updated = "2026-10-27T02:58:42Z"
 scope = ["crates/gob-text/**"]
 +++
 
