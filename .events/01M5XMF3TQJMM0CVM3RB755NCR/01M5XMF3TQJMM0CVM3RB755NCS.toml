@@ -1,0 +1,12 @@
+kind = "create"
+title = "Burn down DOC006, DOC001, EXC005, MDL019, MDL005 warnings"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
+scope = ["docs/design/docs.md"]
+acceptance = ["frob check reports zero DOC006, DOC001, EXC005, MDL019 and MDL005 findings"]
+at = "2026-10-27T02:54:09Z"
+actor = "lognd"
+rev = 1
