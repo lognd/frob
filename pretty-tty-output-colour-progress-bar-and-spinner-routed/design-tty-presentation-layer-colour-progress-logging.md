@@ -2,7 +2,8 @@
 id = "01M5XMN8AWYYW3JV5H3BAYVPRM"
 title = "Design: TTY presentation layer (colour, progress, logging routing)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
