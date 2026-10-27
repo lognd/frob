@@ -5,9 +5,10 @@ type = "task"
 category = "todo"
 priority = "high"
 points = 3
+parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-27T01:10:50Z"
-updated = "2026-10-27T01:10:50Z"
+updated = "2026-10-27T01:23:42Z"
 scope = ["tickets/**", ".gitattributes", "README.md", "CONTRIBUTING.md", "docs/**"]
 
 [[acceptance]]
