@@ -4,10 +4,11 @@ title = "Activity inference: implementing, testing, waiting, landing, idle from 
 type = "story"
 category = "todo"
 priority = "medium"
+points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:52Z"
-updated = "2026-10-06T13:39:52Z"
+updated = "2026-10-27T02:58:13Z"
 scope = ["crates/frob-metrics/**", "crates/frob-lease/**", "crates/frob-land/**", "crates/frob-tests/**"]
 
 [[links]]
