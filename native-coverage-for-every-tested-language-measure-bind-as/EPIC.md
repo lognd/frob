@@ -1,0 +1,12 @@
++++
+id = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
+title = "Native coverage for every tested language: measure, bind as evidence, gate with COV004"
+type = "epic"
+category = "todo"
+priority = "high"
+reporter = "lognd"
+created = "2026-10-27T00:45:38Z"
+updated = "2026-10-27T00:45:38Z"
++++
+
+frob wraps test runners for Rust, Python, JS/TS and C# (nextest, pytest, vitest/jest, dotnet/unity) but only reads a hand-made lcov.info (COV004). Every language we can test must also be measured by frob, produce a normalised lcov report, bind coverage as evidence on the ticket, and be checked by COV004 like any other gate. Owner requirement: no tested language may lack coverage.
