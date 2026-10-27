@@ -2,7 +2,8 @@
 id = "01M5XCVZK2S3FYG8KPS7YXEHNJ"
 title = "Hullbreach one-token-source e2e: palette in design/tokens drives Tailwind, CSS, USS and C# and the ThrustRed drift fires"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
