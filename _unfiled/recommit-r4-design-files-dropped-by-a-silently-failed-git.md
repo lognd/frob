@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:03Z"
+updated = "2026-10-27T00:53:31Z"
 aliases = ["crunk:T-0040"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = [".gitignore", "docs/design/01-customer-requirements.md", "docs/design/03-system-design.md", "docs/design/05-components.md", "docs/design/subsystems/ingest.md", "docs/design/subsystems/values.md", "tickets/T-0038/ticket.md"]
 
 [[acceptance]]
