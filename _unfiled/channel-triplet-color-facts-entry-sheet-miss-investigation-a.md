@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:02Z"
+updated = "2026-10-27T00:53:38Z"
 aliases = ["crunk:T-0095"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/ingest/parse.py", "src/crunk/rules/_org.py", "tests/unit/test_ingest.py", "tests/unit/test_rules_org.py", "tests/unit/test_rules_color.py", "tests/system/test_e2e_40_channel_triplets.py"]
 
 [[links]]
