@@ -8,8 +8,12 @@ points = 2
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T04:54:19Z"
-updated = "2026-10-27T00:43:06Z"
+updated = "2026-10-27T00:43:07Z"
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M5XCZ0XPCPA1DT2QB5VGHDZC"
 
 [[acceptance]]
 text = "Given a sitemap route without a screen or a flow dead end, when checked, then UX findings fire"
