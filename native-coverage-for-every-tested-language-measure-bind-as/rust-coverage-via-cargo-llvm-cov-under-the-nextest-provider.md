@@ -2,7 +2,8 @@
 id = "01M5XD3SGEGXC7MSTTQJRW4R9E"
 title = "Rust coverage via cargo-llvm-cov under the nextest provider"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
