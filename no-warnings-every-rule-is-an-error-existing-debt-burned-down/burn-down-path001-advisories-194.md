@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:54:09Z"
-updated = "2026-10-27T03:29:52Z"
-scope = ["docs/design/paths.md", "crates/frob-evidence/src/scrub.rs", "crates/frob-evidence/tests/capture_home.rs", "crates/frob-evidence/tests/evidence.rs", "crates/frob-evidence/tests/import_v1.rs", "crates/frob-evidence/tests/unity.rs", "crates/frob-land/tests/land.rs", "crates/frob-ledger/tests/ledger.rs", "crates/frob-ledger/tests/privacy.rs", "crates/frob-ledger/tests/scrub.rs", "crates/frob-mirror/src/privacy.rs", "crates/frob-release/tests/it/release_workflow.rs", "crates/frob-worktree/tests/gc.rs"]
+updated = "2026-10-27T03:29:53Z"
+scope = ["docs/design/paths.md", "crates/frob-evidence/src/scrub.rs", "crates/frob-evidence/tests/capture_home.rs", "crates/frob-evidence/tests/evidence.rs", "crates/frob-evidence/tests/import_v1.rs", "crates/frob-evidence/tests/unity.rs", "crates/frob-land/tests/land.rs", "crates/frob-ledger/tests/ledger.rs", "crates/frob-ledger/tests/privacy.rs", "crates/frob-ledger/tests/scrub.rs", "crates/frob-mirror/src/privacy.rs", "crates/frob-release/tests/it/release_workflow.rs", "crates/frob-worktree/tests/gc.rs", "crates/frob/src/init.rs"]
 
 [[acceptance]]
 text = "frob check reports zero PATH001 findings, fixed or waived with a reason"
