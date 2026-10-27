@@ -1,0 +1,13 @@
+kind = "create"
+title = "Ban println/eprintln/print/dbg: workspace clippy deny plus remove current call sites"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
+scope = ["Cargo.toml", "clippy.toml", "crates/frob/src/lease_cmd.rs", "crates/gob-exec/src/prereq.rs", "crates/gob-plan/**", "crates/gob-testsupport/**"]
+acceptance = ["workspace lints deny clippy::print_stdout, print_stderr and dbg_macro; build scripts, benches and tests are explicitly allowed; lease_cmd.rs and prereq.rs log through gob-log instead", "gob-plan and gob-testsupport print sites are routed through gob-log or the presenter, or allowed with a recorded reason"]
+body = "Audit 2026-10-26: gob-log's docs say never println! outside the renderer crate but nothing enforces it. Non-test, non-bench sites today: crates/frob/src/lease_cmd.rs:113 (eprintln), crates/gob-exec/src/prereq.rs:19 (eprintln), plus gob-plan and gob-testsupport; build.rs println is the cargo protocol and stays allowed."
+at = "2026-10-27T02:59:06Z"
+actor = "lognd"
+rev = 1
