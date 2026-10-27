@@ -4,9 +4,10 @@ title = "CLI flags declared once: convert remaining string-name flag lookups in 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-14T15:45:28Z"
-updated = "2026-10-14T15:45:28Z"
+updated = "2026-10-27T02:58:19Z"
 scope = ["crates/gob-product/**", "crates/gob-testsupport/**", "crates/gob-cli/**"]
 
 [[acceptance]]
