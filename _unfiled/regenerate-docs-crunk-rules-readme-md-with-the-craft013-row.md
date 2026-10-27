@@ -4,9 +4,10 @@ title = "Regenerate docs/crunk/rules/README.md with the CRAFT013 row"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-10-23T02:04:38Z"
-updated = "2026-10-23T02:04:38Z"
+updated = "2026-10-27T02:58:41Z"
 scope = ["docs/crunk/rules/**"]
 +++
 
