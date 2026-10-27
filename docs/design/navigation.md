@@ -111,15 +111,20 @@ is a one-shot, verifiable move:
 1. Build the orphan branch from the current tree: each
    `tickets/<id>/ticket.md` becomes `<top-epic-slug>/<slug>.md`, each
    `tickets/<id>/events/<ulid>.toml` becomes `.events/<id>/<ulid>.toml`,
-   then generate the README, indexes and guide. `--dry-run` prints the
-   mapping.
+   then run the reindex generators over that tree, so the migration
+   commit already carries the README (replacing the init placeholder),
+   per-epic pages, indexes, glossary, guide and TOUR. `--dry-run` prints
+   the mapping.
 2. Verify before anything else changes: for every ticket, the fold of
    the branch copy equals the fold of the original (the doctor check on
    both), and the event counts match; any difference aborts.
 3. Commit the branch, then one commit on the code branch that removes
-   `tickets/`, sets `[tickets] storage = "branch"` (materialized), and
-   adds the README region. Leases, evidence and land read the ledger
-   through frob-ledger, which reads the configured storage.
+   `tickets/`, sets `[tickets] ref_mode = "orphan"` (commits go on the
+   orphan ticket branch `[tickets] branch`; `trunk` advances the
+   configured `ref` and `branch` writes to the checked-out branch, so
+   neither is the migrated layout), and adds the README region. Leases,
+   evidence and land read the ledger through frob-ledger, which reads
+   the configured `ref_mode`.
 4. Rollback is reverting that one code commit; the branch can be
    deleted. The migration ticket is the first user of the reindex
    replay check (TICK007), run on the initial branch commit.

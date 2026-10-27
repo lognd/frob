@@ -27,6 +27,8 @@ pub struct MigrateData {
     pub events: usize,
     /// Milestone and cycle files copied.
     pub object_files: usize,
+    /// Generated pages (README, indexes, epic pages, TOUR) the migration commit adds.
+    pub pages: usize,
     /// Tickets whose old `ticket.md` differed from the fold of its events (the fold is what moves).
     pub drifted: Vec<String>,
     /// The migration commit; absent for a dry run or when the branch already held the ledger.
@@ -98,6 +100,7 @@ impl Command for Migrate {
             tickets: report.tickets,
             events: report.events,
             object_files: report.object_files,
+            pages: report.pages,
             drifted: report.drifted.iter().map(ToString::to_string).collect(),
             commit: report.commit.map(|c| c.to_string()),
             dry_run: ctx.dry_run,

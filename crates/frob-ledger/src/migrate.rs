@@ -19,6 +19,7 @@ use crate::id::{EventId, TicketId};
 use crate::layout::{self, Layout};
 use crate::ledger::Ledger;
 use crate::model::{Ticket, TicketType};
+use crate::reindex::{ReindexOptions, Tree, reindex};
 
 /// What a migration planned or did.
 #[derive(Debug, Clone)]
@@ -31,6 +32,8 @@ pub struct MigrateReport {
     pub events: usize,
     /// Milestone and cycle files copied.
     pub object_files: usize,
+    /// Generated pages (README, indexes, epic pages, TOUR) the migration commit adds.
+    pub pages: usize,
     /// Tickets whose `ticket.md` on the old branch differed from the fold of its events.
     pub drifted: Vec<TicketId>,
     /// Each ticket and the branch path it gets, sorted by path.
@@ -253,11 +256,13 @@ impl Ledger {
         if names.len() != files.len() {
             return Err(LedgerError::invalid("two migrated files share one path"));
         }
+        let (pages, mapping) = self.generated_pages(&mut files, mapping)?;
         let mut report = MigrateReport {
             branch: self.config().branch.clone(),
             tickets: src.tickets.len(),
             events,
             object_files: src.objects.len(),
+            pages,
             drifted: src.drifted,
             mapping: {
                 let mut m: Vec<_> = mapping.into_iter().collect();
@@ -295,8 +300,8 @@ impl Ledger {
             &full,
             &changes,
             &format!(
-                "tickets(migrate): {} tickets, {} events, {} object files",
-                report.tickets, report.events, report.object_files
+                "tickets(migrate): {} tickets, {} events, {} object files, {} generated pages",
+                report.tickets, report.events, report.object_files, report.pages
             ),
             &opts,
         )?;
@@ -304,6 +309,43 @@ impl Ledger {
         tracing::info!(%branch, commit = %out.oid, files = files.len(), "legacy ledger migrated and verified");
         report.commit = Some(out.oid);
         Ok(report)
+    }
+
+    // frob:ticket 01M4HQ2TRBB71KW33TSCHJYNT6
+    /// Run the reindex generators over the planned files so the migration commit carries the README, indexes, epic pages and TOUR, not the init placeholder.
+    ///
+    /// Replaces `files` by the reindexed tree (a ticket the path function files elsewhere is
+    /// moved, and `mapping` follows) and returns the number of generated pages added.
+    fn generated_pages(
+        &self,
+        files: &mut Vec<(String, Vec<u8>)>,
+        mut mapping: BTreeMap<TicketId, String>,
+    ) -> Result<(usize, BTreeMap<TicketId, String>)> {
+        let tree: Tree = files.iter().cloned().collect();
+        let opts = ReindexOptions {
+            version: env!("CARGO_PKG_VERSION"),
+            handle_min_len: self.config().handle_min_len,
+            generators: crate::r#gen::GENERATORS,
+        };
+        let out = reindex(&tree, &opts)?;
+        for m in &out.moves {
+            tracing::warn!(from = %m.from, to = %m.to, "migration path differs from the reindex path; using the reindex path");
+            for path in mapping.values_mut().filter(|p| **p == m.from) {
+                path.clone_from(&m.to);
+            }
+        }
+        // `.gitattributes` stays the one `init_branch` wrote (merge driver plus LF pin): the
+        // generated copy lacks both, and a later `init_branch` would then rewrite it.
+        let mut out_tree = out.tree;
+        out_tree.remove(".gitattributes");
+        let pages = out_tree.keys().filter(|p| !tree.contains_key(*p)).count();
+        tracing::info!(
+            pages,
+            moves = out.moves.len(),
+            "generated pages added to the migration"
+        );
+        *files = out_tree.into_iter().collect();
+        Ok((pages, mapping))
     }
 
     /// Read every planned file back from `branch_ref` and compare bytes; any difference is an error.
