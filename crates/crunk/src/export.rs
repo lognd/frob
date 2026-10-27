@@ -57,21 +57,9 @@ fn run_target(target: Target, out: Option<&PathBuf>, ctx: &Context) -> Outcome<T
     Ok(payload)
 }
 
-macro_rules! export_verb {
-    ($ty:ident, $verb:literal, $target:expr, $doc:literal) => {
-        #[doc = $doc]
-        #[derive(Debug, Clone, Default, gob_cli::Command)]
-        #[command(
-                            verb = $verb,
-                            product = "crunk",
-                            idempotent = true,
-                            dry_run,
-                            exits(ok, refused, usage, internal)
-                        )]
-        pub struct $ty {
-            out: Option<PathBuf>,
-        }
-
+/// Implement [`Command`] for an export verb struct that holds only `out`.
+macro_rules! export_command {
+    ($ty:ident, $target:expr) => {
         impl Command for $ty {
             type Data = TokensData;
 
@@ -92,27 +80,58 @@ macro_rules! export_verb {
     };
 }
 
-export_verb!(
-    ExportCss,
-    "export css",
-    Target::Css,
-    "Print the CSS custom-property export, or write it to `--out`."
-);
-export_verb!(
-    ExportTailwind,
-    "export tailwind",
-    Target::Tailwind,
-    "Print the Tailwind theme export, or write it to `--out`."
-);
-export_verb!(
-    ExportUss,
-    "export uss",
-    Target::Uss,
-    "Print the Unity USS variable sheet, or write it to `--out`."
-);
-export_verb!(
-    ExportCsharp,
-    "export csharp",
-    Target::Csharp,
-    "Print the C# constants export, or write it to `--out`."
-);
+/// Print the CSS custom-property export, or write it to `--out`.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "export css",
+    product = "crunk",
+    idempotent = true,
+    dry_run,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ExportCss {
+    out: Option<PathBuf>,
+}
+export_command!(ExportCss, Target::Css);
+
+/// Print the Tailwind theme export, or write it to `--out`.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "export tailwind",
+    product = "crunk",
+    idempotent = true,
+    dry_run,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ExportTailwind {
+    out: Option<PathBuf>,
+}
+export_command!(ExportTailwind, Target::Tailwind);
+
+/// Print the Unity USS variable sheet, or write it to `--out`.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "export uss",
+    product = "crunk",
+    idempotent = true,
+    dry_run,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ExportUss {
+    out: Option<PathBuf>,
+}
+export_command!(ExportUss, Target::Uss);
+
+/// Print the C# constants export, or write it to `--out`.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "export csharp",
+    product = "crunk",
+    idempotent = true,
+    dry_run,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ExportCsharp {
+    out: Option<PathBuf>,
+}
+export_command!(ExportCsharp, Target::Csharp);
