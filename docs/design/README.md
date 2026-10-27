@@ -37,6 +37,7 @@ ACCEPTED and further changes go through tickets.
 | boundaries.md | placement test, full capability map per product and crate, splits considered, naming and dependency rules |
 | git-io.md | in-process git via gix, bounded spawns, GitHub over HTTPS, one hook binary |
 | diagnostics.md | DRAFT for owner review: diagnostics that teach (rustc style: code, snippet, help, explain), fix applicability levels, when auto-apply and prompting are allowed, teaching moments |
+| output.md | DRAFT: pretty TTY output: the `frob-present` crate boundary, TTY/NO_COLOR/CI detection, palette, presenter trait and stage-event model, routing all human output through logging, JSON envelope unchanged |
 | mirror.md | DRAFT for owner review: the ticket branch layout and the one-way tracker mirror with mechanisms for credentials, partial failure, rate limits, identity, tracker edits, schema drift, downtime |
 | plugins.md | DRAFT for owner review: one pack mechanism for the standard library and third parties; tiers (data, declarative plans, WASM code rules, adapters), universal versus single-language rules, pytest-style typed hooks, performance parity by one executor and benchmark gates, excuses as pack data |
 | cicd.md | DRAFT, D60 accepted: CI/CD and deployment languages; survey of 1069 repositories; bind zizmor, actionlint, hadolint, checkov; own policy and CI-to-repo consistency rules; CI001-015, DK001-004; GitHub Actions and Dockerfile as languages in U |
