@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "the spec states, for every atom, the argument type, how a call-site argument is extracted and the verdict when it cannot be extracted (Unresolved, never a pass)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "grmb-spec.md 4.1, binding.md 7.2 and packs.md 8.1 are reconciled with the new spec (no contradictory claims left)"
