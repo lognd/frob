@@ -2,7 +2,8 @@
 id = "01M5XMF3K21JW3A9F7S61BXXNJ"
 title = "Burn down PM009: size every ready ticket (438 warnings)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
