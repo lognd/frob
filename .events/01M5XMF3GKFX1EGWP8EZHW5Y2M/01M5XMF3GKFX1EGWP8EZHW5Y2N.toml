@@ -1,0 +1,12 @@
+kind = "create"
+title = "Design: collapse severity to Error, baseline file, gate scoping"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
+scope = ["docs/design/rules.md"]
+acceptance = ["docs/design/rules.md specifies the Error-only severity model, the shrink-only baseline file format, the ramp-in replacement and gate scopes for HUMAN rules, and the heuristic-waiver message contract"]
+at = "2026-10-27T02:54:09Z"
+actor = "lognd"
+rev = 1
