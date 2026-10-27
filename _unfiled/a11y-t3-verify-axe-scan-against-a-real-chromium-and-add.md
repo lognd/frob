@@ -4,9 +4,10 @@ title = "A11Y T3: verify axe scan against a real Chromium and add keyboard focus
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-22T08:35:02Z"
-updated = "2026-10-22T08:35:02Z"
+updated = "2026-10-27T02:58:39Z"
 scope = ["crates/crunk-gallery/**"]
 
 [[acceptance]]
