@@ -7,9 +7,9 @@ outcome = "done"
 priority = "medium"
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-09-05T00:00:02Z"
+updated = "2026-10-27T00:53:33Z"
 aliases = ["crunk:T-0053"]
-labels = ["component:crunk", "source:crunk"]
+labels = ["component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/spec/models.py", "src/crunk/spec/load.py", "src/crunk/tokens/render.py", "tests/unit/test_spec.py", "tests/unit/test_tokens.py", "tests/system/test_e2e_23_header.py"]
 
 [[links]]
