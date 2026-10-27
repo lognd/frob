@@ -4,9 +4,10 @@ title = "crunk mdtest: multi-file projects in one rule-page example"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-12T02:39:35Z"
-updated = "2026-10-12T02:39:35Z"
+updated = "2026-10-27T02:58:18Z"
 scope = ["crates/crunk-rules/**"]
 +++
 
