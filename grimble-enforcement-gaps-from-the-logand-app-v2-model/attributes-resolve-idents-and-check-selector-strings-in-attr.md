@@ -1,14 +1,14 @@
 +++
 id = "01M4FGZA01EGFS39VXJAF89CA1"
 title = "Attributes: resolve idents and check selector strings in attr values"
-type = "story"
+type = "task"
 category = "todo"
 priority = "low"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:08:02Z"
-updated = "2026-10-09T05:08:02Z"
+updated = "2026-10-28T12:56:50Z"
 idempotency_key = "logand-gaps-E1"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["crates/grimble-model/**", "crates/grimble-check/**", "docs/design/grmb-spec.md", "changelog.d/**"]
