@@ -2,13 +2,13 @@
 id = "01M61CD7AZW2RZ2TYDDA1DMVQ4"
 title = "Burn down DEAD001/COV001 in frob-mirror (~18 findings)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5XMF3XC9ZD6FPZ59ECWJCJ4"
 reporter = "lognd"
 created = "2026-10-28T13:50:16Z"
-updated = "2026-10-28T13:50:16Z"
+updated = "2026-10-28T13:50:29Z"
 scope = ["crates/frob-mirror/**"]
 
 [[acceptance]]
