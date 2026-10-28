@@ -7,7 +7,10 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-09T17:49:24Z"
-updated = "2026-10-09T17:49:24Z"
+updated = "2026-10-28T12:56:53Z"
+persona = "a repository maintainer"
+capability = "be warned when config names a deleted git branch"
+outcome_text = "stale branch names do not silently break tooling"
 labels = ["adoption:logand-app"]
 scope = ["crates/gob-check/**", "crates/frob-land/**", "changelog.d/**"]
 

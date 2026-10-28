@@ -1,0 +1,6 @@
+kind = "field"
+field = "capability"
+new = "be warned when config names a deleted git branch"
+at = "2026-10-28T12:56:53Z"
+actor = "lognd"
+rev = 1
