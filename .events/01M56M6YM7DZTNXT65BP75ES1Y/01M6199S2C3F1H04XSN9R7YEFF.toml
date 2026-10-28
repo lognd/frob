@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working ~R1VFD4X: land opens the primary checkout once (test land_opens_each_repository_once) but the ticket worktree is still discovered about 14 times and the ratchet land-checkout about 11 (frob-check memo/snapshot/scope, gob-git fallback/content, frob-release config); frob CLI verbs still call Located::discover per helper; three Workspace types remain."
+new = """
+found while working ~R1VFD4X: land opens the primary checkout once (test land_opens_each_repository_once) but the ticket worktree is still discovered about 14 times and the ratchet land-checkout about 11 (frob-check memo/snapshot/scope, gob-git fallback/content, frob-release config); frob CLI verbs still call Located::discover per helper; three Workspace types remain.
+
+no-story: internal engineering task in frob-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:58Z"
+actor = "lognd"
+rev = 1
