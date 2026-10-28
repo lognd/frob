@@ -8,8 +8,8 @@ points = 3
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:51Z"
-updated = "2026-10-28T18:52:10Z"
-scope = ["crates/gob-check/**", "crates/frob-check/src/lib.rs"]
+updated = "2026-10-28T19:27:26Z"
+scope = ["crates/gob-check/**", "crates/frob-check/src/lib.rs", "crates/gob-mdtest/coverage-allowlist.toml"]
 
 [[acceptance]]
 text = "each CI id declared once; ratchet test fails on duplicates"
