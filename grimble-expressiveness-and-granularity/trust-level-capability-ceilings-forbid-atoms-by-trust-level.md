@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-10-27T03:15:10Z"
+updated = "2026-10-28T12:55:59Z"
 idempotency_key = "grimble-expr-trustceil-2026-10-26"
-labels = ["grimble", "audit:grimble-expressiveness"]
+labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/**", "docs/design/grmb-spec.md"]
 
 [[acceptance]]
@@ -23,3 +23,5 @@ bound = false
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. Node trust (foreign < authenticated < trusted) never enters capability evaluation (caps.rs has no reference to trust). A foreign node can be granted process.spawn or fs.write and nothing objects. Add policy-level ceilings, e.g. `policy { foreign may not process.spawn, fs.write; }` or per-kind ceilings from packs, firing a CAP rule when a grant exceeds the ceiling.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
