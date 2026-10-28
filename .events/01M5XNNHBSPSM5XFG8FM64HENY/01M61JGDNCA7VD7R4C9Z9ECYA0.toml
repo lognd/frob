@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-28T15:34:34Z"
+digest = "98930d1d274123520568d9b7274b493254179cfd7a6d23642883cd4e8b6b2b88"
+exit_code = 0
+head = "ba14405cd8602f4d027c596ac9d9a449f7318519"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d8022762-f65f-4af8-8087-74cd7132cdef with nextest profile: default
+    Starting 1 test across 489 binaries (5628 tests skipped)
+        PASS [   0.166s] grimble-bind::caps a_symbol_grant_whose_symbol_has_no_use_is_cap002
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.179s] 1 test run: 1 passed, 5628 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_symbol_grant_whose_symbol_has_no_use_is_cap002"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "7ff6658a7099ef63b210d869ff1b09671017882b44e3547dad840c2d465fee6f"
+at = "2026-10-28T15:34:34Z"
+actor = "lognd"
+rev = 1
