@@ -1,0 +1,15 @@
+kind = "field"
+field = "body"
+old = """
+Implements plugins.md section 8.
+
+Declarative mapping of node kinds to U operators checked against node-types.json (an unmapped kind is a load finding), a locals-style scopes file with Must/May/Unknown references, capability precisions and a fidelity corpus run once per version; unexpressible nodes become opaque and Unresolved."""
+new = """
+Implements plugins.md section 8.
+
+Declarative mapping of node kinds to U operators checked against node-types.json (an unmapped kind is a load finding), a locals-style scopes file with Must/May/Unknown references, capability precisions and a fidelity corpus run once per version; unexpressible nodes become opaque and Unresolved.
+
+no-story: internal engineering task in gob-packs; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:46Z"
+actor = "lognd"
+rev = 1
