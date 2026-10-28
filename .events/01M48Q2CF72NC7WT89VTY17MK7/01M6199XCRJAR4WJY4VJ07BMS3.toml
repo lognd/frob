@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "A documented Claude Code hook (PostToolUse/Stop) that appends token usage per session to the worktree's .frob activity journal, so cost per point can use tokens as well as wall-clock; frob never reads harness transcripts itself. Privacy: counts only, no content."
+new = """
+A documented Claude Code hook (PostToolUse/Stop) that appends token usage per session to the worktree's .frob activity journal, so cost per point can use tokens as well as wall-clock; frob never reads harness transcripts itself. Privacy: counts only, no content.
+
+no-story: internal engineering task in frob-metrics; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:02Z"
+actor = "lognd"
+rev = 1
