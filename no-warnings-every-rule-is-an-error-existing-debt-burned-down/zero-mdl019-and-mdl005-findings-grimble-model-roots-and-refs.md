@@ -2,7 +2,8 @@
 id = "01M627BCZMXG78QDBA465PZ5J2"
 title = "Zero MDL019 and MDL005 findings (grimble model roots and refs)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
