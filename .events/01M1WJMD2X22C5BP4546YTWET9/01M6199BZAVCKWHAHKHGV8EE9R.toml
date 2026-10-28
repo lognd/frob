@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Consumer F-307/H3-2 (T-4109): retention is a time bound, not a rate bound; nothing models write amplification on carries-bearing stores. Mirror the existing outbound-flow rate requirement onto inbound writes. Not fixture-testable in frob's own tree: no carries/PII-bearing store or unauthenticated-route model exists here. Consumer-blocking: latent for us; was live for the consumer."
+new = """
+Consumer F-307/H3-2 (T-4109): retention is a time bound, not a rate bound; nothing models write amplification on carries-bearing stores. Mirror the existing outbound-flow rate requirement onto inbound writes. Not fixture-testable in frob's own tree: no carries/PII-bearing store or unauthenticated-route model exists here. Consumer-blocking: latent for us; was live for the consumer.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:44Z"
+actor = "lognd"
+rev = 1
