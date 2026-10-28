@@ -13,7 +13,7 @@ scope = ["crates/crunk/**", "profile.toml", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "cargo doc link to private crate::tokens::preview in crunk export is fixed so the Docs CI job passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "every crunk export leaf command has a scenario or a skip reason in profile.toml so the profile CI job passes"
