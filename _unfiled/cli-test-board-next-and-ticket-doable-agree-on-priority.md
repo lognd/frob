@@ -7,8 +7,11 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-07T02:56:45Z"
-updated = "2026-10-27T02:58:14Z"
+updated = "2026-10-28T12:55:40Z"
+labels = ["no-story"]
 scope = ["crates/frob/tests/board.rs"]
 +++
 
 found while working ~N9XHZS1: the end-to-end test (new todo tickets with --priority and --class; ticket doable titles equal board --brief next titles) was drafted but crates/frob/** was leased by another ticket. Draft kept by the implementer in the session scratchpad; recreate it here.
+
+no-story: internal engineering task in frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
