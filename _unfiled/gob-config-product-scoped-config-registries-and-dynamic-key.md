@@ -1,13 +1,13 @@
 +++
 id = "01M43MPG53JR8TP0E15394FZ5T"
 title = "gob-config: product-scoped config registries and dynamic-key tables; migrate crunk-spec"
-type = "story"
+type = "task"
 category = "todo"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T14:22:14Z"
-updated = "2026-10-27T02:58:09Z"
+updated = "2026-10-28T12:56:48Z"
 
 [[acceptance]]
 text = "Given frob and crunk config tables, when gen runs, then each product gets its own reference page and schema and neither contains the other's keys"
