@@ -2,7 +2,8 @@
 id = "01M5XNNH8ZMXDQJWNZBDK5702P"
 title = "CAP001: one in-scope use masks every out-of-scope use of the same atom in a node"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
