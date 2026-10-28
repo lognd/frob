@@ -2,7 +2,8 @@
 id = "01M5XNNHBSPSM5XFG8FM64HENY"
 title = "CAP: honour symbol-granular at selectors (file::Symbol) instead of collapsing to files"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
