@@ -1,7 +1,7 @@
 +++
 id = "01M2Y1SS0WSW1HNM4S14V8BH51"
 title = "SQL: extract SQL from host languages, sqlfluff as parser with a frob rule plugin for performance semantics, squawk for migrations, ORM N+1 and pooling rules, EXPLAIN obligation on flagged queries"
-type = "story"
+type = "task"
 flavour = "user_story"
 category = "todo"
 priority = "low"
@@ -9,7 +9,7 @@ points = 8
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-27T02:57:52Z"
+updated = "2026-10-28T12:56:49Z"
 aliases = ["T-5148"]
 labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
