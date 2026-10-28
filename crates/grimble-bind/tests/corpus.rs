@@ -65,7 +65,7 @@ fn key_of(f: &grimble_bind::BindFinding) -> String {
             f.rule,
             f.reason.map_or("?", Reason::code)
         ),
-        s => format!("{} {}", f.rule, format!("{s:?}").to_lowercase()),
+        s @ Severity::Error => format!("{} {}", f.rule, format!("{s:?}").to_lowercase()),
     }
 }
 

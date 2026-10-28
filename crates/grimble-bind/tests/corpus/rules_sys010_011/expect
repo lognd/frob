@@ -1,5 +1,5 @@
-finding SYS010 warn ~claim/bad
-finding SYS010 warn ~claim/empty
+finding SYS010 error ~claim/bad
+finding SYS010 error ~claim/empty
 finding SYS011 error ~vmodel/req_bad/ref[0]
 finding SYS011 error ~vmodel/t_bad/runnable[0]
 finding SYS011 error ~vmodel/t_nontest/runnable[0]

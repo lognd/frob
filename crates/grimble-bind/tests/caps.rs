@@ -94,7 +94,7 @@ fn a_granted_atom_never_observed_is_a_cap002_warning() {
     );
     let f = of(&b, "CAP002");
     assert_eq!(f.len(), 1, "{:?}", b.findings);
-    assert_eq!(f[0].severity, gob_rules::Severity::Warn);
+    assert_eq!(f[0].severity, gob_rules::Severity::Error);
     assert_eq!(f[0].anchor, "cap/node/a/fs.write");
 }
 

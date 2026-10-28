@@ -1005,7 +1005,7 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             }
             out.fire(
                 "CAP002",
-                Severity::Warn,
+                Severity::Error,
                 format!(
                     "`{}` grants `{}` but no use of it is observed in the code it owns",
                     e.anchor, g.written

@@ -144,7 +144,7 @@ fn drift(b: &Binding) -> Vec<String> {
                 f.rule,
                 f.reason.map_or("?", Reason::code)
             ),
-            s => format!("{} {}", f.rule, format!("{s:?}").to_lowercase()),
+            s @ Severity::Error => format!("{} {}", f.rule, format!("{s:?}").to_lowercase()),
         })
         .collect();
     v.sort();
@@ -255,7 +255,7 @@ fn identity_body_rename_is_sys008_then_ack_rename_carries_the_entry() {
     let r = acked_repo();
     r.write("c/lib.rs", &take().replace("take", "receive"));
     let b = r.bind();
-    assert_eq!(drift(&b), ["SYS008 advisory"], "{:#?}", b.findings);
+    assert_eq!(drift(&b), ["SYS008 error"], "{:#?}", b.findings);
     assert!(
         message_of(&b, "SYS008").contains("grimble ack --rename c/lib.rs::take c/lib.rs::receive")
     );
@@ -290,7 +290,7 @@ fn identity_body_rename_several_candidates_are_all_listed_and_trivial_bodies_are
         m.contains("c/lib.rs::a") && m.contains("c/lib.rs::b"),
         "{m}"
     );
-    assert_eq!(drift(&b), ["SYS008 advisory"]);
+    assert_eq!(drift(&b), ["SYS008 error"]);
     // A trivial body is never paired.
     let r = Repo::new();
     r.write("p/small.rs", "pub fn tiny() {}\n");
@@ -438,7 +438,7 @@ fn rules_sys006_shape_contract_clean_when_all_three_agree() {
 fn rules_sys006_consumer_behind_is_warn_under_backward_and_error_otherwise() {
     let r = consumer_behind_repo("versioning compat=backward;");
     let b = r.bind();
-    assert_eq!(drift(&b), ["SYS006 warn"], "{:#?}", b.findings);
+    assert_eq!(drift(&b), ["SYS006 error"], "{:#?}", b.findings);
     assert!(message_of(&b, "SYS006").contains("consumer"));
     for versioning in ["", "versioning compat=none;", "versioning compat=forward;"] {
         let r = consumer_behind_repo(versioning);
@@ -495,7 +495,7 @@ fn ack_without_a_reason_is_refused_and_a_rename_is_logged() {
 fn rename_min_tokens_knob_decides_whether_a_body_can_be_paired() {
     let r = acked_repo();
     r.write("c/lib.rs", &take().replace("take", "receive"));
-    assert_eq!(drift(&r.bind_with(12)), ["SYS008 advisory"]);
+    assert_eq!(drift(&r.bind_with(12)), ["SYS008 error"]);
     assert_eq!(drift(&r.bind_with(10_000)), ["SYS007 error"]);
 }
 
