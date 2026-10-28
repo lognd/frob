@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Consumer F-386 item 2 (T-4182, shell round-5): a CSP is a string in an edge-server config snippet; frob check has no gate that reads it, and frob sys audit reasons about code capabilities (may fetch_url grants) not the edge policy that would permit or deny them at runtime -- nothing connects a browser node's declared media loads to the header that actually governs them. Not fixture-testable in frob's own tree: no CSP/edge-policy config exists here."
+new = """
+Consumer F-386 item 2 (T-4182, shell round-5): a CSP is a string in an edge-server config snippet; frob check has no gate that reads it, and frob sys audit reasons about code capabilities (may fetch_url grants) not the edge policy that would permit or deny them at runtime -- nothing connects a browser node's declared media loads to the header that actually governs them. Not fixture-testable in frob's own tree: no CSP/edge-policy config exists here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:00Z"
+actor = "lognd"
+rev = 1
