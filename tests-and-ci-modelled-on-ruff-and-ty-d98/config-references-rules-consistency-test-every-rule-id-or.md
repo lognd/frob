@@ -8,7 +8,8 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:14:26Z"
-updated = "2026-10-27T02:58:12Z"
+updated = "2026-10-28T12:55:45Z"
+labels = ["no-story"]
 scope = ["crates/gob-config/**", "crates/gob-rules/**", "crates/frob/**"]
 
 [[acceptance]]
@@ -25,3 +26,5 @@ bound = false
 +++
 
 Source review N5 (notes/research/codegen-macros.md G11, clippy tests/config-consistency.rs): config names rule ids (crunk.toml [lint] COLOR001 = off, frob.toml rule severities and exceptions, directive waivers name rules). Add a registry-driven test over every ConfigTable field and shipped config that takes rule ids or slugs, failing on an unknown id that is neither live nor a redirect (~67J8R53), plus the same check as a doctor/config finding for user repositories.
+
+no-story: internal engineering task in gob-config; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
