@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Deferred by ~YNC30Q8: frob-gh's conditional-GET cache is in memory only; mirror.md says ETags are cached in .frob/. Add a caller-supplied store (file-backed in .frob/, keyed by URL, atomic writes via gob-fs) so a second mirror run sends If-None-Match from the first run's responses."
+new = """
+Deferred by ~YNC30Q8: frob-gh's conditional-GET cache is in memory only; mirror.md says ETags are cached in .frob/. Add a caller-supplied store (file-backed in .frob/, keyed by URL, atomic writes via gob-fs) so a second mirror run sends If-None-Match from the first run's responses.
+
+no-story: internal engineering task in frob-gh; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:47Z"
+actor = "lognd"
+rev = 1

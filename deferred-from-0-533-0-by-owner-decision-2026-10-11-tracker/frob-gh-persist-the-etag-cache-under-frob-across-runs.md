@@ -8,7 +8,8 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-06T07:54:09Z"
-updated = "2026-10-27T02:58:11Z"
+updated = "2026-10-28T12:55:47Z"
+labels = ["no-story"]
 scope = ["crates/frob-gh/**"]
 
 [[acceptance]]
@@ -21,3 +22,5 @@ bound = false
 +++
 
 Deferred by ~YNC30Q8: frob-gh's conditional-GET cache is in memory only; mirror.md says ETags are cached in .frob/. Add a caller-supplied store (file-backed in .frob/, keyed by URL, atomic writes via gob-fs) so a second mirror run sends If-None-Match from the first run's responses.
+
+no-story: internal engineering task in frob-gh; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
