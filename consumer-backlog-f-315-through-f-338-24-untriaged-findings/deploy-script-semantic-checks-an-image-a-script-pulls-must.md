@@ -8,10 +8,12 @@ points = 3
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:50Z"
+updated = "2026-10-28T12:55:47Z"
 aliases = ["T-4238"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/gates"]
 +++
 
 Consumer F-325/M2-4: two checks beyond existing pinning verification: (a) every image name a deploy script pulls is an image some job pushes (within-file string-set comparison); (b) a smoke-check URL must not name a route whose handler declares an admin/auth guard -- frob already resolves route symbols for guard-inventory purposes, so both halves of this contract violation are in its index. Not fixture-testable in frob's own tree: no deploy workflows or guarded routes exist here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

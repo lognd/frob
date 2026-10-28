@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Consumer F-325/M2-4: two checks beyond existing pinning verification: (a) every image name a deploy script pulls is an image some job pushes (within-file string-set comparison); (b) a smoke-check URL must not name a route whose handler declares an admin/auth guard -- frob already resolves route symbols for guard-inventory purposes, so both halves of this contract violation are in its index. Not fixture-testable in frob's own tree: no deploy workflows or guarded routes exist here."
+new = """
+Consumer F-325/M2-4: two checks beyond existing pinning verification: (a) every image name a deploy script pulls is an image some job pushes (within-file string-set comparison); (b) a smoke-check URL must not name a route whose handler declares an admin/auth guard -- frob already resolves route symbols for guard-inventory purposes, so both halves of this contract violation are in its index. Not fixture-testable in frob's own tree: no deploy workflows or guarded routes exist here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:47Z"
+actor = "lognd"
+rev = 1
