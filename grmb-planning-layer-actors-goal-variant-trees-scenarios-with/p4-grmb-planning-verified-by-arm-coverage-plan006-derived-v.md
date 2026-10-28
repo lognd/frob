@@ -1,14 +1,14 @@
 +++
 id = "01M4FDBERB4M7E9RG2HD4J3YZ2"
 title = "P4 grmb planning: verified_by arm coverage, PLAN006, derived V-model levels into kernel closure"
-type = "story"
+type = "task"
 category = "todo"
 priority = "medium"
 points = 5
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:45Z"
-updated = "2026-10-09T05:08:25Z"
+updated = "2026-10-28T12:56:51Z"
 labels = ["grimble"]
 scope = ["crates/grimble-bind/**", "crates/grimble-check/**", "crates/grimble-model/**", "changelog.d/**"]
 
