@@ -1,0 +1,14 @@
+kind = "create"
+title = "Zero DOC006 findings (stale code citations)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
+idempotency_key = "b755-doc006"
+scope = ["crates/frob-doc/**"]
+acceptance = ["frob check reports zero DOC006 findings"]
+body = "Split from ~B755NCR (mis-scoped to docs/design/docs.md). Fix citations in crates/frob-doc, frob-obligations, gob-text, gob-plan, gob-packs, gob-ir symref.rs, gob-cli explain.rs, docs/design/build-test-ci.md 179-180, notes/. Widen lease as needed."
+at = "2026-10-28T21:41:08Z"
+actor = "lognd"
+rev = 1
