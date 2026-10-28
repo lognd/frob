@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:05Z"
+updated = "2026-10-28T12:57:46Z"
 aliases = ["T-6486"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_horizontal.py", "tests/fixtures/sysdesign/sysdesign402/**"]
 +++
 
@@ -37,3 +37,5 @@ Acceptance criteria: detects framework session-middleware configuration (Django 
 ENGINE`, Express `express-session` store option, Flask `SESSION_TYPE`, etc.) set to an
 in-memory or filesystem backend for a target the design model declares "production". Positive-
 control fixture: tests/fixtures/sysdesign/sysdesign402/filesystem-session-backend/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
