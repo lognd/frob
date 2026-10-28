@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-27T03:15:09Z"
+updated = "2026-10-28T12:55:58Z"
 idempotency_key = "grimble-expr-unify-2026-10-26"
-labels = ["grimble", "audit:grimble-expressiveness"]
+labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/gob-ir/src/registry.rs", "crates/gob-symbols/src/ambient.rs", "crates/grimble-check/src/effects.rs", "crates/grimble-lints/src/neat/**", "crates/grimble-model/src/atoms.rs"]
 
 [[acceptance]]
@@ -23,3 +23,5 @@ bound = false
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. grimble-model.md 9.6 says 'There is one callee-vocabulary table per language; the NEAT [neat.effects] tables and grimble's detectors are views over it'. In fact there are five: gob-ir registry + grimble-model atoms (CAP), gob-symbols/src/ambient.rs (clock, rng, env, stdio, exit), grimble-check/src/effects.rs (COH002, the only one with TypeScript), grimble-lints/src/neat/mod.rs:107-122 plus the closed Atom enum in neat/effects.rs (frob:effects claims use words net/env/stdio that are not CAP atoms), and gob-trust/src/effects (pack broker). They disagree (NEAT knows TcpStream::connect as net; CAP detects no network). Make the registry the single source and derive the others from it. Related: ~T28A73Q (COH002 tables into gob-caps) and ~WNH8N7X (vocab classes for NEAT013); this ticket is the umbrella merge and must not duplicate their acceptance.
+
+no-story: internal engineering task in gob-ir; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
