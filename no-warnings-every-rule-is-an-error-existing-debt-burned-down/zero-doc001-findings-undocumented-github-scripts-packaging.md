@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-28T23:38:09Z"
+updated = "2026-10-28T23:42:21Z"
 idempotency_key = "b755-doc001"
-scope = [".github/**"]
+scope = [".github/**", "packaging/pypi/render.py", "scripts/claude-hooks/frob-suggest.py"]
 
 [[acceptance]]
 text = "frob check reports zero DOC001 findings"

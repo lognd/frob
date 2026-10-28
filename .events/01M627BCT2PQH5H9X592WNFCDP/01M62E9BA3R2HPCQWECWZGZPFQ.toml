@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = [".github/**"]
+new = [".github/**", "packaging/pypi/render.py", "scripts/claude-hooks/frob-suggest.py"]
+at = "2026-10-28T23:42:21Z"
+actor = "lognd"
+rev = 1
