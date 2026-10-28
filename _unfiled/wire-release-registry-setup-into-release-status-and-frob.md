@@ -7,8 +7,11 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-13T03:27:58Z"
-updated = "2026-10-27T02:58:18Z"
+updated = "2026-10-28T12:55:54Z"
+labels = ["no-story"]
 scope = ["crates/frob/src/release_cmd.rs", "frob.toml"]
 +++
 
 found while working ~57AZHYH: frob-release has assess_with(input, registry_setup) and ReleaseConfig.registry_setup; release_cmd.rs must call assess_with(&input, cfg.release.registry_setup) and frob.toml set registry_setup = true, else frob loses its own registry-setup item.
+
+no-story: internal engineering task in frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
