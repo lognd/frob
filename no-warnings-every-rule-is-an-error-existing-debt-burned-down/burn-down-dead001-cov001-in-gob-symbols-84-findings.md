@@ -2,7 +2,8 @@
 id = "01M61CD6Q7ZBB2B4YDXST6JQTK"
 title = "Burn down DEAD001/COV001 in gob-symbols (~84 findings)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XMF3XC9ZD6FPZ59ECWJCJ4"
