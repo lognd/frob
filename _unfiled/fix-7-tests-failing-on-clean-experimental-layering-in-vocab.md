@@ -2,12 +2,12 @@
 id = "01M61QW501Q46SJ8QAY9X5NXA3"
 title = "Fix 7 tests failing on clean experimental: layering, in_vocab, lease_widen waits, init/doctor/config_sync"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-28T17:10:40Z"
-updated = "2026-10-28T17:55:25Z"
+updated = "2026-10-28T17:55:27Z"
 scope = ["crates/gob-dev/tests/layering.rs", "crates/gob-plan/**", "crates/frob/tests/it/**", "crates/frob/src/**", "crates/frob-cli/**", "crates/frob-check/tests/**", "crates/crunk/tests/**", "crates/crunk/src/**"]
 
 [[acceptance]]
