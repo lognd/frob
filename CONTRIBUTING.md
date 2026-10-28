@@ -90,6 +90,111 @@ ULIDs.
 `frob ack <symref>` records a symbol's digest in `frob.lock` so later
 signature or doc drift is reported; `frob ack --help` lists the forms.
 
+## Naming and layout conventions
+
+Rule ids, slugs and crate names are public API (users write
+`frob:accept COV001` and `[rules.TIME001]`; crates publish under their
+package name), so renames go through aliases and are kept rare. Items
+marked "target" are the agreed direction; existing code that predates
+them is migrated opportunistically, not in drive-by edits.
+
+### Crate naming
+
+- Crates are `<product>-<noun>` in kebab case. `<product>` is one of
+  `gob` (shared substrate), `frob`, `grimble` or `crunk`. A product-neutral
+  noun names a capability (`frob-ledger`, `grimble-bind`, `crunk-tokens`);
+  `-utils`, `-common` and `-helpers` are banned.
+- Role suffixes mean one thing each: `-cli` the shipped binary, `-check`
+  a product's rule host and check pipeline, `-serve` MCP transport or
+  tools, `-model` domain types, `-rules` a crate whose main content is
+  rule families, and `-dev`, `-testsupport`, `-mdtest` are never
+  published. A crate named after a CLI verb (`frob-land`, `frob-ack`) is
+  fine when it is that verb's engine.
+- Directory equals package name (`crates/gob-ir` is `gob-ir`). The one
+  current exception is `crates/frob/`, whose package is `frob-cli` (bin
+  `frob`); use `-p frob-cli` for cargo and `crates/frob/**` for lease
+  globs until the directory is renamed (target: `crates/frob-cli/`).
+  `grimble` and `crunk` keep their published binary-crate names.
+- Edges go down a layer or stay within one; products do not depend on
+  each other except through `-cli` crates behind `bundle`. See
+  `docs/design/boundaries.md` section 5 and the layer table.
+
+### Rule code scheme
+
+- A rule id is `FAMILYNNN`: a 2-6 letter uppercase family prefix plus a
+  three-digit number (`COV001`, `TICK011`, `COLOR002`). Each id may carry
+  a lowercase slug as its human name; messages and pages show `ID slug`.
+- The hundreds digit is a band within a family, never a product marker.
+  By convention `0xx` is native and `1xx` is findings bound from an
+  external tool (`A11Y101`); document any other band in the family's
+  owning crate. A family belongs to exactly one product and one crate.
+- Ids are never reused. A removed or renamed rule stays recorded as
+  retired so its code cannot come back (`FMT001`, `CAP003`).
+- A new family needs at least three planned rules; otherwise join an
+  existing family.
+- Compiler and engine diagnostics use `E-<AREA>-NNN`, not `FAMILYNNN`.
+- Target: one family registry (`crates/gob-rules/families.toml`) with a
+  test that every declared id falls in a band of its family, plus a
+  `status` (`preview`, `stable`, `deprecated`, `removed`) and `since` per
+  rule.
+
+### Crate layout
+
+A crate that owns rules follows this shape (not every crate has every
+part):
+
+```
+crates/<crate>/
+  Cargo.toml
+  src/
+    lib.rs             module declarations, re-exports, crate doc
+    error.rs           the crate's error enum
+    config.rs          config table types
+    host.rs            the product host trait the rules need
+    rules/             one <id>.rs + <id>.md per rule (plus generated mod.rs)
+    <family>/          shared detector logic for a family, lowercase name
+    cmd/<verb>.rs      CLI verbs (binary crates; target, many are still
+                       src/<verb>_cmd.rs)
+    <topic>.rs | <topic>/mod.rs   everything else
+  tests/
+    it/main.rs         integration tests as one binary (target)
+    it/<feature>.rs    one module per feature
+    it/support.rs      the one shared helper module
+    fixtures/<area>/   test inputs
+    snapshots/         insta snapshots
+  benches/
+```
+
+- A rule's logic lives in `src/rules/<id>.rs` and its page and mdtest
+  cases in `src/rules/<id>.md`; shared logic goes in a family module, not
+  in a catch-all (`util.rs`, `legacy.rs`). Existing `legacy.rs` files are
+  migration debt, not a pattern.
+- Binary crates keep only argument parsing and rendering in `cmd/`; logic
+  belongs in the engine crate for that verb.
+- Run `cargo dev gen all` after adding or changing a rule so the
+  generated indexes and pages stay fresh.
+
+### File naming
+
+- Rust modules are snake_case nouns. Prefer `foo/mod.rs` for nested
+  modules (the current majority); do not mix `foo.rs` with a `foo/`
+  directory in the same crate.
+- Rule source files are `<id-lower>.rs` and `<id-lower>.md` under
+  `src/rules/`; generated rule pages in `docs/reference/rules/` are
+  `<ID>.md`; pack rules are `packs/<pack>/rules/<ID>.grl` beside
+  `packs/<pack>/pack.toml`.
+- Test modules are `tests/it/<feature>.rs`; per-rule extras go in
+  `tests/it/rules/<id-lower>.rs`. Name shared helpers `support.rs`, not
+  `common.rs` or `helpers.rs`.
+- Docs and notes are lowercase kebab-case `.md`, with no version number
+  in the name and no product prefix inside a product directory. Notes
+  live in `notes/<kind>/` and are date-prefixed
+  (`YYYY-MM-DD-<slug>.md`).
+- Changelog fragments are `changelog.d/<ULID>.<type>.md`; create them with
+  `frob ticket fragment`, not by hand.
+- Scripts: kebab-case for executables, snake_case for importable Python
+  modules.
+
 ## Rules every change follows
 
 - ASCII only in every file; no emoji.
