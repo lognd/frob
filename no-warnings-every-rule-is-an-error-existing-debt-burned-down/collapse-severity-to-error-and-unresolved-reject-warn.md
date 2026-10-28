@@ -9,7 +9,7 @@ parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
 updated = "2026-10-28T12:54:53Z"
-scope = ["crates/gob-rules/src/**", "crates/crunk-rules/Cargo.toml"]
+scope = ["crates/gob-rules/src/**", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/src"]
 
 [[acceptance]]
 text = "Severity has only Error and Unresolved; Warn and Advisory removed from derive, [rules], fail_on"
