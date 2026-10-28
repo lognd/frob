@@ -8,7 +8,8 @@ points = 8
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:01Z"
-updated = "2026-10-28T12:56:51Z"
+updated = "2026-10-28T12:57:37Z"
+labels = ["no-story"]
 scope = ["crates/gob-ir/**", "crates/gob-mdtest/**", "crates/frob-obligations/**"]
 
 [[links]]
@@ -25,3 +26,5 @@ bound = false
 +++
 
 testing.md 7: a standard small repository per polarity (May-only edge, Must edge, opaque region, Unknown visibility) run against every shipped rule; a P- rule firing on a May-only reach fails (Theorem 3: never an Error whose premise is false). Port COV001's hand-rolled May logic onto the shared evaluator where practical. Design: docs/design/testing.md (D106); audit: notes/research/u-testing-audit.md.
+
+no-story: internal engineering task in gob-ir; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

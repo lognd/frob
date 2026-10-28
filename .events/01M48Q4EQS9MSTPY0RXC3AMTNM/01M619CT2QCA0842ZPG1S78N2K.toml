@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "testing.md 7: a standard small repository per polarity (May-only edge, Must edge, opaque region, Unknown visibility) run against every shipped rule; a P- rule firing on a May-only reach fails (Theorem 3: never an Error whose premise is false). Port COV001's hand-rolled May logic onto the shared evaluator where practical. Design: docs/design/testing.md (D106); audit: notes/research/u-testing-audit.md."
+new = """
+testing.md 7: a standard small repository per polarity (May-only edge, Must edge, opaque region, Unknown visibility) run against every shipped rule; a P- rule firing on a May-only reach fails (Theorem 3: never an Error whose premise is false). Port COV001's hand-rolled May logic onto the shared evaluator where practical. Design: docs/design/testing.md (D106); audit: notes/research/u-testing-audit.md.
+
+no-story: internal engineering task in gob-ir; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:37Z"
+actor = "lognd"
+rev = 1
