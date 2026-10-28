@@ -1625,7 +1625,7 @@ fn read_events_on_disk_treats_a_missing_events_directory_as_empty() {
 
 #[test]
 fn doable_filters_by_derived_crate_and_product() {
-    // frob:ticket 5E5N62X
+    // frob:ticket 01M61MM4M34XBAW2QYZ5E5N62X
     let (_dir, ledger) = fixture(Layout::Dir, RefMode::Trunk);
     let mut a = NewTicket::new("in ledger", TicketType::Task);
     a.scope = vec!["crates/frob-ledger/**".into()];

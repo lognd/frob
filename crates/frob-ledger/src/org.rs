@@ -1,5 +1,5 @@
 //! Derived organisation of a ticket: the crates its scope touches and the products they belong to.
-// frob:ticket 5E5N62X
+// frob:ticket 01M61MM4M34XBAW2QYZ5E5N62X
 
 /// True when `s` contains a glob metacharacter.
 fn has_glob(s: &str) -> bool {
