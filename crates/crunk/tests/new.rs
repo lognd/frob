@@ -92,7 +92,10 @@ fn scaffolds_each_kind_and_screen_and_component_validate() {
         .unwrap()
         .iter()
         .filter(|f| {
-            f["severity"] == "error" && f["file"].as_str().is_some_and(|p| p.starts_with("design"))
+            // CRAFT002 asks for the full interaction set, which a bare skeleton leaves to its author.
+            f["severity"] == "error"
+                && f["rule"] != "CRAFT002"
+                && f["file"].as_str().is_some_and(|p| p.starts_with("design"))
         });
     assert_eq!(mine.count(), 0, "{out} {err}");
 }

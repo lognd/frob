@@ -7,6 +7,8 @@ use std::path::Path;
 use assert_cmd::Command;
 use serde_json::Value;
 
+mod common;
+
 fn project() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     let spec = crunk_spec::presets::preset("default")
@@ -20,7 +22,9 @@ fn project() -> tempfile::TempDir {
     );
     std::fs::write(dir.path().join("crunk.toml"), spec).expect("write spec");
     std::fs::create_dir_all(dir.path().join("styles")).expect("mkdir");
-    std::fs::write(dir.path().join("styles/a.css"), ".a { margin: 0; }\n").expect("css");
+    let css = dir.path().join("styles/a.css");
+    std::fs::write(&css, ".a { margin: 0; }\n").expect("css");
+    common::append_states(&css);
     dir
 }
 
@@ -81,10 +85,13 @@ fn a_non_interactive_ack_is_recorded_and_marked_and_review_then_lists_it_current
 
 // frob:tests crates/crunk/src/lib.rs::CrunkProduct
 #[test]
-fn the_release_gate_fails_check_on_a_missing_review_that_the_default_gate_only_advises() {
+fn a_missing_review_fails_check_at_the_default_and_the_release_gate() {
     let dir = project();
     let (code, out, err) = crunk(dir.path(), &["check", "--json"]);
-    assert_eq!(code, 0, "{out} {err}");
+    assert_eq!(
+        code, 1,
+        "HUMAN001 is an error since the Severity collapse: {out} {err}"
+    );
     let (code, out, err) = crunk(dir.path(), &["check", "--gate", "release", "--json"]);
     assert_eq!(code, 1, "{out} {err}");
 }

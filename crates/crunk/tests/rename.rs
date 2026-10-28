@@ -8,6 +8,8 @@ use std::path::Path;
 use gob_cli::run_for_test;
 use serde_json::Value;
 
+mod common;
+
 const SPEC: &str = r##"[project]
 css_root = "styles"
 tokens_file = "tokens.css"
@@ -43,6 +45,8 @@ fn project() -> tempfile::TempDir {
     std::fs::write(p.join("crunk.toml"), SPEC).unwrap();
     std::fs::create_dir_all(p.join("styles/base")).unwrap();
     std::fs::write(p.join("styles/base/a.css"), CSS).unwrap();
+    common::append_states(&p.join("styles/base/states.css"));
+    common::satisfy_roles(p);
     std::fs::create_dir_all(p.join("src")).unwrap();
     std::fs::write(p.join("src/A.tsx"), TSX).unwrap();
     std::fs::create_dir_all(p.join("design/components")).unwrap();
@@ -196,6 +200,12 @@ fn extract_token_promotes_a_literal_and_rewrites_uses() {
     std::fs::write(
         p.join("src/B.tsx"),
         "export const B = () => <p style={{ color: '#abcdef' }} />;\n",
+    )
+    .unwrap();
+    // CRAFT012 wants 90 percent token coverage; the literals left in `b.css` need this to be outweighed.
+    std::fs::write(
+        p.join("styles/base/covered.css"),
+        ".c { color: var(--color-ink); }\n".repeat(30),
     )
     .unwrap();
     let (code, out, err) = crunk(
@@ -405,6 +415,7 @@ fn font_stack_tokens_are_renamed_through_typography_stacks() {
     let p = dir.path();
     let spec = format!("{SPEC}\n[typography.stacks]\nmono = [\"Inter\"]\n");
     std::fs::write(p.join("crunk.toml"), spec).unwrap();
+    common::satisfy_roles(p);
     std::fs::write(
         p.join("styles/base/m.css"),
         ".m { font-family: var(--font-family-mono); }\n",

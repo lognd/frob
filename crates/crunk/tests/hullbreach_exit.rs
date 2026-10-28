@@ -7,6 +7,8 @@ use std::path::{Path, PathBuf};
 
 use gob_cli::run_for_test;
 
+mod common;
+
 fn crunk(dir: &Path, args: &[&str]) -> (i32, String, String) {
     run_for_test(&crunk::cli(), args, dir)
 }
@@ -28,6 +30,7 @@ fn the_ci_step_passes_on_a_scaffolded_web_project() {
     .expect("package.json");
     let (code, out, err) = crunk(dir.path(), &["init"]);
     assert_eq!(code, 0, "init: {out} {err}");
+    common::satisfy_craft(dir.path());
     let (code, out, err) = crunk(dir.path(), &["check"]);
     assert_eq!(code, 0, "check: {out} {err}");
     let (code, out, err) = crunk(dir.path(), &["tokens", "--check"]);

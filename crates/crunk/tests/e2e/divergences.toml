@@ -154,3 +154,13 @@ steps = [
   "e2e_56_57_58_honesty/e2e_57_cache_prune_all#04",
 ]
 reason = "The Python `cache ls` and `cache prune` verbs were not ported (the Rust crunk keeps no result cache); the verb is rejected with a usage error (exit 2)."
+
+[[divergence]]
+id = "rust-rules-error-where-python-warned"
+field = "exit"
+steps = [
+  "e2e_03_spacing/fix_snaps_near_value_leaves_far_value#03",
+  "e2e_03_spacing/space001_warns_by_default_then_errors_when_releveled#02",
+  "e2e_11_stacks/declared_stacks_pass_check_and_export_tokens#03",
+]
+reason = "The Python run exited 0 because SPACE001 was a warning by default and CRAFT004, SLOP010 and SLOP011 did not exist. Rust has collapsed severity to error and unresolved, so the same fixture's remaining SPACE001 finding (or the Rust-only CRAFT/SLOP finding) exits 1."

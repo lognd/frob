@@ -7,6 +7,8 @@ use std::path::Path;
 use gob_cli::run_for_test;
 use serde_json::Value;
 
+mod common;
+
 fn crunk(dir: &Path, args: &[&str]) -> (i32, Value) {
     let (code, out, _) = run_for_test(&crunk::cli(), args, dir);
     (code, serde_json::from_str(&out).unwrap_or(Value::Null))
@@ -31,7 +33,11 @@ fn project(css: &str) -> tempfile::TempDir {
         "crunk.toml",
         &format!("{spec}\n[rules]\nramp = false\n"),
     );
-    write(dir.path(), "styles/a.css", css);
+    write(
+        dir.path(),
+        "styles/a.css",
+        &format!("{css}{}", common::STATE_CSS),
+    );
     dir
 }
 
@@ -49,16 +55,16 @@ fn ramped_project(css: &str) -> tempfile::TempDir {
 
 // frob:tests crates/gob-product/src/check.rs::Check
 #[test]
-fn the_default_ramp_downgrades_a_new_rule_so_check_exits_zero() {
+fn the_ramp_no_longer_downgrades_a_new_rule_so_check_exits_one() {
     let dir = ramped_project(".a { color: #ff0000; }\n");
     let (code, env) = crunk(dir.path(), &["check", "--json"]);
-    assert_eq!(code, 0, "{env}");
+    assert_eq!(code, 1, "{env}");
     let findings = env["data"]["findings"].as_array().expect("findings");
     let hit = findings
         .iter()
         .find(|f| f["rule"] == "COLOR001")
         .expect("COLOR001");
-    assert_eq!(hit["severity"], "warning", "{hit}");
+    assert_eq!(hit["severity"], "error", "{hit}");
 }
 
 // frob:tests crates/gob-product/src/check.rs::Check

@@ -164,6 +164,8 @@ pub fn replay(scenario: &str) -> Vec<Diff> {
             overlay(&setup, &work);
             disable_ramp(&work);
         }
+        // Earlier steps (`init`, `new`) may have scaffolded a project that lacks the CRAFT inputs.
+        crate::common::satisfy_craft(&work);
         let step = read_json(&fixture.join(format!("{num}.step.json")));
         for gone in step["setup_deleted"].as_array().into_iter().flatten() {
             let _ = std::fs::remove_file(work.join(gone.as_str().expect("path")));

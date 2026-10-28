@@ -7,6 +7,8 @@
 
 // frob:ticket 01M43AVKMT52QCG7DGNQ4J906S
 
+#[path = "common/mod.rs"]
+mod common;
 #[path = "parity/compare.rs"]
 mod compare;
 #[path = "parity/corpus.rs"]

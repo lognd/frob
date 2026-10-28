@@ -13,6 +13,9 @@ use std::path::{Path, PathBuf};
 use gob_cli::run_for_test;
 use serde_json::Value;
 
+#[path = "../common/mod.rs"]
+mod common;
+
 fn parity_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/crunk-parity")
 }
@@ -28,6 +31,7 @@ fn scaffold() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     assert_eq!(crunk(dir.path(), &["init"]).0, 0, "init must succeed");
     disable_ramp(dir.path());
+    common::satisfy_craft(dir.path());
     dir
 }
 
