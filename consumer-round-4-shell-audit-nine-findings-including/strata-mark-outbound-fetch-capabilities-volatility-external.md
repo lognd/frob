@@ -8,10 +8,12 @@ points = 3
 parent = "01M1WJMD26NR9SKQCEFEHS7ENJ"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:49Z"
+updated = "2026-10-28T12:55:40Z"
 aliases = ["T-4222"]
-labels = ["v1-cluster:B3d", "triage:accepted"]
+labels = ["v1-cluster:B3d", "triage:accepted", "no-story"]
 scope = ["src/frob/strata"]
 +++
 
 Consolidates F-362/H4-2 (T-4166: a build node's grant to fetch third-party data carries no attribute saying that data is volatile, so nothing objects to comparing it for byte equality against a committed file) with F-386 item 7 (T-4182: the same gate restated, plus a note that a hand-picked field allowlist was implemented instead of a volatility classification, which is why the field partition is a judgement call rather than a structural fix). Not fixture-testable in frob's own tree: no external-fetch-grounding-a-build-oracle pattern exists here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
