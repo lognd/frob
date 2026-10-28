@@ -8,9 +8,9 @@ points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:39Z"
-updated = "2026-10-03T03:34:39Z"
+updated = "2026-10-28T12:55:47Z"
 idempotency_key = "m2-sec-ci-trust-rule"
-labels = ["milestone:2", "area:security"]
+labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/grimble-ci/src/**"]
 
 [[links]]
@@ -33,3 +33,5 @@ bound = false
 Implements security.md section 2.11 (CI rules); cicd.md.
 
 Joins CI006 and CI011; the design assigns it no id yet (listed in the planning report).
+
+no-story: internal engineering task in grimble-ci; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
