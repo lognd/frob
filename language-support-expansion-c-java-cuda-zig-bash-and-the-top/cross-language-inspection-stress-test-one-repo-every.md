@@ -8,9 +8,9 @@ points = 5
 parent = "01KZ7KGKHXGS6W2YAVRY27W0D5"
 reporter = "human"
 created = "2026-08-05T00:00:00Z"
-updated = "2026-10-27T02:57:35Z"
+updated = "2026-10-28T12:56:05Z"
 aliases = ["T-1608"]
-labels = ["v1-cluster:D2", "triage:accepted"]
+labels = ["v1-cluster:D2", "triage:accepted", "no-story"]
 scope = ["tests/**", "src/frob/**", "docs/**"]
 
 [[links]]
@@ -27,3 +27,5 @@ What it must demonstrate:
 - A full frob check over the mixed repo producing correct, non-degraded results -- and, critically, ANNOUNCING any language whose analysis could not run rather than silently reporting zero findings for it.
 
 That last point is this drive's recurring lesson applied to the language layer: a silent under-report is indistinguishable from a clean result, and every incident this session traced back to exactly that. A mixed-language repo multiplies the opportunities for it.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

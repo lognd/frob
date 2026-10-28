@@ -1,0 +1,27 @@
+kind = "field"
+field = "body"
+old = """
+The payoff test for the whole epic: a single fixture repository containing every supported language at once, carrying a real obligation graph across language boundaries.
+
+What it must demonstrate:
+- Doc edges from a symbol in one language to documentation that also covers symbols in another.
+- Test edges from a test written in one language binding a symbol implemented in another (the FFI/binding shape frob users actually have: Python tests over a Rust or C++ core, a TypeScript client over a Java service).
+- Waivers, todos, and ticket directives resolving identically regardless of the host language's comment syntax.
+- A full frob check over the mixed repo producing correct, non-degraded results -- and, critically, ANNOUNCING any language whose analysis could not run rather than silently reporting zero findings for it.
+
+That last point is this drive's recurring lesson applied to the language layer: a silent under-report is indistinguishable from a clean result, and every incident this session traced back to exactly that. A mixed-language repo multiplies the opportunities for it."""
+new = """
+The payoff test for the whole epic: a single fixture repository containing every supported language at once, carrying a real obligation graph across language boundaries.
+
+What it must demonstrate:
+- Doc edges from a symbol in one language to documentation that also covers symbols in another.
+- Test edges from a test written in one language binding a symbol implemented in another (the FFI/binding shape frob users actually have: Python tests over a Rust or C++ core, a TypeScript client over a Java service).
+- Waivers, todos, and ticket directives resolving identically regardless of the host language's comment syntax.
+- A full frob check over the mixed repo producing correct, non-degraded results -- and, critically, ANNOUNCING any language whose analysis could not run rather than silently reporting zero findings for it.
+
+That last point is this drive's recurring lesson applied to the language layer: a silent under-report is indistinguishable from a clean result, and every incident this session traced back to exactly that. A mixed-language repo multiplies the opportunities for it.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:05Z"
+actor = "lognd"
+rev = 1
