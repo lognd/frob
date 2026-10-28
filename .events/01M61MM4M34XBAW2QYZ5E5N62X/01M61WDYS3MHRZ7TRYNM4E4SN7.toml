@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "builder cap; deferred"
+at = "2026-10-28T18:30:18Z"
+actor = "lognd"
+rev = 1
