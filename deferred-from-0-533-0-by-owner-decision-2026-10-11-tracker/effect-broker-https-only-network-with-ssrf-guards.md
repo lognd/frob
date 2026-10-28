@@ -8,9 +8,9 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:35Z"
-updated = "2026-10-03T03:34:35Z"
+updated = "2026-10-28T12:55:45Z"
 idempotency_key = "m2-sec-broker-net"
-labels = ["milestone:2", "area:security"]
+labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/gob-wasm/src/broker/net.rs"]
 
 [[links]]
@@ -29,3 +29,5 @@ bound = false
 Implements security.md section 2.5 (network).
 
 HTTPS only with certificate validation, redirects off by default and re-checked per hop, DNS resolved once per request and refused for loopback, link-local, private and metadata ranges unless an IP range is granted, size and time caps, exact hostnames (a *.host form is separate and loudly rendered).
+
+no-story: internal engineering task in gob-wasm; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
