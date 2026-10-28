@@ -2,7 +2,8 @@
 id = "01M61CD7AZW2RZ2TYDDA1DMVQ4"
 title = "Burn down DEAD001/COV001 in frob-mirror (~18 findings)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XMF3XC9ZD6FPZ59ECWJCJ4"
