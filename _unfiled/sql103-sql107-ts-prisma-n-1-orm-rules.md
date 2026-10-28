@@ -7,10 +7,12 @@ priority = "low"
 points = 3
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-10-27T02:57:53Z"
+updated = "2026-10-28T12:56:00Z"
 aliases = ["T-5445"]
-labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sql/_orm_rules.py"]
 +++
 
 found while working T-5337: filter-after-fetch (SQL103), server-cache-layer-for-repeated-expensive-queries (SQL107), and a TypeScript/Prisma N+1 walk (include/no-include mirrors Django's select_related) were cut from T-5337's scope to keep that leaf reviewable; SQL101/102/104/105/106 landed with real Python-first detection and migration_scan/pool-config helpers other leaves can reuse
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

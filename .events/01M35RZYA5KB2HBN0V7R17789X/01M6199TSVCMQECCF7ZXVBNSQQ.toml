@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working T-5337: filter-after-fetch (SQL103), server-cache-layer-for-repeated-expensive-queries (SQL107), and a TypeScript/Prisma N+1 walk (include/no-include mirrors Django's select_related) were cut from T-5337's scope to keep that leaf reviewable; SQL101/102/104/105/106 landed with real Python-first detection and migration_scan/pool-config helpers other leaves can reuse"
+new = """
+found while working T-5337: filter-after-fetch (SQL103), server-cache-layer-for-repeated-expensive-queries (SQL107), and a TypeScript/Prisma N+1 walk (include/no-include mirrors Django's select_related) were cut from T-5337's scope to keep that leaf reviewable; SQL101/102/104/105/106 landed with real Python-first detection and migration_scan/pool-config helpers other leaves can reuse
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:00Z"
+actor = "lognd"
+rev = 1
