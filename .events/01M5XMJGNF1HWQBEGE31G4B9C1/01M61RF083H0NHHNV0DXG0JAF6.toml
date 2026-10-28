@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T17:14:27Z"
+digest = "eb4814853971e5bac1754650d0c3ce2f6406810558ac2472c76d27c7d3772ed5"
+exit_code = 101
+head = "bbf55da6d4dde8c3e1345c27995b7449cd84f3a2"
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+error[E0599]: no variant, associated function, or constant named `Warn` found for enum `Severity` in the current scope
+   --> crates/grimble-bind/src/caps.rs:857:27
+    |
+857 |                 Severity::Warn,
+    |                           ^^^^ variant, associated function, or constant not found in `Severity`
+
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `grimble-bind` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "warn_and_advisory_severity_are_config_errors_naming_the_replacement"
+size = 1264
+status = "measured"
+at = "2026-10-28T17:14:27Z"
+actor = "lognd"
+rev = 1
