@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:57Z"
+updated = "2026-10-28T12:57:43Z"
 aliases = ["T-6423"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_segmentation.py", "tests/fixtures/sysdesign/sysdesign108/**"]
 
 [[links]]
@@ -46,3 +46,5 @@ Acceptance criteria: cross-references strata `may` capability atoms against T-SY
 security-group/NACL egress rules for the same node's deployment target; flags a `may` grant
 with no matching egress allow. Positive-control fixture: tests/fixtures/sysdesign/
 sysdesign108/may-grant-no-egress-rule/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
