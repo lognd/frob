@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T22:46:32Z"
+digest = "974a8ec48e9b0a2e2b3bae888aeee146800cf78de2d70d79a08e302dfbfbc673"
+exit_code = 1
+head = "8d7a3ef82d44c550e9b965fd68d443fdc9dc6c63"
+passed = false
+provider = "command"
+ref = "grimble check"
+size = 10449584
+status = "measured"
+uri = "dir:.git/frob/artifacts/974a8ec48e9b0a2e2b3bae888aeee146800cf78de2d70d79a08e302dfbfbc673"
+at = "2026-10-28T22:46:32Z"
+actor = "lognd"
+rev = 1
