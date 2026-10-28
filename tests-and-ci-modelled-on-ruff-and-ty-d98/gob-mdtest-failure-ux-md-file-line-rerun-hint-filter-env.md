@@ -8,7 +8,8 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:41Z"
-updated = "2026-10-28T12:56:48Z"
+updated = "2026-10-28T12:57:31Z"
+labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
 
 [[acceptance]]
@@ -29,3 +30,5 @@ bound = false
 +++
 
 Report failures at path.md:LINE of the marker, print a rerun command, add a filter env (section path substring), emit GitHub annotations when requested, and generate one test per markdown file so nextest isolates and retries per file (ty datatest-style). Source: notes/research/rule-testing.md (D103).
+
+no-story: internal engineering task in gob-mdtest; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
