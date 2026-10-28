@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T19:25:32Z"
+digest = "c0fc21989b81ae19e8ece56cf91370c9b42968b9634aada62dfca65443d938e5"
+exit_code = 0
+head = "3ca5a8f1b52baff0a0d179da1a32e8ce98b8a7fc"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.07s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cd2b0241-54c7-4fab-95e7-1b424e819303 with nextest profile: default
+    Starting 1 test across 490 binaries (5672 tests skipped)
+        PASS [   0.274s] crunk::verbs check_json_with_a_valid_config_is_a_valid_sibling_document
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.283s] 1 test run: 1 passed, 5672 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "check_json_with_a_valid_config"
+size = 568
+status = "measured"
+test_count = 1
+tests_digest = "a3779023f159243b186200c975f5f8572a37801255b2014d2498d057dfa312f2"
+at = "2026-10-28T19:25:32Z"
+actor = "lognd"
+rev = 1
