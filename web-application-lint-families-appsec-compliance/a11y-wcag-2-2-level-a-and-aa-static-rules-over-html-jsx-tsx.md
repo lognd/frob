@@ -1,7 +1,7 @@
 +++
 id = "01M2Y1SS0T6ZDPMY6DRJGEK1XJ"
 title = "A11Y: WCAG 2.2 Level A and AA static rules over HTML/JSX/TSX/Vue/templates plus accessibility statement page (42 criteria, 40 static)"
-type = "story"
+type = "task"
 flavour = "user_story"
 category = "todo"
 priority = "low"
@@ -9,7 +9,7 @@ points = 8
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-27T02:57:52Z"
+updated = "2026-10-28T12:56:52Z"
 aliases = ["T-5146"]
 labels = ["component:gates", "v1-cluster:B2", "area:crunk", "triage:accepted", "milestone:0.538.0"]
 +++
