@@ -8,10 +8,12 @@ points = 3
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:50Z"
+updated = "2026-10-28T12:55:57Z"
 aliases = ["T-4233"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/gates/_inv.py"]
 +++
 
 Consumer F-325/H2-2 first half: a credential-parsing invariant had no evidence to bind to because the only bound test used a password with no reserved characters -- 'no bound test varies input X' is checkable from the test source for parameter-shaped inputs. Adjacent to T-3997 (TESTMOCK001: fully-mocked subjects need a non-mocked companion) -- same family (a test that LOOKS like coverage but structurally cannot exercise the failure mode) but a distinct trigger (single-fixture-value vs full-mock). Fixture-testable: YES, generically, with a synthetic parameterized function in frob's own tree.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
