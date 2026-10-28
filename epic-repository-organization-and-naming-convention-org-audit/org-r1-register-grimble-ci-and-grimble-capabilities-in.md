@@ -2,7 +2,8 @@
 id = "01M61MM48BS9R91X3TS5AE5GYM"
 title = "org R1: register grimble_ci and grimble_capabilities in product_rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
