@@ -878,10 +878,10 @@ mod tests {
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
     #[test]
     fn rust_type_alias_and_grouped_use_resolve() {
-        let src = "use std::process::{Command as Cmd, Stdio};\nfn f() { Cmd::new(\"sh\"); }\n";
+        let src = "use std::fs::{File as Fh, OpenOptions};\nfn f() { Fh::create(\"sh\"); }\n";
         assert_eq!(
             paths("rust", src),
-            vec![("std::process::Command::new".into(), true, false)]
+            vec![("std::fs::File::create".into(), true, false)]
         );
     }
 
@@ -914,7 +914,7 @@ mod tests {
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
     #[test]
     fn rust_explicit_external_root_is_kept_and_local_roots_are_dropped() {
-        let src = "use crate::proc::Command;\nfn f() { std::process::Command::new(\"sh\"); tokio::process::Command::new(\"sh\"); Command::new(\"x\"); }\n";
+        let src = "use crate::proc::File;\nfn f() { std::fs::File::create(\"sh\"); tokio::fs::File::create(\"sh\"); File::create(\"x\"); }\n";
         let got = path_uses("rust", src);
         assert_eq!(got.len(), 2, "{got:?}");
         assert!(got.iter().all(|u| u.external_root));
