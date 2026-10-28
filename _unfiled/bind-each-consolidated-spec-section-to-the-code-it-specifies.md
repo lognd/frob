@@ -1,13 +1,13 @@
 +++
 id = "01M4H0RSP2HVXYS4BNCY9W8WYP"
 title = "Bind each consolidated spec section to the code it specifies with frob:doc (code side) or frob:describes (doc side) so DRIFT fires when either changes; start with the rule and binding specs"
-type = "story"
+type = "task"
 category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T19:03:20Z"
-updated = "2026-10-09T19:03:20Z"
+updated = "2026-10-28T12:56:54Z"
 labels = ["docs"]
 scope = ["crates/**", "docs/**", "changelog.d/**"]
 
