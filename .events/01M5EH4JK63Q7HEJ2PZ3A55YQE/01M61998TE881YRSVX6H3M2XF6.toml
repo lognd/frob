@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working ~P8YV3RW: frob test inherits the caller's cargo env (regression test added). frob land's check stages were not audited (out of scope: frob-land crate); confirm they spawn cargo with an inherited environment and pin it with a test."
+new = """
+found while working ~P8YV3RW: frob test inherits the caller's cargo env (regression test added). frob land's check stages were not audited (out of scope: frob-land crate); confirm they spawn cargo with an inherited environment and pin it with a test.
+
+no-story: internal engineering task in frob-land; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:41Z"
+actor = "lognd"
+rev = 1
