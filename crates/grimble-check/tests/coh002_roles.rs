@@ -82,7 +82,7 @@ fn the_pass_judges_a_core_directive_as_core_and_a_shell_directive_as_unresolved(
     assert_eq!(plain.len(), 1, "{plain:?}");
     let core = findings("a.py", Language::Python, &py("# grimble:core\n"));
     assert_eq!(core.len(), 1, "{core:?}");
-    assert_eq!(core[0].severity, gob_rules::Severity::Advisory);
+    assert_eq!(core[0].severity, gob_rules::Severity::Error);
     let shell = findings("a.py", Language::Python, &py("# grimble:shell\n"));
     assert_eq!(shell.len(), 1, "{shell:?}");
     assert_eq!(shell[0].severity, gob_rules::Severity::Unresolved);
@@ -105,7 +105,7 @@ fn without_a_directive_the_supplied_role_is_used_unchanged() {
     );
     let plain = findings("a.py", Language::Python, &src);
     assert_eq!(plain.len(), 1, "{plain:?}");
-    assert_eq!(plain[0].severity, gob_rules::Severity::Advisory);
+    assert_eq!(plain[0].severity, gob_rules::Severity::Error);
 }
 
 // frob:tests crates/grimble-check/src/unit_role.rs::declared_roles

@@ -160,7 +160,7 @@ fn ci002_verbatim_spec_text_parses_with_a_literal_brace_glob() {
 /// Wrap a clause in a rule that otherwise parses clean and return the debug dump.
 fn dump_clause(clause: &str) -> String {
     let src = format!(
-        "rule T001 \"t\" {{\n lang *\n severity warn\n {clause}\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}}"
+        "rule T001 \"t\" {{\n lang *\n severity error\n {clause}\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}}"
     );
     let p = clean(&src);
     format!("{:?}", p.file)
@@ -180,7 +180,7 @@ fn report_message_braces_interpolate_and_escapes_are_literal() {
 fn regex_string_quantifiers_and_knob_defaults_keep_braces_literally() {
     let d = dump_clause("find f: file where f.path matches \"a{2,3}\\{x\\}\"");
     assert!(d.contains(r#"Str("a{2,3}\\{x\\}")"#), "{d}");
-    let src = "rule T001 \"t\" {\n lang *\n severity warn\n knob g: glob = \"*.{a,b}\" \"d\"\n find f: file\n report f \"m\"\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}";
+    let src = "rule T001 \"t\" {\n lang *\n severity error\n knob g: glob = \"*.{a,b}\" \"d\"\n find f: file\n report f \"m\"\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}";
     let p = clean(src);
     assert!(format!("{:?}", p.file).contains(r#""*.{a,b}""#));
 }
@@ -197,7 +197,7 @@ fn unbalanced_brace_in_a_non_message_string_is_a_plain_literal() {
 // frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
 #[test]
 fn message_interpolation_spans_are_exact_and_bad_braces_are_parse_errors() {
-    let src = "rule T001 \"t\" {\n lang *\n severity warn\n find f: file\n report f \"hi {f.name}!\"\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}";
+    let src = "rule T001 \"t\" {\n lang *\n severity error\n find f: file\n report f \"hi {f.name}!\"\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}";
     let p = clean(src);
     let d = format!("{:?}", p.file);
     let at = src.find("{f.name}").unwrap();
@@ -461,7 +461,7 @@ fn quantifier_clause_and_any_and_ranges_parse() {
 #[test]
 fn example_forms_parse() {
     let rule = rule_of(&wrap(
-        "example fire rust \"named\" {\n    file \"a.rs\" \"\"\"\n      x\n    \"\"\"\n    config \"\"\"\n      a = 1\n    \"\"\"\n    diff [\"a\", \"b\"]\n    lease [\"c/**\"]\n    expect \"line 3: warn\"\n    fixed \"\"\"\n      y\n    \"\"\"\n  }\n  example clean {}\n  example unresolved \"\"\"\n    z\n  \"\"\"",
+        "example fire rust \"named\" {\n    file \"a.rs\" \"\"\"\n      x\n    \"\"\"\n    config \"\"\"\n      a = 1\n    \"\"\"\n    diff [\"a\", \"b\"]\n    lease [\"c/**\"]\n    expect \"line 3: error\"\n    fixed \"\"\"\n      y\n    \"\"\"\n  }\n  example clean {}\n  example unresolved \"\"\"\n    z\n  \"\"\"",
     ));
     assert_eq!(rule.examples.len(), 3);
     let ExampleBody::Inputs(inputs) = &rule.examples[0].body else {
@@ -535,7 +535,7 @@ fn first_find_fields(src: &str) -> Vec<(String, String)> {
 fn dotted_and_bare_field_forms_parse_to_the_same_fields() {
     let wrap = |c: &str| {
         format!(
-            "rule T001 \"t\" {{\n lang *\n severity warn\n {c}\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}}"
+            "rule T001 \"t\" {{\n lang *\n severity error\n {c}\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}}"
         )
     };
     let bare = first_find_fields(&wrap("find e: element(tag = \"img\", kind = \"x\")"));
@@ -597,7 +597,7 @@ fn every_grl_example_in_grl_spec_parses() {
             b.clone()
         } else {
             format!(
-                "rule T001 \"t\" {{\n lang *\n severity warn\n {b}\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}}"
+                "rule T001 \"t\" {{\n lang *\n severity error\n {b}\n explain \"\"\"\n x\n ## Remedy\n y\n \"\"\"\n}}"
             )
         };
         let p = parsed(&src);

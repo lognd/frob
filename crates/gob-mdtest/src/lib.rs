@@ -9,7 +9,7 @@
 //! - headings form a tree: a section is a test or a group, never both; `file=` blocks add files to
 //!   a case, `toml` blocks configure a section and its descendants (child overrides parent)
 //! - suite default rule: `<!-- mdtest: rule=ID -->`
-//! - markers `// error: [COL] ID "substring"` (also `warn`, `advisory`,
+//! - markers `// error: [COL] ID "substring"` (also
 //!   `unresolved[REASON]`; column, rule and message optional; a bare `error:`
 //!   means the rule under test) assert a finding on that line of the block;
 //!   a marker alone on its line applies to the next non-marker line.

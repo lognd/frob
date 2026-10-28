@@ -14,7 +14,7 @@ use crate::host::{CrunkHost, component_subjects, missing_component_inputs};
 #[rule(
     id = "COMP006",
     slug = "a11y-contract-incomplete",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

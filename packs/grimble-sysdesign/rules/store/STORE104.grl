@@ -1,12 +1,12 @@
 rule STORE104 "unfiltered-delete-or-update" {
   lang python
-  severity advisory
+  severity error
 
   find c: call where c.callee.name == "execute" and c.text ~ /execute\(\s*["'](DELETE FROM|delete from|UPDATE \w+ SET|update \w+ set)/ and not c.text ~ /(WHERE|where)/
   report c "this DELETE or UPDATE has no WHERE clause and rewrites every row"
 
   example fire python """
-    cur.execute("DELETE FROM sessions")  #~ advisory
+    cur.execute("DELETE FROM sessions")  #~ error
   """
   example clean python """
     cur.execute("DELETE FROM sessions WHERE expires < now()")

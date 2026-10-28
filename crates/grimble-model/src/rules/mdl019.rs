@@ -11,7 +11,7 @@ use crate::host::MdlHost;
 #[rule(
     id = "MDL019",
     slug = "mdl-orphan-file",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

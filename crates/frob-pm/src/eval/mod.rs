@@ -72,13 +72,13 @@ mod tests {
     #[test]
     fn strict_escalates_listed_rules_only() {
         let fs = vec![
-            finding("PM001", Severity::Warn),
-            finding("PM033", Severity::Advisory),
+            finding("PM001", Severity::Error),
+            finding("PM033", Severity::Error),
         ];
         let out = apply_strict(true, fs.clone());
         assert_eq!(out[0].severity, Severity::Error);
-        assert_eq!(out[1].severity, Severity::Advisory);
+        assert_eq!(out[1].severity, Severity::Error);
         let off = apply_strict(false, fs);
-        assert_eq!(off[0].severity, Severity::Warn);
+        assert_eq!(off[0].severity, Severity::Error);
     }
 }

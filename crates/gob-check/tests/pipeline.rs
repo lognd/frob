@@ -20,7 +20,7 @@ use gob_text::{FileId, FileInterner, Span, TextRange, TextSize};
     slug = "toy-bad",
     family = "TOY",
     product = "toy",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = File,
     fix = Manual,
@@ -36,7 +36,7 @@ struct Toy001;
     slug = "toy-measured",
     family = "TOY",
     product = "toy",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -72,7 +72,7 @@ impl FileCheck<Toy> for BadCheck {
         let span = Span::new(file, TextRange::at(start, TextSize::new(3)));
         vec![Finding::new(
             Toy001.meta().rule_id().expect("valid"),
-            Severity::Warn,
+            Severity::Error,
             Some(span),
             "says BAD",
             path,

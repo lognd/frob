@@ -17,7 +17,7 @@ mod danger001;
 
 const RULE: &str = r#"rule DANGER001 "danger-call" {
   lang typescript
-  severity warn
+  severity error
   find c: call where c.callee == "danger"
   report c "danger"
   explain """

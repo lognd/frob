@@ -12,7 +12,7 @@ static DEF: RuleDef = RuleDef {
     id: "TST001",
     slug: "probe",
     family: "TST",
-    severity: Severity::Warn,
+    severity: Severity::Error,
     release_severity: None,
     polarity: Polarity::Pplus,
     must_measure: false,
@@ -69,5 +69,5 @@ fn a_located_emission_becomes_a_finding_in_its_file() {
     }
     .into_located_finding(Probe::DEF, &mut files);
     assert!(spanless.span.is_none());
-    assert_eq!(spanless.severity, Severity::Warn);
+    assert_eq!(spanless.severity, Severity::Error);
 }

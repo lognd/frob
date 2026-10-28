@@ -127,7 +127,7 @@ fn disagreement(reference: Layer, layer: Layer) -> Option<String> {
 #[rule(
     id = "CRAFT007",
     slug = "elevation-system",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

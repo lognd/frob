@@ -20,7 +20,7 @@ const MOTION_PROPS: [&str; 2] = ["transition", "animation"];
 #[rule(
     id = "CRAFT010",
     slug = "motion-policy",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

@@ -11,7 +11,7 @@ use crate::host::ErrHost;
 #[rule(
     id = "ERR002",
     slug = "discarded-result",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

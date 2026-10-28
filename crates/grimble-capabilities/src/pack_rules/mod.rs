@@ -206,7 +206,7 @@ pub fn issue_finding(issue: &PackIssue) -> Finding {
         ),
         PackIssue::DetectorUnavailable { pack, detector } => (
             "PACK003",
-            Severity::Warn,
+            Severity::Error,
             format!("{pack}::{detector}"),
             format!("pack `{pack}` detector `{detector}` is unavailable"),
         ),
@@ -230,7 +230,7 @@ pub fn issue_finding(issue: &PackIssue) -> Finding {
         ),
         PackIssue::RedundantOverride { pack, key } => (
             "PACK008",
-            Severity::Advisory,
+            Severity::Error,
             format!("{pack}::{key}"),
             format!("override of `{key}` in pack `{pack}` restates the pack"),
         ),

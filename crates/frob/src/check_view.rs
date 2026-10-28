@@ -15,15 +15,15 @@ fn headline(data: &CheckData) -> String {
     let files = data.stats.as_ref().map_or_else(String::new, |s| {
         format!(", {} files checked", s.files_checked)
     });
-    if c.error + c.warn + c.advisory + c.unresolved == 0 {
+    if c.error + c.unresolved == 0 {
         return format!(
             "check{scope}: clean ({} suppressed{files})",
             data.suppressed
         );
     }
     format!(
-        "check{scope}: {} error, {} warn, {} advisory, {} unresolved ({} suppressed{files})",
-        c.error, c.warn, c.advisory, c.unresolved, data.suppressed
+        "check{scope}: {} error, {} unresolved ({} suppressed{files})",
+        c.error, c.unresolved, data.suppressed
     )
 }
 
@@ -196,7 +196,7 @@ mod tests {
     #[test]
     fn check_view_leads_with_counts_then_findings_and_notes() {
         let mut d = data();
-        d.counts.warn = 1;
+        d.counts.error = 1;
         d.suppressed = 2;
         d.ticket = Some("~ABC1234".to_owned());
         d.lines = vec!["a.rs:1:1: warning X001 msg".to_owned()];
@@ -205,7 +205,7 @@ mod tests {
         assert_eq!(
             rows,
             vec![
-                "check for ~ABC1234: 0 error, 1 warn, 0 advisory, 0 unresolved (2 suppressed)",
+                "check for ~ABC1234: 1 error, 0 unresolved (2 suppressed)",
                 "",
                 "a.rs:1:1: warning X001 msg",
                 "",
@@ -222,12 +222,12 @@ mod tests {
         d.explain = Some(Explained {
             id: "X001".to_owned(),
             slug: "x-rule".to_owned(),
-            severity: "warn".to_owned(),
+            severity: "error".to_owned(),
             summary: "sum".to_owned(),
             explanation: "line one\nline two".to_owned(),
         });
         let rows = check_rows(&d, false);
-        assert_eq!(rows[0], "X001 (x-rule, warn)");
+        assert_eq!(rows[0], "X001 (x-rule, error)");
         assert_eq!(rows.last().map(String::as_str), Some("  line two"));
     }
 }

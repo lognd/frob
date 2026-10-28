@@ -34,7 +34,7 @@ impl From<ExitCode> for i32 {
 
 /// `Negative` when a finding reaches `threshold`, or an Unresolved one fails `policy`.
 ///
-/// `threshold` gates Error, Warn and Advisory only (`None` disables it).
+/// `threshold` gates Error only (`None` disables it).
 /// Unresolved fails under `All`, or under `Required` when the finding carries a
 /// required reason; the result is never `Refused` (cli.md section 2).
 pub fn fail_on(

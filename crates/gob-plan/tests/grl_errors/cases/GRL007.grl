@@ -5,7 +5,7 @@ rule UNIV002 "unsafe-anywhere" {
   report u "unsafe code needs a review"
 
   example fire """
-    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ error
   """
   example clean """
     fn f(x: u32) -> u32 { x }

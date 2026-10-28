@@ -1,12 +1,12 @@
 rule ROUTE104 "csrf-protection-exempted" {
   lang python
-  severity warn
+  severity error
 
   find c: call where c.text ~ /csrf(_protect)?\.exempt\(/
   report c "a view is exempted from CSRF protection"
 
   example fire python """
-    csrf.exempt(transfer_view)  #~ warn
+    csrf.exempt(transfer_view)  #~ error
   """
   example clean python """
     csrf.init_app(app)

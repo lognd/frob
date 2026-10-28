@@ -30,7 +30,7 @@ const UNCHOSEN_FONTS: &[&str] = &[
 #[rule(
     id = "SLOP010",
     slug = "font-unchosen",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

@@ -1,5 +1,6 @@
 ---
 source: crates/gob-plan/src/grl/parse/tests/mod.rs
+assertion_line: 143
 expression: dump(&p.file)
 ---
 File {
@@ -97,41 +98,41 @@ File {
       name: None,
       body: Source(
         BlockLit {
-           value: "fn f(x: u32) -> u32 { dbg!(x) }        //~ warn",
-          body: @125..180,
-          span: @122..183 
+           value: "fn f(x: u32) -> u32 { dbg!(x) }        //~ error",
+          body: @125..181,
+          span: @122..184 
         }
       ),
-      span: @109..183 
+      span: @109..184 
     },
     Example {
        expect: Expect {
          kind: Clean,
-        span: @194..199 
+        span: @195..200 
       },
       lang: None,
       name: None,
       body: Source(
         BlockLit {
            value: "fn f(x: u32) -> u32 { x }",
-          body: @203..236,
-          span: @200..239 
+          body: @204..237,
+          span: @201..240 
         }
       ),
-      span: @186..239 
+      span: @187..240 
     }
   ],
   explain: Some(
     Explain {
        text: BlockLit {
          value: "`dbg!` prints to stderr and is meant for local debugging only.\n\n## Remedy\nDelete the call, or log through `tracing` if the value matters.",
-        body: @254..407,
-        span: @251..410 
+        body: @255..408,
+        span: @252..411 
       },
-      span: @243..410 
+      span: @244..411 
     }
   ),
-  span: @0..412 
+  span: @0..413 
 }
 ] 
 }

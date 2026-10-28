@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI010",
     slug = "checkout-no-persist",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

@@ -13,7 +13,7 @@ use syn::{Ident, ItemStruct, Lit, LitStr, Token, bracketed, parenthesized};
 
 use crate::{rule_doc, valid_id, valid_slug};
 
-const SEVERITY: &[&str] = &["Error", "Warn", "Advisory"];
+const SEVERITY: &[&str] = &["Error"];
 const POLARITY: &[&str] = &["Pplus", "Pminus", "P0", "Pn", "Pc"];
 const SCOPE: &[&str] = &["File", "Repo"];
 const FIX: &[&str] = &["Manual", "Deterministic", "VerifyCommit", "FixIt"];

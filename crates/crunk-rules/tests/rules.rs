@@ -408,18 +408,18 @@ fn a_rules_own_release_severity_beats_the_family_and_the_default() {
     let advisory = gob_rules::RuleDef {
         id: "ZZZ001",
         family: "ZZZ",
-        severity: Severity::Advisory,
+        severity: Severity::Error,
         release_severity: Some(Severity::Error),
         ..gob_rules::RuleDef::POISONED
     };
-    assert_eq!(gate_severity(&advisory, Gate::Check), Severity::Advisory);
+    assert_eq!(gate_severity(&advisory, Gate::Check), Severity::Error);
     assert_eq!(gate_severity(&advisory, Gate::Release), Severity::Error);
     let human = gob_rules::RuleDef {
         family: "HUMAN",
-        release_severity: Some(Severity::Warn),
+        release_severity: Some(Severity::Error),
         ..gob_rules::RuleDef::POISONED
     };
-    assert_eq!(gate_severity(&human, Gate::Release), Severity::Warn);
+    assert_eq!(gate_severity(&human, Gate::Release), Severity::Error);
 }
 
 // frob:tests crates/crunk-rules/src/family.rs::is_waivable
@@ -476,7 +476,7 @@ fn lint_levels_map_onto_pipeline_severities() {
     );
     assert_eq!(
         crunk_rules::lint::severity_of(&spec_with("WAIVE001 = \"warn\""), waive),
-        Some(Severity::Warn)
+        Some(Severity::Error)
     );
     assert_eq!(
         crunk_rules::lint::severity_of(&spec_with("WAIVE001 = \"off\""), waive),

@@ -84,7 +84,7 @@ fn a_waiver_without_a_reason_fires_waive001_and_does_not_suppress() {
         "{}",
         w.message
     );
-    assert_eq!(w.severity, Severity::Warn);
+    assert_eq!(w.severity, Severity::Error);
 }
 
 // frob:tests crates/crunk-rules/src/waiver.rs::exceptions
@@ -121,7 +121,7 @@ fn lint_warn_changes_the_severity_and_off_drops_the_finding() {
         .iter()
         .find(|f| f.rule.as_str() == "WAIVE001")
         .expect("WAIVE001");
-    assert_eq!(w.severity, Severity::Warn);
+    assert_eq!(w.severity, Severity::Error);
     let off = spec().replace("[lint]", "[lint]\nWAIVE001 = \"off\"");
     let r = run_over(&off, &[("styles/a.css", css)]);
     assert!(!ids(&r).contains(&"WAIVE001".to_owned()));

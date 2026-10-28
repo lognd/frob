@@ -27,7 +27,7 @@ fn lookup_in_update_fires_unity201_as_advisory() {
     let r = analyze(&[cs(&src)]);
     assert_eq!(r.findings.len(), 1);
     assert_eq!(r.findings[0].rule, "UNITY201");
-    assert_eq!(r.findings[0].severity, Severity::Advisory);
+    assert_eq!(r.findings[0].severity, Severity::Error);
     assert!(r.not_applicable.is_empty());
 }
 

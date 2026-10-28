@@ -67,7 +67,7 @@ fn is_aligned(el: &SceneElement) -> bool {
 #[rule(
     id = "CRAFT011",
     slug = "optical-alignment",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

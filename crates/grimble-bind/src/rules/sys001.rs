@@ -11,7 +11,7 @@ use crate::host::BindHost;
 #[rule(
     id = "SYS001",
     slug = "sys-unowned",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

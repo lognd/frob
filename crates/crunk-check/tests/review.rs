@@ -93,7 +93,7 @@ fn a_changed_token_makes_human001_name_the_screen_and_token_until_acked_again() 
     write(dir.path(), "crunk.toml", &spec_text("#2f6fee", ""));
     let stale = human(dir.path(), Gate::Check);
     assert_eq!(stale.len(), 1, "{stale:?}");
-    assert_eq!(stale[0].severity, Severity::Advisory);
+    assert_eq!(stale[0].severity, Severity::Error);
     assert!(stale[0].message.contains("`home`"), "{}", stale[0].message);
     assert!(
         stale[0].message.contains("token:--color-accent"),
@@ -123,7 +123,7 @@ fn a_token_the_screen_does_not_use_does_not_make_it_stale() {
 fn the_release_gate_raises_a_stale_review_to_an_error_that_fails_the_run() {
     let dir = project("#2f6fed", "");
     let at_check = human(dir.path(), Gate::Check);
-    assert_eq!(at_check[0].severity, Severity::Advisory);
+    assert_eq!(at_check[0].severity, Severity::Error);
     let opts = CheckOptions {
         gate: Gate::Release,
         ..CheckOptions::default()

@@ -1,12 +1,12 @@
 rule SEO102 "canonical-link-without-href" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "link" and e has attribute(name = "rel", value = "canonical") and not e has attribute(name = "href")
   report e "canonical link has no href: search engines ignore it and may index duplicates"
 
   example fire html """
-    <link rel="canonical">  <!--~ warn -->
+    <link rel="canonical">  <!--~ error -->
   """
   example clean html """
     <link rel="canonical" href="https://example.com/pricing">

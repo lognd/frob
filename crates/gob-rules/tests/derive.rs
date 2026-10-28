@@ -17,13 +17,13 @@ struct DemoRule;
 
 /// Second rule used for lookups.
 #[derive(Rule)]
-#[rule(id = "DEM002", slug = "demo-two", family = "DEM", severity = Warn,
+#[rule(id = "DEM002", slug = "demo-two", family = "DEM", severity = Error,
     tier = Universal, scope = Repo, fix = FixIt, version = 3)]
 struct DemoTwo;
 
 /// Declares polarity and `must_measure` explicitly.
 #[derive(Rule)]
-#[rule(id = "DEM003", slug = "demo-three", family = "DEM", severity = Warn,
+#[rule(id = "DEM003", slug = "demo-three", family = "DEM", severity = Error,
     tier = Universal, scope = Repo, fix = Manual, polarity = Pminus, must_measure = true, version = 1)]
 struct DemoThree;
 
@@ -118,19 +118,19 @@ fn fingerprint_ignores_numbers_and_whitespace_but_not_anchor() {
     let r: RuleId = "DEM001".parse().unwrap();
     let a = Finding::new(
         r.clone(),
-        Severity::Warn,
+        Severity::Error,
         None,
         "line 3:  too   long (120)",
         "a.rs",
     );
     let b = Finding::new(
         r.clone(),
-        Severity::Warn,
+        Severity::Error,
         None,
         "line 40: too long (9)",
         "a.rs",
     );
-    let c = Finding::new(r, Severity::Warn, None, "line 3: too long (120)", "b.rs");
+    let c = Finding::new(r, Severity::Error, None, "line 3: too long (120)", "b.rs");
     assert_eq!(a.fingerprint, b.fingerprint);
     assert_ne!(a.fingerprint, c.fingerprint);
     assert_eq!(a.fingerprint.to_hex().len(), 64);
@@ -142,44 +142,28 @@ fn demo_finding(id: &str, severity: Severity) -> gob_rules::Finding {
 
 // frob:tests crates/gob-rules/src/ramp.rs::RuleSettings.ramp_findings
 #[test]
-fn ramp_findings_caps_new_error_rules_and_honours_settings() {
+fn ramp_findings_is_inert_now_that_warn_is_retired() {
     let since = |id: &str| Registry::global().by_id(id).map(|m| m.since);
-    // DEM001 is an Error rule that first shipped in 2.0.0.
     let mut f = [
         demo_finding("DEM001", Severity::Error),
-        demo_finding("DEM002", Severity::Warn),
+        demo_finding("DEM002", Severity::Error),
     ];
     let on = gob_rules::RuleSettings::default();
-    assert_eq!(on.ramp_findings(&mut f, &since, "2.0.1"), 1);
-    assert_eq!(f[0].severity, Severity::Warn);
-    assert!(f[0].message.contains("2.1.0"), "{}", f[0].message);
-    assert_eq!(f[1].severity, Severity::Warn);
-    assert_eq!(f[1].message, "msg");
-
-    let mut out_of_window = [demo_finding("DEM001", Severity::Error)];
-    assert_eq!(on.ramp_findings(&mut out_of_window, &since, "2.1.0"), 0);
-    assert_eq!(out_of_window[0].severity, Severity::Error);
-
-    let off = gob_rules::RuleSettings::from_toml("[rules]\nramp = false\n").unwrap();
-    let mut f = [demo_finding("DEM001", Severity::Error)];
-    assert_eq!(off.ramp_findings(&mut f, &since, "2.0.1"), 0);
+    assert_eq!(on.ramp_findings(&mut f, &since, "2.0.1"), 0);
     assert_eq!(f[0].severity, Severity::Error);
-
-    let pinned =
-        gob_rules::RuleSettings::from_toml("[rules.DEM001]\nseverity = \"error\"\n").unwrap();
-    let mut f = [demo_finding("DEM001", Severity::Error)];
-    assert_eq!(pinned.ramp_findings(&mut f, &since, "2.0.1"), 0);
+    assert_eq!(f[0].message, "msg");
+    assert_eq!(f[1].severity, Severity::Error);
 }
 
 // frob:tests crates/gob-rules/src/ramp.rs::RuleSettings.from_toml
 #[test]
 fn from_toml_reads_ramp_severity_and_disabled_and_rejects_a_bad_ramp() {
     let s = gob_rules::RuleSettings::from_toml(
-        "[rules]\nramp = false\n[rules.A001]\nseverity = \"warn\"\n[rules.B001]\ndisabled = true\n",
+        "[rules]\nramp = false\n[rules.A001]\nseverity = \"error\"\n[rules.B001]\ndisabled = true\n",
     )
     .unwrap();
     assert!(!s.ramp);
-    assert_eq!(s.severity["A001"], Severity::Warn);
+    assert_eq!(s.severity["A001"], Severity::Error);
     assert!(s.disabled.contains("B001"));
     assert_eq!(
         gob_rules::RuleSettings::from_toml("name = 1\n").unwrap(),

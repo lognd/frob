@@ -1,5 +1,6 @@
 ---
 source: crates/gob-diagnostics/tests/contract.rs
+assertion_line: 538
 expression: out
 ---
 (no location)
@@ -7,5 +8,5 @@ expression: out
   reason: the language support is too shallow for this rule (fidelity)
   remedy: use a richer adapter or disable the rule here
 
-0 errors, 0 warnings, 0 advisory, 1 unresolved (0 required)
+0 errors, 1 unresolved (0 required)
   unresolved: 0 because a plugin did not finish, 1 because the code is undecidable

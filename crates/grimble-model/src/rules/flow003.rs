@@ -11,7 +11,7 @@ use crate::host::MdlHost;
 #[rule(
     id = "FLOW003",
     slug = "flow-no-rate",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

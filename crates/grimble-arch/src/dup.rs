@@ -273,7 +273,7 @@ fn finding(c: &Clone, texts: &[(&str, bool, String)], files: &[Vec<Tok<'_>>]) ->
     let range = (files[f][p].start, files[f][p + c.len - 1].end);
     Verdict::fire(
         DUP,
-        Severity::Advisory,
+        Severity::Error,
         (texts[f].0, range),
         format!(
             "{} copies of a {}-token block, {}: {}",

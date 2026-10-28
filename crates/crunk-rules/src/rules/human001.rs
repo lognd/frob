@@ -15,7 +15,7 @@ use crate::review::ReviewStatus;
 #[rule(
     id = "HUMAN001",
     slug = "human-review-stale",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

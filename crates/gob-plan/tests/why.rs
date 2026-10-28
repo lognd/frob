@@ -16,7 +16,7 @@ use support::Doc;
 
 const RULE: &str = r#"rule NOPE001 "no-dbg" {
   lang typescript
-  severity warn
+  severity error
   find d: call where d.callee == "danger"
   where not d inside function
   report d "remove dbg"
@@ -51,7 +51,7 @@ fn why_prints_candidates_and_the_failed_inside_clause() {
 
 const P_MINUS: &str = r#"rule CALL001 "uncalled" {
   lang rust
-  severity warn
+  severity error
   polarity P-
   find f: function
   where some t: function where t calls f

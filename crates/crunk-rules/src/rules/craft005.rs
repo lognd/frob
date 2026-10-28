@@ -20,7 +20,7 @@ const STATE: &str = "active";
 #[rule(
     id = "CRAFT005",
     slug = "press-feedback",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

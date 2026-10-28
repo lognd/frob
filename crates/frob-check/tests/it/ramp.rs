@@ -42,10 +42,10 @@ fn test001(config: &str) -> gob_rules::Finding {
 
 // frob:tests crates/frob-check/src/lib.rs::run
 #[test]
-fn a_new_error_rule_is_ramped_to_warn_unless_ramp_is_off() {
+fn a_new_error_rule_is_no_longer_ramped() {
     let ramped = test001("");
-    assert_eq!(ramped.severity, Severity::Warn);
-    assert!(ramped.message.contains("0.533.0"), "{}", ramped.message);
+    assert_eq!(ramped.severity, Severity::Error);
+    assert!(!ramped.message.contains("0.533.0"), "{}", ramped.message);
     let strict = test001("[rules]\nramp = false\n");
     assert_eq!(strict.severity, Severity::Error);
 }

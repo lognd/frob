@@ -220,7 +220,7 @@ pub fn pm013(limits: WipLimits, wip: &Wip) -> Evaluation {
         tracing::debug!(count = wip.standard.len(), limit, "PM013: over the limit");
         out.findings.push(Finding::new(
             rule_id(),
-            Severity::Warn,
+            Severity::Error,
             None,
             format!(
                 "{} tickets are in progress, over the [pm.wip] in_progress limit of {limit}; holders: {}; finish or requeue one (frob requeue <ticket> --reason <why>) or raise the limit",
@@ -235,7 +235,7 @@ pub fn pm013(limits: WipLimits, wip: &Wip) -> Evaluation {
         tracing::debug!(count = wip.expedite.len(), max, "PM013: expedite lane over");
         out.findings.push(Finding::new(
             rule_id(),
-            Severity::Warn,
+            Severity::Error,
             None,
             format!(
                 "{} expedite tickets are in progress, over the [pm.classes] expedite_max of {max}; holders: {}; finish or requeue one (frob requeue <ticket> --reason <why>) or raise expedite_max",
@@ -253,7 +253,7 @@ pub fn pm013(limits: WipLimits, wip: &Wip) -> Evaluation {
         );
         out.findings.push(Finding::new(
             rule_id(),
-            Severity::Warn,
+            Severity::Error,
             None,
             format!(
                 "{} tickets are ready to land, over the [pm.wip] ready limit of {}; waiting: {}; land them (frob land <ticket>) or raise the limit",

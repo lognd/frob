@@ -1,6 +1,6 @@
 rule NEAT013 "ambient-source-call" {
   lang *
-  severity warn
+  severity error
   needs vocab(sources)
   knob sources: vocab = vocab("clock", "rng", "env", "fs", "net", "stdio", "exit") "ambient sources"
 
@@ -11,7 +11,7 @@ rule NEAT013 "ambient-source-call" {
 
   example fire python """
     def now_str():
-        return time.time()          #~ warn
+        return time.time()          #~ error
   """
   example clean python """
     # frob:shell

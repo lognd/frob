@@ -7,7 +7,7 @@ rule NOPE017 "certainly-under-not" {
   report f "no certain call to g"
 
   example fire """
-    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ error
   """
   example clean """
     fn f(x: u32) -> u32 { x }

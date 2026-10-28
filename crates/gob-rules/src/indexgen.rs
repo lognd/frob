@@ -338,7 +338,7 @@ mod tests {
 
     fn rule_file(id: &str, ty: &str, scope: &str) -> String {
         format!(
-            "use gob_rules::rule;\n\n#[rule(\n    id = \"{id}\",\n    slug = \"x-y\",\n    severity = Warn,\n    scope = {scope},\n    applies = universal(needs = [Comments], min_fidelity = F1),\n    since = \"0.1.0\",\n)]\n/// Doc.\npub struct {ty};\n"
+            "use gob_rules::rule;\n\n#[rule(\n    id = \"{id}\",\n    slug = \"x-y\",\n    severity = Error,\n    scope = {scope},\n    applies = universal(needs = [Comments], min_fidelity = F1),\n    since = \"0.1.0\",\n)]\n/// Doc.\npub struct {ty};\n"
         )
     }
 

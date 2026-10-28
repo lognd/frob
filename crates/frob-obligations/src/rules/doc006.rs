@@ -13,7 +13,7 @@ use crate::host::ObligationHost;
 #[rule(
     id = "DOC006",
     slug = "dangling-citation",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

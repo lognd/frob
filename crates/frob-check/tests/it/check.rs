@@ -144,21 +144,13 @@ fn fail_on_maps_severity_to_the_exit_code() {
     )
     .expect("none");
     assert_eq!(none.exit_code(), ExitCode::Ok);
-    // Only a warning-level rule present: error threshold passes, warn threshold fails.
-    let warn_only = CheckOptions {
+    // DOC001 is an Error now that Warn is retired: the error gate fails on it.
+    let doc_only = CheckOptions {
         only: vec!["DOC001".to_owned()],
         ..quiet()
     };
     assert_eq!(
-        run(dir.path(), &warn_only).expect("error gate").exit_code(),
-        ExitCode::Ok
-    );
-    let strict = CheckOptions {
-        fail_on: Some(FailOn::Warn),
-        ..warn_only
-    };
-    assert_eq!(
-        run(dir.path(), &strict).expect("warn gate").exit_code(),
+        run(dir.path(), &doc_only).expect("error gate").exit_code(),
         ExitCode::Negative
     );
 }
@@ -171,7 +163,7 @@ fn fail_on_maps_severity_to_the_exit_code() {
     id = "FIXT001",
     slug = "fixture-rewrite",
     family = "FIXT",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = File,
     fix = Deterministic,
@@ -210,7 +202,7 @@ impl FileCheck<Frob> for Rewrite {
         vec![
             Finding::new(
                 id,
-                gob_rules::Severity::Warn,
+                gob_rules::Severity::Error,
                 Some(span),
                 "spell it `color`",
                 path,

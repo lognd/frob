@@ -93,7 +93,7 @@ Every verb, every time:
 - Unresolved and the gate (the one mechanism; rules.md section 4 step 8,
   products.md, boundaries.md, grimble-model.md 9.5 and universal-model.md
   4.2 refer here). `Unresolved` is a finding severity orthogonal to the
-  `Error | Warn | Advisory` threshold: `--fail-on` and `[check] fail_on`
+  `Error` threshold (`error` or `none`): `--fail-on` and `[check] fail_on`
   never count it. A materialized knob `[check] fail_on_unresolved =
   "required" | "never" | "all"` (default `"required"`) adds a second
   test to the gate: under `"required"`, a finding that is Unresolved and

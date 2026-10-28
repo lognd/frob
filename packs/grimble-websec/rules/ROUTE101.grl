@@ -1,12 +1,12 @@
 rule ROUTE101 "unsafe-method-on-get-route" {
   lang python
-  severity warn
+  severity error
 
   find c: call where c.text ~ /add_url_rule\(.*"GET".*"(POST|PUT|DELETE)"/
   report c "one route serves GET and a state-changing method"
 
   example fire python """
-    app.add_url_rule("/item", view_func=item, methods=["GET", "DELETE"])  #~ warn
+    app.add_url_rule("/item", view_func=item, methods=["GET", "DELETE"])  #~ error
   """
   example clean python """
     app.add_url_rule("/item", view_func=item, methods=["GET"])

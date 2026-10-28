@@ -11,7 +11,7 @@ use crate::host::BindHost;
 #[rule(
     id = "SYS004",
     slug = "sys-entity-without-code",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

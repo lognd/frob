@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI001",
     slug = "pinned-ref",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

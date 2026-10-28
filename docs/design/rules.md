@@ -313,9 +313,9 @@ readable `PlayerSettings` asset is not examined, and a walk with none is
 not applicable. UNITY302 needs no settings and fires on a Rigidbody force
 or move made from `Update` or `LateUpdate`.
 
-The grimble check reads `[rules.<id>] severity = "advisory" | "warn" |
-"error"` (`RuleOverrides` in `grimble-check`). The override beats the rule
-default and `[grimble] strict`. An unknown rule id is logged and ignored
+The grimble check reads `[rules.<id>] severity = "error" | "off"` (`RuleOverrides` in `grimble-check`; "warn" and "advisory" are config errors naming the replacement).
+The frob product reads the same table from `frob.toml`: `[rules.<id>] severity = "off"` (or `disabled = true`) drops that rule's findings after the run (`drop_disabled_product_findings` in `gob-rules`), `"error"` is accepted, and `"warn"`/`"advisory"` are config errors. This repository turns off the rules that still have findings, each with a `reason` naming its burn-down ticket, until the baseline store lands (6.1.7).
+The override beats the rule default and `[grimble] strict`. An unknown rule id is logged and ignored
 because `[rules]` is shared with other products; an invalid token fails
 the run. Unresolved findings are never re-graded, and `disabled` is not
 read by grimble. The table is hand-parsed, so it is not part of the
@@ -352,7 +352,7 @@ output:
    id = "GPOL001"
    alias = "no-print-in-lib"
    language = "python"
-   severity = "warn"       # TOML spells the Severity enum in lowercase
+   severity = "error"      # TOML spells the Severity enum in lowercase
    message = "use the module logger, not print"
    rule = { pattern = "print($$$ARGS)", not = { inside = { kind = "decorated_definition", has = { pattern = "@cli" } } } }
    fix = "_log.info($$$ARGS)"

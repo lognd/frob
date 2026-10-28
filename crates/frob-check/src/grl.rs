@@ -163,12 +163,12 @@ mod tests {
 
     const RULE: &str = r#"rule NOPE001 "danger-call" {
   lang rust
-  severity warn
+  severity error
   find c: call where c.callee == "danger"
   report c "danger on line {c.line}"
   example fire rust """
     fn b() {
-        danger(); //~ warn
+        danger(); //~ error
     }
   """
   example clean rust """
@@ -211,7 +211,7 @@ mod tests {
     // frob:tests crates/frob-check/src/grl.rs::findings
     #[test]
     fn a_failing_example_is_a_grl016_finding_naming_the_rule_and_example() {
-        let broken = RULE.replacen("danger(); //~ warn", "danger();", 1);
+        let broken = RULE.replacen("danger(); //~ error", "danger();", 1);
         let d = repo(&broken);
         let r = report(d.path());
         let found = grl(&r);

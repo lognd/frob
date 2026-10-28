@@ -56,7 +56,7 @@ pub(crate) fn check(
                 tracing::debug!(unit = %rec.symref, lines, limit, "LARGE001 unit over the limit");
                 findings.push(Verdict::fire(
                     LARGE,
-                    Severity::Warn,
+                    Severity::Error,
                     (path, (start, end)),
                     format!(
                         "`{}` is {lines} lines long, over the limit of {limit}",

@@ -19,7 +19,7 @@ x = forbidden
 
 ```py expect=fire rule=MDT002
 x = 1
-y = forbidden  # warn: MDT002
+y = forbidden  # error: MDT002
 ```
 
 ## clean
@@ -32,7 +32,7 @@ let ok = allowed;
 # Second rule
 
 ```py expect=fire
-y = forbidden  # warn: MDT002
+y = forbidden  # error: MDT002
 ```
 
 ```py expect=clean

@@ -160,10 +160,6 @@ pub use gob_rules::Polarity;
 pub enum Severity {
     /// `error`
     Error,
-    /// `warn`
-    Warn,
-    /// `advisory`
-    Advisory,
 }
 
 /// A rule scope.
@@ -813,7 +809,7 @@ pub enum InputKind {
     Diff(Vec<StrLit>),
     /// `lease ["glob", ...]`
     Lease(Vec<StrLit>),
-    /// `expect "line 3: warn"`
+    /// `expect "line 3: error"`
     Expect(StrLit),
     /// `fixed """..."""`
     Fixed(BlockLit),

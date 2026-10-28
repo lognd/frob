@@ -67,6 +67,20 @@ pub fn set_done_requires(root: &Path, requires: &[&str]) {
     std::fs::write(&path, lines.join("\n") + "\n").expect("write frob.toml");
 }
 
+/// `[rules]` entries that switch off the rules a brand-new repository trips (an empty ready queue, no test, no doc comment, no parent story) so a flow test can assert a clean `frob check`; the burn-down is tracked by the severity-collapse follow-up tickets.
+pub const FRESH_REPO_RULES_OFF: &str = "\n[rules.PM007]\nseverity = \"off\"\nreason = \"fresh fixture repository has no story hierarchy\"\n\n[rules.PM032]\nseverity = \"off\"\nreason = \"fresh fixture repository has no good-first tickets\"\n\n[rules.PM033]\nseverity = \"off\"\nreason = \"fresh fixture repository has an empty ready queue\"\n\n[rules.COV001]\nseverity = \"off\"\nreason = \"fixture code carries no tests\"\n\n[rules.DOC001]\nseverity = \"off\"\nreason = \"fixture code carries no doc comments\"\n";
+
+/// Append [`FRESH_REPO_RULES_OFF`] to `<root>/frob.toml`.
+pub fn turn_off_fresh_repo_rules(root: &Path) {
+    use std::io::Write;
+    let mut f = std::fs::OpenOptions::new()
+        .append(true)
+        .open(root.join("frob.toml"))
+        .expect("open frob.toml");
+    f.write_all(FRESH_REPO_RULES_OFF.as_bytes())
+        .expect("append rules");
+}
+
 /// `PATH` with every directory that already holds a real sibling (`crunk`, `grimble`) removed, keeping git and the toolchain; so sibling discovery never depends on what the developer installed.
 pub fn hermetic_path() -> std::ffi::OsString {
     hermetic_path_from(&std::env::var_os("PATH").unwrap_or_default())

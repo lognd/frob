@@ -278,10 +278,6 @@ pub fn is_plugin_unfinished(finding: &Finding) -> bool {
 pub struct Summary {
     /// Error findings.
     pub errors: usize,
-    /// Warning findings.
-    pub warnings: usize,
-    /// Advisory findings.
-    pub advisory: usize,
     /// All Unresolved findings.
     pub unresolved: usize,
     /// Unresolved findings that fail the gate under `required`.
@@ -302,8 +298,6 @@ impl Summary {
         for f in findings {
             match f.severity {
                 Severity::Error => s.errors += 1,
-                Severity::Warn => s.warnings += 1,
-                Severity::Advisory => s.advisory += 1,
                 Severity::Unresolved => {
                     s.unresolved += 1;
                     if f.required.is_some() {

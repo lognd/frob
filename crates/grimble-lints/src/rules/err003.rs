@@ -11,7 +11,7 @@ use crate::host::ErrHost;
 #[rule(
     id = "ERR003",
     slug = "silent-catch-all",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

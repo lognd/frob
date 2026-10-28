@@ -1,12 +1,12 @@
 rule WEBPERF102 "img-without-height" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "img" and not e has attribute(name = "height")
   report e "image has no height: the layout shifts when it loads"
 
   example fire html """
-    <img src="hero.png" alt="Hero" width="640">  <!--~ warn -->
+    <img src="hero.png" alt="Hero" width="640">  <!--~ error -->
   """
   example clean html """
     <img src="hero.png" alt="Hero" width="640" height="360">

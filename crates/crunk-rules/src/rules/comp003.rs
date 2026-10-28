@@ -13,7 +13,7 @@ use crate::host::{CrunkHost, component_subjects, missing_component_inputs};
 #[rule(
     id = "COMP003",
     slug = "states-invalid",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

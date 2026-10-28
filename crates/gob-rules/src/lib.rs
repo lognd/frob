@@ -9,7 +9,7 @@
 //! use gob_rules::{RuleId, Severity};
 //! let id: RuleId = "COV006".parse().unwrap();
 //! assert_eq!(id.family(), "COV");
-//! assert!(Severity::Error > Severity::Warn);
+//! assert!(Severity::Error > Severity::Unresolved);
 //! ```
 
 // Lets the `#[rule]` expansion name `::gob_rules` from inside this crate (~N88H9SY).
@@ -51,7 +51,9 @@ pub use meta::{
     Applicability, FixKind, Needs, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier,
 };
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
-pub use ramp::{Ramped, in_ramp, ramp, ramp_end, ramp_product_findings};
+pub use ramp::{
+    Ramped, drop_disabled_product_findings, in_ramp, ramp, ramp_end, ramp_product_findings,
+};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError, RuleRow, RuleSettings};
 pub use required::{PackFailure, RequiredReason};

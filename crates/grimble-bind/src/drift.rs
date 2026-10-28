@@ -171,7 +171,7 @@ fn sys007_symbol(
     if !candidates.is_empty() {
         out.fire(
             "SYS008",
-            Severity::Advisory,
+            Severity::Error,
             format!(
                 "{key} is gone and its Body now appears at {}; if it is a rename run `grimble ack --rename {key} {}`",
                 candidates.join(", "),
@@ -398,16 +398,6 @@ fn shape_skew(sp: &str, sc: &str, live: &str, why: &mut Vec<String>) -> bool {
     sp == live && sc != live
 }
 
-/// The severity of a skew: `Warn` only under `versioning compat=backward` when every compared
-/// side shows nothing but a consumer behind a producer that moved forward; otherwise `Error`.
-fn skew_severity(compat: Option<&str>, only_consumer_behind: bool) -> Severity {
-    if compat == Some("backward") && only_consumer_behind {
-        Severity::Warn
-    } else {
-        Severity::Error
-    }
-}
-
 fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
     let Some(fe) = cx.lock.flows.get(key) else {
         return;
@@ -447,11 +437,10 @@ fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
     };
     out.count("SYS006", 1);
     let mut why = Vec::new();
-    let mut only_consumer_behind = true;
     let mut skewed = false;
     let ends_skewed = pc != cc || *pc != fe.producer.contract || *cc != fe.consumer.contract;
     if ends_skewed {
-        only_consumer_behind &= end_skew(fe, (pi, pc), (ci, cc), &mut why);
+        let _ = end_skew(fe, (pi, pc), (ci, cc), &mut why);
         skewed = true;
     }
     let contract = cx.contracts.get(key);
@@ -463,7 +452,7 @@ fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
         match live_shape(rows, live, &k.anchor) {
             Shape::Exact(sl) => {
                 if sp != sc || *sl != **sp || *sl != **sc {
-                    only_consumer_behind &= shape_skew(sp, sc, &sl, &mut why);
+                    let _ = shape_skew(sp, sc, &sl, &mut why);
                     skewed = true;
                 }
             }
@@ -491,7 +480,7 @@ fn sys006(cx: &DriftCx<'_>, key: &str, out: &mut Output) {
         _ => format!("producer {pi} and consumer {ci}"),
     };
     let compat = contract.and_then(|k| k.compat.as_deref());
-    let severity = skew_severity(compat, only_consumer_behind);
+    let severity = Severity::Error;
     tracing::debug!(flow = key, ?compat, ?severity, "contract skew found");
     out.fire(
         "SYS006",

@@ -1,4 +1,4 @@
-//! Ramp-in: a rule first shipped in release N runs at Warn through N, then at its declared severity.
+//! Ramp-in (inert): Warn is retired, so no rule is capped; ~MBFZHZD removes this module.
 //!
 //! The window is the minor line of `since` (`0.532.0` ramps through `0.532.x`); the release that
 //! ends it is the next minor, `0.533.0`. Pre-release suffixes (`-dev`) are ignored, so a dev build
@@ -45,26 +45,26 @@ pub struct Ramped {
     pub note: String,
 }
 
-/// Cap `declared` at Warn when `current` is inside the ramp window of `since`; `None` when no ramp applies (outside the window, `declared` already at most Warn, or an unparseable version).
+/// Ramp-in is inert: Warn no longer exists (rules.md 6.1.1), so no severity is ever capped; ~MBFZHZD removes this plumbing.
 #[must_use]
 pub fn ramp(since: &str, declared: Severity, current: &str) -> Option<Ramped> {
-    if declared <= Severity::Warn || !in_ramp(since, current) {
-        return None;
-    }
-    let end = ramp_end(since)?;
-    tracing::debug!(since, current, "rule ramped from error to warn");
-    Some(Ramped {
-        severity: Severity::Warn,
-        note: format!("new in {since}; reported as warn until {end}, when it becomes error"),
-    })
+    tracing::trace!(since, ?declared, current, "ramp-in is inert");
+    None
+}
+
+/// The config error for a retired `severity` spelling, naming its replacement.
+fn retired_severity(id: &str, word: &str) -> String {
+    format!(
+        "[rules.{id}] severity = \"{word}\" is no longer supported: use \"error\" plus a baseline in frob-baseline.toml, or \"off\""
+    )
 }
 
 impl RuleSettings {
-    /// Read `[rules] ramp`, the `[rules.<id>] severity` ids and `disabled = true` ids from the `text` of a product config; a missing `[rules]` gives the defaults.
+    /// Read `[rules] ramp`, the `[rules.<id>] severity` (`error` or `off`) ids and `disabled = true` ids from the `text` of a product config; a missing `[rules]` gives the defaults.
     ///
     /// # Errors
     ///
-    /// The TOML parse error when `text` is not TOML or `[rules] ramp` is not a boolean.
+    /// The TOML parse error when `text` is not TOML or `[rules] ramp` is not a boolean, or the message naming `error` plus a baseline, or `off`, when a severity is `warn` or `advisory`.
     pub fn from_toml(text: &str) -> Result<Self, String> {
         let doc: toml::Table = text.parse().map_err(|e: toml::de::Error| e.to_string())?;
         let mut out = Self::default();
@@ -76,15 +76,17 @@ impl RuleSettings {
                 ("ramp", toml::Value::Boolean(on)) => out.ramp = *on,
                 ("ramp", _) => return Err("`[rules] ramp` must be true or false".to_owned()),
                 (id, toml::Value::Table(entry)) => {
-                    let sev = entry.get("severity").and_then(toml::Value::as_str);
-                    let sev = match sev {
-                        Some("advisory") => Some(Severity::Advisory),
-                        Some("warn") => Some(Severity::Warn),
-                        Some("error") => Some(Severity::Error),
-                        _ => None,
-                    };
-                    if let Some(sev) = sev {
-                        out.severity.insert(id.to_owned(), sev);
+                    match entry.get("severity").and_then(toml::Value::as_str) {
+                        Some(word @ ("advisory" | "warn")) => {
+                            return Err(retired_severity(id, word));
+                        }
+                        Some("error") => {
+                            out.severity.insert(id.to_owned(), Severity::Error);
+                        }
+                        Some("off") => {
+                            out.disabled.insert(id.to_owned());
+                        }
+                        _ => {}
                     }
                     if entry.get("disabled").and_then(toml::Value::as_bool) == Some(true) {
                         out.disabled.insert(id.to_owned());
@@ -129,11 +131,45 @@ impl RuleSettings {
     }
 }
 
-// frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
 #[allow(
     clippy::disallowed_methods,
     reason = "reads the product's own config file, which is not walked content"
 )]
+/// The `[rules]` of `<root>/<product>.toml`, or the defaults when it is absent or unreadable.
+fn product_settings(root: &std::path::Path, product: &str) -> RuleSettings {
+    let path = root.join(format!("{product}.toml"));
+    match std::fs::read_to_string(&path) {
+        Ok(text) => RuleSettings::from_toml(&text).unwrap_or_else(|e| {
+            tracing::warn!(path = %path.display(), error = %e, "[rules] unreadable; defaults used");
+            RuleSettings::default()
+        }),
+        Err(_) => RuleSettings::default(),
+    }
+}
+
+// frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+/// Drop the findings of every rule switched off by `[rules.<id>] severity = "off"` (or `disabled = true`) in `<root>/<product>.toml`; returns how many were dropped.
+pub fn drop_disabled_product_findings(
+    root: &std::path::Path,
+    product: &str,
+    findings: &mut Vec<Finding>,
+) -> usize {
+    let settings = product_settings(root, product);
+    if settings.disabled.is_empty() {
+        return 0;
+    }
+    let before = findings.len();
+    findings.retain(|f| !settings.disabled.contains(f.rule.as_str()));
+    let dropped = before - findings.len();
+    tracing::info!(
+        product,
+        dropped,
+        "findings dropped for rules switched off in [rules]"
+    );
+    dropped
+}
+
+// frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
 /// Ramp the Error findings of rules new in release `current` using the `[rules]` of `<root>/<product>.toml` (defaults when absent or unreadable); a rule's `since` comes from `defs` first, then `registry`. Returns how many were ramped.
 pub fn ramp_product_findings(
     root: &std::path::Path,
@@ -143,14 +179,7 @@ pub fn ramp_product_findings(
     findings: &mut [Finding],
     current: &str,
 ) -> usize {
-    let path = root.join(format!("{product}.toml"));
-    let settings = match std::fs::read_to_string(&path) {
-        Ok(text) => RuleSettings::from_toml(&text).unwrap_or_else(|e| {
-            tracing::warn!(path = %path.display(), error = %e, "[rules] unreadable; ramp defaults used");
-            RuleSettings::default()
-        }),
-        Err(_) => RuleSettings::default(),
-    };
+    let settings = product_settings(root, product);
     let since_of = |id: &str| {
         defs.iter()
             .find(|d| d.id == id)
@@ -166,25 +195,56 @@ mod tests {
 
     // frob:tests crates/gob-rules/src/ramp.rs::ramp
     #[test]
-    fn an_error_rule_is_warn_through_its_release_line_then_error() {
-        let r = ramp("0.532.0", Severity::Error, "0.532.0").unwrap();
-        assert_eq!(r.severity, Severity::Warn);
-        assert!(r.note.contains("0.533.0"), "{}", r.note);
-        assert!(ramp("0.532.0", Severity::Error, "0.532.3").is_some());
-        assert!(ramp("0.532.0", Severity::Error, "0.533.0").is_none());
-        assert!(ramp("0.532.0", Severity::Error, "0.533.0-dev").is_none());
-        assert!(ramp("0.532.0", Severity::Error, "0.531.9").is_none());
-        assert!(ramp("0.532.0", Severity::Error, "1.0.0").is_none());
-    }
-
-    // frob:tests crates/gob-rules/src/ramp.rs::ramp
-    #[test]
-    fn lower_severities_and_bad_versions_are_never_ramped() {
-        assert!(ramp("0.532.0", Severity::Warn, "0.532.0").is_none());
-        assert!(ramp("0.532.0", Severity::Advisory, "0.532.0").is_none());
+    fn ramp_is_inert_for_every_input() {
+        assert!(ramp("0.532.0", Severity::Error, "0.532.0").is_none());
         assert!(ramp("0.532.0", Severity::Error, "dev").is_none());
-        assert!(ramp("x", Severity::Error, "0.532.0").is_none());
+        assert!(in_ramp("0.532.0", "0.532.3"));
         assert_eq!(ramp_end("1.2.3").as_deref(), Some("1.3.0"));
         assert_eq!(ramp_end("1.2"), None);
+    }
+
+    // frob:tests crates/gob-rules/src/ramp.rs::from_toml
+    #[test]
+    fn warn_and_advisory_severity_are_config_errors_naming_the_replacement() {
+        for word in ["warn", "advisory"] {
+            let err = RuleSettings::from_toml(&format!("[rules.AAA001]\nseverity = \"{word}\"\n"))
+                .unwrap_err();
+            assert!(err.contains("error\" plus a baseline"), "{err}");
+            assert!(err.contains("\"off\""), "{err}");
+        }
+    }
+
+    // frob:tests crates/gob-rules/src/ramp.rs::from_toml
+    #[test]
+    fn severity_off_disables_and_error_is_accepted() {
+        let s = RuleSettings::from_toml(
+            "[rules.AAA001]\nseverity = \"off\"\n[rules.BBB001]\nseverity = \"error\"\n",
+        )
+        .unwrap();
+        assert!(s.disabled.contains("AAA001"));
+        assert_eq!(s.severity.get("BBB001"), Some(&Severity::Error));
+    }
+
+    // frob:tests crates/gob-rules/src/ramp.rs::drop_disabled_product_findings
+    #[test]
+    fn findings_of_rules_switched_off_in_the_product_config_are_dropped() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("prod.toml"),
+            "[rules.AAA001]\nseverity = \"off\"\n",
+        )
+        .unwrap();
+        let mk = |id: &str| Finding::new(id.parse().unwrap(), Severity::Error, None, "m", "a");
+        let mut findings = vec![mk("AAA001"), mk("BBB001")];
+        assert_eq!(
+            drop_disabled_product_findings(dir.path(), "prod", &mut findings),
+            1
+        );
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].rule.as_str(), "BBB001");
+        assert_eq!(
+            drop_disabled_product_findings(dir.path(), "none", &mut findings),
+            0
+        );
     }
 }

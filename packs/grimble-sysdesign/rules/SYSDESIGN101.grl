@@ -1,6 +1,6 @@
 rule SYSDESIGN101 "node-owns-whole-tree" {
   lang -
-  severity warn
+  severity error
   reads model
 
   find s: model.selectors where s.selector ~ /^"?\*\*"?$/

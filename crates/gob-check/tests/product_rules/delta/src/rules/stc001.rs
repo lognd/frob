@@ -7,7 +7,7 @@ use crate::Host;
 #[rule(
     id = "STC001",
     slug = "stage-counted",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

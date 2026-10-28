@@ -112,7 +112,7 @@ impl RuleDef {
         id: "POISONED",
         slug: "poisoned",
         family: "POISONED",
-        severity: Severity::Advisory,
+        severity: Severity::Unresolved,
         release_severity: None,
         polarity: Polarity::P0,
         must_measure: false,

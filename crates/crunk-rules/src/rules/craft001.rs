@@ -21,7 +21,7 @@ const STATE: &str = "focus-visible";
 #[rule(
     id = "CRAFT001",
     slug = "focus-visible-defined",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

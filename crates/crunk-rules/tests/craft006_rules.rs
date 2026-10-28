@@ -43,7 +43,7 @@ fn every_missing_scale_is_reported_with_its_paired_rule() {
         "{}",
         found[2].message
     );
-    assert!(found.iter().all(|f| f.severity == Severity::Advisory));
+    assert!(found.iter().all(|f| f.severity == Severity::Error));
 }
 
 // frob:tests crates/crunk-rules/src/rules/craft006.rs::Craft006

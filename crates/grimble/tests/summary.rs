@@ -76,7 +76,11 @@ fn summary_of_a_large_model_is_compact() {
         .find(|r| r["rule"] == "CAP001")
         .unwrap_or_else(|| panic!("no CAP001 row: {data}"));
     assert_eq!(rule["error"], 500);
-    assert_eq!(data["findings"]["by_severity"]["error"], 500);
+    // Every finding is an error now; the 500 CAP001 rows plus the model's own few others.
+    assert!(
+        data["findings"]["by_severity"]["error"].as_u64().unwrap() >= 500,
+        "{data}"
+    );
     let caps = &data["capabilities"];
     assert_eq!(caps["nodes"], 500);
     assert_eq!(caps["cells"]["undeclared"], 500);

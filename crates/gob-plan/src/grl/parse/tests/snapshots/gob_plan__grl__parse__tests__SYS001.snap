@@ -30,36 +30,36 @@ File {
         },
         Spanned {
            node: Severity(
-            Warn
+            Error
           ),
-          span: @48..61 
+          span: @48..62 
         },
         Spanned {
            node: Scope(
             Repo
           ),
-          span: @63..73 
+          span: @64..74 
         },
         Spanned {
            node: Rollup(
             Directory
           ),
-          span: @75..91 
+          span: @76..92 
         },
         Spanned {
            node: Reads(
             [
               Word {
                  text: "model",
-                span: @100..105 
+                span: @101..106 
               },
               Word {
                  text: "config",
-                span: @107..113 
+                span: @108..114 
               }
             ]
           ),
-          span: @94..113 
+          span: @95..114 
         }
       ],
       clauses: [
@@ -68,19 +68,19 @@ File {
             Binding {
                name: Word {
                  text: "a",
-                span: @122..123 
+                span: @123..124 
               },
               source: Shape(
                 Spanned {
                    node: Kind {
                      kind: Word {
                        text: "artifact",
-                      span: @125..133 
+                      span: @126..134 
                     },
                     fields: [],
                   arg: None 
                 },
-                span: @125..133 
+                span: @126..134 
               }
             ),
             rels: [],
@@ -95,17 +95,17 @@ File {
                            segments: [
                             Word {
                                text: "a",
-                              span: @144..145 
+                              span: @145..146 
                             },
                             Word {
                                text: "path",
-                              span: @146..150 
+                              span: @147..151 
                             }
                           ],
-                          span: @144..150 
+                          span: @145..151 
                         }
                       ),
-                      span: @144..150 
+                      span: @145..151 
                     },
                     rhs: Spanned {
                        node: Path(
@@ -113,33 +113,33 @@ File {
                            segments: [
                             Word {
                                text: "config",
-                              span: @159..165 
+                              span: @160..166 
                             },
                             Word {
                                text: "grimble",
-                              span: @166..173 
+                              span: @167..174 
                             },
                             Word {
                                text: "exclude",
-                              span: @174..181 
+                              span: @175..182 
                             }
                           ],
-                          span: @159..181 
+                          span: @160..182 
                         }
                       ),
-                      span: @159..181 
+                      span: @160..182 
                     } 
                   },
-                  span: @144..181 
+                  span: @145..182 
                 }
               ),
-              span: @140..181 
+              span: @141..182 
             }
           ),
-          span: @122..181 
+          span: @123..182 
         }
       ),
-      span: @117..181 
+      span: @118..182 
     },
     Spanned {
        node: Where(
@@ -149,19 +149,19 @@ File {
             binding: Binding {
                name: Word {
                  text: "u",
-                span: @195..196 
+                span: @196..197 
               },
               source: Shape(
                 Spanned {
                    node: Kind {
                      kind: Word {
                        text: "unit",
-                      span: @198..202 
+                      span: @199..203 
                     },
                     fields: [],
                   arg: None 
                 },
-                span: @198..202 
+                span: @199..203 
               }
             ),
             rels: [],
@@ -177,13 +177,13 @@ File {
                              segments: [
                               Word {
                                  text: "u",
-                                span: @209..210 
+                                span: @210..211 
                               }
                             ],
-                            span: @209..210 
+                            span: @210..211 
                           }
                         ),
-                        span: @209..210 
+                        span: @210..211 
                       },
                       rel: Spanned {
                          node: Containment {
@@ -196,20 +196,20 @@ File {
                                    segments: [
                                     Word {
                                        text: "a",
-                                      span: @218..219 
+                                      span: @219..220 
                                     }
                                   ],
-                                  span: @218..219 
+                                  span: @219..220 
                                 }
                               ),
-                              span: @218..219 
+                              span: @219..220 
                             }
                           ) 
                         },
-                        span: @211..219 
+                        span: @212..220 
                       } 
                     },
-                    span: @209..219 
+                    span: @210..220 
                   },
                   Spanned {
                      node: Quant {
@@ -217,19 +217,19 @@ File {
                       binding: Binding {
                          name: Word {
                            text: "n",
-                          span: @229..230 
+                          span: @230..231 
                         },
                         source: Shape(
                           Spanned {
                              node: Kind {
                                kind: Word {
                                  text: "node",
-                                span: @232..236 
+                                span: @233..237 
                               },
                               fields: [],
                             arg: None 
                           },
-                          span: @232..236 
+                          span: @233..237 
                         }
                       ),
                       rels: [],
@@ -242,20 +242,20 @@ File {
                                  segments: [
                                   Word {
                                      text: "u",
-                                    span: @243..244 
+                                    span: @244..245 
                                   }
                                 ],
-                                span: @243..244 
+                                span: @244..245 
                               }
                             ),
-                            span: @243..244 
+                            span: @244..245 
                           },
                           rel: Spanned {
                              node: Verb {
                                certainty: None,
                               verb: Word {
                                  text: "owned by",
-                                span: @245..253 
+                                span: @246..254 
                               },
                               object: Term(
                                 Spanned {
@@ -264,88 +264,88 @@ File {
                                        segments: [
                                         Word {
                                            text: "n",
-                                          span: @254..255 
+                                          span: @255..256 
                                         }
                                       ],
-                                      span: @254..255 
+                                      span: @255..256 
                                     }
                                   ),
-                                  span: @254..255 
+                                  span: @255..256 
                                 }
                               ) 
                             },
-                            span: @245..255 
+                            span: @246..256 
                           } 
                         },
-                        span: @243..255 
+                        span: @244..256 
                       }
                     ),
-                    span: @229..255 
+                    span: @230..256 
                   } 
                 },
-                span: @224..255 
+                span: @225..256 
               }
             ]
           ),
-          span: @209..255 
+          span: @210..256 
         }
       ),
-      span: @195..255 
+      span: @196..256 
     } 
   },
-  span: @190..255 
+  span: @191..256 
 }
 ),
-span: @184..255 
+span: @185..256 
 },
 Spanned {
    node: Report(
     Report {
        target: Word {
          text: "a",
-        span: @265..266 
+        span: @266..267 
       },
       message: Message {
          parts: [
           Text {
              value: "no node owns any part of ",
-            span: @268..293 
+            span: @269..294 
           },
           Interp {
              path: Path {
                segments: [
                 Word {
                    text: "a",
-                  span: @294..295 
+                  span: @295..296 
                 },
                 Word {
                    text: "path",
-                  span: @296..300 
+                  span: @297..301 
                 }
               ],
-              span: @294..300 
+              span: @295..301 
             },
-            span: @293..301 
+            span: @294..302 
           }
         ],
-        span: @267..302 
+        span: @268..303 
       },
       when: None 
     }
   ),
-  span: @258..302 
+  span: @259..303 
 }
 ],
 examples: [
   Example {
      expect: Expect {
        kind: Fire,
-      span: @314..318 
+      span: @315..319 
     },
     lang: Some(
       Word {
          text: "python",
-        span: @319..325 
+        span: @320..326 
       }
     ),
     name: None,
@@ -355,39 +355,39 @@ examples: [
            node: Model(
             BlockLit {
                value: "node app { owns \"src/app/**\"; }",
-              body: @341..372,
-              span: @338..375 
+              body: @342..373,
+              span: @339..376 
             }
           ),
-          span: @332..375 
+          span: @333..376 
         },
         Spanned {
            node: File {
              path: StrLit {
                value: "scripts/legacy.py",
-              span: @385..404 
+              span: @386..405 
             },
             text: BlockLit {
-               value: "def f(): pass                  #~ warn",
-              body: @408..458,
-              span: @405..461 
+               value: "def f(): pass                  #~ error",
+              body: @409..460,
+              span: @406..463 
             } 
           },
-          span: @380..461 
+          span: @381..463 
         }
       ]
     ),
-    span: @306..465 
+    span: @307..467 
   },
   Example {
      expect: Expect {
        kind: Clean,
-      span: @476..481 
+      span: @478..483 
     },
     lang: Some(
       Word {
          text: "python",
-        span: @482..488 
+        span: @484..490 
       }
     ),
     name: None,
@@ -397,42 +397,42 @@ examples: [
            node: Model(
             BlockLit {
                value: "node app { owns \"src/app/**\"; }",
-              body: @504..535,
-              span: @501..538 
+              body: @506..537,
+              span: @503..540 
             }
           ),
-          span: @495..538 
+          span: @497..540 
         },
         Spanned {
            node: File {
              path: StrLit {
                value: "src/app/a.py",
-              span: @548..562 
+              span: @550..564 
             },
             text: BlockLit {
                value: "def f(): pass",
-              body: @566..591,
-              span: @563..594 
+              body: @568..593,
+              span: @565..596 
             } 
           },
-          span: @543..594 
+          span: @545..596 
         }
       ]
     ),
-    span: @468..598 
+    span: @470..600 
   }
 ],
 explain: Some(
   Explain {
      text: BlockLit {
        value: "Every file should belong to a design node.\n## Remedy\nAdd an `owns` selector to a node, or exclude the path in grimble.toml.",
-      body: @612..751,
-      span: @609..754 
+      body: @614..753,
+      span: @611..756 
     },
-    span: @601..754 
+    span: @603..756 
   }
 ),
-span: @0..756 
+span: @0..758 
 }
 ] 
 }

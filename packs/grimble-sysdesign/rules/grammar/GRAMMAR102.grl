@@ -1,6 +1,6 @@
 rule GRAMMAR102 "node-name-not-snake-case" {
   lang -
-  severity warn
+  severity error
   reads model
 
   find n: model.nodes where not n.name ~ /^[a-z][a-z0-9_]*$/

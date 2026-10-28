@@ -118,6 +118,7 @@ impl Fresh {
         assert_eq!(again["data"]["config"]["created"], false, "init repeats");
         assert!(self.root.join("frob.toml").is_file());
         common::set_done_requires(&self.root, &["no_open_children"]);
+        common::turn_off_fresh_repo_rules(&self.root);
         git(&self.root, &["add", "-A"]);
         git(&self.root, &["commit", "-q", "-m", "chore: frob init"]);
     }

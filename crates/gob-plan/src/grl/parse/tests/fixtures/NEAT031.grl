@@ -1,6 +1,6 @@
 rule NEAT031 "dispatch-site-owns-logic" {
   lang *
-  severity advisory
+  severity error
   knob ratio: float = 0.7 "share of statements that are calls or guarded calls"
 
   def peer_call(s) = s is call and some p: function where s resolves to p and p peer of s.unit
@@ -16,7 +16,7 @@ rule NEAT031 "dispatch-site-owns-logic" {
   example fire python """
     def run(ctx):
         a(ctx)
-        if ctx.x:                   #~ advisory
+        if ctx.x:                   #~ error
             y = ctx.x * 2
             b(y)
         c(ctx)

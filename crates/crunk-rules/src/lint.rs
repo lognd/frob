@@ -19,8 +19,7 @@ pub fn severity_of(spec: &DesignSpec, def: &RuleDef) -> Option<Severity> {
 fn map(level: SpecSeverity) -> Option<Severity> {
     match level {
         SpecSeverity::Off => None,
-        SpecSeverity::Warn => Some(Severity::Warn),
-        SpecSeverity::Error => Some(Severity::Error),
+        SpecSeverity::Warn | SpecSeverity::Error => Some(Severity::Error),
     }
 }
 

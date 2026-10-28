@@ -153,6 +153,7 @@ fn init_then_check_on_main_exits_zero_with_base_main() {
     let dir = repo("main", true);
     assert_eq!(frob(dir.path(), &["init"]).status.code(), Some(0));
     assert!(base_line(dir.path(), "main"), "{}", config_text(dir.path()));
+    common::turn_off_fresh_repo_rules(dir.path());
     git(dir.path(), &["add", "-A"]);
     git(dir.path(), &["commit", "-q", "-m", "chore: frob init"]);
     let check = frob(dir.path(), &["check"]);

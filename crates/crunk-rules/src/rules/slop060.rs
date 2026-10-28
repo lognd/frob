@@ -24,7 +24,7 @@ const MIN_DENSITY: f64 = 3.0;
 #[rule(
     id = "SLOP060",
     slug = "buzzword-density",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

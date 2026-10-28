@@ -24,34 +24,34 @@ File {
         },
         Spanned {
            node: Severity(
-            Advisory
+            Error
           ),
-          span: @53..70 
+          span: @53..67 
         },
         Spanned {
            node: Knob(
             Knob {
                name: Word {
                  text: "ratio",
-                span: @78..83 
+                span: @75..80 
               },
               ty: Spanned {
                  node: Float,
-                span: @85..90 
+                span: @82..87 
               },
               default: Spanned {
                  node: Decimal(
                   "0.7"
                 ),
-                span: @93..96 
+                span: @90..93 
               },
               doc: StrLit {
                  value: "share of statements that are calls or guarded calls",
-                span: @97..150 
+                span: @94..147 
               } 
             }
           ),
-          span: @73..150 
+          span: @70..147 
         }
       ],
       clauses: [
@@ -60,12 +60,12 @@ File {
             Def {
                name: Word {
                  text: "peer_call",
-                span: @158..167 
+                span: @155..164 
               },
               params: [
                 Word {
                    text: "s",
-                  span: @168..169 
+                  span: @165..166 
                 }
               ],
               body: Spanned {
@@ -79,20 +79,20 @@ File {
                                segments: [
                                 Word {
                                    text: "s",
-                                  span: @173..174 
+                                  span: @170..171 
                                 }
                               ],
-                              span: @173..174 
+                              span: @170..171 
                             }
                           ),
-                          span: @173..174 
+                          span: @170..171 
                         },
                         test: Word {
                            text: "call",
-                          span: @178..182 
+                          span: @175..179 
                         } 
                       },
-                      span: @173..182 
+                      span: @170..179 
                     },
                     Spanned {
                        node: Quant {
@@ -100,19 +100,19 @@ File {
                         binding: Binding {
                            name: Word {
                              text: "p",
-                            span: @192..193 
+                            span: @189..190 
                           },
                           source: Shape(
                             Spanned {
                                node: Kind {
                                  kind: Word {
                                    text: "function",
-                                  span: @195..203 
+                                  span: @192..200 
                                 },
                                 fields: [],
                               arg: None 
                             },
-                            span: @195..203 
+                            span: @192..200 
                           }
                         ),
                         rels: [],
@@ -128,20 +128,20 @@ File {
                                          segments: [
                                           Word {
                                              text: "s",
-                                            span: @210..211 
+                                            span: @207..208 
                                           }
                                         ],
-                                        span: @210..211 
+                                        span: @207..208 
                                       }
                                     ),
-                                    span: @210..211 
+                                    span: @207..208 
                                   },
                                   rel: Spanned {
                                      node: Verb {
                                        certainty: None,
                                       verb: Word {
                                          text: "resolves to",
-                                        span: @212..223 
+                                        span: @209..220 
                                       },
                                       object: Term(
                                         Spanned {
@@ -150,20 +150,20 @@ File {
                                                segments: [
                                                 Word {
                                                    text: "p",
-                                                  span: @224..225 
+                                                  span: @221..222 
                                                 }
                                               ],
-                                              span: @224..225 
+                                              span: @221..222 
                                             }
                                           ),
-                                          span: @224..225 
+                                          span: @221..222 
                                         }
                                       ) 
                                     },
-                                    span: @212..225 
+                                    span: @209..222 
                                   } 
                                 },
-                                span: @210..225 
+                                span: @207..222 
                               },
                               Spanned {
                                  node: Rel {
@@ -173,20 +173,20 @@ File {
                                          segments: [
                                           Word {
                                              text: "p",
-                                            span: @230..231 
+                                            span: @227..228 
                                           }
                                         ],
-                                        span: @230..231 
+                                        span: @227..228 
                                       }
                                     ),
-                                    span: @230..231 
+                                    span: @227..228 
                                   },
                                   rel: Spanned {
                                      node: Verb {
                                        certainty: None,
                                       verb: Word {
                                          text: "peer of",
-                                        span: @232..239 
+                                        span: @229..236 
                                       },
                                       object: Term(
                                         Spanned {
@@ -195,54 +195,54 @@ File {
                                                segments: [
                                                 Word {
                                                    text: "s",
-                                                  span: @240..241 
+                                                  span: @237..238 
                                                 },
                                                 Word {
                                                    text: "unit",
-                                                  span: @242..246 
+                                                  span: @239..243 
                                                 }
                                               ],
-                                              span: @240..246 
+                                              span: @237..243 
                                             }
                                           ),
-                                          span: @240..246 
+                                          span: @237..243 
                                         }
                                       ) 
                                     },
-                                    span: @232..246 
+                                    span: @229..243 
                                   } 
                                 },
-                                span: @230..246 
+                                span: @227..243 
                               }
                             ]
                           ),
-                          span: @210..246 
+                          span: @207..243 
                         }
                       ),
-                      span: @192..246 
+                      span: @189..243 
                     } 
                   },
-                  span: @187..246 
+                  span: @184..243 
                 }
               ]
             ),
-            span: @173..246 
+            span: @170..243 
           } 
         }
       ),
-      span: @154..246 
+      span: @151..243 
     },
     Spanned {
        node: Def(
         Def {
            name: Word {
              text: "guarded_call",
-            span: @253..265 
+            span: @250..262 
           },
           params: [
             Word {
                text: "s",
-              span: @266..267 
+              span: @263..264 
             }
           ],
           body: Spanned {
@@ -256,52 +256,52 @@ File {
                            segments: [
                             Word {
                                text: "s",
-                              span: @271..272 
+                              span: @268..269 
                             }
                           ],
-                          span: @271..272 
+                          span: @268..269 
                         }
                       ),
-                      span: @271..272 
+                      span: @268..269 
                     },
                     snippet: Snippet {
                        lang: Some(
                         SnippetLang {
                            name: "rust",
-                          span: @276..280 
+                          span: @273..277 
                         }
                       ),
                       ticks: 1,
                       text: "if $C { $F($$$A) }",
-                      body: @281..299,
+                      body: @278..296,
                       metavars: [
                         MetaVar {
                            kind: One,
                           name: Some(
                             "C"
                           ),
-                          span: @284..286 
+                          span: @281..283 
                         },
                         MetaVar {
                            kind: One,
                           name: Some(
                             "F"
                           ),
-                          span: @289..291 
+                          span: @286..288 
                         },
                         MetaVar {
                            kind: Seq,
                           name: Some(
                             "A"
                           ),
-                          span: @292..296 
+                          span: @289..293 
                         }
                       ],
                       dollars: [] 
                   },
                   roles: true 
                 },
-                span: @271..309 
+                span: @268..306 
               },
               Spanned {
                  node: Quant {
@@ -309,19 +309,19 @@ File {
                   binding: Binding {
                      name: Word {
                        text: "k",
-                      span: @319..320 
+                      span: @316..317 
                     },
                     source: Shape(
                       Spanned {
                          node: Kind {
                            kind: Word {
                              text: "call",
-                            span: @322..326 
+                            span: @319..323 
                           },
                           fields: [],
                         arg: None 
                       },
-                      span: @322..326 
+                      span: @319..323 
                     }
                   ),
                   rels: [],
@@ -337,13 +337,13 @@ File {
                                    segments: [
                                     Word {
                                        text: "k",
-                                      span: @333..334 
+                                      span: @330..331 
                                     }
                                   ],
-                                  span: @333..334 
+                                  span: @330..331 
                                 }
                               ),
-                              span: @333..334 
+                              span: @330..331 
                             },
                             rel: Spanned {
                                node: Containment {
@@ -356,27 +356,27 @@ File {
                                          segments: [
                                           Word {
                                              text: "s",
-                                            span: @351..352 
+                                            span: @348..349 
                                           }
                                         ],
-                                        span: @351..352 
+                                        span: @348..349 
                                       }
                                     ),
-                                    span: @351..352 
+                                    span: @348..349 
                                   }
                                 ) 
                               },
-                              span: @335..352 
+                              span: @332..349 
                             } 
                           },
-                          span: @333..352 
+                          span: @330..349 
                         },
                         Spanned {
                            node: DefCall(
                             Call {
                                name: Word {
                                  text: "peer_call",
-                                span: @357..366 
+                                span: @354..363 
                               },
                               args: [
                                 Spanned {
@@ -385,56 +385,56 @@ File {
                                        segments: [
                                         Word {
                                            text: "k",
-                                          span: @367..368 
+                                          span: @364..365 
                                         }
                                       ],
-                                      span: @367..368 
+                                      span: @364..365 
                                     }
                                   ),
-                                  span: @367..368 
+                                  span: @364..365 
                                 }
                               ],
-                              span: @357..369 
+                              span: @354..366 
                             }
                           ),
-                          span: @357..369 
+                          span: @354..366 
                         }
                       ]
                     ),
-                    span: @333..369 
+                    span: @330..366 
                   }
                 ),
-                span: @319..369 
+                span: @316..366 
               } 
             },
-            span: @314..369 
+            span: @311..366 
           }
         ]
       ),
-      span: @271..369 
+      span: @268..366 
     } 
   }
 ),
-span: @249..369 
+span: @246..366 
 },
 Spanned {
    node: Find(
     Binding {
        name: Word {
          text: "d",
-        span: @378..379 
+        span: @375..376 
       },
       source: Shape(
         Spanned {
            node: Kind {
              kind: Word {
                text: "function",
-              span: @381..389 
+              span: @378..386 
             },
             fields: [],
           arg: None 
         },
-        span: @381..389 
+        span: @378..386 
       }
     ),
     rels: [],
@@ -449,29 +449,29 @@ Spanned {
                    segments: [
                     Word {
                        text: "d",
-                      span: @400..401 
+                      span: @397..398 
                     }
                   ],
-                  span: @400..401 
+                  span: @397..398 
                 }
               ),
-              span: @400..401 
+              span: @397..398 
             },
             attr: StrLit {
                value: "frob:dispatcher",
-              span: @411..428 
+              span: @408..425 
             } 
           },
-          span: @400..428 
+          span: @397..425 
         }
       ),
-      span: @396..428 
+      span: @393..425 
     }
   ),
-  span: @378..428 
+  span: @375..425 
 }
 ),
-span: @373..428 
+span: @370..425 
 },
 Spanned {
    node: Where(
@@ -483,19 +483,19 @@ Spanned {
             Binding {
                name: Word {
                  text: "s",
-                span: @443..444 
+                span: @440..441 
               },
               source: Shape(
                 Spanned {
                    node: Kind {
                      kind: Word {
                        text: "stmt",
-                      span: @446..450 
+                      span: @443..447 
                     },
                     fields: [],
                   arg: None 
                 },
-                span: @446..450 
+                span: @443..447 
               }
             ),
             rels: [
@@ -510,17 +510,17 @@ Spanned {
                            segments: [
                             Word {
                                text: "d",
-                              span: @467..468 
+                              span: @464..465 
                             }
                           ],
-                          span: @467..468 
+                          span: @464..465 
                         }
                       ),
-                      span: @467..468 
+                      span: @464..465 
                     }
                   ) 
                 },
-                span: @451..468 
+                span: @448..465 
               }
             ],
             filter: Some(
@@ -532,7 +532,7 @@ Spanned {
                         Call {
                            name: Word {
                              text: "peer_call",
-                            span: @475..484 
+                            span: @472..481 
                           },
                           args: [
                             Spanned {
@@ -541,26 +541,26 @@ Spanned {
                                    segments: [
                                     Word {
                                        text: "s",
-                                      span: @485..486 
+                                      span: @482..483 
                                     }
                                   ],
-                                  span: @485..486 
+                                  span: @482..483 
                                 }
                               ),
-                              span: @485..486 
+                              span: @482..483 
                             }
                           ],
-                          span: @475..487 
+                          span: @472..484 
                         }
                       ),
-                      span: @475..487 
+                      span: @472..484 
                     },
                     Spanned {
                        node: DefCall(
                         Call {
                            name: Word {
                              text: "guarded_call",
-                            span: @491..503 
+                            span: @488..500 
                           },
                           args: [
                             Spanned {
@@ -569,29 +569,29 @@ Spanned {
                                    segments: [
                                     Word {
                                        text: "s",
-                                      span: @504..505 
+                                      span: @501..502 
                                     }
                                   ],
-                                  span: @504..505 
+                                  span: @501..502 
                                 }
                               ),
-                              span: @504..505 
+                              span: @501..502 
                             }
                           ],
-                          span: @491..506 
+                          span: @488..503 
                         }
                       ),
-                      span: @491..506 
+                      span: @488..503 
                     }
                   ]
                 ),
-                span: @475..506 
+                span: @472..503 
               }
             ),
-            span: @443..506 
+            span: @440..503 
           }
         ),
-        span: @437..507 
+        span: @434..504 
       },
       rhs: Spanned {
          node: Binary {
@@ -600,29 +600,29 @@ Spanned {
              node: Knob(
               Word {
                  text: "ratio",
-                span: @524..529 
+                span: @521..526 
               }
             ),
-            span: @519..529 
+            span: @516..526 
           },
           rhs: Spanned {
              node: Count(
               Binding {
                  name: Word {
                    text: "s",
-                  span: @538..539 
+                  span: @535..536 
                 },
                 source: Shape(
                   Spanned {
                      node: Kind {
                        kind: Word {
                          text: "stmt",
-                        span: @541..545 
+                        span: @538..542 
                       },
                       fields: [],
                     arg: None 
                   },
-                  span: @541..545 
+                  span: @538..542 
                 }
               ),
               rels: [
@@ -637,40 +637,40 @@ Spanned {
                              segments: [
                               Word {
                                  text: "d",
-                                span: @562..563 
+                                span: @559..560 
                               }
                             ],
-                            span: @562..563 
+                            span: @559..560 
                           }
                         ),
-                        span: @562..563 
+                        span: @559..560 
                       }
                     ) 
                   },
-                  span: @546..563 
+                  span: @543..560 
                 }
               ],
               filter: None,
-              span: @538..563 
+              span: @535..560 
             }
           ),
-          span: @532..564 
+          span: @529..561 
         } 
       },
-      span: @519..564 
+      span: @516..561 
     } 
   },
-  span: @437..564 
+  span: @434..561 
 }
 ),
-span: @431..564 
+span: @428..561 
 },
 Spanned {
    node: Find(
     Binding {
        name: Word {
          text: "b",
-        span: @572..573 
+        span: @569..570 
       },
       source: Shape(
         Spanned {
@@ -680,27 +680,27 @@ Spanned {
                  node: Kind {
                    kind: Word {
                      text: "branch",
-                    span: @576..582 
+                    span: @573..579 
                   },
                   fields: [],
                 arg: None 
               },
-              span: @576..582 
+              span: @573..579 
             },
             Spanned {
                node: Kind {
                  kind: Word {
                    text: "loop",
-                  span: @585..589 
+                  span: @582..586 
                 },
                 fields: [],
               arg: None 
             },
-            span: @585..589 
+            span: @582..586 
           }
         ]
       ),
-      span: @575..590 
+      span: @572..587 
     }
   ),
   rels: [],
@@ -716,13 +716,13 @@ filter: Some(
                    segments: [
                     Word {
                        text: "b",
-                      span: @597..598 
+                      span: @594..595 
                     }
                   ],
-                  span: @597..598 
+                  span: @594..595 
                 }
               ),
-              span: @597..598 
+              span: @594..595 
             },
             rel: Spanned {
                node: InUnit {
@@ -733,20 +733,20 @@ filter: Some(
                          segments: [
                           Word {
                              text: "d",
-                            span: @607..608 
+                            span: @604..605 
                           }
                         ],
-                        span: @607..608 
+                        span: @604..605 
                       }
                     ),
-                    span: @607..608 
+                    span: @604..605 
                   }
                 ) 
               },
-              span: @599..608 
+              span: @596..605 
             } 
           },
-          span: @597..608 
+          span: @594..605 
         },
         Spanned {
            node: Not(
@@ -755,7 +755,7 @@ filter: Some(
                 Call {
                    name: Word {
                      text: "guarded_call",
-                    span: @617..629 
+                    span: @614..626 
                   },
                   args: [
                     Spanned {
@@ -764,39 +764,39 @@ filter: Some(
                            segments: [
                             Word {
                                text: "b",
-                              span: @630..631 
+                              span: @627..628 
                             }
                           ],
-                          span: @630..631 
+                          span: @627..628 
                         }
                       ),
-                      span: @630..631 
+                      span: @627..628 
                     }
                   ],
-                  span: @617..632 
+                  span: @614..629 
                 }
               ),
-              span: @617..632 
+              span: @614..629 
             }
           ),
-          span: @613..632 
+          span: @610..629 
         }
       ]
     ),
-    span: @597..632 
+    span: @594..629 
   }
 ),
-span: @572..632 
+span: @569..629 
 }
 ),
-span: @567..632 
+span: @564..629 
 },
 Spanned {
    node: Report(
     Report {
        target: Word {
          text: "b",
-        span: @642..643 
+        span: @639..640 
       },
       message: Message {
          parts: [
@@ -805,146 +805,146 @@ Spanned {
                segments: [
                 Word {
                    text: "d",
-                  span: @646..647 
+                  span: @643..644 
                 },
                 Word {
                    text: "name",
-                  span: @648..652 
+                  span: @645..649 
                 }
               ],
-              span: @646..652 
+              span: @643..649 
             },
-            span: @645..653 
+            span: @642..650 
           },
           Text {
              value: " dispatches to peers; this ",
-            span: @653..680 
+            span: @650..677 
           },
           Interp {
              path: Path {
                segments: [
                 Word {
                    text: "b",
-                  span: @681..682 
+                  span: @678..679 
                 },
                 Word {
                    text: "role",
-                  span: @683..687 
+                  span: @680..684 
                 }
               ],
-              span: @681..687 
+              span: @678..684 
             },
-            span: @680..688 
+            span: @677..685 
           },
           Text {
              value: " does more than guard a call",
-            span: @688..716 
+            span: @685..713 
           }
         ],
-        span: @644..717 
+        span: @641..714 
       },
       when: None 
     }
   ),
-  span: @635..717 
+  span: @632..714 
 },
 Spanned {
    node: Note(
     Note {
        target: Word {
          text: "d",
-        span: @725..726 
+        span: @722..723 
       },
       message: Message {
          parts: [
           Text {
              value: "dispatcher by shape",
-            span: @728..747 
+            span: @725..744 
           }
         ],
-        span: @727..748 
+        span: @724..745 
       } 
     }
   ),
-  span: @720..748 
+  span: @717..745 
 }
 ],
 examples: [
   Example {
      expect: Expect {
        kind: Fire,
-      span: @760..764 
+      span: @757..761 
     },
     lang: Some(
       Word {
          text: "python",
-        span: @765..771 
+        span: @762..768 
       }
     ),
     name: None,
     body: Source(
       BlockLit {
-         value: "def run(ctx):\n    a(ctx)\n    if ctx.x:                   #~ advisory\n        y = ctx.x * 2\n        b(y)\n    c(ctx)",
-        body: @775..917,
-        span: @772..920 
+         value: "def run(ctx):\n    a(ctx)\n    if ctx.x:                   #~ error\n        y = ctx.x * 2\n        b(y)\n    c(ctx)",
+        body: @772..911,
+        span: @769..914 
       }
     ),
-    span: @752..920 
+    span: @749..914 
   },
   Example {
      expect: Expect {
        kind: Clean,
-      span: @931..936 
+      span: @925..930 
     },
     lang: Some(
       Word {
          text: "python",
-        span: @937..943 
+        span: @931..937 
       }
     ),
     name: None,
     body: Source(
       BlockLit {
          value: "def run(ctx):\n    a(ctx)\n    if ctx.x: b(ctx)\n    c(ctx)",
-        body: @947..1023,
-        span: @944..1026 
+        body: @941..1017,
+        span: @938..1020 
       }
     ),
-    span: @923..1026 
+    span: @917..1020 
   },
   Example {
      expect: Expect {
        kind: NotApplicable,
-      span: @1037..1050 
+      span: @1031..1044 
     },
     lang: Some(
       Word {
          text: "json",
-        span: @1051..1055 
+        span: @1045..1049 
       }
     ),
     name: None,
     body: Source(
       BlockLit {
          value: "{}",
-        body: @1059..1069,
-        span: @1056..1072 
+        body: @1053..1063,
+        span: @1050..1066 
       }
     ),
-    span: @1029..1072 
+    span: @1023..1066 
   }
 ],
 explain: Some(
   Explain {
      text: BlockLit {
        value: "A function that mostly dispatches to its peers should not also own logic.\n## Remedy\nMove the logic into the callee or a named predicate.",
-      body: @1086..1238,
-      span: @1083..1241 
+      body: @1080..1232,
+      span: @1077..1235 
     },
-    span: @1075..1241 
+    span: @1069..1235 
   }
 ),
-span: @0..1243 
+span: @0..1237 
 }
 ] 
 }

@@ -1,6 +1,6 @@
 rule HDR001 "headers" {
   lang rust
-  severity warn
+  severity error
   polarity P-
 
   find d: `todo!()`

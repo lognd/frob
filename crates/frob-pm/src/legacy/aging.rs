@@ -36,7 +36,7 @@ const DAY_SECS: i64 = 86_400;
     id = "PM008",
     slug = "ticket-aged",
     family = "PM",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -54,7 +54,7 @@ pub struct Pm008;
     id = "PM009",
     slug = "ready-unsized",
     family = "PM",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -99,7 +99,7 @@ pub fn pm008(handle: &str, category: Category, age: i64, limit: u32) -> Option<F
     tracing::debug!(ticket = handle, %category, age, limit, "PM008: ticket aged");
     Some(Finding::new(
         id8(),
-        Severity::Warn,
+        Severity::Error,
         None,
         format!(
             "ticket {handle} has been {category} for {age} day(s), past the limit of {limit} ([pm.max_age_days]): finish, requeue or drop it"
@@ -116,7 +116,7 @@ pub fn pm009(handle: &str, points: Option<u8>) -> Option<Finding> {
     tracing::debug!(ticket = handle, "PM009: ready ticket without points");
     Some(Finding::new(
         id9(),
-        Severity::Warn,
+        Severity::Error,
         None,
         format!("ready ticket {handle} has no points: size it or move it out of the ready queue"),
         &format!("ticket:{handle}"),

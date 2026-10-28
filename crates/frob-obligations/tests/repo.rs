@@ -314,7 +314,7 @@ fn every_rule_is_registered_exactly_once() {
     }
     assert_eq!(
         reg.by_id("COV001").map(|m| m.severity),
-        Some(Severity::Warn)
+        Some(Severity::Error)
     );
     assert_eq!(
         reg.by_id("DOC002").map(|m| m.severity),
@@ -367,7 +367,7 @@ fn cov001_is_unresolved_when_a_test_reaches_an_unresolved_call_naming_the_item()
     let _ = by("S.target").expect("the method is not silently covered either");
     assert_eq!(target.severity, Severity::Unresolved, "{}", target.message);
     let plain = by("::plain").expect("plain is uncovered");
-    assert_eq!(plain.severity, Severity::Warn, "{}", plain.message);
+    assert_eq!(plain.severity, Severity::Error, "{}", plain.message);
 }
 
 /// The COV001 findings of a tree built from `files`.
@@ -395,8 +395,8 @@ const TWO_TYPES: &str = "/// A.\npub struct A;\n\nimpl A {\n    /// Makes.\n    
 fn cov001_external_path_call_does_not_poison_same_named_methods() {
     let test = "\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn t() {\n        let _ = Vec::new();\n    }\n}\n";
     let cov = cov_findings(&[("src/lib.rs", &format!("{TWO_TYPES}{test}"))]);
-    assert_eq!(severity_of(&cov, "A.new"), Some(Severity::Warn), "{cov:?}");
-    assert_eq!(severity_of(&cov, "B.new"), Some(Severity::Warn), "{cov:?}");
+    assert_eq!(severity_of(&cov, "A.new"), Some(Severity::Error), "{cov:?}");
+    assert_eq!(severity_of(&cov, "B.new"), Some(Severity::Error), "{cov:?}");
 }
 
 // frob:tests crates/frob-obligations/src/cov.rs::cov001
@@ -421,7 +421,7 @@ fn cov001_path_qualifier_poisons_only_the_named_type() {
         "names the call: {}",
         a.message
     );
-    assert_eq!(severity_of(&cov, "B.new"), Some(Severity::Warn), "{cov:?}");
+    assert_eq!(severity_of(&cov, "B.new"), Some(Severity::Error), "{cov:?}");
 }
 
 // frob:tests crates/frob-obligations/src/cov.rs::cov001
@@ -437,7 +437,7 @@ fn cov001_unknown_receiver_poisons_methods_but_not_free_functions() {
     );
     assert_eq!(
         severity_of(&cov, "::run`"),
-        Some(Severity::Warn),
+        Some(Severity::Error),
         "a method call can never be the free function: {cov:?}"
     );
 }
@@ -465,7 +465,11 @@ fn cov001_unit_struct_value_types_its_receiver_and_covers_the_method() {
     // `R` is the unit struct `R`: `r.run()` is `R::run`, so it is covered (no finding) and
     // the free function `run` is not.
     assert_eq!(severity_of(&cov, "R.run"), None, "{cov:?}");
-    assert_eq!(severity_of(&cov, "::run`"), Some(Severity::Warn), "{cov:?}");
+    assert_eq!(
+        severity_of(&cov, "::run`"),
+        Some(Severity::Error),
+        "{cov:?}"
+    );
 }
 
 // frob:tests crates/frob-obligations/src/cov.rs::cov001
@@ -477,10 +481,10 @@ fn cov001_qualifierless_unknown_call_keeps_the_broad_match() {
         "pub fn run() {}\n\n/// Other.\npub fn mystery_twin() {}",
     );
     let cov = cov_findings(&[("src/lib.rs", &format!("{src}{test}"))]);
-    assert_eq!(severity_of(&cov, "R.run"), Some(Severity::Warn), "{cov:?}");
+    assert_eq!(severity_of(&cov, "R.run"), Some(Severity::Error), "{cov:?}");
     assert_eq!(
         severity_of(&cov, "mystery_twin"),
-        Some(Severity::Warn),
+        Some(Severity::Error),
         "{cov:?}"
     );
 }
@@ -517,7 +521,7 @@ fn cov001_covers_a_cross_crate_path_call_through_a_use_import() {
     );
     assert_eq!(
         severity_of(&cov, "Inputs.lonely"),
-        Some(Severity::Warn),
+        Some(Severity::Error),
         "{cov:?}"
     );
 }

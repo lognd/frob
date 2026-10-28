@@ -5,15 +5,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::id::{ParseRuleIdError, RuleId};
 
-/// How serious a finding is; ordered `Unresolved < Advisory < Warn < Error`.
+/// How serious a finding is; ordered `Unresolved < Error`; `Warn` and `Advisory` were retired (rules.md 6.1.1), so a rule is on (Error), off, or Unresolved for a site it cannot decide.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Severity {
     /// Could not be decided (missing tool, unreadable input).
     Unresolved,
-    /// Informational; never fails a gate.
-    Advisory,
-    /// Reported; fails only in strict modes.
-    Warn,
     /// Fails the gate.
     Error,
 }

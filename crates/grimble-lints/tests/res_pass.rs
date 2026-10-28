@@ -24,7 +24,7 @@ fn an_unpaired_performance_mark_is_a_certain_warn() {
     )]);
     assert_eq!(r.findings.len(), 1);
     assert_eq!(r.findings[0].rule, RES001);
-    assert_eq!(r.findings[0].severity, Severity::Warn);
+    assert_eq!(r.findings[0].severity, Severity::Error);
     assert!(r.findings[0].reason.is_none());
     assert!(r.findings[0].message.contains("performance.clearMarks"));
     assert_eq!(r.subjects.get(RES001), Some(&1));
@@ -65,7 +65,7 @@ fn a_release_in_another_function_does_not_pair_and_tests_are_exempt() {
         "function f() { const t = setTimeout(g, 5); }\nfunction h() { clearTimeout(x); }\n",
     )]);
     assert_eq!(r.findings.len(), 1);
-    assert_eq!(r.findings[0].severity, Severity::Warn);
+    assert_eq!(r.findings[0].severity, Severity::Error);
     let r = analyze(&[file(
         "a.test.ts",
         Language::TypeScript,

@@ -263,7 +263,7 @@ fn perf_finding(perf: &PerfTable, timing: &Timing, only: &[String]) -> Option<Fi
             .meta()
             .rule_id()
             .unwrap_or_else(|e| unreachable!("derive validates the id: {e}")),
-        Severity::Warn,
+        Severity::Error,
         None,
         format!(
             "built-in stages took {} ms, over the {} ms budget{slowest}",

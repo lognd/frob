@@ -89,8 +89,7 @@ pub fn catalog_mismatches(indexes: &[&RuleIndex]) -> Vec<(&'static str, Severity
         .flat_map(|ix| ix.metas.iter())
         .filter_map(|d| {
             let cat = match default_severity(d.id)? {
-                crunk_spec::Severity::Error => Severity::Error,
-                crunk_spec::Severity::Warn => Severity::Warn,
+                crunk_spec::Severity::Error | crunk_spec::Severity::Warn => Severity::Error,
                 crunk_spec::Severity::Off => return None,
             };
             (cat != d.severity).then_some((d.id, d.severity, cat))
@@ -101,8 +100,6 @@ pub fn catalog_mismatches(indexes: &[&RuleIndex]) -> Vec<(&'static str, Severity
 fn severity_name(s: Severity) -> &'static str {
     match s {
         Severity::Unresolved => "unresolved",
-        Severity::Advisory => "advisory",
-        Severity::Warn => "warn",
         Severity::Error => "error",
     }
 }

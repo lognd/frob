@@ -1,9 +1,10 @@
 ---
 source: crates/gob-diagnostics/tests/contract.rs
+assertion_line: 506
 expression: "plain(&s, &f)"
 ---
 src/a.rs
-  2:5: warning[DOC001]: spell it color
+  2:5: error[DOC001]: spell it color
   fix[maybe-incorrect]: colour to color
     --- src/a.rs
     +++ src/a.rs
@@ -12,4 +13,4 @@ src/a.rs
     +let color = 1;
   note: unsafe: review the diff before applying
 
-0 errors, 1 warnings, 0 advisory, 0 unresolved (0 required)
+1 errors, 0 unresolved (0 required)

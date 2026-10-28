@@ -105,7 +105,7 @@ mod tests {
     use super::*;
     use crate::files::{Mode, apply};
 
-    const RULE: &str = "rule STD001 \"std-demo\" {\n  lang typescript\n  severity warn\n  find c: call where c.callee == \"danger\"\n  report c \"danger\"\n  explain \"\"\"\n    Danger.\n\n    ## Remedy\n    Do not.\n  \"\"\"\n}\n";
+    const RULE: &str = "rule STD001 \"std-demo\" {\n  lang typescript\n  severity error\n  find c: call where c.callee == \"danger\"\n  report c \"danger\"\n  explain \"\"\"\n    Danger.\n\n    ## Remedy\n    Do not.\n  \"\"\"\n}\n";
 
     fn root_with(source: &str) -> tempfile::TempDir {
         let dir = tempfile::tempdir().unwrap();

@@ -89,7 +89,7 @@ fn verdict_output_is_stable_across_the_shared_type() {
         .map(|f| (f.severity, f.message.clone()))
         .collect();
     assert_eq!(ci.len(), 1, "{ci:?}");
-    assert_eq!(ci[0].0, gob_rules::Severity::Warn);
+    assert_eq!(ci[0].0, gob_rules::Severity::Error);
     assert!(
         ci[0]
             .1

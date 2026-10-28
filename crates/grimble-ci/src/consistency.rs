@@ -43,7 +43,7 @@ pub(crate) fn check(repo: &Repo<'_>, workflows: &[Workflow<'_>]) -> Vec<Verdict>
             {
                 out.push(fire(
                     CI012,
-                    Severity::Warn,
+                    Severity::Error,
                     (wf.path, wf.within_job(&job, &tc.value)),
                     format!("job `{job}` installs Rust `{}` but `rust-toolchain.toml` pins `{p}`; use the pinned channel (or drop the explicit toolchain so rustup reads the file)", tc.value),
                     format!("{}:{job}:toolchain:{}", wf.path, tc.value),
@@ -54,7 +54,7 @@ pub(crate) fn check(repo: &Repo<'_>, workflows: &[Workflow<'_>]) -> Vec<Verdict>
             {
                 out.push(fire(
                     CI012,
-                    Severity::Warn,
+                    Severity::Error,
                     (wf.path, wf.within_job(&job, &tc.value)),
                     format!("job `{job}` tests Rust `{}`, older than the manifests' `rust-version` {}.{}; raise the CI toolchain or lower `rust-version`", tc.value, min.0, min.1),
                     format!("{}:{job}:msrv:{}", wf.path, tc.value),
@@ -90,7 +90,7 @@ fn frob_verbs(wf: &Workflow<'_>, out: &mut Vec<Verdict>) {
                 }
                 out.push(fire(
                     CI012,
-                    Severity::Warn,
+                    Severity::Error,
                     (wf.path, wf.within_job(job.id, &bad.word)),
                     format!(
                         "job `{}` runs `frob {}`, but frob has no such verb; use one of {}",
@@ -292,7 +292,7 @@ fn dependabot(repo: &Repo<'_>, anchor: &Workflow<'_>, out: &mut Vec<Verdict>) {
     else {
         out.push(fire(
             CI012,
-            Severity::Warn,
+            Severity::Error,
             (anchor.path, (0, 0)),
             format!("no `.github/dependabot.yml` or Renovate config, yet the repository uses {}; add a Dependabot config with one `updates` entry per ecosystem", join(&implied)),
             "dependabot:absent".to_owned(),
@@ -327,7 +327,7 @@ fn dependabot(repo: &Repo<'_>, anchor: &Workflow<'_>, out: &mut Vec<Verdict>) {
     if !missing.is_empty() {
         out.push(fire(
             CI012,
-            Severity::Warn,
+            Severity::Error,
             (path, (0, 0)),
             format!("Dependabot has no `updates` entry for {}, which the repository uses; add one per ecosystem", join(&missing)),
             "dependabot:missing".to_owned(),
@@ -377,7 +377,7 @@ fn codeowners(repo: &Repo<'_>, anchor: &str, out: &mut Vec<Verdict>) {
     if !covered {
         out.push(fire(
             CI012,
-            Severity::Warn,
+            Severity::Error,
             (path, (0, 0)),
             "CODEOWNERS has no entry covering `.github`, so workflow changes need no owner review; add `/.github/ @your-org/maintainers`".to_owned(),
             "codeowners:github".to_owned(),

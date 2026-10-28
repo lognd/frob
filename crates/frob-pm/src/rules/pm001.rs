@@ -15,7 +15,7 @@ const NO_MILESTONES: &str = "no milestone objects in this repository";
 #[rule(
     id = "PM001",
     slug = "milestone-without-goal",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

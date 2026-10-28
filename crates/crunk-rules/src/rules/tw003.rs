@@ -19,7 +19,7 @@ const ALPHA_VALUE_PLACEHOLDER: &str = "<alpha-value>";
 #[rule(
     id = "TW003",
     slug = "alpha-modifier-without-placeholder",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

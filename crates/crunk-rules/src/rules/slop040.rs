@@ -16,7 +16,7 @@ use crate::slop;
 #[rule(
     id = "SLOP040",
     slug = "emoji-as-icon",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

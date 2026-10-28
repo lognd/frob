@@ -149,10 +149,6 @@ pub struct FixOutcome {
 pub struct Counts {
     /// Error findings.
     pub error: usize,
-    /// Warn findings.
-    pub warn: usize,
-    /// Advisory findings.
-    pub advisory: usize,
     /// Unresolved findings.
     pub unresolved: usize,
 }
@@ -164,8 +160,6 @@ impl Counts {
         for f in findings {
             match f.severity {
                 Severity::Error => c.error += 1,
-                Severity::Warn => c.warn += 1,
-                Severity::Advisory => c.advisory += 1,
                 Severity::Unresolved => c.unresolved += 1,
             }
         }

@@ -31,7 +31,7 @@ fn is_stand_in(text: &str) -> bool {
 #[rule(
     id = "CRAFT009",
     slug = "real-content",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

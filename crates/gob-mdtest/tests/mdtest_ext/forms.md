@@ -29,10 +29,9 @@ let b = forbidden;
 let c = twice;
 ```
 
-## advisory and unresolved
+## unresolved
 
 ```rust expect=fire
-let a = advisory_word; // advisory: [9] MDT001 "advice"
 let b = unsure; // unresolved[hole]: [9] "undecided"
 let c = unsure_req; // unresolved[hole, required]: MDT001
 let d = unsure; // unresolved: MDT001

@@ -11,7 +11,7 @@ use crate::host::MdlHost;
 #[rule(
     id = "MDL010",
     slug = "mdl-selector-empty-by-construction",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

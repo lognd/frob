@@ -123,7 +123,7 @@ pub(crate) fn check(
         } else {
             findings.push(Verdict::fire(
                 VIS,
-                Severity::Advisory,
+                Severity::Error,
                 site,
                 format!(
                     "`{name}` is `pub` but no other package uses it; narrow it to `pub(crate)`"

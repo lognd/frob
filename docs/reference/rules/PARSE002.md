@@ -8,7 +8,7 @@
 |---|---|
 | family | PARSE |
 | product | frob |
-| severity (default) | advisory |
+| severity (default) | error |
 | tier | universal |
 | scope | file |
 | fix | manual |

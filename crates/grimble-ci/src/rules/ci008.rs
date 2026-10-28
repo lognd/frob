@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI008",
     slug = "ci-publish-untagged",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

@@ -11,7 +11,7 @@ use crate::host::TimeHost;
 #[rule(
     id = "TIME002",
     slug = "naive-aware-mix",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

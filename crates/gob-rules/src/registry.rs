@@ -77,7 +77,7 @@ pub struct RuleRow {
 /// The `[rules]` severity and disable settings, applied identically to every rule.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuleSettings {
-    /// `[rules] ramp`: a rule new in the running release reports at most Warn (default true).
+    /// `[rules] ramp`: retained for config compatibility; ramp-in is inert (default true).
     pub ramp: bool,
     /// Ids switched off.
     pub disabled: BTreeSet<String>,
@@ -291,22 +291,8 @@ mod tests {
 
     // frob:tests crates/gob-rules/src/registry.rs::effective_ramped
     #[test]
-    fn a_new_error_rule_ramps_to_warn_unless_ramp_is_off_or_overridden() {
+    fn effective_ramped_never_caps_and_honours_disabled() {
         let mut s = RuleSettings::default();
-        let (sev, note) = s.effective_ramped(&STD, "0.1.0").unwrap();
-        assert_eq!(sev, Severity::Warn);
-        assert!(note.unwrap().contains("0.2.0"));
-        assert_eq!(
-            s.effective_ramped(&STD, "0.2.0").unwrap(),
-            (Severity::Error, None)
-        );
-        s.severity.insert("AAA001".into(), Severity::Error);
-        assert_eq!(
-            s.effective_ramped(&STD, "0.1.0").unwrap(),
-            (Severity::Error, None)
-        );
-        s.severity.clear();
-        s.ramp = false;
         assert_eq!(
             s.effective_ramped(&STD, "0.1.0").unwrap(),
             (Severity::Error, None)
@@ -319,10 +305,10 @@ mod tests {
     #[test]
     fn rules_settings_apply_identically() {
         let mut s = RuleSettings::default();
-        s.severity.insert("AAA001".into(), Severity::Warn);
-        s.severity.insert("ZZZ001".into(), Severity::Warn);
-        assert_eq!(s.effective_severity(&STD), Some(Severity::Warn));
-        assert_eq!(s.effective_severity(&PLUG), Some(Severity::Warn));
+        s.severity.insert("AAA001".into(), Severity::Unresolved);
+        s.severity.insert("ZZZ001".into(), Severity::Unresolved);
+        assert_eq!(s.effective_severity(&STD), Some(Severity::Unresolved));
+        assert_eq!(s.effective_severity(&PLUG), Some(Severity::Unresolved));
         s.disabled.insert("AAA001".into());
         s.disabled.insert("ZZZ001".into());
         assert_eq!(s.effective_severity(&STD), None);

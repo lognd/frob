@@ -279,7 +279,7 @@ mod tests {
         let r = ArchReport {
             findings: vec![Verdict::fire(
                 "DEAD001",
-                Severity::Warn,
+                Severity::Error,
                 ("d.rs", (4, 8)),
                 "dead".into(),
                 "d".into(),

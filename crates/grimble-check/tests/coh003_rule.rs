@@ -48,7 +48,7 @@ fn module_depth_layers_make_coh003_fire_through_the_product() {
         ("a/b/h.py", HELPER),
     ]);
     assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0]["severity"], "advisory", "{found:?}");
+    assert_eq!(found[0]["severity"], "error", "{found:?}");
 }
 
 // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
@@ -72,7 +72,7 @@ fn model_layers_make_coh003_fire_through_the_product() {
         ("low/h.py", HELPER),
     ]);
     assert_eq!(placed.len(), 1, "{placed:?}");
-    assert_eq!(placed[0]["severity"], "advisory", "{placed:?}");
+    assert_eq!(placed[0]["severity"], "error", "{placed:?}");
     let message = placed[0]["message"].as_str().unwrap();
     assert!(message.contains("4 layers apart"), "{message}");
 }

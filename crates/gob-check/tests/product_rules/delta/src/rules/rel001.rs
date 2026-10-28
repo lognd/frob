@@ -7,7 +7,7 @@ use crate::Host;
 #[rule(
     id = "REL001",
     slug = "relay-one",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

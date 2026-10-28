@@ -13,7 +13,7 @@ use crate::host::AckHost;
 #[rule(
     id = "DRIFT004",
     slug = "reattest-required",
-    severity = Warn,
+    severity = Error,
     polarity = P0,
     must_measure = false,
     scope = Repo,

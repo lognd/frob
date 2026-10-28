@@ -50,7 +50,7 @@ fn sysdesign_slice_rules_have_fire_clean_and_not_applicable_examples() {
         assert!(src.contains("example fire"), "{file}");
         assert!(src.contains("example clean"), "{file}");
         assert!(src.contains("example notapplicable"), "{file}");
-        assert!(src.contains("severity advisory"), "{file}");
+        assert!(src.contains("severity error"), "{file}");
     }
 }
 

@@ -1,12 +1,12 @@
 rule STORE102 "redis-flush-command" {
   lang python
-  severity advisory
+  severity error
 
   find c: call where c.callee.name in ["flushall", "flushdb"]
   report c "FLUSHALL/FLUSHDB drops every key in the store: delete the keys you own instead"
 
   example fire python """
-    r.flushall()  #~ advisory
+    r.flushall()  #~ error
   """
   example clean python """
     r.delete("session:1")

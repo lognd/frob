@@ -38,10 +38,10 @@ fn path001(config: &str) -> (String, String) {
 
 // frob:tests crates/grimble-check/src/product.rs::Grimble
 #[test]
-fn new_error_rule_is_ramped_to_warning_with_a_note() {
+fn new_error_rule_is_no_longer_ramped() {
     let (severity, message) = path001("[check]\n");
-    assert_eq!(severity, "warning");
-    assert!(message.contains("0.533.0"), "{message}");
+    assert_eq!(severity, "error");
+    assert!(!message.contains("0.533.0"), "{message}");
 }
 
 // frob:tests crates/grimble-check/src/product.rs::Grimble

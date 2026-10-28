@@ -1,12 +1,12 @@
 rule WEBPERF101 "img-without-dimensions" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "img" and not e has attribute(name = "width")
   report e "image has no width: the layout shifts when it loads"
 
   example fire html """
-    <img src="hero.png" alt="Hero">  <!--~ warn -->
+    <img src="hero.png" alt="Hero">  <!--~ error -->
   """
   example clean html """
     <img src="hero.png" alt="Hero" width="640" height="360">

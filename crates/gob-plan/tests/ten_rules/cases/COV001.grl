@@ -1,6 +1,6 @@
 rule COV001 "untested-public-function" {
   lang *
-  polarity P-  severity warn  scope repo  must_measure
+  polarity P-  severity error  scope repo  must_measure
   knob depth: int = 12 "call levels a test may go through"
 
   find f: function where f is public and not f inside test and not f is test
@@ -9,7 +9,7 @@ rule COV001 "untested-public-function" {
   report f "public {f.kind} `{f.name}` has no test that reaches it"
 
   example fire rust """
-    pub fn double(x: i32) -> i32 { x * 2 }       //~ warn
+    pub fn double(x: i32) -> i32 { x * 2 }       //~ error
   """
   example clean rust """
     pub fn double(x: i32) -> i32 { x * 2 }

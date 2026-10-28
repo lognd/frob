@@ -13,7 +13,7 @@ use crate::host::AckHost;
 #[rule(
     id = "AFFECT001",
     slug = "dependents-not-updated",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

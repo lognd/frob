@@ -18,7 +18,7 @@ const GRADIENT_LIMIT: usize = 4;
 #[rule(
     id = "SLOP003",
     slug = "gradient-abuse",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

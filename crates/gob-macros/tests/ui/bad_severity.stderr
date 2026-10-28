@@ -1,4 +1,4 @@
-error: invalid severity `Fatal`; expected one of: Error, Warn, Advisory, Unresolved
+error: invalid severity `Fatal`; expected one of: Error, Unresolved
  --> tests/ui/bad_severity.rs:4:10
   |
 4 | #[derive(Rule)]

@@ -63,7 +63,7 @@ const INTERNAL_PREFIXES: &[&str] = &[
     id = "PM003",
     slug = "story-structure",
     family = "PM",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -84,7 +84,7 @@ pub struct Pm003;
     id = "PM004",
     slug = "story-restates-want",
     family = "PM",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -105,7 +105,7 @@ pub struct Pm004;
     id = "PM005",
     slug = "story-criteria-shape",
     family = "PM",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -125,7 +125,7 @@ pub struct Pm005;
     id = "PM006",
     slug = "story-too-large",
     family = "PM",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -147,7 +147,7 @@ pub struct Pm006;
     id = "PM007",
     slug = "task-without-story",
     family = "PM",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -163,7 +163,7 @@ fn rule_id<R: Rule>(rule: &R) -> RuleId {
 
 fn finding<R: Rule>(rule: &R, handle: &str, message: String) -> Finding {
     tracing::debug!(rule = %rule.meta().id, ticket = handle, "story rule fires");
-    Finding::new(rule_id(rule), Severity::Warn, None, message, handle)
+    Finding::new(rule_id(rule), Severity::Error, None, message, handle)
 }
 
 fn is_story(t: &Ticket) -> bool {

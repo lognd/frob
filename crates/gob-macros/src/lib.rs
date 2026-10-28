@@ -195,10 +195,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
             args.slug
         )));
     }
-    let severity = errors.handle(
-        args.severity
-            .pick("severity", &["Error", "Warn", "Advisory", "Unresolved"]),
-    );
+    let severity = errors.handle(args.severity.pick("severity", &["Error", "Unresolved"]));
     let tier = errors.handle(args.tier.pick("tier", &["Universal", "Lang"]));
     let scope = errors.handle(args.scope.pick("scope", &["File", "Repo"]));
     let fix = errors.handle(

@@ -115,7 +115,7 @@ fn a_summary_survives_its_encoding() {
     s.bindings.push(serde_json::json!({"entity": "node/a"}));
     s.findings.push(BindFinding {
         rule: "SYS001",
-        severity: gob_rules::Severity::Warn,
+        severity: gob_rules::Severity::Error,
         file: Some("src/a.rs".to_owned()),
         range: Some((1, 4)),
         message: "m".to_owned(),

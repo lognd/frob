@@ -167,7 +167,7 @@ mod tests {
         );
         Finding::new(
             FMT_RULE.parse::<RuleId>().expect("rule id"),
-            Severity::Warn,
+            Severity::Error,
             Some(at),
             "ruff-format/FMT001: file is not formatted",
             path,

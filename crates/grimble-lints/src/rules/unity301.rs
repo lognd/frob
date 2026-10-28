@@ -11,7 +11,7 @@ use crate::host::UnityHost;
 #[rule(
     id = "UNITY301",
     slug = "legacy-input-under-input-system",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

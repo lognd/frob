@@ -13,7 +13,7 @@ use crate::host::AckHost;
 #[rule(
     id = "DRIFT003",
     slug = "stale-ack",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

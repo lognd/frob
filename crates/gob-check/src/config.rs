@@ -58,16 +58,12 @@ impl TypesTable {
 }
 
 /// Severity at which `frob check` fails (cli.md section 2, exit 1).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum FailOn {
     /// Never fail on findings.
     None,
-    /// Fail on advisory findings and above.
-    Advisory,
-    /// Fail on warnings and above.
-    Warn,
-    /// Fail on errors only.
+    /// Fail on errors.
     Error,
 }
 
@@ -76,21 +72,37 @@ impl FailOn {
     pub fn threshold(self) -> Option<Severity> {
         match self {
             Self::None => Option::None,
-            Self::Advisory => Some(Severity::Advisory),
-            Self::Warn => Some(Severity::Warn),
             Self::Error => Some(Severity::Error),
         }
     }
 
-    /// Parse the `--fail-on` spelling (`error`, `warn`, `advisory`, `none`).
+    /// Parse the `--fail-on` spelling (`error`, `none`); `warn` and `advisory` are retired.
     pub fn parse(text: &str) -> Option<Self> {
         match text {
             "none" => Some(Self::None),
-            "advisory" => Some(Self::Advisory),
-            "warn" => Some(Self::Warn),
             "error" => Some(Self::Error),
             _ => Option::None,
         }
+    }
+
+    /// The config error for a `fail_on` spelling that is not `error` or `none`, naming the replacement for the retired `warn` and `advisory`.
+    ///
+    /// # Errors
+    /// The message to show the user when `text` is not a supported spelling.
+    pub fn parse_config(text: &str) -> Result<Self, String> {
+        Self::parse(text).ok_or_else(|| match text {
+            "warn" | "advisory" => format!(
+                "fail_on = {text:?} is no longer supported: Warn and Advisory were retired; use \"error\" (with a baseline in frob-baseline.toml for known findings) or \"none\""
+            ),
+            _ => format!("fail_on = {text:?}: expected error or none"),
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for FailOn {
+    fn deserialize<D: serde::Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        let text = String::deserialize(de)?;
+        Self::parse_config(&text).map_err(serde::de::Error::custom)
     }
 }
 
@@ -489,5 +501,26 @@ mod tier_tests {
         assert!(ToolTier::Train.runs_at(Some(ToolTier::Train)));
         assert!(!ToolTier::Ci.runs_at(Some(ToolTier::Train)));
         assert!(ToolTier::Ci.runs_at(None));
+    }
+}
+
+#[cfg(test)]
+mod fail_on_tests {
+    use super::FailOn;
+
+    // frob:tests crates/gob-check/src/config.rs::FailOn.parse_config
+    #[test]
+    fn warn_and_advisory_fail_on_are_config_errors_naming_the_replacement() {
+        for retired in ["warn", "advisory"] {
+            let msg = FailOn::parse_config(retired).expect_err("retired spelling");
+            assert!(msg.contains(retired), "{msg}");
+            assert!(
+                msg.contains("\"error\"") && msg.contains("\"none\""),
+                "{msg}"
+            );
+        }
+        assert_eq!(FailOn::parse_config("error"), Ok(FailOn::Error));
+        assert_eq!(FailOn::parse_config("none"), Ok(FailOn::None));
+        assert!(FailOn::parse_config("loud").is_err());
     }
 }

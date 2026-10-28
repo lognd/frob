@@ -12,7 +12,7 @@ use crate::host::{PmHost, relay_pm};
 #[rule(
     id = "PM033",
     slug = "ready-queue-low",
-    severity = Advisory,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

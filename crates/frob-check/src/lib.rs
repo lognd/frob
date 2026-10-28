@@ -140,6 +140,7 @@ pub fn run_with_cone(
         spec.packs = packs::live_packs(root);
     }
     let mut report = gob_check::run(&product, root, &run_opts)?;
+    gob_rules::drop_disabled_product_findings(root, snapshot::PRODUCT, &mut report.findings);
     // frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
     gob_rules::ramp_product_findings(
         root,

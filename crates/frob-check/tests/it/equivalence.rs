@@ -74,7 +74,7 @@ fn fixture_b(root: &Path) {
     write(
         root,
         "frob.toml",
-        "[check]\nexclude = [\"vendor/\"]\nfail_on = \"warn\"\n",
+        "[check]\nexclude = [\"vendor/\"]\nfail_on = \"error\"\n",
     );
     write(
         root,

@@ -293,12 +293,12 @@ const fn clean_sample(lang: Lang) -> &'static str {
     }
 }
 
-/// The marker a `fire` example puts on the line that must be reported (`//~ warn`).
+/// The marker a `fire` example puts on the line that must be reported (`//~ error`).
 fn fire_marker(lang: Lang) -> String {
     match catalog::comment_markers(lang).first() {
-        Some(&"<!--") => "<!--~ warn -->".to_owned(),
-        Some(m) => format!("{m}~ warn"),
-        None => "expect \"line 1: warn\"".to_owned(),
+        Some(&"<!--") => "<!--~ error -->".to_owned(),
+        Some(m) => format!("{m}~ error"),
+        None => "expect \"line 1: error\"".to_owned(),
     }
 }
 

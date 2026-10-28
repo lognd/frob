@@ -11,7 +11,7 @@ use crate::host::ErrHost;
 #[rule(
     id = "ERR001",
     slug = "empty-error-handler",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

@@ -85,7 +85,7 @@ rule NOPE001 "no-dbg" {
   report d "remove dbg! before committing"
 
   example fire """
-    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ error
   """
   example clean """
     fn f(x: u32) -> u32 { x }
@@ -102,7 +102,7 @@ rule NOPE001 "no-dbg" {
 
 Read it top to bottom: in Rust, find every `d` that looks like
 `dbg!(...)`, and report it. `$$$ARGS` stands for any arguments. The two
-examples are tests: the first must produce a warning on the marked line,
+examples are tests: the first must produce an error on the marked line,
 the second must produce nothing.
 
 **Step 3. Test it.**
@@ -232,7 +232,7 @@ rule       = "rule" RULE_ID STRING "{" { header } { clause } { example } explain
 
 header     = "lang" lang_set
            | "polarity" ( "P+" | "P-" | "P0" | "Pn" | "Pc" )
-           | "severity" ( "error" | "warn" | "advisory" )
+           | "severity" "error"
            | "scope" ( "file" | "repo" )
            | "must_measure"
            | "needs" need { "," need }
@@ -295,7 +295,7 @@ example    = "example" EXPECT [ LANG ] [ STRING ] "{" { input } "}"
 EXPECT     = "fire" | "clean" | "unresolved" | "notapplicable" | "known-gap" ;
 input      = "file" STRING TRIPLE | "config" TRIPLE | "model" TRIPLE
            | "diff" "[" STRING { "," STRING } "]" | "lease" "[" STRING { "," STRING } "]"
-           | "expect" STRING                         (* "line 3: warn", for languages without comments *)
+           | "expect" STRING                         (* "line 3: error", for languages without comments *)
            | "fixed" TRIPLE ;                        (* the expected output of the rule's fix *)
 explain    = "explain" TRIPLE ;                     (* markdown; must contain "## Remedy" *)
 
@@ -855,11 +855,11 @@ Unresolved `budget` (plugins.md 6.5).
 - Expected findings are marked with the language's comment introducer
   followed by `~` and a severity, on the line where the reported node
   starts (for `report f` on a function, the line of its header, not of
-  the call inside it): `//~ warn` (Rust, C, JavaScript, TypeScript,
-  Java, Go), `#~ error` (Python, YAML, TOML, shell), `--~ warn` (Lua,
+  the call inside it): `//~ error` (Rust, C, JavaScript, TypeScript,
+  Java, Go), `#~ error` (Python, YAML, TOML, shell), `--~ error` (Lua,
   SQL), `<!--~ error -->` (Markdown, HTML). `//~ unresolved` marks an
   expected Unresolved. For languages without comments (JSON), use
-  `expect "line 3: warn"` lines in the example header.
+  `expect "line 3: error"` lines in the example header.
 - Inputs other than one source file are sub-blocks: `file "path"
   """..."""` (several allowed), `config """toml"""`, `model
   """grmb"""`, `diff ["path", ...]`, `lease ["glob", ...]`.
@@ -1009,7 +1009,7 @@ rule DOC002 "broken-markdown-link" {
 ```grl
 rule COV001 "untested-public-function" {
   lang *
-  polarity P-  severity warn  scope repo  must_measure
+  polarity P-  severity error  scope repo  must_measure
   knob depth: int = 12 "call levels a test may go through"
 
   find f: function where f is public and not f inside test
@@ -1018,7 +1018,7 @@ rule COV001 "untested-public-function" {
   report f "public {f.kind} `{f.name}` has no test that reaches it"
 
   example fire rust """
-    pub fn double(x: i32) -> i32 { x * 2 }       //~ warn
+    pub fn double(x: i32) -> i32 { x * 2 }       //~ error
   """
   example clean rust """
     pub fn double(x: i32) -> i32 { x * 2 }
@@ -1129,7 +1129,7 @@ unless the example is `clean`).
 ```grl
 rule SYS001 "unowned" {
   lang *
-  polarity P-  severity warn  scope repo  rollup directory
+  polarity P-  severity error  scope repo  rollup directory
   reads model, config
 
   find a: artifact where not a.path matches config.grimble.exclude
@@ -1139,7 +1139,7 @@ rule SYS001 "unowned" {
   example fire python {
     model """node app { owns "src/app/**"; }"""
     file "scripts/legacy.py" """
-      def f(): pass                  #~ warn
+      def f(): pass                  #~ error
     """
   }
   example clean python {
@@ -1203,7 +1203,7 @@ pack is invisible to rule authors.
 ```grl
 rule NEAT013 "ambient-source-call" {
   lang *
-  severity warn
+  severity error
   needs vocab(sources)
   knob sources: vocab = vocab("clock", "rng", "env", "fs", "net", "stdio", "exit") "ambient sources"
 
@@ -1214,7 +1214,7 @@ rule NEAT013 "ambient-source-call" {
 
   example fire python """
     def now_str():
-        return time.time()          #~ warn
+        return time.time()          #~ error
   """
   example clean python """
     # grimble:shell
@@ -1248,7 +1248,7 @@ holds. `has attr "frob:shell"` also holds when a `frob:shell` comment sits just 
 ```grl
 rule NEAT031 "dispatch-site-owns-logic" {
   lang *
-  severity advisory
+  severity error
   knob ratio: float = 0.7 "share of statements that are calls or guarded calls"
 
   def peer_call(s) = s is call and some p: function where s resolves to p and p peer of s.unit
@@ -1264,7 +1264,7 @@ rule NEAT031 "dispatch-site-owns-logic" {
   example fire python """
     def run(ctx):
         a(ctx)
-        if ctx.x:                   #~ advisory
+        if ctx.x:                   #~ error
             y = ctx.x * 2
             b(y)
         c(ctx)
@@ -1291,7 +1291,7 @@ rule NEAT031 "dispatch-site-owns-logic" {
 ```grl
 rule CI002 "permissions-declared" {
   lang yaml
-  severity warn
+  severity error
 
   find w: file where w.path matches ".github/workflows/*.{yml,yaml}"
   no k: key(path = "/permissions") inside w
@@ -1299,7 +1299,7 @@ rule CI002 "permissions-declared" {
   report w "workflow has no top-level permissions and job {j.name} declares none"
 
   example fire { file ".github/workflows/ci.yml" """
-    name: ci                                 #~ warn
+    name: ci                                 #~ error
     jobs:
       build:
         runs-on: ubuntu-latest

@@ -138,7 +138,7 @@ pub fn scaffold(id: &str, file: &str, line: usize, source: &str) -> Result<NewRu
     let message = head.replace('"', "");
     let text = format!(
         "rule {id} \"{slug}\" {{\n  lang {lang}\n\n  find {var}: {ticks}{snippet}{ticks}\n  \
-         report {var} \"avoid {message}\"\n\n  example fire \"\"\"\n    {code}        {intro} warn\n  \"\"\"\n  \
+         report {var} \"avoid {message}\"\n\n  example fire \"\"\"\n    {code}        {intro} error\n  \"\"\"\n  \
          # add an `example clean` here: code the rule must leave alone\n\n  explain \"\"\"\n    \
          Say why `{message}` should not be used.\n\n    ## Remedy\n    Say what to do instead.\n  \"\"\"\n}}\n"
     );

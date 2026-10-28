@@ -27,7 +27,7 @@ pub fn lang_of(id: &str) -> Option<Lang> {
     Lang::from_tag(id).or_else(|| ALIASES.iter().find(|(a, _)| *a == id).map(|(_, l)| *l))
 }
 
-/// The comment introducers of a language, longest-lived first (`//~ warn`, `#~ error`).
+/// The comment introducers of a language, longest-lived first (`//~ error`, `#~ error`).
 pub const fn comment_markers(lang: Lang) -> &'static [&'static str] {
     match lang {
         Lang::Rust | Lang::CSharp | Lang::TypeScript | Lang::Grmb => &["//", "/*"],

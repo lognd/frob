@@ -34,7 +34,7 @@ algorithms used by two or more rules are plain modules of the same crate.
 ```rust
 #[rule(
     id = "COV001", slug = "untested-public-function",
-    severity = Warn, polarity = Pminus, must_measure = true,
+    severity = Error, polarity = Pminus, must_measure = true,
     scope = Repo, fix = Manual,
     applies = universal(needs = [TestItems, Visibility], min_fidelity = F2),
     version = 1, since = "2.0.0",
@@ -56,9 +56,9 @@ impl RepoRule for Cov001 { /* evaluation on the same type */ }
   pipeline stage emits (tool parsers, the grimble model check).
 - `evidence` is required (or an Evidence section in the rule page): it
   names the lint-catalogue row and its E_det. A rule whose row is
-  contested (C = 0.5) must declare `default = off` or `default = advisory`,
-  and no new rule defaults to Warn before the precision ledger (N16)
-  supports it (rules.md section 1).
+  contested (C = 0.5) must declare `default = off`, and no new rule
+  defaults to error before the precision ledger (N16) supports it
+  (rules.md section 1). Warn and Advisory no longer exist (rules.md 6.1.1).
 - `body = relay` (optional, `scope = Repo` only, not with `must_measure`) swaps `RepoRule` for
   `RelayRule`, whose `relay(host, files)` returns whole `Finding`s a sibling stage already
   computed. Unlike `Out`, that keeps the typed `UnresolvedReason`, per-finding severity, the

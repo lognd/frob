@@ -42,7 +42,7 @@ fn copy_keys_without_a_voice_file_report_it_and_name_slop060() {
         finding.message
     );
     assert!(finding.message.contains("home.hero"), "{}", finding.message);
-    assert_eq!(finding.severity, Severity::Warn);
+    assert_eq!(finding.severity, Severity::Error);
 }
 
 // frob:tests crates/crunk-rules/src/rules/craft013.rs::Craft013

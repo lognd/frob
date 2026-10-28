@@ -22,12 +22,10 @@ fn safe_path(path: &str) -> bool {
         || path.split(['/', '\\']).any(|s| s == ".."))
 }
 
-/// The severity mapping, one to one; frob never re-grades.
+/// The severity mapping; sibling warnings and advisories become Errors now that frob has only Error and Unresolved.
 fn severity(s: Sev) -> Severity {
     match s {
-        Sev::Error => Severity::Error,
-        Sev::Warning => Severity::Warn,
-        Sev::Advisory => Severity::Advisory,
+        Sev::Error | Sev::Warning | Sev::Advisory => Severity::Error,
         Sev::Unresolved => Severity::Unresolved,
     }
 }

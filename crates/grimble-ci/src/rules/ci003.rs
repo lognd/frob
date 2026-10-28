@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI003",
     slug = "ci-permissions-write-all",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

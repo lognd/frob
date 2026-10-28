@@ -11,7 +11,7 @@ use super::host::PackHost;
 #[rule(
     id = "PACK008",
     slug = "pack-redundant-override",
-    severity = Advisory,
+    severity = Error,
     polarity = P0,
     must_measure = false,
     scope = Repo,

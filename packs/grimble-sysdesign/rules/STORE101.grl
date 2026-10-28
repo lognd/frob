@@ -1,12 +1,12 @@
 rule STORE101 "redis-keys-command" {
   lang [python, typescript]
-  severity warn
+  severity error
 
   find c: call where c.callee.name in ["keys"]
   report c "KEYS walks the whole keyspace and blocks the server: use SCAN"
 
   example fire python """
-    r.keys("session:*")  #~ warn
+    r.keys("session:*")  #~ error
   """
   example clean python """
     def purge(r):

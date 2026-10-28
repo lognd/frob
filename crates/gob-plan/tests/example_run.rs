@@ -8,19 +8,19 @@ use gob_text::FileInterner;
 
 const RULE: &str = r#"rule DNG001 "danger-call" {
   lang rust
-  severity warn
+  severity error
   find c: call where c.callee == "danger"
   report c "danger on line {c.line}"
   example fire rust """
     fn a() {}
     fn b() {
-        danger(); //~ warn
+        danger(); //~ error
     }
   """
   example clean rust """
     fn a() {}
     fn b() {
-        danger(); //~ warn
+        danger(); //~ error
     }
   """
   explain """
@@ -53,7 +53,7 @@ fn a_clean_variant_of_a_violating_source_fails_with_grl016_and_a_diff() {
     assert!(!r[1].passed);
     assert_eq!(r[1].code, Some("GRL016"));
     assert!(
-        r[1].diff.contains("+ actual   line 3: warn"),
+        r[1].diff.contains("+ actual   line 3: error"),
         "{}",
         r[1].diff
     );
@@ -62,7 +62,7 @@ fn a_clean_variant_of_a_violating_source_fails_with_grl016_and_a_diff() {
 // frob:tests crates/gob-plan/src/examples/runner.rs::run_example
 #[test]
 fn a_fire_example_whose_source_has_no_violation_fails() {
-    let src = RULE.replace("danger(); //~ warn", "safe(); //~ warn");
+    let src = RULE.replace("danger(); //~ error", "safe(); //~ error");
     let r = results(&src);
     assert!(!r[0].passed);
     assert_eq!(r[0].code, Some("GRL016"));

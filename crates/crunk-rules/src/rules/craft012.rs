@@ -27,7 +27,7 @@ const MIN_COVERAGE_PERCENT: usize = 90;
 #[rule(
     id = "CRAFT012",
     slug = "intent-coverage",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

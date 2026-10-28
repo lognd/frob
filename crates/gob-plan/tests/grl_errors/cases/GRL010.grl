@@ -7,7 +7,7 @@ rule NOPE007 "far-reach" {
   report f "reaches {g.name}"
 
   example fire """
-    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ error
   """
   example clean """
     fn f(x: u32) -> u32 { x }

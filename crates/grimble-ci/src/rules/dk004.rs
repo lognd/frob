@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "DK004",
     slug = "dk-pipe-to-shell",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

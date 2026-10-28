@@ -70,7 +70,7 @@ fn secrets_inherit(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) 
         if inherits && !is_local(uses) && !uses.contains("${{") {
             out.push(fire(
                 CI013,
-                Severity::Advisory,
+                Severity::Error,
                 (wf.path, wf.within_job(job.id, "secrets")),
                 format!("job `{}` calls the external workflow `{uses}` with `secrets: inherit`, handing it every secret of the caller; pass only the secrets it needs by name", job.id),
                 format!("{}:{}:secrets-inherit", wf.path, job.id),
@@ -85,7 +85,7 @@ fn structure(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
         tracing::debug!(path = wf.path, anchor, "CI014 structural error");
         out.push(fire(
             CI014,
-            Severity::Warn,
+            Severity::Error,
             (wf.path, range),
             message,
             anchor,
@@ -206,7 +206,7 @@ fn action_currency(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) 
             if let Some(why) = problem {
                 out.push(fire(
                     CI015,
-                    Severity::Advisory,
+                    Severity::Error,
                     (wf.path, wf.within_job(job.id, uses)),
                     format!("job `{}` uses `{uses}`: {why}", job.id),
                     format!("{}:{}:{idx}:{name}", wf.path, job.id),

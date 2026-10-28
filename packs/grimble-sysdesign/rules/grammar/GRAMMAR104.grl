@@ -1,6 +1,6 @@
 rule GRAMMAR104 "node-name-repeats-kind" {
   lang -
-  severity advisory
+  severity error
   reads model
 
   find n: model.nodes where n.name == n.kind

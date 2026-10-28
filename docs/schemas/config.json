@@ -126,18 +126,8 @@
           "type": "string"
         },
         {
-          "const": "advisory",
-          "description": "Fail on advisory findings and above.",
-          "type": "string"
-        },
-        {
-          "const": "warn",
-          "description": "Fail on warnings and above.",
-          "type": "string"
-        },
-        {
           "const": "error",
-          "description": "Fail on errors only.",
+          "description": "Fail on errors.",
           "type": "string"
         }
       ]

@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI002",
     slug = "ci-permissions-missing",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

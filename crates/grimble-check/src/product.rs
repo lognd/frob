@@ -1078,7 +1078,7 @@ mod tests {
         );
         Finding::new(
             rule.parse().expect("rule id"),
-            Severity::Warn,
+            Severity::Error,
             Some(span),
             message,
             file,
@@ -1090,7 +1090,7 @@ mod tests {
         let mut report = CiReport::default();
         report.findings.push(grimble_ci::Verdict {
             rule,
-            severity: Severity::Warn,
+            severity: Severity::Error,
             file: file.to_owned(),
             range: (10, 11),
             message: message.to_owned(),

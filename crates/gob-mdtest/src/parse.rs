@@ -68,7 +68,7 @@ pub struct Marker {
     pub line: u32,
     /// Rule named by the marker.
     pub rule: RuleId,
-    /// Severity the marker word asserts (`error`, `warn`, `advisory`, `unresolved`).
+    /// Severity the marker word asserts (`error`, `unresolved`).
     pub severity: Severity,
     /// 1-based byte column the finding must start at, when asserted.
     pub col: Option<u32>,
@@ -194,10 +194,8 @@ fn extension(lang: &str) -> &str {
 }
 
 /// Marker words in matching order, with the severity each asserts.
-const WORDS: [(&str, Severity); 4] = [
+const WORDS: [(&str, Severity); 2] = [
     ("error", Severity::Error),
-    ("warn", Severity::Warn),
-    ("advisory", Severity::Advisory),
     ("unresolved", Severity::Unresolved),
 ];
 
@@ -215,7 +213,7 @@ struct Hit {
     required: bool,
 }
 
-/// Find the earliest marker word (`error:`, `warn:`, `advisory:`, `unresolved[R]:`) in `comment`.
+/// Find the earliest marker word (`error:`, `unresolved[R]:`) in `comment`.
 fn find_hit(comment: &str) -> Option<Hit> {
     let mut best: Option<Hit> = None;
     for (word, severity) in WORDS {
@@ -810,9 +808,9 @@ mod tests {
     // frob:tests crates/gob-mdtest/src/parse.rs::markers
     #[test]
     fn bare_marker_takes_the_default_rule() {
-        let m = markers("a # warn:\nb <!-- error: [2] -->\n", 1, &rule()).unwrap();
+        let m = markers("a # error:\nb <!-- error: [2] -->\n", 1, &rule()).unwrap();
         assert_eq!(m[0].rule, rule());
-        assert_eq!(m[0].severity, Severity::Warn);
+        assert_eq!(m[0].severity, Severity::Error);
         assert_eq!(m[1].rule, rule());
         assert_eq!(m[1].col, Some(2));
     }
@@ -820,10 +818,10 @@ mod tests {
     // frob:tests crates/gob-mdtest/src/parse.rs::markers
     #[test]
     fn own_line_and_stacked_markers_target_the_next_non_marker_line() {
-        let m = markers("// error: [1]\n// advisory: \"x\"\n\ncode\n", 1, &rule()).unwrap();
+        let m = markers("// error: [1]\n// unresolved: \"x\"\n\ncode\n", 1, &rule()).unwrap();
         assert_eq!(m.len(), 2);
         assert!(m.iter().all(|m| m.line == 3));
-        assert_eq!(m[1].severity, Severity::Advisory);
+        assert_eq!(m[1].severity, Severity::Unresolved);
     }
 
     // frob:tests crates/gob-mdtest/src/parse.rs::markers

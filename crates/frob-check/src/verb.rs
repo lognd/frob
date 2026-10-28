@@ -156,8 +156,6 @@ struct ToolFlags {
 fn fail_on_name(f: FailOn) -> &'static str {
     match f {
         FailOn::None => "none",
-        FailOn::Advisory => "advisory",
-        FailOn::Warn => "warn",
         FailOn::Error => "error",
     }
 }
@@ -467,10 +465,8 @@ impl Command for Check {
         if report.exit_code() == ExitCode::Negative {
             let c = data.counts;
             let summary = format!(
-                "{} error(s), {} warning(s), {} advisory at or above `{}`; {} unresolved ({} required, gate `{}`)",
+                "{} error(s) at or above `{}`; {} unresolved ({} required, gate `{}`)",
                 c.error,
-                c.warn,
-                c.advisory,
                 fail_on_name(report.fail_on),
                 c.unresolved,
                 data.required_unresolved,
@@ -505,11 +501,10 @@ const DIFF_RULES: [&str; 2] = ["SCOPE001", "TICK002"];
 
 /// True when `finding` must print in full although its path is outside the ticket diff.
 ///
-/// Anything that can fail the gate stays visible: errors, required unresolved
-/// findings, and everything at or above `fail_on`.
+/// Anything that can fail the gate stays visible: required unresolved
+/// findings, and everything at or above `fail_on` (errors, unless the gate is off).
 fn blocking(report: &CheckReport, finding: &Finding) -> bool {
-    finding.severity == Severity::Error
-        || finding.required.is_some()
+    finding.required.is_some()
         || report
             .fail_on
             .threshold()

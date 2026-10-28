@@ -521,7 +521,7 @@ mod tests {
             slug: "t",
             family: "T",
             product: "frob",
-            severity: Severity::Warn,
+            severity: Severity::Error,
             summary: "s",
             explanation: "e",
             tier: Tier::Universal,

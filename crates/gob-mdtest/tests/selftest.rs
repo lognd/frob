@@ -1,10 +1,10 @@
-//! Self-tests: a toy rule MDT001 (and MDT002 as a warn) over the corpora.
+//! Self-tests: a toy rule MDT001 (and MDT002) over the corpora.
 
 use gob_mdtest::{Case, Missing, Runner, run_dir, run_file};
 use gob_rules::{Finding, Severity};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 
-/// Fires on every line containing `forbidden`; MDT002 reports it as a warning.
+/// Fires on every line containing `forbidden`; MDT002 reports it the same way.
 fn toy(case: &Case) -> Vec<Finding> {
     let file = FileInterner::new().intern(&case.file_name);
     let mut out = Vec::new();
@@ -14,11 +14,7 @@ fn toy(case: &Case) -> Vec<Finding> {
             let start = TextSize::try_from(off).unwrap();
             let len = TextSize::try_from(line.len()).unwrap();
             let span = Span::new(file, TextRange::at(start, len));
-            let sev = if case.rule.as_str() == "MDT002" {
-                Severity::Warn
-            } else {
-                Severity::Error
-            };
+            let sev = Severity::Error;
             out.push(Finding::new(
                 case.rule.clone(),
                 sev,
@@ -117,7 +113,7 @@ fn a_runner_may_return_a_rule_report() {
     assert!(ok.passed(), "{}", ok.render());
 }
 
-/// Extended toy: columns at the word, plus advisory, unresolved (hole, optionally required) and two-hit lines.
+/// Extended toy: columns at the word, plus unresolved (hole, optionally required) and two-hit lines.
 fn toy_ext(case: &Case) -> Vec<Finding> {
     let file = FileInterner::new().intern(&case.file_name);
     let mut out = Vec::new();
@@ -125,7 +121,6 @@ fn toy_ext(case: &Case) -> Vec<Finding> {
     for line in case.text.split_inclusive('\n') {
         for (word, sev, msg) in [
             ("forbidden", Severity::Error, "forbidden word"),
-            ("advisory_word", Severity::Advisory, "advisory advice"),
             ("unsure_req", Severity::Unresolved, "undecided required"),
             ("unsure;", Severity::Unresolved, "undecided"),
             ("twice", Severity::Error, "first hit"),
@@ -216,7 +211,7 @@ fn own_line_marker_applies_to_the_next_line_even_if_blank() {
     assert!(t.contains("!    3"), "{t}");
 }
 
-/// The toy plus a stray MDT009 Error and an MDT001 Advisory on every case.
+/// The toy plus a stray MDT009 Error and an MDT001 Unresolved on every case.
 fn noisy(case: &Case) -> Vec<Finding> {
     let file = FileInterner::new().intern(&case.file_name);
     let span = Span::new(file, TextRange::at(TextSize::from(0), TextSize::from(1)));
@@ -230,7 +225,7 @@ fn noisy(case: &Case) -> Vec<Finding> {
     ));
     out.push(Finding::new(
         case.rule.clone(),
-        Severity::Advisory,
+        Severity::Unresolved,
         Some(span),
         "side note",
         &case.file_name,
@@ -240,7 +235,7 @@ fn noisy(case: &Case) -> Vec<Finding> {
 
 // frob:tests crates/gob-mdtest/src/run.rs::check
 #[test]
-fn an_unexpected_second_rule_or_advisory_fails_the_case() {
+fn an_unexpected_second_rule_or_unresolved_fails_the_case() {
     let dir = std::env::temp_dir().join(format!("gob-mdtest-strict-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("s.md");
@@ -257,14 +252,14 @@ fn an_unexpected_second_rule_or_advisory_fails_the_case() {
     // the unselected-rule case (second block, no rules=) ignores MDT009
     assert!(
         r.cases[1].outcome.is_err(),
-        "clean block sees its own advisory"
+        "clean block sees its own unresolved"
     );
     assert!(
         text.contains("class=fire severity=Error reason=- rule=MDT009"),
         "{text}"
     );
     assert!(
-        text.contains("class=advisory severity=Advisory reason=- rule=MDT001"),
+        text.contains("class=unresolved severity=Unresolved reason=- rule=MDT001"),
         "{text}"
     );
 }

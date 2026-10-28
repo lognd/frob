@@ -1,6 +1,6 @@
 rule SYSDESIGN102 "node-owns-test-tree" {
   lang -
-  severity advisory
+  severity error
   reads model
 
   find s: model.selectors where s.selector ~ /(^|[\/"])tests?(\/|"|$)/

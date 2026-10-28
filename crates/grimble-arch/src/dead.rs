@@ -113,7 +113,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
         } else {
             findings.push(Verdict::fire(
                 DEAD,
-                Severity::Warn,
+                Severity::Error,
                 site,
                 format!("`{name}` is private and nothing references it"),
                 key,

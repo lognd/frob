@@ -1,6 +1,6 @@
 rule SYSDESIGN101 "node-kind-unset" {
   lang -
-  severity warn  scope repo
+  severity error  scope repo
   reads model
 
   find n: model.nodes

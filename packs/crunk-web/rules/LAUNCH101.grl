@@ -1,12 +1,12 @@
 rule LAUNCH101 "placeholder-copy" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find l: literal where l.text ~ /[Ll]orem [Ii]psum/
   report l "placeholder copy left in the page: write the real text before launch"
 
   example fire html """
-    <p>Lorem ipsum dolor sit amet</p>  <!--~ warn -->
+    <p>Lorem ipsum dolor sit amet</p>  <!--~ error -->
   """
   example clean html """
     <p>Ship faster with fewer surprises.</p>

@@ -126,7 +126,7 @@ fn an_undefined_token_with_the_generated_sheet_present_fires_and_without_it_is_u
         .find(|f| f.rule.as_str() == "COLOR002")
         .expect("COLOR002");
     // COLOR002 is new in this release line, so it reports at warn until the next release.
-    assert_eq!(hit.severity, gob_rules::Severity::Warn, "{hit:?}");
+    assert_eq!(hit.severity, gob_rules::Severity::Error, "{hit:?}");
 }
 
 // frob:tests crates/crunk-rules/src/rules/contrast001.rs::Contrast001
@@ -197,13 +197,13 @@ fn a_spec_only_project_gets_a_required_unresolved_from_color001() {
 // frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
 // frob:tests crates/crunk-check/src/product.rs::Crunk
 #[test]
-fn a_rule_new_in_this_release_line_is_ramped_to_warn() {
+fn a_rule_new_in_this_release_line_is_no_longer_ramped() {
     let source = ".a { color: #1b1b1b; }\n";
     let ramped = findings_of(spec(), "styles/a.css", source);
     assert_eq!(ramped.len(), 1, "{ramped:?}");
-    assert_eq!(ramped[0].severity, gob_rules::Severity::Warn);
+    assert_eq!(ramped[0].severity, gob_rules::Severity::Error);
     assert!(
-        ramped[0].message.contains("0.533.0"),
+        !ramped[0].message.contains("0.533.0"),
         "{}",
         ramped[0].message
     );

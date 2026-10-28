@@ -12,7 +12,7 @@ fn rule(knob: &str, clause: &str, examples: &str) -> String {
     format!(
         r#"rule RAT001 "ratio" {{
   lang python
-  severity warn
+  severity error
   {knob}
 
   find f: function
@@ -56,7 +56,7 @@ fn example(fire: bool, body: &str) -> String {
     let mut lines = body.lines();
     let first = lines.next().expect("def line");
     let first = if fire {
-        format!("{first}   #~ warn")
+        format!("{first}   #~ error")
     } else {
         first.to_owned()
     };

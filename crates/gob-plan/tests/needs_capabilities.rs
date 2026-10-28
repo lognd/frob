@@ -15,14 +15,14 @@ fn rule_text(needs: &str, na_lang: &str) -> String {
     format!(
         r#"rule CAP900 "needs a capability" {{
   lang *
-  polarity P-  severity warn  scope file  rollup file
+  polarity P-  severity error  scope file  rollup file
   needs {needs}
 
   find f: function
   report f "function {{f.name}}"
   example fire rust {{
     file "src/a.rs" """
-      fn a() {{}}   //~ warn
+      fn a() {{}}   //~ error
     """
   }}
   example clean rust {{

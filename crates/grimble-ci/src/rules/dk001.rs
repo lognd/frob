@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "DK001",
     slug = "dk-root-user",
-    severity = Advisory,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

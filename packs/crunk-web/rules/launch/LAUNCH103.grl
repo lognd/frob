@@ -1,12 +1,12 @@
 rule LAUNCH103 "manifest-link-without-href" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "link" and e has attribute(name = "rel", value = "manifest") and not e has attribute(name = "href")
   report e "web app manifest link has no href: the site is not installable"
 
   example fire html """
-    <link rel="manifest">  <!--~ warn -->
+    <link rel="manifest">  <!--~ error -->
   """
   example clean html """
     <link rel="manifest" href="/site.webmanifest">

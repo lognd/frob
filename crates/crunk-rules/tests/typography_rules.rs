@@ -83,6 +83,6 @@ fn type003_names_the_weight_and_the_declared_ones_and_is_a_warning() {
         found[0].message,
         "font-weight 600 is outside declared weights [400, 500, 700]"
     );
-    assert_eq!(found[0].severity, Severity::Warn);
+    assert_eq!(found[0].severity, Severity::Error);
     assert!(support::run::<Type003>(&css("h1 { font-weight: var(--w); }\n")).is_empty());
 }

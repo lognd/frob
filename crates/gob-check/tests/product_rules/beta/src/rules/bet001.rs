@@ -7,7 +7,7 @@ use crate::Host;
 #[rule(
     id = "BET001",
     slug = "beta-one",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

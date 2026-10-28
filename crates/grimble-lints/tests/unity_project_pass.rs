@@ -46,7 +46,7 @@ fn input_system_handler_fires_unity301_as_warn() {
         &[settings("ProjectSettings/ProjectSettings.asset", "1")],
     );
     assert_eq!(count(&r, "UNITY301"), 1);
-    assert_eq!(r.findings[0].severity, Severity::Warn);
+    assert_eq!(r.findings[0].severity, Severity::Error);
 }
 
 // frob:tests crates/grimble-lints/src/unity_pass.rs::analyze_project

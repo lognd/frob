@@ -662,19 +662,9 @@ fn ruff_target(code: &str) -> RuffRule {
     RuffRule::Maps(target)
 }
 
-/// Default severity of a rule this module can produce.
-fn default_severity(rule: &str) -> Severity {
-    match rule {
-        // frob:ticket 01M4D94PD6M68GJ6MEDBVDP7MK
-        // VERSION001: a removed public item under an unchanged major version breaks consumers.
-        "CI006" | "CI007" | "VERSION001" => Severity::Error,
-        // frob:ticket 01M4D90ZDHTSR1JX06Z17FNR3C
-        "CI001" | "CI003" | "CI014" | "DEAD001" | "FMT001" | "ERR001" | "ERR003" | "CONC001"
-        | "TESTQ001" | "LOGIC001" | "A11Y001" | "REACT001" | "TYPING001" | "UNITY101" => {
-            Severity::Warn
-        }
-        _ => Severity::Advisory,
-    }
+/// Default severity of a rule this module can produce: every finding is an Error (Warn/Advisory were retired).
+fn default_severity(_rule: &str) -> Severity {
+    Severity::Error
 }
 
 /// The rule id (and severity) for `raw`, or `None` when the finding is dropped.
@@ -682,20 +672,15 @@ fn default_severity(rule: &str) -> Severity {
 /// A configured `id_map` entry wins over the parser default; an invalid
 /// target id falls back to the parser's catch-all. An actionlint
 /// `runner-label` finding is dropped when the label is in `stage.labels`,
-/// and is Advisory when no labels are configured (it cannot be told apart
-/// from label noise).
+/// and is an Error otherwise.
 pub(crate) fn classify(stage: &ToolStage, raw: &RawFinding) -> Option<(RuleId, Severity)> {
-    let mut severity_override = None;
-    if stage.parser == ToolParser::ActionlintJson && raw.tool_id == "runner-label" {
-        if let Some(label) = unknown_label(&raw.message)
-            && stage.labels.iter().any(|l| l == label)
-        {
-            tracing::debug!(stage = %stage.name, label, "runner label is configured; dropped");
-            return None;
-        }
-        if stage.labels.is_empty() {
-            severity_override = Some(Severity::Advisory);
-        }
+    if stage.parser == ToolParser::ActionlintJson
+        && raw.tool_id == "runner-label"
+        && let Some(label) = unknown_label(&raw.message)
+        && stage.labels.iter().any(|l| l == label)
+    {
+        tracing::debug!(stage = %stage.name, label, "runner label is configured; dropped");
+        return None;
     }
     let defaults = default_id_map(stage.parser);
     let ruff = if stage.parser == ToolParser::RuffJson && !stage.id_map.contains_key(&raw.tool_id) {
@@ -738,14 +723,7 @@ pub(crate) fn classify(stage: &ToolStage, raw: &RawFinding) -> Option<(RuleId, S
             .parse()
             .unwrap_or_else(|e| unreachable!("fallback ids are valid: {e}"))
     });
-    if stage.parser == ToolParser::CargoJson {
-        // rustc's level is the lint's configured severity (`-D warnings` makes it an error).
-        severity_override = Some(match raw.meta.level.as_deref() {
-            Some("error") => Severity::Error,
-            _ => Severity::Warn,
-        });
-    }
-    let severity = severity_override.unwrap_or_else(|| default_severity(id.as_str()));
+    let severity = default_severity(id.as_str());
     Some((id, severity))
 }
 
@@ -913,7 +891,7 @@ mod tests {
         let (id, sev) = classify(&stage(ToolParser::TyposJson), &found[0]).expect("kept");
         assert_eq!(
             (id.to_string(), sev),
-            ("SPELL001".to_owned(), Severity::Advisory)
+            ("SPELL001".to_owned(), Severity::Error)
         );
         // typos prints nothing for words its typos.toml allowlists, so no finding.
         assert!(parse(ToolParser::TyposJson, "").expect("empty").is_empty());
@@ -1033,9 +1011,9 @@ mod tests {
         assert_eq!(
             ids,
             [
-                ("CI001".to_owned(), Severity::Warn),
-                ("CI010".to_owned(), Severity::Advisory),
-                ("TOOL002".to_owned(), Severity::Advisory)
+                ("CI001".to_owned(), Severity::Error),
+                ("CI010".to_owned(), Severity::Error),
+                ("TOOL002".to_owned(), Severity::Error)
             ]
         );
     }
@@ -1057,9 +1035,9 @@ mod tests {
         assert_eq!(
             got,
             [
-                ("CI013".to_owned(), Severity::Advisory),
-                ("CI015".to_owned(), Severity::Advisory),
-                ("TOOL002".to_owned(), Severity::Advisory)
+                ("CI013".to_owned(), Severity::Error),
+                ("CI015".to_owned(), Severity::Error),
+                ("TOOL002".to_owned(), Severity::Error)
             ]
         );
         assert!(is_sibling_bound_id("CI013") && is_sibling_bound_id("CI015"));
@@ -1084,7 +1062,7 @@ mod tests {
                 ..found[1].clone()
             };
             let (id, sev) = classify(&st, &raw).expect("classified");
-            assert_eq!((id.as_str(), sev), ("CI014", Severity::Warn), "{kind}");
+            assert_eq!((id.as_str(), sev), ("CI014", Severity::Error), "{kind}");
         }
     }
 
@@ -1114,16 +1092,16 @@ mod tests {
         assert_eq!(
             sev(&st),
             [
-                Some(Severity::Advisory),
-                Some(Severity::Warn),
-                Some(Severity::Warn)
+                Some(Severity::Error),
+                Some(Severity::Error),
+                Some(Severity::Error)
             ],
             "no labels configured: runner-label is Advisory"
         );
         st.labels = vec!["blacksmith-4".to_owned()];
         assert_eq!(sev(&st)[0], None, "a configured label is dropped");
         st.labels = vec!["other".to_owned()];
-        assert_eq!(sev(&st)[0], Some(Severity::Warn), "unknown after the knob");
+        assert_eq!(sev(&st)[0], Some(Severity::Error), "unknown after the knob");
         assert!(
             found
                 .iter()
@@ -1212,9 +1190,9 @@ mod tests {
         assert_eq!(
             got,
             [
-                ("WCSS003".to_owned(), Severity::Advisory),
-                ("WCSS002".to_owned(), Severity::Advisory),
-                ("TOOL002".to_owned(), Severity::Advisory),
+                ("WCSS003".to_owned(), Severity::Error),
+                ("WCSS002".to_owned(), Severity::Error),
+                ("TOOL002".to_owned(), Severity::Error),
             ]
         );
         let mut mapped = stage(ToolParser::StylelintJson);
@@ -1264,20 +1242,20 @@ mod tests {
             })
             .collect();
         let want = [
-            ("jsx-a11y/alt-text", "A11Y001", Severity::Warn),
-            ("react-hooks/exhaustive-deps", "REACT001", Severity::Warn),
-            ("react/no-array-index-key", "REACT001", Severity::Warn),
+            ("jsx-a11y/alt-text", "A11Y001", Severity::Error),
+            ("react-hooks/exhaustive-deps", "REACT001", Severity::Error),
+            ("react/no-array-index-key", "REACT001", Severity::Error),
             (
                 "@typescript-eslint/no-floating-promises",
                 "CONC001",
-                Severity::Warn,
+                Severity::Error,
             ),
             (
                 "@typescript-eslint/no-explicit-any",
                 "TYPING001",
-                Severity::Warn,
+                Severity::Error,
             ),
-            ("no-console", "LINT001", Severity::Advisory),
+            ("no-console", "LINT001", Severity::Error),
         ];
         assert_eq!(got, want.map(|(a, b, c)| (a.to_owned(), b.to_owned(), c)));
         assert!(parse(ToolParser::EslintJson, "").expect("empty").is_empty());
@@ -1311,7 +1289,7 @@ mod tests {
             "the engine-called message's IDE0051 is flagged suppressed by the USP suppressor"
         );
         let (_, sev) = classify(&st, &found[0]).expect("classified");
-        assert_eq!(sev, Severity::Warn);
+        assert_eq!(sev, Severity::Error);
     }
 
     // frob:tests crates/gob-check/src/tool_parse.rs::classify
@@ -1331,7 +1309,7 @@ mod tests {
         assert_eq!(
             got,
             [
-                ("DEAD001".to_owned(), Severity::Warn),
+                ("DEAD001".to_owned(), Severity::Error),
                 ("NEAT002".to_owned(), Severity::Error),
                 ("LOGIC001".to_owned(), Severity::Error),
                 ("LINT001".to_owned(), Severity::Error),

@@ -9,12 +9,12 @@ use gob_plan::verbs::test::{ExampleLine, test_file};
 
 const RULE: &str = r#"rule NOPE001 "danger-call" {
   lang rust
-  severity warn
+  severity error
   find c: call where c.callee == "danger"
   report c "danger on line {c.line}"
   example fire rust """
     fn b() {
-        danger(); //~ warn
+        danger(); //~ error
     }
   """
   example clean rust """
@@ -107,8 +107,8 @@ fn catalog_returns_the_entry_or_a_did_you_mean() {
 #[test]
 fn fmt_rewrites_to_the_canonical_layout_and_is_idempotent() {
     let messy = RULE.replace(
-        "  lang rust\n  severity warn\n",
-        "lang rust severity warn\n",
+        "  lang rust\n  severity error\n",
+        "lang rust severity error\n",
     );
     let Formatted::Changed(text) = format_text("rules/F.grl", &messy) else {
         panic!("expected a rewrite");

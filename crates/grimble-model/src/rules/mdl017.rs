@@ -11,7 +11,7 @@ use crate::host::MdlHost;
 #[rule(
     id = "MDL017",
     slug = "mdl-duplicate-clause",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

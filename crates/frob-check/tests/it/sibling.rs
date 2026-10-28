@@ -70,7 +70,7 @@ fn a_valid_document_is_merged_namespaced_and_gated_on_its_marks() {
     assert!(of_rule(&r, "SIB001").is_empty());
     let warn = of_rule(&r, "SYS006");
     assert_eq!(warn.len(), 1);
-    assert_eq!(warn[0].severity, Severity::Warn);
+    assert_eq!(warn[0].severity, Severity::Error);
     assert!(
         warn[0].message.contains("--base main"),
         "base passed: {}",
@@ -118,14 +118,17 @@ fn a_valid_document_is_merged_namespaced_and_gated_on_its_marks() {
 // frob:tests crates/frob-check/src/sibling/mod.rs::Siblings
 #[test]
 fn frob_applies_its_own_gate_to_the_merged_marks() {
-    let dir = repo("valid -", "[check]\nfail_on_unresolved = \"never\"\n");
+    let dir = repo(
+        "valid -",
+        "[check]\nfail_on = \"none\"\nfail_on_unresolved = \"never\"\n",
+    );
     let r = run(dir.path(), &opts()).expect("run");
     assert_eq!(
         r.exit_code(),
         ExitCode::Ok,
-        "warning is below fail_on and the gate is off"
+        "the gate is off, so a mark cannot fail it"
     );
-    let dir = repo("valid -", "[check]\nfail_on = \"warn\"\n");
+    let dir = repo("valid -", "[check]\nfail_on = \"error\"\n");
     assert_eq!(
         run(dir.path(), &opts()).expect("run").exit_code(),
         ExitCode::Negative

@@ -36,7 +36,7 @@ use crate::store::PmStore;
     id = "PM010",
     slug = "cycle-over-capacity",
     family = "PM",
-    severity = Advisory,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -58,7 +58,7 @@ pub struct Pm010;
     id = "PM011",
     slug = "cycle-without-goal",
     family = "PM",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -81,7 +81,7 @@ pub struct Pm011;
     id = "PM012",
     slug = "cycle-member-not-ready",
     family = "PM",
-    severity = Advisory,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -129,7 +129,7 @@ pub fn pm010(cycle: &Cycle, points: u32, cap: &Capacity) -> Option<Finding> {
     tracing::debug!(cycle = %cycle.alias(), points, limit, "PM010: cycle over capacity");
     Some(Finding::new(
         rule_id::<Pm010>(),
-        Severity::Advisory,
+        Severity::Error,
         None,
         format!(
             "cycle {} commits {points} points, over its {}",
@@ -148,7 +148,7 @@ pub fn pm011(cycle: &Cycle) -> Option<Finding> {
     tracing::debug!(cycle = %cycle.alias(), "PM011: cycle without goal");
     Some(Finding::new(
         rule_id::<Pm011>(),
-        Severity::Warn,
+        Severity::Error,
         None,
         format!(
             "cycle {} has no goal; recreate it with `frob cycle new --goal TEXT`",
@@ -167,7 +167,7 @@ pub fn pm012(cycle: &Cycle, handle: &str, failed: &[ReadyRequirement]) -> Option
     tracing::debug!(cycle = %cycle.alias(), ticket = handle, ?names, "PM012: member not ready");
     Some(Finding::new(
         rule_id::<Pm012>(),
-        Severity::Advisory,
+        Severity::Error,
         None,
         format!(
             "{handle} in cycle {} is not ready: fails {}",

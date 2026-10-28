@@ -11,7 +11,7 @@ use super::host::PackHost;
 #[rule(
     id = "PACK003",
     slug = "pack-detector-unavailable",
-    severity = Warn,
+    severity = Error,
     polarity = P0,
     must_measure = false,
     scope = Repo,

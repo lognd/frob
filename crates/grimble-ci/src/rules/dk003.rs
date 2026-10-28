@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "DK003",
     slug = "dk-floating-tag",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

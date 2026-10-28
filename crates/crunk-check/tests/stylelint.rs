@@ -41,9 +41,9 @@ fn a_stylelint_stage_yields_advisory_findings_under_crunk_ids() {
     assert_eq!(
         found,
         [
-            ("TOOL002".to_owned(), Severity::Advisory),
-            ("WCSS002".to_owned(), Severity::Advisory),
-            ("WCSS003".to_owned(), Severity::Advisory),
+            ("TOOL002".to_owned(), Severity::Error),
+            ("WCSS002".to_owned(), Severity::Error),
+            ("WCSS003".to_owned(), Severity::Error),
         ]
     );
 }

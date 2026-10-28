@@ -80,10 +80,10 @@ fn configured_names_add_to_the_adapter_capability() {
     let config = "[coh]\neffect_calls = [\"transmit\"]\n";
     let custom = coh_findings(config, &unit_calling("transmit"));
     assert_eq!(custom.len(), 1, "{custom:?}");
-    assert_eq!(custom[0]["severity"], "advisory", "{custom:?}");
+    assert_eq!(custom[0]["severity"], "error", "{custom:?}");
     // The capability still knows `send`: the list adds to it, it does not replace it.
     let known = coh_findings(config, &unit_calling("send"));
-    assert_eq!(known[0]["severity"], "advisory", "{known:?}");
+    assert_eq!(known[0]["severity"], "error", "{known:?}");
     // A trivial override silences a name the capability cannot place.
     let quiet = coh_findings("[coh]\ntrivial = [\"mystery\"]\n", &unit_calling("mystery"));
     assert!(quiet.is_empty(), "{quiet:?}");
@@ -95,7 +95,7 @@ fn configured_names_add_to_the_adapter_capability() {
 fn without_a_coh_table_the_adapter_capability_decides() {
     let found = coh_findings("[check]\n", &unit_calling("send"));
     assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0]["severity"], "advisory", "{found:?}");
+    assert_eq!(found[0]["severity"], "error", "{found:?}");
     let table_free = coh_findings("[check]\n", &unit_calling("transmit"));
     assert_eq!(table_free[0]["severity"], "unresolved", "{table_free:?}");
 }
@@ -105,7 +105,7 @@ fn without_a_coh_table_the_adapter_capability_decides() {
 fn an_empty_effect_list_no_longer_turns_the_rule_off() {
     let found = coh_findings("[coh]\neffect_calls = []\n", &unit_calling("send"));
     assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0]["severity"], "advisory", "{found:?}");
+    assert_eq!(found[0]["severity"], "error", "{found:?}");
 }
 
 // frob:tests crates/grimble-check/src/coh002.rs::default_trivial

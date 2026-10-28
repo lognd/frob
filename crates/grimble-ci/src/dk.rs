@@ -68,7 +68,7 @@ fn root_user(path: &str, all: &[Stage], out: &mut Vec<Verdict>) {
         };
         out.push(fire(
             DK001,
-            Severity::Advisory,
+            Severity::Error,
             (path, last.from_range),
             format!("the final stage {why}, so the container runs as root; add `USER <non-root>` (for example `RUN useradd -r app` then `USER app`) before the entrypoint"),
             format!("{path}:final-stage"),
@@ -92,7 +92,7 @@ fn base_image(
     if digest.is_none() && cfg.require_digest {
         out.push(fire(
             DK002,
-            Severity::Advisory,
+            Severity::Error,
             (path, stage.from_range),
             format!("base image `{image}` is not pinned by digest; resolve it and write `{image}@sha256:<digest>`"),
             format!("{path}:{image}:digest"),
@@ -101,7 +101,7 @@ fn base_image(
     if digest.is_none() && matches!(tag, None | Some("latest")) {
         out.push(fire(
             DK003,
-            Severity::Warn,
+            Severity::Error,
             (path, stage.from_range),
             format!(
                 "base image `{image}` floats on `latest`; pin a version tag such as `{}:<version>`",
@@ -131,7 +131,7 @@ fn pipe_to_shell(path: &str, ins: &Instruction, cfg: &CiConfig, out: &mut Vec<Ve
     }
     out.push(fire(
         DK004,
-        Severity::Advisory,
+        Severity::Error,
         (path, ins.range),
         format!("a download from `{host}` is piped straight into a shell; fetch it to a file, verify a checksum, then run it"),
         format!("{path}:{}", ins.range.0),

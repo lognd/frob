@@ -12,7 +12,7 @@ use crate::scene_files::{EPSILON, rect};
 #[rule(
     id = "LAYOUT002",
     slug = "siblings-overlap",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

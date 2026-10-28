@@ -35,7 +35,7 @@ fn describe(kind: Kind) -> &'static str {
 }
 
 /// The severity both TIME rules report at.
-const SEVERITY: Severity = Severity::Warn;
+const SEVERITY: Severity = Severity::Error;
 
 /// Run `TIME001` and `TIME002` over `files`.
 pub fn analyze(files: &[PathFile<'_>]) -> TimeReport {

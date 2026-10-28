@@ -1,12 +1,12 @@
 rule SEO101 "anchor-without-href" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "a" and not e has attribute(name = "href")
   report e "anchor has no href: crawlers do not follow it"
 
   example fire html """
-    <a onclick="go()">Pricing</a>  <!--~ warn -->
+    <a onclick="go()">Pricing</a>  <!--~ error -->
   """
   example clean html """
     <a href="/pricing">Pricing</a>

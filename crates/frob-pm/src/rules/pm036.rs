@@ -12,7 +12,7 @@ use crate::host::{PmHost, relay_pm};
 #[rule(
     id = "PM036",
     slug = "cycle-overdue",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

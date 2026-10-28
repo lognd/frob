@@ -114,7 +114,7 @@ pub fn pm034(milestones: &[Milestone], tickets: &[Claimant]) -> Evaluation {
             };
             out.findings.push(Finding::new(
                 rule_id(),
-                Severity::Warn,
+                Severity::Error,
                 None,
                 format!(
                     "ticket {} ({}) claims milestone {version} but no epic above it is a member of {version} (member epics: {epics}); run `frob milestone add <epic> {version}` or reparent the ticket under a member epic",
@@ -133,7 +133,7 @@ pub fn pm034(milestones: &[Milestone], tickets: &[Claimant]) -> Evaluation {
                     tracing::debug!(epic = %epic, child = %child.id, other, "PM034: child claims another milestone");
                     out.findings.push(Finding::new(
                         rule_id(),
-                        Severity::Warn,
+                        Severity::Error,
                         None,
                         format!(
                             "epic {} is a member of milestone {} but its child {} ({}) claims milestone {other}; run `frob milestone add {} {other}` or reparent the child",

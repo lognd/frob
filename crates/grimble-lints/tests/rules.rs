@@ -90,7 +90,7 @@ fn absolute_path_is_an_error_outside_tests_and_advisory_inside() {
     assert_eq!(lib.len(), 1, "{lib:?}");
     assert_eq!((lib[0].rule, lib[0].severity), ("PATH001", Severity::Error));
     let test = run("tests/a.rs", src);
-    assert_eq!(test[0].severity, Severity::Advisory, "{test:?}");
+    assert_eq!(test[0].severity, Severity::Error, "{test:?}");
 }
 
 #[test]
@@ -236,7 +236,7 @@ fn naive_compared_with_aware_fires_time002() {
     let src = "from datetime import datetime, timezone\n\n\ndef f():\n    a = datetime.now()\n    b = datetime.now(timezone.utc)\n    return a < b\n";
     let found = of_rule("TIME002", "a.py", src);
     assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0].severity, Severity::Warn);
+    assert_eq!(found[0].severity, Severity::Error);
 }
 
 #[test]

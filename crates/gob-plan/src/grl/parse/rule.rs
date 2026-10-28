@@ -26,7 +26,7 @@ use crate::grl::token::{Token, TokenKind};
 // test_ok grl_headers_and_severity
 // rule HDR001 "headers" {
 //   lang rust
-//   severity warn
+//   severity error
 //   polarity P-
 //
 //   find d: `todo!()`
@@ -45,7 +45,7 @@ use crate::grl::token::{Token, TokenKind};
 //   report d "remove dbg!"
 //
 //   example fire """
-//     fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+//     fn f(x: u32) -> u32 { dbg!(x) }        //~ error
 //   """
 //   example clean """
 //     fn f(x: u32) -> u32 { x }
@@ -408,12 +408,8 @@ impl Parser<'_> {
             "polarity" => HeaderKind::Polarity(self.polarity()?),
             "severity" => HeaderKind::Severity(self.choice(
                 "a severity",
-                "`error`, `warn` and `advisory`",
-                &[
-                    ("error", Severity::Error),
-                    ("warn", Severity::Warn),
-                    ("advisory", Severity::Advisory),
-                ],
+                "only `error` (use a baseline for known findings, or turn the rule off in config)",
+                &[("error", Severity::Error)],
             )?),
             "scope" => HeaderKind::Scope(self.choice(
                 "a scope",
@@ -664,7 +660,7 @@ impl Parser<'_> {
                 InputKind::Fixed(self.block("the expected output as a triple-quoted block")?)
             }
             "expect" => InputKind::Expect(
-                self.plain_str("the expectation in quotes, such as \"line 3: warn\"")?,
+                self.plain_str("the expectation in quotes, such as \"line 3: error\"")?,
             ),
             "diff" => InputKind::Diff(self.string_list()?),
             _ => InputKind::Lease(self.string_list()?),

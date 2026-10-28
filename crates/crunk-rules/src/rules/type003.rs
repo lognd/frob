@@ -15,7 +15,7 @@ use crate::typography::{Weight, weight_of};
 #[rule(
     id = "TYPE003",
     slug = "font-weight-off-scale",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

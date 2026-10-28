@@ -139,7 +139,7 @@ fn root_findings(files: &ModelFiles, roots: &[LoadedRoot], ids: &mut FileInterne
         let fid = ids.intern(path);
         out.push(Finding::new(
             rule.clone(),
-            Severity::Warn,
+            Severity::Error,
             Some(TextSpan::new(fid, TextRange::new(0.into(), 0.into()))),
             format!(
                 "`{path}` is reachable from no model root; include it from a root, list it under `[grimble] models`, or exclude it in `[check] exclude`"
@@ -997,7 +997,7 @@ impl<'a> Checker<'a> {
                 if !m.has_reason() {
                     self.emit(
                         "MDL008",
-                        Some(Severity::Warn),
+                        Some(Severity::Error),
                         rec.file,
                         c.span,
                         format!(

@@ -259,12 +259,11 @@ impl Actual {
         }
     }
 
-    /// Outcome class of the finding: `unresolved` for an Unresolved, `advisory`, else `fire`.
+    /// Outcome class of the finding: `unresolved` for an Unresolved, else `fire`.
     fn class(&self) -> &'static str {
         match self.severity {
             Severity::Unresolved => "unresolved",
-            Severity::Advisory => "advisory",
-            _ => "fire",
+            Severity::Error => "fire",
         }
     }
 
@@ -416,22 +415,16 @@ fn check_subjects(block: &Block, res: &CaseResult) -> Result<(), String> {
 /// Findings of a block without markers that neither the header assertion nor the rule under test covers.
 ///
 /// A finding of another rule is always a stray. For the block rule under `expect=fire`, the header
-/// matches Error/Warn findings; an Unresolved finding is a stray, and so is an Advisory one when an
-/// Error/Warn also fired (a rule that only ever advises is matched as a whole). `unresolved` blocks
-/// accept Unresolved and Advisory; other classes are checked separately.
+/// matches Error findings; an optional (non-required) Unresolved finding is a stray. `unresolved`
+/// blocks accept Unresolved; other classes are checked separately.
 fn strays<'a>(block: &Block, actual: &'a [Actual]) -> Vec<&'a Actual> {
-    let hard = actual.iter().any(|a| {
-        a.rule == block.rule && !matches!(a.severity, Severity::Unresolved | Severity::Advisory)
-    });
     actual
         .iter()
         .filter(|a| {
             if a.rule != block.rule {
                 return true;
             }
-            block.expect == Expect::Fire
-                && ((a.severity == Severity::Unresolved && !a.required)
-                    || (hard && a.severity == Severity::Advisory))
+            block.expect == Expect::Fire && a.severity == Severity::Unresolved && !a.required
         })
         .collect()
 }
@@ -526,10 +519,7 @@ fn check(block: &Block, res: &CaseResult) -> Result<(), String> {
             }
         }
         Expect::Unresolved => {
-            if let Some(a) = actual
-                .iter()
-                .find(|a| !matches!(a.severity, Severity::Unresolved | Severity::Advisory))
-            {
+            if let Some(a) = actual.iter().find(|a| a.severity != Severity::Unresolved) {
                 return Err(format!(
                     "    expected only Unresolved findings, got {}\n{}",
                     a.short(),

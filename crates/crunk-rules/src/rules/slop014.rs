@@ -16,7 +16,7 @@ use crate::slop;
 #[rule(
     id = "SLOP014",
     slug = "eyebrow-chrome",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

@@ -184,11 +184,11 @@ fn the_rule_index_knows_the_mdl_family() {
     }
     assert_eq!(
         by_id("MDL015").map(|d| d.severity),
-        Some(gob_rules::Severity::Advisory)
+        Some(gob_rules::Severity::Error)
     );
     assert_eq!(
         by_id("MDL005").map(|d| d.severity),
-        Some(gob_rules::Severity::Warn)
+        Some(gob_rules::Severity::Error)
     );
 }
 

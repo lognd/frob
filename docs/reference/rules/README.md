@@ -8,7 +8,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [AFFECT001](AFFECT001.md) | dependents-not-updated | warn | manual | P+ | false | A public symbol changed its signature and its dependents were not re-acked. |
+| [AFFECT001](AFFECT001.md) | dependents-not-updated | error | manual | P+ | false | A public symbol changed its signature and its dependents were not re-acked. |
 
 ## BP
 
@@ -23,7 +23,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [CAP001](CAP001.md) | cap-undeclared | error | manual | P+ | false | Code a node owns uses a capability atom the node does not grant. |
-| [CAP002](CAP002.md) | cap-declared-unused | warn | manual | P- | false | A node grants a capability atom that no code it owns uses. |
+| [CAP002](CAP002.md) | cap-declared-unused | error | manual | P- | false | A node grants a capability atom that no code it owns uses. |
 | [CAP005](CAP005.md) | cap-grant-unacknowledged | error | manual | P+ | false | A new or widened `may` grant has no human acknowledgement. |
 
 ## CFG
@@ -36,11 +36,11 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [CI001](CI001.md) | pinned-ref | warn | manual | P+ | false | An external `uses:` reference is not pinned to a full commit SHA. |
+| [CI001](CI001.md) | pinned-ref | error | manual | P+ | false | An external `uses:` reference is not pinned to a full commit SHA. |
 | [CI006](CI006.md) | no-prt-head-checkout | error | manual | P+ | false | A dangerous trigger (`pull_request_target`, `workflow_run`) runs with untrusted pull request content. |
 | [CI007](CI007.md) | no-event-interpolation-in-run | error | manual | P+ | false | A `run:` script interpolates an expression an attacker can influence. |
-| [CI010](CI010.md) | checkout-no-persist | advisory | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
-| [CI014](CI014.md) | gha-syntax-and-schema | warn | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
+| [CI010](CI010.md) | checkout-no-persist | error | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
+| [CI014](CI014.md) | gha-syntax-and-schema | error | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
 
 ## CLAIM
 
@@ -53,8 +53,8 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [COH002](COH002.md) | decision-with-effects | advisory | manual | P+ | true | A unit that branches on computed data and performs effects inside those branches. |
-| [COH003](COH003.md) | mixed-abstraction-levels | advisory | manual | P+ | true | A unit whose callees sit on abstraction layers further apart than the allowed spread. |
+| [COH002](COH002.md) | decision-with-effects | error | manual | P+ | true | A unit that branches on computed data and performs effects inside those branches. |
+| [COH003](COH003.md) | mixed-abstraction-levels | error | manual | P+ | true | A unit whose callees sit on abstraction layers further apart than the allowed spread. |
 
 ## COLOR
 
@@ -69,11 +69,11 @@
 |---|---|---|---|---|---|---|
 | [COMP001](COMP001.md) | props-invalid | error | manual | P+ | true | A component prop is named once, an enum lists its values, and a default is one of them. Each block is one component file under `design/components/`. |
 | [COMP002](COMP002.md) | variants-incomplete | error | manual | P+ | true | A component variant matrix lists every combination of its axis props exactly once. |
-| [COMP003](COMP003.md) | states-invalid | warn | manual | P+ | true | A component declares at least one state, each with a distinct id. |
+| [COMP003](COMP003.md) | states-invalid | error | manual | P+ | true | A component declares at least one state, each with a distinct id. |
 | [COMP004](COMP004.md) | literal-unbound | error | manual | P+ | true | A component binding points at a design token, never at a literal value. |
 | [COMP005](COMP005.md) | binding-unresolved | error | manual | P+ | true | Every component binding names an anatomy node, a declared state and a defined token. |
-| [COMP006](COMP006.md) | a11y-contract-incomplete | warn | manual | P+ | true | An interactive component carries an a11y contract: a role, an accessible-name source, a keyboard map and a target at least 24 pixels wide. |
-| [COMP007](COMP007.md) | code-mapping-missing | warn | manual | P+ | true | A component that is ready or completed maps to the code that implements it. |
+| [COMP006](COMP006.md) | a11y-contract-incomplete | error | manual | P+ | true | An interactive component carries an a11y contract: a role, an accessible-name source, a keyboard map and a target at least 24 pixels wide. |
+| [COMP007](COMP007.md) | code-mapping-missing | error | manual | P+ | true | A component that is ready or completed maps to the code that implements it. |
 | [COMP008](COMP008.md) | code-props-mismatch | error | manual | P+ | true | A code mapping that lists props lists exactly the component's props. |
 | [COMP009](COMP009.md) | component-hash-stale | error | manual | P+ | true | A component that is ready or completed records the hash of its content and the token values it binds. |
 
@@ -82,7 +82,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [CONTENT001](CONTENT001.md) | content-literal-copy | error | manual | P+ | true | Copy lives in content keys, not in the scene markup. |
-| [CONTENT002](CONTENT002.md) | content-over-budget | warn | manual | P+ | true | A copy key stays inside its length budget. |
+| [CONTENT002](CONTENT002.md) | content-over-budget | error | manual | P+ | true | A copy key stays inside its length budget. |
 | [CONTENT003](CONTENT003.md) | content-key-undefined | error | manual | P+ | true | Every copy key a scene references is defined. |
 
 ## CONTRAST
@@ -95,7 +95,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [COV001](COV001.md) | untested-public-function | warn | manual | P- | true | A public function or method has no test that reaches it. |
+| [COV001](COV001.md) | untested-public-function | error | manual | P- | true | A public function or method has no test that reaches it. |
 | [COV003](COV003.md) | tests-names-missing-test | error | manual | P- | false | Alias of TEST001; never emitted by this crate. |
 | [COV004](COV004.md) | coverage-below-threshold | error | manual | P+ | false | Measured coverage of a scope is under the minimum the `[coverage]` table requires. |
 
@@ -103,19 +103,19 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [CRAFT001](CRAFT001.md) | focus-visible-defined | advisory | manual | P+ | false | A stylesheet with a UI styles keyboard focus; the clean case adds a `:focus-visible` rule. |
-| [CRAFT002](CRAFT002.md) | component-states-complete | advisory | manual | P+ | false | A component declares the full set of states a user can reach. |
-| [CRAFT003](CRAFT003.md) | one-moment | advisory | manual | P+ | false | A scene has one focal moment, marked with `data-moment`. |
-| [CRAFT004](CRAFT004.md) | fonts-shipped | advisory | manual | P+ | false | Custom fonts are shipped with `@font-face` and a fallback metric match. |
-| [CRAFT005](CRAFT005.md) | press-feedback | advisory | manual | P+ | false | A pressed control answers the press; the clean case adds an `:active` rule. |
-| [CRAFT006](CRAFT006.md) | scales-present | advisory | manual | P+ | false | A project whose `crunk.toml` is the default preset (spacing, font sizes and radii all declared) |
-| [CRAFT007](CRAFT007.md) | elevation-system | advisory | manual | P+ | false | Shadows share one light. |
-| [CRAFT008](CRAFT008.md) | semantic-roles-complete | advisory | manual | P+ | false | The default preset declares danger, warning and success roles beside `body`, so a fresh init is |
-| [CRAFT009](CRAFT009.md) | real-content | advisory | manual | P+ | false | A scene shows real content, not a stand-in. |
-| [CRAFT010](CRAFT010.md) | motion-policy | advisory | manual | P+ | false | Flags, once, a project whose stylesheets declare no `transition`, `animation` or `@keyframes` at all (the motion policy was deleted), and, once, a project that has motion but no `prefers-reduced-motion` media query. Advisory. |
-| [CRAFT011](CRAFT011.md) | optical-alignment | advisory | manual | P+ | false | An icon beside a label is centred on it. |
-| [CRAFT012](CRAFT012.md) | intent-coverage | advisory | manual | P+ | false | Most styling values come from tokens. |
-| [CRAFT013](CRAFT013.md) | voice-file-present | warn | manual | P+ | false | A scene that references a copy key needs the project's voice file; the clean case adds |
+| [CRAFT001](CRAFT001.md) | focus-visible-defined | error | manual | P+ | false | A stylesheet with a UI styles keyboard focus; the clean case adds a `:focus-visible` rule. |
+| [CRAFT002](CRAFT002.md) | component-states-complete | error | manual | P+ | false | A component declares the full set of states a user can reach. |
+| [CRAFT003](CRAFT003.md) | one-moment | error | manual | P+ | false | A scene has one focal moment, marked with `data-moment`. |
+| [CRAFT004](CRAFT004.md) | fonts-shipped | error | manual | P+ | false | Custom fonts are shipped with `@font-face` and a fallback metric match. |
+| [CRAFT005](CRAFT005.md) | press-feedback | error | manual | P+ | false | A pressed control answers the press; the clean case adds an `:active` rule. |
+| [CRAFT006](CRAFT006.md) | scales-present | error | manual | P+ | false | A project whose `crunk.toml` is the default preset (spacing, font sizes and radii all declared) |
+| [CRAFT007](CRAFT007.md) | elevation-system | error | manual | P+ | false | Shadows share one light. |
+| [CRAFT008](CRAFT008.md) | semantic-roles-complete | error | manual | P+ | false | The default preset declares danger, warning and success roles beside `body`, so a fresh init is |
+| [CRAFT009](CRAFT009.md) | real-content | error | manual | P+ | false | A scene shows real content, not a stand-in. |
+| [CRAFT010](CRAFT010.md) | motion-policy | error | manual | P+ | false | Flags, once, a project whose stylesheets declare no `transition`, `animation` or `@keyframes` at all (the motion policy was deleted), and, once, a project that has motion but no `prefers-reduced-motion` media query. Advisory. |
+| [CRAFT011](CRAFT011.md) | optical-alignment | error | manual | P+ | false | An icon beside a label is centred on it. |
+| [CRAFT012](CRAFT012.md) | intent-coverage | error | manual | P+ | false | Most styling values come from tokens. |
+| [CRAFT013](CRAFT013.md) | voice-file-present | error | manual | P+ | false | A scene that references a copy key needs the project's voice file; the clean case adds |
 
 ## CYCLE
 
@@ -127,16 +127,16 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [DEAD001](DEAD001.md) | arch-dead-unit | warn | manual | P- | true | A private function or method that nothing references. |
+| [DEAD001](DEAD001.md) | arch-dead-unit | error | manual | P- | true | A private function or method that nothing references. |
 
 ## DOC
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [DOC001](DOC001.md) | undocumented-public-item | warn | manual | P- | false | A public item has no doc comment. |
+| [DOC001](DOC001.md) | undocumented-public-item | error | manual | P- | false | A public item has no doc comment. |
 | [DOC002](DOC002.md) | broken-markdown-link | error | manual | P+ | false | A markdown link points at a missing path or a missing heading. |
-| [DOC003](DOC003.md) | doc-status-header | warn | manual | P+ | false | A document under `docs/` has no status header, a status outside the vocabulary, or a `superseded-by` that names a missing document. |
-| [DOC006](DOC006.md) | dangling-citation | warn | manual | P+ | false | A prose citation such as `tickets.md section 6` or `tickets.md#lifecycle` names a file, section or anchor that does not exist. |
+| [DOC003](DOC003.md) | doc-status-header | error | manual | P+ | false | A document under `docs/` has no status header, a status outside the vocabulary, or a `superseded-by` that names a missing document. |
+| [DOC006](DOC006.md) | dangling-citation | error | manual | P+ | false | A prose citation such as `tickets.md section 6` or `tickets.md#lifecycle` names a file, section or anchor that does not exist. |
 
 ## DRIFT
 
@@ -144,8 +144,8 @@
 |---|---|---|---|---|---|---|
 | [DRIFT001](DRIFT001.md) | doc-binding-drift | error | manual | P+ | false | A `frob:doc` binding went stale: the code changed under the doc, or the doc under the code. |
 | [DRIFT002](DRIFT002.md) | dangling-doc-target | error | manual | P+ | false | A `frob:doc` directive names a markdown section that does not exist. |
-| [DRIFT003](DRIFT003.md) | stale-ack | warn | manual | P+ | false | A symbol was acked, its signature changed, and no `frob:doc` directive covers it. |
-| [DRIFT004](DRIFT004.md) | reattest-required | warn | manual | P0 | false | A lock entry was recorded under another file version or digest scheme and must be re-attested. |
+| [DRIFT003](DRIFT003.md) | stale-ack | error | manual | P+ | false | A symbol was acked, its signature changed, and no `frob:doc` directive covers it. |
+| [DRIFT004](DRIFT004.md) | reattest-required | error | manual | P0 | false | A lock entry was recorded under another file version or digest scheme and must be re-attested. |
 
 ## DSL
 
@@ -153,21 +153,21 @@
 |---|---|---|---|---|---|---|
 | [DSL001](DSL001.md) | unknown-directive-verb | error | manual | P+ | false | A directive names a verb its namespace does not declare. |
 | [DSL002](DSL002.md) | abbreviated-ticket-id | error | deterministic | P+ | false | A directive carries an abbreviated ticket id instead of a full 26-char ULID. |
-| [DSL003](DSL003.md) | deprecated-directive-spelling | warn | deterministic | P+ | false | A directive uses a deprecated `frob:` claim spelling that D120 moved or dropped. |
+| [DSL003](DSL003.md) | deprecated-directive-spelling | error | deterministic | P+ | false | A directive uses a deprecated `frob:` claim spelling that D120 moved or dropped. |
 
 ## DUP
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [DUP001](DUP001.md) | arch-duplicate-code | advisory | manual | Pn | true | A block of code copied three or more times. |
+| [DUP001](DUP001.md) | arch-duplicate-code | error | manual | Pn | true | A block of code copied three or more times. |
 
 ## ERR
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [ERR001](ERR001.md) | empty-error-handler | warn | manual | P- | true | An error handler with an empty body that silently swallows the error. |
-| [ERR002](ERR002.md) | discarded-result | warn | manual | P- | true | The result of a fallible call is bound to `_` and dropped. |
-| [ERR003](ERR003.md) | silent-catch-all | warn | manual | P- | true | A catch-all handler that neither rethrows nor logs the error. |
+| [ERR001](ERR001.md) | empty-error-handler | error | manual | P- | true | An error handler with an empty body that silently swallows the error. |
+| [ERR002](ERR002.md) | discarded-result | error | manual | P- | true | The result of a fallible call is bound to `_` and dropped. |
+| [ERR003](ERR003.md) | silent-catch-all | error | manual | P- | true | A catch-all handler that neither rethrows nor logs the error. |
 
 ## EXC
 
@@ -175,11 +175,11 @@
 |---|---|---|---|---|---|---|
 | [EXC001](EXC001.md) | exception-reason-rejected | error | manual | P+ | false | An accept or defer directive carries a reason the checker rejects. |
 | [EXC003](EXC003.md) | defer-ticket-terminal | error | manual | P+ | false | A defer directive names a ticket that is done or dropped. |
-| [EXC005](EXC005.md) | accept-not-attested | warn | manual | P+ | false | An accept directive's bound symbol changed since it was attested. |
+| [EXC005](EXC005.md) | accept-not-attested | error | manual | P+ | false | An accept directive's bound symbol changed since it was attested. |
 | [EXC007](EXC007.md) | defer-ticket-missing | error | manual | P+ | false | A defer directive names a ticket that does not exist. |
 | [EXC014](EXC014.md) | defer-expired | error | manual | P+ | false | A defer directive's `until` date has passed. |
 | [EXC016](EXC016.md) | accept-on-unresolved | error | manual | P+ | false | An accept directive names a rule at a site where the finding is Unresolved. |
-| [EXC017](EXC017.md) | native-suppression-without-exception | warn | manual | P+ | false | A native suppression of a rule bound through a tool stage has no frob exception. |
+| [EXC017](EXC017.md) | native-suppression-without-exception | error | manual | P+ | false | A native suppression of a rule bound through a tool stage has no frob exception. |
 
 ## EXPORT
 
@@ -194,7 +194,7 @@
 |---|---|---|---|---|---|---|
 | [FLOW001](FLOW001.md) | flow-label-closure | error | manual | P+ | false | A flow's label exceeds the destination node's clearance and no declassify boundary lowers it. |
 | [FLOW002](FLOW002.md) | flow-unendorsed | error | manual | P+ | false | A flow into a higher-trust node has no endorse boundary reaching that trust. |
-| [FLOW003](FLOW003.md) | flow-no-rate | warn | manual | P+ | false | A flow from a foreign node declares no rate. |
+| [FLOW003](FLOW003.md) | flow-no-rate | error | manual | P+ | false | A flow from a foreign node declares no rate. |
 
 ## GRL
 
@@ -224,21 +224,21 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [HUMAN001](HUMAN001.md) | human-review-stale | advisory | manual | P+ | false | A screen that needs a human review has a current, trusted ack in `crunk.lock`. Each block is one |
-| [HUMAN002](HUMAN002.md) | human-review-rejected | advisory | manual | P+ | false | A reviewed screen is not under a standing rejection. Each block is one source file in a project |
+| [HUMAN001](HUMAN001.md) | human-review-stale | error | manual | P+ | false | A screen that needs a human review has a current, trusted ack in `crunk.lock`. Each block is one |
+| [HUMAN002](HUMAN002.md) | human-review-rejected | error | manual | P+ | false | A reviewed screen is not under a standing rejection. Each block is one source file in a project |
 
 ## INV
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [INV001](INV001.md) | invariant-without-anchor | warn | manual | P- | false | An invariants document has no `frob:invariant` directive in code. |
+| [INV001](INV001.md) | invariant-without-anchor | error | manual | P- | false | An invariants document has no `frob:invariant` directive in code. |
 | [INV002](INV002.md) | forbidden-import | error | manual | P+ | false | A file imports something the `[invariants]` table forbids. |
 
 ## LARGE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [LARGE001](LARGE001.md) | arch-large-unit | warn | manual | Pn | true | A function, method or type longer than the configured line limit. |
+| [LARGE001](LARGE001.md) | arch-large-unit | error | manual | Pn | true | A function, method or type longer than the configured line limit. |
 
 ## LAYER
 
@@ -251,7 +251,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [LAYOUT001](LAYOUT001.md) | child-overflows-parent | error | manual | P+ | true | A scene node stays inside its parent's rectangle. Each block is one scene file under `design/scenes/` of a default-preset project; the scene is solved with the deterministic layout engine (T1) and every node's absolute rectangle is compared with its parent's. |
-| [LAYOUT002](LAYOUT002.md) | siblings-overlap | warn | manual | P+ | true | Sibling scene nodes do not cover one another. Each block is one scene file under `design/scenes/`; siblings share a parent and their solved rectangles are compared pairwise. |
+| [LAYOUT002](LAYOUT002.md) | siblings-overlap | error | manual | P+ | true | Sibling scene nodes do not cover one another. Each block is one scene file under `design/scenes/`; siblings share a parent and their solved rectangles are compared pairwise. |
 | [LAYOUT003](LAYOUT003.md) | node-clipped-by-viewport | error | manual | P+ | true | No scene node extends past the viewport edge. Each block is one scene file under `design/scenes/`; every node's rectangle, the root included, is compared with the viewport the scene is solved against. |
 | [LAYOUT004](LAYOUT004.md) | content-outside-safe-area | error | manual | P+ | true | Text and interactive targets stay inside the safe area. Each block is one scene file under `design/scenes/`; the scene's `safe_area` is the inset from every viewport edge (notches, rounded corners, home indicators) that content must respect. |
 | [LAYOUT005](LAYOUT005.md) | target-below-minimum-size | error | manual | P+ | true | Interactive targets are large enough to hit. Each block is one scene file under `design/scenes/`; a node marked `"interactive": true` is a pointer or touch target. |
@@ -265,20 +265,20 @@
 | [MDL002](MDL002.md) | mdl-unresolved-include | error | manual | P+ | false | An include names a missing file, matches nothing, escapes the repository or is not readable. |
 | [MDL003](MDL003.md) | mdl-include-cycle | error | manual | P+ | false | The include graph has a cycle. |
 | [MDL004](MDL004.md) | mdl-unknown-pack | error | manual | P+ | false | A pack is not enabled, not under `packs/`, or its version or digest differs from the pin. |
-| [MDL005](MDL005.md) | mdl-selector-no-file | warn | manual | P+ | false | A selector's path matches no file in the walk. |
+| [MDL005](MDL005.md) | mdl-selector-no-file | error | manual | P+ | false | A selector's path matches no file in the walk. |
 | [MDL006](MDL006.md) | mdl-unresolved-ref | error | manual | P+ | false | A reference resolves to no entity, or to an entity of the wrong kind. |
 | [MDL007](MDL007.md) | mdl-version | error | manual | P+ | false | Missing version header, unsupported major, or files of one model with different majors. |
 | [MDL008](MDL008.md) | mdl-field | error | manual | P+ | false | A required field is missing, a scalar clause appears twice, or an `extend` sets a scalar. |
 | [MDL009](MDL009.md) | mdl-type | error | manual | P+ | false | An ill-typed value. |
-| [MDL010](MDL010.md) | mdl-selector-empty-by-construction | warn | manual | P+ | false | A selector that cannot match anything whatever the repository holds. |
+| [MDL010](MDL010.md) | mdl-selector-empty-by-construction | error | manual | P+ | false | A selector that cannot match anything whatever the repository holds. |
 | [MDL011](MDL011.md) | mdl-module | error | manual | P+ | false | A `part of` name differs from the root `module`, two roots share a module name, or an included file declares `module`. |
-| [MDL012](MDL012.md) | mdl-deprecated-name | warn | manual | P+ | false | A reference uses a `renamed_from` name. |
+| [MDL012](MDL012.md) | mdl-deprecated-name | error | manual | P+ | false | A reference uses a `renamed_from` name. |
 | [MDL013](MDL013.md) | mdl-exception | error | manual | P+ | false | A malformed exception clause. |
 | [MDL014](MDL014.md) | mdl-vmodel | error | manual | P+ | false | A V-model construction error. |
-| [MDL015](MDL015.md) | mdl-shadow | advisory | manual | P+ | false | A reference resolved to a nearer entity that shadows an outer one of the same name. |
+| [MDL015](MDL015.md) | mdl-shadow | error | manual | P+ | false | A reference resolved to a nearer entity that shadows an outer one of the same name. |
 | [MDL016](MDL016.md) | mdl-unknown-atom | error | manual | P+ | false | A capability atom is in no registry and no enabled pack. |
-| [MDL017](MDL017.md) | mdl-duplicate-clause | advisory | manual | P+ | false | A list clause repeated with identical content. |
-| [MDL019](MDL019.md) | mdl-orphan-file | warn | manual | P+ | false | A .grmb file in the walk is reachable from no model root. |
+| [MDL017](MDL017.md) | mdl-duplicate-clause | error | manual | P+ | false | A list clause repeated with identical content. |
+| [MDL019](MDL019.md) | mdl-orphan-file | error | manual | P+ | false | A .grmb file in the walk is reachable from no model root. |
 | [MDL020](MDL020.md) | mdl-include-outside | error | manual | P+ | false | An include names a file above the including file's directory without the `outside` marker. |
 | [MDL021](MDL021.md) | mdl-no-root | error | manual | P+ | false | No model root is declared, or a declared root is not a .grmb file of the walk. |
 
@@ -296,14 +296,14 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [PAIR001](PAIR001.md) | acquire-without-release | warn | manual | P- | true | An acquire (timer, listener, request, observer, subscription) with no release on the teardown path. |
+| [PAIR001](PAIR001.md) | acquire-without-release | error | manual | P- | true | An acquire (timer, listener, request, observer, subscription) with no release on the teardown path. |
 
 ## PARSE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [PARSE001](PARSE001.md) | malformed-directive | error | manual | P+ | false | A `frob:` directive is malformed: unterminated quote, bad key, missing or invalid argument. |
-| [PARSE002](PARSE002.md) | directive-matched-lexically | advisory | manual | P+ | false | A `frob:` directive sits in a file with no registered grammar and was matched by a text scan. |
+| [PARSE002](PARSE002.md) | directive-matched-lexically | error | manual | P+ | false | A `frob:` directive sits in a file with no registered grammar and was matched by a text scan. |
 
 ## PATH
 
@@ -317,30 +317,30 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [PERF001](PERF001.md) | check-over-budget | warn | manual | P+ | false | The built-in stages of a check run took longer than the `[perf]` budget. |
+| [PERF001](PERF001.md) | check-over-budget | error | manual | P+ | false | The built-in stages of a check run took longer than the `[perf]` budget. |
 
 ## PM
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [PM001](PM001.md) | milestone-without-goal | warn | manual | P- | false | A milestone has no goal statement or no exit criteria. |
-| [PM002](PM002.md) | milestone-epics-incomplete | warn | manual | P- | false | A milestone has no epics, or a member epic is done while work under it is open. |
-| [PM003](PM003.md) | story-structure | warn | manual | P+ | false | A story lacks one of `as_a`, `i_want`, `so_that`, or one is shorter than three words. |
-| [PM004](PM004.md) | story-restates-want | warn | manual | P+ | false | A story's `so_that` restates its `i_want`. |
-| [PM005](PM005.md) | story-criteria-shape | warn | manual | P+ | false | A story has no acceptance criteria, or a criterion is neither Given/When/Then nor explicit free-form. |
-| [PM006](PM006.md) | story-too-large | warn | manual | P+ | false | A story is larger than `[pm] max_story_points`. |
-| [PM007](PM007.md) | task-without-story | warn | manual | P+ | false | A task with user-visible scope has no parent story and no `no-story` reason. |
-| [PM008](PM008.md) | ticket-aged | warn | manual | P+ | false | A ticket has stayed in its category longer than `[pm.max_age_days]` allows. |
-| [PM009](PM009.md) | ready-unsized | warn | manual | P+ | false | A ready ticket (`todo`, not an epic) has no story points. |
-| [PM010](PM010.md) | cycle-over-capacity | advisory | manual | P+ | false | An open or planned cycle commits more points than its capacity. |
-| [PM011](PM011.md) | cycle-without-goal | warn | manual | P+ | false | An open or planned cycle states no goal. |
-| [PM012](PM012.md) | cycle-member-not-ready | advisory | manual | P+ | false | A not-yet-started member of an open or planned cycle fails the definition of ready. |
-| [PM013](PM013.md) | wip-limit-exceeded | warn | manual | P- | false | The repository has more tickets in progress than `[pm.wip] in_progress` allows. |
+| [PM001](PM001.md) | milestone-without-goal | error | manual | P- | false | A milestone has no goal statement or no exit criteria. |
+| [PM002](PM002.md) | milestone-epics-incomplete | error | manual | P- | false | A milestone has no epics, or a member epic is done while work under it is open. |
+| [PM003](PM003.md) | story-structure | error | manual | P+ | false | A story lacks one of `as_a`, `i_want`, `so_that`, or one is shorter than three words. |
+| [PM004](PM004.md) | story-restates-want | error | manual | P+ | false | A story's `so_that` restates its `i_want`. |
+| [PM005](PM005.md) | story-criteria-shape | error | manual | P+ | false | A story has no acceptance criteria, or a criterion is neither Given/When/Then nor explicit free-form. |
+| [PM006](PM006.md) | story-too-large | error | manual | P+ | false | A story is larger than `[pm] max_story_points`. |
+| [PM007](PM007.md) | task-without-story | error | manual | P+ | false | A task with user-visible scope has no parent story and no `no-story` reason. |
+| [PM008](PM008.md) | ticket-aged | error | manual | P+ | false | A ticket has stayed in its category longer than `[pm.max_age_days]` allows. |
+| [PM009](PM009.md) | ready-unsized | error | manual | P+ | false | A ready ticket (`todo`, not an epic) has no story points. |
+| [PM010](PM010.md) | cycle-over-capacity | error | manual | P+ | false | An open or planned cycle commits more points than its capacity. |
+| [PM011](PM011.md) | cycle-without-goal | error | manual | P+ | false | An open or planned cycle states no goal. |
+| [PM012](PM012.md) | cycle-member-not-ready | error | manual | P+ | false | A not-yet-started member of an open or planned cycle fails the definition of ready. |
+| [PM013](PM013.md) | wip-limit-exceeded | error | manual | P- | false | The repository has more tickets in progress than `[pm.wip] in_progress` allows. |
 | [PM031](PM031.md) | good-first-incomplete | error | manual | P+ | false | A ticket labelled `good-first` is missing something a newcomer needs. |
-| [PM032](PM032.md) | good-first-pool-low | warn | manual | P+ | false | Fewer than `[tickets] good_first_min` ready tickets carry the `good-first` label. |
-| [PM033](PM033.md) | ready-queue-low | advisory | manual | P- | false | The ready queue holds fewer doable tickets than `[pm] ready_min`. |
-| [PM034](PM034.md) | milestone-member-outside-epics | warn | manual | P- | false | A ticket claims a milestone that its epic ancestry does not reach. |
-| [PM036](PM036.md) | cycle-overdue | warn | manual | P- | false | An active cycle is past its end date and has not been closed. |
+| [PM032](PM032.md) | good-first-pool-low | error | manual | P+ | false | Fewer than `[tickets] good_first_min` ready tickets carry the `good-first` label. |
+| [PM033](PM033.md) | ready-queue-low | error | manual | P- | false | The ready queue holds fewer doable tickets than `[pm] ready_min`. |
+| [PM034](PM034.md) | milestone-member-outside-epics | error | manual | P- | false | A ticket claims a milestone that its epic ancestry does not reach. |
+| [PM036](PM036.md) | cycle-overdue | error | manual | P- | false | An active cycle is past its end date and has not been closed. |
 
 ## PROC
 
@@ -352,13 +352,13 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [RADIUS001](RADIUS001.md) | radius-off-scale | warn | manual | P+ | true | Corner radii must be steps of the radius scale. Each block is one source file in a project whose |
+| [RADIUS001](RADIUS001.md) | radius-off-scale | error | manual | P+ | true | Corner radii must be steps of the radius scale. Each block is one source file in a project whose |
 
 ## READ
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [READ001](READ001.md) | unreadable-file | warn | manual | P+ | false | A walked file could not be read, so no rule examined it. |
+| [READ001](READ001.md) | unreadable-file | error | manual | P+ | false | A walked file could not be read, so no rule examined it. |
 
 ## REF
 
@@ -378,7 +378,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [RES001](RES001.md) | unpaired-resource-acquisition | warn | manual | P- | true | An acquire call with no paired release in its scope: the resource is never given back. |
+| [RES001](RES001.md) | unpaired-resource-acquisition | error | manual | P- | true | An acquire call with no paired release in its scope: the resource is never given back. |
 
 ## RESP
 
@@ -412,21 +412,21 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SIZE001](SIZE001.md) | size-off-scale | warn | manual | P+ | true | Box sizes must be steps of the sizes scale. Each block is one source file in a project whose |
+| [SIZE001](SIZE001.md) | size-off-scale | error | manual | P+ | true | Box sizes must be steps of the sizes scale. Each block is one source file in a project whose |
 
 ## SLOP
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SLOP001](SLOP001.md) | default-palette-accent | advisory | manual | P+ | false | Flags a palette entry or a colour literal within two deltaE_OK points of a Tailwind indigo, violet or purple 400-700 stop. `[decisions] accent` records that the purple is the brand and silences the rule. Advisory: real purple brands exist. |
-| [SLOP003](SLOP003.md) | gradient-abuse | advisory | manual | P+ | false | Flags the fourth gradient background in a project, and any gradient text (`background-clip: text`). `[decisions] gradients` silences it. Advisory. |
-| [SLOP004](SLOP004.md) | coloured-glow-shadows | advisory | manual | P+ | false | Flags two or more `box-shadow` layers with a saturated colour and a blur of 15px or more. `[decisions] glows` silences it. Advisory. |
-| [SLOP010](SLOP010.md) | font-unchosen | advisory | manual | P+ | false | Flags a literal `font-family` led by Inter, Roboto, Arial, system-ui or a second-wave default (Space Grotesk, Geist, Instrument Serif, Fraunces, Syne). `[decisions] fonts` records the rationale and silences it. Advisory: a chosen Inter is fine. |
-| [SLOP011](SLOP011.md) | font-not-shipped | warn | manual | P+ | false | Flags a literal `font-family` or `--font-*` whose first family is not a generic or system face and that no `@font-face` defines. A project that loads fonts through Google Fonts, Bunny, `next/font` or `@fontsource` is exempt, as is a `[decisions] fonts` project. Warn. |
-| [SLOP014](SLOP014.md) | eyebrow-chrome | advisory | manual | P+ | false | Flags three or more short (four words or fewer) labels in an element marked `uppercase`, `eyebrow`, `kicker` or `overline` that sit directly above an `h1` or `h2`. `[decisions] eyebrows` silences it. Advisory. |
-| [SLOP022](SLOP022.md) | uniform-radius | advisory | manual | P+ | false | Flags, once, three or more literal radii that share one value or that are 16px and larger in more than 60 percent of cases. Zero, percentages and `var()` radii are ignored. `[decisions] radius` silences it. Advisory. |
-| [SLOP040](SLOP040.md) | emoji-as-icon | warn | manual | P+ | false | Flags a pictograph as the first character of an `li`, heading, `button` or `a` label in a JSX source, or at the start of a CSS `content` or `list-style` string. Numeric character references and CSS escapes are read as the character they name. `[decisions] emoji` silences it. Warn. |
-| [SLOP060](SLOP060.md) | buzzword-density | advisory | manual | P+ | false | Scores the literal text of a JSX source against a buzzword lexicon (seamless, unlock, elevate, supercharge, world-class and similar). Three or more hits at three or more per 100 words, over at least 30 words, fires once per source; a single hit never fires. `[decisions] voice` silences it. Advisory. |
+| [SLOP001](SLOP001.md) | default-palette-accent | error | manual | P+ | false | Flags a palette entry or a colour literal within two deltaE_OK points of a Tailwind indigo, violet or purple 400-700 stop. `[decisions] accent` records that the purple is the brand and silences the rule. Advisory: real purple brands exist. |
+| [SLOP003](SLOP003.md) | gradient-abuse | error | manual | P+ | false | Flags the fourth gradient background in a project, and any gradient text (`background-clip: text`). `[decisions] gradients` silences it. Advisory. |
+| [SLOP004](SLOP004.md) | coloured-glow-shadows | error | manual | P+ | false | Flags two or more `box-shadow` layers with a saturated colour and a blur of 15px or more. `[decisions] glows` silences it. Advisory. |
+| [SLOP010](SLOP010.md) | font-unchosen | error | manual | P+ | false | Flags a literal `font-family` led by Inter, Roboto, Arial, system-ui or a second-wave default (Space Grotesk, Geist, Instrument Serif, Fraunces, Syne). `[decisions] fonts` records the rationale and silences it. Advisory: a chosen Inter is fine. |
+| [SLOP011](SLOP011.md) | font-not-shipped | error | manual | P+ | false | Flags a literal `font-family` or `--font-*` whose first family is not a generic or system face and that no `@font-face` defines. A project that loads fonts through Google Fonts, Bunny, `next/font` or `@fontsource` is exempt, as is a `[decisions] fonts` project. Warn. |
+| [SLOP014](SLOP014.md) | eyebrow-chrome | error | manual | P+ | false | Flags three or more short (four words or fewer) labels in an element marked `uppercase`, `eyebrow`, `kicker` or `overline` that sit directly above an `h1` or `h2`. `[decisions] eyebrows` silences it. Advisory. |
+| [SLOP022](SLOP022.md) | uniform-radius | error | manual | P+ | false | Flags, once, three or more literal radii that share one value or that are 16px and larger in more than 60 percent of cases. Zero, percentages and `var()` radii are ignored. `[decisions] radius` silences it. Advisory. |
+| [SLOP040](SLOP040.md) | emoji-as-icon | error | manual | P+ | false | Flags a pictograph as the first character of an `li`, heading, `button` or `a` label in a JSX source, or at the start of a CSS `content` or `list-style` string. Numeric character references and CSS escapes are read as the character they name. `[decisions] emoji` silences it. Warn. |
+| [SLOP060](SLOP060.md) | buzzword-density | error | manual | P+ | false | Scores the literal text of a JSX source against a buzzword lexicon (seamless, unlock, elevate, supercharge, world-class and similar). Three or more hits at three or more per 100 words, over at least 30 words, fires once per source; a single hit never fires. `[decisions] voice` silences it. Advisory. |
 
 ## SPACE
 
@@ -438,26 +438,26 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [STATE001](STATE001.md) | interactive-states-missing | warn | manual | P+ | true | A screen declared `interactive` declares default, hover, focus-visible, active and disabled states. Each block is one screen file under `design/screens/` of a default-preset project. |
-| [STATE002](STATE002.md) | data-states-missing | warn | manual | P+ | true | A screen declared `data_bound` declares loading, empty, error and partial states. Each block is one screen file under `design/screens/` of a default-preset project. |
-| [STATE003](STATE003.md) | form-states-missing | warn | manual | P+ | true | A screen declared `form` declares error, success and validation states. Each block is one screen file under `design/screens/` of a default-preset project. |
-| [STATE006](STATE006.md) | game-states-missing | warn | manual | P+ | true | A screen declared `game` declares menu-default, pause, disconnect, low-hull and death states. Each block is one screen file under `design/screens/` of a default-preset project. |
+| [STATE001](STATE001.md) | interactive-states-missing | error | manual | P+ | true | A screen declared `interactive` declares default, hover, focus-visible, active and disabled states. Each block is one screen file under `design/screens/` of a default-preset project. |
+| [STATE002](STATE002.md) | data-states-missing | error | manual | P+ | true | A screen declared `data_bound` declares loading, empty, error and partial states. Each block is one screen file under `design/screens/` of a default-preset project. |
+| [STATE003](STATE003.md) | form-states-missing | error | manual | P+ | true | A screen declared `form` declares error, success and validation states. Each block is one screen file under `design/screens/` of a default-preset project. |
+| [STATE006](STATE006.md) | game-states-missing | error | manual | P+ | true | A screen declared `game` declares menu-default, pause, disconnect, low-hull and death states. Each block is one screen file under `design/screens/` of a default-preset project. |
 | [STATE007](STATE007.md) | screen-hash-stale | error | manual | P+ | true | A screen locked as `ready` or `completed` records the hash of its content. Each block is one screen file under `design/screens/` of a default-preset project. |
 
 ## SYS
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SYS001](SYS001.md) | sys-unowned | warn | manual | P- | false | An artifact in the walk that no node owns. |
+| [SYS001](SYS001.md) | sys-unowned | error | manual | P- | false | An artifact in the walk that no node owns. |
 | [SYS002](SYS002.md) | sys-ambiguous-owner | error | manual | P+ | false | Two nodes own one identity at the same specificity. |
 | [SYS003](SYS003.md) | sys-binding-conflict | error | manual | P+ | false | Bindings contradict each other or an operand does not resolve. |
-| [SYS004](SYS004.md) | sys-entity-without-code | warn | manual | P- | false | A binding clause matches no code. |
-| [SYS005](SYS005.md) | sys-unmodeled | warn | manual | P+ | true | A public unit in a modeled selector that no node owns. |
+| [SYS004](SYS004.md) | sys-entity-without-code | error | manual | P- | false | A binding clause matches no code. |
+| [SYS005](SYS005.md) | sys-unmodeled | error | manual | P+ | true | A public unit in a modeled selector that no node owns. |
 | [SYS006](SYS006.md) | sys-contract-skew | error | manual | P0 | true | The two ends of an acked flow disagree on the Contract facet. |
 | [SYS007](SYS007.md) | sys-changed-since-ack | error | manual | P0 | true | An acked identity changed since its ack. |
-| [SYS008](SYS008.md) | sys-renamed | advisory | manual | P0 | false | An acked identity vanished and its Body appears under a new name. |
-| [SYS009](SYS009.md) | sys-flow-end-unbound | warn | manual | P- | false | One end of a flow binds no code while the other does. |
-| [SYS010](SYS010.md) | sys-claim-without-evidence | warn | manual | P- | false | A claim above proof level L1 has no test evidence. |
+| [SYS008](SYS008.md) | sys-renamed | error | manual | P0 | false | An acked identity vanished and its Body appears under a new name. |
+| [SYS009](SYS009.md) | sys-flow-end-unbound | error | manual | P- | false | One end of a flow binds no code while the other does. |
+| [SYS010](SYS010.md) | sys-claim-without-evidence | error | manual | P- | false | A claim above proof level L1 has no test evidence. |
 | [SYS011](SYS011.md) | sys-vmodel-link-broken | error | manual | P- | false | A vmodel ref or runnable resolves to nothing. |
 | [SYS013](SYS013.md) | sys-undeclared-flow | error | manual | P+ | false | An import or call edge between two owners with no flow between them. |
 
@@ -487,15 +487,15 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [TIME001](TIME001.md) | local-clock-read | warn | manual | P- | true | A current-time read in the local zone, or without a zone, whose value is stored or sent. |
-| [TIME002](TIME002.md) | naive-aware-mix | warn | manual | P- | true | A naive and a timezone-aware datetime compared or subtracted. |
+| [TIME001](TIME001.md) | local-clock-read | error | manual | P- | true | A current-time read in the local zone, or without a zone, whose value is stored or sent. |
+| [TIME002](TIME002.md) | naive-aware-mix | error | manual | P- | true | A naive and a timezone-aware datetime compared or subtracted. |
 
 ## TODO
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [TODO001](TODO001.md) | bare-work-marker | error | manual | P+ | false | A comment carries an upper-case work marker with no owning ticket. |
-| [TODO002](TODO002.md) | todo-ticket-terminal | warn | manual | P+ | true | A `frob:todo` directive points at a ticket that is already done or dropped. |
+| [TODO002](TODO002.md) | todo-ticket-terminal | error | manual | P+ | true | A `frob:todo` directive points at a ticket that is already done or dropped. |
 
 ## TOKEN
 
@@ -503,12 +503,12 @@
 |---|---|---|---|---|---|---|
 | [TOKEN002](TOKEN002.md) | token-file-invalid | error | manual | P+ | true | An authored token file compiles. Each block is one source file in a project whose `crunk.toml` is the default preset. |
 | [TOKEN003](TOKEN003.md) | token-alias-broken | error | manual | P+ | true | Token aliases resolve. Each block is one source file in a project whose `crunk.toml` is the default preset. |
-| [TOKEN004](TOKEN004.md) | token-unused | warn | manual | P+ | true | Every token is used. Each block is one source file in a project whose `crunk.toml` is the default preset. |
-| [TOKEN005](TOKEN005.md) | token-naming | warn | manual | P+ | true | Token paths follow the naming and layering convention. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN004](TOKEN004.md) | token-unused | error | manual | P+ | true | Every token is used. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN005](TOKEN005.md) | token-naming | error | manual | P+ | true | Token paths follow the naming and layering convention. Each block is one source file in a project whose `crunk.toml` is the default preset. |
 | [TOKEN006](TOKEN006.md) | token-mode-incomplete | error | manual | P+ | true | Mode overrides are complete. Each block is one source file in a project whose `crunk.toml` is the default preset. |
 | [TOKEN007](TOKEN007.md) | token-scope-violation | error | manual | P+ | true | Tokens are bound to properties they are scoped for. Each block is one source file in a project whose `crunk.toml` is the default preset. |
-| [TOKEN008](TOKEN008.md) | token-near-duplicate | warn | manual | P+ | true | Tokens do not duplicate each other. Each block is one source file in a project whose `crunk.toml` is the default preset. |
-| [TOKEN009](TOKEN009.md) | token-deprecated-used | warn | manual | P+ | true | Deprecated tokens are not used. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN008](TOKEN008.md) | token-near-duplicate | error | manual | P+ | true | Tokens do not duplicate each other. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN009](TOKEN009.md) | token-deprecated-used | error | manual | P+ | true | Deprecated tokens are not used. Each block is one source file in a project whose `crunk.toml` is the default preset. |
 
 ## TOKENS
 
@@ -521,7 +521,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [TOOL001](TOOL001.md) | tool-stage-failed | error | manual | P+ | false | A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start. |
-| [TOOL002](TOOL002.md) | tool-finding-unmapped | advisory | manual | P+ | false | A bound tool reported a finding that no frob rule id covers. |
+| [TOOL002](TOOL002.md) | tool-finding-unmapped | error | manual | P+ | false | A bound tool reported a finding that no frob rule id covers. |
 
 ## TW
 
@@ -529,7 +529,7 @@
 |---|---|---|---|---|---|---|
 | [TW001](TW001.md) | arbitrary-value-off-design | error | manual | P+ | true | An arbitrary Tailwind value must still sit on the design law. Each block is one source file in a |
 | [TW002](TW002.md) | theme-entry-undefined-token | error | manual | P- | true | A Tailwind theme entry may only map to a token that exists. Each block is one source file in a |
-| [TW003](TW003.md) | alpha-modifier-without-placeholder | warn | manual | P+ | true | An alpha modifier needs a theme colour that can take alpha. Each block is one source file in a |
+| [TW003](TW003.md) | alpha-modifier-without-placeholder | error | manual | P+ | true | An alpha modifier needs a theme colour that can take alpha. Each block is one source file in a |
 | [TW004](TW004.md) | tailwind-default-color | error | manual | P+ | true | A colour utility must come from the project theme, not Tailwind's defaults. Each block is one source |
 | [TW005](TW005.md) | tailwind-default-scale | error | manual | P+ | true | A scale utility must come from the declared scales, not Tailwind's defaults. Each block is one source |
 
@@ -539,25 +539,25 @@
 |---|---|---|---|---|---|---|
 | [TYPE001](TYPE001.md) | font-size-off-scale | error | manual | P+ | true | Font sizes must be steps of the type ramp. Each block is one source file in a project whose |
 | [TYPE002](TYPE002.md) | font-family-off-stack | error | manual | P+ | true | Font families must come from the declared stacks. Each block is one source file in a project whose |
-| [TYPE003](TYPE003.md) | font-weight-off-scale | warn | manual | P+ | true | Font weights must be declared weights. Each block is one source file in a project whose `crunk.toml` |
+| [TYPE003](TYPE003.md) | font-weight-off-scale | error | manual | P+ | true | Font weights must be declared weights. Each block is one source file in a project whose `crunk.toml` |
 
 ## UNITY
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [UNITY001](UNITY001.md) | asset-missing-meta | warn | manual | P+ | false | A tracked file or folder under `Assets/` (or an embedded package under `Packages/`) has no tracked `.meta`. |
-| [UNITY002](UNITY002.md) | orphan-meta | warn | manual | P+ | false | A tracked `.meta` file whose asset is not tracked. |
+| [UNITY001](UNITY001.md) | asset-missing-meta | error | manual | P+ | false | A tracked file or folder under `Assets/` (or an embedded package under `Packages/`) has no tracked `.meta`. |
+| [UNITY002](UNITY002.md) | orphan-meta | error | manual | P+ | false | A tracked `.meta` file whose asset is not tracked. |
 | [UNITY003](UNITY003.md) | duplicate-guid | error | manual | P+ | false | Two or more tracked `.meta` files carry the same `guid`. |
-| [UNITY201](UNITY201.md) | lookup-in-hot-code | advisory | manual | P- | true | A component or object lookup (GetComponent, Find, Camera.main) in code Unity runs every frame. |
-| [UNITY202](UNITY202.md) | allocation-in-hot-code | advisory | manual | P- | true | A managed allocation (collection, StringBuilder, array) in code Unity runs every frame. |
-| [UNITY301](UNITY301.md) | legacy-input-under-input-system | warn | manual | P- | true | The legacy Input class used in a project whose active input handler is the Input System. |
-| [UNITY302](UNITY302.md) | physics-force-outside-fixed-update | warn | manual | P- | true | A Rigidbody force or move applied from Update or LateUpdate instead of FixedUpdate. |
+| [UNITY201](UNITY201.md) | lookup-in-hot-code | error | manual | P- | true | A component or object lookup (GetComponent, Find, Camera.main) in code Unity runs every frame. |
+| [UNITY202](UNITY202.md) | allocation-in-hot-code | error | manual | P- | true | A managed allocation (collection, StringBuilder, array) in code Unity runs every frame. |
+| [UNITY301](UNITY301.md) | legacy-input-under-input-system | error | manual | P- | true | The legacy Input class used in a project whose active input handler is the Input System. |
+| [UNITY302](UNITY302.md) | physics-force-outside-fixed-update | error | manual | P- | true | A Rigidbody force or move applied from Update or LateUpdate instead of FixedUpdate. |
 
 ## VIS
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [VIS001](VIS001.md) | arch-wide-visibility | advisory | manual | P- | true | A `pub` function that no other package uses. |
+| [VIS001](VIS001.md) | arch-wide-visibility | error | manual | P- | true | A `pub` function that no other package uses. |
 
 ## WAIVE
 

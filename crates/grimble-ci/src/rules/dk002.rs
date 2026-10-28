@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "DK002",
     slug = "dk-digest-unpinned",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

@@ -467,11 +467,11 @@ fn check_severity(repo: &Repo, rule: &str) -> Option<String> {
 // frob:ticket 01M41B2PD4NAV8VACA13750GWB
 // frob:tests apply_strict
 #[test]
-fn pm_strict_escalates_pm001_to_error() {
+fn pm_strict_is_a_no_op_because_pm001_is_always_an_error() {
     let repo = Repo::new();
     repo.ok(&["milestone", "new", "0.532.0", "--goal", "g"]);
     let _ = repo.ticket("epic");
-    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("warning"));
+    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("error"));
     let toml = repo.dir.path().join("frob.toml");
     let text = std::fs::read_to_string(&toml).expect("frob.toml");
     assert!(text.contains("strict = false"), "{text}");
@@ -485,7 +485,7 @@ fn pm_strict_escalates_pm001_to_error() {
 fn pm001_fires_on_a_milestone_with_no_tickets() {
     let repo = Repo::new();
     repo.ok(&["milestone", "new", "0.1.0", "--goal", "g"]);
-    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("warning"));
+    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("error"));
 }
 
 #[test]

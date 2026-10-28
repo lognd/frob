@@ -13,7 +13,7 @@ use crate::host::{PmHost, relay_pm};
 #[rule(
     id = "PM013",
     slug = "wip-limit-exceeded",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

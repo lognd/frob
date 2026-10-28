@@ -297,7 +297,7 @@ const GRL_RULE: &str = "rule NOPE001 \"no-dbg\" {
   report d \"remove dbg! before committing\"
 
   example fire \"\"\"
-    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ error
   \"\"\"
   example clean \"\"\"
     fn f(x: u32) -> u32 { x }

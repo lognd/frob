@@ -38,7 +38,7 @@ pub fn pm033(ready_min: u32, ready: usize) -> Evaluation {
     tracing::debug!(ready, ready_min, "PM033: ready queue below the order point");
     out.findings.push(Finding::new(
         rule_id(),
-        Severity::Advisory,
+        Severity::Error,
         None,
         format!(
             "ready queue is {ready}, below {ready_min}: plan the next cycle (run frob cycle plan) or triage"
@@ -83,7 +83,7 @@ mod tests {
     fn message_carries_both_counts() {
         // frob:tests crates/frob-pm/src/eval/replenish.rs::pm033
         let f = &pm033(4, 1).findings[0];
-        assert_eq!(f.severity, Severity::Advisory);
+        assert_eq!(f.severity, Severity::Error);
         assert!(
             f.message.contains("ready queue is 1, below 4"),
             "{}",

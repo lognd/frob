@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI005",
     slug = "ci-timeout-missing",
-    severity = Advisory,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,
