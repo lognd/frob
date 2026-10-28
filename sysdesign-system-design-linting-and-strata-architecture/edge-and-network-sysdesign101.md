@@ -1,14 +1,14 @@
 +++
 id = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 title = "edge and network (SYSDESIGN101+)"
-type = "story"
+type = "task"
 category = "todo"
 priority = "low"
 points = 5
 parent = "01M3AXSDACKS00T3E853M1J0DR"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:57Z"
+updated = "2026-10-28T12:56:52Z"
 aliases = ["T-6424"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
