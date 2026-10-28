@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk new component skeleton lacks CRAFT002 interaction states"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk/src/new/**"]
+body = "found while working WJH9CR5: new.rs test filters CRAFT002 out of the skeleton validation"
+at = "2026-10-28T21:26:47Z"
+actor = "lognd"
+rev = 1
