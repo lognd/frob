@@ -90,6 +90,7 @@ pub fn work_copy(parent: &Path) -> PathBuf {
     copy_tree(&parity_root().join("fixtures/static"), &work);
     for project in PROJECTS {
         disable_ramp(&work.join(project));
+        crate::common::satisfy_craft(&work.join(project));
     }
     work
 }
