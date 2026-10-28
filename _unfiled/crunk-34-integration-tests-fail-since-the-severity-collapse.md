@@ -2,7 +2,8 @@
 id = "01M61WBFHXRYRQBBW2RWJH9CR5"
 title = "crunk: 34 integration tests fail since the Severity collapse made CRAFT rules Error"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
