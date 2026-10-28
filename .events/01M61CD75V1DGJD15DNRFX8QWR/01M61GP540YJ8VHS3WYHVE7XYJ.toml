@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T15:02:13Z"
+digest = "73ab5e4dd9fe2990c9b7a39cc21f46ff36fb842d8a544fdd548f6143b7d7eaac"
+exit_code = 101
+head = "dade10a89d309ca853f403dcb57942c2c21d454e"
+passed = false
+provider = "nextest"
+ref = "reindex_plans_commits_and_settles_a_misfiled_ticket"
+size = 16813
+status = "measured"
+uri = "dir:.git/frob/artifacts/73ab5e4dd9fe2990c9b7a39cc21f46ff36fb842d8a544fdd548f6143b7d7eaac"
+at = "2026-10-28T15:02:13Z"
+actor = "lognd"
+rev = 1
