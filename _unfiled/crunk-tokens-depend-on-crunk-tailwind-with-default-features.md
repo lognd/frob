@@ -7,9 +7,11 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:32Z"
-updated = "2026-10-27T02:58:15Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:52Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-tokens/Cargo.toml"]
 +++
 
 Found while working ~1WS0DQ4: crunk-tailwind gained a default-on runtime feature (gob-exec, gob-cache, gob-symbols, ...). crunk-tokens only needs the default-theme tables; set default-features = false there. Blocked by neither; do after ~1WS0DQ4 lands.
+
+no-story: internal engineering task in crunk-tokens; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
