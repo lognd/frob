@@ -7,9 +7,11 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:35Z"
-updated = "2026-10-27T02:58:15Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:48Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-ingest/src/tailwind/**"]
 +++
 
 Found while working ~ZZCCYHY: detection only tries root-relative candidates (src/index.css, ...), exactly as the Python crunk, so the Hullbreach platform (web/src/index.css with @config to web/tailwind.config.ts) falls back to the static v3 reader (33 entries) unless [tailwind] css_entry is set (node gives 34). Find a CSS file whose @config names the configured file, or scan the config directory and its parents.
+
+no-story: internal engineering task in crunk-ingest; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
