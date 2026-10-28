@@ -2,7 +2,8 @@
 id = "01M61MM4DYQH99W116AH0NS1CC"
 title = "org R3: family ownership metadata and ratchet test"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
