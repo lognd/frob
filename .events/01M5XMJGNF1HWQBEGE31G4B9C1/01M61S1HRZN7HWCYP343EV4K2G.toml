@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T17:31:03Z"
+digest = "e0b29e2a6d097af59120a92a186848722118ef44e730ccd2034f7535d01d7fc5"
+exit_code = 0
+head = "341c1cd7f90a4d85ebe2b746dd9a57583c90182a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1b52dac7-e332-40eb-854e-67955cda51b3 with nextest profile: default
+    Starting 1 test across 490 binaries (5672 tests skipped)
+        PASS [   0.004s] gob-rules ramp::tests::severity_off_disables_and_error_is_accepted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 5672 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "severity_off_disables_and_error_is_accepted"
+size = 563
+status = "measured"
+test_count = 1
+tests_digest = "633597e7cfa6939e95ee570a8390892df0b6ae5282a25435b378013784d6df66"
+at = "2026-10-28T17:31:03Z"
+actor = "lognd"
+rev = 1
