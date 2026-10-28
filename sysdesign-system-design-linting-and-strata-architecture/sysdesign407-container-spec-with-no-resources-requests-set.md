@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:07Z"
+updated = "2026-10-28T12:57:45Z"
 aliases = ["T-6509"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_horizontal.py", "tests/fixtures/sysdesign/sysdesign407/**"]
 
 [[links]]
@@ -46,3 +46,5 @@ k8s-manifest-literal (requests.cpu/limits.memory) check").
 Acceptance criteria: flags a T-SYS-B-K8S container spec with no `resources.requests.cpu` and no
 `resources.requests.memory`. Positive-control fixture: tests/fixtures/sysdesign/sysdesign408/
 container-no-requests/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
