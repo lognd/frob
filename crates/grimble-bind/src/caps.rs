@@ -15,14 +15,20 @@
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters); `open(..)` is `fs.read` whatever its mode; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
-//! severity table is not consulted (CAP001 is an Error, CAP002 a Warning); a grant's `at`
-//! selector is compared at file granularity; `may` arguments are ignored.
+//! severity table is not consulted (CAP001 is an Error, CAP002 a Warning); `may` arguments
+//! are ignored.
+//!
+//! Grant scope (ticket M64HENY): a grant's `at` selector is judged against the unit of the use
+//! (the call edge's from-symbol) and its enclosing symbols, not its file. `at "f.rs::allowed"`
+//! covers a use in `allowed` and in anything nested in it, and a use in a sibling function of
+//! the same file is CAP001. CAP002 asks whether any use falls inside the selected units.
 
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 // frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
 // frob:ticket 01M59RWT16TFNSACMMTTXX200T
+// frob:ticket 01M5XNNHBSPSM5XFG8FM64HENY
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -30,8 +36,8 @@ use std::fmt::Write as _;
 use gob_ir::Answer;
 use gob_ir::registry::{DetectorKind, atoms, callee_vocab, detectors};
 use gob_rules::Severity;
-use gob_symbols::EdgeKind;
-use gob_walk::{Owner, select_files};
+use gob_symbols::{EdgeKind, Target};
+use gob_walk::{Owner, selects_unit_or_enclosing};
 use grimble_capabilities::{Cell, NodeInput};
 use grimble_model::ast::EntityKind;
 use grimble_model::{PackDetectorKind, PackPin};
@@ -56,6 +62,10 @@ const METHOD_GATES: [(&str, &str, &str, &str); 2] = [
 struct Use {
     atom: String,
     file: String,
+    /// The from-symbol of the call edge as text: the unit the use sits in.
+    unit: String,
+    /// The qualname segments of that unit (empty for module-level code).
+    qual: Vec<String>,
     line: Option<u32>,
     callee: String,
     /// False when the receiver type did not resolve: a May use whoever owns the code.
@@ -477,6 +487,11 @@ fn observe(cx: &Cx<'_>) -> Uses {
             let u = Use {
                 atom,
                 file: uo.file.clone(),
+                unit: from.clone(),
+                qual: match e.from.target() {
+                    Target::Symbol(segs) => segs.clone(),
+                    _ => Vec::new(),
+                },
                 line: e.line,
                 callee: callee.to_owned(),
                 certain,
@@ -506,19 +521,19 @@ fn observe(cx: &Cx<'_>) -> Uses {
     uses
 }
 
-/// True when `grant` covers `atom` (the atom itself or its parent) at `file`.
-fn covers(cx: &Cx<'_>, grant: &Grant, atom: &str, file: &str) -> bool {
+/// True when `sel` covers the unit a use sits in, or an enclosing symbol of it.
+fn selects_use(sel: &gob_walk::Selector, u: &Use) -> bool {
+    selects_unit_or_enclosing(sel, &u.file, &u.qual)
+}
+
+/// True when `grant` covers the use `u` of `atom` (the atom itself or its parent) in its unit.
+fn covers(grant: &Grant, atom: &str, u: &Use) -> bool {
     let granted = gob_ir::registry::canonical(&grant.atom).unwrap_or(&grant.atom);
     let named = granted == atom
         || atom
             .strip_prefix(granted)
             .is_some_and(|rest| rest.starts_with('.'));
-    named
-        && grant.at.as_ref().is_none_or(|sel| {
-            select_files(sel, &cx.code.walk)
-                .iter()
-                .any(|m| m.path == file)
-        })
+    named && grant.at.as_ref().is_none_or(|sel| selects_use(sel, u))
 }
 
 fn list(uses: &[&Use]) -> String {
@@ -534,10 +549,12 @@ fn list(uses: &[&Use]) -> String {
     s
 }
 
-/// The `(node anchor, atom)` pairs the capability matrix marks `undeclared` (or `unknown`: the
-/// callee vocabulary matched but no registry detector row exists, e.g. a pack atom) from the
-/// certain uses in Must-owned code. A use counts as granted when a grant covers it at its file.
-fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String)> {
+/// The `(node anchor, atom, file)` triples the capability matrix marks `undeclared` (or `unknown`:
+/// the callee vocabulary matched but no registry detector row exists, e.g. a pack atom) from the
+/// certain uses in Must-owned code. Coverage is decided per use site (binding.md 7.2 item 3): a
+/// grant that covers the atom in one unit never masks the same atom used in another unit. The
+/// third element is the use's unit (its from-symbol), not its file.
+fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String, String)> {
     let mut out = BTreeSet::new();
     for e in cx
         .model
@@ -548,29 +565,32 @@ fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String)> {
         let Some(found) = uses.lo.get(&e.anchor) else {
             continue;
         };
-        // One matrix input per language of the node's used code.
-        let mut inputs: BTreeMap<&str, NodeInput> = BTreeMap::new();
+        // One matrix input per (file, language) of the node's used code, so each use is judged
+        // against the grants that cover it at its own file.
+        let mut inputs: BTreeMap<(&str, &str), NodeInput> = BTreeMap::new();
         for u in found.iter().filter(|u| u.certain) {
             let Some(lang) = cx.code.file(&u.file).map(|c| c.language.as_str()) else {
                 continue;
             };
-            let input = inputs.entry(lang).or_insert_with(|| NodeInput {
-                node: e.anchor.clone(),
-                lang: lang.to_owned(),
-                ..NodeInput::default()
-            });
+            let input = inputs
+                .entry((u.unit.as_str(), lang))
+                .or_insert_with(|| NodeInput {
+                    node: e.anchor.clone(),
+                    lang: lang.to_owned(),
+                    ..NodeInput::default()
+                });
             input.uses.insert(u.atom.clone());
-            if e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file)) {
+            if e.grants.iter().any(|g| covers(g, &u.atom, u)) {
                 input.grants.insert(u.atom.clone());
             }
         }
-        for input in inputs.into_values() {
+        for ((unit, _), input) in inputs {
             let atoms: Vec<String> = input.uses.iter().cloned().collect();
             let atoms: Vec<&str> = atoms.iter().map(String::as_str).collect();
             let matrix = grimble_capabilities::build(&[input], &atoms);
             for (atom, cell) in matrix.cells.values().flatten() {
                 if matches!(cell, Cell::Undeclared | Cell::Unknown) {
-                    out.insert((e.anchor.clone(), atom.clone()));
+                    out.insert((e.anchor.clone(), atom.clone(), unit.to_owned()));
                 }
             }
         }
@@ -597,10 +617,10 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             let mut by_atom: BTreeMap<(&str, bool), Vec<&Use>> = BTreeMap::new();
             for u in found {
                 let flagged = if must && u.certain {
-                    undeclared.contains(&(e.anchor.clone(), u.atom.clone()))
-                        && !e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file))
+                    undeclared.contains(&(e.anchor.clone(), u.atom.clone(), u.unit.clone()))
+                        && !e.grants.iter().any(|g| covers(g, &u.atom, u))
                 } else {
-                    !e.grants.iter().any(|g| covers(cx, g, &u.atom, &u.file))
+                    !e.grants.iter().any(|g| covers(g, &u.atom, u))
                 };
                 if flagged {
                     by_atom
@@ -794,16 +814,22 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
                 tracing::debug!(node = %e.anchor, atom = %g.atom, "grant has no detectable atom or no owned code; not judged");
                 continue;
             }
+            // Scope in units: a file is in scope when the selector may reach it; a use is in
+            // scope when its own unit (or an enclosing one) is selected.
             let in_scope = |f: &str| {
-                g.at.as_ref()
-                    .is_none_or(|sel| select_files(sel, &cx.code.walk).iter().any(|m| m.path == f))
+                g.at.as_ref().is_none_or(|sel| {
+                    gob_walk::select_files(sel, &cx.code.walk)
+                        .iter()
+                        .any(|m| m.path == f)
+                })
             };
+            let use_in_scope = |u: &Use| g.at.as_ref().is_none_or(|sel| selects_use(sel, u));
             let scoped: Vec<&str> = files.iter().copied().filter(|f| in_scope(f)).collect();
             report_no_detector(cx, e, &atoms, &scoped, &mut reported, site, out);
             let observed = [&uses.lo, &uses.hi].iter().any(|by_node| {
                 by_node.get(&e.anchor).is_some_and(|us| {
                     us.iter()
-                        .any(|u| atoms.contains(&u.atom) && in_scope(&u.file))
+                        .any(|u| atoms.contains(&u.atom) && use_in_scope(u))
                 })
             });
             if observed {

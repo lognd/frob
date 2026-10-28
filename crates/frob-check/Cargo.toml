@@ -16,6 +16,7 @@ frob-evidence = { version = "0.532.0", path = "../frob-evidence" }
 frob-lease = { version = "0.532.0", path = "../frob-lease" }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-obligations = { version = "0.532.0", path = "../frob-obligations" }
+frob-present = { version = "0.532.0", path = "../frob-present" }
 frob-pm = { version = "0.532.0", path = "../frob-pm" }
 frob-release = { version = "0.532.0", path = "../frob-release" }
 frob-tests = { version = "0.532.0", path = "../frob-tests" }

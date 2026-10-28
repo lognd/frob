@@ -506,7 +506,7 @@ impl SymbolGraph {
                 let mut nodes = Vec::new();
                 let mut external = false;
                 for t in types.into_iter().filter(|&t| is_type(self.graph[t].kind)) {
-                    let m = self.cs_hierarchy_member(cs, t, &call.callee, &is_callable, 0);
+                    let m = self.cs_hierarchy_member(cs, t, &call.callee, &|k| is_callable(k), 0);
                     nodes.extend(m.nodes);
                     external |= m.external_base;
                 }

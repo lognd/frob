@@ -19,11 +19,16 @@ fn bind_py(py: &str, body: &str) -> Binding {
 }
 
 fn bind_file(rel: &str, text: &str, body: &str) -> Binding {
-    let py = text;
+    bind_files(&[(rel, text)], body)
+}
+
+fn bind_files(files_in: &[(&str, &str)], body: &str) -> Binding {
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(dir.path().join("src")).unwrap();
     std::fs::create_dir_all(dir.path().join("design")).unwrap();
-    std::fs::write(dir.path().join(rel), py).unwrap();
+    for (rel, text) in files_in {
+        std::fs::write(dir.path().join(rel), text).unwrap();
+    }
     let text = model(body);
     std::fs::write(dir.path().join("design/model.grmb"), &text).unwrap();
     let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
@@ -351,4 +356,53 @@ fn every_vocabulary_class_names_a_registered_atom() {
         }
         assert!(atoms.contains(class), "vocab class {class} has no atom");
     }
+}
+
+// frob:ticket 01M5XNHDQCQBE228DR8FZ3G6WK
+// frob:tests crates/grimble-bind/src/caps.rs::matrix_undeclared
+#[test]
+fn a_grant_covering_one_use_site_never_masks_an_uncovered_use_of_the_same_atom() {
+    let write =
+        "from pathlib import Path\n\n_P = Path(\"o\")\n\n\ndef go():\n    _P.write_text(\"a\")\n";
+    let files = [("src/wrap.py", write), ("src/broken.py", write)];
+    let b = bind_files(&files, "  may fs.write at \"src/wrap.py\";\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{f:?}");
+    assert_eq!(f[0].anchor, "cap/node/a/fs.write");
+    assert!(f[0].message.contains("src/broken.py:7"), "{}", f[0].message);
+    assert!(!f[0].message.contains("src/wrap.py"), "{}", f[0].message);
+    let b = bind_files(&files, "  may fs.write;\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+const TWO_FNS: &str = "def allowed():\n    def inner():\n        open(\"/etc/hosts\")\n    open(\"/etc/hosts\")\n\ndef sneaky():\n    open(\"/home/u/.ssh/id_rsa\")\n";
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_symbol_granular_grant_covers_its_symbol_and_nested_code_not_a_sibling() {
+    let b = bind_py(TWO_FNS, "  may fs.read at \"src/x.py::allowed\";\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+    assert!(f[0].message.contains("src/x.py:7"), "{}", f[0].message);
+    assert!(!f[0].message.contains("src/x.py:3"), "{}", f[0].message);
+    assert!(!f[0].message.contains("src/x.py:4"), "{}", f[0].message);
+    assert!(of(&b, "CAP002").is_empty(), "{:?}", b.findings);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_whole_file_grant_still_covers_every_function_of_the_file() {
+    let b = bind_py(TWO_FNS, "  may fs.read at \"src/x.py\";\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_symbol_grant_whose_symbol_has_no_use_is_cap002() {
+    let b = bind_py(
+        TWO_FNS,
+        "  may fs.read at \"src/x.py::allowed\";\n  may fs.read at \"src/x.py::nowhere\";\n",
+    );
+    let f = of(&b, "CAP002");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
 }

@@ -368,6 +368,7 @@ mod tests {
     }
 
     // frob:tests publish
+    // frob:tests crates/frob-mirror/src/github/write.rs::WriteTransport.remove_label
     #[test]
     fn label_change_uses_only_add_and_remove_and_keeps_tracker_labels() {
         let clock = FakeClock::default();
@@ -389,6 +390,7 @@ mod tests {
 
     // frob:tests publish
     // frob:tests state_reason
+    // frob:tests crates/frob-mirror/src/github/write.rs::WriteTransport.close_issue
     #[test]
     fn dropped_ticket_closes_with_reason_and_is_never_deleted() {
         let clock = FakeClock::default();
@@ -408,6 +410,10 @@ mod tests {
     }
 
     // frob:tests publish
+    // frob:tests crates/frob-mirror/src/github/write.rs::WriteTransport.patch_issue
+    // frob:tests crates/frob-mirror/src/github/write.rs::WriteTransport.add_label
+    // frob:tests crates/frob-mirror/src/github/write.rs::Clock.now
+    // frob:tests crates/frob-mirror/src/github/write.rs::Clock.sleep
     #[test]
     fn two_mutations_are_at_least_one_second_apart() {
         let clock = FakeClock::default();
@@ -459,6 +465,8 @@ mod tests {
     }
 
     // frob:tests publish_relations
+    // frob:tests crates/frob-mirror/src/github/write.rs::WriteTransport.add_sub_issue
+    // frob:tests crates/frob-mirror/src/github/write.rs::WriteTransport.add_link
     #[test]
     fn native_relations_use_sub_issue_and_link_calls() {
         let clock = FakeClock::default();

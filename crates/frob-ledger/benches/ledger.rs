@@ -60,6 +60,7 @@ fn synthetic(n: usize, ids: &[TicketId]) -> Ticket {
     }
 }
 
+// frob:accept DEAD001 because="registered through the criterion_group! macro, which the call graph does not expand"
 fn bench(c: &mut Criterion) {
     let dir = tempfile::tempdir().expect("tempdir");
     let ids: Vec<TicketId> = (0..TICKETS).map(|_| TicketId::mint()).collect();

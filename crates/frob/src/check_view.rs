@@ -168,6 +168,7 @@ mod tests {
             findings: Vec::new(),
             stats: None,
             timing: None,
+            profile: None,
             fidelity: None,
             siblings: Vec::new(),
             sibling_lines: Vec::new(),

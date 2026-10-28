@@ -8,6 +8,7 @@ use gob_cache::Cache;
 use gob_symbols::build_graph;
 use gob_walk::{WalkConfig, walk};
 
+// frob:accept DEAD001 because="called by the criterion_group! macro, which the call graph cannot see"
 fn bench_build(c: &mut Criterion) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
     let walked = walk(&root, &WalkConfig::default()).expect("walk crates/");

@@ -534,9 +534,7 @@ impl Ready {
             lock.progress("publish");
         };
         self.out.attempts = attempt;
-        self.out
-            .stages
-            .push(StageTiming::new("publish", started.elapsed()));
+        record(&mut self.out.stages, "publish", started.elapsed());
         self.out.commit = Some(oid.to_string());
         Ok(self.finish(leases, opts, oid, &actor))
     }
@@ -832,6 +830,7 @@ pub(crate) fn blank_outcome(
         resolved: Vec::new(),
         changelog_exempt: None,
         stages: Vec::new(),
+        profile: None,
         lock: None,
     }
 }
@@ -1166,7 +1165,7 @@ fn verify_check(
     let mut stages = Vec::new();
     let timer = Instant::now();
     let (scoped, _, cone) = frob_check::run_with_cone(wt_path, &options(Some(handle)))?;
-    stages.push(StageTiming::new("scoped", timer.elapsed()));
+    record(&mut stages, "scoped", timer.elapsed());
     stages.extend(
         scoped
             .timing
@@ -1177,11 +1176,11 @@ fn verify_check(
     );
     let timer = Instant::now();
     let head = frob_check::run(wt_path, &options(None))?;
-    stages.push(StageTiming::new("head", timer.elapsed()));
+    record(&mut stages, "head", timer.elapsed());
     let timer = Instant::now();
     let base_oid = wt.rev_parse(&base_ref(base))?.to_string();
     let base_set = ratchet::base_findings(wt, wt_path, &base_oid, ledger.config())?;
-    stages.push(StageTiming::new("base-findings", timer.elapsed()));
+    record(&mut stages, "base-findings", timer.elapsed());
     tracing::info!(?stages, "land check stage timings");
     let mut verdict = ratchet::verdict(&scoped, &head, &base_set);
     if let Some(cone) = &cone {
@@ -1273,10 +1272,21 @@ fn flaky_refusal(new: &[ratchet::FindingNote], handle: &str) -> LandError {
 
 /// Run `f`, recording its wall time in `stages` as `name`.
 fn timed<T>(stages: &mut Vec<StageTiming>, name: &str, f: impl FnOnce() -> T) -> T {
-    let timer = Instant::now();
-    let value = f();
-    stages.push(StageTiming::new(name, timer.elapsed()));
+    // frob:ticket 01M5XMN8N235JFVMJW9MCY59H4
+    let (value, took) = frob_present::events::timed(&stage_id(name), f);
+    stages.push(StageTiming::new(name, took));
     value
+}
+
+/// The dotted stage id (`land.check`) of a land stage called `name`.
+fn stage_id(name: &str) -> String {
+    format!("land.{}", name.replace(':', "."))
+}
+
+/// Record a stage that already ran for `took`: emit its end event and push its timing.
+fn record(stages: &mut Vec<StageTiming>, name: &str, took: Duration) {
+    frob_present::events::emit_end(&stage_id(name), took, frob_present::Outcome::Ok);
+    stages.push(StageTiming::new(name, took));
 }
 
 /// The warning a debug build earns when it lands.
@@ -1320,7 +1330,7 @@ fn record_recheck(
     } else {
         "retry-reuse"
     };
-    out.stages.push(StageTiming::new(name, took));
+    record(&mut out.stages, name, took);
     let Some(r) = rechecked else { return };
     out.stages.extend(prefixed("recheck", r.stages));
     out.pre_existing = r.pre_existing;

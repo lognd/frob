@@ -289,6 +289,13 @@ mod tests {
         assert_eq!(r.sign(fields()).kid, "k2");
     }
 
+    // frob:tests crates/frob-mirror/src/keyring.rs::Keyring.from_env
+    #[test]
+    fn from_env_with_an_unset_variable_is_a_load_error_naming_the_kid() {
+        let r = Keyring::from_env("k9", "FROB_MIRROR_TEST_KEY_THAT_IS_NEVER_SET", &[]);
+        assert!(matches!(r, Err(KeyringError::Load { ref kid, .. }) if kid == "k9"));
+    }
+
     #[test]
     fn key_past_verify_period_is_unknown_kid() {
         let old = Keyring::new("k1", key(1), vec![]).unwrap().sign(fields());

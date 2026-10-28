@@ -59,8 +59,8 @@
 
 mod binders;
 mod consteval;
-mod fold;
-pub(crate) use fold::{Facts, fold_island};
+pub(crate) mod fold;
+pub(crate) use fold::Facts;
 pub(crate) mod imports;
 mod style;
 

@@ -211,7 +211,7 @@ struct TestCall {
     clippy::struct_excessive_bools,
     reason = "independent one-shot flags of one fold pass"
 )]
-struct Fold<'a> {
+struct TsFold<'a> {
     cx: Cx<'a>,
     path: &'a str,
     /// Identifiers are references (expression context) rather than tokens.
@@ -585,8 +585,8 @@ fn scan_exports(root: Node<'_>, text: &str) -> ExportScan {
 }
 
 /// A fresh fold of the program text `cx.text` for the file at `path`.
-fn new_fold<'a>(cx: Cx<'a>, path: &'a str, exports: ExportScan) -> Fold<'a> {
-    Fold {
+fn new_fold<'a>(cx: Cx<'a>, path: &'a str, exports: ExportScan) -> TsFold<'a> {
+    TsFold {
         cx,
         path,
         expr: true,
@@ -624,7 +624,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let spec = file_root_spec(&f.cx, input.size as usize).binders(&refs);
     let root_id = f.cx.add(spec, &kids)?;
     f.ord_nodes[0] = Some(root_id);
-    let Fold {
+    let TsFold {
         cx,
         ord_nodes,
         sites,
@@ -794,7 +794,7 @@ pub(crate) fn fold_island(
     let names = scope_binders(Vec::new(), &stmts, text, &skip);
     f.push_scope(names.iter().cloned().collect(), HashMap::new());
     let kids = f.seq(&stmts, 1, true)?;
-    let Fold {
+    let TsFold {
         cx,
         ord_nodes,
         mut sites,
@@ -873,7 +873,7 @@ struct UnitHead<'n> {
     decorators: Vec<Node<'n>>,
 }
 
-impl<'a> Fold<'a> {
+impl<'a> TsFold<'a> {
     fn t(&self, n: Node<'_>) -> &'a str {
         text_of(self.cx.text, n)
     }
@@ -2056,7 +2056,7 @@ impl<'a> Fold<'a> {
                 sig.push(self.cx.lit(l.kind(), self.t(l), l)?);
             }
         }
-        sig.extend(self.with_expr(false, |s| s.sig_lits(f, &exclude))?);
+        sig.extend(self.with_expr(false, |s: &mut TsFold<'_>| s.sig_lits(f, &exclude))?);
         let binders = self.fn_binders(f);
         let ord = self.alloc();
         self.units.push((ord, Ctx::Function));
@@ -2121,7 +2121,7 @@ impl<'a> Fold<'a> {
         {
             self.scan_calls(c);
         }
-        let sig = self.with_expr(false, |s| s.sig_lits(n, &[body]))?;
+        let sig = self.with_expr(false, |s: &mut TsFold<'_>| s.sig_lits(n, &[body]))?;
         let vis = self.scope_vis(&name, export.is_some());
         let ord = self.alloc();
         let bases = Self::class_bases(n, self.cx.text);
@@ -2167,7 +2167,7 @@ impl<'a> Fold<'a> {
         };
         let doc = self.take_doc()?;
         let name = unit_name(self.t(name_node));
-        let sig = self.with_expr(false, |s| s.sig_lits(n, &[]))?;
+        let sig = self.with_expr(false, |s: &mut TsFold<'_>| s.sig_lits(n, &[]))?;
         let ord = self.alloc();
         let bases: Vec<String> = children(n)
             .into_iter()
@@ -2207,7 +2207,7 @@ impl<'a> Fold<'a> {
         let name_node = m.child_by_field_name("name").unwrap_or(m);
         let name = self.member_name(name_node);
         let mut sig = vec![self.cx.lit("name", &name, name_node)?];
-        sig.extend(self.with_expr(false, |s| s.sig_lits(m, &[name_node]))?);
+        sig.extend(self.with_expr(false, |s: &mut TsFold<'_>| s.sig_lits(m, &[name_node]))?);
         let ord = self.alloc();
         let body = self.cx.op(Operator::group(GroupOrder::Sequence), m, &[])?;
         let head = UnitHead {
@@ -2318,7 +2318,7 @@ impl<'a> Fold<'a> {
         };
         let doc = self.take_doc()?;
         let name = unit_name(self.t(name_node));
-        let sig = self.with_expr(false, |s| s.sig_lits(n, &[]))?;
+        let sig = self.with_expr(false, |s: &mut TsFold<'_>| s.sig_lits(n, &[]))?;
         let ord = self.alloc();
         self.units.push((ord, Ctx::Function));
         self.scan_calls(n);
@@ -2534,7 +2534,7 @@ impl<'a> Fold<'a> {
         }
         let body = n.child_by_field_name("body");
         let exclude: Vec<Node<'_>> = body.into_iter().collect();
-        let sig_toks = self.with_expr(false, |s| s.sig_lits(n, &exclude))?;
+        let sig_toks = self.with_expr(false, |s: &mut TsFold<'_>| s.sig_lits(n, &exclude))?;
         let sig = self
             .cx
             .op(Operator::group(GroupOrder::Sequence), n, &sig_toks)?;

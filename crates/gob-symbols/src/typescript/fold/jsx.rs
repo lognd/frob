@@ -21,7 +21,7 @@ use gob_ir::const_value::{
 use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, markup};
 use tree_sitter::Node;
 
-use super::{Fold, R, Root, Site, call_text, children, is_comment, line_of};
+use super::{R, Root, Site, TsFold, call_text, children, is_comment, line_of};
 use crate::css::tokens::{Token, declaration_node, tokens};
 use crate::model::collapse_ws;
 use crate::typescript::style::{css_property, numeric_raw};
@@ -73,7 +73,7 @@ fn jsx_text(raw: &str) -> Option<String> {
     (!lines.is_empty()).then(|| lines.join(" "))
 }
 
-impl Fold<'_> {
+impl TsFold<'_> {
     /// The tag, kind (`intrinsic`, `component`, `member`, `fragment`) and head node of a JSX name.
     pub(super) fn jsx_head(
         &mut self,

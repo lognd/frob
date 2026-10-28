@@ -112,6 +112,8 @@ fn read(dir: &Path, rel: &str) -> String {
     std::fs::read_to_string(dir.join(rel)).expect("file")
 }
 
+// frob:tests crates/frob-ledger/src/doctor.rs::DoctorReport.is_clean
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.brief
 fn lifecycle_new_update_link_comment_close(layout: Layout) {
     let (dir, ledger) = fixture(layout, RefMode::Trunk);
     let mut req = NewTicket::new("Parse the config", TicketType::Task);
@@ -276,6 +278,7 @@ fn update_validates_and_repeats_are_already(layout: Layout) {
 }
 both_layouts!(update_validates_and_repeats_are_already);
 
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.unlink
 fn link_topology_is_enforced(layout: Layout) {
     let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let mk = |t: &str| {
@@ -365,6 +368,7 @@ fn doctor_flags_and_fixes_a_stale_frontmatter(layout: Layout) {
 }
 both_layouts!(doctor_flags_and_fixes_a_stale_frontmatter);
 
+// frob:tests crates/frob-ledger/src/tick.rs::tick002
 fn tick002_and_tick003(layout: Layout) {
     let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let id = ledger
@@ -1130,6 +1134,7 @@ fn events_many_equals_events_per_ticket(layout: Layout) {
 }
 both_layouts!(events_many_equals_events_per_ticket);
 
+// frob:tests crates/frob-ledger/src/ledger.rs::Ledger.git_reads
 // frob:ticket 01M4DPJG0W39SCKZE5N807V4XM
 fn doctor_resolves_the_ledger_revision_a_fixed_number_of_times(layout: Layout) {
     let reads_for = |tickets: usize| {
@@ -1343,6 +1348,7 @@ fn brief_omits_suggested_commands_outside_allowed_tools(layout: Layout) {
 }
 both_layouts!(brief_omits_suggested_commands_outside_allowed_tools);
 
+// frob:tests crates/frob-ledger/src/triage.rs::Ledger.inbox
 /// Triage list and accept give the same results in both layouts, and the accept lands one commit.
 // frob:ticket 01M4HQ2T0QV27JHJP0DRF7ZZHA
 // frob:tests crates/frob-ledger/src/triage.rs::Ledger.triage
@@ -1448,4 +1454,171 @@ fn point_scale_gates_which_point_values_a_ticket_may_carry() {
         int.new_ticket(pointed("4")).is_ok(),
         "4 is allowed on the integer scale"
     );
+}
+
+// frob:ticket 01M4GKAYSGHAE5QAXN1BJBTQN2
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.aliases_many
+fn aliases_many_maps_each_ticket_and_refuses_a_missing_one(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let a = ledger
+        .new_ticket(NewTicket::new("A", TicketType::Task))
+        .expect("a")
+        .ticket
+        .front
+        .id;
+    let b = ledger
+        .new_ticket(NewTicket::new("B", TicketType::Task))
+        .expect("b")
+        .ticket
+        .front
+        .id;
+    let ids: std::collections::BTreeSet<TicketId> = [a, b].into_iter().collect();
+    let map = ledger.aliases_many(&ids).expect("aliases");
+    assert_eq!(map.len(), 2);
+    assert!(map.values().all(Vec::is_empty));
+    let missing: std::collections::BTreeSet<TicketId> = [TicketId::mint()].into_iter().collect();
+    assert!(matches!(
+        ledger.aliases_many(&missing),
+        Err(LedgerError::NotFound { .. })
+    ));
+}
+both_layouts!(aliases_many_maps_each_ticket_and_refuses_a_missing_one);
+
+// frob:ticket 01M3WYJ81430D3D5QSNCFM8QB0
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.scope_after
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.acceptance_removed
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.criteria_now
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.tip
+fn dry_run_views_report_the_patch_without_writing(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let mut req = NewTicket::new("Plan", TicketType::Task);
+    req.scope = vec!["a/**".into()];
+    req.acceptance = vec!["one".into(), "two".into(), "three".into()];
+    let made = ledger.new_ticket(req).expect("new");
+    let id = made.ticket.front.id;
+    let tip = ledger.tip().expect("tip");
+
+    let widen = Patch {
+        add_scope: vec!["b/**".into()],
+        ..Patch::default()
+    };
+    assert_eq!(
+        ledger.scope_after(id, &widen).expect("scope"),
+        ["a/**", "b/**"]
+    );
+    let drop_two = Patch {
+        remove_acceptance: vec![2],
+        ..Patch::default()
+    };
+    assert_eq!(ledger.acceptance_removed(id, &drop_two).expect("gone"), [2]);
+    let clear = Patch {
+        clear_acceptance: true,
+        ..Patch::default()
+    };
+    assert_eq!(
+        ledger.acceptance_removed(id, &clear).expect("gone"),
+        [1, 2, 3]
+    );
+    assert_eq!(ledger.tip().expect("tip"), tip, "nothing was written");
+
+    // Positions recorded at the creation event shift once criterion 1 is removed.
+    let since = made.events[0];
+    assert_eq!(
+        ledger.criteria_now(id, since, &[1, 3]).expect("now"),
+        [Some(1), Some(3)]
+    );
+    ledger
+        .update(
+            id,
+            &Patch {
+                remove_acceptance: vec![1],
+                ..Patch::default()
+            },
+        )
+        .expect("remove");
+    assert_eq!(
+        ledger.criteria_now(id, since, &[1, 3]).expect("now"),
+        [None, Some(2)]
+    );
+}
+both_layouts!(dry_run_views_report_the_patch_without_writing);
+
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.reopen
+fn reopen_returns_a_done_ticket_to_todo(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let id = ledger
+        .new_ticket(NewTicket::new("Again", TicketType::Task))
+        .expect("new")
+        .ticket
+        .front
+        .id;
+    assert!(ledger.reopen(id, "  ").is_err(), "a reason is required");
+    assert!(
+        ledger.reopen(id, "not done yet").expect("noop").already,
+        "a ticket that is not done is already open"
+    );
+    let guards = default_close_guards();
+    let refs: Vec<&dyn frob_ledger::guards::CloseGuard> = guards.iter().map(|g| &**g).collect();
+    ledger
+        .close(id, Some(Outcome::Done), None, &refs)
+        .expect("close");
+    let reopened = ledger.reopen(id, "regressed").expect("reopen");
+    assert!(!reopened.already);
+    assert_eq!(reopened.ticket.front.category, Category::Todo);
+}
+both_layouts!(reopen_returns_a_done_ticket_to_todo);
+
+// frob:tests crates/frob-ledger/src/index.rs::Index.count
+// frob:tests crates/frob-ledger/src/index.rs::edges_of_all
+#[test]
+fn index_counts_tickets_and_edges_of_all_lists_every_declared_edge() {
+    let (dir, ledger) = fixture(Layout::Dir, RefMode::Trunk);
+    let a = ledger
+        .new_ticket(NewTicket::new("A", TicketType::Task))
+        .expect("a")
+        .ticket;
+    let mut req = NewTicket::new("B", TicketType::Task);
+    req.blocked_by = vec![a.front.id];
+    let b = ledger.new_ticket(req).expect("b").ticket;
+    let tickets = vec![a.clone(), b.clone()];
+
+    let edges = frob_ledger::index::edges_of_all(&tickets);
+    assert_eq!(edges.len(), 1, "{edges:?}");
+    assert!(
+        edges
+            .iter()
+            .all(|e| e.from == b.front.id || e.to == b.front.id)
+    );
+
+    let mut index = Index::open(&dir.path().join("index.sqlite")).expect("open");
+    assert_eq!(index.count().expect("empty"), 0);
+    index.rebuild("k", &tickets, 7).expect("rebuild");
+    assert_eq!(index.count().expect("two"), 2);
+}
+
+// frob:tests crates/frob-ledger/src/migrate.rs::Ledger.migrate_to_branch
+#[test]
+fn migrate_to_branch_dry_runs_then_copies_the_legacy_ledger() {
+    let (_dir, ledger) = fixture(Layout::Dir, RefMode::Trunk);
+    ledger
+        .new_ticket(NewTicket::new("Move me", TicketType::Task))
+        .expect("new");
+    let dry = ledger.migrate_to_branch(true).expect("dry");
+    assert_eq!(dry.tickets, 1);
+    assert!(dry.commit.is_none());
+    let done = ledger.migrate_to_branch(false).expect("migrate");
+    assert!(done.commit.is_some() && !done.already, "{done:?}");
+    let again = ledger.migrate_to_branch(false).expect("again");
+    assert!(again.already && again.commit.is_none(), "{again:?}");
+
+    let (_d2, branch) = fixture(Layout::Branch, RefMode::Trunk);
+    assert!(branch.migrate_to_branch(true).is_err());
+}
+
+// frob:tests crates/frob-ledger/src/merge.rs::read_events_on_disk
+#[test]
+fn read_events_on_disk_treats_a_missing_events_directory_as_empty() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let events = frob_ledger::merge::read_events_on_disk(dir.path()).expect("read");
+    assert!(events.is_empty());
 }

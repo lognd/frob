@@ -1142,6 +1142,7 @@ dependencies = [
  "frob-ledger",
  "frob-obligations",
  "frob-pm",
+ "frob-present",
  "frob-release",
  "frob-tests",
  "gob-cache",
@@ -1311,6 +1312,7 @@ dependencies = [
  "frob-evidence",
  "frob-lease",
  "frob-ledger",
+ "frob-present",
  "frob-release",
  "frob-worktree",
  "gob-cache",
@@ -1488,7 +1490,10 @@ name = "frob-present"
 version = "0.532.0"
 dependencies = [
  "anstyle",
+ "schemars",
+ "serde",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
