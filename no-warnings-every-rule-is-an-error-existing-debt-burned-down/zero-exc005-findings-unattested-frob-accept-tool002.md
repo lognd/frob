@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-28T23:11:42Z"
+updated = "2026-10-28T23:31:44Z"
 idempotency_key = "b755-exc005"
 scope = ["crates/gob-plan/**", "frob.lock"]
 
