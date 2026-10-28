@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working ~9QK3N9A: no rule reports never-assigned fields and the C# symbol graph has no field-write edges. never_written_fields is a lexical, name-based list with no consumer; add a rule (id, doc) and a real field-write graph, and consider [Serializable] nested-class public fields."
+new = """
+found while working ~9QK3N9A: no rule reports never-assigned fields and the C# symbol graph has no field-write edges. never_written_fields is a lexical, name-based list with no consumer; add a rule (id, doc) and a real field-write graph, and consider [Serializable] nested-class public fields.
+
+no-story: internal engineering task in frob-obligations; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:33Z"
+actor = "lognd"
+rev = 1
