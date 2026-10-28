@@ -8,9 +8,9 @@ points = 3
 parent = "01M1T07NWGXQV249M3HN5DQV9V"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:44Z"
+updated = "2026-10-28T12:56:01Z"
 aliases = ["T-3996"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/gates/_refs_schema.py"]
 
 [[acceptance]]
@@ -25,3 +25,5 @@ bound = false
 F-208 (T-3984 item 13). VERIFIED: git grep for required_file across src/frob found nothing. [[refs.entrypoint]] (src/frob/gates/_refs_schema.py, REFSCHEMA001) already declares code entrypoints that must exist and be justified; there is no inverse declaration for an untracked-but-mandatory NON-code artifact.
 
 FINDING THIS WOULD HAVE CAUGHT: a policy artifact (a config file, a required security header file, a deployment manifest) that must exist on disk at deploy/build time but is not itself tracked in git (generated, fetched, or provisioned out-of-band) and has no declared surface at all -- so its absence is invisible to every existing gate, none of which know it is supposed to exist. Proposed `required_file` construct: the inverse of refs.entrypoint -- declares a path that must exist (checked at the point it matters, e.g. build/deploy time) without requiring it be git-tracked, each entry individually justified the same way refs.entrypoint entries are.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
