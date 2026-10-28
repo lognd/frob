@@ -2,13 +2,13 @@
 id = "01M627BCT2PQH5H9X592WNFCDP"
 title = "Zero DOC001 findings (undocumented .github, scripts, packaging)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-28T21:41:08Z"
+updated = "2026-10-28T23:38:09Z"
 idempotency_key = "b755-doc001"
 scope = [".github/**"]
 
