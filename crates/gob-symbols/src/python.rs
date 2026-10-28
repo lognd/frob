@@ -1045,7 +1045,7 @@ impl<'a> Fold<'a> {
         if let Some(p) = params {
             self.scan_calls(p);
         }
-        let sig = self.with_expr(false, |f| {
+        let sig = self.with_expr(false, |f: &mut Fold<'_>| {
             f.sig_tokens(
                 Some(name_node),
                 &[params, def.child_by_field_name("return_type")],
@@ -1108,7 +1108,9 @@ impl<'a> Fold<'a> {
         if let Some(s) = supers {
             self.scan_calls(s);
         }
-        let sig = self.with_expr(false, |f| f.sig_tokens(Some(name_node), &[supers]))?;
+        let sig = self.with_expr(false, |f: &mut Fold<'_>| {
+            f.sig_tokens(Some(name_node), &[supers])
+        })?;
         let (doc, stmts) = split_docstring(children(block));
         let doc_id = match doc.and_then(docstring_of) {
             Some(s) => Some(self.doc_node(s)?),

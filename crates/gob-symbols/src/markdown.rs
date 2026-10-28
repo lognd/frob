@@ -288,7 +288,10 @@ impl Md<'_> {
                 _ => self.block(*k, Some(idx), &mut body)?,
             }
         }
-        let level = heading.map_or(1, heading_level);
+        let level = match heading {
+            Some(h) => heading_level(h),
+            None => 1,
+        };
         let sig_text = self
             .cx
             .lit("heading", &collapse_ws(&text), heading.unwrap_or(sec))?;

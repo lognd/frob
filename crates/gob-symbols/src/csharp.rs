@@ -337,7 +337,7 @@ struct UnitSpec {
     facts: UnitFacts,
 }
 
-struct Fold<'a> {
+struct CsFold<'a> {
     cx: Cx<'a>,
     path: &'a str,
     containers: Vec<Container>,
@@ -466,7 +466,7 @@ fn safe(text: &str) -> String {
 }
 
 fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-    let mut f = Fold {
+    let mut f = CsFold {
         cx: Cx::new(input.path, "csharp", text),
         path: input.path,
         containers: vec![Container::Namespace],
@@ -482,7 +482,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let kids = f.members(&nodes, root.end_byte(), 1)?;
     let spec = file_root_spec(&f.cx, input.size as usize);
     let root_id = f.cx.add(spec, &kids)?;
-    let Fold {
+    let CsFold {
         cx,
         facts,
         raw_calls,
@@ -532,7 +532,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     Ok(Folded { term, scopes, file })
 }
 
-impl<'a> Fold<'a> {
+impl<'a> CsFold<'a> {
     fn t(&self, n: Node<'_>) -> &'a str {
         text_of(self.cx.text, n)
     }
@@ -1398,7 +1398,7 @@ struct RawUse {
     ns: Vec<String>,
 }
 
-impl Fold<'_> {
+impl CsFold<'_> {
     /// The namespace segments `n` declares (`namespace A.B` is `[A, B]`).
     fn ns_parts(&self, n: Node<'_>) -> Vec<String> {
         let Some(name) = n.child_by_field_name("name") else {

@@ -13,6 +13,8 @@ use gob_cache::{ArtifactKey, Cache};
 use petgraph::graph::NodeIndex;
 use serde::{Deserialize, Serialize};
 
+use super::csharp::CsIndex;
+use super::typescript::TsIndex;
 use super::{CallEdge, CallSink, EdgeKind, Index, StatusEdge};
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::types::TypeFacts;
@@ -91,7 +93,7 @@ impl<'a> LinkCache<'a> {
             tracing::debug!("link cache miss");
             return None;
         };
-        let stored = match postcard::from_bytes::<Stored>(&bytes) {
+        let stored: Stored = match postcard::from_bytes::<Stored>(&bytes) {
             Ok(s) => s,
             Err(err) => {
                 tracing::warn!(%err, "link cache payload undecodable");
@@ -196,11 +198,13 @@ pub(super) mod status_serde {
 
     /// Writes the status as its rank (0 Unknown, 1 May, 2 Must).
     #[allow(clippy::trivially_copy_pass_by_ref)] // serde `with` requires a reference
+    // frob:defer DEAD001 because="named by a serde `with` attribute string, which the call graph cannot see" ticket=01M61DFC5ZCSJTKMNBP88AKFVS
     pub fn serialize<S: Serializer>(s: &Status, ser: S) -> Result<S::Ok, S::Error> {
         ser.serialize_u8(super::status_to_u8(*s))
     }
 
     /// Reads a status written by [`serialize`]; any other rank is an error.
+    // frob:defer DEAD001 because="named by a serde `with` attribute string, which the call graph cannot see" ticket=01M61DFC5ZCSJTKMNBP88AKFVS
     pub fn deserialize<'de, D: Deserializer<'de>>(de: D) -> Result<Status, D::Error> {
         match u8::deserialize(de)? {
             n @ 0..=2 => Ok(super::status_of_u8(n)),
@@ -250,7 +254,8 @@ pub(super) fn deps_digest(idx: &Index) -> String {
     feed_sorted(&mut h, "file_crate", &idx.file_crate);
     feed_sorted(&mut h, "externs", &idx.externs);
     feed_sorted(&mut h, "reach", &idx.reach);
-    idx.cs.feed_deps(&mut h);
-    idx.ts.feed_deps(&mut h);
+    let (cs, ts): (&CsIndex, &TsIndex) = (&idx.cs, &idx.ts);
+    cs.feed_deps(&mut h);
+    ts.feed_deps(&mut h);
     h.finalize().to_hex().to_string()
 }
