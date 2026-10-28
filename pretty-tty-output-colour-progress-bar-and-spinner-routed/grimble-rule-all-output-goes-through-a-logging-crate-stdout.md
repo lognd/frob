@@ -8,7 +8,8 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:59:07Z"
-updated = "2026-10-27T03:01:37Z"
+updated = "2026-10-28T12:55:55Z"
+labels = ["no-story"]
 scope = ["crates/grimble-check/**", "crates/grimble-capabilities/**"]
 
 [[acceptance]]
@@ -37,3 +38,5 @@ bound = false
 +++
 
 Owner request 2026-10-26: every sink must route through a logging crate; grimble should enforce it for all supported languages. Complements the frob-side clippy ban.
+
+no-story: internal engineering task in grimble-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
