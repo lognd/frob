@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
-updated = "2026-10-28T22:09:43Z"
+updated = "2026-10-28T22:15:53Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/src/ramp*", "crates/gob-rules/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**", "crates/frob-release/**", "docs/**", "crates/crunk-spec/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "strictness accepts strict only; the old value is ignored with a deprecation note"
-bound = false
+bound = true
 +++
 
 Implements docs/design/rules.md section 6.1 (rules.md 6.1.3). Filed from ~ZHW5Y2M.
