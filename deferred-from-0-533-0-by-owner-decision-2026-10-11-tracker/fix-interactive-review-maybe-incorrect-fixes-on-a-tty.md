@@ -8,9 +8,9 @@ points = 5
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-03T03:34:41Z"
+updated = "2026-10-28T12:55:50Z"
 idempotency_key = "m2-diag-fix-interactive"
-labels = ["milestone:2", "area:diagnostics"]
+labels = ["milestone:2", "area:diagnostics", "no-story"]
 scope = ["crates/frob/src/fix_cmd.rs", "crates/gob-cli/src/interactive.rs"]
 
 [[links]]
@@ -37,3 +37,5 @@ bound = false
 Implements diagnostics.md section 4.
 
 One fix at a time with a diff and [y]es / [n]o / [e]dit / [s]kip rule / [q]uit; refuses with exit 2 when stdin or stdout is not a TTY and points at the JSON fix list; invisible characters shown as escapes.
+
+no-story: internal engineering task in frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
