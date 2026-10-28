@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSDASH31CMNHAQ9JXR1YQ"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:04Z"
+updated = "2026-10-28T12:57:32Z"
 aliases = ["T-6475"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/strata/_retry_budget.py (new)", "tests/fixtures/sysdesign/sysdesign302/**"]
 +++
 
@@ -45,3 +45,5 @@ Acceptance criteria: flags a process/service (per bound-code scan, same discipli
 "real backoff-shaped token" check) with 2+ REL220-marked retrying flows and no shared/aggregate
 retry-budget primitive (percentage-based or fixed-rate cap) referenced across them. Positive-
 control fixture: tests/fixtures/sysdesign/sysdesign302/per-flow-retry-no-budget/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
