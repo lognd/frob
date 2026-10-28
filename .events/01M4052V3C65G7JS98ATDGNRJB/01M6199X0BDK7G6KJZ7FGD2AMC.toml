@@ -1,0 +1,15 @@
+kind = "field"
+field = "body"
+old = """
+Implements mirror.md section 3.6 (last bullet).
+
+A transferred issue, one converted to a discussion, and a locked or pinned issue are classified and reported in mirror status, never acted on blindly."""
+new = """
+Implements mirror.md section 3.6 (last bullet).
+
+A transferred issue, one converted to a discussion, and a locked or pinned issue are classified and reported in mirror status, never acted on blindly.
+
+no-story: internal engineering task in frob-mirror; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:02Z"
+actor = "lognd"
+rev = 1

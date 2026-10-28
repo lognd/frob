@@ -8,9 +8,9 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:38Z"
-updated = "2026-10-03T05:51:38Z"
+updated = "2026-10-28T12:56:02Z"
 idempotency_key = "m2-mirror2-classify"
-labels = ["milestone:2", "area:mirror"]
+labels = ["milestone:2", "area:mirror", "no-story"]
 scope = ["crates/frob-mirror/src/classify.rs"]
 
 [[links]]
@@ -29,3 +29,5 @@ bound = false
 Implements mirror.md section 3.6 (last bullet).
 
 A transferred issue, one converted to a discussion, and a locked or pinned issue are classified and reported in mirror status, never acted on blindly.
+
+no-story: internal engineering task in frob-mirror; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
