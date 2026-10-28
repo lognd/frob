@@ -8,7 +8,8 @@ points = 8
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-10-11T18:12:26Z"
+updated = "2026-10-28T12:55:47Z"
+labels = ["no-story"]
 scope = ["crates/frob-cli/**"]
 
 [[acceptance]]
@@ -27,3 +28,5 @@ bound = false
 text = "malformed stdin fails open with a warning, never blocks the agent"
 bound = false
 +++
+
+no-story: internal engineering task in frob-cli; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
