@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
-updated = "2026-10-28T22:17:14Z"
+updated = "2026-10-28T22:18:18Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/src/ramp*", "crates/gob-rules/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**", "crates/frob-release/**", "docs/**", "crates/crunk-spec/**"]
 
