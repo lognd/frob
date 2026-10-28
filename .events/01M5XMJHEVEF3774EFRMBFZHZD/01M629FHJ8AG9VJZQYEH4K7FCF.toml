@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T22:17:14Z"
+digest = "1de81e7610494c6ffa3744528cdf63a6822cb33d1f65a10f5bb7efb6767ff46d"
+exit_code = 0
+head = "a11b929620325f4e01e25c1eb0f6438e472296b6"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5138e730-725b-407b-b600-6ac156851c4d with nextest profile: default
+    Starting 2 tests across 492 binaries (5692 tests skipped)
+        PASS [   2.987s] frob-check::it ramp::a_new_error_rule_is_no_longer_ramped
+        PASS [   3.022s] grimble-check::ramp new_error_rule_is_no_longer_ramped
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.032s] 2 tests run: 2 passed, 5692 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "new_error_rule_is_no_longer_ramped"
+size = 691
+status = "measured"
+test_count = 2
+tests_digest = "aa180fd640ee4657724ecd1b71e0c72a174692e47448ecfd507de5f577c022d5"
+at = "2026-10-28T22:17:14Z"
+actor = "lognd"
+rev = 1
