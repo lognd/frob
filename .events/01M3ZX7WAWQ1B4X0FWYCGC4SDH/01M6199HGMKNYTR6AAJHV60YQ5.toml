@@ -1,0 +1,15 @@
+kind = "field"
+field = "body"
+old = """
+Implements security.md section 2.5 (reads).
+
+The parent performs granted reads: openat2 RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS on Linux, component-wise O_NOFOLLOW elsewhere, tracked files only (the git index), refusing link count above 1, case-insensitive matching on case-insensitive file systems."""
+new = """
+Implements security.md section 2.5 (reads).
+
+The parent performs granted reads: openat2 RESOLVE_BENEATH|RESOLVE_NO_SYMLINKS on Linux, component-wise O_NOFOLLOW elsewhere, tracked files only (the git index), refusing link count above 1, case-insensitive matching on case-insensitive file systems.
+
+no-story: internal engineering task in gob-wasm; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:50Z"
+actor = "lognd"
+rev = 1
