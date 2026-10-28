@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Left by ~E0E8M28: remaining per-crate consolidation (frob-ledger, crunk-*, grimble-*, frob-tests, gob-dev; gob-plan after ~0HC06TD and ~YJPYE5V land), Context-injected env and PATH so tests that set .env or need hermetic PATH run in process, routing the remaining direct cargo_bin spawns through frob_command(), and a workspace-wide A/B wall-time measurement (not possible under the OOM-era -j2 limits). Do not consolidate trybuild binaries (ui, ui_rule_attr, ui_product)."
+new = """
+Left by ~E0E8M28: remaining per-crate consolidation (frob-ledger, crunk-*, grimble-*, frob-tests, gob-dev; gob-plan after ~0HC06TD and ~YJPYE5V land), Context-injected env and PATH so tests that set .env or need hermetic PATH run in process, routing the remaining direct cargo_bin spawns through frob_command(), and a workspace-wide A/B wall-time measurement (not possible under the OOM-era -j2 limits). Do not consolidate trybuild binaries (ui, ui_rule_attr, ui_product).
+
+no-story: internal engineering task in gob-cli; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:54Z"
+actor = "lognd"
+rev = 1
