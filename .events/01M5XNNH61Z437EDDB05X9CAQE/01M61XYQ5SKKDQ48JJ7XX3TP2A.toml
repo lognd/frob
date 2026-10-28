@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-28T18:55:24Z"
+digest = "53eb0fe09a5be708c818812de91fb1aef4102b4ec3bbb197af9804c925245728"
+exit_code = 0
+head = "c5f5e135692b595948f58ff9dae204ffcec6203d"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d583c293-ec10-4b88-8efe-41bac1f9b699 with nextest profile: default
+    Starting 1 test across 490 binaries (5689 tests skipped)
+        PASS [   0.005s] grimble-bind::grants argument_scoped_grants_no_longer_exempt_a_trust_zone
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 5689 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "argument_scoped_grants_no_longer_exempt"
+size = 625
+status = "measured"
+test_count = 1
+tests_digest = "f37cdded82760c8dc66e6818680eb450ea496e5e8bc6b07b548ca033c259669c"
+at = "2026-10-28T18:55:24Z"
+actor = "lognd"
+rev = 1
