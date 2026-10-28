@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = 'Design crunk.md section 9 item 3 ("the serve patch tool"). Wrap the existing edit.rs Edit logic; no second patch engine. Write tools must be opt-in on the serve command.'
+new = """
+Design crunk.md section 9 item 3 ("the serve patch tool"). Wrap the existing edit.rs Edit logic; no second patch engine. Write tools must be opt-in on the serve command.
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:44Z"
+actor = "lognd"
+rev = 1
