@@ -13,6 +13,12 @@
 //! in the same file); it is a Must use. A `.m` entry on a receiver that does not resolve is a May
 //! use, reported Unresolved (grimble-model.md 9.6: unknown never reads as clean).
 //!
+//! Import resolution (ticket D36SRKP): besides the call graph, `gob_symbols::path_uses` resolves
+//! each call and each function-valued reference through `use ... as`, from-imports, `let` and
+//! assignment aliases, literal `getattr` / `import_module` (a May use, never CAP001) and explicit
+//! `std::` / `tokio::` roots (which a repository type named `Command` cannot hide). Not resolved:
+//! glob imports, macro bodies, computed attribute names.
+//!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters); `open(..)` is `fs.read` whatever its mode; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
 //! severity table is not consulted (CAP001 is an Error, CAP002 a Warning); `may` arguments
@@ -29,6 +35,7 @@
 // frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
 // frob:ticket 01M59RWT16TFNSACMMTTXX200T
 // frob:ticket 01M5XNNHBSPSM5XFG8FM64HENY
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -431,6 +438,163 @@ mod pytype {
     }
 }
 
+/// Files an owner `Must` claims go to `lo` when certain, else `hi`; `May` owners get `hi`.
+fn route(uses: &mut Uses, owner: &Owner, u: Use) {
+    match owner {
+        Owner::Must(n) if !u.certain => {
+            uses.hi.entry(n.as_str().to_owned()).or_default().push(u);
+        }
+        Owner::Must(n) => uses.lo.entry(n.as_str().to_owned()).or_default().push(u),
+        Owner::May(ns) => {
+            for n in ns {
+                uses.hi
+                    .entry(n.as_str().to_owned())
+                    .or_default()
+                    .push(u.clone());
+            }
+        }
+        Owner::Unknown(_) | Owner::Foreign => {}
+    }
+}
+
+/// The last path segment of a vocabulary name (`fs::read` -> `read`, `subprocess.run` -> `run`).
+fn last_segment(name: &str) -> &str {
+    let name = name.trim_start_matches('.');
+    name.rsplit(['.', ':']).next().unwrap_or(name)
+}
+
+/// The ownership unit holding byte `offset` of a file: its innermost symbol that is a unit, else
+/// the file unit. Returns the unit's symref text and qualname segments.
+fn unit_at(
+    cx: &Cx<'_>,
+    symbols: &gob_symbols::FileSymbols,
+    file_unit: &str,
+    offset: usize,
+) -> (String, Vec<String>) {
+    let width = |s: &gob_symbols::SymbolRecord| u32::from(s.span.end()) - u32::from(s.span.start());
+    let holder = symbols
+        .symbols
+        .iter()
+        .filter(|s| {
+            usize::try_from(u32::from(s.span.start())).is_ok_and(|a| a <= offset)
+                && usize::try_from(u32::from(s.span.end())).is_ok_and(|b| offset < b)
+        })
+        .filter(|s| cx.owners.units.contains_key(&s.symref.to_string()))
+        .min_by_key(|s| width(s));
+    match holder {
+        Some(s) => (
+            s.symref.to_string(),
+            match s.symref.target() {
+                Target::Symbol(segs) => segs.clone(),
+                _ => Vec::new(),
+            },
+        ),
+        None => (file_unit.to_owned(), Vec::new()),
+    }
+}
+
+/// Uses found by import resolution (ticket D36SRKP): calls and function values whose written
+/// path names a vocabulary entry only through an alias, a from-import, a `let` binding, a literal
+/// `getattr` / `import_module`, or an explicit `std::` / `tokio::` root that a same-named
+/// repository item hides from the call graph. Added to `uses` unless the call-graph pass already
+/// recorded the same atom on the same line of the same unit.
+fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
+    // (file, line, name) of every call the graph resolved inside the repository
+    let mut local: BTreeSet<(String, u32, String)> = BTreeSet::new();
+    for e in cx.graph.edges_with_status() {
+        if e.kind == EdgeKind::Calls
+            && e.to.is_some()
+            && let (Some(l), Some(n)) = (e.line, e.name.as_ref())
+        {
+            local.insert((e.from.path().to_owned(), l, n.clone()));
+        }
+    }
+    let seen: BTreeSet<(String, Option<u32>, String, bool)> = {
+        let mut set = BTreeSet::new();
+        for (_, us) in uses.lo.iter().chain(uses.hi.iter()) {
+            for u in us {
+                set.insert((u.unit.clone(), u.line, u.atom.clone(), u.certain));
+            }
+        }
+        set
+    };
+    let mut seen = seen;
+    let files: BTreeSet<&str> = cx.owners.units.values().map(|u| u.file.as_str()).collect();
+    let mut vocabs: BTreeMap<String, Vec<(&str, BTreeSet<&str>)>> = BTreeMap::new();
+    let mut added = 0usize;
+    for path in files {
+        let Some(code) = cx.code.file(path) else {
+            continue;
+        };
+        if !matches!(code.language.as_str(), "rust" | "python") {
+            continue;
+        }
+        let vocab = vocabs
+            .entry(code.language.clone())
+            .or_insert_with(|| vocabularies(&code.language, cx.packs));
+        let Some(src) = code.source() else { continue };
+        // cheap prefilter: some vocabulary name's last segment must occur in the file at all
+        if !vocab
+            .iter()
+            .any(|(_, names)| names.iter().any(|n| src.contains(last_segment(n))))
+        {
+            continue;
+        }
+        let Some(symbols) = code.symbols() else {
+            continue;
+        };
+        let file_unit = gob_symbols::Symref::file(path).to_string();
+        for pu in gob_symbols::path_uses(&code.language, &src) {
+            if !pu.external_root
+                && !pu.dynamic
+                && local.contains(&(
+                    path.to_owned(),
+                    pu.line,
+                    last_segment(&pu.spelled).to_owned(),
+                ))
+            {
+                tracing::debug!(file = path, line = pu.line, spelled = %pu.spelled, "resolved path is a repository item");
+                continue;
+            }
+            let hits: Vec<&str> = vocab
+                .iter()
+                .filter(|(_, names)| names_callee(&code.language, names, &pu.path))
+                .map(|(a, _)| *a)
+                .collect();
+            if hits.is_empty() {
+                continue;
+            }
+            let (unit, qual) = unit_at(cx, symbols, &file_unit, pu.offset);
+            let Some(uo) = cx.owners.units.get(&unit) else {
+                tracing::debug!(file = path, unit = %unit, "resolved use has no ownership unit");
+                continue;
+            };
+            let certain = !pu.dynamic;
+            for atom in hits {
+                if !seen.insert((unit.clone(), Some(pu.line), atom.to_owned(), certain)) {
+                    continue;
+                }
+                tracing::debug!(file = path, line = pu.line, atom, callee = %pu.path, certain, "resolved capability use");
+                added += 1;
+                route(
+                    uses,
+                    &uo.merged.owner,
+                    Use {
+                        atom: atom.to_owned(),
+                        file: path.to_owned(),
+                        unit: unit.clone(),
+                        qual: qual.clone(),
+                        line: Some(pu.line),
+                        callee: pu.path.clone(),
+                        certain,
+                    },
+                );
+            }
+        }
+    }
+    tracing::info!(added, "import-resolved capability uses added");
+}
+
 fn observe(cx: &Cx<'_>) -> Uses {
     let edges: Vec<_> = cx
         .graph
@@ -496,23 +660,10 @@ fn observe(cx: &Cx<'_>) -> Uses {
                 callee: callee.to_owned(),
                 certain,
             };
-            match &uo.merged.owner {
-                Owner::Must(n) if !certain => {
-                    uses.hi.entry(n.as_str().to_owned()).or_default().push(u);
-                }
-                Owner::Must(n) => uses.lo.entry(n.as_str().to_owned()).or_default().push(u),
-                Owner::May(ns) => {
-                    for n in ns {
-                        uses.hi
-                            .entry(n.as_str().to_owned())
-                            .or_default()
-                            .push(u.clone());
-                    }
-                }
-                Owner::Unknown(_) | Owner::Foreign => {}
-            }
+            route(&mut uses, &uo.merged.owner, u);
         }
     }
+    scan_resolved(cx, &mut uses);
     tracing::info!(
         must_nodes = uses.lo.len(),
         may_nodes = uses.hi.len(),
