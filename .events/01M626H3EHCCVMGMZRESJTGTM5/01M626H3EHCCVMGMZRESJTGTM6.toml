@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk init scaffold fails its own CRAFT001/005/008/010 check"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk/src/init/**"]
+body = "found while working WJH9CR5: tests patch the fresh scaffold with satisfy_craft; fix RESET_CSS and roles in scaffold.rs so init output passes check"
+at = "2026-10-28T21:26:46Z"
+actor = "lognd"
+rev = 1
