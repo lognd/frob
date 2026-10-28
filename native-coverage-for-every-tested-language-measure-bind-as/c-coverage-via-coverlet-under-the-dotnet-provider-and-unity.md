@@ -8,7 +8,10 @@ points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:39Z"
-updated = "2026-10-27T00:47:18Z"
+updated = "2026-10-28T12:56:49Z"
+persona = "a C# developer"
+capability = "get coverage via coverlet under the dotnet provider"
+outcome_text = "coverage gates work on my C# and Unity projects"
 scope = ["crates/frob-evidence/src/coverage/csharp.rs", "crates/frob-evidence/tests/coverage_csharp.rs"]
 
 [[links]]
