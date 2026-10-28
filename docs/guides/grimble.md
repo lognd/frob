@@ -131,7 +131,7 @@ module model;
 
 node app : trusted {
   owns "src/**";
-  may fs.read;
+  may fs.read because="reads the notes file";
 }
 
 node store : trusted {
@@ -148,15 +148,17 @@ flow save : app -> store {
 
 boundary scrub declassify save : Secret -> Public;
 EOF
+printf '\n[rules.SYS004]\nseverity = "off"\nreason = "the flow binds no code yet"\n' >> grimble.toml
 grimble fmt
 grimble check --text
 git add -A && git commit -m "feat: model the app and store"
 ```
 
-The check now exits 0. What remains is a `SYS004` warning (the flow binds no
-code on either end yet) and an unresolved `SYS013` edge (a call grimble could
-not place between owners); neither fails the gate unless you raise `fail_on`. `[grimble] strict = true`
-promotes SYS001 and SYS005 to errors.
+The check now exits 0. `SYS004` (the flow binds no code on
+either end yet) is an error, so the script turns it off with a reason in the
+`[rules.SYS004]` block until the code lands. What remains is an unresolved
+`SYS013` edge (a call grimble could not place between owners); it does not
+fail the gate unless you raise `fail_on`.
 
 ## The rule families an adopter turns on first
 
@@ -184,7 +186,7 @@ to run when `check` says a model file did not parse.
 
 ## Watching grants grow
 
-Give every `may` a reason (`because="..."` or `ticket="..."`); one without is an MDL008 warning.
+Give every `may` a reason (`because="..."` or `ticket="..."`); one without is an MDL008 error.
 `grimble status` prints grant count and file breadth per node and, against the commit that last
 changed `grimble.lock`, names every grant that widened.
 
