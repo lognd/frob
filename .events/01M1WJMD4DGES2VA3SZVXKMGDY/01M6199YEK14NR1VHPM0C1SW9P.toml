@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Consumer F-325/M2-1: a bound test checks a runbook's structure and file/service existence but cannot distinguish 'this path exists in the repo' from 'this path exists in the namespace the command runs in'. Cheap bounded version: flag any host-side path under a mount point compose declares as a named volume. Not fixture-testable in frob's own tree: no containers/compose files exist here."
+new = """
+Consumer F-325/M2-1: a bound test checks a runbook's structure and file/service existence but cannot distinguish 'this path exists in the repo' from 'this path exists in the namespace the command runs in'. Cheap bounded version: flag any host-side path under a mount point compose declares as a named volume. Not fixture-testable in frob's own tree: no containers/compose files exist here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:03Z"
+actor = "lognd"
+rev = 1
