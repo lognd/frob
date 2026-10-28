@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:42:41Z"
-updated = "2026-10-27T00:43:02Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:55Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-spec/src/research.rs, crates/crunk-rules/src/ux/research.rs, crates/crunk-rules/tests/ux_research.rs"]
 
 [[acceptance]]
@@ -18,3 +18,5 @@ bound = false
 +++
 
 Design crunk.md section 8 research row. Opt-in per project. Reuses crunk-spec load patterns from screen_file.rs.
+
+no-story: internal engineering task in crunk-spec; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
