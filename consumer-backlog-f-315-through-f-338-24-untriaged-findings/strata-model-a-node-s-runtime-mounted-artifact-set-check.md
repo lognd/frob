@@ -8,10 +8,12 @@ points = 3
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:50Z"
+updated = "2026-10-28T12:55:41Z"
 aliases = ["T-4232"]
-labels = ["v1-cluster:B3d", "triage:accepted"]
+labels = ["v1-cluster:B3d", "triage:accepted", "no-story"]
 scope = ["src/frob/strata"]
 +++
 
 Consumer F-325/H2-1 (edge/ops round-2 sub-epic of T-4135): a config file (e.g. an edge server's include directive) references a mount path with no gate connecting the declared may fs.read grant to what a deployment's compose service actually mounts. Even without a config-file grammar, a path-set comparison between two text files frob already reads would catch this. Adjacent to T-3996 (required_file: declared surface for untracked-but-mandatory artifacts) -- distinct mechanism (mount-path resolution vs. untracked-mandatory-file declaration), cross-reference during design. Not fixture-testable in frob's own tree: no containers/mounts exist here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
