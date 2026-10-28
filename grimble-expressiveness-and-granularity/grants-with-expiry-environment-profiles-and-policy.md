@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-10-27T03:15:10Z"
+updated = "2026-10-28T12:55:50Z"
 idempotency_key = "grimble-expr-expiry-2026-10-26"
-labels = ["grimble", "audit:grimble-expressiveness"]
+labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-model/src/**", "crates/grimble-bind/src/**", "docs/design/grmb-spec.md"]
 
 [[acceptance]]
@@ -23,3 +23,5 @@ bound = false
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. A may grant has no until=, no profile (test-only network, dev-only stdout), and policies cannot be composed beyond packs and include. Temporary grants therefore become permanent and test-only needs (tests spawning processes) are granted to whole trees (design/model.grmb in this repo grants exec at crates/*/tests/**). Add `until=DATE` on may (expired grant is an error), `profile test|prod|NAME` scoping selected by config or selector, and `policy NAME { ... }` blocks a node can `use`.
+
+no-story: internal engineering task in grimble-model; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
