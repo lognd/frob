@@ -2,13 +2,13 @@
 id = "01M5XNNHJ0ES2PB6ZKAD36SRKP"
 title = "CAP: match capability uses on import-resolved symbols, not callee spelling (aliases, from-imports, fn values, name collisions)"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-27T03:15:08Z"
+updated = "2026-10-28T15:51:34Z"
 idempotency_key = "grimble-expr-alias-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/gob-symbols/src/**", "crates/grimble-bind/tests/**"]
