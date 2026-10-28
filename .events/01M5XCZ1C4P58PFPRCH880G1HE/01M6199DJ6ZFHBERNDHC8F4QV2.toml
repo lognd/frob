@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Design crunk.md section 8 post-launch row."
+new = """
+Design crunk.md section 8 post-launch row.
+
+no-story: internal engineering task in crunk-spec; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:46Z"
+actor = "lognd"
+rev = 1
