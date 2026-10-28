@@ -2,13 +2,13 @@
 id = "01M627BCQ5MSJF9KC2MCYXF9A0"
 title = "Zero DOC006 findings (stale code citations)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-28T21:41:08Z"
+updated = "2026-10-28T22:56:12Z"
 idempotency_key = "b755-doc006"
 scope = ["crates/frob-doc/**"]
 
