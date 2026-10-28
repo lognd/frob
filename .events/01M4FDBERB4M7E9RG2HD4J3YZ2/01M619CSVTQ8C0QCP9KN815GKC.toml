@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "grmb-planning.md 6.2 and 6.3, row P4. verified_by ... for STEP.VARIANT arm evidence and arm anchors; PLAN006; derived V-model levels and refines links fed to the kernel closure rules with suppression so one root cause gives one finding."
+new = """
+grmb-planning.md 6.2 and 6.3, row P4. verified_by ... for STEP.VARIANT arm evidence and arm anchors; PLAN006; derived V-model levels and refines links fed to the kernel closure rules with suppression so one root cause gives one finding.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:37Z"
+actor = "lognd"
+rev = 1

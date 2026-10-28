@@ -8,8 +8,8 @@ points = 5
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:45Z"
-updated = "2026-10-28T12:56:51Z"
-labels = ["grimble"]
+updated = "2026-10-28T12:57:37Z"
+labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "crates/grimble-check/**", "crates/grimble-model/**", "changelog.d/**"]
 
 [[links]]
@@ -30,3 +30,5 @@ bound = false
 +++
 
 grmb-planning.md 6.2 and 6.3, row P4. verified_by ... for STEP.VARIANT arm evidence and arm anchors; PLAN006; derived V-model levels and refines links fed to the kernel closure rules with suppression so one root cause gives one finding.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
