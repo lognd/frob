@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-28T17:43:30Z"
+digest = "f663c7fffb5c41cf184ae62ba428aa82c9d4c9e6404e9c2ccba1acbdf8a1c7cb"
+exit_code = 0
+head = "341c1cd7f90a4d85ebe2b746dd9a57583c90182a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6e4e9c66-7668-4e04-bca7-3ccc12bdf77c with nextest profile: default
+    Starting 1 test across 490 binaries (5672 tests skipped)
+        PASS [   0.013s] gob-check config::fail_on_tests::warn_and_advisory_fail_on_are_config_errors_naming_the_replacement
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 5672 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "warn_and_advisory_fail_on_are_config_errors_naming_the_replacement"
+size = 596
+status = "measured"
+test_count = 1
+tests_digest = "2123cef6c776f8eca4d9f2a5d0c0e0788fad2f6f06a5d5337fbaf2a6651aaa0e"
+at = "2026-10-28T17:43:30Z"
+actor = "lognd"
+rev = 1
