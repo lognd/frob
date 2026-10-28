@@ -14,7 +14,7 @@
 //! | `DOC001` | Warn | file | a public Rust item has no doc comment, or a public Python unit no docstring |
 //! | `DOC002` | Error | file | a markdown link points at a missing path or heading |
 //! | `DOC003` | Warn | repo | a document under `docs/` has no valid status header |
-//! | `DOC006` | Warn | repo | a prose citation `x.md section N` or `x.md#anchor` names a missing file, section or anchor |
+//! | `DOC006` | Warn | repo | a prose citation `x.md section N` or `x.md` plus an anchor names a missing file, section or anchor |
 //! | `REF001` | Error | file | a `frob:ticket` names no ticket of the ledger |
 //! | `INV001` | Warn | repo | `invariants/<slug>.md` has no `frob:invariant <slug>` in code |
 //! | `INV002` | Error | repo | an import matches `forbid_imports` of [`InvariantsConfig`] |

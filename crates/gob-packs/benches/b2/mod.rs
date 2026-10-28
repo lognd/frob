@@ -1,4 +1,4 @@
-//! Shared parts of benchmark B2 (plugins.md section 6.6): a rule compiled in against the same
+//! Shared parts of benchmark B2 (plugins.md section 6): a rule compiled in against the same
 //! rule as a disk-loaded plan served from a warm plan cache.
 //!
 //! The compiled-in form is what `gob_plan::codegen` emits: embedded canonical plan bytes read by

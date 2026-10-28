@@ -277,7 +277,7 @@ comment nodes:
 | No ticket narrative | A comment block (consecutive `//` lines, or one `/* */`) in a `.rs` file may mention at most one `T-####` and must be <= 6 lines; longer blocks must be rustdoc (`///`, `//!`) or a `// Invariant:` block |
 | No history words in comments | Regex on `//` comments for `(used to|previously|was changed|regression|incident|hotfix|see discussion|as of 20\d\d)`; allow in `///` only when under a `# History`-free section (i.e. forbid everywhere, waive with `frob:waive`) |
 | Ticket ids in rustdoc | Forbidden in `///`/`//!` (public docs must not leak internal tracker ids); allowed in `//` only as `(T-####)` suffix or `TODO(T-####)` |
-| Rationale pointer, not rationale | A `//` comment containing "because" or "rationale" longer than 3 lines must reference `docs/decisions/NNNN` or `docs/style.md#anchor` |
+| Rationale pointer, not rationale | A `//` comment containing "because" or "rationale" longer than 3 lines must reference `docs/decisions/NNNN` or `docs/design/documentation.md` |
 | Public items documented | `#![warn(missing_docs)]` promoted to `deny` in CI via `RUSTFLAGS` |
 | Doc sections present | `clippy::missing_errors_doc`, `clippy::missing_panics_doc`, `clippy::missing_safety_doc` = warn (deny in CI) |
 

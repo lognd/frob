@@ -195,7 +195,7 @@ MEDIUM = a gap or duplication; LOW = wording.
 - What: frob cannot link grimble-model, and a substrate Language enum cannot name a product
   adapter, so frob sees `.grmb` as F0 opaque (or, today, as an empty file, U G19). 9.3 does not
   say that `grimble graph --json` exports the U term or which frob rule consumes it.
-- Failure: `// frob:doc docs/arch.md#cli` above `node cli` in design/frob.grmb is never bound;
+- Failure: `// frob:doc docs/design/architecture.md section 1` above `node cli` in design/frob.grmb is never bound;
   DOC and REF report nothing (or Unresolved if H5 is fixed) although 9.3 promised they work.
 - Fix: either move the .grmb parser and adapter to a substrate crate (`gob-grmb`, allowed
   because it has no product logic) and register it in an open adapter registry, or state in 9.3
