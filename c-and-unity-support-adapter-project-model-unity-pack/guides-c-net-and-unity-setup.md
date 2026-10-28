@@ -8,7 +8,10 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:05Z"
-updated = "2026-10-05T02:37:05Z"
+updated = "2026-10-28T12:56:54Z"
+persona = "a dotnet or Unity developer"
+capability = "follow a setup guide for frob"
+outcome_text = "I can adopt frob in a C# project"
 idempotency_key = "d94-guide"
 scope = ["docs/guides/dotnet.md", "docs/guides/unity.md", "docs/design/dotnet-unity.md", "docs/design/README.md", "docs/reference/fidelity.md"]
 
