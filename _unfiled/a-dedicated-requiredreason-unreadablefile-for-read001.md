@@ -7,7 +7,8 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-04T06:14:13Z"
-updated = "2026-10-04T06:14:13Z"
+updated = "2026-10-28T12:56:06Z"
+labels = ["no-story"]
 scope = ["crates/gob-rules/**", "crates/gob-check/src/**", "crates/grimble-check/**", "docs/schemas/**", "docs/design/sibling-contract.md"]
 
 [[acceptance]]
@@ -16,3 +17,5 @@ bound = false
 +++
 
 ~KAD47SZ reports unreadable tracked files as READ001 with RequiredReason::ZeroSubjects, so grimble-check and the envelope describe them as vacuous. Add a dedicated reason through the rule metadata, the envelope schema and the sibling contract.
+
+no-story: internal engineering task in gob-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
