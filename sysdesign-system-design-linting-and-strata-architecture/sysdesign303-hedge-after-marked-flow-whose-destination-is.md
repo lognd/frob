@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSDASH31CMNHAQ9JXR1YQ"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:02Z"
+updated = "2026-10-28T12:57:46Z"
 aliases = ["T-6469"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/strata/_hedge.py (new)", "tests/fixtures/sysdesign/sysdesign303/**"]
 
 [[links]]
@@ -41,3 +41,5 @@ Acceptance criteria: reads the `hedge_after` attr from T-SYS-A-FLOW-HEDGE's new 
 a flow declaring `hedge_after` whose destination node is neither `idempotent` nor covered by a
 declared idempotency key (same idempotency test REL221 already runs, reused not re-implemented).
 Positive-control fixture: tests/fixtures/sysdesign/sysdesign303/hedge-non-idempotent-dst/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
