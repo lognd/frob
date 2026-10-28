@@ -2,13 +2,13 @@
 id = "01M5XMJHEVEF3774EFRMBFZHZD"
 title = "Retire ramp-in and strictness warn-new-rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
-updated = "2026-10-28T12:55:56Z"
+updated = "2026-10-28T21:56:11Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/src/ramp*"]
 
