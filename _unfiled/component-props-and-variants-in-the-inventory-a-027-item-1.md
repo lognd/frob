@@ -2,12 +2,13 @@
 id = "01M1QDTV2DXFNFC4JANYE6H9ZW"
 title = "component props and variants in the inventory (A-027 item 1 remainder)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 3
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-27T02:57:38Z"
+updated = "2026-10-28T12:55:09Z"
 aliases = ["crunk:T-0077"]
 labels = ["v1-cluster:C1", "area:crunk", "component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/**"]
