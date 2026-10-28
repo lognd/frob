@@ -7,7 +7,10 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-17T08:54:10Z"
-updated = "2026-10-27T02:58:20Z"
+updated = "2026-10-28T12:56:48Z"
+persona = "a crunk user"
+capability = "apply Tier A fixes for color, space and type findings"
+outcome_text = "crunk can repair simple findings automatically"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/**"]
 
