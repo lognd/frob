@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-28T17:10:40Z"
-updated = "2026-10-28T19:28:54Z"
-scope = ["crates/gob-dev/tests/layering.rs", "crates/gob-plan/**", "crates/frob/tests/it/**", "crates/frob/src/**", "crates/frob-cli/**", "crates/frob-check/tests/**", "crates/crunk/tests/**", "crates/crunk/src/**", "crates/crunk-check/src/sibling.rs", "crates/frob-evidence/src/coverage/lcov.rs", "crates/grimble-check/src/sibling.rs", "docs/design/boundaries.md", "docs/schemas/sibling.json"]
+updated = "2026-10-28T19:44:48Z"
+scope = ["crates/gob-dev/tests/layering.rs", "crates/gob-plan/**", "crates/frob/tests/it/**", "crates/frob/src/**", "crates/frob-cli/**", "crates/frob-check/tests/**", "crates/crunk/tests/**", "crates/crunk/src/**", "crates/crunk-check/src/sibling.rs", "crates/frob-evidence/src/coverage/lcov.rs", "crates/grimble-check/src/sibling.rs", "docs/design/boundaries.md", "docs/schemas/sibling.json", "crates/gob-check/src/sibling.rs", "crates/gob-check/src/sibling_doc.rs"]
 
 [[acceptance]]
 text = "All tests failing in CI run 40729676574 on ubuntu pass: layering, in_vocab, equivalence fixture_b, crunk check_json sibling document, config_sync, doctor_piped, init_twice, lease_widen waits"
