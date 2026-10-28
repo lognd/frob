@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Found while doing ~R149H7C: the pure comparison (crunk_gallery::visual) exists. Still needed: a VIS001 #[rule] declaration plus md in crunk-rules, [vis] thresholds in crunk.toml, PNG decode of design and build renders and PNG encode of the diff image at the diff path (needs a png dependency and the T2 renderer)."
+new = """
+Found while doing ~R149H7C: the pure comparison (crunk_gallery::visual) exists. Still needed: a VIS001 #[rule] declaration plus md in crunk-rules, [vis] thresholds in crunk.toml, PNG decode of design and build renders and PNG encode of the diff image at the diff path (needs a png dependency and the T2 renderer).
+
+no-story: internal engineering task in crunk-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:49Z"
+actor = "lognd"
+rev = 1
