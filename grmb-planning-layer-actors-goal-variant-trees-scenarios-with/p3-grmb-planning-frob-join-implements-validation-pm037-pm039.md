@@ -8,8 +8,8 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:44Z"
-updated = "2026-10-28T12:56:48Z"
-labels = ["grimble"]
+updated = "2026-10-28T12:57:31Z"
+labels = ["grimble", "no-story"]
 scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-check/**", "crates/frob/**", "docs/design/cli.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
 [[links]]
@@ -30,3 +30,5 @@ bound = false
 +++
 
 grmb-planning.md 10, row P3. implements design: validation for planning anchors against the graph export; overlay planned, in-progress, done and the test verdict; PM037-PM039 in frob-pm; close guard design_bound in the default close set; frob plan --from-design with --apply and --findings (goal to epic, scenario to story, impl to task, idempotency key = anchor, scope and acceptance seeded, requires to blocked-by).
+
+no-story: internal engineering task in frob-pm; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
