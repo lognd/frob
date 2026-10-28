@@ -1,0 +1,10 @@
+kind = "create"
+title = "Stale Advisory doc comments in human001 and craft008"
+type = "chore"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-rules/src/rules/human001.rs", "crates/crunk-rules/src/rules/craft008.rs"]
+body = "found while working WJH9CR5: severity is now error, docs still say advisory"
+at = "2026-10-28T21:26:47Z"
+actor = "lognd"
+rev = 1
