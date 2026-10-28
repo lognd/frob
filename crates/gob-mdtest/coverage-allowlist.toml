@@ -12,36 +12,6 @@ ticket = "~G6YQBDT"
 
 [[gap]]
 product = "frob"
-rule = "CI001"
-kind = "unresolved"
-ticket = "~G6YQBDT"
-
-[[gap]]
-product = "frob"
-rule = "CI006"
-kind = "unresolved"
-ticket = "~G6YQBDT"
-
-[[gap]]
-product = "frob"
-rule = "CI007"
-kind = "unresolved"
-ticket = "~G6YQBDT"
-
-[[gap]]
-product = "frob"
-rule = "CI010"
-kind = "unresolved"
-ticket = "~G6YQBDT"
-
-[[gap]]
-product = "frob"
-rule = "CI014"
-kind = "unresolved"
-ticket = "~G6YQBDT"
-
-[[gap]]
-product = "frob"
 rule = "DSL001"
 kind = "unresolved"
 ticket = "~G6YQBDT"

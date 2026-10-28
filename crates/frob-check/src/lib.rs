@@ -54,9 +54,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 pub use gob_check::{
-    AppliedFix, CheckError, CheckReport, CheckTable, Ci001, Ci006, Ci007, Ci010, Ci014, Counts,
-    FailOn, FileCheck, FixOutcome, Perf001, PerfTable, Proc001, StageTime, Stats, Timing, Tool001,
-    Tool002, ToolParser, ToolStage,
+    AppliedFix, CheckError, CheckReport, CheckTable, Counts, FailOn, FileCheck, FixOutcome,
+    Perf001, PerfTable, Proc001, StageTime, Stats, Timing, Tool001, Tool002, ToolParser, ToolStage,
 };
 pub use memo::FileToolMemo;
 pub use options::{CheckOptions, TeachSelect};

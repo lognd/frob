@@ -9,8 +9,6 @@ use gob_cli::{CliError, Command, Context, ExplainArgs, ExplainData, Outcome, Pag
 /// Every `frob` rule page (`docs/reference/rules/<ID>.md`), embedded at build time.
 static PAGES: &[Page] = gob_cli::rule_pages![
     "AFFECT001",
-    "CI014",
-    "CI010",
     "DOC001",
     "DRIFT003",
     "EXC005",
@@ -29,8 +27,6 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "CFG001",
     "REL001",
     "COV003",
-    "CI001",
-    "CI007",
     "COV001",
     "DSL002",
     "EXC003",
@@ -73,7 +69,6 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "SCOPE001",
     "TODO002",
     "TOOL001",
-    "CI006",
     "PM034",
     "PM006",
     "TICK008",
