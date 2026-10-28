@@ -2,7 +2,8 @@
 id = "01M61KHST2XVE7GQCKQK33PC9M"
 title = "CI green: fix crunk rustdoc private link and profile.toml scenarios for crunk export leaves"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
