@@ -8,9 +8,9 @@ points = 5
 parent = "01M3AXSD8TNZP3PQVKB7EKCR7M"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:57Z"
+updated = "2026-10-28T12:57:39Z"
 aliases = ["T-6417"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/lang/_config_terraform.py (new)", "tests/fixtures/sysdesign/config-terraform/**"]
 
 [[links]]
@@ -48,3 +48,5 @@ implementer may ship a structural (not line-regex) block/attribute extractor sco
 these resource kinds and must document the narrowing in docs/modules/lang.md, matching the
 honesty precedent set by _websec_debug_config.py's own self-admission. Positive-control
 fixture: tests/fixtures/sysdesign/config-terraform/open-egress-sg/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
