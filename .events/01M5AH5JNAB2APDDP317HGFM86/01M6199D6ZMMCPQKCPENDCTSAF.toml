@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working ~ZM1HA1J: finishes the consolidation and closes the 3 GB acceptance measurement."
+new = """
+found while working ~ZM1HA1J: finishes the consolidation and closes the 3 GB acceptance measurement.
+
+no-story: internal engineering task in crates/*/tests/**; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:46Z"
+actor = "lognd"
+rev = 1
