@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Fix landed earlier (778dd6d326); ledger status was stale, criterion 1 evidence already passing."
+at = "2026-10-28T12:55:08Z"
+actor = "lognd"
+rev = 1
