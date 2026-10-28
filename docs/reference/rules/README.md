@@ -32,16 +32,6 @@
 |---|---|---|---|---|---|---|
 | [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | P- | false | A materialized config knob is missing from the product config file. |
 
-## CI
-
-| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
-|---|---|---|---|---|---|---|
-| [CI001](CI001.md) | pinned-ref | error | manual | P+ | false | An external `uses:` reference is not pinned to a full commit SHA. |
-| [CI006](CI006.md) | no-prt-head-checkout | error | manual | P+ | false | A dangerous trigger (`pull_request_target`, `workflow_run`) runs with untrusted pull request content. |
-| [CI007](CI007.md) | no-event-interpolation-in-run | error | manual | P+ | false | A `run:` script interpolates an expression an attacker can influence. |
-| [CI010](CI010.md) | checkout-no-persist | error | manual | P+ | false | `actions/checkout` leaves credentials in the workspace. |
-| [CI014](CI014.md) | gha-syntax-and-schema | error | manual | P+ | false | actionlint rejects the workflow syntax, schema, expression or runner label. |
-
 ## CLAIM
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
