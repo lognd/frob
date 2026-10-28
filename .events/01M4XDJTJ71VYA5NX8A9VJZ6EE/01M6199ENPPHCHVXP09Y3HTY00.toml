@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Split from ~NRQ4KHD."
+new = """
+Split from ~NRQ4KHD.
+
+no-story: internal engineering task in gob-pattern; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:47Z"
+actor = "lognd"
+rev = 1
