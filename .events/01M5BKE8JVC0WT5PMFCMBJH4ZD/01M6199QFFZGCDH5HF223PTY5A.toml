@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working ~3WZ8JB3: TODO001 lives in legacy.rs outside rules/**; classify text-only legacy rules and add cell=island fire blocks."
+new = """
+found while working ~3WZ8JB3: TODO001 lives in legacy.rs outside rules/**; classify text-only legacy rules and add cell=island fire blocks.
+
+no-story: internal engineering task in frob-obligations; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:56Z"
+actor = "lognd"
+rev = 1
