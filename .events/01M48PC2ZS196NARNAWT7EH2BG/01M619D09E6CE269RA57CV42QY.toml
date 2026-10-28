@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Port clippy's lint-message convention test: every rule message and rendered finding starts lower-case and has no trailing period (or whatever docs/design/diagnostics.md states), with a shrink-only allowlist. Source: notes/research/rule-testing.md (D103)."
+new = """
+Port clippy's lint-message convention test: every rule message and rendered finding starts lower-case and has no trailing period (or whatever docs/design/diagnostics.md states), with a shrink-only allowlist. Source: notes/research/rule-testing.md (D103).
+
+no-story: internal engineering task in gob-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:43Z"
+actor = "lognd"
+rev = 1

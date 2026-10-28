@@ -8,7 +8,8 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:42Z"
-updated = "2026-10-28T12:56:53Z"
+updated = "2026-10-28T12:57:43Z"
+labels = ["no-story"]
 scope = ["crates/gob-rules/**", "crates/gob-diagnostics/**"]
 
 [[acceptance]]
@@ -25,3 +26,5 @@ bound = false
 +++
 
 Port clippy's lint-message convention test: every rule message and rendered finding starts lower-case and has no trailing period (or whatever docs/design/diagnostics.md states), with a shrink-only allowlist. Source: notes/research/rule-testing.md (D103).
+
+no-story: internal engineering task in gob-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
