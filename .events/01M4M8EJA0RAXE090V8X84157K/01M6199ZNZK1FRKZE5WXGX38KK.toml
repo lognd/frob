@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working ~B2ZBRER: PrecisionLedger has add_fixed and add_dismissed but nothing records them between runs; fixed counts need history and dismissals need a verb with a reason"
+new = """
+found while working ~B2ZBRER: PrecisionLedger has add_fixed and add_dismissed but nothing records them between runs; fixed counts need history and dismissals need a verb with a reason
+
+no-story: internal engineering task in gob-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:04Z"
+actor = "lognd"
+rev = 1
