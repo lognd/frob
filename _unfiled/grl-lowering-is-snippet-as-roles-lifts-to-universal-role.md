@@ -7,7 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T16:00:27Z"
-updated = "2026-10-14T16:00:27Z"
+updated = "2026-10-28T12:55:43Z"
+labels = ["no-story"]
 scope = ["crates/gob-plan/**"]
 
 [[acceptance]]
@@ -20,3 +21,5 @@ bound = false
 +++
 
 Follow-up of ~H2V8QVT. Needs a role-lifting step (snippet parsed in its tagged language, lifted to universal operators, GRL007 for unliftable nodes) and a role-binding plan op binding metavariables from gob_pattern::grammar Match.bindings as role nodes; no lifting exists in gob-pattern today.
+
+no-story: internal engineering task in gob-plan; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
