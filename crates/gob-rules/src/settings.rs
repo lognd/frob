@@ -1,14 +1,9 @@
-//! Ramp-in (inert): Warn is retired, so no rule is capped; ~MBFZHZD removes this module.
-//!
-//! The window is the minor line of `since` (`0.532.0` ramps through `0.532.x`); the release that
-//! ends it is the next minor, `0.533.0`. Pre-release suffixes (`-dev`) are ignored, so a dev build
-//! of the next release is already past the window.
+//! `[rules]` config reading and per-product disabled-rule filtering; ramp-in is retired (rules.md 6.1.3).
 
 // frob:ticket 01M4HDXVZNXTNANMHRGVGQ66DC
-use crate::decl::RuleDef;
 use crate::finding::Finding;
 use crate::meta::Severity;
-use crate::registry::{Registry, RuleSettings};
+use crate::registry::RuleSettings;
 
 /// A parsed `major.minor.patch` triple; a pre-release or build suffix is dropped.
 fn triple(text: &str) -> Option<(u64, u64, u64)> {
@@ -20,36 +15,13 @@ fn triple(text: &str) -> Option<(u64, u64, u64)> {
     parts.next().is_none().then_some((major, minor, patch))
 }
 
-/// The release at which a rule first shipped in `since` stops being ramped (`0.532.0` gives `0.533.0`); `None` when `since` is not a version.
+/// True when `current` is inside the minor line a rule first shipped in (`since` `0.532.0` matches `0.532.x`); false when either is not a version.
 #[must_use]
-pub fn ramp_end(since: &str) -> Option<String> {
-    let (major, minor, _) = triple(since)?;
-    Some(format!("{major}.{}.0", minor + 1))
-}
-
-/// True when `current` is inside the ramp window of a rule or atom first shipped in `since`; false when either is not a version.
-#[must_use]
-pub fn in_ramp(since: &str, current: &str) -> bool {
+pub fn shipped_in(since: &str, current: &str) -> bool {
     let (Some(first), Some(now)) = (triple(since), triple(current)) else {
         return false;
     };
     now >= first && (now.0, now.1) == (first.0, first.1)
-}
-
-/// The severity a rule or atom runs at during its ramp, plus the note naming when it takes its declared severity.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Ramped {
-    /// Severity to report at.
-    pub severity: Severity,
-    /// Note naming the release where the declared severity takes effect.
-    pub note: String,
-}
-
-/// Ramp-in is inert: Warn no longer exists (rules.md 6.1.1), so no severity is ever capped; ~MBFZHZD removes this plumbing.
-#[must_use]
-pub fn ramp(since: &str, declared: Severity, current: &str) -> Option<Ramped> {
-    tracing::trace!(since, ?declared, current, "ramp-in is inert");
-    None
 }
 
 /// The config error for a retired `severity` spelling, naming its replacement.
@@ -60,11 +32,11 @@ fn retired_severity(id: &str, word: &str) -> String {
 }
 
 impl RuleSettings {
-    /// Read `[rules] ramp`, the `[rules.<id>] severity` (`error` or `off`) ids and `disabled = true` ids from the `text` of a product config; a missing `[rules]` gives the defaults.
+    /// Read the `[rules.<id>] severity` (`error` or `off`) ids and `disabled = true` ids from the `text` of a product config; a missing `[rules]` gives the defaults.
     ///
     /// # Errors
     ///
-    /// The TOML parse error when `text` is not TOML or `[rules] ramp` is not a boolean, or the message naming `error` plus a baseline, or `off`, when a severity is `warn` or `advisory`.
+    /// The TOML parse error when `text` is not TOML, or the message naming `error` plus a baseline, or `off`, when a severity is `warn` or `advisory`.
     pub fn from_toml(text: &str) -> Result<Self, String> {
         let doc: toml::Table = text.parse().map_err(|e: toml::de::Error| e.to_string())?;
         let mut out = Self::default();
@@ -73,8 +45,11 @@ impl RuleSettings {
         };
         for (key, value) in rules {
             match (key.as_str(), value) {
-                ("ramp", toml::Value::Boolean(on)) => out.ramp = *on,
-                ("ramp", _) => return Err("`[rules] ramp` must be true or false".to_owned()),
+                ("ramp", _) => {
+                    tracing::warn!(
+                        "[rules] ramp is deprecated and ignored: ramp-in is retired, a new rule ships as an error"
+                    );
+                }
                 (id, toml::Value::Table(entry)) => {
                     match entry.get("severity").and_then(toml::Value::as_str) {
                         Some(word @ ("advisory" | "warn")) => {
@@ -96,38 +71,6 @@ impl RuleSettings {
             }
         }
         Ok(out)
-    }
-
-    /// Cap every Error finding of a rule new in release `current` (its `since` from `since_of`) at Warn, noting the release it becomes Error; returns how many were ramped.
-    ///
-    /// Nothing is ramped when `[rules] ramp = false` or the rule carries an explicit `[rules.<id>] severity`.
-    pub fn ramp_findings(
-        &self,
-        findings: &mut [Finding],
-        since_of: &dyn Fn(&str) -> Option<&'static str>,
-        current: &str,
-    ) -> usize {
-        if !self.ramp {
-            return 0;
-        }
-        let mut ramped = 0;
-        for f in findings
-            .iter_mut()
-            .filter(|f| f.severity == Severity::Error)
-        {
-            let id = f.rule.as_str();
-            if self.severity.contains_key(id) {
-                continue;
-            }
-            let Some(since) = since_of(id) else { continue };
-            if let Some(r) = ramp(since, Severity::Error, current) {
-                tracing::info!(rule = id, "finding ramped from error to warn");
-                f.severity = r.severity;
-                f.message = format!("{} ({})", f.message, r.note);
-                ramped += 1;
-            }
-        }
-        ramped
     }
 }
 
@@ -169,41 +112,28 @@ pub fn drop_disabled_product_findings(
     dropped
 }
 
-// frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
-/// Ramp the Error findings of rules new in release `current` using the `[rules]` of `<root>/<product>.toml` (defaults when absent or unreadable); a rule's `since` comes from `defs` first, then `registry`. Returns how many were ramped.
-pub fn ramp_product_findings(
-    root: &std::path::Path,
-    product: &str,
-    registry: &Registry,
-    defs: &[&'static RuleDef],
-    findings: &mut [Finding],
-    current: &str,
-) -> usize {
-    let settings = product_settings(root, product);
-    let since_of = |id: &str| {
-        defs.iter()
-            .find(|d| d.id == id)
-            .map(|d| d.since)
-            .or_else(|| registry.by_id(id).map(|m| m.since))
-    };
-    settings.ramp_findings(findings, &since_of, current)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // frob:tests crates/gob-rules/src/ramp.rs::ramp
+    // frob:tests crates/gob-rules/src/settings.rs::shipped_in
     #[test]
-    fn ramp_is_inert_for_every_input() {
-        assert!(ramp("0.532.0", Severity::Error, "0.532.0").is_none());
-        assert!(ramp("0.532.0", Severity::Error, "dev").is_none());
-        assert!(in_ramp("0.532.0", "0.532.3"));
-        assert_eq!(ramp_end("1.2.3").as_deref(), Some("1.3.0"));
-        assert_eq!(ramp_end("1.2"), None);
+    fn shipped_in_matches_the_minor_line_only() {
+        assert!(shipped_in("0.532.0", "0.532.3"));
+        assert!(shipped_in("0.532.0", "0.532.0-dev"));
+        assert!(!shipped_in("0.532.0", "0.533.0"));
+        assert!(!shipped_in("0.532.0", "dev"));
     }
 
-    // frob:tests crates/gob-rules/src/ramp.rs::from_toml
+    // frob:tests crates/gob-rules/src/settings.rs::from_toml
+    #[test]
+    fn a_retired_ramp_key_is_accepted_and_ignored() {
+        let s = RuleSettings::from_toml("[rules]\nramp = false\n").unwrap();
+        assert_eq!(s, RuleSettings::default());
+        assert!(RuleSettings::from_toml("[rules]\nramp = 3\n").is_ok());
+    }
+
+    // frob:tests crates/gob-rules/src/settings.rs::from_toml
     #[test]
     fn warn_and_advisory_severity_are_config_errors_naming_the_replacement() {
         for word in ["warn", "advisory"] {
@@ -214,7 +144,7 @@ mod tests {
         }
     }
 
-    // frob:tests crates/gob-rules/src/ramp.rs::from_toml
+    // frob:tests crates/gob-rules/src/settings.rs::from_toml
     #[test]
     fn severity_off_disables_and_error_is_accepted() {
         let s = RuleSettings::from_toml(
@@ -225,7 +155,7 @@ mod tests {
         assert_eq!(s.severity.get("BBB001"), Some(&Severity::Error));
     }
 
-    // frob:tests crates/gob-rules/src/ramp.rs::drop_disabled_product_findings
+    // frob:tests crates/gob-rules/src/settings.rs::drop_disabled_product_findings
     #[test]
     fn findings_of_rules_switched_off_in_the_product_config_are_dropped() {
         let dir = tempfile::tempdir().unwrap();

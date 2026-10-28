@@ -140,16 +140,5 @@ pub fn run_with_cone(
     }
     let mut report = gob_check::run(&product, root, &run_opts)?;
     gob_rules::drop_disabled_product_findings(root, snapshot::PRODUCT, &mut report.findings);
-    // frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
-    gob_rules::ramp_product_findings(
-        root,
-        snapshot::PRODUCT,
-        gob_rules::Registry::global(),
-        &gob_check::Product::rule_set(&product)
-            .defs()
-            .collect::<Vec<_>>(),
-        &mut report.findings,
-        env!("CARGO_PKG_VERSION"),
-    );
     Ok((report, product.diff_paths(), product.cone_paths()))
 }

@@ -75,45 +75,15 @@ pub struct RuleRow {
 }
 
 /// The `[rules]` severity and disable settings, applied identically to every rule.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RuleSettings {
-    /// `[rules] ramp`: retained for config compatibility; ramp-in is inert (default true).
-    pub ramp: bool,
     /// Ids switched off.
     pub disabled: BTreeSet<String>,
     /// Severity overrides by id.
     pub severity: BTreeMap<String, Severity>,
 }
 
-impl Default for RuleSettings {
-    fn default() -> Self {
-        Self {
-            ramp: true,
-            disabled: BTreeSet::new(),
-            severity: BTreeMap::new(),
-        }
-    }
-}
-
 impl RuleSettings {
-    // frob:ticket 01M4HDXVZNXTNANMHRGVGQ66DC
-    /// The severity a rule runs at in release `current` with the note explaining a ramp, or `None` when disabled; an explicit `[rules]` severity is never ramped.
-    #[must_use]
-    pub fn effective_ramped(
-        &self,
-        meta: &RuleMeta,
-        current: &str,
-    ) -> Option<(Severity, Option<String>)> {
-        let sev = self.effective_severity(meta)?;
-        if !self.ramp || self.severity.contains_key(meta.id) {
-            return Some((sev, None));
-        }
-        Some(match crate::ramp::ramp(meta.since, sev, current) {
-            Some(r) => (r.severity, Some(r.note)),
-            None => (sev, None),
-        })
-    }
-
     /// The severity a rule runs at, or `None` when it is disabled; provenance plays no part.
     #[must_use]
     pub fn effective_severity(&self, meta: &RuleMeta) -> Option<Severity> {
@@ -287,18 +257,6 @@ mod tests {
             reg().provenance("ZZZ001"),
             Some(&Provenance::Pack("acme".into()))
         );
-    }
-
-    // frob:tests crates/gob-rules/src/registry.rs::effective_ramped
-    #[test]
-    fn effective_ramped_never_caps_and_honours_disabled() {
-        let mut s = RuleSettings::default();
-        assert_eq!(
-            s.effective_ramped(&STD, "0.1.0").unwrap(),
-            (Severity::Error, None)
-        );
-        s.disabled.insert("AAA001".into());
-        assert_eq!(s.effective_ramped(&STD, "0.1.0"), None);
     }
 
     // frob:tests rules_settings_apply_identically

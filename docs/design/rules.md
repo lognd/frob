@@ -793,22 +793,11 @@ all its rules (HUMAN001 and HUMAN002 do: Advisory under the default
 `check` gate, Error under `release`). `gate_severity` and `apply_gate`
 use the rule's own value first and the family's as the fallback.
 
-Ramp-in is the last step. A rule whose `since` is the running release's
-minor line (`0.532.x` for `since = "0.532.0"`) and whose severity is Error
-reports as Warn, with a note naming the release where it becomes Error
-(`0.533.0`). `[rules] ramp = false` turns it off, and an explicit `[rules]`
-severity for the rule is never ramped. `gob_rules::ramp` holds the window
-and `RuleSettings::effective_ramped` applies it; `frob release changelog`
-lists rules in their window under "Newly live rules" in the section.
-
-Each product applies the ramp to its findings through the shared
-`gob_rules::ramp_product_findings`, called at the end of `frob-check`,
-`grimble-check` and `crunk-check` runs. It reads `[rules] ramp` and the
-`[rules.<ID>]` severities from `<product>.toml` and appends the note to the
-finding message. In `crunk-check` the ramp runs before the release gate, so
-a gate that raises a rule to Error is not undone. `crunk.toml` accepts a
-`[rules]` table (it is one of `crunk_spec::OWN_TABLES`), so `[rules] ramp =
-false` turns the ramp off for crunk.
+Ramp-in is retired (6.1.3): a new rule ships at its declared severity, and
+no step after the gate rewrites severities. `[rules] ramp` is still parsed
+by `gob_rules::RuleSettings::from_toml` but ignored with a deprecation
+warning. `frob release changelog` lists rules whose `since` is the release's
+minor line (`gob_rules::shipped_in`) under "Newly live rules".
 
 ## 8. Crate layout for this layer
 
