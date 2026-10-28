@@ -1,8 +1,8 @@
 [check]
 # Lowest severity that makes `frob check` exit 1; `none` never fails.
 fail_on = "error"
-# Paths no grimble stage walks: deliberately broken test corpora and fixtures.
-exclude = ["crates/*/tests/corpus/**", "crates/*/tests/mdtest/**", "crates/*/tests/mdtest_fail/**", "crates/*/tests/fixtures/**", "crates/*/tests/ui/**"]
+# Paths no grimble stage walks: deliberately broken test corpora, fixtures and extracted inline inputs.
+exclude = ["crates/*/tests/corpus/**", "crates/*/tests/mdtest/**", "crates/*/tests/mdtest_fail/**", "crates/*/tests/fixtures/**", "crates/*/tests/ui/**", "crates/*/resources/inline/**"]
 # Which Unresolved findings fail the gate: `required`, `never` or `all`.
 fail_on_unresolved = "required"
 

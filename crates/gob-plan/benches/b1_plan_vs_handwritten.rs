@@ -1,4 +1,4 @@
-//! Benchmark B1 (plugins.md section 6.6): the plan executor against handwritten Rust on
+//! Benchmark B1 (plugins.md section 6): the plan executor against handwritten Rust on
 //! TODO001, COV001 and DOC002 over the 100k-line fixture.
 //!
 //! Findings are compared first; then each file is timed both ways and the median per-file ratio
