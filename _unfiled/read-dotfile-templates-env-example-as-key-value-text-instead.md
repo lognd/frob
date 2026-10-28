@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T18:32:35Z"
-updated = "2026-10-27T02:58:16Z"
+updated = "2026-10-28T12:55:50Z"
+labels = ["no-story"]
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/frob-check/**"]
 
 [[acceptance]]
@@ -16,3 +17,5 @@ bound = false
 +++
 
 Split from ~T54E67N (logand F-556): no key=value reader exists, so classifying dotfile templates needs a new language/adapter in gob-languages and gob-symbols, outside the T54E67N scope.
+
+no-story: internal engineering task in gob-languages; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
