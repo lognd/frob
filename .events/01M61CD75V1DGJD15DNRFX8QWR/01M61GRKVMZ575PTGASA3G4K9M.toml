@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T15:05:03Z"
+digest = "f36cb1c31f2c621ebb17befe8808cddb403d10b8730758ea6a3b47e4a8a3550f"
+exit_code = 101
+head = "dade10a89d309ca853f403dcb57942c2c21d454e"
+passed = false
+provider = "nextest"
+ref = "bind_yields_one_rule_per_tick_rule_for_a_ledger_host"
+size = 17720
+status = "measured"
+uri = "dir:.git/frob/artifacts/f36cb1c31f2c621ebb17befe8808cddb403d10b8730758ea6a3b47e4a8a3550f"
+at = "2026-10-28T15:05:03Z"
+actor = "lognd"
+rev = 1
