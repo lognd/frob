@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T21:58:19Z"
+digest = "74a1bfa8628f3e7be0e19f8c0363af542a9806f34c5d6451bee6fce60d8a4682"
+exit_code = 101
+head = "04c57f65ef4925a36b2222ab3e20488262088a43"
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+error[E0063]: missing fields `crates` and `products` in initializer of `frob_ledger::index::Summary`
+   --> crates/frob-lease/tests/lease.rs:386:5
+    |
+386 |     Summary {
+    |     ^^^^^^^ missing `crates` and `products`
+
+For more information about this error, try `rustc --explain E0063`.
+error: could not compile `frob-lease` (test "lease") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "doable_filters_by_derived_crate_and_product"
+size = 972
+status = "measured"
+at = "2026-10-28T21:58:19Z"
+actor = "lognd"
+rev = 1
