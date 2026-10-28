@@ -8,9 +8,9 @@ points = 3
 parent = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:05Z"
+updated = "2026-10-28T12:57:40Z"
 aliases = ["T-6487"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["strata-core/src/parse/grammar_node.rs", "src/frob/strata/_models.py", "docs/design/grmb-spec.md"]
 
 [[links]]
@@ -80,3 +80,5 @@ Acceptance criteria: all six clauses land in one change; `drain`/`cert_expiry`/`
 becomes closed-vocabulary IDENT, `owner` (node-level) desugars to attr and registers in
 T-STORE-301-ATTR's table. Positive-control fixture: tests/fixtures/sysdesign/node-ops/
 <!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->rollout-no-drain-bound/design.strata.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
