@@ -8,10 +8,12 @@ points = 3
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:48Z"
+updated = "2026-10-28T12:56:03Z"
 aliases = ["T-4192"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/gates"]
 +++
 
 Consumer F-307/H3-7 (T-4109): COV/WIRE see the response type as referenced because some routes use it, masking routes returning a bare dict literal instead. Same family as the existing SIT-011 guard-inventory pattern. Not fixture-testable in frob's own tree: no HTTP routes exist here. Consumer-blocking: latent for us.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
