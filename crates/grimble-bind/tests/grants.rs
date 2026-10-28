@@ -111,10 +111,21 @@ fn every_atom_at_a_broad_glob_is_a_zone_and_overlaps_count_once() {
 
 // frob:tests crates/grimble-bind/src/grants.rs::trust_zones
 #[test]
+fn argument_scoped_grants_no_longer_exempt_a_trust_zone() {
+    let f = ["x"];
+    let mut scoped = at("node/c", "net.connect", "\"t/**\"", &f);
+    scoped.args = vec!["api.example.com".into()];
+    let all = vec![at("node/c", "fs", "\"t/**\"", &f), scoped];
+    let z = trust_zones(&all, &universe());
+    assert_eq!(z.zones.len(), 1, "{z:?}");
+}
+
+// frob:tests crates/grimble-bind/src/grants.rs::trust_zones
+#[test]
 fn partial_narrow_scoped_and_empty_inputs_are_not_zones() {
     let f = ["x"];
-    // Missing net.connect; a single file glob; an argument-scoped atom; a symbol glob.
-    let mut all = vec![
+    // Missing net.connect; a single file glob; a symbol glob.
+    let all = vec![
         at("node/a", "fs", "\"t/**\"", &f),
         at("node/b", "fs", "\"one.py\"", &f),
         at("node/b", "net.connect", "\"one.py\"", &f),
@@ -124,9 +135,6 @@ fn partial_narrow_scoped_and_empty_inputs_are_not_zones() {
         grant("node/e", "fs", &f, true),
         grant("node/e", "net.connect", &f, true),
     ];
-    let mut scoped = at("node/c", "net.connect", "\"t/**\"", &f);
-    scoped.args = vec!["api.example.com".into()];
-    all.push(scoped);
     assert!(trust_zones(&all, &universe()).zones.is_empty());
     assert!(trust_zones(&[], &universe()).zones.is_empty());
     assert!(

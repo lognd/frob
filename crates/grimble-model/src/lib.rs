@@ -28,6 +28,7 @@
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 
 pub mod adapter;
+pub mod args;
 pub mod ast;
 pub mod binding;
 pub mod check;

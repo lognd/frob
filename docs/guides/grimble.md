@@ -196,6 +196,15 @@ may overlap and a shared file is counted once. Nodes with no code-owning selecto
 `kind external`) are listed as ungated: no capability check judges them. Prefer argument-scoped
 grants such as `may net.connect("api.example.com")` over blanket ones.
 
+Grant arguments are enforced. Each argument is typed by its atom: `fs.*` takes path globs
+(`"config/**"`, no `..`), `net.*` takes `host[:port]` patterns (`"api.example.com:443"`,
+`"*.example.com"`, no scheme or `@`), `process.env` takes a variable name and `process.spawn` a
+binary name; anything else is an MDL008 error. A use passes only if the argument it calls with is a
+literal (or a constant, concatenation or `(host, port)` pair of literals) that matches a granted
+argument. A literal outside them is CAP001 naming both; an argument the binder cannot resolve
+statically is reported Unresolved, never clean. Paths are compared as written (symlinks are not
+followed). A grant with no argument allows any.
+
 ## Where next
 
 - `grimble --help` and `grimble check --help`: every verb and flag.

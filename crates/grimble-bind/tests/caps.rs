@@ -545,3 +545,95 @@ fn shadowed_names_strings_and_comments_are_not_uses() {
         assert!(of(&b, "CAP001").is_empty(), "{src}: {:?}", b.findings);
     }
 }
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_a_read_outside_every_granted_path_is_cap001_naming_both() {
+    let py = "def go():\n    open(\"/home/u/.ssh/id_rsa\")\n";
+    let b = bind_py(py, "  may fs.read(\"config/**\") because=\"cfg\";\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+    assert!(f[0].reason.is_none(), "an Error, not Unresolved: {f:?}");
+    assert_eq!(f[0].anchor, "cap/node/a/fs.read");
+    assert!(
+        f[0].message.contains("/home/u/.ssh/id_rsa"),
+        "{}",
+        f[0].message
+    );
+    assert!(f[0].message.contains("config/**"), "{}", f[0].message);
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_a_literal_inside_the_grant_is_clean_and_dotdot_escapes_are_not() {
+    let grant = "  may fs.read(\"config/**\") because=\"cfg\";\n";
+    let ok = bind_py("def go():\n    open(\"config/app.toml\")\n", grant);
+    assert!(of(&ok, "CAP001").is_empty(), "{:?}", ok.findings);
+    let esc = bind_py("def go():\n    open(\"config/../secret\")\n", grant);
+    assert_eq!(of(&esc, "CAP001").len(), 1, "{:?}", esc.findings);
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_constants_fold_and_a_non_literal_argument_is_unresolved_never_clean() {
+    let grant = "  may fs.read(\"config/**\") because=\"cfg\";\n";
+    let folded = bind_py(
+        "BASE = \"config\"\n\ndef go():\n    open(BASE + \"/a.toml\")\n",
+        grant,
+    );
+    assert!(of(&folded, "CAP001").is_empty(), "{:?}", folded.findings);
+    let dynamic = bind_py("def go(p):\n    open(p)\n", grant);
+    let f = of(&dynamic, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", dynamic.findings);
+    assert!(f[0].reason.is_some(), "Unresolved with a reason: {f:?}");
+    let recv = bind_py(
+        "from pathlib import Path\n\ndef go():\n    Path(\"config/a\").read_text()\n",
+        grant,
+    );
+    let f = of(&recv, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", recv.findings);
+    assert!(f[0].reason.is_some(), "{f:?}");
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_hosts_env_names_and_binaries_are_judged() {
+    let host = "  may net.connect(\"api.example.com:443\") because=\"api\";\n";
+    let tuple =
+        "import socket\n\ndef go():\n    socket.create_connection((\"api.example.com\", 443))\n";
+    let b = bind_py(tuple, host);
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let trick = "import urllib.request\n\ndef go():\n    urllib.request.urlopen(\"https://api.example.com@evil.com/x\")\n";
+    let b = bind_py(trick, host);
+    assert_eq!(
+        of(&b, "CAP001").len(),
+        1,
+        "userinfo trick: {:?}",
+        b.findings
+    );
+    let env = "import os\n\ndef go():\n    os.getenv(\"HOME\")\n";
+    let b = bind_py(env, "  may process.env(\"PATH\") because=\"p\";\n");
+    assert_eq!(of(&b, "CAP001").len(), 1, "{:?}", b.findings);
+    let b = bind_py(env, "  may process.env(\"HOME\") because=\"p\";\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let run = "import subprocess\n\ndef go():\n    subprocess.run([\"git\", \"status\"])\n";
+    let b = bind_py(run, "  may process.spawn(\"git\") because=\"vcs\";\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let b = bind_py(run, "  may process.spawn(\"curl\") because=\"vcs\";\n");
+    assert_eq!(of(&b, "CAP001").len(), 1, "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_a_grant_without_arguments_still_covers_every_argument() {
+    let b = bind_py(
+        "def go(p):\n    open(p)\n    open(\"/etc/passwd\")\n",
+        "  may fs.read;\n",
+    );
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
