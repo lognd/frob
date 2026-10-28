@@ -8,8 +8,8 @@ points = 13
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:41Z"
-updated = "2026-10-28T12:56:53Z"
-labels = ["grimble"]
+updated = "2026-10-28T12:57:44Z"
+labels = ["grimble", "no-story"]
 scope = ["crates/grimble-model/**", "docs/design/rules.md", "docs/design/grmb-spec.md", "docs/design/grmb-planning.md", "changelog.d/**"]
 
 [[links]]
@@ -30,3 +30,5 @@ bound = false
 +++
 
 grmb-planning.md 2, 3, 4, 5.1-5.6, 7.1, 8 and 15 row P1. Lexer tokens => -|> -?> * and the contextual planning words (2.1, additive to major 2); parser for system, actor, goal, step, scenario, impl, page; scenario typing (outcome, collected set, error set, retry bound) as MDL022-MDL031; U encoding and facets of 8.2; fmt rules of 8.3; conformance corpus under crates/grimble-model/tests/corpus/plan/ with both worked examples; rules.md MDL range note.
+
+no-story: internal engineering task in grimble-model; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "grmb-planning.md 2, 3, 4, 5.1-5.6, 7.1, 8 and 15 row P1. Lexer tokens => -|> -?> * and the contextual planning words (2.1, additive to major 2); parser for system, actor, goal, step, scenario, impl, page; scenario typing (outcome, collected set, error set, retry bound) as MDL022-MDL031; U encoding and facets of 8.2; fmt rules of 8.3; conformance corpus under crates/grimble-model/tests/corpus/plan/ with both worked examples; rules.md MDL range note."
+new = """
+grmb-planning.md 2, 3, 4, 5.1-5.6, 7.1, 8 and 15 row P1. Lexer tokens => -|> -?> * and the contextual planning words (2.1, additive to major 2); parser for system, actor, goal, step, scenario, impl, page; scenario typing (outcome, collected set, error set, retry bound) as MDL022-MDL031; U encoding and facets of 8.2; fmt rules of 8.3; conformance corpus under crates/grimble-model/tests/corpus/plan/ with both worked examples; rules.md MDL range note.
+
+no-story: internal engineering task in grimble-model; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:44Z"
+actor = "lognd"
+rev = 1
