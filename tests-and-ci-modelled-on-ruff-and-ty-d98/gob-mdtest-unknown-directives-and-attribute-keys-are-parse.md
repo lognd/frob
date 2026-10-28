@@ -8,7 +8,8 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:42Z"
-updated = "2026-10-28T12:56:52Z"
+updated = "2026-10-28T12:57:41Z"
+labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
 [[links]]
@@ -29,3 +30,5 @@ bound = false
 +++
 
 Any HTML comment directive other than a known one (plus a small formatter allowlist) and any unknown info-string key are parse errors, and a fence with rule= but no expect= is an error instead of silent documentation (ty parser). Source: notes/research/rule-testing.md (D103).
+
+no-story: internal engineering task in gob-mdtest; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

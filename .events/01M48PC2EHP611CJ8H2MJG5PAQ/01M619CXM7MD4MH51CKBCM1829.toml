@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Any HTML comment directive other than a known one (plus a small formatter allowlist) and any unknown info-string key are parse errors, and a fence with rule= but no expect= is an error instead of silent documentation (ty parser). Source: notes/research/rule-testing.md (D103)."
+new = """
+Any HTML comment directive other than a known one (plus a small formatter allowlist) and any unknown info-string key are parse errors, and a fence with rule= but no expect= is an error instead of silent documentation (ty parser). Source: notes/research/rule-testing.md (D103).
+
+no-story: internal engineering task in gob-mdtest; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:41Z"
+actor = "lognd"
+rev = 1
