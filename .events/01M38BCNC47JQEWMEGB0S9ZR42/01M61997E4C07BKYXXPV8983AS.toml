@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working T-5357: WEBSEC403 currently checks only that a React Router admin-path <Route> is wrapped in a guard component, a JSX-local text-regex proxy. The ticket body's full corpus item is a React router-guard AST cross-referenced against the server's own route table (built from the same WEBSEC402 admin-route detection) to confirm the client guard has a matching server-side enforcement. Implement the cross-reference."
+new = """
+found while working T-5357: WEBSEC403 currently checks only that a React Router admin-path <Route> is wrapped in a guard component, a JSX-local text-regex proxy. The ticket body's full corpus item is a React router-guard AST cross-referenced against the server's own route table (built from the same WEBSEC402 admin-route detection) to confirm the client guard has a matching server-side enforcement. Implement the cross-reference.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:40Z"
+actor = "lognd"
+rev = 1
