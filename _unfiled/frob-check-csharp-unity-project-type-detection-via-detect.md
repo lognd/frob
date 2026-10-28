@@ -7,9 +7,9 @@ priority = "low"
 points = 3
 reporter = "agent"
 created = "2026-09-26T00:00:00Z"
-updated = "2026-10-27T02:58:08Z"
+updated = "2026-10-28T12:55:56Z"
 aliases = ["T-6590"]
-labels = ["v1-cluster:C4a", "triage:accepted"]
+labels = ["v1-cluster:C4a", "triage:accepted", "no-story"]
 scope = ["src/frob/check/__init__.py", "src/frob/app/check_runner.py", "src/frob/lang/_project_detect.py", "src/frob/app/config.py", "docs/design/rules.md"]
 +++
 
@@ -45,3 +45,5 @@ Deliver:
 <!-- frob:waive DOC006 reason="external, illustrative or future-facing path named in this ticket body" -->5. Docs: docs/modules/check.md lists the two new types and the runner key.
 Follow-on: T-5198 (unity-project strata fragments have no root module) is
 expected to fire on a real repo right after this; leave it to that ticket.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
