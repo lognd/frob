@@ -8,9 +8,9 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:32Z"
-updated = "2026-10-03T03:34:32Z"
+updated = "2026-10-28T12:55:43Z"
 idempotency_key = "m2-wasm-pack-build"
-labels = ["milestone:2", "area:packs"]
+labels = ["milestone:2", "area:packs", "no-story"]
 scope = ["crates/gob-wasm/src/build/**"]
 
 [[links]]
@@ -33,3 +33,5 @@ bound = false
 Implements plugins.md section 6.1 (last paragraph).
 
 Plugin authors who need built-in-class speed build their pack to a component with tier-2 semantics; the build records toolchain and source tree digest.
+
+no-story: internal engineering task in gob-wasm; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
