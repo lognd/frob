@@ -8,9 +8,9 @@ points = 3
 parent = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:59Z"
+updated = "2026-10-28T12:57:37Z"
 aliases = ["T-6444"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["strata-core/src/parse/grammar_node.rs", "src/frob/strata/_models.py", "docs/design/grmb-spec.md"]
 
 [[links]]
@@ -67,3 +67,5 @@ Acceptance criteria:
   `shared_state_ok` exemptions on REL340/REL360.
 - Positive-control fixture: tests/fixtures/sysdesign/node-lifecycle/faas-no-health-exempt/
   design.strata with a `lifecycle invoked` node that would otherwise fail REL210.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
