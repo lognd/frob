@@ -7,7 +7,10 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T03:34:25Z"
-updated = "2026-10-27T02:58:19Z"
+updated = "2026-10-28T12:56:52Z"
+persona = "a repository maintainer"
+capability = "configure which crates the Rust test provider excludes"
+outcome_text = "test runs follow my repo instead of a hardcoded list"
 idempotency_key = "tests-rust-exclude-20261013"
 scope = ["crates/frob/**"]
 
