@@ -49,6 +49,7 @@
 
 mod adapter;
 mod ambient;
+mod canon;
 mod crates;
 mod def_use;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
@@ -97,6 +98,7 @@ pub use adapter::{
     ParseStatus, Precision,
 };
 pub use ambient::{AMBIENT_CLASSES, is_ambient_name};
+pub use canon::{PathUse, path_uses};
 pub use crates::CrateDeps;
 pub use csharp::{
     CSharpAdapter, CsharpDynamicCall, CsharpTest, CsharpTestFramework, csharp_dynamic_calls,

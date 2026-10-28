@@ -1069,7 +1069,14 @@ The cell of `(n, a)` is computed, in this order:
    `covered by a grant` below means the atom, every constrained argument slot,
    `via`, profile and expiry all match with Must values. An argument that cannot
    be extracted makes the use unresolved (CAP006), which sets the cell `unknown`
-   exactly as item 4 does, never `uses`-clean. Let `E(n, a)` be the identities of the
+   exactly as item 4 does, never `uses`-clean. Observed uses are matched on the import-resolved path of the callee, not its
+   spelling: `use` aliases, `import x as y`, `from m import f`, function values and
+   literal `getattr`/`import_module` forms resolve to the vocabulary entry (a
+   repository type that merely shares a name never hides `std::process::Command`),
+   a dynamic literal form is unresolved, and shadowed names, strings and comments
+   are not uses. Glob imports, macro bodies and computed attribute names are not
+   followed.
+   Let `E(n, a)` be the identities of the
    remaining subject set covered by a template excuse for a' covering a
    (grmb-spec 4.7, packs.md 6.7); it is empty when no template applies. If
    some `i` in `M(n)` has `Use_lo(i, a)` non-empty:

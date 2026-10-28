@@ -406,3 +406,142 @@ fn a_symbol_grant_whose_symbol_has_no_use_is_cap002() {
     let f = of(&b, "CAP002");
     assert_eq!(f.len(), 1, "{:?}", b.findings);
 }
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn rust_aliases_and_function_values_resolve_to_the_vocabulary() {
+    let cases = [
+        (
+            "use std::fs::read_to_string as slurp;\nfn go() {\n    let _ = slurp(\"x\");\n}\n",
+            "cap/node/a/fs.read",
+        ),
+        (
+            "use std::process::Command as Cmd;\nfn go() {\n    let _ = Cmd::new(\"ls\");\n}\n",
+            "cap/node/a/process.spawn",
+        ),
+        (
+            "fn go() {\n    let f: fn(&str) -> std::io::Result<()> = std::fs::remove_file;\n    let _ = f(\"x\");\n}\n",
+            "cap/node/a/fs.write",
+        ),
+        (
+            "fn go(v: Vec<&str>) {\n    v.into_iter().for_each(|p| { let _ = std::fs::remove_file(p); });\n    let _: Vec<_> = vec![\"a\"].into_iter().map(std::fs::remove_file).collect();\n}\n",
+            "cap/node/a/fs.write",
+        ),
+        (
+            "use std::process::{Command as C, Stdio};\nfn go() {\n    let _ = C::new(\"ls\");\n}\n",
+            "cap/node/a/process.spawn",
+        ),
+    ];
+    for (src, atom) in cases {
+        let b = bind_file("src/x.rs", src, "");
+        assert!(
+            atoms(&b).iter().any(|a| a == atom),
+            "{src}: {atom} missing in {:?}",
+            b.findings
+        );
+        assert!(
+            of(&b, "CAP001").iter().all(|f| f.reason.is_none()),
+            "{src}: {:?}",
+            b.findings
+        );
+    }
+}
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn python_import_aliases_and_from_imports_resolve_to_the_vocabulary() {
+    for (src, atom) in [
+        (
+            "import subprocess as sp\n\n\ndef go():\n    sp.run(['ls'])\n",
+            "cap/node/a/process.spawn",
+        ),
+        (
+            "from subprocess import run\n\n\ndef go():\n    run(['ls'])\n",
+            "cap/node/a/process.spawn",
+        ),
+        (
+            "from os import system as sh\n\n\ndef go():\n    sh('ls')\n",
+            "cap/node/a/process.spawn",
+        ),
+        (
+            "import os\n\n\ndef go(cmds):\n    return list(map(os.system, cmds))\n",
+            "cap/node/a/process.spawn",
+        ),
+    ] {
+        let b = bind_py(src, "");
+        assert!(
+            atoms(&b).iter().any(|a| a == atom),
+            "{src}: {atom} missing in {:?}",
+            b.findings
+        );
+    }
+}
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_literal_getattr_or_import_module_is_unresolved_not_an_error() {
+    for src in [
+        "import os\n\n\ndef go():\n    getattr(os, 'system')('ls')\n",
+        "import importlib\n\n\ndef go():\n    importlib.import_module('subprocess').run(['ls'])\n",
+    ] {
+        let b = bind_py(src, "");
+        let f = of(&b, "CAP001");
+        assert!(!f.is_empty(), "{src}: {:?}", b.findings);
+        assert!(
+            f.iter().all(|f| f.reason.is_some()),
+            "{src}: dynamic forms must be Unresolved: {f:?}"
+        );
+    }
+}
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_repository_type_named_command_does_not_hide_std_or_tokio_command() {
+    let local = "pub struct Command;\nimpl Command {\n    pub fn new(_: &str) -> Self {\n        Command\n    }\n}\n";
+    for call in [
+        "std::process::Command::new(\"sh\")",
+        "tokio::process::Command::new(\"sh\")",
+    ] {
+        let user = format!("fn go() {{\n    let _ = {call};\n}}\n");
+        let b = bind_files(&[("src/cmd.rs", local), ("src/x.rs", &user)], "");
+        assert_eq!(
+            atoms(&b),
+            ["cap/node/a/process.spawn"],
+            "{call}: {:?}",
+            b.findings
+        );
+    }
+    // the local Command alone is not a process spawn
+    let user = "use crate::cmd::Command;\nfn go() {\n    let _ = Command::new(\"sh\");\n}\n";
+    let b = bind_files(&[("src/cmd.rs", local), ("src/x.rs", user)], "");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn shadowed_names_strings_and_comments_are_not_uses() {
+    let rs = [
+        "use std::fs::read_to_string as slurp;\nfn go(slurp: u8) {\n    let _ = slurp;\n}\nfn two() {\n    fn slurp(_: &str) {}\n    slurp(\"x\");\n}\n",
+        "use std::process::Command as Cmd;\nfn go() {\n    let s = \"Cmd::new(ls) std::process::Command::new\";\n    // Cmd::new(\"ls\")\n    let _ = s;\n}\n",
+        "use clap::Command as Cmd;\nfn cli() {\n    let _ = Cmd::new(\"x\");\n}\n",
+    ];
+    for src in rs {
+        let b = bind_file("src/x.rs", src, "");
+        assert!(of(&b, "CAP001").is_empty(), "{src}: {:?}", b.findings);
+    }
+    let py = [
+        "import subprocess as sp\n\n\ndef go(sp):\n    sp.run(['ls'])\n",
+        "from subprocess import run\n\n\ndef go():\n    run = len\n    run('x')\n",
+        "from subprocess import run\n\n\ndef run2():\n    \"\"\"run(['ls'])\"\"\"\n    s = \"run(['ls'])\"  # run(['ls'])\n    return s\n",
+        "def go():\n    from mypkg import run\n    return 1\n\n\ndef two():\n    return run('x')\n",
+    ];
+    for src in py {
+        let b = bind_py(src, "");
+        assert!(of(&b, "CAP001").is_empty(), "{src}: {:?}", b.findings);
+    }
+}
