@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Currently reported as UnmappedProperty findings or BadValue. Found while working QPY31M6."
+new = """
+Currently reported as UnmappedProperty findings or BadValue. Found while working QPY31M6.
+
+no-story: internal engineering task in crunk-layout; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:02Z"
+actor = "lognd"
+rev = 1
