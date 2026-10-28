@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Consumer F-317/H-1 (T-4135 sub-epic, shell round-3). frob check has no notion of 'this module exports a check*/*Check gate that no entry point calls'. A rule flagging an exported check*/*Check symbol in a scripts dir with no reference from a package manifest's script list would have caught both halves of the finding; the allowlist-desync half is a concrete instance of frob:invariant PUBLIC_ALLOWLIST == git ls-files <dir>, which the code already states in prose. Fixture-testable: partially -- the entrypoint-reference check is generic and testable against frob's own scripts/CLI; the specific allowlist-invariant shape is consumer-only."
+new = """
+Consumer F-317/H-1 (T-4135 sub-epic, shell round-3). frob check has no notion of 'this module exports a check*/*Check gate that no entry point calls'. A rule flagging an exported check*/*Check symbol in a scripts dir with no reference from a package manifest's script list would have caught both halves of the finding; the allowlist-desync half is a concrete instance of frob:invariant PUBLIC_ALLOWLIST == git ls-files <dir>, which the code already states in prose. Fixture-testable: partially -- the entrypoint-reference check is generic and testable against frob's own scripts/CLI; the specific allowlist-invariant shape is consumer-only.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:57Z"
+actor = "lognd"
+rev = 1
