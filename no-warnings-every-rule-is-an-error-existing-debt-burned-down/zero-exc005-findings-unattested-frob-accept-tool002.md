@@ -2,13 +2,13 @@
 id = "01M627BCWT16JMFK5E667DNHNY"
 title = "Zero EXC005 findings (unattested frob:accept TOOL002)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-28T21:41:08Z"
+updated = "2026-10-28T22:56:18Z"
 idempotency_key = "b755-exc005"
 scope = ["crates/gob-plan/**"]
 
