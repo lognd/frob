@@ -1,0 +1,14 @@
+kind = "create"
+title = "org D5: consolidate scripts under scripts/"
+type = "task"
+category = "todo"
+priority = "low"
+points = 5
+parent = "01M61MHM8ER57BA9VVKXDTE2G7"
+idempotency_key = "org-D5"
+scope = ["scripts/**"]
+acceptance = ["scripts live under scripts/{ci,hooks,packaging}; workflows, release.yml and hook install paths updated and tested"]
+body = "Hidden consumers: workflows, packaging smoke, user .claude hooks. Org audit section 4.7 (scratchpad org-audit.md). Deferred and sequenced, not dropped."
+at = "2026-10-28T21:16:39Z"
+actor = "lognd"
+rev = 1
