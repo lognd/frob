@@ -8,9 +8,9 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:39Z"
-updated = "2026-10-03T05:51:39Z"
+updated = "2026-10-28T12:55:40Z"
 idempotency_key = "m2-mirror2-creds-doctor"
-labels = ["milestone:2", "area:mirror"]
+labels = ["milestone:2", "area:mirror", "no-story"]
 scope = ["crates/frob/src/doctor_mirror.rs", "crates/frob-mirror/src/envcheck.rs"]
 
 [[links]]
@@ -37,3 +37,5 @@ bound = false
 Implements mirror.md section 3.1 (Credentials) and security.md 2.11.
 
 Credentials (the App key, the marker keyring) live in an environment whose deployment branches are restricted to the default branch, never in repository secrets. doctor verifies it through the API: Error where the API answers that it is not so, Unresolved where it cannot answer.
+
+no-story: internal engineering task in frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
