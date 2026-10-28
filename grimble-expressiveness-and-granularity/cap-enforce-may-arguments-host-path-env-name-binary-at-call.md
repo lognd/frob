@@ -2,7 +2,8 @@
 id = "01M5XNNH61Z437EDDB05X9CAQE"
 title = "CAP: enforce may arguments (host, path, env name, binary) at call sites"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
