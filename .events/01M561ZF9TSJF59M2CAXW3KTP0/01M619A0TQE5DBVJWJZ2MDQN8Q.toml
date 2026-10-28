@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working P8VPKKP: the repo:obligations RepoGroup and Product::applicable COV001 branch are the last legacy machinery in frob-check/src/product.rs"
+new = """
+found while working P8VPKKP: the repo:obligations RepoGroup and Product::applicable COV001 branch are the last legacy machinery in frob-check/src/product.rs
+
+no-story: internal engineering task in frob-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:06Z"
+actor = "lognd"
+rev = 1
