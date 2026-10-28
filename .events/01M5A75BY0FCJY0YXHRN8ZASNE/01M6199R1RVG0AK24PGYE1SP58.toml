@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Follow-up of ~TXX200T: expose render/census through a CLI verb; CAP002 still evaluated in grimble-bind caps.rs without the crate."
+new = """
+Follow-up of ~TXX200T: expose render/census through a CLI verb; CAP002 still evaluated in grimble-bind caps.rs without the crate.
+
+no-story: internal engineering task in grimble; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:57Z"
+actor = "lognd"
+rev = 1
