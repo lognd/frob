@@ -8,9 +8,9 @@ points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:32Z"
-updated = "2026-10-03T03:34:32Z"
+updated = "2026-10-28T12:55:52Z"
 idempotency_key = "m2-wasm-cache"
-labels = ["milestone:2", "area:packs"]
+labels = ["milestone:2", "area:packs", "no-story"]
 scope = ["crates/gob-wasm/src/cache.rs"]
 
 [[links]]
@@ -33,3 +33,5 @@ bound = false
 Implements plugins.md section 6.4; security.md section 2.2.
 
 Cranelift AOT on first use; entries live outside the work tree and carry a MAC so a shipped .cwasm is never loaded.
+
+no-story: internal engineering task in gob-wasm; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
