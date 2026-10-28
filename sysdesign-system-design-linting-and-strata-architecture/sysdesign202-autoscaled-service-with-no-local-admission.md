@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSDAZX9B4327J18H8GE7S"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:54Z"
+updated = "2026-10-28T12:57:38Z"
 aliases = ["T-6390"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_admission.py (new)", "tests/fixtures/sysdesign/sysdesign202/**"]
 +++
 
@@ -44,3 +44,5 @@ depth threshold consulted before accepting work) on a service declared `capacity
 2..N` (autoscaling-shaped); flags its absence, and separately flags presence-with-no-exported-
 metric (the 9.3 pairing) as a second finding in the same module. Positive-control fixture:
 tests/fixtures/sysdesign/sysdesign202/autoscaled-no-admission-check/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
