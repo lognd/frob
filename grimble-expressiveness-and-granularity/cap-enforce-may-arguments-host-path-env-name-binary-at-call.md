@@ -2,13 +2,13 @@
 id = "01M5XNNH61Z437EDDB05X9CAQE"
 title = "CAP: enforce may arguments (host, path, env name, binary) at call sites"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-27T03:15:08Z"
+updated = "2026-10-28T18:04:15Z"
 idempotency_key = "grimble-expr-args-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/grants.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-model/src/**", "crates/grimble-bind/tests/**"]
