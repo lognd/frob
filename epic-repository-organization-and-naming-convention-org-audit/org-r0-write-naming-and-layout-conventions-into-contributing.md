@@ -2,13 +2,13 @@
 id = "01M61MM45G1BV990DMB957JQ92"
 title = "org R0: write naming and layout conventions into CONTRIBUTING"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:51Z"
-updated = "2026-10-28T16:13:51Z"
+updated = "2026-10-28T18:04:10Z"
 scope = ["CONTRIBUTING.md"]
 
 [[acceptance]]
