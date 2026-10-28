@@ -7,9 +7,9 @@ priority = "low"
 points = 8
 reporter = "human"
 created = "2026-08-26T00:00:00Z"
-updated = "2026-10-27T02:57:35Z"
+updated = "2026-10-28T12:55:54Z"
 aliases = ["T-2963"]
-labels = ["v1-cluster:E1", "triage:accepted"]
+labels = ["v1-cluster:E1", "triage:accepted", "no-story"]
 scope = ["src/frob/serve/**", "src/frob/app/_daemon_proxy.py", "tests/test_app_daemon_proxy.py", "tests/test_serve_socket.py", "tests/test_serve_events.py", "tests/test_serve_leases.py", "docs/design/cli.md"]
 +++
 
@@ -99,3 +99,5 @@ Do not close this epic without first filing its own child tickets (one
 per real deliverable: transport abstraction, chosen backend
 implementation, parity re-verification, doc updates) -- this ticket is
 the tracking/decision record, not a single unit of work.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
