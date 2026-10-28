@@ -8,7 +8,8 @@ points = 3
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "lognd"
 created = "2026-10-08T08:13:18Z"
-updated = "2026-10-08T08:13:18Z"
+updated = "2026-10-28T12:55:52Z"
+labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/gob-frameworks/**"]
 
 [[acceptance]]
@@ -21,3 +22,5 @@ bound = false
 +++
 
 notes/research/lint-catalogue-2026-10-08.md row W05 (4.2 N23); notes/research/creators-web-2026-10-08.md WADV045, WADV058 (Sutton, O'Hara, Pickering, de Vries, W3C) and 5.3 (hullbreach applies).
+
+no-story: internal engineering task in crunk-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
