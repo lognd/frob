@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-28T18:51:56Z"
+digest = "71f91486e79a117b77ba569970f785003d0532ac0fd8797b918ac67693359eb8"
+exit_code = 0
+head = "c5f5e135692b595948f58ff9dae204ffcec6203d"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 313918bb-cd5d-4f45-aa7a-0441293e9b10 with nextest profile: default
+    Starting 1 test across 490 binaries (5689 tests skipped)
+        PASS [   0.006s] grimble-model::may_reason grant_argument_of_the_wrong_type_for_its_atom_is_an_mdl008_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 5689 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "grant_argument_of_the_wrong_type"
+size = 642
+status = "measured"
+test_count = 1
+tests_digest = "e37fd34bb0c9f210676134cc097d183b0e0b01ff5aeeaf394aa5d00cd10f2ee1"
+at = "2026-10-28T18:51:56Z"
+actor = "lognd"
+rev = 1
