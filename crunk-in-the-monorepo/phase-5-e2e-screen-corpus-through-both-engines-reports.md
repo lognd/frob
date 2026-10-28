@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:24Z"
-updated = "2026-10-27T00:42:30Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:56:04Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/tests/e2e_render_tiers.rs, crates/crunk/tests/fixtures/render_corpus/**"]
 
 [[links]]
@@ -30,3 +30,5 @@ bound = false
 +++
 
 Epic acceptance for phase 5. Test-only.
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
