@@ -1,0 +1,14 @@
+kind = "create"
+title = "org C5: merge grimble-verdict and gob-product (optional)"
+type = "task"
+category = "todo"
+priority = "low"
+points = 5
+parent = "01M61MHM8ER57BA9VVKXDTE2G7"
+idempotency_key = "org-C5"
+scope = ["crates/grimble-verdict/**"]
+acceptance = ["decision recorded; if merged, final moved-to release prepared for orphaned crate"]
+body = "Optional; owner decision on crates.io orphans. Org audit section 4.7 (scratchpad org-audit.md). Deferred and sequenced, not dropped."
+at = "2026-10-28T21:16:39Z"
+actor = "lognd"
+rev = 1
