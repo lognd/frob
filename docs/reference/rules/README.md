@@ -32,6 +32,27 @@
 |---|---|---|---|---|---|---|
 | [CFG001](CFG001.md) | missing-materialized-knob | error | deterministic | P- | false | A materialized config knob is missing from the product config file. |
 
+## CI
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [CI001](CI001.md) | pinned-ref | error | manual | P+ | true | An external `uses:` that is not pinned to a full commit SHA. |
+| [CI002](CI002.md) | ci-permissions-missing | error | manual | P- | true | A workflow without top-level permissions where a job sets none. |
+| [CI003](CI003.md) | ci-permissions-write-all | error | manual | P+ | true | Top-level permissions that grant write to every job. |
+| [CI004](CI004.md) | ci-concurrency-missing | error | manual | P- | true | A push or pull request workflow with no concurrency group. |
+| [CI005](CI005.md) | ci-timeout-missing | error | manual | P- | true | A job with no timeout-minutes, or one above the configured limit. |
+| [CI006](CI006.md) | no-prt-head-checkout | error | manual | P+ | true | A privileged trigger that checks out the pull request head. |
+| [CI007](CI007.md) | no-event-interpolation-in-run | error | manual | P+ | true | An attacker-influenced expression spliced into a `run:` script. |
+| [CI008](CI008.md) | ci-publish-untagged | error | manual | P+ | true | A registry publish on a trigger that is not limited to release tags. |
+| [CI009](CI009.md) | ci-publish-token | error | manual | P+ | true | A long-lived token used to publish where trusted publishing exists. |
+| [CI010](CI010.md) | checkout-no-persist | error | manual | P+ | true | `actions/checkout` that leaves credentials in the workspace. |
+| [CI011](CI011.md) | ci-pr-target-permissions | error | manual | P- | true | A pull_request_target workflow without explicit read-only permissions. |
+| [CI012](CI012.md) | ci-config-consistency | error | manual | P0 | true | CI configuration that disagrees with the repository manifests and ownership files. |
+| [CI013](CI013.md) | no-secrets-inherit | error | manual | P+ | true | A call to an external reusable workflow that passes every secret. |
+| [CI014](CI014.md) | gha-syntax-and-schema | error | manual | P+ | true | A workflow that breaks the GitHub Actions syntax. |
+| [CI015](CI015.md) | action-currency | error | manual | P+ | true | An external action from an archived repository or on an end-of-life Node runtime. |
+| [CI016](CI016.md) | trust-from-protected-ref | error | manual | P+ | true | A privileged workflow that runs frob, grimble or crunk with trust not read from a protected ref. |
+
 ## CLAIM
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
@@ -118,6 +139,15 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [DEAD001](DEAD001.md) | arch-dead-unit | error | manual | P- | true | A private function or method that nothing references. |
+
+## DK
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [DK001](DK001.md) | dk-root-user | error | manual | P- | true | A final image stage that runs as root. |
+| [DK002](DK002.md) | dk-digest-unpinned | error | manual | P+ | true | A base image not pinned by digest (opt-in with require_digest). |
+| [DK003](DK003.md) | dk-floating-tag | error | manual | P+ | true | A base image with no tag or the latest tag. |
+| [DK004](DK004.md) | dk-pipe-to-shell | error | manual | P+ | true | A download piped straight into a shell. |
 
 ## DOC
 
@@ -281,6 +311,19 @@
 | [ORG003](ORG003.md) | component-prefix | error | manual | P+ | true | Classes in `components/<name>.css` carry the component name. Each block is one source file in a |
 | [ORG004](ORG004.md) | custom-property-outside-tokens | error | manual | P+ | true | Custom properties are defined in the generated tokens file only. Each block is one source file in a |
 | [ORG005](ORG005.md) | ungoverned-stylesheet | error | manual | P+ | true | Every stylesheet of the project is under `css_root`. Each block is one source file in a project whose |
+
+## PACK
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [PACK001](PACK001.md) | pack-lock-mismatch | error | manual | P0 | false | An enabled pack differs from its lock entry. |
+| [PACK002](PACK002.md) | pack-unknown-atom | error | manual | P+ | false | A pack names a capability atom the registry does not know. |
+| [PACK003](PACK003.md) | pack-detector-unavailable | error | manual | P0 | false | A pack detector is unavailable, so its detections are skipped. |
+| [PACK004](PACK004.md) | pack-duplicate | error | manual | P+ | false | A pack declares the same item more than once. |
+| [PACK005](PACK005.md) | pack-malformed | error | manual | P+ | false | A pack file is malformed. |
+| [PACK006](PACK006.md) | pack-unavailable | error | manual | P+ | false | An enabled pack could not be loaded. |
+| [PACK007](PACK007.md) | pack-unknown-infer-rule | error | manual | P+ | false | A pack names an inference rule that does not exist. |
+| [PACK008](PACK008.md) | pack-redundant-override | error | manual | P0 | false | An override restates what the pack already says. |
 
 ## PAIR
 

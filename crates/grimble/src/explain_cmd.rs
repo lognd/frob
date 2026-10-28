@@ -14,6 +14,9 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "MDL003", "SYS013", "MDL009", "SYS011", "PATH003", "MDL021", "SYS002", "SYS010", "SYS003",
     "SYS004", "SYS005", "TIME001", "TIME002", "PAIR001", "UNITY201", "UNITY202", "UNITY301",
     "UNITY302", "COH002", "COH003", "DUP001", "ERR001", "ERR002", "ERR003", "RES001", "VIS001",
+    "CI001", "CI002", "CI003", "CI004", "CI005", "CI006", "CI007", "CI008", "CI009", "CI010",
+    "CI011", "CI012", "CI013", "CI014", "CI015", "CI016", "DK001", "DK002", "DK003", "DK004",
+    "PACK001", "PACK002", "PACK003", "PACK004", "PACK005", "PACK006", "PACK007", "PACK008",
 ];
 
 /// Print the full page of one rule offline; an unknown id exits 2 with the closest ids.
@@ -49,6 +52,17 @@ impl Command for Explain {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:tests crates/grimble/src/explain_cmd.rs::PAGES
+    #[test]
+    fn explain_resolves_ci_dk_and_pack_rules_through_the_registry() {
+        for id in ["CI001", "DK001", "PACK001"] {
+            assert!(
+                PAGES.iter().any(|(page, _)| *page == id),
+                "{id} must have an embedded page"
+            );
+        }
+    }
 
     // frob:tests crates/grimble/src/explain_cmd.rs::PAGES
     #[test]

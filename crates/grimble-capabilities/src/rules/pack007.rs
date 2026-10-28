@@ -1,16 +1,16 @@
-//! PACK002: A pack references a capability atom that is not in the atom registry.
+//! PACK007: A pack references an inference rule that does not exist.
 
 // frob:ticket 01M3ZX7K3N8AWVBTZ90E0F1YSP
 
 use gob_rules::{Out, RepoRule, rule};
 
-use super::host::PackHost;
+use crate::pack_rules::PackHost;
 
-/// A pack references a capability atom that is not in the atom registry.
+/// A pack references an inference rule that does not exist.
 #[derive(Debug, Clone, Copy, Default)]
 #[rule(
-    id = "PACK002",
-    slug = "pack-unknown-atom",
+    id = "PACK007",
+    slug = "pack-unknown-infer-rule",
     severity = Error,
     polarity = Pplus,
     must_measure = false,
@@ -21,9 +21,9 @@ use super::host::PackHost;
     version = 1,
     since = "0.532.0",
 )]
-pub struct Pack002;
+pub struct Pack007;
 
-impl<P: ?Sized + PackHost> RepoRule<P> for Pack002 {
+impl<P: ?Sized + PackHost> RepoRule<P> for Pack007 {
     /// The verdict is computed by the pack pass (`evaluate`); see the module doc.
     fn check(&self, _host: &P, _out: &mut Out<'_, Self>) {}
 }

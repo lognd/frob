@@ -1,16 +1,16 @@
-//! PACK007: A pack references an inference rule that does not exist.
+//! PACK006: An enabled pack could not be loaded; Unresolved, and required when the pack is required.
 
 // frob:ticket 01M3ZX7K3N8AWVBTZ90E0F1YSP
 
 use gob_rules::{Out, RepoRule, rule};
 
-use super::host::PackHost;
+use crate::pack_rules::PackHost;
 
-/// A pack references an inference rule that does not exist.
+/// An enabled pack could not be loaded; Unresolved, and required when the pack is required.
 #[derive(Debug, Clone, Copy, Default)]
 #[rule(
-    id = "PACK007",
-    slug = "pack-unknown-infer-rule",
+    id = "PACK006",
+    slug = "pack-unavailable",
     severity = Error,
     polarity = Pplus,
     must_measure = false,
@@ -21,9 +21,9 @@ use super::host::PackHost;
     version = 1,
     since = "0.532.0",
 )]
-pub struct Pack007;
+pub struct Pack006;
 
-impl<P: ?Sized + PackHost> RepoRule<P> for Pack007 {
+impl<P: ?Sized + PackHost> RepoRule<P> for Pack006 {
     /// The verdict is computed by the pack pass (`evaluate`); see the module doc.
     fn check(&self, _host: &P, _out: &mut Out<'_, Self>) {}
 }

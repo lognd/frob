@@ -4,7 +4,7 @@
 
 use gob_rules::{Out, RepoRule, rule};
 
-use super::host::PackHost;
+use crate::pack_rules::PackHost;
 
 /// An enabled pack differs from its lock entry (changed, added, removed item or lock-missing).
 #[derive(Debug, Clone, Copy, Default)]

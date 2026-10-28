@@ -4,7 +4,7 @@
 
 use gob_rules::{Out, RepoRule, rule};
 
-use super::host::PackHost;
+use crate::pack_rules::PackHost;
 
 /// A pack's detector is unavailable, so its detections are skipped.
 #[derive(Debug, Clone, Copy, Default)]
