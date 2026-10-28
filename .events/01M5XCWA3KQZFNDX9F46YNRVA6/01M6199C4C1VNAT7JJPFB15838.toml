@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Epic acceptance for phase 3. Test-only over crunk new, edit, the COMP/STATE/CONTENT rules; fix any gap found by filing a bug, not by widening scope."
+new = """
+Epic acceptance for phase 3. Test-only over crunk new, edit, the COMP/STATE/CONTENT rules; fix any gap found by filing a bug, not by widening scope.
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:45Z"
+actor = "lognd"
+rev = 1
