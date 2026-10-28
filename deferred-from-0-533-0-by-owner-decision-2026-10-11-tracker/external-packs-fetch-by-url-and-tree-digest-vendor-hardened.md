@@ -8,9 +8,9 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:25Z"
-updated = "2026-10-03T03:34:25Z"
+updated = "2026-10-28T12:55:51Z"
 idempotency_key = "m2-packs-external"
-labels = ["milestone:2", "area:packs"]
+labels = ["milestone:2", "area:packs", "no-story"]
 scope = ["crates/gob-packs/src/external/**"]
 
 [[links]]
@@ -29,3 +29,5 @@ bound = false
 Implements plugins.md section 2; security.md section 2.8.
 
 HTTPS only, redirects only within the declared host, tree digest verified before extraction, absolute, .. , symlink, hardlink and device entries refused, size and file-count caps; vendored then treated as a repository pack, shown as ext:HOST/NAME.
+
+no-story: internal engineering task in gob-packs; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
