@@ -2,7 +2,8 @@
 id = "01M61QW501Q46SJ8QAY9X5NXA3"
 title = "Fix 7 tests failing on clean experimental: layering, in_vocab, lease_widen waits, init/doctor/config_sync"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
