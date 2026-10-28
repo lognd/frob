@@ -2,7 +2,8 @@
 id = "01M5XMF3NH766X1FJ7M339DX5F"
 title = "Burn down PM007 and PM003/PM005/PM008 ledger-hygiene warnings"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
