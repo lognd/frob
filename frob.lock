@@ -688,6 +688,17 @@ acked_at = "2026-10-27T03:35:24.833957896Z"
 reason = "attest PATH001 fixture accepts"
 
 [[symbol]]
+identity = "crates/gob-symbols/benches/graph.rs::bench_build"
+symref = "crates/gob-symbols/benches/graph.rs::bench_build"
+sig = "70491f7b8d491b80c214e57e6055fd0738f7219cff25046ae693c028edb99ad6"
+body = "2708f83d15f5366199dd8af34aaa01d31b052596c9c8e3e9227fbe6ef678e2c7"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "f1977b4de996355bd813b2d380b2cf0815d0c6844f3d88cbd4222fe58eb87d89"
+contract = "87f1d0065b4235ad69fd22a6437a3fd30c2c1208cc320505f6ffc5affc8aaa70"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-28T14:28:37.915184308Z"
+
+[[symbol]]
 identity = "crates/gob-symbols/src/yaml.rs::tests.broken_yaml_falls_back_to_the_line_scan"
 symref = "crates/gob-symbols/src/yaml.rs::tests.broken_yaml_falls_back_to_the_line_scan"
 sig = "29ec57e2c1ca715b99014d8fe3f29b0d71f557d5c3f1c26b00727925e43ebd58"

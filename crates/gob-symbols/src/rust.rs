@@ -371,7 +371,7 @@ fn first_named(n: Node<'_>) -> Option<Node<'_>> {
         .find(|c| c.is_named() && !matches!(c.kind(), "lifetime" | "lifetime_parameter"))
 }
 
-struct Fold<'a> {
+struct RustFold<'a> {
     cx: Cx<'a>,
     path: &'a str,
     module: Vec<String>,
@@ -508,7 +508,7 @@ fn fold_tree_inline(
     input: &FileInput<'_>,
 ) -> Result<Folded, FoldError> {
     let (_, module) = crate_and_module(input.path);
-    let mut f = Fold {
+    let mut f = RustFold {
         cx: Cx::new(input.path, "rust", text),
         path: input.path,
         module,
@@ -536,7 +536,7 @@ fn fold_tree_inline(
     let kids = f.container(root, &Scope::default(), true)?;
     let root_id =
         f.cx.add(file_root_spec(&f.cx, input.size as usize), &kids)?;
-    let Fold {
+    let RustFold {
         cx,
         ord_nodes,
         sites,
@@ -685,7 +685,7 @@ fn token_kind(kind: &str) -> bool {
         )
 }
 
-impl<'a> Fold<'a> {
+impl<'a> RustFold<'a> {
     fn t(&self, n: Node<'_>) -> &'a str {
         text_of(self.cx.text, n)
     }
@@ -1984,7 +1984,7 @@ impl<'a> Fold<'a> {
     /// keeps its byte offset and line in the real file. Names bound inside the arguments (closure
     /// parameters, `let`, match arms) shadow outer typed variables for the whole invocation.
     fn scan_exact_macro(&mut self, n: Node<'_>, caller: usize) -> bool {
-        self.with_exact_macro_args(n, |s, root, name| {
+        self.with_exact_macro_args(n, |s: &mut RustFold<'_>, root, name| {
             let saved_env = s.env.borrow().len();
             s.macro_walk(root, caller, name);
             s.env.borrow_mut().truncate(saved_env);
@@ -3219,7 +3219,7 @@ impl<'a> Fold<'a> {
     fn alias_keeps_first(&self, node: Node<'_>) -> bool {
         let param = node
             .child_by_field_name("type_parameters")
-            .and_then(first_named)
+            .and_then(|tp| first_named(tp))
             .and_then(|p| p.child_by_field_name("name").or(Some(p)))
             .map(|p| self.t(p).to_owned());
         let Some(rhs) = node.child_by_field_name("type") else {
@@ -3231,7 +3231,7 @@ impl<'a> Fold<'a> {
             .map(|h| self.t(h).rsplit("::").next().unwrap_or("").to_owned());
         let arg = rhs
             .child_by_field_name("type_arguments")
-            .and_then(first_named)
+            .and_then(|ta| first_named(ta))
             .map(|a| self.t(a).to_owned());
         matches!(head.as_deref(), Some("Result" | "Option")) && param.is_some() && param == arg
     }

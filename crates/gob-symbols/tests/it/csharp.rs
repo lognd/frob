@@ -211,7 +211,7 @@ fn a_change_in_any_part_changes_the_merged_digest() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.attributes
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.attributes
 fn attributes_keep_names_arguments_and_targets() {
     let fs = files();
     let attrs = |path: &str, tail: &str| {
@@ -268,7 +268,7 @@ fn attributes_keep_names_arguments_and_targets() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.make_unit
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.make_unit
 fn an_attribute_change_changes_only_the_attr_and_sig_digests() {
     let a = extract("A.cs", "class C { [Obsolete] void M() { } }");
     let b = extract("A.cs", "class C { [Obsolete(\"x\")] void M() { } }");
@@ -279,7 +279,7 @@ fn an_attribute_change_changes_only_the_attr_and_sig_digests() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.conditional
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.conditional
 fn both_branches_of_an_if_yield_units_and_carry_their_condition() {
     let fs = files();
     let f = file(&fs, EDITOR);
@@ -307,7 +307,7 @@ fn both_branches_of_an_if_yield_units_and_carry_their_condition() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.conditional
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.conditional
 fn elif_and_else_branches_negate_the_earlier_conditions() {
     let f = extract(
         "A.cs",
@@ -337,7 +337,7 @@ fn elif_and_else_branches_negate_the_earlier_conditions() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.tr
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.tr
 fn a_conditional_inside_a_member_body_is_unresolved_for_that_member_only() {
     let fs = files();
     let f = file(&fs, GAPS);
@@ -357,7 +357,7 @@ fn a_conditional_inside_a_member_body_is_unresolved_for_that_member_only() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.members
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.members
 fn top_level_statements_are_unmodelled_and_the_gate_reads_partial() {
     let g = graph();
     let info = g.file_info(GAPS).expect("file info");
@@ -372,7 +372,7 @@ fn top_level_statements_are_unmodelled_and_the_gate_reads_partial() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.hole
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.hole
 fn a_syntax_error_is_a_hole_never_a_clean_file() {
     let f = extract("A.cs", "class C { void M( { } }\nclass D { }\n");
     assert!(matches!(f.parse_status, ParseStatus::Partial { .. }));
@@ -394,7 +394,7 @@ fn comments_and_layout_never_change_digests() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.namespace_chain
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.namespace_chain
 fn block_namespaces_nest_and_siblings_share_no_parent() {
     let f = extract(
         "A.cs",
@@ -422,7 +422,7 @@ fn block_namespaces_nest_and_siblings_share_no_parent() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.type_unit
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.type_unit
 fn base_types_are_facts_on_the_type_unit() {
     let f = extract(
         "A.cs",
@@ -467,7 +467,7 @@ fn cs_files_are_claimed_by_the_csharp_adapter() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::Fold.collapse
+// frob:tests crates/gob-symbols/src/csharp.rs::CsFold.collapse
 fn deep_nesting_collapses_and_loses_no_unit_silently() {
     let depth = 400;
     let mut src = String::from("class C { void M() { ");

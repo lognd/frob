@@ -1211,7 +1211,9 @@ impl SymbolGraph {
             }
             Receiver::Bound(_) | Receiver::Tuple(_) | Receiver::Expr => return None,
         };
-        Some(idx.canonical_ext(ty.dyn_normalized().with_split_path()))
+        let norm: Ty = ty.dyn_normalized();
+        let split: Ty = norm.with_split_path();
+        Some(idx.canonical_ext(split))
     }
 
     /// The declared type of field `field` of the enum variant named by the pattern `path` (`Kind::A`, `Self::A`).
@@ -1229,7 +1231,7 @@ impl SymbolGraph {
             [only] if only == "Self" => Ty::plain(self.enclosing_impl_type(caller)?, file),
             _ => Ty::plain(owner.join("::"), file),
         };
-        let b = enum_ty.with_split_path();
+        let b: Ty = enum_ty.with_split_path();
         if idx.is_alias(&b.file, &b.head) {
             return None;
         }
