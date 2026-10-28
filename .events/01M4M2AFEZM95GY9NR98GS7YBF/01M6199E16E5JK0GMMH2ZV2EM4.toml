@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working ~ZN62TQN: crunk already binds crunk:waive via crunk_rules::waiver (D120), so the user-visible M4 symptom is fixed. Remaining: make resolve_exceptions a provided method in gob-check that binds directives, so crunk and grimble stop duplicating apply_exceptions wiring."
+new = """
+found while working ~ZN62TQN: crunk already binds crunk:waive via crunk_rules::waiver (D120), so the user-visible M4 symptom is fixed. Remaining: make resolve_exceptions a provided method in gob-check that binds directives, so crunk and grimble stop duplicating apply_exceptions wiring.
+
+no-story: internal engineering task in gob-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:46Z"
+actor = "lognd"
+rev = 1
