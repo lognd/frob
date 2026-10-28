@@ -8,7 +8,8 @@ points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:10Z"
-updated = "2026-10-28T12:56:50Z"
+updated = "2026-10-28T12:57:36Z"
+labels = ["no-story"]
 scope = ["crates/gob-dev/**", "docs/reference/**"]
 
 [[links]]
@@ -25,3 +26,5 @@ bound = false
 +++
 
 M10: rule pages, the languages page and the per-rule matrix are generated kinds with freshness tests, reading each rule's .md. Design: docs/design/rule-authoring.md (D107); detail and the failure table: notes/research/rule-authoring.md section 4.
+
+no-story: internal engineering task in gob-dev; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
