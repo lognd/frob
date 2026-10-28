@@ -25,6 +25,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 VERSION_PACKAGE = "frob-cli"
 log = logging.getLogger("render")
+PRE_TAGS = {"alpha": "a", "beta": "b", "rc": "rc"}
 
 
 def products() -> list[dict]:
@@ -39,7 +40,9 @@ def pep440(semver: str) -> str:
     if not m:
         raise SystemExit(f"render: cannot express version {semver!r} as PEP 440")
     base, pre, n = m.groups()
-    return base if pre is None else f"{base}{ {'alpha': 'a', 'beta': 'b', 'rc': 'rc'}[pre] }{n}"
+    if pre is None:
+        return base
+    return base + PRE_TAGS[pre] + n
 
 
 def lockstep_version() -> str:
@@ -68,7 +71,8 @@ def render(name: str, out: Path) -> None:
     """Write the maturin project of product `name` into `out`."""
     table = next((p for p in products() if p["name"] == name), None)
     if table is None:
-        raise SystemExit(f"render: unknown product {name!r}; known: {[p['name'] for p in products()]}")
+        known = [p["name"] for p in products()]
+        raise SystemExit(f"render: unknown product {name!r}; known: {known}")
     version = lockstep_version()
     out.mkdir(parents=True, exist_ok=True)
     manifest = Path(ROOT / table["manifest"])
@@ -94,16 +98,15 @@ def render(name: str, out: Path) -> None:
 def main(argv: list[str]) -> int:
     """Dispatch the three subcommands."""
     logging.basicConfig(level=logging.INFO, format="render: %(message)s", stream=sys.stderr)
-    match argv:
-        case ["list"]:
-            print("\n".join(p["name"] for p in products()))
-        case ["version"]:
-            print(lockstep_version())
-        case ["render", name, out]:
-            render(name, Path(out).resolve())
-        case _:
-            print(__doc__, file=sys.stderr)
-            return 2
+    if argv == ["list"]:
+        print("\n".join(p["name"] for p in products()))
+    elif argv == ["version"]:
+        print(lockstep_version())
+    elif len(argv) == 3 and argv[0] == "render":
+        render(argv[1], Path(argv[2]).resolve())
+    else:
+        print(__doc__, file=sys.stderr)
+        return 2
     return 0
 
 
