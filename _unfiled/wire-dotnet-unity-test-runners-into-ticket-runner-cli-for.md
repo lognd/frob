@@ -7,10 +7,12 @@ priority = "low"
 points = 2
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-10-27T02:57:53Z"
+updated = "2026-10-28T12:56:01Z"
 aliases = ["T-5487"]
-labels = ["v1-cluster:C4a", "triage:accepted"]
+labels = ["v1-cluster:C4a", "triage:accepted", "no-story"]
 scope = ["src/frob/app/ticket_runner/**"]
 +++
 
 T-4516's own scope note (WIRE001 waiver on run_dotnet_tests/run_unity_batchmode) said this routing was T-4516's job, but T-4516 closed as a story rollup without actually wiring the CLI: no src/frob/app/** caller of run_dotnet_tests/run_unity_batchmode exists. Route frob's ticket-runner CLI to call these for csharp/Unity node ids (blocked on T-4518's project-model detection, same as the original note). Found while working T-5470.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
