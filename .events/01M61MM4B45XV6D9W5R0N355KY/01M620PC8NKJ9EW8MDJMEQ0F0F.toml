@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "yield gob-check to 9X5NXA3 to break lease deadlock"
+at = "2026-10-28T19:44:48Z"
+actor = "lognd"
+rev = 1
