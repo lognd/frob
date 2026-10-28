@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = 'Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. DetectorKind (registry.rs:15-30) lists Callee, Import, Attribute, Macro, Pattern, Lexical, NotApplicable, but observe() only implements callee vocabularies and PackDetectorKind (grimble-model/src/model.rs:30-37) is only Callee/None/Impossible. So unsafe blocks, extern "C" / #[no_mangle] FFI, `import ctypes`, eval/exec/compile, pickle.loads, macros such as println!, and argument-shaped uses (subprocess with shell=True) cannot be atoms. gob-pattern already has a structural matcher and grammar-level patterns; let a pack detector row be a GRL pattern or a U query (packs.md 2 kind = query) and an import row.'
+new = """
+Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. DetectorKind (registry.rs:15-30) lists Callee, Import, Attribute, Macro, Pattern, Lexical, NotApplicable, but observe() only implements callee vocabularies and PackDetectorKind (grimble-model/src/model.rs:30-37) is only Callee/None/Impossible. So unsafe blocks, extern "C" / #[no_mangle] FFI, `import ctypes`, eval/exec/compile, pickle.loads, macros such as println!, and argument-shaped uses (subprocess with shell=True) cannot be atoms. gob-pattern already has a structural matcher and grammar-level patterns; let a pack detector row be a GRL pattern or a U query (packs.md 2 kind = query) and an import row.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:58Z"
+actor = "lognd"
+rev = 1
