@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:04Z"
+updated = "2026-10-28T12:57:38Z"
 aliases = ["T-6478"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_edge.py (new)", "tests/fixtures/sysdesign/sysdesign101/**"]
 
 [[links]]
@@ -54,3 +54,5 @@ node-level `owner`/attr conventions) node cross-referenced against T-SYS-B-TERRA
 `aws_route53_record`/`cloudflare_record` set for the same hostname; flags when no health-check
 reference and no secondary/failover record exists. Positive-control fixture: tests/fixtures/
 sysdesign/sysdesign101/tier1-single-a-record/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
