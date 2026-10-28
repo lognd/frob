@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:03Z"
-updated = "2026-10-27T00:43:03Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:59Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-spec/src/game_files.rs, crates/crunk-rules/src/gx_files.rs, crates/crunk-rules/tests/gx_files.rs"]
 
 [[acceptance]]
@@ -18,3 +18,5 @@ bound = false
 +++
 
 Design crunk.md section 8 game row. Extends the existing [game] table work in KDEW049; do not duplicate GX015-021.
+
+no-story: internal engineering task in crunk-spec; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
