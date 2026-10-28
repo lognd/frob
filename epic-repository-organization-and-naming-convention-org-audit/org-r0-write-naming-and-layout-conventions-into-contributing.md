@@ -2,7 +2,8 @@
 id = "01M61MM45G1BV990DMB957JQ92"
 title = "org R0: write naming and layout conventions into CONTRIBUTING"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
