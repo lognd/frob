@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-28T22:56:12Z"
+updated = "2026-10-28T23:01:09Z"
 idempotency_key = "b755-doc006"
-scope = ["crates/frob-doc/**"]
+scope = ["crates/frob-doc/**", "crates/frob-obligations/**"]
 
 [[acceptance]]
 text = "frob check reports zero DOC006 findings"
