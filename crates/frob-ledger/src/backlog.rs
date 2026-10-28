@@ -237,6 +237,8 @@ mod tests {
             created,
             updated: created,
             blocked,
+            crates: Vec::new(),
+            products: Vec::new(),
         }
     }
 

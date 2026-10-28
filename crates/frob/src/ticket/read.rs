@@ -437,6 +437,7 @@ impl Command for List {
             parent,
             label: self.label.clone(),
             blocked: self.blocked.then_some(true),
+            ..ListFilter::default()
         };
         let tickets = ledger.list(&filter).map_err(cli_err)?;
         tracing::debug!(count = tickets.len(), "ticket list");
@@ -535,7 +536,7 @@ impl List {
     }
 }
 
-/// List tickets that can be started: todo, no open blocker, scope not leased; `--newcomer` keeps the good-first ones, smallest first, with start notes.
+/// List tickets that can be started: todo, no open blocker, scope not leased; `--newcomer` keeps the good-first ones, smallest first, with start notes; `--crate` and `--product` keep tickets whose scope touches that crate or product.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
     verb = "ticket doable",
@@ -547,6 +548,8 @@ impl List {
 pub struct Doable {
     limit: Option<usize>,
     newcomer: bool,
+    krate: Option<String>,
+    product: Option<String>,
 }
 
 /// The flags of `ticket doable`, declared once.
@@ -560,6 +563,18 @@ struct DoableArgs {
         help = "Only good-first tickets, smallest first, with their start notes"
     )]
     newcomer: bool,
+    #[arg(
+        long = "crate",
+        value_name = "TEXT",
+        help = "Only tickets whose scope touches this crate"
+    )]
+    krate: Option<String>,
+    #[arg(
+        long,
+        value_name = "TEXT",
+        help = "Only tickets whose scope touches a crate of this product"
+    )]
+    product: Option<String>,
 }
 
 impl Command for Doable {
@@ -581,6 +596,8 @@ impl Command for Doable {
         Ok(Self {
             limit,
             newcomer: a.newcomer,
+            krate: a.krate,
+            product: a.product,
         })
     }
 
@@ -588,7 +605,9 @@ impl Command for Doable {
         let ledger = open(ctx)?;
         let (leases, warning) = lease_check(ctx);
         let freshness = freshness_notice(ctx);
-        let tickets = ledger.doable(&*leases).map_err(cli_err)?;
+        let tickets = ledger
+            .doable_in(&*leases, self.krate.as_deref(), self.product.as_deref())
+            .map_err(cli_err)?;
         let mut data = if self.newcomer {
             newcomer_rows(&ledger, tickets)?
         } else if crate::profile::Profile::for_cwd(&ctx.cwd) == crate::profile::Profile::Newcomer {
