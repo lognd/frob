@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["All tests failing in CI run 40729676574 on ubuntu pass: layering, in_vocab, equivalence fixture_b, crunk check_json sibling document, config_sync, doctor_piped, init_twice, lease_widen waits", "The windows nextest job failures from the same run are diagnosed and fixed or filed"]
+moved = []
+at = "2026-10-28T17:55:25Z"
+actor = "lognd"
+rev = 1
