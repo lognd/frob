@@ -8,9 +8,9 @@ points = 3
 parent = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:57Z"
+updated = "2026-10-28T12:57:32Z"
 aliases = ["T-6416"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["strata-core/src/parse/grammar_infra.rs", "src/frob/strata/_models.py", "docs/design/grmb-spec.md"]
 
 [[links]]
@@ -58,3 +58,5 @@ file). `partitions` is a typed field (per-partition throughput arithmetic feeds 
 REL-family rule); `stampede_guard` and queue `keyed_by` desugar to attrs. Positive-control
 <!-- frob:waive DOC006 reason="future-facing: created by this ticket or its story scaffold" -->
 fixture: tests/fixtures/sysdesign/infra-cache-queue/high-fanout-no-stampede-guard/design.strata.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
