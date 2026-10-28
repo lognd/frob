@@ -2,13 +2,13 @@
 id = "01M61MM48BS9R91X3TS5AE5GYM"
 title = "org R1: register grimble_ci and grimble_capabilities in product_rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:51Z"
-updated = "2026-10-28T20:36:19Z"
+updated = "2026-10-28T20:36:20Z"
 scope = ["crates/grimble-*/**", "docs/reference/rules/**", "crates/gob-mdtest/**"]
 
 [[acceptance]]
