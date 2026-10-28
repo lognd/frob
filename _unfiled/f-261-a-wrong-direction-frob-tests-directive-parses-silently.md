@@ -8,9 +8,9 @@ priority = "low"
 points = 3
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:45Z"
+updated = "2026-10-28T12:55:55Z"
 aliases = ["T-4059"]
-labels = ["v1-cluster:C4a", "triage:accepted"]
+labels = ["v1-cluster:C4a", "triage:accepted", "no-story"]
 scope = ["src/frob/graph/dsl.py"]
 +++
 
@@ -122,3 +122,5 @@ placement rules, or whether each is embedded in the scanner that enforces it.
 ADDITIONAL FIXTURE: a frob:ticket edge separated from its symbol by a prose
 comment is either accepted, or reported AT PARSE TIME with a message naming the
 adjacency rule -- never silently uncounted until a pre-land sweep.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
