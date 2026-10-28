@@ -1,0 +1,15 @@
+kind = "field"
+field = "body"
+old = """
+Implements plugins.md section 6.6 (B3).
+
+Target within 1.5x."""
+new = """
+Implements plugins.md section 6.6 (B3).
+
+Target within 1.5x.
+
+no-story: internal engineering task in gob-wasm; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:06Z"
+actor = "lognd"
+rev = 1
