@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/src/**", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/src", "crates/crunk-rules/tests", "crates/frob-ack/Cargo.toml", "crates/frob-ack/src", "crates/frob-ack/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml"]
+new = ["crates/gob-rules/src/**", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/src", "crates/crunk-rules/tests", "crates/frob-ack/Cargo.toml", "crates/frob-ack/src", "crates/frob-ack/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src"]
+at = "2026-10-28T12:54:56Z"
+actor = "lognd"
+rev = 1
