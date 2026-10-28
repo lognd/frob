@@ -1,0 +1,10 @@
+kind = "create"
+title = "DEAD001 'line' reached only through a May edge in ticket/read.rs"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/src/ticket/read.rs"]
+body = "found while working ~5E5N62X; pre-existing (blame 2026-10-21), not in that diff"
+at = "2026-10-28T22:38:26Z"
+actor = "lognd"
+rev = 1
