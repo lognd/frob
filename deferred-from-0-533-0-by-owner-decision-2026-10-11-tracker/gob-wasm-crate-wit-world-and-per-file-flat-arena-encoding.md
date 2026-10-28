@@ -8,9 +8,9 @@ points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:31Z"
-updated = "2026-10-03T03:34:31Z"
+updated = "2026-10-28T12:55:44Z"
 idempotency_key = "m2-wasm-wit"
-labels = ["milestone:2", "area:packs"]
+labels = ["milestone:2", "area:packs", "no-story"]
 scope = ["crates/gob-wasm/**"]
 
 [[links]]
@@ -33,3 +33,5 @@ bound = false
 Implements plugins.md sections 3 and 6.3.
 
 Feature-gated crate. One flat arena per file (U term, scope graph, attributes, location table) so the guest is called once per file, never per node.
+
+no-story: internal engineering task in gob-wasm; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
