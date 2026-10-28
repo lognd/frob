@@ -7,9 +7,11 @@ priority = "low"
 points = 5
 reporter = "lognd"
 created = "2026-10-08T13:40:33Z"
-updated = "2026-10-28T12:56:51Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:57:36Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/doctor.rs,crates/crunk-spec/src/table.rs,crates/crunk-check/src/**"]
 +++
 
 Found while working ~1WS0DQ4 and ~ZZCCYHY: Runtime::doctor (presence table) and ingest_tailwind(Engine) exist but nothing calls them. crunk doctor should print the table; [tailwind] engine = static and --static should select Engine::Static; crunk check should construct the Runtime (state dir, cache, notice sink to stderr) and pass it to ingest. Reason code unresolved-by-tailwind maps to UnresolvedReason::Opaque for the TW rules (~BWK6MXR).
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
