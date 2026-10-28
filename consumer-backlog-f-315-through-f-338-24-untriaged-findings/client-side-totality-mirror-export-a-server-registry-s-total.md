@@ -8,9 +8,9 @@ points = 3
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:51Z"
+updated = "2026-10-28T12:55:57Z"
 aliases = ["T-4249"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/gates"]
 
 [[links]]
@@ -19,3 +19,5 @@ target = "01M1T07NZ8409YTCHE1KFNZ4W8"
 +++
 
 Consumer F-327/M-1,M-5 (T-4135 sub-epic, API contract audit), consolidated with F-362/M4-5 (T-4166 -- splitting a display-only error-code list from a needs-recovery axis is the client-side half of this same totality gap). A backend's _assert_total_coverage()-style check proves every registered error has a mapping -- a claim about the registry, not the response surface as seen by the client. Nothing enumerates the codes the backend can emit and requires the consumer to enumerate and handle/ignore each. Blocked by T-4072 (generated-types staleness + hand-written-interface ban): this needs the generated contract artifact T-4072 establishes to exist before a client-side totality test can be written against it. Not fixture-testable in frob's own tree: no client/server duo exists here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

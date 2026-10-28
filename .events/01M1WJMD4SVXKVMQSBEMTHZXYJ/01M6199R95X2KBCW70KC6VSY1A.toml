@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Consumer F-327/M-1,M-5 (T-4135 sub-epic, API contract audit), consolidated with F-362/M4-5 (T-4166 -- splitting a display-only error-code list from a needs-recovery axis is the client-side half of this same totality gap). A backend's _assert_total_coverage()-style check proves every registered error has a mapping -- a claim about the registry, not the response surface as seen by the client. Nothing enumerates the codes the backend can emit and requires the consumer to enumerate and handle/ignore each. Blocked by T-4072 (generated-types staleness + hand-written-interface ban): this needs the generated contract artifact T-4072 establishes to exist before a client-side totality test can be written against it. Not fixture-testable in frob's own tree: no client/server duo exists here."
+new = """
+Consumer F-327/M-1,M-5 (T-4135 sub-epic, API contract audit), consolidated with F-362/M4-5 (T-4166 -- splitting a display-only error-code list from a needs-recovery axis is the client-side half of this same totality gap). A backend's _assert_total_coverage()-style check proves every registered error has a mapping -- a claim about the registry, not the response surface as seen by the client. Nothing enumerates the codes the backend can emit and requires the consumer to enumerate and handle/ignore each. Blocked by T-4072 (generated-types staleness + hand-written-interface ban): this needs the generated contract artifact T-4072 establishes to exist before a client-side totality test can be written against it. Not fixture-testable in frob's own tree: no client/server duo exists here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:57Z"
+actor = "lognd"
+rev = 1
