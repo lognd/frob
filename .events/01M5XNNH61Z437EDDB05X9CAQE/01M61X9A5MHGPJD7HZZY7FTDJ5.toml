@@ -1,0 +1,245 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T18:28:52Z"
+digest = "4ec905e93e39d3077f24d1be27c2bcd3b2a5cce43b97a95305276720968016dc"
+exit_code = 0
+head = "c5f5e135692b595948f58ff9dae204ffcec6203d"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling zerocopy v0.8.59
+   Compiling ident_case v1.0.1
+   Compiling either v1.18.0
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling thiserror v2.0.21
+   Compiling tracing-attributes v0.1.31
+   Compiling tracing v0.1.44
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling zerocopy-derive v0.8.59
+   Compiling serde v1.0.229
+   Compiling ref-cast-impl v1.0.27
+   Compiling ref-cast v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling schemars_derive v1.2.2
+   Compiling schemars v1.2.2
+   Compiling darling_core v0.20.11
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling ahash v0.8.12
+   Compiling rayon v1.12.0
+   Compiling hashbrown v0.14.5
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling serde_core v1.0.229
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling indexmap v2.14.2
+   Compiling serde_json v1.0.151
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling tree-sitter v0.27.0
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gix-path v0.12.6
+   Compiling gix-features v0.49.1
+   Compiling cobs v0.3.0
+   Compiling postcard v1.1.3
+   Compiling gix-fs v0.22.1
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gix-command v0.10.1
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling gix-glob v0.27.1
+   Compiling sha1 v0.10.7
+   Compiling sha1-checked v0.10.0
+   Compiling gix-hash v0.26.2
+   Compiling gix-attributes v0.35.0
+   Compiling dashmap v6.2.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-object v0.64.1
+   Compiling gix-packetline v0.22.2
+   Compiling gix-config-value v0.19.1
+   Compiling gix-ignore v0.22.1
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-lock v24.0.0
+   Compiling gix-url v0.38.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-zlib v0.1.0
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-transport v0.59.2
+   Compiling gix-macros v0.1.6
+   Compiling gix-index v0.55.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-filter v0.34.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-discover v0.55.0
+   Compiling gix-dir v0.29.1
+   Compiling gix-config v0.60.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-revision v0.49.1
+   Compiling gix-shallow v0.13.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-merge v0.20.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-status v0.34.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix v0.87.1
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling pest_generator v2.9.2
+   Compiling pest_derive v2.9.2
+   Compiling insta v1.48.0
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.5
+   Compiling clap_derive v4.6.7
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling clap v4.6.7
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling bit-vec v0.8.0
+   Compiling bit-set v0.8.0
+   Compiling serde_yaml_ng v0.10.0
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling error_set_impl v0.9.2
+   Compiling error_set v0.9.2
+   Compiling ulid v1.2.1
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling quick-error v1.2.3
+   Compiling rusty-fork v0.3.1
+   Compiling rand_xorshift v0.4.0
+   Compiling unarray v0.1.4
+   Compiling proptest v1.11.0
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling half v2.7.1
+   Compiling ciborium-io v0.2.2
+   Compiling ciborium-ll v0.2.2
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling itertools v0.10.5
+   Compiling cast v0.3.0
+   Compiling criterion-plot v0.5.0
+   Compiling ciborium v0.2.2
+   Compiling tinytemplate v1.2.1
+   Compiling is-terminal v0.4.17
+   Compiling oorandom v11.1.5
+   Compiling anes v0.1.6
+   Compiling criterion v0.5.1
+   Compiling fluent-uri v0.4.1
+   Compiling strum_macros v0.28.0
+   Compiling jsonschema-value v0.58.5
+   Compiling referencing v0.58.5
+   Compiling strum v0.28.0
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling fancy-regex v0.19.2
+   Compiling email_address v0.2.9
+   Compiling jsonschema v0.58.5
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-serve v0.532.0 (<worktree>/crates/gob-serve)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling rustc_version v0.4.1
+   Compiling derive_more-impl v2.1.1
+   Compiling gungraun-macros v0.10.0
+   Compiling proc-macro-error-attr3 v3.1.1
+   Compiling gungraun-common v0.1.0
+   Compiling bincode-next v3.1.1
+   Compiling proc-macro-error3 v3.1.1
+   Compiling derive_more v2.1.1
+   Compiling rapidhash v4.5.1
+   Compiling either-or-both v0.3.1
+   Compiling gungraun v0.20.0
+   Compiling pastey v0.2.3
+   Compiling unty-next v0.1.2
+   Compiling gungraun-runner v0.20.0
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-present v0.532.0 (<worktree>/crates/frob-present)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling target-tuple v1.0.2
+   Compiling termcolor v1.4.1
+   Compiling glob v0.3.4
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling trybuild v1.0.121
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling nix v0.31.3
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+   Compiling sha2 v0.10.9
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling petgraph v0.8.3
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling gob-text v0.532.0 (<worktree>/crates/gob-text)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14m 58s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c899bd34-119e-480c-9549-5805b1698318 with nextest profile: default
+    Starting 1 test across 490 binaries (5689 tests skipped)
+        PASS [   0.088s] grimble-bind::caps arg_scope_a_read_outside_every_granted_path_is_cap001_naming_both
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.119s] 1 test run: 1 passed, 5689 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "arg_scope_a_read_outside_every_granted_path"
+size = 10027
+status = "measured"
+test_count = 1
+tests_digest = "0d4476f2d956b03c12be7ad3b4ec6641a98b29ce44c6cbbebdfb18ae23d62a95"
+at = "2026-10-28T18:28:52Z"
+actor = "lognd"
+rev = 1
