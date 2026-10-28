@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSDASH31CMNHAQ9JXR1YQ"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:02Z"
+updated = "2026-10-28T12:57:32Z"
 aliases = ["T-6462"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/strata/_stampede.py (new)", "tests/fixtures/sysdesign/sysdesign304/**"]
 
 [[links]]
@@ -55,3 +55,5 @@ threshold and no `stampede_guard` declared flags; a flow declaring `stampede_gua
 bound code containing a real lock/single-flight/probabilistic-early-expiry token also flags,
 unproven. Positive-control fixture: tests/fixtures/sysdesign/sysdesign304/
 high-fanout-no-stampede-guard/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
