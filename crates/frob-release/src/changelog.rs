@@ -68,12 +68,12 @@ pub struct LiveRule {
     pub summary: String,
 }
 
-/// The rules in `registry` first shipped in the ramp window of `version`, in id order: those that are new in this release and run at warn until the next.
+/// The rules in `registry` first shipped in the minor line of `version`, in id order: those that are new in this release.
 #[must_use]
 pub fn newly_live(registry: &gob_rules::Registry, version: &str) -> Vec<LiveRule> {
     registry
         .iter()
-        .filter(|m| gob_rules::in_ramp(m.since, version))
+        .filter(|m| gob_rules::shipped_in(m.since, version))
         .map(|m| LiveRule {
             id: m.id.to_owned(),
             slug: m.slug.to_owned(),

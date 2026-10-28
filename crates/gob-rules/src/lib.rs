@@ -24,10 +24,10 @@ mod index;
 pub mod indexgen;
 mod meta;
 mod precision;
-mod ramp;
 mod reason;
 mod registry;
 mod required;
+mod settings;
 mod unresolved;
 
 pub use decl::{
@@ -51,12 +51,10 @@ pub use meta::{
     Applicability, FixKind, Needs, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier,
 };
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
-pub use ramp::{
-    Ramped, drop_disabled_product_findings, in_ramp, ramp, ramp_end, ramp_product_findings,
-};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError, RuleRow, RuleSettings};
 pub use required::{PackFailure, RequiredReason};
+pub use settings::{drop_disabled_product_findings, shipped_in};
 pub use unresolved::{RuleReport, UnknownClass, UnresolvedReason};
 
 /// A declared rule; implemented by `#[derive(Rule)]`. Object safe.
