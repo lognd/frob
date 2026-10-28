@@ -11,7 +11,7 @@ created = "2026-10-27T03:15:08Z"
 updated = "2026-10-28T18:10:14Z"
 idempotency_key = "grimble-expr-args-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/grants.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-model/src/**", "crates/grimble-bind/tests/**", "crates/gob-symbols/src/call_args.rs", "crates/gob-symbols/src/lib.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/src/rules/mdl008.md"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/grants.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-model/src/**", "crates/grimble-bind/tests/**", "crates/gob-symbols/src/call_args.rs", "crates/gob-symbols/src/lib.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/src/rules/mdl008.md", "crates/grimble-model/src/lib.rs"]
 
 [[acceptance]]
 text = "a use whose literal argument falls outside every covering grant argument fires CAP001 naming the observed argument and the granted ones"
