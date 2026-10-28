@@ -8,8 +8,8 @@ points = 3
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:48Z"
-updated = "2026-10-28T12:56:51Z"
-labels = ["grimble"]
+updated = "2026-10-28T12:57:39Z"
+labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "docs/design/binding.md", "changelog.d/**"]
 
 [[links]]
@@ -26,3 +26,5 @@ bound = false
 +++
 
 grmb-planning.md 6.4, 6.5 and 7.3, row P6. node(st, s) from in node, actor node or the owner of bound identities; PLAN009 node mismatch; SYS015 consecutive step uses in different nodes with no flow in that direction, Unresolved when a node is Unknown.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

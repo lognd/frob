@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "grmb-planning.md 6.4, 6.5 and 7.3, row P6. node(st, s) from in node, actor node or the owner of bound identities; PLAN009 node mismatch; SYS015 consecutive step uses in different nodes with no flow in that direction, Unresolved when a node is Unknown."
+new = """
+grmb-planning.md 6.4, 6.5 and 7.3, row P6. node(st, s) from in node, actor node or the owner of bound identities; PLAN009 node mismatch; SYS015 consecutive step uses in different nodes with no flow in that direction, Unresolved when a node is Unknown.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:39Z"
+actor = "lognd"
+rev = 1
