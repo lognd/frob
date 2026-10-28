@@ -2,7 +2,8 @@
 id = "01M61MM4M34XBAW2QYZ5E5N62X"
 title = "org L1: derived product and crate fields and doable filters on tickets"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
