@@ -134,6 +134,7 @@ where
 
 const SUMMARY_COLS: &str = "id, handle, title, type, category, outcome, priority, points, parent, created, updated, blocked, class, due";
 
+// frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="passed as a function value to rusqlite query_map, a call edge the resolver reports only as May"
 fn summary_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Summary> {
     let outcome: Option<String> = r.get(5)?;
     let parent: Option<String> = r.get(8)?;

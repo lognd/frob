@@ -47,6 +47,7 @@ fn a_readme_without_a_region_gets_one_appended() {
     assert_eq!(check("# Title\n", &region), Err(RegionDrift::Missing));
 }
 
+// frob:tests crates/frob-ledger/src/gen/code_readme.rs::RegionDrift.rule
 #[test]
 fn a_hand_edit_inside_the_region_is_reported_as_gen001() {
     let region = render(&settings(None));

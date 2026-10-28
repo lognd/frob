@@ -708,6 +708,7 @@ mod tests {
         assert!(d.fields.iter().any(|f| f.key == "type"));
     }
 
+    // frob:tests crates/frob-ledger/src/schema.rs::TicketSchemaDescription.json_schema
     #[test]
     fn json_schema_has_one_property_per_field() {
         let schema = FrontmatterSchema::json_schema();
@@ -723,6 +724,7 @@ mod tests {
         assert!(required.iter().any(|r| r == "title"));
     }
 
+    // frob:tests crates/frob-ledger/src/schema.rs::TicketSchemaEntry.description
     #[test]
     fn registry_lists_the_schema() {
         assert!(all_schemas().iter().any(|d| d.name == "FrontmatterSchema"));
@@ -742,5 +744,62 @@ mod tests {
             field("type").map(|f| f.kind),
             Some(FieldKind::Choice(_))
         ));
+    }
+
+    // frob:tests crates/frob-ledger/src/schema.rs::TicketFieldDescription.inner_type
+    #[test]
+    fn inner_type_strips_one_option_layer() {
+        let d = FrontmatterSchema::describe();
+        let opt = d
+            .fields
+            .iter()
+            .find(|f| f.type_name.starts_with("Option<"))
+            .expect("an optional field");
+        assert!(!opt.inner_type().starts_with("Option<"));
+        let labels = d.fields.iter().find(|f| f.key == "labels").expect("labels");
+        assert_eq!(labels.inner_type(), "Vec<String>");
+    }
+
+    // frob:tests crates/frob-ledger/src/schema.rs::docs_table
+    #[test]
+    fn free_docs_table_has_a_row_per_settable_or_read_only_field() {
+        let table = docs_table();
+        assert!(table.starts_with("| Field | Type |"));
+        assert!(table.lines().count() > 2);
+    }
+
+    // frob:tests crates/frob-ledger/src/schema.rs::field_map
+    #[test]
+    fn field_map_has_a_key_for_every_schema_field() {
+        let t = Ticket {
+            front: full_frontmatter(),
+            body: String::new(),
+        };
+        let map = field_map(&t);
+        for d in FIELDS.iter() {
+            assert!(map.contains_key(d.name), "missing {}", d.name);
+        }
+    }
+
+    // frob:tests crates/frob-ledger/src/schema.rs::parse_text_value
+    #[test]
+    fn parse_text_value_validates_by_field_kind() {
+        assert!(parse_text_value("nope", "x").is_err());
+        assert!(parse_text_value("id", "x").is_err());
+        assert!(parse_text_value("acceptance", "a, b").is_err());
+        assert!(parse_text_value("labels", "").is_err());
+        assert!(parse_text_value("priority", "not-a-priority").is_err());
+        assert_eq!(
+            parse_text_value("labels", "a, b,,c").expect("list"),
+            Some(toml::Value::Array(
+                ["a", "b", "c"]
+                    .map(|s| toml::Value::String(s.into()))
+                    .to_vec()
+            ))
+        );
+        assert_eq!(
+            parse_text_value("points", "5").expect("points"),
+            Some(toml::Value::Integer(5))
+        );
     }
 }

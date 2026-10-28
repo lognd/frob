@@ -294,4 +294,11 @@ mod tests {
         assert!(t.roots.is_empty());
         assert_eq!(t.len(), 2);
     }
+
+    // frob:tests crates/frob-ledger/src/backlog.rs::Backlog.is_empty
+    #[test]
+    fn is_empty_only_when_nothing_is_listed() {
+        assert!(build(&[], &BTreeSet::new(), None).is_empty());
+        assert!(!build(&fixture(), &BTreeSet::new(), None).is_empty());
+    }
 }

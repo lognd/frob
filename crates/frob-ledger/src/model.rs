@@ -277,6 +277,7 @@ pub struct ScaleError {
 }
 
 impl PointScale {
+    // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named inside a thiserror error attribute, which the call graph does not read"
     /// Human wording of the accepted values.
     fn describe(self) -> &'static str {
         match self {

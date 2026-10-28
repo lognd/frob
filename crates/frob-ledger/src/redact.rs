@@ -57,6 +57,7 @@ struct RuleSpec {
     case_sensitive: bool,
 }
 
+// frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by the serde attribute default = yes, an edge the call graph cannot see"
 fn yes() -> bool {
     true
 }
@@ -111,6 +112,7 @@ impl std::fmt::Display for Hit {
 }
 
 impl Rule {
+    // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="passed as a path value to map in hits and first_private_hit, an edge the resolver reports only as May"
     fn hit(&self) -> Hit {
         Hit {
             label: self.label.clone(),

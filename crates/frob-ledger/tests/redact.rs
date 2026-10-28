@@ -127,3 +127,30 @@ fn load_local_reads_the_common_dir_file() {
     assert!(r.first_private_hit(TERM).is_some());
     assert!(!r.fingerprint().is_empty());
 }
+
+/// Fragment files below a directory are scanned for private terms; a clean set or no rules finds nothing.
+// frob:tests crates/frob-ledger/src/redact.rs::fragment_findings
+#[test]
+fn fragment_findings_flags_private_terms_in_fragment_files() {
+    use frob_ledger::redact::fragment_findings;
+    let dir = tempfile::tempdir().expect("tempdir");
+    let frag = dir.path().join("changes");
+    std::fs::create_dir_all(&frag).expect("mkdir");
+    std::fs::write(frag.join("a.md"), format!("saw {TERM} here\n")).expect("write");
+    std::fs::write(frag.join("b.md"), "all clear\n").expect("write");
+    let found = fragment_findings(dir.path(), "changes", &rules(""));
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(
+        fragment_findings(dir.path(), "changes", &RuleSet::empty()).is_empty(),
+        "no rules, no findings"
+    );
+    assert!(fragment_findings(dir.path(), "absent", &rules("")).is_empty());
+}
+
+/// Logging the local rule files needs only the common dir and never fails.
+// frob:tests crates/frob-ledger/src/redact.rs::RuleSet.mention_local_files
+#[test]
+fn mention_local_files_tolerates_absent_files() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    RuleSet::mention_local_files(dir.path());
+}
