@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-plan/**"]
+new = ["crates/gob-plan/**", "frob.lock"]
+at = "2026-10-28T23:11:22Z"
+actor = "lognd"
+rev = 1
