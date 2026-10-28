@@ -1,0 +1,15 @@
+kind = "field"
+field = "body"
+old = """
+Implements plugins.md sections 6.4 and 6.5; security.md section 2.5.
+
+Runs inside the sandbox worker only. Epoch interruption; a call over [packs] file_budget_ms reports Unresolved reason budget, a trap reports Unresolved reason trap. Never silence."""
+new = """
+Implements plugins.md sections 6.4 and 6.5; security.md section 2.5.
+
+Runs inside the sandbox worker only. Epoch interruption; a call over [packs] file_budget_ms reports Unresolved reason budget, a trap reports Unresolved reason trap. Never silence.
+
+no-story: internal engineering task in gob-wasm; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:05Z"
+actor = "lognd"
+rev = 1
