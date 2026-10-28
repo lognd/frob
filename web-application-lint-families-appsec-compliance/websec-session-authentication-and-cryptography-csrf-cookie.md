@@ -1,7 +1,7 @@
 +++
 id = "01M2Y1SS0PCVWFZPFZT8VQ159Z"
 title = "WEBSEC session, authentication and cryptography: CSRF, cookie flags, fixation and timeout, JWT and OAuth checks, NIST 800-63B passwords, hashing, IV/nonce, randomness, TLS verification (ASVS V6 V7 V9 V10 V11 V12)"
-type = "story"
+type = "task"
 flavour = "user_story"
 category = "todo"
 priority = "low"
@@ -9,7 +9,7 @@ points = 8
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-27T02:57:51Z"
+updated = "2026-10-28T12:56:49Z"
 aliases = ["T-5142"]
 labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
