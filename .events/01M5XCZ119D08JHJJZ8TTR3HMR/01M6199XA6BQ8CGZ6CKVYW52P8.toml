@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Design crunk.md section 8 flows row. Flow file model already exists in crunk-spec flow_file.rs; this adds rules over it, no new file format."
+new = """
+Design crunk.md section 8 flows row. Flow file model already exists in crunk-spec flow_file.rs; this adds rules over it, no new file format.
+
+no-story: internal engineering task in crunk-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:02Z"
+actor = "lognd"
+rev = 1

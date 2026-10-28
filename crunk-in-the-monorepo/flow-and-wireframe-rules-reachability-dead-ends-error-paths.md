@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:02Z"
-updated = "2026-10-27T00:43:02Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:56:02Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-rules/src/ux/flows.rs, crates/crunk-rules/tests/ux_flows.rs"]
 
 [[acceptance]]
@@ -18,3 +18,5 @@ bound = false
 +++
 
 Design crunk.md section 8 flows row. Flow file model already exists in crunk-spec flow_file.rs; this adds rules over it, no new file format.
+
+no-story: internal engineering task in crunk-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
