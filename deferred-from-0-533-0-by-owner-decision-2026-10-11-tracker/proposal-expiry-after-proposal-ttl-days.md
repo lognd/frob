@@ -8,9 +8,9 @@ points = 2
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T05:51:37Z"
-updated = "2026-10-03T05:51:37Z"
+updated = "2026-10-28T12:55:39Z"
 idempotency_key = "m2-mirror2-proposal-expire"
-labels = ["milestone:2", "area:mirror"]
+labels = ["milestone:2", "area:mirror", "no-story"]
 scope = ["crates/frob-mirror/src/expire.rs"]
 
 [[links]]
@@ -33,3 +33,5 @@ bound = false
 Implements mirror.md section 3.5 (expiry).
 
 Proposals expire after [mirror] proposal_ttl_days (default 30) as proposal-expired events written by the run; an expired proposal is never reopened by a re-read.
+
+no-story: internal engineering task in frob-mirror; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
