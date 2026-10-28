@@ -135,7 +135,7 @@ fn ledger_events(ticket: TicketId, event: &Event) -> Option<LedgerEvent> {
                 FIELD_TITLE | FIELD_LABELS | FIELD_ASSIGNEE
             ) =>
         {
-            (f.field.clone(), f.new.as_ref().map(render_value)?)
+            (f.field.clone(), render_value(f.new.as_ref()?))
         }
         EventBody::Transition(t) => (
             FIELD_STATE.to_owned(),
