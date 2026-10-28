@@ -1,0 +1,14 @@
+kind = "create"
+title = "org R8: rule status lifecycle, drop tier from pages, split Unresolved out of Severity"
+type = "task"
+category = "todo"
+priority = "low"
+points = 13
+parent = "01M61MHM8ER57BA9VVKXDTE2G7"
+idempotency_key = "org-R8"
+scope = ["crates/gob-rules/**"]
+acceptance = ["status=preview|stable|deprecated|removed with since on #[rule]; Unresolved moved to finding outcome with schema_version bump"]
+body = "OPTIONAL and LAST: sibling JSON contract change. Needs owner go-ahead before starting. Org audit section 4.7 (scratchpad org-audit.md). Deferred and sequenced, not dropped."
+at = "2026-10-28T21:16:38Z"
+actor = "lognd"
+rev = 1
