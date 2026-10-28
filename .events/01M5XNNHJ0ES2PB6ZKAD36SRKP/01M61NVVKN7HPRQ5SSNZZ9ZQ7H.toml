@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-28T16:35:31Z"
+digest = "f09698c200d6ec413d1fb59e89e4a9161608b305f91fe45cbc4dfb1f5e210cb6"
+exit_code = 0
+head = "81e1b2faeead6ec7b0c45c594b80325ebceced2c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8ccb3591-b67a-41e5-8aa7-8f7e90760bd7 with nextest profile: default
+    Starting 1 test across 490 binaries (5668 tests skipped)
+        PASS [   0.167s] grimble-bind::caps a_repository_type_named_command_does_not_hide_std_or_tokio_command
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.177s] 1 test run: 1 passed, 5668 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_repository_type_named_command"
+size = 582
+status = "measured"
+test_count = 1
+tests_digest = "d76e546cdbaf31058e9cec07bfba5e58c265682fd6a3ae89d2841bc28aca1d8e"
+at = "2026-10-28T16:35:31Z"
+actor = "lognd"
+rev = 1
