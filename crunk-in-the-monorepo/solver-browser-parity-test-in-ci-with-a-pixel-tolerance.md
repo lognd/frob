@@ -8,7 +8,8 @@ points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-08T04:53:59Z"
-updated = "2026-10-27T00:42:24Z"
+updated = "2026-10-28T12:55:54Z"
+labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-gallery/**", ".github/workflows/**"]
 
 [[links]]
@@ -25,3 +26,5 @@ bound = false
 +++
 
 docs/design/crunk.md section 3.
+
+no-story: internal engineering task in crunk-gallery; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
