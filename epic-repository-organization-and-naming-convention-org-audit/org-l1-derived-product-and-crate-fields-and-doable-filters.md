@@ -8,12 +8,12 @@ points = 5
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:52Z"
-updated = "2026-10-28T22:06:47Z"
+updated = "2026-10-28T22:09:22Z"
 scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/read.rs", "crates/frob/tests/it/board.rs", "crates/frob-lease/tests/lease.rs", "crates/frob-pm/src/eval/wip.rs", "crates/frob-pm/src/cycle/points.rs"]
 
 [[acceptance]]
 text = "tickets expose product/crate derived from scope; doable filters by them"
-bound = false
+bound = true
 +++
 
 Org audit step; see section 4.7 of the Opus org audit report (scratchpad org-audit.md).
