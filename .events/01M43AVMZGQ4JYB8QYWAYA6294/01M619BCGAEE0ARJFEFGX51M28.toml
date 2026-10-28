@@ -1,0 +1,6 @@
+kind = "field"
+field = "capability"
+new = "install a first preview release of crunk"
+at = "2026-10-28T12:56:50Z"
+actor = "lognd"
+rev = 1
