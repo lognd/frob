@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T20:05:37Z"
+digest = "377205f791e8aad5372d4477b5f484c698c4a368307f76354eac7b817313320c"
+exit_code = 0
+head = "4ea50aedee2df1a3dfb8325d520219196de61e55"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.03s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d1ee74e7-90cf-423f-a730-5bd26a8337d0 with nextest profile: default
+    Starting 1 test across 490 binaries (5689 tests skipped)
+        PASS [   0.741s] frob-cli::it lease_widen::lease_widen_wait_succeeds_once_the_holder_releases
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.749s] 1 test run: 1 passed, 5689 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "lease_widen_wait_succeeds"
+size = 573
+status = "measured"
+test_count = 1
+tests_digest = "52339c50aaada28dcdda2e7231d5a3942e43e6ff945ae571a9ecdbc9631845e5"
+at = "2026-10-28T20:05:37Z"
+actor = "lognd"
+rev = 1
