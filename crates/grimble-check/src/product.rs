@@ -888,6 +888,7 @@ impl Product for Grimble {
             .chain(grimble_bind::rules::METAS)
             .chain(grimble_arch::rules::METAS)
             .chain(grimble_ci::rules::METAS)
+            .chain(grimble_capabilities::rules::METAS)
             .chain(grimble_lints::rules::METAS)
             .chain(crate::rules::METAS)
             .copied()

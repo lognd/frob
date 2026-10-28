@@ -3189,6 +3189,7 @@ dependencies = [
  "gob-walk",
  "grimble-arch",
  "grimble-bind",
+ "grimble-capabilities",
  "grimble-ci",
  "grimble-lints",
  "grimble-model",

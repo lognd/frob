@@ -8,22 +8,6 @@
 // frob:ticket 01M3ZX7K3N8AWVBTZ90E0F1YSP
 
 mod host;
-/// Rule `PACK001`.
-pub mod pack001;
-/// Rule `PACK002`.
-pub mod pack002;
-/// Rule `PACK003`.
-pub mod pack003;
-/// Rule `PACK004`.
-pub mod pack004;
-/// Rule `PACK005`.
-pub mod pack005;
-/// Rule `PACK006`.
-pub mod pack006;
-/// Rule `PACK007`.
-pub mod pack007;
-/// Rule `PACK008`.
-pub mod pack008;
 
 use std::collections::BTreeSet;
 
@@ -31,15 +15,15 @@ use gob_packs::lock::{ItemChange, Lock, LockFinding, LockedPack, verify};
 use gob_rules::{Finding, PackFailure, RequiredReason, RuleId, Severity, UnresolvedReason};
 use tracing::{debug, info, warn};
 
+pub use crate::rules::pack001::Pack001;
+pub use crate::rules::pack002::Pack002;
+pub use crate::rules::pack003::Pack003;
+pub use crate::rules::pack004::Pack004;
+pub use crate::rules::pack005::Pack005;
+pub use crate::rules::pack006::Pack006;
+pub use crate::rules::pack007::Pack007;
+pub use crate::rules::pack008::Pack008;
 pub use host::PackHost;
-pub use pack001::Pack001;
-pub use pack002::Pack002;
-pub use pack003::Pack003;
-pub use pack004::Pack004;
-pub use pack005::Pack005;
-pub use pack006::Pack006;
-pub use pack007::Pack007;
-pub use pack008::Pack008;
 
 /// The reason code PACK006 carries on its Unresolved finding.
 pub const UNAVAILABLE_REASON: &str = "pack-unavailable";
