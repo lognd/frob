@@ -7,7 +7,10 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T16:53:54Z"
-updated = "2026-10-09T16:53:54Z"
+updated = "2026-10-28T12:56:51Z"
+persona = "a developer on a terminal"
+capability = "see progress while slow verbs run"
+outcome_text = "I know the command is working and not hung"
 scope = ["crates/gob-cli/**", "crates/gob-check/**", "crates/frob-land/**", "changelog.d/**"]
 
 [[acceptance]]
