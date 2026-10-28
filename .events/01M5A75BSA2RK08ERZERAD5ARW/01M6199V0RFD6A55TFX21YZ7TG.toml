@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Follow-up of ~TXX200T: resolve template excuse selectors to files, emit CAP004 (Error certain, Unresolved on May), make uses Bounds-aware."
+new = """
+Follow-up of ~TXX200T: resolve template excuse selectors to files, emit CAP004 (Error certain, Unresolved on May), make uses Bounds-aware.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:00Z"
+actor = "lognd"
+rev = 1
