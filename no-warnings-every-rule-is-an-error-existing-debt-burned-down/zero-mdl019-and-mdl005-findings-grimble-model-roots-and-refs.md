@@ -2,13 +2,13 @@
 id = "01M627BCZMXG78QDBA465PZ5J2"
 title = "Zero MDL019 and MDL005 findings (grimble model roots and refs)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-28T21:41:08Z"
+updated = "2026-10-28T22:17:10Z"
 idempotency_key = "b755-mdl"
 scope = ["design/model.grmb"]
 
