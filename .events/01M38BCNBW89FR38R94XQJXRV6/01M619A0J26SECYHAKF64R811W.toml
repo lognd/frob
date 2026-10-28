@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working T-5353: WEBSEC218-224 used 7 of the reserved WEBSEC218-225 8-id block; WEBSEC225 has no distinct check defined in the ticket body's seven-item corpus and is left unimplemented -- decide and implement, or formally retire the id."
+new = """
+found while working T-5353: WEBSEC218-224 used 7 of the reserved WEBSEC218-225 8-id block; WEBSEC225 has no distinct check defined in the ticket body's seven-item corpus and is left unimplemented -- decide and implement, or formally retire the id.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:05Z"
+actor = "lognd"
+rev = 1
