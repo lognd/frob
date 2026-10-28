@@ -1,0 +1,6 @@
+kind = "field"
+field = "capability"
+new = "get one actionable finding for v1 hyphenated atoms"
+at = "2026-10-28T12:56:54Z"
+actor = "lognd"
+rev = 1
