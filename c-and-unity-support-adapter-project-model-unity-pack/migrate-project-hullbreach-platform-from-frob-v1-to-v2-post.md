@@ -8,7 +8,10 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:05Z"
-updated = "2026-10-05T02:43:20Z"
+updated = "2026-10-28T12:56:53Z"
+persona = "a hullbreach maintainer"
+capability = "migrate the platform project from frob v1 to v2"
+outcome_text = "the platform repo is governed by the current frob"
 idempotency_key = "d94-migplat"
 scope = ["docs/migration/**", "notes/**"]
 
