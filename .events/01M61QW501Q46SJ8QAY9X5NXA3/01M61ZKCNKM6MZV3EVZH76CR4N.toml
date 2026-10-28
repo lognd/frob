@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T19:25:39Z"
+digest = "01a0e0c6c825a970e79f9cccba735b9b50d022aa64107c7c69900c75239a68b9"
+exit_code = 0
+head = "3ca5a8f1b52baff0a0d179da1a32e8ce98b8a7fc"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2781496e-c4fb-4639-ace2-03e770e41b63 with nextest profile: default
+    Starting 1 test across 490 binaries (5672 tests skipped)
+        PASS [   0.187s] frob-cli::it cli::config_sync_adds_missing_knobs_once
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.197s] 1 test run: 1 passed, 5672 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "config_sync_adds_missing"
+size = 550
+status = "measured"
+test_count = 1
+tests_digest = "8cfe51ee83d38a2def55eecfb5835b6fb4d642f3f863afcbba43c5ddc0a16e17"
+at = "2026-10-28T19:25:39Z"
+actor = "lognd"
+rev = 1
