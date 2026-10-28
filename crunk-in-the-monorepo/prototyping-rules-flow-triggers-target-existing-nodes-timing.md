@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:03Z"
-updated = "2026-10-27T00:43:03Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:56:01Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-rules/src/ux/motion.rs, crates/crunk-rules/tests/ux_motion.rs"]
 
 [[links]]
@@ -22,3 +22,5 @@ bound = false
 +++
 
 Design crunk.md section 8 prototyping row.
+
+no-story: internal engineering task in crunk-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
