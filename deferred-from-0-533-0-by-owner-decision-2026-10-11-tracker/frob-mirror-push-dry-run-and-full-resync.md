@@ -8,9 +8,9 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-03T03:34:43Z"
-updated = "2026-10-03T05:51:56Z"
+updated = "2026-10-28T12:55:50Z"
 idempotency_key = "m2-mirror-push-verb"
-labels = ["milestone:2", "area:mirror"]
+labels = ["milestone:2", "area:mirror", "no-story"]
 scope = ["crates/frob/src/mirror_cmd.rs"]
 
 [[links]]
@@ -41,3 +41,5 @@ bound = false
 Implements mirror.md sections 3.1 and 3.2.
 
 The verb that performs a live run; local pushes are opt-in and use the person's own token. It takes the writer lock, honours the budget, and --dry-run prints the plan: work classes in order, calls and mutations budgeted, and nothing is sent.
+
+no-story: internal engineering task in frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
