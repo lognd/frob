@@ -1,7 +1,7 @@
 //! `export css|tailwind|uss|csharp`: print one token export, or write it to `--out`.
 //!
 //! A thin verb over [`crunk_tokens::export`]: it renders through the same code path as
-//! `tokens --target` (see [`crate::tokens::preview`]) and adds only `--out`. `export dtcg` is the
+//! `tokens --target` (see `tokens::preview`) and adds only `--out`. `export dtcg` is the
 //! separate [`crate::dtcg::ExportDtcg`], which reads the stored interchange document.
 
 // frob:ticket 01M5XCVMQBQWARH7HT8RYHA0KY

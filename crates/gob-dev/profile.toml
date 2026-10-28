@@ -573,6 +573,18 @@ skip = "opt-in behind the gallery cargo feature, absent from the default build t
 [scenario."crunk edit"]
 skip = "rewrites the project's stylesheet and token sources in place and needs a target and value argument, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/edit.rs"
 
+[scenario."crunk export csharp"]
+skip = "prints or writes a design-token export that needs a configured token source and optional output path, which the repo fixture does not provide; covered by crates/crunk/tests/export_verb.rs"
+
+[scenario."crunk export css"]
+skip = "prints or writes a design-token export that needs a configured token source and optional output path, which the repo fixture does not provide; covered by crates/crunk/tests/export_verb.rs"
+
+[scenario."crunk export tailwind"]
+skip = "prints or writes a design-token export that needs a configured token source and optional output path, which the repo fixture does not provide; covered by crates/crunk/tests/export_verb.rs"
+
+[scenario."crunk export uss"]
+skip = "prints or writes a design-token export that needs a configured token source and optional output path, which the repo fixture does not provide; covered by crates/crunk/tests/export_verb.rs"
+
 [scenario."crunk export dtcg"]
 skip = "needs a design-token source and an output path to write the exported file, which the repo fixture does not provide; covered by crates/crunk/tests/dtcg.rs"
 
