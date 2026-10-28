@@ -8,9 +8,9 @@ points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-03T03:34:41Z"
+updated = "2026-10-28T12:55:40Z"
 idempotency_key = "m2-diag-moments-cli"
-labels = ["milestone:2", "area:diagnostics"]
+labels = ["milestone:2", "area:diagnostics", "no-story"]
 scope = ["crates/gob-cli/src/error.rs", "crates/gob-config/src/**"]
 
 [[acceptance]]
@@ -25,3 +25,5 @@ bound = false
 Implements diagnostics.md section 5 (table rows 3 and 4).
 
 Did-you-mean through strsim plus the three most likely verbs; unknown config key gets did-you-mean against the materialized table and the doc link for the table.
+
+no-story: internal engineering task in gob-cli; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
