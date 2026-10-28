@@ -7,7 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-27T01:10:47Z"
-updated = "2026-10-27T01:14:26Z"
+updated = "2026-10-28T12:55:43Z"
+labels = ["no-story"]
 scope = ["crates/frob-check/**", "docs/design/**", "crates/frob-rules/**", "README.md", "CONTRIBUTING.md", "docs/**", "**/*.md"]
 
 [[acceptance]]
@@ -36,3 +37,5 @@ bound = false
 +++
 
 DRIFT001 only fires on frob:doc/describes bindings; README, quickstart and CONTRIBUTING had none, so the move to the orphan ledger left them stale unflagged. Consider DOC rule for backticked paths absent from the tree, and bindings from ledger docs to crates/frob-ledger config.
+
+no-story: internal engineering task in frob-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

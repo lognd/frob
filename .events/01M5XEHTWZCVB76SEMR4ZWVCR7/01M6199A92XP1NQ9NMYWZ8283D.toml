@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "DRIFT001 only fires on frob:doc/describes bindings; README, quickstart and CONTRIBUTING had none, so the move to the orphan ledger left them stale unflagged. Consider DOC rule for backticked paths absent from the tree, and bindings from ledger docs to crates/frob-ledger config."
+new = """
+DRIFT001 only fires on frob:doc/describes bindings; README, quickstart and CONTRIBUTING had none, so the move to the orphan ledger left them stale unflagged. Consider DOC rule for backticked paths absent from the tree, and bindings from ledger docs to crates/frob-ledger config.
+
+no-story: internal engineering task in frob-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:43Z"
+actor = "lognd"
+rev = 1
