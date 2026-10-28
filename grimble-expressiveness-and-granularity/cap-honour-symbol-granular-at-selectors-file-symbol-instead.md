@@ -2,13 +2,13 @@
 id = "01M5XNNHBSPSM5XFG8FM64HENY"
 title = "CAP: honour symbol-granular at selectors (file::Symbol) instead of collapsing to files"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-27T03:15:08Z"
+updated = "2026-10-28T15:03:34Z"
 idempotency_key = "grimble-expr-symat-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/owner.rs", "crates/gob-walk/src/**", "crates/grimble-bind/tests/**"]
