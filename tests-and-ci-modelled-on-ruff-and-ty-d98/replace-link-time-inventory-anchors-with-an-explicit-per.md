@@ -1,14 +1,14 @@
 +++
 id = "01M48MR4V68JMFW44NG67J8R53"
 title = "Replace link-time inventory anchors with an explicit per-product registry checked against inventory"
-type = "story"
+type = "task"
 category = "todo"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-27T02:58:12Z"
+updated = "2026-10-28T12:56:49Z"
 scope = ["crates/gob-rules/**", "crates/gob-dev/**", "crates/gob-config/**", "crates/gob-cli/**"]
 
 [[acceptance]]
