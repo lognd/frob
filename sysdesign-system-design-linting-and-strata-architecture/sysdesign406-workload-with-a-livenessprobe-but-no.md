@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8AD5W7ECRJX8VGNKVM"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:03Z"
+updated = "2026-10-28T12:57:44Z"
 aliases = ["T-6472"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_horizontal.py", "tests/fixtures/sysdesign/sysdesign406/**"]
 
 [[links]]
@@ -49,3 +49,5 @@ the coordinator's contiguous-numbering directive -- a container spec with exactl
 readiness/liveness probe set flags; a probe pointed at a route the design model marks as a
 business endpoint rather than a dedicated `/healthz`/`/readyz`-shaped path also flags.
 Positive-control fixture: tests/fixtures/sysdesign/sysdesign406/liveness-only-no-readiness/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
