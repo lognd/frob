@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Stale unscheduled crunk wishlist item: scope src/crunk/** no longer exists (crunk lives in crates/crunk*) and it needs its own design revision before work; reopen and re-scope when scheduled."
+at = "2026-10-28T12:55:08Z"
+actor = "lognd"
+rev = 1
