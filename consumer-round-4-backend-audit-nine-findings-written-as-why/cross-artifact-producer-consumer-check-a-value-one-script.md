@@ -8,10 +8,12 @@ points = 3
 parent = "01M1WJMD2FWKPS1J7MPF18KDVY"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:49Z"
+updated = "2026-10-28T12:55:59Z"
 aliases = ["T-4226"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/gates"]
 +++
 
 Consumer F-373/P1 (T-4175): a shell script POSTs a header, a backend route's unit tests construct that header themselves, and a separate ops test asserts only on the payload -- both halves pass in isolation and no gate compares producer against consumer. Not fixture-testable in frob's own tree: no shell-to-backend script pairing exists here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

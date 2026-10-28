@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Consumer F-373/P1 (T-4175): a shell script POSTs a header, a backend route's unit tests construct that header themselves, and a separate ops test asserts only on the payload -- both halves pass in isolation and no gate compares producer against consumer. Not fixture-testable in frob's own tree: no shell-to-backend script pairing exists here."
+new = """
+Consumer F-373/P1 (T-4175): a shell script POSTs a header, a backend route's unit tests construct that header themselves, and a separate ops test asserts only on the payload -- both halves pass in isolation and no gate compares producer against consumer. Not fixture-testable in frob's own tree: no shell-to-backend script pairing exists here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:59Z"
+actor = "lognd"
+rev = 1
