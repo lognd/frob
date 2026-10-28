@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:22Z"
-updated = "2026-10-27T00:41:22Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:56:06Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs"]
 
 [[acceptance]]
@@ -18,3 +18,5 @@ bound = false
 +++
 
 Design crunk.md section 9 item 2 ("USS and C# exporters with the Figma plan-limit check"). Add Target::FigmaVariables (collections=tiers, modes=modes, variables=tokens) and the plan-limit rule (variables per collection and modes per collection by plan tier from crunk.toml). Register via the export verb ticket when it lands; do not edit export/mod.rs beyond the enum variant.
+
+no-story: internal engineering task in crunk-tokens; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
