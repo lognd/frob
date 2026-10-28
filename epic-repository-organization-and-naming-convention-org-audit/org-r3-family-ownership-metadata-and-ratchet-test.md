@@ -8,12 +8,12 @@ points = 5
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:51Z"
-updated = "2026-10-28T20:41:17Z"
+updated = "2026-10-28T20:48:26Z"
 scope = ["crates/gob-rules/**"]
 
 [[acceptance]]
 text = "every rule family names one owning crate; test enforces it"
-bound = false
+bound = true
 +++
 
 Org audit step; see section 4.7 of the Opus org audit report (scratchpad org-audit.md).
