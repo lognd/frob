@@ -7,7 +7,10 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T15:23:02Z"
-updated = "2026-10-09T15:23:03Z"
+updated = "2026-10-28T12:56:48Z"
+persona = "a developer running frob"
+capability = "see server routes and client call sites extracted per framework"
+outcome_text = "cross-stack route checks work on FastAPI, Flask, axum and Express"
 labels = ["grimble"]
 scope = ["crates/gob-frameworks/**", "changelog.d/**"]
 

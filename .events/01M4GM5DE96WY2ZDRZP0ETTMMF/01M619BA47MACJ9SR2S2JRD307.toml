@@ -1,0 +1,6 @@
+kind = "field"
+field = "outcome_text"
+new = "cross-stack route checks work on FastAPI, Flask, axum and Express"
+at = "2026-10-28T12:56:48Z"
+actor = "lognd"
+rev = 1
