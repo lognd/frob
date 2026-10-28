@@ -351,6 +351,8 @@ mod tests {
             created: at,
             updated: at,
             blocked: false,
+            crates: Vec::new(),
+            products: Vec::new(),
         }
     }
 
