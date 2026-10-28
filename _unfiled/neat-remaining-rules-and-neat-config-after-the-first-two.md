@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T09:24:08Z"
-updated = "2026-10-27T02:58:22Z"
+updated = "2026-10-28T12:55:52Z"
+labels = ["no-story"]
 scope = ["crates/grimble-lints/**", "crates/gob-ir/**"]
 
 [[acceptance]]
@@ -24,3 +25,5 @@ bound = false
 +++
 
 Follow-up to ~GFWC6QP, which shipped NEAT010 and NEAT031 for Rust only. Deferred: NEAT003 call-site part, NEAT030 sandwich check, NEAT012 captured reads, other languages, BOUND_TOOLS entries for NEAT001/005/009, grimble check wiring.
+
+no-story: internal engineering task in grimble-lints; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
