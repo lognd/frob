@@ -8,9 +8,9 @@ points = 3
 parent = "01M3ZX76ZV963F3AXRKJ8F744N"
 reporter = "lognd"
 created = "2026-10-03T03:34:41Z"
-updated = "2026-10-03T03:34:41Z"
+updated = "2026-10-28T12:56:01Z"
 idempotency_key = "m2-diag-moments-state"
-labels = ["milestone:2", "area:diagnostics"]
+labels = ["milestone:2", "area:diagnostics", "no-story"]
 scope = ["crates/frob/src/init.rs", "crates/frob-ledger/src/error.rs", "crates/gob-diagnostics/src/reason_words.rs"]
 
 [[links]]
@@ -29,3 +29,5 @@ bound = false
 Implements diagnostics.md section 5 (rows 1, 2, 5, 7).
 
 First run without frob.toml prints what the tool is in two sentences and the one init command; a missing ledger branch prints `note: tickets live on the branch frob-tickets` and `help: git fetch origin frob-tickets`; each Unresolved reason code is explained in words with the exact annotation or capability that would decide.
+
+no-story: internal engineering task in frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
