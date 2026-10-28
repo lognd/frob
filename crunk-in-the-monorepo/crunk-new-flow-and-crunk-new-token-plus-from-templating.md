@@ -8,8 +8,8 @@ points = 2
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-27T00:41:33Z"
-updated = "2026-10-27T00:41:33Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:55Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/new.rs, crates/crunk/tests/new_flow_token.rs"]
 
 [[acceptance]]
@@ -18,3 +18,5 @@ bound = false
 +++
 
 Design crunk.md section 5 author row. First verify which of component|screen|flow|token new.rs already supports and only add the missing ones; if all are present, close with evidence instead of adding code.
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
