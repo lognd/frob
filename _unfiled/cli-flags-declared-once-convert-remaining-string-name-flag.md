@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T15:45:28Z"
-updated = "2026-10-27T02:58:19Z"
+updated = "2026-10-28T12:55:58Z"
+labels = ["no-story"]
 scope = ["crates/gob-product/**", "crates/gob-testsupport/**", "crates/gob-cli/**"]
 
 [[acceptance]]
@@ -16,3 +17,5 @@ bound = false
 +++
 
 Follow-up of ~6T3ZQX6. String-name flag lookups remain in gob-product (shared_flags, check.rs, doctor.rs) and gob-testsupport fake bins. Convert to clap::Args structs via gob_cli::augment/parse and extend crates/gob-cli/tests/flags_declared_once.rs to cover them. Also dedupe rule_cmd.rs between crates/frob and crates/grimble.
+
+no-story: internal engineering task in gob-product; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
