@@ -7,7 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-26T15:08:12Z"
-updated = "2026-10-26T15:08:12Z"
+updated = "2026-10-28T12:55:56Z"
+labels = ["no-story"]
 scope = ["crates/frob-ledger/**", "crates/frob-pm/**", "crates/frob-cli/**"]
 
 [[acceptance]]
@@ -16,3 +17,5 @@ bound = false
 +++
 
 Follow-up of JD1T9DP: bulk event reads are now parallel (doctor 1.8s to 0.87s, velocity 3.8s to 2.1s). Remaining: 0.51s fixed startup/ledger sync in frob ticket doable, non-event work in cycle velocity, and the option of caching parsed done-transition facts in the index.
+
+no-story: internal engineering task in frob-ledger; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
