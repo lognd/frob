@@ -8,9 +8,9 @@ points = 2
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:31Z"
-updated = "2026-10-03T03:34:31Z"
+updated = "2026-10-28T12:55:40Z"
 idempotency_key = "m2-packs-timing"
-labels = ["milestone:2", "area:packs"]
+labels = ["milestone:2", "area:packs", "no-story"]
 scope = ["crates/gob-log/src/**", "crates/gob-check/src/pipeline.rs"]
 
 [[links]]
@@ -33,3 +33,5 @@ bound = false
 Implements plugins.md section 6.6 (last sentence).
 
 A slow plugin is visible by name in the timing tree.
+
+no-story: internal engineering task in gob-log; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

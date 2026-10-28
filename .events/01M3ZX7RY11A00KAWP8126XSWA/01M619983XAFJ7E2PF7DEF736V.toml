@@ -1,0 +1,15 @@
+kind = "field"
+field = "body"
+old = """
+Implements plugins.md section 6.6 (last sentence).
+
+A slow plugin is visible by name in the timing tree."""
+new = """
+Implements plugins.md section 6.6 (last sentence).
+
+A slow plugin is visible by name in the timing tree.
+
+no-story: internal engineering task in gob-log; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:40Z"
+actor = "lognd"
+rev = 1
