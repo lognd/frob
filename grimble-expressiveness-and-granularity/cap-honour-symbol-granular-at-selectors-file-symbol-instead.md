@@ -8,10 +8,10 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-28T15:03:34Z"
+updated = "2026-10-28T15:28:58Z"
 idempotency_key = "grimble-expr-symat-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/owner.rs", "crates/gob-walk/src/**", "crates/grimble-bind/tests/**"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/owner.rs", "crates/gob-walk/src/**", "crates/grimble-bind/tests/**", "crates/grimble-bind/src/grants.rs"]
 
 [[acceptance]]
 text = "a use in a sibling function of the at-selected symbol fires CAP001; a use inside the selected symbol (and its nested closures) is covered"
