@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "mis-scoped; split by rule family"
+at = "2026-10-28T21:41:08Z"
+actor = "lognd"
+rev = 1
