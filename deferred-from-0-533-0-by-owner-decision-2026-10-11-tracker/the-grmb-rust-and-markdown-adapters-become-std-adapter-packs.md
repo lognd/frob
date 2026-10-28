@@ -8,9 +8,9 @@ points = 3
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:32Z"
-updated = "2026-10-03T03:34:32Z"
+updated = "2026-10-28T12:55:59Z"
 idempotency_key = "m2-packs-std-adapters"
-labels = ["milestone:2", "area:packs"]
+labels = ["milestone:2", "area:packs", "no-story"]
 scope = ["crates/gob-packs/src/std/adapters.rs"]
 
 [[links]]
@@ -33,3 +33,5 @@ bound = false
 Implements plugins.md section 8 (last sentence).
 
 Registration through the same pack API; behaviour must not change.
+
+no-story: internal engineering task in gob-packs; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
