@@ -1,0 +1,70 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T14:11:41Z"
+digest = "cbb383ae04affa7463319b72c9736711b6c2678406aae41a8a7d42f8a961db1c"
+exit_code = 0
+head = "3a386b80048f17a6d68c6ffcd7cb98d6b4952773"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 29f0d5cb-9d9c-465a-a1df-51e25a2a92d5 with nextest profile: default
+    Starting 8 tests across 489 binaries (5615 tests skipped)
+        PASS [   0.007s] gob-symbols::it api_surface::is_html_path_matches_html_and_htm_in_any_case
+        PASS [   0.007s] gob-symbols::it api_surface::digests_of_facets_hashes_three_facets_and_leaves_two_empty
+        PASS [   0.008s] gob-symbols::it api_surface::capability_decl_with_replaces_an_earlier_declaration
+        PASS [   0.008s] gob-symbols::it api_surface::call_qualifier_describe_names_each_shape
+        PASS [   0.008s] gob-symbols::it api_surface::unity_assembly_is_test_and_test_mode_follow_constraint_and_directory
+        PASS [   0.008s] gob-symbols::it api_surface::symref_with_path_and_with_segments_rewrite_one_part
+        PASS [   0.010s] gob-symbols::it api_surface::ts_import_targets_and_source_answer_for_a_named_import
+        PASS [   0.010s] gob-symbols::it api_surface::from_files_with_deps_typed_builds_the_same_graph_as_untyped_without_facts
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 8 tests run: 8 passed, 5615 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "api_surface"
+size = 3843
+status = "measured"
+test_count = 8
+tests_digest = "7ee8fef387faeb52b06ae89ff7edf78cb28ab16299c6c2b28902689442221db4"
+at = "2026-10-28T14:11:41Z"
+actor = "lognd"
+rev = 1
