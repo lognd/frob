@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T14:43:32Z"
-updated = "2026-10-26T14:43:32Z"
+updated = "2026-10-28T12:55:34Z"
+labels = ["no-story"]
 scope = ["crates/gob-caps/**", "crates/frob-release/**"]
 
 [[acceptance]]
@@ -16,3 +17,5 @@ bound = false
 +++
 
 Follow-up of VGQ66DC acceptance 2: only rules are covered today.
+
+no-story: internal engineering task in gob-caps; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

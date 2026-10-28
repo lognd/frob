@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Follow-up of VGQ66DC acceptance 2: only rules are covered today."
+new = """
+Follow-up of VGQ66DC acceptance 2: only rules are covered today.
+
+no-story: internal engineering task in gob-caps; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:34Z"
+actor = "lognd"
+rev = 1
