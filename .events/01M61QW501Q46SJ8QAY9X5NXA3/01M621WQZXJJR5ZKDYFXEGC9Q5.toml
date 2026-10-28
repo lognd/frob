@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-28T20:05:43Z"
+digest = "1eb545f6ce78f739d9acbdf309d7402b35ce71dbef403f17dbbd32197b5bb855"
+exit_code = 0
+head = "4ea50aedee2df1a3dfb8325d520219196de61e55"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 17777301-1880-4985-bb8f-3d2b50c5f778 with nextest profile: default
+    Starting 1 test across 490 binaries (5689 tests skipped)
+        PASS [   0.022s] frob-evidence coverage::lcov::tests::normalises_absolute_backslash_and_dot_paths
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.030s] 1 test run: 1 passed, 5689 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "normalises_absolute_backslash"
+size = 577
+status = "measured"
+test_count = 1
+tests_digest = "2ade5787725bfb6f80a8f37b32473ba13057b64e6a8da5318c0f5e1fd382b941"
+at = "2026-10-28T20:05:43Z"
+actor = "lognd"
+rev = 1
