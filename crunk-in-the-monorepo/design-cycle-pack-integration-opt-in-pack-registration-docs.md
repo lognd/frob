@@ -8,7 +8,8 @@ points = 2
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-08T04:54:19Z"
-updated = "2026-10-27T00:43:07Z"
+updated = "2026-10-28T12:56:07Z"
+labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-spec/**"]
 
 [[links]]
@@ -33,3 +34,5 @@ bound = false
 +++
 
 docs/design/crunk.md section 8.
+
+no-story: internal engineering task in crunk-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
