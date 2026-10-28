@@ -8,7 +8,8 @@ points = 8
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:09Z"
-updated = "2026-10-28T12:56:52Z"
+updated = "2026-10-28T12:57:40Z"
+labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/gob-check/**", "crates/*/src/rules/**"]
 
 [[links]]
@@ -29,3 +30,5 @@ bound = false
 +++
 
 M9: run each rule's .md through the product harness with the D106 outcome classes; derived matrix cases; the coverage allowlist becomes per-rule corpus = pending(~ticket) checked by the macro. Supersedes ~HDFYHNJ. Design: docs/design/rule-authoring.md (D107); detail and the failure table: notes/research/rule-authoring.md section 4.
+
+no-story: internal engineering task in gob-mdtest; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
