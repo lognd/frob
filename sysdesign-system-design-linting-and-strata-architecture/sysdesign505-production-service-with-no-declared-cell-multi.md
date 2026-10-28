@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8X08Y5AGX1VX1CH4QH"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:04Z"
+updated = "2026-10-28T12:57:43Z"
 aliases = ["T-6481"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_data_tier.py", "tests/fixtures/sysdesign/sysdesign505/**"]
 
 [[links]]
@@ -47,3 +47,5 @@ Acceptance criteria: flags a node declared "production" (per the same convention
 REL280/281 SLO checks use) with no `cell` reference at all, i.e. no declared multi-region
 posture one way or the other. Positive-control fixture: tests/fixtures/sysdesign/sysdesign506/
 production-service-no-cell/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
