@@ -8,9 +8,9 @@ points = 3
 parent = "01M3AXSD8TNZP3PQVKB7EKCR7M"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:54Z"
+updated = "2026-10-28T12:57:38Z"
 aliases = ["T-6396"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/lang/_config_detect.py (new)", "src/frob/lang/_config_doc.py (new)", "docs/design/language-engines.md"]
 +++
 
@@ -50,3 +50,5 @@ Acceptance criteria:
 - Positive-control fixture: tests/fixtures/sysdesign/configdoc/mixed-surfaces/** containing one
   file of each surface kind, proving detection does not cross-contaminate (a Helm values.yaml
   is not misdetected as raw k8s).
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
