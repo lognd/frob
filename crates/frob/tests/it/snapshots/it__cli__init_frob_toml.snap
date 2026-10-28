@@ -28,6 +28,10 @@ normalization = "warn-unresolved"
 # How a notebook with an undeclared cell order is treated.
 notebook_order = "warn-unresolved"
 
+[coverage]
+# When true, a language that has tests but no coverage report is a COV004 finding (a missing coverage tool is reported as not run instead).
+require_reports = true
+
 [directives]
 # Comment namespaces the scanner reads; comments in any other are ignored.
 namespaces = ["frob", "grimble", "crunk"]

@@ -111,7 +111,7 @@ fn check_json_with_a_valid_config_is_a_valid_sibling_document() {
             .expect("default preset")
             .replace("[lint]", "[lint]\nTOKENS001 = \"off\"\nEXPORT001 = \"off\""),
     );
-    write(dir.path(), "styles/base/a.css", ".a { margin: 0; }\n");
+    write(dir.path(), "styles/base/a.css", ".a { margin: 0; transition: opacity 0.2s; }\n.a:focus-visible { outline: 2px solid currentColor; }\n.a:active { opacity: 0.8; }\n@media (prefers-reduced-motion: reduce) { .a { transition: none; } }\n");
     let (code, env, _) = crunk(dir.path(), &["check", "--json"]);
     assert_eq!(code, 0, "{env}");
     assert_eq!(env["ok"], true);
