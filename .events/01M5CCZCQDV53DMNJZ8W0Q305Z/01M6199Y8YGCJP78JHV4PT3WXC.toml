@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Remaining gap after ~BA2A6ST. Suspects: eval_op/Verdict::join dispatch, line_span, matcher lookups by OpId; needs a cheaper verdict representation and compiled op dispatch. Profile with perf on the b1 bench binary."
+new = """
+Remaining gap after ~BA2A6ST. Suspects: eval_op/Verdict::join dispatch, line_span, matcher lookups by OpId; needs a cheaper verdict representation and compiled op dispatch. Profile with perf on the b1 bench binary.
+
+no-story: internal engineering task in gob-plan; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:03Z"
+actor = "lognd"
+rev = 1
