@@ -1,0 +1,12 @@
+kind = "create"
+title = "MDL: pack atom argument schemas in PackPin for MDL008 and CAP001"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/grimble-model/src/**"]
+acceptance = ["pack atoms declare argument kinds and are validated and judged"]
+body = "found while working ~5X9CAQE: pack atoms declare argument kinds and are validated and judged"
+at = "2026-10-28T18:59:21Z"
+actor = "lognd"
+rev = 1
