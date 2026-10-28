@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T20:05:41Z"
+digest = "7f5fe3b1d7e1a346c48482d93e5356e386b53543f855de69c7cec135e40d7e66"
+exit_code = 0
+head = "4ea50aedee2df1a3dfb8325d520219196de61e55"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9e686b7e-cf0a-4b31-8287-8def588d0ea1 with nextest profile: default
+    Starting 1 test across 490 binaries (5689 tests skipped)
+        PASS [   0.005s] gob-plan::exec_relations an_in_vocab_op_tests_a_name_against_the_language_vocabulary_classes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 5689 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "in_vocab_op"
+size = 589
+status = "measured"
+test_count = 1
+tests_digest = "8fbed6aede0fbda137af6b8c0221a7fabbd8996146ea15fe2d6bdb5e7b5b8286"
+at = "2026-10-28T20:05:41Z"
+actor = "lognd"
+rev = 1
