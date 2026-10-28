@@ -8,10 +8,12 @@ points = 3
 parent = "01M1WJMD2FWKPS1J7MPF18KDVY"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:50Z"
+updated = "2026-10-28T12:56:02Z"
 aliases = ["T-4229"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/gates"]
 +++
 
 Consumer F-373/P5 (T-4175): a unit test exercises a runbook script under a dry-run env var, but no test executes, parses, or lints the runbook's own documented fenced commands, and frob's doc gates check anchors and drift, not whether a documented shell command would actually run. Mark runbook code fences with a directive naming the container they run in, and lint/dry-run against it. Not fixture-testable in frob's own tree: no runbooks/containers exist here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
