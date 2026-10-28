@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Every Warn/Advisory rule became Error; frob product honours [rules.X] severity=off (drop_disabled_product_findings); rules with open findings are off in frob.toml pending ~7FDF275 and burn-down tickets (~MTBE4QF for the rest); ramp is inert pending ~MBFZHZD; crunk [lint] warn and sibling warnings map to Error; frob-check blocking() no longer treats every Error as unconditionally blocking (fail_on none summarises). Evidence is bound but measured red: grimble-bind caps.rs and tests need the saved diff (scratchpad dk5702p.patch), held by D36SRKP. Pre-existing failures filed as ~9X5NXA3."
+at = "2026-10-28T17:22:20Z"
+actor = "lognd"
+rev = 1
