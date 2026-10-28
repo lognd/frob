@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-09T15:23:04Z"
-updated = "2026-10-28T12:56:49Z"
-labels = ["grimble"]
+updated = "2026-10-28T12:57:33Z"
+labels = ["grimble", "no-story"]
 scope = ["crates/gob-ir/**", "crates/gob-symbols/**", "changelog.d/**"]
 
 [[links]]
@@ -29,3 +29,5 @@ bound = false
 +++
 
 Needed by grmb planning impl outcome maps (variant <- error), checked both ways. Research cycle R2 should survey exception-flow analysis (Java checked exceptions, Python exception analysis tools, Rust) before this is built.
+
+no-story: internal engineering task in gob-ir; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
