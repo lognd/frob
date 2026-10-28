@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:35:02Z"
-updated = "2026-10-27T02:58:39Z"
+updated = "2026-10-28T12:55:56Z"
+labels = ["no-story"]
 scope = ["crates/crunk-gallery/**"]
 
 [[acceptance]]
@@ -20,3 +21,5 @@ bound = false
 +++
 
 Found while working ~PT56WSN. The axe runner was only tested with recorded axe JSON and a fake node; node/render.mjs axe mode was never run against real Playwright, axe-core and Chromium. Keyboard focus replay (design doc section 4, T3) was not done.
+
+no-story: internal engineering task in crunk-gallery; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

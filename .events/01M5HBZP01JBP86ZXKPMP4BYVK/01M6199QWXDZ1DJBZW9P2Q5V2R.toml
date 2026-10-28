@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Found while working ~PT56WSN. The axe runner was only tested with recorded axe JSON and a fake node; node/render.mjs axe mode was never run against real Playwright, axe-core and Chromium. Keyboard focus replay (design doc section 4, T3) was not done."
+new = """
+Found while working ~PT56WSN. The axe runner was only tested with recorded axe JSON and a fake node; node/render.mjs axe mode was never run against real Playwright, axe-core and Chromium. Keyboard focus replay (design doc section 4, T3) was not done.
+
+no-story: internal engineering task in crunk-gallery; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:56Z"
+actor = "lognd"
+rev = 1
