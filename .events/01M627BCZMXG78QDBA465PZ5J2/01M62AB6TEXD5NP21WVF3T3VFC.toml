@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["design/model.grmb"]
+new = ["design/model.grmb", "grimble.toml"]
+at = "2026-10-28T22:33:27Z"
+actor = "lognd"
+rev = 1

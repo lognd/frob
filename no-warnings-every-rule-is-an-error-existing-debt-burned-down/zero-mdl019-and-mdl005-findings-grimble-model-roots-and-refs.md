@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-28T22:17:10Z"
+updated = "2026-10-28T22:33:27Z"
 idempotency_key = "b755-mdl"
-scope = ["design/model.grmb"]
+scope = ["design/model.grmb", "grimble.toml"]
 
 [[acceptance]]
 text = "frob check reports zero MDL019 and MDL005 findings"
