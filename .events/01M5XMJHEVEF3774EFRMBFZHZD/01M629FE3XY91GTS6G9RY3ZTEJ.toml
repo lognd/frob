@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-28T22:17:19Z"
+digest = "e265d515b775a66e67d4eb57d9658f7b45a89117d655a0050310ec8b8a5ba664"
+exit_code = 0
+head = "a11b929620325f4e01e25c1eb0f6438e472296b6"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 57.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 26c8f85e-5e6d-4ba7-8697-6984af2e4343 with nextest profile: default
+    Starting 1 test across 7 binaries (54 tests skipped)
+        PASS [   0.010s] gob-rules settings::tests::a_retired_ramp_key_is_accepted_and_ignored
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 54 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules a_retired_ramp_key_is_accepted_and_ignored"
+size = 615
+status = "measured"
+test_count = 1
+tests_digest = "20e682708eab8159208b0eb520ea03635b95727ea14b23342cd33d6c55f88c48"
+at = "2026-10-28T22:17:19Z"
+actor = "lognd"
+rev = 1
