@@ -8,14 +8,14 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-28T12:54:34Z"
+updated = "2026-10-28T12:57:45Z"
 idempotency_key = "grimble-expr-mask-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-capabilities/src/lib.rs", "crates/grimble-bind/tests/**"]
 
 [[acceptance]]
 text = "a regression test with one covered and one uncovered use of the same atom in one node fires CAP001 for the uncovered use only"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the cell computation is per use (or per unit) as binding.md 7.2 item 3 states"
