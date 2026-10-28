@@ -7,7 +7,8 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T19:05:33Z"
-updated = "2026-10-27T02:58:16Z"
+updated = "2026-10-28T12:55:42Z"
+labels = ["no-story"]
 scope = ["crates/gob-check/src/sibling_doc.rs", "crates/gob-check/src/sibling.rs"]
 
 [[links]]
@@ -20,3 +21,5 @@ bound = false
 +++
 
 found while working ~AMVHK82: PackRef has only name, version, digest, so a repo pack's provenance repo:packs/NAME is only logged.
+
+no-story: internal engineering task in gob-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
