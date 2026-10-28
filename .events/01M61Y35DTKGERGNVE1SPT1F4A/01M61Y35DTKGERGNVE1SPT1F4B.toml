@@ -1,0 +1,12 @@
+kind = "create"
+title = "CAP: resolve symlinks when judging path grant arguments"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/grimble-model/src/args.rs"]
+acceptance = ["path comparison accounts for symlinks"]
+body = "found while working ~5X9CAQE: path comparison accounts for symlinks"
+at = "2026-10-28T18:59:21Z"
+actor = "lognd"
+rev = 1
