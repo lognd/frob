@@ -8,9 +8,9 @@ points = 3
 parent = "01M1QDTYTRW714S858S0TP6YWM"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:43Z"
+updated = "2026-10-28T12:55:43Z"
 aliases = ["T-3977"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/gates/_tdd_order.py"]
 
 [[acceptance]]
@@ -31,3 +31,5 @@ T-3928 frontend-unique item. This pairs with the TDD pincer already recorded in 
 FINDING THIS WOULD HAVE CAUGHT: nothing in the consumer's own audits directly, but the consumer flags the risk explicitly -- a genuinely broken test and a deliberately-red spec-first test are indistinguishable to any tool watching outcome states, which weakens exactly the TDD1-DRIFT2 pincer this repo relies on for its own evidence integrity.
 
 Proposed: a `frob:pending T-####` directive on a test, marking it expected-red until ticket T-#### lands. A gate then treats a pending test's redness as expected (does not count as a suite regression) while still requiring it to flip green (or the directive removed) once its ticket closes -- otherwise it is exactly a no-exit waiver in test-directive form. Design the closure condition (auto-clear on ticket done? separate check?) before implementing.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
