@@ -8,7 +8,8 @@ points = 5
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-08T04:54:49Z"
-updated = "2026-10-08T04:54:49Z"
+updated = "2026-10-28T12:56:07Z"
+labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-check/**"]
 
 [[acceptance]]
@@ -17,3 +18,5 @@ bound = false
 +++
 
 deslop research SLOP020, 021, 026, 027-029; needs the T1 solver (crunk phase 4).
+
+no-story: internal engineering task in crunk-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
