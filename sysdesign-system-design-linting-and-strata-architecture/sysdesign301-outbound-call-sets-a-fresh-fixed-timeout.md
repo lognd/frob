@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSDASH31CMNHAQ9JXR1YQ"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:00Z"
+updated = "2026-10-28T12:57:34Z"
 aliases = ["T-6446"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/strata/_deadline_propagation.py (new)", "tests/fixtures/sysdesign/sysdesign301/**"]
 
 [[links]]
@@ -50,3 +50,5 @@ Acceptance criteria: for a multi-hop synchronous chain (per REL340's existing sy
 tracking), flags an outbound client call whose timeout literal is not derived from (does not
 reference) the parent request's remaining deadline. Positive-control fixture: tests/fixtures/
 sysdesign/sysdesign301/fresh-timeout-per-hop/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
