@@ -1,14 +1,14 @@
 +++
 id = "01M48R07AYMKWPKZDXW4BKKSMH"
 title = "Plugin parity: one RuleDef for Rust, GRL std and pack rules; GRL reads, since and fidelity headers"
-type = "story"
+type = "task"
 category = "todo"
 priority = "medium"
 points = 8
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:11Z"
-updated = "2026-10-27T02:58:14Z"
+updated = "2026-10-28T12:56:49Z"
 scope = ["crates/gob-rules/**", "crates/gob-plan/**", "docs/design/grl-spec.md"]
 
 [[links]]
