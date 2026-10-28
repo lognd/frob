@@ -1,7 +1,7 @@
 +++
 id = "01M2Y1SS0R72ZC7F5PSP0BC04T"
 title = "WEBSEC authorization, business logic and LLM surface: admin routes without auth, front-end-only guards, IDOR/BOLA, mass assignment, RLS off, webhook signature and replay, payment idempotency, TOCTOU, resource limits, OWASP LLM Top 10 2025 (ASVS V4 V8, API Top 10, LLM Top 10)"
-type = "story"
+type = "task"
 flavour = "user_story"
 category = "todo"
 priority = "low"
@@ -9,7 +9,7 @@ points = 8
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "human"
 created = "2026-09-20T00:00:00Z"
-updated = "2026-10-27T02:57:52Z"
+updated = "2026-10-28T12:56:52Z"
 aliases = ["T-5144"]
 labels = ["component:gates", "v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
