@@ -8,10 +8,12 @@ points = 3
 parent = "01M1WJMD2FWKPS1J7MPF18KDVY"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:49Z"
+updated = "2026-10-28T12:55:45Z"
 aliases = ["T-4227"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/gates"]
 +++
 
 Consumer F-373/P3 (T-4175): a system test builds a throwaway app with one synthetic route per error type and asserts against that -- it never touches the real routers, so an error body constructed anywhere other than the intended mapper is outside its reach by construction. The test is green and its subject is not the system. This is the dogfooding-blindness class expressed as a test-design defect, and it is detectable in principle: label a test whose subject (app/route table/registry instance) is constructed inline in the test file, rather than imported from the package under test, as a distinct and weaker evidence kind. High-value, generic. Fixture-testable: YES, frob's own evidence-binding code with a synthetic example (a test that builds its own throwaway object instead of importing the real one).
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
