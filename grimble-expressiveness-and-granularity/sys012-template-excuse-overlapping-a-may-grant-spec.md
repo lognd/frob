@@ -8,9 +8,9 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-10-27T03:15:10Z"
+updated = "2026-10-28T12:55:41Z"
 idempotency_key = "grimble-expr-sys012-2026-10-26"
-labels = ["grimble", "audit:grimble-expressiveness"]
+labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-bind/src/rules/**", "crates/grimble-capabilities/src/excuse.rs"]
 
 [[acceptance]]
@@ -19,3 +19,5 @@ bound = false
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. binding.md 7.2 item 5 says 'A template excuse that overlaps a grant may A prime is SYS012 (6.12)'; crates/grimble-bind/src/rules has no sys012. Template excuses themselves are computed but never applied (excuse.rs has no caller outside its crate); emission is ~RAD5ARW. Add SYS012 once excuses are wired.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
