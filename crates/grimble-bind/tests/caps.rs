@@ -374,3 +374,35 @@ fn a_grant_covering_one_use_site_never_masks_an_uncovered_use_of_the_same_atom()
     let b = bind_files(&files, "  may fs.write;\n");
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
 }
+
+const TWO_FNS: &str = "def allowed():\n    def inner():\n        open(\"/etc/hosts\")\n    open(\"/etc/hosts\")\n\ndef sneaky():\n    open(\"/home/u/.ssh/id_rsa\")\n";
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_symbol_granular_grant_covers_its_symbol_and_nested_code_not_a_sibling() {
+    let b = bind_py(TWO_FNS, "  may fs.read at \"src/x.py::allowed\";\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+    assert!(f[0].message.contains("src/x.py:7"), "{}", f[0].message);
+    assert!(!f[0].message.contains("src/x.py:3"), "{}", f[0].message);
+    assert!(!f[0].message.contains("src/x.py:4"), "{}", f[0].message);
+    assert!(of(&b, "CAP002").is_empty(), "{:?}", b.findings);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_whole_file_grant_still_covers_every_function_of_the_file() {
+    let b = bind_py(TWO_FNS, "  may fs.read at \"src/x.py\";\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_symbol_grant_whose_symbol_has_no_use_is_cap002() {
+    let b = bind_py(
+        TWO_FNS,
+        "  may fs.read at \"src/x.py::allowed\";\n  may fs.read at \"src/x.py::nowhere\";\n",
+    );
+    let f = of(&b, "CAP002");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+}
