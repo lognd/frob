@@ -8,7 +8,8 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:21Z"
-updated = "2026-10-27T02:58:12Z"
+updated = "2026-10-28T12:55:55Z"
+labels = ["no-story"]
 scope = ["crates/gob-dev/**", "crates/gob-symbols/src/languages_page.rs", "docs/reference/**"]
 
 [[acceptance]]
@@ -33,3 +34,5 @@ bound = false
 +++
 
 Macro and codegen review 2026-10-06: our gen with --check and GEN001 matches ruff's cargo dev generate-all --mode check; gaps are that some generated pages are kept in sync by tests instead of gen (docs/reference/languages.md from ~4M1BX5H), and there is no single list of every generated file. Route every generated file through the artifact registry (~11A603G), add a dry-run mode that prints the diff, and a generated-files manifest so CI and reviewers can see what is generated.
+
+no-story: internal engineering task in gob-dev; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
