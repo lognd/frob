@@ -2,7 +2,8 @@
 id = "01M5XMJGNF1HWQBEGE31G4B9C1"
 title = "Collapse Severity to Error and Unresolved; reject warn/advisory config"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
