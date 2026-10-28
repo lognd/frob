@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
-updated = "2026-10-28T13:24:19Z"
+updated = "2026-10-28T13:24:20Z"
 labels = ["no-story"]
-scope = ["crates/gob-rules/src/**", "crates/crunk-rules/**", "crates/frob-ack/**", "crates/frob-check/**", "crates/frob-obligations/**", "crates/frob-pm/**", "crates/gob-check/**", "crates/gob-directives/**", "crates/gob-macros/**", "crates/gob-mdtest/**", "crates/grimble-arch/**", "crates/grimble-check/**", "crates/grimble-ci/**", "crates/grimble-lints/**", "crates/grimble-model/**", "crates/gob-diagnostics/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/frob-release/**", "crates/frob/**", "crates/grimble-vet/**", "crates/gob-plan/**", "crates/gob-product/**", "crates/grimble-bind/src/rules/**", "crates/grimble-bind/src/eval.rs", "crates/grimble-capabilities/src/pack_rules/**", "packs/**", "docs/design/rule-authoring.md", "docs/design/rules.md", "docs/design/cli.md", "docs/design/architecture.md", "grimble.toml", "frob.toml", "crates/gob-dev/**", "crates/gob-ir/**", "crates/gob-packs/**", "crates/grimble/**", "docs/crunk/**"]
+scope = ["crates/gob-rules/src/**", "crates/crunk-rules/**", "crates/frob-ack/**", "crates/frob-check/**", "crates/frob-obligations/**", "crates/frob-pm/**", "crates/gob-check/**", "crates/gob-directives/**", "crates/gob-macros/**", "crates/gob-mdtest/**", "crates/grimble-arch/**", "crates/grimble-check/**", "crates/grimble-ci/**", "crates/grimble-lints/**", "crates/grimble-model/**", "crates/gob-diagnostics/**", "crates/crunk-check/**", "crates/crunk-spec/**", "crates/frob-release/**", "crates/frob/**", "crates/grimble-vet/**", "crates/gob-plan/**", "crates/gob-product/**", "crates/grimble-bind/src/rules/**", "crates/grimble-bind/src/eval.rs", "crates/grimble-capabilities/src/pack_rules/**", "packs/**", "docs/design/rule-authoring.md", "docs/design/rules.md", "docs/design/cli.md", "docs/design/architecture.md", "grimble.toml", "frob.toml", "crates/gob-dev/**", "crates/gob-ir/**", "crates/gob-packs/**", "crates/grimble/**", "docs/crunk/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "Severity has only Error and Unresolved; Warn and Advisory removed from derive, [rules], fail_on"
