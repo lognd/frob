@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Classify each in-progress ticket's time from signals frob already sees or records cheaply, never from a state an agent sets: lease events, worktree commit times, worktree file mtimes when frob looks, test and evidence runs, goway job reports when present, lease refusals (record E-LEASE-HELD as a local event), land start and end; sessionise with an idle gap threshold. Store in a local .frob activity journal (not committed), summarised onto the ticket at land on the ticket branch. Feeds board --brief and stats."
+new = """
+Classify each in-progress ticket's time from signals frob already sees or records cheaply, never from a state an agent sets: lease events, worktree commit times, worktree file mtimes when frob looks, test and evidence runs, goway job reports when present, lease refusals (record E-LEASE-HELD as a local event), land start and end; sessionise with an idle gap threshold. Store in a local .frob activity journal (not committed), summarised onto the ticket at land on the ticket branch. Feeds board --brief and stats.
+
+no-story: internal engineering task in frob-metrics; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:32Z"
+actor = "lognd"
+rev = 1
