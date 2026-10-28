@@ -1,14 +1,14 @@
 +++
 id = "01M48PC2ZS196NARNAWT7EH2BG"
 title = "Diagnostic message convention test over the registry and snapshots"
-type = "story"
+type = "task"
 category = "todo"
 priority = "low"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:42Z"
-updated = "2026-10-27T02:58:12Z"
+updated = "2026-10-28T12:56:53Z"
 scope = ["crates/gob-rules/**", "crates/gob-diagnostics/**"]
 
 [[acceptance]]
