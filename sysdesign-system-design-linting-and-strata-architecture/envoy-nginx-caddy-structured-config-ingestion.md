@@ -8,9 +8,9 @@ points = 5
 parent = "01M3AXSD8TNZP3PQVKB7EKCR7M"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:06Z"
+updated = "2026-10-28T12:57:35Z"
 aliases = ["T-6503"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/lang/_config_proxy.py (new)", "tests/fixtures/sysdesign/config-proxy/**"]
 
 [[links]]
@@ -47,3 +47,5 @@ for mTLS), nginx.conf directives (`client_max_body_size`, `limit_conn_zone`,
 `keepalive_timeout`, timeouts), and Caddyfile equivalents, as a structural extractor (block/
 directive-aware, not a byte-regex) for the specific directive names Story C's rules need.
 Positive-control fixture: tests/fixtures/sysdesign/config-proxy/envoy-no-outlier-detection/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
