@@ -8,7 +8,10 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-05T02:37:03Z"
-updated = "2026-10-05T02:37:03Z"
+updated = "2026-10-28T12:56:54Z"
+persona = "a Unity developer"
+capability = "have frob init suggest the unity pack"
+outcome_text = "I get the right rules without reading the docs"
 idempotency_key = "d94-init"
 scope = ["crates/frob/src/init.rs", "crates/frob/src/first_run.rs", "crates/frob/src/config.rs", "crates/frob/tests/**", "docs/reference/cli/frob.md"]
 
