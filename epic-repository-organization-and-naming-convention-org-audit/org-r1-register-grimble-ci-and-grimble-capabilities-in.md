@@ -8,8 +8,8 @@ points = 3
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:51Z"
-updated = "2026-10-28T16:13:51Z"
-scope = ["crates/grimble-*/**"]
+updated = "2026-10-28T20:36:19Z"
+scope = ["crates/grimble-*/**", "docs/reference/rules/**", "crates/gob-mdtest/**"]
 
 [[acceptance]]
 text = "grimble explain DK001 and CI rules resolve through the registry"
