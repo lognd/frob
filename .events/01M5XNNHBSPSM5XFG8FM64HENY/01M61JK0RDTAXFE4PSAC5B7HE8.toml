@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-28T15:36:53Z"
+digest = "eb5ec221a691ec805cf97ae2052985831cb5242e469a63bbfe87ae64f33b6db6"
+exit_code = 0
+head = "ba14405cd8602f4d027c596ac9d9a449f7318519"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 31913dc0-09e0-4055-8440-6a83577d93c8 with nextest profile: default
+    Starting 1 test across 489 binaries (5628 tests skipped)
+        PASS [   0.010s] gob-walk select::tests::breadth_counts_symbol_selectors_in_units
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.029s] 1 test run: 1 passed, 5628 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "breadth_counts_symbol_selectors_in_units"
+size = 616
+status = "measured"
+test_count = 1
+tests_digest = "d92eb28fff67bd5dbc5ea33dd3a65739ba9b6f64da79e8d9e5a852eb76c4da91"
+at = "2026-10-28T15:36:53Z"
+actor = "lognd"
+rev = 1
