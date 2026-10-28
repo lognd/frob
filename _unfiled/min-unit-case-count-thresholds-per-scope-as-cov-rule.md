@@ -7,8 +7,11 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T12:42:45Z"
-updated = "2026-10-28T12:56:48Z"
+updated = "2026-10-28T12:57:31Z"
+labels = ["no-story"]
 scope = ["crates/frob-obligations/**"]
 +++
 
 found while working ~0MQ76H2: the min unit cases half of the v1 [testing] thresholds is not implemented; only line/branch percent (COV004) is.
+
+no-story: internal engineering task in frob-obligations; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
