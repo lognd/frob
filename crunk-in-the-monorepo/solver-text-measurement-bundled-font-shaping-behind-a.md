@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:54Z"
-updated = "2026-10-27T00:41:54Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:44Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-layout/src/text/**, crates/crunk-layout/tests/text*.rs, crates/crunk-layout/fonts/**"]
 
 [[links]]
@@ -22,3 +22,5 @@ bound = false
 +++
 
 Design crunk.md section 3 and D113. Implements the taffy measure callback using the library recorded by the spike. Fonts are bundled, license files included, no system font lookup (determinism).
+
+no-story: internal engineering task in crunk-layout; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
