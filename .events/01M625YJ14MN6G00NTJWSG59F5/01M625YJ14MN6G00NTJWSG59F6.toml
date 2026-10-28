@@ -1,0 +1,14 @@
+kind = "create"
+title = "org C6: reduce the layer table to named tiers"
+type = "task"
+category = "todo"
+priority = "low"
+points = 5
+parent = "01M61MHM8ER57BA9VVKXDTE2G7"
+idempotency_key = "org-C6"
+scope = ["crates/gob-dev/tests/layering.rs"]
+acceptance = ["layer table uses about 6 named tiers; layering test and doc table updated"]
+body = "Do after C3. Org audit section 4.7 (scratchpad org-audit.md). Deferred and sequenced, not dropped."
+at = "2026-10-28T21:16:39Z"
+actor = "lognd"
+rev = 1
