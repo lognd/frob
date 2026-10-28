@@ -50,3 +50,27 @@ fn blank_reason_counts_as_missing() {
     assert_eq!(reason_findings("may fs.read because=\"  \";").len(), 1);
     assert_eq!(reason_findings("may fs.read ticket=\"\";").len(), 1);
 }
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn grant_argument_of_the_wrong_type_for_its_atom_is_an_mdl008_error() {
+    for body in [
+        "may net.connect(\"https://api.example.com/v1\") because=\"x\";",
+        "may net.connect(\"user@host\") because=\"x\";",
+        "may fs.read(\"../secret\") because=\"x\";",
+        "may process.env(\"A=B\") because=\"x\";",
+        "may process.spawn(\"git status\") because=\"x\";",
+        "may fs.read(\"\") because=\"x\";",
+    ] {
+        assert_eq!(reason_findings(body).len(), 1, "{body}");
+    }
+    for body in [
+        "may net.connect(\"api.example.com:443\", \"*.example.org\") because=\"x\";",
+        "may fs.read(\"config/**\") because=\"x\";",
+        "may process.env(\"HOME\") because=\"x\";",
+        "may process.spawn(\"git\") because=\"x\";",
+    ] {
+        assert!(reason_findings(body).is_empty(), "{body}");
+    }
+}

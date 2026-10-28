@@ -1,0 +1,1 @@
+The capability check now enforces the arguments of a may grant at call sites: a literal path, host, env name or binary outside every granted argument fires CAP001, an argument it cannot resolve is reported as unresolved, and a grant argument of the wrong type for its atom is an MDL008 error.

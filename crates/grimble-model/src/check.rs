@@ -720,6 +720,52 @@ impl<'a> Checker<'a> {
         }
     }
 
+    /// MDL008 for each `may` argument that is the wrong type for its atom (args.rs): a path
+    /// pattern for `fs`, a host pattern for `net`, a name for `process.env` / `process.spawn`.
+    /// Pack atoms declare no argument schema in a pin, so their arguments are not judged here.
+    // frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+    fn grant_args(&mut self, rec: &EntityRec<'_>, m: &crate::ast::May, anchor: &str) {
+        if m.args.is_empty() {
+            return;
+        }
+        let in_pack = m.atom.pack.is_some()
+            || (gob_ir::registry::atom(&m.atom.name).is_none()
+                && self
+                    .input
+                    .packs
+                    .values()
+                    .any(|pin| pin.atoms.contains(&m.atom.name)));
+        if in_pack {
+            return;
+        }
+        let canonical = gob_ir::registry::canonical(&m.atom.name).unwrap_or(&m.atom.name);
+        let kind = crate::args::arg_kind(canonical);
+        for a in &m.args {
+            let problem = match kind {
+                None => Some(format!("`{}` takes no arguments", m.atom.written())),
+                Some(k) => crate::args::validate(k, &a.value).err().map(|why| {
+                    format!(
+                        "`may {}(\"{}\")`: {} is expected, but {why}",
+                        m.atom.written(),
+                        a.value,
+                        k.describe()
+                    )
+                }),
+            };
+            if let Some(msg) = problem {
+                tracing::debug!(atom = %m.atom.written(), arg = %a.value, "malformed grant argument");
+                self.emit(
+                    "MDL008",
+                    Some(Severity::Error),
+                    rec.file,
+                    a.span,
+                    msg,
+                    anchor,
+                );
+            }
+        }
+    }
+
     fn atom(
         &mut self,
         rec: &EntityRec<'_>,
@@ -993,6 +1039,7 @@ impl<'a> Checker<'a> {
                 if let Some(at) = &m.at {
                     self.selector(rec, at, anchor);
                 }
+                self.grant_args(rec, m, anchor);
                 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
                 if !m.has_reason() {
                     self.emit(
