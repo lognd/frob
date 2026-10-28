@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Add a `snapshot` fence after a case (and a section directive) holding the rendered diagnostics; FROB_MDTEST_UPDATE=1 inserts, rewrites or removes the block in the markdown, with three failures otherwise (missing, stale, orphan), like ty's inline snapshots. External insta stays only for snapshot-diagnostics. cargo dev ci proves update mode is off. Source: notes/research/rule-testing.md (D103)."
+new = """
+Add a `snapshot` fence after a case (and a section directive) holding the rendered diagnostics; FROB_MDTEST_UPDATE=1 inserts, rewrites or removes the block in the markdown, with three failures otherwise (missing, stale, orphan), like ty's inline snapshots. External insta stays only for snapshot-diagnostics. cargo dev ci proves update mode is off. Source: notes/research/rule-testing.md (D103).
+
+no-story: internal engineering task in gob-mdtest; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:44Z"
+actor = "lognd"
+rev = 1
