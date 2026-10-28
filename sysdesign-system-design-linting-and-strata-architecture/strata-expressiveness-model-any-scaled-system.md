@@ -1,14 +1,14 @@
 +++
 id = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 title = "strata expressiveness: model any scaled system"
-type = "story"
+type = "task"
 category = "todo"
 priority = "low"
 points = 8
 parent = "01M3AXSDACKS00T3E853M1J0DR"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:07Z"
+updated = "2026-10-28T12:56:51Z"
 aliases = ["T-6510"]
 labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
 +++
