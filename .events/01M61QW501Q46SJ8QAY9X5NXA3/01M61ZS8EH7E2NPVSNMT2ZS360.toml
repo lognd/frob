@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/tests/layering.rs", "crates/gob-plan/**", "crates/frob/tests/it/**", "crates/frob/src/**", "crates/frob-cli/**", "crates/frob-check/tests/**", "crates/crunk/tests/**", "crates/crunk/src/**", "crates/crunk-check/src/sibling.rs", "crates/frob-evidence/src/coverage/lcov.rs", "crates/grimble-check/src/sibling.rs", "docs/design/boundaries.md"]
+new = ["crates/gob-dev/tests/layering.rs", "crates/gob-plan/**", "crates/frob/tests/it/**", "crates/frob/src/**", "crates/frob-cli/**", "crates/frob-check/tests/**", "crates/crunk/tests/**", "crates/crunk/src/**", "crates/crunk-check/src/sibling.rs", "crates/frob-evidence/src/coverage/lcov.rs", "crates/grimble-check/src/sibling.rs", "docs/design/boundaries.md", "docs/schemas/sibling.json"]
+at = "2026-10-28T19:28:54Z"
+actor = "lognd"
+rev = 1
