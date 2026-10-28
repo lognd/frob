@@ -1,0 +1,17 @@
++++
+id = "01M61MHM8ER57BA9VVKXDTE2G7"
+title = "Epic: repository organization and naming convention (org audit)"
+type = "epic"
+category = "todo"
+priority = "high"
+points = 1
+reporter = "lognd"
+created = "2026-10-28T16:12:29Z"
+updated = "2026-10-28T16:12:29Z"
+
+[[acceptance]]
+text = "every step of the org audit migration plan is landed or recorded as dropped with a reason"
+bound = false
++++
+
+Opus org audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/org-audit.md (copy into docs before relying on it). Compares with ruff and ty. Plan section 4.7, steps R0-R8 rules, C1-C6 crates, T1-T2 tests, D1-D5 docs, L1-L4 ledger.
