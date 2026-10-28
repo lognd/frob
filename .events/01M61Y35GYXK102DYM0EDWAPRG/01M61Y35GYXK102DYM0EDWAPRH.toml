@@ -1,0 +1,12 @@
+kind = "create"
+title = "MDL: fix stale mdl008.md text calling a no-reason grant a warning"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/grimble-model/src/rules/mdl008.md"]
+acceptance = ["mdl008.md wording matches the current severity"]
+body = "found while working ~5X9CAQE: mdl008.md wording matches the current severity"
+at = "2026-10-28T18:59:21Z"
+actor = "lognd"
+rev = 1
