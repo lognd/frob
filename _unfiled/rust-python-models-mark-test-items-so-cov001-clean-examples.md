@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T16:16:57Z"
-updated = "2026-10-14T16:16:57Z"
+updated = "2026-10-28T12:55:56Z"
+labels = ["no-story"]
 scope = ["crates/gob-symbols/src/**"]
 
 [[acceptance]]
@@ -16,3 +17,5 @@ bound = false
 +++
 
 Found while working ~YJPYE5V: the rust model never emits the test attr that KindTest::Test reads, so 'some t: test' is empty and COV001 always fires. Unskip examples 1,2 in crates/gob-plan/src/examples/corpus_tests.rs.
+
+no-story: internal engineering task in gob-symbols; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
