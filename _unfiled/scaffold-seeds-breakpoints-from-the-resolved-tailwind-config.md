@@ -2,12 +2,13 @@
 id = "01M1T07J3G9ZVN106VJ79H7B2E"
 title = "scaffold seeds breakpoints from the resolved tailwind config (A-050.4)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 3
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:40Z"
+updated = "2026-10-28T12:55:08Z"
 aliases = ["crunk:T-0112"]
 labels = ["v1-cluster:C1", "area:crunk", "component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/scaffold/**"]
