@@ -8,9 +8,9 @@ points = 5
 parent = "01M3AXSD8TNZP3PQVKB7EKCR7M"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:56Z"
+updated = "2026-10-28T12:57:45Z"
 aliases = ["T-6406"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/lang/_config_compose.py (new)", "tests/fixtures/sysdesign/config-compose/**"]
 
 [[links]]
@@ -40,3 +40,5 @@ SYSDESIGN-INVENTORY.md sec 2: "docker-compose: NOT FOUND. Zero hits for 'docker-
 `services.<name>.{image, ports, environment, depends_on, deploy.resources, restart}` from
 <!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->compose.yaml/docker-compose.yml. Positive-control fixture: tests/fixtures/sysdesign/
 config-compose/env-baked-secret-in-service/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
