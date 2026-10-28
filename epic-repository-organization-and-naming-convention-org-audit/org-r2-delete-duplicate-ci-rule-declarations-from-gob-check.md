@@ -2,7 +2,8 @@
 id = "01M61MM4B45XV6D9W5R0N355KY"
 title = "org R2: delete duplicate CI rule declarations from gob-check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
