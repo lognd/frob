@@ -8,9 +8,9 @@ points = 5
 parent = "01M3AXSD8TNZP3PQVKB7EKCR7M"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:54Z"
+updated = "2026-10-28T12:57:41Z"
 aliases = ["T-6394"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/lang/_config_k8s.py (new)", "tests/fixtures/sysdesign/config-k8s/**"]
 
 [[links]]
@@ -45,3 +45,5 @@ Deployment|Service|Ingress|HorizontalPodAutoscaler|PodDisruptionBudget|NetworkPo
 minimum, exposing `spec.template.spec.containers[].readinessProbe/livenessProbe/startupProbe/
 resources`, `spec.minReplicas`, `spec.minAvailable`, `spec.rules` (Ingress). Positive-control
 fixture: tests/fixtures/sysdesign/config-k8s/full-manifest-set/** with one manifest per kind.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
