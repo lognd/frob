@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T22:17:05Z"
+digest = "fd34174edf361bc8e5a0effb0200721f338d212750e395722dab0c5b177ce917"
+exit_code = 0
+head = "a11b929620325f4e01e25c1eb0f6438e472296b6"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.66s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8a2f09b0-753f-48ca-afbd-1cf088069eed with nextest profile: default
+    Starting 1 test across 7 binaries (54 tests skipped)
+        PASS [   0.004s] gob-rules settings::tests::shipped_in_matches_the_minor_line_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 54 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules shipped_in_matches_the_minor_line_only"
+size = 797
+status = "measured"
+test_count = 1
+tests_digest = "76ee78535d1d2b705362e27c41248e196e51d505a5eec045f5241d0471221910"
+at = "2026-10-28T22:17:05Z"
+actor = "lognd"
+rev = 1
