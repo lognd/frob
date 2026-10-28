@@ -1,0 +1,12 @@
+kind = "create"
+title = "CAP: judge the second argument of rename/copy against may fs.write args"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/grimble-bind/src/caps.rs"]
+acceptance = ["the destination argument of rename/copy is judged too"]
+body = "found while working ~5X9CAQE: the destination argument of rename/copy is judged too"
+at = "2026-10-28T18:59:21Z"
+actor = "lognd"
+rev = 1
