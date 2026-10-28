@@ -8,9 +8,9 @@ priority = "low"
 points = 3
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:43Z"
+updated = "2026-10-28T12:55:43Z"
 aliases = ["T-3981"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/tickets/_evidence.py"]
 +++
 
@@ -73,3 +73,5 @@ ACCEPTANCE
 - The "this test does not exist in this tree" claim made conditional on there
   being no near match.
 - All three fixtures committed.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
