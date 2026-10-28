@@ -8,9 +8,9 @@ points = 3
 parent = "01M3AXSDBEQGV8V5VHYGXBEQTV"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:02Z"
+updated = "2026-10-28T12:57:41Z"
 aliases = ["T-6467"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["strata-core/src/parse/grammar_flow.rs", "src/frob/strata/_models.py", "docs/design/grmb-spec.md"]
 
 [[links]]
@@ -44,3 +44,5 @@ Acceptance criteria: flow_prop gains `hedge after QUANTITY`, desugars to attr `h
 registered in T-STORE-301-ATTR's table. Downstream RULE leaf (SYSDESIGN303, Story E) is
 blocked_by this ticket. Positive-control fixture: tests/fixtures/sysdesign/flow-hedge/
 <!-- frob:waive DOC006 reason="future-facing: created by this ticket or its scaffold" -->hedge-non-idempotent-dst/design.strata.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
