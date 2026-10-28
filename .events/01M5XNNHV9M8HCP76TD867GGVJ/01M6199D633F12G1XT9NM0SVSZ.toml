@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["grimble", "audit:grimble-expressiveness", "creates:packs/core-effects/**"]
+new = ["grimble", "audit:grimble-expressiveness", "creates:packs/core-effects/**", "no-story"]
+at = "2026-10-28T12:55:45Z"
+actor = "lognd"
+rev = 1
