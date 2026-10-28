@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working ~ZM1HA1J: cargo dev test-size now measures the total; consolidation of tests/*.rs is outside that ticket's scope. Measure before/after with cargo dev test-size."
+new = """
+found while working ~ZM1HA1J: cargo dev test-size now measures the total; consolidation of tests/*.rs is outside that ticket's scope. Measure before/after with cargo dev test-size.
+
+no-story: internal engineering task in gob-plan; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:06Z"
+actor = "lognd"
+rev = 1
