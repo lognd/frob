@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:55Z"
+updated = "2026-10-28T12:57:37Z"
 aliases = ["T-6404"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_segmentation.py (new)", "tests/fixtures/sysdesign/sysdesign106/**"]
 
 [[links]]
@@ -53,3 +53,5 @@ egress, (b) data-tier SG ingress CIDR broader than app-tier SG, (c) data resourc
 with a default internet-gateway route, (d) unrestricted egress on a data/restricted-tier
 resource. Positive-control fixtures: tests/fixtures/sysdesign/sysdesign106/{default-allow-sg,
 broad-data-tier-ingress,public-subnet-db,unrestricted-egress}/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
