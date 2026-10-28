@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Design crunk.md section 3 (boxes, text runs and overflow, tab and focus order, computed token bindings). crunk-ingest already has a LayoutSolve for the JSON scene mini-solver; extend or share its types rather than duplicating them. Focus order comes from the existing FocusGraph in focus.rs."
+new = """
+Design crunk.md section 3 (boxes, text runs and overflow, tab and focus order, computed token bindings). crunk-ingest already has a LayoutSolve for the JSON scene mini-solver; extend or share its types rather than duplicating them. Focus order comes from the existing FocusGraph in focus.rs.
+
+no-story: internal engineering task in crunk-layout; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:51Z"
+actor = "lognd"
+rev = 1

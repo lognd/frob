@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:53Z"
-updated = "2026-10-27T00:41:53Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:51Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-layout/src/output/**, crates/crunk-layout/tests/output*.rs, docs/schemas/crunk-layout-solve-v1.json"]
 
 [[acceptance]]
@@ -18,3 +18,5 @@ bound = false
 +++
 
 Design crunk.md section 3 (boxes, text runs and overflow, tab and focus order, computed token bindings). crunk-ingest already has a LayoutSolve for the JSON scene mini-solver; extend or share its types rather than duplicating them. Focus order comes from the existing FocusGraph in focus.rs.
+
+no-story: internal engineering task in crunk-layout; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
