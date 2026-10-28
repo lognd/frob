@@ -7,7 +7,8 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T21:08:52Z"
-updated = "2026-10-22T21:08:52Z"
+updated = "2026-10-28T12:55:42Z"
+labels = ["no-story"]
 scope = ["crates/crunk-spec/**", "crates/crunk/src/extract.rs"]
 
 [[acceptance]]
@@ -16,3 +17,5 @@ bound = false
 +++
 
 found while working K4DBBVJ: durations are currently refused with E-EXTRACT-DURATION because crunk.toml has no duration table. Also candidates: percent and em kinds, JSX string literal rewriting.
+
+no-story: internal engineering task in crunk-spec; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
