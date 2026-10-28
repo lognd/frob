@@ -1,0 +1,14 @@
+kind = "create"
+title = "org D2: move design docs into product subdirs (one product per PR)"
+type = "task"
+category = "todo"
+priority = "low"
+points = 8
+parent = "01M61MHM8ER57BA9VVKXDTE2G7"
+idempotency_key = "org-D2"
+scope = ["docs/design/**"]
+acceptance = ["design docs live under docs/design/<product>/ with MOVED.toml rows; frob doc remap run; DRIFT acks reviewed"]
+body = "HIGH RISK: external URLs and frob:doc bindings; do not start early. Org audit section 4.7 (scratchpad org-audit.md). Deferred and sequenced, not dropped."
+at = "2026-10-28T21:16:39Z"
+actor = "lognd"
+rev = 1
