@@ -7,10 +7,12 @@ priority = "low"
 points = 5
 reporter = "human"
 created = "2026-09-23T00:00:00Z"
-updated = "2026-10-27T02:57:53Z"
+updated = "2026-10-28T12:55:44Z"
 aliases = ["T-5446"]
-labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B2", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sql/_sqlfluff_plugin.py"]
 +++
 
 found while working T-5335: WHERE-vs-ON on outer joins, non-sargable predicates, NOT-IN-over-nullable-subquery, OR-across-columns, correlated-subquery-where-join-fits, DISTINCT-masking-fan-out, COUNT(*)-vs-EXISTS, no-LIMIT-on-interactive-query, missing-statement_timeout, long-transaction -- these ten candidate rules from T-5335's own body need schema/session state (index catalog, cross-statement session config, resolved query plan) beyond a single-statement sqlfluff AST plugin's reach. T-5335's own contingency clause splits them off rather than forcing the fit.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
