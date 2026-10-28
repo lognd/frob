@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "found while working ~60E2DXH: each screen state needs a render-ledger entry per platform; needs render output."
+new = """
+found while working ~60E2DXH: each screen state needs a render-ledger entry per platform; needs render output.
+
+no-story: internal engineering task in crunk-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:06Z"
+actor = "lognd"
+rev = 1
