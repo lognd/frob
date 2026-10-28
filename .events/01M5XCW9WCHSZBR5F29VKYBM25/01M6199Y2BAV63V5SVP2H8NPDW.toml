@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Design crunk.md section 5 interop row (serve: outline first, drill into nodes, search over the design system, the code map, an agent-guidelines file). Reuse crunk query find and crunk map for search and code map; do not duplicate them. Read-only: the patch tool is in the phase 3 epic."
+new = """
+Design crunk.md section 5 interop row (serve: outline first, drill into nodes, search over the design system, the code map, an agent-guidelines file). Reuse crunk query find and crunk map for search and code map; do not duplicate them. Read-only: the patch tool is in the phase 3 epic.
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:03Z"
+actor = "lognd"
+rev = 1

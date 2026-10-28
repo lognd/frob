@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:33Z"
-updated = "2026-10-27T00:41:33Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:56:03Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/outline.rs, crates/crunk/src/guidelines.rs, crates/crunk/tests/outline.rs"]
 
 [[acceptance]]
@@ -18,3 +18,5 @@ bound = false
 +++
 
 Design crunk.md section 5 interop row (serve: outline first, drill into nodes, search over the design system, the code map, an agent-guidelines file). Reuse crunk query find and crunk map for search and code map; do not duplicate them. Read-only: the patch tool is in the phase 3 epic.
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
