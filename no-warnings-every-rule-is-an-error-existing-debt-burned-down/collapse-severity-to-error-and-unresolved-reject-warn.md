@@ -9,7 +9,7 @@ parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
 updated = "2026-10-28T12:54:59Z"
-scope = ["crates/gob-rules/src/**", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/src", "crates/crunk-rules/tests", "crates/frob-ack/Cargo.toml", "crates/frob-ack/src", "crates/frob-ack/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src", "crates/frob-check/tests", "crates/frob-obligations/Cargo.toml", "crates/frob-obligations/src", "crates/frob-obligations/tests", "crates/frob-pm/Cargo.toml", "crates/frob-pm/src", "crates/frob-pm/tests", "crates/gob-check/Cargo.toml", "crates/gob-check/clippy.toml", "crates/gob-check/src", "crates/gob-check/tests", "crates/gob-directives/Cargo.toml"]
+scope = ["crates/gob-rules/src/**", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/src", "crates/crunk-rules/tests", "crates/frob-ack/Cargo.toml", "crates/frob-ack/src", "crates/frob-ack/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src", "crates/frob-check/tests", "crates/frob-obligations/Cargo.toml", "crates/frob-obligations/src", "crates/frob-obligations/tests", "crates/frob-pm/Cargo.toml", "crates/frob-pm/src", "crates/frob-pm/tests", "crates/gob-check/Cargo.toml", "crates/gob-check/clippy.toml", "crates/gob-check/src", "crates/gob-check/tests", "crates/gob-directives/Cargo.toml", "crates/gob-directives/resources"]
 
 [[acceptance]]
 text = "Severity has only Error and Unresolved; Warn and Advisory removed from derive, [rules], fail_on"
