@@ -7,8 +7,11 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T12:52:06Z"
-updated = "2026-10-27T02:58:41Z"
+updated = "2026-10-28T12:56:07Z"
+labels = ["no-story"]
 scope = ["crates/grimble-bind/src/**"]
 +++
 
 Found while working JB1G32M: summary derives per-node cells from CAP findings only, so uses/denied/excused cells are absent.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
