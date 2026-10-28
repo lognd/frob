@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:58Z"
+updated = "2026-10-28T12:57:39Z"
 aliases = ["T-6425"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_lb.py", "tests/fixtures/sysdesign/sysdesign107/**"]
 
 [[links]]
@@ -53,3 +53,5 @@ Acceptance criteria: flags an internal listener in T-SYS-B-PROXY's parsed config
 transport_socket when the corresponding strata node/flow declares `attr transport mtls` (or the
 design declares zero-trust more broadly) but the deployed config disagrees. Positive-control
 fixture: tests/fixtures/sysdesign/sysdesign107/declared-mtls-plaintext-listener/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
