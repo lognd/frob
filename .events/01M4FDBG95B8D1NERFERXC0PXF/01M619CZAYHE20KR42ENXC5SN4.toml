@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "grmb-planning.md 11, row P5. Per scenario a sequence diagram (actors and nodes as lifelines, Succ pairs as messages, arms as alt, retry as loop) and an activity diagram; per system a use-case diagram."
+new = """
+grmb-planning.md 11, row P5. Per scenario a sequence diagram (actors and nodes as lifelines, Succ pairs as messages, arms as alt, retry as loop) and an activity diagram; per system a use-case diagram.
+
+no-story: internal engineering task in grimble; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:42Z"
+actor = "lognd"
+rev = 1

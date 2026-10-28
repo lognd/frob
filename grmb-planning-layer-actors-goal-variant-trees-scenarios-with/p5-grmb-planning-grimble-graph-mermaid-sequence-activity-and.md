@@ -8,8 +8,8 @@ points = 3
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:47Z"
-updated = "2026-10-28T12:56:53Z"
-labels = ["grimble"]
+updated = "2026-10-28T12:57:42Z"
+labels = ["grimble", "no-story"]
 scope = ["crates/grimble/**", "crates/grimble-check/**", "changelog.d/**"]
 
 [[links]]
@@ -22,3 +22,5 @@ bound = false
 +++
 
 grmb-planning.md 11, row P5. Per scenario a sequence diagram (actors and nodes as lifelines, Succ pairs as messages, arms as alt, retry as loop) and an activity diagram; per system a use-case diagram.
+
+no-story: internal engineering task in grimble; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
