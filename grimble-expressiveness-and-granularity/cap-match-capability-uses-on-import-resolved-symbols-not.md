@@ -2,7 +2,8 @@
 id = "01M5XNNHJ0ES2PB6ZKAD36SRKP"
 title = "CAP: match capability uses on import-resolved symbols, not callee spelling (aliases, from-imports, fn values, name collisions)"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
