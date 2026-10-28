@@ -1,7 +1,7 @@
 +++
 id = "01KZ7KGKHYQ1QZ0BHKB49P22KK"
 title = "Language expansion: research and rank the target set, define per-language semantics"
-type = "story"
+type = "task"
 flavour = "user_story"
 category = "todo"
 priority = "low"
@@ -9,7 +9,7 @@ points = 8
 parent = "01KZ7KGKHXGS6W2YAVRY27W0D5"
 reporter = "human"
 created = "2026-08-05T00:00:00Z"
-updated = "2026-10-27T02:57:31Z"
+updated = "2026-10-28T12:56:28Z"
 aliases = ["T-1598"]
 labels = ["v1-cluster:D2", "triage:accepted"]
 scope = ["docs/**"]
