@@ -859,3 +859,26 @@ Under `--ticket`, `--fix` edits only files the lease covers (its scope globs plu
 edited). A fix with an edit outside that set is left whole, unapplied, and listed in
 `fix.skipped_scope` with the `frob lease widen <ticket> --glob <path>` command that
 would cover it. A diff scope (`--diff-base`) edits only the files the diff names.
+
+## Ledger hygiene conventions (~339DX5F)
+
+The PM hygiene rules (PM003, PM005, PM007, PM008) warn about ledger shape, and
+the fixes below are the intended ones; none of them delete a ticket.
+
+- **A story is for a user-visible outcome.** A story carries `persona`,
+  `capability` and `outcome_text` (each at least three words, PM003) and at
+  least one acceptance criterion in Given/When/Then form (PM005). Purely
+  internal engineering work (a rule family with no criteria yet, a refactor, a
+  provider) is a `task`, retyped with `frob ticket update <t> --set type=task`.
+- **Free-form criteria.** A criterion that cannot be phrased Given/When/Then
+  starts with `free-form:` and a reason, which PM005 accepts.
+- **`no-story` exemption.** A task whose scope touches user-visible paths but
+  that has no story parent (PM007) takes the `no-story` label and states the
+  reason in its body. Children of a story that is later retyped to a task fall
+  under this rule too.
+- **Stale todo (PM008).** A ticket past `[pm.max_age_days]` is finished,
+  requeued or dropped with a reason; `frob ticket drop` is reopenable, so
+  unscheduled wishlist items with a dead scope are dropped rather than left
+  to age. An in-progress ticket whose work landed is closed with
+  `frob ticket closeout`, which needs bound evidence, a reason and a
+  changelog fragment.
