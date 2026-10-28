@@ -1,0 +1,13 @@
+kind = "create"
+title = "CI green: fix crunk rustdoc private link and profile.toml scenarios for crunk export leaves"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+scope = ["crates/crunk/**", "profile.toml"]
+acceptance = ["cargo doc link to private crate::tokens::preview in crunk export is fixed so the Docs CI job passes", "every crunk export leaf command has a scenario or a skip reason in profile.toml so the profile CI job passes"]
+body = "CI on experimental fails in Docs (rustdoc private link in crunk export) and profile (crunk export csharp/css/tailwind/uss lack scenarios). Run 40718326507."
+at = "2026-10-28T15:55:06Z"
+actor = "lognd"
+rev = 1
