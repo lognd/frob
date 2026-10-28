@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:24Z"
-updated = "2026-10-27T00:42:24Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:51Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-gallery/src/flashing.rs, crates/crunk-gallery/tests/flashing.rs"]
 
 [[acceptance]]
@@ -18,3 +18,5 @@ bound = false
 +++
 
 Design crunk.md section 4 T2 row (flashing frames). Pure frame-sequence logic over Image; capture hookup is out of scope.
+
+no-story: internal engineering task in crunk-gallery; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
