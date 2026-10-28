@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T16:35:21Z"
+digest = "1543651d954165e446ddf680594048ed6b3aeb5fb16cf107013069e097d4700a"
+exit_code = 0
+head = "81e1b2faeead6ec7b0c45c594b80325ebceced2c"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4178bf66-0022-4d8d-b246-84736db76e45 with nextest profile: default
+    Starting 1 test across 490 binaries (5668 tests skipped)
+        PASS [   0.139s] grimble-bind::caps a_literal_getattr_or_import_module_is_unresolved_not_an_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.148s] 1 test run: 1 passed, 5668 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_literal_getattr"
+size = 629
+status = "measured"
+test_count = 1
+tests_digest = "0ee2341ba48a2898757fd520ef6f755fb9ed38c3ffe4859a9a45fc2b0d81f9cf"
+at = "2026-10-28T16:35:21Z"
+actor = "lognd"
+rev = 1
