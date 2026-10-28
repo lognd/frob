@@ -7,8 +7,11 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T15:51:43Z"
-updated = "2026-10-14T15:51:43Z"
+updated = "2026-10-28T12:56:05Z"
+labels = ["no-story"]
 scope = ["crates/gob-plan/**"]
 +++
 
 Found while working ~ETGCVS0. DOC002 now lowers, but the executor field reader (exec/core/field.rs) yields Unknown for link fields target, target.path, target.anchor, file and for heading text/file, so the rule cannot decide at run time. Read them from the markdown model nodes.
+
+no-story: internal engineering task in gob-plan; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
