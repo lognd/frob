@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:58:02Z"
+updated = "2026-10-28T12:57:35Z"
 aliases = ["T-6465"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_edge.py", "tests/fixtures/sysdesign/sysdesign102/**"]
 
 [[links]]
@@ -53,3 +53,5 @@ Acceptance criteria: flags a T-SYS-B-K8S Ingress or T-SYS-B-TERRAFORM `aws_lb_li
 `cloudflare_*` resource whose TLS block contains inline PEM-shaped certificate/key material
 instead of a `cert-manager.io/cluster-issuer` annotation or ACM ARN reference. Positive-control
 fixture: tests/fixtures/sysdesign/sysdesign102/ingress-inline-pem/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
