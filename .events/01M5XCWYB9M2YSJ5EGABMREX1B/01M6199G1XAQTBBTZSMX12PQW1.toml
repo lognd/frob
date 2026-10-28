@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Design crunk.md section 3. Glue ticket: consumes the style, text and output modules. Public entry point solve_scene_html(scene, tokens, viewport, fonts) -> Result<LayoutSolveDoc, SolveError>."
+new = """
+Design crunk.md section 3. Glue ticket: consumes the style, text and output modules. Public entry point solve_scene_html(scene, tokens, viewport, fonts) -> Result<LayoutSolveDoc, SolveError>.
+
+no-story: internal engineering task in crunk-layout; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:49Z"
+actor = "lognd"
+rev = 1
