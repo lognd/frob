@@ -7,9 +7,9 @@ priority = "low"
 points = 3
 reporter = "human"
 created = "2026-09-24T00:00:00Z"
-updated = "2026-10-09T20:42:08Z"
+updated = "2026-10-28T12:55:54Z"
 aliases = ["T-5768"]
-labels = ["v1-cluster:B3d", "triage:accepted"]
+labels = ["v1-cluster:B3d", "triage:accepted", "no-story"]
 scope = ["src/frob/tickets/_evidence.py", "tests/system/test_cli_evidence_enforcement.py", "docs/design/grmb-spec.md"]
 
 [[links]]
@@ -26,3 +26,5 @@ Doc page: docs/strata/vmodel.md#layout-verification-node
 Cross-repo dependency: blocked on the crunk repo leaf titled 'Define versioned gallery manifest JSON schema' (crunk epic 'gallery: every component and layout rendered and reviewed en masse'). Ids differ across repos, so the edge is recorded here by title.
 
 Tree: /tmp/claude-1000/-home-logan-projects-frob/f95beb8e-97d5-4dd4-9038-3ffab8a3a4ea/scratchpad/CRUNK-GALLERY-TREE.md (sections 2 and 5; section 5 overrides).
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
