@@ -8,9 +8,9 @@ points = 3
 parent = "01M1T07NXGXQ1VDNZ4FWF10TGF"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:44Z"
+updated = "2026-10-28T12:55:52Z"
 aliases = ["T-4040"]
-labels = ["v1-cluster:C4a", "triage:accepted"]
+labels = ["v1-cluster:C4a", "triage:accepted", "no-story"]
 scope = ["src/frob/graph/dsl.py"]
 
 [[links]]
@@ -31,3 +31,5 @@ Item 7. DOWNSTREAM OF T-4016 (already filed: the TS walker emits no symbol for d
 VERIFIED: git grep for kind= alongside frob:waive TEST-family rules found no existing mechanism recording what KIND of test evidence a waived claim asserted. _TESTS_KINDS (src/frob/graph/dsl.py: unit/integration/e2e/property) exists for a BOUND frob:tests edge, but a WAIVED one carries no equivalent.
 
 FINDING THIS WOULD HAVE CAUGHT: a frob:tests claim waived for a tooling reason (the TS-walker gap, or any similar binding failure) states WHY the evidence is invisible but not WHAT KIND of evidence it was claiming -- so nobody notices later that the waived tests are UNIT-shaped where the original claim was INTEGRATION-shaped, silently downgrading the actual coverage claim with no visible signal. Proposed: a waived frob:tests directive must still carry its intended kind= (unit/integration/e2e/property), recorded alongside the waiver reason, so once the underlying tooling gap (T-4016) closes and the waiver is lifted, the re-bound evidence can be checked against the SAME kind it originally claimed rather than whatever kind the newly-working binding happens to produce.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
