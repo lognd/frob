@@ -2,13 +2,13 @@
 id = "01M5XMJGNF1HWQBEGE31G4B9C1"
 title = "Collapse Severity to Error and Unresolved; reject warn/advisory config"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
-updated = "2026-10-27T05:20:11Z"
+updated = "2026-10-28T12:54:34Z"
 scope = ["crates/gob-rules/src/**"]
 
 [[acceptance]]
