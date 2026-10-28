@@ -8,9 +8,9 @@ points = 3
 parent = "01M1T07NWGXQV249M3HN5DQV9V"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:43Z"
+updated = "2026-10-28T12:55:44Z"
 aliases = ["T-3991"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/policy/__init__.py"]
 
 [[acceptance]]
@@ -27,3 +27,5 @@ F-203 (T-3984 item 8). VERIFIED: git grep for GEN001 across src/frob found nothi
 FINDING THIS WOULD HAVE CAUGHT: three hand-written drift tests, each independently re-verifying that a generated file matches its generator's current output, duplicating the same check-command-and-diff logic three times (the exact "two copies of a rule is a bug waiting to desync" shape this repo's own CLAUDE.md names). Proposed: a declared-generated-files block (source file -> generator command -> output file) plus one gate that runs each declared check command and diffs the result, replacing the three hand-written tests with one data-driven mechanism.
 
 FIRST STEP: identify which three hand-written drift tests the consumer means is not directly determinable from our side (this is their repo's shape) -- so this ticket's first task is designing the declared-generated-files schema generically, then finding this repo's OWN analogous hand-written generated-file drift tests (if any) as a first adopter/proof of concept before rolling it out as a general frob feature.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
