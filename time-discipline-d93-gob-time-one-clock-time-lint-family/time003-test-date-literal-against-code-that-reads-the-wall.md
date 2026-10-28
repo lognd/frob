@@ -8,7 +8,10 @@ points = 5
 parent = "01M44R5D47XBH3E2N3B8FNMT9F"
 reporter = "lognd"
 created = "2026-10-05T00:42:19Z"
-updated = "2026-10-27T02:58:11Z"
+updated = "2026-10-28T12:56:48Z"
+persona = "a developer writing tests"
+capability = "be warned when a test date literal meets wall clock code"
+outcome_text = "time dependent tests do not rot silently"
 
 [[links]]
 kind = "blocked-by"
