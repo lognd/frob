@@ -2,7 +2,8 @@
 id = "01M5XMJHEVEF3774EFRMBFZHZD"
 title = "Retire ramp-in and strictness warn-new-rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
