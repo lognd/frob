@@ -2,13 +2,13 @@
 id = "01M5XMF3XC9ZD6FPZ59ECWJCJ4"
 title = "Burn down DEAD001 and COV001 (warn and unresolved)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:54:09Z"
-updated = "2026-10-27T02:54:09Z"
+updated = "2026-10-28T13:46:36Z"
 scope = ["docs/design/coverage.md"]
 
 [[acceptance]]
