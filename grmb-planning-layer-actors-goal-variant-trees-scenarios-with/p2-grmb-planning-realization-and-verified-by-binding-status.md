@@ -8,8 +8,8 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:42Z"
-updated = "2026-10-28T12:56:51Z"
-labels = ["grimble"]
+updated = "2026-10-28T12:57:38Z"
+labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "crates/grimble/**", "crates/grimble-check/**", "docs/schemas/sibling.json", "docs/design/rules.md", "docs/design/sibling-contract.md", "changelog.d/**"]
 
 [[links]]
@@ -26,3 +26,5 @@ bound = false
 +++
 
 grmb-planning.md 5.7, 5.8, 6.1, 7.2 and 9, row P2. Realization and verified_by rows in B; status and status_hi per entity; obligations list; PLAN family registered in rules.md 3 with PLAN001-PLAN005 and PLAN007-PLAN010; graph JSON and check --json additions as optional keys under grimble.graph/1; sibling.json defs and strict schema.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

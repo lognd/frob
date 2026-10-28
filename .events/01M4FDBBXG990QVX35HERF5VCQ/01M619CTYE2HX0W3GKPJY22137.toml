@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "grmb-planning.md 5.7, 5.8, 6.1, 7.2 and 9, row P2. Realization and verified_by rows in B; status and status_hi per entity; obligations list; PLAN family registered in rules.md 3 with PLAN001-PLAN005 and PLAN007-PLAN010; graph JSON and check --json additions as optional keys under grimble.graph/1; sibling.json defs and strict schema."
+new = """
+grmb-planning.md 5.7, 5.8, 6.1, 7.2 and 9, row P2. Realization and verified_by rows in B; status and status_hi per entity; obligations list; PLAN family registered in rules.md 3 with PLAN001-PLAN005 and PLAN007-PLAN010; graph JSON and check --json additions as optional keys under grimble.graph/1; sibling.json defs and strict schema.
+
+no-story: internal engineering task in grimble-bind; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:57:38Z"
+actor = "lognd"
+rev = 1
