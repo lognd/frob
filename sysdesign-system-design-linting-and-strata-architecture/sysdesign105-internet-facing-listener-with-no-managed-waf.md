@@ -8,9 +8,9 @@ points = 2
 parent = "01M3AXSD8RPMPFSYCWPM0XQY5G"
 reporter = "agent"
 created = "2026-09-25T00:00:00Z"
-updated = "2026-10-27T02:57:59Z"
+updated = "2026-10-28T12:57:45Z"
 aliases = ["T-6437"]
-labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B1", "area:grimble", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/sysdesign/_waf.py (new)", "tests/fixtures/sysdesign/sysdesign105/**"]
 
 [[links]]
@@ -43,3 +43,5 @@ Acceptance criteria: flags a T-SYS-B-TERRAFORM internet-facing listener (`aws_lb
 public-subnet ALB, or `cloudflare_ruleset` absent for a proxied zone) with no
 `ManagedRuleGroupStatement`/`cloudflare_ruleset`/Azure WAF policy binding. Positive-control
 fixture: tests/fixtures/sysdesign/sysdesign105/public-alb-no-waf/**.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
