@@ -8,10 +8,12 @@ points = 3
 parent = "01M1WJMD174K541FJR85BEHX2T"
 reporter = "agent"
 created = "2026-09-07T00:00:00Z"
-updated = "2026-10-27T02:57:50Z"
+updated = "2026-10-28T12:55:51Z"
 aliases = ["T-4239"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/strata"]
 +++
 
 Consumer F-325/M2-6: a script's shebang says sh, its declared runtime image is alpine (busybox userland), and shellcheck ran with the default sh dialect misses a non-POSIX GNU extension (head -n -N). Bind a shell component to its runtime image (a strata node attribute) and run shellcheck with the matching dialect/compat list, or run the script's own tests inside that image. Not fixture-testable in frob's own tree: no shell-scripts-bound-to-container-images exist here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
