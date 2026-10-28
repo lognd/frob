@@ -21,8 +21,15 @@
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters); `open(..)` is `fs.read` whatever its mode; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
-//! severity table is not consulted (CAP001 is an Error, CAP002 a Warning); `may` arguments
-//! are ignored.
+//! severity table is not consulted (CAP001 is an Error, CAP002 a Warning).
+//!
+//! `may` arguments (ticket 5X9CAQE): a grant `may fs.read("config/**")` covers a use only when the
+//! use's argument is statically known and `grimble_model::args::judge` matches it against a grant
+//! argument. The argument is folded by `gob_symbols::call_args` (literals, concatenations,
+//! single-assignment constants, tuples, path wrappers). A known argument outside every covering
+//! grant argument is CAP001 (Error) naming both. An argument that cannot be folded, a use through
+//! a receiver (`Path(..).read_text()`), or an atom a pack declares is Unresolved with reason
+//! `unresolved-edge`, never clean. Paths are compared lexically (symlinks are not followed).
 //!
 //! Grant scope (ticket M64HENY): a grant's `at` selector is judged against the unit of the use
 //! (the call edge's from-symbol) and its enclosing symbols, not its file. `at "f.rs::allowed"`
@@ -36,6 +43,7 @@
 // frob:ticket 01M59RWT16TFNSACMMTTXX200T
 // frob:ticket 01M5XNNHBSPSM5XFG8FM64HENY
 // frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -46,6 +54,7 @@ use gob_rules::Severity;
 use gob_symbols::{EdgeKind, Target};
 use gob_walk::{Owner, selects_unit_or_enclosing};
 use grimble_capabilities::{Cell, NodeInput};
+use grimble_model::args::{ArgKind, Judgement, arg_kind, judge};
 use grimble_model::ast::EntityKind;
 use grimble_model::{PackDetectorKind, PackPin};
 
@@ -77,6 +86,9 @@ struct Use {
     callee: String,
     /// False when the receiver type did not resolve: a May use whoever owns the code.
     certain: bool,
+    /// The statically known argument the call passes (see `attach_args`); `None` when it does not
+    /// fold, which an argument-scoped grant can never clear.
+    arg: Option<String>,
 }
 
 impl Use {
@@ -587,6 +599,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                         line: Some(pu.line),
                         callee: pu.path.clone(),
                         certain,
+                        arg: None,
                     },
                 );
             }
@@ -659,11 +672,13 @@ fn observe(cx: &Cx<'_>) -> Uses {
                 line: e.line,
                 callee: callee.to_owned(),
                 certain,
+                arg: None,
             };
             route(&mut uses, &uo.merged.owner, u);
         }
     }
     scan_resolved(cx, &mut uses);
+    attach_args(cx, &mut uses);
     tracing::info!(
         must_nodes = uses.lo.len(),
         may_nodes = uses.hi.len(),
@@ -677,7 +692,168 @@ fn selects_use(sel: &gob_walk::Selector, u: &Use) -> bool {
     selects_unit_or_enclosing(sel, &u.file, &u.qual)
 }
 
-/// True when `grant` covers the use `u` of `atom` (the atom itself or its parent) in its unit.
+/// The first token of a shell string, or `None` when it holds a shell metacharacter and so may run
+/// something else.
+fn shell_program(cmd: &str) -> Option<String> {
+    if cmd.contains([';', '|', '&', '$', '`', '<', '>', '(', ')', '\n']) {
+        return None;
+    }
+    cmd.split_whitespace().next().map(str::to_owned)
+}
+
+/// The host pattern text of an observed `(host, port)` pair, bracketing an IPv6 host.
+fn host_port(host: &str, port: Option<&str>) -> String {
+    let host = if host.contains(':') && !host.starts_with('[') {
+        format!("[{host}]")
+    } else {
+        host.to_owned()
+    };
+    match port {
+        Some(p) => format!("{host}:{p}"),
+        None => host,
+    }
+}
+
+/// The argument a call passes, as the string `judge` compares, for an atom of `kind`.
+fn observed_arg(kind: ArgKind, call: &gob_symbols::CallArgs) -> Option<String> {
+    use gob_symbols::ArgValue;
+    let first = call.args.first()?.as_ref()?;
+    match (kind, first) {
+        (ArgKind::Path | ArgKind::EnvName | ArgKind::Host, ArgValue::Str(s)) => Some(s.clone()),
+        (ArgKind::Binary, ArgValue::Str(s)) => shell_program(s),
+        (ArgKind::Binary, ArgValue::Seq(v)) => v.first().cloned().flatten(),
+        (ArgKind::Host, ArgValue::Seq(v)) if v.len() == 2 => {
+            let host = v[0].as_deref()?;
+            Some(host_port(host, v[1].as_deref()))
+        }
+        _ => None,
+    }
+}
+
+/// True when the vocabulary entry reaches the call through a receiver, so the first call argument
+/// is not the path, name or program the atom is about (`Path.read_text`, `.read_text`).
+fn receiver_entry(callee: &str) -> bool {
+    callee.starts_with("Path.") || callee.starts_with('.') || callee.starts_with("?.")
+}
+
+/// Fill `Use::arg` for the uses an argument-scoped grant could judge: parse each file once and
+/// match a use to the one call on its line with the same last callee segment. An ambiguous line
+/// (two such calls with different arguments), a missing call or an unfoldable argument leaves
+/// `None`. Does nothing when no grant carries arguments.
+fn attach_args(cx: &Cx<'_>, uses: &mut Uses) {
+    let scoped = cx
+        .model
+        .entities
+        .values()
+        .any(|e| e.grants.iter().any(|g| !g.args.is_empty()));
+    if !scoped {
+        return;
+    }
+    let mut parsed: BTreeMap<String, BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>>> =
+        BTreeMap::new();
+    let (mut known, mut unknown) = (0usize, 0usize);
+    for u in uses.lo.values_mut().chain(uses.hi.values_mut()).flatten() {
+        let Some(kind) = arg_kind(&u.atom) else {
+            continue;
+        };
+        let Some(line) = u.line else { continue };
+        if kind != ArgKind::Host && receiver_entry(&u.callee) {
+            unknown += 1;
+            continue;
+        }
+        let Some(code) = cx.code.file(&u.file) else {
+            continue;
+        };
+        let calls = parsed.entry(u.file.clone()).or_insert_with(|| {
+            let mut m: BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>> = BTreeMap::new();
+            if let Some(src) = code.source() {
+                for c in gob_symbols::call_args(&code.language, &src) {
+                    m.entry((c.line, last_segment(&c.callee).to_owned()))
+                        .or_default()
+                        .push(c);
+                }
+            }
+            m
+        });
+        let Some(cands) = calls.get(&(line, last_segment(&u.callee).to_owned())) else {
+            unknown += 1;
+            continue;
+        };
+        let vals: BTreeSet<Option<String>> = cands.iter().map(|c| observed_arg(kind, c)).collect();
+        if vals.len() == 1 {
+            u.arg = vals.into_iter().next().flatten();
+        }
+        if u.arg.is_some() {
+            known += 1;
+        } else {
+            unknown += 1;
+        }
+    }
+    tracing::info!(known, unknown, "call arguments attached to uses");
+}
+
+/// How the grants of a node judge one use.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Coverage {
+    /// No grant names the atom in the use's unit.
+    Uncovered,
+    /// A grant with no arguments, or an argument the use satisfies.
+    Covered,
+    /// Argument-scoped grants cover the atom and unit, but the observed argument matches none.
+    Mismatch {
+        observed: String,
+        granted: Vec<String>,
+    },
+    /// Argument-scoped grants cover the atom and unit and the argument is not statically known.
+    Unknown { granted: Vec<String> },
+}
+
+/// The `Judgement` of the use against one argument-scoped grant: any grant argument that matches
+/// is `Match`; otherwise `Unknown` if any could not be decided or the use has no folded argument.
+fn judge_use(grant: &Grant, atom: &str, u: &Use) -> Judgement {
+    let (Some(kind), Some(obs)) = (arg_kind(atom), u.arg.as_deref()) else {
+        return Judgement::Unknown;
+    };
+    let mut out = Judgement::NoMatch;
+    for a in &grant.args {
+        match judge(kind, a, obs) {
+            Judgement::Match => return Judgement::Match,
+            Judgement::Unknown => out = Judgement::Unknown,
+            Judgement::NoMatch => {}
+        }
+    }
+    out
+}
+
+/// Fold the grants of a node into one `Coverage` of the use `u` of `atom`.
+fn coverage(grants: &[Grant], atom: &str, u: &Use) -> Coverage {
+    let mut granted: Vec<String> = Vec::new();
+    let mut unknown = false;
+    for g in grants.iter().filter(|g| covers(g, atom, u)) {
+        if g.args.is_empty() {
+            return Coverage::Covered;
+        }
+        match judge_use(g, atom, u) {
+            Judgement::Match => return Coverage::Covered,
+            Judgement::Unknown => unknown = true,
+            Judgement::NoMatch => {}
+        }
+        granted.extend(g.args.iter().cloned());
+    }
+    if granted.is_empty() {
+        return Coverage::Uncovered;
+    }
+    match (&u.arg, unknown) {
+        (Some(observed), false) => Coverage::Mismatch {
+            observed: observed.clone(),
+            granted,
+        },
+        _ => Coverage::Unknown { granted },
+    }
+}
+
+/// True when `grant` covers the use `u` of `atom` (the atom itself or its parent) in its unit,
+/// whatever its arguments say.
 fn covers(grant: &Grant, atom: &str, u: &Use) -> bool {
     let granted = gob_ir::registry::canonical(&grant.atom).unwrap_or(&grant.atom);
     let named = granted == atom
@@ -731,7 +907,9 @@ fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String, Stri
                     ..NodeInput::default()
                 });
             input.uses.insert(u.atom.clone());
-            if e.grants.iter().any(|g| covers(g, &u.atom, u)) {
+            // An argument-scoped grant that names the atom keeps the cell declared; CAP001
+            // judges its argument separately.
+            if coverage(&e.grants, &u.atom, u) != Coverage::Uncovered {
                 input.grants.insert(u.atom.clone());
             }
         }
@@ -750,6 +928,10 @@ fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String, Stri
     out
 }
 
+/// Argument findings keyed by (atom, observed argument or None when unfolded, granted arguments).
+type ByArg<'a> = BTreeMap<(&'a str, Option<String>, Vec<String>), Vec<&'a Use>>;
+
+#[allow(clippy::too_many_lines)] // one pass per node: exact, argument and may findings together
 fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
     let undeclared = matrix_undeclared(cx, uses);
     for e in cx
@@ -766,18 +948,85 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             };
             // (atom, receiver unresolved) -> uses; an unresolved receiver is a May use.
             let mut by_atom: BTreeMap<(&str, bool), Vec<&Use>> = BTreeMap::new();
+            // argument findings: (atom, observed, granted) -> uses; observed None is unfolded
+            let mut by_arg: ByArg<'_> = BTreeMap::new();
             for u in found {
-                let flagged = if must && u.certain {
-                    undeclared.contains(&(e.anchor.clone(), u.atom.clone(), u.unit.clone()))
-                        && !e.grants.iter().any(|g| covers(g, &u.atom, u))
-                } else {
-                    !e.grants.iter().any(|g| covers(g, &u.atom, u))
-                };
-                if flagged {
-                    by_atom
-                        .entry((u.atom.as_str(), !u.certain))
+                match coverage(&e.grants, &u.atom, u) {
+                    Coverage::Covered => {}
+                    Coverage::Mismatch { observed, granted } => by_arg
+                        .entry((u.atom.as_str(), Some(observed), granted))
                         .or_default()
-                        .push(u);
+                        .push(u),
+                    Coverage::Unknown { granted } => by_arg
+                        .entry((u.atom.as_str(), None, granted))
+                        .or_default()
+                        .push(u),
+                    Coverage::Uncovered => {
+                        let flagged = !(must && u.certain)
+                            || undeclared.contains(&(
+                                e.anchor.clone(),
+                                u.atom.clone(),
+                                u.unit.clone(),
+                            ));
+                        if flagged {
+                            by_atom
+                                .entry((u.atom.as_str(), !u.certain))
+                                .or_default()
+                                .push(u);
+                        }
+                    }
+                }
+            }
+            for ((atom, observed, granted), us) in by_arg {
+                let allowed = granted
+                    .iter()
+                    .map(|a| format!("{a:?}"))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                match observed {
+                    Some(obs) if must && us.iter().all(|u| u.certain) => {
+                        let anchor = format!("cap/{}/{atom}", e.anchor);
+                        out.fire(
+                            "CAP001",
+                            Severity::Error,
+                            format!(
+                                "`{}` uses `{atom}` with argument {obs:?}, outside every granted argument ({allowed}) ({} use(s)): {}",
+                                e.anchor,
+                                us.len(),
+                                list(&us)
+                            ),
+                            &anchor,
+                            site,
+                        );
+                    }
+                    Some(obs) => {
+                        let anchor = format!("cap/{}/{atom}/arg", e.anchor);
+                        out.unresolved(
+                            "CAP001",
+                            Reason::MayOnlyOwner,
+                            &format!(
+                                "`{atom}` may be used by `{}` with argument {obs:?}, outside every granted argument ({allowed}); the use is not certain Must-owned code: {}",
+                                e.anchor,
+                                list(&us)
+                            ),
+                            &anchor,
+                            site,
+                        );
+                    }
+                    None => {
+                        let anchor = format!("cap/{}/{atom}/arg", e.anchor);
+                        out.unresolved(
+                            "CAP001",
+                            Reason::UnresolvedEdge,
+                            &format!(
+                                "`{atom}` is used by `{}` with an argument that cannot be resolved statically, so the granted arguments ({allowed}) cannot be checked: {}",
+                                e.anchor,
+                                list(&us)
+                            ),
+                            &anchor,
+                            site,
+                        );
+                    }
                 }
             }
             for ((atom, unresolved_receiver), us) in by_atom {

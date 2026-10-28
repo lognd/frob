@@ -370,7 +370,7 @@ fails the test. Every workspace crate must appear here exactly once.
 | Layer | Name | Crates |
 |---|---|---|
 | 0 | foundation | gob-path |
-| 1 | base | crunk-values, gob-caps, gob-fs, gob-log, gob-macros, gob-text, gob-time |
+| 1 | base | crunk-values, frob-present, gob-caps, gob-fs, gob-log, gob-macros, gob-text, gob-time |
 | 2 | io | gob-exec, gob-languages, gob-lock, gob-walk |
 | 3 | repo | gob-git, gob-trust |
 | 4 | model | gob-cache, gob-ir |

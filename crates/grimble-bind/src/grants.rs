@@ -354,12 +354,12 @@ fn grant_covers(granted: &str, atom: &str) -> bool {
             .is_some_and(|r| r.starts_with('.'))
 }
 
-/// The trust zones among `all`: grants without string arguments (an argument-scoped grant is
-/// narrow by construction) at one broad glob of one node that together cover every atom of
-/// `universe`. Zones may overlap; each is listed and the union is counted once.
+/// The trust zones among `all`: grants at one broad glob of one node that together cover every
+/// atom of `universe`. A grant's arguments do not exempt it (ticket 5X9CAQE: CAP001 now enforces
+/// them, but a broad argument such as `fs.read("**")` is still a broad grant). Zones may overlap; each is listed and the union is counted once.
 pub fn trust_zones(all: &[GrantFacts], universe: &[String]) -> Zones {
     let mut groups: BTreeMap<(&str, &str), Vec<&GrantFacts>> = BTreeMap::new();
-    for g in all.iter().filter(|g| g.args.is_empty()) {
+    for g in all {
         if let Some(at) = g.at.as_deref().filter(|a| is_broad(a)) {
             groups.entry((g.node.as_str(), at)).or_default().push(g);
         }

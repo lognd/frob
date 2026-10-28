@@ -1069,7 +1069,21 @@ The cell of `(n, a)` is computed, in this order:
    `covered by a grant` below means the atom, every constrained argument slot,
    `via`, profile and expiry all match with Must values. An argument that cannot
    be extracted makes the use unresolved (CAP006), which sets the cell `unknown`
-   exactly as item 4 does, never `uses`-clean. Observed uses are matched on the import-resolved path of the callee, not its
+   exactly as item 4 does, never `uses`-clean.
+
+   `may` arguments in the shipped binder (ticket 5X9CAQE): for the atoms with an argument type
+   (`fs`, `fs.read`, `fs.write` path; `net`, `net.connect`, `net.listen` host; `process.env` name;
+   `process.spawn`, `process.exec` binary; typed by `grimble_model::args`) the first argument of
+   the call is folded statically (`gob_symbols::call_args`: literals, `+` concatenation,
+   single-assignment constants, `(host, port)` pairs, `Path` / `String` wrappers, `os.path.join` of
+   literals). A grant with arguments covers a use only if the folded argument matches one grant
+   argument: paths lexically (`..` is resolved, `**` globs, symlinks are not followed), hosts by the
+   real host after the last `@` with scheme default ports, binaries and names exactly. A folded
+   argument that matches no covering grant argument is CAP001 (Error) naming the observed and the
+   granted arguments. An argument that does not fold, a use through a receiver (`Path(..).read_text()`),
+   or an atom a pack declares is Unresolved (`unresolved-edge`), never clean. A grant with no
+   arguments covers every argument. A wrong-typed grant argument is an MDL008 error, and an
+   argument-scoped grant counts toward a trust zone like any other grant. Observed uses are matched on the import-resolved path of the callee, not its
    spelling: `use` aliases, `import x as y`, `from m import f`, function values and
    literal `getattr`/`import_module` forms resolve to the vocabulary entry (a
    repository type that merely shares a name never hides `std::process::Command`),

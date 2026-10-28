@@ -49,6 +49,7 @@
 
 mod adapter;
 mod ambient;
+mod call_args;
 mod canon;
 mod crates;
 mod def_use;
@@ -98,6 +99,7 @@ pub use adapter::{
     ParseStatus, Precision,
 };
 pub use ambient::{AMBIENT_CLASSES, is_ambient_name};
+pub use call_args::{ArgValue, CallArgs, call_args};
 pub use canon::{PathUse, path_uses};
 pub use crates::CrateDeps;
 pub use csharp::{

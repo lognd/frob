@@ -75,6 +75,8 @@ pub struct SiblingInput<'a> {
     pub packs: Option<PacksField>,
     /// The optional `template_excuses` array (grimble only; `None` omits the key).
     pub template_excuses: Option<Vec<Value>>,
+    /// The optional `not_run` section (crunk only; `None` omits the key).
+    pub not_run: Option<Value>,
 }
 
 /// The reason code of an Unresolved finding when the product knows no better: `fidelity`.
@@ -225,6 +227,7 @@ pub fn document(input: &SiblingInput<'_>) -> Value {
         packs: input.packs.as_ref().map(|p| p.packs.clone()),
         packs_digest: input.packs.as_ref().map(|p| p.digest.clone()),
         template_excuses: input.template_excuses.clone(),
+        not_run: input.not_run.clone(),
     };
     debug!(
         product = input.product,

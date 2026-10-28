@@ -42,7 +42,18 @@ pub struct Lcov {
 pub fn normalize(sf: &str, root: &Path) -> String {
     let flat = sf.replace('\\', "/");
     let path = Path::new(&flat);
-    let rebased = if path.is_absolute() {
+    // Textual strip first: a rooted `/repo/..` path is not `is_absolute` on Windows (no drive).
+    let root_flat = gob_path::exact_text(root)
+        .unwrap_or_default()
+        .replace('\\', "/");
+    let textual = flat
+        .strip_prefix(root_flat.trim_end_matches('/'))
+        .filter(|_| !root_flat.is_empty())
+        .and_then(|r| r.strip_prefix('/'))
+        .map(str::to_owned);
+    let rebased = if textual.is_some() {
+        textual
+    } else if path.is_absolute() {
         RelPath::from_host(root, path)
             .ok()
             .map(|r| r.as_str().to_owned())

@@ -576,8 +576,8 @@ fn an_in_vocab_op_tests_a_name_against_the_language_vocabulary_classes() {
         b.report(None, f, "x");
         rows_of(&b.build(), &m, 0)
     };
-    assert_eq!(run_for(&["net"]), vec![fs[0].index()]);
-    assert_eq!(run_for(&["clock", "net"]), vec![fs[0].index()]);
+    assert_eq!(run_for(&["net.connect"]), vec![fs[0].index()]);
+    assert_eq!(run_for(&["clock", "net.connect"]), vec![fs[0].index()]);
     // A class the language has no vocabulary for is the empty set: nothing matches.
     assert!(run_for(&["no_such_class"]).is_empty());
 }

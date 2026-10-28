@@ -212,6 +212,42 @@ pub struct SiblingDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[schemars(with = "Option<Vec<TemplateExcuseRow>>")]
     pub template_excuses: Option<Vec<Value>>,
+    /// Rules a tiered run left undecided; omitted by products without tiers.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "Option<NotRunSection>")]
+    pub not_run: Option<Value>,
+}
+
+/// One rule a tiered run left undecided (an entry of `not_run.rules`).
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct NotRunRow {
+    /// Rule id.
+    pub rule: String,
+    /// Family prefix.
+    pub family: String,
+    /// The tier the rule declares (`T0` to `T4`).
+    #[schemars(regex(pattern = "^T[0-4]$"))]
+    pub tier: String,
+    /// The tier the run went up to (`T0` to `T4`).
+    #[schemars(regex(pattern = "^T[0-4]$"))]
+    pub ran_to: String,
+    /// `not_run`, or `unresolved` for a `must_measure` rule.
+    #[schemars(extend("enum" = ["not_run", "unresolved"]))]
+    pub status: String,
+    /// One line on why.
+    pub reason: String,
+}
+
+/// The `not_run` section: the tier a run went up to and the rules above it.
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct NotRunSection {
+    /// The tier the run went up to (`T0` to `T4`).
+    #[schemars(regex(pattern = "^T[0-4]$"))]
+    pub tier: String,
+    /// The rules above the tier, sorted by rule id.
+    pub rules: Vec<NotRunRow>,
 }
 
 /// One entry of `template_excuses`.
