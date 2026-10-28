@@ -8,8 +8,8 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
-updated = "2026-10-28T12:54:57Z"
-scope = ["crates/gob-rules/src/**", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/src", "crates/crunk-rules/tests", "crates/frob-ack/Cargo.toml", "crates/frob-ack/src", "crates/frob-ack/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src", "crates/frob-check/tests", "crates/frob-obligations/Cargo.toml", "crates/frob-obligations/src", "crates/frob-obligations/tests", "crates/frob-pm/Cargo.toml", "crates/frob-pm/src"]
+updated = "2026-10-28T12:54:58Z"
+scope = ["crates/gob-rules/src/**", "crates/crunk-rules/Cargo.toml", "crates/crunk-rules/src", "crates/crunk-rules/tests", "crates/frob-ack/Cargo.toml", "crates/frob-ack/src", "crates/frob-ack/tests", "crates/frob-check/Cargo.toml", "crates/frob-check/benches", "crates/frob-check/clippy.toml", "crates/frob-check/src", "crates/frob-check/tests", "crates/frob-obligations/Cargo.toml", "crates/frob-obligations/src", "crates/frob-obligations/tests", "crates/frob-pm/Cargo.toml", "crates/frob-pm/src", "crates/frob-pm/tests"]
 
 [[acceptance]]
 text = "Severity has only Error and Unresolved; Warn and Advisory removed from derive, [rules], fail_on"
