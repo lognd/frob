@@ -1,0 +1,15 @@
+kind = "field"
+field = "body"
+old = """
+Implements security.md section 2.5 (environment, processes).
+
+Environment answered by exact name from the broker; the worker never sees the real environment; subprocess only via argv templates of 2.4."""
+new = """
+Implements security.md section 2.5 (environment, processes).
+
+Environment answered by exact name from the broker; the worker never sees the real environment; subprocess only via argv templates of 2.4.
+
+no-story: internal engineering task in gob-wasm; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:44Z"
+actor = "lognd"
+rev = 1
