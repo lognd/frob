@@ -8,8 +8,8 @@ points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:23Z"
-updated = "2026-10-27T00:42:24Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:56:05Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/render_browser.rs, crates/crunk/tests/render_browser.rs"]
 
 [[links]]
@@ -26,3 +26,5 @@ bound = false
 +++
 
 Design crunk.md section 5 render row. Depends on the solve render verb for the shared flags. Thin wrapper over crunk-gallery render and the boxes capture.
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
