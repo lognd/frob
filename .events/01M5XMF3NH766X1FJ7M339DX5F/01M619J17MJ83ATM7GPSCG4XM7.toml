@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/tickets.md"]
+new = ["docs/design/tickets.md", "changelog.d/01M561J10PTM0B1X2BEZ908DQB.fixed.md"]
+at = "2026-10-28T13:00:28Z"
+actor = "lognd"
+rev = 1
