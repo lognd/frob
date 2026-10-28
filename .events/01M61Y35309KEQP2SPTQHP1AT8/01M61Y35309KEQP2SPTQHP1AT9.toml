@@ -1,0 +1,12 @@
+kind = "create"
+title = "CAP: judge receiver-style path calls (Path(x).read_text) against may args"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/grimble-bind/src/caps.rs"]
+acceptance = ["receiver-style calls such as Path(x).read_text() are judged, not Unresolved, under an argument grant"]
+body = "found while working ~5X9CAQE: receiver-style calls such as Path(x).read_text() are judged, not Unresolved, under an argument grant"
+at = "2026-10-28T18:59:21Z"
+actor = "lognd"
+rev = 1
