@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:54Z"
-updated = "2026-10-27T00:41:54Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:53Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/render.rs, crates/crunk/src/snapshot.rs, crates/crunk/tests/render_solve.rs"]
 
 [[links]]
@@ -22,3 +22,5 @@ bound = false
 +++
 
 Design crunk.md section 5 render row and section 3 baselines. Baselines are committed under design/baselines/. Reuses crunk diff --layout where it exists.
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
