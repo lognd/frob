@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Design crunk.md section 4 T2 row. Pure function over Image from visual.rs plus boxes from the boxes capture, so it is unit testable without a browser."
+new = """
+Design crunk.md section 4 T2 row. Pure function over Image from visual.rs plus boxes from the boxes capture, so it is unit testable without a browser.
+
+no-story: internal engineering task in crunk-gallery; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:46Z"
+actor = "lognd"
+rev = 1

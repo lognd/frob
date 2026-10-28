@@ -8,8 +8,8 @@ points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:24Z"
-updated = "2026-10-27T00:42:24Z"
-labels = ["area:crunk"]
+updated = "2026-10-28T12:55:46Z"
+labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-gallery/src/rendered_contrast.rs, crates/crunk-gallery/tests/rendered_contrast.rs"]
 
 [[links]]
@@ -22,3 +22,5 @@ bound = false
 +++
 
 Design crunk.md section 4 T2 row. Pure function over Image from visual.rs plus boxes from the boxes capture, so it is unit testable without a browser.
+
+no-story: internal engineering task in crunk-gallery; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
