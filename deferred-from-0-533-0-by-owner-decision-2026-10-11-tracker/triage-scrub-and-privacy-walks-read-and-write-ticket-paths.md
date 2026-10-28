@@ -8,8 +8,8 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-07T03:20:48Z"
-updated = "2026-10-27T02:58:14Z"
-labels = ["area:mirror"]
+updated = "2026-10-28T12:55:48Z"
+labels = ["area:mirror", "no-story"]
 scope = ["crates/frob-ledger/src/triage.rs", "crates/frob-ledger/src/scrub.rs", "crates/frob-ledger/src/privacy.rs"]
 
 [[links]]
@@ -22,3 +22,5 @@ bound = false
 +++
 
 Found while working ~5N48KNK. triage.rs, scrub.rs and privacy.rs build tickets/<ULID>/ticket.md and tickets/<ULID>/events paths from cfg.dir; under Layout::Branch they must resolve the file through Ledger::ticket_file_at / branch_scan_at and events through layout::branch_events_dir. Must land before the live ledger migration (~128J4NT).
+
+no-story: internal engineering task in frob-ledger; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
