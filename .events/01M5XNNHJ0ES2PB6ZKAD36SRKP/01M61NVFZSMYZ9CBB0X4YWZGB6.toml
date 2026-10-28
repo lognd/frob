@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T16:33:19Z"
+digest = "929c12e2571b651652faaa93722da01b0d432e8fc1e95550bee296753e9857cb"
+exit_code = 0
+head = "81e1b2faeead6ec7b0c45c594b80325ebceced2c"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5f02dd6f-91d7-449d-8133-3ba5acc51757 with nextest profile: default
+    Starting 2 tests across 490 binaries (5667 tests skipped)
+        PASS [   0.006s] gob-symbols canon::tests::python_import_aliases_resolve
+        PASS [   0.425s] grimble-bind::caps python_import_aliases_and_from_imports_resolve_to_the_vocabulary
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.474s] 2 tests run: 2 passed, 5667 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "python_import_aliases"
+size = 1024
+status = "measured"
+test_count = 2
+tests_digest = "5d57fa13cf3fbdf20c42cd074e15437da9ed39b1831632823a3a615681f8cbbd"
+at = "2026-10-28T16:33:19Z"
+actor = "lognd"
+rev = 1
