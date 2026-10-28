@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Consumer F-362/M4-5 (T-4166): a display-layer list (IGNORED_ERROR_CODES) is used to discharge a recovery question -- the totality test checks only that every backend code appears in one of two lists, not whether the code needing a recovery ACTION (e.g. re-bootstrapping CSRF) got one. Split into DISPLAY_ONLY and a second, independently-answered axis, with the totality test asserting both. Related family to T-4166's own registry-vs-surface totality theme (F-373 in T-4175) but a distinct code path -- kept separate rather than merged. Not fixture-testable in frob's own tree: no client/server error-code registry duo exists here."
+new = """
+Consumer F-362/M4-5 (T-4166): a display-layer list (IGNORED_ERROR_CODES) is used to discharge a recovery question -- the totality test checks only that every backend code appears in one of two lists, not whether the code needing a recovery ACTION (e.g. re-bootstrapping CSRF) got one. Split into DISPLAY_ONLY and a second, independently-answered axis, with the totality test asserting both. Related family to T-4166's own registry-vs-surface totality theme (F-373 in T-4175) but a distinct code path -- kept separate rather than merged. Not fixture-testable in frob's own tree: no client/server error-code registry duo exists here.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:00Z"
+actor = "lognd"
+rev = 1
