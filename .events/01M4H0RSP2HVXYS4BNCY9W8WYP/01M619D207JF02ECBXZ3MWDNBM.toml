@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["docs"]
+new = ["docs", "no-story"]
+at = "2026-10-28T12:57:45Z"
+actor = "lognd"
+rev = 1

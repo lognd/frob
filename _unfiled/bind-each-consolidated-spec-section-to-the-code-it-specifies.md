@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T19:03:20Z"
-updated = "2026-10-28T12:56:54Z"
-labels = ["docs"]
+updated = "2026-10-28T12:57:45Z"
+labels = ["docs", "no-story"]
 scope = ["crates/**", "docs/**", "changelog.d/**"]
 
 [[acceptance]]
@@ -17,3 +17,5 @@ bound = false
 +++
 
 Audit: no production code binds into docs/design, so spec-vs-code drift (e.g. SYS003 meaning changed) is invisible. Depends on the shared-spec consolidation phase and ~H0RPXYR (frob:describes).
+
+no-story: internal engineering task in crates/**; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
