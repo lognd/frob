@@ -1,0 +1,15 @@
+kind = "field"
+field = "body"
+old = """
+Implements security.md section 2.9.
+
+An adapter may not claim an extension or language id already claimed (PACK004); repository NotApplicable claims are listed in the fidelity report and counted by GATE001; a claim for an atom owned by another pack is PACK005; in-source declarations are marked by-declaration and may add targets but never remove one the adapter found."""
+new = """
+Implements security.md section 2.9.
+
+An adapter may not claim an extension or language id already claimed (PACK004); repository NotApplicable claims are listed in the fidelity report and counted by GATE001; a claim for an atom owned by another pack is PACK005; in-source declarations are marked by-declaration and may add targets but never remove one the adapter found.
+
+no-story: internal engineering task in gob-packs; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:04Z"
+actor = "lognd"
+rev = 1

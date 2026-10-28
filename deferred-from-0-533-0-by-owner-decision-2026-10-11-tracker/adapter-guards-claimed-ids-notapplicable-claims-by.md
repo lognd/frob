@@ -8,9 +8,9 @@ points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:39Z"
-updated = "2026-10-03T03:34:39Z"
+updated = "2026-10-28T12:56:04Z"
 idempotency_key = "m2-sec-adapter-guards"
-labels = ["milestone:2", "area:security"]
+labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/gob-packs/src/adapters/guards.rs"]
 
 [[links]]
@@ -33,3 +33,5 @@ bound = false
 Implements security.md section 2.9.
 
 An adapter may not claim an extension or language id already claimed (PACK004); repository NotApplicable claims are listed in the fidelity report and counted by GATE001; a claim for an atom owned by another pack is PACK005; in-source declarations are marked by-declaration and may add targets but never remove one the adapter found.
+
+no-story: internal engineering task in gob-packs; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
