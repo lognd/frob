@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "COH003 fixed a quirk where a nested function that is a top-level statement of the unit is not skipped; check COH002 for the same."
+new = """
+COH003 fixed a quirk where a nested function that is a top-level statement of the unit is not skipped; check COH002 for the same.
+
+no-story: internal engineering task in grimble-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:56:06Z"
+actor = "lognd"
+rev = 1
