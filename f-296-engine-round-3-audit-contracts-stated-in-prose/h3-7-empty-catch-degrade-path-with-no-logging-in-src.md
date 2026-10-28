@@ -8,9 +8,9 @@ points = 3
 parent = "01M1T07NZSWG65V1BFPEJK6SE6"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:47Z"
+updated = "2026-10-28T12:55:39Z"
 aliases = ["T-4094"]
-labels = ["v1-cluster:B4", "triage:accepted"]
+labels = ["v1-cluster:B4", "triage:accepted", "no-story"]
 scope = ["src/frob/arch/_logging_checks.py"]
 
 [[acceptance]]
@@ -30,3 +30,5 @@ Proposed: a cheap tree-sitter pattern flagging an empty catch block or a null-re
 
 
 CORRECTION after filing: src/frob/arch/_logging_checks.py already implements check_unlogged_error_path (T-0622), which flags exactly this shape -- a catch clause with no nearby log call -- and is written once against NormalizedModule so it fires for EVERY LanguageAdapter, TS/JS included, per run_logging_checks' own docstring. So the proposed rule is ALREADY IMPLEMENTED, not missing. This ticket's remaining scope narrows to: (1) verify this check actually fires on the consumer's own TS repro (a jsdom-attributed empty catch in src/) -- if it already does, no frob work is needed here at all, only pointing the consumer at the existing check; (2) if it does NOT fire on their repro, find out why (a TS-specific gap in NormalizedFunction.catches population, or a severity/wiring gap keeping this check off by default) and fix that specific gap rather than building new detection. Do not build a duplicate rule.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
