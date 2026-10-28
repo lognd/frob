@@ -1,0 +1,19 @@
+kind = "field"
+field = "body"
+old = """
+Item 6. VERIFIED: git grep for a11y/axe-core/WCAG across src/frob found nothing. src/frob/graph/dsl.py's _TESTS_KINDS frozenset (currently {"unit", "integration", "e2e", "property"}) is the exact registry a new kind gets added to.
+
+FINDING THIS WOULD HAVE CAUGHT: axe-core installed as a devDependency that nothing actually imports or runs -- so it exists on paper as a stated accessibility-testing tool with zero exercise -- and WCAG conformance modelled only as class-string constants (e.g. an aria-* class name literal) that frob can check for EXISTENCE (the string is present somewhere) but not EFFECT (does it actually satisfy the accessibility property it names). Frontend a11y has no obligation kind at all today: a frob:tests edge can claim kind="unit" or kind="e2e" for an a11y check, but nothing distinguishes "this test actually ran an accessibility scanner and asserted on its output" from an ordinary unit test that happens to touch aria attributes.
+
+Proposed: add kind="a11y" to _TESTS_KINDS, with the same binding discipline as the other kinds (a frob:tests edge naming a test that must actually invoke an accessibility-scanning tool, not merely reference an aria-* class string) -- mirroring how kind="property" already requires exercising a property space rather than one example."""
+new = """
+Item 6. VERIFIED: git grep for a11y/axe-core/WCAG across src/frob found nothing. src/frob/graph/dsl.py's _TESTS_KINDS frozenset (currently {"unit", "integration", "e2e", "property"}) is the exact registry a new kind gets added to.
+
+FINDING THIS WOULD HAVE CAUGHT: axe-core installed as a devDependency that nothing actually imports or runs -- so it exists on paper as a stated accessibility-testing tool with zero exercise -- and WCAG conformance modelled only as class-string constants (e.g. an aria-* class name literal) that frob can check for EXISTENCE (the string is present somewhere) but not EFFECT (does it actually satisfy the accessibility property it names). Frontend a11y has no obligation kind at all today: a frob:tests edge can claim kind="unit" or kind="e2e" for an a11y check, but nothing distinguishes "this test actually ran an accessibility scanner and asserted on its output" from an ordinary unit test that happens to touch aria attributes.
+
+Proposed: add kind="a11y" to _TESTS_KINDS, with the same binding discipline as the other kinds (a frob:tests edge naming a test that must actually invoke an accessibility-scanning tool, not merely reference an aria-* class string) -- mirroring how kind="property" already requires exercising a property space rather than one example.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:57Z"
+actor = "lognd"
+rev = 1

@@ -8,9 +8,9 @@ points = 3
 parent = "01M1T07NXSGQEK1JQ4XKQSJFAK"
 reporter = "agent"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:44Z"
+updated = "2026-10-28T12:55:57Z"
 aliases = ["T-4034"]
-labels = ["v1-cluster:B2", "area:crunk", "triage:accepted", "milestone:0.538.0"]
+labels = ["v1-cluster:B2", "area:crunk", "triage:accepted", "milestone:0.538.0", "no-story"]
 scope = ["src/frob/graph/dsl.py"]
 
 [[acceptance]]
@@ -27,3 +27,5 @@ Item 6. VERIFIED: git grep for a11y/axe-core/WCAG across src/frob found nothing.
 FINDING THIS WOULD HAVE CAUGHT: axe-core installed as a devDependency that nothing actually imports or runs -- so it exists on paper as a stated accessibility-testing tool with zero exercise -- and WCAG conformance modelled only as class-string constants (e.g. an aria-* class name literal) that frob can check for EXISTENCE (the string is present somewhere) but not EFFECT (does it actually satisfy the accessibility property it names). Frontend a11y has no obligation kind at all today: a frob:tests edge can claim kind="unit" or kind="e2e" for an a11y check, but nothing distinguishes "this test actually ran an accessibility scanner and asserted on its output" from an ordinary unit test that happens to touch aria attributes.
 
 Proposed: add kind="a11y" to _TESTS_KINDS, with the same binding discipline as the other kinds (a frob:tests edge naming a test that must actually invoke an accessibility-scanning tool, not merely reference an aria-* class string) -- mirroring how kind="property" already requires exercising a property space rather than one example.
+
+no-story: internal engineering task in src/frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
