@@ -8,7 +8,7 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-28T15:55:06Z"
-updated = "2026-10-28T15:55:18Z"
+updated = "2026-10-28T15:58:39Z"
 scope = ["crates/crunk/**", "profile.toml", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = false
 
 [[acceptance]]
 text = "every crunk export leaf command has a scenario or a skip reason in profile.toml so the profile CI job passes"
-bound = false
+bound = true
 +++
 
 CI on experimental fails in Docs (rustdoc private link in crunk export) and profile (crunk export csharp/css/tailwind/uss lack scenarios). Run 40718326507.

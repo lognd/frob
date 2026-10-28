@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-28T15:58:39Z"
+digest = "fd114f3e1820dbb546913560fb7e0d41f8406eb32410949049f490a2b71b56fb"
+head = "b2daca646f2191d845617ba6388c1f7866ca0a35"
+provider = "file"
+ref = "crates/gob-dev/profile.toml"
+size = 20360
+status = "measured"
+at = "2026-10-28T15:58:39Z"
+actor = "lognd"
+rev = 1
