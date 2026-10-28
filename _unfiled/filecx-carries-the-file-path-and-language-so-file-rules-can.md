@@ -7,8 +7,11 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T02:09:38Z"
-updated = "2026-10-27T02:58:17Z"
+updated = "2026-10-28T12:56:00Z"
+labels = ["no-story"]
 scope = ["crates/gob-rules/src/decl.rs", "crates/gob-check/src/**"]
 +++
 
 found while working ~K4B9CKF: #[rule] FileRule::check gets only text, so a syntactic rule over several languages cannot choose a grammar; ERR001-ERR003 need it
+
+no-story: internal engineering task in gob-rules; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
