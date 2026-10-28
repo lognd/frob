@@ -55,6 +55,8 @@ fn summary(
         created,
         updated: created,
         blocked,
+        crates: Vec::new(),
+        products: Vec::new(),
     }
 }
 

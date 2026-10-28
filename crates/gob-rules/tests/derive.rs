@@ -136,38 +136,18 @@ fn fingerprint_ignores_numbers_and_whitespace_but_not_anchor() {
     assert_eq!(a.fingerprint.to_hex().len(), 64);
 }
 
-fn demo_finding(id: &str, severity: Severity) -> gob_rules::Finding {
-    gob_rules::Finding::new(id.parse().unwrap(), severity, None, "msg", "anchor")
-}
-
-// frob:tests crates/gob-rules/src/ramp.rs::RuleSettings.ramp_findings
+// frob:tests crates/gob-rules/src/settings.rs::RuleSettings.from_toml
 #[test]
-fn ramp_findings_is_inert_now_that_warn_is_retired() {
-    let since = |id: &str| Registry::global().by_id(id).map(|m| m.since);
-    let mut f = [
-        demo_finding("DEM001", Severity::Error),
-        demo_finding("DEM002", Severity::Error),
-    ];
-    let on = gob_rules::RuleSettings::default();
-    assert_eq!(on.ramp_findings(&mut f, &since, "2.0.1"), 0);
-    assert_eq!(f[0].severity, Severity::Error);
-    assert_eq!(f[0].message, "msg");
-    assert_eq!(f[1].severity, Severity::Error);
-}
-
-// frob:tests crates/gob-rules/src/ramp.rs::RuleSettings.from_toml
-#[test]
-fn from_toml_reads_ramp_severity_and_disabled_and_rejects_a_bad_ramp() {
+fn from_toml_reads_severity_and_disabled_and_ignores_a_retired_ramp() {
     let s = gob_rules::RuleSettings::from_toml(
         "[rules]\nramp = false\n[rules.A001]\nseverity = \"error\"\n[rules.B001]\ndisabled = true\n",
     )
     .unwrap();
-    assert!(!s.ramp);
     assert_eq!(s.severity["A001"], Severity::Error);
     assert!(s.disabled.contains("B001"));
     assert_eq!(
         gob_rules::RuleSettings::from_toml("name = 1\n").unwrap(),
         gob_rules::RuleSettings::default()
     );
-    assert!(gob_rules::RuleSettings::from_toml("[rules]\nramp = 3\n").is_err());
+    assert!(gob_rules::RuleSettings::from_toml("[rules]\nramp = 3\n").is_ok());
 }

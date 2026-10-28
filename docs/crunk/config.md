@@ -300,11 +300,11 @@ One `[[review.reviewers]]` entry: who may ack, and the signing keys their acks m
 
 ## `[rules]`
 
-Rule settings read by `gob_rules::RuleSettings` (`ramp`, `[rules.<ID>]`); optional.
+Rule settings read by `gob_rules::RuleSettings` (`[rules.<ID>]`; a retired `ramp` key is ignored); optional.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `ramp` | boolean | no | `true` | Report a rule new in this release line as warn until its ramp ends; false reports it at its declared severity at once. |
+| `ramp` | boolean | no | `true` | Deprecated and ignored: ramp-in is retired, a new rule reports at its declared severity. |
 | any other key | table | no | - | user-named entry |
 
 ## `[scales]`

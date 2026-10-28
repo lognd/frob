@@ -398,6 +398,8 @@ fn summary(id: TicketId) -> Summary {
         created: Stamp::from_unix(1),
         updated: Stamp::from_unix(1),
         blocked: false,
+        crates: Vec::new(),
+        products: Vec::new(),
     }
 }
 

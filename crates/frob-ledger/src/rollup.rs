@@ -165,6 +165,8 @@ mod tests {
             created: gob_time::Stamp::from_unix(0),
             updated: gob_time::Stamp::from_unix(0),
             blocked: false,
+            crates: Vec::new(),
+            products: Vec::new(),
         }
     }
 

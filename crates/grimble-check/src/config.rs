@@ -217,7 +217,7 @@ impl RuleOverrides {
         };
         for (id, entry) in rules {
             if id == "ramp" {
-                // `[rules] ramp = bool` is the ramp-in switch (gob-rules), not a rule.
+                // `[rules] ramp = bool` is a retired ramp-in switch (gob-rules ignores it), not a rule.
                 continue;
             }
             let toml::Value::Table(entry) = entry else {
