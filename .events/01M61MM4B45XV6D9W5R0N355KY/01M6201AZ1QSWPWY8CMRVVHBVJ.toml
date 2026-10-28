@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-28T19:31:12Z"
+digest = "44b12c33c00e583349c6d0c33ab42817794e95ce8ad17d2bb822e198396abbed"
+exit_code = 0
+head = "3de82cf7fe25d3e42d0895c53518e5bd63c75309"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 59s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 09845e2b-ce6c-4fa3-a604-68155f44e30c with nextest profile: default
+    Starting 1 test across 491 binaries (5673 tests skipped)
+        PASS [   0.605s] gob-check::unique_rule_ids no_rule_id_is_declared_twice_in_the_workspace
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.614s] 1 test run: 1 passed, 5673 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "no_rule_id_is_declared_twice_in_the_workspace"
+size = 1640
+status = "measured"
+test_count = 1
+tests_digest = "7ee7d035eede979012c119d4b6de8ee21489ccb590f7a9c30840b0431f9a7dec"
+at = "2026-10-28T19:31:12Z"
+actor = "lognd"
+rev = 1
