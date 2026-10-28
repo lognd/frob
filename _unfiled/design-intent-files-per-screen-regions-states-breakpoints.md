@@ -2,12 +2,13 @@
 id = "01M1QDTV29CFFES3TB8PH8QF9P"
 title = "design-intent files per screen: regions/states/breakpoints/motion diffed against the implementation (A-027 item 2)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 5
 reporter = "human"
 created = "2026-09-05T00:00:00Z"
-updated = "2026-10-27T02:57:37Z"
+updated = "2026-10-28T12:55:09Z"
 aliases = ["crunk:T-0073"]
 labels = ["v1-cluster:C1", "area:crunk", "component:crunk", "source:crunk", "imported:crunk"]
 scope = ["src/crunk/**"]
