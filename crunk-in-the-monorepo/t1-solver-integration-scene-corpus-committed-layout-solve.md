@@ -8,7 +8,8 @@ points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:45Z"
-updated = "2026-10-27T00:41:55Z"
+updated = "2026-10-28T12:55:53Z"
+labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-layout/**"]
 
 [[links]]
@@ -29,3 +30,5 @@ bound = false
 +++
 
 docs/design/crunk.md section 3.
+
+no-story: internal engineering task in crunk-layout; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
