@@ -377,3 +377,86 @@ fn missing_eol_pins_lists_only_unsettled_globs() {
         ["*.toml text eol=lf"]
     );
 }
+
+// frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.reindex_plan
+// frob:tests crates/frob-ledger/src/ops.rs::ReindexPlan.diff
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.reindex_commit
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.event_strings
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.tip
+// frob:tests crates/frob-ledger/src/misfiled.rs::Ledger.misfiled_ticket_findings
+// frob:tests crates/frob-ledger/src/replay.rs::Ledger.reindex_replay_findings
+#[test]
+fn reindex_plans_commits_and_settles_a_misfiled_ticket() {
+    let (_dir, ledger) = fixture();
+    assert!(ledger.tip().expect("tip").is_some());
+    let made = ledger
+        .new_ticket(NewTicket::new("Wander", TicketType::Task))
+        .expect("new");
+    let id = made.ticket.front.id;
+    assert_eq!(
+        Ledger::event_strings(&made.events),
+        made.events
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+    );
+    assert!(ledger.misfiled_ticket_findings().expect("scan").is_empty());
+
+    move_card(&ledger, "_unfiled/wander.md", "elsewhere/misfiled.md");
+    let findings = ledger.misfiled_ticket_findings().expect("scan");
+    assert_eq!(findings.len(), 1, "{findings:?}");
+
+    let plan = ledger.reindex_plan().expect("plan");
+    assert_eq!(plan.moves.len(), 1);
+    let diff = plan.diff(10);
+    assert!(
+        diff.contains("move elsewhere/misfiled.md -> _unfiled/wander.md"),
+        "{diff}"
+    );
+    let capped = plan.diff(0);
+    assert!(capped.ends_with("more"), "{capped}");
+
+    let before = ledger.tip().expect("tip");
+    let oid = ledger
+        .reindex_commit(Some(made.events[0]))
+        .expect("commit")
+        .expect("a commit");
+    assert_ne!(Some(oid), before);
+    assert_eq!(ledger.tip().expect("tip"), Some(oid));
+    assert!(files(&ledger).contains(&"_unfiled/wander.md".to_owned()));
+    assert!(
+        ledger.reindex_replay_findings().expect("replay").is_empty(),
+        "a faithful reindex commit replays clean"
+    );
+    assert!(ledger.misfiled_ticket_findings().expect("scan").is_empty());
+    assert!(ledger.reindex_commit(None).expect("settled").is_none());
+    assert_eq!(ledger.show(id).expect("show").ticket.front.title, "Wander");
+}
+
+// frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
+// frob:tests crates/frob-ledger/src/hand_written.rs::Ledger.hand_written_texts
+#[test]
+fn hand_written_texts_lists_ticket_bodies_but_not_generated_pages() {
+    let (_dir, ledger) = fixture();
+    let mut req = NewTicket::new("Body holder", TicketType::Task);
+    req.body = "Hand written words.\n".into();
+    ledger.new_ticket(req).expect("new");
+    let texts = ledger.hand_written_texts().expect("texts");
+    assert!(
+        texts.iter().any(|(_, t)| t.contains("Hand written words.")),
+        "{texts:?}"
+    );
+    assert!(texts.iter().all(|(p, _)| !p.starts_with("indexes/")));
+}
+
+// frob:tests crates/frob-ledger/src/replay.rs::reindex_trailer
+#[test]
+fn reindex_trailer_reads_the_last_trailer_value() {
+    use frob_ledger::replay::reindex_trailer;
+    assert_eq!(
+        reindex_trailer("tickets(reindex): after X\n\nFrob-Reindex: 1.2.3\n"),
+        Some("1.2.3")
+    );
+    assert_eq!(reindex_trailer("plain commit"), None);
+}

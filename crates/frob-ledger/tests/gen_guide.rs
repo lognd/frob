@@ -67,6 +67,7 @@ fn reindex_installs_guide_pages_filled_in_that_name_their_profile_and_link_acros
     );
 }
 
+// frob:tests crates/frob-ledger/src/gen/guide.rs::render_with
 #[test]
 fn a_newer_version_changes_each_file_only_by_its_marker_and_the_template_text() {
     let paths = BTreeMap::new();

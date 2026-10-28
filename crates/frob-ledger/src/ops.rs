@@ -1247,6 +1247,7 @@ fn is_list_field(name: &str) -> bool {
     field(name).is_some_and(|d| d.settable && matches!(d.kind, FieldKind::List))
 }
 
+// frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="passed as a function value to is_none_or in plan_update, an edge the resolver reports only as May"
 /// Whether a TOML value is an empty array.
 fn is_empty_list(v: &toml::Value) -> bool {
     v.as_array().is_some_and(Vec::is_empty)
