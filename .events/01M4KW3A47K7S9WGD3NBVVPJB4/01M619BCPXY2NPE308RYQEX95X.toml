@@ -1,0 +1,6 @@
+kind = "field"
+field = "persona"
+new = "an agent holding a lease"
+at = "2026-10-28T12:56:51Z"
+actor = "lognd"
+rev = 1
