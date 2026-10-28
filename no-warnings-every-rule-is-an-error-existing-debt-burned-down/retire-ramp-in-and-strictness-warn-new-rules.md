@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
-updated = "2026-10-28T21:56:55Z"
+updated = "2026-10-28T21:56:56Z"
 labels = ["no-story"]
-scope = ["crates/gob-rules/src/ramp*", "crates/gob-rules/**"]
+scope = ["crates/gob-rules/src/ramp*", "crates/gob-rules/**", "crates/frob-check/**"]
 
 [[acceptance]]
 text = "ramp, effective_ramped, ramp_product_findings, new_rule_warn_releases removed from frob, grimble and crunk checks"
