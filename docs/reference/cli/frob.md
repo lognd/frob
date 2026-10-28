@@ -71,7 +71,7 @@
 | `ticket close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a ticket with an outcome once every close guard passes; repeating is a no-op. |
 | `ticket closeout` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a finished ticket after the fact: needs bound evidence and a reason, takes no lease and counts toward no cycle. |
 | `ticket comment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a comment (note, decision, question or answer) to a ticket. |
-| `ticket doable` | yes | no | 0 ok, 2 usage, 4 internal | List tickets that can be started: todo, no open blocker, scope not leased; `--newcomer` keeps the good-first ones, smallest first, with start notes. |
+| `ticket doable` | yes | no | 0 ok, 2 usage, 4 internal | List tickets that can be started: todo, no open blocker, scope not leased; `--newcomer` keeps the good-first ones, smallest first, with start notes; `--crate` and `--product` keep tickets whose scope touches that crate or product. |
 | `ticket doctor` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-fold every ticket, milestone and cycle and report frontmatter drift, dangling links and event-order problems. |
 | `ticket drop` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Drop a ticket: close it as wont-fix with a required reason. |
 | `ticket evidence add` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Capture evidence with a provider and append it to a ticket: `ticket evidence add <ticket>`. |

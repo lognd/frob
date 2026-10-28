@@ -19,7 +19,7 @@ use crate::links::{Edge, edges_of};
 use crate::model::{Category, Class, LinkKind, Outcome, Priority, Stamp, Ticket, TicketType};
 
 /// Schema version; a mismatch drops and recreates every table.
-pub const INDEX_FORMAT: i64 = 2;
+pub const INDEX_FORMAT: i64 = 3;
 
 const SCHEMA: &str = "
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
@@ -39,6 +39,8 @@ CREATE TABLE IF NOT EXISTS tickets (
     updated TEXT NOT NULL,
     blocked INTEGER NOT NULL DEFAULT 0,
     idem_key TEXT,
+    crates TEXT NOT NULL DEFAULT '',
+    products TEXT NOT NULL DEFAULT '',
     doc TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS tickets_category ON tickets(category);
@@ -95,6 +97,10 @@ pub struct Summary {
     pub updated: Stamp,
     /// True while any blocker is not done (derived).
     pub blocked: bool,
+    /// Crates named by the scope globs (derived).
+    pub crates: Vec<String>,
+    /// Products those crates belong to (derived).
+    pub products: Vec<String>,
 }
 
 /// Filters for [`Index::list`]; all given filters must match.
@@ -110,6 +116,10 @@ pub struct ListFilter {
     pub label: Option<String>,
     /// Only blocked (`true`) or unblocked (`false`) tickets.
     pub blocked: Option<bool>,
+    /// Only tickets whose scope touches this crate.
+    pub krate: Option<String>,
+    /// Only tickets whose scope touches a crate of this product.
+    pub product: Option<String>,
 }
 
 /// The SQLite-backed index of one worktree.
@@ -132,7 +142,7 @@ where
     })
 }
 
-const SUMMARY_COLS: &str = "id, handle, title, type, category, outcome, priority, points, parent, created, updated, blocked, class, due";
+const SUMMARY_COLS: &str = "id, handle, title, type, category, outcome, priority, points, parent, created, updated, blocked, class, due, crates, products";
 
 // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="passed as a function value to rusqlite query_map, a call edge the resolver reports only as May"
 fn summary_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Summary> {
@@ -164,6 +174,8 @@ fn summary_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Summary> {
             .map_err(|e: String| {
                 rusqlite::Error::FromSqlConversionFailure(13, rusqlite::types::Type::Text, e.into())
             })?,
+        crates: crate::org::split(&r.get::<_, String>(14)?),
+        products: crate::org::split(&r.get::<_, String>(15)?),
     })
 }
 
@@ -388,6 +400,14 @@ impl Index {
             Some(false) => clauses.push("blocked = 0"),
             None => {}
         }
+        if let Some(k) = &filter.krate {
+            clauses.push("instr(',' || crates || ',', ',' || ? || ',') > 0");
+            args.push(k.clone());
+        }
+        if let Some(p) = &filter.product {
+            clauses.push("instr(',' || products || ',', ',' || ? || ',') > 0");
+            args.push(p.clone());
+        }
         let wher = if clauses.is_empty() {
             String::new()
         } else {
@@ -549,12 +569,14 @@ fn delete_rows(tx: &rusqlite::Transaction<'_>, id: &str) -> Result<()> {
 fn insert(tx: &rusqlite::Transaction<'_>, t: &Ticket) -> Result<()> {
     let f = &t.front;
     let id = f.id.to_string();
+    let crates = crate::org::crates_of(&f.scope);
+    let products = crate::org::products_of(&crates);
     let doc =
         serde_json::to_string(t).map_err(|e| LedgerError::malformed("index.doc", e.to_string()))?;
     tx.prepare_cached(
         "INSERT OR REPLACE INTO tickets
-         (id, title, type, category, outcome, priority, points, parent, created, updated, idem_key, doc, class, due)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+         (id, title, type, category, outcome, priority, points, parent, created, updated, idem_key, doc, class, due, crates, products)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
     )?
     .execute(params![
         id,
@@ -571,6 +593,8 @@ fn insert(tx: &rusqlite::Transaction<'_>, t: &Ticket) -> Result<()> {
         doc,
         f.class.as_str(),
         f.due.map(|d| d.to_string()),
+        crate::org::join(&crates),
+        crate::org::join(&products),
     ])?;
     let mut link = tx.prepare_cached("INSERT INTO links (src, kind, dst) VALUES (?1, ?2, ?3)")?;
     for l in &f.links {

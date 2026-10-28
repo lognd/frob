@@ -89,6 +89,7 @@ pub mod moves; // frob:ticket 01M3ZX86W1P62F80ZNR17Q0SQ9
 pub mod nudge; // frob:ticket 01M4052VF61FCR6FQS2KSS1NJG
 pub mod objects;
 pub mod ops;
+pub mod org;
 pub mod path_fn; // frob:ticket 01M3ZX82K7HX9D2VKT25KS4MV2
 pub mod privacy;
 pub mod proposal;

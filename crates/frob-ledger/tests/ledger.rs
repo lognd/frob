@@ -1622,3 +1622,32 @@ fn read_events_on_disk_treats_a_missing_events_directory_as_empty() {
     let events = frob_ledger::merge::read_events_on_disk(dir.path()).expect("read");
     assert!(events.is_empty());
 }
+
+#[test]
+fn doable_filters_by_derived_crate_and_product() {
+    // frob:ticket 5E5N62X
+    let (_dir, ledger) = fixture(Layout::Dir, RefMode::Trunk);
+    let mut a = NewTicket::new("in ledger", TicketType::Task);
+    a.scope = vec!["crates/frob-ledger/**".into()];
+    let a = ledger.new_ticket(a).expect("a").ticket.front.id;
+    let mut b = NewTicket::new("in gob", TicketType::Task);
+    b.scope = vec!["crates/gob-path/src/x.rs".into()];
+    let b = ledger.new_ticket(b).expect("b").ticket.front.id;
+
+    let ids = |k: Option<&str>, p: Option<&str>| -> Vec<_> {
+        ledger
+            .doable_in(&NoLeases, k, p)
+            .expect("doable")
+            .iter()
+            .map(|s| s.id)
+            .collect()
+    };
+    assert_eq!(ids(Some("frob-ledger"), None), vec![a]);
+    assert_eq!(ids(None, Some("gob")), vec![b]);
+    assert!(ids(Some("frob"), None).is_empty(), "crate match is exact");
+    assert_eq!(ids(None, None).len(), 2);
+    let s = ledger.doable(&NoLeases).expect("doable");
+    let sa = s.iter().find(|x| x.id == a).expect("a");
+    assert_eq!(sa.crates, vec!["frob-ledger"]);
+    assert_eq!(sa.products, vec!["frob"]);
+}
