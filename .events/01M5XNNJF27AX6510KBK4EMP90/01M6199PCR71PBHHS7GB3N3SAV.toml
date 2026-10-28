@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. grimble-model.md 9.6 specifies the row `{atom, language, detector_kind, pattern_or_vocab_ref, precision, cwe, rationale, safer_alternative, severity}`; AtomEntry/DetectorEntry (registry.rs:33-50) carry only name, aliases, lang and kind. caps.rs:17-18 'the pack severity table is not consulted (CAP001 is an Error, CAP002 a Warning)', so incidental atoms cannot be Warn and repos cannot tune per atom. Extend the row, surface rationale and safer alternative in CAP001 messages, and honour [packs.severity]."
+new = """
+Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. grimble-model.md 9.6 specifies the row `{atom, language, detector_kind, pattern_or_vocab_ref, precision, cwe, rationale, safer_alternative, severity}`; AtomEntry/DetectorEntry (registry.rs:33-50) carry only name, aliases, lang and kind. caps.rs:17-18 'the pack severity table is not consulted (CAP001 is an Error, CAP002 a Warning)', so incidental atoms cannot be Warn and repos cannot tune per atom. Extend the row, surface rationale and safer alternative in CAP001 messages, and honour [packs.severity].
+
+no-story: internal engineering task in gob-ir; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-10-28T12:55:55Z"
+actor = "lognd"
+rev = 1
