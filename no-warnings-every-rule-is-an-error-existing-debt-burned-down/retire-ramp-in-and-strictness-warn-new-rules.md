@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
 updated = "2026-10-28T21:56:57Z"
 labels = ["no-story"]
-scope = ["crates/gob-rules/src/ramp*", "crates/gob-rules/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**", "crates/frob-release/**"]
+scope = ["crates/gob-rules/src/ramp*", "crates/gob-rules/**", "crates/frob-check/**", "crates/grimble-check/**", "crates/crunk-check/**", "crates/frob-release/**", "docs/**"]
 
 [[acceptance]]
 text = "ramp, effective_ramped, ramp_product_findings, new_rule_warn_releases removed from frob, grimble and crunk checks"
