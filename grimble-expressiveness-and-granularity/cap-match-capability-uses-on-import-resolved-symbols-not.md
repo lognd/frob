@@ -8,10 +8,10 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-28T15:51:34Z"
+updated = "2026-10-28T16:09:21Z"
 idempotency_key = "grimble-expr-alias-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/gob-symbols/src/**", "crates/grimble-bind/tests/**"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/gob-symbols/src/**", "crates/grimble-bind/tests/**", "docs/design/binding.md"]
 
 [[acceptance]]
 text = "fixtures for each repro above fire CAP001 (or Unresolved for the dynamic getattr/import_module forms), with negative fixtures for a shadowed local name, a string and a comment"
