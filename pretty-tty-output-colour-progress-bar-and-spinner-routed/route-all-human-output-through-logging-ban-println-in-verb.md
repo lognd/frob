@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:57:31Z"
-updated = "2026-10-29T02:15:55Z"
+updated = "2026-10-29T02:39:51Z"
 labels = ["no-story"]
-scope = ["crates/frob/src/**"]
+scope = ["crates/frob/src/**", "crates/gob-check/**"]
 
 [[acceptance]]
 text = "a policy rule fails println/eprintln in verb code outside the presenter; existing call sites are routed through logging"
