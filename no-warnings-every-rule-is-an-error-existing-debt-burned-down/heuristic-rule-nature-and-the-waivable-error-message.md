@@ -2,7 +2,8 @@
 id = "01M5XMJJ68A64KGZJGB291TPEB"
 title = "Heuristic rule nature and the waivable-error message contract"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
