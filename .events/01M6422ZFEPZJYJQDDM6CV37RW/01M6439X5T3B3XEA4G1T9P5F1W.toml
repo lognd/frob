@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["getattr, __import__, importlib.import_module, vars/__dict__/sys.modules lookups with a non-literal name yield an Unresolved finding; literal names resolve to the origin symbol", 'a literal name argument (Python __import__("os"), getattr(os, "system"), importlib.import_module("os"); JS require("child_process"), import("x"), obj["k"]; C# Type.GetType("..."); same for every supported language) resolves to the origin symbol exactly as the direct form would, tested per language; only non-literal names yield Unresolved']
+new = ["getattr, __import__, importlib.import_module, vars/__dict__/sys.modules lookups with a non-literal name yield an Unresolved finding; literal names resolve to the origin symbol", 'a literal name argument (Python __import__("os"), getattr(os, "system"), importlib.import_module("os"); JS require("child_process"), import("x"), obj["k"]; C# Type.GetType("..."); same for every supported language) resolves to the origin symbol exactly as the direct form would, tested per language; only non-literal names yield Unresolved', "Literal-name resolution is implemented once in the shared gob-ir const_value capability and consumed by every language adapter in gob-symbols; no per-language lexical special case in grimble-check. Non-literal names return Unknown/Unresolved."]
+moved = [1, 2]
+at = "2026-10-29T15:08:54Z"
+actor = "lognd"
+rev = 1
