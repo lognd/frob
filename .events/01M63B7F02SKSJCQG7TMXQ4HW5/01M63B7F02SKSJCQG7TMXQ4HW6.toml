@@ -1,0 +1,14 @@
+kind = "create"
+title = "Wire rule nature attribute, envelope fields and agent detection"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
+idempotency_key = "followup-291TPEB-nature-wiring"
+scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/gob-cli/**"]
+acceptance = ["#[rule(nature = heuristic)] flows to RuleDef and the output envelope (nature, waivable_by)", "Agent vs human audience is detected by the CLI and selects HeuristicNote::message"]
+body = "Follow-up from ~291TPEB: gob-rules::nature exists but is not wired. no-story: internal engineering task."
+at = "2026-10-29T08:08:08Z"
+actor = "lognd"
+rev = 1
