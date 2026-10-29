@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:59:07Z"
-updated = "2026-10-29T14:27:15Z"
+updated = "2026-10-29T15:02:21Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/**", "crates/grimble-capabilities/**", "docs/design/output-atoms.md", "docs/reference/config.md", "docs/schemas/config.json", "changelog.d/01M5XMR67K19SFAWNTDJKKJPTT.changed.md", "docs/reference/rules/LOG001.md", "docs/reference/rules/LOG002.md", "docs/README.md", "Cargo.lock", "docs/reference/rules/README.md"]
 
