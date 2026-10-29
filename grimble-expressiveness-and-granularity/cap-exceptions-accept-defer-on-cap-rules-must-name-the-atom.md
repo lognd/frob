@@ -11,7 +11,7 @@ created = "2026-10-27T03:15:09Z"
 updated = "2026-10-29T03:10:53Z"
 idempotency_key = "grimble-expr-exceptions-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/grimble-bind/src/grant_ack.rs", "crates/grimble-bind/src/rules/**", "crates/grimble-model/src/**", "crates/grimble/src/ack.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/eval.rs"]
+scope = ["crates/grimble-bind/src/grant_ack.rs", "crates/grimble-bind/src/rules/**", "crates/grimble-model/src/**", "crates/grimble/src/ack.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/Cargo.toml"]
 
 [[acceptance]]
 text = "an accept/defer on CAP001 without an atom is an MDL error; one with an atom silences only that atom"
