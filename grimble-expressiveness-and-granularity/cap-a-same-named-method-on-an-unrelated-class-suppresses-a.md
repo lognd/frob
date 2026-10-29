@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-29T15:08:54Z"
+updated = "2026-10-29T15:09:01Z"
 idempotency_key = "vnvd3q1-decoy"
-scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**"]
+scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/gob-ir/**"]
 
 [[acceptance]]
 text = "a method defined on a project class never suppresses a use whose receiver resolves to a capability type; test with the decoy in another file"
