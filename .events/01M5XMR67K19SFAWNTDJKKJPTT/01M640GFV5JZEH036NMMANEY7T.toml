@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-29T14:20:02Z"
+digest = "9f9dd3155d8452c2c5459e18f66406e99d7bd26d76b05caa6350e2eb74cb83b1"
+exit_code = 0
+head = "5d6969e7e40e54b4d5fe72a2521752a83d0b1a6b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3c2f42b7-dc3a-4838-9d49-0e83bc4658ec with nextest profile: default
+    Starting 1 test across 1 binary (11 tests skipped)
+        PASS [   1.440s] grimble-check::log_rules python_direct_output_atoms_fire
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.440s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test log_rules -E 'test(python_direct_output_atoms_fire)'"
+size = 545
+status = "measured"
+test_count = 1
+tests_digest = "c98adb4a4213c3e15d313d7fcaad108640a7aab6c4352db2a1eaa0fa2bbc549d"
+at = "2026-10-29T14:20:02Z"
+actor = "lognd"
+rev = 1
