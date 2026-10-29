@@ -1,0 +1,10 @@
+kind = "create"
+title = "Fix PATH001 absolute host path literal in grimble-model args.rs test"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-model/src/args.rs"]
+body = "frob check reports PATH001 at crates/grimble-model/src/args.rs:317 (test literal); found while working CGE2RGD, unrelated to it."
+at = "2026-10-29T09:31:52Z"
+actor = "lognd"
+rev = 1
