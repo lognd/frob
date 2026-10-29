@@ -2,7 +2,8 @@
 id = "01M5XD3T77PEHA0QDBXC7TFFN3"
 title = "Coverage docs and end-to-end test across all languages"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
