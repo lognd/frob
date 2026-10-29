@@ -8,13 +8,13 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:57:31Z"
-updated = "2026-10-29T01:32:21Z"
+updated = "2026-10-29T02:05:33Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/**"]
 
 [[acceptance]]
 text = "a policy rule fails println/eprintln in verb code outside the presenter; existing call sites are routed through logging"
-bound = false
+bound = true
 +++
 
 no-story: internal engineering task in frob; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
