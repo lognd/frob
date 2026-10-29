@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-29T14:17:37Z"
+digest = "8658e19cea428155bac07335060dee46a689cba446021bd0a8f00872b938ad2a"
+exit_code = 0
+head = "5d6969e7e40e54b4d5fe72a2521752a83d0b1a6b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7a480997-1b17-421f-a94c-3a58a36f4692 with nextest profile: default
+    Starting 1 test across 1 binary (11 tests skipped)
+        PASS [   0.151s] grimble-check::log_rules log002_requires_a_logging_crate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.151s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test log_rules -E 'test(log002_requires_a_logging_crate)'"
+size = 600
+status = "measured"
+test_count = 1
+tests_digest = "b6aa8fdfa69a0ccc3544a4e42b41d1067b45dfd814a71cc94907e75a28981ba1"
+at = "2026-10-29T14:17:37Z"
+actor = "lognd"
+rev = 1

@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:59:07Z"
-updated = "2026-10-29T14:05:04Z"
+updated = "2026-10-29T14:17:37Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/**", "crates/grimble-capabilities/**", "docs/design/output-atoms.md", "docs/reference/config.md", "docs/schemas/config.json", "changelog.d/01M5XMR67K19SFAWNTDJKKJPTT.changed.md", "docs/reference/rules/LOG001.md", "docs/reference/rules/LOG002.md", "docs/README.md", "Cargo.lock"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "the rule requires that a program that emits output (stdout, stderr or files) has a logging crate configured; the sink may be file, stdout or stderr but must be reached through the logging layer"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the finding message tells agents to obey and humans how to waive with frob:waive"
