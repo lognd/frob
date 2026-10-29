@@ -2,7 +2,8 @@
 id = "01M5XD3SSSJP0R696S51X6RRD6"
 title = "JS/TS coverage via c8/istanbul under the vitest and jest providers"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
