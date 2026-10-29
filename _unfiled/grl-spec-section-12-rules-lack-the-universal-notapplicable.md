@@ -2,12 +2,12 @@
 id = "01M4DPRS9DZ8NGVP9MBGV4D8CQ"
 title = "grl-spec section 12 rules lack the universal notapplicable or unresolved example that GRL011 now requires"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-08T12:10:51Z"
-updated = "2026-10-29T08:26:17Z"
+updated = "2026-10-29T08:26:19Z"
 scope = ["crates/gob-plan/src/grl/parse/tests/fixtures/**", "docs/design/grl-spec.md"]
 
 [[acceptance]]
