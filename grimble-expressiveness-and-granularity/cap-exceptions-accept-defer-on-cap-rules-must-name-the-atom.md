@@ -8,10 +8,10 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-29T04:00:10Z"
+updated = "2026-10-29T04:00:11Z"
 idempotency_key = "grimble-expr-exceptions-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/grimble-bind/src/grant_ack.rs", "crates/grimble-bind/src/rules/**", "crates/grimble-model/src/**", "crates/grimble/src/ack.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/Cargo.toml", "crates/grimble-check/src/model_view.rs", "crates/grimble/tests/**", "crates/grimble-bind/src/**", "Cargo.lock", "crates/grimble-model/tests/cap_exception.rs", "docs/design/binding.md"]
+scope = ["crates/grimble-bind/src/grant_ack.rs", "crates/grimble-bind/src/rules/**", "crates/grimble-model/src/**", "crates/grimble/src/ack.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/Cargo.toml", "crates/grimble-check/src/model_view.rs", "crates/grimble/tests/**", "crates/grimble-bind/src/**", "Cargo.lock", "crates/grimble-model/tests/cap_exception.rs", "docs/design/binding.md", "docs/reference/rules/CAP001.md"]
 
 [[acceptance]]
 text = "an accept/defer on CAP001 without an atom is an MDL error; one with an atom silences only that atom"
