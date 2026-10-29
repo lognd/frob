@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T22:13:50Z"
+digest = "558798c6a979391ef722f2557205b8a31361120970db6ef160b77b88f45bde03"
+exit_code = 0
+head = "0ecd71dc97325afc7c65c5d4e54b43bcc0b039fb"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1308dd66-816b-48b1-b4b0-a013af481fca with nextest profile: default
+    Starting 1 test across 35 binaries (212 tests skipped)
+        PASS [   0.004s] grimble-check effects::registry_agreement::every_typescript_effect_qualifier_and_builtin_is_in_the_capability_registry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 212 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(registry_agreement)'"
+size = 612
+status = "measured"
+test_count = 1
+tests_digest = "9aed027a8998178fab42ecbf9d84a25d9e7be8f686481b782a7cbeaad836a410"
+at = "2026-10-29T22:13:50Z"
+actor = "lognd"
+rev = 1
