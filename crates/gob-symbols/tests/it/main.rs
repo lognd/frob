@@ -16,6 +16,7 @@ mod html;
 mod inference;
 mod link_cache;
 mod measured;
+mod name_lookups;
 mod nodejs;
 mod python;
 mod python_types;

@@ -107,6 +107,56 @@ struct Cx<'a> {
     python: bool,
 }
 
+/// Folds Python expressions to gob-ir [`ConstValue`]s with the same rules `call_args` uses
+/// (literals, adjacent strings, `+`, single-assigned module constants), for name lookups.
+// frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+pub(crate) struct Folder<'a> {
+    cx: Cx<'a>,
+}
+
+impl<'a> Folder<'a> {
+    /// A folder over the Python file `root` parsed from `src`.
+    pub(crate) fn python(src: &'a str, root: Node<'_>) -> Self {
+        Self {
+            cx: Cx {
+                src,
+                consts: collect_consts(src, root, true),
+                python: true,
+            },
+        }
+    }
+
+    /// The static value of `n`: a known string, a partial string (an interpolated f-string or
+    /// a concatenation with an unknown part), or unknown.
+    pub(crate) fn fold(&self, n: Node<'_>) -> gob_ir::const_value::ConstValue {
+        use gob_ir::const_value::{ConstValue, Fragment};
+        use gob_ir::name_lookup::{concat, literal};
+        if let Some(ArgValue::Str(s)) = self.cx.eval(n, 0) {
+            return literal(s);
+        }
+        match n.kind() {
+            "parenthesized_expression" => n
+                .named_child(0)
+                .map_or(ConstValue::Unknown, |c| self.fold(c)),
+            "binary_operator" => {
+                let plus = n
+                    .child_by_field_name("operator")
+                    .is_some_and(|o| text(self.cx.src, o) == "+");
+                match (
+                    plus,
+                    n.child_by_field_name("left"),
+                    n.child_by_field_name("right"),
+                ) {
+                    (true, Some(l), Some(r)) => concat(&self.fold(l), &self.fold(r)),
+                    _ => ConstValue::Unknown,
+                }
+            }
+            "string" | "concatenated_string" => ConstValue::Fragments(vec![Fragment::Unknown]),
+            _ => ConstValue::Unknown,
+        }
+    }
+}
+
 /// `(start, end)` byte ranges are not storable beside the tree, so constants keep the byte
 /// offset of their value node and are re-found by `value_at`.
 fn collect_consts(src: &str, root: Node<'_>, python: bool) -> BTreeMap<String, Option<usize>> {

@@ -26,6 +26,10 @@ const MAX_ALIAS_DEPTH: usize = 8;
 
 /// One call or function-valued reference with its resolved path.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "independent facts of one resolved use, read together by consumers"
+)]
 pub struct PathUse {
     /// Byte offset of the reference in the file.
     pub offset: usize,
@@ -42,6 +46,22 @@ pub struct PathUse {
     /// True when the path is rooted in a well-known external crate (Rust `std::` and kin): the
     /// reference names that crate whatever local items are called.
     pub external_root: bool,
+    /// True when the lookup's name is not a single literal (`getattr(os, n)`, `__import__(n)`):
+    /// `path` is then only the known prefix (empty when nothing is known) and the use may reach
+    /// anything under it. Always `dynamic`; a consumer reports it Unresolved, never certain.
+    pub computed: bool,
+}
+
+/// The path segment standing for a lookup name that is not a single literal.
+pub(crate) const COMPUTED: &str = "?";
+
+/// Splits a path at its first [`COMPUTED`] segment: the known prefix and whether there was one.
+pub(crate) fn known_prefix(path: String) -> (String, bool) {
+    let segments: Vec<&str> = path.split('.').collect();
+    match segments.iter().position(|s| *s == COMPUTED) {
+        Some(i) => (segments[..i].join("."), true),
+        None => (path, false),
+    }
 }
 
 /// How a name in scope resolves.
@@ -75,12 +95,17 @@ fn line(n: Node<'_>) -> u32 {
 }
 
 /// Every import-resolved call and function-valued reference in `source`, in source order.
-/// `language` is the adapter tag (`rust` or `python`); other languages and unparsable files
-/// give nothing.
+/// `language` is the adapter tag (`rust`, `python`, or a `typescript`/`csharp` family tag, where
+/// only name-computed lookups are reported); other languages and unparsable files give nothing.
 pub fn path_uses(language: &str, source: &str) -> Vec<PathUse> {
     let lang = match language {
         "rust" => Language::Rust,
         "python" => Language::Python,
+        "typescript" => Language::TypeScript,
+        "tsx" => Language::Tsx,
+        "javascript" => Language::JavaScript,
+        "jsx" => Language::Jsx,
+        "csharp" => Language::CSharp,
         _ => return Vec::new(),
     };
     let ParseResult::Parsed(tree) = parse(lang, source, &ParseLimits::default()) else {
@@ -89,7 +114,8 @@ pub fn path_uses(language: &str, source: &str) -> Vec<PathUse> {
     };
     let mut out = match lang {
         Language::Rust => rust::scan(&tree.text, tree.root()),
-        _ => python::scan(&tree.text, tree.root()),
+        Language::Python => python::scan(&tree.text, tree.root()),
+        _ => crate::lookups::scan(language, &tree.text, tree.root()),
     };
     out.sort_by_key(|u| u.offset);
     out.dedup_by(|a, b| a.offset == b.offset && a.path == b.path);
@@ -401,6 +427,7 @@ mod rust {
                 call,
                 dynamic: false,
                 external_root,
+                computed: false,
             });
         }
 
@@ -462,12 +489,20 @@ mod rust {
 }
 
 mod python {
-    use super::{BTreeMap, Binding, MAX_ALIAS_DEPTH, Node, PathUse, bind, line, text};
+    use super::{
+        BTreeMap, Binding, COMPUTED, MAX_ALIAS_DEPTH, Node, PathUse, bind, known_prefix, line, text,
+    };
+    use crate::call_args::Folder;
+    use gob_ir::name_lookup::{Resolved, resolve_name};
+
+    /// Builtins whose lookups are modelled; an unshadowed use resolves to `builtins.<name>`.
+    const BUILTINS: &[&str] = &["getattr", "__import__", "vars", "globals", "locals"];
 
     /// Scans a Python syntax tree.
     pub(super) fn scan(src: &str, root: Node<'_>) -> Vec<PathUse> {
         let mut cx = Cx {
             src,
+            fold: Folder::python(src, root),
             scopes: Vec::new(),
             out: Vec::new(),
         };
@@ -494,6 +529,8 @@ mod python {
 
     struct Cx<'s> {
         src: &'s str,
+        /// Folds a lookup's name argument (literals, `+`, module constants) to a static value.
+        fold: Folder<'s>,
         scopes: Vec<Scope>,
         out: Vec<PathUse>,
     }
@@ -674,15 +711,22 @@ mod python {
                 return None;
             }
             match e.kind() {
-                "identifier" => match self.lookup(text(self.src, e)) {
-                    Some(Binding::Alias(p, d)) => Some((p.clone(), *d)),
-                    _ => None,
-                },
+                "identifier" => {
+                    let name = text(self.src, e);
+                    match self.lookup(name) {
+                        Some(Binding::Alias(p, d)) => Some((p.clone(), *d)),
+                        Some(Binding::Shadow) => None,
+                        None => BUILTINS
+                            .contains(&name)
+                            .then(|| (format!("builtins.{name}"), false)),
+                    }
+                }
                 "parenthesized_expression" => {
                     let mut c = e.walk();
                     let inner = e.named_children(&mut c).next()?;
                     self.resolve(inner, depth + 1)
                 }
+                "subscript" => self.resolve_index(e, depth),
                 "attribute" => {
                     let obj = e.child_by_field_name("object")?;
                     let attr = e.child_by_field_name("attribute")?;
@@ -694,55 +738,94 @@ mod python {
             }
         }
 
-        /// `getattr(mod, 'name')`, `importlib.import_module('m')` and `__import__('m')` with
-        /// literal arguments.
+        /// The name argument `arg` as a path segment: its literal value, or [`COMPUTED`] when the
+        /// shared gob-ir rule says it is not a single literal.
+        fn name_of(&self, arg: Node<'_>) -> String {
+            match resolve_name(&self.fold.fold(arg)) {
+                Resolved::Literal(s) => s,
+                Resolved::Unresolved(gap) => {
+                    tracing::debug!(?gap, line = line(arg), "canon: computed lookup name");
+                    COMPUTED.to_owned()
+                }
+            }
+        }
+
+        /// `getattr(mod, name)`, `importlib.import_module(name)` and `__import__(name)`: the
+        /// symbol a literal name denotes, or a [`COMPUTED`] segment for any other name.
         fn resolve_dynamic(&self, call: Node<'_>, depth: usize) -> Option<(String, bool)> {
             let f = call.child_by_field_name("function")?;
             let args = call.child_by_field_name("arguments")?;
             let mut c = args.walk();
             let args: Vec<Node<'_>> = args.named_children(&mut c).collect();
-            let lit = |n: Node<'_>| -> Option<String> {
-                if n.kind() != "string" {
-                    return None;
-                }
-                let mut c = n.walk();
-                let mut parts = n
-                    .named_children(&mut c)
-                    .filter(|p| !matches!(p.kind(), "string_start" | "string_end"));
-                let first = parts.next()?;
-                (first.kind() == "string_content" && parts.next().is_none())
-                    .then(|| text(self.src, first).to_owned())
-            };
-            if f.kind() == "identifier" {
-                let name = text(self.src, f);
-                if self.lookup(name).is_some() {
-                    // a user binding named like the builtin, or an import alias handled below
-                    if let Some((p, _)) = self.resolve(f, depth + 1)
-                        && p == "importlib.import_module"
-                    {
-                        return lit(*args.first()?).map(|m| (m, true));
-                    }
-                    return None;
-                }
-                return match name {
-                    "getattr" if args.len() >= 2 => {
-                        let (p, _) = self.resolve(args[0], depth + 1)?;
-                        Some((format!("{p}.{}", lit(args[1])?), true))
-                    }
-                    "__import__" if !args.is_empty() => lit(args[0]).map(|m| (m, true)),
-                    _ => None,
-                };
-            }
             let (p, _) = self.resolve(f, depth + 1)?;
-            (p == "importlib.import_module")
-                .then(|| lit(*args.first()?).map(|m| (m, true)))
-                .flatten()
+            match p.as_str() {
+                "builtins.getattr" if args.len() >= 2 => {
+                    let (obj, _) = self.resolve(args[0], depth + 1)?;
+                    Some((format!("{obj}.{}", self.name_of(args[1])), true))
+                }
+                "builtins.__import__" | "importlib.import_module" if !args.is_empty() => {
+                    Some((self.name_of(args[0]), true))
+                }
+                _ => None,
+            }
+        }
+
+        /// `sys.modules[name]`, `X.__dict__[name]`, `vars(X)[name]` and `globals()[name]` /
+        /// `locals()[name]` / `vars()[name]`.
+        fn resolve_index(&self, e: Node<'_>, depth: usize) -> Option<(String, bool)> {
+            let obj = e.child_by_field_name("value")?;
+            let name = self.name_of(e.child_by_field_name("subscript")?);
+            if let Some((p, _)) = self.resolve(obj, depth + 1)
+                && p == "sys.modules"
+            {
+                return Some((name, true));
+            }
+            let namespace = |this: &Self| -> Option<(String, bool)> {
+                if name == COMPUTED {
+                    return Some((name.clone(), true));
+                }
+                match this.lookup(&name) {
+                    Some(Binding::Alias(p, _)) => Some((p.clone(), true)),
+                    _ => None,
+                }
+            };
+            match obj.kind() {
+                "attribute"
+                    if text(self.src, obj.child_by_field_name("attribute")?) == "__dict__" =>
+                {
+                    let (p, _) = self.resolve(obj.child_by_field_name("object")?, depth + 1)?;
+                    Some((format!("{p}.{name}"), true))
+                }
+                "call" => {
+                    let (f, _) = self.resolve(obj.child_by_field_name("function")?, depth + 1)?;
+                    let mut c = obj.walk();
+                    let args: Vec<Node<'_>> = obj
+                        .child_by_field_name("arguments")?
+                        .named_children(&mut c)
+                        .collect();
+                    match (f.as_str(), args.len()) {
+                        ("builtins.vars", 1) => {
+                            let (p, _) = self.resolve(args[0], depth + 1)?;
+                            Some((format!("{p}.{name}"), true))
+                        }
+                        ("builtins.vars" | "builtins.globals" | "builtins.locals", 0) => {
+                            namespace(self)
+                        }
+                        _ => None,
+                    }
+                }
+                _ => None,
+            }
         }
 
         fn emit(&mut self, e: Node<'_>, call: bool) {
             let Some((path, dynamic)) = self.resolve(e, 0) else {
                 return;
             };
+            if path.starts_with("builtins.") {
+                return;
+            }
+            let (path, computed) = known_prefix(path);
             if !call && !dynamic && !path.contains('.') {
                 return;
             }
@@ -754,13 +837,14 @@ mod python {
                 call,
                 dynamic,
                 external_root: false,
+                computed,
             });
         }
 
         /// A function used as a value: an expression in an argument, assignment, return or
         /// container position.
         fn value(&mut self, v: Node<'_>) {
-            if matches!(v.kind(), "identifier" | "attribute" | "call") {
+            if matches!(v.kind(), "identifier" | "attribute" | "call" | "subscript") {
                 self.emit(v, false);
             }
         }
@@ -798,11 +882,24 @@ mod python {
                     self.scopes.push(Scope { map, class: true });
                     pushed = true;
                 }
+                "expression_statement" => {
+                    // a namespace lookup whose result is discarded (`vars(m)[n]`)
+                    let mut c = n.walk();
+                    if let Some(v) = n.named_children(&mut c).find(|k| k.kind() == "subscript") {
+                        self.emit(v, false);
+                    }
+                }
                 "call" => {
                     if let Some(f) = n.child_by_field_name("function")
-                        && matches!(f.kind(), "identifier" | "attribute" | "call")
+                        && matches!(f.kind(), "identifier" | "attribute" | "call" | "subscript")
                     {
                         self.emit(f, true);
+                    }
+                    // a lookup whose result is discarded (`__import__(n)` as a statement)
+                    if n.parent()
+                        .is_some_and(|p| p.kind() == "expression_statement")
+                    {
+                        self.emit(n, false);
                     }
                 }
                 "argument_list"
