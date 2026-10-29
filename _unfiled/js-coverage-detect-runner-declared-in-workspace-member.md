@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-29T03:37:51Z"
-updated = "2026-10-29T06:53:49Z"
-scope = ["crates/frob-evidence/src/coverage/js.rs", "crates/frob-evidence/tests/**"]
+updated = "2026-10-29T07:08:49Z"
+scope = ["crates/frob-evidence/src/coverage/js.rs", "crates/frob-evidence/tests/**", "docs/design/testing.md"]
 
 [[acceptance]]
 text = "Given a workspace whose root package.json lacks a test runner but a member package.json declares vitest or jest, when coverage detection runs, then the JS runner is detected; a repo with no runner anywhere is still reported as not run"
