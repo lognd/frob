@@ -2,7 +2,8 @@
 id = "01M627BCQ5MSJF9KC2MCYXF9A0"
 title = "Zero DOC006 findings (stale code citations)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
