@@ -1,0 +1,10 @@
+kind = "create"
+title = "Grimble LOG rules: flow-conditional atoms (write/writeln handles, os.open flags, shutil/json.dump/csv sinks, Path.write_text, js pipe, cs TextWriter)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/src/log/**"]
+body = "found while working ~JKKJPTT: atoms whose output depends on where a handle flows are not detected"
+at = "2026-10-29T09:32:21Z"
+actor = "lognd"
+rev = 1
