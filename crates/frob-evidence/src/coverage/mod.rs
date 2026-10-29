@@ -16,6 +16,7 @@
 //! no usable report is [`CoverageStatus::MissingReport`], a COV004 finding when the
 //! language has tests and `[coverage] require_reports` is true.
 
+pub mod csharp;
 pub mod js;
 pub mod lcov;
 pub mod python;
@@ -105,6 +106,7 @@ pub const PROVIDERS: &[&dyn CoverageProvider] = &[
     &python::PythonCoverage,
     &js::VitestCoverage,
     &js::JestCoverage,
+    &csharp::CsharpCoverage,
 ];
 
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q

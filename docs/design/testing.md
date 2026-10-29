@@ -196,3 +196,15 @@ not run, never as a pass; a run that leaves no (or an empty) report is a missing
 report. COV004 owes a report only when a `*.test.*`, `*.spec.*` or `__tests__` file
 exists and the root `package.json` (or a `<runner>.config.*` file) names the runner;
 a repository naming both is claimed by vitest alone.
+
+C# is `coverage::csharp::CsharpCoverage` under the `dotnet` provider, recording the
+language `csharp` into `.frob/coverage/csharp.info`. It runs
+`dotnet test <projects> <flags> --nologo --collect:"XPlat Code Coverage" --results-directory <raw> [--filter <ids>] -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=lcov`
+at the repository root, taking the same project paths, `--no-build`, `--no-restore`,
+`-c <config>` and test ids the dotnet evidence provider accepts. Coverlet nests its
+`coverage.info` in a per-run directory under `<raw>`; the provider finds it, drops records
+under `bin`/`obj`, and the shared normaliser rebases paths. A missing `dotnet`, or no
+project/props file naming `coverlet.collector`, is recorded as not run, never as a pass;
+a run that leaves no (or an empty) report is a missing report. COV004 owes a report when
+a `.cs` file outside build output declares an xUnit, NUnit or MSTest test. Unity editor
+coverage is not part of this provider.
