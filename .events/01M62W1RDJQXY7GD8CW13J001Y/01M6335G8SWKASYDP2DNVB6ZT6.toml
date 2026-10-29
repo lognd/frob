@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a TTY with colour enabled, when a gob-cli failure renders, then the error CODE and status are styled; given NO_COLOR or a non-TTY the output is byte-identical to today and exit codes are unchanged"]
+moved = []
+at = "2026-10-29T05:47:15Z"
+actor = "lognd"
+rev = 1
