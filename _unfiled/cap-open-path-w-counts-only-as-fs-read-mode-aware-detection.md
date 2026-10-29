@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T03:43:31Z"
-updated = "2026-10-29T05:53:35Z"
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs"]
+updated = "2026-10-29T06:06:10Z"
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/tests/caps.rs"]
 
 [[acceptance]]
 text = "Given open(p, 'w') in a node granting only fs.read, when CAP rules run, then CAP001 fs.write fires; a non-literal mode reports an Unresolved"
