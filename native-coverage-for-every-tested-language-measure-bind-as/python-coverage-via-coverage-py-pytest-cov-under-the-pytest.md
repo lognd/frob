@@ -8,11 +8,11 @@ points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:38Z"
-updated = "2026-10-29T01:32:51Z"
+updated = "2026-10-29T01:53:40Z"
 persona = "a Python developer"
 capability = "get coverage from coverage.py under the pytest provider"
 outcome_text = "coverage gates work on my Python projects"
-scope = ["crates/frob-evidence/src/coverage/python.rs", "crates/frob-evidence/tests/coverage_python.rs", "crates/frob-evidence/src/coverage/mod.rs", "crates/frob-evidence/src/provider.rs"]
+scope = ["crates/frob-evidence/src/coverage/python.rs", "crates/frob-evidence/tests/coverage_python.rs", "crates/frob-evidence/src/coverage/mod.rs", "crates/frob-evidence/src/provider.rs", "docs/design/testing.md"]
 
 [[links]]
 kind = "blocked-by"
