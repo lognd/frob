@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:02Z"
-updated = "2026-10-29T07:57:29Z"
+updated = "2026-10-29T08:18:01Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**", "docs/design/rules.md"]
 
