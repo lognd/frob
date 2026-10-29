@@ -74,17 +74,97 @@ fn any_js_test(dir: &Path, in_tests: bool) -> bool {
     false
 }
 
-/// Whether the repository root declares `runner`: its name appears in `package.json` or a `<runner>.config.*` file exists.
-fn declares(root: &Path, runner: &str) -> bool {
-    if std::fs::read_to_string(root.join("package.json")).is_ok_and(|t| t.contains(runner)) {
+/// Whether `dir` itself declares `runner`: its name appears in `package.json` or a `<runner>.config.*` file exists.
+fn declares_in(dir: &Path, runner: &str) -> bool {
+    if std::fs::read_to_string(dir.join("package.json")).is_ok_and(|t| t.contains(runner)) {
         return true;
     }
     let prefix = format!("{runner}.config.");
-    std::fs::read_dir(root).is_ok_and(|rd| {
+    std::fs::read_dir(dir).is_ok_and(|rd| {
         rd.flatten().any(|e| {
             gob_path::exact_text(Path::new(&e.file_name())).is_some_and(|n| n.starts_with(&prefix))
         })
     })
+}
+
+/// The workspace globs the root declares: npm/yarn `workspaces` (array or `{packages}`) and pnpm's `pnpm-workspace.yaml` `packages:` list.
+fn workspace_patterns(root: &Path) -> Vec<String> {
+    let mut out = Vec::new();
+    if let Some(value) = std::fs::read_to_string(root.join("package.json"))
+        .ok()
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+    {
+        let list = match &value["workspaces"] {
+            serde_json::Value::Object(o) => o.get("packages"),
+            other => Some(other),
+        };
+        if let Some(items) = list.and_then(serde_json::Value::as_array) {
+            out.extend(items.iter().filter_map(|v| v.as_str().map(str::to_owned)));
+        }
+    }
+    if let Ok(yaml) = std::fs::read_to_string(root.join("pnpm-workspace.yaml")) {
+        let mut in_packages = false;
+        for line in yaml.lines() {
+            let trimmed = line.trim();
+            if let Some(item) = trimmed.strip_prefix("- ").filter(|_| in_packages) {
+                out.push(item.trim().trim_matches(['"', '\'']).to_owned());
+            } else if !trimmed.is_empty() && !trimmed.starts_with('#') {
+                in_packages = trimmed.starts_with("packages:");
+            }
+        }
+    }
+    out
+}
+
+/// Child directories of `base` (recursively when `deep`), skipping dependency and build directories.
+fn child_dirs(base: &Path, deep: bool, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(base) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let skipped = gob_path::exact_text(Path::new(&entry.file_name()))
+            .is_none_or(|n| SKIPPED.contains(&n) || n.starts_with('.'));
+        if path.is_dir() && !skipped {
+            if deep {
+                child_dirs(&path, true, out);
+            }
+            out.push(path);
+        }
+    }
+}
+
+/// The member directories the workspace globs name; supports literal paths, `dir/*` and `dir/**`, ignores `!` negations and other wildcards.
+fn member_dirs(root: &Path) -> Vec<PathBuf> {
+    let mut dirs = Vec::new();
+    for pattern in workspace_patterns(root) {
+        let pattern = pattern.trim_start_matches("./").trim_end_matches('/');
+        if pattern.starts_with('!') {
+            continue;
+        }
+        let (base, deep) = match pattern.strip_suffix("/**") {
+            Some(base) => (base, Some(true)),
+            None => match pattern.strip_suffix("/*") {
+                Some(base) => (base, Some(false)),
+                None => (pattern, None),
+            },
+        };
+        if base.contains('*') {
+            tracing::debug!(pattern, "unsupported workspace glob; ignored");
+            continue;
+        }
+        match deep {
+            Some(deep) => child_dirs(&root.join(base), deep, &mut dirs),
+            None => dirs.push(root.join(base)),
+        }
+    }
+    tracing::debug!(members = dirs.len(), "js workspace members resolved");
+    dirs
+}
+
+/// Whether the repository declares `runner`: at the root or in any workspace member (`package.json` or `<runner>.config.*`).
+fn declares(root: &Path, runner: &str) -> bool {
+    declares_in(root, runner) || member_dirs(root).iter().any(|d| declares_in(d, runner))
 }
 
 /// The first `node_modules/<package>` directory from `cwd` up to `root`.
