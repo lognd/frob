@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T00:37:57Z"
+digest = "48a4c5dd6fab09a69adb88073d68ed345617823e4f40a75f1663510aa20a1c4e"
+exit_code = 0
+head = "892a78f365b20e7201a5ac6f26576d950976cb9e"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling rustls-webpki v0.103.16
+   Compiling rustls v0.23.46
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 62877ee7-d953-4638-b15d-388e4d7b6eca with nextest profile: default
+    Starting 1 test across 492 binaries (5699 tests skipped)
+        PASS [   0.005s] gob-caps matrix::tests::spike_expectations_hold
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 1 test run: 1 passed, 5699 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "gob-caps::matrix spike_expectations_hold"
+size = 905
+status = "measured"
+test_count = 1
+tests_digest = "30ccc56b73ccd84b9ab3188130ea176bd7b9714a32eb431fbf80caa6a24b517d"
+at = "2026-10-29T00:37:57Z"
+actor = "lognd"
+rev = 1
