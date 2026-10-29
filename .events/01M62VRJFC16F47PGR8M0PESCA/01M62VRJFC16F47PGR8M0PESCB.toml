@@ -1,0 +1,10 @@
+kind = "create"
+title = "PATH001 absolute host path literal in grimble-model args test"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-model/src/args.rs"]
+body = "found while working ~1X6RRD6: args.rs:317 test uses a literal absolute path, flagged PATH001."
+at = "2026-10-29T03:37:51Z"
+actor = "lognd"
+rev = 1
