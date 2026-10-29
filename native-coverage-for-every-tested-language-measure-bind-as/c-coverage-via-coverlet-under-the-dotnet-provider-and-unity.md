@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:39Z"
-updated = "2026-10-29T04:32:57Z"
+updated = "2026-10-29T04:39:55Z"
 persona = "a C# developer"
 capability = "get coverage via coverlet under the dotnet provider"
 outcome_text = "coverage gates work on my C# and Unity projects"
@@ -24,5 +24,5 @@ bound = true
 
 [[acceptance]]
 text = "Given a [[coverage.threshold]] scope below its minimum for this language, when frob check runs, then COV004 reports it, and a tool that is missing is reported as not run rather than passing"
-bound = false
+bound = true
 +++
