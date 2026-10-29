@@ -645,6 +645,12 @@ impl<'t> Cx<'_, 't> {
                     self.emit(t, true);
                 }
             }
+            // `[DllImport("lib")]`: the attribute type is the use, resolved through the usings
+            "attribute" if self.csharp() => {
+                if let Some(t) = n.child_by_field_name("name") {
+                    self.emit(t, true);
+                }
+            }
             _ => {}
         }
         let lookup_form = matches!(
@@ -669,7 +675,9 @@ impl<'t> Cx<'_, 't> {
                 == Some(id);
             if is_callee {
                 self.emit(n, true);
-            } else if !is_object {
+            } else if !is_object || (self.csharp() && n.kind() == "invocation_expression") {
+                // a C# reflection chain (`Type.GetType(..).GetMethod(..).Invoke(..)`) resolves
+                // through its inner call even though that call is the object of the next one
                 self.emit(n, false);
             }
         } else if lookup_form {
@@ -721,6 +729,27 @@ mod tests {
 
     fn has(u: &[(String, bool)], p: &str) -> bool {
         u.iter().any(|(x, _)| x == p)
+    }
+
+    // frob:tests crates/gob-symbols/src/lookups.rs::scan
+    #[test]
+    fn csharp_reflection_chain_and_dllimport_attribute_are_looked_up() {
+        let chain = uses(
+            "csharp",
+            "using System;\nclass A { void G(){ Type.GetType(\"System.Diagnostics.Process\").GetMethod(\"Start\").Invoke(null, null); } }\n",
+        );
+        assert!(
+            chain.iter().any(|(p, _)| p.contains("Process")),
+            "{chain:?}"
+        );
+        let attr = uses(
+            "csharp",
+            "using System.Runtime.InteropServices;\nclass A { [DllImport(\"c\")] static extern int f(); }\n",
+        );
+        assert!(
+            has(&attr, "System.Runtime.InteropServices.DllImport"),
+            "{attr:?}"
+        );
     }
 
     // frob:tests crates/gob-symbols/src/lookups.rs::scan

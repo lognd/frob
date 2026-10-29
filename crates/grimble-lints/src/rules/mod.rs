@@ -97,7 +97,7 @@ where
 }
 
 #[cfg(test)]
-mod freshness {
+mod tests {
     /// The committed index equals what the rule files imply.
     #[test]
     fn rules_index_is_fresh() {

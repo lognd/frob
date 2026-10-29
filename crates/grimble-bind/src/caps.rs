@@ -66,6 +66,7 @@
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
+// frob:ticket 01M64230AR8DHJZY9QQS3EC85S
 // frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
 // frob:ticket 01M59RWT16TFNSACMMTTXX200T
 // frob:ticket 01M5XNNHBSPSM5XFG8FM64HENY
@@ -167,6 +168,13 @@ fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
     if names.contains(callee) {
         return true;
     }
+    // a trailing `*` names every item under its prefix (`libc::*`), from the exact root only
+    if names
+        .iter()
+        .any(|n| wildcard_prefix(n).is_some_and(|p| callee.starts_with(p)))
+    {
+        return true;
+    }
     // `process.env.HOME` reads through the `process.env` object entry
     if lang == "typescript"
         && names.iter().any(|n| {
@@ -183,6 +191,38 @@ fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
         && names
             .iter()
             .any(|n| n.contains("::") && callee.ends_with(&format!("::{n}")))
+}
+
+/// The prefix a wildcard vocabulary name covers (`libc::*` -> `libc::`, `A.B.*` -> `A.B.`).
+fn wildcard_prefix(name: &str) -> Option<&str> {
+    name.strip_suffix('*')
+        .filter(|p| p.ends_with("::") || p.ends_with('.'))
+}
+
+/// True when a computed (unknown-tail) use of `path` may reach vocabulary `name`: the name lives
+/// under the path, is the path, or (Rust) is spelled relative to a module the path ends in, as
+/// after `use std::arch::*` (names are matched by suffix, so `arch::asm` is `std::arch::asm`).
+fn computed_reaches(lang: &str, name: &str, path: &str) -> bool {
+    if name == path || name.starts_with(&format!("{path}.")) {
+        return true;
+    }
+    if let Some(p) = wildcard_prefix(name)
+        && path.starts_with(p.trim_end_matches([':', '.']))
+    {
+        return true;
+    }
+    if lang != "rust" {
+        return false;
+    }
+    if name.starts_with(&format!("{path}::")) {
+        return true;
+    }
+    // some proper segment-prefix of the name is a segment-suffix of the path
+    let segs: Vec<&str> = name.split("::").collect();
+    (1..segs.len()).any(|k| {
+        let q = segs[..k].join("::");
+        path == q || path.ends_with(&format!("::{q}"))
+    })
 }
 
 /// True for languages whose uses are found only by import resolution: a spelled call-graph text
@@ -976,7 +1016,10 @@ fn owner_of_use(cx: &Cx<'_>, unit: &str, path: &str) -> Option<Owner> {
 
 /// The last path segment of a vocabulary name (`fs::read` -> `read`, `subprocess.run` -> `run`).
 fn last_segment(name: &str) -> &str {
-    let name = name.trim_start_matches('.');
+    let name = name
+        .trim_start_matches('.')
+        .trim_end_matches('*')
+        .trim_end_matches(['.', ':']);
     name.rsplit(['.', ':']).next().unwrap_or(name)
 }
 
@@ -1117,7 +1160,6 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                 tracing::debug!(file = path, line = pu.line, spelled = %pu.spelled, "resolved path is a repository item");
                 continue;
             }
-            let prefix = format!("{}.", pu.path);
             let hits: Vec<&str> = vocab
                 .iter()
                 .filter(|(_, names)| {
@@ -1127,7 +1169,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                         pu.path.is_empty()
                             || names
                                 .iter()
-                                .any(|n| n.starts_with(&prefix) || *n == pu.path)
+                                .any(|n| computed_reaches(&code.language, n, &pu.path))
                     } else {
                         names_callee(&code.language, names, &pu.path)
                     }
