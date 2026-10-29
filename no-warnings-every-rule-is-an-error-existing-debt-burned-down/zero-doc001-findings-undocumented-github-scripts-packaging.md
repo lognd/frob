@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-29T01:14:03Z"
+updated = "2026-10-29T01:19:27Z"
 idempotency_key = "b755-doc001"
 scope = [".github/**", "packaging/pypi/render.py", "scripts/claude-hooks/frob-suggest.py"]
 
