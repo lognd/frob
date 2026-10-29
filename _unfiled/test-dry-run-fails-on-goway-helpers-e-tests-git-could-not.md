@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-06T23:48:25Z"
-updated = "2026-10-29T06:51:11Z"
+updated = "2026-10-29T07:06:44Z"
 scope = ["crates/frob-tests/**", "crates/gob-git/**"]
 
 [[acceptance]]
 text = "test-dry-run passes on a goway helper for a branch several commits ahead of origin/experimental"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "on a shallow clone without the base objects frob test reports a named reason, not a generic git error"
