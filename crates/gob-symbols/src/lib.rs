@@ -51,6 +51,7 @@ mod adapter;
 mod ambient;
 mod call_args;
 mod canon;
+mod capvocab;
 mod crates;
 mod def_use;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM

@@ -1173,6 +1173,21 @@ The cell of `(n, a)` is computed, in this order:
    unowned code legitimate, give it an owner with the grants it needs, or
    exclude it; there is no per-rule opt-out.
 
+   TypeScript family and C# (ticket PKW7X2J). Files of these languages
+   are judged by import resolution alone: a spelled `fs.readFile` proves
+   nothing, because the receiver may be a local object named `fs`. The
+   resolver follows ES imports (named, renamed, namespace, default),
+   `import x = require`, `require` through variables and destructuring,
+   the `node:` prefix, ambient globals (`fetch`, `process.env`,
+   `globalThis.fetch`, `new WebSocket`) and, for C#, `using`, `using
+   static`, `using A = ..`, `global::` and fully qualified names. The
+   registry rows (process.spawn, fs.read, fs.write, net.connect,
+   net.listen, process.env, code.eval) live in `gob-symbols` `capvocab`,
+   and a consistency test ties them to the grimble-check effects table.
+   A computed `require(n)`, `obj[n]`, `eval`, `new Function` and
+   `Assembly.Load` are Unresolved, never certain and never clean. Go,
+   Java, C and shell still have no grammar and are not covered.
+
 Effect of May ownership. A use found at an identity in `Y(n)` is in `Use_hi`
 of n and not in `Use_lo`: it can prevent `declared-unused` (a use might
 exist), make `undeclared` Unresolved (not fired) and never create `uses`.

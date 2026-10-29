@@ -397,6 +397,7 @@ language feature each name it in the research note):
 | `apply_targets` | May set / Unknown | by name in unit, artifact, project (may-call); type-directed where decidable |
 | `visibility` | Yes/No/Unknown/NotApplicable | keyword; build-system aware |
 | `effects(region)` | Bounds / Unknown | declared; inferred |
+| `effects(region)` for TypeScript and C# | Bounds / Unknown | resolved through imports (`import`, `require`, `using`, aliases, globals); a computed or reflective name is Unknown, never clean |
 | `test_items` | Exact / Unknown / NotApplicable | attribute scan; framework registry |
 | `imports` | Exact / Unknown | syntactic; resolved to artifacts |
 | `expand(phase)` | term / Unknown | none; bounded steps |
