@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T14:22:14Z"
-updated = "2026-10-29T17:05:50Z"
+updated = "2026-10-29T17:08:10Z"
 scope = ["crates/gob-config/**", "crates/gob-macros/**", "crates/crunk-spec/**", "crates/gob-dev/**", "crates/gob-cli/**", "crates/grimble/**", "docs/reference/**", "docs/schemas/**", "docs/crunk/**", "crates/frob/src/workspace.rs"]
 
 [[acceptance]]
