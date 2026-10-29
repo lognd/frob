@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "scope names a nonexistent file; needs rescoping"
+at = "2026-10-29T01:32:28Z"
+actor = "lognd"
+rev = 1
