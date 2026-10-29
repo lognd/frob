@@ -1,0 +1,53 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T03:37:26Z"
+digest = "c82e4b6581335728191c082f8ef166a641aa4ea095687093a545062e1d810b5d"
+exit_code = 104
+head = "3d727d7216c6d1c165042e665f6d129daa975e0f"
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 31s
+error: creating test list failed
+
+Caused by:
+  for `gob-rules::derive`, command `<worktree>/target/debug/deps/derive-013334c4fdcc2089 --list --format terse` exited with exit code 70
+  --- stdout:
+
+  --- stderr:
+  error: [double-spawn] failed to exec `"<worktree>/target/debug/deps/derive-013334c4fdcc2089" "--list" "--format" "terse"`, current_dir: `<worktree>/crates/gob-rules`
+
+  Caused by:
+    No such file or directory (os error 2)
+
+  ---
+"""
+passed = false
+provider = "nextest"
+ref = "accept_cap001_without_an_atom_is_an_error"
+size = 2051
+status = "measured"
+at = "2026-10-29T03:37:26Z"
+actor = "lognd"
+rev = 1
