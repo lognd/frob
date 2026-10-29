@@ -8,9 +8,9 @@ points = 13
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-29T14:47:39Z"
+updated = "2026-10-29T21:52:24Z"
 idempotency_key = "vnvd3q1-nonpy"
-scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**"]
+scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "crates/gob-ir/**", "docs/design/universal-model.md", "docs/design/binding.md", "docs/reference/**"]
 
 [[acceptance]]
 text = "each supported language has registry entries for process, filesystem, network and environment capabilities, resolved through its import system, with tests"
