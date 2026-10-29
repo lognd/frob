@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use gob_check::CheckError;
 use gob_cli::CliError;
-use gob_config::{ConfigError, TableDescription, all_tables};
+use gob_config::{ConfigError, TableDescription, frob_tables};
 
 use crate::PRODUCT;
 
@@ -25,7 +25,7 @@ pub(crate) fn check_error(err: CheckError) -> CliError {
 
 /// Every registered config table sorted by name (inventory order is link-dependent).
 pub(crate) fn registered_tables() -> Vec<TableDescription> {
-    let mut tables: Vec<TableDescription> = all_tables().collect();
+    let mut tables: Vec<TableDescription> = frob_tables().collect();
     tables.sort_by(|a, b| a.table.cmp(&b.table));
     tables
 }

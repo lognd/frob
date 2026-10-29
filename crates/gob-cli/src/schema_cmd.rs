@@ -1,7 +1,7 @@
 //! The built-in `schema` verb: envelope and config schemas.
 
 use clap::ArgMatches;
-use gob_config::all_tables;
+use gob_config::frob_tables;
 use gob_diagnostics::envelope_schema;
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -89,7 +89,7 @@ impl Command for SchemaCmd {
     }
 
     fn run(&self, _ctx: &Context) -> Outcome<SchemaData> {
-        let mut tables: Vec<_> = all_tables().collect();
+        let mut tables: Vec<_> = frob_tables().collect();
         tables.sort_by(|a, b| a.table.cmp(&b.table));
         let refs: Vec<_> = tables.iter().collect();
         tracing::debug!(tables = refs.len(), "schema assembled");
