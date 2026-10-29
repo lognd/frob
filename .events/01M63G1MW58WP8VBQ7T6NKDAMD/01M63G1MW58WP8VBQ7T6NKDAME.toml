@@ -1,0 +1,10 @@
+kind = "create"
+title = "Grimble LOG rules: Java, Zig, C/C++/CUDA and Bash output atoms"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/src/log/**"]
+body = "found while working ~JKKJPTT: catalogue lists planned groups for these languages; only Rust, Python, JS/TS and C# have scanners"
+at = "2026-10-29T09:32:20Z"
+actor = "lognd"
+rev = 1
