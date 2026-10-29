@@ -2,7 +2,8 @@
 id = "01M642307T98S89GQ4APKW7X2J"
 title = "CAP: no capability detection for TypeScript, JavaScript, Go, Java, C, C# and shell"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 13
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
