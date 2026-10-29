@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-06T23:48:25Z"
-updated = "2026-10-29T07:11:37Z"
+updated = "2026-10-29T07:11:42Z"
 scope = ["crates/frob-tests/**", "crates/gob-git/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "on a shallow clone without the base objects frob test reports a named reason, not a generic git error"
-bound = false
+bound = true
 +++
 
 Seen twice on 2026-10-06 (~N88H9SY's remote cargo dev ci, before and after a merge; the step passed remotely earlier the same day for ~FWSQYH1 and ~AVXTRHX): frob test --dry-run against origin/experimental fails with E-TESTS-GIT 'Could not create index from tree' on the helper. goway sends a minimal .git with HEAD and the with_refs refs (refs/heads/experimental, refs/remotes/origin/experimental) and only the objects of each ref's tip tree, shallow. Find whether frob test needs the merge base or the base tree's index entries that a shallow overlay lacks, then either have goway send what frob test needs or make frob test report a named Unresolved (not E-TESTS-GIT) when the base history is shallow.
