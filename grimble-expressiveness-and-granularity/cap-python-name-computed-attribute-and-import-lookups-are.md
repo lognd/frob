@@ -2,7 +2,8 @@
 id = "01M6422ZFEPZJYJQDDM6CV37RW"
 title = "CAP: Python name-computed attribute and import lookups are silently accepted"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
