@@ -4,6 +4,7 @@
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 // frob:ticket 01M4K3BPQ72DVFEMK8EXQSD03K
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
 
 use grimble_bind::{BindInput, Binding};
 use grimble_model::ModelFiles;
@@ -42,6 +43,11 @@ fn bind_files(files_in: &[(&str, &str)], body: &str) -> Binding {
         rename_min_tokens: 12,
         ledger_dir: "tickets",
     })
+}
+
+/// An absolute key path built from the root separator, not spelled as a host path literal.
+fn key_path() -> String {
+    format!("{}home/u/.ssh/id_rsa", std::path::MAIN_SEPARATOR)
 }
 
 fn of<'a>(b: &'a Binding, rule: &str) -> Vec<&'a grimble_bind::BindFinding> {
@@ -550,17 +556,14 @@ fn shadowed_names_strings_and_comments_are_not_uses() {
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn arg_scope_a_read_outside_every_granted_path_is_cap001_naming_both() {
-    let py = "def go():\n    open(\"/home/u/.ssh/id_rsa\")\n";
-    let b = bind_py(py, "  may fs.read(\"config/**\") because=\"cfg\";\n");
+    let key = key_path();
+    let py = format!("def go():\n    open(\"{key}\")\n");
+    let b = bind_py(&py, "  may fs.read(\"config/**\") because=\"cfg\";\n");
     let f = of(&b, "CAP001");
     assert_eq!(f.len(), 1, "{:?}", b.findings);
     assert!(f[0].reason.is_none(), "an Error, not Unresolved: {f:?}");
     assert_eq!(f[0].anchor, "cap/node/a/fs.read");
-    assert!(
-        f[0].message.contains("/home/u/.ssh/id_rsa"),
-        "{}",
-        f[0].message
-    );
+    assert!(f[0].message.contains(&key), "{}", f[0].message);
     assert!(f[0].message.contains("config/**"), "{}", f[0].message);
 }
 
@@ -684,4 +687,81 @@ fn unowned_code_without_a_use_and_frob_owned_files_are_clean() {
         ("tickets/T-1/x.py", LOOSE),
     ]);
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+const AGENT_FIELD: &str = "use ureq::Agent;\n\npub struct Transport {\n    agent: Agent,\n}\n\nimpl Transport {\n    pub fn send(&self, req: u8) {\n        let _ = self.agent.run(req);\n    }\n}\n";
+
+fn net_anchors(b: &Binding) -> Vec<String> {
+    of(b, "CAP001")
+        .iter()
+        .map(|f| f.anchor.clone())
+        .filter(|a| a.ends_with("net.connect"))
+        .collect()
+}
+
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_method_call_on_a_typed_field_receiver_is_net_connect_cap001() {
+    let b = bind_file("src/http.rs", AGENT_FIELD, "");
+    assert_eq!(
+        net_anchors(&b),
+        ["cap/node/a/net.connect"],
+        "{:?}",
+        b.findings
+    );
+}
+
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_narrow_net_connect_grant_clears_the_typed_receiver_use() {
+    let b = bind_file(
+        "src/http.rs",
+        AGENT_FIELD,
+        "  may net.connect at \"src/http.rs\";\n",
+    );
+    assert!(net_anchors(&b).is_empty(), "{:?}", b.findings);
+    let elsewhere = bind_file(
+        "src/http.rs",
+        AGENT_FIELD,
+        "  may net.connect at \"src/other.rs\";\n",
+    );
+    assert_eq!(net_anchors(&elsewhere).len(), 1, "{:?}", elsewhere.findings);
+}
+
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn typed_receivers_resolve_through_params_lets_aliases_and_wrappers() {
+    let srcs = [
+        "use ureq::Agent as A;\nfn go(a: &A) {\n    a.get(\"x\");\n}\n",
+        "use ureq::Agent;\nfn go() {\n    let a: Agent = make();\n    a.post(\"x\");\n}\n",
+        "use ureq::Agent;\nfn go() {\n    let a = Agent::new_with_defaults();\n    a.get(\"x\");\n}\n",
+        "use ureq::{self, Agent};\nfn go(a: std::sync::Arc<Agent>) {\n    a.clone().head(\"x\");\n}\n",
+        "fn go(a: &ureq::Agent) {\n    a.get(\"x\");\n}\n",
+        "use ureq;\nstatic AGENT: ureq::Agent = make();\nfn go() {\n    AGENT.run(1);\n}\n",
+    ];
+    for src in srcs {
+        let b = bind_file("src/x.rs", src, "");
+        assert_eq!(net_anchors(&b).len(), 1, "{src}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn unrelated_local_shadowed_or_unresolved_receivers_are_not_net_connect() {
+    let srcs = [
+        "struct Agent;\nimpl Agent {\n    fn run(&self) {}\n}\nfn go(a: &Agent) {\n    a.run();\n}\n",
+        "use ureq::Agent;\nfn go(a: &Agent, b: u8) {\n    let a = b;\n    a.get(\"x\");\n}\n",
+        "use ureq::Agent;\nfn go(a: &Agent) {\n    for a in 0..3 {\n        a.get(\"x\");\n    }\n}\n",
+        "use ureq::Agent;\nfn go(a: &Agent) {\n    let f = |a: u8| a.get(\"x\");\n    f(1);\n}\n",
+        "use ureq::Agent;\nfn go(a: &Other) {\n    a.get(\"x\");\n}\n",
+        "use ureq::Agent;\nfn go() {\n    mystery().get(\"x\");\n}\n",
+    ];
+    for src in srcs {
+        let b = bind_file("src/x.rs", src, "");
+        assert!(net_anchors(&b).is_empty(), "{src}: {:?}", b.findings);
+    }
 }

@@ -170,3 +170,13 @@ is merged into the `[coverage] report` that COV004 reads. A missing
 `cargo-llvm-cov` is recorded as not run, never as a pass; a run that leaves no
 report is a missing report, which COV004 flags when `[coverage] require_reports`
 is true and the repository has Rust tests.
+
+Python is `coverage::python::PythonCoverage` under the `pytest` provider: it runs
+the same pytest launcher the provider uses (`[tests] python`, else the repository
+`.venv`, else `pytest`) with
+`--cov --cov-report=lcov:<raw> <pytest args>` at the repository root (needs
+`pytest-cov`, which brings `coverage`). The lcov goes through the same normaliser
+into `.frob/coverage/python.info` and the merged report. A missing `coverage`
+executable is recorded as not run, never as a pass; a run that leaves no report is
+a missing report, which COV004 flags when `[coverage] require_reports` is true and
+the repository has `test_*.py` or `*_test.py` files.

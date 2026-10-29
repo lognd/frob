@@ -1090,6 +1090,16 @@ The cell of `(n, a)` is computed, in this order:
    a dynamic literal form is unresolved, and shadowed names, strings and comments
    are not uses. Glob imports, macro bodies and computed attribute names are not
    followed.
+
+   Typed receivers (ticket YCR4M6H). A Rust vocabulary entry written `<type path>.<method>`
+   (`ureq::Agent.run`, `reqwest::Client.get`) names a method call whose receiver type resolves,
+   from the syntax tree of the file, to that path: through `use` imports and aliases, struct
+   fields (`self.agent`), parameters, `let` bindings with a stated type or a constructor
+   (`Agent::new_with_defaults()`), `Arc` / `Box` / `Rc` wrappers, `clone()` and typed `const` /
+   `static` items. Such a call is a Must use (`net.connect` for the HTTP clients). A name bound
+   twice to different types, or by a pattern that states no type (closure parameter, `for`,
+   `match`, destructuring), is unresolved and reports nothing; types from another file and
+   values returned by calls are not followed.
    Let `E(n, a)` be the identities of the
    remaining subject set covered by a template excuse for a' covering a
    (grmb-spec 4.7, packs.md 6.7); it is empty when no template applies. If
