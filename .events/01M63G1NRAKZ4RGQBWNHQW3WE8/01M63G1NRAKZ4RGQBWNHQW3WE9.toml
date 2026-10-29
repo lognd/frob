@@ -1,0 +1,10 @@
+kind = "create"
+title = "Grimble LOG rules: unsupported resolution classes (non-literal mode args, Rust macro_rules and extern C, Bash redirects, JS dynamic console[name])"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/src/log/**"]
+body = "found while working ~JKKJPTT: these forms are skipped; JS dynamic access has no flag_dynamic yet"
+at = "2026-10-29T09:32:21Z"
+actor = "lognd"
+rev = 1
