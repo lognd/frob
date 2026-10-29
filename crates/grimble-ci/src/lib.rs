@@ -39,8 +39,8 @@
 //!   (`cargo run -p frob -- ..`) is not judged, and only the verb and its first subcommand are.
 //! - `CI001`, `CI006`, `CI007`, `CI010`, `CI013` and `CI015` are lexical fallbacks of the bound
 //!   zizmor rules, and `CI014` of actionlint; they read the workflow text only (no `uses:`
-//!   resolution, no shell parsing), so `CI007` and `CI010` are Advisory where the match is a
-//!   guess. `CI014` knows only a few structural errors (no runner-label or expression typing),
+//!   resolution, no shell parsing), so `CI007` and `CI010` are Errors even where the match is a
+//!   guess (a false positive is fixed in the workflow or excepted). `CI014` knows only a few structural errors (no runner-label or expression typing),
 //!   and `CI015` only a small offline table of archived actions and end-of-life Node majors.
 //! - `CI016` reads `run:` scripts lexically: a literal `--trust-from` ref is taken as protected
 //!   (the workflow text cannot show branch protection), and a ref held in an expression or variable

@@ -22,7 +22,7 @@ use crate::store::PmStore;
 
 /// An open or planned cycle commits more points than its capacity.
 ///
-/// Advisory only. Capacity is the cycle's own `capacity_points`, else
+/// An Error finding. Capacity is the cycle's own `capacity_points`, else
 /// `rolling_mean - k * stddev` once `[pm] min_history` cycles have closed;
 /// before that nothing is enforced and the rule is silent.
 ///
@@ -68,7 +68,7 @@ pub struct Pm011;
 
 /// A not-yet-started member of an open or planned cycle fails the definition of ready.
 ///
-/// Advisory. The predicates are `[pm] ready_requires`; the finding names the
+/// An Error finding. The predicates are `[pm] ready_requires`; the finding names the
 /// failed ones. Started and finished members are not judged.
 ///
 /// ## Remedy
