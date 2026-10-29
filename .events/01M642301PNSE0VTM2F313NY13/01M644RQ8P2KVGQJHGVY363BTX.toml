@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-29T15:33:38Z"
+digest = "14afc9a7721e4c6b81426b03ca96935ead56c1b8474aa18d14acb3f6b666dba6"
+exit_code = 0
+head = "1be705d36085ffb857ad5c1b963a91bf8baea769"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 48.71s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 17f9fca4-0de2-426e-bfcd-900f7e5ec7e7 with nextest profile: default
+    Starting 4 tests across 16 binaries (488 tests skipped)
+        PASS [   0.012s] gob-symbols::it python::a_method_guessed_by_name_alone_is_marked_name_only_in_every_adapter
+        PASS [   0.107s] grimble-bind::caps python_decoy_method_in_another_file_does_not_hide_a_path_read
+        PASS [   0.110s] grimble-bind::caps rust_decoy_method_in_another_file_does_not_hide_a_typed_client_use
+        PASS [   0.113s] grimble-bind::caps python_decoy_never_turns_an_unproven_receiver_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.114s] 4 tests run: 4 passed, 488 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -p grimble-bind -E 'test(decoy) | test(name_only)'"
+size = 955
+status = "measured"
+test_count = 4
+tests_digest = "2b77f6fdd9e53a6b04cf46fb47619284633493acb18ac54d5d92b135f8676fa0"
+at = "2026-10-29T15:33:38Z"
+actor = "lognd"
+rev = 1

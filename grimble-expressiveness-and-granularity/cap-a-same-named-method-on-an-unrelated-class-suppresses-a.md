@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-29T15:32:28Z"
+updated = "2026-10-29T15:33:38Z"
 idempotency_key = "vnvd3q1-decoy"
 scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/gob-ir/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Fix lives in the universal layer (gob-ir/gob-symbols resolution and VocabEntry registry), not a per-language patch in grimble-check; regression test covers every language with an adapter."
-bound = false
+bound = true
 +++
 
 Case p29 vs p29b: identical uses are reported only when the decoy file is absent. symbol-resolved fix required (binding/import resolution, not text matching); pin case as regression test; unresolvable forms must report Unresolved, never pass silently
