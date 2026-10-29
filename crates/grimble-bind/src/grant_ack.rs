@@ -7,12 +7,18 @@
 //! `widened`). Narrowing a grant and removing one never need an ack: the files still covered are
 //! a subset of the approved ones, and a gone grant has no subject.
 //!
+//! A CAP001/CAP002 exception (`accept CAP001 atom=ATOM until=DATE ...`) is approved the same way:
+//! its ledger row carries the `rule` and the `until` date. A new exception is `added`; one whose
+//! `until` is later than the approved date is `widened`. Grant identity is canonical: an alias
+//! (`exec`) and its canonical atom (`process.spawn`) are one identity.
+//!
 //! The check is a snapshot against the ledger, not a diff against git, so it needs no history
 //! and merge commits are judged on the merged result like any other commit. A node rename is a
 //! new identity and needs a re-ack. An approval whose attester is no longer in frob.toml's
 //! `[evidence] attesters` list counts as no approval. A repository with no ledger file opts out
 //! (nothing is pending), like `grimble status` with no baseline; creating the ledger is the
-//! first `grimble ack --grants`. Deleting it undoes the opt-in, as deleting `grimble.lock` does.
+//! first `grimble ack --grants`. Deleting a ledger that git history shows existed is *not* an
+//! opt-out: it is reported (CAP005) and every grant and exception is pending again.
 
 // frob:ticket 01M4GYBNW01DT1MJ6NJN2GX6NN
 
@@ -26,8 +32,11 @@ use grimble_model::ast::EntityKind;
 
 use crate::eval::{Cx, Output};
 use crate::grants::files_of;
-use crate::model::{Entity, Grant, Model};
+use crate::model::{CapException, Entity, Grant, Model, canonical_atom};
 use crate::types::Role;
+
+/// `(node, rule, canonical atom, args)`: the identity of a grant (empty rule) or an exception.
+type Identity = (String, String, String, Vec<String>);
 
 /// The approvals ledger, repo-relative.
 pub const LEDGER_FILE: &str = "grimble.grants.toml";
@@ -37,10 +46,14 @@ pub const LEDGER_FILE: &str = "grimble.grants.toml";
 pub struct Approval {
     /// The node anchor.
     pub node: String,
-    /// The atom as written.
+    /// The atom (canonical for new rows; old rows may hold the written alias).
     pub atom: String,
     /// The string arguments of the grant.
     pub args: Vec<String>,
+    /// The excepted rule for an exception row (`CAP001`/`CAP002`); empty for a grant.
+    pub rule: String,
+    /// The approved `until` date of an exception row; empty for a grant.
+    pub until: String,
     /// The selector texts approved: the `at` text, or the node's `owns` texts for a whole-node grant.
     pub selectors: Vec<String>,
     /// The attester identity (an email of `[evidence] attesters`).
@@ -52,8 +65,13 @@ pub struct Approval {
 }
 
 impl Approval {
-    fn key(&self) -> (&str, &str, &[String]) {
-        (&self.node, &self.atom, &self.args)
+    fn key(&self) -> Identity {
+        (
+            self.node.clone(),
+            self.rule.clone(),
+            canonical_atom(&self.atom),
+            self.args.clone(),
+        )
     }
 }
 
@@ -64,6 +82,8 @@ pub struct Ledger {
     pub approvals: Vec<Approval>,
     /// `[evidence] attesters` of frob.toml.
     pub attesters: Vec<String>,
+    /// The ledger file is gone though git history shows it existed.
+    pub removed: bool,
 }
 
 /// Why the ledger cannot be read.
@@ -100,6 +120,8 @@ fn parse_approval(t: &toml::Table) -> Option<Approval> {
         node: text("node")?,
         atom: text("atom")?,
         args: str_list(t.get("args"))?,
+        rule: text("rule").unwrap_or_default(),
+        until: text("until").unwrap_or_default(),
         selectors: str_list(t.get("selectors"))?,
         attester: text("attester")?,
         reason: text("reason")?,
@@ -145,7 +167,7 @@ pub fn load(root: &Path) -> Result<Option<Vec<Approval>>, LedgerError> {
 /// The ledger file text for `approvals`, sorted so the bytes are stable.
 pub fn render(approvals: &[Approval]) -> String {
     let mut sorted: Vec<&Approval> = approvals.iter().collect();
-    sorted.sort_by(|a, b| a.key().cmp(&b.key()));
+    sorted.sort_by_key(|a| a.key());
     let strs =
         |v: &[String]| toml::Value::Array(v.iter().cloned().map(toml::Value::String).collect());
     let rows: Vec<toml::Value> = sorted
@@ -155,6 +177,10 @@ pub fn render(approvals: &[Approval]) -> String {
             t.insert("node".into(), a.node.clone().into());
             t.insert("atom".into(), a.atom.clone().into());
             t.insert("args".into(), strs(&a.args));
+            if !a.rule.is_empty() {
+                t.insert("rule".into(), a.rule.clone().into());
+                t.insert("until".into(), a.until.clone().into());
+            }
             t.insert("selectors".into(), strs(&a.selectors));
             t.insert("attester".into(), a.attester.clone().into());
             t.insert("reason".into(), a.reason.clone().into());
@@ -197,10 +223,14 @@ pub struct Pending {
     pub kind: Kind,
     /// The approval record an ack would write.
     pub approval_scope: Vec<String>,
-    /// The atom as written.
+    /// The canonical atom.
     pub atom: String,
     /// The string arguments.
     pub args: Vec<String>,
+    /// The excepted rule for a CAP exception; empty for a grant.
+    pub rule: String,
+    /// The `until` date of a CAP exception; empty for a grant.
+    pub until: String,
     /// The `.grmb` file and span of the grant.
     pub site: (String, (usize, usize)),
 }
@@ -257,7 +287,8 @@ pub fn pending(model: &Model, walk: &WalkResult, ledger: &Ledger) -> Vec<Pending
             };
             let approval = ledger.approvals.iter().find(|a| {
                 a.node == e.anchor
-                    && a.atom == g.written
+                    && a.rule.is_empty()
+                    && canonical_atom(&a.atom) == canonical_atom(&g.written)
                     && a.args == g.args
                     && ledger.attesters.contains(&a.attester)
             });
@@ -271,14 +302,56 @@ pub fn pending(model: &Model, walk: &WalkResult, ledger: &Ledger) -> Vec<Pending
                 name: grant_name(g),
                 kind,
                 approval_scope: scope_texts(e, g),
-                atom: g.written.clone(),
+                atom: canonical_atom(&g.written),
                 args: g.args.clone(),
+                rule: String::new(),
+                until: String::new(),
                 site: (g.file.clone(), (g.span.start, g.span.end)),
             });
         }
+        pending_exceptions(e, ledger, &mut out);
     }
     tracing::debug!(pending = out.len(), "pending grant approvals computed");
     out
+}
+
+fn exception_name(x: &CapException) -> String {
+    format!(
+        "{} {} atom={} until={}",
+        x.kind,
+        x.rule,
+        x.written,
+        x.until.as_deref().unwrap_or("?")
+    )
+}
+
+/// The CAP exceptions of `e` that `ledger` does not cover: new, or with a later `until`.
+fn pending_exceptions(e: &Entity, ledger: &Ledger, out: &mut Vec<Pending>) {
+    for x in &e.cap_exceptions {
+        let until = x.until.clone().unwrap_or_default();
+        let approval = ledger.approvals.iter().find(|a| {
+            a.node == e.anchor
+                && a.rule == x.rule
+                && canonical_atom(&a.atom) == x.atom
+                && ledger.attesters.contains(&a.attester)
+        });
+        let kind = match approval {
+            None => Kind::Added,
+            Some(a) if until > a.until => Kind::Widened,
+            Some(_) => continue,
+        };
+        out.push(Pending {
+            node: e.anchor.clone(),
+            name: exception_name(x),
+            kind,
+            approval_scope: Vec::new(),
+            atom: x.atom.clone(),
+            args: Vec::new(),
+            rule: x.rule.clone(),
+            until,
+            site: (x.file.clone(), (x.span.start, x.span.end)),
+        });
+    }
 }
 
 /// What `grimble ack --grants` works from: the pending grants and every live grant identity.
@@ -286,8 +359,8 @@ pub fn pending(model: &Model, walk: &WalkResult, ledger: &Ledger) -> Vec<Pending
 pub struct GrantState {
     /// Grants the ledger on file does not cover (all of them when there is no ledger).
     pub pending: Vec<Pending>,
-    /// `(node, atom, args)` of every grant the model states.
-    pub live: BTreeSet<(String, String, Vec<String>)>,
+    /// `(node, rule, canonical atom, args)` of every grant and CAP exception the model states.
+    pub live: BTreeSet<Identity>,
 }
 
 /// The [`GrantState`] of `model` on `walk` against `ledger`.
@@ -297,9 +370,19 @@ pub fn state(model: &Model, walk: &WalkResult, ledger: &Ledger) -> GrantState {
         .values()
         .filter(|e| e.kind == EntityKind::Node)
         .flat_map(|e| {
-            e.grants
+            let grants = e.grants.iter().map(|g| {
+                (
+                    e.anchor.clone(),
+                    String::new(),
+                    canonical_atom(&g.written),
+                    g.args.clone(),
+                )
+            });
+            let excepts = e
+                .cap_exceptions
                 .iter()
-                .map(|g| (e.anchor.clone(), g.written.clone(), g.args.clone()))
+                .map(|x| (e.anchor.clone(), x.rule.clone(), x.atom.clone(), Vec::new()));
+            grants.chain(excepts).collect::<Vec<_>>()
         })
         .collect();
     GrantState {
@@ -317,13 +400,20 @@ pub fn approve(
     at: &str,
 ) -> Vec<Approval> {
     let (live, pending) = (&state.live, &state.pending);
-    let redone: BTreeSet<(&str, &str, &[String])> = pending
+    let redone: BTreeSet<Identity> = pending
         .iter()
-        .map(|p| (p.node.as_str(), p.atom.as_str(), p.args.as_slice()))
+        .map(|p| {
+            (
+                p.node.clone(),
+                p.rule.clone(),
+                p.atom.clone(),
+                p.args.clone(),
+            )
+        })
         .collect();
     let mut out: Vec<Approval> = ledger
         .iter()
-        .filter(|a| live.contains(&(a.node.clone(), a.atom.clone(), a.args.clone())))
+        .filter(|a| live.contains(&a.key()))
         .filter(|a| !redone.contains(&a.key()))
         .cloned()
         .collect();
@@ -331,6 +421,8 @@ pub fn approve(
         node: p.node.clone(),
         atom: p.atom.clone(),
         args: p.args.clone(),
+        rule: p.rule.clone(),
+        until: p.until.clone(),
         selectors: p.approval_scope.clone(),
         attester: attester.to_owned(),
         reason: reason.to_owned(),
@@ -351,22 +443,41 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
         .entities
         .values()
         .filter(|e| e.kind == EntityKind::Node)
-        .map(|e| e.grants.len())
+        .map(|e| e.grants.len() + e.cap_exceptions.len())
         .sum();
     out.count("CAP005", total);
+    if ledger.removed {
+        out.fire(
+            "CAP005",
+            Severity::Error,
+            format!(
+                "`{LEDGER_FILE}` existed in git history but is gone; restore it or re-approve every grant with `grimble ack --grants --reason \"...\"`"
+            ),
+            "cap/ledger",
+            None,
+        );
+    }
     for p in &pending {
         let what = match p.kind {
             Kind::Added => "is new",
             Kind::Widened => "is wider than its approval",
         };
+        let (word, anchor) = if p.rule.is_empty() {
+            ("grant", format!("cap/{}/grant/{}", p.node, p.atom))
+        } else {
+            (
+                "exception",
+                format!("cap/{}/exception/{}/{}", p.node, p.rule, p.atom),
+            )
+        };
         out.fire(
             "CAP005",
             Severity::Error,
             format!(
-                "`{}` grant `{}` {what}; a human must run `grimble ack --grants --reason \"...\"`",
+                "`{}` {word} `{}` {what}; a human must run `grimble ack --grants --reason \"...\"`",
                 p.node, p.name
             ),
-            &format!("cap/{}/grant/{}", p.node, p.atom),
+            &anchor,
             Some((p.site.0.as_str(), p.site.1)),
         );
     }

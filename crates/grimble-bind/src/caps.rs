@@ -1514,7 +1514,7 @@ fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String, Stri
 type ByArg<'a> = BTreeMap<(&'a str, Option<String>, Vec<String>), Vec<&'a Use>>;
 
 #[allow(clippy::too_many_lines)] // one pass per node: exact, argument and may findings together
-fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
+fn cap001(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
     let undeclared = matrix_undeclared(cx, uses);
     for e in cx
         .model
@@ -1533,6 +1533,9 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             // argument findings: (atom, observed, granted) -> uses; observed None is unfolded
             let mut by_arg: ByArg<'_> = BTreeMap::new();
             for u in found {
+                if crate::model::silenced(e, "CAP001", &u.atom, today) {
+                    continue;
+                }
                 match coverage(&e.grants, &u.atom, u) {
                     Coverage::Covered => {}
                     Coverage::Mismatch { observed, granted } => by_arg
@@ -1813,7 +1816,7 @@ fn report_no_detector(
     }
 }
 
-fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
+fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
     for e in cx
         .model
         .entities
@@ -1893,6 +1896,9 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
                 tracing::debug!(node = %e.anchor, atom = %g.atom, may_owned, unseen, covered, "grant not judged: absence is not Exact");
                 continue;
             }
+            if crate::model::silenced(e, "CAP002", &g.atom, today) {
+                continue;
+            }
             out.fire(
                 "CAP002",
                 Severity::Error,
@@ -1910,9 +1916,10 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
 /// Evaluate CAP001 and CAP002 over the observed uses and the node grants.
 pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     let uses = observe(cx);
-    cap001(cx, &uses, out);
+    let today = gob_time::Clock::today(&gob_time::SystemClock::pin());
+    cap001(cx, &uses, today, out);
     cap001_unowned(&uses, out);
-    cap002(cx, &uses, out);
+    cap002(cx, &uses, today, out);
     tracing::info!(
         cap001 = out.subjects.get("CAP001").copied().unwrap_or(0),
         cap002 = out.subjects.get("CAP002").copied().unwrap_or(0),
