@@ -4,7 +4,7 @@
 use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use frob_ledger::privacy::{find_home_path, find_home_root, tick004};
-use frob_ledger::{Ledger, LedgerConfig};
+use frob_ledger::{Layout, Ledger, LedgerConfig};
 use gob_git::{CommitOptions, RelPath, Repo};
 
 /// Every documented spelling is found; relative lookalikes are not.
@@ -253,4 +253,69 @@ fn clean_scan_makes_the_next_scan_incremental() {
     let (found, fourth) = ledger.home_path_scan().expect("rescan");
     assert_eq!(found.len(), 2, "a dirty ledger is never recorded clean");
     assert_eq!(fourth, 2);
+}
+
+/// The home-path and private-term walks find dirty ticket files and events in either layout.
+// frob:ticket 01M4A61GY4Z5H9C0W92BGHBJ66
+// frob:tests crates/frob-ledger/src/privacy.rs::Ledger.home_path_findings
+// frob:tests crates/frob-ledger/src/privacy.rs::Ledger.private_term_findings
+#[test]
+fn walks_find_ticket_files_and_events_in_both_layouts() {
+    for layout in [Layout::Dir, Layout::Branch] {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let repo = Repo::init(dir.path()).expect("init");
+        std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
+        let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
+        std::fs::write(
+            repo.git_dir().join("config"),
+            format!("{cfg}[user]\n\tname = Test User\n\temail = test@example.com\n"),
+        )
+        .expect("identity");
+        drop(repo);
+        let repo = Repo::discover(dir.path()).expect("discover");
+        repo.commit_paths(
+            "refs/heads/main",
+            &[(
+                RelPath::new("README.md").expect("path"),
+                Some(b"hello\n".to_vec()),
+            )],
+            "root",
+            &CommitOptions::default(),
+        )
+        .expect("root commit");
+        let ledger = Ledger::open(
+            repo,
+            LedgerConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
+        )
+        .with_layout(layout);
+        ledger
+            .new_ticket(NewTicket::new("Clean", TicketType::Task))
+            .expect("clean");
+        assert!(
+            ledger.home_path_findings().expect("scan").is_empty(),
+            "{layout:?}"
+        );
+        let mut dirty = NewTicket::new("Dirty", TicketType::Task);
+        dirty.body = "see /home/name/projects/x".to_owned();
+        ledger.new_ticket(dirty).expect("dirty");
+        let (found, scanned) = ledger.home_path_scan().expect("scan");
+        assert_eq!(
+            found.len(),
+            2,
+            "{layout:?}: ticket file and event: {found:?}"
+        );
+        assert_eq!(
+            scanned, 2,
+            "{layout:?}: only the new ticket after the clean scan"
+        );
+        assert!(
+            found.iter().all(|f| f.rule.as_str() == "TICK004"),
+            "{layout:?}"
+        );
+        assert!(
+            ledger.private_term_findings().expect("terms").is_empty(),
+            "{layout:?}: no private rules, nothing reported"
+        );
+    }
 }
