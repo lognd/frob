@@ -9,6 +9,7 @@
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 // frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
+// frob:ticket 01M64230AR8DHJZY9QQS3EC85S
 
 use gob_ir::registry::{AtomEntry, DetectorEntry, DetectorKind, VocabEntry};
 
@@ -41,6 +42,28 @@ inventory::submit! {
         aliases: &[],
         detectors: &[
             DetectorEntry { lang: "python", kind: DetectorKind::Callee },
+        ],
+    }
+}
+
+// Native interop (loading a library, calling a foreign function), ticket S3EC85S.
+inventory::submit! {
+    AtomEntry {
+        name: "ffi",
+        aliases: &[],
+        detectors: &[
+            DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
+        ],
+    }
+}
+
+// Escapes from the type system (`transmute`, inline assembly), ticket S3EC85S.
+inventory::submit! {
+    AtomEntry {
+        name: "unsafe",
+        aliases: &[],
+        detectors: &[
+            DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
         ],
     }
 }
@@ -145,6 +168,20 @@ inventory::submit! {
         "fs::create_dir_all", "fs::remove_file", "fs::remove_dir", "fs::remove_dir_all", "fs::rename",
         "fs::set_permissions", "fs::hard_link", "tempfile::tempfile", "tempfile::tempdir",
         "NamedTempFile::new", "TempDir::new",
+    ] }
+}
+
+// A trailing `::*` names every item under that crate or module: foreign calls are open-ended.
+inventory::submit! {
+    VocabEntry { lang: "rust", kind: "ffi", names: &[
+        "libc::*", "libloading::*", "windows_sys::*", "winapi::*", "extern::*",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "rust", kind: "unsafe", names: &[
+        "mem::transmute", "mem::transmute_copy", "arch::asm", "arch::global_asm",
+        "arch::naked_asm",
     ] }
 }
 
