@@ -2,13 +2,13 @@
 id = "01M5XD3T77PEHA0QDBXC7TFFN3"
 title = "Coverage docs and end-to-end test across all languages"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:39Z"
-updated = "2026-10-28T12:55:49Z"
+updated = "2026-10-29T22:18:30Z"
 labels = ["no-story"]
 scope = ["docs/guides/coverage.md", "crates/frob/tests/it/coverage_e2e.rs"]
 
