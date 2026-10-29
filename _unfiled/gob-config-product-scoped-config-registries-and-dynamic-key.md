@@ -2,7 +2,8 @@
 id = "01M43MPG53JR8TP0E15394FZ5T"
 title = "gob-config: product-scoped config registries and dynamic-key tables; migrate crunk-spec"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
