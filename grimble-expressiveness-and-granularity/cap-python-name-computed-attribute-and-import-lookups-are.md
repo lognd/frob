@@ -2,13 +2,13 @@
 id = "01M6422ZFEPZJYJQDDM6CV37RW"
 title = "CAP: Python name-computed attribute and import lookups are silently accepted"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
-updated = "2026-10-29T15:08:54Z"
+updated = "2026-10-29T15:56:37Z"
 idempotency_key = "vnvd3q1-py-dynamic-name"
 scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**"]
 
