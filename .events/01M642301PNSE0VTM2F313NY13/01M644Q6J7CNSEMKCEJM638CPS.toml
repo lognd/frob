@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T15:32:28Z"
+digest = "2930f09bf1c140f1af836f12aeb5c6c01934c72e489f7dbdf1351efeb88d55f5"
+exit_code = 0
+head = "1be705d36085ffb857ad5c1b963a91bf8baea769"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1409c398-33d8-465c-a683-40030a4dcfcf with nextest profile: default
+    Starting 3 tests across 14 binaries (117 tests skipped)
+        PASS [   0.150s] grimble-bind::caps python_decoy_never_turns_an_unproven_receiver_clean
+        PASS [   0.154s] grimble-bind::caps rust_decoy_method_in_another_file_does_not_hide_a_typed_client_use
+        PASS [   0.154s] grimble-bind::caps python_decoy_method_in_another_file_does_not_hide_a_path_read
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.155s] 3 tests run: 3 passed, 117 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(decoy)'"
+size = 1622
+status = "measured"
+test_count = 3
+tests_digest = "1a924e0249f7f1477d7f9dd251fc41ed9dcb5b83f2a1b1e16f71cb96b3947d19"
+at = "2026-10-29T15:32:28Z"
+actor = "lognd"
+rev = 1
