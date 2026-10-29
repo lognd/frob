@@ -21,6 +21,10 @@ require_siblings = true
 # every other spawn goes through gob_exec::Runner.
 process_spawners = ["gob-exec", "gob-git"]
 
+# Crates allowed to print to stdout/stderr (PROC002 is inert in repositories that do not list any);
+# all other human output goes through logging (tracing).
+output_presenters = ["frob-present"]
+
 # External tool stages, run after the built-in rules.
 [[check.tool]]
 name = "cargo"

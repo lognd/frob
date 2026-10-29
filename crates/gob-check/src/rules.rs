@@ -1,4 +1,4 @@
-//! Rules declared by this crate: `PROC001`, `TOOL001`, `TOOL002`, `PERF001` and `READ001`.
+//! Rules declared by this crate: `PROC001`, `PROC002`, `TOOL001`, `TOOL002`, `PERF001` and `READ001`.
 
 use gob_rules::Rule;
 
@@ -22,6 +22,26 @@ use gob_rules::Rule;
     version = 1
 )]
 pub struct Proc001;
+
+/// A crate outside the repository's declared presenters prints with a print macro.
+///
+/// A repository-local policy: only repositories that list crates in
+/// `[check] output_presenters` are checked. Matches `println!`, `eprintln!`,
+/// `print!` and `eprint!` invocations in the syntax tree outside test code.
+/// Emit a `tracing` event instead, or move the output into a presenter crate.
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "PROC002",
+    slug = "print-outside-presenter",
+    family = "PROC",
+    severity = Error,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    polarity = Pplus,
+    version = 1
+)]
+pub struct Proc002;
 
 /// A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start.
 ///

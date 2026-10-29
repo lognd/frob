@@ -55,7 +55,8 @@ use std::sync::Arc;
 
 pub use gob_check::{
     AppliedFix, CheckError, CheckReport, CheckTable, Counts, FailOn, FileCheck, FixOutcome,
-    Perf001, PerfTable, Proc001, StageTime, Stats, Timing, Tool001, Tool002, ToolParser, ToolStage,
+    Perf001, PerfTable, Proc001, Proc002, StageTime, Stats, Timing, Tool001, Tool002, ToolParser,
+    ToolStage,
 };
 pub use memo::FileToolMemo;
 pub use options::{CheckOptions, TeachSelect};

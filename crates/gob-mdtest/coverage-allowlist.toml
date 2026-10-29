@@ -78,6 +78,12 @@ ticket = "~G6YQBDT"
 
 [[gap]]
 product = "frob"
+rule = "PROC002"
+kind = "unresolved"
+ticket = "~G6YQBDT"
+
+[[gap]]
+product = "frob"
 rule = "TICK008"
 kind = "unresolved"
 ticket = "~G6YQBDT"

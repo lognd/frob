@@ -10,6 +10,7 @@ mod ledger_inert;
 mod ledger_missing;
 mod perf;
 mod proc001;
+mod proc002;
 mod python;
 mod ramp;
 mod sibling;

@@ -43,6 +43,7 @@ Materialized: yes.
 | `fail_on_unresolved` | `UnresolvedPolicy` | `"required"` | yes | Which Unresolved findings fail the gate: `required`, `never` or `all`. |
 | `fix_requires_scope` | `bool` | `false` | no | Refuse `--fix` unless `--ticket` scopes the run. |
 | `output_cap_bytes` | `u64` | `67108864` | no | Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB). |
+| `output_presenters` | `Vec<String>` | `[]` | no | Crates (directories under `crates/`) allowed to print to stdout or stderr; empty turns `PROC002` off. |
 | `process_spawners` | `Vec<String>` | `[]` | no | Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off. |
 | `require_siblings` | `bool` | `true` | yes | When true an unusable configured sibling is a required Unresolved (`SIB001`). |
 | `setup` | `Vec<String>` | `[]` | no | Command lines (program plus plain arguments, no shell) run once in the checkout root before any tool stage, e.g. to build gitignored output; a failure leaves the stages Unresolved. |

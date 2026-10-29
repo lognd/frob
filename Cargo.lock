@@ -2586,6 +2586,7 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "tree-sitter",
  "trybuild",
 ]
 

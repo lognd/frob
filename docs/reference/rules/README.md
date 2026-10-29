@@ -380,6 +380,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [PROC001](PROC001.md) | process-outside-exec | error | manual | P+ | false | A crate outside the repository's declared spawners uses a process-spawning API. |
+| [PROC002](PROC002.md) | print-outside-presenter | error | manual | P+ | false | A crate outside the repository's declared presenters prints with a print macro. |
 
 ## RADIUS
 

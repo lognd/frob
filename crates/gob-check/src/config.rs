@@ -436,6 +436,9 @@ pub struct CheckTable {
     /// Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off.
     #[config(default = Vec::new())]
     pub process_spawners: Vec<String>,
+    /// Crates (directories under `crates/`) allowed to print to stdout or stderr; empty turns `PROC002` off.
+    #[config(default = Vec::new())]
+    pub output_presenters: Vec<String>,
     /// Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB).
     #[config(default = 67_108_864)]
     pub output_cap_bytes: u64,

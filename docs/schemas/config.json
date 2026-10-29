@@ -663,6 +663,14 @@
           "minimum": 0,
           "type": "integer"
         },
+        "output_presenters": {
+          "default": [],
+          "description": "Crates (directories under `crates/`) allowed to print to stdout or stderr; empty turns `PROC002` off.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "process_spawners": {
           "default": [],
           "description": "Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off.",

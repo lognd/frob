@@ -303,7 +303,7 @@ fn opaque_repo_findings<P: Product>(
     }
     let mut out = Vec::new();
     let mut groups = product.repo_groups();
-    groups.extend(crate::repo::builtin_groups::<P>(Vec::new()));
+    groups.extend(crate::repo::builtin_groups::<P>(Vec::new(), Vec::new()));
     let rules: Vec<RuleRef> = groups
         .iter()
         .flat_map(|g| g.metas.iter())
