@@ -1,0 +1,145 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T22:13:37Z"
+digest = "2b7a74899f60abd1eb198e9d931d235dbb140a45ad9b1cb76eef0d14a5e3d0c2"
+exit_code = 0
+head = "0ecd71dc97325afc7c65c5d4e54b43bcc0b039fb"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f3e7feaf-8217-43fb-96af-8cc4daa20c9c with nextest profile: default
+    Starting 120 tests across 2 binaries (273 tests skipped)
+        PASS [   0.006s] gob-symbols typescript::style::tests::keys_become_css_properties
+        PASS [   0.006s] gob-symbols typescript::imports::tests::use_targets_round_trip_with_hashes_in_the_specifier
+        PASS [   0.006s] gob-symbols typescript::fold::jsx::tests::jsx_text_collapses_lines
+        PASS [   0.007s] gob-symbols lookups::tests::typescript_local_names_shadow_ambient_ones
+        PASS [   0.007s] gob-symbols typescript::style::tests::numbers_get_px_unless_unitless
+        PASS [   0.008s] gob-symbols lookups::tests::typescript_imports_resolve_to_module_paths
+        PASS [   0.008s] gob-symbols typescript::imports::tests::edges_round_trip
+        PASS [   0.008s] gob-symbols lookups::tests::csharp_usings_resolve_to_qualified_paths
+        PASS [   0.007s] gob-symbols typescript::style::tests::unitless_covers_the_list_and_custom_properties
+        PASS [   0.007s] gob-symbols lookups::tests::csharp_literal_and_computed_type_lookups
+        PASS [   0.015s] gob-symbols::it csharp::a_change_in_any_part_changes_the_merged_digest
+        PASS [   0.013s] gob-symbols::it csharp::an_attribute_change_changes_only_the_attr_and_sig_digests
+        PASS [   0.015s] gob-symbols::it csharp::a_test_file_is_recognised_by_its_attributes_not_by_path_alone
+        PASS [   0.016s] gob-symbols::it csharp::a_syntax_error_is_a_hole_never_a_clean_file
+        PASS [   0.018s] gob-symbols::it csharp::accessibility_follows_keywords_and_container_defaults
+        PASS [   0.020s] gob-symbols::it csharp::a_literal_invoke_is_an_unresolved_edge_that_never_reaches_the_named_method
+        PASS [   0.020s] gob-symbols::it csharp::a_using_item_adds_and_a_remove_item_drops_an_implicit_namespace
+        PASS [   0.012s] gob-symbols::it csharp::base_types_are_facts_on_the_type_unit
+        PASS [   0.020s] gob-symbols::it csharp::an_enclosing_namespace_type_shadows_an_implicit_namespace_and_two_implicit_hits_are_ambiguous
+        PASS [   0.023s] gob-symbols::it csharp::a_conditional_inside_a_member_body_is_unresolved_for_that_member_only
+        PASS [   0.012s] gob-symbols::it csharp::block_namespaces_nest_and_siblings_share_no_parent
+        PASS [   0.009s] gob-symbols::it csharp::comments_and_layout_never_change_digests
+        PASS [   0.010s] gob-symbols::it csharp::cs_files_are_claimed_by_the_csharp_adapter
+        PASS [   0.030s] gob-symbols::it csharp::attributes_keep_names_arguments_and_targets
+        PASS [   0.014s] gob-symbols::it csharp::elif_and_else_branches_negate_the_earlier_conditions
+        PASS [   0.015s] gob-symbols::it csharp::extension_methods_resolve_only_for_a_known_receiver_type
+        PASS [   0.022s] gob-symbols::it csharp::both_branches_of_an_if_yield_units_and_carry_their_condition
+        PASS [   0.022s] gob-symbols::it csharp::calls_resolve_across_namespaces_through_using_and_using_static
+        PASS [   0.014s] gob-symbols::it csharp::fixtures_and_helpers_are_not_tests_and_a_theory_without_nunit_is_xunit
+        PASS [   0.010s] gob-symbols::it csharp::global_and_alias_usings_are_listed_with_kind_and_target
+        PASS [   0.041s] gob-symbols::it csharp::a_partial_class_over_two_files_is_one_unit_with_two_spans
+        PASS [   0.018s] gob-symbols::it csharp::framework_calls_are_external_and_clean_but_unknown_names_are_not
+        PASS [   0.025s] gob-symbols::it csharp::deep_nesting_collapses_and_loses_no_unit_silently
+        PASS [   0.024s] gob-symbols::it csharp::fields_events_and_properties_carry_visibility_and_declarators
+        PASS [   0.017s] gob-symbols::it csharp::implicit_system_makes_core_types_framework_clean
+        PASS [   0.014s] gob-symbols::it csharp::nunit_xunit_and_mstest_methods_are_tests_with_their_qualified_name
+        PASS [   0.017s] gob-symbols::it csharp::implicit_usings_resolve_a_repo_type_from_an_implicit_namespace
+        PASS [   0.009s] gob-symbols::it csharp::use_binding_without_a_kind_deserializes_as_plain
+        PASS [   0.018s] gob-symbols::it csharp::send_message_with_a_string_name_is_unresolved_with_the_reason_named
+        PASS [   0.009s] gob-symbols::it csharp::using_directives_carry_a_typed_kind
+        PASS [   0.016s] gob-symbols::it csharp::this_base_and_constructor_chains_resolve
+        PASS [   0.018s] gob-symbols::it csharp::typed_method_calls_resolve_as_before_with_the_pack_loaded
+        PASS [   0.025s] gob-symbols::it csharp::namespaces_types_and_members_are_units_with_kinds
+        PASS [   0.013s] gob-symbols::it csharp::without_implicit_usings_the_namespace_is_not_in_scope
+        PASS [   0.010s] gob-symbols::it csharp_fixtures::the_solution_fixture_has_two_projects_and_a_reference_edge
+        PASS [   0.011s] gob-symbols::it csharp_fixtures::the_unity_fixture_has_an_asmdef_pair
+        PASS [   0.024s] gob-symbols::it csharp::unknown_receivers_are_unresolved_and_never_clean
+        PASS [   0.013s] gob-symbols::it typescript::a_block_let_shadows_only_inside_its_block
+        PASS [   0.033s] gob-symbols::it csharp::top_level_statements_are_unmodelled_and_the_gate_reads_partial
+        PASS [   0.013s] gob-symbols::it typescript::a_component_use_is_a_call_edge_to_the_component_unit
+        PASS [   0.010s] gob-symbols::it typescript::a_jsdoc_comment_is_the_doc_facet_not_the_body
+        PASS [   0.027s] gob-symbols::it csharp_fixtures::the_fixture_tests_carry_nunit_xunit_and_unity_ids
+        PASS [   0.021s] gob-symbols::it name_lookups::csharp_literal_names_resolve_and_others_are_computed
+        PASS [   0.015s] gob-symbols::it typescript::a_function_passed_as_a_value_is_a_may_reference
+        PASS [   0.013s] gob-symbols::it typescript::a_tsx_file_lists_declarations_and_jsx_elements
+        PASS [   0.011s] gob-symbols::it typescript::calls_are_attributed_to_the_enclosing_unit
+        PASS [   0.011s] gob-symbols::it typescript::cjs_function_expression_exports_are_public_units
+        PASS [   0.014s] gob-symbols::it typescript::cjs_exports_make_declarations_public_and_resolvable
+        PASS [   0.013s] gob-symbols::it typescript::cjs_last_write_wins_and_reassignment_detaches
+        PASS [   0.020s] gob-symbols::it typescript::barrels_and_aliases_are_followed_to_the_declaring_unit
+        PASS [   0.014s] gob-symbols::it typescript::cjs_object_literal_exports_name_function_members
+        PASS [   0.010s] gob-symbols::it typescript::css_tagged_templates_are_css_regions
+        PASS [   0.016s] gob-symbols::it typescript::conditional_and_mapped_children_are_groups
+        PASS [   0.026s] gob-symbols::it typescript::calls_resolve_by_scope_import_and_receiver
+        PASS [   0.013s] gob-symbols::it typescript::declarations_become_units_with_kinds_and_visibility
+        PASS [   0.009s] gob-symbols::it typescript::inline_style_objects_lower_to_declarations
+        PASS [   0.010s] gob-symbols::it typescript::javascript_dialects_use_the_same_adapter
+        PASS [   0.016s] gob-symbols::it typescript::dynamic_and_computed_imports_are_unknown_never_dropped
+        PASS [   0.018s] gob-symbols::it typescript::deep_nesting_collapses_without_losing_calls_or_imports
+        PASS [   0.017s] gob-symbols::it typescript::every_import_form_is_an_edge_and_a_binding
+        PASS [   0.010s] gob-symbols::it typescript::syntax_errors_and_with_statements_are_partial_parses
+        PASS [   0.017s] gob-symbols::it typescript::loop_catch_switch_and_var_scopes
+        PASS [   0.012s] gob-symbols::it typescript::test_items_are_units_that_own_their_calls
+        PASS [   0.017s] gob-symbols::it typescript::relative_specifiers_try_the_typescript_orders
+        PASS [   0.015s] gob-symbols::it typescript::test_runner_calls_are_test_items
+        PASS [   0.017s] gob-symbols::it typescript::the_python_module_graph_and_the_typescript_one_agree_on_shared_shapes
+        PASS [   0.011s] gob-symbols::it typescript_consteval::a_dynamic_argument_leaves_fragments
+        PASS [   0.014s] gob-symbols::it typescript_consteval::a_cycle_in_one_file_is_unresolved_with_the_reason
+        PASS [   0.022s] gob-symbols::it typescript::web_pages_every_import_is_must_may_or_unknown
+        PASS [   0.013s] gob-symbols::it typescript_consteval::a_local_const_cycle_is_unresolved_with_the_reason
+        PASS [   0.016s] gob-symbols::it typescript_consteval::a_function_local_const_evaluates
+        PASS [   0.023s] gob-symbols::it typescript_consteval::a_cycle_across_files_is_unresolved_with_the_reason
+        PASS [   0.025s] gob-symbols::it typescript_consteval::a_block_scoped_const_does_not_leak_into_its_sibling_scope
+        PASS [   0.012s] gob-symbols::it typescript_consteval::a_local_const_shadows_a_module_const
+        PASS [   0.016s] gob-symbols::it typescript_consteval::a_local_const_shadows_an_import
+        PASS [   0.020s] gob-symbols::it typescript_consteval::a_local_const_reads_module_and_imported_consts
+        PASS [   0.012s] gob-symbols::it typescript_consteval::a_local_wrapper_that_forwards_to_clsx_is_a_joiner
+        PASS [   0.011s] gob-symbols::it typescript_consteval::a_renamed_clsx_import_and_a_default_import_are_joiners
+        PASS [   0.017s] gob-symbols::it typescript_consteval::a_nested_function_sees_the_outer_local_const
+        PASS [   0.019s] gob-symbols::it typescript_consteval::a_namespace_member_follows_a_reexport
+        PASS [   0.015s] gob-symbols::it typescript_consteval::an_imported_const_resolves_with_its_origin_span
+        PASS [   0.016s] gob-symbols::it typescript_consteval::a_wrapper_that_does_not_forward_is_not_a_joiner
+        PASS [   0.012s] gob-symbols::it typescript_consteval::an_imported_wrapper_that_forwards_to_clsx_is_a_joiner
+        PASS [   0.018s] gob-symbols::it typescript_consteval::a_shadowed_namespace_and_a_non_namespace_import_stay_unknown
+        PASS [   0.034s] gob-symbols::it typescript_consteval::a_namespace_import_member_evaluates
+        PASS [   0.019s] gob-symbols::it typescript_consteval::an_over_budget_chain_is_unresolved_with_the_reason
+        PASS [   0.018s] gob-symbols::it typescript_consteval::clsx_joins_strings_conditions_objects_and_arrays
+        PASS [   0.016s] gob-symbols::it typescript_consteval::same_file_constants_and_literals_evaluate
+        PASS [   0.016s] gob-symbols::it typescript_consteval::route_path_constants_evaluate_across_files
+        PASS [   0.022s] gob-symbols::it typescript_consteval::v1_arrays_objects_and_spreads
+        PASS [   0.016s] gob-symbols::it typescript_consteval::v1_literals_concatenation_ternary_and_or
+        PASS [   0.018s] gob-symbols::it typescript_consteval::v1_unfoldable_values_are_never_guessed
+        PASS [   0.028s] gob-symbols::it typescript_consteval::let_var_and_parameters_are_not_constant
+        PASS [   0.021s] gob-symbols::it typescript_consteval::v1_cross_module_constants_and_templates
+        PASS [   0.010s] gob-symbols::it typescript_inherit::cyclic_heritage_terminates_and_falls_back
+        PASS [   0.016s] gob-symbols::it typescript_inherit::bases_resolve_through_imports_in_another_file
+        PASS [   0.019s] gob-symbols::it typescript_inherit::class_prefers_its_extends_chain_over_implemented_interfaces
+        PASS [   0.015s] gob-symbols::it typescript_inherit::derived_receiver_links_to_inherited_method
+        PASS [   0.013s] gob-symbols::it typescript_inherit::generic_annotations_and_bases_resolve_by_their_simple_name
+        PASS [   0.017s] gob-symbols::it typescript_inherit::interface_extends_chains_diamonds_and_optional_methods
+        PASS [   0.012s] gob-symbols::it typescript_inherit::interface_receiver_links_to_interface_method
+        PASS [   0.020s] gob-symbols::it typescript_inherit::inheritance_prefers_the_override_and_walks_several_levels
+        PASS [   0.016s] gob-symbols::it typescript_inherit::unannotated_receivers_stay_unresolved_and_never_reach_interface_methods
+        PASS [   0.014s] gob-symbols::it typescript_types::strict_clean_concrete_dispatch_is_must_and_any_sites_are_dynamic
+        PASS [   0.012s] gob-symbols::it unity_project::files_outside_any_asmdef_belong_to_the_assembly_csharp_family
+        PASS [   0.229s] gob-symbols::it corpus::csharp_corpus_covers_every_claimed_operator
+        PASS [   0.209s] gob-symbols::it csharp_fixtures::the_dotnet_solution_fixture_matches_its_snapshot
+        PASS [   0.207s] gob-symbols::it def_use::def_use_typescript_golden
+        PASS [   0.209s] gob-symbols::it csharp_fixtures::the_unity_fixture_matches_its_snapshot
+        PASS [   0.188s] gob-symbols::it typescript::jsx_lowers_to_markup_terms_with_expected_snapshot
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.296s] 120 tests run: 120 passed, 273 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(/typescript|csharp/)'"
+size = 13075
+status = "measured"
+test_count = 120
+tests_digest = "b9b4238b329975964902328fd8dd75046026425dc75e465477439bad5fa2a275"
+at = "2026-10-29T22:13:37Z"
+actor = "lognd"
+rev = 1
