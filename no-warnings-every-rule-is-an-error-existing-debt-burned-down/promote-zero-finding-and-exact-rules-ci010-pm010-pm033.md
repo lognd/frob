@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:03Z"
-updated = "2026-10-29T05:15:25Z"
+updated = "2026-10-29T05:15:26Z"
 labels = ["no-story"]
-scope = ["crates/*/src/**/rules*", "crates/frob-pm/src/legacy/cycle_plan.rs", "crates/*/src/rules/*.md", "crates/grimble-ci/src/lib.rs", "crates/grimble-ci/src/supply.rs"]
+scope = ["crates/*/src/**/rules*", "crates/frob-pm/src/legacy/cycle_plan.rs", "crates/*/src/rules/*.md", "crates/grimble-ci/src/lib.rs", "crates/grimble-ci/src/supply.rs", "docs/reference/rules/*.md"]
 
 [[acceptance]]
 text = "Every zero-finding Warn/Advisory rule is Error with no baseline; CI010, PM010, PM033, SYS008 fixed then Error"
