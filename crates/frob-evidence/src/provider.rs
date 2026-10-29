@@ -580,6 +580,12 @@ impl PytestRunner {
     pub fn label(&self) -> &str {
         &self.label
     }
+
+    // frob:ticket 01M5XD3SNPVCTD68M0QB25EXKE
+    /// The program and the arguments that precede pytest's own (so coverage can launch the same pytest).
+    pub fn into_parts(self) -> (Program, Vec<String>) {
+        (self.program, self.prefix)
+    }
 }
 
 // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
