@@ -1,0 +1,14 @@
+kind = "create"
+title = "CAP: Python local alias of a builtin callable is not resolved"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+idempotency_key = "vnvd3q1-py-alias"
+scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**"]
+acceptance = ["assignment aliases of builtins and module attributes resolve to the origin symbol"]
+body = "Case p03: alias of open not resolved. symbol-resolved fix required (binding/import resolution, not text matching); pin case as regression test; unresolvable forms must report Unresolved, never pass silently"
+at = "2026-10-29T14:47:38Z"
+actor = "lognd"
+rev = 1
