@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T20:55:10Z"
-updated = "2026-10-29T15:54:27Z"
+updated = "2026-10-29T15:54:28Z"
 labels = ["no-story"]
 scope = ["crates/frob/Cargo.toml", "Cargo.lock", "docs/design/products.md"]
+
+[[acceptance]]
+text = "frob-cli declares an optional bundle feature that enables the grimble and crunk-check dependencies, and builds with and without it"
+bound = false
 +++
 
 found while working ~F50FAHB: crates/frob has no bundle feature yet (neither grimble's nor crunk-check's); products.md section 6
