@@ -1,0 +1,64 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T23:23:42Z"
+digest = "58189e4d498cda03cdc983f09d396d99081fd65057488cea9f8a94d0b400c3f4"
+exit_code = 0
+head = "1bffd1e2807b5b129acbcf80f21ee12c5a4282d1"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c5ba9d13-95db-4956-bf16-1bed97ef0745 with nextest profile: default
+    Starting 32 tests across 1 binary (15 binaries skipped)
+        PASS [   0.072s] grimble-bind::caps_interop c01_csharp_computed_method_name_is_unresolved
+        PASS [   0.074s] grimble-bind::caps_interop c02_csharp_function_pointer_marshalling_is_native_interop
+        PASS [   0.077s] grimble-bind::caps_interop c02_csharp_computed_type_name_is_unresolved
+        PASS [   0.080s] grimble-bind::caps_interop c01_csharp_literal_reflection_chain_resolves_to_the_target
+        PASS [   0.079s] grimble-bind::caps_interop r07_rust_unsafe_extern_block_is_native_interop
+        PASS [   0.080s] grimble-bind::caps_interop c02_csharp_dllimport_is_native_interop
+        PASS [   0.083s] grimble-bind::caps_interop c02_csharp_local_marshal_class_names_nothing
+        PASS [   0.083s] grimble-bind::caps_interop c02_csharp_assembly_load_from_a_path_is_unresolved_eval
+        PASS [   0.083s] grimble-bind::caps_interop c02_csharp_qualified_dllimport_is_native_interop
+        PASS [   0.088s] grimble-bind::caps_interop r07_rust_extern_block_and_call_are_native_interop
+        PASS [   0.090s] grimble-bind::caps_interop r07_rust_libc_call_is_native_interop
+        PASS [   0.092s] grimble-bind::caps_interop c02_csharp_native_library_load_is_native_interop
+        PASS [   0.060s] grimble-bind::caps_interop r08_rust_dynamic_library_load_is_native_interop
+        PASS [   0.061s] grimble-bind::caps_interop r08_rust_aliased_libc_call_is_native_interop
+        PASS [   0.071s] grimble-bind::caps_interop r22_rust_local_libc_module_names_nothing
+        PASS [   0.073s] grimble-bind::caps_interop r22_rust_local_function_named_like_libc_names_nothing
+        PASS [   0.081s] grimble-bind::caps_interop r08_rust_libc_glob_import_is_unresolved
+        PASS [   0.084s] grimble-bind::caps_interop r08_rust_imported_libc_function_is_native_interop
+        PASS [   0.081s] grimble-bind::caps_interop r11_rust_transmute_is_an_unsafe_escape
+        PASS [   0.078s] grimble-bind::caps_interop r22_rust_arch_glob_import_is_unresolved
+        PASS [   0.086s] grimble-bind::caps_interop r11_rust_imported_transmute_is_an_unsafe_escape
+        PASS [   0.094s] grimble-bind::caps_interop r22_rust_imported_asm_is_an_unsafe_escape
+        PASS [   0.085s] grimble-bind::caps_interop t02_javascript_aliased_eval_is_unresolved_eval
+        PASS [   0.097s] grimble-bind::caps_interop r22_rust_inline_asm_is_an_unsafe_escape
+        PASS [   0.066s] grimble-bind::caps_interop t02_javascript_computed_import_is_unresolved
+        PASS [   0.076s] grimble-bind::caps_interop t02_javascript_computed_require_is_unresolved
+        PASS [   0.062s] grimble-bind::caps_interop t02_javascript_eval_is_unresolved_eval
+        PASS [   0.062s] grimble-bind::caps_interop t02_javascript_literal_require_resolves_to_the_module
+        PASS [   0.064s] grimble-bind::caps_interop t02_javascript_process_dlopen_is_native_interop
+        PASS [   0.070s] grimble-bind::caps_interop t02_javascript_function_constructor_is_unresolved_eval
+        PASS [   0.070s] grimble-bind::caps_interop t02_javascript_parameter_named_eval_names_nothing
+        PASS [   0.074s] grimble-bind::caps_interop t02_javascript_parameter_named_require_names_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.236s] 32 tests run: 32 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'binary(caps_interop)'"
+size = 4184
+status = "measured"
+test_count = 32
+tests_digest = "20982602f05966ae0b21d02f28ea2a04da07a4053671818a10c32b3a059b8899"
+at = "2026-10-29T23:23:42Z"
+actor = "lognd"
+rev = 1
