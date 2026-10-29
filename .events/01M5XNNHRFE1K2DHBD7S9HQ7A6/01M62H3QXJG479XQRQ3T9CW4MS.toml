@@ -1,0 +1,46 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T00:30:16Z"
+digest = "45c62f03bc4fea7ab56a5d4592b37868b2d00fcdffb61a76fef4c832cd6e580c"
+exit_code = 104
+head = "19e27d57a9a90d318fc11ccfa33d82edbc306350"
+inline = """
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 21s
+error: creating test list failed
+
+Caused by:
+  for `crunk-fix::fix`, command `<worktree>/target/debug/deps/fix-b712aa3210818ded --list --format terse` exited with exit code 70
+  --- stdout:
+
+  --- stderr:
+  error: [double-spawn] failed to exec `"<worktree>/target/debug/deps/fix-b712aa3210818ded" "--list" "--format" "terse"`, current_dir: `<worktree>/crates/crunk-fix`
+
+  Caused by:
+    No such file or directory (os error 2)
+
+  ---
+"""
+passed = false
+provider = "nextest"
+ref = "grimble-bind::caps an_unowned_file_with_a_capability_use_is_a_cap001_error"
+size = 1392
+status = "measured"
+at = "2026-10-29T00:30:16Z"
+actor = "lognd"
+rev = 1
