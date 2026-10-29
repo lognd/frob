@@ -2,6 +2,7 @@
 
 // frob:ticket 01M3ZX7FCFBJSWMTZGCQMW7215
 
+use crate::pretty::PrettyExt;
 use gob_path::Shown;
 use std::fmt::Write as _;
 use std::path::Path;
@@ -148,7 +149,7 @@ impl Command for RuleTest {
             let message = format!("{failed} example(s) failed\n{}", rows.join("\n"));
             return Err(gate(message, &data));
         }
-        Ok(Payload::new(data).with_rendered(rows))
+        Ok(Payload::new(data).with_pretty(rows))
     }
 }
 
@@ -209,7 +210,7 @@ impl Command for RuleCheck {
                 &data,
             ));
         }
-        Ok(Payload::new(data).with_rendered(rows))
+        Ok(Payload::new(data).with_pretty(rows))
     }
 }
 
@@ -271,7 +272,7 @@ impl Command for RuleCatalog {
                 row
             })
             .collect();
-        Ok(Payload::new(result).with_rendered(rows))
+        Ok(Payload::new(result).with_pretty(rows))
     }
 }
 
@@ -528,7 +529,7 @@ impl Command for RuleWhy {
                 Ok(why) => {
                     tracing::debug!(rule = %self.id, %path, line, "rule why traced");
                     let rows = why.lines();
-                    return Ok(Payload::new(why).with_rendered(rows));
+                    return Ok(Payload::new(why).with_pretty(rows));
                 }
             }
         }

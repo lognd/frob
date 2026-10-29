@@ -6,6 +6,7 @@
 
 // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
 
+use crate::pretty::PrettyExt;
 use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
@@ -485,7 +486,7 @@ impl Command for AgentBrief {
             max_bytes,
             truncated,
         })
-        .with_rendered(rows);
+        .with_pretty(rows);
         for w in warnings {
             payload = payload.with_warning(w);
         }

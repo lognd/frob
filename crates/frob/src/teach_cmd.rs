@@ -5,6 +5,7 @@
 
 // frob:ticket 01M3ZX81N4AFEA0W55R756T5RD
 
+use crate::pretty::PrettyExt;
 use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
@@ -87,7 +88,7 @@ impl Command for Teach {
             rule: self.rule.clone(),
             path: Shown::of(&path).to_string(),
         })
-        .with_rendered(rows))
+        .with_pretty(rows))
     }
 }
 

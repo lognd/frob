@@ -11,6 +11,7 @@
 
 mod freshness;
 
+use crate::pretty::PrettyExt;
 use std::time::Duration;
 
 use self::freshness::{FreshState, Notice, Signals, Thresholds, assess};
@@ -558,7 +559,7 @@ fn with_freshness(
 /// The payload whose rendered text is the one status line.
 fn render(r: RefreshReport) -> Payload<RefreshReport> {
     let text = r.status.clone();
-    Payload::new(r).with_rendered(vec![text])
+    Payload::new(r).with_pretty(vec![text])
 }
 
 /// Map a probe result to the exit contract: 0 ok, 3 retryable, 1 needs action.

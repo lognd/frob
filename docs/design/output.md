@@ -196,6 +196,18 @@ never reads the wall clock.
 | ~W1GQTPG | tables, status lines and error layout for every verb's text view | section 4 roles and section 6 rule 2; needs ~VXR58J9 |
 | ~4270F1C | route remaining human output through logging, ban `println` in verb code | section 6; coordinates with ~J1PTXPF |
 
+### 7.1 Text view decoration (~W1GQTPG, landed core)
+
+Verbs still build plain aligned rows (`text_view`, `check_view`). The
+`pretty` module of `frob-cli` colours them after alignment: ticket handles
+and rule ids as `Id`, status words as `Ok`/`Warn`/`Error`, headings as
+`Info` and `label  value` keys as `Dim`. Colour is applied only when
+stdout is a colour terminal (not `NO_COLOR`, not `TERM=dumb`); piped
+output and the JSON envelope are byte-identical to before. On a terminal,
+rows wider than `COLUMNS` (80 when unknown) are cut with an ASCII `...`.
+Error layout (`error[CODE]`, remedy lines) lives in `gob-cli` and is a
+follow-up.
+
 Order: ~VXR58J9 and ~MCY59H4 are independent and can run in parallel
 (the event field names above are the only shared surface); ~W1GQTPG and
 ~4270F1C follow ~VXR58J9.

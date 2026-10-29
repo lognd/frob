@@ -6,6 +6,7 @@
 
 // frob:ticket 01M47QSHBWSGEYXJ56PR6FQBS9
 
+use crate::pretty::PrettyExt;
 use std::path::{Path, PathBuf};
 
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
@@ -62,7 +63,7 @@ impl Product for FrobProduct {
         tracing::debug!("frob check through the product verb");
         let payload = frob_check::Check::from_matches(matches)?.run(ctx)?;
         let rows = crate::check_view::check_rows(&payload.data, ctx.verbosity > 0);
-        Ok(payload.with_rendered(rows))
+        Ok(payload.with_pretty(rows))
     }
 
     fn doctor(ctx: &Context, _root: &Path, matches: &ArgMatches) -> Outcome<DoctorData> {

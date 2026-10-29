@@ -1,5 +1,6 @@
 //! Read-only ticket verbs: show (`--format md` is the brief), list (`--category triage` is the inbox), doable; `brief` stays as a hidden alias.
 
+use crate::pretty::PrettyExt;
 use frob_ledger::TicketId;
 use frob_ledger::event::{Event, EventBody};
 use frob_ledger::guards::{LeaseCheck, NoLeases};
@@ -223,7 +224,7 @@ impl Command for Show {
             changelog_exempt,
         };
         let rows = rendered.unwrap_or_else(|| crate::text_view::show_rows(&data));
-        Ok(Payload::new(data).with_rendered(rows))
+        Ok(Payload::new(data).with_pretty(rows))
     }
 }
 
@@ -449,7 +450,7 @@ impl Command for List {
             fill_full(&ledger, &mut data)?;
         }
         let rows = crate::text_view::list_rows(&data);
-        Ok(Payload::new(data).with_rendered(rows))
+        Ok(Payload::new(data).with_pretty(rows))
     }
 }
 
@@ -496,7 +497,7 @@ impl List {
             tickets: Vec::new(),
             tree: Some(tree),
         })
-        .with_rendered(rows);
+        .with_pretty(rows);
         match warning {
             Some(w) => payload.with_warning(w),
             None => payload,
@@ -532,7 +533,7 @@ impl List {
             tickets: entries.into_iter().map(ListRow::from).collect(),
         };
         let rows = crate::text_view::list_rows(&data);
-        Ok(Payload::new(data).with_rendered(rows))
+        Ok(Payload::new(data).with_pretty(rows))
     }
 }
 
@@ -620,7 +621,7 @@ impl Command for Doable {
             data.count = data.tickets.len();
         }
         let rows = crate::text_view::list_rows(&data);
-        let payload = Payload::new(data).with_rendered(rows);
+        let payload = Payload::new(data).with_pretty(rows);
         let payload = match warning {
             Some(w) => payload.with_warning(w),
             None => payload,

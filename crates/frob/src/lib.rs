@@ -26,6 +26,7 @@ pub mod milestone_evidence_cmd;
 pub mod mirror_cmd;
 pub mod mirror_recreate_cmd;
 pub(crate) mod pathtext;
+mod pretty;
 mod product;
 pub mod profile;
 pub mod profile_cmd;

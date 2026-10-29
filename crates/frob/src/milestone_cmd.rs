@@ -5,6 +5,7 @@
 //! with the command that shows what exists. Membership lives on the milestone,
 //! never on the ticket (releases.md section 6a).
 
+use crate::pretty::PrettyExt;
 use frob_ledger::Ledger;
 use frob_ledger::model::{Stamp, TicketType};
 use frob_pm::milestone::{MilestoneError, NewPlan, parse_version, plan_new, unknown_version};
@@ -547,7 +548,7 @@ impl Command for MilestoneShow {
             events: Vec::new(),
             commit: None,
         })
-        .with_rendered(rows))
+        .with_pretty(rows))
     }
 }
 

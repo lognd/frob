@@ -16,6 +16,7 @@
 // frob:ticket 01M4069W45P08YPC4YH4XZVMNC
 // frob:ticket 01M48Q29NESQDWE88YC8HBYT4Z
 
+use crate::pretty::PrettyExt;
 use gob_path::Shown;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::IsTerminal;
@@ -397,7 +398,7 @@ impl Command for BoardVerb {
         let (data, rows) = present(board, brief, ctx, width);
         let mut payload = Payload::new(data);
         if let Some(rows) = rows {
-            payload = payload.with_rendered(rows);
+            payload = payload.with_pretty(rows);
         }
         for w in warnings {
             payload = payload.with_warning(w);

@@ -6,6 +6,7 @@
 //! `PM034` and the changelog dry-run into [`frob_release::status::Input`] and reports; it never refuses
 //! over what it finds.
 
+use crate::pretty::PrettyExt;
 use gob_path::Shown;
 use std::collections::BTreeSet;
 
@@ -248,7 +249,7 @@ impl Command for ReleaseNotes {
             version: self.version.clone(),
             notes,
         })
-        .with_rendered(rows))
+        .with_pretty(rows))
     }
 }
 
@@ -327,7 +328,7 @@ impl Command for ReleaseStatus {
             message: None,
             report: Some(report),
         })
-        .with_rendered(rows))
+        .with_pretty(rows))
     }
 }
 
