@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T18:59:21Z"
-updated = "2026-10-29T23:26:12Z"
-scope = ["crates/grimble-model/src/args.rs"]
+updated = "2026-10-29T23:29:36Z"
+scope = ["crates/grimble-model/src/args.rs", "crates/grimble-model/Cargo.toml"]
 
 [[acceptance]]
 text = "path comparison accounts for symlinks"
