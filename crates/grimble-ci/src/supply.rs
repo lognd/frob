@@ -261,7 +261,7 @@ fn matches_pattern(token: &str, pattern: &str) -> bool {
 enum Reach {
     /// A value an outsider chooses outright (Error).
     Narrow,
-    /// Event data that may carry free text (Advisory).
+    /// Event data that may carry free text (still an Error, reported as a broad context).
     Broad,
 }
 
