@@ -85,9 +85,21 @@ pub enum GapReason {
     Floating,
 }
 
+/// What proves a call edge's target: the receiver's resolved type, or only the method's name.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EdgeBasis {
+    /// Resolved through bindings, imports or a proven receiver type.
+    #[default]
+    Symbolic,
+    /// The receiver is unproven: every method of that name is a candidate, so the edge says nothing about which type is called.
+    NameOnly,
+}
+
 /// One edge with its resolution status; `to` is `None` for an `Unknown` edge.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StatusEdge {
+    /// Whether the target was proven by resolution or guessed from the method name alone.
+    pub basis: EdgeBasis,
     /// The referring symbol (a section or file for links).
     pub from: Symref,
     /// The target, `None` when nothing can be claimed.
@@ -706,6 +718,8 @@ struct Query<'a> {
 enum Outcome {
     /// Targets with the status of the edges to them.
     Hit(Vec<NodeIndex>, Status),
+    /// Method candidates by name alone, the receiver's type unproven: May edges marked `EdgeBasis::NameOnly`.
+    NameOnly(Vec<NodeIndex>),
     /// A call through a trait bound: Must to the trait's method, May to its implementations.
     Dispatch(NodeIndex, Vec<NodeIndex>),
     /// Resolved inside the file (a nested item): no crate edge, no poison.
@@ -1652,7 +1666,7 @@ impl SymbolGraph {
         if cands.is_empty() {
             Outcome::Gap(GapReason::Unbound)
         } else {
-            Outcome::Hit(cands, Status::May)
+            Outcome::NameOnly(cands)
         }
     }
 
@@ -2324,6 +2338,7 @@ impl SymbolGraph {
                     qualifier: qualifier.clone(),
                 });
                 sink.status_edges.push(StatusEdge {
+                    basis: EdgeBasis::Symbolic,
                     from: caller.clone(),
                     to: None,
                     kind: EdgeKind::Calls,
@@ -2338,11 +2353,35 @@ impl SymbolGraph {
                     sink.poisoned.push(a);
                 }
             }
-            Outcome::Hit(nodes, status) => self.record_hit(sink, call, &nodes, status, capped),
+            Outcome::Hit(nodes, status) => {
+                self.record_hit(sink, call, &nodes, (status, EdgeBasis::Symbolic), capped);
+            }
+            Outcome::NameOnly(nodes) => {
+                tracing::debug!(callee = %call.callee, candidates = nodes.len(), "receiver unproven: name-only call edges");
+                self.record_hit(
+                    sink,
+                    call,
+                    &nodes,
+                    (Status::May, EdgeBasis::NameOnly),
+                    capped,
+                );
+            }
             Outcome::Dispatch(decl, impls) => {
-                self.record_hit(sink, call, &[decl], Status::Must, capped);
+                self.record_hit(
+                    sink,
+                    call,
+                    &[decl],
+                    (Status::Must, EdgeBasis::Symbolic),
+                    capped,
+                );
                 if !impls.is_empty() {
-                    self.record_hit(sink, call, &impls, Status::May, capped);
+                    self.record_hit(
+                        sink,
+                        call,
+                        &impls,
+                        (Status::May, EdgeBasis::Symbolic),
+                        capped,
+                    );
                 }
             }
         }
@@ -2354,7 +2393,7 @@ impl SymbolGraph {
         sink: &mut CallSink,
         call: &CallSite,
         nodes: &[NodeIndex],
-        status: Status,
+        (status, basis): (Status, EdgeBasis),
         capped: bool,
     ) {
         let caller = &call.caller;
@@ -2378,6 +2417,7 @@ impl SymbolGraph {
         }
         for to in &found {
             sink.status_edges.push(StatusEdge {
+                basis,
                 from: caller.clone(),
                 to: Some(to.clone()),
                 kind: EdgeKind::Calls,
@@ -2463,6 +2503,7 @@ impl SymbolGraph {
             self.link(from, n, EdgeKind::References, Status::May);
             let to = self.graph[n].symref.clone();
             self.status_edges.push(StatusEdge {
+                basis: EdgeBasis::Symbolic,
                 from: r.from.clone(),
                 to: Some(to),
                 kind: EdgeKind::References,
@@ -2488,6 +2529,7 @@ impl SymbolGraph {
         if let (Some(a), Some(b)) = (from, self.index.get(&target).copied()) {
             self.link(a, b, EdgeKind::Links, Status::Must);
             self.status_edges.push(StatusEdge {
+                basis: EdgeBasis::Symbolic,
                 from: r.from.clone(),
                 to: Some(target),
                 kind: EdgeKind::Links,
@@ -2501,6 +2543,7 @@ impl SymbolGraph {
         } else {
             tracing::debug!(from = %r.from, dest = %r.name, "broken link");
             self.status_edges.push(StatusEdge {
+                basis: EdgeBasis::Symbolic,
                 from: r.from.clone(),
                 to: None,
                 kind: EdgeKind::Links,
@@ -2521,6 +2564,7 @@ impl SymbolGraph {
         let reason = (status == Status::Unknown).then_some(GapReason::Floating);
         tracing::debug!(from = %r.from, reference = %r.name, ?status, "instantiate edge");
         self.status_edges.push(StatusEdge {
+            basis: EdgeBasis::Symbolic,
             from: r.from.clone(),
             to: None,
             kind: EdgeKind::Instantiates,
@@ -2544,6 +2588,7 @@ impl SymbolGraph {
         if let (Some(a), Some((t, b))) = (from, to) {
             self.link(a, b, EdgeKind::Depends, Status::Must);
             self.status_edges.push(StatusEdge {
+                basis: EdgeBasis::Symbolic,
                 from: r.from.clone(),
                 to: Some(t),
                 kind: EdgeKind::Depends,
@@ -2557,6 +2602,7 @@ impl SymbolGraph {
         } else {
             tracing::debug!(from = %r.from, target = %r.name, "unresolved dependency");
             self.status_edges.push(StatusEdge {
+                basis: EdgeBasis::Symbolic,
                 from: r.from.clone(),
                 to: None,
                 kind: EdgeKind::Depends,

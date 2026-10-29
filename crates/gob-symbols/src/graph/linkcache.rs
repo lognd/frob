@@ -21,7 +21,7 @@ use crate::types::TypeFacts;
 use gob_ir::Status;
 
 /// Bump when call resolution changes what it produces, so stored results are not replayed (mirrors `EXTRACTOR_VERSION`).
-pub const LINK_VERSION: u32 = 1;
+pub const LINK_VERSION: u32 = 2;
 
 /// Hashes the per-file inputs of a build (path, content digest, adapter identity) into a cache key part.
 #[derive(Default)]
