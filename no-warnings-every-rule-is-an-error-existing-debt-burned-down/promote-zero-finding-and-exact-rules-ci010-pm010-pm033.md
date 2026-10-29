@@ -2,13 +2,13 @@
 id = "01M5XMJJTFNZP3FWP3WXK1MB0D"
 title = "Promote zero-finding and exact rules (CI010, PM010, PM033, SYS008) to Error"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:03Z"
-updated = "2026-10-28T12:56:06Z"
+updated = "2026-10-29T04:58:51Z"
 labels = ["no-story"]
 scope = ["crates/*/src/**/rules*"]
 
