@@ -166,7 +166,7 @@ impl EffectsCapability {
     }
 }
 
-// frob:ticket PKW7X2J
+// frob:ticket 01M642307T98S89GQ4APKW7X2J
 #[cfg(test)]
 mod registry_agreement {
     use super::TYPESCRIPT_EFFECTS;

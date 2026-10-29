@@ -8,7 +8,7 @@
 //! prefix is stripped before matching. Scope: grimble-bind matches these against resolved paths
 //! only, never against spelled text, so a local `fs` object names nothing.
 
-// frob:ticket PKW7X2J
+// frob:ticket 01M642307T98S89GQ4APKW7X2J
 
 use gob_ir::VocabEntry;
 
