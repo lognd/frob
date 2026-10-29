@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/gob-ir/**", "crates/grimble-bind/**", "changelog/**", ".frob/**", "docs/design/binding.md"]
+new = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/gob-ir/**", "crates/grimble-bind/**", "changelog/**", ".frob/**", "docs/design/binding.md", "docs/design/universal-model.md"]
+at = "2026-10-29T16:01:02Z"
+actor = "lognd"
+rev = 1
