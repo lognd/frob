@@ -12,7 +12,7 @@ updated = "2026-10-29T03:06:57Z"
 persona = "a JS or TS developer"
 capability = "get coverage from c8 or istanbul under vitest and jest"
 outcome_text = "coverage gates work on my JS projects"
-scope = ["crates/frob-evidence/src/coverage/js.rs", "crates/frob-evidence/tests/coverage_js.rs", "crates/frob-evidence/src/coverage/mod.rs"]
+scope = ["crates/frob-evidence/src/coverage/js.rs", "crates/frob-evidence/tests/coverage_js.rs", "crates/frob-evidence/src/coverage/mod.rs", "crates/frob-evidence/src/provider.rs"]
 
 [[links]]
 kind = "blocked-by"

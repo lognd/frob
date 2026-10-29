@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-evidence/src/coverage/js.rs", "crates/frob-evidence/tests/coverage_js.rs", "crates/frob-evidence/src/coverage/mod.rs"]
+new = ["crates/frob-evidence/src/coverage/js.rs", "crates/frob-evidence/tests/coverage_js.rs", "crates/frob-evidence/src/coverage/mod.rs", "crates/frob-evidence/src/provider.rs"]
+at = "2026-10-29T03:06:57Z"
+actor = "lognd"
+rev = 1
