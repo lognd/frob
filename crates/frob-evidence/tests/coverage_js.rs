@@ -88,6 +88,61 @@ fn a_tests_directory_and_a_config_file_count() {
     assert!(VitestCoverage.has_tests(other.path()));
 }
 
+// frob:tests crates/frob-evidence/src/coverage/js.rs::VitestCoverage.has_tests
+// frob:tests crates/frob-evidence/src/coverage/js.rs::JestCoverage.has_tests
+#[test]
+fn a_runner_declared_in_a_workspace_member_is_detected() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path();
+    touch(root, "package.json", r#"{"workspaces":["packages/*"]}"#);
+    touch(
+        root,
+        "packages/web/package.json",
+        r#"{"devDependencies":{"vitest":"1"}}"#,
+    );
+    touch(root, "packages/web/src/a.test.ts", "");
+    assert!(VitestCoverage.has_tests(root));
+    assert!(!JestCoverage.has_tests(root), "vitest claims it");
+
+    let obj = tempfile::tempdir().expect("tempdir");
+    touch(
+        obj.path(),
+        "package.json",
+        r#"{"workspaces":{"packages":["libs/core"]}}"#,
+    );
+    touch(
+        obj.path(),
+        "libs/core/package.json",
+        r#"{"devDependencies":{"jest":"1"}}"#,
+    );
+    touch(obj.path(), "libs/core/a.spec.js", "");
+    assert!(JestCoverage.has_tests(obj.path()));
+
+    let pnpm = tempfile::tempdir().expect("tempdir");
+    touch(pnpm.path(), "package.json", "{}");
+    touch(
+        pnpm.path(),
+        "pnpm-workspace.yaml",
+        "packages:\n  - 'apps/**'\n  - '!apps/old'\n",
+    );
+    touch(pnpm.path(), "apps/a/b/vitest.config.ts", "");
+    touch(pnpm.path(), "apps/a/b/x.test.ts", "");
+    assert!(VitestCoverage.has_tests(pnpm.path()));
+}
+
+// frob:tests crates/frob-evidence/src/coverage/js.rs::VitestCoverage.has_tests
+// frob:tests crates/frob-evidence/src/coverage/js.rs::JestCoverage.has_tests
+#[test]
+fn a_workspace_with_no_runner_anywhere_is_not_run() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path();
+    touch(root, "package.json", r#"{"workspaces":["packages/*"]}"#);
+    touch(root, "packages/web/package.json", r#"{"name":"web"}"#);
+    touch(root, "packages/web/src/a.test.ts", "");
+    assert!(!VitestCoverage.has_tests(root));
+    assert!(!JestCoverage.has_tests(root));
+}
+
 // frob:tests crates/frob-evidence/src/coverage/js.rs::VitestCoverage.plan
 #[test]
 fn vitest_plan_uses_the_installed_backend_and_the_project_runner() {

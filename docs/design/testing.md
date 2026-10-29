@@ -194,7 +194,8 @@ istanbul). Records under `node_modules` are dropped before the shared normaliser
 rebases paths. A missing `node`, runner, or vitest coverage package is recorded as
 not run, never as a pass; a run that leaves no (or an empty) report is a missing
 report. COV004 owes a report only when a `*.test.*`, `*.spec.*` or `__tests__` file
-exists and the root `package.json` (or a `<runner>.config.*` file) names the runner;
+exists and the root `package.json`, a workspace member's `package.json` (npm/yarn `workspaces`,
+pnpm `pnpm-workspace.yaml`; literal paths, `dir/*` and `dir/**`), or a `<runner>.config.*` file names the runner;
 a repository naming both is claimed by vitest alone.
 
 C# is `coverage::csharp::CsharpCoverage` under the `dotnet` provider, recording the
