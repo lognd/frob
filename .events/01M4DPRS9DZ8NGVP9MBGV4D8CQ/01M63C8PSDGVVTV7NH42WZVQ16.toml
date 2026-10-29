@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Every grl-spec section 12 rule has the universal notapplicable-or-unresolved example, and the_fixture_rules_of_the_spec_check_clean no longer filters the GRL011 message"]
+moved = []
+at = "2026-10-29T08:26:17Z"
+actor = "lognd"
+rev = 1
