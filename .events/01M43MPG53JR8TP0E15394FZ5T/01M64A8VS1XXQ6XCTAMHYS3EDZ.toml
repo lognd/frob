@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T17:10:03Z"
+digest = "a12c5d160d6031a5814e1358453fb0c5069572e10d961315e21bfa6721bf47ac"
+exit_code = 0
+head = "d344d8c646031d169caa27ff3f595a0b633b1059"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 52461a19-f8db-4cec-9308-3d2cd77041eb with nextest profile: default
+    Starting 2 tests across 1 binary (499 binaries skipped)
+        PASS [   0.011s] gob-dev::config_products crunk_page_has_a_section_per_table_and_a_row_per_key
+        PASS [   0.021s] gob-dev::config_products every_product_gets_its_own_page_and_schema_path
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E package(gob-dev)&binary(config_products)"
+size = 1186
+status = "measured"
+test_count = 2
+tests_digest = "6d570d0532ea6c71c7ac0221cef7a5dbaf19261d993b7df9368b382264042134"
+at = "2026-10-29T17:10:03Z"
+actor = "lognd"
+rev = 1
