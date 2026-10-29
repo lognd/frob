@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T03:01:37Z"
-updated = "2026-10-29T06:58:32Z"
+updated = "2026-10-29T07:05:14Z"
 scope = ["docs/design/output-atoms.md", "docs/README.md"]
 
 [[acceptance]]
