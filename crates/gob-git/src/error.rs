@@ -72,6 +72,15 @@ pub enum GitError {
     /// The requested comparison or operation is not supported.
     #[error("E-GIT-UNSUPPORTED: {0}")]
     Unsupported(String),
+    /// The base revision resolves but its tree is not in the object store (a shallow or partial clone).
+    // frob:ticket 01M49SWMDMB1TEHJ5Q1HRJ3KXT
+    #[error("E-GIT-SHALLOW-BASE: the tree of `{spec}` is not in the object store: {detail}")]
+    ShallowBase {
+        /// The tree-ish that could not be read.
+        spec: String,
+        /// Underlying failure.
+        detail: String,
+    },
     /// A spawn fallback could not run or exited non-zero.
     #[error("E-GIT-SPAWN: git {args}: {detail}")]
     Spawn {
@@ -98,6 +107,7 @@ impl GitError {
             Self::NoIdentity => "E-GIT-IDENTITY",
             Self::LocalEdits { .. } => "E-GIT-LOCAL-EDITS",
             Self::Unsupported(_) => "E-GIT-UNSUPPORTED",
+            Self::ShallowBase { .. } => "E-GIT-SHALLOW-BASE",
             Self::Spawn { .. } => "E-GIT-SPAWN",
         }
     }
