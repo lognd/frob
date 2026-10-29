@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:03Z"
-updated = "2026-10-29T05:12:29Z"
+updated = "2026-10-29T05:12:53Z"
 labels = ["no-story"]
 scope = ["crates/*/src/**/rules*"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Per-rule counts from a full frob check recorded in the ticket"
-bound = false
+bound = true
 +++
 
 Implements docs/design/rules.md section 6.1 (rules.md 6.1.7 steps 2-3). Filed from ~ZHW5Y2M.
