@@ -30,6 +30,14 @@
 //! function value is reported Unresolved against `code.eval`, naming the call. A spelled name alone
 //! is never a certain use, so the finding is never an error.
 //!
+//! TypeScript family and C# (ticket PKW7X2J): `typescript` (TypeScript, JavaScript, Node, Deno,
+//! Bun) and `csharp` files are judged by import resolution alone, never by spelled call text, so
+//! a local object named `fs` or a repository class named `File` is not a capability. The
+//! registry entries live in `gob_symbols::capvocab`; they are matched against paths resolved
+//! through ES imports, `require`, `import x = require`, ambient globals, and C# `using`
+//! (namespace, `static`, alias, `global::`). A computed `require(n)` or `obj[n]` stays Unresolved,
+//! and `eval` / `Function` / `Assembly.Load` are never a certain use.
+//!
 //! Typed receivers (ticket YCR4M6H): a Rust vocabulary entry `<type path>.<method>`
 //! (`ureq::Agent.run`) names a method call whose receiver type resolves, from the syntax tree, to
 //! that path: through `use` imports and aliases, struct fields (`self.agent`), parameters, typed
@@ -66,6 +74,7 @@
 // frob:ticket 01M5XNNHRFE1K2DHBD7S9HQ7A6
 // frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
 // frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
+// frob:ticket PKW7X2J
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -158,6 +167,15 @@ fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
     if names.contains(callee) {
         return true;
     }
+    // `process.env.HOME` reads through the `process.env` object entry
+    if lang == "typescript"
+        && names.iter().any(|n| {
+            n.rsplit_once('.').is_some_and(|(_, last)| last == "env")
+                && callee.starts_with(&format!("{n}."))
+        })
+    {
+        return true;
+    }
     lang == "rust"
         && !callee
             .split_once("::")
@@ -165,6 +183,12 @@ fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
         && names
             .iter()
             .any(|n| n.contains("::") && callee.ends_with(&format!("::{n}")))
+}
+
+/// True for languages whose uses are found only by import resolution: a spelled call-graph text
+/// (`fs.readFile`) proves nothing there, since the receiver may be any local object named `fs`.
+fn resolved_only(lang: &str) -> bool {
+    matches!(lang, "typescript" | "csharp")
 }
 
 /// The atom of the code-evaluating builtins, whose use is only ever unresolved from a name.
@@ -1056,7 +1080,10 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
         let Some(code) = cx.code.file(path) else {
             continue;
         };
-        if !matches!(code.language.as_str(), "rust" | "python") {
+        if !matches!(
+            code.language.as_str(),
+            "rust" | "python" | "typescript" | "csharp"
+        ) {
             continue;
         }
         let vocab = vocabs
@@ -1119,6 +1146,8 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
             // computed name is unproven
             let certain = !pu.computed;
             for atom in hits {
+                // a spelled `eval` / `Function` / `Assembly.Load` names no source: only unproven
+                let certain = certain && !(atom == CODE_EVAL && resolved_only(&code.language));
                 if !seen.insert((unit.clone(), Some(pu.line), atom.to_owned(), certain)) {
                     continue;
                 }
@@ -1266,6 +1295,9 @@ fn observe(cx: &Cx<'_>) -> Uses {
         let Some(code) = cx.code.file(path) else {
             continue;
         };
+        if resolved_only(&code.language) {
+            continue;
+        }
         let file_calls = calls_in.get(path).unwrap_or(&empty);
         // A cut-off callee text cannot be split; fall back to the spelled method name.
         let spelled;

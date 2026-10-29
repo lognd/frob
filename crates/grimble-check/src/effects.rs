@@ -165,3 +165,48 @@ impl EffectsCapability {
         class
     }
 }
+
+// frob:ticket PKW7X2J
+#[cfg(test)]
+mod registry_agreement {
+    use super::TYPESCRIPT_EFFECTS;
+    use gob_ir::Answer;
+    use std::collections::BTreeSet;
+
+    /// Every TypeScript name the capability registry knows, over all effect kinds.
+    fn registered_names() -> BTreeSet<&'static str> {
+        let mut out = BTreeSet::new();
+        for kind in [
+            "process.spawn",
+            "fs.read",
+            "fs.write",
+            "net.connect",
+            "net.listen",
+            "process.env",
+            "code.eval",
+        ] {
+            if let Answer::Exact(names) = gob_ir::registry::callee_vocab("typescript", kind) {
+                out.extend(names);
+            }
+        }
+        out
+    }
+
+    // frob:tests crates/grimble-check/src/effects.rs::TYPESCRIPT_EFFECTS
+    #[test]
+    fn every_typescript_effect_qualifier_and_builtin_is_in_the_capability_registry() {
+        let names = registered_names();
+        for q in TYPESCRIPT_EFFECTS.effect_qualifiers {
+            if *q == "localStorage" {
+                continue; // browser storage has no capability atom yet
+            }
+            assert!(
+                names.iter().any(|n| n.split('.').next() == Some(*q)),
+                "effects qualifier {q} has no capability registry name"
+            );
+        }
+        for b in TYPESCRIPT_EFFECTS.effect_builtins {
+            assert!(names.contains(b), "effects builtin {b} is not registered");
+        }
+    }
+}

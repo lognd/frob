@@ -1,0 +1,212 @@
+//! Capability vocabularies for the TypeScript family (TypeScript, JavaScript, Node, Deno, Bun) and
+//! C#: the resolved callee paths that spawn a process, touch the filesystem or network, read the
+//! environment or evaluate code (ticket PKW7X2J).
+//!
+//! Names are the symbolic paths `lookups` resolves through each language's import system, so
+//! `import * as cp from "node:child_process"; cp.exec(x)` and `using P = System.Diagnostics.Process;
+//! P.Start(x)` both spell `child_process.exec` and `System.Diagnostics.Process.Start`. A `node:`
+//! prefix is stripped before matching. Scope: grimble-bind matches these against resolved paths
+//! only, never against spelled text, so a local `fs` object names nothing.
+
+// frob:ticket PKW7X2J
+
+use gob_ir::VocabEntry;
+
+inventory::submit! {
+    VocabEntry { lang: "typescript", kind: "process.spawn", names: &[
+        "child_process.exec", "child_process.execSync", "child_process.execFile",
+        "child_process.execFileSync", "child_process.spawn", "child_process.spawnSync",
+        "child_process.fork", "Deno.run", "Deno.Command", "Bun.spawn", "Bun.spawnSync",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "typescript", kind: "fs.read", names: &[
+        "fs.readFile", "fs.promises.readFile", "fs/promises.readFile", "fs.readFileSync",
+        "fs.promises.readFileSync", "fs/promises.readFileSync", "fs.readdir",
+        "fs.promises.readdir", "fs/promises.readdir", "fs.readdirSync",
+        "fs.promises.readdirSync", "fs/promises.readdirSync", "fs.readlink",
+        "fs.promises.readlink", "fs/promises.readlink", "fs.readlinkSync",
+        "fs.promises.readlinkSync", "fs/promises.readlinkSync", "fs.stat", "fs.promises.stat",
+        "fs/promises.stat", "fs.statSync", "fs.promises.statSync", "fs/promises.statSync",
+        "fs.lstat", "fs.promises.lstat", "fs/promises.lstat", "fs.lstatSync",
+        "fs.promises.lstatSync", "fs/promises.lstatSync", "fs.access", "fs.promises.access",
+        "fs/promises.access", "fs.accessSync", "fs.promises.accessSync",
+        "fs/promises.accessSync", "fs.exists", "fs.promises.exists", "fs/promises.exists",
+        "fs.existsSync", "fs.promises.existsSync", "fs/promises.existsSync", "fs.open",
+        "fs.promises.open", "fs/promises.open", "fs.openSync", "fs.promises.openSync",
+        "fs/promises.openSync", "fs.opendir", "fs.promises.opendir", "fs/promises.opendir",
+        "fs.opendirSync", "fs.promises.opendirSync", "fs/promises.opendirSync",
+        "fs.createReadStream", "fs.promises.createReadStream", "fs/promises.createReadStream",
+        "fs.realpath", "fs.promises.realpath", "fs/promises.realpath", "fs.realpathSync",
+        "fs.promises.realpathSync", "fs/promises.realpathSync", "fs.readv", "fs.promises.readv",
+        "fs/promises.readv", "fs.readvSync", "fs.promises.readvSync", "fs/promises.readvSync",
+        "fs.watch", "fs.promises.watch", "fs/promises.watch", "fs.watchFile",
+        "fs.promises.watchFile", "fs/promises.watchFile", "fs.glob", "fs.promises.glob",
+        "fs/promises.glob", "fs.globSync", "fs.promises.globSync", "fs/promises.globSync",
+        "Deno.readTextFile", "Deno.readFile", "Deno.readDir", "Deno.stat", "Deno.lstat",
+        "Deno.open", "Deno.readLink", "Deno.realPath", "Bun.file",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "typescript", kind: "fs.write", names: &[
+        "fs.writeFile", "fs.promises.writeFile", "fs/promises.writeFile", "fs.writeFileSync",
+        "fs.promises.writeFileSync", "fs/promises.writeFileSync", "fs.appendFile",
+        "fs.promises.appendFile", "fs/promises.appendFile", "fs.appendFileSync",
+        "fs.promises.appendFileSync", "fs/promises.appendFileSync", "fs.mkdir",
+        "fs.promises.mkdir", "fs/promises.mkdir", "fs.mkdirSync", "fs.promises.mkdirSync",
+        "fs/promises.mkdirSync", "fs.mkdtemp", "fs.promises.mkdtemp", "fs/promises.mkdtemp",
+        "fs.mkdtempSync", "fs.promises.mkdtempSync", "fs/promises.mkdtempSync", "fs.rm",
+        "fs.promises.rm", "fs/promises.rm", "fs.rmSync", "fs.promises.rmSync",
+        "fs/promises.rmSync", "fs.rmdir", "fs.promises.rmdir", "fs/promises.rmdir",
+        "fs.rmdirSync", "fs.promises.rmdirSync", "fs/promises.rmdirSync", "fs.unlink",
+        "fs.promises.unlink", "fs/promises.unlink", "fs.unlinkSync", "fs.promises.unlinkSync",
+        "fs/promises.unlinkSync", "fs.rename", "fs.promises.rename", "fs/promises.rename",
+        "fs.renameSync", "fs.promises.renameSync", "fs/promises.renameSync", "fs.copyFile",
+        "fs.promises.copyFile", "fs/promises.copyFile", "fs.copyFileSync",
+        "fs.promises.copyFileSync", "fs/promises.copyFileSync", "fs.cp", "fs.promises.cp",
+        "fs/promises.cp", "fs.cpSync", "fs.promises.cpSync", "fs/promises.cpSync", "fs.chmod",
+        "fs.promises.chmod", "fs/promises.chmod", "fs.chmodSync", "fs.promises.chmodSync",
+        "fs/promises.chmodSync", "fs.chown", "fs.promises.chown", "fs/promises.chown",
+        "fs.chownSync", "fs.promises.chownSync", "fs/promises.chownSync", "fs.truncate",
+        "fs.promises.truncate", "fs/promises.truncate", "fs.truncateSync",
+        "fs.promises.truncateSync", "fs/promises.truncateSync", "fs.symlink",
+        "fs.promises.symlink", "fs/promises.symlink", "fs.symlinkSync",
+        "fs.promises.symlinkSync", "fs/promises.symlinkSync", "fs.link", "fs.promises.link",
+        "fs/promises.link", "fs.linkSync", "fs.promises.linkSync", "fs/promises.linkSync",
+        "fs.utimes", "fs.promises.utimes", "fs/promises.utimes", "fs.utimesSync",
+        "fs.promises.utimesSync", "fs/promises.utimesSync", "fs.open", "fs.promises.open",
+        "fs/promises.open", "fs.openSync", "fs.promises.openSync", "fs/promises.openSync",
+        "fs.createWriteStream", "fs.promises.createWriteStream",
+        "fs/promises.createWriteStream", "fs.write", "fs.promises.write", "fs/promises.write",
+        "fs.writeSync", "fs.promises.writeSync", "fs/promises.writeSync", "Deno.writeTextFile",
+        "Deno.writeFile", "Deno.mkdir", "Deno.remove", "Deno.rename", "Deno.copyFile",
+        "Deno.makeTempFile", "Deno.makeTempDir", "Deno.open", "Deno.create", "Bun.write",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "typescript", kind: "net.connect", names: &[
+        "http.request", "http.get", "https.request", "https.get", "http2.connect",
+        "net.connect", "net.createConnection", "net.Socket", "tls.connect",
+        "dgram.createSocket", "dns.lookup", "dns.resolve", "dns.promises.lookup",
+        "dns.promises.resolve", "fetch", "XMLHttpRequest", "WebSocket", "EventSource", "axios",
+        "axios.get", "axios.post", "axios.put", "axios.delete", "axios.patch", "axios.request",
+        "axios.head", "node-fetch", "got", "got.get", "got.post", "got.put", "got.delete",
+        "got.patch", "got.head", "undici.fetch", "undici.request", "Deno.connect",
+        "Deno.connectTls",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "typescript", kind: "net.listen", names: &[
+        "http.createServer", "https.createServer", "http2.createServer",
+        "http2.createSecureServer", "net.createServer", "net.Server", "tls.createServer",
+        "dgram.Socket", "Deno.listen", "Deno.listenTls", "Deno.serve", "Bun.serve",
+        "Bun.listen",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "typescript", kind: "process.env", names: &[
+        "process.env", "process.loadEnvFile", "Deno.env.get", "Deno.env.set",
+        "Deno.env.toObject", "Deno.env.has", "Deno.env.delete", "Bun.env",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "typescript", kind: "code.eval", names: &[
+        "eval", "Function", "vm.runInThisContext", "vm.runInNewContext", "vm.runInContext",
+        "vm.Script", "vm.compileFunction",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "csharp", kind: "process.spawn", names: &[
+        "System.Diagnostics.Process.Start", "System.Diagnostics.Process",
+        "System.Diagnostics.ProcessStartInfo",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "csharp", kind: "fs.read", names: &[
+        "System.IO.File.ReadAllText", "System.IO.File.ReadAllBytes",
+        "System.IO.File.ReadAllLines", "System.IO.File.ReadLines",
+        "System.IO.File.ReadAllTextAsync", "System.IO.File.ReadAllBytesAsync",
+        "System.IO.File.ReadAllLinesAsync", "System.IO.File.OpenRead",
+        "System.IO.File.OpenText", "System.IO.File.Open", "System.IO.File.Exists",
+        "System.IO.File.GetAttributes", "System.IO.File.GetLastWriteTime",
+        "System.IO.Directory.GetFiles", "System.IO.Directory.GetDirectories",
+        "System.IO.Directory.GetFileSystemEntries", "System.IO.Directory.EnumerateFiles",
+        "System.IO.Directory.EnumerateDirectories",
+        "System.IO.Directory.EnumerateFileSystemEntries", "System.IO.Directory.Exists",
+        "System.IO.FileStream", "System.IO.StreamReader", "System.IO.FileInfo",
+        "System.IO.DirectoryInfo",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "csharp", kind: "fs.write", names: &[
+        "System.IO.File.WriteAllText", "System.IO.File.WriteAllBytes",
+        "System.IO.File.WriteAllLines", "System.IO.File.WriteAllTextAsync",
+        "System.IO.File.WriteAllBytesAsync", "System.IO.File.WriteAllLinesAsync",
+        "System.IO.File.AppendAllText", "System.IO.File.AppendAllLines",
+        "System.IO.File.AppendAllTextAsync", "System.IO.File.AppendText",
+        "System.IO.File.Create", "System.IO.File.CreateText", "System.IO.File.Open",
+        "System.IO.File.OpenWrite", "System.IO.File.Delete", "System.IO.File.Copy",
+        "System.IO.File.Move", "System.IO.File.Replace", "System.IO.File.SetAttributes",
+        "System.IO.Directory.CreateDirectory", "System.IO.Directory.Delete",
+        "System.IO.Directory.Move", "System.IO.FileStream", "System.IO.StreamWriter",
+        "System.IO.FileInfo", "System.IO.DirectoryInfo", "System.IO.Path.GetTempFileName",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "csharp", kind: "net.connect", names: &[
+        "System.Net.Http.HttpClient", "System.Net.WebClient", "System.Net.WebRequest.Create",
+        "System.Net.WebRequest.CreateHttp", "System.Net.HttpWebRequest",
+        "System.Net.Sockets.TcpClient", "System.Net.Sockets.UdpClient",
+        "System.Net.Sockets.Socket", "System.Net.WebSockets.ClientWebSocket",
+        "System.Net.Dns.GetHostEntry", "System.Net.Dns.GetHostAddresses",
+        "System.Net.Dns.GetHostEntryAsync", "System.Net.Dns.GetHostAddressesAsync",
+        "System.Net.Mail.SmtpClient", "System.Net.Http.HttpClient.GetAsync",
+        "System.Net.Http.HttpClient.GetStringAsync",
+        "System.Net.Http.HttpClient.GetByteArrayAsync",
+        "System.Net.Http.HttpClient.GetStreamAsync", "System.Net.Http.HttpClient.PostAsync",
+        "System.Net.Http.HttpClient.PutAsync", "System.Net.Http.HttpClient.DeleteAsync",
+        "System.Net.Http.HttpClient.PatchAsync", "System.Net.Http.HttpClient.SendAsync",
+        "System.Net.Http.HttpClient.Send", "System.Net.WebClient.DownloadString",
+        "System.Net.WebClient.DownloadStringAsync", "System.Net.WebClient.DownloadData",
+        "System.Net.WebClient.DownloadFile", "System.Net.WebClient.DownloadFileAsync",
+        "System.Net.WebClient.UploadString", "System.Net.WebClient.UploadData",
+        "System.Net.WebClient.UploadFile", "System.Net.WebClient.OpenRead",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "csharp", kind: "net.listen", names: &[
+        "System.Net.Sockets.TcpListener", "System.Net.Sockets.Socket",
+        "System.Net.HttpListener",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "csharp", kind: "process.env", names: &[
+        "System.Environment.GetEnvironmentVariable",
+        "System.Environment.GetEnvironmentVariables",
+        "System.Environment.SetEnvironmentVariable",
+        "System.Environment.ExpandEnvironmentVariables",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "csharp", kind: "code.eval", names: &[
+        "System.Reflection.Assembly.Load", "System.Reflection.Assembly.LoadFrom",
+        "System.Reflection.Assembly.LoadFile",
+        "Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.EvaluateAsync",
+        "Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.RunAsync",
+        "Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.Create",
+        "System.CodeDom.Compiler.CodeDomProvider.CompileAssemblyFromSource",
+    ] }
+}

@@ -5,8 +5,15 @@
 //! calls are lookups, and whether a name is a literal, is decided once by
 //! [`gob_ir::name_lookup`]. A literal name resolves to the same path the direct form has; any
 //! other name yields a `computed` [`PathUse`] (see `canon`), which consumers report Unresolved.
+//!
+//! Direct uses resolve through the import system too (ticket PKW7X2J): `import * as cp from
+//! "node:child_process"`, `const { exec } = require("child_process")`, `import fs = require("fs")`
+//! and the ambient globals (`fetch`, `process`, `Deno`, `globalThis.fetch`) in the TypeScript
+//! family; `using` namespaces, `using static`, `using A = X.Y`, `global::` and fully qualified
+//! names in C#. A name the program binds itself (a local `fs`, a class `File`) resolves to nothing.
 
 // frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+// frob:ticket PKW7X2J
 
 use std::collections::BTreeMap;
 
@@ -15,6 +22,37 @@ use gob_ir::name_lookup::{LookupKind, Resolved, concat, literal, primitive, reso
 use tree_sitter::Node;
 
 use crate::canon::{COMPUTED, PathUse, known_prefix};
+
+/// Ambient TypeScript-family globals a capability can hide behind when the program binds none.
+const TS_GLOBALS: &[&str] = &[
+    "process",
+    "fetch",
+    "eval",
+    "Function",
+    "Deno",
+    "Bun",
+    "XMLHttpRequest",
+    "WebSocket",
+    "EventSource",
+    "globalThis",
+    "window",
+    "self",
+    "global",
+];
+
+/// Roots that name the global object; they are dropped from a path.
+const GLOBAL_ROOTS: &[&str] = &["globalThis", "window", "self", "global"];
+
+/// Namespaces C# imports implicitly (`ImplicitUsings`), tried after every written `using`.
+const IMPLICIT_USINGS: &[&str] = &[
+    "System",
+    "System.IO",
+    "System.Net.Http",
+    "System.Threading",
+    "System.Threading.Tasks",
+    "System.Collections.Generic",
+    "System.Linq",
+];
 
 /// Deepest alias or constant chain followed.
 const MAX_DEPTH: usize = 8;
@@ -37,6 +75,10 @@ struct Cx<'s, 't> {
     /// The language tag the primitive table is keyed by (`typescript` or `csharp`).
     lang: &'static str,
     binds: BTreeMap<String, Vec<Bind<'t>>>,
+    /// C# `using Ns;` namespaces.
+    usings: Vec<String>,
+    /// C# `using static Type;` types.
+    static_usings: Vec<String>,
     out: Vec<PathUse>,
 }
 
@@ -60,6 +102,8 @@ pub(crate) fn scan(language: &str, src: &str, root: Node<'_>) -> Vec<PathUse> {
         src,
         lang,
         binds: BTreeMap::new(),
+        usings: Vec::new(),
+        static_usings: Vec::new(),
         out: Vec::new(),
     };
     cx.collect(root);
@@ -79,7 +123,16 @@ impl<'t> Cx<'_, 't> {
 
     /// The one binding of `name`, when it has exactly one and it is informative.
     fn only(&self, name: &str) -> Option<&Bind<'t>> {
-        match self.binds.get(name)?.as_slice() {
+        let all = self.binds.get(name)?;
+        // the same module imported again in another scope still names that module
+        if let [Bind::Import(first), rest @ ..] = all.as_slice()
+            && rest
+                .iter()
+                .all(|b| matches!(b, Bind::Import(p) if p == first))
+        {
+            return all.first();
+        }
+        match all.as_slice() {
             [b @ (Bind::Plain(_) | Bind::Member(..) | Bind::Import(_))] => Some(b),
             _ => None,
         }
@@ -107,25 +160,7 @@ impl<'t> Cx<'_, 't> {
                         self.bind(text(src, nm), Bind::Plain(v));
                     }
                     (Some(nm), Some(v)) if nm.kind() == "object_pattern" => {
-                        for p in named(nm) {
-                            match p.kind() {
-                                "shorthand_property_identifier_pattern" => {
-                                    let k = text(src, p).to_owned();
-                                    self.bind(&k.clone(), Bind::Member(v, k));
-                                }
-                                "pair_pattern" => {
-                                    if let (Some(k), Some(val)) = (
-                                        p.child_by_field_name("key"),
-                                        p.child_by_field_name("value"),
-                                    ) && val.kind() == "identifier"
-                                    {
-                                        let key = text(src, k).to_owned();
-                                        self.bind(text(src, val), Bind::Member(v, key));
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
+                        self.bind_object_pattern(nm, v);
                     }
                     (Some(nm), _) => {
                         let mut names = Vec::new();
@@ -138,6 +173,8 @@ impl<'t> Cx<'_, 't> {
                 }
             }
             "import_statement" => self.collect_import(n),
+            "import_require_clause" => self.collect_import_require(n),
+            "using_directive" => self.collect_using(n),
             "assignment_expression"
             | "augmented_assignment_expression"
             | "for_in_statement"
@@ -193,6 +230,29 @@ impl<'t> Cx<'_, 't> {
         }
     }
 
+    /// Binds each name of `const { a, k: b } = v` as a member of `v`.
+    fn bind_object_pattern(&mut self, pattern: Node<'t>, v: Node<'t>) {
+        let src = self.src;
+        for p in named(pattern) {
+            match p.kind() {
+                "shorthand_property_identifier_pattern" => {
+                    let k = text(src, p).to_owned();
+                    self.bind(&k.clone(), Bind::Member(v, k));
+                }
+                "pair_pattern" => {
+                    if let (Some(k), Some(val)) =
+                        (p.child_by_field_name("key"), p.child_by_field_name("value"))
+                        && val.kind() == "identifier"
+                    {
+                        let key = text(src, k).to_owned();
+                        self.bind(text(src, val), Bind::Member(v, key));
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
     fn collect_import(&mut self, n: Node<'t>) {
         let src = self.src;
         let Some(source) = n.child_by_field_name("source") else {
@@ -227,6 +287,49 @@ impl<'t> Cx<'_, 't> {
                     _ => {}
                 }
             }
+        }
+    }
+
+    /// `import fs = require("fs")`.
+    fn collect_import_require(&mut self, n: Node<'t>) {
+        let (Some(id), Some(source)) = (
+            named(n).into_iter().find(|c| c.kind() == "identifier"),
+            n.child_by_field_name("source"),
+        ) else {
+            return;
+        };
+        if let Resolved::Literal(module) = resolve_name(&self.fold(source, 0)) {
+            let local = text(self.src, id).to_owned();
+            self.bind(&local, Bind::Import(module));
+        }
+    }
+
+    /// C# `using Ns;`, `using static T;`, `using A = X.Y;` (and their `global` forms).
+    fn collect_using(&mut self, n: Node<'t>) {
+        let alias = n.child_by_field_name("name");
+        let Some(target) = named(n)
+            .into_iter()
+            .rev()
+            .find(|c| alias.is_none_or(|a| a.id() != c.id()))
+        else {
+            return;
+        };
+        let spelled: String = text(self.src, target).split_whitespace().collect();
+        let target = spelled
+            .strip_prefix("global::")
+            .unwrap_or(&spelled)
+            .to_owned();
+        if let Some(a) = alias {
+            let local = text(self.src, a).to_owned();
+            self.bind(&local, Bind::Import(target));
+        } else if text(self.src, n)
+            .split_whitespace()
+            .take(3)
+            .any(|w| w == "static")
+        {
+            self.static_usings.push(target);
+        } else {
+            self.usings.push(target);
         }
     }
 
@@ -314,6 +417,15 @@ impl<'t> Cx<'_, 't> {
 
     // ---- resolving expressions to paths ------------------------------------------------------
 
+    /// True when `name`, unbound by the program, denotes an ambient global or type.
+    fn ambient(&self, name: &str) -> bool {
+        if self.csharp() {
+            name.chars().next().is_some_and(char::is_uppercase)
+        } else {
+            TS_GLOBALS.contains(&name)
+        }
+    }
+
     /// The call arguments of a call-like node, unwrapping C# `argument` nodes.
     fn args(call: Node<'t>) -> Vec<Node<'t>> {
         let Some(a) = call.child_by_field_name("arguments") else {
@@ -342,16 +454,38 @@ impl<'t> Cx<'_, 't> {
             | "await_expression"
             | "as_expression"
             | "non_null_expression"
-            | "satisfies_expression" => self.resolve(*named(e).first()?, d),
-            "identifier" => match self.only(text(self.src, e))? {
-                Bind::Import(p) => Some((p.clone(), false)),
-                Bind::Member(v, key) => {
-                    let (p, dy) = self.resolve(*v, d)?;
-                    Some((format!("{p}.{key}"), dy))
+            | "satisfies_expression"
+            | "generic_name" => self.resolve(*named(e).first()?, d),
+            "identifier" => {
+                let name = text(self.src, e);
+                match self.only(name) {
+                    Some(Bind::Import(p)) => Some((p.clone(), false)),
+                    Some(Bind::Member(v, key)) => {
+                        let (p, dy) = self.resolve(*v, d)?;
+                        Some((format!("{p}.{key}"), dy))
+                    }
+                    Some(Bind::Plain(v)) => self.resolve(*v, d),
+                    None if !self.user_bound(name) && self.ambient(name) => {
+                        Some((name.to_owned(), false))
+                    }
+                    Some(Bind::Opaque) | None => None,
                 }
-                Bind::Plain(v) => self.resolve(*v, d),
-                Bind::Opaque => None,
-            },
+            }
+            // a value built by `new T(..)` is a `T`: its methods resolve as `T.method`
+            "new_expression" => self.resolve(e.child_by_field_name("constructor")?, d),
+            "object_creation_expression" => self.resolve(e.child_by_field_name("type")?, d),
+            "qualified_name" => {
+                let (p, dy) = self.resolve(e.child_by_field_name("qualifier")?, d)?;
+                Some((
+                    format!("{p}.{}", text(self.src, e.child_by_field_name("name")?)),
+                    dy,
+                ))
+            }
+            "alias_qualified_name" => {
+                let alias = text(self.src, e.child_by_field_name("alias")?);
+                let name = e.child_by_field_name("name")?;
+                (alias == "global").then(|| (text(self.src, name).to_owned(), false))
+            }
             "member_expression" => {
                 let (p, dy) = self.resolve(e.child_by_field_name("object")?, d)?;
                 Some((
@@ -439,25 +573,54 @@ impl<'t> Cx<'_, 't> {
 
     // ---- emitting ----------------------------------------------------------------------------
 
+    /// The paths a resolved `path` may name: itself, and for C# every namespace it may sit in.
+    fn candidates(&self, path: &str) -> Vec<String> {
+        if !self.csharp() || path.is_empty() {
+            return vec![path.to_owned()];
+        }
+        let mut out = vec![path.to_owned()];
+        if path.starts_with("System.") || path.starts_with("Microsoft.") {
+            return out;
+        }
+        for ns in self
+            .usings
+            .iter()
+            .map(String::as_str)
+            .chain(IMPLICIT_USINGS.iter().copied())
+        {
+            out.push(format!("{ns}.{path}"));
+        }
+        // `using static System.IO.File; ReadAllText(p)`
+        for ty in &self.static_usings {
+            out.push(format!("{ty}.{path}"));
+        }
+        out.dedup();
+        out
+    }
+
     fn emit(&mut self, e: Node<'t>, call: bool) {
         let Some((path, dynamic)) = self.resolve(e, 0) else {
             return;
         };
         let (path, computed) = known_prefix(path);
-        if !dynamic || (path.is_empty() && !computed) {
+        let path = normalize(path, self.csharp());
+        if path.is_empty() && !computed {
             return;
         }
-        tracing::debug!(line = e.start_position().row + 1, %path, computed, "lookups: name lookup");
-        self.out.push(PathUse {
-            offset: e.start_byte(),
-            line: u32::try_from(e.start_position().row + 1).unwrap_or(u32::MAX),
-            spelled: text(self.src, e).split_whitespace().collect(),
-            path,
-            call,
-            dynamic: true,
-            external_root: false,
-            computed,
-        });
+        tracing::debug!(line = e.start_position().row + 1, %path, computed, dynamic, "lookups: resolved use");
+        let external_root = self.csharp() && path.starts_with("System.");
+        for path in self.candidates(&path) {
+            self.out.push(PathUse {
+                offset: e.start_byte(),
+                line: u32::try_from(e.start_position().row + 1).unwrap_or(u32::MAX),
+                spelled: text(self.src, e).split_whitespace().collect(),
+                path,
+                call,
+                dynamic,
+                external_root,
+                computed,
+            });
+        }
     }
 
     fn visit(&mut self, n: Node<'t>) {
@@ -469,6 +632,20 @@ impl<'t> Cx<'_, 't> {
             })
         {
             self.emit(n, true);
+        }
+        // `new T(..)` / `new ns.T(..)`: the constructed type is the callee
+        match n.kind() {
+            "new_expression" => {
+                if let Some(c) = n.child_by_field_name("constructor") {
+                    self.emit(c, true);
+                }
+            }
+            "object_creation_expression" => {
+                if let Some(t) = n.child_by_field_name("type") {
+                    self.emit(t, true);
+                }
+            }
+            _ => {}
         }
         let lookup_form = matches!(
             n.kind(),
@@ -504,6 +681,19 @@ impl<'t> Cx<'_, 't> {
     }
 }
 
+/// A resolved path with the `node:` scheme and any global-object root dropped (`globalThis.fetch`
+/// names `fetch`).
+fn normalize(path: String, csharp: bool) -> String {
+    if csharp {
+        return path;
+    }
+    let path = path.strip_prefix("node:").unwrap_or(&path);
+    match path.split_once('.') {
+        Some((root, rest)) if GLOBAL_ROOTS.contains(&root) => rest.to_owned(),
+        _ => path.to_owned(),
+    }
+}
+
 /// The identifiers bound by a pattern or parameter node.
 fn idents(src: &str, n: Node<'_>, out: &mut Vec<String>) {
     match n.kind() {
@@ -529,6 +719,89 @@ mod tests {
             .collect()
     }
 
+    fn has(u: &[(String, bool)], p: &str) -> bool {
+        u.iter().any(|(x, _)| x == p)
+    }
+
+    // frob:tests crates/gob-symbols/src/lookups.rs::scan
+    #[test]
+    fn typescript_imports_resolve_to_module_paths() {
+        for (src, want) in [
+            (
+                "import * as cp from \"child_process\"; cp.exec(x);",
+                "child_process.exec",
+            ),
+            (
+                "import { exec } from \"child_process\"; exec(x);",
+                "child_process.exec",
+            ),
+            (
+                "import { exec as r } from \"node:child_process\"; r(x);",
+                "child_process.exec",
+            ),
+            ("import fs = require(\"fs\"); fs.rmSync(p);", "fs.rmSync"),
+            (
+                "const { exec } = require('child_process'); exec(x);",
+                "child_process.exec",
+            ),
+            ("globalThis.fetch(u);", "fetch"),
+            ("const h = process.env.HOME;", "process.env.HOME"),
+            ("new WebSocket(u);", "WebSocket"),
+        ] {
+            assert!(
+                has(&uses("typescript", src), want),
+                "{src}: {:?}",
+                uses("typescript", src)
+            );
+        }
+    }
+
+    // frob:tests crates/gob-symbols/src/lookups.rs::scan
+    #[test]
+    fn typescript_local_names_shadow_ambient_ones() {
+        for src in [
+            "function fetch(u) { return u; } fetch(1);",
+            "const fs = { readFile(p) { return p; } }; fs.readFile(p);",
+            "function f(fs) { fs.readFile(p); }",
+        ] {
+            let u = uses("typescript", src);
+            assert!(!has(&u, "fetch") && !has(&u, "fs.readFile"), "{src}: {u:?}");
+        }
+    }
+
+    // frob:tests crates/gob-symbols/src/lookups.rs::scan
+    #[test]
+    fn csharp_usings_resolve_to_qualified_paths() {
+        for (src, want) in [
+            (
+                "using System.Diagnostics; class C { void M(string x) { Process.Start(x); } }",
+                "System.Diagnostics.Process.Start",
+            ),
+            (
+                "using P = System.Diagnostics.Process; class C { void M(string x) { P.Start(x); } }",
+                "System.Diagnostics.Process.Start",
+            ),
+            (
+                "using static System.IO.File; class C { string M(string p) { return ReadAllText(p); } }",
+                "System.IO.File.ReadAllText",
+            ),
+            (
+                "class C { void M(string x) { global::System.Diagnostics.Process.Start(x); } }",
+                "System.Diagnostics.Process.Start",
+            ),
+            (
+                "using System.Net.Http; class C { object M() { return new HttpClient(); } }",
+                "System.Net.Http.HttpClient",
+            ),
+        ] {
+            assert!(
+                has(&uses("csharp", src), want),
+                "{src}: {:?}",
+                uses("csharp", src)
+            );
+        }
+    }
+
     // frob:tests crates/gob-symbols/src/lookups.rs::scan
     #[test]
     fn javascript_literal_lookups_resolve_to_the_module() {
@@ -543,7 +816,7 @@ mod tests {
         let u = uses("javascript", "const fs = require('fs'); fs['readFile'](p);");
         assert!(u.contains(&("fs.readFile".to_owned(), false)), "{u:?}");
         let u = uses("typescript", "const m = await import('node:fs'); m.rm(p);");
-        assert!(u.contains(&("node:fs.rm".to_owned(), false)), "{u:?}");
+        assert!(u.contains(&("fs.rm".to_owned(), false)), "{u:?}");
     }
 
     // frob:tests crates/gob-symbols/src/lookups.rs::scan
