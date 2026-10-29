@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T14:22:14Z"
-updated = "2026-10-29T21:13:14Z"
-scope = ["crates/gob-config/**", "crates/gob-macros/**", "crates/crunk-spec/**", "crates/gob-dev/**", "crates/gob-cli/**", "crates/grimble/**", "docs/reference/**", "docs/schemas/**", "docs/crunk/**", "crates/frob/src/workspace.rs"]
+updated = "2026-10-29T21:13:28Z"
+scope = ["crates/gob-config/**", "crates/gob-macros/**", "crates/crunk-spec/**", "crates/gob-dev/**", "crates/gob-cli/**", "crates/grimble/**", "docs/reference/**", "docs/schemas/**", "docs/crunk/**", "crates/frob/src/workspace.rs", "changelog/**"]
 
 [[acceptance]]
 text = "Given frob and crunk config tables, when gen runs, then each product gets its own reference page and schema and neither contains the other's keys"
