@@ -2,7 +2,8 @@
 id = "01M5XMR67K19SFAWNTDJKKJPTT"
 title = "Grimble rule: all output goes through a logging crate (stdout, stderr and file sinks), per language"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
