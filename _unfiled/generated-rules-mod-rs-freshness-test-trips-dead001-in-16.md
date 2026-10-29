@@ -12,7 +12,7 @@ scope = ["crates/gob-rules/**", "crates/gob-check/tests/product_rules/*/src/rule
 
 [[acceptance]]
 text = "The rules-index generator emits a cfg(test) mod tests so DEAD001 no longer flags the freshness test"
-bound = false
+bound = true
 +++
 
 The rules-index generator (crates/gob-rules/src/indexgen.rs:290) emits 'mod freshness' holding fn rules_index_is_fresh. grimble_bind::eval::is_test_unit only treats a qualifier segment named tests or test as test code, so DEAD001 reports the #[test] fn as dead in every crate with a generated src/rules/mod.rs. Found while burning down ~XVC7KX6. Fix: root #[test] fns in is_test_unit (crates/grimble-bind), or emit 'mod tests' and regenerate every crate index.

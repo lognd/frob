@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T23:49:07Z"
+digest = "03356a4aba8bead569e67067577867ec13c1d5cb8ede4a0e6606e5bc5ec08b0f"
+exit_code = 0
+head = "1fc6e504d40acaa16b8c952bf4bda158abe05acb"
+inline = '''
+   Compiling tracing-core v0.1.36
+   Compiling winnow v1.0.4
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_json v1.0.151
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling getrandom v0.4.3
+   Compiling target-tuple v1.0.2
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling tempfile v3.27.0
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling tracing v0.1.44
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling schemars v1.2.2
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling trybuild v1.0.121
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.05s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 67c19e73-3468-4fe8-bd0f-4d0a7c4e0133 with nextest profile: default
+    Starting 1 test across 7 binaries (59 tests skipped)
+        PASS [   0.004s] gob-rules indexgen::tests::render_lists_mods_metas_bind_and_the_freshness_test
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 59 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(=indexgen::tests::render_lists_mods_metas_bind_and_the_freshness_test)'"
+size = 1258
+status = "measured"
+test_count = 1
+tests_digest = "9536b2ed5b1d292dd43fa6c29c63cf07a88c47f178d7b1135592a21dae696555"
+at = "2026-10-29T23:49:07Z"
+actor = "lognd"
+rev = 1
