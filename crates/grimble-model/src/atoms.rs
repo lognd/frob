@@ -8,7 +8,7 @@
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
-// frob:ticket RZA7WX2
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
 
 use gob_ir::registry::{AtomEntry, DetectorEntry, DetectorKind, VocabEntry};
 

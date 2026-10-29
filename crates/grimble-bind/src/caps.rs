@@ -28,7 +28,7 @@
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
-//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket RZA7WX2) but a mode other than a literal is a May `fs.write` beside the read; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
+//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal is a May `fs.write` beside the read; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
 //! severity table is not consulted (CAP001 is an Error, CAP002 a Warning).
 //!
 //! `may` arguments (ticket 5X9CAQE): a grant `may fs.read("config/**")` covers a use only when the
@@ -54,7 +54,7 @@
 // frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
 // frob:ticket 01M5XNNHRFE1K2DHBD7S9HQ7A6
 // frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
-// frob:ticket RZA7WX2
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -1414,7 +1414,7 @@ fn open_mode(c: &gob_symbols::CallArgs, receiver: bool) -> OpenMode {
     }
 }
 
-/// Make a Python `open` mode-aware (ticket RZA7WX2): `open(p, 'w')` is `fs.write` and no longer
+/// Make a Python `open` mode-aware (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2): `open(p, 'w')` is `fs.write` and no longer
 /// `fs.read` (unless the mode also reads), and a mode that is not a literal adds a May `fs.write`
 /// beside the read. A use whose call cannot be found on its line stays a plain read.
 fn refine_open_modes(cx: &Cx<'_>, uses: &mut Uses) {

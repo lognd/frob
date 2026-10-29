@@ -789,7 +789,7 @@ fn a_cap001_exception_silences_only_its_atom_and_resolves_aliases() {
     );
 }
 
-// frob:ticket RZA7WX2
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn open_with_a_write_mode_is_fs_write_and_a_read_grant_does_not_cover_it() {
@@ -812,7 +812,7 @@ fn open_with_a_write_mode_is_fs_write_and_a_read_grant_does_not_cover_it() {
     }
 }
 
-// frob:ticket RZA7WX2
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn open_with_a_read_mode_or_none_stays_fs_read_only() {
@@ -823,7 +823,7 @@ fn open_with_a_read_mode_or_none_stays_fs_read_only() {
     }
 }
 
-// frob:ticket RZA7WX2
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn open_with_a_non_literal_mode_is_a_may_fs_write_unresolved() {
@@ -835,7 +835,7 @@ fn open_with_a_non_literal_mode_is_a_may_fs_write_unresolved() {
     assert!(f[0].reason.is_some(), "Unresolved, not an Error: {f:?}");
 }
 
-// frob:ticket RZA7WX2
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn rust_path_method_receivers_are_fs_read() {
