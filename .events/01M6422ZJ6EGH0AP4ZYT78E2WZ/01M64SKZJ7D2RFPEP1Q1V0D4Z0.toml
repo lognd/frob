@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T21:38:52Z"
+digest = "338f9881f4d41f24bff51bbdae83c6530eca665717c37c9f2eaf56105eae532a"
+exit_code = 0
+head = "f5093c8b055748ae2f60dde290fa31ca266a7dbf"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 15cb39c1-d26c-4fe9-be87-ceb3f21933e3 with nextest profile: default
+    Starting 3 tests across 14 binaries (124 tests skipped)
+        PASS [   0.063s] grimble-bind::caps audit_p08_the_finding_names_the_call
+        PASS [   0.109s] grimble-bind::caps audit_p08_a_constant_source_is_resolved_and_a_shadowing_eval_is_not_the_builtin
+        PASS [   0.319s] grimble-bind::caps audit_p08_non_constant_code_evaluation_is_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.320s] 3 tests run: 3 passed, 124 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(audit_p08)'"
+size = 772
+status = "measured"
+test_count = 3
+tests_digest = "c337b06f1b015f5064f21f39444550caf5d9a49f49e10742b55e3c36cf74cc24"
+at = "2026-10-29T21:38:52Z"
+actor = "lognd"
+rev = 1
