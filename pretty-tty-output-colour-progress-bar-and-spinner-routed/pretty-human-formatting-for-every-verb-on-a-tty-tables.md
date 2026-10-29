@@ -8,9 +8,9 @@ points = 8
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:57:31Z"
-updated = "2026-10-29T03:28:11Z"
+updated = "2026-10-29T03:29:23Z"
 labels = ["no-story"]
-scope = ["crates/frob/src/**"]
+scope = ["crates/frob/src/**", "crates/frob/Cargo.toml"]
 
 [[acceptance]]
 text = "every verb has coloured, aligned TTY output via the presenter; --text and non-TTY output unchanged; a test per verb family covers it"
