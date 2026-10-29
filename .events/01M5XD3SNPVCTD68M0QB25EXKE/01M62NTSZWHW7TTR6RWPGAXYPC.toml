@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T01:53:46Z"
+digest = "a8ed5d65744eb1286d05296925895bf5f57d7f0b4bc0ac3614d762e0d315ddaa"
+exit_code = 0
+head = "0dc95013358a8e5bcdf62e5e36636518bb438756"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.81s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0d685af5-65ed-4082-959d-d11382acdab0 with nextest profile: default
+    Starting 3 tests across 1 binary (4 tests and 13 binaries skipped)
+        PASS [   0.009s] frob-evidence::coverage_python python_is_registered_under_pytest
+        PASS [   0.012s] frob-evidence::coverage_python plan_runs_pytest_with_cov_and_the_arguments
+        PASS [   0.012s] frob-evidence::coverage_python to_lcov_reads_the_report_and_reports_absence
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 3 tests run: 3 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'binary(coverage_python) & (test(plan_runs_pytest_with_cov_and_the_arguments) | test(to_lcov_reads_the_report_and_reports_absence) | test(python_is_registered_under_pytest))'"
+size = 825
+status = "measured"
+test_count = 3
+tests_digest = "f44c7d1435aaa9cc94215ea4aa1499f60f2e47b03009ce1045a9bca4ae18abb6"
+at = "2026-10-29T01:53:46Z"
+actor = "lognd"
+rev = 1
