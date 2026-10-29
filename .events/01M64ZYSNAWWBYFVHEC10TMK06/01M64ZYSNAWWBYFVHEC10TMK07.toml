@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP: instance-typed C# reflection (MethodInfo.Invoke on unknown-origin values) is not reported"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-symbols/**"]
+body = "found while working S3EC85S: reflection chains are resolved only from literal Type.GetType roots"
+at = "2026-10-29T23:29:38Z"
+actor = "lognd"
+rev = 1
