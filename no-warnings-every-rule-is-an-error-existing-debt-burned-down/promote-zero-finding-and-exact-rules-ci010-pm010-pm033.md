@@ -2,7 +2,8 @@
 id = "01M5XMJJTFNZP3FWP3WXK1MB0D"
 title = "Promote zero-finding and exact rules (CI010, PM010, PM033, SYS008) to Error"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
