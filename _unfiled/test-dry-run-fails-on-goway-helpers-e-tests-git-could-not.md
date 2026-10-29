@@ -2,12 +2,12 @@
 id = "01M49SWMDMB1TEHJ5Q1HRJ3KXT"
 title = "test-dry-run fails on goway helpers: E-TESTS-GIT Could not create index from tree"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-06T23:48:25Z"
-updated = "2026-10-27T02:58:14Z"
+updated = "2026-10-29T06:51:11Z"
 scope = ["crates/frob-tests/**", "crates/gob-git/**"]
 
 [[acceptance]]
