@@ -1,0 +1,10 @@
+kind = "create"
+title = "JS coverage: detect runner declared in workspace member package.json"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-evidence/src/coverage/js.rs"]
+body = "found while working ~1X6RRD6: has_tests reads only the root package.json, so monorepo members are missed."
+at = "2026-10-29T03:37:51Z"
+actor = "lognd"
+rev = 1
