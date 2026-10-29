@@ -418,8 +418,24 @@ impl SymbolGraph {
                     found.extend(cs.child(&owner, name, want, self));
                 }
             } else if u.kind == UseKind::Static {
-                for t in self.cs_type_text(cs, file, segs, &u.target) {
-                    found.extend(self.cs_members(cs, t, name, want).nodes);
+                // The target is looked up by qualified name, never through `cs_name`: resolving
+                // its head through the scope's uses would meet this very directive again and
+                // recurse without end (`using static System.Diagnostics.Process;`).
+                let owners = CsIndex::prefixes(&segs[..segs.len().min(u.container.len())])
+                    .map(|p| {
+                        if p.is_empty() {
+                            u.target.clone()
+                        } else {
+                            format!("{p}.{}", u.target)
+                        }
+                    })
+                    .chain([u.target.clone()]);
+                for owner in owners {
+                    for &t in cs.by_fqn.get(&owner).into_iter().flatten() {
+                        if is_type(self.graph[t].kind) {
+                            found.extend(self.cs_members(cs, t, name, want).nodes);
+                        }
+                    }
                 }
             } else if u.local == name {
                 let targets = self.cs_type_text(cs, file, segs, &u.target);

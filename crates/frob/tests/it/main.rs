@@ -14,6 +14,7 @@ mod common;
 mod config_ledger_parser;
 mod config_reads;
 mod config_unknown_key;
+mod coverage_e2e;
 mod cycle;
 mod deprecated_aliases;
 mod doc_commands;
