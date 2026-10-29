@@ -2,7 +2,8 @@
 id = "01M62EB4V7ZG8MCFQ4H7HTED6Y"
 title = "DOC001: mark YAML and GithubActions visibility not-applicable in the capability matrix"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
