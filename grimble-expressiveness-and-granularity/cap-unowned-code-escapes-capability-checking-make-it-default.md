@@ -2,7 +2,8 @@
 id = "01M5XNNHRFE1K2DHBD7S9HQ7A6"
 title = "CAP: unowned code escapes capability checking; make it default-deny"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
