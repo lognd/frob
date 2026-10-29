@@ -23,6 +23,13 @@
 //! exactly as the direct form, any other name is reported Unresolved against every atom its known
 //! prefix could reach.
 //!
+//! Python `eval`, `exec` and `compile` (atom `code.eval`, ticket T78E2WZ) resolve through the same
+//! alias and import machinery (`e = eval`, `builtins.eval`, `from builtins import exec as run`,
+//! `getattr(builtins, 'eval')`, `__builtins__['eval']`). A constant source is parsed and its uses
+//! are scanned in the scopes of the call; any other source, an unparsable or over-nested one, or a
+//! function value is reported Unresolved against `code.eval`, naming the call. A spelled name alone
+//! is never a certain use, so the finding is never an error.
+//!
 //! Typed receivers (ticket YCR4M6H): a Rust vocabulary entry `<type path>.<method>`
 //! (`ureq::Agent.run`) names a method call whose receiver type resolves, from the syntax tree, to
 //! that path: through `use` imports and aliases, struct fields (`self.agent`), parameters, typed
@@ -160,6 +167,9 @@ fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
             .any(|n| n.contains("::") && callee.ends_with(&format!("::{n}")))
 }
 
+/// The atom of the code-evaluating builtins, whose use is only ever unresolved from a name.
+const CODE_EVAL: &str = "code.eval";
+
 /// One atom a call may use and whether the call certainly does.
 struct Hit {
     atom: String,
@@ -207,7 +217,9 @@ fn atoms_of(
         if names_callee(lang, names, callee) {
             out.push(Hit {
                 atom: atom.to_owned(),
-                certain: true,
+                // a spelled `builtins.eval` names no source: whether the code is constant is
+                // only known to the symbolic pass, so the name alone is never proof (T78E2WZ)
+                certain: atom != CODE_EVAL,
             });
             continue;
         }
@@ -1053,11 +1065,13 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
         let Some(src) = code.source() else { continue };
         // cheap prefilter: some vocabulary name's last segment must occur in the file at all
         // (a name-computed lookup names no vocabulary entry, so a lookup primitive also passes)
-        if !gob_ir::name_lookup::mentions_lookup(&code.language, &src)
-            && !vocab
+        // (`__builtins__[n]` is a lookup into the builtins namespace, which names no primitive)
+        let relevant = gob_ir::name_lookup::mentions_lookup(&code.language, &src)
+            || (code.language == "python" && src.contains("__builtins__"))
+            || vocab
                 .iter()
-                .any(|(_, names)| names.iter().any(|n| src.contains(last_segment(n))))
-        {
+                .any(|(_, names)| names.iter().any(|n| src.contains(last_segment(n))));
+        if !relevant {
             continue;
         }
         let Some(symbols) = code.symbols() else {
@@ -1082,7 +1096,11 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                 .filter(|(_, names)| {
                     if pu.computed {
                         // unknown tail: any atom whose vocabulary lives under the known prefix
-                        pu.path.is_empty() || names.iter().any(|n| n.starts_with(&prefix))
+                        // (or a vocabulary entry that is the path itself: a computed use of `eval`)
+                        pu.path.is_empty()
+                            || names
+                                .iter()
+                                .any(|n| n.starts_with(&prefix) || *n == pu.path)
                     } else {
                         names_callee(&code.language, names, &pu.path)
                     }

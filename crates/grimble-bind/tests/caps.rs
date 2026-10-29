@@ -964,3 +964,65 @@ fn audit_p14_literal_names_resolve_and_a_shadowing_getattr_is_not_the_builtin() 
     );
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
 }
+
+// frob:ticket 01M6422ZJ6EGH0AP4ZYT78E2WZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p08_non_constant_code_evaluation_is_unresolved() {
+    for src in [
+        "def go(s):\n    eval(s)\n",
+        "def go(s):\n    exec(s)\n",
+        "def go(s):\n    compile(s, 'f', 'exec')\n",
+        "E = eval\n\n\ndef go(s):\n    E(s)\n",
+        "import builtins\n\n\ndef go(s):\n    builtins.eval(s)\n",
+        "from builtins import exec as run\n\n\ndef go(s):\n    run(s)\n",
+        "import builtins\n\n\ndef go(n, s):\n    getattr(builtins, n)(s)\n",
+        "def go(s):\n    __builtins__['eval'](s)\n",
+        "def go(s):\n    eval('1 +' + s)\n",
+        "def go():\n    eval('1 +')\n",
+    ] {
+        assert_unresolved_only(src);
+    }
+}
+
+// frob:ticket 01M6422ZJ6EGH0AP4ZYT78E2WZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p08_the_finding_names_the_call() {
+    let b = bind_py("def go(s):\n    eval(s)\n", "");
+    let f = of(&b, "CAP001");
+    assert!(
+        f.iter()
+            .any(|f| f.anchor.starts_with("cap/node/a/code.eval")
+                && f.message.contains("builtins.eval")),
+        "{f:?}"
+    );
+}
+
+// frob:ticket 01M6422ZJ6EGH0AP4ZYT78E2WZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p08_a_constant_source_is_resolved_and_a_shadowing_eval_is_not_the_builtin() {
+    let b = bind_py(
+        "import os\n\n\ndef go():\n    eval(\"os.system('x')\")\n",
+        "",
+    );
+    let f = of(&b, "CAP001");
+    assert!(
+        f.iter()
+            .any(|f| f.anchor == "cap/node/a/process.spawn" && f.reason.is_none()),
+        "{:?}",
+        b.findings
+    );
+    assert!(
+        !f.iter()
+            .any(|f| f.anchor.starts_with("cap/node/a/code.eval")),
+        "{:?}",
+        b.findings
+    );
+    let b = bind_py(
+        "def eval(s):\n    return s\n\n\ndef go(s):\n    eval(s)\n",
+        "",
+    );
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}

@@ -1106,6 +1106,16 @@ The cell of `(n, a)` is computed, in this order:
    every atom its known prefix could reach, never clean and never an error. Glob imports and
    macro bodies are not followed.
 
+   Python code evaluation (ticket T78E2WZ). `eval`, `exec` and `compile` are the atom
+   `code.eval`, resolved through the same alias and import rules (`e = eval`, `builtins.eval`,
+   `from builtins import exec as run`, `getattr(builtins, 'eval')`, `__builtins__['eval']`). A
+   constant source (also by `+`, a module constant or a placeholder-free f-string) is parsed and
+   scanned in the scopes of the call, so the uses it names are reported as the direct form. A
+   source that is not constant, does not parse, nests beyond three levels, contains an escape
+   the folder does not read, or a function value (`map(eval, xs)`) is Unresolved against
+   `code.eval` and names the call, never clean and never an error. A shadowing binding is not
+   the builtin.
+
    Typed receivers (ticket YCR4M6H). A Rust vocabulary entry written `<type path>.<method>`
    (`ureq::Agent.run`, `reqwest::Client.get`) names a method call whose receiver type resolves,
    from the syntax tree of the file, to that path: through `use` imports and aliases, struct

@@ -490,13 +490,29 @@ mod rust {
 
 mod python {
     use super::{
-        BTreeMap, Binding, COMPUTED, MAX_ALIAS_DEPTH, Node, PathUse, bind, known_prefix, line, text,
+        BTreeMap, Binding, COMPUTED, Language, MAX_ALIAS_DEPTH, Node, ParseLimits, ParseResult,
+        PathUse, bind, known_prefix, line, parse, text,
     };
     use crate::call_args::Folder;
     use gob_ir::name_lookup::{Resolved, resolve_name};
 
     /// Builtins whose lookups are modelled; an unshadowed use resolves to `builtins.<name>`.
-    const BUILTINS: &[&str] = &["getattr", "__import__", "vars", "globals", "locals"];
+    const BUILTINS: &[&str] = &[
+        "getattr",
+        "__import__",
+        "vars",
+        "globals",
+        "locals",
+        "eval",
+        "exec",
+        "compile",
+    ];
+
+    /// Builtins that evaluate a string as code; a non-constant source is reported (ticket T78E2WZ).
+    const DYNAMIC_CODE: &[&str] = &["builtins.eval", "builtins.exec", "builtins.compile"];
+
+    /// Deepest nesting of constant sources re-scanned (`eval("eval('..')")`).
+    const MAX_EVAL_DEPTH: usize = 3;
 
     /// Scans a Python syntax tree.
     pub(super) fn scan(src: &str, root: Node<'_>) -> Vec<PathUse> {
@@ -505,22 +521,13 @@ mod python {
             fold: Folder::python(src, root),
             scopes: Vec::new(),
             out: Vec::new(),
+            depth: 0,
         };
-        // two passes so a later alias can see an earlier one (`a = os.system; b = a`)
-        cx.scopes.push(Scope {
-            map: BTreeMap::new(),
-            class: false,
-        });
-        for _ in 0..2 {
-            let map = cx.collect(root, &[]);
-            if let Some(s) = cx.scopes.last_mut() {
-                s.map = map;
-            }
-        }
-        cx.visit(root);
+        cx.run(root);
         cx.out
     }
 
+    #[derive(Clone)]
     struct Scope {
         map: BTreeMap<String, Binding>,
         /// A class body: invisible to the functions nested in it.
@@ -533,6 +540,8 @@ mod python {
         fold: Folder<'s>,
         scopes: Vec<Scope>,
         out: Vec<PathUse>,
+        /// Nesting of the constant `eval` source being scanned (0 for the file itself).
+        depth: usize,
     }
 
     /// The identifiers bound by an assignment target or parameter list.
@@ -716,6 +725,7 @@ mod python {
                     match self.lookup(name) {
                         Some(Binding::Alias(p, d)) => Some((p.clone(), *d)),
                         Some(Binding::Shadow) => None,
+                        None if name == "__builtins__" => Some(("builtins".to_owned(), false)),
                         None => BUILTINS
                             .contains(&name)
                             .then(|| (format!("builtins.{name}"), false)),
@@ -779,6 +789,10 @@ mod python {
                 && p == "sys.modules"
             {
                 return Some((name, true));
+            } else if let Some((p, _)) = self.resolve(obj, depth + 1)
+                && p == "builtins"
+            {
+                return Some((format!("builtins.{name}"), true));
             }
             let namespace = |this: &Self| -> Option<(String, bool)> {
                 if name == COMPUTED {
@@ -786,6 +800,9 @@ mod python {
                 }
                 match this.lookup(&name) {
                     Some(Binding::Alias(p, _)) => Some((p.clone(), true)),
+                    None if DYNAMIC_CODE.contains(&format!("builtins.{name}").as_str()) => {
+                        Some((format!("builtins.{name}"), true))
+                    }
                     _ => None,
                 }
             };
@@ -818,10 +835,132 @@ mod python {
             }
         }
 
+        /// Collects the bindings of `root` (twice, so a later alias sees an earlier one) and
+        /// visits it.
+        fn run(&mut self, root: Node<'_>) {
+            self.scopes.push(Scope {
+                map: BTreeMap::new(),
+                class: false,
+            });
+            for _ in 0..2 {
+                let map = self.collect(root, &[]);
+                if let Some(s) = self.scopes.last_mut() {
+                    s.map = map;
+                }
+            }
+            self.visit(root);
+        }
+
+        /// The source argument of the call whose function node is `f`: the first positional
+        /// argument, else a `source=` / `expression=` keyword. `None` when it cannot be seen.
+        fn source_arg<'t>(f: Node<'t>) -> Option<Node<'t>> {
+            let call = f
+                .parent()
+                .filter(|p| p.kind() == "call" && p.child_by_field_name("function") == Some(f))?;
+            let args = call.child_by_field_name("arguments")?;
+            let mut c = args.walk();
+            let kids: Vec<Node<'t>> = args
+                .named_children(&mut c)
+                .filter(|k| k.kind() != "comment")
+                .collect();
+            let first = *kids.first()?;
+            if !matches!(
+                first.kind(),
+                "keyword_argument" | "list_splat" | "dictionary_splat"
+            ) {
+                return Some(first);
+            }
+            None
+        }
+
+        /// The keyword form of the source argument (`eval(expression=..)`).
+        fn source_keyword<'t>(&self, f: Node<'t>) -> Option<Node<'t>> {
+            let call = f
+                .parent()
+                .filter(|p| p.kind() == "call" && p.child_by_field_name("function") == Some(f))?;
+            let args = call.child_by_field_name("arguments")?;
+            let mut c = args.walk();
+            args.named_children(&mut c)
+                .filter(|k| k.kind() == "keyword_argument")
+                .find(|k| {
+                    k.child_by_field_name("name")
+                        .is_some_and(|n| matches!(text(self.src, n), "source" | "expression"))
+                })
+                .and_then(|k| k.child_by_field_name("value"))
+        }
+
+        /// The uses inside the constant code string `code` evaluated at `depth`, resolved
+        /// against the scopes in force at the call. `None` when it does not parse cleanly.
+        fn scan_code(&self, code: &str) -> Option<Vec<PathUse>> {
+            let ParseResult::Parsed(tree) = parse(Language::Python, code, &ParseLimits::default())
+            else {
+                return None;
+            };
+            let root = tree.root();
+            if root.has_error() {
+                return None;
+            }
+            let mut inner = Cx {
+                src: &tree.text,
+                fold: Folder::python(&tree.text, root),
+                scopes: self.scopes.clone(),
+                out: Vec::new(),
+                depth: self.depth + 1,
+            };
+            inner.run(root);
+            Some(inner.out)
+        }
+
+        /// Reports a use of a code-evaluating builtin at `e`: the uses of a constant source,
+        /// or an unresolved (computed) use naming the builtin for anything else.
+        fn emit_dynamic_code(&mut self, e: Node<'_>, path: &str, call: bool) {
+            let spelled: String = text(self.src, e).split_whitespace().collect();
+            let unresolved = |this: &mut Self, why: &str| {
+                tracing::debug!(path, line = line(e), why, "canon: unresolved dynamic code");
+                let (p, computed) = known_prefix(path.to_owned());
+                this.out.push(PathUse {
+                    offset: e.start_byte(),
+                    line: line(e),
+                    spelled: spelled.clone(),
+                    path: if computed { p } else { path.to_owned() },
+                    call,
+                    dynamic: true,
+                    external_root: false,
+                    computed: true,
+                });
+            };
+            if !call || path == "builtins.?" {
+                return unresolved(self, "not a direct call");
+            }
+            let Some(arg) = Self::source_arg(e).or_else(|| self.source_keyword(e)) else {
+                return unresolved(self, "no visible source argument");
+            };
+            let Resolved::Literal(code) = resolve_name(&self.fold.fold(arg)) else {
+                return unresolved(self, "non-constant source");
+            };
+            if self.depth >= MAX_EVAL_DEPTH {
+                return unresolved(self, "nesting too deep");
+            }
+            let Some(found) = self.scan_code(&code) else {
+                return unresolved(self, "source does not parse");
+            };
+            tracing::debug!(path, uses = found.len(), "canon: constant source scanned");
+            for mut u in found {
+                u.offset = e.start_byte();
+                u.line = line(e);
+                u.dynamic = true;
+                self.out.push(u);
+            }
+        }
+
         fn emit(&mut self, e: Node<'_>, call: bool) {
             let Some((path, dynamic)) = self.resolve(e, 0) else {
                 return;
             };
+            if path == "builtins.?" || DYNAMIC_CODE.contains(&path.as_str()) {
+                self.emit_dynamic_code(e, &path, call);
+                return;
+            }
             if path.starts_with("builtins.") {
                 return;
             }

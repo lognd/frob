@@ -11,6 +11,7 @@ mod css;
 mod def_use;
 mod doc_claims;
 mod dotnet;
+mod dynamic_code;
 mod gaps;
 mod html;
 mod inference;

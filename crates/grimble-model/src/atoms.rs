@@ -34,6 +34,17 @@ inventory::submit! {
     }
 }
 
+// Evaluating a string as code (Python `eval`, `exec`, `compile`), ticket T78E2WZ.
+inventory::submit! {
+    AtomEntry {
+        name: "code.eval",
+        aliases: &[],
+        detectors: &[
+            DetectorEntry { lang: "python", kind: DetectorKind::Callee },
+        ],
+    }
+}
+
 inventory::submit! {
     AtomEntry {
         name: "net.listen",
@@ -100,6 +111,10 @@ inventory::submit! {
         "Path.rename", "Path.replace",
         ".write_text", ".write_bytes",
     ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "code.eval", names: &["builtins.eval", "builtins.exec", "builtins.compile"] }
 }
 
 inventory::submit! {
