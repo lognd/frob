@@ -1,0 +1,48 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T09:32:27Z"
+digest = "5c9c03aae87e493d0b516c38888e2ff9ae9b5b47d3dd5f6e158bfb1c8a11d7ad"
+exit_code = 101
+head = "5d6969e7e40e54b4d5fe72a2521752a83d0b1a6b"
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+error[E0004]: non-exhaustive patterns: `gob_caps::Lang::Dotenv` not covered
+  --> crates/gob-plan/src/catalog/answer.rs:32:11
+   |
+32 |     match lang {
+   |           ^^^^ pattern `gob_caps::Lang::Dotenv` not covered
+   |
+note: `gob_caps::Lang` defined here
+  --> crates/gob-caps/src/lang.rs:8:0
+  ::: crates/gob-caps/src/lang.rs:32:4
+   |
+   = note: not covered
+   = note: the matched value is of type `gob_caps::Lang`
+help: ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern as shown
+   |
+37 ~         Lang::OpaqueText | Lang::Binary => &[],
+38 ~         gob_caps::Lang::Dotenv => todo!(),
+   |
+
+For more information about this error, try `rustc --explain E0004`.
+error: could not compile `gob-plan` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "grimble-check::log_rules python_direct_output_atoms_fire"
+size = 1665
+status = "measured"
+at = "2026-10-29T09:32:27Z"
+actor = "lognd"
+rev = 1
