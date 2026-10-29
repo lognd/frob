@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-check/**", "crates/grimble-capabilities/**", "docs/design/output-atoms.md", "docs/reference/config.md"]
+new = ["crates/grimble-check/**", "crates/grimble-capabilities/**", "docs/design/output-atoms.md", "docs/reference/config.md", "docs/schemas/config.json"]
+at = "2026-10-29T08:26:39Z"
+actor = "lognd"
+rev = 1
