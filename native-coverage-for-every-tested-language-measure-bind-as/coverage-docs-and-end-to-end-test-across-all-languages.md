@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:39Z"
-updated = "2026-10-29T22:18:30Z"
+updated = "2026-10-29T22:21:27Z"
 labels = ["no-story"]
-scope = ["docs/guides/coverage.md", "crates/frob/tests/it/coverage_e2e.rs"]
+scope = ["docs/guides/coverage.md", "crates/frob/tests/it/coverage_e2e.rs", "crates/frob/tests/it/main.rs"]
 
 [[links]]
 kind = "blocked-by"

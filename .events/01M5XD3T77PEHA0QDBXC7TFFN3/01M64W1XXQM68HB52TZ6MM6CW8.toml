@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/guides/coverage.md", "crates/frob/tests/it/coverage_e2e.rs"]
+new = ["docs/guides/coverage.md", "crates/frob/tests/it/coverage_e2e.rs", "crates/frob/tests/it/main.rs"]
+at = "2026-10-29T22:21:27Z"
+actor = "lognd"
+rev = 1
