@@ -2,7 +2,8 @@
 id = "01M627BCT2PQH5H9X592WNFCDP"
 title = "Zero DOC001 findings (undocumented .github, scripts, packaging)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
