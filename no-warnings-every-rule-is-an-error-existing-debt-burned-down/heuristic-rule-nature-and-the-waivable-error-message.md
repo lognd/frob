@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:02Z"
-updated = "2026-10-29T07:33:32Z"
+updated = "2026-10-29T07:40:21Z"
 labels = ["no-story"]
-scope = ["crates/gob-rules/**"]
+scope = ["crates/gob-rules/**", "docs/design/rules.md"]
 
 [[acceptance]]
 text = "Finding messages for nature=Heuristic rules state heuristic/smell, why it fired, and the exact frob:waive line with reason"
