@@ -23,6 +23,13 @@ pub trait CohHost {
     fn coh_subjects_of(&self, id: &str) -> usize;
 }
 
+/// The LOG rules are evaluated in one pass over the walk (`log::pass`); `log_subjects_of` is what
+/// the must-measure rules report from.
+pub trait LogHost {
+    /// Files the LOG pass examined for rule `id` on this run (0 when it examined none).
+    fn log_subjects_of(&self, id: &str) -> usize;
+}
+
 /// Everything a declared grimble rule may ask: the model, binding, architecture and path hosts.
 pub trait GrimbleHost:
     MdlHost
@@ -35,6 +42,7 @@ pub trait GrimbleHost:
     + ResHost
     + UnityHost
     + CohHost
+    + LogHost
     + CiHost
     + PackHost
 {
@@ -51,6 +59,7 @@ impl<
         + ResHost
         + UnityHost
         + CohHost
+        + LogHost
         + CiHost
         + PackHost
         + ?Sized,
@@ -111,6 +120,12 @@ impl UnityHost for GrimbleInputs {
 impl CohHost for GrimbleInputs {
     fn coh_subjects_of(&self, id: &str) -> usize {
         self.coh.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+impl LogHost for GrimbleInputs {
+    fn log_subjects_of(&self, id: &str) -> usize {
+        self.log.subjects.get(id).copied().unwrap_or(0)
     }
 }
 

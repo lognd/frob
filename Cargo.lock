@@ -3206,6 +3206,7 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "tree-sitter",
 ]
 
 [[package]]

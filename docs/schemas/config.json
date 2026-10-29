@@ -1309,6 +1309,55 @@
       },
       "type": "object"
     },
+    "log": {
+      "additionalProperties": false,
+      "description": "The `[log]` table (LOG001, LOG002): where direct output is allowed and which crates count as logging.\n\n`modules` are the files that make up the logging layer (output is allowed inside them and\ntheir logging configuration satisfies LOG002); `exempt` are files that are never judged.",
+      "properties": {
+        "exempt": {
+          "default": [
+            "**/tests/**",
+            "**/test/**",
+            "**/__tests__/**",
+            "**/test_*.py",
+            "**/*_test.*",
+            "**/*.test.*",
+            "**/*.spec.*",
+            "**/build.rs",
+            "**/__main__.py"
+          ],
+          "description": "Globs of files LOG001 and LOG002 never judge (tests, build scripts, entry shims).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "extra_crates": {
+          "default": [],
+          "description": "Extra logging crates or packages (`a.b` or `a::b`) that count as a configured logging layer.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "modules": {
+          "default": [
+            "**/log/**",
+            "**/logging/**",
+            "**/logger/**",
+            "**/log.*",
+            "**/logger.*",
+            "**/logging.*",
+            "**/logging_config.*"
+          ],
+          "description": "Globs of the logging module(s): direct output is allowed there.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "mirror": {
       "additionalProperties": false,
       "description": "Mirror identity settings, so recreate needs no environment variables for them.",

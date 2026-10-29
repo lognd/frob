@@ -103,6 +103,72 @@ impl CohTable {
     }
 }
 
+/// The `[log]` table (LOG001, LOG002): where direct output is allowed and which crates count as logging.
+///
+/// `modules` are the files that make up the logging layer (output is allowed inside them and
+/// their logging configuration satisfies LOG002); `exempt` are files that are never judged.
+// frob:ticket 01M5XMR67K19SFAWNTDJKKJPTT
+#[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
+#[config(table = "log")]
+pub struct LogTable {
+    /// Globs of the logging module(s): direct output is allowed there.
+    #[config(default = default_log_modules())]
+    pub modules: Vec<String>,
+    /// Globs of files LOG001 and LOG002 never judge (tests, build scripts, entry shims).
+    #[config(default = default_log_exempt())]
+    pub exempt: Vec<String>,
+    /// Extra logging crates or packages (`a.b` or `a::b`) that count as a configured logging layer.
+    #[config(default = Vec::new())]
+    pub extra_crates: Vec<String>,
+}
+
+/// The default `[log] modules` globs.
+#[must_use]
+pub fn default_log_modules() -> Vec<String> {
+    [
+        "**/log/**",
+        "**/logging/**",
+        "**/logger/**",
+        "**/log.*",
+        "**/logger.*",
+        "**/logging.*",
+        "**/logging_config.*",
+    ]
+    .iter()
+    .map(|s| (*s).to_owned())
+    .collect()
+}
+
+/// The default `[log] exempt` globs.
+#[must_use]
+pub fn default_log_exempt() -> Vec<String> {
+    [
+        "**/tests/**",
+        "**/test/**",
+        "**/__tests__/**",
+        "**/test_*.py",
+        "**/*_test.*",
+        "**/*.test.*",
+        "**/*.spec.*",
+        "**/build.rs",
+        "**/__main__.py",
+    ]
+    .iter()
+    .map(|s| (*s).to_owned())
+    .collect()
+}
+
+impl LogTable {
+    /// Load `[log]` from `<root>/grimble.toml` (a missing file or table means defaults).
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load(root: &Path) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    }
+}
+
 /// The warning printed when packs are requested but not loaded.
 pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build loads only local/ packs (atoms); external packs, the lock and PACK rules are not evaluated";
 

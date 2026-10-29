@@ -261,6 +261,21 @@ Materialized: yes.
 | `ttl_secs` | `u64` | `7200` | no | Seconds a lease stays live after its last renewal (default two hours). |
 | `waiter_ttl_secs` | `u64` | `60` | no | Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped. |
 
+## `[log]`
+
+The `[log]` table (LOG001, LOG002): where direct output is allowed and which crates count as logging.
+
+`modules` are the files that make up the logging layer (output is allowed inside them and
+their logging configuration satisfies LOG002); `exempt` are files that are never judged.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `exempt` | `Vec<String>` | `["**/tests/**", "**/test/**", "**/__tests__/**", "**/test_*.py", "**/*_test.*", "**/*.test.*", "**/*.spec.*", "**/build.rs", "**/__main__.py"]` | no | Globs of files LOG001 and LOG002 never judge (tests, build scripts, entry shims). |
+| `extra_crates` | `Vec<String>` | `[]` | no | Extra logging crates or packages (`a.b` or `a::b`) that count as a configured logging layer. |
+| `modules` | `Vec<String>` | `["**/log/**", "**/logging/**", "**/logger/**", "**/log.*", "**/logger.*", "**/logging.*", "**/logging_config.*"]` | no | Globs of the logging module(s): direct output is allowed there. |
+
 ## `[mirror]`
 
 Mirror identity settings, so recreate needs no environment variables for them.

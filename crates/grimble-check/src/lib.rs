@@ -49,6 +49,7 @@ pub mod example_model;
 pub mod fidelity;
 mod host;
 pub mod layers;
+pub mod log;
 pub mod model_view;
 pub mod neat037;
 pub mod packs;

@@ -144,3 +144,18 @@ fn dockerfile_stages_from_and_copy_edges() {
     );
     assert!(deps.contains(&(stage("final"), stage("rt"))));
 }
+
+// frob:tests crates/gob-symbols/src/dotenv.rs::DotenvAdapter
+#[test]
+fn dotenv_template_is_read_as_key_value_text_not_opaque() {
+    let text = "# placeholder values only\nDB_URL=postgres://user:changeme@localhost/db\nAPI_KEY=your-key-here\n";
+    let g = graph_of(".env.example", text);
+    let sym = |n: &str| Symref::parse(&format!(".env.example::{n}")).unwrap();
+    assert!(g.get(&sym("DB_URL")).is_some());
+    assert!(g.get(&sym("API_KEY")).is_some());
+    let f = gob_symbols::extract_file(&entry(".env.example", text), text);
+    assert_eq!(f.fidelity, Fidelity::F1);
+    assert_eq!(f.language, "dotenv");
+    let real = gob_symbols::extract_file(&entry(".env", text), text);
+    assert_eq!(real.fidelity, Fidelity::F0);
+}
