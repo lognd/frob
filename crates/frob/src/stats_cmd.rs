@@ -6,6 +6,7 @@
 
 // frob:ticket 01M48Q2AQXY69YKK3D2DC05ZWR
 
+use crate::pretty::PrettyExt;
 use std::collections::{BTreeMap, BTreeSet};
 
 use frob_ledger::TicketId;
@@ -101,7 +102,7 @@ impl Command for Stats {
         });
         tracing::info!(tickets = tickets.len(), cycles = all.len(), "stats");
         let rendered = render_text(&report);
-        Ok(Payload::new(report).with_rendered(rendered))
+        Ok(Payload::new(report).with_pretty(rendered))
     }
 }
 

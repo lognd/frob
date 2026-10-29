@@ -1,5 +1,6 @@
 //! `frob doctor`: report the environment; findings never make it fail.
 
+use crate::pretty::PrettyExt;
 use gob_path::Shown;
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -475,7 +476,7 @@ impl Doctor {
         .with_findings(findings.into_iter().chain(protection).collect());
         let payload = {
             let rows = crate::text_view::doctor_rows(&payload.data);
-            payload.with_rendered(rows)
+            payload.with_pretty(rows)
         };
         Ok(warnings
             .into_iter()

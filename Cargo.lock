@@ -1197,6 +1197,7 @@ dependencies = [
  "frob-mirror",
  "frob-obligations",
  "frob-pm",
+ "frob-present",
  "frob-release",
  "frob-tests",
  "frob-worktree",

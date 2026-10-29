@@ -5,6 +5,7 @@
 
 // frob:ticket 01M4H0WXVXJ18DX9SVX6EHT0AD
 
+use crate::pretty::PrettyExt;
 use gob_path::Shown;
 
 use frob_doc::{MOVED_PATH, MovedMap, RemapError};
@@ -123,6 +124,6 @@ impl Command for DocRemap {
             files,
             written: !ctx.dry_run,
         })
-        .with_rendered(rows))
+        .with_pretty(rows))
     }
 }

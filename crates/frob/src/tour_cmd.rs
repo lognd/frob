@@ -6,6 +6,7 @@
 
 // frob:ticket 01M3ZX88BP9P0ZWPMJ5J5SBSMN
 
+use crate::pretty::PrettyExt;
 use gob_path::Shown;
 use std::io::{BufRead, IsTerminal, Write};
 use std::time::Duration;
@@ -291,13 +292,13 @@ impl Command for TourVerb {
                 &mut opener,
             )
             .map_err(CliError::internal)?;
-            return Ok(Payload::new(TourData { stops, interactive }).with_rendered(Vec::new()));
+            return Ok(Payload::new(TourData { stops, interactive }).with_pretty(Vec::new()));
         }
         let rows = stops
             .iter()
             .flat_map(|s| s.body.lines().map(str::to_owned).chain([String::new()]))
             .collect();
-        Ok(Payload::new(TourData { stops, interactive }).with_rendered(rows))
+        Ok(Payload::new(TourData { stops, interactive }).with_pretty(rows))
     }
 }
 
