@@ -1049,7 +1049,7 @@ For node n and atom a:
 - `Use(i, a) = effects(i)` restricted to a: an Answer over EffectSites; `Use_lo`
   Must uses, `Use_hi` possible uses.
 
-Name-only call edges (ticket ~313NY13): when the call graph cannot prove a
+Name-only call edges (ticket 01M642301PNSE0VTM2F313NY13): when the call graph cannot prove a
 method call's receiver type it links every same-named method as a May edge
 with basis `NameOnly`. Such an edge proves no target, so the use detector
 judges the call as if it were unresolved: a project class that merely shares

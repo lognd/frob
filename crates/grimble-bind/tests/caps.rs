@@ -849,7 +849,7 @@ fn rust_path_method_receivers_are_fs_read() {
     assert!(of(&bind_file("src/x.rs", rs, ""), "CAP001").is_empty());
 }
 
-// frob:ticket ~313NY13
+// frob:ticket 01M642301PNSE0VTM2F313NY13
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn python_decoy_method_in_another_file_does_not_hide_a_path_read() {
@@ -867,7 +867,7 @@ fn python_decoy_method_in_another_file_does_not_hide_a_path_read() {
     assert_eq!(atoms(&both), atoms(&alone), "{:?}", both.findings);
 }
 
-// frob:ticket ~313NY13
+// frob:ticket 01M642301PNSE0VTM2F313NY13
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn python_decoy_never_turns_an_unproven_receiver_clean() {
@@ -878,7 +878,7 @@ fn python_decoy_never_turns_an_unproven_receiver_clean() {
     assert_eq!(atoms(&both), atoms(&alone), "{:?}", both.findings);
 }
 
-// frob:ticket ~313NY13
+// frob:ticket 01M642301PNSE0VTM2F313NY13
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn rust_decoy_method_in_another_file_does_not_hide_a_typed_client_use() {

@@ -970,7 +970,7 @@ fn unit_at(
     }
 }
 
-/// frob:ticket ~313NY13
+/// frob:ticket 01M642301PNSE0VTM2F313NY13
 /// True when the call edge proves no target: unresolved, or a guess by method name alone. A
 /// project class that merely shares a method's name must never hide a use whose receiver may be
 /// a capability type, so such an edge is judged like an unresolved call.

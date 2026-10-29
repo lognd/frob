@@ -226,7 +226,7 @@ fn call_bases(files: &[(&str, &str)], from: &str) -> Vec<gob_symbols::EdgeBasis>
         .collect()
 }
 
-// frob:ticket ~313NY13
+// frob:ticket 01M642301PNSE0VTM2F313NY13
 // frob:tests crates/gob-symbols/src/graph.rs::StatusEdge
 #[test]
 fn a_method_guessed_by_name_alone_is_marked_name_only_in_every_adapter() {
