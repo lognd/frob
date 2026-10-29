@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-08T12:10:51Z"
-updated = "2026-10-29T08:26:19Z"
-scope = ["crates/gob-plan/src/grl/parse/tests/fixtures/**", "docs/design/grl-spec.md"]
+updated = "2026-10-29T08:45:01Z"
+scope = ["crates/gob-plan/src/grl/parse/tests/fixtures/**", "docs/design/grl-spec.md", "crates/gob-plan/src/grl/parse/tests/snapshots/**"]
 
 [[acceptance]]
 text = "Every grl-spec section 12 rule has the universal notapplicable-or-unresolved example, and the_fixture_rules_of_the_spec_check_clean no longer filters the GRL011 message"
