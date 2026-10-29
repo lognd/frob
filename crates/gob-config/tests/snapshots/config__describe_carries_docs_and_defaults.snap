@@ -4,6 +4,10 @@ expression: "Tickets::describe()"
 ---
 TableDescription {
     table: "tickets",
+    product: "frob",
+    array: false,
+    inline: false,
+    rest: None,
     doc: "Ticket settings.",
     materialize: true,
     fields: [
@@ -11,6 +15,7 @@ TableDescription {
             key: "cas_retries",
             doc: "Compare-and-swap retries when updating the ledger.",
             default_toml: "5",
+            required: false,
             enforcement: true,
             type_name: "u32",
             schema: Object {
@@ -23,6 +28,7 @@ TableDescription {
             key: "ref",
             doc: "Where tickets live: `trunk` or `branch`.",
             default_toml: "\"trunk\"",
+            required: false,
             enforcement: true,
             type_name: "String",
             schema: Object {
@@ -33,6 +39,7 @@ TableDescription {
             key: "labels",
             doc: "Free-form labels.",
             default_toml: "[]",
+            required: false,
             enforcement: false,
             type_name: "Vec<String>",
             schema: Object {

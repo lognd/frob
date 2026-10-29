@@ -1,0 +1,5 @@
+error: a `rest` field must be a map type such as `IndexMap<String, V>`
+ --> tests/ui/config_rest_not_map.rs:8:14
+  |
+8 |     entries: Vec<String>,
+  |              ^^^
