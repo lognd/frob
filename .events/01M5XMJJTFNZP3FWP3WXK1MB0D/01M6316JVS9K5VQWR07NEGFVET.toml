@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T05:12:29Z"
+digest = "90789263c4526e4fd65828e9b653537a4df7b688fd4003d2dd6c7c81f36899f4"
+exit_code = 0
+head = "aaaf5a1c26f99e581b23fbe21fe6b1a6477d1ef4"
+inline = """
+348 generated files up to date
+"""
+passed = true
+provider = "command"
+ref = "cargo run -q -j2 -p gob-dev -- gen all --check"
+size = 31
+status = "measured"
+at = "2026-10-29T05:12:29Z"
+actor = "lognd"
+rev = 1
