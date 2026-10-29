@@ -67,6 +67,7 @@ mod graph;
 mod markdown;
 mod model;
 // frob:ticket 01M47QKTN549397AFFSC3DEAQX
+mod dotenv;
 mod lang;
 mod languages_page;
 mod nodejs;
@@ -110,6 +111,7 @@ pub use css::{CssAdapter, is_css_path};
 pub use def_use::{PYTHON_SYNTAX, RUST_SYNTAX, TYPESCRIPT_SYNTAX, def_use_of, syntax_for};
 pub use docker_image::{DockerfileAdapter, is_dockerfile_path};
 pub use docstatus::{DocHeader, DocStatus, StatusProblem, is_generated, parse_header};
+pub use dotenv::{DotenvAdapter, is_dotenv_template_path};
 pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
     parse_project, parse_solution,
