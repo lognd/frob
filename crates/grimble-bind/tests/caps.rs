@@ -637,3 +637,51 @@ fn arg_scope_a_grant_without_arguments_still_covers_every_argument() {
     );
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
 }
+
+const LOOSE: &str = "import os\n\ndef go():\n    os.system(\"ls\")\n";
+
+fn bind_loose(extra: &[(&str, &str)]) -> Binding {
+    let dir = tempfile::tempdir().unwrap();
+    for d in ["src", "design", "loose", "tickets/T-1"] {
+        std::fs::create_dir_all(dir.path().join(d)).unwrap();
+    }
+    for (rel, text) in extra {
+        std::fs::write(dir.path().join(rel), text).unwrap();
+    }
+    let text = model("");
+    std::fs::write(dir.path().join("design/model.grmb"), &text).unwrap();
+    std::fs::write(dir.path().join("src/ok.py"), "def f():\n    return 1\n").unwrap();
+    let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
+    let files = ModelFiles::new().with_file("design/model.grmb", text.into_bytes());
+    grimble_bind::bind(&BindInput {
+        root: dir.path(),
+        entries: &walked.files,
+        model: &files,
+        modeled: &[],
+        strict: false,
+        rename_min_tokens: 12,
+        ledger_dir: "tickets",
+    })
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn an_unowned_file_with_a_capability_use_is_a_cap001_error() {
+    let b = bind_loose(&[("loose/l.py", LOOSE)]);
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{f:?}");
+    assert_eq!(f[0].anchor, "cap/unowned/process.spawn");
+    assert_eq!(f[0].severity, gob_rules::Severity::Error);
+    assert!(f[0].reason.is_none());
+    assert!(f[0].message.contains("loose/l.py"), "{}", f[0].message);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn unowned_code_without_a_use_and_frob_owned_files_are_clean() {
+    let b = bind_loose(&[
+        ("loose/l.py", "def go():\n    return 1\n"),
+        ("tickets/T-1/x.py", LOOSE),
+    ]);
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
