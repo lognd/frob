@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Full frob check counts at 2026-10-29 (unique findings): CI010 0, PM033 0, SYS008 0, PM010 1 (live cycle 2026-10-26..2026-11-01 commits 336 points over capacity 267; a cycle-data finding, not a code defect), PM003 2, PM005 2, PATH001 1, SYS013 11 unresolved, COV004 2 unresolved, CYCLE001 1, PATH002 1, PATH003 1, AFFECT001 1 unresolved. Severity enum already collapsed to Error|Unresolved (d7ea79ce8e); this ticket corrected the remaining Advisory wording in CI007, CI010, PM010, PM012, PM033 and SYS008 docs."
+at = "2026-10-29T05:12:26Z"
+actor = "lognd"
+rev = 1
