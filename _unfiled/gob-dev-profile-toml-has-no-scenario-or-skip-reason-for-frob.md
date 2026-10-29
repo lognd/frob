@@ -2,12 +2,12 @@
 id = "01M4KWWDW9YRX4V8SNG1X60JKF"
 title = "gob-dev profile.toml has no scenario or skip reason for frob ticket closeout"
 type = "bug"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T21:53:08Z"
-updated = "2026-10-29T09:32:26Z"
+updated = "2026-10-29T14:01:35Z"
 scope = ["crates/gob-dev/**"]
 
 [[acceptance]]
