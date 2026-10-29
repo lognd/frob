@@ -4,9 +4,10 @@ title = "Style error[CODE] and status rendering in gob-cli on a TTY"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T03:42:52Z"
-updated = "2026-10-29T03:42:52Z"
+updated = "2026-10-29T05:47:07Z"
 scope = ["crates/gob-cli/**"]
 +++
 
