@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a method defined on a project class never suppresses a use whose receiver resolves to a capability type; test with the decoy in another file"]
+new = ["a method defined on a project class never suppresses a use whose receiver resolves to a capability type; test with the decoy in another file", "Fix lives in the universal layer (gob-ir/gob-symbols resolution and VocabEntry registry), not a per-language patch in grimble-check; regression test covers every language with an adapter."]
+moved = [1]
+at = "2026-10-29T15:08:54Z"
+actor = "lognd"
+rev = 1
