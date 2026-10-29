@@ -12,7 +12,7 @@ updated = "2026-10-29T04:44:48Z"
 persona = "a C# developer"
 capability = "get coverage via coverlet under the dotnet provider"
 outcome_text = "coverage gates work on my C# and Unity projects"
-scope = ["crates/frob-evidence/src/coverage/csharp.rs", "crates/frob-evidence/tests/coverage_csharp.rs", "crates/frob-evidence/src/coverage/mod.rs"]
+scope = ["crates/frob-evidence/src/coverage/csharp.rs", "crates/frob-evidence/tests/coverage_csharp.rs", "crates/frob-evidence/src/coverage/mod.rs", "docs/design/testing.md"]
 
 [[links]]
 kind = "blocked-by"
