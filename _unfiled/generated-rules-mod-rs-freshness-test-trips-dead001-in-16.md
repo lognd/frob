@@ -2,12 +2,12 @@
 id = "01M64WSNR41TCVNG5F8HH6N6BT"
 title = "Generated rules/mod.rs freshness test trips DEAD001 in 16 crates"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T22:34:25Z"
-updated = "2026-10-29T22:34:25Z"
+updated = "2026-10-29T23:00:08Z"
 scope = ["crates/gob-rules/**"]
 +++
 
