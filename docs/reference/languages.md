@@ -195,22 +195,6 @@ Fidelity F2; extensions `.dockerfile`.
 | order | Gap | none |
 | project_model | Gap | none |
 
-## dotenv
-
-Fidelity F1.
-
-| Capability | Cell | Precision |
-|---|---|---|
-| resolve_ref | Gap | none |
-| apply_targets | Gap | none |
-| visibility | NotApplicable | not-applicable |
-| effects | NotApplicable | not-applicable |
-| test_items | NotApplicable | not-applicable |
-| imports | NotApplicable | not-applicable |
-| expand | NotApplicable | not-applicable |
-| order | Gap | none |
-| project_model | NotApplicable | not-applicable |
-
 ## grmb
 
 Fidelity F4; extensions `.grmb`.
