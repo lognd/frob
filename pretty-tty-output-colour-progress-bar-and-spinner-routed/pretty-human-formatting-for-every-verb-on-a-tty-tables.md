@@ -8,7 +8,7 @@ points = 8
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:57:31Z"
-updated = "2026-10-29T03:53:24Z"
+updated = "2026-10-29T04:49:01Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/**", "crates/frob/Cargo.toml", "Cargo.lock", "crates/frob-present/Cargo.toml", "crates/frob-present/src", "crates/frob-present/tests", "docs/design/output.md"]
 
