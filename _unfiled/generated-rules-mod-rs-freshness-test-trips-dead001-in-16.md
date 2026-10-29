@@ -2,7 +2,8 @@
 id = "01M64WSNR41TCVNG5F8HH6N6BT"
 title = "Generated rules/mod.rs freshness test trips DEAD001 in 16 crates"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
