@@ -404,7 +404,7 @@ pub(crate) fn emit(exec: &Execution) {
 mod tests {
     use super::*;
 
-    // frob:ticket 13J001Y
+    // frob:ticket 01M62W1RDJQXY7GD8CW13J001Y
     #[test]
     fn a_colour_terminal_styles_the_error_code_and_plain_is_byte_identical() {
         let err = CliError::Negative("nope".to_owned());
@@ -417,7 +417,7 @@ mod tests {
         assert_eq!(colour.exit, 1);
     }
 
-    // frob:ticket 13J001Y
+    // frob:ticket 01M62W1RDJQXY7GD8CW13J001Y
     #[test]
     fn style_detection_honours_tty_no_color_and_dumb() {
         let env = |p: &[(&str, &str)]| EnvSnapshot::from_pairs(p.iter().copied());
@@ -435,7 +435,7 @@ mod tests {
         );
     }
 
-    // frob:ticket 13J001Y
+    // frob:ticket 01M62W1RDJQXY7GD8CW13J001Y
     #[test]
     fn value_lines_colours_keys_and_status_only_with_a_style() {
         let v = serde_json::json!({"state": "closed", "n": 1});
