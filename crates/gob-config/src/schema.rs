@@ -3,7 +3,8 @@
 
 use serde_json::{Map, Value, json};
 
-use crate::describe::{FieldDescription, TableDescription};
+use crate::describe::{FieldDescription, RestDescription, TableDescription, product_tables};
+use crate::product::product_entry;
 
 /// Key under which schemars (draft 2020-12) stores shared definitions.
 const DEFS: &str = "$defs";
@@ -13,9 +14,38 @@ const DEFS: &str = "$defs";
 /// Every `$ref` a field carries resolves against the root `$defs` object, which merges the
 /// definitions each field's schema brought along.
 pub fn schema(tables: &[&TableDescription]) -> Value {
+    product_schema(tables, &SchemaOptions::default())
+}
+
+/// How a product's schema root is presented.
+#[derive(Debug, Clone, Default)]
+pub struct SchemaOptions {
+    /// Schema title (the config file name), when set.
+    pub title: Option<String>,
+    /// Allow top-level keys outside the listed tables (tables owned by shared crates).
+    pub open_top_level: bool,
+    /// Top-level tables the file must contain.
+    pub required_tables: Vec<String>,
+}
+
+/// The config schema of `product`, presented per its registered [`crate::ProductEntry`].
+pub fn product_config_schema(product: &str) -> Value {
+    let mut tables: Vec<TableDescription> = product_tables(product).collect();
+    tables.sort_by(|a, b| a.table.cmp(&b.table));
+    let refs: Vec<&TableDescription> = tables.iter().collect();
+    let options = product_entry(product).map_or_else(SchemaOptions::default, |e| SchemaOptions {
+        title: Some(e.title.to_owned()),
+        open_top_level: e.open_top_level,
+        required_tables: e.required_tables.iter().map(|t| (*t).to_owned()).collect(),
+    });
+    product_schema(&refs, &options)
+}
+
+/// A JSON Schema document for one product's `tables`, presented per `options`.
+pub fn product_schema(tables: &[&TableDescription], options: &SchemaOptions) -> Value {
     let mut root = Map::new();
     let mut defs = Map::new();
-    for desc in tables {
+    for desc in tables.iter().filter(|d| !d.inline) {
         let mut node = table_node(desc, &mut defs);
         let segs: Vec<&str> = desc.table.split('.').collect();
         let (last, parents) = segs
@@ -46,8 +76,14 @@ pub fn schema(tables: &[&TableDescription]) -> Value {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": root,
-        "additionalProperties": false,
+        "additionalProperties": options.open_top_level,
     });
+    if let Some(title) = &options.title {
+        doc["title"] = Value::String(title.clone());
+    }
+    if !options.required_tables.is_empty() {
+        doc["required"] = json!(options.required_tables);
+    }
     let dangling = dangling_refs(&doc, &defs);
     if !dangling.is_empty() {
         tracing::warn!(?dangling, "schema has $ref links with no $defs entry");
@@ -105,7 +141,45 @@ fn merge_defs(defs: &mut Map<String, Value>, incoming: Map<String, Value>) {
     }
 }
 
+/// The schema of one table as a self-contained node: definitions its fields carry ride along
+/// under `$defs` (used by the derive to make a nested table usable as a field type).
+pub fn table_schema(desc: &TableDescription) -> Value {
+    let mut defs = Map::new();
+    let mut node = object_node(desc, &mut defs);
+    if let (Value::Object(map), false) = (&mut node, defs.is_empty()) {
+        map.insert(DEFS.to_owned(), Value::Object(defs));
+    }
+    node
+}
+
+/// The node for a table placed by path: an array wrapper for `[[x]]` tables.
 fn table_node(desc: &TableDescription, defs: &mut Map<String, Value>) -> Value {
+    let mut node = object_node(desc, defs);
+    if desc.array {
+        let description = node.as_object_mut().and_then(|m| m.remove("description"));
+        let mut wrapped = json!({"type": "array", "items": node});
+        if let Some(d) = description {
+            wrapped["description"] = d;
+        }
+        return wrapped;
+    }
+    node
+}
+
+#[allow(clippy::option_if_let_else)]
+fn object_node(desc: &TableDescription, defs: &mut Map<String, Value>) -> Value {
+    let mut node = match &desc.rest {
+        Some(rest) => rest_node(rest, defs),
+        None => fields_node(desc, defs),
+    };
+    if !desc.doc.is_empty() {
+        node["description"] = Value::String(desc.doc.clone());
+    }
+    node
+}
+
+/// A table of declared fields: closed properties plus the required list.
+fn fields_node(desc: &TableDescription, defs: &mut Map<String, Value>) -> Value {
     let props: Map<String, Value> = desc
         .fields
         .iter()
@@ -116,10 +190,40 @@ fn table_node(desc: &TableDescription, defs: &mut Map<String, Value>) -> Value {
         "properties": props,
         "additionalProperties": false,
     });
-    if !desc.doc.is_empty() {
-        node["description"] = Value::String(desc.doc.clone());
+    let required: Vec<&str> = desc
+        .fields
+        .iter()
+        .filter(|f| f.required)
+        .map(|f| f.key.as_str())
+        .collect();
+    if !required.is_empty() {
+        node["required"] = json!(required);
     }
     node
+}
+
+/// A dynamic-key table: the override schema when given, else any key with one value shape.
+fn rest_node(rest: &RestDescription, defs: &mut Map<String, Value>) -> Value {
+    let mut node = match &rest.table_schema {
+        Some(full) => full.clone(),
+        None => json!({"type": "object", "additionalProperties": rest.value_schema.clone()}),
+    };
+    hoist_defs(&mut node, defs);
+    if let Some(Value::Object(map)) = node.get_mut("additionalProperties")
+        && let Some(Value::Object(carried)) = map.remove(DEFS)
+    {
+        merge_defs(defs, carried);
+    }
+    node
+}
+
+/// Move a node's own `$defs` into `defs`.
+fn hoist_defs(node: &mut Value, defs: &mut Map<String, Value>) {
+    if let Value::Object(map) = node
+        && let Some(Value::Object(carried)) = map.remove(DEFS)
+    {
+        merge_defs(defs, carried);
+    }
 }
 
 fn field_node(f: &FieldDescription, defs: &mut Map<String, Value>) -> Value {

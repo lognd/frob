@@ -8,6 +8,15 @@
 //! [`check`] reports each missing knob as `CFG001`, and [`schema`] exports a
 //! JSON Schema for all tables.
 //!
+//! Tables are scoped to a product (`#[config(product = "crunk")]`; default `frob`). Every
+//! product gets its own reference page and schema, so one product's keys never appear in
+//! another's: [`frob_tables`] and [`product_tables`] select a registry, [`products`] lists
+//! them, and a crate may submit a [`ProductEntry`] to set the title, intro and required
+//! tables. Further struct attributes: `array` (`[[x]]` tables), `inline` (nested in a parent
+//! table, not a top-level schema property) and `rest` (a dynamic-key table over one map
+//! field, with an optional `schema_with` for key detail). Field attributes add `required`
+//! (no default; a missing key is an error) and `rename`.
+//!
 //! ```
 //! use gob_config::ConfigTable;
 //!
@@ -37,6 +46,7 @@ mod load;
 mod local;
 mod materialize;
 mod mirror;
+mod product;
 pub mod rules;
 mod schema;
 mod ui;
@@ -46,8 +56,8 @@ pub use artifact::{ArtifactBody, ArtifactEntry, ArtifactFamily, all_artifacts};
 pub use check::check;
 pub use compute::{ComputeTable, blake3_tagged, compute_digest};
 pub use describe::{
-    ConfigTable, FieldDescription, TableDescription, TableEntry, all_tables, render_default,
-    schema_of,
+    ConfigTable, DEFAULT_PRODUCT, FieldDescription, RestDescription, TableDescription, TableEntry,
+    all_tables, frob_tables, product_tables, products, render_default, schema_of,
 };
 pub use error::ConfigError;
 pub use gob_macros::ConfigTable;
@@ -59,9 +69,12 @@ pub use load::{
 pub use local::{repo_file, user_config_dir, user_config_dir_with, user_file};
 pub use materialize::{MaterializeReport, materialize};
 pub use mirror::{DEFAULT_MIRROR_KID, MirrorTable};
+pub use product::{ProductEntry, product_entry};
 pub use rules::cfg001::Cfg001;
-pub use schema::schema;
+pub use schema::{SchemaOptions, product_config_schema, product_schema, schema, table_schema};
+pub use schemars;
 pub use serde;
+pub use serde_json;
 pub use toml;
 pub use ui::UiTable;
 pub use workspace::{nested_config_dirs, workspace_members};

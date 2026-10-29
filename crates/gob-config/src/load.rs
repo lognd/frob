@@ -180,7 +180,7 @@ fn build<T: ConfigTable>(
     let child_prefix = format!("{}.", desc.table);
     merged.retain(|key, _| {
         let child = format!("{child_prefix}{key}");
-        !crate::describe::all_tables()
+        !crate::describe::product_tables(&desc.product)
             .any(|d| d.table == child || d.table.starts_with(&format!("{child}.")))
     });
     for key in merged.keys() {

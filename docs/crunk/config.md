@@ -10,29 +10,19 @@ Path-base law: `[project] tokens_file` resolves against `css_root`; every other 
 
 ## `[breakpoints]`
 
-Viewport name to px, plus `base_required`; optional. Absent with a `[tailwind]` config
-declared means the Tailwind v3 defaults; absent entirely means the BP rules are off.
+The `[breakpoints]` table: viewport name to px, plus `base_required`.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `base_required` | array of string | no | `["flex","grid","block","hidden","w-","h-","col-","row-"]` | Layout-critical utility families whose responsive variants demand an unprefixed mobile base (BP002). |
-| any other key | integer | no | - | Breakpoint width in px. |
+| any other key | `IndexMap<String, Dyn>` | no | - | The `[breakpoints]` table: viewport name to px, plus `base_required`. |
 
 ## `[decisions]`
 
-Declared design decisions (`key = "reason"`) that silence the SLOP rules built on an
-unchosen default; optional.
+The `[decisions]` table: declared design decisions, `key = "reason"`.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `accent` | string | no | `-` |  |
-| `emoji` | string | no | `-` |  |
-| `eyebrows` | string | no | `-` |  |
-| `fonts` | string | no | `-` |  |
-| `glows` | string | no | `-` |  |
-| `gradients` | string | no | `-` |  |
-| `radius` | string | no | `-` |  |
-| `voice` | string | no | `-` |  |
+| any other key | `IndexMap<String, String>` | no | - | The `[decisions]` table: declared design decisions, `key = "reason"`. |
 
 ## `[game]`
 
@@ -40,13 +30,13 @@ The `[game]` table: a game profile and the accessibility coverage keys it has de
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `action` | array of table | no | `[]` | Input actions (`[[game.action]]`) with their remap, glyph and hold declarations. |
-| `colour_blind_modes` | array of string | no | `[]` | Palette modes (`[palette.modes.<name>]`) that serve as colour-blind modes. |
-| `coverage` | array of string | no | `[]` | Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`]. |
-| `devices` | array of string | no | `[]` | Input device families the game supports (`xbox`, `playstation`, `keyboard`, ...); each action needs a glyph for every one. |
-| `glyph_height_pct` | integer | no | `null` | Measured glyph height of the game's body typeface as a percent of its font size (1 to 100); without it a text size that passes on the font size alone cannot be judged. |
-| `profile` | array of table | no | `[]` | Target profiles (`[[game.profile]]`) the HUD safe area and text size are judged at. |
-| `subtitles` | table | no | `null` | `[game.subtitles]`: subtitle size and the options the player gets. |
+| `action` | `Vec<GameAction>` | no | `[]` | Input actions (`[[game.action]]`) with their remap, glyph and hold declarations. |
+| `colour_blind_modes` | `Vec<String>` | no | `[]` | Palette modes (`[palette.modes.<name>]`) that serve as colour-blind modes. |
+| `coverage` | `Vec<String>` | no | `[]` | Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`]. |
+| `devices` | `Vec<String>` | no | `[]` | Input device families the game supports (`xbox`, `playstation`, `keyboard`, ...); each action needs a glyph for every one. |
+| `glyph_height_pct` | `u32` | no | - | Measured glyph height of the game's body typeface as a percent of its font size (1 to 100); without it a text size that passes on the font size alone cannot be judged. |
+| `profile` | `Vec<GameProfile>` | no | `[]` | Target profiles (`[[game.profile]]`) the HUD safe area and text size are judged at. |
+| `subtitles` | `GameSubtitles` | no | - | Subtitle settings (`[game.subtitles]`). |
 
 ## `[[game.action]]`
 
@@ -54,11 +44,11 @@ One `[[game.action]]`: an input action and how the game treats remapping, glyphs
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `glyphs` | array of string | no | `[]` | Device families that have a glyph for the action. |
-| `hold` | boolean | no | `null` | Whether the action needs a held press; absent means undeclared. |
-| `hold_alternative` | string | no | `null` | What replaces the hold (`toggle`, `tap`, ...) for a player who cannot hold. |
-| `id` | string | yes | `-` | Action id, unique within the game. |
-| `remappable` | boolean | no | `null` | Whether the player can rebind the action; absent means undeclared. |
+| `glyphs` | `Vec<String>` | no | `[]` | Device families that have a glyph for the action. |
+| `hold` | `bool` | no | - | Whether the action needs a held press; absent means undeclared. |
+| `hold_alternative` | `String` | no | - | What replaces the hold (`toggle`, `tap`, ...) for a player who cannot hold. |
+| `id` | `String` | yes | - | Action id, unique within the game. |
+| `remappable` | `bool` | no | - | Whether the player can rebind the action; absent means undeclared. |
 
 ## `[[game.profile]]`
 
@@ -66,12 +56,12 @@ One `[[game.profile]]`: a target screen with its safe area and minimum text size
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `height` | integer | yes | `-` | Screen height in pixels. |
-| `id` | string | yes | `-` | Profile id, unique within the game. |
-| `kind` | string | yes | `-` | `console`, `pc` or `mobile`. |
-| `min_text_px` | integer | no | `null` | Minimum body text height in pixels at 1080p; absent means 26 for a console, 18 for a pc and no known minimum for mobile. |
-| `safe_area_pct` | integer | no | `null` | Percent of each edge kept clear of the HUD; absent means 5 for a console and 0 otherwise. |
-| `width` | integer | yes | `-` | Screen width in pixels. |
+| `height` | `u32` | yes | - | Screen height in pixels. |
+| `id` | `String` | yes | - | Profile id, unique within the game. |
+| `kind` | `String` | yes | - | `console`, `pc` or `mobile`. |
+| `min_text_px` | `u32` | no | - | Minimum body text height in pixels at 1080p; absent means 26 for a console, 18 for a pc and no known minimum for mobile. |
+| `safe_area_pct` | `u32` | no | - | Percent of each edge kept clear of the HUD; absent means 5 for a console and 0 otherwise. |
+| `width` | `u32` | yes | - | Screen width in pixels. |
 
 ## `[game.subtitles]`
 
@@ -79,9 +69,9 @@ One `[[game.profile]]`: a target screen with its safe area and minimum text size
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `background` | boolean | no | `null` | Whether a background behind the subtitles is offered; absent means undeclared. |
-| `size_px` | integer | no | `null` | Default subtitle text height in pixels at 1080p. |
-| `speaker_labels` | boolean | no | `null` | Whether speaker names are shown; absent means undeclared. |
+| `background` | `bool` | no | - | Whether a background behind the subtitles is offered; absent means undeclared. |
+| `size_px` | `u32` | no | - | Default subtitle text height in pixels at 1080p. |
+| `speaker_labels` | `bool` | no | - | Whether speaker names are shown; absent means undeclared. |
 
 ## `[jsx]`
 
@@ -89,88 +79,46 @@ The `[jsx]` table: sources to ingest for style props and `className` strings.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `globs` | array of string | no | `[]` | Root-relative globs of `.tsx` and `.jsx` sources; empty means JSX ingest is off. |
+| `globs` | `Vec<String>` | no | `[]` | Root-relative globs of `.tsx` and `.jsx` sources; empty means JSX ingest is off. |
 
 ## `[layers]`
 
-Named z-index layers (`name = <integer>`); optional, absent means LAYER001 is silent.
+The `[layers]` table: named z-index layers, `name = <integer>`.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| any other key | integer | no | - | user-named entry |
+| any other key | `IndexMap<String, i64>` | no | - | The `[layers]` table: named z-index layers, `name = <integer>`. |
 
 ## `[lint]`
 
-Per-rule severities (`RULE001 = "error" | "warn" | "off"`), `fix_tolerance` and
-`color_tolerance`; optional.
+The `[lint]` table: per-rule severities, `fix_tolerance` and `color_tolerance`.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `BP001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `BP002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `BP003` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `COLOR001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `COLOR002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `CONTRAST001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `EXPORT001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `EXPORT002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `GALLERY001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `GALLERY002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `GALLERY003` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `GALLERY004` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `GALLERY005` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
-| `LAYER001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `ORG001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `ORG002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `ORG003` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `ORG004` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `ORG005` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `RADIUS001` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
-| `SIZE001` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
-| `SPACE001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TOKEN002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TOKEN003` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TOKEN004` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
-| `TOKEN005` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
-| `TOKEN006` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TOKEN007` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TOKEN008` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
-| `TOKEN009` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
-| `TOKENS001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TW001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TW002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TW003` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
-| `TW004` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TW005` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TYPE001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TYPE002` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `TYPE003` | `error` or `warn` or `off` | no | `"warn"` | Severity override for this rule. |
-| `WAIVE001` | `error` or `warn` or `off` | no | `"error"` | Severity override for this rule. |
-| `color_tolerance` | number | no | `8.0` | Largest palette distance at which a color literal is treated as a palette color. |
-| `fix_tolerance` | number | no | `0.15` | Largest relative distance a fix may move a value to snap it to a token. |
+| any other key | `IndexMap<String, Dyn>` | no | - | The `[lint]` table: per-rule severities, `fix_tolerance` and `color_tolerance`. |
 
 ## `[[mock_set]]`
 
-One `[[session]]` or `[[mock_set]]` roster entry: an id plus opaque renderer-consumed data.
+One `[[mock_set]]` roster entry; same shape as a `[[session]]` entry.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `data` | table | no | `{}` | Opaque data the renderer reads. |
-| `id` | string | yes | `-` | Entry id, unique within its roster. |
+| `data` | `IndexMap<String, Dyn>` | no | `{}` | Opaque data the renderer reads. |
+| `id` | `String` | yes | - | Entry id, unique within its roster. |
 
 ## `[org]`
 
-File and class organization. Required.
+The `[org]` table: file and class organization rules (ORG001 to ORG005).
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `buckets` | array of string | yes | `-` | Allowed bucket directory names under `css_root`, at least one. |
-| `class_case` | `kebab` or `snake` or `camel` | no | `"kebab"` | Class-name casing enforced by ORG rules. |
-| `component_prefix` | boolean | no | `true` | Whether component classes must carry the component name as a prefix. |
-| `entry` | array of string | no | `[]` | Root-relative entry stylesheet globs. |
-| `ignore` | array of string | no | `[]` | Root-relative globs the ORG rules skip. |
-| `model` | `buckets` or `utility-first` | no | `"buckets"` | How style files are organized. |
-| `tokens_only_custom_props` | boolean | no | `true` | Whether custom properties may only be defined in the tokens file. |
+| `buckets` | `Vec<String>` | yes | - | Allowed bucket directory names under `css_root`, at least one. |
+| `class_case` | `ClassCase` | no | `"kebab"` | Required class-name casing. |
+| `component_prefix` | `bool` | no | `true` | Whether component classes must carry the component name as a prefix. |
+| `entry` | `Vec<String>` | no | `[]` | Root-relative entry stylesheet globs. |
+| `ignore` | `Vec<String>` | no | `[]` | Root-relative globs the ORG rules skip. |
+| `model` | `OrgModel` | no | `"buckets"` | File organization model. |
+| `tokens_only_custom_props` | `bool` | no | `true` | Whether custom properties may only be defined in the tokens file. |
 
 ## `[packs]`
 
@@ -178,33 +126,15 @@ The `[packs]` table: which std packs are on (all opt-in, off by default).
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `crunk_web` | boolean | no | `false` | Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL). |
+| `crunk_web` | `bool` | no | `false` | Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL). |
 
 ## `[palette]`
 
-Named colors (`name = "<css color>"`), plus the `[palette.roles]` and `[palette.modes.<name>]` subtables. Required.
+The `[palette]` table: named colors plus the `roles` and `modes` subtables.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `modes` | table | no | `-` | Mode name (`dark`, `cb-safe`, ...) to a table recolouring declared palette names; COLOR and CONTRAST rules run once per mode. |
-| `roles` | table | no | `-` | Role name to a `[foreground, background]` palette-name pair, or a `{ pair = [fg, bg], floor = <n> }` table overriding the contrast floor (default 4.5). |
-| any other key | string | no | - | A CSS color literal: hex, rgb(), hsl() or a named color. |
-
-## `[palette.modes]`
-
-Mode name (`dark`, `cb-safe`, ...) to a table recolouring declared palette names; COLOR and CONTRAST rules run once per mode.
-
-| Key | Type | Required | Default | Doc |
-|---|---|---|---|---|
-| any other key | table | no | - | user-named entry |
-
-## `[palette.roles]`
-
-Role name to a `[foreground, background]` palette-name pair, or a `{ pair = [fg, bg], floor = <n> }` table overriding the contrast floor (default 4.5).
-
-| Key | Type | Required | Default | Doc |
-|---|---|---|---|---|
-| any other key | see schema | no | - | user-named entry |
+| any other key | `IndexMap<String, Dyn>` | no | - | The `[palette]` table: named colors plus the `roles` and `modes` subtables. |
 
 ## `[[platform]]`
 
@@ -216,31 +146,23 @@ is rejected at load. Parameters are flat in the entry, not nested.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `base_url` | string | no | `-` | web: base URL renders hit for approval; use the real production edge, never a dev server whose SPA fallback masks 404s. |
-| `command` | string | no | `-` | command: the command line, non-empty. |
-| `cpu_throttle` | number | no | `-` | web, chromium only: CPU throttling multiplier, at least 1. |
-| `cwd` | string | no | `-` | command: working directory. |
-| `device_scale` | number | no | `-` | web: device scale factor, greater than zero (default 1). |
-| `engine` | `chromium` or `firefox` or `webkit` | no | `-` | Browser engines the built-in `web` renderer drives. |
-| `env` | table | no | `-` | command: extra environment variables. |
-| `id` | string | yes | `-` | Platform id, unique across `[[platform]]`. |
-| `init_scripts` | array of string | no | `-` | web: scripts added with `add_init_script` before navigation. |
-| `java_script_enabled` | boolean | no | `-` | web: whether JavaScript is enabled (default true). |
-| `locale` | string | no | `-` | web: browser locale. |
-| `media` | table | no | `-` | Emulated media features (`prefers-reduced-motion`, `prefers-color-scheme`). |
-| `network_throttle` | table | no | `-` | A web renderer's CDP network-throttling profile (chromium only). |
-| `renderer` | string | yes | `-` | Renderer id: `web` or `command`. |
-| `settle_ms` | integer | no | `-` | web: platform-level settle delay in ms added to the readiness wait (default 500). |
-| `tags` | array of string | no | `[]` | Tags a screen's `applies_to` may reference as `tag:<name>`. |
-| `viewport` | table | no | `-` | A `[[platform]]` web viewport size in CSS pixels. |
-
-## `[platform.env]`
-
-command: extra environment variables.
-
-| Key | Type | Required | Default | Doc |
-|---|---|---|---|---|
-| any other key | string | no | - | user-named entry |
+| `base_url` | `String` | no | - | web: base URL renders hit for approval; use the real production edge, never a dev server whose SPA fallback masks 404s. |
+| `command` | `String` | no | - | command: the command line, non-empty. |
+| `cpu_throttle` | `f64` | no | - | web, chromium only: CPU throttling multiplier, at least 1. |
+| `cwd` | `String` | no | - | command: working directory. |
+| `device_scale` | `f64` | no | - | web: device scale factor, greater than zero (default 1). |
+| `engine` | `Engine` | no | - | web: browser engine. |
+| `env` | `IndexMap<String, String>` | no | - | command: extra environment variables. |
+| `id` | `String` | yes | - | Platform id, unique across `[[platform]]`. |
+| `init_scripts` | `Vec<String>` | no | - | web: scripts added with `add_init_script` before navigation. |
+| `java_script_enabled` | `bool` | no | - | web: whether JavaScript is enabled (default true). |
+| `locale` | `String` | no | - | web: browser locale. |
+| `media` | `MediaFeatures` | no | - | web: emulated media features. |
+| `network_throttle` | `NetworkThrottle` | no | - | web, chromium only: network throttling profile. |
+| `renderer` | `String` | yes | - | Renderer id: `web` or `command`. |
+| `settle_ms` | `u32` | no | - | web: platform-level settle delay in ms added to the readiness wait (default 500). |
+| `tags` | `Vec<String>` | no | `[]` | Tags a screen's `applies_to` may reference as `tag:<name>`. |
+| `viewport` | `Viewport` | no | - | web: viewport size. |
 
 ## `[platform.media]`
 
@@ -248,8 +170,8 @@ Emulated media features (`prefers-reduced-motion`, `prefers-color-scheme`).
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `color_scheme` | `light` or `dark` or `no-preference` | no | `"no-preference"` | The `prefers-color-scheme` a platform or state emulates. |
-| `reduced_motion` | boolean | no | `false` | Emulate `prefers-reduced-motion: reduce`. |
+| `color_scheme` | `ColorScheme` | no | `"no-preference"` | Emulated `prefers-color-scheme`. |
+| `reduced_motion` | `bool` | no | `false` | Emulate `prefers-reduced-motion: reduce`. |
 
 ## `[platform.network_throttle]`
 
@@ -257,9 +179,9 @@ A web renderer's CDP network-throttling profile (chromium only).
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `download` | number | yes | `-` | Download throughput in bytes per second, greater than zero. |
-| `latency` | number | no | `0.0` | Added latency in milliseconds, at least zero. |
-| `upload` | number | yes | `-` | Upload throughput in bytes per second, greater than zero. |
+| `download` | `f64` | yes | - | Download throughput in bytes per second, greater than zero. |
+| `latency` | `f64` | no | `0.0` | Added latency in milliseconds, at least zero. |
+| `upload` | `f64` | yes | - | Upload throughput in bytes per second, greater than zero. |
 
 ## `[platform.viewport]`
 
@@ -267,18 +189,18 @@ A `[[platform]]` web viewport size in CSS pixels.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `height` | integer | yes | `-` | Height in CSS pixels, greater than zero. |
-| `width` | integer | yes | `-` | Width in CSS pixels, greater than zero. |
+| `height` | `u32` | yes | - | Height in CSS pixels, greater than zero. |
+| `width` | `u32` | yes | - | Width in CSS pixels, greater than zero. |
 
 ## `[project]`
 
-Where managed CSS and generated tokens live. Required.
+The `[project]` table: where managed CSS and generated tokens live.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `css_root` | string | yes | `-` | Directory of the managed CSS, relative to the project root. |
-| `root_font_size` | number | yes | `-` | Pixels per `rem`, used to compare `rem` lengths against the px scales. |
-| `tokens_file` | string | yes | `-` | The generated tokens file, relative to `css_root`. This is the one `*_file` key that resolves against `css_root`; every other `*_file` key resolves against the project root. |
+| `css_root` | `String` | yes | - | Directory of the managed CSS, relative to the project root. |
+| `root_font_size` | `f64` | yes | - | Pixels per `rem`, used to compare `rem` lengths against the px scales. |
+| `tokens_file` | `String` | yes | - | The generated tokens file, relative to `css_root`. This is the one `*_file` key that resolves against `css_root`; every other `*_file` key resolves against the project root. |
 
 ## `[review]`
 
@@ -286,8 +208,8 @@ The `[review]` table: the human review lock policy.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `require_signed` | boolean | no | `false` | When true, the commit that introduced an ack must carry a good signature from a key listed for a reviewer, else HUMAN001 fires. |
-| `reviewers` | array of table | no | `[]` | Allow-list of reviewers; empty means any identity may ack. |
+| `require_signed` | `bool` | no | `false` | When true, the commit that introduced an ack must carry a good signature from a key listed for a reviewer, else HUMAN001 fires. |
+| `reviewers` | `Vec<Reviewer>` | no | `[]` | Allow-list of reviewers; empty means any identity may ack. |
 
 ## `[[review.reviewers]]`
 
@@ -295,28 +217,30 @@ One `[[review.reviewers]]` entry: who may ack, and the signing keys their acks m
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `id` | string | yes | `-` | The reviewer identity, matched against the git `user.email` (or `user.name`) at ack time. |
-| `keys` | array of string | no | `[]` | Signing key ids or fingerprints the reviewer's signed commits may carry. |
+| `id` | `String` | yes | - | The reviewer identity, matched against the git `user.email` (or `user.name`) at ack time. |
+| `keys` | `Vec<String>` | no | `[]` | Signing key ids or fingerprints the reviewer's signed commits may carry. |
 
 ## `[rules]`
 
-Rule settings read by `gob_rules::RuleSettings` (`[rules.<ID>]`; a retired `ramp` key is ignored); optional.
+The `[rules]` table: a `[rules.<ID>]` settings table per rule.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `ramp` | boolean | no | `true` | Deprecated and ignored: ramp-in is retired, a new rule reports at its declared severity. |
-| any other key | table | no | - | user-named entry |
+| any other key | `IndexMap<String, serde_json::Value>` | no | - | The `[rules]` table: a `[rules.<ID>]` settings table per rule. |
 
 ## `[scales]`
 
-Allowed px scales. Required.
+The `[scales]` table: strictly ascending px step lists.
+
+`spacing` and `font_sizes` are required and non-empty. `radii` and `sizes` are optional:
+empty `radii` keeps RADIUS001 silent and empty `sizes` makes SIZE001 fall back to `spacing`.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `font_sizes` | array of number | yes | `-` | Allowed font sizes in px, strictly ascending. |
-| `radii` | array of number | no | `[]` | Allowed border radii in px, strictly ascending; empty means no radius tokens. |
-| `sizes` | array of number | no | `[]` | Allowed sizes (width and height) in px, strictly ascending; empty means use `spacing`. |
-| `spacing` | array of number | yes | `-` | Allowed spacing steps in px, strictly ascending. |
+| `font_sizes` | `Vec<f64>` | yes | - | Allowed font sizes in px, strictly ascending. |
+| `radii` | `Vec<f64>` | no | `[]` | Allowed border radii in px, strictly ascending; empty means no radius tokens. |
+| `sizes` | `Vec<f64>` | no | `[]` | Allowed sizes (width and height) in px, strictly ascending; empty means use `spacing`. |
+| `spacing` | `Vec<f64>` | yes | - | Allowed spacing steps in px, strictly ascending. |
 
 ## `[[screen]]`
 
@@ -324,19 +248,19 @@ One `[[screen]]` entry: a route, page or activity with named states.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `applies_to` | array of string | no | `-` | Platform ids and `tag:<name>` entries the screen applies to; absent means every platform. |
-| `content_hash` | string | no | `-` | Hash of the screen's content when its status was last set (STATE007). |
-| `copy_keys` | array of string | no | `-` | Copy keys the screen's text comes from. |
-| `entry` | string | yes | `-` | Entry route, page or activity. |
-| `headings` | array of string | no | `-` | Headings the rendered screen is expected to show. |
-| `id` | string | yes | `-` | Screen id, unique across `[[screen]]`. |
-| `kinds` | array of `interactive` or `data_bound` or `form` or `game` | no | `-` | Which STATE coverage families apply (interactive, data bound, form, game); absent means none. |
-| `landmarks` | array of string | no | `-` | Landmark roles the rendered screen is expected to expose. |
-| `provenance` | `human` or `agent` | no | `-` | Who authored a screen. |
-| `review` | `human` or `skip` | no | `-` | Whether a screen needs a recorded human review. |
-| `sources` | array of string | no | `-` | Source files or directories (relative to the project root) whose bytes and token uses the review digest covers; absent means only the spec and every token. |
-| `states` | array of table | yes | `-` | Named states, at least one. |
-| `status` | `draft` or `ready` or `changed` or `completed` | no | `-` | Lifecycle status of a screen spec. |
+| `applies_to` | `Vec<String>` | no | - | Platform ids and `tag:<name>` entries the screen applies to; absent means every platform. |
+| `content_hash` | `String` | no | - | Hash of the screen's content when its status was last set (STATE007). |
+| `copy_keys` | `Vec<String>` | no | `[]` | Copy keys the screen's text comes from. |
+| `entry` | `String` | yes | - | Entry route, page or activity. |
+| `headings` | `Vec<String>` | no | `[]` | Headings the rendered screen is expected to show. |
+| `id` | `String` | yes | - | Screen id, unique across `[[screen]]`. |
+| `kinds` | `Vec<ScreenKind>` | no | `[]` | Which STATE coverage families apply (interactive, data bound, form, game); absent means none. |
+| `landmarks` | `Vec<String>` | no | `[]` | Landmark roles the rendered screen is expected to expose. |
+| `provenance` | `Provenance` | no | - | Who made the screen: `human` or `agent`; an agent screen needs a human review by default. |
+| `review` | `ReviewRequirement` | no | - | `human` requires a recorded human review (HUMAN001); `skip` waives it for an agent screen. |
+| `sources` | `Vec<String>` | no | - | Source files or directories (relative to the project root) whose bytes and token uses the review digest covers; absent means only the spec and every token. |
+| `states` | `Vec<ScreenState>` | yes | - | Named states, at least one. |
+| `status` | `ScreenStatus` | no | - | Lifecycle status; `ready` and `completed` screens must carry a matching `content_hash`. |
 
 ## `[[screen.states]]`
 
@@ -344,27 +268,18 @@ One named state of a `[[screen]]`.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `actions` | array of table with `kind` = `click` or `hover` or `focus` or `fill` or `press` or `wait_for` | no | `[]` | Ordered interaction script. |
-| `applies_to` | array of string | no | `-` | Narrower platform set than the screen's: platform ids and `tag:<name>` entries. |
-| `diff_against` | string | no | `-` | Id of a sibling state this one is diffed against. |
-| `expect_url` | string | no | `-` | URL the page must end on. |
-| `fixture` | string | no | `-` | Fixture path used to reach the state. |
-| `id` | string | yes | `-` | State id, unique within its screen. |
-| `media` | table | no | `-` | Emulated media features (`prefers-reduced-motion`, `prefers-color-scheme`). |
-| `mock` | string | no | `-` | Id of a declared `[[mock_set]]`. |
-| `network` | array of table | no | `[]` | Network overrides. |
-| `session` | string | no | `-` | Id of a declared `[[session]]`. |
-| `settle_ms` | integer | no | `-` | Per-state settle delay in ms overriding the platform's. |
-| `setup` | string | no | `-` | Setup data used to reach the state. |
-
-## `[screen.states.media]`
-
-Emulated media features (`prefers-reduced-motion`, `prefers-color-scheme`).
-
-| Key | Type | Required | Default | Doc |
-|---|---|---|---|---|
-| `color_scheme` | `light` or `dark` or `no-preference` | no | `"no-preference"` | The `prefers-color-scheme` a platform or state emulates. |
-| `reduced_motion` | boolean | no | `false` | Emulate `prefers-reduced-motion: reduce`. |
+| `actions` | `Vec<Action>` | no | `[]` | Ordered interaction script. |
+| `applies_to` | `Vec<String>` | no | - | Narrower platform set than the screen's: platform ids and `tag:<name>` entries. |
+| `diff_against` | `String` | no | - | Id of a sibling state this one is diffed against. |
+| `expect_url` | `String` | no | - | URL the page must end on. |
+| `fixture` | `String` | no | - | Fixture path used to reach the state. |
+| `id` | `String` | yes | - | State id, unique within its screen. |
+| `media` | `MediaFeatures` | no | - | Media features overlaid on the platform's. |
+| `mock` | `String` | no | - | Id of a declared `[[mock_set]]`. |
+| `network` | `Vec<NetworkOverride>` | no | `[]` | Network overrides. |
+| `session` | `String` | no | - | Id of a declared `[[session]]`. |
+| `settle_ms` | `u32` | no | - | Per-state settle delay in ms overriding the platform's. |
+| `setup` | `String` | no | - | Setup data used to reach the state. |
 
 ## `[[screen.states.network]]`
 
@@ -372,10 +287,10 @@ A state's network override for requests matching `url_pattern`.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `action` | `abort` or `status` or `delay` or `hold` | yes | `-` | What a network override does to the requests it matches. |
-| `delay_ms` | integer | no | `-` | Delay in ms, greater than zero, for `action = "delay"`. |
-| `status` | integer | no | `-` | HTTP status 100 to 599, for `action = "status"`. |
-| `url_pattern` | string | yes | `-` | URL pattern of the requests to override, non-empty. |
+| `action` | `NetworkAction` | yes | - | What to do to matching requests. |
+| `delay_ms` | `u32` | no | - | Delay in ms, greater than zero, for `action = "delay"`. |
+| `status` | `u32` | no | - | HTTP status 100 to 599, for `action = "status"`. |
+| `url_pattern` | `String` | yes | - | URL pattern of the requests to override, non-empty. |
 
 ## `[[session]]`
 
@@ -383,8 +298,8 @@ One `[[session]]` or `[[mock_set]]` roster entry: an id plus opaque renderer-con
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `data` | table | no | `{}` | Opaque data the renderer reads. |
-| `id` | string | yes | `-` | Entry id, unique within its roster. |
+| `data` | `IndexMap<String, Dyn>` | no | `{}` | Opaque data the renderer reads. |
+| `id` | `String` | yes | - | Entry id, unique within its roster. |
 
 ## `[tailwind]`
 
@@ -394,12 +309,12 @@ Every `*_file` key here resolves against the project root, not `css_root`.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `alpha_channels` | boolean | no | `false` | Also emit `-rgb` channel triplets so Tailwind opacity modifiers work. |
-| `config` | string | no | `""` | Path of the Tailwind config to cross-check; empty means Tailwind support is off. |
-| `css_entry` | string | no | `""` | Tailwind v4 CSS entry (the file carrying `@import "tailwindcss"`); empty means detect. |
-| `namespace_keys` | boolean | no | `false` | Emit prefix-qualified `theme.extend` keys (`space-4`) instead of bare steps (`4`). |
-| `tokens_file` | string | no | `""` | Output path of the generated Tailwind theme mapping; empty means none. |
-| `version` | `auto` or `v3` or `v4` | no | `"auto"` | Which Tailwind generation the `[tailwind] config` file is written for. |
+| `alpha_channels` | `bool` | no | `false` | Also emit `-rgb` channel triplets so Tailwind opacity modifiers work. |
+| `config` | `String` | no | `""` | Path of the Tailwind config to cross-check; empty means Tailwind support is off. |
+| `css_entry` | `String` | no | `""` | Tailwind v4 CSS entry (the file carrying `@import "tailwindcss"`); empty means detect. |
+| `namespace_keys` | `bool` | no | `false` | Emit prefix-qualified `theme.extend` keys (`space-4`) instead of bare steps (`4`). |
+| `tokens_file` | `String` | no | `""` | Output path of the generated Tailwind theme mapping; empty means none. |
+| `version` | `TailwindVersion` | no | `"auto"` | Shape of the `config` file. |
 
 ## `[tokens]`
 
@@ -407,9 +322,9 @@ The `[tokens]` table: prefixes, an optional verbatim CSS header and a JSON expor
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `header` | string | no | `""` | A complete CSS comment block emitted verbatim above the generated marker; empty means no header. Must start with `/*`, end with `*/` and hold no interior `*/`. |
-| `json_file` | string | no | `""` | Path of a committed flat JSON export of the tokens, relative to the project root; empty means none. |
-| `prefixes` | table | no | `{"color":"color","font_family":"font-family","font_size":"font-size","layer":"layer","radius":"radius","size":"size","space":"space"}` | The `[tokens.prefixes]` table: custom-property name prefixes. |
+| `header` | `String` | no | `""` | A complete CSS comment block emitted verbatim above the generated marker; empty means no header. Must start with `/*`, end with `*/` and hold no interior `*/`. |
+| `json_file` | `String` | no | `""` | Path of a committed flat JSON export of the tokens, relative to the project root; empty means none. |
+| `prefixes` | `TokenPrefixes` | no | `{ color = "color", font_family = "font-family", font_size = "font-size", layer = "layer", radius = "radius", size = "size", space = "space" }` | Custom-property prefixes, see `[tokens.prefixes]`. |
 
 ## `[tokens.prefixes]`
 
@@ -420,29 +335,20 @@ non-empty so numeric steps keep a leading letter. A non-empty prefix matches `[a
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `color` | string | no | `"color"` | Prefix of palette color tokens: `--color-ink`. |
-| `font_family` | string | no | `"font-family"` | Prefix of font-family tokens: `--font-family-base`. |
-| `font_size` | string | no | `"font-size"` | Prefix of font-size tokens: `--font-size-16`. |
-| `layer` | string | no | `"layer"` | Prefix of layer (z-index) tokens: `--layer-toast`. |
-| `radius` | string | no | `"radius"` | Prefix of radius tokens: `--radius-8`. |
-| `size` | string | no | `"size"` | Prefix of size tokens: `--size-32`. |
-| `space` | string | no | `"space"` | Prefix of spacing tokens: `--space-4`. |
+| `color` | `String` | no | `"color"` | Prefix of palette color tokens: `--color-ink`. |
+| `font_family` | `String` | no | `"font-family"` | Prefix of font-family tokens: `--font-family-base`. |
+| `font_size` | `String` | no | `"font-size"` | Prefix of font-size tokens: `--font-size-16`. |
+| `layer` | `String` | no | `"layer"` | Prefix of layer (z-index) tokens: `--layer-toast`. |
+| `radius` | `String` | no | `"radius"` | Prefix of radius tokens: `--radius-8`. |
+| `size` | `String` | no | `"size"` | Prefix of size tokens: `--size-32`. |
+| `space` | `String` | no | `"space"` | Prefix of spacing tokens: `--space-4`. |
 
 ## `[typography]`
 
-Allowed font families and weights. Required.
+The `[typography]` table: allowed font families and weights, and named stacks.
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
-| `families` | array of string | yes | `-` | Allowed font family names, at least one. |
-| `stacks` | table | no | `{}` | Named font stacks: name to an ordered list of members, each of which must be one of `families` (compared case-insensitively). |
-| `weights` | array of integer | yes | `-` | Allowed font weights, at least one. |
-
-## `[typography.stacks]`
-
-Named font stacks: name to an ordered list of members, each of which must be one of
-`families` (compared case-insensitively).
-
-| Key | Type | Required | Default | Doc |
-|---|---|---|---|---|
-| any other key | array of string | no | - | user-named entry |
+| `families` | `Vec<String>` | yes | - | Allowed font family names, at least one. |
+| `stacks` | `IndexMap<String, Vec<String>>` | no | `{}` | Named font stacks: name to an ordered list of members, each of which must be one of `families` (compared case-insensitively). |
+| `weights` | `Vec<i64>` | yes | - | Allowed font weights, at least one. |

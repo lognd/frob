@@ -5,29 +5,30 @@
 //! needed, and their doc comments and defaults become `docs/schemas/crunk.json` and
 //! `docs/crunk/config.md`. Cross-field rules (ascending scales, dangling references) live in
 //! the `validate` module so every failure can carry a location.
+// frob:ticket 01M43MPG53JR8TP0E15394FZ5T
 
 // frob:ticket 01M43ARX764095Q4VWABWXXV5H
 
+use gob_config::ConfigTable;
 use indexmap::IndexMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::dynamic::Dyn;
 
-fn yes() -> bool {
-    true
-}
-
 /// The `[project]` table: where managed CSS and generated tokens live.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "project", product = "crunk")]
 pub struct ProjectConfig {
     /// Directory of the managed CSS, relative to the project root.
+    #[config(required)]
     pub css_root: String,
     /// The generated tokens file, relative to `css_root`. This is the one `*_file` key that
     /// resolves against `css_root`; every other `*_file` key resolves against the project root.
+    #[config(required)]
     pub tokens_file: String,
     /// Pixels per `rem`, used to compare `rem` lengths against the px scales.
+    #[config(required)]
     pub root_font_size: f64,
 }
 
@@ -35,32 +36,33 @@ pub struct ProjectConfig {
 ///
 /// `spacing` and `font_sizes` are required and non-empty. `radii` and `sizes` are optional:
 /// empty `radii` keeps RADIUS001 silent and empty `sizes` makes SIZE001 fall back to `spacing`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "scales", product = "crunk")]
 pub struct ScalesConfig {
     /// Allowed spacing steps in px, strictly ascending.
+    #[config(required)]
     pub spacing: Vec<f64>,
     /// Allowed font sizes in px, strictly ascending.
+    #[config(required)]
     pub font_sizes: Vec<f64>,
     /// Allowed border radii in px, strictly ascending; empty means no radius tokens.
-    #[serde(default)]
     pub radii: Vec<f64>,
     /// Allowed sizes (width and height) in px, strictly ascending; empty means use `spacing`.
-    #[serde(default)]
     pub sizes: Vec<f64>,
 }
 
 /// The `[typography]` table: allowed font families and weights, and named stacks.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "typography", product = "crunk")]
 pub struct TypographyConfig {
     /// Allowed font family names, at least one.
+    #[config(required)]
     pub families: Vec<String>,
     /// Allowed font weights, at least one.
+    #[config(required)]
     pub weights: Vec<i64>,
     /// Named font stacks: name to an ordered list of members, each of which must be one of
     /// `families` (compared case-insensitively).
-    #[serde(default)]
     pub stacks: IndexMap<String, Vec<String>>,
 }
 
@@ -90,37 +92,33 @@ pub enum OrgModel {
 }
 
 /// The `[org]` table: file and class organization rules (ORG001 to ORG005).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "org", product = "crunk")]
 pub struct OrgConfig {
     /// Allowed bucket directory names under `css_root`, at least one.
+    #[config(required)]
     pub buckets: Vec<String>,
     /// Required class-name casing.
-    #[serde(default)]
     pub class_case: ClassCase,
     /// Whether component classes must carry the component name as a prefix.
-    #[serde(default = "yes")]
+    #[config(default = true)]
     pub component_prefix: bool,
     /// Whether custom properties may only be defined in the tokens file.
-    #[serde(default = "yes")]
+    #[config(default = true)]
     pub tokens_only_custom_props: bool,
     /// File organization model.
-    #[serde(default)]
     pub model: OrgModel,
     /// Root-relative globs the ORG rules skip.
-    #[serde(default)]
     pub ignore: Vec<String>,
     /// Root-relative entry stylesheet globs.
-    #[serde(default)]
     pub entry: Vec<String>,
 }
 
 /// The `[jsx]` table: sources to ingest for style props and `className` strings.
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "jsx", product = "crunk")]
 pub struct JsxConfig {
     /// Root-relative globs of `.tsx` and `.jsx` sources; empty means JSX ingest is off.
-    #[serde(default)]
     pub globs: Vec<String>,
 }
 
@@ -140,26 +138,20 @@ pub enum TailwindVersion {
 /// The `[tailwind]` table: the config to cross-check and an optional generated theme mapping.
 ///
 /// Every `*_file` key here resolves against the project root, not `css_root`.
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "tailwind", product = "crunk")]
 pub struct TailwindConfig {
     /// Path of the Tailwind config to cross-check; empty means Tailwind support is off.
-    #[serde(default)]
     pub config: String,
     /// Tailwind v4 CSS entry (the file carrying `@import "tailwindcss"`); empty means detect.
-    #[serde(default)]
     pub css_entry: String,
     /// Output path of the generated Tailwind theme mapping; empty means none.
-    #[serde(default)]
     pub tokens_file: String,
     /// Emit prefix-qualified `theme.extend` keys (`space-4`) instead of bare steps (`4`).
-    #[serde(default)]
     pub namespace_keys: bool,
     /// Also emit `-rgb` channel triplets so Tailwind opacity modifiers work.
-    #[serde(default)]
     pub alpha_channels: bool,
     /// Shape of the `config` file.
-    #[serde(default)]
     pub version: TailwindVersion,
 }
 
@@ -167,92 +159,55 @@ pub struct TailwindConfig {
 ///
 /// `color`, `layer` and `font_family` may be empty (a bare identifier name); the others must be
 /// non-empty so numeric steps keep a leading letter. A non-empty prefix matches `[a-z][a-z0-9-]*`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "tokens.prefixes", product = "crunk", inline)]
 pub struct TokenPrefixes {
     /// Prefix of palette color tokens: `--color-ink`.
-    #[serde(default = "d_color")]
+    #[config(default = "color".to_owned())]
     pub color: String,
     /// Prefix of spacing tokens: `--space-4`.
-    #[serde(default = "d_space")]
+    #[config(default = "space".to_owned())]
     pub space: String,
     /// Prefix of font-size tokens: `--font-size-16`.
-    #[serde(default = "d_font_size")]
+    #[config(default = "font-size".to_owned())]
     pub font_size: String,
     /// Prefix of radius tokens: `--radius-8`.
-    #[serde(default = "d_radius")]
+    #[config(default = "radius".to_owned())]
     pub radius: String,
     /// Prefix of layer (z-index) tokens: `--layer-toast`.
-    #[serde(default = "d_layer")]
+    #[config(default = "layer".to_owned())]
     pub layer: String,
     /// Prefix of font-family tokens: `--font-family-base`.
-    #[serde(default = "d_font_family")]
+    #[config(default = "font-family".to_owned())]
     pub font_family: String,
     /// Prefix of size tokens: `--size-32`.
-    #[serde(default = "d_size")]
+    #[config(default = "size".to_owned())]
     pub size: String,
 }
 
-fn d_color() -> String {
-    "color".to_owned()
-}
-fn d_space() -> String {
-    "space".to_owned()
-}
-fn d_font_size() -> String {
-    "font-size".to_owned()
-}
-fn d_radius() -> String {
-    "radius".to_owned()
-}
-fn d_layer() -> String {
-    "layer".to_owned()
-}
-fn d_font_family() -> String {
-    "font-family".to_owned()
-}
-fn d_size() -> String {
-    "size".to_owned()
-}
-
-impl Default for TokenPrefixes {
-    fn default() -> Self {
-        Self {
-            color: d_color(),
-            space: d_space(),
-            font_size: d_font_size(),
-            radius: d_radius(),
-            layer: d_layer(),
-            font_family: d_font_family(),
-            size: d_size(),
-        }
-    }
-}
-
 /// The `[tokens]` table: prefixes, an optional verbatim CSS header and a JSON export path.
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "tokens", product = "crunk")]
 pub struct RawTokens {
     /// Custom-property prefixes, see `[tokens.prefixes]`.
-    #[serde(default)]
     pub prefixes: TokenPrefixes,
     /// A complete CSS comment block emitted verbatim above the generated marker; empty means
     /// no header. Must start with `/*`, end with `*/` and hold no interior `*/`.
-    #[serde(default)]
     pub header: String,
     /// Path of a committed flat JSON export of the tokens, relative to the project root; empty
     /// means none.
-    #[serde(default)]
     pub json_file: String,
 }
 
 /// A `[[platform]]` web viewport size in CSS pixels.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "platform.viewport", product = "crunk", inline)]
 pub struct Viewport {
     /// Width in CSS pixels, greater than zero.
+    #[config(required)]
     pub width: u32,
     /// Height in CSS pixels, greater than zero.
+    #[config(required)]
     pub height: u32,
 }
 
@@ -272,27 +227,26 @@ pub enum ColorScheme {
 }
 
 /// Emulated media features (`prefers-reduced-motion`, `prefers-color-scheme`).
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "platform.media", product = "crunk", inline)]
 pub struct MediaFeatures {
     /// Emulate `prefers-reduced-motion: reduce`.
-    #[serde(default)]
     pub reduced_motion: bool,
     /// Emulated `prefers-color-scheme`.
-    #[serde(default)]
     pub color_scheme: ColorScheme,
 }
 
 /// A web renderer's CDP network-throttling profile (chromium only).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "platform.network_throttle", product = "crunk", inline)]
 pub struct NetworkThrottle {
     /// Download throughput in bytes per second, greater than zero.
+    #[config(required)]
     pub download: f64,
     /// Upload throughput in bytes per second, greater than zero.
+    #[config(required)]
     pub upload: f64,
     /// Added latency in milliseconds, at least zero.
-    #[serde(default)]
     pub latency: f64,
 }
 
@@ -313,15 +267,16 @@ pub enum Engine {
 /// The `web` renderer takes `engine` and `viewport` (required) plus the other web keys; the
 /// `command` renderer takes `command` (required), `cwd` and `env`. A key of the other renderer
 /// is rejected at load. Parameters are flat in the entry, not nested.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "platform", product = "crunk", array)]
 pub struct RawPlatform {
     /// Platform id, unique across `[[platform]]`.
+    #[config(required)]
     pub id: String,
     /// Renderer id: `web` or `command`.
+    #[config(required)]
     pub renderer: String,
     /// Tags a screen's `applies_to` may reference as `tag:<name>`.
-    #[serde(default)]
     pub tags: Vec<String>,
     /// web: browser engine.
     pub engine: Option<Engine>,
@@ -413,12 +368,14 @@ pub enum NetworkAction {
 }
 
 /// A state's network override for requests matching `url_pattern`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "screen.states.network", product = "crunk", inline, array)]
 pub struct NetworkOverride {
     /// URL pattern of the requests to override, non-empty.
+    #[config(required)]
     pub url_pattern: String,
     /// What to do to matching requests.
+    #[config(required)]
     pub action: NetworkAction,
     /// HTTP status 100 to 599, for `action = "status"`.
     pub status: Option<u32>,
@@ -427,10 +384,11 @@ pub struct NetworkOverride {
 }
 
 /// One named state of a `[[screen]]`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "screen.states", product = "crunk", inline, array)]
 pub struct ScreenState {
     /// State id, unique within its screen.
+    #[config(required)]
     pub id: String,
     /// Fixture path used to reach the state.
     pub fixture: Option<String>,
@@ -441,10 +399,8 @@ pub struct ScreenState {
     /// Media features overlaid on the platform's.
     pub media: Option<MediaFeatures>,
     /// Ordered interaction script.
-    #[serde(default)]
     pub actions: Vec<Action>,
     /// Network overrides.
-    #[serde(default)]
     pub network: Vec<NetworkOverride>,
     /// Id of a declared `[[session]]`.
     pub session: Option<String>,
@@ -459,51 +415,54 @@ pub struct ScreenState {
 }
 
 /// One `[[screen]]` entry: a route, page or activity with named states.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "screen", product = "crunk", array)]
 pub struct ScreenConfig {
     /// Screen id, unique across `[[screen]]`.
+    #[config(required)]
     pub id: String,
     /// Entry route, page or activity.
+    #[config(required)]
     pub entry: String,
     /// Named states, at least one.
+    #[config(required)]
     pub states: Vec<ScreenState>,
     /// Platform ids and `tag:<name>` entries the screen applies to; absent means every platform.
     pub applies_to: Option<Vec<String>>,
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// Who made the screen: `human` or `agent`; an agent screen needs a human review by default.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub provenance: Option<Provenance>,
     /// `human` requires a recorded human review (HUMAN001); `skip` waives it for an agent screen.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub review: Option<ReviewRequirement>,
     /// Source files or directories (relative to the project root) whose bytes and token uses the
     /// review digest covers; absent means only the spec and every token.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sources: Option<Vec<String>>,
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     /// Which STATE coverage families apply (interactive, data bound, form, game); absent means none.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub kinds: Vec<ScreenKind>,
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     /// Landmark roles the rendered screen is expected to expose.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub landmarks: Vec<String>,
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     /// Headings the rendered screen is expected to show.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub headings: Vec<String>,
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     /// Copy keys the screen's text comes from.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub copy_keys: Vec<String>,
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     /// Lifecycle status; `ready` and `completed` screens must carry a matching `content_hash`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<ScreenStatus>,
     // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
     /// Hash of the screen's content when its status was last set (STATE007).
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub content_hash: Option<String>,
 }
 
@@ -561,27 +520,25 @@ pub enum ReviewRequirement {
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
 /// One `[[review.reviewers]]` entry: who may ack, and the signing keys their acks may carry.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ConfigTable)]
+#[config(table = "review.reviewers", product = "crunk", inline, array)]
 pub struct Reviewer {
     /// The reviewer identity, matched against the git `user.email` (or `user.name`) at ack time.
+    #[config(required)]
     pub id: String,
     /// Signing key ids or fingerprints the reviewer's signed commits may carry.
-    #[serde(default)]
     pub keys: Vec<String>,
 }
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
 /// The `[review]` table: the human review lock policy.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ConfigTable)]
+#[config(table = "review", product = "crunk")]
 pub struct ReviewConfig {
     /// Allow-list of reviewers; empty means any identity may ack.
-    #[serde(default)]
     pub reviewers: Vec<Reviewer>,
     /// When true, the commit that introduced an ack must carry a good signature from a key
     /// listed for a reviewer, else HUMAN001 fires.
-    #[serde(default)]
     pub require_signed: bool,
 }
 
@@ -594,11 +551,10 @@ impl ReviewConfig {
 
 // frob:ticket 01M50AQ6XHV6Z8GS0V8J66M9GD
 /// The `[packs]` table: which std packs are on (all opt-in, off by default).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ConfigTable)]
+#[config(table = "packs", product = "crunk")]
 pub struct PacksConfig {
     /// Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL).
-    #[serde(default)]
     pub crunk_web: bool,
 }
 
@@ -642,37 +598,34 @@ pub const GAME_COVERAGE_KEYS: &[(&str, &str)] = &[
 
 // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
 /// The `[game]` table: a game profile and the accessibility coverage keys it has declared.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ConfigTable)]
+#[config(table = "game", product = "crunk")]
 pub struct GameConfig {
     /// Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`].
-    #[serde(default)]
     pub coverage: Vec<String>,
     // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
     /// Target profiles (`[[game.profile]]`) the HUD safe area and text size are judged at.
-    #[serde(default, rename = "profile")]
+    #[config(rename = "profile")]
+    #[serde(rename = "profile")]
     pub profiles: Vec<GameProfile>,
     // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
     /// Input device families the game supports (`xbox`, `playstation`, `keyboard`, ...); each
     /// action needs a glyph for every one.
-    #[serde(default)]
     pub devices: Vec<String>,
     // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
     /// Input actions (`[[game.action]]`) with their remap, glyph and hold declarations.
-    #[serde(default, rename = "action")]
+    #[config(rename = "action")]
+    #[serde(rename = "action")]
     pub actions: Vec<GameAction>,
     // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
     /// Palette modes (`[palette.modes.<name>]`) that serve as colour-blind modes.
-    #[serde(default)]
     pub colour_blind_modes: Vec<String>,
     // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
     /// Measured glyph height of the game's body typeface as a percent of its font size (1 to
     /// 100); without it a text size that passes on the font size alone cannot be judged.
-    #[serde(default)]
     pub glyph_height_pct: Option<u32>,
     // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
     /// Subtitle settings (`[game.subtitles]`).
-    #[serde(default)]
     pub subtitles: Option<GameSubtitles>,
 }
 
@@ -682,60 +635,56 @@ pub const GAME_PROFILE_KINDS: [&str; 3] = ["console", "pc", "mobile"];
 
 // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
 /// One `[[game.profile]]`: a target screen with its safe area and minimum text size.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ConfigTable)]
+#[config(table = "game.profile", product = "crunk", inline, array)]
 pub struct GameProfile {
     /// Profile id, unique within the game.
+    #[config(required)]
     pub id: String,
     /// `console`, `pc` or `mobile`.
+    #[config(required)]
     pub kind: String,
     /// Screen width in pixels.
+    #[config(required)]
     pub width: u32,
     /// Screen height in pixels.
+    #[config(required)]
     pub height: u32,
     /// Percent of each edge kept clear of the HUD; absent means 5 for a console and 0 otherwise.
-    #[serde(default)]
     pub safe_area_pct: Option<u32>,
     /// Minimum body text height in pixels at 1080p; absent means 26 for a console, 18 for a pc
     /// and no known minimum for mobile.
-    #[serde(default)]
     pub min_text_px: Option<u32>,
 }
 
 // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
 /// One `[[game.action]]`: an input action and how the game treats remapping, glyphs and holding.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ConfigTable)]
+#[config(table = "game.action", product = "crunk", inline, array)]
 pub struct GameAction {
     /// Action id, unique within the game.
+    #[config(required)]
     pub id: String,
     /// Whether the player can rebind the action; absent means undeclared.
-    #[serde(default)]
     pub remappable: Option<bool>,
     /// Whether the action needs a held press; absent means undeclared.
-    #[serde(default)]
     pub hold: Option<bool>,
     /// What replaces the hold (`toggle`, `tap`, ...) for a player who cannot hold.
-    #[serde(default)]
     pub hold_alternative: Option<String>,
     /// Device families that have a glyph for the action.
-    #[serde(default)]
     pub glyphs: Vec<String>,
 }
 
 // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
 /// `[game.subtitles]`: subtitle size and the options the player gets.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ConfigTable)]
+#[config(table = "game.subtitles", product = "crunk", inline)]
 pub struct GameSubtitles {
     /// Default subtitle text height in pixels at 1080p.
-    #[serde(default)]
     pub size_px: Option<u32>,
     /// Whether a background behind the subtitles is offered; absent means undeclared.
-    #[serde(default)]
     pub background: Option<bool>,
     /// Whether speaker names are shown; absent means undeclared.
-    #[serde(default)]
     pub speaker_labels: Option<bool>,
 }
 
@@ -751,43 +700,109 @@ impl GameConfig {
 }
 
 /// One `[[session]]` or `[[mock_set]]` roster entry: an id plus opaque renderer-consumed data.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "session", product = "crunk", array)]
 pub struct RosterEntry {
     /// Entry id, unique within its roster.
+    #[config(required)]
     pub id: String,
     /// Opaque data the renderer reads.
-    #[serde(default)]
     pub data: IndexMap<String, Dyn>,
+}
+
+/// One `[[mock_set]]` roster entry; same shape as a `[[session]]` entry.
+#[derive(Debug, Clone, PartialEq, Serialize, ConfigTable)]
+#[config(table = "mock_set", product = "crunk", array)]
+pub struct MockSetEntry {
+    /// Entry id, unique within its roster.
+    #[config(required)]
+    pub id: String,
+    /// Opaque data the renderer reads.
+    pub data: IndexMap<String, Dyn>,
+}
+
+impl From<MockSetEntry> for RosterEntry {
+    /// A mock-set entry is a roster entry; the loader merges both rosters.
+    fn from(e: MockSetEntry) -> Self {
+        Self {
+            id: e.id,
+            data: e.data,
+        }
+    }
+}
+
+/// The `[palette]` table: named colors plus the `roles` and `modes` subtables.
+#[derive(Debug, Clone, PartialEq, ConfigTable)]
+#[config(table = "palette", product = "crunk", rest)]
+pub struct PaletteTable {
+    /// The `[palette]` table: named colors plus the `roles` and `modes` subtables.
+    #[config(schema_with = palette_schema)]
+    pub entries: IndexMap<String, Dyn>,
+}
+
+/// The `[lint]` table: per-rule severities, `fix_tolerance` and `color_tolerance`.
+#[derive(Debug, Clone, PartialEq, ConfigTable)]
+#[config(table = "lint", product = "crunk", rest)]
+pub struct LintTable {
+    /// The `[lint]` table: per-rule severities, `fix_tolerance` and `color_tolerance`.
+    #[config(schema_with = lint_schema)]
+    pub entries: IndexMap<String, Dyn>,
+}
+
+/// The `[breakpoints]` table: viewport name to px, plus `base_required`.
+#[derive(Debug, Clone, PartialEq, ConfigTable)]
+#[config(table = "breakpoints", product = "crunk", rest)]
+pub struct BreakpointsTable {
+    /// The `[breakpoints]` table: viewport name to px, plus `base_required`.
+    #[config(schema_with = breakpoints_schema)]
+    pub entries: IndexMap<String, Dyn>,
+}
+
+/// The `[decisions]` table: declared design decisions, `key = "reason"`.
+#[derive(Debug, Clone, PartialEq, ConfigTable)]
+#[config(table = "decisions", product = "crunk", rest)]
+pub struct DecisionsTable {
+    /// The `[decisions]` table: declared design decisions, `key = "reason"`.
+    #[config(schema_with = decisions_schema)]
+    pub entries: IndexMap<String, String>,
+}
+
+/// The `[rules]` table: a `[rules.<ID>]` settings table per rule.
+#[derive(Debug, Clone, PartialEq, ConfigTable)]
+#[config(table = "rules", product = "crunk", rest)]
+pub struct RulesTable {
+    /// The `[rules]` table: a `[rules.<ID>]` settings table per rule.
+    #[config(schema_with = rules_schema)]
+    pub entries: IndexMap<String, serde_json::Value>,
+}
+
+/// The `[layers]` table: named z-index layers, `name = <integer>`.
+#[derive(Debug, Clone, PartialEq, ConfigTable)]
+#[config(table = "layers", product = "crunk", rest)]
+pub struct LayersTable {
+    /// The `[layers]` table: named z-index layers, `name = <integer>`.
+    pub entries: IndexMap<String, i64>,
 }
 
 /// The whole `crunk.toml`, as written. Tables owned by shared crates (`[check]`, `[perf]`, ...)
 /// are validated by their owners and ignored here.
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, JsonSchema)]
-#[schemars(title = "crunk.toml")]
+#[derive(Debug, Clone, PartialEq, Default, Deserialize)]
 pub struct RawSpec {
     /// Where managed CSS and generated tokens live. Required.
-    #[schemars(required)]
     pub project: Option<ProjectConfig>,
     /// Named colors (`name = "<css color>"`), plus the `[palette.roles]` and `[palette.modes.<name>]` subtables. Required.
-    #[schemars(required)]
-    #[schemars(schema_with = "palette_schema")]
-    pub palette: Option<IndexMap<String, Dyn>>,
+    pub palette: Option<PaletteTable>,
     /// Allowed px scales. Required.
-    #[schemars(required)]
     pub scales: Option<ScalesConfig>,
     /// Allowed font families and weights. Required.
-    #[schemars(required)]
     pub typography: Option<TypographyConfig>,
     /// Named z-index layers (`name = <integer>`); optional, absent means LAYER001 is silent.
-    pub layers: Option<IndexMap<String, i64>>,
+    pub layers: Option<LayersTable>,
     /// File and class organization. Required.
-    #[schemars(required)]
     pub org: Option<OrgConfig>,
     /// Per-rule severities (`RULE001 = "error" | "warn" | "off"`), `fix_tolerance` and
     /// `color_tolerance`; optional.
-    #[schemars(schema_with = "lint_schema")]
-    pub lint: Option<IndexMap<String, Dyn>>,
+    pub lint: Option<LintTable>,
     /// Token naming and export; optional.
     pub tokens: Option<RawTokens>,
     /// JSX ingest; optional.
@@ -796,8 +811,7 @@ pub struct RawSpec {
     pub tailwind: Option<TailwindConfig>,
     /// Viewport name to px, plus `base_required`; optional. Absent with a `[tailwind]` config
     /// declared means the Tailwind v3 defaults; absent entirely means the BP rules are off.
-    #[schemars(schema_with = "breakpoints_schema")]
-    pub breakpoints: Option<IndexMap<String, Dyn>>,
+    pub breakpoints: Option<BreakpointsTable>,
     /// Gallery platforms; optional.
     pub platform: Option<Vec<RawPlatform>>,
     /// Gallery screens; optional.
@@ -805,7 +819,7 @@ pub struct RawSpec {
     /// Gallery session roster; optional.
     pub session: Option<Vec<RosterEntry>>,
     /// Gallery mock-set roster; optional.
-    pub mock_set: Option<Vec<RosterEntry>>,
+    pub mock_set: Option<Vec<MockSetEntry>>,
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// Human review lock policy; optional.
     pub review: Option<ReviewConfig>,
@@ -818,18 +832,16 @@ pub struct RawSpec {
     // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
     /// Declared design decisions (`key = "reason"`) that silence the SLOP rules built on an
     /// unchosen default; optional.
-    #[schemars(schema_with = "decisions_schema")]
-    pub decisions: Option<IndexMap<String, String>>,
+    pub decisions: Option<DecisionsTable>,
     // frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
     /// Rule settings read by `gob_rules::RuleSettings` (`[rules.<ID>]`; a retired `ramp` key is ignored); optional.
-    #[schemars(schema_with = "rules_schema")]
-    pub rules: Option<IndexMap<String, serde_json::Value>>,
+    pub rules: Option<RulesTable>,
 }
 
 // frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
 /// Schema of `[rules]`: a `[rules.<ID>]` table per rule.
-fn rules_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
-    schemars::json_schema!({
+fn rules_schema() -> serde_json::Value {
+    serde_json::json!({
         "type": "object",
         "description": "Rule settings. `[rules.<ID>]` sets `severity` (advisory, warn, error) or `disabled = true` for one rule.",
         "properties": {
@@ -859,8 +871,8 @@ pub const DECISION_KEYS: &[&str] = &[
     "voice",
 ];
 
-fn decisions_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
-    schemars::json_schema!({
+fn decisions_schema() -> serde_json::Value {
+    serde_json::json!({
         "type": "object",
         "description": "Declared design decisions, `key = \"reason\"`. A declared decision silences the SLOP rule that flags the unchosen default: accent (SLOP001), gradients (SLOP003), glows (SLOP004), fonts (SLOP010, SLOP011), eyebrows (SLOP014), radius (SLOP022), emoji (SLOP040), voice (SLOP060).",
         "properties": {
@@ -877,8 +889,8 @@ fn decisions_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
     })
 }
 
-fn palette_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
-    schemars::json_schema!({
+fn palette_schema() -> serde_json::Value {
+    serde_json::json!({
         "type": "object",
         "description": "Named colors (`name = \"<css color>\"`), plus the `[palette.roles]` and `[palette.modes.<name>]` subtables. Required.",
         "properties": {
@@ -913,7 +925,7 @@ fn palette_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
     })
 }
 
-fn lint_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+fn lint_schema() -> serde_json::Value {
     let mut properties = serde_json::Map::new();
     properties.insert(
         "fix_tolerance".to_owned(),
@@ -944,11 +956,11 @@ fn lint_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
         "properties": properties,
         "additionalProperties": false
     });
-    schemars::Schema::try_from(schema).unwrap_or_else(|_| unreachable!("a JSON object is a schema"))
+    schema
 }
 
-fn breakpoints_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
-    schemars::json_schema!({
+fn breakpoints_schema() -> serde_json::Value {
+    serde_json::json!({
         "type": "object",
         "description": "Viewport name to px, plus `base_required`; optional.",
         "properties": {

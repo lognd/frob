@@ -1,9 +1,8 @@
-//! The JSON Schema and reference page generated from the table types.
+//! The JSON Schema generated from the table types, and the product scoping of crunk's tables.
 
-// frob:ticket 01M43ARX764095Q4VWABWXXV5H
+// frob:ticket 01M43MPG53JR8TP0E15394FZ5T
 
-use crunk_spec::schema::{reference, schema};
-use serde_json::Value;
+use crunk_spec::schema::{PRODUCT, schema};
 
 // frob:tests crates/crunk-spec/src/schema.rs::schema
 #[test]
@@ -13,6 +12,7 @@ fn schema_describes_every_table_and_rejects_unknown_keys() {
         schema["$schema"],
         "https://json-schema.org/draft/2020-12/schema"
     );
+    assert_eq!(schema["title"], "crunk.toml");
     let props = schema["properties"].as_object().unwrap();
     for table in crunk_spec::OWN_TABLES {
         assert!(props.contains_key(*table), "schema lacks [{table}]");
@@ -27,41 +27,30 @@ fn schema_describes_every_table_and_rejects_unknown_keys() {
     let lint = &props["lint"];
     assert!(lint["properties"]["COLOR001"]["enum"].is_array());
     assert_eq!(lint["additionalProperties"], false);
+    assert_eq!(lint["properties"]["fix_tolerance"]["default"], 0.15);
     assert_eq!(
-        props["lint"]["properties"]["fix_tolerance"]["default"],
-        0.15
+        schema["required"],
+        serde_json::json!(["project", "palette", "scales", "typography", "org"])
     );
 }
 
-// frob:tests crates/crunk-spec/src/schema.rs::reference
+// frob:tests crates/crunk-spec/src/schema.rs::schema
 #[test]
-fn reference_page_has_a_section_per_table_and_a_row_per_key() {
-    let page = reference();
-    for heading in [
-        "## `[project]`",
-        "## `[palette]`",
-        "## `[scales]`",
-        "## `[typography]`",
-        "## `[org]`",
-        "## `[lint]`",
-        "## `[tokens]`",
-        "## `[tokens.prefixes]`",
-        "## `[tailwind]`",
-        "## `[breakpoints]`",
-        "## `[[platform]]`",
-        "## `[[screen]]`",
-        "## `[[screen.states]]`",
-        "## `[[session]]`",
+fn crunk_tables_are_scoped_to_the_crunk_product() {
+    let crunk: Vec<String> = gob_config::product_tables(PRODUCT)
+        .map(|t| t.table.clone())
+        .collect();
+    for table in [
+        "project", "palette", "lint", "platform", "session", "mock_set",
     ] {
-        assert!(page.contains(heading), "reference lacks {heading}\n{page}");
+        assert!(crunk.iter().any(|t| t == table), "crunk lacks {table}");
     }
-    assert!(page.contains("| `css_root` | string | yes |"));
-    assert!(
-        page.contains("| `class_case` | `kebab` or `snake` or `camel` | no | `\"kebab\"` |"),
-        "{page}"
-    );
-    assert!(page.is_ascii(), "reference must be ASCII");
-    let again = reference();
-    assert_eq!(page, again, "deterministic");
-    let _: Value = crunk_spec::schema::schema();
+    let frob: Vec<String> = gob_config::frob_tables().map(|t| t.table.clone()).collect();
+    for table in &crunk {
+        assert!(
+            !frob.contains(table),
+            "{table} leaked into the frob product"
+        );
+    }
+    assert!(gob_config::products().contains(&PRODUCT.to_owned()));
 }
