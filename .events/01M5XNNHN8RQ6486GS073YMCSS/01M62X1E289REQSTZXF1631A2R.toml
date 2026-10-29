@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-bind/src/grant_ack.rs", "crates/grimble-bind/src/rules/**", "crates/grimble-model/src/**", "crates/grimble/src/ack.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/Cargo.toml", "crates/grimble-check/src/model_view.rs", "crates/grimble/tests/**", "crates/grimble-bind/src/**", "Cargo.lock", "crates/grimble-model/tests/cap_exception.rs"]
+new = ["crates/grimble-bind/src/grant_ack.rs", "crates/grimble-bind/src/rules/**", "crates/grimble-model/src/**", "crates/grimble/src/ack.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/Cargo.toml", "crates/grimble-check/src/model_view.rs", "crates/grimble/tests/**", "crates/grimble-bind/src/**", "Cargo.lock", "crates/grimble-model/tests/cap_exception.rs", "docs/design/binding.md"]
+at = "2026-10-29T04:00:10Z"
+actor = "lognd"
+rev = 1
