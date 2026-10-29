@@ -2,7 +2,8 @@
 id = "01M5XD3SXWDQJE0YT8K5GRB80B"
 title = "C# coverage via coverlet under the dotnet provider, and Unity editor coverage"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
