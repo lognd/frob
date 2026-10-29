@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-29T23:00:02Z"
+updated = "2026-10-29T23:07:42Z"
 idempotency_key = "vnvd3q1-reflect-ffi"
-scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**"]
+scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-model/src/atoms.rs"]
 
 [[acceptance]]
 text = "C# reflection and DllImport, Rust extern blocks and libc calls, fn-pointer transmute, inline asm, JS require/eval/Function with computed names yield capability findings or Unresolved"
