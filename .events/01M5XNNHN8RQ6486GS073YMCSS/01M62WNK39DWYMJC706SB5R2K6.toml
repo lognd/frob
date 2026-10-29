@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-29T03:50:48Z"
+digest = "65468aec0c6dcd0b50660418dc0ae26b0f0aec5d369e51df8044945f320febc7"
+exit_code = 0
+head = "3d727d7216c6d1c165042e665f6d129daa975e0f"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7d2fca2a-65ad-441c-ba21-eaa518a31d24 with nextest profile: default
+    Starting 1 test across 494 binaries (5724 tests skipped)
+        PASS [   0.134s] grimble-bind::grant_ack a_ledger_deleted_after_it_existed_is_reported
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.146s] 1 test run: 1 passed, 5724 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_ledger_deleted_after_it_existed_is_reported"
+size = 927
+status = "measured"
+test_count = 1
+tests_digest = "feaba5f963fb146800c41f6b3bc41d496e5850418c9d45785cdebc4d5bb08174"
+at = "2026-10-29T03:50:48Z"
+actor = "lognd"
+rev = 1
