@@ -10,6 +10,7 @@ authors.workspace = true
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+frob-present = { version = "0.532.0", path = "../frob-present" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
