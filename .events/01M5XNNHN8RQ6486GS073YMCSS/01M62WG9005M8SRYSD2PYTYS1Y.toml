@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-29T03:49:42Z"
+digest = "78caf1228acda509c0c7fdd7f57f6423f2d3cfb2a7c945985e7dcc8b2cfa95ef"
+exit_code = 0
+head = "3d727d7216c6d1c165042e665f6d129daa975e0f"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 04f38957-02b4-44c1-9a22-672c67e4b242 with nextest profile: default
+    Starting 1 test across 494 binaries (5724 tests skipped)
+        PASS [   0.233s] grimble-bind::grant_ack a_cap_exception_needs_an_ack_and_widening_it_needs_another
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.243s] 1 test run: 1 passed, 5724 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_cap_exception_needs_an_ack_and_widening_it_needs_another"
+size = 634
+status = "measured"
+test_count = 1
+tests_digest = "a2702becc75d62f2c4cad04111e3010a38afc8e26e51435fda2808ae8d1ee055"
+at = "2026-10-29T03:49:42Z"
+actor = "lognd"
+rev = 1
