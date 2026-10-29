@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:03Z"
-updated = "2026-10-29T05:15:26Z"
+updated = "2026-10-29T05:27:23Z"
 labels = ["no-story"]
 scope = ["crates/*/src/**/rules*", "crates/frob-pm/src/legacy/cycle_plan.rs", "crates/*/src/rules/*.md", "crates/grimble-ci/src/lib.rs", "crates/grimble-ci/src/supply.rs", "docs/reference/rules/*.md"]
 
