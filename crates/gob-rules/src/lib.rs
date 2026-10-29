@@ -23,6 +23,7 @@ mod id;
 mod index;
 pub mod indexgen;
 mod meta;
+mod nature;
 mod precision;
 mod reason;
 mod registry;
@@ -50,6 +51,7 @@ pub use inventory;
 pub use meta::{
     Applicability, FixKind, Needs, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier,
 };
+pub use nature::{AGENT_INSTRUCTION, Audience, HEURISTIC_PREFIX, HeuristicNote, Nature};
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
 pub use registry::{Registry, RegistryError, RuleRow, RuleSettings};

@@ -43,6 +43,14 @@ impl TestsError {
                     .flag("base", "<an existing ref>"),
             )
             .into(),
+            Self::Git(gob_git::GitError::ShallowBase { spec, detail }) => gob_cli::Refusal::new(
+                "E-TESTS-SHALLOW-BASE",
+                gob_cli::RefusalClass::GuardNeedsAction,
+                format!(
+                    "the base tree {spec} is not in this checkout's object store ({detail}); fetch the base history or pass a base that is present"
+                ),
+            )
+            .into(),
             other => CliError::internal(other),
         }
     }
@@ -50,3 +58,21 @@ impl TestsError {
 
 /// The result type of this crate.
 pub type Result<T> = std::result::Result<T, TestsError>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/frob-tests/src/error.rs::TestsError.into_cli
+    #[test]
+    fn shallow_base_is_a_named_refusal_not_internal() {
+        let err = TestsError::Git(gob_git::GitError::ShallowBase {
+            spec: "Ref(\"origin/experimental\")".into(),
+            detail: "object not found".into(),
+        });
+        match err.into_cli() {
+            CliError::Refusal(r) => assert_eq!(r.code, "E-TESTS-SHALLOW-BASE"),
+            other => panic!("expected a refusal, got {other:?}"),
+        }
+    }
+}

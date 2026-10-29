@@ -19,6 +19,10 @@ rule CAP001 "undeclared-capability" {
       fn serve() { std::net::TcpListener::bind("0.0.0.0:0"); }
     """
   }
+  example notapplicable json {
+    model """node frob { owns "src/**"; }"""
+    file "src/a.json" """{ "listen": "0.0.0.0:0" }"""
+  }
   explain """
     Capabilities are denied unless granted (D75).
     ## Remedy
