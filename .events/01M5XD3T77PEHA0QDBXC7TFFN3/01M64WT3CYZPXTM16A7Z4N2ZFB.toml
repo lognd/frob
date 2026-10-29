@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T22:34:32Z"
+digest = "f4f568193a7d15205c0e190fa7f8c12d69a5b8c8f373154cf231a708c60a2702"
+exit_code = 0
+head = "4e077c38146939c80612769f28ff0078706bb5ac"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 12cb7db0-5812-4b20-bfbb-b8d863568b7a with nextest profile: default
+    Starting 4 tests across 4 binaries (483 tests skipped)
+        PASS [   0.015s] frob-cli::it coverage_e2e::every_language_has_a_provider_that_sees_its_tests
+        PASS [   0.188s] frob-cli::it coverage_e2e::a_language_with_tests_but_no_report_is_flagged
+        PASS [   0.188s] frob-cli::it coverage_e2e::thresholds_met_in_every_language_are_clean
+        PASS [   0.189s] frob-cli::it coverage_e2e::each_language_is_reported_against_its_own_threshold
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.191s] 4 tests run: 4 passed, 483 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(coverage_e2e)'"
+size = 1081
+status = "measured"
+test_count = 4
+tests_digest = "22b717c16be345a38ab0c29c5aceaa8cc3ce071d58eb796c13eb83a1469daea4"
+at = "2026-10-29T22:34:32Z"
+actor = "lognd"
+rev = 1
