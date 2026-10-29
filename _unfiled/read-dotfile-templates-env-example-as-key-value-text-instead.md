@@ -2,7 +2,8 @@
 id = "01M4KHD7774ZV3YECPVCGE2RGD"
 title = "Read dotfile templates (.env.example) as key=value text instead of opaque"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "Claude"
