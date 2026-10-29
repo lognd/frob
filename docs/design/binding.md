@@ -1644,3 +1644,7 @@ This file's ids and rules win. The edits that accompany it:
 5. code-model.md section 6 describes `binds` as an inference; this file adds
    that the explicit `via="manual"` form is rank 1 of the relation C (1.4), the
    same source ordering as for B.
+
+## CAP exceptions and the ledger (T-73YMCSS)
+
+An `accept`/`defer` of CAP001 or CAP002 must carry `atom=` (the one atom silenced) and `until=` (an expiry date); the exception covers that atom of that node only and stops silencing after the date. Atoms are canonicalised through the registry, so `exec` and `process.spawn` are one identity. Each such exception is a row of `grimble.grants.toml` (with `rule` and `until`) and is a CAP005 finding until an attester acks it; a later `until` is a widening. A `grimble.grants.toml` that git history shows existed but is now missing is a CAP005 finding, not an opt-out. An `at SELECTOR` restriction on an exception is not yet supported.

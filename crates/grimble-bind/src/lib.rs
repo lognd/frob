@@ -178,13 +178,29 @@ fn expand_files(
     out
 }
 
+/// Whether `HEAD` of the repository at `root` contains the grant ledger (false with no repository or commit).
+fn ledger_in_head(root: &Path) -> bool {
+    gob_git::Repo::discover(root)
+        .and_then(|r| r.read_blob_at("HEAD", grant_ack::LEDGER_FILE))
+        .is_ok_and(|b| b.is_some())
+}
+
 /// The grant approvals ledger and attesters of `root`; `None` when there is no ledger or it is unreadable (logged).
 fn read_grant_ledger(root: &Path) -> Option<grant_ack::Ledger> {
     match grant_ack::load(root) {
         Ok(Some(approvals)) => Some(grant_ack::Ledger {
             approvals,
             attesters: grant_ack::attesters(root),
+            removed: false,
         }),
+        Ok(None) if ledger_in_head(root) => {
+            tracing::warn!("grant ledger was deleted after it existed; CAP005 reports it");
+            Some(grant_ack::Ledger {
+                approvals: Vec::new(),
+                attesters: grant_ack::attesters(root),
+                removed: true,
+            })
+        }
         Ok(None) => None,
         Err(err) => {
             tracing::error!(%err, "grant ledger is unreadable; CAP005 cannot run");
@@ -203,6 +219,7 @@ fn grants_state(
     let ledger = ledger.unwrap_or_else(|| grant_ack::Ledger {
         approvals: Vec::new(),
         attesters: grant_ack::attesters(root),
+        removed: false,
     });
     grant_ack::state(model, &code.walk, &ledger)
 }

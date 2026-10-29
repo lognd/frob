@@ -180,3 +180,19 @@ into `.frob/coverage/python.info` and the merged report. A missing `coverage`
 executable is recorded as not run, never as a pass; a run that leaves no report is
 a missing report, which COV004 flags when `[coverage] require_reports` is true and
 the repository has `test_*.py` or `*_test.py` files.
+
+JavaScript and TypeScript are `coverage::js::VitestCoverage` and
+`coverage::js::JestCoverage` under the `vitest` and `jest` providers; both record the
+language `javascript` (TypeScript sources included) into
+`.frob/coverage/javascript.info`. The project's own runner (`node_modules/.bin`, else
+`PATH`) runs at the repository root: vitest as
+`vitest run --coverage.enabled --coverage.provider=<v8|istanbul> --coverage.reporter=lcov --coverage.reportsDirectory=<raw>`
+(v8 is the c8 lineage; the backend is whichever of `@vitest/coverage-v8` or
+`@vitest/coverage-istanbul` is installed, v8 first), jest as
+`jest --ci --coverage --coverageReporters=lcov --coverageDirectory=<raw>` (jest's bundled
+istanbul). Records under `node_modules` are dropped before the shared normaliser
+rebases paths. A missing `node`, runner, or vitest coverage package is recorded as
+not run, never as a pass; a run that leaves no (or an empty) report is a missing
+report. COV004 owes a report only when a `*.test.*`, `*.spec.*` or `__tests__` file
+exists and the root `package.json` (or a `<runner>.config.*` file) names the runner;
+a repository naming both is claimed by vitest alone.

@@ -4,6 +4,7 @@
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 // frob:ticket 01M4K3BPQ72DVFEMK8EXQSD03K
+// frob:ticket 01M5XNNHN8RQ6486GS073YMCSS
 // frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
 
 use grimble_bind::{BindInput, Binding};
@@ -764,4 +765,26 @@ fn unrelated_local_shadowed_or_unresolved_receivers_are_not_net_connect() {
         let b = bind_file("src/x.rs", src, "");
         assert!(net_anchors(&b).is_empty(), "{src}: {:?}", b.findings);
     }
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_cap001_exception_silences_only_its_atom_and_resolves_aliases() {
+    let py = "import subprocess\n\ndef go():\n    subprocess.run([\"ls\"])\n    open(\"/etc/hosts\").read()\n";
+    let excepted = "  accept CAP001 atom=\"exec\" until=2999-01-01 because=\"x\";\n";
+    let b = bind_py(py, excepted);
+    let anchors: Vec<_> = of(&b, "CAP001").iter().map(|f| f.anchor.clone()).collect();
+    assert_eq!(
+        anchors,
+        ["cap/node/a/fs.read"],
+        "only process.spawn is silenced"
+    );
+
+    let expired = "  accept CAP001 atom=\"exec\" until=2000-01-01 because=\"x\";\n";
+    let b = bind_py(py, expired);
+    assert_eq!(
+        of(&b, "CAP001").len(),
+        2,
+        "an expired exception enforces again"
+    );
 }

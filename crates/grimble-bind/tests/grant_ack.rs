@@ -2,6 +2,7 @@
 //! until an attester's approval is in `grimble.grants.toml`; narrowing and removal need none.
 
 // frob:ticket 01M4GYBNW01DT1MJ6NJN2GX6NN
+// frob:ticket 01M5XNNHN8RQ6486GS073YMCSS
 
 use std::path::Path;
 
@@ -180,6 +181,8 @@ fn the_ledger_round_trips() {
         node: "node/a".into(),
         atom: "fs.read".into(),
         args: vec!["x".into()],
+        rule: String::new(),
+        until: String::new(),
         selectors: vec!["\"src/**\"".into()],
         attester: ME.into(),
         reason: "why \"quoted\"".into(),
@@ -191,4 +194,91 @@ fn the_ledger_round_trips() {
         &grant_ack::render(&rows),
     );
     assert_eq!(grant_ack::load(dir.path()).expect("load"), Some(rows));
+}
+
+fn exc_model(until: &str) -> String {
+    format!(
+        "grimble = \"2\";\nmodule m;\nnode a : trusted {{ owns \"src/**\"; accept CAP001 atom=\"exec\" until={until} because=\"x\"; }}\nnode d : trusted {{ owns \"design/**\"; }}\n"
+    )
+}
+
+// frob:tests crates/grimble-bind/src/grant_ack.rs::evaluate
+#[test]
+fn a_cap_exception_needs_an_ack_and_widening_it_needs_another() {
+    let dir = repo("");
+    let root = dir.path();
+    write(root, "design/m.grmb", &exc_model("2999-01-01"));
+    ack(root, ME);
+    assert!(cap005(&bind(root)).is_empty());
+    let rows = grant_ack::load(root).expect("load").expect("ledger");
+    assert_eq!(
+        rows[0].atom, "process.spawn",
+        "ledger holds the canonical atom"
+    );
+    assert_eq!(rows[0].rule, "CAP001");
+
+    // Same exception written with the canonical name is the same identity.
+    write(
+        root,
+        "design/m.grmb",
+        &exc_model("2999-01-01").replace("exec", "process.spawn"),
+    );
+    assert!(
+        cap005(&bind(root)).is_empty(),
+        "alias and canonical are one identity"
+    );
+
+    // Later expiry is a widening.
+    write(root, "design/m.grmb", &exc_model("3000-01-01"));
+    let b = bind(root);
+    assert_eq!(cap005(&b).len(), 1, "{:?}", cap005(&b));
+    assert_eq!(b.grants.pending[0].kind, Kind::Widened);
+    ack(root, ME);
+    assert!(cap005(&bind(root)).is_empty());
+
+    // A brand new exception is pending.
+    write(
+        root,
+        "design/m.grmb",
+        &exc_model("3000-01-01").replace("exec", "net.listen"),
+    );
+    let found = cap005(&bind(root));
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(found[0].contains("exception"), "{found:?}");
+}
+
+// frob:tests crates/grimble-bind/src/grant_ack.rs::evaluate
+#[test]
+fn a_ledger_deleted_after_it_existed_is_reported() {
+    let dir = repo("");
+    let root = dir.path();
+    let git = |args: &[&str]| {
+        let st = std::process::Command::new("git")
+            .args(args)
+            .current_dir(root)
+            .status()
+            .expect("git");
+        assert!(st.success(), "git {args:?}");
+    };
+    write(root, "design/m.grmb", &exc_model("2999-01-01"));
+    ack(root, ME);
+    git(&["init", "-q"]);
+    git(&["-c", "user.email=a@b.c", "-c", "user.name=a", "add", "-A"]);
+    git(&[
+        "-c",
+        "user.email=a@b.c",
+        "-c",
+        "user.name=a",
+        "commit",
+        "-qm",
+        "x",
+    ]);
+    assert!(cap005(&bind(root)).is_empty());
+    std::fs::remove_file(root.join(grant_ack::LEDGER_FILE)).expect("rm");
+    let found = cap005(&bind(root));
+    assert!(
+        found.iter().any(|m| m.contains("gone")),
+        "removal reported: {found:?}"
+    );
+    assert!(found.iter().any(|m| m.contains("exception")), "{found:?}");
 }
