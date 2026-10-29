@@ -17,6 +17,7 @@ use crate::adapter::{Adapter, Capability, Fidelity, Precision};
 use crate::csharp::CSharpAdapter;
 use crate::css::{CssAdapter, EXTENSIONS as CSS_EXTENSIONS};
 use crate::docker_image::{DockerfileAdapter, is_dockerfile_path};
+use crate::dotenv::{DotenvAdapter, is_dotenv_template_path};
 use crate::html::{EXTENSIONS as HTML_EXTENSIONS, HtmlAdapter};
 use crate::markdown::MarkdownAdapter;
 use crate::opaque::OpaqueAdapter;
@@ -40,10 +41,11 @@ static HTML: HtmlAdapter = HtmlAdapter;
 // frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
 static ACTIONS: ActionsAdapter = ActionsAdapter;
 static DOCKERFILE: DockerfileAdapter = DockerfileAdapter;
+static DOTENV: DotenvAdapter = DotenvAdapter;
 static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Extensions (no dot, lowercase) claimed by the built-in adapters, by language.
-const BUILTIN_EXTENSIONS: [(&str, &[&str]); 10] = [
+const BUILTIN_EXTENSIONS: [(&str, &[&str]); 11] = [
     ("rust", &["rs"]),
     ("markdown", &["md", "markdown"]),
     ("yaml", &["yml", "yaml"]),
@@ -54,6 +56,7 @@ const BUILTIN_EXTENSIONS: [(&str, &[&str]); 10] = [
     ("html", HTML_EXTENSIONS),
     ("github-actions", &[]),
     ("dockerfile", &["dockerfile"]),
+    ("dotenv", &[]),
 ];
 
 /// A registrable adapter: submit one with `inventory::submit!` to make it visible here.
@@ -174,6 +177,7 @@ pub fn adapters() -> Vec<&'static dyn Adapter> {
         &HTML,
         &ACTIONS,
         &DOCKERFILE,
+        &DOTENV,
     ];
     out.extend(registry().registered.iter().map(|r| r.adapter));
     out
@@ -217,6 +221,9 @@ pub fn adapter_for_entry(path: &str, hint: &LanguageHint) -> Option<&'static dyn
     }
     if is_dockerfile_path(path) {
         return Some(&DOCKERFILE);
+    }
+    if is_dotenv_template_path(path) {
+        return Some(&DOTENV);
     }
     adapter_for(hint)
 }
