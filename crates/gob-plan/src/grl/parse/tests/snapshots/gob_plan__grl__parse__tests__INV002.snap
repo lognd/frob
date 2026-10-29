@@ -416,19 +416,61 @@ examples: [
       ]
     ),
     span: @673..907 
+  },
+  Example {
+     expect: Expect {
+       kind: Unresolved,
+      span: @918..928 
+    },
+    lang: Some(
+      Word {
+         text: "python",
+        span: @929..935 
+      }
+    ),
+    name: None,
+    body: Inputs(
+      [
+        Spanned {
+           node: Config(
+            BlockLit {
+               value: "[[invariants.forbid_imports]]\nfrom = \"src/[core/**\"\nto = \"requests\"\nreason = \"no network in core\"",
+              body: @952..1079,
+              span: @949..1082 
+            }
+          ),
+          span: @942..1082 
+        },
+        Spanned {
+           node: File {
+             path: StrLit {
+               value: "src/core/a.py",
+              span: @1092..1107 
+            },
+            text: BlockLit {
+               value: "import requests              #~ unresolved",
+              body: @1111..1165,
+              span: @1108..1168 
+            } 
+          },
+          span: @1087..1168 
+        }
+      ]
+    ),
+    span: @910..1172 
   }
 ],
 explain: Some(
   Explain {
      text: BlockLit {
        value: "Some modules must not depend on others; the table lives in [invariants].\n## Remedy\nRemove the import or move the code; change the table only with a decision.",
-      body: @921..1094,
-      span: @918..1097 
+      body: @1186..1359,
+      span: @1183..1362 
     },
-    span: @910..1097 
+    span: @1175..1362 
   }
 ),
-span: @0..1099 
+span: @0..1364 
 }
 ] 
 }

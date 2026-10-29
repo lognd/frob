@@ -1076,6 +1076,17 @@ rule INV002 "forbidden-import" {
       import requests_mock
     """
   }
+  example unresolved python {
+    config """
+      [[invariants.forbid_imports]]
+      from = "src/[core/**"
+      to = "requests"
+      reason = "no network in core"
+    """
+    file "src/core/a.py" """
+      import requests              #~ unresolved
+    """
+  }
   explain """
     Some modules must not depend on others; the table lives in [invariants].
     ## Remedy
@@ -1148,6 +1159,10 @@ rule SYS001 "unowned" {
       def f(): pass
     """
   }
+  example notapplicable json {
+    model """node app { owns "src/app/**"; }"""
+    file "src/app/a.json" """{ "owned": true }"""
+  }
   explain """
     Every file should belong to a design node.
     ## Remedy
@@ -1183,6 +1198,10 @@ rule CAP001 "undeclared-capability" {
     file "src/a.rs" """
       fn serve() { std::net::TcpListener::bind("0.0.0.0:0"); }
     """
+  }
+  example notapplicable json {
+    model """node frob { owns "src/**"; }"""
+    file "src/a.json" """{ "listen": "0.0.0.0:0" }"""
   }
   explain """
     Capabilities are denied unless granted (D75).

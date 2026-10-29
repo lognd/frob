@@ -19,6 +19,10 @@ rule SYS001 "unowned" {
       def f(): pass
     """
   }
+  example notapplicable json {
+    model """node app { owns "src/app/**"; }"""
+    file "src/app/a.json" """{ "owned": true }"""
+  }
   explain """
     Every file should belong to a design node.
     ## Remedy

@@ -77,15 +77,10 @@ fn the_fixture_rules_of_the_spec_check_clean() {
         let path = entry.expect("entry").path();
         if path.extension().is_some_and(|e| e == "grl") {
             let src = std::fs::read_to_string(&path).expect("read");
-            // The spec's abbreviated rules omit the universal third example (GRL011); every
-            // other code must stay silent.
-            // They are std rules, so host fixes are allowed.
+            // They are std rules, so host fixes are allowed; every code must stay silent.
             let parsed = parse(FileInterner::new().intern("t.grl"), &src);
             assert!(parsed.is_ok(), "{:?}", parsed.errors);
-            let found: Vec<_> = check_file_as(&parsed.file, None, Tier::Std)
-                .into_iter()
-                .filter(|d| !(d.code == Some(Code::Grl011) && d.message.contains("notapplicable")))
-                .collect();
+            let found = check_file_as(&parsed.file, None, Tier::Std);
             assert!(
                 found.is_empty(),
                 "{}: {found:#?}",

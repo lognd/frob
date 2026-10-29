@@ -420,19 +420,61 @@ examples: [
       ]
     ),
     span: @470..600 
+  },
+  Example {
+     expect: Expect {
+       kind: NotApplicable,
+      span: @611..624 
+    },
+    lang: Some(
+      Word {
+         text: "json",
+        span: @625..629 
+      }
+    ),
+    name: None,
+    body: Inputs(
+      [
+        Spanned {
+           node: Model(
+            BlockLit {
+               value: "node app { owns \"src/app/**\"; }",
+              body: @645..676,
+              span: @642..679 
+            }
+          ),
+          span: @636..679 
+        },
+        Spanned {
+           node: File {
+             path: StrLit {
+               value: "src/app/a.json",
+              span: @689..705 
+            },
+            text: BlockLit {
+               value: "{ \"owned\": true }",
+              body: @709..726,
+              span: @706..729 
+            } 
+          },
+          span: @684..729 
+        }
+      ]
+    ),
+    span: @603..733 
   }
 ],
 explain: Some(
   Explain {
      text: BlockLit {
        value: "Every file should belong to a design node.\n## Remedy\nAdd an `owns` selector to a node, or exclude the path in grimble.toml.",
-      body: @614..753,
-      span: @611..756 
+      body: @747..886,
+      span: @744..889 
     },
-    span: @603..756 
+    span: @736..889 
   }
 ),
-span: @0..758 
+span: @0..891 
 }
 ] 
 }
