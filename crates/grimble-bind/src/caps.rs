@@ -15,9 +15,13 @@
 //!
 //! Import resolution (ticket D36SRKP): besides the call graph, `gob_symbols::path_uses` resolves
 //! each call and each function-valued reference through `use ... as`, from-imports, `let` and
-//! assignment aliases, literal `getattr` / `import_module` (a May use, never CAP001) and explicit
+//! assignment aliases, literal `getattr` / `import_module` (the same use as the direct form) and explicit
 //! `std::` / `tokio::` roots (which a repository type named `Command` cannot hide). Not resolved:
-//! glob imports, macro bodies, computed attribute names.
+//! glob imports and macro bodies. A name-computed lookup (`getattr`, `__import__`,
+//! `importlib.import_module`, `vars(m)[n]`, `m.__dict__[n]`, `sys.modules[n]`) resolves through
+//! the shared gob-ir `name_lookup` rule (ticket 6CV37RW): a literal name denotes the origin symbol
+//! exactly as the direct form, any other name is reported Unresolved against every atom its known
+//! prefix could reach.
 //!
 //! Typed receivers (ticket YCR4M6H): a Rust vocabulary entry `<type path>.<method>`
 //! (`ureq::Agent.run`) names a method call whose receiver type resolves, from the syntax tree, to
@@ -1048,9 +1052,11 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
             .or_insert_with(|| vocabularies(&code.language, cx.packs));
         let Some(src) = code.source() else { continue };
         // cheap prefilter: some vocabulary name's last segment must occur in the file at all
-        if !vocab
-            .iter()
-            .any(|(_, names)| names.iter().any(|n| src.contains(last_segment(n))))
+        // (a name-computed lookup names no vocabulary entry, so a lookup primitive also passes)
+        if !gob_ir::name_lookup::mentions_lookup(&code.language, &src)
+            && !vocab
+                .iter()
+                .any(|(_, names)| names.iter().any(|n| src.contains(last_segment(n))))
         {
             continue;
         }
@@ -1070,9 +1076,17 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                 tracing::debug!(file = path, line = pu.line, spelled = %pu.spelled, "resolved path is a repository item");
                 continue;
             }
+            let prefix = format!("{}.", pu.path);
             let hits: Vec<&str> = vocab
                 .iter()
-                .filter(|(_, names)| names_callee(&code.language, names, &pu.path))
+                .filter(|(_, names)| {
+                    if pu.computed {
+                        // unknown tail: any atom whose vocabulary lives under the known prefix
+                        pu.path.is_empty() || names.iter().any(|n| n.starts_with(&prefix))
+                    } else {
+                        names_callee(&code.language, names, &pu.path)
+                    }
+                })
                 .map(|(a, _)| *a)
                 .collect();
             if hits.is_empty() {
@@ -1083,7 +1097,9 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                 tracing::debug!(file = path, unit = %unit, "resolved use has no ownership unit");
                 continue;
             };
-            let certain = !pu.dynamic;
+            // a literal lookup name denotes the origin symbol exactly as the direct form; only a
+            // computed name is unproven
+            let certain = !pu.computed;
             for atom in hits {
                 if !seen.insert((unit.clone(), Some(pu.line), atom.to_owned(), certain)) {
                     continue;

@@ -489,7 +489,7 @@ fn python_import_aliases_and_from_imports_resolve_to_the_vocabulary() {
 // frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
-fn a_literal_getattr_or_import_module_is_unresolved_not_an_error() {
+fn a_literal_getattr_or_import_module_is_the_direct_use() {
     for src in [
         "import os\n\n\ndef go():\n    getattr(os, 'system')('ls')\n",
         "import importlib\n\n\ndef go():\n    importlib.import_module('subprocess').run(['ls'])\n",
@@ -498,8 +498,8 @@ fn a_literal_getattr_or_import_module_is_unresolved_not_an_error() {
         let f = of(&b, "CAP001");
         assert!(!f.is_empty(), "{src}: {:?}", b.findings);
         assert!(
-            f.iter().all(|f| f.reason.is_some()),
-            "{src}: dynamic forms must be Unresolved: {f:?}"
+            f.iter().all(|f| f.reason.is_none()),
+            "{src}: a literal name is exactly the direct form: {f:?}"
         );
     }
 }
@@ -888,4 +888,79 @@ fn rust_decoy_method_in_another_file_does_not_hide_a_typed_client_use() {
     let both = bind_files(&[("src/x.rs", rs), ("src/y.rs", decoy)], "");
     assert!(!atoms(&alone).is_empty(), "{:?}", alone.findings);
     assert_eq!(atoms(&both), atoms(&alone), "{:?}", both.findings);
+}
+
+/// Every CAP001 finding of `src` is Unresolved (never an Error) and there is at least one.
+fn assert_unresolved_only(src: &str) {
+    let b = bind_py(src, "");
+    let f = of(&b, "CAP001");
+    assert!(!f.is_empty(), "{src}: nothing reported: {:?}", b.findings);
+    assert!(
+        f.iter().all(|f| f.reason.is_some()),
+        "{src}: must be Unresolved, not an error: {f:?}"
+    );
+}
+
+// frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p05_non_literal_getattr_is_unresolved() {
+    for src in [
+        "import os\n\n\ndef go(n):\n    getattr(os, n)('x')\n",
+        "import os\n\nG = getattr\n\n\ndef go(n):\n    G(os, n)('x')\n",
+        "import os\n\n\ndef go(n):\n    getattr(os, 'sys' + n)('x')\n",
+        "import os\n\n\ndef go(n):\n    getattr(os, f'sys{n}')('x')\n",
+    ] {
+        assert_unresolved_only(src);
+    }
+}
+
+// frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p06_non_literal_import_is_unresolved() {
+    for src in [
+        "def go(n):\n    __import__(n).system('x')\n",
+        "import importlib\n\n\ndef go(n):\n    importlib.import_module(n).run(['x'])\n",
+        "from importlib import import_module as im\n\n\ndef go(n):\n    im(n).run(['x'])\n",
+    ] {
+        assert_unresolved_only(src);
+    }
+}
+
+// frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p07_namespace_lookups_with_computed_names_are_unresolved() {
+    for src in [
+        "import os\n\n\ndef go(n):\n    vars(os)[n]('x')\n",
+        "import os\n\n\ndef go(n):\n    os.__dict__[n]('x')\n",
+        "import sys\n\n\ndef go(n):\n    sys.modules[n].system('x')\n",
+    ] {
+        assert_unresolved_only(src);
+    }
+}
+
+// frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p14_literal_names_resolve_and_a_shadowing_getattr_is_not_the_builtin() {
+    for src in [
+        "import os\n\n\ndef go():\n    getattr(os, 'system')('x')\n",
+        "def go():\n    __import__('os').system('x')\n",
+        "import os\n\nNAME = 'sys' + 'tem'\n\n\ndef go():\n    getattr(os, NAME)('x')\n",
+    ] {
+        let b = bind_py(src, "");
+        let f = of(&b, "CAP001");
+        assert!(
+            !f.is_empty() && f.iter().all(|f| f.reason.is_none()),
+            "{src}: literal must resolve to the origin symbol: {:?}",
+            b.findings
+        );
+    }
+    let b = bind_py(
+        "import os\n\n\ndef getattr(o, n):\n    return None\n\n\ndef go(n):\n    getattr(os, n)\n",
+        "",
+    );
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
 }

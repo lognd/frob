@@ -6,6 +6,7 @@ mod digest_scheme;
 mod effect_class;
 mod equivalence;
 mod eval;
+mod name_lookup;
 mod precision;
 mod properties;
 mod queries;

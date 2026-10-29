@@ -70,6 +70,7 @@ mod model;
 mod dotenv;
 mod lang;
 mod languages_page;
+mod lookups;
 mod nodejs;
 mod opaque;
 mod paths;

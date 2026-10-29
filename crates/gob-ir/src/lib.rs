@@ -68,6 +68,7 @@ pub mod eval;
 mod hot;
 mod location;
 pub mod markup;
+pub mod name_lookup;
 mod operator;
 mod precision;
 mod print;

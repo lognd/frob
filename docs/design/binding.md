@@ -1096,9 +1096,15 @@ The cell of `(n, a)` is computed, in this order:
    spelling: `use` aliases, `import x as y`, `from m import f`, function values and
    literal `getattr`/`import_module` forms resolve to the vocabulary entry (a
    repository type that merely shares a name never hides `std::process::Command`),
-   a dynamic literal form is unresolved, and shadowed names, strings and comments
-   are not uses. Glob imports, macro bodies and computed attribute names are not
-   followed.
+   and shadowed names, strings and comments are not uses. A name-computed lookup
+   (`getattr`, `__import__`, `importlib.import_module`, `vars(m)[n]`, `m.__dict__[n]`,
+   `sys.modules[n]`, and the `require` / `import()` / `obj[k]` and `Type.GetType` forms of
+   the other adapters) is decided once by the gob-ir `name_lookup` rule over the bounded
+   `const_value` of its name argument (ticket 6CV37RW): a literal name (also by `+`, adjacent
+   strings, a module constant or an f-string without a placeholder) resolves to the origin symbol
+   exactly as the direct form, and any other name is Unresolved (`unresolved-edge`) against
+   every atom its known prefix could reach, never clean and never an error. Glob imports and
+   macro bodies are not followed.
 
    Typed receivers (ticket YCR4M6H). A Rust vocabulary entry written `<type path>.<method>`
    (`ureq::Agent.run`, `reqwest::Client.get`) names a method call whose receiver type resolves,

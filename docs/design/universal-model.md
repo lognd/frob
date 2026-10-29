@@ -585,7 +585,7 @@ forms below and every product reads them through GRL.
 |---|---|---|---|
 | Q48 | `markup`: elements (tag, kind intrinsic / component / unknown), attributes, children, text | Exact per element; an attribute spread is an attribute at status May | capability |
 | Q49 | `style`: rules (selector), declarations (property, raw value, component values), at-rules, custom properties, `var()` references | Exact; a `var()` reference is May (the cascade decides) | capability |
-| Q50 | `const_value(expr)` | Known, OneOf, Fragments (known parts and Unknown rest) or Unknown, within a step budget (default 256) | capability |
+| Q50 | `const_value(expr)` | Known, OneOf, Fragments (known parts and Unknown rest) or Unknown, within a step budget (default 256); the `name_lookup` rule maps a Known string name of a lookup primitive (`getattr`, `require`, `Type.GetType`, ...) to its origin symbol and every other value to Unresolved | capability |
 | Q51 | `class_tokens(attr)`, derived from Q48 and Q50 | Known tokens (Must, or May through `clsx`, `cn`, `classnames`, `classNames` matched by name) plus a dynamic flag | derived |
 
 Lowering into U, using the thirteen universal operators plus two
