@@ -2,7 +2,8 @@
 id = "01M5XMWRV7DKX8XBBK4JXNJRTQ"
 title = "Catalogue every output atom per supported language for the logging rule (research)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
