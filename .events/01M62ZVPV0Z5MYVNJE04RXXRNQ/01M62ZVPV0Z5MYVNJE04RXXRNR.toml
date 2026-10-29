@@ -1,0 +1,10 @@
+kind = "create"
+title = "End-to-end fake-dotnet run_coverage test and [evidence.dotnet] path in the coverage plan"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-evidence/tests/coverage_csharp.rs"]
+body = "Split from 5GRB80B: no end-to-end run_coverage test for C# since required_tool uses which and unsafe set_var is forbidden; also honor [evidence.dotnet] path."
+at = "2026-10-29T04:49:28Z"
+actor = "lognd"
+rev = 1
