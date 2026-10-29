@@ -9,6 +9,7 @@
 //! only, never against spelled text, so a local `fs` object names nothing.
 
 // frob:ticket 01M642307T98S89GQ4APKW7X2J
+// frob:ticket 01M64230AR8DHJZY9QQS3EC85S
 
 use gob_ir::VocabEntry;
 
@@ -208,5 +209,27 @@ inventory::submit! {
         "Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.RunAsync",
         "Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.Create",
         "System.CodeDom.Compiler.CodeDomProvider.CompileAssemblyFromSource",
+    ] }
+}
+
+// Native interop and dynamic loading, ticket S3EC85S. A trailing `.*` names every member.
+inventory::submit! {
+    VocabEntry { lang: "csharp", kind: "ffi", names: &[
+        "System.Runtime.InteropServices.DllImport",
+        "System.Runtime.InteropServices.DllImportAttribute",
+        "System.Runtime.InteropServices.LibraryImport",
+        "System.Runtime.InteropServices.LibraryImportAttribute",
+        "System.Runtime.InteropServices.NativeLibrary.*",
+        "System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer",
+        "System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate",
+        "System.Runtime.InteropServices.Marshal.PrelinkAll",
+        "System.Runtime.InteropServices.Marshal.Prelink",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "typescript", kind: "ffi", names: &[
+        "process.dlopen", "process.binding", "process._linkedBinding", "Deno.dlopen",
+        "Deno.UnsafeFnPointer", "Deno.UnsafePointer", "Bun.FFI.*", "bun:ffi.*",
     ] }
 }

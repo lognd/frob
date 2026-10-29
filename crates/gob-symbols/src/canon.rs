@@ -12,6 +12,7 @@
 //! `importlib.import_module` argument is, flagged `dynamic`).
 
 // frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:ticket 01M64230AR8DHJZY9QQS3EC85S
 
 use std::collections::BTreeMap;
 
@@ -19,7 +20,24 @@ use gob_languages::{Language, ParseLimits, ParseResult, parse};
 use tree_sitter::Node;
 
 /// Crates whose paths a Rust file may name without importing them first.
-const EXTERNAL_ROOTS: &[&str] = &["std", "core", "alloc", "tokio", "async_std", "smol"];
+const EXTERNAL_ROOTS: &[&str] = &[
+    "std",
+    "core",
+    "alloc",
+    "tokio",
+    "async_std",
+    "smol",
+    // native interop (ticket S3EC85S): the crates a foreign call goes through, and the synthetic
+    // `extern` root a function declared in an `extern` block resolves to
+    "libc",
+    "libloading",
+    "windows_sys",
+    "winapi",
+    EXTERN_ROOT,
+];
+
+/// The synthetic root of a function or static declared in an `extern "C" { .. }` block.
+const EXTERN_ROOT: &str = "extern";
 
 /// Deepest alias chain followed (`let a = b; let b = c; ..`).
 const MAX_ALIAS_DEPTH: usize = 8;
@@ -125,7 +143,8 @@ pub fn path_uses(language: &str, source: &str) -> Vec<PathUse> {
 
 mod rust {
     use super::{
-        BTreeMap, Binding, EXTERNAL_ROOTS, MAX_ALIAS_DEPTH, Node, PathUse, bind, line, text,
+        BTreeMap, Binding, EXTERN_ROOT, EXTERNAL_ROOTS, MAX_ALIAS_DEPTH, Node, PathUse, bind, line,
+        text,
     };
 
     /// Scans a Rust syntax tree.
@@ -217,6 +236,44 @@ mod rust {
         }
     }
 
+    /// The module paths a `use` argument imports every item of (`use libc::*` -> `libc`).
+    fn use_globs(src: &str, n: Node<'_>, prefix: &str, out: &mut Vec<String>) {
+        let join = |tail: &str| {
+            if prefix.is_empty() {
+                tail.to_owned()
+            } else {
+                format!("{prefix}::{tail}")
+            }
+        };
+        let clean = |s: &str| s.split_whitespace().collect::<String>();
+        match n.kind() {
+            "use_wildcard" => {
+                let mut c = n.walk();
+                let base = n.named_children(&mut c).next().map_or_else(
+                    || prefix.to_owned(),
+                    |p| join(clean(text(src, p)).trim_start_matches("::")),
+                );
+                out.push(base);
+            }
+            "scoped_use_list" => {
+                let base = n.child_by_field_name("path").map_or_else(
+                    || prefix.to_owned(),
+                    |p| join(clean(text(src, p)).trim_start_matches("::")),
+                );
+                if let Some(list) = n.child_by_field_name("list") {
+                    use_globs(src, list, &base, out);
+                }
+            }
+            "use_list" => {
+                let mut c = n.walk();
+                for ch in n.named_children(&mut c) {
+                    use_globs(src, ch, prefix, out);
+                }
+            }
+            _ => {}
+        }
+    }
+
     /// Item-level bindings of a `source_file`, `declaration_list` or `block`.
     fn container_items(src: &str, container: Node<'_>) -> BTreeMap<String, Binding> {
         let mut map = BTreeMap::new();
@@ -233,6 +290,27 @@ mod rust {
                         bind(&mut map, &local, Binding::Alias(full, false));
                     }
                 }
+                "foreign_mod_item" => {
+                    // every function and static the block declares is a foreign symbol
+                    let mut cc = ch.walk();
+                    let decls: Vec<_> = ch
+                        .child_by_field_name("body")
+                        .into_iter()
+                        .flat_map(|b| b.named_children(&mut cc).collect::<Vec<_>>())
+                        .collect();
+                    for d in decls {
+                        if matches!(d.kind(), "function_signature_item" | "static_item")
+                            && let Some(name) = d.child_by_field_name("name")
+                        {
+                            let n = text(src, name);
+                            bind(
+                                &mut map,
+                                n,
+                                Binding::Alias(format!("{EXTERN_ROOT}::{n}"), false),
+                            );
+                        }
+                    }
+                }
                 "function_item"
                 | "struct_item"
                 | "enum_item"
@@ -242,8 +320,7 @@ mod rust {
                 | "type_item"
                 | "trait_item"
                 | "mod_item"
-                | "function_signature_item"
-                | "foreign_mod_item" => {
+                | "function_signature_item" => {
                     if let Some(name) = ch.child_by_field_name("name") {
                         bind(&mut map, text(src, name), Binding::Shadow);
                     }
@@ -255,6 +332,37 @@ mod rust {
     }
 
     impl Cx<'_> {
+        /// A glob import names no item locally, so every use it may bring in is unresolved: the
+        /// module is recorded as a computed use under its path (ticket S3EC85S).
+        fn emit_globs(&mut self, decl: Node<'_>) {
+            let Some(arg) = decl.child_by_field_name("argument") else {
+                return;
+            };
+            let mut globs = Vec::new();
+            use_globs(self.src, arg, "", &mut globs);
+            for full in globs {
+                if full.is_empty()
+                    || matches!(full.split("::").next(), Some("crate" | "self" | "super"))
+                {
+                    continue;
+                }
+                let at = decl;
+                let Some((path, _)) = self.canonical(&full, at, 0) else {
+                    continue;
+                };
+                self.out.push(PathUse {
+                    offset: decl.start_byte(),
+                    line: line(decl),
+                    spelled: format!("{full}::*"),
+                    path,
+                    call: false,
+                    dynamic: false,
+                    external_root: true,
+                    computed: true,
+                });
+            }
+        }
+
         fn items_of(&mut self, container: Node<'_>) -> &BTreeMap<String, Binding> {
             let src = self.src;
             self.items
@@ -438,6 +546,25 @@ mod rust {
                         self.emit(f, true);
                     }
                 }
+                // `asm!(..)` / `global_asm!(..)`: the macro path is the callee
+                "macro_invocation" => {
+                    if let Some(m) = n.child_by_field_name("macro") {
+                        self.emit(m, true);
+                    }
+                }
+                // an `extern { .. }` block links native symbols whether or not it is called here
+                "foreign_mod_item" => {
+                    self.out.push(PathUse {
+                        offset: n.start_byte(),
+                        line: line(n),
+                        spelled: EXTERN_ROOT.to_owned(),
+                        path: format!("{EXTERN_ROOT}::block"),
+                        call: false,
+                        dynamic: false,
+                        external_root: true,
+                        computed: false,
+                    });
+                }
                 "arguments"
                 | "array_expression"
                 | "tuple_expression"
@@ -475,6 +602,9 @@ mod rust {
             let mut c = n.walk();
             let kids: Vec<_> = n.children(&mut c).collect();
             for k in kids {
+                if k.kind() == "use_declaration" {
+                    self.emit_globs(k);
+                }
                 // macro bodies are token trees; their calls stay with the call graph
                 if matches!(
                     k.kind(),
@@ -1099,6 +1229,49 @@ mod tests {
             .into_iter()
             .map(|u| (u.path, u.call, u.dynamic))
             .collect()
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_extern_block_function_resolves_to_the_extern_root() {
+        let src = "extern \"C\" { fn system(c: *const i8) -> i32; }\nfn f(c: *const i8) { unsafe { system(c); } }\n";
+        assert!(
+            paths("rust", src)
+                .iter()
+                .any(|(p, call, _)| p == "extern::system" && *call)
+        );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_inline_asm_macro_resolves_through_its_import() {
+        let src = "use std::arch::asm;\nfn f() { unsafe { asm!(\"nop\"); } }\n";
+        assert!(
+            paths("rust", src)
+                .iter()
+                .any(|(p, _, _)| p == "std::arch::asm")
+        );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_glob_import_is_a_computed_use_of_its_path() {
+        let uses = path_uses("rust", "use libc::*;\nfn f() {}\n");
+        assert!(
+            uses.iter()
+                .any(|u| u.path == "libc" && u.spelled == "libc::*" && u.computed)
+        );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_local_module_named_like_an_external_root_resolves_locally() {
+        let src = "mod libc { pub fn system(_c: i32) {} }\nfn f() { libc::system(1); }\n";
+        assert!(
+            paths("rust", src)
+                .iter()
+                .all(|(p, _, _)| !p.starts_with("libc"))
+        );
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
