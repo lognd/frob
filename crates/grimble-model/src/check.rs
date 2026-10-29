@@ -178,6 +178,14 @@ fn dim_of(unit: &str) -> Option<Dim> {
     }
 }
 
+/// The ledger rule that audits capability exceptions; it is never itself excepted.
+pub const CAP_LEDGER_RULE: &str = "CAP005";
+
+/// True for the capability rules whose exceptions must name an atom and expire.
+pub fn is_cap_exception_rule(rule: &str) -> bool {
+    matches!(rule, "CAP001" | "CAP002")
+}
+
 fn date_ok(s: &str) -> bool {
     let p: Vec<&str> = s.split('-').collect();
     let [year, month, day] = p[..] else {
@@ -1415,12 +1423,27 @@ impl<'a> Checker<'a> {
             ),
             _ => {}
         }
-        let (required, optional): (&[&str], &[&str]) = match x.kind {
-            crate::ast::ExcKind::Accept => (&["because"], &[]),
-            crate::ast::ExcKind::Defer => (&["ticket", "because"], &["until"]),
-            crate::ast::ExcKind::Hotfix => (&["ticket", "because"], &[]),
+        let (mut required, mut optional): (Vec<&str>, Vec<&str>) = match x.kind {
+            crate::ast::ExcKind::Accept => (vec!["because"], vec![]),
+            crate::ast::ExcKind::Defer => (vec!["ticket", "because"], vec!["until"]),
+            crate::ast::ExcKind::Hotfix => (vec!["ticket", "because"], vec![]),
         };
-        for r in required {
+        if is_cap_exception_rule(&x.rule.text) {
+            // A capability exception names the atom it covers and expires.
+            required.extend(["atom", "until"]);
+            optional.retain(|k| *k != "until");
+        }
+        if x.rule.text == CAP_LEDGER_RULE {
+            self.emit(
+                "MDL013",
+                None,
+                file,
+                x.rule.span,
+                format!("`{CAP_LEDGER_RULE}` is the exception ledger check and cannot be excepted"),
+                anchor,
+            );
+        }
+        for r in &required {
             if !x.attrs.iter().any(|a| a.key.text == *r) {
                 self.emit(
                     "MDL013",
@@ -1447,6 +1470,7 @@ impl<'a> Checker<'a> {
             }
             let ok = match (k, &a.value.value) {
                 ("because", Value::Str(_)) => true,
+                ("atom", Value::Str(s)) => !s.trim().is_empty(),
                 ("ticket", Value::Str(s)) => is_full_ulid(s),
                 ("until", Value::Date(d)) => date_ok(d),
                 _ => false,
@@ -1457,7 +1481,7 @@ impl<'a> Checker<'a> {
                     None,
                     file,
                     a.value.span,
-                    format!("`{k}=` is malformed (because: string, ticket: full ULID string, until: calendar date)"),
+                    format!("`{k}=` is malformed (because: string, atom: non-empty string, ticket: full ULID string, until: calendar date)"),
                     anchor,
                 );
             }

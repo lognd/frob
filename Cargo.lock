@@ -3139,6 +3139,7 @@ version = "0.532.0"
 dependencies = [
  "gob-cache",
  "gob-directives",
+ "gob-git",
  "gob-ir",
  "gob-languages",
  "gob-lock",
@@ -3147,6 +3148,7 @@ dependencies = [
  "gob-rules",
  "gob-symbols",
  "gob-text",
+ "gob-time",
  "gob-walk",
  "grimble-capabilities",
  "grimble-model",
