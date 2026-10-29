@@ -2,12 +2,12 @@
 id = "01M4HYH9CDNJSYEZQGKRZA7WX2"
 title = "CAP: open(path, 'w') counts only as fs.read; mode-aware detection and Rust Path method receivers are not covered"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-10T03:43:31Z"
-updated = "2026-10-27T02:58:16Z"
+updated = "2026-10-29T05:31:13Z"
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs"]
 
 [[acceptance]]
