@@ -2,7 +2,8 @@
 id = "01M6422ZJ6EGH0AP4ZYT78E2WZ"
 title = "CAP: Python dynamic code evaluation is not reported"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
