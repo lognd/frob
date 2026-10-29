@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/**", "crates/gob-check/tests/product_rules/*/src/rules/mod.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/frob-ack/src/rules/mod.rs", "crates/frob-lease/src/rules/mod.rs", "crates/frob-ledger/src/rules/mod.rs", "crates/frob-obligations/src/rules/mod.rs", "crates/frob-pm/src/rules/mod.rs", "crates/frob-release/src/rules/mod.rs", "crates/frob-tests/src/rules/mod.rs", "crates/gob-config/src/rules/mod.rs", "crates/grimble-arch/src/rules/mod.rs", "crates/grimble-bind/src/rules/mod.rs", "crates/grimble-capabilities/src/rules/mod.rs", "crates/grimble-ci/src/rules/mod.rs", "crates/grimble-lints/src/rules/mod.rs"]
+new = ["crates/gob-rules/**", "crates/gob-check/tests/product_rules/*/src/rules/mod.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/frob-ack/src/rules/mod.rs", "crates/frob-lease/src/rules/mod.rs", "crates/frob-ledger/src/rules/mod.rs", "crates/frob-obligations/src/rules/mod.rs", "crates/frob-pm/src/rules/mod.rs", "crates/frob-release/src/rules/mod.rs", "crates/frob-tests/src/rules/mod.rs", "crates/gob-config/src/rules/mod.rs", "crates/grimble-arch/src/rules/mod.rs", "crates/grimble-bind/src/rules/mod.rs", "crates/grimble-capabilities/src/rules/mod.rs", "crates/grimble-ci/src/rules/mod.rs", "crates/grimble-lints/src/rules/mod.rs", "crates/grimble-model/src/rules/mod.rs"]
+at = "2026-10-29T23:00:55Z"
+actor = "lognd"
+rev = 1
