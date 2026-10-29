@@ -1,0 +1,10 @@
+kind = "create"
+title = "Document product-scoped config registries in docs/design (D87)"
+type = "docs"
+category = "todo"
+priority = "medium"
+scope = ["docs/design/**"]
+body = "Found while working ~394FZ5T: gob-config registries are now product-scoped (see crates/gob-config/src/product.rs). docs/design was outside that lease; read D87 and document product scoping and dynamic-key tables there."
+at = "2026-10-29T17:06:00Z"
+actor = "lognd"
+rev = 1
