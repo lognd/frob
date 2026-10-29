@@ -2,12 +2,12 @@
 id = "01M62VRJMEEJK8EZCM0RV29FE6"
 title = "JS coverage: detect runner declared in workspace member package.json"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-29T03:37:51Z"
-updated = "2026-10-29T06:29:09Z"
+updated = "2026-10-29T06:29:11Z"
 scope = ["crates/frob-evidence/src/coverage/js.rs", "crates/frob-evidence/tests/**"]
 
 [[acceptance]]
