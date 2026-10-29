@@ -8,11 +8,11 @@ points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
 reporter = "lognd"
 created = "2026-10-27T00:45:38Z"
-updated = "2026-10-29T03:05:32Z"
+updated = "2026-10-29T03:06:57Z"
 persona = "a JS or TS developer"
 capability = "get coverage from c8 or istanbul under vitest and jest"
 outcome_text = "coverage gates work on my JS projects"
-scope = ["crates/frob-evidence/src/coverage/js.rs", "crates/frob-evidence/tests/coverage_js.rs"]
+scope = ["crates/frob-evidence/src/coverage/js.rs", "crates/frob-evidence/tests/coverage_js.rs", "crates/frob-evidence/src/coverage/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
