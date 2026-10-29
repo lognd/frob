@@ -1,0 +1,10 @@
+kind = "create"
+title = "Grimble LOG rules: advisory (Warn) severity for advisory atoms"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/src/log/**"]
+body = "found while working ~JKKJPTT: advisory atoms are not reported because the pass only emits Error"
+at = "2026-10-29T09:32:21Z"
+actor = "lognd"
+rev = 1
