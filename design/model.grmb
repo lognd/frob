@@ -12,6 +12,7 @@ node frob : trusted {
   may process.env at "crates/frob*/**";
   may exec at "crates/frob*/tests/**";
   may net.listen at "crates/frob-mirror/**";
+  may net.connect at "crates/frob-mirror/src/github/http.rs";
   may exec at "crates/frob/build.rs";
   may exec at "crates/frob-ledger/src/refresh.rs";
 }

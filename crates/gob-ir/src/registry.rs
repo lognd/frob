@@ -4,6 +4,7 @@
 //! linking a crate that calls `inventory::submit!`.
 
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
 
 use std::collections::BTreeSet;
 use std::sync::RwLock;
@@ -301,7 +302,35 @@ inventory::submit! {
     VocabEntry {
         lang: "rust",
         kind: "net.connect",
-        names: &["TcpStream::connect", "UdpSocket::connect"],
+        // `<type path>.<method>` entries name a method on a receiver whose resolved type is that
+        // path (ticket YCR4M6H): grimble-bind types the receiver symbolically.
+        names: &[
+            "TcpStream::connect",
+            "UdpSocket::connect",
+            "ureq::Agent.get",
+            "ureq::Agent.post",
+            "ureq::Agent.put",
+            "ureq::Agent.delete",
+            "ureq::Agent.head",
+            "ureq::Agent.patch",
+            "ureq::Agent.run",
+            "reqwest::Client.get",
+            "reqwest::Client.post",
+            "reqwest::Client.put",
+            "reqwest::Client.delete",
+            "reqwest::Client.head",
+            "reqwest::Client.patch",
+            "reqwest::Client.request",
+            "reqwest::Client.execute",
+            "reqwest::blocking::Client.get",
+            "reqwest::blocking::Client.post",
+            "reqwest::blocking::Client.put",
+            "reqwest::blocking::Client.delete",
+            "reqwest::blocking::Client.head",
+            "reqwest::blocking::Client.patch",
+            "reqwest::blocking::Client.request",
+            "reqwest::blocking::Client.execute",
+        ],
     }
 }
 
