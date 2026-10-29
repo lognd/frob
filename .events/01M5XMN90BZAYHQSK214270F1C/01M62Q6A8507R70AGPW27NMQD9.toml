@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T02:15:55Z"
+digest = "907cb025aeeba0a4e58a22f00181b1de0fc68dd7443e4d71ded8e2991c699515"
+exit_code = 0
+head = "c00fe38e2314b880acc0cda48b8f6241a8e5e806"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 56s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2e09e7ba-495b-486d-aac0-ca115ad13eaf with nextest profile: default
+    Starting 1 test across 492 binaries (5704 tests skipped)
+        PASS [   0.022s] gob-check proc002::tests::flags_macro_invocations_not_text
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.032s] 1 test run: 1 passed, 5704 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "gob-check proc002::tests::flags_macro_invocations_not_text"
+size = 916
+status = "measured"
+test_count = 1
+tests_digest = "ed6bb461a7ec1e7c9377099f0126af79bd18e3a6aa1dc56824f94980e3424ec1"
+at = "2026-10-29T02:15:55Z"
+actor = "lognd"
+rev = 1
