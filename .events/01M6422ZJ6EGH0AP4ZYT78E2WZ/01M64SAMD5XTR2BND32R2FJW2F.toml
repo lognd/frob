@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T21:33:32Z"
+digest = "26eb95102e89505dca29a79ce64802aa26fb3d70189003b454865e00847b44ff"
+exit_code = 0
+inline = '''
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.64s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 233e1f5b-4134-4493-8a34-df46b6d27f7b with nextest profile: default
+    Starting 3 tests across 14 binaries (124 tests skipped)
+        PASS [   0.102s] grimble-bind::caps audit_p08_the_finding_names_the_call
+        PASS [   0.145s] grimble-bind::caps audit_p08_a_constant_source_is_resolved_and_a_shadowing_eval_is_not_the_builtin
+        PASS [   0.349s] grimble-bind::caps audit_p08_non_constant_code_evaluation_is_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.351s] 3 tests run: 3 passed, 124 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(audit_p08)'"
+size = 1705
+status = "measured"
+test_count = 3
+tests_digest = "c337b06f1b015f5064f21f39444550caf5d9a49f49e10742b55e3c36cf74cc24"
+at = "2026-10-29T21:33:32Z"
+actor = "lognd"
+rev = 1
