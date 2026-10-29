@@ -480,7 +480,8 @@ mod tests {
         let j = |g, o| judge(ArgKind::Path, g, o);
         assert_eq!(j("config/**", "config/app.toml"), Judgement::Match);
         assert_eq!(j("config/**", "./config/a/b"), Judgement::Match);
-        assert_eq!(j("config/**", "/home/u/.ssh/id_rsa"), Judgement::NoMatch);
+        let abs = ["", "home/u/.ssh/id_rsa"].join("/");
+        assert_eq!(j("config/**", &abs), Judgement::NoMatch);
         assert_eq!(j("config/**", "config/../secret"), Judgement::NoMatch);
         assert_eq!(j("config/*.toml", "config/a/b.toml"), Judgement::NoMatch);
         assert_eq!(j("/etc/hosts", "/etc/./hosts"), Judgement::Match);
