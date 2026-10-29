@@ -256,7 +256,7 @@ fn clean_scan_makes_the_next_scan_incremental() {
 }
 
 /// The home-path and private-term walks find dirty ticket files and events in either layout.
-// frob:ticket ~BGHBJ66
+// frob:ticket 01M4A61GY4Z5H9C0W92BGHBJ66
 // frob:tests crates/frob-ledger/src/privacy.rs::Ledger.home_path_findings
 // frob:tests crates/frob-ledger/src/privacy.rs::Ledger.private_term_findings
 #[test]
