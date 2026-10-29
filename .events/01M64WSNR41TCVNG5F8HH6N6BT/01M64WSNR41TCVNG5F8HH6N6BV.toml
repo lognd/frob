@@ -1,0 +1,11 @@
+kind = "create"
+title = "Generated rules/mod.rs freshness test trips DEAD001 in 16 crates"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/gob-rules/**"]
+body = "The rules-index generator (crates/gob-rules/src/indexgen.rs:290) emits 'mod freshness' holding fn rules_index_is_fresh. grimble_bind::eval::is_test_unit only treats a qualifier segment named tests or test as test code, so DEAD001 reports the #[test] fn as dead in every crate with a generated src/rules/mod.rs. Found while burning down ~XVC7KX6. Fix: root #[test] fns in is_test_unit (crates/grimble-bind), or emit 'mod tests' and regenerate every crate index."
+at = "2026-10-29T22:34:25Z"
+actor = "lognd"
+rev = 1
