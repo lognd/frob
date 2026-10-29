@@ -21,7 +21,9 @@ test `crates/frob/tests/it/doc_commands.rs`, so it stays true.
   use. grimble checks the repository against it.
 - **Node**: a part of the system. It `owns` files or symbols by glob, has a
   trust level (`trusted` below) and `may` grants capability atoms such as
-  `fs.read`. Anything not granted is denied.
+  `fs.read`. Anything not granted is denied, and that includes code no node
+  owns: an observed capability use in an unowned file is a `CAP001` error. Give
+  the code an owner with the grants it needs, or list it in `[check] exclude`.
 - **Flow**: data moving from one node to another, with a `label` (here
   `Secret` or `Public`) and a `rate`. A node's `clearance` is the highest label
   it may hold.
@@ -169,7 +171,7 @@ Everything below runs in a plain `grimble check`; the knobs are in
 |---|---|---|
 | `MDL` | The model itself is malformed: syntax errors, bad references (MDL006), a missing include (MDL002), unreachable files (MDL019), no root (MDL021). | Always on; fix these first. |
 | `SYS` | Model and code disagree: files nobody owns (SYS001), a binding that matches no code (SYS004), public units no node owns (SYS005, needs `[grimble] modeled`). | `strict = true` turns SYS001 and SYS005 into errors. |
-| `CAP` | Code uses a capability its node does not grant (CAP001) or a node grants one nothing uses (CAP002). CAP005: a new or widened `may` grant no attester has approved. | Add `may ATOM;` to the node, or remove the use. For CAP005 a person listed in frob.toml `[evidence] attesters` runs `grimble ack --grants --reason "why"` and commits `grimble.grants.toml`. |
+| `CAP` | Code uses a capability its node does not grant, or code no node owns uses one at all (CAP001) or a node grants one nothing uses (CAP002). CAP005: a new or widened `may` grant no attester has approved. | Add `may ATOM;` to the node, or remove the use. For CAP005 a person listed in frob.toml `[evidence] attesters` runs `grimble ack --grants --reason "why"` and commits `grimble.grants.toml`. |
 | `FLOW` | A label above the destination's clearance (FLOW001), an endorse missing on a flow into a higher-trust node (FLOW002), no rate on a foreign flow (FLOW003). | Add a `boundary`, change a `clearance`, or add a `rate`. |
 | `CLAIM` | A `claim` (`noflow`, `reach`) that the declared flows refute (CLAIM001). | Write claims for the guarantees you care about. |
 | `CYCLE`, `LARGE`, `DEAD` | Architecture: crates that import each other, functions longer than `large_lines` (default 400), unreferenced private functions. | Tune `[grimble] large_lines`; 0 turns LARGE001 off. DUP001 (copied blocks) is tuned by `dup_min_tokens` (50) and `dup_min_occurrences` (3). |

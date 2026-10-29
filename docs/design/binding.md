@@ -1126,6 +1126,18 @@ The cell of `(n, a)` is computed, in this order:
    report such a cell, is retired. The only finding on a denied atom is
    CAP001 when a use is observed (item 3).
 
+   Unowned code (ticket S9HQ7A6). Code no node owns is checked against an
+   implicit node with no grants, so denial does not depend on ownership: a
+   certain use of any atom in a file no `owns` selector reaches, or in a unit
+   no selector claims (`Owner::Foreign`), is CAP001 (Error, anchor
+   `cap/unowned/ATOM`) regardless of `[grimble] strict`, which only governs
+   SYS001. An unresolved receiver, or a unit whose owner cannot be named (an
+   unseen remainder), is Unresolved, never silent; a tie between owners puts
+   the use in `Use_hi` of each tied node. Not subjects: frob-owned paths
+   (6.1) and anything `[check] exclude` removes from the walk. To make
+   unowned code legitimate, give it an owner with the grants it needs, or
+   exclude it; there is no per-rule opt-out.
+
 Effect of May ownership. A use found at an identity in `Y(n)` is in `Use_hi`
 of n and not in `Use_lo`: it can prevent `declared-unused` (a use might
 exist), make `undeclared` Unresolved (not fired) and never create `uses`.

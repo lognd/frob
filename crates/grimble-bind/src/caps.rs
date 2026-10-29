@@ -44,6 +44,7 @@
 // frob:ticket 01M5XNNHBSPSM5XFG8FM64HENY
 // frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
 // frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:ticket 01M5XNNHRFE1K2DHBD7S9HQ7A6
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -105,6 +106,11 @@ impl Use {
 struct Uses {
     lo: BTreeMap<String, Vec<Use>>,
     hi: BTreeMap<String, Vec<Use>>,
+    /// Uses in code no node owns (`Owner::Foreign`): checked against an implicit node with no
+    /// grants (default-deny, ticket S9HQ7A6).
+    unowned: Vec<Use>,
+    /// Uses in code whose owner cannot be named and has no candidate (a hidden remainder).
+    unseen: Vec<Use>,
 }
 
 /// Why CAP001 and CAP002 have no subject: no node owns code, so no cell exists.
@@ -465,8 +471,33 @@ fn route(uses: &mut Uses, owner: &Owner, u: Use) {
                     .push(u.clone());
             }
         }
-        Owner::Unknown(_) | Owner::Foreign => {}
+        // A tie names its candidates: each may own the use.
+        Owner::Unknown(ns) if !ns.is_empty() => {
+            for n in ns {
+                uses.hi
+                    .entry(n.as_str().to_owned())
+                    .or_default()
+                    .push(u.clone());
+            }
+        }
+        Owner::Unknown(_) => uses.unseen.push(u),
+        Owner::Foreign => uses.unowned.push(u),
     }
+}
+
+/// The owner of the unit a use sits in. A file no selector reaches has no ownership units at all
+/// (see `owner::build`), so its code is `Foreign` rather than skipped; frob-owned and unwalked
+/// files and units the owner pass never saw have no owner to judge (`None`).
+fn owner_of_use(cx: &Cx<'_>, unit: &str, path: &str) -> Option<Owner> {
+    if let Some(uo) = cx.owners.units.get(unit) {
+        return Some(uo.merged.owner.clone());
+    }
+    let unreached = cx.owners.files.get(path).is_some_and(|fo| !fo.expanded);
+    if unreached && !crate::frob_owned::is_frob_owned(path, cx.ledger_dir) {
+        tracing::debug!(path, unit, "use sits in code no node owns");
+        return Some(Owner::Foreign);
+    }
+    None
 }
 
 /// The last path segment of a vocabulary name (`fs::read` -> `read`, `subprocess.run` -> `run`).
@@ -505,14 +536,9 @@ fn unit_at(
     }
 }
 
-/// Uses found by import resolution (ticket D36SRKP): calls and function values whose written
-/// path names a vocabulary entry only through an alias, a from-import, a `let` binding, a literal
-/// `getattr` / `import_module`, or an explicit `std::` / `tokio::` root that a same-named
-/// repository item hides from the call graph. Added to `uses` unless the call-graph pass already
-/// recorded the same atom on the same line of the same unit.
-fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
-    // (file, line, name) of every call the graph resolved inside the repository
-    let mut local: BTreeSet<(String, u32, String)> = BTreeSet::new();
+/// (file, line, name) of every call the graph resolved inside the repository.
+fn graph_resolved_calls(cx: &Cx<'_>) -> BTreeSet<(String, u32, String)> {
+    let mut local = BTreeSet::new();
     for e in cx.graph.edges_with_status() {
         if e.kind == EdgeKind::Calls
             && e.to.is_some()
@@ -521,17 +547,50 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
             local.insert((e.from.path().to_owned(), l, n.clone()));
         }
     }
-    let seen: BTreeSet<(String, Option<u32>, String, bool)> = {
-        let mut set = BTreeSet::new();
-        for (_, us) in uses.lo.iter().chain(uses.hi.iter()) {
-            for u in us {
-                set.insert((u.unit.clone(), u.line, u.atom.clone(), u.certain));
-            }
+    local
+}
+
+/// Dedup keys (unit, line, atom, certain) of every use already recorded.
+fn seen_uses(uses: &Uses) -> BTreeSet<(String, Option<u32>, String, bool)> {
+    let mut set = BTreeSet::new();
+    for us in uses
+        .lo
+        .values()
+        .chain(uses.hi.values())
+        .chain([&uses.unowned, &uses.unseen])
+    {
+        for u in us {
+            set.insert((u.unit.clone(), u.line, u.atom.clone(), u.certain));
         }
-        set
-    };
-    let mut seen = seen;
-    let files: BTreeSet<&str> = cx.owners.units.values().map(|u| u.file.as_str()).collect();
+    }
+    set
+}
+
+/// Files the import-resolution pass reads: every unit file plus unexpanded (unowned) files.
+fn scan_files<'a>(cx: &'a Cx<'_>) -> BTreeSet<&'a str> {
+    cx.owners
+        .units
+        .values()
+        .map(|u| u.file.as_str())
+        .chain(
+            cx.owners
+                .files
+                .iter()
+                .filter(|(_, fo)| !fo.expanded)
+                .map(|(p, _)| p.as_str()),
+        )
+        .collect()
+}
+
+/// Uses found by import resolution (ticket D36SRKP): calls and function values whose written
+/// path names a vocabulary entry only through an alias, a from-import, a `let` binding, a literal
+/// `getattr` / `import_module`, or an explicit `std::` / `tokio::` root that a same-named
+/// repository item hides from the call graph. Added to `uses` unless the call-graph pass already
+/// recorded the same atom on the same line of the same unit.
+fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
+    let local = graph_resolved_calls(cx);
+    let mut seen = seen_uses(uses);
+    let files = scan_files(cx);
     let mut vocabs: BTreeMap<String, Vec<(&str, BTreeSet<&str>)>> = BTreeMap::new();
     let mut added = 0usize;
     for path in files {
@@ -577,7 +636,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                 continue;
             }
             let (unit, qual) = unit_at(cx, symbols, &file_unit, pu.offset);
-            let Some(uo) = cx.owners.units.get(&unit) else {
+            let Some(owner) = owner_of_use(cx, &unit, path) else {
                 tracing::debug!(file = path, unit = %unit, "resolved use has no ownership unit");
                 continue;
             };
@@ -590,7 +649,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                 added += 1;
                 route(
                     uses,
-                    &uo.merged.owner,
+                    &owner,
                     Use {
                         atom: atom.to_owned(),
                         file: path.to_owned(),
@@ -630,15 +689,21 @@ fn observe(cx: &Cx<'_>) -> Uses {
     let mut vocabs: BTreeMap<String, Vec<(&str, BTreeSet<&str>)>> = BTreeMap::new();
     for e in &edges {
         let Some(text) = &e.text else { continue };
-        let from = e.from.to_string();
-        let Some(uo) = cx.owners.units.get(&from) else {
+        let path = e.from.path();
+        // Code no selector reaches has no units: its calls sit in the file unit.
+        let from = if cx.owners.units.contains_key(&e.from.to_string()) {
+            e.from.to_string()
+        } else {
+            gob_symbols::Symref::file(path).to_string()
+        };
+        let Some(owner) = owner_of_use(cx, &from, path) else {
             continue;
         };
         let callee = callee_of(text);
-        let Some(code) = cx.code.file(&uo.file) else {
+        let Some(code) = cx.code.file(path) else {
             continue;
         };
-        let file_calls = calls_in.get(&uo.file).unwrap_or(&empty);
+        let file_calls = calls_in.get(path).unwrap_or(&empty);
         // A cut-off callee text cannot be split; fall back to the spelled method name.
         let spelled;
         let callee = if callee.ends_with("...") {
@@ -650,7 +715,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
         let mut is_path = |recv: &str| {
             code.language == "python"
                 && sources
-                    .entry(uo.file.clone())
+                    .entry(path.to_owned())
                     .or_insert_with(|| code.source())
                     .as_deref()
                     .is_some_and(|src| pytype::is_path_expr(src, recv, 0))
@@ -663,7 +728,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
         {
             let u = Use {
                 atom,
-                file: uo.file.clone(),
+                file: path.to_owned(),
                 unit: from.clone(),
                 qual: match e.from.target() {
                     Target::Symbol(segs) => segs.clone(),
@@ -674,7 +739,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
                 certain,
                 arg: None,
             };
-            route(&mut uses, &uo.merged.owner, u);
+            route(&mut uses, &owner, u);
         }
     }
     scan_resolved(cx, &mut uses);
@@ -682,6 +747,8 @@ fn observe(cx: &Cx<'_>) -> Uses {
     tracing::info!(
         must_nodes = uses.lo.len(),
         may_nodes = uses.hi.len(),
+        unowned = uses.unowned.len(),
+        unseen = uses.unseen.len(),
         "capability uses observed"
     );
     uses
@@ -1076,6 +1143,65 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
     }
 }
 
+/// CAP001 for code no node owns: an implicit node with no grants, so every observed use is denied.
+///
+/// A certain use in `Foreign` code is an Error; an unresolved receiver, or code whose owner is
+/// hidden (an unseen remainder), is Unresolved, never silent. Frob-owned and `[check] exclude`d
+/// files are not in the walk of uses (see `owner_of_use`).
+fn cap001_unowned(uses: &Uses, out: &mut Output) {
+    out.count("CAP001", 1);
+    // (atom, receiver unresolved, owner hidden) -> uses
+    let mut by_atom: BTreeMap<(&str, bool, bool), Vec<&Use>> = BTreeMap::new();
+    for (set, hidden) in [(&uses.unowned, false), (&uses.unseen, true)] {
+        for u in set {
+            by_atom
+                .entry((u.atom.as_str(), !u.certain, hidden))
+                .or_default()
+                .push(u);
+        }
+    }
+    for ((atom, unresolved_receiver, hidden), us) in by_atom {
+        if !unresolved_receiver && !hidden {
+            let anchor = format!("cap/unowned/{atom}");
+            out.fire(
+                "CAP001",
+                Severity::Error,
+                format!(
+                    "unowned code uses `{atom}`; no node owns it, so nothing grants it ({} use(s)): {}",
+                    us.len(),
+                    list(&us)
+                ),
+                &anchor,
+                None,
+            );
+        } else if hidden {
+            let anchor = format!("cap/unowned/{atom}/hidden");
+            out.unresolved(
+                "CAP001",
+                Reason::UnseenRemainder,
+                &format!(
+                    "`{atom}` is used in code whose owner cannot be named (unseen remainder): {}",
+                    list(&us)
+                ),
+                &anchor,
+                None,
+            );
+        } else {
+            let anchor = format!("cap/unowned/{atom}/receiver");
+            out.unresolved(
+                "CAP001",
+                Reason::UnresolvedEdge,
+                &format!(
+                    "`{atom}` may be used by unowned code, which has no grant; the receiver type of the call could not be resolved: {}",
+                    list(&us)
+                ),
+                &anchor,
+                None,
+            );
+        }
+    }
+}
+
 /// The atoms a grant of `granted` covers: itself and its children, registered or declared by a pack.
 fn expansion(granted: &str, packs: &BTreeMap<String, PackPin>) -> Vec<String> {
     atoms()
@@ -1270,6 +1396,7 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
 pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     let uses = observe(cx);
     cap001(cx, &uses, out);
+    cap001_unowned(&uses, out);
     cap002(cx, &uses, out);
     tracing::info!(
         cap001 = out.subjects.get("CAP001").copied().unwrap_or(0),
