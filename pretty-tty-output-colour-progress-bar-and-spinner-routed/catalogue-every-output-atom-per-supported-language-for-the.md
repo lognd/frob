@@ -8,8 +8,8 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T03:01:37Z"
-updated = "2026-10-29T06:57:26Z"
-scope = ["docs/design/output-atoms.md"]
+updated = "2026-10-29T06:58:32Z"
+scope = ["docs/design/output-atoms.md", "docs/README.md"]
 
 [[acceptance]]
 text = "docs/design/output-atoms.md lists, for every language grimble supports, every way to write to stdout, stderr, files, raw fds, syslog/journald, debugger channels and by shelling out or FFI, including esoteric ones, each with its fully qualified symbol path, how it can be aliased or re-exported, and the sanctioned logging replacement"
