@@ -2,7 +2,8 @@
 id = "01M4KWWDW9YRX4V8SNG1X60JKF"
 title = "gob-dev profile.toml has no scenario or skip reason for frob ticket closeout"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "Claude"
