@@ -211,3 +211,63 @@ fn pytest_functions_and_test_class_methods_are_tests() {
         ]
     );
 }
+
+/// The `Calls` edges from `from` to `to_path`, as their bases.
+fn call_bases(files: &[(&str, &str)], from: &str) -> Vec<gob_symbols::EdgeBasis> {
+    let fs: Vec<FileSymbols> = files
+        .iter()
+        .map(|(p, t)| extract_file(&entry(p, t), t))
+        .collect();
+    SymbolGraph::from_files(fs)
+        .edges_with_status()
+        .iter()
+        .filter(|e| e.kind == EdgeKind::Calls && e.to.is_some() && e.from.to_string() == from)
+        .map(|e| e.basis)
+        .collect()
+}
+
+// frob:ticket ~313NY13
+// frob:tests crates/gob-symbols/src/graph.rs::StatusEdge
+#[test]
+fn a_method_guessed_by_name_alone_is_marked_name_only_in_every_adapter() {
+    use gob_symbols::EdgeBasis::NameOnly;
+    let py = call_bases(
+        &[
+            ("src/x.py", "def go(p):\n    return p.read_text()\n"),
+            (
+                "src/y.py",
+                "class Repo:\n    def read_text(self):\n        return 1\n",
+            ),
+        ],
+        "src/x.py::go",
+    );
+    assert_eq!(py, [NameOnly], "python");
+    let ts = call_bases(
+        &[
+            (
+                "src/x.ts",
+                "export function go(p) { return p.readText(); }\n",
+            ),
+            (
+                "src/y.ts",
+                "export class Repo { readText() { return 1; } }\n",
+            ),
+        ],
+        "src/x.ts::go",
+    );
+    assert_eq!(ts, [NameOnly], "typescript");
+    let rs = call_bases(
+        &[
+            (
+                "src/lib.rs",
+                "mod y;\npub fn go() { let p = other(); p.read_text(); }\n",
+            ),
+            (
+                "src/y.rs",
+                "pub struct Repo;\nimpl Repo { pub fn read_text(&self) {} }\n",
+            ),
+        ],
+        "src/lib.rs::go",
+    );
+    assert_eq!(rs, [NameOnly], "rust");
+}

@@ -1049,6 +1049,15 @@ For node n and atom a:
 - `Use(i, a) = effects(i)` restricted to a: an Answer over EffectSites; `Use_lo`
   Must uses, `Use_hi` possible uses.
 
+Name-only call edges (ticket ~313NY13): when the call graph cannot prove a
+method call's receiver type it links every same-named method as a May edge
+with basis `NameOnly`. Such an edge proves no target, so the use detector
+judges the call as if it were unresolved: a project class that merely shares
+a name with a capability method (`Path.read_text`, `.get` on a client) never
+hides a use, whichever file the decoy sits in. The marker is set by the
+universal resolver in gob-symbols (Rust, Python and TypeScript unknown-receiver
+paths); adapters with no `VocabEntry` have no capability uses to hide.
+
 Note that ownership is `owner(i)`, not "the identity matched n's selector":
 an identity matched by `owns "crates/frob/**"` but owned by a more
 specific node m counts for m (2.2).

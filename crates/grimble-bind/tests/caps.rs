@@ -848,3 +848,44 @@ fn rust_path_method_receivers_are_fs_read() {
     let rs = "fn go(p: &Foo) -> bool {\n    p.exists()\n}\n";
     assert!(of(&bind_file("src/x.rs", rs, ""), "CAP001").is_empty());
 }
+
+// frob:ticket ~313NY13
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn python_decoy_method_in_another_file_does_not_hide_a_path_read() {
+    let py =
+        "from pathlib import Path\n\n_P = Path(\"o\")\n\n\ndef go():\n    return _P.read_text()\n";
+    let decoy = "class Repo:\n    def read_text(self):\n        return \"\"\n";
+    let alone = bind_files(&[("src/x.py", py)], "");
+    let both = bind_files(&[("src/x.py", py), ("src/y.py", decoy)], "");
+    assert_eq!(
+        atoms(&alone),
+        ["cap/node/a/fs.read"],
+        "{:?}",
+        alone.findings
+    );
+    assert_eq!(atoms(&both), atoms(&alone), "{:?}", both.findings);
+}
+
+// frob:ticket ~313NY13
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn python_decoy_never_turns_an_unproven_receiver_clean() {
+    let py = "def go(p):\n    return p.read_text()\n";
+    let decoy = "class Repo:\n    def read_text(self):\n        return \"\"\n";
+    let alone = bind_files(&[("src/x.py", py)], "");
+    let both = bind_files(&[("src/x.py", py), ("src/y.py", decoy)], "");
+    assert_eq!(atoms(&both), atoms(&alone), "{:?}", both.findings);
+}
+
+// frob:ticket ~313NY13
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn rust_decoy_method_in_another_file_does_not_hide_a_typed_client_use() {
+    let rs = "fn go() {\n    let c = reqwest::blocking::Client::new();\n    let _ = c.get(\"http://h\");\n}\n";
+    let decoy = "pub struct Repo;\nimpl Repo {\n    pub fn get(&self, _k: &str) {}\n}\n";
+    let alone = bind_files(&[("src/x.rs", rs)], "");
+    let both = bind_files(&[("src/x.rs", rs), ("src/y.rs", decoy)], "");
+    assert!(!atoms(&alone).is_empty(), "{:?}", alone.findings);
+    assert_eq!(atoms(&both), atoms(&alone), "{:?}", both.findings);
+}

@@ -970,12 +970,21 @@ fn unit_at(
     }
 }
 
+/// frob:ticket ~313NY13
+/// True when the call edge proves no target: unresolved, or a guess by method name alone. A
+/// project class that merely shares a method's name must never hide a use whose receiver may be
+/// a capability type, so such an edge is judged like an unresolved call.
+fn is_open_call(e: &gob_symbols::StatusEdge) -> bool {
+    e.kind == EdgeKind::Calls && (e.to.is_none() || (e.basis == gob_symbols::EdgeBasis::NameOnly))
+}
+
 /// (file, line, name) of every call the graph resolved inside the repository.
 fn graph_resolved_calls(cx: &Cx<'_>) -> BTreeSet<(String, u32, String)> {
     let mut local = BTreeSet::new();
     for e in cx.graph.edges_with_status() {
         if e.kind == EdgeKind::Calls
             && e.to.is_some()
+            && !is_open_call(e)
             && let (Some(l), Some(n)) = (e.line, e.name.as_ref())
         {
             local.insert((e.from.path().to_owned(), l, n.clone()));
@@ -1187,7 +1196,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
         .graph
         .edges_with_status()
         .iter()
-        .filter(|e| e.kind == EdgeKind::Calls && e.to.is_none())
+        .filter(|e| is_open_call(e))
         .collect();
     let mut calls_in: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for e in &edges {
@@ -1202,9 +1211,14 @@ fn observe(cx: &Cx<'_>) -> Uses {
     let mut sources: BTreeMap<String, Option<String>> = BTreeMap::new();
     let mut uses = Uses::default();
     let mut vocabs: BTreeMap<String, Vec<(&str, BTreeSet<&str>)>> = BTreeMap::new();
+    // A name-only call carries one edge per same-named method: judge the site once.
+    let mut judged: BTreeSet<(String, Option<u32>, String)> = BTreeSet::new();
     for e in &edges {
         let Some(text) = &e.text else { continue };
         let path = e.from.path();
+        if e.to.is_some() && !judged.insert((e.from.to_string(), e.line, text.clone())) {
+            continue;
+        }
         // Code no selector reaches has no units: its calls sit in the file unit.
         let from = if cx.owners.units.contains_key(&e.from.to_string()) {
             e.from.to_string()

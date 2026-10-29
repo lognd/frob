@@ -31,7 +31,7 @@ use petgraph::Direction;
 use petgraph::graph::NodeIndex;
 use petgraph::visit::EdgeRef;
 
-use super::{EdgeKind, GapReason, Outcome, StatusEdge, SymbolGraph, base_segment};
+use super::{EdgeBasis, EdgeKind, GapReason, Outcome, StatusEdge, SymbolGraph, base_segment};
 use crate::crates::CrateDeps;
 use crate::model::{
     CallSite, FileSymbols, ImportEdge, LocalBinding, Receiver, RefSite, SymbolKind, UseBinding,
@@ -289,6 +289,7 @@ fn import_edge(
     reason: Option<GapReason>,
 ) -> StatusEdge {
     StatusEdge {
+        basis: EdgeBasis::Symbolic,
         from: Symref::file(from),
         to,
         kind: EdgeKind::Imports,
@@ -731,7 +732,7 @@ impl SymbolGraph {
     /// Every TypeScript method named `name` as May candidates, or an external gap when none exists.
     fn ts_unknown_receiver(ts: &TsIndex, name: &str) -> Outcome {
         match ts.methods.get(name) {
-            Some(ms) if !ms.is_empty() => Outcome::Hit(ms.clone(), Status::May),
+            Some(ms) if !ms.is_empty() => Outcome::NameOnly(ms.clone()),
             _ => Outcome::Gap(GapReason::Unbound),
         }
     }
