@@ -1,0 +1,10 @@
+kind = "create"
+title = "BUILD: gob-config derive mismatch breaks gob-dev gen all in worktrees"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-config/**"]
+body = "found while working ~6CV37RW: gob-dev fails to compile gob-config (FieldDescription has no field required) on this base."
+at = "2026-10-29T16:39:37Z"
+actor = "lognd"
+rev = 1
