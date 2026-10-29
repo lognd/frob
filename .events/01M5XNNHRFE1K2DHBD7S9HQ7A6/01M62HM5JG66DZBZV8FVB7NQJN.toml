@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/rules/sys001.rs", "crates/grimble-check/src/config.rs", "crates/grimble-bind/tests/**", "docs/design/binding.md", "docs/guides/grimble.md"]
+new = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/rules/sys001.rs", "crates/grimble-check/src/config.rs", "crates/grimble-bind/tests/**", "docs/design/binding.md", "docs/guides/grimble.md", "docs/reference/languages.md"]
+at = "2026-10-29T00:40:41Z"
+actor = "lognd"
+rev = 1
