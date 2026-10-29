@@ -11,7 +11,8 @@ use gob_rules::Finding;
 use gob_text::FileInterner;
 use grimble_check::coh_pass::{CohPassOptions, analyze};
 use grimble_check::coh002::Coh002Options;
-use grimble_check::config::CohTable;
+use grimble_check::config::{CohTable, default_log_exempt, default_log_modules};
+use grimble_check::log::pass::{LogOptions, analyze as log_analyze};
 use grimble_check::{CheckOptions, run, sibling_document};
 use grimble_lints::pass::PathFile;
 
@@ -63,8 +64,18 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
             text: &f.text,
         })
         .collect();
-    analyze(&inputs, &CohPassOptions::default())
-        .findings
+    let findings = if case.rule.as_str().starts_with("LOG") {
+        // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+        let opts = LogOptions {
+            modules: default_log_modules(),
+            exempt: default_log_exempt(),
+            extra_crates: Vec::new(),
+        };
+        log_analyze(&inputs, &opts).findings
+    } else {
+        analyze(&inputs, &CohPassOptions::default()).findings
+    };
+    findings
         .into_iter()
         .filter(|f| f.rule == case.rule.as_str())
         .filter_map(|f| f.into_finding(&mut files))

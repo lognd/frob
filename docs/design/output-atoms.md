@@ -68,7 +68,11 @@ path segment or receiver, `{1,2}` for an fd or stream argument filter),
 (the reason it counts), `use` (the sanctioned replacement at the call
 site). An optional `when` narrows the match to an argument condition
 (for example only fd 1 or 2) and `sev = "advisory"` marks implicit or
-low-signal atoms that report but are not part of the default deny set.
+low-signal atoms; the rule loads them but does not report them (see
+section "Implementation status"). An optional `mode_arg` (0-based index
+of the mode or flags argument, also read from a `mode=`/`flags=` keyword)
+makes the atom fire only when that argument is a string literal naming a
+writing mode (`w`, `a`, `x` or `+`), so a read-only `open(path)` is clean.
 
 Detection is symbolic, never a text needle: the rule parses with the
 named grammar, builds a per-file scope (imports, assignments, local
@@ -216,7 +220,7 @@ atoms = [
  { id = "rust.io-copy", ch = "stream", sym = "std::io::copy", form = "fn", via = ["from-import", "import-alias"], why = "pumps a reader into a writer; an output when the writer is a std stream", use = "tracing::info!", when = "second arg resolves to a std stream" },
  { id = "rust.bufwriter", ch = "stream", sym = "std::io::{BufWriter,LineWriter}::new", form = "fn", via = ["from-import", "handle-flow"], why = "wraps a writer; wrapping a std stream or a file keeps the output", use = "a tracing layer writer (tracing_appender)", when = "arg resolves to a std stream or file" },
  { id = "rust.fs-write", ch = "file", sym = "std::fs::write", form = "fn", via = ["from-import", "import-alias"], why = "creates and writes a file by path", use = "tracing_appender::rolling or the project log module" },
- { id = "rust.file-create", ch = "file", sym = "std::fs::File::{create,create_new,open}", form = "fn", via = ["from-import", "import-alias", "handle-flow"], why = "opens a file handle that later writes go to", use = "tracing_appender file writer" },
+ { id = "rust.file-create", ch = "file", sym = "std::fs::File::{create,create_new}", form = "fn", via = ["from-import", "import-alias", "handle-flow"], why = "opens a file handle that later writes go to", use = "tracing_appender file writer" },
  { id = "rust.openoptions", ch = "file", sym = "std::fs::OpenOptions", form = "type", via = ["from-import", "import-alias", "handle-flow"], why = "opens a file for write or append", use = "tracing_appender file writer" },
  { id = "rust.file-from-fd", ch = "fd", sym = "std::os::fd::{FromRawFd,OwnedFd,BorrowedFd}::*", form = "fn", via = ["from-import", "fd-literal", "handle-flow"], why = "wraps raw fd 1 or 2 into a File and writes it", use = "tracing::info!", when = "fd argument is 1 or 2" },
  { id = "rust.stdio-fd", ch = "fd", sym = "std::os::fd::AsRawFd::as_raw_fd", form = "method", via = ["handle-flow"], why = "exposes the std stream's fd for out-of-band writes", use = "tracing::info!", sev = "advisory" },
@@ -269,16 +273,17 @@ atoms = [
  { id = "py.os-write", ch = "fd", sym = "os.{write,writev,pwrite,sendfile}", form = "fn", via = ["import-alias", "from-import", "fd-literal", "dynamic-getattr"], why = "raw write to a descriptor", use = "logger.info", when = "fd is 1, 2, sys.stdout.fileno() or sys.stderr.fileno()" },
  { id = "py.os-fdopen", ch = "fd", sym = "os.fdopen", form = "fn", via = ["import-alias", "from-import", "fd-literal"], why = "opens fd 1 or 2 as a file object", use = "logger.info", when = "fd is 1 or 2" },
  { id = "py.os-dup", ch = "fd", sym = "os.{dup,dup2}", form = "fn", via = ["import-alias", "from-import", "fd-literal"], why = "duplicates or rewires std fds so later writes escape the facade", use = "none", when = "an argument is 1 or 2", sev = "advisory" },
- { id = "py.open", ch = "file", sym = "builtins.open", form = "builtin", via = ["builtins-module", "assign-alias"], why = "opens a path for writing; in write, append or exclusive modes it is a file sink; with a std stream path or fd 1/2 it is a std stream", use = "logging.FileHandler built in the logging module" },
- { id = "py.io-open", ch = "file", sym = "io.{open,FileIO,open_code}", form = "fn", via = ["import-alias", "from-import"], why = "same as open", use = "logging.FileHandler in the logging module" },
+ { id = "py.open", ch = "file", sym = "builtins.open", form = "builtin", via = ["builtins-module", "assign-alias"], why = "opens a path for writing; in write, append or exclusive modes it is a file sink; with a std stream path or fd 1/2 it is a std stream", use = "logging.FileHandler built in the logging module", mode_arg = 1 },
+ { id = "py.io-open", ch = "file", sym = "io.{open,FileIO,open_code}", form = "fn", via = ["import-alias", "from-import"], why = "same as open", use = "logging.FileHandler in the logging module", mode_arg = 1 },
  { id = "py.path-std", ch = "fd", sym = "open | io.open | pathlib.Path | os.open | shutil.copyfile | builtins.open", form = "fn", via = ["path-literal"], why = "a path literal /dev/stdout, /dev/stderr, /dev/fd/1, /dev/fd/2, /proc/self/fd/1, /proc/self/fd/2, /dev/tty or /dev/console names a std stream", use = "logger.info", when = "path resolves to a std stream path" },
- { id = "py.pathlib-write", ch = "file", sym = "pathlib.Path.{write_text,write_bytes,open,touch}", form = "method", via = ["import-alias", "from-import", "handle-flow"], why = "writes a file by path", use = "logging.FileHandler in the logging module" },
+ { id = "py.pathlib-write", ch = "file", sym = "pathlib.Path.{write_text,write_bytes,touch}", form = "method", via = ["import-alias", "from-import", "handle-flow"], why = "writes a file by path", use = "logging.FileHandler in the logging module" },
+ { id = "py.pathlib-open", ch = "file", sym = "pathlib.Path.open", form = "method", via = ["import-alias", "from-import", "handle-flow"], why = "opens a file by path in a writing mode", use = "logging.FileHandler in the logging module", mode_arg = 0 },
  { id = "py.os-open", ch = "file", sym = "os.open", form = "fn", via = ["import-alias", "from-import"], why = "opens a descriptor with O_WRONLY or O_RDWR", use = "logging.FileHandler in the logging module", when = "flags include O_WRONLY, O_RDWR, O_APPEND or O_CREAT" },
  { id = "py.shutil", ch = "stream", sym = "shutil.{copyfileobj,copyfile,copy,copy2}", form = "fn", via = ["import-alias", "from-import"], why = "pumps bytes into a destination; an output when it is a std stream or a file", use = "logger.info", when = "destination resolves to a std stream or file" },
  { id = "py.json-dump", ch = "stream", sym = "json.dump", form = "fn", via = ["import-alias", "from-import"], why = "serialises into a file object; an output when that object is a std stream or file", use = "logger.info(json.dumps(...))", when = "second arg resolves to a std stream or file" },
  { id = "py.csv-writer", ch = "stream", sym = "csv.{writer,DictWriter}", form = "fn", via = ["import-alias", "from-import"], why = "writes rows to a file object", use = "logger.info", when = "first arg resolves to a std stream or file" },
  { id = "py.pickle-dump", ch = "stream", sym = "{pickle,marshal,plistlib,tomli_w,yaml}.dump", form = "fn", via = ["import-alias", "from-import"], why = "serialises into a file object", use = "logger.info", when = "file arg resolves to a std stream or file", sev = "advisory" },
- { id = "py.redirect", ch = "stream", sym = "contextlib.{redirect_stdout,redirect_stderr}", form = "type", via = ["import-alias", "from-import"], why = "swaps sys.stdout or sys.stderr to a target; the target is a sink", use = "capture into a buffer and log it with logger.info", sev = "advisory" },
+ { id = "py.redirect", ch = "stream", sym = "contextlib.{redirect_stdout,redirect_stderr}", form = "type", via = ["import-alias", "from-import"], why = "swaps sys.stdout or sys.stderr to a target; the target is a sink", use = "capture into a buffer and log it with logger.info" },
  { id = "py.traceback", ch = "stderr", sym = "traceback.{print_exc,print_exception,print_stack,print_tb,print_last,print_list,TracebackException.print}", form = "fn", via = ["import-alias", "from-import"], why = "prints the traceback to sys.stderr unless file= is given", use = "logger.exception or logger.error(exc_info=True)" },
  { id = "py.pprint", ch = "stdout", sym = "pprint.{pprint,pp,PrettyPrinter}", form = "fn", via = ["import-alias", "from-import"], why = "pretty-prints to sys.stdout or the stream argument", use = "logger.info(pprint.pformat(x))" },
  { id = "py.warnings", ch = "stderr", sym = "warnings.{warn,warn_explicit,showwarning,_showwarnmsg}", form = "fn", via = ["import-alias", "from-import"], why = "the default filter prints to sys.stderr", use = "logging.captureWarnings(True) plus logger.warning" },
@@ -326,7 +331,8 @@ atoms = [
  { id = "js.process-warning", ch = "stderr", sym = "process.{emitWarning,on('warning')}", form = "fn", via = ["global-object", "from-import"], why = "default handler prints the warning to stderr", use = "logger.warn", sev = "advisory" },
  { id = "js.pipe", ch = "stream", sym = "stream.{pipe,pipeline,finished}, stream/promises.pipeline, Readable.prototype.pipe", form = "method", via = ["handle-flow", "from-import", "require"], why = "a pipeline whose sink is process.stdout, process.stderr or a file stream", use = "logger", when = "sink resolves to a std stream or file" },
  { id = "js.fs-writesync", ch = "fd", sym = "fs.{writeSync,write,writevSync,writev}", form = "fn", via = ["require", "import-alias", "from-import", "fd-literal", "dynamic-getattr"], why = "raw descriptor write", use = "logger", when = "fd is 1 or 2 or process.stdout.fd / process.stderr.fd" },
- { id = "js.fs-file", ch = "file", sym = "fs.{writeFile,writeFileSync,appendFile,appendFileSync,createWriteStream,openSync,open,copyFile,cp,truncate}, fs.promises.{writeFile,appendFile,open}, FileHandle.{write,writeFile,appendFile,createWriteStream}", form = "fn", via = ["require", "import-alias", "from-import", "destructure"], why = "file sinks by path or fd", use = "the file transport of the project logger" },
+ { id = "js.fs-file", ch = "file", sym = "fs.{writeFile,writeFileSync,appendFile,appendFileSync,createWriteStream,copyFile,cp,truncate}, fs.promises.{writeFile,appendFile}, FileHandle.{write,writeFile,appendFile,createWriteStream}", form = "fn", via = ["require", "import-alias", "from-import", "destructure"], why = "file sinks by path or fd", use = "the file transport of the project logger" },
+ { id = "js.fs-open", ch = "file", sym = "fs.{open,openSync}, fs.promises.open", form = "fn", via = ["require", "import-alias", "from-import", "destructure"], why = "opens a file descriptor in a writing flag mode", use = "the file transport of the project logger", mode_arg = 1 },
  { id = "js.path-std", ch = "fd", sym = "fs.*", form = "fn", via = ["path-literal"], why = "a path literal /dev/stdout, /dev/stderr, /dev/fd/1, /dev/fd/2, /proc/self/fd/1, /dev/tty, CON, or an options bag {fd: 1} / {fd: 2} names a std stream", use = "logger", when = "path or fd resolves to a std stream" },
  { id = "js.child-process", ch = "shell", sym = "child_process.{spawn,spawnSync,exec,execSync,execFile,execFileSync,fork}", form = "fn", via = ["require", "import-alias", "from-import", "destructure"], why = "stdio:'inherit' (and spawnSync/execSync defaults for stderr) wires the child to our streams", use = "stdio:'pipe' and log the captured data" },
  { id = "js.readline", ch = "stdout", sym = "readline.{createInterface,Interface.write,Interface.setPrompt,Interface.prompt,Interface.question,cursorTo,clearLine,moveCursor,emitKeypressEvents}, readline/promises.*", form = "method", via = ["require", "import-alias", "from-import", "handle-flow"], why = "writes prompts and cursor controls to the output stream", use = "logger for messages; keep prompts in a CLI module", sev = "advisory" },
@@ -542,3 +548,20 @@ atoms = [
 - Third-party printers (`rich`, `chalk`, `click`) are listed advisory
   because their set is open-ended; projects extend the table by adding
   rows in a local override block of the same shape.
+
+## Implementation status (LOG001 and LOG002)
+
+The `grimble-check` rules LOG001 and LOG002 read this catalogue at build
+time (`include_str!`), so a new row needs no code change. Known gaps,
+each tracked as a follow-up ticket:
+
+- Atoms with `sev = "advisory"` are loaded but not reported, because
+  `gob_rules::Severity` has only Unresolved and Error.
+- Atoms whose `when` is a data-flow condition (not an fd or path
+  literal) are skipped; `handle-flow` is not tracked past one binding.
+- A `mode_arg` that is not a string literal is skipped, not flagged.
+- Rust `macro_rules!` expansion and `extern "C"` FFI atoms are not
+  resolved.
+- Planned languages (Java, Zig, C/C++/CUDA, Bash) have no scanner yet.
+- Dynamic JavaScript targets such as `console[name]` are not yet
+  reported as Unresolved.

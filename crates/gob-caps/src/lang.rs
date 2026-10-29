@@ -28,6 +28,8 @@ pub enum Lang {
     GithubActions,
     /// Dockerfiles (`Dockerfile`, `Dockerfile.*`, `*.dockerfile`), selected by file name.
     Dockerfile,
+    /// Dotenv templates (`.env.example`, `.env.sample`, `.env.template`): `KEY=value` lines and `#` comments.
+    Dotenv,
     /// The grimble model language (`.grmb`).
     Grmb,
     /// Pseudo-language: text with no adapter.
@@ -38,7 +40,7 @@ pub enum Lang {
 
 impl Lang {
     /// Every language, in matrix row order.
-    pub const ALL: [Self; 14] = [
+    pub const ALL: [Self; 15] = [
         Self::Rust,
         Self::Python,
         Self::CSharp,
@@ -50,6 +52,7 @@ impl Lang {
         Self::Toml,
         Self::GithubActions,
         Self::Dockerfile,
+        Self::Dotenv,
         Self::Grmb,
         Self::OpaqueText,
         Self::Binary,
@@ -69,6 +72,7 @@ impl Lang {
             Self::Toml => "toml",
             Self::GithubActions => "github-actions",
             Self::Dockerfile => "dockerfile",
+            Self::Dotenv => "dotenv",
             Self::Grmb => "grmb",
             Self::OpaqueText => "opaque-text",
             Self::Binary => "binary",

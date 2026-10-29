@@ -78,6 +78,10 @@ fn corpus_of(lang: &str) -> Vec<(String, String)> {
             "Dockerfile".to_owned(),
             "# image\nFROM rust:1.80 AS build\nRUN cargo build\nFROM build AS final\n".to_owned(),
         )],
+        "dotenv" => vec![(
+            ".env.example".to_owned(),
+            "# placeholders\nDB_URL=changeme\nAPI_KEY=your-key-here\n".to_owned(),
+        )],
         _ => Vec::new(),
     }
 }
@@ -269,7 +273,7 @@ fn corpus_cases_on_disk_match_the_claimed_operators() {
 
 /// Per-adapter probe inputs: (language, path, a truncated source, garbage source).
 // frob:accept PATH001 because="false positive: the literal is YAML with a backslash-n escape, not a drive path"
-const PROBES: [(&str, &str, &str, &str); 10] = [
+const PROBES: [(&str, &str, &str, &str); 11] = [
     (
         "rust",
         "p.rs",
@@ -299,6 +303,12 @@ const PROBES: [(&str, &str, &str, &str); 10] = [
         "Dockerfile",
         "FROM rust AS \\\n",
         "\u{0}\u{1} FROM \u{7f} AS",
+    ),
+    (
+        "dotenv",
+        "p.env.example",
+        "KEY=\n=\nexport",
+        "\u{0}\u{1}=== \u{7f} export",
     ),
     (
         "python",

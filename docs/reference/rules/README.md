@@ -276,6 +276,13 @@
 | [LAYOUT004](LAYOUT004.md) | content-outside-safe-area | error | manual | P+ | true | Text and interactive targets stay inside the safe area. Each block is one scene file under `design/scenes/`; the scene's `safe_area` is the inset from every viewport edge (notches, rounded corners, home indicators) that content must respect. |
 | [LAYOUT005](LAYOUT005.md) | target-below-minimum-size | error | manual | P+ | true | Interactive targets are large enough to hit. Each block is one scene file under `design/scenes/`; a node marked `"interactive": true` is a pointer or touch target. |
 
+## LOG
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [LOG001](LOG001.md) | direct-output | error | manual | P+ | true | Direct output (print, println!, console.*, Console.Write*, sys.stdout and the like) outside the logging layer. |
+| [LOG002](LOG002.md) | no-logging-crate | error | manual | P+ | true | A program that emits output has no logging crate configured. |
+
 ## MDL
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
