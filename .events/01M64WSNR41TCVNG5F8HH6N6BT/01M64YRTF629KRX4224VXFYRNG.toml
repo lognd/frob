@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-10-29T23:08:54Z"
+digest = "3f1fcdcc7d3e7d0a6d6c1c6187e11c1b713b4cee60f8d30f1324a196f273bd9d"
+exit_code = 0
+head = "a6b0261f06aa943a6f66403d52b233dc8bf5c7dd"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 840b5ef8-e856-4744-9df0-41ca8fa30bb6 with nextest profile: default
+    Starting 1 test across 7 binaries (59 tests skipped)
+        PASS [   0.004s] gob-rules indexgen::tests::render_lists_mods_metas_bind_and_the_freshness_test
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 59 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(=indexgen::tests::render_lists_mods_metas_bind_and_the_freshness_test)'"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "9536b2ed5b1d292dd43fa6c29c63cf07a88c47f178d7b1135592a21dae696555"
+at = "2026-10-29T23:08:54Z"
+actor = "lognd"
+rev = 1
