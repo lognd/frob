@@ -2,7 +2,8 @@
 id = "01M5XNNHN8RQ6486GS073YMCSS"
 title = "CAP exceptions: accept/defer on CAP rules must name the atom, expire, and need attester approval like grants"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
