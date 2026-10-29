@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T23:43:20Z"
-updated = "2026-10-29T00:18:52Z"
-scope = ["crates/gob-caps/**", "crates/gob-check/**"]
+updated = "2026-10-29T00:29:24Z"
+scope = ["crates/gob-caps/**", "crates/gob-check/**", "docs/reference/languages.md"]
 +++
 
 Found while working ~2WNFCDP. DOC001 reports 'capability gap: visibility' as unresolved for every .yml under .github (13 files) because Lang::Yaml/GithubActions have a Gap visibility cell in crates/gob-caps/src/matrix.rs; YAML declares no public items, so the cell should be NotApplicable (like Css/Html). frob:accept cannot suppress an unresolved.
