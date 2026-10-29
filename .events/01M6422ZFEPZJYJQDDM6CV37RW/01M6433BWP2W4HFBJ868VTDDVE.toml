@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["getattr, __import__, importlib.import_module, vars/__dict__/sys.modules lookups with a non-literal name yield an Unresolved finding; literal names resolve to the origin symbol"]
+new = ["getattr, __import__, importlib.import_module, vars/__dict__/sys.modules lookups with a non-literal name yield an Unresolved finding; literal names resolve to the origin symbol", 'a literal name argument (Python __import__("os"), getattr(os, "system"), importlib.import_module("os"); JS require("child_process"), import("x"), obj["k"]; C# Type.GetType("..."); same for every supported language) resolves to the origin symbol exactly as the direct form would, tested per language; only non-literal names yield Unresolved']
+moved = [1]
+at = "2026-10-29T15:05:19Z"
+actor = "lognd"
+rev = 1
