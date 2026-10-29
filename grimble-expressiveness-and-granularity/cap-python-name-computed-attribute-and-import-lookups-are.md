@@ -8,7 +8,7 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
-updated = "2026-10-29T16:36:52Z"
+updated = "2026-10-29T16:38:01Z"
 idempotency_key = "vnvd3q1-py-dynamic-name"
 scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/gob-ir/**", "crates/grimble-bind/**", "changelog/**", ".frob/**", "docs/design/binding.md", "docs/design/universal-model.md"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "Literal-name resolution is implemented once in the shared gob-ir const_value capability and consumed by every language adapter in gob-symbols; no per-language lexical special case in grimble-check. Non-literal names return Unknown/Unresolved."
-bound = false
+bound = true
 +++
 
 Cases p05 p06 p07 p14. symbol-resolved fix required (binding/import resolution, not text matching); pin case as regression test; unresolvable forms must report Unresolved, never pass silently
