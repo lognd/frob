@@ -383,7 +383,7 @@ impl SymbolGraph {
     /// Every Python method named `name` as May candidates, or an external gap when none exists.
     fn py_unknown_receiver(py: &PyIndex, name: &str) -> Outcome {
         match py.methods.get(name) {
-            Some(ms) if !ms.is_empty() => Outcome::Hit(ms.clone(), Status::May),
+            Some(ms) if !ms.is_empty() => Outcome::NameOnly(ms.clone()),
             _ => Outcome::Gap(GapReason::Unbound),
         }
     }
