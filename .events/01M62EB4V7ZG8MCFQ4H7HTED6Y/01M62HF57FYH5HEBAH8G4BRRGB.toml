@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a YAML or GithubActions file, when DOC001 runs, then no capability-gap visibility finding is reported (matrix cell is NotApplicable)"]
+moved = []
+at = "2026-10-29T00:37:57Z"
+actor = "lognd"
+rev = 1
