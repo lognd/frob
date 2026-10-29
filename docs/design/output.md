@@ -205,8 +205,11 @@ and rule ids as `Id`, status words as `Ok`/`Warn`/`Error`, headings as
 stdout is a colour terminal (not `NO_COLOR`, not `TERM=dumb`); piped
 output and the JSON envelope are byte-identical to before. On a terminal,
 rows wider than `COLUMNS` (80 when unknown) are cut with an ASCII `...`.
-Error layout (`error[CODE]`, remedy lines) lives in `gob-cli` and is a
-follow-up.
+`gob-cli` applies the same palette to its own text: the `error[CODE]`
+prefix of a failure is `Error` (decided on stderr, so `2>file` stays
+plain), and the generic fallback view colours the `ok` status and dims
+keys (decided on stdout). Layout, exit codes and JSON are unchanged
+(~13J001Y).
 
 Order: ~VXR58J9 and ~MCY59H4 are independent and can run in parallel
 (the event field names above are the only shared surface); ~W1GQTPG and

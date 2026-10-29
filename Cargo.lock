@@ -2596,6 +2596,7 @@ name = "gob-cli"
 version = "0.532.0"
 dependencies = [
  "clap",
+ "frob-present",
  "gob-config",
  "gob-diagnostics",
  "gob-exec",
