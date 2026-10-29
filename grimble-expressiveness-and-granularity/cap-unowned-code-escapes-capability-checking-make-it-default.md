@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-29T00:30:16Z"
+updated = "2026-10-29T00:31:43Z"
 idempotency_key = "grimble-expr-unowned-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/rules/sys001.rs", "crates/grimble-check/src/config.rs", "crates/grimble-bind/tests/**"]
@@ -19,7 +19,7 @@ bound = false
 
 [[acceptance]]
 text = "the guide and binding.md state the unowned-code behaviour explicitly"
-bound = false
+bound = true
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. observe() drops uses whose owner is Unknown or Foreign (caps.rs:495) and CAP001 only iterates nodes that own code, so moving a file outside every owns glob removes it from capability checking; the only signal is SYS001, a warning unless [grimble] strict. Repro: loose/l.py with os.system and no owner: no CAP finding, SYS001 warning, exit 0. docs/guides/grimble.md:24 says 'Anything not granted is denied'. Treat unowned code as an implicit node with no grants (CAP001 Error on any observed use), or make SYS001 an error whenever an unowned file has an observed capability use.
