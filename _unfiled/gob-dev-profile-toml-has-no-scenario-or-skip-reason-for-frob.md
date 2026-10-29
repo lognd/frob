@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "Claude"
 created = "2026-10-10T21:53:08Z"
-updated = "2026-10-29T14:01:35Z"
+updated = "2026-10-29T14:01:53Z"
 scope = ["crates/gob-dev/**"]
 
 [[acceptance]]
 text = "Given the closeout verb, when gob-dev profile_coverage runs, then every_leaf_command_has_a_scenario_or_a_skip_reason passes"
-bound = false
+bound = true
 +++
 
 found while working ~C8N7M9Q: gob-dev::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason fails on experimental: leaf commands with no scenario and no skip reason: frob ticket closeout
