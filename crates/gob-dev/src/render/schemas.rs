@@ -1,6 +1,6 @@
 //! `docs/schemas/*.json`: envelope, config, directive and issue-projection schemas.
 
-use gob_config::{TableDescription, all_tables, schema};
+use gob_config::products;
 use gob_directives::all_directives;
 use serde_json::{Map, Value, json};
 
@@ -26,22 +26,21 @@ pub fn directives_schema() -> Value {
     })
 }
 
+/// Repo-relative path of `product`'s config schema.
+pub fn schema_path(product: &str) -> String {
+    if product == gob_config::DEFAULT_PRODUCT {
+        "docs/schemas/config.json".to_owned()
+    } else {
+        format!("docs/schemas/{product}.json")
+    }
+}
+
 /// The schema files for the global inventories.
 pub fn generate(frob: &crate::products::FrobProduct) -> Vec<GenFile> {
-    let tables: Vec<TableDescription> = {
-        let mut t: Vec<_> = all_tables().collect();
-        t.sort_by(|a, b| a.table.cmp(&b.table));
-        t
-    };
-    let refs: Vec<&TableDescription> = tables.iter().collect();
-    vec![
+    let mut files = vec![
         GenFile {
             path: "docs/schemas/envelope.json".to_owned(),
             content: json_file("schemas", gob_diagnostics::envelope_schema()),
-        },
-        GenFile {
-            path: "docs/schemas/config.json".to_owned(),
-            content: json_file("schemas", schema(&refs)),
         },
         GenFile {
             path: "docs/schemas/directives.json".to_owned(),
@@ -52,5 +51,12 @@ pub fn generate(frob: &crate::products::FrobProduct) -> Vec<GenFile> {
             path: "docs/schemas/issue-projection.json".to_owned(),
             content: json_file("schemas", (frob.issue_schema)()),
         },
-    ]
+    ];
+    for product in products() {
+        files.push(GenFile {
+            path: schema_path(&product),
+            content: json_file("schemas", gob_config::product_config_schema(&product)),
+        });
+    }
+    files
 }
