@@ -1,0 +1,10 @@
+kind = "create"
+title = "Grimble LOG report is uncached (cache like COH)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/src/product.rs"]
+body = "found while working ~JKKJPTT: log_report reruns every check; cache keyed on the [log] table digest"
+at = "2026-10-29T09:32:21Z"
+actor = "lognd"
+rev = 1
