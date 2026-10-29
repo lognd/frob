@@ -5,12 +5,18 @@
 pub mod coh002;
 /// Rule `COH003`.
 pub mod coh003;
+/// Rule `LOG001`.
+pub mod log001;
+/// Rule `LOG002`.
+pub mod log002;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
     // one entry per rule file
     <coh002::Coh002 as gob_rules::RuleDecl>::DEF,
     <coh003::Coh003 as gob_rules::RuleDecl>::DEF,
+    <log001::Log001 as gob_rules::RuleDecl>::DEF,
+    <log002::Log002 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -29,10 +35,14 @@ pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
 where
     coh002::Coh002: gob_rules::Measured<P>,
     coh003::Coh003: gob_rules::Measured<P>,
+    log001::Log001: gob_rules::Measured<P>,
+    log002::Log002: gob_rules::Measured<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::measured(coh002::Coh002));
     rules.push(gob_rules::BoundRule::measured(coh003::Coh003));
+    rules.push(gob_rules::BoundRule::measured(log001::Log001));
+    rules.push(gob_rules::BoundRule::measured(log002::Log002));
     rules
 }
 
