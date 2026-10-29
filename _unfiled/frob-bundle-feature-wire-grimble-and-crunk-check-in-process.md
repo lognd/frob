@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-04T20:55:10Z"
-updated = "2026-10-29T15:41:18Z"
+updated = "2026-10-29T15:54:25Z"
 labels = ["no-story"]
-scope = ["crates/frob/Cargo.toml"]
+scope = ["crates/frob/Cargo.toml", "Cargo.lock"]
 +++
 
 found while working ~F50FAHB: crates/frob has no bundle feature yet (neither grimble's nor crunk-check's); products.md section 6
