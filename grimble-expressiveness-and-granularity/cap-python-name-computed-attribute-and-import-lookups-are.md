@@ -8,7 +8,7 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
-updated = "2026-10-29T16:36:28Z"
+updated = "2026-10-29T16:36:52Z"
 idempotency_key = "vnvd3q1-py-dynamic-name"
 scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/gob-ir/**", "crates/grimble-bind/**", "changelog/**", ".frob/**", "docs/design/binding.md", "docs/design/universal-model.md"]
 
