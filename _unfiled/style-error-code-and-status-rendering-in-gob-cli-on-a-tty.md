@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T03:42:52Z"
-updated = "2026-10-29T06:09:57Z"
-scope = ["crates/gob-cli/**"]
+updated = "2026-10-29T06:17:14Z"
+scope = ["crates/gob-cli/**", "docs/design/output.md"]
 
 [[acceptance]]
 text = "Given a TTY with colour enabled, when a gob-cli failure renders, then the error CODE and status are styled; given NO_COLOR or a non-TTY the output is byte-identical to today and exit codes are unchanged"
