@@ -2,7 +2,8 @@
 id = "01M4A61GY4Z5H9C0W92BGHBJ66"
 title = "Triage, scrub and privacy walks read and write ticket paths directly (Dir layout only)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
