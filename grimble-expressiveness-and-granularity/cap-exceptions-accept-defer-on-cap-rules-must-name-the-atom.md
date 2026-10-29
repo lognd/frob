@@ -2,13 +2,13 @@
 id = "01M5XNNHN8RQ6486GS073YMCSS"
 title = "CAP exceptions: accept/defer on CAP rules must name the atom, expire, and need attester approval like grants"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-27T03:15:09Z"
+updated = "2026-10-29T03:05:12Z"
 idempotency_key = "grimble-expr-exceptions-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/grant_ack.rs", "crates/grimble-bind/src/rules/**", "crates/grimble-model/src/**", "crates/grimble/src/ack.rs", "crates/grimble-bind/tests/**"]
