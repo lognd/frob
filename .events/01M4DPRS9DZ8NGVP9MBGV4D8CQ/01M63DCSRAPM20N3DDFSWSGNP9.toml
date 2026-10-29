@@ -1,0 +1,44 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T08:45:19Z"
+digest = "6eebf9570846edb8fea250c0cd6f007f82c29140e51df2d8dffcb09303caa0b7"
+exit_code = 0
+head = "269f2998438ea4d300b066ef54d9e9869a603c73"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 40.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f9c9b1d0-4f4b-4e47-b151-9c5936e60b6a with nextest profile: default
+    Starting 2 tests across 33 binaries (320 tests skipped)
+        PASS [   0.008s] gob-plan::check_names the_fixture_rules_of_the_spec_check_clean
+        PASS [   0.146s] gob-plan grl::parse::tests::spec_rules_parse_without_error_and_match_snapshots
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.147s] 2 tests run: 2 passed, 320 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-j2 -p gob-plan -E test(the_fixture_rules_of_the_spec_check_clean)|test(spec_rules_parse_without_error_and_match_snapshots)"
+size = 1876
+status = "measured"
+test_count = 2
+tests_digest = "9990b0abf57ae5ee3ef08d1fd80b8ba4c1050e6f4c99773530defdab42563dc2"
+at = "2026-10-29T08:45:19Z"
+actor = "lognd"
+rev = 1
