@@ -2,7 +2,7 @@
 //!
 //! The ledger is committed and pushed, so a `/home/<name>/...` path in an event
 //! publishes the user name and directory layout. The scan is a plain byte scan of
-//! every file below the tickets directory at the ledger tip; it never parses TOML
+//! every file of the ledger tree (below the tickets directory in the dir layout, the whole branch in the branch layout) at the ledger tip; it never parses TOML
 //! or Markdown and never rewrites anything.
 
 use gob_path::Shown;
@@ -213,17 +213,18 @@ impl Ledger {
             return Ok((Vec::new(), 0));
         };
         let hex = tip.to_string();
-        let dir = self.config().dir.clone();
-        let known_clean = self.clean_blobs(&dir);
+        let spec = self.tree_spec(&hex);
+        let prefix = self.tree_prefix();
+        let known_clean = self.clean_blobs();
         let mut out = Vec::new();
         let mut scanned = 0usize;
         let mut skipped = 0usize;
-        for (rel, oid) in self.list_blobs(&format!("{hex}:{dir}"))? {
+        for (rel, oid) in self.list_blobs(&spec)? {
             if known_clean.contains(&oid) {
                 skipped += 1;
                 continue;
             }
-            let path = format!("{dir}/{rel}");
+            let path = format!("{prefix}{rel}");
             let bytes = self.repo().read_blob(&oid)?;
             scanned += 1;
             out.extend(tick004(&path, &bytes));
@@ -248,7 +249,7 @@ impl Ledger {
     /// Blob ids that the last recorded clean scan covered; empty when there is no usable record.
     ///
     /// Blobs are content addressed, so a blob present in a clean tree is clean now whatever path it sits at.
-    fn clean_blobs(&self, dir: &str) -> std::collections::HashSet<gob_git::Oid> {
+    fn clean_blobs(&self) -> std::collections::HashSet<gob_git::Oid> {
         let Ok(text) = std::fs::read_to_string(self.clean_scan_path()) else {
             tracing::debug!("no recorded clean TICK004 scan; scanning every file");
             return std::collections::HashSet::default();
@@ -262,7 +263,7 @@ impl Ledger {
             tracing::debug!("recorded clean TICK004 scan has another version; scanning every file");
             return std::collections::HashSet::default();
         };
-        match self.list_blobs(&format!("{old}:{dir}")) {
+        match self.list_blobs(&self.tree_spec(old)) {
             Ok(blobs) => blobs.into_iter().map(|(_, oid)| oid).collect(),
             Err(e) => {
                 tracing::warn!(error = %e, "recorded clean TICK004 scan unreadable; scanning every file");
@@ -306,10 +307,10 @@ impl Ledger {
             return Ok(Vec::new());
         };
         let hex = tip.to_string();
-        let dir = self.config().dir.clone();
+        let prefix = self.tree_prefix();
         let mut out = Vec::new();
-        for (rel, oid) in self.list_blobs(&format!("{hex}:{dir}"))? {
-            let path = format!("{dir}/{rel}");
+        for (rel, oid) in self.list_blobs(&self.tree_spec(&hex))? {
+            let path = format!("{prefix}{rel}");
             let bytes = self.repo().read_blob(&oid)?;
             out.extend(crate::redact::tick005(&path, &bytes, rules));
         }

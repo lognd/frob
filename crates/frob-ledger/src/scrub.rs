@@ -287,7 +287,7 @@ impl Ledger {
     }
 
     /// The revision spec of the ledger tree at `hex`.
-    fn tree_spec(&self, hex: &str) -> String {
+    pub(crate) fn tree_spec(&self, hex: &str) -> String {
         match self.layout() {
             Layout::Dir => format!("{hex}:{}", self.config().dir),
             Layout::Branch => hex.to_owned(),
