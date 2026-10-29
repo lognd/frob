@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:59:07Z"
-updated = "2026-10-29T14:01:49Z"
+updated = "2026-10-29T14:14:44Z"
 labels = ["no-story"]
-scope = ["crates/grimble-check/**", "crates/grimble-capabilities/**", "docs/design/output-atoms.md", "docs/reference/config.md", "docs/schemas/config.json"]
+scope = ["crates/grimble-check/**", "crates/grimble-capabilities/**", "docs/design/output-atoms.md", "docs/reference/config.md", "docs/schemas/config.json", "changelog.d/01M5XMR67K19SFAWNTDJKKJPTT.changed.md"]
 
 [[acceptance]]
 text = "a grimble rule reports direct output calls (Rust println!/eprintln!/print!/dbg!, Python print, JS console.*, C# Console.Write*) outside a configured logging module, as a waivable error with a required reason"
