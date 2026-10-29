@@ -1,0 +1,10 @@
+kind = "create"
+title = "TEST: cap_rules_are_listed_fire_and_are_writable_in_accept fails on baseline (MDL013 x4)"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/tests/binding.rs,crates/grimble-model/src/directive.rs"]
+body = "found while working ~6CV37RW: fails with and without that change; findings list MDL013 four times."
+at = "2026-10-29T16:39:37Z"
+actor = "lognd"
+rev = 1
