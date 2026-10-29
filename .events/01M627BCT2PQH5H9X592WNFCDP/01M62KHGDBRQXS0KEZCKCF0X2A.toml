@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T01:14:03Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "0cf0976bd1b335c1825717091d66f5b82da327dc"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c "import json,subprocess,sys; o=subprocess.run(['~/projects/frob/target/release/frob','check','--only','DOC001'],capture_output=True,text=True).stdout; d=json.loads(o); sys.exit(1 if [x for x in d['data']['findings'] if x['severity']!='unresolved'] else 0)""""
+size = 0
+status = "measured"
+at = "2026-10-29T01:14:03Z"
+actor = "lognd"
+rev = 1

@@ -8,13 +8,13 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T21:41:08Z"
-updated = "2026-10-28T23:42:21Z"
+updated = "2026-10-29T01:14:03Z"
 idempotency_key = "b755-doc001"
 scope = [".github/**", "packaging/pypi/render.py", "scripts/claude-hooks/frob-suggest.py"]
 
 [[acceptance]]
 text = "frob check reports zero DOC001 findings"
-bound = false
+bound = true
 +++
 
 Split from ~B755NCR (mis-scoped to docs/design/docs.md). Document .github workflows, issue templates, dependabot, install-linker action, scripts/claude-hooks/frob-suggest.py, packaging/pypi/render.py.
