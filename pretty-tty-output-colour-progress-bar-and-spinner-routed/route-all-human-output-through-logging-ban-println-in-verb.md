@@ -2,7 +2,8 @@
 id = "01M5XMN90BZAYHQSK214270F1C"
 title = "Route all human output through logging; ban println in verb code"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
