@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP: capability detection for Go (audit g01), import-resolved"
+type = "story"
+category = "todo"
+priority = "high"
+scope = ["crates/gob-languages/**", "crates/gob-symbols/**"]
+body = "Split from PKW7X2J. Go has no Language variant or tree-sitter grammar in gob-languages, so no resolved path-use scanner or VocabEntry rows exist. Needs: grammar plus detect, import-resolved scanner (aliases, dot imports, package-qualified names) in gob-symbols lookups, vocab for os/exec, os, net, net/http, os.Getenv, plugin. Pin audit case g01. Unresolvable forms report Unresolved."
+at = "2026-10-29T22:09:20Z"
+actor = "lognd"
+rev = 1
