@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The rules-index generator emits a cfg(test) mod tests so DEAD001 no longer flags the freshness test"]
+moved = []
+at = "2026-10-29T23:49:07Z"
+actor = "lognd"
+rev = 1
