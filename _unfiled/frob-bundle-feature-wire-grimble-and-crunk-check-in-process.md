@@ -2,7 +2,8 @@
 id = "01M44B5Z2P1VFVA6BWP2J2Q46X"
 title = "frob bundle feature: wire grimble and crunk-check in-process dependencies"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
