@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T06:09:57Z"
+digest = "3f71829d3415cae9640ed0a8020e20537b3988dcb78f2a8c6968cf0b3fca1741"
+exit_code = 0
+head = "d2d7c951806dcfd6fa1feb8221589dc0e8320233"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 472f9ec6-78c9-44ee-a98c-eeabfce2740e with nextest profile: default
+    Starting 1 test across 496 binaries (5755 tests skipped)
+        PASS [   0.005s] gob-cli render::tests::style_detection_honours_tty_no_color_and_dumb
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.037s] 1 test run: 1 passed, 5755 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "gob-cli render::tests::style_detection_honours_tty_no_color_and_dumb"
+size = 1192
+status = "measured"
+test_count = 1
+tests_digest = "20fc0740fe134f9a0df8cc343ceb0c3c3732ef3c2402f45ebe2fce0bffdbe94b"
+at = "2026-10-29T06:09:57Z"
+actor = "lognd"
+rev = 1
