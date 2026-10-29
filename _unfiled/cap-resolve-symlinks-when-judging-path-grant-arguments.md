@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T18:59:21Z"
-updated = "2026-10-29T23:29:42Z"
+updated = "2026-10-29T23:38:53Z"
 scope = ["crates/grimble-model/src/args.rs", "crates/grimble-model/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
 text = "path comparison accounts for symlinks"
-bound = false
+bound = true
 +++
 
 found while working ~5X9CAQE: path comparison accounts for symlinks

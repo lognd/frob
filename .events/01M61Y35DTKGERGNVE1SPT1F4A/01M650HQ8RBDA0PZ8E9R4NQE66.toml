@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T23:38:53Z"
+digest = "c3cac350f3fae26f05ec467625c573899973ee594f4d79eab6da8ec0a6794ed8"
+exit_code = 0
+head = "bc6b711bb6c2772e8dbd7b8a3f512d2b424d87e3"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 46ec5e60-6319-45de-99d7-3c52d7471c5d with nextest profile: default
+    Starting 3 tests across 15 binaries (71 tests skipped)
+        PASS [   0.005s] grimble-model args::tests::symlink_out_of_the_grant_is_no_match
+        PASS [   0.005s] grimble-model args::tests::symlink_inside_the_grant_matches_by_real_location
+        PASS [   0.005s] grimble-model args::tests::dangling_missing_and_loop_paths_fail_closed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 71 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'test(symlink_out_of_the_grant_is_no_match) | test(symlink_inside_the_grant_matches_by_real_location) | test(dangling_missing_and_loop_paths_fail_closed)'"
+size = 810
+status = "measured"
+test_count = 3
+tests_digest = "006e8b4511e4ab026025a6c5e1525326cceb91b42b4fabcb32d2833955cd06bd"
+at = "2026-10-29T23:38:53Z"
+actor = "lognd"
+rev = 1
