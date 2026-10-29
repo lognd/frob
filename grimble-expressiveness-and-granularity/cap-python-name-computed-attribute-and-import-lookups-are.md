@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
 updated = "2026-10-29T16:00:57Z"
 idempotency_key = "vnvd3q1-py-dynamic-name"
-scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/gob-ir/**", "crates/grimble-bind/**", "changelog/**"]
+scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/gob-ir/**", "crates/grimble-bind/**", "changelog/**", ".frob/**"]
 
 [[acceptance]]
 text = "getattr, __import__, importlib.import_module, vars/__dict__/sys.modules lookups with a non-literal name yield an Unresolved finding; literal names resolve to the origin symbol"
