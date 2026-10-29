@@ -2,7 +2,8 @@
 id = "01M4DPRS9DZ8NGVP9MBGV4D8CQ"
 title = "grl-spec section 12 rules lack the universal notapplicable or unresolved example that GRL011 now requires"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
