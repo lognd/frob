@@ -362,19 +362,61 @@ File {
         ]
       ),
       span: @464..644 
+    },
+    Example {
+       expect: Expect {
+         kind: NotApplicable,
+        span: @655..668 
+      },
+      lang: Some(
+        Word {
+           text: "json",
+          span: @669..673 
+        }
+      ),
+      name: None,
+      body: Inputs(
+        [
+          Spanned {
+             node: Model(
+              BlockLit {
+                 value: "node frob { owns \"src/**\"; }",
+                body: @689..717,
+                span: @686..720 
+              }
+            ),
+            span: @680..720 
+          },
+          Spanned {
+             node: File {
+               path: StrLit {
+                 value: "src/a.json",
+                span: @730..742 
+              },
+              text: BlockLit {
+                 value: "{ \"listen\": \"0.0.0.0:0\" }",
+                body: @746..771,
+                span: @743..774 
+              } 
+            },
+            span: @725..774 
+          }
+        ]
+      ),
+      span: @647..778 
     }
   ],
   explain: Some(
     Explain {
        text: BlockLit {
          value: "Capabilities are denied unless granted (D75).\n## Remedy\nAdd `may ATOM;` to the node, or remove the use.",
-        body: @658..777,
-        span: @655..780 
+        body: @792..911,
+        span: @789..914 
       },
-      span: @647..780 
+      span: @781..914 
     }
   ),
-  span: @0..782 
+  span: @0..916 
 }
 ] 
 }

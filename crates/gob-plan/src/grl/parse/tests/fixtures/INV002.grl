@@ -30,6 +30,17 @@ rule INV002 "forbidden-import" {
       import requests_mock
     """
   }
+  example unresolved python {
+    config """
+      [[invariants.forbid_imports]]
+      from = "src/[core/**"
+      to = "requests"
+      reason = "no network in core"
+    """
+    file "src/core/a.py" """
+      import requests              #~ unresolved
+    """
+  }
   explain """
     Some modules must not depend on others; the table lives in [invariants].
     ## Remedy
