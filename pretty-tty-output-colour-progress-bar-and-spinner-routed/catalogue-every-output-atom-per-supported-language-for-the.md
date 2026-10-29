@@ -2,13 +2,13 @@
 id = "01M5XMWRV7DKX8XBBK4JXNJRTQ"
 title = "Catalogue every output atom per supported language for the logging rule (research)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T03:01:37Z"
-updated = "2026-10-27T03:01:37Z"
+updated = "2026-10-29T06:50:49Z"
 scope = ["docs/design/output-atoms.md"]
 
 [[acceptance]]
