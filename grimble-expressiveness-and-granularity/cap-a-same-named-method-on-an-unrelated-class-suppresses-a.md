@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-29T15:39:02Z"
+updated = "2026-10-29T15:45:49Z"
 idempotency_key = "vnvd3q1-decoy"
 scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/gob-ir/**", "crates/gob-symbols/**", "crates/grimble-bind/**", "docs/design/binding.md"]
 
