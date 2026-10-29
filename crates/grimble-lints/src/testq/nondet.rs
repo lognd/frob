@@ -142,7 +142,7 @@ fn module_calls<'t>(cx: &Ctx<'t>, n: Node<'t>, out: &mut Vec<Callee<'t>>) {
 /// Every nondeterministic call of `func`; `marks` is the text of its attributes or decorators.
 pub(super) fn find<'t>(cx: &Ctx<'t>, func: Node<'t>, marks: &str, root: Node<'t>) -> Vec<Hit<'t>> {
     match cx.lang {
-        Lang::Script => return nondet_script::find(cx, func, root),
+        Lang::Script => return nondet_script::find_script(cx, func, root),
         Lang::CSharp => return nondet_cs::find(cx, func),
         Lang::Rust | Lang::Python => {}
     }

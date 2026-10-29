@@ -178,7 +178,7 @@ fn is_function(lang: Lang, n: Node<'_>) -> bool {
 }
 
 /// Every site in `root`, one scope at a time.
-pub(super) fn scan<'t>(lang: Lang, root: Node<'t>, src: &str) -> Vec<Raw<'t>> {
+pub(super) fn scan_time<'t>(lang: Lang, root: Node<'t>, src: &str) -> Vec<Raw<'t>> {
     let aliases = collect_aliases(lang, root, src);
     let mut scopes = vec![root];
     let mut stack = vec![root];
@@ -200,7 +200,7 @@ pub(super) fn scan<'t>(lang: Lang, root: Node<'t>, src: &str) -> Vec<Raw<'t>> {
             classes: BTreeMap::new(),
             out: Vec::new(),
         };
-        f.visit(scope);
+        f.visit_time(scope);
         tracing::trace!(kind = scope.kind(), sites = f.out.len(), "time flow scope");
         out.extend(f.out);
     }
@@ -276,26 +276,26 @@ struct Flow<'t, 's, 'a> {
 }
 
 impl<'t, 's> Flow<'t, 's, '_> {
-    fn visit(&mut self, node: Node<'t>) {
+    fn visit_time(&mut self, node: Node<'t>) {
         if node != self.scope && is_function(self.lang, node) {
             return;
         }
-        self.at(node);
+        self.at_time(node);
         for c in children(node) {
-            self.visit(c);
+            self.visit_time(c);
         }
     }
 
-    fn flag(&mut self, kind: Kind, node: Node<'t>) {
+    fn flag_time(&mut self, kind: Kind, node: Node<'t>) {
         self.out.push(Raw { kind, node });
     }
 
-    fn at(&mut self, node: Node<'t>) {
+    fn at_time(&mut self, node: Node<'t>) {
         match (self.lang, node.kind()) {
-            (Lang::Rust, "let_declaration") => self.bind(node, "pattern", "value"),
-            (Lang::Python, "assignment") => self.bind(node, "left", "right"),
+            (Lang::Rust, "let_declaration") => self.bind_time(node, "pattern", "value"),
+            (Lang::Python, "assignment") => self.bind_time(node, "left", "right"),
             (Lang::Python, "typed_parameter" | "typed_default_parameter")
-            | (Lang::Rust, "parameter") => self.param(node),
+            | (Lang::Rust, "parameter") => self.param_time(node),
             (Lang::Rust, "call_expression") | (Lang::Python, "call") => self.read(node),
             (Lang::Rust, "binary_expression") | (Lang::Python, "binary_operator") => {
                 let op = node
@@ -336,12 +336,12 @@ impl<'t, 's> Flow<'t, 's, '_> {
             .any(|w| matches!((w[0], w[1]), (Some(a), Some(b)) if mixes(a, b)))
         {
             tracing::trace!(line = node.start_position().row + 1, "naive/aware mix");
-            self.flag(Kind::NaiveAwareMix, node);
+            self.flag_time(Kind::NaiveAwareMix, node);
         }
     }
 
     /// Record the class of the names bound by `pattern = value`, or forget them.
-    fn bind(&mut self, node: Node<'t>, pat: &str, val: &str) {
+    fn bind_time(&mut self, node: Node<'t>, pat: &str, val: &str) {
         let (Some(p), Some(v)) = (node.child_by_field_name(pat), node.child_by_field_name(val))
         else {
             return;
@@ -361,7 +361,7 @@ impl<'t, 's> Flow<'t, 's, '_> {
     }
 
     /// A parameter annotated with a datetime type that names its awareness.
-    fn param(&mut self, node: Node<'t>) {
+    fn param_time(&mut self, node: Node<'t>) {
         let ty = node
             .child_by_field_name("type")
             .map(|t| text(t, self.src).to_owned());
@@ -487,7 +487,7 @@ impl<'t, 's> Flow<'t, 's, '_> {
                 line = call.start_position().row + 1,
                 "local clock read kept"
             );
-            self.flag(Kind::LocalClockRead, call);
+            self.flag_time(Kind::LocalClockRead, call);
         }
     }
 

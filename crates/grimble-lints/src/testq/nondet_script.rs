@@ -129,7 +129,7 @@ fn zero_delay(cx: &Ctx<'_>, call: Node<'_>) -> bool {
 }
 
 /// Every nondeterministic call or `new Date()` in the body of the test function `func`.
-pub(super) fn find<'t>(cx: &Ctx<'t>, func: Node<'t>, root: Node<'t>) -> Vec<Hit<'t>> {
+pub(super) fn find_script<'t>(cx: &Ctx<'t>, func: Node<'t>, root: Node<'t>) -> Vec<Hit<'t>> {
     let Some(body) = func.child_by_field_name("body") else {
         return Vec::new();
     };

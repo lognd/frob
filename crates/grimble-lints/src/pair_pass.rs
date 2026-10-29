@@ -69,7 +69,7 @@ struct Hit {
 }
 
 /// Every unpaired acquire of `f`: React effects in TS/JS, Unity lifecycles in Unity C#.
-fn scan_file(f: &PathFile<'_>) -> Result<Vec<Hit>, ScanError> {
+fn scan_pair_file(f: &PathFile<'_>) -> Result<Vec<Hit>, ScanError> {
     let mut hits: Vec<Hit> = effect::scan(f.language, f.text)?
         .into_iter()
         .map(|s| Hit {
@@ -101,7 +101,8 @@ pub fn analyze(files: &[PathFile<'_>]) -> PairReport {
     let mut examined = 0usize;
     // Parsing and scanning is the whole cost and is independent per file, so it runs on the rayon
     // pool; the fold stays sequential so the report is deterministic.
-    let scans: Vec<Result<Vec<Hit>, ScanError>> = files.par_iter().map(scan_file).collect();
+    let scans: Vec<Result<Vec<Hit>, ScanError>> =
+        files.par_iter().map(|f| scan_pair_file(f)).collect();
     for (f, scanned) in files.iter().zip(scans) {
         let sites = match scanned {
             Ok(sites) => sites,

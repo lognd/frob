@@ -183,6 +183,8 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-lints/src/host.rs::UnityHost.unity_subjects_of
     // frob:tests crates/grimble-lints/src/host.rs::ErrHost.err_subjects_of
     // frob:tests crates/grimble-lints/src/host.rs::ResHost.res_subjects_of
+    // frob:tests crates/grimble-lints/src/host.rs::TimeHost.time_subjects_of
+    // frob:tests crates/grimble-lints/src/host.rs::PairHost.pair_subjects_of
     // frob:tests crates/grimble-lints/src/pass.rs::PathFinding.into_finding
     assert_eq!(grimble_lints::rules::bind::<Fixed>().len(), 14);
     assert_eq!(
@@ -200,6 +202,14 @@ fn host_binds_and_converts() {
     assert_eq!(
         grimble_lints::host::ResHost::res_subjects_of(&Fixed, "RES001"),
         11
+    );
+    assert_eq!(
+        grimble_lints::host::TimeHost::time_subjects_of(&Fixed, "TIME001"),
+        8
+    );
+    assert_eq!(
+        grimble_lints::host::PairHost::pair_subjects_of(&Fixed, "PAIR001"),
+        9
     );
     let found = run(
         "src/lib.rs",

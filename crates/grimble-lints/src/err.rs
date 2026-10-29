@@ -508,4 +508,12 @@ mod tests {
     fn an_unsupported_language_has_no_sites() {
         assert!(kinds(Language::Markdown, "# x\n").is_empty());
     }
+
+    // frob:tests crates/grimble-lints/src/err.rs::Kind.rule_id
+    #[test]
+    fn rule_ids_follow_kinds() {
+        assert_eq!(Kind::EmptyHandler.rule_id(), "ERR001");
+        assert_eq!(Kind::DiscardedResult.rule_id(), "ERR002");
+        assert_eq!(Kind::SilentCatchAll.rule_id(), "ERR003");
+    }
 }
