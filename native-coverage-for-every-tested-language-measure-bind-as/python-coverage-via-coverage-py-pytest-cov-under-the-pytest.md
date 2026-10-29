@@ -2,7 +2,8 @@
 id = "01M5XD3SNPVCTD68M0QB25EXKE"
 title = "Python coverage via coverage.py/pytest-cov under the pytest provider"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XD3SCZ3VFWNYXJC8FPN9FB"
