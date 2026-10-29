@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP: TypeScript and C# capability vocabularies so literal lookups yield findings"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-caps/**,crates/grimble-bind/src/caps.rs"]
+body = "found while working ~6CV37RW: name lookups are resolved for TS/JS/C# in gob-symbols but scan_resolved is gated to rust|python and no TS/C# vocabulary exists."
+at = "2026-10-29T16:39:37Z"
+actor = "lognd"
+rev = 1
