@@ -7,7 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T14:22:14Z"
-updated = "2026-10-29T15:41:24Z"
+updated = "2026-10-29T15:43:56Z"
+scope = ["crates/gob-config/**"]
 
 [[acceptance]]
 text = "Given frob and crunk config tables, when gen runs, then each product gets its own reference page and schema and neither contains the other's keys"
