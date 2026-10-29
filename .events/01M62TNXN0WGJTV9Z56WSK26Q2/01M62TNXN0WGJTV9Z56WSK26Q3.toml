@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP exceptions: support at SELECTOR restriction"
+type = "story"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-model/src/check.rs", "crates/grimble-bind/src/caps.rs"]
+body = "found while working 73YMCSS: accept CAP001 atom=ATOM [at SELECTOR] until=DATE should silence only the atom in the selected files."
+at = "2026-10-29T03:18:56Z"
+actor = "lognd"
+rev = 1
