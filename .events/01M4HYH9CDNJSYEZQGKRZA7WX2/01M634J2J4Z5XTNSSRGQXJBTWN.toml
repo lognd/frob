@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T06:11:05Z"
+digest = "ebd22f90453fc3f00439e96c80e5496df3b448698d9a7850816b9f54be513ef5"
+exit_code = 0
+head = "37fb5a4e8c12b1b12d64f0cc7e747361297a58a3"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.59s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 31b0d3e2-696a-4fd5-af3d-5851ade68011 with nextest profile: default
+    Starting 1 test across 496 binaries (5752 tests skipped)
+        PASS [   0.983s] grimble-bind::caps open_with_a_write_mode_is_fs_write_and_a_read_grant_does_not_cover_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.005s] 1 test run: 1 passed, 5752 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "grimble-bind::caps open_with_a_write_mode_is_fs_write_and_a_read_grant_does_not_cover_it"
+size = 640
+status = "measured"
+test_count = 1
+tests_digest = "c5160be35ebbe9927013091fa3eea1dc0f2327970f5e97900ae95f369d08ba25"
+at = "2026-10-29T06:11:05Z"
+actor = "lognd"
+rev = 1
