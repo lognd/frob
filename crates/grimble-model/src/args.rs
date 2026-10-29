@@ -8,12 +8,19 @@
 //! the observed value cannot be compared soundly (a glob metacharacter in a path, a host with no
 //! known port against a port-scoped grant), and callers must treat it as unresolved, never clean.
 //!
-//! Paths are compared lexically: `.` and empty segments drop, `..` pops a segment, and a path
-//! that climbs above its start never matches. Symbolic links are not followed, since nothing is
-//! read from disk. Hosts compare case-insensitively on labels; a `*.` prefix matches subdomains
+//! [`judge`] compares paths lexically: `.` and empty segments drop, `..` pops a segment, and a
+//! path that climbs above its start never matches. It reads nothing from disk, so it cannot see
+//! symbolic links. [`judge_resolved`] is the link-aware form: it resolves the observed path (and
+//! the literal prefix of an absolute grant) against a root, following every link component by
+//! component, and fails closed with a [`ResolveError`] when the path cannot be resolved soundly.
+//! Hosts compare case-insensitively on labels; a `*.` prefix matches subdomains
 //! only, never the apex.
 
 // frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:ticket 01M61Y35DTKGERGNVE1SPT1F4A
+
+use std::ffi::OsString;
+use std::path::{Component, Path, PathBuf};
 
 /// What an atom's `may` arguments mean.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -115,6 +122,165 @@ pub fn judge(kind: ArgKind, grant: &str, observed: &str) -> Judgement {
 }
 
 // ---------------------------------------------------------------------------------- paths
+
+/// Most symbolic links followed while resolving one path before it counts as a loop.
+const MAX_LINK_HOPS: usize = 40;
+
+/// Why a path could not be resolved against the file system; callers treat it as unresolved.
+#[derive(Debug, thiserror::Error)]
+pub enum ResolveError {
+    /// More than [`MAX_LINK_HOPS`] links were followed, so the path is (or may be) a loop.
+    #[error("symbolic link loop while resolving {0:?}")]
+    Loop(PathBuf),
+    /// The real location is not valid Unicode, so it cannot be compared with a text grant.
+    #[error("real location {0:?} is not valid unicode")]
+    NotUnicode(PathBuf),
+    /// A component could not be inspected (permissions, I/O), so its target is unknown.
+    #[error("cannot inspect {path:?}: {source}")]
+    Io {
+        /// The component that failed.
+        path: PathBuf,
+        /// The underlying error.
+        source: std::io::Error,
+    },
+}
+
+/// One owned path component awaiting resolution.
+enum Tok {
+    Root,
+    Parent,
+    Name(OsString),
+}
+
+/// The components of `p` as owned tokens, last first, so a stack pop yields the next one.
+fn toks_rev(p: &Path) -> Vec<Tok> {
+    let mut v: Vec<Tok> = p
+        .components()
+        .filter_map(|c| match c {
+            Component::RootDir => Some(Tok::Root),
+            Component::ParentDir => Some(Tok::Parent),
+            Component::Normal(n) => Some(Tok::Name(n.to_owned())),
+            Component::CurDir | Component::Prefix(_) => None,
+        })
+        .collect();
+    v.reverse();
+    v
+}
+
+/// Resolves `path` (relative to `base`, which must already be resolved) through every symbolic
+/// link, applying `..` after link expansion; components that do not exist are kept lexically.
+///
+/// # Errors
+/// [`ResolveError::Loop`] past [`MAX_LINK_HOPS`] links; [`ResolveError::Io`] when a component
+/// cannot be inspected for any reason other than not existing.
+pub fn resolve_real(base: &Path, path: &Path) -> Result<PathBuf, ResolveError> {
+    let mut cur = base.to_path_buf();
+    let mut todo = toks_rev(path);
+    let mut hops = 0usize;
+    let mut missing = false;
+    while let Some(tok) = todo.pop() {
+        match tok {
+            Tok::Root => {
+                cur = PathBuf::from("/");
+                missing = false;
+            }
+            Tok::Parent => {
+                cur.pop();
+            }
+            Tok::Name(name) => {
+                let next = cur.join(&name);
+                if missing {
+                    cur = next;
+                    continue;
+                }
+                match std::fs::symlink_metadata(&next) {
+                    Ok(m) if m.file_type().is_symlink() => {
+                        hops += 1;
+                        if hops > MAX_LINK_HOPS {
+                            tracing::warn!(path = ?path, "symlink loop; failing closed");
+                            return Err(ResolveError::Loop(path.to_path_buf()));
+                        }
+                        let target =
+                            std::fs::read_link(&next).map_err(|source| ResolveError::Io {
+                                path: next.clone(),
+                                source,
+                            })?;
+                        tracing::debug!(link = ?next, target = ?target, "following symlink");
+                        // a relative target resolves from the link's directory, which is `cur`
+                        todo.extend(toks_rev(&target));
+                    }
+                    Ok(_) => cur = next,
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                        missing = true;
+                        cur = next;
+                    }
+                    Err(source) => {
+                        return Err(ResolveError::Io { path: next, source });
+                    }
+                }
+            }
+        }
+    }
+    Ok(cur)
+}
+
+/// `p` as text, or [`ResolveError::NotUnicode`] so a lossy name can never match a grant.
+fn text_of(p: &Path) -> Result<&str, ResolveError> {
+    gob_path::exact_text(p).ok_or_else(|| ResolveError::NotUnicode(p.to_path_buf()))
+}
+
+/// The grant with its leading glob-free segments resolved through links (absolute grants only;
+/// a relative grant is rooted at the resolved root by the caller).
+fn resolve_grant(grant: &str) -> Result<String, ResolveError> {
+    let segs: Vec<&str> = grant.split('/').collect();
+    let lit = segs.iter().take_while(|s| !s.contains(['*', '?'])).count();
+    let prefix = segs[..lit].join("/");
+    let rest = segs[lit..].join("/");
+    let real = resolve_real(
+        Path::new("/"),
+        Path::new(if prefix.is_empty() { "/" } else { &prefix }),
+    )?;
+    let mut out = text_of(&real)?.to_owned();
+    if !rest.is_empty() {
+        if !out.ends_with('/') {
+            out.push('/');
+        }
+        out.push_str(&rest);
+    }
+    Ok(out)
+}
+
+/// Link-aware [`judge`] for a path grant: `observed` and an absolute `grant`'s literal prefix are
+/// resolved through symbolic links first. A relative observed path and a relative grant are both
+/// taken from `root`. An observed path whose real location leaves `root` never matches a
+/// relative grant. Other kinds delegate to [`judge`].
+///
+/// # Errors
+/// A [`ResolveError`] when a link loop or an uninspectable component makes the real location
+/// unknowable; callers must treat that as unresolved, never as a match.
+pub fn judge_resolved(
+    kind: ArgKind,
+    grant: &str,
+    observed: &str,
+    root: &Path,
+) -> Result<Judgement, ResolveError> {
+    if kind != ArgKind::Path || observed.contains(['*', '?', '[', '{', '}', '$', '~']) {
+        return Ok(judge(kind, grant, observed));
+    }
+    let real_root = resolve_real(Path::new("/"), root)?;
+    let real = resolve_real(&real_root, Path::new(observed))?;
+    let verdict = if grant.starts_with('/') {
+        let g = resolve_grant(grant)?;
+        judge_path(&g, text_of(&real)?)
+    } else {
+        match real.strip_prefix(&real_root) {
+            Ok(inside) => judge_path(grant, text_of(inside)?),
+            Err(_) => Judgement::NoMatch,
+        }
+    };
+    tracing::trace!(grant, observed, real = ?real, ?verdict, "grant path judged by real location");
+    Ok(verdict)
+}
 
 /// A lexically normalized path: whether it is absolute and its segments. `climbs` is set when a
 /// relative path pops above its start (`../x`).
@@ -321,6 +487,91 @@ mod tests {
         assert_eq!(j("config/**", "../config/x"), Judgement::NoMatch);
         assert_eq!(j("**", "../x"), Judgement::NoMatch);
         assert_eq!(j("config/**", "config/*"), Judgement::Unknown);
+    }
+
+    /// A fresh scratch directory (resolved) holding `root/` and `outside/`.
+    #[cfg(unix)]
+    fn scratch(tag: &str) -> (std::path::PathBuf, std::path::PathBuf) {
+        let base = std::env::temp_dir().join(format!("args-resolve-{}-{tag}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        std::fs::create_dir_all(base.join("root/config")).unwrap();
+        std::fs::create_dir_all(base.join("outside")).unwrap();
+        std::fs::write(base.join("outside/secret"), "x").unwrap();
+        let base = resolve_real(Path::new("/"), &base).unwrap();
+        (base.join("root"), base.join("outside"))
+    }
+
+    // frob:tests crates/grimble-model/src/args.rs::judge_resolved
+    #[cfg(unix)]
+    #[test]
+    fn symlink_out_of_the_grant_is_no_match() {
+        use std::os::unix::fs::symlink;
+        let (root, outside) = scratch("escape");
+        symlink(&outside, root.join("config/out")).unwrap();
+        let j = |g, o| judge_resolved(ArgKind::Path, g, o, &root).unwrap();
+        // lexically inside, really outside
+        assert_eq!(
+            judge(ArgKind::Path, "config/**", "config/out/secret"),
+            Judgement::Match
+        );
+        assert_eq!(j("config/**", "config/out/secret"), Judgement::NoMatch);
+        // `..` after a link applies to the link target, not the link's directory
+        assert_eq!(j("config/**", "config/out/../x"), Judgement::NoMatch);
+        assert_eq!(j("config/**", "config/app.toml"), Judgement::Match);
+        // an absolute observed path is resolved too
+        let abs = root.join("config/out/secret");
+        assert_eq!(j("config/**", text_of(&abs).unwrap()), Judgement::NoMatch);
+    }
+
+    // frob:tests crates/grimble-model/src/args.rs::judge_resolved
+    #[cfg(unix)]
+    #[test]
+    fn symlink_inside_the_grant_matches_by_real_location() {
+        use std::os::unix::fs::symlink;
+        let (root, outside) = scratch("inside");
+        std::fs::create_dir_all(root.join("data")).unwrap();
+        symlink(root.join("config"), root.join("data/alias")).unwrap();
+        let j = |g, o| judge_resolved(ArgKind::Path, g, o, &root).unwrap();
+        assert_eq!(j("config/**", "data/alias/app.toml"), Judgement::Match);
+        assert_eq!(j("data/**", "data/alias/app.toml"), Judgement::NoMatch);
+        // an absolute grant naming the outside dir through a link in its prefix
+        symlink(&outside, root.join("data/o")).unwrap();
+        let g = format!("{}/**", text_of(&root.join("data/o")).unwrap());
+        let o = outside.join("secret");
+        let jr = judge_resolved(ArgKind::Path, &g, text_of(&o).unwrap(), &root).unwrap();
+        assert_eq!(jr, Judgement::Match);
+    }
+
+    // frob:tests crates/grimble-model/src/args.rs::judge_resolved
+    #[cfg(unix)]
+    #[test]
+    fn dangling_missing_and_loop_paths_fail_closed() {
+        use std::os::unix::fs::symlink;
+        let (root, outside) = scratch("edge");
+        let j = |g, o| judge_resolved(ArgKind::Path, g, o, &root);
+        // a dangling link whose target would be outside: follow it, no match
+        symlink(outside.join("nope"), root.join("config/dangle")).unwrap();
+        assert_eq!(j("config/**", "config/dangle").unwrap(), Judgement::NoMatch);
+        // a dangling link to a missing path inside the grant still matches
+        symlink(root.join("config/later"), root.join("config/ok")).unwrap();
+        assert_eq!(j("config/**", "config/ok").unwrap(), Judgement::Match);
+        // a nonexistent target keeps lexical semantics
+        assert_eq!(j("config/**", "config/new/file").unwrap(), Judgement::Match);
+        assert_eq!(
+            j("config/**", "config/new/../../x").unwrap(),
+            Judgement::NoMatch
+        );
+        // a loop is an error, not a verdict
+        symlink(root.join("config/b"), root.join("config/a")).unwrap();
+        symlink(root.join("config/a"), root.join("config/b")).unwrap();
+        assert!(matches!(
+            j("config/**", "config/a/x"),
+            Err(ResolveError::Loop(_))
+        ));
+        // glob characters stay Unknown and other kinds delegate
+        assert_eq!(j("config/**", "config/*").unwrap(), Judgement::Unknown);
+        let h = judge_resolved(ArgKind::Host, "a.com", "a.com", &root).unwrap();
+        assert_eq!(h, Judgement::Match);
     }
 
     // frob:tests crates/grimble-model/src/args.rs::judge
