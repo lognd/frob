@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T06:09:52Z"
+digest = "7410e6c71ba1c9f7096f765eba64788fd1c49357305a980029a6d60f84252ef9"
+exit_code = 0
+head = "37fb5a4e8c12b1b12d64f0cc7e747361297a58a3"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 54.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bead63d2-37b4-42b8-bb8f-4595975ee415 with nextest profile: default
+    Starting 1 test across 496 binaries (5752 tests skipped)
+        PASS [   0.075s] grimble-bind::caps open_with_a_non_literal_mode_is_a_may_fs_write_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.088s] 1 test run: 1 passed, 5752 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "grimble-bind::caps open_with_a_non_literal_mode_is_a_may_fs_write_unresolved"
+size = 1552
+status = "measured"
+test_count = 1
+tests_digest = "ed5603b282d27c076321661bd22be511d458b5fd1e8d4d3f1a65dd47e03f2b26"
+at = "2026-10-29T06:09:52Z"
+actor = "lognd"
+rev = 1
