@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-06T23:48:25Z"
-updated = "2026-10-29T07:11:44Z"
-scope = ["crates/frob-tests/**", "crates/gob-git/**"]
+updated = "2026-10-29T07:17:35Z"
+scope = ["crates/frob-tests/**", "crates/gob-git/**", "docs/design/git-io.md"]
 
 [[acceptance]]
 text = "test-dry-run passes on a goway helper for a branch several commits ahead of origin/experimental"
