@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "Claude"
 created = "2026-10-10T18:32:35Z"
-updated = "2026-10-29T09:00:34Z"
+updated = "2026-10-29T09:23:09Z"
 labels = ["no-story"]
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/frob-check/**", "crates/gob-caps/**", "crates/gob-plan/src/catalog/answer.rs"]
 
