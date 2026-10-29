@@ -48,6 +48,7 @@ const OWNERS: &[(&str, &str)] = &[
     ("LARGE", "grimble-arch"),
     ("LAYER", "crunk-rules"),
     ("LAYOUT", "crunk-rules"),
+    ("LOG", "grimble-check"),
     ("MDL", "grimble-model"),
     ("ORG", "crunk-rules"),
     ("PACK", "grimble-capabilities"),
