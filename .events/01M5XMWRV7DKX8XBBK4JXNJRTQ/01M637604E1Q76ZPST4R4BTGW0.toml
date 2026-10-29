@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-29T06:57:26Z"
+digest = "84a6eb7a68a61aa9ff3d40cb28fc2013169f55c11d3a940434bcc537e8d4322b"
+head = "ee5f25f53db077908261652fd607adb8f6a2f4f9"
+provider = "file"
+ref = "docs/design/output-atoms.md"
+size = 72599
+status = "measured"
+at = "2026-10-29T06:57:26Z"
+actor = "lognd"
+rev = 1
