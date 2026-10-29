@@ -2,12 +2,12 @@
 id = "01M43MPG53JR8TP0E15394FZ5T"
 title = "gob-config: product-scoped config registries and dynamic-key tables; migrate crunk-spec"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-04T14:22:14Z"
-updated = "2026-10-29T17:10:03Z"
+updated = "2026-10-29T21:13:14Z"
 scope = ["crates/gob-config/**", "crates/gob-macros/**", "crates/crunk-spec/**", "crates/gob-dev/**", "crates/gob-cli/**", "crates/grimble/**", "docs/reference/**", "docs/schemas/**", "docs/crunk/**", "crates/frob/src/workspace.rs"]
 
 [[acceptance]]
