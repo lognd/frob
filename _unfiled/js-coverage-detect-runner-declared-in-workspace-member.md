@@ -2,7 +2,8 @@
 id = "01M62VRJMEEJK8EZCM0RV29FE6"
 title = "JS coverage: detect runner declared in workspace member package.json"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
