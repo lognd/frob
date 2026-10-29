@@ -8,6 +8,7 @@
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
 
 use gob_ir::registry::{AtomEntry, DetectorEntry, DetectorKind, VocabEntry};
 
@@ -113,6 +114,13 @@ inventory::submit! {
     VocabEntry { lang: "rust", kind: "fs.read", names: &[
         "File::open", "fs::read", "fs::read_to_string", "fs::read_dir", "fs::metadata",
         "fs::symlink_metadata", "fs::canonicalize", "fs::read_link", "fs::copy", "OpenOptions::new",
+        "std::path::Path.exists", "std::path::Path.is_file", "std::path::Path.is_dir",
+        "std::path::Path.read_dir", "std::path::Path.metadata", "std::path::Path.symlink_metadata",
+        "std::path::Path.canonicalize", "std::path::Path.read_link", "std::path::Path.try_exists",
+        "std::path::PathBuf.exists", "std::path::PathBuf.is_file", "std::path::PathBuf.is_dir",
+        "std::path::PathBuf.read_dir", "std::path::PathBuf.metadata",
+        "std::path::PathBuf.symlink_metadata", "std::path::PathBuf.canonicalize",
+        "std::path::PathBuf.read_link", "std::path::PathBuf.try_exists",
     ] }
 }
 
