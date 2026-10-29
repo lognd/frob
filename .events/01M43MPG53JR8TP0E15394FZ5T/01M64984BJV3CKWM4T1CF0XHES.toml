@@ -1,0 +1,61 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-29T16:48:46Z"
+digest = "006038fbc14504b352e4da97a519a63122d81c9dc530fba7a9d45ddc5ad1de87"
+exit_code = 104
+head = "77df3ab7592287a259f13b62b5cdf6b54bd4fcba"
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-text v0.532.0 (<worktree>/crates/gob-text)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-present v0.532.0 (<worktree>/crates/frob-present)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 50s
+error: creating test list failed
+
+Caused by:
+  for `grimble-model`, command `<worktree>/target/debug/deps/grimble_model-aad9dfe18e680bd8 --list --format terse` exited with exit code 70
+  --- stdout:
+
+  --- stderr:
+  error: [double-spawn] failed to exec `"<worktree>/target/debug/deps/grimble_model-aad9dfe18e680bd8" "--list" "--format" "terse"`, current_dir: `<worktree>/crates/grimble-model`
+
+  Caused by:
+    No such file or directory (os error 2)
+
+  ---
+"""
+passed = false
+provider = "nextest"
+ref = "package(crunk-spec) and binary(schema)"
+size = 2547
+status = "measured"
+at = "2026-10-29T16:48:46Z"
+actor = "lognd"
+rev = 1
