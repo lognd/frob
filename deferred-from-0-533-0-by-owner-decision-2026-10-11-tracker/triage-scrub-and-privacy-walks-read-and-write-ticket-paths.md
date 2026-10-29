@@ -8,7 +8,7 @@ points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
 reporter = "lognd"
 created = "2026-10-07T03:20:48Z"
-updated = "2026-10-29T14:42:33Z"
+updated = "2026-10-29T15:25:22Z"
 labels = ["area:mirror", "no-story"]
 scope = ["crates/frob-ledger/src/triage.rs", "crates/frob-ledger/src/scrub.rs", "crates/frob-ledger/src/privacy.rs", "crates/frob-ledger/tests/privacy.rs"]
 
