@@ -2,11 +2,12 @@
 id = "01M62C1NHDRPEQNFQJP82VB73N"
 title = "Zero DOC006 findings in gob-plan benches (plugins.md section 6.6)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-28T23:03:12Z"
-updated = "2026-10-28T23:03:12Z"
+updated = "2026-10-29T00:09:07Z"
 scope = ["crates/gob-plan/benches/**"]
 +++
 
