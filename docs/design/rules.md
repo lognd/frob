@@ -688,6 +688,12 @@ Exact rules are not waivable by default (`waivable = false` unchanged);
 they are baselined, fixed or off. Waivers appear in `excepted` and count
 against the budgets of exceptions.md section 4.
 
+Implementation (~291TPEB): `gob_rules::Nature` (`Exact` default,
+`Heuristic`), `Audience` (`Agent`, `Human`), `HeuristicNote::message(audience)`
+and `Finding::heuristic(..)` build the three-part message; the fingerprint is
+audience-independent. The `nature =` derive attribute, the envelope fields and
+the agent-detection wiring belong to later tickets.
+
 **6.1.5 Gate scopes (replace `release_severity`).** A rule declares
 `gates = [...]` with a subset of `local | ci | release` (default all
 three). A rule runs and can fail only at gates it lists; the gate is
