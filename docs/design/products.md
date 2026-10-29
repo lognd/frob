@@ -132,7 +132,8 @@ uv's default data directory, then pipx's venvs directory, accepted only
 when it is a virtual environment holding `frob.exe`; `PATH` is not
 consulted for this), then on PATH, and reports which one it used (`check`: `data.siblings`; `doctor`: `siblings`, with any second copy and its version). A user who wants `grimble` on
 PATH as well runs `uv tool install grimble`. frob can still link a
-sibling's crates in-process when built with the `bundle` feature; a
+sibling's crates in-process when built with the `bundle` feature
+(`frob-cli`'s optional `grimble` and `crunk-check` dependencies); a
 build without it (crates.io `frob-cli`) that cannot find a configured
 sibling reports it as a required Unresolved finding rather than
 omitting it, and treats a sibling whose `--json` has another
