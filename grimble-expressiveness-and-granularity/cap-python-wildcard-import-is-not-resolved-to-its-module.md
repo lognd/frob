@@ -1,0 +1,20 @@
++++
+id = "01M6422Z8JGE789ZHW4G68NRS1"
+title = "CAP: Python wildcard import is not resolved to its module"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+reporter = "lognd"
+created = "2026-10-29T14:47:38Z"
+updated = "2026-10-29T14:47:38Z"
+idempotency_key = "vnvd3q1-py-star"
+scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**"]
+
+[[acceptance]]
+text = "from-import-star of a capability module resolves each bare name to its origin symbol and the use is reported"
+bound = false
++++
+
+Case p02: names bound by a wildcard import are not resolved. symbol-resolved fix required (binding/import resolution, not text matching); pin case as regression test; unresolvable forms must report Unresolved, never pass silently
