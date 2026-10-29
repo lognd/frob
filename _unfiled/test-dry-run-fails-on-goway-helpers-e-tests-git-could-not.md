@@ -2,7 +2,8 @@
 id = "01M49SWMDMB1TEHJ5Q1HRJ3KXT"
 title = "test-dry-run fails on goway helpers: E-TESTS-GIT Could not create index from tree"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
