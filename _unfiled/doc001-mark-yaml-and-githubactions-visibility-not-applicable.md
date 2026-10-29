@@ -2,12 +2,12 @@
 id = "01M62EB4V7ZG8MCFQ4H7HTED6Y"
 title = "DOC001: mark YAML and GithubActions visibility not-applicable in the capability matrix"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T23:43:20Z"
-updated = "2026-10-29T00:08:48Z"
+updated = "2026-10-29T00:08:49Z"
 scope = ["crates/gob-caps/**", "crates/gob-check/**"]
 +++
 
