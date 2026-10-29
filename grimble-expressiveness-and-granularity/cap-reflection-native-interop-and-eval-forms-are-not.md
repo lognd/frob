@@ -2,7 +2,8 @@
 id = "01M64230AR8DHJZY9QQS3EC85S"
 title = "CAP: reflection, native interop and eval forms are not reported"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
