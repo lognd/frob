@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
 updated = "2026-10-29T21:17:18Z"
 idempotency_key = "vnvd3q1-py-eval"
-scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/grimble-bind/**", "crates/grimble-model/**", "docs/design/binding.md"]
+scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**", "crates/grimble-bind/**", "crates/grimble-model/**", "docs/design/binding.md", "docs/design/universal-model.md"]
 
 [[acceptance]]
 text = "eval, exec and compile on a non-constant source yield an Unresolved finding naming the call"
