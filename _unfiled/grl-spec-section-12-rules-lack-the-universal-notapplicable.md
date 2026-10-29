@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-08T12:10:51Z"
-updated = "2026-10-29T08:45:19Z"
+updated = "2026-10-29T08:55:34Z"
 scope = ["crates/gob-plan/src/grl/parse/tests/fixtures/**", "docs/design/grl-spec.md", "crates/gob-plan/src/grl/parse/tests/snapshots/**", "crates/gob-plan/tests/check_names.rs"]
 
 [[acceptance]]
