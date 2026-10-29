@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T01:48:07Z"
+digest = "f5f6217529dbc3999086e1e0bf53fb1a82b6203b5e9f27709c739137ce7f2646"
+exit_code = 0
+head = "e2ff25d4785371fcb6cd6ad8415b2fe1324e4af9"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d91163dc-aef4-4f67-b8ca-4de52032781b with nextest profile: default
+    Starting 1 test across 492 binaries (5703 tests skipped)
+        PASS [   0.214s] grimble-bind::caps a_narrow_net_connect_grant_clears_the_typed_receiver_use
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.223s] 1 test run: 1 passed, 5703 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "grimble-bind::caps a_narrow_net_connect_grant_clears_the_typed_receiver_use"
+size = 627
+status = "measured"
+test_count = 1
+tests_digest = "337f34b4b37d36ab7171801c42517bd8c765ad76e8a7816e90089580736f1ca7"
+at = "2026-10-29T01:48:07Z"
+actor = "lognd"
+rev = 1
