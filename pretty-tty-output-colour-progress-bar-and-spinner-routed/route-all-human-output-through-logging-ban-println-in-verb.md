@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:57:31Z"
-updated = "2026-10-29T02:45:27Z"
+updated = "2026-10-29T02:45:28Z"
 labels = ["no-story"]
-scope = ["crates/frob/src/**", "crates/gob-check/**", "crates/frob-check/**", "crates/gob-mdtest/coverage-allowlist.toml", "docs/**", "frob.toml", "Cargo.lock"]
+scope = ["crates/frob/src/**", "crates/gob-check/**", "crates/frob-check/**", "crates/gob-mdtest/coverage-allowlist.toml", "docs/**", "frob.toml", "Cargo.lock", "changelog.d/01M5XMN90BZAYHQSK214270F1C.changed.md"]
 
 [[acceptance]]
 text = "a policy rule fails println/eprintln in verb code outside the presenter; existing call sites are routed through logging"
