@@ -1,4 +1,4 @@
-//! Benchmark B2 (plugins.md section 6.6): a rule compiled in against the same rule as a cached
+//! Benchmark B2 (plugins.md section 6): a rule compiled in against the same rule as a cached
 //! disk plan, over the 100k-line fixture.
 //!
 //! The two runs' JSON findings are compared first; then each rule is timed both ways with the

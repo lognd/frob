@@ -3,8 +3,8 @@
 //! ```toml
 //! [moved]
 //! "docs/design/tickets.md" = "docs/design/work.md"            # a file moved
-//! "docs/design/tickets.md#lifecycle" = "docs/design/work.md#states"
-//! "docs/design/tickets.md section 6" = "merged:docs/design/work.md#states"
+//! "<old>.md#<old-anchor>" = "<new>.md#<new-anchor>"
+//! "<old>.md section 9" = "merged:<new>.md#<new-anchor>"
 //! "docs/design/old.md" = "removed:superseded-by docs/design/work.md"
 //! "docs/design/older.md" = "archive:docs/archive/older.md"
 //! ```
@@ -31,7 +31,7 @@ pub struct Ref {
 }
 
 impl Ref {
-    /// Split `file.md`, `file.md#a` or `file.md section N`; `None` when no markdown file is named.
+    /// Split `<file>.md`, `<file>.md#<anchor>` or `<file>.md section N`; `None` when no markdown file is named.
     #[must_use]
     pub fn parse(text: &str) -> Option<Self> {
         let text = text.trim();
@@ -45,7 +45,7 @@ impl Ref {
         })
     }
 
-    /// The place as a reader would quote it (`a.md`, `a.md#x`, `a.md section 3`).
+    /// The place as a reader would quote it (a bare file, a file with an anchor, or a file with a section number).
     #[must_use]
     pub fn render(&self) -> String {
         match &self.locator {

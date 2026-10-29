@@ -1,4 +1,4 @@
-//! Prose citations of a markdown file (`tickets.md section 6`, `tickets.md#lifecycle`) and the
+//! Prose citations of a markdown file (a file plus a section number, or a file plus an anchor) and the
 //! headings they point at.
 //!
 //! Pure text in, plain values out: this module only finds citations and the sections and anchors
@@ -26,7 +26,7 @@ pub enum Locator {
     Anchor(String),
 }
 
-/// One `x.md section N` or `x.md#anchor` citation found in a text.
+/// One `x.md section N` or file-plus-anchor citation found in a text.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Citation {
     /// The cited file as written (`tickets.md`, `docs/design/tickets.md`).
@@ -40,7 +40,7 @@ pub struct Citation {
 }
 
 impl Citation {
-    /// The citation as a reader would quote it (`tickets.md section 6`, `tickets.md#lifecycle`).
+    /// The citation as a reader would quote it (a file plus a section number, or a file plus an anchor).
     #[must_use]
     pub fn quoted(&self) -> String {
         match &self.locator {

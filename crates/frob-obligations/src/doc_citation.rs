@@ -1,4 +1,4 @@
-//! `DOC006`: a prose citation of a markdown file (`tickets.md section 6`, `tickets.md#anchor`)
+//! `DOC006`: a prose citation of a markdown file (a file plus a section number, or a file plus an anchor)
 //! names a file, section or anchor that does not exist, and `docs/MOVED.toml` does not move it.
 
 // frob:ticket 01M4H0RE1Q9A1M47ZT7Q1ZG43K
@@ -121,7 +121,7 @@ enum Check {
     NoFile,
 }
 
-/// The place a citation or row target is reported as: `x.md section 6`.
+/// The place a citation or row target is reported as: a file plus a section number.
 fn display(file: &str, locator: &Locator) -> String {
     Citation {
         file: file.to_owned(),

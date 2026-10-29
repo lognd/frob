@@ -2,7 +2,7 @@
 //!
 //! The pages are the generated `docs/reference/rules/<ID>.md` files, embedded in each product's
 //! binary through [`rule_pages!`]; one source feeds the web reference, the terminal and the JSON
-//! `data` (diagnostics.md sections 1.2, 5.1 and 6). A product registers a thin verb that calls
+//! `data` (diagnostics.md sections 1, 5.1 and 6). A product registers a thin verb that calls
 //! [`explain`] with its own page table.
 
 // frob:ticket 01M3ZX7ZD77ZW385N5B992NX3A

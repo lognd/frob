@@ -63,7 +63,7 @@ Phase-2 check: CLI table rows enumerated 164, classified 169 (split rows count o
 |---|---|---|---|---|
 | C-79-listnew | scaffold [list/new] | cli-surface l.79: KEEP (small) | DROPPED-ON-PURPOSE | v2/docs/design/boundaries.md 2.6: scaffold templates dropped for the product; `frob init` is the apply path (BUILT, v2/crates/frob/src/init.rs) |
 | C-79-apply | scaffold [apply] | cli-surface l.79: KEEP (small) | BUILT | v2/crates/frob/src/init.rs (`frob init`: knobs, .gitignore, merge driver) |
-| C-80 | explore | cli-surface l.80: MERGE-INTO map/outline/xref flat | DESIGNED | v2/docs/design/cli.md section 4 row `graph query`, `explore outline\|map\|xref\|docs` (M2, crate frob-explore); code-model.md l.416; no ticket |
+| C-80 | explore | cli-surface l.80: MERGE-INTO map/outline/xref flat | DESIGNED | docs/design/cli.md section 4 row `graph query`, `explore outline\|map\|xref\|docs` (M2, crate frob-explore); code-model.md l.416; no ticket |
 | C-81 | outline, map, xref | cli-surface l.81: KEEP as `explore`-style readers | DESIGNED | same row; also `grimble explore outline\|map\|xref`; no ticket, no code |
 | C-82-cycle | cycle, dup, arch [cycle] | cli-surface l.82: MERGE-INTO check | TICKETED | ~1QBHP7T G10 grimble-arch: CYCLE, LARGE, DEAD; cli.md l.272 says cycle lives in grimble |
 | C-82-dup, | cycle, dup, arch [dup, arch] | cli-surface l.82: MERGE-INTO check | DESIGNED | rules.md section 3 CYCLE/ARCH/LARGE/DEAD/DUP row, section 8 crate grimble-arch; G10 ticket names only CYCLE, LARGE, DEAD, so ARCH and DUP have no ticket |
@@ -1061,7 +1061,7 @@ The v1 pain-point table (tickets.md 7), the failure families (agent-usage 3.3) a
 
 | Id | v1 DROP | v2 decision and consequence |
 |---|---|---|
-| R-1 | NARR001 (v1 DROP: style, narrative lives in tickets) | v2/docs/design/documentation.md section 4: NARR001 comment blocks over 6 lines or citing more than one ticket; same intent as v1 DOCARCH002/NARR001 caps. Reversal of the drop with a tighter threshold. Not built, not ticketed. |
+| R-1 | NARR001 (v1 DROP: style, narrative lives in tickets) | docs/design/documentation.md section 4: NARR001 comment blocks over 6 lines or citing more than one ticket; same intent as v1 DOCARCH002/NARR001 caps. Reversal of the drop with a tighter threshold. Not built, not ticketed. |
 | R-2 | DOCARCH001/TICK011/WAIVE009/010 (v1 DROP: English phrase scans) | documentation.md NARR002 history words (`used to`, `previously`, `regression`, `incident`) is a prose-lexical scan of the kind v1 marked DROP; exceptions.md 5 reason checker restates-the-rule and boilerplate deny-list is milder. Decide whether NARR002 stays. |
 | R-3 | PRE001 (v1 DROP: slow ceremony; scope lease replaces it) | rules.md section 3 SCOPE, PRE, QUEUE row carries 'pre-work sweep'. Contradicts the drop reason; no PRE rule exists in code or tickets. |
 | R-4 | TDD001 (v1 DROP: git-history archaeology, costly) | rules.md section 3 TEST, TDD row carries 'commit-order'; boundaries.md l.140 lists TDD under frob-obligations. |

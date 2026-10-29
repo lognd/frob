@@ -8,7 +8,7 @@ use gob_text::FileInterner;
 use crate::doc_citation;
 use crate::host::ObligationHost;
 
-/// A prose citation (`x.md section N`, `x.md#anchor`) whose target is missing and not remapped.
+/// A prose citation (`x.md section N`, a file plus an anchor) whose target is missing and not remapped.
 #[derive(Debug, Clone, Copy, Default)]
 #[rule(
     id = "DOC006",

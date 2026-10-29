@@ -688,6 +688,42 @@ acked_at = "2026-10-27T03:35:24.833957896Z"
 reason = "attest PATH001 fixture accepts"
 
 [[symbol]]
+identity = "crates/gob-plan/benches/ic_plan.rs::ic_plan_case"
+symref = "crates/gob-plan/benches/ic_plan.rs::ic_plan_case"
+sig = "418db21a465e25e868ebcd710dab215271b66570e341963888b0457f5764628e"
+body = "495c02d5bc85dc2cfe4a36a6317e51b3de6b1ce8408041314e2dc0258067a819"
+doc = "66687ea774e40861b5aa0d288757b50e3dc1de2f046360948071465d92fae74d"
+attr = "af6b7390b58fd46be4652b41e37b827a8fc22b23cbccab66721ab773779119be"
+contract = "43409fd01e1f3741d5f166defa3d0bfc14760f1608127167e604cb5cf045fdd8"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-28T23:11:22.99447353Z"
+reason = "accept DEAD001 reviewed: bench entry points called by gungraun main! macro"
+
+[[symbol]]
+identity = "crates/gob-plan/benches/ic_plan.rs::parse_rust"
+symref = "crates/gob-plan/benches/ic_plan.rs::parse_rust"
+sig = "f8c6a3fa0c4ecb32e6b1530d56a6bfc70a4f34d7017f79a21665cfc958344743"
+body = "6b3ce7197a98beaa8a663d508d00607f5306add8a2a0382e7cf7c51372914608"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "b6789c35a11ddbbad21e779cd173a5ed268582bbb91825d763e93499f7acc5ec"
+contract = "edf8d25c52a28772d1e6ef9010e0b0c5e1c5d0e1453e3cb19d21b29ca9668a1f"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-28T23:11:22.99447353Z"
+reason = "accept DEAD001 reviewed: bench entry points called by gungraun main! macro"
+
+[[symbol]]
+identity = "crates/gob-plan/benches/ic_plan.rs::plan_executor"
+symref = "crates/gob-plan/benches/ic_plan.rs::plan_executor"
+sig = "ecfb64fbb88897ae842732bfa7f4125db4f62bff988ae0e3d88f9b673d89db77"
+body = "e0902e4ca1233094191a140175a97b00c71fb3936dbe57d34bc8d3213ec2025a"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "af00261b301481313d547e624791a061f3074b2c5fd8ffcfbbf0e4be065953c8"
+contract = "8adac12183c0757eaa371aa555e504a253a198fc8e442b2a48cf946f4eba9c21"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-10-28T23:11:22.99447353Z"
+reason = "accept DEAD001 reviewed: bench entry points called by gungraun main! macro"
+
+[[symbol]]
 identity = "crates/gob-symbols/benches/graph.rs::bench_build"
 symref = "crates/gob-symbols/benches/graph.rs::bench_build"
 sig = "70491f7b8d491b80c214e57e6055fd0738f7219cff25046ae693c028edb99ad6"

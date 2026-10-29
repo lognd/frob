@@ -96,12 +96,12 @@ flow gob_to_frob : gob -> frob {
 flow grimble_to_frob : grimble -> frob {
   label Internal;
   producer "crates/grimble/src/lib.rs";
-  consumer "crates/frob/tests/remedies.rs";
+  consumer "crates/frob/tests/siblings/remedies.rs";
 }
 
 /// Crunk's sibling document flows into frob check, which hosts and drives it.
 flow crunk_to_frob : crunk -> frob {
   label Internal;
   producer "crates/crunk/src/lib.rs";
-  consumer "crates/frob/tests/web_conformance.rs";
+  consumer "crates/frob/tests/siblings/web_conformance.rs";
 }

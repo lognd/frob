@@ -485,7 +485,7 @@ remove it after a failed land. A land that dies silently may have succeeded: che
 
 | Area | Incident / gotcha | Cite |
 |---|---|---|
-| Monofile era | every ticket write was a diff over everyone's state; archive clobber, churn rewrites, id collisions, draft deaths via the "restore main's file" recipe, DirtyMain from write-then-commit split, lock starvation | T-0577 T-0959 T-1036 T-1090 T-1115..1128 T-1054 T-0933/0982 (all collected in ledger-v2.md section 0) |
+| Monofile era | every ticket write was a diff over everyone's state; archive clobber, churn rewrites, id collisions, draft deaths via the "restore main's file" recipe, DirtyMain from write-then-commit split, lock starvation | T-0577 T-0959 T-1036 T-1090 T-1115..1128 T-1054 T-0933/0982 (all collected in the v1 ledger-v2 doc, section 0) |
 | Narrative corruption | a Done-report line byte-identical to a ledger marker forged a section boundary and corrupted a neighbor | T-1536 |
 | Stale-snapshot wholesale writes | silent revert of three DONE tickets to QUEUED by a stale in-memory map | T-0680/T-0889/T-1588 |
 | Hand edits | agents hand-edit ledgers, bypass verbs; every verb exists to replace a hand-edit recipe (priority, scope, body, drop, reopen, restore, done-report, renumber, promote). Hand-refile of a draft lost 12 evidence ids | T-1636 T-0579 T-2392 |
