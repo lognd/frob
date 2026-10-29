@@ -2,7 +2,8 @@
 id = "01M642301PNSE0VTM2F313NY13"
 title = "CAP: a same-named method on an unrelated class suppresses a real use elsewhere"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
