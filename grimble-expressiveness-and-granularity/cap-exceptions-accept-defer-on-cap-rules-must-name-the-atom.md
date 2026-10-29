@@ -8,14 +8,14 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-29T03:37:26Z"
+updated = "2026-10-29T03:41:03Z"
 idempotency_key = "grimble-expr-exceptions-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/grant_ack.rs", "crates/grimble-bind/src/rules/**", "crates/grimble-model/src/**", "crates/grimble/src/ack.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/Cargo.toml", "crates/grimble-check/src/model_view.rs", "crates/grimble/tests/**", "crates/grimble-bind/src/**", "Cargo.lock"]
 
 [[acceptance]]
 text = "an accept/defer on CAP001 without an atom is an MDL error; one with an atom silences only that atom"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a new or widened CAP exception is a CAP005-class finding until an attester acks it, and deleting grimble.grants.toml after it existed is reported"

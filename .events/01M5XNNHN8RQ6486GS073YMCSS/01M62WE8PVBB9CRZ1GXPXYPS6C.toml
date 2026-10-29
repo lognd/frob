@@ -1,0 +1,84 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T03:41:03Z"
+digest = "b642c8edbd785542a4aac1ea1254c8f4e91201c381c84d23eb1314eeecac6608"
+exit_code = 0
+head = "3d727d7216c6d1c165042e665f6d129daa975e0f"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8m 30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 46267695-27be-44ac-901c-e8e80981ae9e with nextest profile: default
+    Starting 1 test across 494 binaries (5724 tests skipped)
+        PASS [   0.135s] grimble-bind::caps a_cap001_exception_silences_only_its_atom_and_resolves_aliases
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.147s] 1 test run: 1 passed, 5724 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_cap001_exception_silences_only_its_atom_and_resolves_aliases"
+size = 4433
+status = "measured"
+test_count = 1
+tests_digest = "81ca7d99fdcb00888717cf49b4e05118ef04bc5b4ec32974feb58bb79482793a"
+at = "2026-10-29T03:41:03Z"
+actor = "lognd"
+rev = 1
