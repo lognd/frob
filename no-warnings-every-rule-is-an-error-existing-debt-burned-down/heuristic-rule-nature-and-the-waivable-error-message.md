@@ -2,13 +2,13 @@
 id = "01M5XMJJ68A64KGZJGB291TPEB"
 title = "Heuristic rule nature and the waivable-error message contract"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:02Z"
-updated = "2026-10-28T12:55:41Z"
+updated = "2026-10-29T07:33:32Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**"]
 
