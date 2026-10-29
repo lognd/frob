@@ -2,7 +2,8 @@
 id = "01M5XWCAYVZQX363SSWYCR4M6H"
 title = "CAP: method calls on typed receivers (ureq::Agent) are not detected as net.connect"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
