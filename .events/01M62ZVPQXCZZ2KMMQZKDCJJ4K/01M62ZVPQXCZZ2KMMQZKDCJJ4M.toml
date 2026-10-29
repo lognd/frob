@@ -1,0 +1,10 @@
+kind = "create"
+title = "Unity editor coverage under the unity provider"
+type = "story"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-evidence/src/coverage/unity.rs"]
+body = "Split from 5GRB80B: C# coverlet coverage is done; Unity editor coverage (Code Coverage package, opencover to lcov) is not."
+at = "2026-10-29T04:49:28Z"
+actor = "lognd"
+rev = 1
