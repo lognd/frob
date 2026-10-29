@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-29T14:20:04Z"
+digest = "7ea74381a85745c84a5a1a5fdb4585bbdce35d43aa878324ccfc9931b4968cab"
+exit_code = 0
+head = "5d6969e7e40e54b4d5fe72a2521752a83d0b1a6b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b67ce790-ce3f-4dad-8dd3-2a27dbcb3269 with nextest profile: default
+    Starting 6 tests across 1 binary (6 tests skipped)
+        PASS [   0.016s] grimble-check::log_rules csharp_global_using_static_is_followed
+        PASS [   0.157s] grimble-check::log_rules javascript_reexported_wrapper_is_followed
+        PASS [   0.159s] grimble-check::log_rules rust_reexported_alias_is_followed
+        PASS [   0.159s] grimble-check::log_rules logging_module_and_tests_are_not_judged
+        PASS [   0.160s] grimble-check::log_rules python_reexported_wrapper_is_followed
+        PASS [   0.438s] grimble-check::log_rules python_negatives_are_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.438s] 6 tests run: 6 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test log_rules -E 'test(python_negatives_are_clean) | test(python_reexported_wrapper_is_followed) | test(rust_reexported_alias_is_followed) | test(javascript_reexported_wrapper_is_followed) | test(csharp_global_using_static_is_followed) | test(logging_module_and_tests_are_not_judged)'"
+size = 983
+status = "measured"
+test_count = 6
+tests_digest = "313c409935057c0c820580e249c904c5db644b7a6e7cf8ab1f50abf1c566f63b"
+at = "2026-10-29T14:20:04Z"
+actor = "lognd"
+rev = 1
