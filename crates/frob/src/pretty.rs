@@ -279,14 +279,14 @@ mod tests {
         lines.iter().map(|s| (*s).to_owned()).collect()
     }
 
-    // frob:tests crates/frob/src/pretty.rs::Theme::decorate
+    // frob:tests crates/frob/src/pretty.rs::Theme.decorate
     #[test]
     fn plain_theme_is_the_identity() {
         let input = rows(&["Tickets", "  ~ABCDEFG  closed  SCOPE001"]);
         assert_eq!(Theme::plain().decorate(input.clone()), input);
     }
 
-    // frob:tests crates/frob/src/pretty.rs::Theme::detect
+    // frob:tests crates/frob/src/pretty.rs::Theme.detect
     #[test]
     fn piped_no_color_and_dumb_streams_get_no_color() {
         let tty = env(&[("TERM", "xterm")]);
@@ -296,7 +296,7 @@ mod tests {
         assert!(!Theme::detect(&env(&[("TERM", "dumb")]), true, None).color);
     }
 
-    // frob:tests crates/frob/src/pretty.rs::Theme::detect
+    // frob:tests crates/frob/src/pretty.rs::Theme.detect
     #[test]
     fn width_comes_from_columns_only_on_a_terminal() {
         let e = env(&[("TERM", "xterm"), ("COLUMNS", "50")]);
@@ -304,7 +304,7 @@ mod tests {
         assert_eq!(Theme::detect(&e, false, None).width(), None);
     }
 
-    // frob:tests crates/frob/src/pretty.rs::Theme::decorate
+    // frob:tests crates/frob/src/pretty.rs::Theme.decorate
     #[test]
     fn colored_theme_styles_ids_status_headings_and_labels() {
         let out = Theme::colored(None).decorate(rows(&[
@@ -336,7 +336,7 @@ mod tests {
         assert_eq!(strip(&out[3]), "status      blocked");
     }
 
-    // frob:tests crates/frob/src/pretty.rs::Theme::decorate
+    // frob:tests crates/frob/src/pretty.rs::Theme.decorate
     #[test]
     fn already_styled_rows_and_prose_are_left_alone() {
         let styled = "\x1b[31mred\x1b[0m done".to_owned();
@@ -345,7 +345,7 @@ mod tests {
         assert!(out[1].starts_with("the build is "));
     }
 
-    // frob:tests crates/frob/src/pretty.rs::Theme::fit
+    // frob:tests crates/frob/src/pretty.rs::Theme.fit
     #[test]
     fn fit_truncates_to_the_width_with_an_ascii_ellipsis() {
         let t = Theme::colored(Some(20));
@@ -365,14 +365,14 @@ mod tests {
         );
     }
 
-    // frob:tests crates/frob/src/pretty.rs::PrettyExt::with_pretty
+    // frob:tests crates/frob/src/pretty.rs::PrettyExt.with_pretty
     #[test]
     fn with_pretty_sets_the_rendered_rows() {
         let p = Payload::new(1_u8).with_pretty(rows(&["x"]));
         assert_eq!(p.rendered, Some(rows(&["x"])));
     }
 
-    // frob:tests crates/frob/src/pretty.rs::Theme::decorate
+    // frob:tests crates/frob/src/pretty.rs::Theme.decorate
     #[test]
     fn table_rows_keep_their_visible_alignment_when_coloured() {
         let table = crate::text_view::table(&[
