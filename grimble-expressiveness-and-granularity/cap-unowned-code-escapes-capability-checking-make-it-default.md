@@ -8,10 +8,10 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-29T00:40:40Z"
+updated = "2026-10-29T00:40:41Z"
 idempotency_key = "grimble-expr-unowned-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/rules/sys001.rs", "crates/grimble-check/src/config.rs", "crates/grimble-bind/tests/**", "docs/design/binding.md"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/rules/sys001.rs", "crates/grimble-check/src/config.rs", "crates/grimble-bind/tests/**", "docs/design/binding.md", "docs/guides/grimble.md"]
 
 [[acceptance]]
 text = "an unowned file with an observed capability use fails grimble check at the default fail_on"
