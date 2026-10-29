@@ -2,13 +2,13 @@
 id = "01M5XMR67K19SFAWNTDJKKJPTT"
 title = "Grimble rule: all output goes through a logging crate (stdout, stderr and file sinks), per language"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-10-27T02:59:07Z"
-updated = "2026-10-28T12:55:55Z"
+updated = "2026-10-29T07:33:10Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/**", "crates/grimble-capabilities/**"]
 
