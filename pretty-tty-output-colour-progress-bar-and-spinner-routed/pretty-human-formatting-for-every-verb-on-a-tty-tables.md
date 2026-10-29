@@ -2,7 +2,8 @@
 id = "01M5XMN8V9MT31K1CR6W1GQTPG"
 title = "Pretty human formatting for every verb on a TTY (tables, status, errors)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
