@@ -859,7 +859,7 @@ pub fn parse_js_json(json: &str, cwd: &Path, member: &str) -> Parsed {
 
 // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
 /// The runner binary `name`: `node_modules/.bin/<name>` in `cwd` or an ancestor up to `root`, else `name` on `PATH`.
-fn find_js_runner(root: &Path, cwd: &Path, name: &str) -> Option<PathBuf> {
+pub(crate) fn find_js_runner(root: &Path, cwd: &Path, name: &str) -> Option<PathBuf> {
     for dir in cwd.ancestors() {
         let bin = dir.join("node_modules").join(".bin");
         let candidates = [bin.join(name), bin.join(format!("{name}.cmd"))];

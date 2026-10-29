@@ -16,6 +16,7 @@
 //! no usable report is [`CoverageStatus::MissingReport`], a COV004 finding when the
 //! language has tests and `[coverage] require_reports` is true.
 
+pub mod js;
 pub mod lcov;
 pub mod python;
 pub mod rust;
@@ -99,7 +100,12 @@ pub trait CoverageProvider: Send + Sync {
 
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
 /// Every registered language; each language ticket adds one entry here.
-pub const PROVIDERS: &[&dyn CoverageProvider] = &[&rust::RustCoverage, &python::PythonCoverage];
+pub const PROVIDERS: &[&dyn CoverageProvider] = &[
+    &rust::RustCoverage,
+    &python::PythonCoverage,
+    &js::VitestCoverage,
+    &js::JestCoverage,
+];
 
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
 /// The registered coverage provider for test provider `provider`, if any.
