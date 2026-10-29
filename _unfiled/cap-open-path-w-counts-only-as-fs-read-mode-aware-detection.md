@@ -2,7 +2,8 @@
 id = "01M4HYH9CDNJSYEZQGKRZA7WX2"
 title = "CAP: open(path, 'w') counts only as fs.read; mode-aware detection and Rust Path method receivers are not covered"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
