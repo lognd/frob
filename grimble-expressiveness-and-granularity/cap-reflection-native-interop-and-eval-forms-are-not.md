@@ -2,13 +2,13 @@
 id = "01M64230AR8DHJZY9QQS3EC85S"
 title = "CAP: reflection, native interop and eval forms are not reported"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-29T23:00:00Z"
+updated = "2026-10-29T23:00:02Z"
 idempotency_key = "vnvd3q1-reflect-ffi"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**"]
 
