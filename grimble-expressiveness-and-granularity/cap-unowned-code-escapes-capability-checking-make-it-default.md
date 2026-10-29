@@ -2,13 +2,13 @@
 id = "01M5XNNHRFE1K2DHBD7S9HQ7A6"
 title = "CAP: unowned code escapes capability checking; make it default-deny"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-27T03:15:09Z"
+updated = "2026-10-29T00:15:13Z"
 idempotency_key = "grimble-expr-unowned-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/rules/sys001.rs", "crates/grimble-check/src/config.rs", "crates/grimble-bind/tests/**"]
