@@ -51,12 +51,18 @@ fn cap001(rel: &str, text: &str) -> Vec<(String, bool)> {
 
 /// True when `atom` is reported certain, or (for `certain == false`) as an unresolved receiver.
 fn has(found: &[(String, bool)], atom: &str, certain: bool) -> bool {
-    let anchor = if certain { atom.to_owned() } else { format!("{atom}/receiver") };
+    let anchor = if certain {
+        atom.to_owned()
+    } else {
+        format!("{atom}/receiver")
+    };
     found.iter().any(|(a, c)| *a == anchor && *c == certain)
 }
 
 fn lacks(found: &[(String, bool)], atom: &str) -> bool {
-    !found.iter().any(|(a, _)| a == atom || *a == format!("{atom}/receiver"))
+    !found
+        .iter()
+        .any(|(a, _)| a == atom || *a == format!("{atom}/receiver"))
 }
 
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
