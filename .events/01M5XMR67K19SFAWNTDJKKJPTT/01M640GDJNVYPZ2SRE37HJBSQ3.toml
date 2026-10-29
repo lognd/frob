@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-29T14:18:52Z"
+digest = "fda0e243c92a4d83249fdd0c2c87c020447fc1f486b20780c9d472d5f6757f76"
+exit_code = 0
+head = "5d6969e7e40e54b4d5fe72a2521752a83d0b1a6b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f85a0d1e-1b34-4741-92e0-c8b5b42f3d42 with nextest profile: default
+    Starting 1 test across 1 binary (11 tests skipped)
+        PASS [   0.338s] grimble-check::log_rules finding_message_tells_agents_and_humans
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.339s] 1 test run: 1 passed, 11 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test log_rules -E 'test(finding_message_tells_agents_and_humans)'"
+size = 608
+status = "measured"
+test_count = 1
+tests_digest = "4383d2a45fd734d16505658340651056aca24eab008d76c3a7719fc1a6f955c6"
+at = "2026-10-29T14:18:52Z"
+actor = "lognd"
+rev = 1
