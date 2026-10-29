@@ -1,0 +1,48 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-29T03:53:24Z"
+digest = "de09e29b35eb5a6b6f15b0ac2e898480f3f3116e78e33d20c98714264d4cde32"
+exit_code = 0
+head = "74a3611cf9604cf8344fe8c84b7cbcf0ea30a1f5"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eed518cc-f4b4-4900-8bff-e206ad539008 with nextest profile: default
+    Starting 8 tests across 493 binaries (5716 tests skipped)
+        PASS [   0.047s] frob-cli pretty::tests::plain_theme_is_the_identity
+        PASS [   0.054s] frob-cli pretty::tests::already_styled_rows_and_prose_are_left_alone
+        PASS [   0.053s] frob-cli pretty::tests::table_rows_keep_their_visible_alignment_when_coloured
+        PASS [   0.053s] frob-cli pretty::tests::colored_theme_styles_ids_status_headings_and_labels
+        PASS [   0.054s] frob-cli pretty::tests::piped_no_color_and_dumb_streams_get_no_color
+        PASS [   0.054s] frob-cli pretty::tests::width_comes_from_columns_only_on_a_terminal
+        PASS [   0.055s] frob-cli pretty::tests::fit_truncates_to_the_width_with_an_ascii_ellipsis
+        PASS [   0.055s] frob-cli pretty::tests::with_pretty_sets_the_rendered_rows
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.065s] 8 tests run: 8 passed, 5716 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "frob-cli pretty::tests"
+size = 2103
+status = "measured"
+test_count = 8
+tests_digest = "2ef2497badefcbdd084349fa11a279df467000a4532d9f8e4e59cc900bf8ade2"
+at = "2026-10-29T03:53:24Z"
+actor = "lognd"
+rev = 1
