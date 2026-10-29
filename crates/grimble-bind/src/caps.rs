@@ -28,7 +28,7 @@
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
-//! file, not values returned by calls); `open(..)` is `fs.read` whatever its mode; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
+//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket RZA7WX2) but a mode other than a literal is a May `fs.write` beside the read; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
 //! severity table is not consulted (CAP001 is an Error, CAP002 a Warning).
 //!
 //! `may` arguments (ticket 5X9CAQE): a grant `may fs.read("config/**")` covers a use only when the
@@ -54,6 +54,7 @@
 // frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
 // frob:ticket 01M5XNNHRFE1K2DHBD7S9HQ7A6
 // frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:ticket RZA7WX2
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -1258,6 +1259,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
     }
     scan_resolved(cx, &mut uses);
     scan_typed_receivers(cx, &mut uses);
+    refine_open_modes(cx, &mut uses);
     attach_args(cx, &mut uses);
     tracing::info!(
         must_nodes = uses.lo.len(),
@@ -1315,7 +1317,10 @@ fn observed_arg(kind: ArgKind, call: &gob_symbols::CallArgs) -> Option<String> {
 /// True when the vocabulary entry reaches the call through a receiver, so the first call argument
 /// is not the path, name or program the atom is about (`Path.read_text`, `.read_text`).
 fn receiver_entry(callee: &str) -> bool {
-    callee.starts_with("Path.") || callee.starts_with('.') || callee.starts_with("?.")
+    callee.starts_with("Path.")
+        || callee.starts_with('.')
+        || callee.starts_with("?.")
+        || is_typed_name(callee)
 }
 
 /// Fill `Use::arg` for the uses an argument-scoped grant could judge: parse each file once and
@@ -1372,6 +1377,120 @@ fn attach_args(cx: &Cx<'_>, uses: &mut Uses) {
         }
     }
     tracing::info!(known, unknown, "call arguments attached to uses");
+}
+
+/// What the mode argument of a Python `open` says.
+#[derive(Debug, PartialEq, Eq)]
+enum OpenMode {
+    /// Read only (no mode, or a literal without `w`, `a`, `x` or `+`).
+    Read,
+    /// A literal mode that writes; `reads` when it also reads (`r+`, `w+`).
+    Write { reads: bool },
+    /// A mode that does not fold: it may write.
+    Unknown,
+}
+
+/// Classify the mode of the `open` call `c`; a receiver form (`Path.open`) takes the mode first.
+fn open_mode(c: &gob_symbols::CallArgs, receiver: bool) -> OpenMode {
+    use gob_symbols::ArgValue;
+    let slot = usize::from(!receiver);
+    let given = match c.kwargs.get("mode") {
+        Some(v) => Some(v),
+        None => c.args.get(slot),
+    };
+    match given {
+        None => OpenMode::Read,
+        Some(Some(ArgValue::Str(m))) => {
+            let plus = m.contains('+');
+            if plus || m.contains(['w', 'a', 'x']) {
+                OpenMode::Write {
+                    reads: plus || m.contains('r'),
+                }
+            } else {
+                OpenMode::Read
+            }
+        }
+        Some(_) => OpenMode::Unknown,
+    }
+}
+
+/// Make a Python `open` mode-aware (ticket RZA7WX2): `open(p, 'w')` is `fs.write` and no longer
+/// `fs.read` (unless the mode also reads), and a mode that is not a literal adds a May `fs.write`
+/// beside the read. A use whose call cannot be found on its line stays a plain read.
+fn refine_open_modes(cx: &Cx<'_>, uses: &mut Uses) {
+    let mut parsed: BTreeMap<String, BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>>> =
+        BTreeMap::new();
+    let (mut writes, mut mays) = (0usize, 0usize);
+    let mut refine = |bucket: &mut Vec<Use>| -> Vec<Use> {
+        let mut added = Vec::new();
+        bucket.retain(|u| {
+            if u.atom != "fs.read" || last_segment(&u.callee) != "open" {
+                return true;
+            }
+            let (Some(line), Some(code)) = (u.line, cx.code.file(&u.file)) else {
+                return true;
+            };
+            if code.language != "python" {
+                return true;
+            }
+            let calls = parsed.entry(u.file.clone()).or_insert_with(|| {
+                let mut m: BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>> = BTreeMap::new();
+                if let Some(src) = code.source() {
+                    for c in gob_symbols::call_args(&code.language, &src) {
+                        m.entry((c.line, last_segment(&c.callee).to_owned()))
+                            .or_default()
+                            .push(c);
+                    }
+                }
+                m
+            });
+            let Some(cands) = calls.get(&(line, "open".to_owned())) else {
+                return true;
+            };
+            let receiver = !matches!(u.callee.as_str(), "open" | "io.open" | "codecs.open");
+            let modes: Vec<OpenMode> = cands.iter().map(|c| open_mode(c, receiver)).collect();
+            let mode = match modes.as_slice() {
+                [only] => only,
+                _ => &OpenMode::Unknown,
+            };
+            match mode {
+                OpenMode::Read => true,
+                OpenMode::Write { reads } => {
+                    writes += 1;
+                    tracing::debug!(file = %u.file, line, callee = %u.callee, reads, "open mode writes: fs.write");
+                    added.push(Use { atom: "fs.write".to_owned(), ..u.clone() });
+                    *reads
+                }
+                OpenMode::Unknown => {
+                    mays += 1;
+                    tracing::debug!(file = %u.file, line, callee = %u.callee, "open mode not a literal: May fs.write");
+                    added.push(Use { atom: "fs.write".to_owned(), certain: false, ..u.clone() });
+                    true
+                }
+            }
+        });
+        added
+    };
+    let mut to_hi: Vec<(String, Use)> = Vec::new();
+    for (node, bucket) in &mut uses.lo {
+        for u in refine(bucket) {
+            if u.certain {
+                bucket.push(u);
+            } else {
+                to_hi.push((node.clone(), u));
+            }
+        }
+    }
+    for bucket in uses.hi.values_mut() {
+        let add = refine(bucket);
+        bucket.extend(add);
+    }
+    let extra = refine(&mut uses.unowned);
+    uses.unowned.extend(extra);
+    for (node, u) in to_hi {
+        uses.hi.entry(node).or_default().push(u);
+    }
+    tracing::info!(writes, mays, "open modes refined");
 }
 
 /// How the grants of a node judge one use.

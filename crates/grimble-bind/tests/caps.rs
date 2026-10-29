@@ -788,3 +788,63 @@ fn a_cap001_exception_silences_only_its_atom_and_resolves_aliases() {
         "an expired exception enforces again"
     );
 }
+
+// frob:ticket RZA7WX2
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn open_with_a_write_mode_is_fs_write_and_a_read_grant_does_not_cover_it() {
+    for call in [
+        "open(\"o\", \"w\")",
+        "open(\"o\", \"a\")",
+        "open(\"o\", mode=\"x\")",
+        "open(\"o\", \"rb+\")",
+    ] {
+        let py = format!("def go():\n    return {call}\n");
+        let b = bind_py(&py, "  may fs.read;\n");
+        assert_eq!(
+            atoms(&b),
+            ["cap/node/a/fs.write"],
+            "{call}: {:?}",
+            b.findings
+        );
+        assert!(of(&b, "CAP001")[0].reason.is_none(), "{call}");
+        assert!(of(&bind_py(&py, "  may fs.read;\n  may fs.write;\n"), "CAP001").is_empty());
+    }
+}
+
+// frob:ticket RZA7WX2
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn open_with_a_read_mode_or_none_stays_fs_read_only() {
+    for call in ["open(\"o\")", "open(\"o\", \"r\")", "open(\"o\", \"rb\")"] {
+        let py = format!("def go():\n    return {call}\n");
+        let b = bind_py(&py, "  may fs.read;\n");
+        assert!(of(&b, "CAP001").is_empty(), "{call}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket RZA7WX2
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn open_with_a_non_literal_mode_is_a_may_fs_write_unresolved() {
+    let py = "def go(m):\n    return open(\"o\", m)\n";
+    let b = bind_py(py, "  may fs.read;\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+    assert!(f[0].anchor.contains("fs.write"), "{}", f[0].anchor);
+    assert!(f[0].reason.is_some(), "Unresolved, not an Error: {f:?}");
+}
+
+// frob:ticket RZA7WX2
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn rust_path_method_receivers_are_fs_read() {
+    let rs = "use std::path::{Path, PathBuf};\n\nfn go(p: &Path, q: PathBuf) -> bool {\n    let _ = p.read_dir();\n    p.exists() && q.metadata().is_ok()\n}\n";
+    let b = bind_file("src/x.rs", rs, "");
+    assert_eq!(atoms(&b), ["cap/node/a/fs.read"], "{:?}", b.findings);
+    assert!(of(&b, "CAP001")[0].reason.is_none());
+    assert!(of(&bind_file("src/x.rs", rs, "  may fs.read;\n"), "CAP001").is_empty());
+    // a receiver of unknown type is not reported
+    let rs = "fn go(p: &Foo) -> bool {\n    p.exists()\n}\n";
+    assert!(of(&bind_file("src/x.rs", rs, ""), "CAP001").is_empty());
+}
