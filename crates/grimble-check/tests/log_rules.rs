@@ -463,3 +463,190 @@ fn js_log_fs_write_to_a_standard_fd() {
         (0, 1)
     );
 }
+
+/// Split one C# file's LOG001 results into (resolved hits, unresolved reports).
+fn cs_log(files: &[(&str, &str)]) -> (usize, usize) {
+    let found = direct(files);
+    let unres = found
+        .iter()
+        .filter(|f| matches!(f.severity, gob_rules::Severity::Unresolved))
+        .count();
+    (found.len() - unres, unres)
+}
+
+// frob:ticket 01M64230Q2FSG2WXTFT4ENDA4R
+// frob:tests crates/grimble-check/src/log/lang_csharp.rs::scan
+#[test]
+fn cs_log_global_qualified_names_resolve() {
+    let one = |t: &str| cs_log(&[("A.cs", t)]);
+    assert_eq!(
+        one("class A { void M() { global::System.Console.WriteLine(\"x\"); } }"),
+        (1, 0)
+    );
+    assert_eq!(
+        one(
+            "global using static global::System.Console;\nclass A { void M() { WriteLine(\"x\"); } }"
+        ),
+        (1, 0)
+    );
+    assert_eq!(
+        one("using C = global::System.Console;\nclass A { void M() { C.WriteLine(\"x\"); } }"),
+        (1, 0)
+    );
+    assert_eq!(
+        one("class A { void M() { var o = global::System.Console.Out; } }"),
+        (1, 0)
+    );
+    assert_eq!(
+        one("class A { void M() { global::Other.Console.WriteLine(\"x\"); } }"),
+        (0, 0)
+    );
+}
+
+// frob:ticket 01M64230Q2FSG2WXTFT4ENDA4R
+// frob:tests crates/grimble-check/src/log/lang_csharp.rs::scan
+#[test]
+fn cs_log_reflection_resolves_or_reports() {
+    let one = |t: &str| {
+        cs_log(&[(
+            "A.cs",
+            &format!("using System;\nclass A {{ void M(string n, object o) {{ {t} }} }}"),
+        )])
+    };
+    assert_eq!(
+        one(
+            "typeof(Console).GetMethod(\"WriteLine\", new[] { typeof(string) }).Invoke(null, new object[] { \"x\" });"
+        ),
+        (1, 0)
+    );
+    assert_eq!(
+        one("var m = typeof(System.Console).GetMethod(\"WriteLine\");\nm.Invoke(null, null);"),
+        (1, 0)
+    );
+    assert_eq!(
+        one("Type.GetType(\"System.Console\").GetMethod(\"Write\").Invoke(null, null);"),
+        (1, 0)
+    );
+    assert_eq!(
+        one("typeof(Console).GetMethod(n).Invoke(null, null);"),
+        (0, 1)
+    );
+    assert_eq!(
+        one("Type.GetType(n).GetMethod(\"WriteLine\").Invoke(null, null);"),
+        (0, 1)
+    );
+    assert_eq!(
+        one("o.GetType().GetMethod(\"WriteLine\").Invoke(o, null);"),
+        (0, 1)
+    );
+    assert_eq!(
+        one("o.GetType().GetMethod(\"Frobnicate\").Invoke(o, null);"),
+        (0, 0)
+    );
+    assert_eq!(
+        one("typeof(Math).GetMethod(\"Abs\").Invoke(null, null);"),
+        (0, 0)
+    );
+}
+
+// frob:ticket 01M64230Q2FSG2WXTFT4ENDA4R
+// frob:tests crates/grimble-check/src/log/lang_csharp.rs::scan
+#[test]
+fn cs_log_inherited_unity_print_resolves_or_reports() {
+    let mono = |t: &str| cs_log(&[("A.cs", t)]);
+    assert_eq!(
+        mono("using UnityEngine;\nclass A : MonoBehaviour { void M() { print(\"x\"); } }"),
+        (1, 0)
+    );
+    assert_eq!(
+        mono(
+            "class A : UnityEngine.MonoBehaviour { void M() { this.print(\"x\"); base.print(\"y\"); } }"
+        ),
+        (2, 0)
+    );
+    assert_eq!(
+        mono("using U = UnityEngine;\nclass A : U.MonoBehaviour { void M() { print(\"x\"); } }"),
+        (1, 0)
+    );
+    assert_eq!(
+        mono(
+            "using UnityEngine;\nclass A : global::UnityEngine.MonoBehaviour { void M() { print(\"x\"); } }"
+        ),
+        (1, 0)
+    );
+    // Indirect inheritance through project classes, across files.
+    assert_eq!(
+        cs_log(&[
+            (
+                "Base.cs",
+                "using UnityEngine;\nclass Base : MonoBehaviour { }"
+            ),
+            ("Mid.cs", "class Mid : Base { }"),
+            ("Leaf.cs", "class Leaf : Mid { void M() { print(\"x\"); } }"),
+        ]),
+        (1, 0)
+    );
+    // A same-named method of the class shadows the inherited helper.
+    assert_eq!(
+        mono(
+            "using UnityEngine;\nclass A : MonoBehaviour { void print(string s) { } void M() { print(\"x\"); } }"
+        ),
+        (0, 0)
+    );
+    // Not a MonoBehaviour: a plain class with its own base.
+    assert_eq!(
+        mono("class A : IDisposable { void M() { print(\"x\"); } }"),
+        (0, 0)
+    );
+    // A base the project cannot see may be a MonoBehaviour: undecidable, so reported.
+    assert_eq!(
+        mono("class A : NetworkBehaviour { void M() { print(\"x\"); } }"),
+        (0, 1)
+    );
+}
+
+// frob:ticket 01M64230Q2FSG2WXTFT4ENDA4R
+// frob:tests crates/grimble-check/src/log/lang_csharp.rs::scan
+#[test]
+fn cs_log_native_import_output_functions_fire() {
+    let one = |t: &str| cs_log(&[("A.cs", t)]);
+    let pre = "using System.Runtime.InteropServices;\n";
+    assert_eq!(
+        one(&format!(
+            "{pre}class N {{ [DllImport(\"libc\")] static extern int puts(string s); void M() {{ puts(\"x\"); }} }}"
+        )),
+        (1, 0)
+    );
+    assert_eq!(
+        one(&format!(
+            "{pre}class N {{ [DllImport(\"libc\", EntryPoint = \"write\")] static extern int sys_write(int fd, byte[] b, int n); void M() {{ sys_write(1, null, 0); }} }}"
+        )),
+        (1, 0)
+    );
+    assert_eq!(
+        one(&format!(
+            "{pre}class N {{ [DllImport(\"kernel32.dll\")] public static extern bool WriteConsole(int h); }}\nclass B {{ void M() {{ N.WriteConsole(1); }} }}"
+        )),
+        (1, 0)
+    );
+    assert_eq!(
+        one(
+            "class N { [System.Runtime.InteropServices.DllImport(\"libc\")] static extern int puts(string s); void M() { puts(\"x\"); } }"
+        ),
+        (1, 0)
+    );
+    // An unrelated native function is not output.
+    assert_eq!(
+        one(&format!(
+            "{pre}class N {{ [DllImport(\"libc\")] static extern int getpid(); void M() {{ getpid(); }} }}"
+        )),
+        (0, 0)
+    );
+    // A computed EntryPoint cannot be resolved.
+    assert_eq!(
+        one(&format!(
+            "{pre}class N {{ const string E = \"write\"; [DllImport(\"libc\", EntryPoint = E)] static extern int w(int fd); }}"
+        )),
+        (0, 1)
+    );
+}

@@ -3,7 +3,7 @@
 
 // frob:ticket 01M5XMR67K19SFAWNTDJKKJPTT
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use tree_sitter::Node;
 
@@ -63,6 +63,10 @@ pub struct Project {
     pub modules: BTreeMap<String, BTreeMap<String, SymPath>>,
     /// Canonical paths of project-wide imports (`global using static System.Console`).
     pub globals: Vec<SymPath>,
+    /// C# classes that derive (transitively, through project classes) from `UnityEngine.MonoBehaviour`.
+    pub mono: BTreeSet<String>,
+    /// C# classes with a base class the project cannot see (so an inherited `print` is undecidable).
+    pub open_bases: BTreeSet<String>,
 }
 
 impl Project {
@@ -114,6 +118,7 @@ pub struct FileScan {
 }
 
 /// The mutable walk state shared by the language scanners.
+#[allow(clippy::struct_excessive_bools)] // independent per-walk flags, not a state machine
 pub struct State<'a> {
     /// The atoms of the file's language group.
     pub group: &'a Group,
@@ -137,6 +142,8 @@ pub struct State<'a> {
     pub in_chain: bool,
     /// Objects of the enclosing `with` blocks, innermost last: unbound names resolve through them.
     pub with_scopes: Vec<SymPath>,
+    /// C#: inside a class whose base class is outside the project (an inherited `print` is undecidable).
+    pub inherited_open: bool,
 }
 
 impl<'a> State<'a> {
@@ -155,6 +162,7 @@ impl<'a> State<'a> {
             suppress: false,
             in_chain: false,
             with_scopes: Vec::new(),
+            inherited_open: false,
         }
     }
 

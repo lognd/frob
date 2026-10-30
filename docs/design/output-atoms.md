@@ -118,6 +118,22 @@ cannot resolve, a non-literal `import()`/`require()` specifier, `eval`,
 descriptor reflection over an output object, and `fs.writeSync` to an
 fd that is not a known integer.
 
+For C# the resolver reads `global::` qualified names as absolute paths,
+follows `typeof(T).GetMethod("M")` and `Type.GetType("T")` (also through
+a local variable) to the symbol `T.M`, and resolves base lists
+symbolically (`using` aliases, namespaces and `global::`) into a
+project-wide class hierarchy, so `print` inherited from
+`UnityEngine.MonoBehaviour` is found through any chain of project
+classes, across files, unless the class declares its own `print`.
+`[DllImport]` and `[LibraryImport]` externs bind the managed method name
+(or its `EntryPoint`) to `DllImport.<lib>.<entry>`, which the
+`cs.pinvoke` row matches. It reports as unresolved: a reflective lookup
+with a computed member name or type that could reach an output atom, a
+`print` call in a class whose base class the project cannot see, and a
+computed `EntryPoint`. `NativeLibrary.GetExport` and
+`Marshal.GetDelegateForFunctionPointer` resolve only as catalogue calls;
+the function they bind is not followed.
+
 ## 4. Languages
 
 ```toml output-languages
@@ -398,7 +414,7 @@ atoms = [
  { id = "cs.path-std", ch = "fd", sym = "System.IO.{File,FileStream,StreamWriter}.*", form = "fn", via = ["path-literal", "fd-literal"], why = "a path literal /dev/stdout, /dev/stderr, /dev/fd/1, /dev/fd/2, /proc/self/fd/1, CONOUT$ or new FileStream(new SafeFileHandle((IntPtr)1,false), FileAccess.Write) reaches a std stream", use = "ILogger", when = "path or handle resolves to a std stream" },
  { id = "cs.textwriter", ch = "stream", sym = "System.IO.TextWriter.Synchronized, System.IO.StringWriter used with Console.SetOut", form = "fn", via = ["import-alias", "glob-import", "handle-flow"], why = "wraps a std writer without changing its destination", use = "ILogger", when = "arg resolves to Console.Out or Console.Error", sev = "advisory" },
  { id = "cs.process", ch = "shell", sym = "System.Diagnostics.Process.Start, ProcessStartInfo{UseShellExecute,RedirectStandardOutput,RedirectStandardError}", form = "fn", via = ["import-alias", "glob-import", "handle-flow"], why = "a started process inherits our console unless output is redirected", use = "RedirectStandardOutput = true and log the lines" },
- { id = "cs.pinvoke", ch = "ffi", sym = "System.Runtime.InteropServices.DllImport{libc,msvcrt,kernel32}::{write,writev,printf,puts,putchar,fputs,fwrite,WriteFile,WriteConsole,WriteConsoleW,OutputDebugString,OutputDebugStringA,OutputDebugStringW,syslog,openlog}", form = "ffi", via = ["extern-decl", "import-alias"], why = "calls native output functions", use = "ILogger" },
+ { id = "cs.pinvoke", ch = "ffi", sym = "System.Runtime.InteropServices.DllImport.*.{write,writev,printf,puts,putchar,fputs,fwrite,WriteFile,WriteConsole,WriteConsoleW,OutputDebugString,OutputDebugStringA,OutputDebugStringW,syslog,openlog}", form = "ffi", via = ["extern-decl", "import-alias"], why = "calls native output functions", use = "ILogger" },
  { id = "cs.libimport", ch = "ffi", sym = "System.Runtime.InteropServices.{LibraryImport,Marshal.GetDelegateForFunctionPointer,NativeLibrary.GetExport}", form = "ffi", via = ["extern-decl", "import-alias", "handle-flow"], why = "source-generated and dynamic native bindings to the same functions", use = "ILogger" },
  { id = "cs.failfast", ch = "implicit", sym = "System.Environment.FailFast", form = "fn", via = ["import-alias", "glob-import", "attr-chain"], why = "writes the message and stack to stderr before aborting", use = "log then FailFast", sev = "advisory" },
  { id = "cs.unhandled", ch = "implicit", sym = "System.AppDomain.UnhandledException, System.Exception.ToString printed by the host", form = "attr", via = ["import-alias", "glob-import"], why = "the runtime prints unhandled exceptions to stderr", use = "handler that calls ILogger.LogCritical", sev = "advisory" },

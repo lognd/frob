@@ -165,6 +165,13 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
                 .extend(lang_csharp::global_usings(p.file.text, p.tree.root()));
         }
     }
+    let decls: Vec<_> = prepared
+        .iter()
+        .filter(|p| p.gid == "csharp")
+        .map(|p| lang_csharp::declarations(p.file.text, p.tree.root(), &project.globals))
+        .collect();
+    lang_csharp::seed(&mut project, &decls);
+    let seeded = project.clone();
     let mut scans: Vec<Option<FileScan>> = Vec::new();
     for round in 0..ROUNDS {
         scans = prepared
@@ -179,10 +186,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
             })
             .collect();
         if round + 1 < ROUNDS {
-            let mut next = Project {
-                modules: BTreeMap::new(),
-                globals: project.globals.clone(),
-            };
+            let mut next = seeded.clone();
             for (p, s) in prepared.iter().zip(&scans) {
                 if let (Some(key), Some(s)) = (module_key(p.file.path, p.gid), s) {
                     next.register(&key, &s.exports);

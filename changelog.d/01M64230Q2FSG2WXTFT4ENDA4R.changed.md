@@ -1,0 +1,1 @@
+The LOG scan now resolves C# global-qualified names, typeof and GetType reflection, inherited Unity print through project class chains and DllImport output functions, and reports computed reflection targets, unseen base classes and computed entry points as unresolved.
