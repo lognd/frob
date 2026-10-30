@@ -160,8 +160,84 @@ the diff and refresh `baseline.toml` by hand if a rate moved.
 
 ## 9. Native coverage providers
 
-`frob ticket evidence add --provider nextest --coverage` measures coverage
-through the language's `CoverageProvider` (`frob_evidence::coverage`). Rust is
+Native coverage is one shared pipeline with one per-language seam. Sections
+9.1 to 9.4 describe the contract, the registry, the flag and the threshold knob;
+9.5 lists the shipped languages. The source of truth is the module docs of
+`frob_evidence::coverage` (`crates/frob-evidence/src/coverage/mod.rs`).
+
+### 9.1 The CoverageProvider contract
+
+A language takes part by implementing `coverage::CoverageProvider` (`Send + Sync`)
+on a unit struct in its own module under `coverage/`. The trait has six methods:
+
+| Method | Returns | Purpose |
+|---|---|---|
+| `provider()` | `Provider` | the test provider whose `--coverage` run this measures |
+| `language()` | `&'static str` | recorded on the summary and used for `.frob/coverage/<language>.info` |
+| `required_tool()` | `&'static str` | the executable that must be on `PATH` |
+| `has_tests(root)` | `bool` | whether the repository has tests in this language, so a report is owed |
+| `plan(ws, reference, out_dir)` | `Result<CoveragePlan, CoverageError>` | the command to run and where its raw report lands |
+| `to_lcov(ws, plan)` | `Result<String, CoverageError>` | converts the raw report to lcov text |
+
+`CoveragePlan` holds `program`, `args`, `cwd`, `env` (added on top of the
+plain-text defaults) and `report` (the raw report path, in any format `to_lcov`
+reads). Paths in the lcov text may be absolute; the shared normaliser fixes them.
+
+Everything else is shared and is not the provider's business: finding the tool,
+running the command through the allowlisted `gob_exec::Runner` with the
+workspace timeout, normalising paths to repo-relative form, writing
+`.frob/coverage/<language>.info`, merging every language's file into the
+`[coverage] report`, and recording a `CoverageSummary` on the evidence record.
+
+The outcome is one of three `CoverageStatus` values:
+
+- `NotRun`: the tool is not on `PATH`, the command could not be started, or the
+  output directory could not be created. Never a failure.
+- `MissingReport`: `plan` failed (other than a missing tool), the command timed
+  out, or `to_lcov` found no report or an unreadable one. A failed write or merge
+  is also `MissingReport`.
+- `Measured`: the per-language file and the merged report were written; the
+  summary carries lines and branches hit and found, and a digest.
+
+A command that exits non-zero but does not time out is not failed by itself; the
+report decides the outcome.
+
+### 9.2 The PROVIDERS registry
+
+`PROVIDERS` (`&[&dyn CoverageProvider]`, in `coverage/mod.rs`) is the only list of
+languages. Its entries, in order, are `rust::RustCoverage` (nextest),
+`python::PythonCoverage` (pytest), `js::VitestCoverage` (vitest),
+`js::JestCoverage` (jest) and `csharp::CsharpCoverage` (dotnet). `registered(provider)`
+returns the entry whose `provider()` matches. A test provider with no entry,
+such as `unity`, is recorded `NotRun` with the reason "no coverage provider is
+registered for <provider>". COV004 reads the same registry. Adding a language is
+one new module under `coverage/` and one `PROVIDERS` entry.
+
+### 9.3 The --coverage flag
+
+`frob ticket evidence add <ticket> --provider <p> --ref <filter> --coverage` runs
+the tests first and then the provider's coverage command, and records the
+per-language summary on the evidence record. A coverage failure never fails the
+capture. The flag belongs to test-runner providers only: `file`, `attestation`
+and `command` are rejected with a usage error. `unity` is accepted but has no
+registered provider, so it records `NotRun`. `frob test` has no `--coverage`
+flag; coverage is captured only through `ticket evidence add`.
+
+### 9.4 The [coverage] require_reports knob
+
+`[coverage] require_reports` (boolean, default `true`, enforcement) is read by
+COV004 in `frob-obligations`. When it is true, each registered provider whose
+language `has_tests` and has no `.frob/coverage/<language>.info` yields one COV004
+finding: an Unresolved "not run" finding when the tool is not installed, otherwise
+a "has tests but no coverage report" finding. When it is false, neither finding is
+produced, and the `threshold` checks still run. The check looks at the
+per-language file, not at the evidence record's status. The file COV004 reads is
+`[coverage] report` (default `lcov.info`). Key reference:
+[config.md](../reference/config.md).
+
+### 9.5 Per-language providers
+
+Rust is
 `coverage::rust::RustCoverage`: it runs
 `cargo llvm-cov nextest [--profile <p>] --lcov --output-path <raw> <filter args>`
 at the repository root, the shared normaliser rewrites the lcov to
