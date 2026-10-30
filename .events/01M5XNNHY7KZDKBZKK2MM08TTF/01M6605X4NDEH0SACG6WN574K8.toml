@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T08:50:28Z"
+digest = "f6ebc6c20378542349e27fe6e86ba3e7129ba50a2b59765f9e81c30f5014d804"
+exit_code = 0
+head = "7d2cece5125cab99c4a954322167c3e46d21104d"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1adcef6a-9377-42de-b72d-c09598f2e22c with nextest profile: default
+    Starting 12 tests across 26 binaries (271 tests skipped)
+        PASS [   0.010s] grimble-bind caps::argdet::tests::argdet_chain_read_only
+        PASS [   0.177s] grimble-bind::caps argdet_python_mode_constant_folds
+        PASS [   0.196s] grimble-bind::caps argdet_python_shadowed_open_is_no_capability
+        PASS [   0.200s] grimble-bind::caps argdet_rust_open_options_alias_is_resolved_symbolically
+        PASS [   0.356s] grimble-bind::caps argdet_rust_open_options_read_grant_covers_read_only_builder
+        PASS [   0.467s] grimble-bind::caps argdet_python_path_open_takes_the_mode_first
+        PASS [   0.545s] grimble-bind::caps argdet_copy_direction_scopes_read_to_source_and_write_to_dest
+        PASS [   0.671s] grimble-bind::caps argdet_python_non_literal_or_splat_mode_is_unresolved_fs_write
+        PASS [   0.679s] grimble-bind::caps argdet_python_aliased_open_is_resolved_symbolically
+        PASS [   0.679s] grimble-bind::caps argdet_rust_open_options_let_bound_builders_are_followed
+        PASS [   1.073s] grimble-bind::caps argdet_python_open_modes_pick_read_or_write
+        PASS [   1.397s] grimble-bind::caps argdet_rust_open_options_flags_pick_read_or_write
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.399s] 12 tests run: 12 passed, 271 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(/argdet_/)'"
+size = 1676
+status = "measured"
+test_count = 12
+tests_digest = "dbbcdb06a6adc409e0b75bca376507b7539e18b2f248fad5c4f5a0776baad261"
+at = "2026-10-30T08:50:28Z"
+actor = "lognd"
+rev = 1
