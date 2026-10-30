@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T12:59:37Z"
+digest = "5caa7a51ba6ace2a7089e3b2de45836fddcd490124f2979bb05993c87be3c1cf"
+exit_code = 0
+head = "a5184198af8eecc2250147e20eb5e3dd77188dbf"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8d6e0812-8cf1-4467-a5a4-96d18d1d6f42 with nextest profile: default
+    Starting 2 tests across 17 binaries (70 tests skipped)
+        PASS [   0.076s] crunk-check::review the_release_gate_runs_a_stale_review_as_an_error_that_fails_the_run
+        PASS [   0.151s] crunk-check::review human001_is_release_only_and_not_in_gate_at_local_and_ci
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.152s] 2 tests run: 2 passed, 70 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E 'test(human001_is_release_only_and_not_in_gate_at_local_and_ci) | test(the_release_gate_runs_a_stale_review_as_an_error_that_fails_the_run)'"
+size = 683
+status = "measured"
+test_count = 2
+tests_digest = "c2ebef339742e2db80ba2e98349b1843ca90c481b3339b17e75cd9bbd51e14fc"
+at = "2026-10-30T12:59:37Z"
+actor = "lognd"
+rev = 1

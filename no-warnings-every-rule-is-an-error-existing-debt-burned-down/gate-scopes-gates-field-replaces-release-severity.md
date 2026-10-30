@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:02Z"
-updated = "2026-10-30T12:57:12Z"
+updated = "2026-10-30T12:59:37Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**", "docs/design/crunk.md", "docs/design/rules.md", "docs/design/README.md", "docs/crunk/rules/README.md", "docs/reference/rules/**", "crates/gob-macros/**", "crates/crunk-rules/**", "crates/crunk-check/**", "crates/crunk/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "release_severity removed from RuleDef, gate_severity and apply_gate; check --gate selects the gate, CI auto-detected"
-bound = false
+bound = true
 +++
 
 Implements docs/design/rules.md section 6.1 (rules.md 6.1.5). Filed from ~ZHW5Y2M.
