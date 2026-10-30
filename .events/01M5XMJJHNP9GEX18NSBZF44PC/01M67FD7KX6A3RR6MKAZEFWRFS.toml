@@ -1,0 +1,62 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T22:37:14Z"
+digest = "171109212e04faa2a9e706e4d2ac74c925f7ea524ec335ec0ba85b4f22c5de5a"
+exit_code = 0
+head = "8eeea617d92106de9b3200b3baea00ad18968a54"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling serde v1.0.229
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling schemars v1.2.2
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling tracing-serde v0.2.0
+   Compiling postcard v1.1.3
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 54.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2f1b5871-226d-4a57-a10e-64cc3c5bb1b6 with nextest profile: default
+    Starting 2 tests across 1 binary (17 binaries skipped)
+        PASS [   0.182s] crunk-check::baseline an_unlisted_key_does_not_mute
+        PASS [   0.217s] crunk-check::baseline a_baselined_finding_is_muted_and_reported_suppressed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.217s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E 'binary(baseline)'"
+size = 2775
+status = "measured"
+test_count = 2
+tests_digest = "73f8e0148b568dcd5e79ad70fb471398b1865d539d66af9a2d2bfaab6f56e061"
+at = "2026-10-30T22:37:14Z"
+actor = "lognd"
+rev = 1
