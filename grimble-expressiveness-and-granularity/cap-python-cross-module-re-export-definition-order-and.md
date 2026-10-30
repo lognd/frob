@@ -2,7 +2,8 @@
 id = "01M6422ZN7HKF98JDAP7XKRQQ2"
 title = "CAP: Python cross-module re-export, definition-order and conditional binding are not resolved"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
