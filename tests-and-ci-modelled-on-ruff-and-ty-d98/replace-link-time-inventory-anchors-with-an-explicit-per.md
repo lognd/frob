@@ -8,9 +8,9 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-30T00:35:01Z"
+updated = "2026-10-30T00:39:49Z"
 labels = ["no-story"]
-scope = ["crates/gob-rules/**", "crates/gob-dev/**", "crates/gob-config/**", "crates/gob-cli/**"]
+scope = ["crates/gob-rules/**", "crates/gob-dev/**", "crates/gob-config/**", "crates/gob-cli/**", "crates/frob-docgen/**"]
 
 [[acceptance]]
 text = "a product whose rule crate is dropped from the build fails the registry test naming the missing crate"
