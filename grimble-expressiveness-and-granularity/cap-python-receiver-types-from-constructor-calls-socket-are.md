@@ -2,13 +2,13 @@
 id = "01M6422ZRSX74XT6RD0BG4T2RC"
 title = "CAP: Python receiver types from constructor calls (socket) are not tracked"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-30T04:40:49Z"
+updated = "2026-10-30T04:40:51Z"
 idempotency_key = "vnvd3q1-py-recv"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
