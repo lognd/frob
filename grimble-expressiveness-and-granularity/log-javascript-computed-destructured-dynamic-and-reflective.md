@@ -8,9 +8,9 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-30T03:11:27Z"
+updated = "2026-10-30T03:11:28Z"
 idempotency_key = "vnvd3q1-log-js"
-scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
+scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/grimble-bind/**", "docs/design/output-atoms.md", "changelog.d/01M64230KYDRZ7V51SECS763EX.changed.md"]
 
 [[acceptance]]
 text = "computed member names, nested destructuring, parameter defaults, with-blocks, dynamic import, eval/Function, Reflect, process internals and fs writeSync to fd 1 or 2 are resolved or reported Unresolved"
