@@ -1,0 +1,252 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-30T12:28:32Z"
+digest = "2639cf28a43a428b1060c18501ccae1a26e1899de01e5e8279e48f9971840a9f"
+exit_code = 101
+head = "f7778a11c6fd0e214c2885dc7d520cc88607f9e2"
+inline = """
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/gob-config/src/rules/cfg001.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "CFG001",
+13 | |     slug = "missing-materialized-knob",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+For more information about this error, try `rustc --explain E0560`.
+error: could not compile `gob-config` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/err001.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "ERR001",
+13 | |     slug = "empty-error-handler",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/err002.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "ERR002",
+13 | |     slug = "discarded-result",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/err003.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "ERR003",
+13 | |     slug = "silent-catch-all",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/pair001.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "PAIR001",
+13 | |     slug = "acquire-without-release",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/path001.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "PATH001",
+13 | |     slug = "absolute-host-path",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/path002.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "PATH002",
+13 | |     slug = "string-path-separator",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/path003.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "PATH003",
+13 | |     slug = "path-in-command-line",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/res001.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "RES001",
+13 | |     slug = "unpaired-resource-acquisition",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/time001.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "TIME001",
+13 | |     slug = "local-clock-read",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/time002.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "TIME002",
+13 | |     slug = "naive-aware-mix",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/unity201.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "UNITY201",
+13 | |     slug = "lookup-in-hot-code",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/unity202.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "UNITY202",
+13 | |     slug = "allocation-in-hot-code",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/unity301.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "UNITY301",
+13 | |     slug = "legacy-input-under-input-system",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `gates`
+  --> crates/grimble-lints/src/rules/unity302.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "UNITY302",
+13 | |     slug = "physics-force-outside-fixed-update",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: could not compile `grimble-lints` (lib) due to 14 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package gob-dev` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p gob-dev -E 'test(ci_fails_when_the_snapshot_update_env_is_set)'"
+size = 8405
+status = "measured"
+at = "2026-10-30T12:28:32Z"
+actor = "lognd"
+rev = 1
