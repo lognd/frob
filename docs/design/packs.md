@@ -900,6 +900,17 @@ file and is not repeated. Language ids are those of the adapter registry:
 
 ### 8.1 core-effects
 
+Shipped as data (ticket 867GGVJ): the pack lives in `packs/core-effects/`
+(`pack.toml` version 1.0.0, `atoms.toml` with the atoms, parents, argument
+kinds, aliases, vocabulary rows, detector rows, `[[receiver_family]]`
+method gates and `[non_process]` crates). `gob_ir::core_pack` embeds and
+parses it; `gob_packs::core_effects` digests it into the `core-effects`
+entry of `grimble.packs.lock`, so any edit to the pack without a version
+bump is a PACK001 lock drift finding. The `process.env` atom is now the
+alias of `env.read`, and `exec` of `process.spawn`; the registry resolves
+aliases to the canonical atom. TypeScript and C# vocabularies stay in
+`gob-symbols` until the unknown-language ticket moves them.
+
 Licence MIT; basis CWE-22, CWE-73, CWE-78, CWE-119, CWE-338, CWE-526,
 CWE-668, CWE-918. Today 18 atoms (13 leaves, 5 parents); the v3 vocabulary (grimble-capabilities-v3.md section 3) extends this table with `fs.exec`, `fs.temp`, `net.resolve`, `net.tls`, `env.cwd`, `process.signal`, `thread`, `ffi`, `eval`, `deserialize`, `reflect`, `db`, `ipc`, `log` and `secret`, and the pack is versioned (v3 section 12), 37 vocabularies, 91
 detector items (39 in the three source languages, 52 `impossible`),

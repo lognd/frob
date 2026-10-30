@@ -1092,8 +1092,8 @@ The cell of `(n, a)` is computed, in this order:
    exactly as item 4 does, never `uses`-clean.
 
    `may` arguments in the shipped binder (ticket 5X9CAQE): for the atoms with an argument type
-   (`fs`, `fs.read`, `fs.write` path; `net`, `net.connect`, `net.listen` host; `process.env` name;
-   `process.spawn`, `process.exec` binary; typed by `grimble_model::args`) the first argument of
+   (`fs`, `fs.read`, `fs.write` path; `net`, `net.connect`, `net.listen` host; `env.read` name;
+   `process.spawn`, `process`, `process.exec` binary; typed by `grimble_model::args`) the first argument of
    the call is folded statically (`gob_symbols::call_args`: literals, `+` concatenation,
    single-assignment constants, `(host, port)` pairs, `Path` / `String` wrappers, `os.path.join` of
    literals). A grant with arguments covers a use only if the folded argument matches one grant
@@ -1262,7 +1262,7 @@ Unresolved, reason `fidelity`, anchor `cap/<node>/no-detector`, naming the
 languages and every atom left unknown. Data files (markdown, TOML, JSON, CSS,
 dotenv) are not code and do not trigger it. TypeScript, JavaScript and C#
 now declare `callee` detectors for `fs.read`, `fs.write`, `net.connect`,
-`net.listen`, `process.spawn`, `process.env`, `code.eval` and `ffi`, matched
+`net.listen`, `process.spawn`, `env.read`, `code.eval` and `ffi`, matched
 by import resolution only; `unsafe` still has none for them.
 
 ### 7.3 The not-applicable declaration
