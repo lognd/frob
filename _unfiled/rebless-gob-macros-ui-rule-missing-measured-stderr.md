@@ -1,0 +1,18 @@
++++
+id = "01M66JFKRYBBNJQVRSCA4E305J"
+title = "Rebless gob-macros ui_rule missing_measured stderr"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+reporter = "lognd"
+created = "2026-10-30T14:12:38Z"
+updated = "2026-10-30T14:12:38Z"
+scope = ["crates/gob-macros/tests/ui_rule/**"]
+
+[[acceptance]]
+text = "ui_rule_attr passes; stderr no longer lists unrelated Measured implementors (or is blessed with Base001/Base002)"
+bound = false
++++
+
+found while working 01M63B7F02SKSJCQG7TMXQ4HW5: Base001/Base002 Measured impls from the baseline commit changed the rustc help output.
