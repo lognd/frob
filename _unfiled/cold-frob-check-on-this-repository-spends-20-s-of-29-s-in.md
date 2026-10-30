@@ -2,7 +2,8 @@
 id = "01M42301J2JXZBNPKYTAKMV3C3"
 title = "Cold frob check on this repository spends 20 s of 29 s in file-rules (release, 12-core host)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
