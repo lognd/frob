@@ -1,0 +1,60 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T02:35:11Z"
+digest = "2c365d8166cdaf877d710a7f2c5ef66cf8f301cc766c6a6aaebe104951ab684b"
+exit_code = 0
+head = "542cd4e24f8b03571b7b9611bcb4cba7e3db3570"
+inline = '''
+   Compiling zerocopy-derive v0.8.59
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling winnow v1.0.4
+   Compiling indexmap v2.14.2
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling bstr v1.13.1
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling globset v0.4.20
+   Compiling zerocopy v0.8.59
+   Compiling ignore v0.4.33
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling petgraph v0.8.3
+   Compiling serde_json v1.0.151
+   Compiling tree-sitter v0.27.0
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling ahash v0.8.12
+   Compiling half v2.7.1
+   Compiling hashbrown v0.14.5
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling criterion v0.5.1
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0421271b-1e9d-4442-87b8-e4b322856fbe with nextest profile: default
+    Starting 1 test across 2 binaries (402 tests skipped)
+        PASS [   0.005s] gob-symbols python::tests::identifiers_are_nfkc_normalised_but_strings_are_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 402 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(nfkc)'"
+size = 2065
+status = "measured"
+test_count = 1
+tests_digest = "859c3095a724f9c96580b2dcfea9168f06220f01929bc6b7a31d98c124bb487c"
+at = "2026-10-30T02:35:11Z"
+actor = "lognd"
+rev = 1
