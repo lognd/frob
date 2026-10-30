@@ -148,6 +148,7 @@ pub(crate) fn success(
     json: bool,
     quiet: bool,
     color: ColorChoice,
+    audience: gob_rules::Audience,
 ) -> Execution {
     let registry = Registry::global();
     let sources = MemorySources::new();
@@ -155,7 +156,7 @@ pub(crate) fn success(
         let records = erased
             .findings
             .iter()
-            .map(|f| FindingRecord::from_finding(f, &sources, registry))
+            .map(|f| FindingRecord::from_finding_for(f, &sources, registry, audience))
             .collect();
         let mut envelope = Envelope::success(erased.data, records);
         envelope.warnings = erased.warnings;
@@ -403,6 +404,7 @@ pub(crate) fn emit(exec: &Execution) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gob_rules::{Audience, Finding};
 
     // frob:ticket 01M62W1RDJQXY7GD8CW13J001Y
     #[test]
@@ -458,11 +460,55 @@ mod tests {
             already: false,
             rendered: Some(vec!["a  b".to_owned(), "c".to_owned()]),
         };
-        let text = success("v", erased(), false, false, ColorChoice::Never);
+        let text = success(
+            "v",
+            erased(),
+            false,
+            false,
+            ColorChoice::Never,
+            Audience::Human,
+        );
         assert_eq!(text.stdout, "a  b\nc\n");
-        let json = success("v", erased(), true, false, ColorChoice::Never);
+        let json = success(
+            "v",
+            erased(),
+            true,
+            false,
+            ColorChoice::Never,
+            Audience::Human,
+        );
         let v: Value = serde_json::from_str(&json.stdout).unwrap();
         assert_eq!(v["data"], serde_json::json!({"k": 1}));
+    }
+
+    // frob:ticket 01M63B7F02SKSJCQG7TMXQ4HW5
+    // frob:tests crates/gob-cli/src/render.rs::success
+    #[test]
+    fn heuristic_finding_message_follows_audience_and_carries_nature() {
+        let note = gob_rules::HeuristicNote::new(
+            "COH003".parse().unwrap(),
+            "cohesion 0.2 is below the 0.4 threshold.",
+        );
+        let render = |audience| {
+            let f = Finding::heuristic(&note, audience, None, "src/a.rs");
+            let e = Erased {
+                data: serde_json::json!({}),
+                findings: vec![f],
+                warnings: Vec::new(),
+                already: false,
+                rendered: None,
+            };
+            let out = success("v", e, true, false, ColorChoice::Never, audience);
+            let v: Value = serde_json::from_str(&out.stdout).unwrap();
+            v["findings"][0].clone()
+        };
+        let agent = render(Audience::Agent);
+        let human = render(Audience::Human);
+        assert_eq!(agent["nature"], "heuristic");
+        assert_eq!(agent["waivable_by"], "human");
+        assert!(!agent["message"].as_str().unwrap().contains("frob:waive"));
+        assert!(human["message"].as_str().unwrap().contains("frob:waive"));
+        assert_eq!(agent["fingerprint"], human["fingerprint"]);
     }
 
     // frob:ticket 01M3ZX87VKDKC0N65NH77EBEJP

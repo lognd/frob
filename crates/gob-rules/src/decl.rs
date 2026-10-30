@@ -71,6 +71,8 @@ pub struct RuleDef {
     pub severity: Severity,
     /// Gates the rule runs at (`gates = [..]`); `None` means all of `local | ci | release`.
     pub gates: Option<&'static [crate::gate::Gate]>,
+    /// Whether the rule proves a defect or makes a judgment call (`nature = heuristic`, default exact).
+    pub nature: crate::nature::Nature,
     /// Polarity class.
     pub polarity: Polarity,
     /// Whether the rule must account for the subjects it measured.
@@ -106,6 +108,16 @@ impl RuleDef {
             .unwrap_or_default()
     }
 
+    /// The evidence holder for a finding of this rule; `None` unless the rule is `nature = heuristic`.
+    #[must_use]
+    pub fn note(&self, evidence: impl Into<String>) -> Option<crate::nature::HeuristicNote> {
+        if self.nature != crate::nature::Nature::Heuristic {
+            return None;
+        }
+        let rule = self.id.parse().ok()?;
+        Some(crate::nature::HeuristicNote::new(rule, evidence))
+    }
+
     /// Placeholder the macro emits after reporting an error, so one mistake is one diagnostic.
     #[doc(hidden)]
     pub const POISONED: RuleDef = RuleDef {
@@ -114,6 +126,7 @@ impl RuleDef {
         family: "POISONED",
         severity: Severity::Unresolved,
         gates: None,
+        nature: crate::nature::Nature::Exact,
         polarity: Polarity::P0,
         must_measure: false,
         needs: Needs::Structural,

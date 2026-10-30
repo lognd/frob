@@ -330,7 +330,14 @@ impl Cli {
                     .presenter
                     .filter(|_| !ctx.json && !ctx.quiet && !ctx.markdown())
                     .and_then(|p| (p.next_step)(&dotted, &erased.data, &ctx));
-                let mut exec = render::success(&dotted, erased, ctx.json, ctx.quiet, ctx.color);
+                let mut exec = render::success(
+                    &dotted,
+                    erased,
+                    ctx.json,
+                    ctx.quiet,
+                    ctx.color,
+                    ctx.audience,
+                );
                 if let Some(line) = step {
                     tracing::debug!(%line, "next step appended");
                     render::append_line(&mut exec.stdout, &line);
@@ -428,6 +435,7 @@ impl Cli {
             verbosity,
             quiet: leaf.get_flag("quiet"),
             dry_run,
+            audience: crate::audience::process_audience(),
             clock: std::sync::Arc::new(gob_time::SystemClock::pin()),
         })
     }

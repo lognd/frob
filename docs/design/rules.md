@@ -691,8 +691,18 @@ against the budgets of exceptions.md section 4.
 Implementation (~291TPEB): `gob_rules::Nature` (`Exact` default,
 `Heuristic`), `Audience` (`Agent`, `Human`), `HeuristicNote::message(audience)`
 and `Finding::heuristic(..)` build the three-part message; the fingerprint is
-audience-independent. The `nature =` derive attribute, the envelope fields and
-the agent-detection wiring belong to later tickets.
+audience-independent.
+
+Wiring (~MXQ4HW5): `#[rule(nature = exact | heuristic)]` (default `exact`)
+fills `RuleDef::nature`; `RuleDef::note(evidence)` builds the note for a
+heuristic rule. A heuristic `Finding` carries its `nature` and `note`, and
+`FindingRecord::from_finding_for(.., audience)` re-renders the message for
+the audience and sets the envelope fields `nature = "heuristic"` and
+`waivable_by = "human"` (both absent for exact findings). The CLI detects the
+audience once per command: any non-empty agent marker variable (`CLAUDECODE`,
+`CLAUDE_CODE_ENTRYPOINT`, `CODEX_SANDBOX`, `CODEX_CI`, `GEMINI_CLI`,
+`CURSOR_AGENT`, `OPENCODE`, or the explicit `FROB_AGENT`) selects the agent
+message; a terminal is never consulted.
 
 **6.1.5 Gate scopes (replace `release_severity`).** A rule declares
 `gates = [...]` with a subset of `local | ci | release` (default all

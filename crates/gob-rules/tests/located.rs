@@ -14,6 +14,7 @@ static DEF: RuleDef = RuleDef {
     family: "TST",
     severity: Severity::Error,
     gates: None,
+    nature: gob_rules::Nature::Exact,
     polarity: Polarity::Pplus,
     must_measure: false,
     needs: gob_rules::Needs::Structural,

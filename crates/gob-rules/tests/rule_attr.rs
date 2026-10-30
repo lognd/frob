@@ -52,6 +52,7 @@ fn def_carries_every_declared_field() {
         (Severity::Error, Polarity::Pplus, Scope::File)
     );
     assert_eq!(d.gates, Some(&[Gate::Local, Gate::Ci][..]));
+    assert_eq!(d.nature, gob_rules::Nature::Heuristic);
     assert!(!d.must_measure);
     assert_eq!(
         d.applies,
@@ -114,4 +115,16 @@ fn rule_evaluates_through_a_trait_object_host() {
         &mut Out::new(&mut found),
     );
     assert_eq!(found.len(), 1);
+}
+
+// frob:ticket 01M63B7F02SKSJCQG7TMXQ4HW5
+// frob:tests crates/gob-rules/src/decl.rs::RuleDef.note
+#[test]
+fn nature_attribute_flows_to_def_and_note() {
+    let d = Todo001::DEF;
+    assert_eq!(d.nature.waivable_by(), Some("human"));
+    assert!(d.note("evidence").is_some());
+    let exact = gob_rules::RuleDef::POISONED;
+    assert_eq!(exact.nature, gob_rules::Nature::Exact);
+    assert!(exact.note("evidence").is_none());
 }
