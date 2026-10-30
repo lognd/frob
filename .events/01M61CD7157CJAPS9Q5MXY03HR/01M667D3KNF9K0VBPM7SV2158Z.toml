@@ -1,0 +1,59 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T10:59:01Z"
+digest = "4295d4d9b28d7f4c2471d20340aa960e91d18da44d360b745de6dbd463af77fb"
+exit_code = 0
+head = "da92b5ac9027e22760b5273a46dbfc90f4a58396"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fcfc4cca-817b-4c82-ba0b-4526a3fb6be8 with nextest profile: default
+    Starting 35 tests across 2 binaries (133 tests skipped)
+        PASS [   0.006s] gob-ir engine::tests::static_const_readonly_and_plain_properties_are_not_serialized
+        PASS [   0.006s] gob-ir core_pack::tests::parents_and_argument_kinds_are_pack_data
+        PASS [   0.005s] gob-ir hot::tests::disabled_pack_is_not_applicable
+        PASS [   0.005s] gob-ir engine::tests::messages_match_by_name_and_prefix
+        PASS [   0.006s] gob-ir const_value::tests::scalar_text_renders_scalars_only
+        PASS [   0.006s] gob-ir core_pack::tests::every_leaf_atom_has_rust_and_python_detector_rows
+        PASS [   0.006s] gob-ir engine::tests::classify_call_separates_dynamic_from_ordinary_calls
+        PASS [   0.006s] gob-ir engine::tests::every_dynamic_reason_is_named
+        PASS [   0.007s] gob-ir core_pack::tests::every_atom_of_packs_md_8_1_resolves
+        PASS [   0.007s] gob-ir core_pack::tests::method_gates_and_non_process_crates_are_pack_data
+        PASS [   0.008s] gob-ir effect_class::tests::write_targets_follow_params_locals_and_may_alias_edges
+        PASS [   0.008s] gob-ir engine::tests::serialized_fields_have_an_external_writer
+        PASS [   0.005s] gob-ir name_lookup::tests::mentions_lookup_finds_primitives_per_language
+        PASS [   0.005s] gob-ir name_lookup::tests::every_supported_language_has_primitives_and_rust_has_none
+        PASS [   0.005s] gob-ir hot::tests::may_edge_gives_may_and_unknown_edge_gives_unresolved
+        PASS [   0.005s] gob-ir print::tests::hole_and_opaque_searches_walk_the_subtree
+        PASS [   0.006s] gob-ir name_lookup::tests::concatenation_is_literal_only_when_both_sides_are
+        PASS [   0.006s] gob-ir operator::tests::bind_scopes_over_the_body_not_the_bound_value
+        PASS [   0.005s] gob-ir style::tests::var_of_keeps_only_var_parts
+        PASS [   0.006s] gob-ir name_lookup::tests::a_known_string_is_a_literal_and_anything_else_is_a_gap
+        PASS [   0.007s] gob-ir::it reach::answer_exact_and_map
+        PASS [   0.006s] gob-ir::it reach::attributes_is_empty
+        PASS [   0.012s] gob-ir print::tests::env_at_lists_enclosing_binders_outermost_first
+        PASS [   0.006s] gob-ir::it reach::digest_bytes_match_hex
+        PASS [   0.012s] gob-ir hot::tests::helper_called_from_update_is_must_hot
+        PASS [   0.006s] gob-ir::it reach::location_artifact_and_span
+        PASS [   0.006s] gob-ir::it reach::poison_reason_codes
+        PASS [   0.006s] gob-ir::it reach::operator_sort_and_opacity
+        PASS [   0.006s] gob-ir::it reach::may_cause_spelling
+        PASS [   0.006s] gob-ir::it reach::identity_of_symref
+        PASS [   0.007s] gob-ir::it reach::scope_graph_counts_refs_and_hints
+        PASS [   0.005s] gob-ir::it reach::status_relation_bounds
+        PASS [   0.009s] gob-ir::it reach::ctx_atoms_over_a_small_term
+        PASS [   0.006s] gob-ir::it reach::term_accessors
+        PASS [   0.004s] gob-ir::it reach::truth_connectives
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.024s] 35 tests run: 35 passed, 133 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir -E 'test(/reach::/) | test(/::tests::/)'"
+size = 3371
+status = "measured"
+test_count = 35
+tests_digest = "ce5a8b01fc34023979b72c4063c4e1dd98c5c498972553936ccf383f95bf508d"
+at = "2026-10-30T10:59:01Z"
+actor = "lognd"
+rev = 1
