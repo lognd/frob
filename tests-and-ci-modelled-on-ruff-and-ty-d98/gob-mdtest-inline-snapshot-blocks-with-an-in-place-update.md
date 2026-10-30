@@ -2,13 +2,13 @@
 id = "01M48PC0TZ7MHW4KA89V6ZFY72"
 title = "gob-mdtest: inline snapshot blocks with an in-place update env"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-28T12:57:44Z"
+updated = "2026-10-30T12:03:01Z"
 labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
 
