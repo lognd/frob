@@ -1,0 +1,10 @@
+kind = "create"
+title = "LOG: JS let/var literal tracking for computed keys"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**"]
+body = "Found while working CS763EX. Only const literals are tracked; let/var reassigned values report Unresolved."
+at = "2026-10-30T03:12:10Z"
+actor = "lognd"
+rev = 1
