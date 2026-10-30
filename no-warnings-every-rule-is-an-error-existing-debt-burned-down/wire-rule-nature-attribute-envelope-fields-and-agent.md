@@ -2,13 +2,13 @@
 id = "01M63B7F02SKSJCQG7TMXQ4HW5"
 title = "Wire rule nature attribute, envelope fields and agent detection"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-29T08:08:08Z"
-updated = "2026-10-29T08:08:08Z"
+updated = "2026-10-30T13:51:12Z"
 idempotency_key = "followup-291TPEB-nature-wiring"
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/gob-cli/**"]
 
