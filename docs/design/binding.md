@@ -1125,6 +1125,20 @@ The cell of `(n, a)` is computed, in this order:
    twice to different types, or by a pattern that states no type (closure parameter, `for`,
    `match`, destructuring), is unresolved and reports nothing; types from another file and
    values returned by calls are not followed.
+
+   Python socket receivers (ticket 01M6422ZRSX74XT6RD0BG4T2RC). `connect`, `connect_ex`, `send`,
+   `sendall` and `sendto` are `net.connect`, and `listen` and `bind` are `net.listen`, when called
+   on a receiver built by `socket.socket`, `socket.create_connection`, `socket.create_server`,
+   `socket.fromfd` or `socket.SocketType`. The constructor is resolved through the file's imports
+   (`from socket import socket as S`, `import socket as sk`), and the receiver keeps its type
+   through an assignment, a `with ... as` target, a one-hop copy (`t = s`) and a chained
+   `socket.socket().connect(..)`; every binding of the name in scope must agree. Such a call is a
+   Must use. A receiver of unproven origin (a parameter, `self.sock`, a name rebound to another
+   constructor or to an unknown value, a value from another function or module) in a file that
+   imports or uses `socket` is a May use, reported as unresolved. A receiver built by another
+   constructor, or any receiver in a file that never reaches `socket`, is not a socket call.
+   Not followed: tuple unpacking (`socketpair`), attribute receivers, and values returned by
+   functions.
    Let `E(n, a)` be the identities of the
    remaining subject set covered by a template excuse for a' covering a
    (grmb-spec 4.7, packs.md 6.7); it is empty when no template applies. If

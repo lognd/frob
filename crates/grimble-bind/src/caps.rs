@@ -111,12 +111,29 @@ use python_modules::Modules;
 /// How many example call sites one finding names.
 const EXAMPLES: usize = 3;
 
-/// A method-name vocabulary entry (`.listen`) counts only in a file that also calls the gate
-/// callee: `(atom, language, method, companion callee)`.
-const METHOD_GATES: [(&str, &str, &str, &str); 2] = [
-    ("net.listen", "python", "listen", "socket.socket"),
-    ("net.connect", "python", "connect", "socket.socket"),
+/// Python socket methods that name a capability only through the receiver's type, as
+/// `(atom, method)`. `atoms_of` skips them; `scan_python_receivers` reports them by receiver type.
+const SOCKET_METHODS: [(&str, &str); 7] = [
+    ("net.connect", "connect"),
+    ("net.connect", "connect_ex"),
+    ("net.connect", "send"),
+    ("net.connect", "sendall"),
+    ("net.connect", "sendto"),
+    ("net.listen", "listen"),
+    ("net.listen", "bind"),
 ];
+
+/// The qualified constructors whose result is a socket (a receiver of [`SOCKET_METHODS`]).
+const SOCKET_CTORS: [&str; 5] = [
+    "socket.socket",
+    "socket.create_connection",
+    "socket.create_server",
+    "socket.fromfd",
+    "socket.SocketType",
+];
+
+/// The module a file must reach for an untyped `.connect` or `.listen` to be a May use.
+const SOCKET_MODULE: &str = "socket";
 
 /// One observed use of an atom.
 #[derive(Clone, Debug)]
@@ -279,13 +296,12 @@ fn vocabularies<'a>(
     out
 }
 
-/// The atoms whose vocabulary in `lang` names the call `callee`, given the calls `file_calls` of
-/// its file and the lazily computed type of its receiver.
+/// The atoms whose vocabulary in `lang` names the call `callee`, given the lazily computed type of
+/// its receiver.
 fn atoms_of(
     vocabs: &[(&str, BTreeSet<&str>)],
     lang: &str,
     callee: &str,
-    file_calls: &BTreeSet<String>,
     receiver_is_path: &mut dyn FnMut(&str) -> bool,
 ) -> Vec<Hit> {
     let mut out = Vec::new();
@@ -306,20 +322,11 @@ fn atoms_of(
         if !names.contains(format!(".{m}").as_str()) {
             continue;
         }
-        let gated = METHOD_GATES
-            .iter()
-            .any(|(m_atom, l, method, _)| *m_atom == atom && *l == lang && *method == m);
-        if gated {
-            let open = METHOD_GATES.iter().any(|(m_atom, l, method, gate)| {
-                *m_atom == atom && *l == lang && *method == m && file_calls.contains(*gate)
-            });
-            if open {
-                out.push(Hit {
-                    atom: atom.to_owned(),
-                    certain: true,
-                });
-            }
-        } else if names.contains(format!("Path.{m}").as_str()) && receiver_is_path(recv) {
+        if lang == "python" && SOCKET_METHODS.contains(&(atom, m)) {
+            // typed by its receiver's constructor, not by this call's text (`scan_python_receivers`)
+            continue;
+        }
+        if names.contains(format!("Path.{m}").as_str()) && receiver_is_path(recv) {
             out.push(Hit {
                 atom: atom.to_owned(),
                 certain: true,
@@ -1523,6 +1530,68 @@ fn scan_typed_receivers(cx: &Cx<'_>, uses: &mut Uses) {
     tracing::info!(added, "typed-receiver capability uses added");
 }
 
+/// Uses found by Python receiver typing (ticket 01M6422ZRSX74XT6RD0BG4T2RC): a socket method
+/// called on a receiver built by a socket constructor is a Must use, however the constructor was
+/// imported or the receiver copied. A receiver of unproven origin in a file that reaches the
+/// `socket` module is a May use (never passed silently); one built by another constructor, or in a
+/// file that never reaches `socket`, is not a socket call.
+fn scan_python_receivers(cx: &Cx<'_>, uses: &mut Uses) {
+    let mut seen = seen_uses(uses);
+    let mut added = 0usize;
+    for path in scan_files(cx) {
+        let Some(code) = cx.code.file(path) else {
+            continue;
+        };
+        if code.language != "python" {
+            continue;
+        }
+        let Some(src) = code.source() else { continue };
+        if !SOCKET_METHODS.iter().any(|(_, m)| src.contains(m)) {
+            continue;
+        }
+        let Some(symbols) = code.symbols() else {
+            continue;
+        };
+        let found = gob_symbols::python_receiver_calls(&src);
+        let reaches = found.reaches(SOCKET_MODULE);
+        let file_unit = gob_symbols::Symref::file(path).to_string();
+        for call in &found.calls {
+            let certain = match call.ty.as_deref() {
+                Some(t) if SOCKET_CTORS.contains(&t) => true,
+                None if reaches => false,
+                Some(_) | None => continue,
+            };
+            let (unit, qual) = unit_at(cx, symbols, &file_unit, call.offset);
+            let Some(owner) = owner_of_use(cx, &unit, path) else {
+                tracing::debug!(file = path, unit = %unit, "socket use has no ownership unit");
+                continue;
+            };
+            for (atom, _) in SOCKET_METHODS.iter().filter(|(_, m)| *m == call.method) {
+                if !seen.insert((unit.clone(), Some(call.line), (*atom).to_owned(), certain)) {
+                    continue;
+                }
+                tracing::debug!(file = path, line = call.line, atom, recv = %call.recv, certain, "python receiver capability use");
+                added += 1;
+                route(
+                    uses,
+                    &owner,
+                    Use {
+                        atom: (*atom).to_owned(),
+                        file: path.to_owned(),
+                        unit: unit.clone(),
+                        qual: qual.clone(),
+                        line: Some(call.line),
+                        callee: format!("{}.{}", call.recv, call.method),
+                        certain,
+                        arg: None,
+                    },
+                );
+            }
+        }
+    }
+    tracing::info!(added, "python receiver capability uses added");
+}
+
 fn observe(cx: &Cx<'_>) -> Uses {
     let edges: Vec<_> = cx
         .graph
@@ -1530,16 +1599,6 @@ fn observe(cx: &Cx<'_>) -> Uses {
         .iter()
         .filter(|e| is_open_call(e))
         .collect();
-    let mut calls_in: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-    for e in &edges {
-        if let Some(t) = &e.text {
-            calls_in
-                .entry(e.from.path().to_owned())
-                .or_default()
-                .insert(callee_of(t).to_owned());
-        }
-    }
-    let empty = BTreeSet::new();
     let mut sources: BTreeMap<String, Option<String>> = BTreeMap::new();
     let mut uses = Uses::default();
     let mut vocabs: BTreeMap<String, Vec<(&str, BTreeSet<&str>)>> = BTreeMap::new();
@@ -1567,7 +1626,6 @@ fn observe(cx: &Cx<'_>) -> Uses {
         if resolved_only(&code.language) {
             continue;
         }
-        let file_calls = calls_in.get(path).unwrap_or(&empty);
         // A cut-off callee text cannot be split; fall back to the spelled method name.
         let spelled;
         let callee = if callee.ends_with("...") {
@@ -1587,9 +1645,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
         let vocab = vocabs
             .entry(code.language.clone())
             .or_insert_with(|| vocabularies(&code.language, cx.packs));
-        for Hit { atom, certain } in
-            atoms_of(vocab, &code.language, callee, file_calls, &mut is_path)
-        {
+        for Hit { atom, certain } in atoms_of(vocab, &code.language, callee, &mut is_path) {
             let u = Use {
                 atom,
                 file: path.to_owned(),
@@ -1608,6 +1664,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
     }
     scan_resolved(cx, &mut uses);
     scan_typed_receivers(cx, &mut uses);
+    scan_python_receivers(cx, &mut uses);
     refine_open_modes(cx, &mut uses);
     attach_args(cx, &mut uses);
     tracing::info!(

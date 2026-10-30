@@ -1,0 +1,1 @@
+Python socket methods are now typed by the constructor that built the receiver, so aliased imports, with targets and copied sockets report connect, send and listen, and an untyped receiver beside the socket module is reported unresolved.
