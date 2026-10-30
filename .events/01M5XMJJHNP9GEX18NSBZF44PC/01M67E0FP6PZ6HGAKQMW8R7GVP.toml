@@ -1,0 +1,48 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T22:13:10Z"
+digest = "a7461f38465bd04072ae996b2901591bf8d0236ad948fa2bee135be7f811abfb"
+exit_code = 0
+head = "12128e80ef49cb6a79641fe2ffc7af0a7ebda76b"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID de805100-5060-41aa-9e0b-f1f5ef85fd06 with nextest profile: default
+    Starting 4 tests across 1 binary (35 binaries skipped)
+        PASS [   0.108s] grimble-check::baseline a_conflicted_baseline_is_a_config_error
+        PASS [   0.238s] grimble-check::baseline an_unlisted_key_does_not_mute
+        PASS [   0.319s] grimble-check::baseline a_baselined_finding_is_muted_and_reported_suppressed
+        PASS [   0.324s] grimble-check::baseline the_deprecated_strict_knob_is_still_accepted_and_changes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.328s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(baseline)'"
+size = 2182
+status = "measured"
+test_count = 4
+tests_digest = "8405adf31c8312cf72ef1c8ab3cb1dfdab8d474f774d79fb7267991f712e00e6"
+at = "2026-10-30T22:13:10Z"
+actor = "lognd"
+rev = 1
