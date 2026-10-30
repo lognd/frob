@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP: direct shutil.move and os.rename source/dest"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/caps/**"]
+body = "found while working ~MM08TTF: both paths are writes, undirected today"
+at = "2026-10-30T08:53:44Z"
+actor = "lognd"
+rev = 1
