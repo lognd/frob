@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-29T08:08:08Z"
 updated = "2026-10-30T14:22:03Z"
 idempotency_key = "followup-291TPEB-nature-wiring"
-scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/gob-cli/**", "crates/gob-diagnostics/**", "docs/design/rules.md", "docs/reference/rules/**", "docs/schemas/envelope.json"]
+scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/gob-cli/**", "crates/gob-diagnostics/**", "docs/design/rules.md", "docs/reference/rules/**", "docs/schemas/envelope.json", "docs/schemas/sibling.json"]
 
 [[acceptance]]
 text = "#[rule(nature = heuristic)] flows to RuleDef and the output envelope (nature, waivable_by)"
