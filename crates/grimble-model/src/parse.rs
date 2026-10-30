@@ -15,8 +15,8 @@ use gob_walk::Selector;
 use crate::ast::{
     Atom, Attachments, ClaimWhat, Clause, ClauseKind, Direction, Entity, EntityKind, Evidence,
     ExcKind, Exception, Excuses, FileStatus, Header, Ident, Include, Item, KeyVal, Link, LinkKind,
-    May, ModuleDecl, ModuleKind, Namespace, ParsedFile, QuantKey, Quantity, RefPath, Sel, Spanned,
-    TemplateExcuse, TopException, Value, VersionHeader, Versioning,
+    May, ModuleDecl, ModuleKind, Namespace, ParsedFile, Provides, QuantKey, Quantity, RefPath, Sel,
+    Spanned, TemplateExcuse, TopException, Value, VersionHeader, Versioning,
 };
 use crate::keywords::is_keyword;
 use crate::lex::{Comment, CommentKind, Punct, Tok, Token, lex};
@@ -1062,6 +1062,7 @@ impl Parser<'_> {
             "owns" => ClauseKind::Owns(self.selector()?),
             "surface" => ClauseKind::Surface(self.selector()?),
             "may" => ClauseKind::May(self.may()?),
+            "provides" => ClauseKind::Provides(self.provides()?),
             "excuses" => {
                 let atom = self.atom()?;
                 let attrs = self.key_vals()?;
@@ -1183,8 +1184,8 @@ impl Parser<'_> {
         }
     }
 
-    fn may(&mut self) -> PResult<May> {
-        let atom = self.atom()?;
+    /// The optional parenthesised string arguments of a grant or provider.
+    fn grant_args(&mut self) -> PResult<Vec<Spanned<String>>> {
         let mut args = Vec::new();
         if self.eat_p(Punct::LParen) {
             while !self.at_p(Punct::RParen) {
@@ -1195,6 +1196,29 @@ impl Parser<'_> {
             }
             self.expect_p(Punct::RParen)?;
         }
+        Ok(args)
+    }
+
+    /// `provides ATOM[(ARGS)] via SEL [because=..]` (capabilities-v3 5.3).
+    fn provides(&mut self) -> PResult<Provides> {
+        let atom = self.atom()?;
+        let args = self.grant_args()?;
+        if !self.eat_kw("via") {
+            return self.unexpected("`via`");
+        }
+        let via = self.selector_to(true)?;
+        let attrs = self.key_vals()?;
+        Ok(Provides {
+            atom,
+            args,
+            via,
+            attrs,
+        })
+    }
+
+    fn may(&mut self) -> PResult<May> {
+        let atom = self.atom()?;
+        let args = self.grant_args()?;
         let at = if self.eat_kw("at") {
             Some(self.selector_to(true)?)
         } else {

@@ -161,6 +161,7 @@ pub fn clause_key(k: &ClauseKind) -> &'static str {
         ClauseKind::Owns(_) => "owns",
         ClauseKind::Surface(_) => "surface",
         ClauseKind::May(_) => "may",
+        ClauseKind::Provides(_) => "provides",
         ClauseKind::Excuses(_) => "excuses",
         ClauseKind::Excuse(_) => "excuse",
         ClauseKind::Label(_) => "label",
@@ -197,7 +198,7 @@ pub fn clause_rank(k: &ClauseKind) -> u8 {
         ClauseKind::Kind(_) => 0,
         ClauseKind::Clearance(_) => 1,
         ClauseKind::Owns(_) => 2,
-        ClauseKind::May(_) => 3,
+        ClauseKind::May(_) | ClauseKind::Provides(_) => 3,
         ClauseKind::Excuses(_) | ClauseKind::Excuse(_) => 4,
         ClauseKind::Surface(_) => 5,
         ClauseKind::Producer(_) => 6,
@@ -229,6 +230,21 @@ pub fn clause_rank(k: &ClauseKind) -> u8 {
     }
 }
 
+/// The canonical text of a `provides ATOM[(ARGS)] via SEL [attrs]` clause body.
+fn provides_text(p: &crate::ast::Provides) -> String {
+    let mut out = format!("provides {}", p.atom.written());
+    if !p.args.is_empty() {
+        let args: Vec<String> = p.args.iter().map(|a| quote(&a.value)).collect();
+        let _ = write!(out, "({})", args.join(", "));
+    }
+    let _ = write!(out, " via {}", selector_text(&p.via));
+    let attrs = key_vals_text(&p.attrs);
+    if !attrs.is_empty() {
+        let _ = write!(out, " {attrs}");
+    }
+    out
+}
+
 /// The canonical one-line text of a clause body (no `;`, no wrapping).
 pub fn clause_text(k: &ClauseKind) -> String {
     match k {
@@ -258,6 +274,7 @@ pub fn clause_text(k: &ClauseKind) -> String {
             }
             out
         }
+        ClauseKind::Provides(p) => provides_text(p),
         ClauseKind::Excuses(e) => {
             format!("excuses {} {}", e.atom.written(), key_vals_text(&e.attrs))
                 .trim_end()
