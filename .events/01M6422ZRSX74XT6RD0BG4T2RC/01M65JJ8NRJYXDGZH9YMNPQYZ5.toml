@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T04:52:35Z"
+digest = "b7ceaa5a547943667e62c551329816d1e6321b87d0af8a69a7418934d9dc6c0f"
+exit_code = 0
+head = "8a4dddaa1b53e45c430f9ef62e515c54500d9e3c"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.72s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 596c9a43-2623-4761-853d-f688c7bf3ccd with nextest profile: default
+    Starting 12 tests across 23 binaries (596 tests skipped)
+        PASS [   0.007s] gob-symbols pyrecv::tests::p13_cap_a_name_rebound_to_different_constructors_is_untyped
+        PASS [   0.007s] gob-symbols pyrecv::tests::p12_cap_a_constructor_result_keeps_its_type
+        PASS [   0.007s] gob-symbols pyrecv::tests::p13_cap_with_alias_and_chained_forms_are_typed
+        PASS [   0.007s] gob-symbols pyrecv::tests::p12_cap_reached_paths_name_the_modules_a_file_uses
+        PASS [   0.007s] gob-symbols pyrecv::tests::p12_cap_aliased_imports_resolve_the_constructor
+        PASS [   0.008s] gob-symbols pyrecv::tests::p13_cap_unprovable_receivers_stay_untyped
+        PASS [   0.072s] grimble-bind::caps_python_receivers p13_cap_a_socket_free_file_stays_silent
+        PASS [   0.074s] grimble-bind::caps_python_receivers p13_cap_a_non_socket_receiver_in_a_socket_file_is_not_a_certain_hit
+        PASS [   0.075s] grimble-bind::caps_python_receivers p13_cap_with_target_and_copied_receiver_are_typed
+        PASS [   0.075s] grimble-bind::caps_python_receivers p12_cap_send_alone_is_a_net_connect
+        PASS [   0.212s] grimble-bind::caps_python_receivers p12_cap_aliased_socket_constructor_keeps_its_type
+        PASS [   0.238s] grimble-bind::caps_python_receivers p13_cap_an_untyped_receiver_beside_socket_is_unresolved_not_silent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.240s] 12 tests run: 12 passed, 596 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -p gob-symbols -E 'test(/p12_cap_|p13_cap_/)'"
+size = 1822
+status = "measured"
+test_count = 12
+tests_digest = "701a679b0040f1a20041446fa4ace78d80aab24a4bccfb70410c92cc6563edf9"
+at = "2026-10-30T04:52:35Z"
+actor = "lognd"
+rev = 1
