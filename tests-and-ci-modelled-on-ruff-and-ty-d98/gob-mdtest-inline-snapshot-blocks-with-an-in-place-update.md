@@ -2,7 +2,8 @@
 id = "01M48PC0TZ7MHW4KA89V6ZFY72"
 title = "gob-mdtest: inline snapshot blocks with an in-place update env"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
