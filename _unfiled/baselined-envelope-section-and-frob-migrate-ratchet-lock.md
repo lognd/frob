@@ -2,7 +2,8 @@
 id = "01M66G70F82EC8EERE0077QKVV"
 title = "baselined envelope section and frob migrate ratchet-lock hook"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
