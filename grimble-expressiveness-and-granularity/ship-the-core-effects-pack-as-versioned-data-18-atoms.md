@@ -2,13 +2,13 @@
 id = "01M5XNNHV9M8HCP76TD867GGVJ"
 title = "Ship the core-effects pack as versioned data: 18 atoms, parents, typed args, stdlib-derived vocabularies"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 13
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-30T09:52:50Z"
+updated = "2026-10-30T09:52:52Z"
 idempotency_key = "grimble-expr-coreeffects-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "creates:packs/core-effects/**", "no-story"]
 scope = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/gob-packs/**", "crates/grimble-bind/src/caps.rs", "packs/core-effects/**", "docs/design/**", "crates/grimble-model/src/**", "crates/grimble-check/src/**"]
