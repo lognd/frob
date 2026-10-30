@@ -1,0 +1,1 @@
+Rust receiver types now flow through function return types, builder chains and lexical shadowing, generic or trait-bound receivers are reported as unresolved, and File::options and fs::symlink are filesystem capabilities.

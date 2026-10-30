@@ -60,12 +60,16 @@
 //! module's own imports to its origin symbol (`python_modules`); a name bound several ways (rebound,
 //! try/except fallback, conditional shadow) is reported per origin, Unresolved.
 //!
-//! Typed receivers (ticket YCR4M6H): a Rust vocabulary entry `<type path>.<method>`
-//! (`ureq::Agent.run`) names a method call whose receiver type resolves, from the syntax tree, to
-//! that path: through `use` imports and aliases, struct fields (`self.agent`), parameters, typed
-//! or constructor `let` bindings, `Arc` / `Box` / `Rc` wrappers, `clone()` and typed `const` /
-//! `static` items. It is a Must use. A name bound twice to different types, or by a pattern that
-//! states no type, stays unresolved and is not reported.
+//! Typed receivers (tickets YCR4M6H and 01M64230GWHHTH9R7CZ55XRPGG): a Rust vocabulary entry
+//! `<type path>.<method>` (`ureq::Agent.run`) names a method call whose receiver type resolves,
+//! from the syntax tree, to that path: through `use` imports (also function-local) and aliases,
+//! struct fields (`self.agent`), parameters, `let` bindings scoped lexically (an inner `let` hides
+//! the outer name only inside its block), constructors, the declared return types of functions and
+//! methods in the file (builder chains), `?` / `unwrap` / `if let Some` / `match` unwrapping,
+//! `Arc` / `Box` / `Rc` / lock wrappers, `clone()` and typed `const` / `static` items. It is a
+//! Must use. A receiver typed by a generic parameter, `impl Trait`, `dyn Trait` or an associated
+//! type is Unresolved: a May use of every typed method of that name. A receiver of any other
+//! unknown type is not reported.
 //!
 //! Calls into another node (ticket 01M642304NQ5XQP3WWD0T8Z2BM, audit case q07): a use belongs to the
 //! node that owns the code it sits in, but a node that calls a function owned elsewhere also
@@ -128,6 +132,7 @@ use grimble_model::ast::EntityKind;
 use grimble_model::{PackDetectorKind, PackPin};
 
 mod python_modules;
+mod rstype;
 mod rust_modules;
 
 use crate::code::CodeFile;
@@ -618,430 +623,6 @@ mod pytype {
             return !ev.is_empty() && ev.iter().all(|p| *p);
         }
         false
-    }
-}
-
-/// Rust receiver typing (ticket YCR4M6H): resolves the type of the receiver of each method call
-/// from the syntax tree, so `agent.run(..)` on an `ureq::Agent` is a `<type path>.<method>` call
-/// the vocabulary can name. Per file: imports, struct fields, parameters, `let` bindings,
-/// `self`, `const` and `static` items. A name bound more than once to different types, or by a
-/// pattern that does not state a type, stays unresolved.
-mod rstype {
-    use std::collections::BTreeMap;
-
-    use gob_languages::{Language, ParseLimits, ParseResult, parse};
-    use tree_sitter::Node;
-
-    /// A resolved type: an external path (`ureq::Agent`) or a type this file defines.
-    #[derive(Clone, Debug, PartialEq, Eq)]
-    enum Ty {
-        Path(String),
-        Local(String),
-    }
-
-    /// A method call whose receiver type resolved to an external path.
-    pub(super) struct TypedCall {
-        /// The resolved type path of the receiver.
-        pub(super) ty: String,
-        /// The called method.
-        pub(super) method: String,
-        pub(super) offset: usize,
-        pub(super) line: u32,
-    }
-
-    /// A name's binding in a function: one type, or `None` when ambiguous or untyped.
-    type Env = BTreeMap<String, Option<Ty>>;
-
-    struct Cx<'s> {
-        src: &'s str,
-        imports: BTreeMap<String, String>,
-        locals: BTreeMap<String, BTreeMap<String, Option<Node<'s>>>>,
-        items: Env,
-        out: Vec<TypedCall>,
-    }
-
-    fn text<'s>(src: &'s str, n: Node<'_>) -> &'s str {
-        src.get(n.start_byte()..n.end_byte()).unwrap_or("")
-    }
-
-    fn kids(n: Node<'_>) -> Vec<Node<'_>> {
-        let mut c = n.walk();
-        n.named_children(&mut c).collect()
-    }
-
-    /// The method calls in `src` whose receiver type resolves to an external path.
-    pub(super) fn typed_calls(src: &str) -> Vec<TypedCall> {
-        let ParseResult::Parsed(tree) = parse(Language::Rust, src, &ParseLimits::default()) else {
-            tracing::debug!("rust source did not parse: no typed receivers");
-            return Vec::new();
-        };
-        let root = tree.root();
-        let mut cx = Cx {
-            src,
-            imports: BTreeMap::new(),
-            locals: BTreeMap::new(),
-            items: Env::new(),
-            out: Vec::new(),
-        };
-        cx.collect_items(root);
-        cx.visit(root, None);
-        tracing::debug!(calls = cx.out.len(), "typed receiver calls resolved");
-        cx.out
-    }
-
-    impl<'s> Cx<'s> {
-        /// Imports, locally defined types with their fields, and typed `const` / `static` items.
-        fn collect_items(&mut self, n: Node<'s>) {
-            match n.kind() {
-                "use_declaration" => {
-                    if let Some(arg) = n.child_by_field_name("argument") {
-                        let mut imports = std::mem::take(&mut self.imports);
-                        flatten_use(self.src, arg, &[], &mut imports);
-                        self.imports = imports;
-                    }
-                }
-                "struct_item" | "enum_item" | "union_item" | "type_item" | "trait_item" => {
-                    if let Some(name) = n.child_by_field_name("name") {
-                        let fields = self
-                            .locals
-                            .entry(text(self.src, name).to_owned())
-                            .or_default();
-                        if let Some(body) = n.child_by_field_name("body") {
-                            for f in kids(body) {
-                                if f.kind() == "field_declaration"
-                                    && let (Some(fname), Some(fty)) = (
-                                        f.child_by_field_name("name"),
-                                        f.child_by_field_name("type"),
-                                    )
-                                {
-                                    fields.insert(text(self.src, fname).to_owned(), Some(fty));
-                                }
-                            }
-                        }
-                    }
-                }
-                _ => {}
-            }
-            for k in kids(n) {
-                if k.kind() != "function_item" {
-                    self.collect_items(k);
-                }
-            }
-            if matches!(n.kind(), "const_item" | "static_item")
-                && let (Some(name), Some(ty)) =
-                    (n.child_by_field_name("name"), n.child_by_field_name("type"))
-            {
-                let ty = self.resolve_type(ty, None);
-                bind(&mut self.items, text(self.src, name), ty);
-            }
-        }
-
-        /// Walks for function items, resolving the calls in each with its own environment.
-        fn visit(&mut self, n: Node<'s>, self_ty: Option<&Ty>) {
-            if n.kind() == "function_item" {
-                self.function(n, self_ty);
-                return;
-            }
-            let impl_ty = (n.kind() == "impl_item")
-                .then(|| n.child_by_field_name("type"))
-                .flatten()
-                .and_then(|t| self.resolve_type(t, None));
-            let self_ty = impl_ty.as_ref().or(self_ty);
-            for k in kids(n) {
-                self.visit(k, self_ty);
-            }
-        }
-
-        fn function(&mut self, f: Node<'s>, self_ty: Option<&Ty>) {
-            let mut env = Env::new();
-            if let Some(params) = f.child_by_field_name("parameters") {
-                for p in kids(params) {
-                    if p.kind() == "parameter"
-                        && let (Some(pat), Some(ty)) = (
-                            p.child_by_field_name("pattern"),
-                            p.child_by_field_name("type"),
-                        )
-                    {
-                        if pat.kind() == "identifier" {
-                            let ty = self.resolve_type(ty, self_ty);
-                            bind(&mut env, text(self.src, pat), ty);
-                        } else {
-                            self.shadow_all(pat, &mut env);
-                        }
-                    }
-                }
-            }
-            let Some(body) = f.child_by_field_name("body") else {
-                return;
-            };
-            self.bindings(body, self_ty, &mut env);
-            self.calls(body, self_ty, &env);
-            // nested functions have their own environment
-            self.nested(body, self_ty);
-        }
-
-        fn nested(&mut self, n: Node<'s>, self_ty: Option<&Ty>) {
-            for k in kids(n) {
-                if k.kind() == "function_item" {
-                    self.function(k, self_ty);
-                } else {
-                    self.nested(k, self_ty);
-                }
-            }
-        }
-
-        /// Marks every name a pattern binds as unresolved.
-        fn shadow_all(&self, pat: Node<'s>, env: &mut Env) {
-            if pat.kind() == "identifier" {
-                env.insert(text(self.src, pat).to_owned(), None);
-            }
-            for k in kids(pat) {
-                self.shadow_all(k, env);
-            }
-        }
-
-        /// Records the types of `let` bindings; every other pattern shadows its names.
-        fn bindings(&self, n: Node<'s>, self_ty: Option<&Ty>, env: &mut Env) {
-            for k in kids(n) {
-                match k.kind() {
-                    "function_item" => continue,
-                    "let_declaration" => match k.child_by_field_name("pattern") {
-                        Some(p) if p.kind() == "identifier" => {
-                            let ty = match (
-                                k.child_by_field_name("type"),
-                                k.child_by_field_name("value"),
-                            ) {
-                                (Some(t), _) => self.resolve_type(t, self_ty),
-                                (None, Some(v)) => self.infer_value(v, self_ty),
-                                (None, None) => None,
-                            };
-                            bind(env, text(self.src, p), ty);
-                        }
-                        Some(p) => self.shadow_all(p, env),
-                        None => {}
-                    },
-                    "closure_parameters" | "for_expression" | "match_arm" | "let_condition"
-                    | "match_pattern" => {
-                        for pat in kids(k) {
-                            if matches!(
-                                k.kind(),
-                                "closure_parameters"
-                                    | "match_arm"
-                                    | "match_pattern"
-                                    | "let_condition"
-                            ) || k.child_by_field_name("pattern") == Some(pat)
-                            {
-                                self.shadow_all(pat, env);
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-                self.bindings(k, self_ty, env);
-            }
-        }
-
-        /// The type a constructor expression (`Agent::new(..)`, `Arc::new(..)`) produces.
-        fn infer_value(&self, v: Node<'s>, self_ty: Option<&Ty>) -> Option<Ty> {
-            if v.kind() != "call_expression" {
-                return None;
-            }
-            let f = v.child_by_field_name("function")?;
-            if f.kind() != "scoped_identifier" {
-                return None;
-            }
-            let full = text(self.src, f);
-            let (prefix, last) = full.rsplit_once("::")?;
-            if !matches!(
-                last,
-                "new" | "default" | "from" | "new_with_defaults" | "new_with_config"
-            ) {
-                return None;
-            }
-            if matches!(prefix, "Arc" | "Box" | "Rc") {
-                let arg = kids(v.child_by_field_name("arguments")?)
-                    .into_iter()
-                    .next()?;
-                return self.infer_value(arg, self_ty);
-            }
-            self.resolve_segments(prefix.split("::").map(str::to_owned).collect(), self_ty)
-        }
-
-        /// Resolves a type node, unwrapping references, smart pointers and generics.
-        fn resolve_type(&self, t: Node<'s>, self_ty: Option<&Ty>) -> Option<Ty> {
-            match t.kind() {
-                "reference_type" => self.resolve_type(t.child_by_field_name("type")?, self_ty),
-                "generic_type" => {
-                    let base = t.child_by_field_name("type")?;
-                    let name = text(self.src, base);
-                    if matches!(
-                        name,
-                        "Arc" | "Box" | "Rc" | "std::sync::Arc" | "std::rc::Rc"
-                    ) {
-                        let args = t.child_by_field_name("type_arguments")?;
-                        let inner = kids(args).into_iter().find(|a| a.kind() != "lifetime")?;
-                        return self.resolve_type(inner, self_ty);
-                    }
-                    self.resolve_type(base, self_ty)
-                }
-                "type_identifier" | "scoped_type_identifier" => self.resolve_segments(
-                    text(self.src, t)
-                        .trim_start_matches("::")
-                        .split("::")
-                        .map(str::to_owned)
-                        .collect(),
-                    self_ty,
-                ),
-                _ => None,
-            }
-        }
-
-        fn resolve_segments(&self, mut segs: Vec<String>, self_ty: Option<&Ty>) -> Option<Ty> {
-            let first = segs.first()?.clone();
-            if segs.len() == 1 && first == "Self" {
-                return self_ty.cloned();
-            }
-            if segs.len() == 1 && self.locals.contains_key(&first) {
-                return Some(Ty::Local(first));
-            }
-            if let Some(full) = self.imports.get(&first) {
-                segs.remove(0);
-                let mut path = full.clone();
-                for s in segs {
-                    path.push_str("::");
-                    path.push_str(&s);
-                }
-                return Some(Ty::Path(path));
-            }
-            (segs.len() > 1).then(|| Ty::Path(segs.join("::")))
-        }
-
-        /// The type of a receiver expression, when it resolves.
-        fn type_of(&self, e: Node<'s>, self_ty: Option<&Ty>, env: &Env) -> Option<Ty> {
-            match e.kind() {
-                "identifier" => {
-                    let name = text(self.src, e);
-                    env.get(name).or_else(|| self.items.get(name))?.clone()
-                }
-                "self" => self_ty.cloned(),
-                "parenthesized_expression" | "reference_expression" => {
-                    let inner = e
-                        .child_by_field_name("value")
-                        .or_else(|| kids(e).into_iter().next())?;
-                    self.type_of(inner, self_ty, env)
-                }
-                "field_expression" => {
-                    let Ty::Local(owner) =
-                        self.type_of(e.child_by_field_name("value")?, self_ty, env)?
-                    else {
-                        return None;
-                    };
-                    let field = text(self.src, e.child_by_field_name("field")?);
-                    let fty = (*self.locals.get(&owner)?.get(field)?)?;
-                    self.resolve_type(fty, Some(&Ty::Local(owner)))
-                }
-                "call_expression" => {
-                    // `x.clone()` keeps the type of `x`
-                    let f = e.child_by_field_name("function")?;
-                    (f.kind() == "field_expression"
-                        && text(self.src, f.child_by_field_name("field")?) == "clone")
-                        .then(|| self.type_of(f.child_by_field_name("value")?, self_ty, env))
-                        .flatten()
-                }
-                _ => None,
-            }
-        }
-
-        /// Records each method call whose receiver resolves to an external path.
-        fn calls(&mut self, n: Node<'s>, self_ty: Option<&Ty>, env: &Env) {
-            for k in kids(n) {
-                if k.kind() == "function_item" {
-                    continue;
-                }
-                if k.kind() == "call_expression"
-                    && let Some(f) = k.child_by_field_name("function")
-                    && f.kind() == "field_expression"
-                    && let (Some(recv), Some(m)) = (
-                        f.child_by_field_name("value"),
-                        f.child_by_field_name("field"),
-                    )
-                    && let Some(Ty::Path(ty)) = self.type_of(recv, self_ty, env)
-                {
-                    self.out.push(TypedCall {
-                        ty,
-                        method: text(self.src, m).to_owned(),
-                        offset: k.start_byte(),
-                        line: u32::try_from(k.start_position().row + 1).unwrap_or(u32::MAX),
-                    });
-                }
-                self.calls(k, self_ty, env);
-            }
-        }
-    }
-
-    /// Binds `name` to `ty`; a second, different binding makes the name unresolved.
-    fn bind(env: &mut Env, name: &str, ty: Option<Ty>) {
-        match env.get(name) {
-            Some(have) if *have != ty => {
-                env.insert(name.to_owned(), None);
-            }
-            Some(_) => {}
-            None => {
-                env.insert(name.to_owned(), ty);
-            }
-        }
-    }
-
-    /// Flattens one use tree into `local name -> full path`.
-    fn flatten_use(src: &str, n: Node<'_>, prefix: &[String], out: &mut BTreeMap<String, String>) {
-        let join = |segs: &[String]| segs.join("::");
-        let spelled = |n: Node<'_>| -> Vec<String> {
-            let mut v = prefix.to_vec();
-            v.extend(
-                text(src, n)
-                    .trim_start_matches("::")
-                    .split("::")
-                    .map(str::to_owned),
-            );
-            v
-        };
-        match n.kind() {
-            "identifier" | "scoped_identifier" => {
-                let full = spelled(n);
-                if let Some(last) = full.last() {
-                    out.insert(last.clone(), join(&full));
-                }
-            }
-            "self" => {
-                if let Some(last) = prefix.last() {
-                    out.insert(last.clone(), join(prefix));
-                }
-            }
-            "use_as_clause" => {
-                if let (Some(path), Some(alias)) = (
-                    n.child_by_field_name("path"),
-                    n.child_by_field_name("alias"),
-                ) {
-                    out.insert(text(src, alias).to_owned(), join(&spelled(path)));
-                }
-            }
-            "scoped_use_list" => {
-                let base = n
-                    .child_by_field_name("path")
-                    .map_or_else(|| prefix.to_vec(), spelled);
-                if let Some(list) = n.child_by_field_name("list") {
-                    for k in kids(list) {
-                        flatten_use(src, k, &base, out);
-                    }
-                }
-            }
-            "use_list" => {
-                for k in kids(n) {
-                    flatten_use(src, k, prefix, out);
-                }
-            }
-            _ => {}
-        }
     }
 }
 
@@ -1598,6 +1179,36 @@ fn is_typed_name(name: &str) -> bool {
     name.contains('.') && !name.starts_with('.') && name.contains("::")
 }
 
+/// The `(callee text, certain)` pairs a typed call may name: an unprovable receiver is an
+/// uncertain use of any typed method, a repository path follows its re-exports to the external
+/// type it names.
+fn typed_callees(
+    cx: &Cx<'_>,
+    rust_modules: &mut RustModules,
+    path: &str,
+    call: &rstype::TypedCall,
+    typed_methods: &BTreeSet<&str>,
+) -> Vec<(String, bool)> {
+    match &call.ty {
+        None if typed_methods.contains(call.method.as_str()) => {
+            vec![(format!("<unresolved receiver>.{}", call.method), false)]
+        }
+        None => Vec::new(),
+        Some(ty)
+            if ty.starts_with("crate::")
+                || ty.starts_with("self::")
+                || ty.starts_with("super::") =>
+        {
+            rust_modules
+                .origins(cx, path, ty)
+                .into_iter()
+                .map(|o| (format!("{}.{}", o.path, call.method), !o.unproven))
+                .collect()
+        }
+        Some(ty) => vec![(format!("{ty}.{}", call.method), true)],
+    }
+}
+
 /// Uses found by typed-receiver resolution (ticket YCR4M6H): method calls whose receiver type
 /// resolves (`rstype`) to a path a vocabulary names as `<type path>.<method>`, such as
 /// `ureq::Agent.run`. A Must use, added unless an earlier pass recorded the same atom on the same
@@ -1611,6 +1222,13 @@ fn scan_typed_receivers(cx: &Cx<'_>, uses: &mut Uses) {
     {
         return;
     }
+    let typed_methods: BTreeSet<&str> = vocab
+        .iter()
+        .flat_map(|(_, names)| names.iter())
+        .filter(|n| is_typed_name(n))
+        .filter_map(|n| n.rsplit_once('.').map(|(_, m)| m))
+        .collect();
+    let mut rust_modules = RustModules::default();
     let mut added = 0usize;
     for path in scan_files(cx) {
         let Some(code) = cx.code.file(path) else {
@@ -1634,40 +1252,55 @@ fn scan_typed_receivers(cx: &Cx<'_>, uses: &mut Uses) {
         };
         let file_unit = gob_symbols::Symref::file(path).to_string();
         for call in rstype::typed_calls(&src) {
-            let callee = format!("{}.{}", call.ty, call.method);
-            let hits: Vec<&str> = vocab
-                .iter()
-                .filter(|(_, names)| names.contains(callee.as_str()))
-                .map(|(a, _)| *a)
-                .collect();
-            if hits.is_empty() {
-                continue;
-            }
-            let (unit, qual) = unit_at(cx, symbols, &file_unit, call.offset);
-            let Some(owner) = owner_of_use(cx, &unit, path) else {
-                tracing::debug!(file = path, unit = %unit, "typed use has no ownership unit");
-                continue;
-            };
-            for atom in hits {
-                if !seen.insert((unit.clone(), Some(call.line), atom.to_owned(), true)) {
+            let callees = typed_callees(cx, &mut rust_modules, path, &call, &typed_methods);
+            for (callee, certain) in callees {
+                let hits: Vec<&str> = if certain || call.ty.is_some() {
+                    vocab
+                        .iter()
+                        .filter(|(_, names)| names.contains(callee.as_str()))
+                        .map(|(a, _)| *a)
+                        .collect()
+                } else {
+                    vocab
+                        .iter()
+                        .filter(|(_, names)| {
+                            names.iter().any(|n| {
+                                is_typed_name(n)
+                                    && n.rsplit_once('.').is_some_and(|(_, m)| m == call.method)
+                            })
+                        })
+                        .map(|(a, _)| *a)
+                        .collect()
+                };
+                if hits.is_empty() {
                     continue;
                 }
-                tracing::debug!(file = path, line = call.line, atom, %callee, "typed-receiver capability use");
-                added += 1;
-                route(
-                    uses,
-                    &owner,
-                    Use {
-                        atom: atom.to_owned(),
-                        file: path.to_owned(),
-                        unit: unit.clone(),
-                        qual: qual.clone(),
-                        line: Some(call.line),
-                        callee: callee.clone(),
-                        certain: true,
-                        arg: None,
-                    },
-                );
+                let (unit, qual) = unit_at(cx, symbols, &file_unit, call.offset);
+                let Some(owner) = owner_of_use(cx, &unit, path) else {
+                    tracing::debug!(file = path, unit = %unit, "typed use has no ownership unit");
+                    continue;
+                };
+                for atom in hits {
+                    if !seen.insert((unit.clone(), Some(call.line), atom.to_owned(), certain)) {
+                        continue;
+                    }
+                    tracing::debug!(file = path, line = call.line, atom, %callee, certain, "typed-receiver capability use");
+                    added += 1;
+                    route(
+                        uses,
+                        &owner,
+                        Use {
+                            atom: atom.to_owned(),
+                            file: path.to_owned(),
+                            unit: unit.clone(),
+                            qual: qual.clone(),
+                            line: Some(call.line),
+                            callee: callee.clone(),
+                            certain,
+                            arg: None,
+                        },
+                    );
+                }
             }
         }
     }

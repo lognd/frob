@@ -151,7 +151,7 @@ inventory::submit! {
 inventory::submit! {
     VocabEntry { lang: "rust", kind: "fs.read", names: &[
         "File::open", "fs::read", "fs::read_to_string", "fs::read_dir", "fs::metadata",
-        "fs::symlink_metadata", "fs::canonicalize", "fs::read_link", "fs::copy", "OpenOptions::new",
+        "fs::symlink_metadata", "fs::canonicalize", "fs::read_link", "fs::copy", "OpenOptions::new", "File::options",
         "std::path::Path.exists", "std::path::Path.is_file", "std::path::Path.is_dir",
         "std::path::Path.read_dir", "std::path::Path.metadata", "std::path::Path.symlink_metadata",
         "std::path::Path.canonicalize", "std::path::Path.read_link", "std::path::Path.try_exists",
@@ -164,9 +164,9 @@ inventory::submit! {
 
 inventory::submit! {
     VocabEntry { lang: "rust", kind: "fs.write", names: &[
-        "File::create", "File::create_new", "OpenOptions::new", "fs::write", "fs::copy", "fs::create_dir",
+        "File::create", "File::create_new", "OpenOptions::new", "File::options", "fs::write", "fs::copy", "fs::create_dir",
         "fs::create_dir_all", "fs::remove_file", "fs::remove_dir", "fs::remove_dir_all", "fs::rename",
-        "fs::set_permissions", "fs::hard_link", "tempfile::tempfile", "tempfile::tempdir",
+        "fs::set_permissions", "fs::hard_link", "fs::symlink", "fs::symlink_file", "fs::symlink_dir", "fs::soft_link", "tempfile::tempfile", "tempfile::tempdir",
         "NamedTempFile::new", "TempDir::new",
     ] }
 }

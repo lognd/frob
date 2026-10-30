@@ -1131,15 +1131,28 @@ The cell of `(n, a)` is computed, in this order:
    `code.eval` and names the call, never clean and never an error. A shadowing binding is not
    the builtin.
 
-   Typed receivers (ticket YCR4M6H). A Rust vocabulary entry written `<type path>.<method>`
-   (`ureq::Agent.run`, `reqwest::Client.get`) names a method call whose receiver type resolves,
-   from the syntax tree of the file, to that path: through `use` imports and aliases, struct
-   fields (`self.agent`), parameters, `let` bindings with a stated type or a constructor
-   (`Agent::new_with_defaults()`), `Arc` / `Box` / `Rc` wrappers, `clone()` and typed `const` /
-   `static` items. Such a call is a Must use (`net.connect` for the HTTP clients). A name bound
-   twice to different types, or by a pattern that states no type (closure parameter, `for`,
-   `match`, destructuring), is unresolved and reports nothing; types from another file and
-   values returned by calls are not followed.
+   Typed receivers (tickets YCR4M6H and 01M64230GWHHTH9R7CZ55XRPGG). A Rust vocabulary entry
+   written `<type path>.<method>` (`ureq::Agent.run`, `reqwest::Client.get`) names a method call
+   whose receiver type resolves, from the syntax tree of the file, to that path: through `use`
+   imports (function-local ones too) and aliases, struct fields (`self.agent`), parameters,
+   `let` bindings with a stated type or a constructor (`Agent::new_with_defaults()`), the
+   declared return type of a function or method defined in the file (`make()`, `B::new().agent()`,
+   builder chains that return `Self`), `?`, `unwrap` / `expect`, `if let Some(x)` and
+   `match ... { Ok(x) => .. }`, `Arc` / `Box` / `Rc` and lock wrappers (`m.lock().unwrap()`), and
+   `clone()`. A `crate::` / `self::` / `super::` type path follows repository re-exports and
+   aliases to its origin. Such a call is a Must use (`net.connect` for the HTTP clients).
+
+   Names are scoped lexically: an inner `let`, closure parameter, `for` or `match` binding hides
+   the outer name only inside its own block, and the outer binding is intact afterwards. A
+   binding whose type is unknown hides the outer one where it is visible.
+
+   A receiver typed by a generic parameter (`T: Client`), `impl Trait`, `dyn Trait`, an
+   associated type or a generic field is Unresolved: when its method name is one a typed entry
+   names, the call is a May use (an Unresolved finding), never clean. A receiver of any other
+   unknown type is not reported. Not followed: return types of functions defined in another file,
+   external builder chains, untyped closure parameters and iterator adapters, tuple-struct
+   fields, and macro bodies. `File::options` and `fs::symlink` / `symlink_file` / `symlink_dir` /
+   `soft_link` are `fs.read` / `fs.write` uses like `OpenOptions::new` and `fs::hard_link`.
 
    Python socket receivers (ticket 01M6422ZRSX74XT6RD0BG4T2RC). `connect`, `connect_ex`, `send`,
    `sendall` and `sendto` are `net.connect`, and `listen` and `bind` are `net.listen`, when called
